@@ -376,6 +376,184 @@ _solidification_create(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the number of cells in a given state for monitoring purpose
+ *
+ * \param[in]     connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]     quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in,out] solid      pointer to the main cs_solidification_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_monitor_cell_state(const cs_cdo_connect_t      *connect,
+                    const cs_cdo_quantities_t   *quant,
+                    cs_solidification_t         *solid)
+{
+  for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++) solid->n_g_cells[i] = 0;
+
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
+
+    if (connect->cell_flag[c] & CS_FLAG_SOLID_CELL)
+      solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] += 1;
+    else
+      solid->n_g_cells[solid->cell_state[c]] += 1;
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Perform the monitoring dedicated to the solidification module
+ *
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_do_monitoring(const cs_cdo_quantities_t   *quant)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+  assert(solid->temperature != NULL);
+
+  for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++)
+    solid->state_ratio[i] = 0;
+
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    const cs_real_t  vol_c = quant->cell_vol[c_id];
+
+    switch (solid->cell_state[c_id]) {
+    case CS_SOLIDIFICATION_STATE_SOLID:
+      solid->state_ratio[CS_SOLIDIFICATION_STATE_SOLID] += vol_c;
+      break;
+    case CS_SOLIDIFICATION_STATE_LIQUID:
+      solid->state_ratio[CS_SOLIDIFICATION_STATE_LIQUID] += vol_c;
+      break;
+    case CS_SOLIDIFICATION_STATE_MUSHY:
+      solid->state_ratio[CS_SOLIDIFICATION_STATE_MUSHY] += vol_c;
+      break;
+    case CS_SOLIDIFICATION_STATE_EUTECTIC:
+      solid->state_ratio[CS_SOLIDIFICATION_STATE_EUTECTIC] += vol_c;
+      break;
+
+    default: /* Should not be in this case */
+      break;
+
+    } /* End of switch */
+
+  } /* Loop on cells */
+
+  /* Finalize the monitoring step*/
+  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_REAL_TYPE, solid->state_ratio);
+  const double  inv_voltot = 100./quant->vol_tot;
+  for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++)
+    solid->state_ratio[i] *= inv_voltot;
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                "### Solidification monitoring: liquid/mushy/solid states\n"
+                "  * Solid    | %6.2f\%% for %9lu cells;\n"
+                "  * Mushy    | %6.2f\%% for %9lu cells;\n"
+                "  * Liquid   | %6.2f\%% for %9lu cells;\n",
+                solid->state_ratio[CS_SOLIDIFICATION_STATE_SOLID],
+                solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID],
+                solid->state_ratio[CS_SOLIDIFICATION_STATE_MUSHY],
+                solid->n_g_cells[CS_SOLIDIFICATION_STATE_MUSHY],
+                solid->state_ratio[CS_SOLIDIFICATION_STATE_LIQUID],
+                solid->n_g_cells[CS_SOLIDIFICATION_STATE_LIQUID]);
+
+  if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "  * Eutectic | %6.2f\%% for %9lu cells;\n",
+                  solid->state_ratio[CS_SOLIDIFICATION_STATE_EUTECTIC],
+                  solid->n_g_cells[CS_SOLIDIFICATION_STATE_EUTECTIC]);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Add a source term to the solute equation derived from an explicit
+ *          use of the advective and diffusive operator
+ *          Generic function prototype for a hook during the cellwise building
+ *          of the linear system
+ *          Fit the cs_equation_user_hook_t prototype. This function may be
+ *          called by different OpenMP threads
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
+ * \param[in]      eqc         context to cast for this discretization
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] mass_hodge  pointer to a cs_hodge_t structure (mass matrix)
+ * \param[in, out] diff_hodge  pointer to a cs_hodge_t structure (diffusion)
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_fb_solute_source_term(const cs_equation_param_t     *eqp,
+                       const cs_equation_builder_t   *eqb,
+                       const void                    *eq_context,
+                       const cs_cell_mesh_t          *cm,
+                       cs_hodge_t                    *mass_hodge,
+                       cs_hodge_t                    *diff_hodge,
+                       cs_cell_sys_t                 *csys,
+                       cs_cell_builder_t             *cb)
+{
+  CS_UNUSED(mass_hodge);
+  CS_UNUSED(eqb);
+
+  if (cb->cell_flag & CS_FLAG_SOLID_CELL)
+    return; /* No solute evolution in permanent solid zone */
+
+  const cs_cdofb_scaleq_t  *eqc = (const cs_cdofb_scaleq_t *)eq_context;
+
+  cs_solidification_t  *solid = cs_solidification_structure;
+  cs_solidification_binary_alloy_t  *alloy
+    = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+  cs_real_t  *cl_c = alloy->c_l_cells;
+  cs_real_t  *cl_f = alloy->c_l_faces;
+
+  /* Diffusion part of the source term to add */
+
+  cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
+                                 diff_hodge);
+
+  /* Define the local stiffness matrix: local matrix owned by the cellwise
+     builder (store in cb->loc) */
+  eqc->get_stiffness_matrix(cm, diff_hodge, cb);
+
+  /* Build the cellwise array: c - c_l
+     One should have c_l >= c. Therefore, one takes fmin(...,0) */
+  for (short int f = 0; f < cm->n_fc; f++)
+    cb->values[f] = fmin(csys->val_n[f] - cl_f[cm->f_ids[f]], 0);
+  cb->values[cm->n_fc] = fmin(csys->val_n[cm->n_fc] - cl_c[cm->c_id], 0);
+
+  /* Update the RHS with the diffusion contribution */
+  cs_sdm_update_matvec(cb->loc, cb->values, csys->rhs);
+
+  /* Define the local advection matrix */
+
+  /* Open hook: Compute the advection flux for the numerical scheme and store
+     the advection fluxes across primal faces */
+  eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
+
+  eqc->advection_main(eqp, cm, csys, eqc->advection_scheme, cb);
+
+  /* Build the cellwise array: c - c_l
+     One should have c_l >= c. Therefore, one takes fmin(...,0) */
+  for (short int f = 0; f < cm->n_fc; f++)
+    cb->values[f] = fmin(csys->val_n[f] - cl_f[cm->f_ids[f]], 0);
+  cb->values[cm->n_fc] = fmin(csys->val_n[cm->n_fc] - cl_c[cm->c_id], 0);
+
+  /* Update the RHS with the convection contribution */
+  cs_sdm_update_matvec(cb->loc, cb->values, csys->rhs);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build the list of (local) solid cells and enforce a zero-velocity
  *         for this selection
  *
@@ -458,10 +636,16 @@ _compute_enthalpy(const cs_cdo_quantities_t    *quant,
 
 }
 
+/*----------------------------------------------------------------------------*
+ * Update functions for the Voller & Prakash modelling
+ *----------------------------------------------------------------------------*/
+
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update/initialize the liquid fraction and its related quantities
- *         This corresponds to the Voller and Prakash (87)
+ * \brief  Update/initialize the liquid fraction, the cell state and the array
+ *         used to compute the forcing term in the momentum equation.
+ *         This corresponds to the methodology described in the paper
+ *         written by Voller and Prakash (87).
  *
  * \param[in]  mesh       pointer to a cs_mesh_t structure
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
@@ -471,10 +655,10 @@ _compute_enthalpy(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_liquid_fraction_voller(const cs_mesh_t             *mesh,
-                               const cs_cdo_connect_t      *connect,
-                               const cs_cdo_quantities_t   *quant,
-                               const cs_time_step_t        *ts)
+_update_gl_voller_prakash_87(const cs_mesh_t             *mesh,
+                             const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant,
+                             const cs_time_step_t        *ts)
 {
   CS_UNUSED(mesh);
 
@@ -490,18 +674,13 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
   cs_real_t  *temp = solid->temperature->val;
   assert(temp != NULL);
 
-  const cs_real_t  rho0 = solid->mass_density->ref_value;
-
   /* 1./(t_liquidus - t_solidus) = \partial g_l/\partial Temp */
   const cs_real_t  dgldT = 1./(v_model->t_liquidus - v_model->t_solidus);
   const cs_real_t  inv_forcing_eps = 1./cs_solidification_forcing_eps;
 
-  for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++) solid->n_g_cells[i] = 0;
-
-  const cs_real_t  dgldT_coef = rho0*solid->latent_heat*dgldT/ts->dt[0];
-
   assert(cs_property_is_uniform(solid->viscosity));
-  const cs_real_t  viscl0 = cs_property_get_cell_value(0, ts->t_cur,
+  const cs_real_t  viscl0 = cs_property_get_cell_value(solid->first_cell,
+                                                       ts->t_cur,
                                                        solid->viscosity);
   const cs_real_t  forcing_coef = solid->forcing_coef * viscl0;
 
@@ -510,25 +689,15 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
     if (connect->cell_flag[c_id] & CS_FLAG_SOLID_CELL) {
 
       g_l[c_id] = 0;
-      solid->thermal_reaction_coef_array[c_id] = 0;
-      solid->thermal_source_term_array[c_id] = 0;
-
       solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_SOLID;
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] += 1;
 
     }
 
-    /* Update the liquid fraction
-     * Update the source term and the reaction coefficient for the thermal
-     * system which are arrays */
+    /* Update the liquid fraction */
     else if (temp[c_id] < v_model->t_solidus) {
 
       g_l[c_id] = 0;
-      solid->thermal_reaction_coef_array[c_id] = 0;
-      solid->thermal_source_term_array[c_id] = 0;
-
       solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_SOLID;
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] += 1;
 
       /* Update the forcing coefficient treated as a property for a reaction
          term in the momentum eq. */
@@ -538,10 +707,6 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
     else if (temp[c_id] > v_model->t_liquidus) {
 
       g_l[c_id] = 1;
-      solid->thermal_reaction_coef_array[c_id] = 0;
-      solid->thermal_source_term_array[c_id] = 0;
-
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_LIQUID] += 1;
       solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_LIQUID;
 
       /* Update the forcing coefficient treated as a property for a reaction
@@ -554,12 +719,7 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
       const cs_real_t  glc = (temp[c_id] - v_model->t_solidus) * dgldT;
 
       g_l[c_id] = glc;
-      solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
-      solid->thermal_source_term_array[c_id] =
-        dgldT_coef*temp[c_id]*quant->cell_vol[c_id];
-
       solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_MUSHY;
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_MUSHY] += 1;
 
       /* Update the forcing coefficient treated as a property for a reaction
          term in the momentum eq. */
@@ -571,13 +731,64 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
 
   } /* Loop on cells */
 
-  /* At this stage, the number of solid cells is a local count
-   * Set the enforcement of the velocity for solid cells */
-  if (solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] > 0)
-    _enforce_solid_cells(quant);
+}
 
-  /* Parallel synchronization of the number of cells in each state */
-  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update/initialize the reaction and source term for the thermal
+ *         equation. This corresponds to the methodology described in the paper
+ *         written by Voller and Prakash (87)
+ *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_thm_voller_prakash_87(const cs_mesh_t             *mesh,
+                              const cs_cdo_connect_t      *connect,
+                              const cs_cdo_quantities_t   *quant,
+                              const cs_time_step_t        *ts)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+
+  cs_solidification_t  *solid = cs_solidification_structure;
+  cs_solidification_voller_t  *v_model
+    = (cs_solidification_voller_t *)solid->model_context;
+
+  /* Sanity checks */
+  assert(v_model != NULL);
+  assert(solid->temperature != NULL);
+
+  const cs_real_t  *temp = solid->temperature->val;
+  assert(temp != NULL);
+
+  /* 1./(t_liquidus - t_solidus) = \partial g_l/\partial Temp */
+  const cs_real_t  rho0 = solid->mass_density->ref_value;
+  const cs_real_t  dgldT = 1./(v_model->t_liquidus - v_model->t_solidus);
+  const cs_real_t  dgldT_coef = rho0*solid->latent_heat*dgldT/ts->dt[0];
+
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    if (solid->cell_state[c_id] == CS_SOLIDIFICATION_STATE_MUSHY) {
+
+      solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
+      solid->thermal_source_term_array[c_id] =
+        dgldT_coef*temp[c_id]*quant->cell_vol[c_id];
+
+    }
+    else {
+
+      solid->thermal_reaction_coef_array[c_id] = 0;
+      solid->thermal_source_term_array[c_id] = 0;
+
+    }
+
+  } /* Loop on cells */
+
 }
 
 /*----------------------------------------------------------------------------*
@@ -2199,21 +2410,206 @@ _stefan_thermal_non_linearities(const cs_mesh_t              *mesh,
                   "## Solidification: Stop after %d iters, delta = %5.3e\n",
                   iter, delta_h);
 
-  for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++) solid->n_g_cells[i] = 0;
-
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-  for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
-
-    if (connect->cell_flag[c] & CS_FLAG_SOLID_CELL)
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] += 1;
-    else
-      solid->n_g_cells[solid->cell_state[c]] += 1;
-
-  }
+  _monitor_cell_state(connect, quant, solid);
 
   /* Parallel synchronization of the number of cells in each state */
-  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
 
+  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the new system state (temperature, liquid fraction) using
+ *         the methodology defined in Voller & Prakash (87)
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_voller_prakash_87(const cs_mesh_t              *mesh,
+                   const cs_cdo_connect_t       *connect,
+                   const cs_cdo_quantities_t    *quant,
+                   const cs_time_step_t         *time_step)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+
+  /* Solidification process with a pure component without segregation */
+
+  cs_solidification_voller_t  *v_model =
+    (cs_solidification_voller_t *)solid->model_context;
+
+  /* Solve the thermal system */
+
+  cs_thermal_system_compute(true, /* operate a cur2prev operation inside */
+                            mesh, connect, quant, time_step);
+
+  /* Update fields and properties which are related to solved variables */
+
+  cs_field_current_to_previous(solid->g_l_field);
+
+  v_model->update_gl(mesh, connect, quant, time_step);
+
+  v_model->update_thm_st(mesh, connect, quant, time_step);
+
+  /* Post-processing */
+
+  if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
+    _compute_enthalpy(quant,
+                      time_step->t_cur,        /* t_eval */
+                      solid->temperature->val, /* temperature */
+                      solid->g_l_field->val,   /* liquid fraction */
+                      v_model->t_solidus,      /* temp_ref */
+                      solid->latent_heat,      /* latent heat coeff. */
+                      solid->mass_density,     /* rho */
+                      solid->cp,               /* cp */
+                      solid->enthalpy->val);   /* computed enthalpy */
+
+  /* Monitoring */
+
+  _monitor_cell_state(connect, quant, solid);
+
+  /* At this stage, the number of solid cells is a local count
+   * Set the enforcement of the velocity for solid cells */
+
+  if (solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] > 0)
+    _enforce_solid_cells(quant);
+
+  /* Parallel synchronization of the number of cells in each state (It should
+     be done after _enforce_solid_cells() */
+
+  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the new system state (temperature, liquid fraction) using
+ *         the methodology defined in Voller & Prakash (87) but also taking
+ *         into account the non-linearities stemming from the thermal source
+ *         term
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_voller_non_linearities(const cs_mesh_t              *mesh,
+                        const cs_cdo_connect_t       *connect,
+                        const cs_cdo_quantities_t    *quant,
+                        const cs_time_step_t         *time_step)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+
+  /* Solidification process with a pure component without segregation */
+  cs_solidification_voller_t  *v_model =
+    (cs_solidification_voller_t *)solid->model_context;
+
+  const size_t  csize = quant->n_cells*sizeof(cs_real_t);
+
+  /* Retrieve the current values */
+  cs_real_t  *enthalpy = solid->enthalpy->val;
+
+  cs_real_t  *hk = NULL;        /* enthalpy h^{n+1,k} */
+  BFT_MALLOC(hk, quant->n_cells, cs_real_t);
+  memcpy(hk, enthalpy, csize);
+
+  /* Non-linear iterations (k) are performed to converge on the relation
+   * h^{n+1,k+1} = h^{n+1,k} + eps with eps a user-defined tolerance
+   *
+   * h = rho.cp (Temp - Tref) + rho.L.gliq
+   *
+   * One sets:
+   * T^{n+1,0} = T^n and gl^{n+1,0} = gl^n
+   */
+
+  cs_equation_current_to_previous(solid->thermal_sys->thermal_eq);
+  cs_field_current_to_previous(solid->g_l_field);
+  cs_field_current_to_previous(solid->enthalpy);
+
+  /* Initialize the stopping criteria */
+
+  cs_real_t  delta_h = 1 + v_model->max_delta_h;
+  int iter = 0;
+
+  while ( delta_h > v_model->max_delta_h && iter < v_model->n_iter_max) {
+
+    /* Compute the new thermal source term */
+
+    v_model->update_thm_st(mesh, connect, quant, time_step);
+
+    /* Solve the thermal system */
+
+    cs_thermal_system_compute(false, /* No cur2prev inside a non-linear
+                                        iterative process */
+                              mesh, connect, quant, time_step);
+
+    /* Compute the new liquid fraction (and update the temperature if needed) */
+
+    v_model->update_gl(mesh, connect, quant, time_step);
+
+    /* Now compute the enthalpy knowing the temperature and the liquid
+     * fraction.
+     * enthalpy stores k+1,n+1 and hk stores k,n+1
+     */
+
+    _compute_enthalpy(quant,
+                      time_step->t_cur,        /* t_eval */
+                      solid->temperature->val, /* temperature */
+                      solid->g_l_field->val,   /* liquid fraction */
+                      v_model->t_solidus,      /* temp_ref */
+                      solid->latent_heat,      /* latent heat coeff. */
+                      solid->mass_density,     /* rho */
+                      solid->cp,               /* cp */
+                      enthalpy);               /* computed enthalpy */
+
+    delta_h = -1;
+    for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
+
+      cs_real_t  dh = fabs(enthalpy[c] - hk[c]);
+      hk[c] = enthalpy[c];
+
+      if (dh > delta_h)
+        delta_h = dh;
+
+    } /* Loop on cells */
+
+    iter++;
+    if (solid->verbosity > 1)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "### Solidification.NL: k= %d | delta_enthalpy= %5.3e\n",
+                    iter, delta_h);
+
+  } /* Until convergence */
+
+  BFT_FREE(hk);
+
+  /* Monitoring */
+
+  if (solid->verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "## Solidification: Stop after %d iters, delta = %5.3e\n",
+                  iter, delta_h);
+
+  /* Monitoring */
+
+  _monitor_cell_state(connect, quant, solid);
+
+  /* At this stage, the number of solid cells is a local count
+   * Set the enforcement of the velocity for solid cells */
+
+  if (solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] > 0)
+    _enforce_solid_cells(quant);
+
+  /* Parallel synchronization of the number of cells in each state (It should
+     be done after _enforce_solid_cells() */
+
+  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2369,155 +2765,6 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
                       solid->mass_density,     /* rho */
                       solid->cp,               /* cp */
                       solid->enthalpy->val);   /* computed enthalpy */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Perform the monitoring dedicated to the solidification module
- *
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_do_monitoring(const cs_cdo_quantities_t   *quant)
-{
-  cs_solidification_t  *solid = cs_solidification_structure;
-  assert(solid->temperature != NULL);
-
-  for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++)
-    solid->state_ratio[i] = 0;
-
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-    const cs_real_t  vol_c = quant->cell_vol[c_id];
-
-    switch (solid->cell_state[c_id]) {
-    case CS_SOLIDIFICATION_STATE_SOLID:
-      solid->state_ratio[CS_SOLIDIFICATION_STATE_SOLID] += vol_c;
-      break;
-    case CS_SOLIDIFICATION_STATE_LIQUID:
-      solid->state_ratio[CS_SOLIDIFICATION_STATE_LIQUID] += vol_c;
-      break;
-    case CS_SOLIDIFICATION_STATE_MUSHY:
-      solid->state_ratio[CS_SOLIDIFICATION_STATE_MUSHY] += vol_c;
-      break;
-    case CS_SOLIDIFICATION_STATE_EUTECTIC:
-      solid->state_ratio[CS_SOLIDIFICATION_STATE_EUTECTIC] += vol_c;
-      break;
-
-    default: /* Should not be in this case */
-      break;
-
-    } /* End of switch */
-
-  } /* Loop on cells */
-
-  /* Finalize the monitoring step*/
-  cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_REAL_TYPE, solid->state_ratio);
-  const double  inv_voltot = 100./quant->vol_tot;
-  for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++)
-    solid->state_ratio[i] *= inv_voltot;
-
-  cs_log_printf(CS_LOG_DEFAULT,
-                "### Solidification monitoring: liquid/mushy/solid states\n"
-                "  * Solid    | %6.2f\%% for %9lu cells;\n"
-                "  * Mushy    | %6.2f\%% for %9lu cells;\n"
-                "  * Liquid   | %6.2f\%% for %9lu cells;\n",
-                solid->state_ratio[CS_SOLIDIFICATION_STATE_SOLID],
-                solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID],
-                solid->state_ratio[CS_SOLIDIFICATION_STATE_MUSHY],
-                solid->n_g_cells[CS_SOLIDIFICATION_STATE_MUSHY],
-                solid->state_ratio[CS_SOLIDIFICATION_STATE_LIQUID],
-                solid->n_g_cells[CS_SOLIDIFICATION_STATE_LIQUID]);
-
-  if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "  * Eutectic | %6.2f\%% for %9lu cells;\n",
-                  solid->state_ratio[CS_SOLIDIFICATION_STATE_EUTECTIC],
-                  solid->n_g_cells[CS_SOLIDIFICATION_STATE_EUTECTIC]);
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add a source term to the solute equation derived from an explicit
- *          use of the advective and diffusive operator
- *          Generic function prototype for a hook during the cellwise building
- *          of the linear system
- *          Fit the cs_equation_user_hook_t prototype. This function may be
- *          called by different OpenMP threads
- *
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         context to cast for this discretization
- * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in, out] mass_hodge  pointer to a cs_hodge_t structure (mass matrix)
- * \param[in, out] diff_hodge  pointer to a cs_hodge_t structure (diffusion)
- * \param[in, out] csys        pointer to a cellwise view of the system
- * \param[in, out] cb          pointer to a cellwise builder
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_fb_solute_source_term(const cs_equation_param_t     *eqp,
-                       const cs_equation_builder_t   *eqb,
-                       const void                    *eq_context,
-                       const cs_cell_mesh_t          *cm,
-                       cs_hodge_t                    *mass_hodge,
-                       cs_hodge_t                    *diff_hodge,
-                       cs_cell_sys_t                 *csys,
-                       cs_cell_builder_t             *cb)
-{
-  CS_UNUSED(mass_hodge);
-  CS_UNUSED(eqb);
-
-  if (cb->cell_flag & CS_FLAG_SOLID_CELL)
-    return; /* No solute evolution in permanent solid zone */
-
-  const cs_cdofb_scaleq_t  *eqc = (const cs_cdofb_scaleq_t *)eq_context;
-
-  cs_solidification_t  *solid = cs_solidification_structure;
-  cs_solidification_binary_alloy_t  *alloy
-    = (cs_solidification_binary_alloy_t *)solid->model_context;
-
-  cs_real_t  *cl_c = alloy->c_l_cells;
-  cs_real_t  *cl_f = alloy->c_l_faces;
-
-  /* Diffusion part of the source term to add */
-
-  cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                 diff_hodge);
-
-  /* Define the local stiffness matrix: local matrix owned by the cellwise
-     builder (store in cb->loc) */
-  eqc->get_stiffness_matrix(cm, diff_hodge, cb);
-
-  /* Build the cellwise array: c - c_l
-     One should have c_l >= c. Therefore, one takes fmin(...,0) */
-  for (short int f = 0; f < cm->n_fc; f++)
-    cb->values[f] = fmin(csys->val_n[f] - cl_f[cm->f_ids[f]], 0);
-  cb->values[cm->n_fc] = fmin(csys->val_n[cm->n_fc] - cl_c[cm->c_id], 0);
-
-  /* Update the RHS with the diffusion contribution */
-  cs_sdm_update_matvec(cb->loc, cb->values, csys->rhs);
-
-  /* Define the local advection matrix */
-
-  /* Open hook: Compute the advection flux for the numerical scheme and store
-     the advection fluxes across primal faces */
-  eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
-
-  eqc->advection_main(eqp, cm, csys, eqc->advection_scheme, cb);
-
-  /* Build the cellwise array: c - c_l
-     One should have c_l >= c. Therefore, one takes fmin(...,0) */
-  for (short int f = 0; f < cm->n_fc; f++)
-    cb->values[f] = fmin(csys->val_n[f] - cl_f[cm->f_ids[f]], 0);
-  cb->values[cm->n_fc] = fmin(csys->val_n[cm->n_fc] - cl_c[cm->c_id], 0);
-
-  /* Update the RHS with the convection contribution */
-  cs_sdm_update_matvec(cb->loc, cb->values, csys->rhs);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2730,6 +2977,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
     break;
 
   case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
+  case CS_SOLIDIFICATION_MODEL_VOLLER_NL:
     {
       cs_solidification_voller_t  *v_model = NULL;
       BFT_MALLOC(v_model, 1, cs_solidification_voller_t);
@@ -2739,11 +2987,18 @@ cs_solidification_activate(cs_solidification_model_t       model,
       v_model->t_solidus = 0.;
       v_model->t_liquidus = 1.0;
 
-      /* Initialize pointer */
-      v_model->update = _update_liquid_fraction_voller;
+      v_model->max_delta_h = 1e-2;
+      v_model->n_iter_max = 1;
+      if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_NL)
+        v_model->n_iter_max = 15;
+
+      /* Function pointers */
+      v_model->update_gl = _update_gl_voller_prakash_87;
+      v_model->update_thm_st = _update_thm_voller_prakash_87;
 
       /* Set the context */
       solid->model_context = (void *)v_model;
+
     }
     break;
 
@@ -2923,7 +3178,8 @@ cs_solidification_get_voller_struct(void)
   /* Sanity checks */
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
-  if (solid->model != CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)
+  if (solid->model != CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87 &&
+      solid->model != CS_SOLIDIFICATION_MODEL_VOLLER_NL )
     bft_error(__FILE__, __LINE__, 0,
               " %s: Voller model not declared during the"
               " activation of the solidification module.\n"
@@ -3353,6 +3609,7 @@ cs_solidification_destroy_all(void)
     break;
 
   case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
+  case CS_SOLIDIFICATION_MODEL_VOLLER_NL:
     {
       cs_solidification_voller_t  *v_model
         = (cs_solidification_voller_t *)solid->model_context;
@@ -3444,18 +3701,30 @@ cs_solidification_init_setup(void)
 
   /* Add the enthalpy field if not already created */
   solid->enthalpy = cs_field_by_name_try("enthalpy");
-  if (solid->enthalpy == NULL &&
-      (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY))
-    solid->enthalpy = cs_field_create("enthalpy",
-                                      field_mask,
-                                      c_loc_id,
-                                      1,
-                                      true); /* has_previous */
+  if (solid->enthalpy == NULL) {
 
-  if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY) {
-    cs_field_set_key_int(solid->enthalpy, log_key, 1);
-    cs_field_set_key_int(solid->enthalpy, post_key, 1);
+    bool add_enthalpy = false;
+
+    if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
+      add_enthalpy = true;
+    if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_NL ||
+        solid->model == CS_SOLIDIFICATION_MODEL_STEFAN)
+      add_enthalpy = true;
+
+    if (add_enthalpy) {
+      solid->enthalpy = cs_field_create("enthalpy",
+                                        field_mask,
+                                        c_loc_id,
+                                        1,
+                                        true); /* has_previous */
+
+      cs_field_set_key_int(solid->enthalpy, log_key, 1);
+    }
+
   }
+
+  if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
+    cs_field_set_key_int(solid->enthalpy, post_key, 1);
 
   /* Add a reaction term to the momentum equation */
   cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
@@ -3471,15 +3740,8 @@ cs_solidification_init_setup(void)
 
   switch (solid->model) {
 
-  case CS_SOLIDIFICATION_MODEL_STEFAN:
-    {
-      /* Check the sanity of the model parameters and retrieve the structure */
-      cs_solidification_stefan_t
-        *s_model = cs_solidification_check_stefan_model();
-    }
-    break; /* Stefan modelling */
-
   case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
+  case CS_SOLIDIFICATION_MODEL_VOLLER_NL:
     {
       /* Check the sanity of the model parameters and retrieve the structure */
       cs_solidification_voller_t
@@ -3516,7 +3778,7 @@ cs_solidification_init_setup(void)
     }
     break; /* Binary alloy model */
 
-  default: /* Nothing else to do */
+  default: /* Stefan: There is nothing else to do */
     break;
 
   } /* Switch on model */
@@ -3817,6 +4079,26 @@ cs_solidification_log_setup(void)
     }
     break;
 
+  case CS_SOLIDIFICATION_MODEL_VOLLER_NL:
+    {
+      cs_solidification_voller_t  *v_model
+        = (cs_solidification_voller_t *)solid->model_context;
+
+      cs_log_printf(CS_LOG_SETUP, "  * %s |"
+                    " Model: Voller-Prakash (1987) with non-linearities\n",
+                    module);
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | Tliq: %5.3e; Tsol: %5.3e\n"
+                    "  * %s | Latent heat: %5.3e\n"
+                    "  * %s | Forcing coef: %5.3e s_das: %5.3e\n"
+                    "  * %s | Max. iter: %d; Max. delta enthalpy: %5.3e\n",
+                    module, v_model->t_liquidus, v_model->t_solidus,
+                    module, solid->latent_heat,
+                    module, solid->forcing_coef, v_model->s_das,
+                    module, v_model->n_iter_max, v_model->max_delta_h);
+    }
+    break;
+
   case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
     {
       cs_solidification_binary_alloy_t  *alloy
@@ -4048,13 +4330,15 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
     break;
 
   case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
+  case CS_SOLIDIFICATION_MODEL_VOLLER_NL:
     {
       cs_solidification_voller_t  *v_model
         = (cs_solidification_voller_t *)solid->model_context;
 
-      v_model->update(mesh, connect, quant, time_step);
+      v_model->update_gl(mesh, connect, quant, time_step);
 
-      if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
+      if ( (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY) ||
+           (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_NL) )
         _compute_enthalpy(quant,
                           time_step->t_cur,        /* t_eval */
                           solid->temperature->val, /* temperature */
@@ -4152,34 +4436,11 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
     break;
 
   case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
-    {
-      /* Solidification process with a pure component without segregation */
-      cs_solidification_voller_t  *v_model =
-        (cs_solidification_voller_t *)solid->model_context;
+    _voller_prakash_87(mesh, connect, quant, time_step);
+    break;
 
-      /* Add equations to be solved at each time step */
-
-      cs_thermal_system_compute(true, /* operate a cur2prev operation inside */
-                                mesh, connect, quant, time_step);
-
-      /* Update fields and properties which are related to solved variables */
-
-      cs_field_current_to_previous(solid->g_l_field);
-
-      v_model->update(mesh, connect, quant, time_step);
-
-      if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
-        _compute_enthalpy(quant,
-                          time_step->t_cur,        /* t_eval */
-                          solid->temperature->val, /* temperature */
-                          solid->g_l_field->val,   /* liquid fraction */
-                          v_model->t_solidus,      /* temp_ref */
-                          solid->latent_heat,      /* latent heat coeff. */
-                          solid->mass_density,     /* rho */
-                          solid->cp,               /* cp */
-                          solid->enthalpy->val);   /* computed enthalpy */
-
-    }
+  case CS_SOLIDIFICATION_MODEL_VOLLER_NL:
+    _voller_non_linearities(mesh, connect, quant, time_step);
     break;
 
   case CS_SOLIDIFICATION_MODEL_STEFAN:

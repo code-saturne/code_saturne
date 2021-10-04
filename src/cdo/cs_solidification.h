@@ -180,6 +180,10 @@ BEGIN_C_DECLS
  *      tracer. Only physical constants describing the solidification process
  *      are used.
  *
+ * \var CS_SOLIDIFICATION_MODEL_VOLLER_NL
+ *      Modelling based on \ref CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87 but
+ *      the thermal equation and the update of the liquid fraction is non-linear
+ *
  * \var CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
  *      The basis is similar to \ref CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
  *      A tracer equation is added corresponding to the evolution of the bulk
@@ -191,6 +195,7 @@ typedef enum {
 
   CS_SOLIDIFICATION_MODEL_STEFAN,
   CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87,
+  CS_SOLIDIFICATION_MODEL_VOLLER_NL,
   CS_SOLIDIFICATION_MODEL_BINARY_ALLOY,
 
   CS_SOLIDIFICATION_N_MODELS
@@ -316,8 +321,20 @@ typedef struct {
   cs_real_t                      t_solidus;
   cs_real_t                      t_liquidus;
 
-  /* Function pointer related to the way of updating the model */
-  cs_solidification_func_t      *update;
+  /* Function pointers */
+  /* ----------------- */
+
+  /* Function to update the liquid fraction */
+  cs_solidification_func_t      *update_gl;
+
+  /* Function to update the source term for the thermal equation */
+  cs_solidification_func_t      *update_thm_st;
+
+  /* Numerical parameters */
+  /* -------------------- */
+
+  int                            n_iter_max;
+  double                         max_delta_h;
 
 } cs_solidification_voller_t;
 
