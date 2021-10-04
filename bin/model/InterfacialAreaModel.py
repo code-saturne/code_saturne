@@ -112,19 +112,11 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         node = self.XMLAreaDiam.xmlInitNode('field', field_id = fieldId)
         node.xmlSetAttribute(model = model)
 
+        # Remove interfacial area parameters if needed
         if model == "constant" :
-            noden = node.xmlGetNode('source_term')
-            if noden != None :
-                noden.xmlRemoveNode()
-            noden = node.xmlGetNode('solmeth')
-            if noden != None :
-                noden.xmlRemoveNode()
-            if len(self.getVariableAIList() ) == 0 :
-                noden = self.XMLAreaDiam.xmlGetNode('min_diameter')
-                if noden != None :
-                    noden.xmlRemoveNode()
-                noden = self.XMLAreaDiam.xmlGetNode('max_diameter')
-                if noden != None :
+            for elt in ['source_term', 'solmeth', 'min_diameter', 'max_diameter']:
+                noden = node.xmlGetChildNode(elt)
+                if noden:
                     noden.xmlRemoveNode()
 
         if oldmodel != model :
