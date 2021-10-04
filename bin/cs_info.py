@@ -43,7 +43,8 @@ from optparse import OptionParser
 #-------------------------------------------------------------------------------
 
 licence_text = \
-"""Copyright (C) 1998-2021 EDF S.A.
+"""
+Copyright (C) 1998-2021 EDF S.A.
 
 This program is free software; you can redistribute it and/or modify it under \
 the terms of the GNU General Public License as published by the Free Software \
@@ -57,7 +58,8 @@ details.
 
 You should have received a copy of the GNU General Public License along with \
 this program; if not, write to the Free Software Foundation, Inc., 51 Franklin \
-Street, Fifth Floor, Boston, MA 02110-1301, USA."""
+Street, Fifth Floor, Boston, MA 02110-1301, USA.
+"""
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
