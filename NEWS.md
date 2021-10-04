@@ -3,6 +3,9 @@ Release 7.0.2 (not released yet)
 
 Bug fixes:
 
+- GUI: Fix crash when trying to set a constant diameter for bubbles or droplets
+  with the FGLIM model instead of the 'interfacial area' model.
+
 - Time moments: fix issue with interpolation on probes and profiles due
   to missing ghost cell synchronization.
 
