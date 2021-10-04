@@ -2359,6 +2359,16 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
   /* Update the forcing term in the momentum equation */
   alloy->update_velocity_forcing(mesh, connect, quant, time_step);
 
+  if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
+    _compute_enthalpy(quant,
+                      time_step->t_cur,        /* t_eval */
+                      solid->temperature->val, /* temperature */
+                      solid->g_l_field->val,   /* liquid fraction */
+                      alloy->t_eut,            /* temp_ref */
+                      solid->latent_heat,      /* latent heat coeff. */
+                      solid->mass_density,     /* rho */
+                      solid->cp,               /* cp */
+                      solid->enthalpy->val);   /* computed enthalpy */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2775,7 +2785,6 @@ cs_solidification_activate(cs_solidification_model_t       model,
       b_model->update_thm_st = _update_thm_taylor;
 
       /* Functions which are common to all strategies */
-      b_model->thermosolutal_coupling = _default_binary_coupling;
       b_model->update_velocity_forcing = _update_velocity_forcing;
       b_model->update_clc = _update_clc;
 
@@ -3271,16 +3280,14 @@ cs_solidification_set_binary_alloy_strategy(cs_solidification_strategy_t  stgy)
  * \param[in] cliq_update        pointer to update the liquid concentration
  * \param[in] gliq_update        pointer to update the liquid fraction
  * \param[in] thm_st_update      pointer to update thermal source terms
- * \param[in] thm_conc_coupling  pointer to compute the thermo-solutal coupling
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_functions(cs_solidification_func_t  *vel_forcing,
-                                cs_solidification_func_t  *cliq_update,
-                                cs_solidification_func_t  *gliq_update,
-                                cs_solidification_func_t  *thm_st_update,
-                                cs_solidification_func_t  *thm_conc_coupling)
+cs_solidification_set_segr_functions(cs_solidification_func_t  *vel_forcing,
+                                     cs_solidification_func_t  *cliq_update,
+                                     cs_solidification_func_t  *gliq_update,
+                                     cs_solidification_func_t  *thm_st_update)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
@@ -3311,10 +3318,6 @@ cs_solidification_set_functions(cs_solidification_func_t  *vel_forcing,
     solid->options |= CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC;
   }
 
-  if (thm_conc_coupling != NULL) {
-    alloy->thermosolutal_coupling = thm_conc_coupling;
-    solid->options |= CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC;
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3882,13 +3885,6 @@ cs_solidification_log_setup(void)
                       "  * %s | Options: %s\n", module,
                       " User-defined function for the liquid fraction/state");
 
-      if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC)
-        cs_log_printf(CS_LOG_SETUP, "  * %s | Options: %s\n", module,
-                      " User-defined function for the thermo-solutal coupling");
-      else
-        cs_log_printf(CS_LOG_SETUP, "  * %s | Options: %s\n", module,
-                      " Default thermo-solutal coupling algorithm");
-
       if (cs_flag_test(solid->options, CS_SOLIDIFICATION_USE_EXTRAPOLATION))
         cs_log_printf(CS_LOG_SETUP,
                       "  * %s | Options: %s\n", module,
@@ -4152,25 +4148,7 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
   switch (solid->model) {
 
   case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
-    {
-      cs_solidification_binary_alloy_t  *alloy =
-        (cs_solidification_binary_alloy_t *)solid->model_context;
-
-      /* Compute a new couple (Temp, g_l, conc) */
-
-      alloy->thermosolutal_coupling(mesh, connect, quant, time_step);
-
-      if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
-        _compute_enthalpy(quant,
-                          time_step->t_cur,        /* t_eval */
-                          solid->temperature->val, /* temperature */
-                          solid->g_l_field->val,   /* liquid fraction */
-                          alloy->t_eut,            /* temp_ref */
-                          solid->latent_heat,      /* latent heat coeff. */
-                          solid->mass_density,     /* rho */
-                          solid->cp,               /* cp */
-                          solid->enthalpy->val);   /* computed enthalpy */
-    }
+    _default_binary_coupling(mesh, connect, quant, time_step);
     break;
 
   case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:

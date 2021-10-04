@@ -150,16 +150,11 @@ BEGIN_C_DECLS
  *
  * \def CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC
  * \brief the update of the thermal source term is defined using a user function
- *
- * \def CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC
- * \brief the main algorithm for the thermo-solutal coupling is defined by a
- *        user function.
  */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_M_FUNC               (1 << 7) /*=  128 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC               (1 << 8) /*=  256 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC               (1 << 9) /*=  512 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC               (1 <<10) /*= 1024 */
-#define CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC             (1 <<11) /*= 2048 */
 
 /*!
  * @}
@@ -382,11 +377,6 @@ typedef struct {
 
   /* Function to update the source term for the thermal equation */
   cs_solidification_func_t     *update_thm_st;
-
-  /* Function to compute the thermo-solutal coupling (previous function pointers
-     are called inside this function by default but a user can define whatever
-     is needed inside */
-  cs_solidification_func_t     *thermosolutal_coupling;
 
   /* Function to update the velocity forcing in the momentum equation */
   cs_solidification_func_t     *update_velocity_forcing;
@@ -805,16 +795,14 @@ cs_solidification_set_binary_alloy_strategy(cs_solidification_strategy_t  stgy);
  * \param[in] cliq_update        pointer to update the liquid concentration
  * \param[in] gliq_update        pointer to update the liquid fraction
  * \param[in] thm_st_update      pointer to update thermal source terms
- * \param[in] thm_conc_coupling  pointer to compute the thermo-solutal coupling
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_functions(cs_solidification_func_t  *vel_forcing,
-                                cs_solidification_func_t  *cliq_update,
-                                cs_solidification_func_t  *gliq_update,
-                                cs_solidification_func_t  *thm_st_update,
-                                cs_solidification_func_t  *thm_conc_coupling);
+cs_solidification_set_segr_functions(cs_solidification_func_t  *vel_forcing,
+                                     cs_solidification_func_t  *cliq_update,
+                                     cs_solidification_func_t  *gliq_update,
+                                     cs_solidification_func_t  *thm_st_update);
 
 /*----------------------------------------------------------------------------*/
 /*!
