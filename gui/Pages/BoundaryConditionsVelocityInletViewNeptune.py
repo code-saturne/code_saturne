@@ -243,10 +243,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
                    ('surface', 'Boundary zone surface')]
 
         elif c == 'flow1_formula':
-            sym = [('x', "X face's gravity center"),
-                   ('y', "Y face's gravity center"),
-                   ('z', "Z face's gravity center"),
-                   ('dt', 'time step'),
+            sym = [('dt', 'time step'),
                    ('t', 'current time'),
                    ('iter', 'number of iteration'),
                    ('surface', 'Boundary zone surface')]
