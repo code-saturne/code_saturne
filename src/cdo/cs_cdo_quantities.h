@@ -128,10 +128,6 @@ typedef struct {
 
 typedef struct { /* Specific mesh quantities */
 
-  /* Flag storing which quantities to compute and how to define the cell
-   * center */
-  cs_flag_t        flag;
-
   /* Global mesh quantities */
   double           vol_tot;
 
