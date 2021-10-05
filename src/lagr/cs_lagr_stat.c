@@ -334,7 +334,7 @@ static int _bdy_fouling_mass_flux_filter[2] = {0, CS_EVENT_FOULING};
  * them at each call.
  *
  * As this type of statistic does not need to keep state between time steps,
- * it is ignored by the lagragian statistics checkpoint/restart mechanism.
+ * it is ignored by the Lagrangian statistics checkpoint/restart mechanism.
  *
  * If dimension > 1, the val array is interleaved
  *
@@ -3861,7 +3861,7 @@ cs_lagr_stat_event_define(const char                *name,
  * them at each call.
  *
  * As this type of statistic does not need to keep state between time steps,
- * it is ignored by the lagragian statistics checkpoint/restart mechanism.
+ * it is ignored by the Lagrangian statistics checkpoint/restart mechanism.
  *
  * If dimension > 1, the val array is interleaved
  *

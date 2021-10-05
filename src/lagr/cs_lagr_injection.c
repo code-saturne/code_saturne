@@ -70,7 +70,7 @@
 #include "cs_random.h"
 
 #include "cs_lagr.h"
-#include "cs_lagr_gradients.h"
+#include "cs_lagr_aux_mean_fluid_quantities.h"
 #include "cs_lagr_tracking.h"
 #include "cs_lagr_new.h"
 #include "cs_lagr_precipitation_model.h"

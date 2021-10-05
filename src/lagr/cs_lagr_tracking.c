@@ -1604,7 +1604,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   /* Anelastic rebound */
   else if (b_type == CS_LAGR_REBOUND ) {
 
-  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+    cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
     particle_state = CS_LAGR_PART_TO_SYNC;
 
@@ -1649,6 +1649,10 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
         particle_velocity_seen[k] -=  r_in[k] / r_nn * tmp ;
     }
     /* TODO else: for EVM u*^2 / r_nn */
+    else {
+      for (int k = 0; k < 3; k++)
+        particle_velocity_seen[k] -= tmp * face_norm[k];
+    }
 
     event_flag = event_flag | CS_EVENT_REBOUND;
 
@@ -1667,6 +1671,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     }
 
     /* Modify the ending point. */
+
     for (int k = 0; k < 3; k++)
       disp[k] = particle_coord[k] - intersect_pt[k];
 

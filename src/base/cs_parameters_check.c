@@ -1372,6 +1372,27 @@ cs_parameters_check(void)
                                    CS_TURB_K_OMEGA);
   }
 
+  if (cs_glob_lagr_time_scheme->extended_t_scheme == 1) {
+
+    cs_parameters_is_equal_int(CS_ABORT_DELAYED,
+                                   _("while reading input data,\n"
+                                     "extended scheme in Lagrangian modelling "
+                                     "is only compatible with "
+                                     "spherical particles"),
+                                   "cs_glob_lagr_model->shape",
+                                   cs_glob_lagr_model->shape,
+                                   CS_LAGR_SHAPE_SPHERE_MODEL);
+
+    cs_parameters_is_equal_int(CS_WARNING,
+                                   _("while reading input data,\n"
+                                     "extended scheme in Lagrangian modelling "
+                                     "is usefull only if turbulent dispersion "
+                                     "is considered"),
+                                   "cs_glob_lagr_model->idistu",
+                                   cs_glob_lagr_model->idistu,
+                                   1);
+  }
+
   /* LES balance */
   if (   cs_glob_turb_model->type != CS_TURB_LES
       && cs_glob_les_balance->i_les_balance != 0) {
@@ -2124,9 +2145,9 @@ cs_parameters_check(void)
 
       cs_parameters_is_not_equal_int(CS_ABORT_DELAYED,
                                    _("while reading input data,\n"
-                                     "the lagrangian checkpoint cannot "
+                                     "the Lagrangian checkpoint cannot "
                                      "be used\n"
-                                     "without having the lagrangian module "
+                                     "without having the Lagrangian module "
                                      "enabled."),
                                      "restart_file",
                                      r_id,

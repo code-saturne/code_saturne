@@ -53,17 +53,19 @@ BEGIN_C_DECLS
 /*!
  * \brief Compute particle characteristics: Tp, TL and PI
  *
- * \param[in] iprev     time step indicator for fields
- *                        0: use fields at current time step
- *                        1: use fields at previous time step
- * \param[in]  dt       time step (per cell)
- * \param[out] taup     dynamic characteristic time
- * \param[out] tlag     fluid characteristic time
- * \param[out] piil     term in integration of up sde
- * \param[out] bx       turbulence characteristics
- * \param[out] tempct   thermal charactersitic time
- * \param[in]  gradpr   pressure gradient
- * \param[in]  gradvf   fluid velocity gradient
+ * \param[in] iprev             time step indicator for fields
+ *                                0: use fields at current time step
+ *                                1: use fields at previous time step
+ * \param[in]  dt               time step (per cell)
+ * \param[out] taup             dynamic characteristic time
+ * \param[out] tlag             fluid characteristic time
+ * \param[out] piil             term in integration of up sde
+ * \param[out] bx               turbulence characteristics
+ * \param[out] tempct           thermal characteristic time
+ * \param[out] beta             for the extended scheme
+ * \param[in]  gradpr           pressure gradient
+ * \param[in]  gradvf           fluid velocity gradient
+ * \param[in]  grad_lagr_time   fluid lagragian time gradient
  */
 /*----------------------------------------------------------------------------*/
 
@@ -75,8 +77,10 @@ cs_lagr_car(int              iprev,
             cs_real_3_t      piil[],
             cs_real_33_t     bx[],
             cs_real_t        tempct[],
+            cs_real_3_t      beta[],
             cs_real_3_t      gradpr[],
-            cs_real_33_t     gradvf[]);
+            cs_real_33_t     gradvf[],
+            cs_real_3_t      grad_lagr_time[]);
 
 /*----------------------------------------------------------------------------*/
 

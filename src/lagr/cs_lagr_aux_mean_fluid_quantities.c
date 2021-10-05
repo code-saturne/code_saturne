@@ -1,5 +1,5 @@
 /*============================================================================
- * Methods for lagrangian gradients
+ * Methods for auxiliary mean fluid quantities (Lagrangian time and gradients)
  *============================================================================*/
 
 /*
@@ -25,7 +25,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*============================================================================
- * Functions dealing with lagrangian gradients
+ * Functions dealing with auxiliary mean fluid quantities
  *============================================================================*/
 
 #include "cs_defs.h"
@@ -65,7 +65,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr_gradients.h"
+#include "cs_lagr_aux_mean_fluid_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -85,21 +85,27 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute gradients.
+ * \brief Compute auxilary mean fluid quantities.
  *
+ *  - Lagragian time
  *  - gradient of total pressure
  *  - velocity gradient
+ *  - Lagragian time gradient
  *
- * \param[in]   time_id   0: current time, 1: previous
- * \param[out]  grad_pr   pressure gradient
- * \param[out]  grad_vel  velocity gradient
+ * \param[in]   time_id                0: current time, 1: previous
+ * \param[out]  lagr_time              Lagragian time scale
+ * \param[out]  grad_pr                pressure gradient
+ * \param[out]  grad_vel               velocity gradient
+ * \param[out]  grad_lagr_time         Lagrangian time gradient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_gradients(int            time_id,
-                  cs_real_3_t   *grad_pr,
-                  cs_real_33_t  *grad_vel)
+cs_lagr_aux_mean_fluid_quantities(int            time_id,
+                                  cs_field_t    *lagr_time,
+                                  cs_real_3_t   *grad_pr,
+                                  cs_real_33_t  *grad_vel,
+                                  cs_real_3_t   *grad_lagr_time)
 {
   cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -261,11 +267,114 @@ cs_lagr_gradients(int            time_id,
   /* Compute velocity gradient
      ========================= */
 
-  if (turb_disp_model || cs_glob_lagr_model->shape > 0) {
+  if (turb_disp_model || cs_glob_lagr_model->shape > 0
+      || cs_glob_lagr_time_scheme->interpol_field) {
     cs_field_gradient_vector(extra->vel,
                              time_id,
                              inc,
                              grad_vel);
+  }
+
+  /* Compute Lagrangian time gradient
+     ================================ */
+  if(cs_glob_lagr_model->idistu > 0) {
+
+    cs_real_t c0     = 3.5;
+
+    /* In case of Rotta model (ie LRR + Cr2 = 0) compute
+     * automatically the C0 constant */
+    if ((turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) &&
+        (CS_ABS(cs_turb_crij2) < 1.e-12))
+      c0 = (cs_turb_crij1-1.0)*2.0/3.0;
+
+    cs_real_t cl     = 1.0 / (0.5 + 0.75 * c0);
+
+    cs_real_t  *energi = NULL, *dissip = NULL;
+    BFT_MALLOC(energi, n_cells, cs_real_t);
+    BFT_MALLOC(dissip, n_cells, cs_real_t);
+
+    if (extra->itytur == 2 || extra->itytur == 4 || extra->iturb == 50) {
+
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        energi[cell_id] = extra->cvar_k->vals[time_id][cell_id];
+        dissip[cell_id] = extra->cvar_ep->vals[time_id][cell_id];
+      }
+
+    }
+    else if (extra->itytur == 3) {
+
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+        energi[cell_id] = 0.5 * (  extra->cvar_rij->vals[time_id][6*cell_id]
+                                 + extra->cvar_rij->vals[time_id][6*cell_id+1]
+                                 + extra->cvar_rij->vals[time_id][6*cell_id+2]);
+        dissip[cell_id] = extra->cvar_ep->vals[time_id][cell_id];
+        extra->cvar_k->val[cell_id] = energi[cell_id] ;
+      }
+
+    }
+    else if (extra->iturb == 60) {
+
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        energi[cell_id] = extra->cvar_k->vals[time_id][cell_id];
+        dissip[cell_id] = extra->cmu * energi[cell_id]
+                                     * extra->cvar_omg->vals[time_id][cell_id];
+      }
+
+    }
+    else {
+
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Lagrangian turbulent dispersion is not compatible with\n"
+           "the selected turbulence model.\n"
+           "\n"
+           "Turbulent dispersion is taken into account with idistu = %d\n"
+           " Activated turbulence model is %d, when only k-eps, LES, Rij-eps,\n"
+           " V2f or k-omega are handled."),
+         (int)cs_glob_lagr_model->idistu,
+         (int)extra->iturb);
+
+    }
+
+    /* Initialize cell Lagrangian time
+     *
+     * Note: the extended time scheme should
+     * compute grad(Tl*_i) = grad(Tl)/b_i - Tl grad(b_i)/b_i^2
+     *
+     * In the following, only the first term is kept
+     * to avoid computing grad(b_i) where no particles are present.
+     *
+     * The other possibility would be to compute b_i everywhere
+     * (taking <u_pi> from the statistic "correctly" initialized)
+     *
+     */
+
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      if (dissip[cell_id] > 0.0 && energi[cell_id] > 0.0) {
+
+        cs_real_t tl  = cl * energi[cell_id] / dissip[cell_id];
+        tl  = CS_MAX(tl, cs_math_epzero);
+
+        lagr_time->val[cell_id] = tl;
+      }
+      else {
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          lagr_time->val[cell_id] = cs_math_epzero;
+      }
+
+    }
+    if (grad_lagr_time != NULL)
+      cs_field_gradient_scalar(lagr_time,
+                               time_id, /* use_previous_t */
+                               1, /* inc: not an increment */
+                               true, /* _recompute_cocg */
+                               grad_lagr_time);
+
+  }
+  else { // idistu == 0
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+      lagr_time->val[cell_id] = cs_math_epzero;
   }
 }
 

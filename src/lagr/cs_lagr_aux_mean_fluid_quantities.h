@@ -1,5 +1,5 @@
-#ifndef __CS_LAGR_GRADIENTS_H__
-#define __CS_LAGR_GRADIENTS_H__
+#ifndef __CS_LAGR_AUX_MEAN_FLUID_QUANTITIES_H__
+#define __CS_LAGR_AUX_MEAN_FLUID_QUANTITIES_H__
 
 /*============================================================================
  * Functions and types for lagrangian field gradients
@@ -51,24 +51,30 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute gradients.
+ * \brief Compute auxilary mean fluid quantities.
  *
+ *  - Lagragian time
  *  - gradient of total pressure
  *  - velocity gradient
+ *  - Lagragian time gradient
  *
- * \param[in]   time_id   0: current time, 1: previous
- * \param[out]  grad_pr   pressure gradient
- * \param[out]  grad_vel  velocity gradient
+ * \param[in]   time_id            0: current time, 1: previous
+ * \param[out]  lagr_time          Lagrangian time scale
+ * \param[out]  grad_pr            pressure gradient
+ * \param[out]  grad_vel           velocity gradient
+ * \param[out]  grad_lagr_time     Lagrangian time gradient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_gradients(int            time_id,
-                  cs_real_3_t   *gradpr,
-                  cs_real_33_t  *gradvf);
+cs_lagr_aux_mean_fluid_quantities(int            time_id,
+                                  cs_field_t    *lagr_time,
+                                  cs_real_3_t   *gradpr,
+                                  cs_real_33_t  *grad_vel,
+                                  cs_real_3_t   *grad_lagr_time);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_LAGR_GRADIENTS_H__ */
+#endif /* __CS_LAGR_AUX_MEAN_FLUID_QUANTITIES_H__ */

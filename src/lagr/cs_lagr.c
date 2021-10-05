@@ -87,7 +87,7 @@
 #include "cs_lagr_roughness.h"
 #include "cs_lagr_clogging.h"
 #include "cs_lagr_injection.h"
-#include "cs_lagr_gradients.h"
+#include "cs_lagr_aux_mean_fluid_quantities.h"
 #include "cs_lagr_car.h"
 #include "cs_lagr_coupling.h"
 #include "cs_lagr_new.h"
@@ -160,6 +160,8 @@ static cs_lagr_time_scheme_t _lagr_time_scheme
      .isttio = 0,
      .isuila = 1,
      .t_order = 0,
+     .extended_t_scheme = 0,
+     .interpol_field = 1,
      .ilapoi = 0,
      .iadded_mass = 0,
      .added_mass_const = 0};
@@ -366,7 +368,9 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .cvar_omg = NULL,
      .cvar_rij = NULL,
      .grad_pr = NULL,
-     .grad_vel = NULL};
+     .grad_vel = NULL,
+     .lagr_time = NULL,
+     .grad_lagr_time = NULL};
 
 cs_lagr_extra_module_t *cs_glob_lagr_extra_module = &_lagr_extra_module;
 
@@ -730,6 +734,9 @@ _lagr_map_fields_default(void)
   _lagr_extra_module.pressure    = cs_field_by_name_try("pressure");
 
   _lagr_extra_module.luminance   = cs_field_by_name_try("luminance");
+
+  _lagr_extra_module.lagr_time = cs_field_by_name_try("lagr_time");
+
   if (cs_field_by_name_try("velocity_1") != NULL) {
     /* we are probably using NEPTUNE_CFD */
     _lagr_extra_module.vel         = cs_field_by_name_try("lagr_velocity");
@@ -1204,6 +1211,10 @@ cs_lagr_finalize(void)
   BFT_FREE(extra->grad_pr);
   if (extra->grad_vel != NULL)
     BFT_FREE(extra->grad_vel);
+
+  if (extra->grad_lagr_time != NULL)
+    BFT_FREE(extra->grad_lagr_time);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1712,10 +1723,15 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
   cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
 
-  BFT_MALLOC(extra->grad_pr, ncelet, cs_real_3_t);
+  if ((    cs_glob_lagr_time_scheme->interpol_field != 0
+        || cs_glob_lagr_time_scheme->extended_t_scheme !=0)
+      && cs_glob_lagr_model->idistu == 1)
+      BFT_MALLOC(extra->grad_lagr_time, ncelet, cs_real_3_t);
+
   if (   cs_glob_lagr_model->modcpl > 0
-      || cs_glob_lagr_model->shape > 0)
-    BFT_MALLOC(extra->grad_vel, ncelet, cs_real_33_t);
+      || cs_glob_lagr_model->shape > 0
+      || cs_glob_lagr_time_scheme->interpol_field != 0)
+      BFT_MALLOC(extra->grad_vel, ncelet, cs_real_33_t);
 
   /* For frozen field:
      values at previous time step = values at current time step */
@@ -1749,10 +1765,6 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
 
   if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_OFF)
     cs_lagr_restart_read_p();
-
-  /* Compute gradients of current value fields */
-  if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE)
-    cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
 
   /* Read statistics restart data */
 
@@ -1852,7 +1864,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
           cs_real_t surfb = surfbo[ifac];
           ustarmoy     = ustarmoy + surfb * _ustar;
           surftot      = surftot + surfb;
-          vislen[ifac] = visccf / _ustar; // FIXME to be coherent with wall fn: y/y+
+          vislen[ifac] = visccf / _ustar; // nu /u*
+          //FIXME to be coherent with wall fn: y/y+
           dtmp[0]      = dtmp[0] + 1.0;
 
         }
@@ -2095,14 +2108,34 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     }
 
-    /* Pressure and fluid velocity gradients
-       ------------------------------------- */
+    /* Compute the Lagrangian time */
+    /* Pressure fluid velocity and Lagrangian time  gradients
+       ----------------------------------------------------- */
 
     /* At the first time step we initialize particles to
        values at current time step and not at previous time step, because
        values at previous time step = initialization (zero gradients) */
 
-    if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
+    if (extra->itytur == 3 ) {
+      /* save previous value dor the kinetic energy */
+      for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
+        extra->cvar_k->vals[1][cell_id] = 0.5 *
+                                    (  extra->cvar_rij->vals[1][6*cell_id]
+                                     + extra->cvar_rij->vals[1][6*cell_id + 1]
+                                     + extra->cvar_rij->vals[1][6*cell_id + 2]);
+    }
+
+    /* First pass allocate and compute it */
+    if (extra->grad_pr == NULL) {
+      BFT_MALLOC(extra->grad_pr, cs_glob_mesh->n_cells_with_ghosts, cs_real_3_t);
+
+      cs_lagr_aux_mean_fluid_quantities(0,
+                                        extra->lagr_time,
+                                        extra->grad_pr,
+                                        extra->grad_vel,
+                                        extra->grad_lagr_time);
+    }
+    else if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
       mode = 1;
       if (ts->nt_cur == 1)
         mode = 0;
@@ -2114,7 +2147,11 @@ cs_lagr_solve_time_step(const int         itypfb[],
           BFT_REALLOC(extra->grad_vel, n_cells_ext, cs_real_33_t);
       }
 
-      cs_lagr_gradients(mode, extra->grad_pr, extra->grad_vel);
+      cs_lagr_aux_mean_fluid_quantities(mode,
+                                        extra->lagr_time,
+                                        extra->grad_pr,
+                                        extra->grad_vel,
+                                        extra->grad_lagr_time);
     }
 
     /* Particles progression
@@ -2132,17 +2169,21 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       cs_lnum_t nresnew = 0;
 
-      cs_real_t   *taup;
+      cs_real_t *taup;
       cs_real_33_t *bx;
       cs_real_3_t *tlag, *piil;
       BFT_MALLOC(taup, p_set->n_particles, cs_real_t);
       BFT_MALLOC(tlag, p_set->n_particles, cs_real_3_t);
-      BFT_MALLOC(piil, p_set->n_particles, cs_real_3_t);
+      BFT_MALLOC(piil, cs_glob_mesh->n_cells, cs_real_3_t);
       BFT_MALLOC(bx, p_set->n_particles, cs_real_33_t);
 
       cs_real_t *tsfext = NULL;
       if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
         BFT_MALLOC(tsfext, p_set->n_particles, cs_real_t);
+
+      cs_real_3_t *beta = NULL;
+      if (cs_glob_lagr_time_scheme->extended_t_scheme != 0)
+        BFT_MALLOC(beta, p_set->n_particles, cs_real_3_t);
 
       cs_real_t *cpgd1 = NULL, *cpgd2 = NULL, *cpght = NULL;
       if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
@@ -2180,7 +2221,11 @@ cs_lagr_solve_time_step(const int         itypfb[],
          at n+1 (with values at current time step) */
       if (   cs_glob_lagr_time_step->nor == 2
           && cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE)
-        cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
+        cs_lagr_aux_mean_fluid_quantities(0,
+                                          extra->lagr_time,
+                                          extra->grad_pr,
+                                          extra->grad_vel,
+                                          extra->grad_lagr_time);
 
       /* use fields at previous or current time step */
       if (cs_glob_lagr_time_step->nor == 1)
@@ -2197,7 +2242,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
-          cs_real_t *jbx1 = cs_lagr_particles_attr(p_set, ip, CS_LAGR_TURB_STATE_1);
+          cs_real_t *jbx1 = cs_lagr_particles_attr(p_set, ip,
+                                                   CS_LAGR_TURB_STATE_1);
 
           for (cs_lnum_t ii = 0; ii < 3; ii++) {
 
@@ -2216,8 +2262,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   piil,
                   bx,
                   tempct,
+                  beta,
                   extra->grad_pr,
-                  extra->grad_vel);
+                  extra->grad_vel,
+                  extra->grad_lagr_time);
 
       /* Integration of SDEs: position, fluid and particle velocity */
 
@@ -2231,6 +2279,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   (const cs_real_33_t *)extra->grad_vel,
                   terbru,
                   (const cs_real_t *)vislen,
+                  beta,
                   &nresnew);
 
       /* Integration of SDEs for orientation of spheroids without inertia */
@@ -2443,6 +2492,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
         BFT_FREE(tsfext);
+
+      if (beta != NULL)
+        BFT_FREE(beta);
 
       if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
           && lagr_model->physical_model == CS_LAGR_PHYS_COAL

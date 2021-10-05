@@ -80,7 +80,7 @@ cs_lagr_resuspension.h \
 cs_lagr_poisson.h \
 cs_lagr_options.h \
 cs_lagr_orientation.h \
-cs_lagr_gradients.h \
+cs_lagr_aux_mean_fluid_quantities.h \
 cs_lagr_particle.h \
 cs_lagr_print.h \
 cs_lagr_sde.h \
@@ -115,7 +115,7 @@ cs_lagr_coupling.c \
 cs_lagr_deposition_model.c \
 cs_lagr_geom.c \
 cs_lagr_poisson.c \
-cs_lagr_gradients.c \
+cs_lagr_aux_mean_fluid_quantities.c \
 cs_lagr_head_losses.c \
 cs_lagr_new.c \
 cs_lagr_options.c \

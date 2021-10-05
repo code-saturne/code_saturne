@@ -52,8 +52,10 @@ BEGIN_C_DECLS
  * \param[out] tsfext    info for return coupling source terms
  * \param[in]  gradpr    pressure gradient
  * \param[in]  gradvf    fluid velocity gradient
- * \param[out] terbru    FIXME
- * \param[in]  vislen    FIXME
+ * \param[out] terbru    Diffusion coefficient accounting for Brownian
+ *                       (molecular) effect
+ * \param[in]  vislen    nu/u* = y/y+
+ * \param[in]  beta      proportional to the gradient of T_lag
  */
 /*----------------------------------------------------------------------------*/
 
@@ -68,6 +70,7 @@ cs_lagr_sde(cs_real_t           dt_p,
             const cs_real_33_t  gradvf[],
             cs_real_t           terbru[],
             const cs_real_t     vislen[],
+            const cs_real_3_t   beta[],
             cs_lnum_t          *nresnew);
 
 /*----------------------------------------------------------------------------*/

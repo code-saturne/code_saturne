@@ -219,6 +219,14 @@ typedef struct {
   /*! trajectory algorithm order in time */
   int  t_order;
 
+  /*! Extended exponential scheme taking into account the gradient of T_lag
+   * (0 off, 1 on) */
+  int  extended_t_scheme;
+
+  /*! activation (=1) or not (=0) P1 interpolation of velocity and
+   *  Lagragian time at the location of the particle */
+  int interpol_field;
+
   /*! activation (=1) or not (=0) of the solution of a Poisson's equation for
     the correction of the particle instantaneous velocities
     (in order to obtain a null divergence).
@@ -981,6 +989,12 @@ typedef struct {
 
   /* velocity gradient */
   cs_real_33_t *grad_vel;
+
+  /* Lagrangian time field */
+  cs_field_t *lagr_time;
+
+  /* Lagrangian time gradient */
+  cs_real_3_t *grad_lagr_time;
 
 } cs_lagr_extra_module_t;
 

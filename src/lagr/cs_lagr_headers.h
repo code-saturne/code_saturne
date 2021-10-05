@@ -38,7 +38,7 @@
 #include "cs_lagr_dlvo.h"
 #include "cs_lagr_orientation.h"
 #include "cs_lagr_extract.h"
-#include "cs_lagr_gradients.h"
+#include "cs_lagr_aux_mean_fluid_quantities.h"
 #include "cs_lagr_head_losses.h"
 #include "cs_lagr_injection.h"
 #include "cs_lagr_lec.h"

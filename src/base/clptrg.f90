@@ -80,7 +80,7 @@
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
 !> \param[in,out] rcodcl        boundary condition values:
-!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(1) value of the Dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
@@ -162,6 +162,7 @@ integer          iuntur, f_id, iustar
 integer          nlogla, nsubla, iuiptn
 integer          kdflim
 integer          f_id_rough
+integer          f_id_tlag
 
 double precision rnx, rny, rnz
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -192,6 +193,7 @@ double precision fcofbf(6), fcofad(6), fcofbd(6)
 
 double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
 double precision rttb, alpha_rnn, liqwt, totwt
+double precision c0, cl
 double precision cpp
 double precision sigmak, sigmae
 double precision coef_mom,coef_momm
@@ -207,6 +209,7 @@ double precision, dimension(:), allocatable :: bdlmo
 double precision, dimension(:), pointer :: cvar_k, bcfnns
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvara_nusa
+double precision, dimension(:), pointer :: tlag
 
 double precision, dimension(:), pointer :: cvar_totwt, cvar_t, cpro_liqwt
 double precision, dimension(:), pointer :: bpro_rough_d
@@ -232,6 +235,8 @@ double precision, dimension(:), pointer :: coefa_fb, coefaf_fb
 double precision, dimension(:), pointer :: coefb_fb, coefbf_fb
 double precision, dimension(:), pointer :: coefa_nu, coefaf_nu
 double precision, dimension(:), pointer :: coefb_nu, coefbf_nu
+double precision, dimension(:), pointer :: coefa_tlag, coefaf_tlag
+double precision, dimension(:), pointer :: coefb_tlag, coefbf_tlag
 
 integer          ntlast , iaff
 data             ntlast , iaff /-1 , 0/
@@ -292,6 +297,13 @@ dlmo = 0.d0
 
 ! Alpha constant for a realisable BC for R12 with the SSG model
 alpha_rnn = 0.47d0
+
+if (iturb.eq.30 .and. abs(crij2).le.epzero .and. crij1.gt.1.d0) then
+  c0 = (crij1-1) * 2.0 / 3.0 ! depend on the lag model
+else
+  c0 = 3.5d0
+endif
+cl = 1.d0 / (0.5d0 + 0.75d0 * c0) ! see the different model
 
 ! pointers to y+ if saved
 
@@ -444,6 +456,23 @@ else
   coefb_nu => null()
   coefaf_nu => null()
   coefbf_nu => null()
+endif
+
+tlag => null()
+! --- Save Lagragian time scale if defined
+call field_get_id_try('lagr_time', f_id_tlag)
+
+if (f_id_tlag.ge.0) then
+  call field_get_val_s(f_id_tlag, tlag)
+  call field_get_coefa_s(f_id_tlag, coefa_tlag)
+  call field_get_coefaf_s(f_id_tlag, coefaf_tlag)
+  call field_get_coefb_s(f_id_tlag, coefb_tlag)
+  call field_get_coefbf_s(f_id_tlag, coefbf_tlag)
+else
+  coefa_tlag => null()
+  coefb_tlag => null()
+  coefaf_tlag => null()
+  coefbf_tlag => null()
 endif
 
 ! --- Physical quantities
@@ -1034,6 +1063,26 @@ do ifac = 1, nfabor
            coefb_ep(ifac), coefbf_ep(ifac),             &
            qimp          , hint )
 
+      !if defined set Dirichlet condition for the Lagrangian time scale
+      if (f_id_tlag.ge.0) then
+        if (iwallf.eq.0) then
+          ! No wall functions forced by user
+          pimp = 0.d0
+        else
+          ! Use of wall functions
+          if (iuntur.eq.1) then
+              pimp = cfnnk / (cfnne * uk) * cl / sqrcmu * xkappa * rough_d
+          else
+            pimp = 0.d0
+          endif
+        endif
+
+        call set_dirichlet_scalar &
+             ( coefa_tlag(ifac), coefaf_tlag(ifac),             &
+               coefb_tlag(ifac), coefbf_tlag(ifac),             &
+               pimp         , hint          , rinfin )
+      endif
+
       ! No diffusion reconstruction when using wall functions
       if (associated(cpro_diff_lim_eps)) cpro_diff_lim_eps(ifac) = 0.d0
 
@@ -1257,6 +1306,28 @@ do ifac = 1, nfabor
            coefb_ep(ifac), coefbf_ep(ifac),             &
            qimp          , hint )
 
+      if (f_id_tlag.ge.0) then
+        if (iwallf.eq.0) then
+          ! No wall functions forced by user
+          pimp = 0.d0
+        else
+          ! Use of wall functions
+          if (iuntur.eq.1) then
+              pimp = 0.5 * cfnnk / (cfnne * uk**3 ) * cl * xkappa * rough_d      &
+                   * ( coefa_rij(1,ifac) + coefb_rij(1,1,ifac) * rijipb(ifac,1)  &
+                     + coefa_rij(2,ifac) + coefb_rij(2,2,ifac) * rijipb(ifac,2)  &
+                     + coefa_rij(3,ifac) + coefb_rij(3,3,ifac) * rijipb(ifac,3))
+          else
+            pimp = 0.d0
+          endif
+        endif
+
+        call set_dirichlet_scalar &
+           ( coefa_tlag(ifac), coefaf_tlag(ifac),             &
+             coefb_tlag(ifac), coefbf_tlag(ifac),             &
+             pimp         , hint          , rinfin )
+      endif
+
       ! No diffusion reconstruction when using wall functions
       if (associated(cpro_diff_lim_eps)) cpro_diff_lim_eps(ifac) = 0.d0
 
@@ -1289,6 +1360,18 @@ do ifac = 1, nfabor
          ( coefa_ep(ifac), coefaf_ep(ifac),             &
            coefb_ep(ifac), coefbf_ep(ifac),             &
            pimp          , hint          , rinfin )
+
+      ! Dirichlet Boundary Condition on Lagrangian time scale
+      !-----------------------------------------------------
+      if (f_id_tlag.ge.0) then
+        pimp = 0.d0
+        hint = (visclc+visctc/sigmak)/distbf
+
+        call set_dirichlet_scalar &
+           ( coefa_tlag(ifac), coefaf_tlag(ifac),             &
+             coefb_tlag(ifac), coefbf_tlag(ifac),             &
+             pimp         , hint          , rinfin )
+      endif
 
       ! Dirichlet Boundary Condition on Phi
       !------------------------------------
@@ -1343,6 +1426,18 @@ do ifac = 1, nfabor
          ( coefa_ep(ifac), coefaf_ep(ifac),             &
            coefb_ep(ifac), coefbf_ep(ifac),             &
            pimp          , hint           , rinfin )
+
+      ! Dirichlet Boundary Condition on Lagrangian time scale
+      !-----------------------------------------------------
+      if (f_id_tlag.ge.0) then
+        pimp = 0.d0
+        hint = (visclc+visctc/sigmak)/distbf
+
+        call set_dirichlet_scalar &
+           ( coefa_tlag(ifac), coefaf_tlag(ifac),             &
+             coefb_tlag(ifac), coefbf_tlag(ifac),             &
+             pimp         , hint          , rinfin )
+      endif
 
       ! Dirichlet Boundary Condition on Phi
       !------------------------------------
@@ -1408,6 +1503,26 @@ do ifac = 1, nfabor
          ( coefa_omg(ifac), coefaf_omg(ifac),             &
            coefb_omg(ifac), coefbf_omg(ifac),             &
            qimp           , hint )
+
+      !if defined set Dirichlet condition for the Lagrangian time scale
+      if (f_id_tlag.ge.0) then
+        if (iwallf.eq.0) then
+          ! No wall functions forced by user
+          pimp = 0.d0
+        else
+          ! Use of wall functions
+          if (iuntur.eq.1) then
+            pimp = cfnnk / (cfnne * uk) * cl / sqrcmu * xkappa * rough_d
+          else
+            pimp = 0.d0
+          endif
+        endif
+
+        call set_dirichlet_scalar &
+           ( coefa_tlag(ifac), coefaf_tlag(ifac),             &
+             coefb_tlag(ifac), coefbf_tlag(ifac),             &
+             pimp         , hint          , rinfin )
+      endif
 
     !===========================================================================
     ! 7.1 Boundary conditions on the Spalart Allmaras turbulence model
@@ -1616,7 +1731,7 @@ end subroutine
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
 !> \param[in,out] rcodcl        boundary condition values:
-!>                               - rcodcl(1) value of the dirichlet
+!>                               - rcodcl(1) value of the Dirichlet
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
