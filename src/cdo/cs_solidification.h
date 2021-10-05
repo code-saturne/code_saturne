@@ -387,8 +387,6 @@ typedef struct {
    * --> c_bulk = (gs*kp + gl)*c_l
    */
 
-  cs_solidification_strategy_t  strategy;
-
   /* Function to update the liquid fraction */
   cs_solidification_func_t     *update_gl;
 
@@ -544,6 +542,11 @@ typedef struct  {
 
   /* Additional settings related to the choice of solidification modelling */
   void            *model_context;
+
+  /* Strategy to update quantities during the solidification process. These
+   * quantities are the liquid fraction, the thermal source term for
+   * instance */
+  cs_solidification_strategy_t   strategy;
 
   /* A reaction term is introduced in the momentum equation. This terms tends to
    * a huge number when the liquid fraction tends to 0 in order to penalize
@@ -786,15 +789,15 @@ cs_solidification_set_binary_alloy_model(const char     *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the strategy to update physical variables related to the
- *         binary alloy model
+ * \brief  Set the strategy to update quantitiess (liquid fraction and
+ *         the thermal source term for the two main quantities)
  *
- * \param[in]  stgy     strategy to perform the numerical segregation
+ * \param[in]  strategy     strategy to perform the update of quantities
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_binary_alloy_strategy(cs_solidification_strategy_t  stgy);
+cs_solidification_set_strategy(cs_solidification_strategy_t  strategy);
 
 /*----------------------------------------------------------------------------*/
 /*!

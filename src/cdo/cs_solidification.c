@@ -655,10 +655,10 @@ _compute_enthalpy(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_gl_voller_prakash_87(const cs_mesh_t             *mesh,
-                             const cs_cdo_connect_t      *connect,
-                             const cs_cdo_quantities_t   *quant,
-                             const cs_time_step_t        *ts)
+_update_gl_voller_legacy(const cs_mesh_t             *mesh,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *quant,
+                         const cs_time_step_t        *ts)
 {
   CS_UNUSED(mesh);
 
@@ -747,10 +747,10 @@ _update_gl_voller_prakash_87(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_thm_voller_prakash_87(const cs_mesh_t             *mesh,
-                              const cs_cdo_connect_t      *connect,
-                              const cs_cdo_quantities_t   *quant,
-                              const cs_time_step_t        *ts)
+_update_thm_voller_legacy(const cs_mesh_t             *mesh,
+                          const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *quant,
+                          const cs_time_step_t        *ts)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
@@ -1642,10 +1642,10 @@ _update_thm_taylor(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_gl_path(const cs_mesh_t             *mesh,
-                const cs_cdo_connect_t      *connect,
-                const cs_cdo_quantities_t   *quant,
-                const cs_time_step_t        *ts)
+_update_gl_binary_path(const cs_mesh_t             *mesh,
+                       const cs_cdo_connect_t      *connect,
+                       const cs_cdo_quantities_t   *quant,
+                       const cs_time_step_t        *ts)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(ts);
@@ -1985,10 +1985,10 @@ _update_gl_path(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_thm_path(const cs_mesh_t             *mesh,
-                 const cs_cdo_connect_t      *connect,
-                 const cs_cdo_quantities_t   *quant,
-                 const cs_time_step_t        *ts)
+_update_thm_binary_path(const cs_mesh_t             *mesh,
+                        const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *quant,
+                        const cs_time_step_t        *ts)
 {
   CS_UNUSED(mesh);
   cs_solidification_t  *solid = cs_solidification_structure;
@@ -2964,6 +2964,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
       s_model->max_delta_h = 1e-2;
 
       /* Function pointers */
+      solid->strategy = CS_SOLIDIFICATION_STRATEGY_PATH;
       s_model->update_gl = _update_gl_stefan;
       s_model->update_thm_st = _update_thm_stefan;
 
@@ -2993,8 +2994,9 @@ cs_solidification_activate(cs_solidification_model_t       model,
         v_model->n_iter_max = 15;
 
       /* Function pointers */
-      v_model->update_gl = _update_gl_voller_prakash_87;
-      v_model->update_thm_st = _update_thm_voller_prakash_87;
+      solid->strategy = CS_SOLIDIFICATION_STRATEGY_LEGACY;
+      v_model->update_gl = _update_gl_voller_legacy;
+      v_model->update_thm_st = _update_thm_voller_legacy;
 
       /* Set the context */
       solid->model_context = (void *)v_model;
@@ -3023,7 +3025,6 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
       /* Monitoring and criteria to drive the convergence of the coupled system
          (solute transport and thermal equation) */
-
       b_model->iter = 0;
       b_model->n_iter_max = 10;
       b_model->delta_tolerance = 1e-3;
@@ -3033,7 +3034,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
       /* Strategy to perform the main steps of the simulation of a binary alloy
        * Default strategy: Taylor which corresponds to the Legacy one with
        * improvements thanks to some Taylor expansions */
-      b_model->strategy = CS_SOLIDIFICATION_STRATEGY_TAYLOR;
+      solid->strategy = CS_SOLIDIFICATION_STRATEGY_TAYLOR;
 
       /* Functions which are specific to a strategy */
       b_model->update_gl = _update_gl_taylor;
@@ -3467,57 +3468,89 @@ cs_solidification_set_binary_alloy_model(const char     *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the strategy to update physical variables related to the
- *         binary alloy model
+ * \brief  Set the strategy to update quantitiess (liquid fraction and
+ *         the thermal source term for the two main quantities)
  *
- * \param[in]  stgy     strategy to perform the numerical segregation
+ * \param[in]  strategy     strategy to perform the update of quantities
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_binary_alloy_strategy(cs_solidification_strategy_t  stgy)
+cs_solidification_set_strategy(cs_solidification_strategy_t  strategy)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
-  cs_solidification_binary_alloy_t
-    *alloy = cs_solidification_get_binary_alloy_struct();
 
-  switch (stgy) {
+  switch (solid->model) {
 
-  case CS_SOLIDIFICATION_STRATEGY_LEGACY:
-    if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
-      alloy->update_gl = _update_gl_legacy_ast;
-    else
-      alloy->update_gl = _update_gl_legacy;
-    alloy->update_thm_st = _update_thm_legacy;
+  case CS_SOLIDIFICATION_MODEL_STEFAN:
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf("%s:  Only one strategy is available with the Stefan model.\n",
+               __func__);
     break;
 
-  case CS_SOLIDIFICATION_STRATEGY_TAYLOR:
-    if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Adding an advective source term is incompatible with"
-                " the Taylor strategy.\n", __func__);
-    else
-      alloy->update_gl = _update_gl_taylor;
-    alloy->update_thm_st = _update_thm_taylor;
+  case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf("%s:  Only one strategy is available with the Stefan model.\n",
+               __func__);
     break;
 
-  case CS_SOLIDIFICATION_STRATEGY_PATH:
-    if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Adding an advective source term is incompatible with"
-                " the Path strategy.\n", __func__);
-    else
-      alloy->update_gl = _update_gl_path;
-    alloy->update_thm_st = _update_thm_path;
+  case CS_SOLIDIFICATION_MODEL_VOLLER_NL:
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf("%s:  Only one strategy is available with the Stefan model.\n",
+               __func__);
+    break;
+
+  case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
+    {
+      cs_solidification_binary_alloy_t
+        *alloy = cs_solidification_get_binary_alloy_struct();
+
+      switch (strategy) {
+
+      case CS_SOLIDIFICATION_STRATEGY_LEGACY:
+        if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
+          alloy->update_gl = _update_gl_legacy_ast;
+        else
+          alloy->update_gl = _update_gl_legacy;
+        alloy->update_thm_st = _update_thm_legacy;
+        break;
+
+      case CS_SOLIDIFICATION_STRATEGY_TAYLOR:
+        if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Adding an advective source term is incompatible with"
+                    " the Taylor strategy.\n", __func__);
+        else
+          alloy->update_gl = _update_gl_taylor;
+        alloy->update_thm_st = _update_thm_taylor;
+        break;
+
+      case CS_SOLIDIFICATION_STRATEGY_PATH:
+        if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Adding an advective source term is incompatible with"
+                    " the Path strategy.\n", __func__);
+        else
+          alloy->update_gl = _update_gl_binary_path;
+        alloy->update_thm_st = _update_thm_binary_path;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0, "%s: Invalid strategy.\n", __func__);
+        break;
+
+      } /* Switch on strategies */
+
+    }
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid strategy.\n", __func__);
-    break;
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid solidification model.\n", __func__);
 
-  } /* Switch on strategies */
+  } /* Switch on the solidification model */
 
-  alloy->strategy = stgy;
+  solid->strategy = strategy;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4046,6 +4079,24 @@ cs_solidification_log_setup(void)
   cs_log_printf(CS_LOG_SETUP, "  * %s | Verbosity: %d\n",
                 module, solid->verbosity);
 
+  /* Display options */
+  cs_log_printf(CS_LOG_SETUP, "  * %s | Strategy:", module);
+  switch (solid->strategy) {
+
+  case CS_SOLIDIFICATION_STRATEGY_LEGACY:
+    cs_log_printf(CS_LOG_SETUP, " Legacy\n");
+    break;
+  case CS_SOLIDIFICATION_STRATEGY_TAYLOR:
+    cs_log_printf(CS_LOG_SETUP, " Legacy + Taylor-based updates\n");
+    break;
+  case CS_SOLIDIFICATION_STRATEGY_PATH:
+    cs_log_printf(CS_LOG_SETUP, " Rely on the solidification path\n");
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid strategy\n", __func__);
+  }
+
   switch (solid->model) {
   case CS_SOLIDIFICATION_MODEL_STEFAN:
     {
@@ -4122,24 +4173,6 @@ cs_solidification_log_setup(void)
                     "  * %s | Forcing coef: %5.3e; s_das: %5.3e\n",
                     module, solid->forcing_coef, alloy->s_das);
 
-      /* Display options */
-      cs_log_printf(CS_LOG_SETUP, "  * %s | Strategy:", module);
-      switch (alloy->strategy) {
-
-      case CS_SOLIDIFICATION_STRATEGY_LEGACY:
-        cs_log_printf(CS_LOG_SETUP, " Legacy\n");
-        break;
-      case CS_SOLIDIFICATION_STRATEGY_TAYLOR:
-        cs_log_printf(CS_LOG_SETUP, " Legacy + Taylor-based updates\n");
-        break;
-      case CS_SOLIDIFICATION_STRATEGY_PATH:
-        cs_log_printf(CS_LOG_SETUP, " Rely on the solidification path\n");
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0, "%s: Invalid strategy\n", __func__);
-      }
-
       cs_log_printf(CS_LOG_SETUP, "  * %s | Options:", module);
       if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC)
         cs_log_printf(CS_LOG_SETUP,
@@ -4173,7 +4206,7 @@ cs_solidification_log_setup(void)
                       " Update using a second-order in time extrapolation");
 
       if (solid->options & CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC) {
-        if (alloy->strategy == CS_SOLIDIFICATION_STRATEGY_PATH)
+        if (solid->strategy == CS_SOLIDIFICATION_STRATEGY_PATH)
           cs_log_printf(CS_LOG_SETUP, "  * %s | Options: %s\n", module,
                       " Penalized eutectic temperature");
       else
