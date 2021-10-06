@@ -791,6 +791,144 @@ _update_thm_voller_legacy(const cs_mesh_t             *mesh,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update/initialize the reaction and source term for the thermal
+ *         equation. One considers the state at the previous time step and that
+ *         the kth sub-iteration to determine the solidification path and
+ *         compute the related quantities.
+ *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_thm_voller_path(const cs_mesh_t             *mesh,
+                        const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *quant,
+                        const cs_time_step_t        *ts)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+
+  cs_solidification_t  *solid = cs_solidification_structure;
+  cs_solidification_voller_t  *v_model
+    = (cs_solidification_voller_t *)solid->model_context;
+
+  /* Sanity checks */
+  assert(v_model != NULL);
+  assert(solid->temperature != NULL);
+
+  const cs_real_t  *temp = solid->temperature->val;
+  const cs_real_t  *temp_pre = solid->temperature->val_pre;
+  assert(temp != NULL && temp_pre != NULL);
+
+  /* 1./(t_liquidus - t_solidus) = \partial g_l/\partial Temp */
+  const cs_real_t  dgldT = 1./(v_model->t_liquidus - v_model->t_solidus);
+  const cs_real_t  coef =
+    solid->mass_density->ref_value*solid->latent_heat/ts->dt[0];
+  const cs_real_t  dgldT_coef = coef * dgldT;
+
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    if (connect->cell_flag[c_id] & CS_FLAG_SOLID_CELL) {
+
+      /* Keep the solid state during all the computation */
+      solid->thermal_reaction_coef_array[c_id] = 0;
+      solid->thermal_source_term_array[c_id] = 0;
+
+    }
+    else if (temp[c_id] < v_model->t_solidus) {
+
+      if (temp_pre[c_id] > v_model->t_liquidus) {
+
+        /* Liquid --> solid state */
+        solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
+        solid->thermal_source_term_array[c_id] =
+          dgldT_coef*v_model->t_liquidus*quant->cell_vol[c_id];
+
+      }
+      else if (temp_pre[c_id] < v_model->t_solidus) {
+
+        /* Solid --> Solid state */
+        solid->thermal_reaction_coef_array[c_id] = 0;
+        solid->thermal_source_term_array[c_id] = 0;
+
+      }
+      else { /* Mushy --> solid state */
+
+        solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
+        solid->thermal_source_term_array[c_id] =
+          dgldT_coef*temp[c_id]*quant->cell_vol[c_id];
+
+        /* Strictly speaking this should not be divided by 1/dt but with a
+           smaller time step (Tsolidus is reached before the end of the time
+           step) */
+
+      }
+
+    }
+    else if (temp[c_id] > v_model->t_liquidus) {
+
+      if (temp_pre[c_id] > v_model->t_liquidus) {
+
+        /* Liquid --> liquid state */
+        solid->thermal_reaction_coef_array[c_id] = 0;
+        solid->thermal_source_term_array[c_id] = 0;
+
+      }
+      else if (temp_pre[c_id] < v_model->t_solidus) {
+
+        /* Solid --> liquid state */
+        solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
+        solid->thermal_source_term_array[c_id] =
+          dgldT_coef*v_model->t_solidus*quant->cell_vol[c_id];
+
+      }
+      else { /* Mushy --> liquid state */
+
+        solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
+        solid->thermal_source_term_array[c_id] =
+          dgldT_coef*temp[c_id]*quant->cell_vol[c_id];
+
+      }
+
+    }
+    else {
+
+      if (temp_pre[c_id] > v_model->t_liquidus) {
+
+        /* Liquid --> mushy state */
+        solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
+        solid->thermal_source_term_array[c_id] =
+          dgldT_coef*v_model->t_liquidus*quant->cell_vol[c_id];
+
+      }
+      else if (temp_pre[c_id] < v_model->t_solidus) {
+
+        /* Solid --> mushy state */
+        solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
+        solid->thermal_source_term_array[c_id] =
+          dgldT_coef*v_model->t_solidus*quant->cell_vol[c_id];
+
+      }
+      else { /* Mushy --> mushy state */
+
+        solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
+        solid->thermal_source_term_array[c_id] =
+          dgldT_coef*temp[c_id]*quant->cell_vol[c_id];
+
+      } /* State for the previous temp (n-1) */
+
+    } /* State for the current temp (n+1,k+1) */
+
+  } /* Loop on cells */
+
+}
+
 /*----------------------------------------------------------------------------*
  * Update functions for the binary alloy modelling
  *----------------------------------------------------------------------------*/
@@ -2515,9 +2653,12 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
   /* Retrieve the current values */
   cs_real_t  *enthalpy = solid->enthalpy->val;
 
-  cs_real_t  *hk = NULL;        /* enthalpy h^{n+1,k} */
+  cs_real_t  *hk = NULL, *tk = NULL;   /* enthalpy and temp at ^{n+1,k} */
   BFT_MALLOC(hk, quant->n_cells, cs_real_t);
   memcpy(hk, enthalpy, csize);
+
+  /* BFT_MALLOC(tk, quant->n_cells, cs_real_t); */
+  /* memcpy(tk, solid->temperature->val, csize); */
 
   /* Non-linear iterations (k) are performed to converge on the relation
    * h^{n+1,k+1} = h^{n+1,k} + eps with eps a user-defined tolerance
@@ -2997,6 +3138,13 @@ cs_solidification_activate(cs_solidification_model_t       model,
       solid->strategy = CS_SOLIDIFICATION_STRATEGY_LEGACY;
       v_model->update_gl = _update_gl_voller_legacy;
       v_model->update_thm_st = _update_thm_voller_legacy;
+
+      /* If the non-linear model is used, then the default strategy is
+         modified */
+      if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_NL) {
+        solid->strategy = CS_SOLIDIFICATION_STRATEGY_PATH;
+        v_model->update_thm_st = _update_thm_voller_path;
+      }
 
       /* Set the context */
       solid->model_context = (void *)v_model;
@@ -3489,21 +3637,37 @@ cs_solidification_set_strategy(cs_solidification_strategy_t  strategy)
     break;
 
   case CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87:
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf("%s:  Only one strategy is available with the Stefan model.\n",
-               __func__);
-    break;
-
   case CS_SOLIDIFICATION_MODEL_VOLLER_NL:
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf("%s:  Only one strategy is available with the Stefan model.\n",
-               __func__);
-    break;
+    {
+      cs_solidification_voller_t  *v_model =
+        cs_solidification_get_voller_struct();
+
+      switch (strategy) {
+
+      case CS_SOLIDIFICATION_STRATEGY_LEGACY:
+        v_model->update_thm_st = _update_thm_voller_legacy;
+        break;
+
+      case CS_SOLIDIFICATION_STRATEGY_PATH:
+        v_model->update_thm_st = _update_thm_voller_path;
+        break;
+
+      default:
+        if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)
+          v_model->update_thm_st = _update_thm_voller_legacy;
+        else
+          v_model->update_thm_st = _update_thm_voller_path;
+        break;
+
+      } /* Switch on the strategy */
+
+    }
+    break; /* Voller-like models */
 
   case CS_SOLIDIFICATION_MODEL_BINARY_ALLOY:
     {
-      cs_solidification_binary_alloy_t
-        *alloy = cs_solidification_get_binary_alloy_struct();
+      cs_solidification_binary_alloy_t *alloy =
+        cs_solidification_get_binary_alloy_struct();
 
       switch (strategy) {
 
