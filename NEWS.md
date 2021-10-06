@@ -32,6 +32,13 @@ Physical modeling:
 
 Numerics:
 
+- Add Basic support for HYPRE solvers.
+  * Only BoomerAMG and PCG are handled at this stage.
+  * Settings for GPU use are not handled yet.
+  * HYPRE uses its own matrices, handled in cs_matrix_hypre, so not additional
+    copy of coefficients is needed in code_saturne (though building
+    through a matrix assembler is not tested yet).
+
 - Add GCR (Generalized Conjugate Residual) which enables a flexible
   preconditioning for non-symmetric linear system. Equivalent to a flexible
   GMRES.

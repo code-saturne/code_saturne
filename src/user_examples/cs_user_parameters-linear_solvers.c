@@ -48,6 +48,12 @@
 #include <petscksp.h>
 #endif
 
+#if defined(HAVE_HYPRE)
+#include <HYPRE_krylov.h>
+#include <HYPRE_parcsr_ls.h>
+#include <HYPRE_utilities.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * PLE library headers
  *----------------------------------------------------------------------------*/
@@ -265,6 +271,54 @@ cs_user_sles_petsc_hook(void               *context,
 }
 
 #endif /* defined(HAVE_PETSC) */
+
+#if defined(HAVE_HYPRE)
+
+/*----------------------------------------------------------------------------
+ * User function example for setup options of a Hypre KSP solver.
+ *
+ * This function is called at the end of the setup stage for a KSP solver.
+ *
+ * Note: if the context pointer is non-NULL, it must point to valid data
+ * when the selection function is called so that value or structure should
+ * not be temporary (i.e. local);
+ *
+ * parameters:
+ *   verbosity <-- verbosity level
+ *   context   <-> pointer to optional (untyped) value or structure
+ *   solver    <->  handle to HYPRE solver
+ *----------------------------------------------------------------------------*/
+
+/* Conjugate gradient with Jacobi preconditioning */
+/*------------------------------------------------*/
+
+/*! [sles_hypre_hook_1] */
+static void
+_hypre_p_setup_hook(int    verbosity,
+                    void  *context,
+                    void  *solver_p)
+{
+  CS_NO_WARN_IF_UNUSED(verbosity);
+  CS_NO_WARN_IF_UNUSED(context);
+
+  HYPRE_Solver  solver = solver_p;
+  HYPRE_Solver  precond = NULL;
+
+  /* Get pointer to preconditioner, based on solver type (here for PCG) */
+  HYPRE_PCGGetPrecond(solver, &precond);
+
+  /* Assuming the preconditioner is BoomerAMG, set options */
+  HYPRE_BoomerAMGSetCoarsenType(precond, 10);        /* HMIS */
+  HYPRE_BoomerAMGSetAggNumLevels(precond, 2);
+  HYPRE_BoomerAMGSetPMaxElmts(precond, 4);
+  HYPRE_BoomerAMGSetInterpType(precond, 7);          /* extended+i */
+  HYPRE_BoomerAMGSetStrongThreshold(precond, 0.5);   /* 2d=>0.25 3d=>0.5 */
+  HYPRE_BoomerAMGSetRelaxType(precond, 6);   /* Sym G.S./Jacobi hybrid */
+  HYPRE_BoomerAMGSetRelaxOrder(precond, 0);
+}
+/*! [sles_hypre_hook_1] */
+
+#endif /* defined(HAVE_HYPRE) */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -513,7 +567,6 @@ cs_user_linear_solvers(void)
   }
   /*! [sles_petsc_2] */
 
-
   /* Setting global options for PETSc with GAMG preconditioner */
   /*-----------------------------------------------------------*/
 
@@ -550,7 +603,6 @@ cs_user_linear_solvers(void)
 #endif
   }
   /*! [sles_petsc_gamg_1] */
-
 
   /* Setting pressure solver with PETSc and GAMG preconditioner */
   /*------------------------------------------------------------*/
@@ -604,7 +656,6 @@ cs_user_linear_solvers(void)
   }
   /*! [sles_petsc_bamg_1] */
 
-
   /* Setting pressure solver with PETSc and BoomerAMG preconditioner */
   /*-----------------------------------------------------------------*/
 
@@ -620,6 +671,53 @@ cs_user_linear_solvers(void)
   /*! [sles_petsc_bamg_2] */
 
 #endif /* defined(HAVE_PETSC) */
+
+#if defined(HAVE_HYPRE)
+
+  /* Setting global options for HYPRE */
+  /*----------------------------------*/
+
+  /*! [sles_hypre_1] */
+  {
+    /* Initialization must be called before setting options;
+       it does not need to be called before calling
+       cs_sles_hypre_define(), as this is handled automatically. */
+
+    /* No global options set yet... */
+  }
+  /*! [sles_hypre_1] */
+
+  /* Setting pressure solver with Hypre with Default PCG+BoomerAMG options */
+  /*-----------------------------------------------------------------------*/
+
+  /*! [sles_hypre_2] */
+  {
+    cs_sles_hypre_define(CS_F_(p)->id,
+                         NULL,
+                         CS_SLES_HYPRE_PCG,            /* solver type */
+                         CS_SLES_HYPRE_BOOMERAMG,      /* preconditioner type */
+                         NULL,
+                         NULL);
+
+  }
+  /*! [sles_hypre_2] */
+
+  /* Setting pressure solver with Hypre and user-defined options */
+  /*-------------------------------------------------------------*/
+
+  /*! [sles_hypre_3] */
+  {
+    cs_sles_hypre_define(CS_F_(p)->id,
+                         NULL,
+                         CS_SLES_HYPRE_PCG,            /* solver type */
+                         CS_SLES_HYPRE_BOOMERAMG,      /* preconditioner type */
+                         _hypre_p_setup_hook,
+                         NULL);
+
+  }
+  /*! [sles_hypre_3] */
+
+#endif /* defined(HAVE_HYPRE) */
 
   /* Setting pressure solver with AMGX */
   /*-----------------------------------*/

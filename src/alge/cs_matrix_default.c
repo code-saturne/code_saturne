@@ -68,6 +68,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_matrix.h"
+
+#if defined(HAVE_HYPRE)
+#include "cs_matrix_hypre.h"
+#endif
+
 #include "cs_matrix_priv.h"
 #include "cs_matrix_tuning.h"
 
@@ -648,6 +653,27 @@ cs_matrix_external(const char       *type_name,
     }
   }
 
+#if defined(HAVE_HYPRE)
+  {
+    cs_matrix_t *m_r = NULL;
+
+    if (_matrix_struct[CS_MATRIX_MSR] != NULL) {
+      m_r =  cs_matrix_msr(symmetric, diag_block_size, extra_diag_block_size);
+    }
+    else {
+      m_r =  cs_matrix_native(symmetric, diag_block_size, extra_diag_block_size);
+    }
+
+    cs_matrix_t *m = cs_matrix_copy_to_external(m_r,
+                                                symmetric,
+                                                diag_block_size,
+                                                extra_diag_block_size);
+
+    cs_matrix_set_type_hypre(m);
+    return m;
+  }
+#endif
+
   bft_error(__FILE__, __LINE__, 0,
             "%s:\n"
             "  no matrix of type \"%s\" and fill type \"%s\" defined.",
@@ -720,7 +746,7 @@ cs_matrix_copy_to_external(cs_matrix_t      *src,
 void
 cs_matrix_default_set_tuned(cs_matrix_t  *m)
 {
-  if (   m->type < 0 || m->type > CS_MATRIX_N_BUILTIN_TYPES
+  if (   m->type < 0 || m->type >= CS_MATRIX_N_BUILTIN_TYPES
       || m->fill_type < 0 || m->fill_type > CS_MATRIX_N_FILL_TYPES)
     return;
 

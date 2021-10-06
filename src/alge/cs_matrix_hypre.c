@@ -45,10 +45,10 @@
  * HYPRE headers
  *----------------------------------------------------------------------------*/
 
-#include "HYPRE.h"
-#include "HYPRE_IJ_mv.h"
-#include "HYPRE_parcsr_mv.h"
-#include "HYPRE_utilities.h"
+#include <HYPRE.h>
+#include <HYPRE_IJ_mv.h>
+#include <HYPRE_parcsr_mv.h>
+#include <HYPRE_utilities.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -71,6 +71,7 @@
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
 #include "cs_matrix_hypre.h"
+#include "cs_matrix_hypre_priv.h"
 #include "cs_matrix_priv.h"
 
 /*----------------------------------------------------------------------------*/
@@ -101,23 +102,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/
-
-/* Note that most types are declared in cs_matrix_priv.h.
-   only those only handled here are declared here. */
-
-/* Adapter coefficients stucture for HYPRE */
-
-typedef struct _cs_matrix_coeffs_hypre_t {
-
-  HYPRE_IJMatrix hm;                       /* HYPRE matrix */
-  HYPRE_IJVector hx;                       /* x (input) vector */
-  HYPRE_IJVector hy;                       /* y (output) vector */
-
-  int  matrix_state;                       /* Matrix state:
-                                              0: not created
-                                              1: created and assembled */
-
-} cs_matrix_coeffs_hypre_t;
 
 /*============================================================================
  *  Global variables
@@ -1244,6 +1228,26 @@ _mat_vec_p_parcsr(const cs_matrix_t  *matrix,
     BFT_FREE(_t);
   }
 
+}
+
+/*============================================================================
+ * Semi-private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief return coefficients structure associated with HYPRE matrix.
+ *
+ * \param[in]  matrix  pointer to matrix structure
+ *
+ * \return  pointer to matrix coefficients handler structure for HYPRE matrix.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_coeffs_hypre_t *
+cs_matrix_hypre_get_coeffs(const cs_matrix_t  *matrix)
+{
+  return (cs_matrix_coeffs_hypre_t *)(matrix->coeffs);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

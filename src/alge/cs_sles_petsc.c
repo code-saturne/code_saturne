@@ -148,7 +148,7 @@ struct _cs_sles_petsc_t {
   cs_timer_counter_t   t_setup;            /* Total setup */
   cs_timer_counter_t   t_solve;            /* Total time used */
 
-  /*Additional setup options */
+  /* Additional setup options */
 
   void                        *hook_context;   /* Optional user context */
   cs_sles_petsc_setup_hook_t  *setup_hook;     /* Post setup function */
@@ -1307,8 +1307,7 @@ cs_sles_petsc_solve(void                *context,
                     size_t               aux_size,
                     void                *aux_vectors)
 {
-  CS_UNUSED(aux_size);
-  CS_UNUSED(aux_vectors);
+
 
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 

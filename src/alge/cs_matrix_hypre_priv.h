@@ -1,8 +1,8 @@
-#ifndef __CS_MATRIX_HYPRE_H__
-#define __CS_MATRIX_HYPRE_H__
+#ifndef __CS_MATRIX_HYPRE_PRIV_H__
+#define __CS_MATRIX_HYPRE_PRIV_H__
 
 /*============================================================================
- * Sparse Matrix Representation and Operations using HYPRE library.
+ * Private types for sparse matrix representation and operations using HYPRE.
  *============================================================================*/
 
 /*
@@ -28,18 +28,27 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * HYPRE headers
+ *----------------------------------------------------------------------------*/
+
+#include <HYPRE.h>
+#include <HYPRE_IJ_mv.h>
+#include <HYPRE_parcsr_mv.h>
+#include <HYPRE_utilities.h>
+
+/*----------------------------------------------------------------------------
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
 
-#include "cs_halo.h"
-#include "cs_matrix.h"
-#include "cs_matrix_assembler.h"
+#include "cs_matrix_hypre.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Macro definitions
@@ -49,30 +58,44 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*============================================================================
- * Global variables
- *============================================================================*/
+/* Note that most types are declared in cs_matrix_priv.h.
+   only those only handled here are declared here. */
+
+/* Adapter coefficients stucture for HYPRE */
+
+typedef struct _cs_matrix_coeffs_hypre_t {
+
+  HYPRE_IJMatrix hm;                       /* HYPRE matrix */
+  HYPRE_IJVector hx;                       /* x (input) vector */
+  HYPRE_IJVector hy;                       /* y (output) vector */
+
+  int  matrix_state;                       /* Matrix state:
+                                              0: not created
+                                              1: created and assembled */
+
+} cs_matrix_coeffs_hypre_t;
 
 /*=============================================================================
- * Public function prototypes
+ * Semi-private function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Switch matrix type to hypre.
+ * \brief return coefficients structure associated with HYPRE matrix.
  *
- * This releases previous coefficients if present, so should be called
- * just after matrix creation, before assigning coefficients.
+ * \param[in]  matrix  pointer to matrix structure
  *
- * \param[in, out]  matrix  pointer to matrix structure
+ * \return  pointer to matrix coefficients handler structure for HYPRE matrix.
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_matrix_set_type_hypre(cs_matrix_t  *matrix);
+cs_matrix_coeffs_hypre_t *
+cs_matrix_hypre_get_coeffs(const cs_matrix_t  *matrix);
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_MATRIX_HYPRE_H__ */
+#endif /* __CS_MATRIX_HYPRE_PRIV_H__ */

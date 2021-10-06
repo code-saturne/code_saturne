@@ -268,6 +268,9 @@ _sles_setup_matrix_native(int                  f_id,
   const cs_mesh_t *m = cs_glob_mesh;
 
   bool need_msr = false;
+#if defined(HAVE_HYPRE)
+  bool need_hypre = false;
+#endif
 
   /* If context has not been defined yet, temporarily set
      matrix coefficients (using native matrix, which has lowest
@@ -326,6 +329,11 @@ _sles_setup_matrix_native(int                  f_id,
   else if (strcmp(cs_sles_get_type(sc), "cs_multigrid_t") == 0)
     mg = cs_sles_get_context(sc);
 
+#if defined(HAVE_HYPRE)
+  else if (strcmp(cs_sles_get_type(sc), "cs_sles_hypre_t") == 0)
+    need_hypre = true;
+#endif
+
   if (mg != NULL) {
     cs_sles_it_type_t fs_type = cs_multigrid_get_fine_solver_type(mg);
     if (   fs_type >= CS_SLES_P_GAUSS_SEIDEL
@@ -343,6 +351,13 @@ _sles_setup_matrix_native(int                  f_id,
     a = cs_matrix_msr(symmetric,
                       diag_block_size,
                       extra_diag_block_size);
+#if defined(HAVE_HYPRE)
+  else if (need_hypre)
+    a = cs_matrix_external("HYPRE_PARCSR",
+                           symmetric,
+                           diag_block_size,
+                           extra_diag_block_size);
+#endif
   else
     a = cs_matrix_default(symmetric,
                           diag_block_size,

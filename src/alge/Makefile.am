@@ -126,7 +126,10 @@ pkginclude_HEADERS += cs_sles_mumps.h
 endif
 
 if HAVE_HYPRE
-pkginclude_HEADERS += cs_matrix_hypre.h
+pkginclude_HEADERS += \
+cs_matrix_hypre.h \
+cs_matrix_hypre_priv.h \
+cs_sles_hypre.h
 endif
 
 if HAVE_AMGX
@@ -197,7 +200,9 @@ endif
 if HAVE_HYPRE
 noinst_LTLIBRARIES += libcsalge_hypre.la
 libcsalge_la_LIBADD += libcsalge_hypre.la
-libcsalge_hypre_la_SOURCES = cs_matrix_hypre.c
+libcsalge_hypre_la_SOURCES = \
+cs_matrix_hypre.c \
+cs_sles_hypre.c
 endif
 
 if HAVE_AMGX

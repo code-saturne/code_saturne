@@ -53,6 +53,10 @@
 #include "cs_sles_it.h"
 #include "cs_sles_pc.h"
 
+#if defined(HAVE_HYPRE)
+#include "cs_sles_hypre.h"
+#endif
+
 #if defined(HAVE_AMGX)
 #include "cs_sles_amgx.h"
 #endif

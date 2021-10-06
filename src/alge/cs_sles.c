@@ -1669,6 +1669,27 @@ cs_sles_solve(cs_sles_t           *sles,
               sles->post_info->row_residual);
   }
 
+  /* Check error */
+
+#if 0
+  {
+    const cs_lnum_t block_size = cs_matrix_get_diag_block_size(a)[0];
+    const cs_lnum_t n_vals_ext = cs_matrix_get_n_columns(a) * block_size;
+    const cs_lnum_t n_vals = cs_matrix_get_n_rows(a) * block_size;
+
+    cs_real_t *resr = NULL;
+    BFT_MALLOC(resr, n_vals_ext, cs_real_t);
+
+    _residual(n_vals, a, rhs, vx, resr);
+    cs_real_t residue = sqrt(cs_gdot(n_vals, resr, resr));
+
+    bft_printf("# residue[%s] = %g (%g * required, precision %g, normalization %g)\n",
+               sles_name, residue, residue/(precision*r_norm), precision, r_norm);
+
+    BFT_FREE(resr);
+  }
+#endif
+
   cs_timer_stats_switch(t_top_id);
 
   cs_timer_t t1 = cs_timer_time();
