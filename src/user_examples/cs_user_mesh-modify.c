@@ -263,7 +263,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     for(int i=0; i<n_selected_elts; i++)
       selected_elts[i] = n_prev_cells + i;
 
-    /* Add slected cells to a new group called "solid" */
+    /* Add selected cells to a new group called "solid" */
     cs_mesh_group_cells_add(mesh,
                             "solid",
                             n_selected_elts,
