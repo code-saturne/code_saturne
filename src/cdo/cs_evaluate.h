@@ -195,8 +195,8 @@ cs_evaluate_3_square_weighted_norm(cs_lnum_t               size,
  * \param[in]  c2x     adjacency structure from cell to x entities (mandatory)
  * \param[in]  w_c2x   weight to apply (mandatory), scanned by c2x
  *
- * \return the computed square weighted and normalized L2-norm of the
- *          difference between array and reference
+ * \return the computed square weighted L2-norm of the difference between the
+ *         two arrays
  */
 /*----------------------------------------------------------------------------*/
 
