@@ -962,7 +962,7 @@ class FluidCharacteristicsModel(Variables, Model):
             return self.getFormulaViscv0Components(zone)
 
         elif tag == 'scalar_diffusivity' and scalar != None:
-            return self.getFormulaDiffComponents(scalar)
+            return self.getFormulaDiffComponents(scalar, zone)
 
         else:
             msg = 'Formula is not available for field %s in MEG' % tag
@@ -1116,7 +1116,7 @@ class FluidCharacteristicsModel(Variables, Model):
         User formula for the diffusion coefficient
         """
         name = self.m_sca.getScalarDiffusivityName(scalar)
-        exp  = self.m_sca.getDiffFormula(scalar)
+        exp  = self.m_sca.getDiffFormula(scalar, zone)
         req = [(str(name), str(scalar)+' diffusion coefficient')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
