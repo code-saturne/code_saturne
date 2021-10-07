@@ -1,5 +1,5 @@
-Release 7.0.2 (not released yet)
---------------------------------
+Release 7.0.2 (October 8 2021)
+------------------------------
 
 Bug fixes:
 
