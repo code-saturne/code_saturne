@@ -649,11 +649,10 @@ class DefineUserScalarsModel(Variables, Model):
         node = n.xmlGetNode('property')
 
         if zone != "1":
-            if node.xmlGetChildNode("zone", name=zone):
-                node = node.xmlGetChildNode("zone", name=zone)
+            if node.xmlGetChildNode("zone", zone_id=zone):
+                node = node.xmlGetChildNode("zone", zone_id=zone)
             else:
-                node = node.xmlInitChildNode("zone")
-                node["name"] = zone
+                node = node.xmlInitChildNode("zone", zone_id=zone)
 
         formula = node.xmlGetChildString('formula')
         if not formula:
@@ -688,11 +687,10 @@ class DefineUserScalarsModel(Variables, Model):
         n = self.scalar_node.xmlGetNode('variable', name = scalar)
         node = n.xmlGetNode('property')
         if zone != "1":
-            if node.xmlGetChildNode("zone", name=zone):
-                node = node.xmlGetChildNode("zone", name=zone)
+            if node.xmlGetChildNode("zone", zone_id=zone):
+                node = node.xmlGetChildNode("zone", zone_id=zone)
             else:
-                node = node.xmlInitChildNode("zone")
-                node["name"] = zone
+                node = node.xmlInitChildNode("zone", zone_id=zone)
         node.xmlSetData('formula', formula)
 
 

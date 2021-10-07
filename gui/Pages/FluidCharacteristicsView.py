@@ -530,7 +530,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 self.pushButtonDiff.show()
                 self.pushButtonDiff.setEnabled(True)
                 name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
-                exp = self.mdl.m_sca.getDiffFormula(self.scalar)
+                exp = self.mdl.m_sca.getDiffFormula(self.scalar, self.zone_id)
                 if exp:
                     self.pushButtonDiff.setStyleSheet("background-color: green")
                     self.pushButtonDiff.setToolTip(exp)
@@ -919,7 +919,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonDiff.show()
             self.pushButtonDiff.setEnabled(True)
             name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
-            exp = self.mdl.m_sca.getDiffFormula(self.scalar)
+            exp = self.mdl.m_sca.getDiffFormula(self.scalar, self.zone_id)
             if exp:
                 self.pushButtonDiff.setStyleSheet("background-color: green")
                 self.pushButtonDiff.setToolTip(exp)
@@ -951,7 +951,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonDiff.show()
             self.pushButtonDiff.setEnabled(True)
             name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
-            exp = self.mdl.m_sca.getDiffFormula(self.scalar)
+            exp = self.mdl.m_sca.getDiffFormula(self.scalar, self.zone_id)
             if exp:
                 self.pushButtonDiff.setStyleSheet("background-color: green")
                 self.pushButtonDiff.setToolTip(exp)
@@ -994,7 +994,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 exp = self.mdl.getFormula('thermal_conductivity', self.zone_id)
             elif sym == "Diff":
                 name = self.mdl.m_sca.getScalarDiffusivityName(self.scalar)
-                exp = self.mdl.m_sca.getDiffFormula(self.scalar)
+                exp = self.mdl.m_sca.getDiffFormula(self.scalar, self.zone_id)
 
             if exp:
                 __button.setStyleSheet("background-color: green")
