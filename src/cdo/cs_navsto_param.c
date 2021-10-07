@@ -314,6 +314,11 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
   nslesp->nl_algo_dtol = 1e3;
   nslesp->nl_algo_verbosity = 1;
 
+  nslesp->anderson_param.n_max_dir = 8;
+  nslesp->anderson_param.starting_iter = 4;
+  nslesp->anderson_param.droptol = 500;
+  nslesp->anderson_param.beta = 0.0;
+
   /* Set the default solver options for the main linear algorithm */
 
   nslesp->n_max_il_algo_iter = 100;
@@ -1057,7 +1062,6 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
                   " Valid choices are \"picard\", \"fixed-point\".",
                   __func__, _val);
       }
-
     }
     break; /* Non-linear algorithm */
 
@@ -1483,6 +1487,17 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
       cs_log_printf(CS_LOG_SETUP, "%s Max of non-linear iterations: %d\n",
                     navsto, nslesp->n_max_nl_algo_iter);
 
+      if (nslesp->nl_algo == CS_PARAM_NL_ALGO_ANDERSON) {
+
+        const cs_iter_algo_param_aa_t  aap = nslesp->anderson_param;
+
+        cs_log_printf(CS_LOG_SETUP, "%s Anderson param: max. dir: %d; "
+                      " start: %d; drop. tol: %5.3e; relax: %5.3e\n",
+                      navsto, aap.n_max_dir, aap.starting_iter, aap.droptol,
+                      aap.beta);
+
+      }
+
     } /* A non-linear treatment is requested */
 
   } /* Navier-Stokes */
@@ -1577,6 +1592,26 @@ cs_navsto_param_set_boussinesq_array(cs_navsto_param_boussinesq_t   *bp,
               "%s: Boussinesq structure is empty\n", __func__);
 
   bp->var = var;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the \ref cs_equation_param_t structure related to the
+ *         velocity equation (momentum equation in most of the cases)
+ *
+ * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ *
+ * \return a pointer to the set of SLES parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_navsto_param_sles_t *
+cs_navsto_param_get_sles_param(const cs_navsto_param_t    *nsp)
+{
+  if (nsp == NULL)
+    return NULL;
+
+  return nsp->sles_param;
 }
 
 /*----------------------------------------------------------------------------*/

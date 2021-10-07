@@ -32,6 +32,7 @@
 #include "cs_boundary.h"
 #include "cs_cdo_turbulence.h"
 #include "cs_equation_param.h"
+#include "cs_iter_algo.h"
 #include "cs_math.h"
 #include "cs_param_sles.h"
 #include "cs_physical_constants.h"
@@ -568,6 +569,12 @@ typedef struct {
    */
 
   int                           nl_algo_verbosity;
+
+  /*! \var anderson_param
+   * Set of parameters to drive the Anderson acceleration
+   */
+
+  cs_iter_algo_param_aa_t       anderson_param;
 
   /*! @} */
 
@@ -1244,6 +1251,20 @@ cs_navsto_param_add_boussinesq_term(cs_navsto_param_t    *nsp,
 void
 cs_navsto_param_set_boussinesq_array(cs_navsto_param_boussinesq_t   *bp,
                                      const cs_real_t                *var);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the \ref cs_equation_param_t structure related to the
+ *         velocity equation (momentum equation in most of the cases)
+ *
+ * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ *
+ * \return a pointer to the set of SLES parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_navsto_param_sles_t *
+cs_navsto_param_get_sles_param(const cs_navsto_param_t    *nsp);
 
 /*----------------------------------------------------------------------------*/
 /*!

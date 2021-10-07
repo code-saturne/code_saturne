@@ -91,13 +91,6 @@ typedef struct {
  * \var cvg
  * Converged, iterating or diverged status
  *
- * \var res
- * Value of the residual for the iterative algorithm
- *
- * \var res0
- * Value of the first residual of the iterative process. This is used for
- * detecting the divergence of the algorithm.
- *
  * \var normalization
  * Value of the normalization for the relative tolerance.
  *
@@ -108,6 +101,16 @@ typedef struct {
  * Tolerance computed as tol = max(atol, normalization*rtol) where
  * atol and rtol are respectively the absolute and relative tolerance associated
  * to the algorithm
+ *
+ * \var prev_res
+ * Value of the previous residual achieved during the iterative process
+ *
+ * \var res
+ * Value of the residual for the iterative algorithm
+ *
+ * \var res0
+ * Value of the first residual of the iterative process. This is used for
+ * detecting the divergence of the algorithm.
  *
  * \var n_algo_iter
  * Current number of iterations for the algorithm (outer iterations)
@@ -130,16 +133,57 @@ typedef struct {
   double                           dtol;
 
   cs_sles_convergence_state_t      cvg;
-  double                           res;
-  double                           res0;
   double                           normalization;
   double                           tol;
+
+  double                           prev_res;
+  double                           res;
+  double                           res0;
 
   int                              n_algo_iter;
   int                              n_inner_iter;
   int                              last_inner_iter;
 
 } cs_iter_algo_info_t;
+
+/*! \struct cs_iter_algo_param_aa_t
+
+ *  \brief Structure storing all the parameters to drive the algorithm called
+ *  Anderson acceleration
+ */
+
+typedef struct {
+
+/*!
+ * \var n_max_dir
+ * Maximum number of directions
+ *
+ * \var starting_iter
+ * Anderson acceleration starts at this iteration number
+ *
+ * \var droptol
+ * Tolerance under which terms are dropped in order to improve the
+ * conditionning number of the QR factorization
+ *
+ * \var beta
+ * Value of the relaxation coefficient (if this is equal to zero then there is
+ * non relaxation to perform)
+ */
+
+  int                        n_max_dir;
+  int                        starting_iter;
+  double                     droptol;
+  double                     beta;
+
+} cs_iter_algo_param_aa_t;
+
+/*! \struct cs_iter_algo_aa_t
+ *  \brief Context structure for the algorithm called Anderson acceleration
+ *
+ *  Set of parameters and arrays to manage the Anderson acceleration
+ */
+
+typedef struct _cs_iter_algo_aa_t  cs_iter_algo_aa_t;
 
 /*============================================================================
  * Inline static public function prototypes
@@ -160,52 +204,12 @@ cs_iter_algo_reset(cs_iter_algo_info_t    *info)
     return;
 
   info->cvg = CS_SLES_ITERATING;
+  info->res0 = cs_math_big_r;
+  info->prev_res = cs_math_big_r;
   info->res = cs_math_big_r;
   info->n_algo_iter = 0;
   info->n_inner_iter = 0;
   info->last_inner_iter = 0;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print header before dumping information gathered in the structure
- *         cs_iter_algo_info_t
- *
- * \param[in]  algo_name     name of the algorithm
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_iter_algo_navsto_print_header(const char   *algo_name)
-{
-  assert(algo_name != NULL);
-  cs_log_printf(CS_LOG_DEFAULT,
-                "%12s.It  -- Algo.Res   Inner  Cumul  ||div(u)||  Tolerance\n",
-                algo_name);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print header before dumping information gathered in the structure
- *         cs_iter_algo_info_t
- *
- * \param[in]  algo_name     name of the algorithm
- * \param[in]  info          pointer to cs_iter_algo_info_t structure
- * \param[in]  div_l2        l2 norm of the divergence
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_iter_algo_navsto_print(const char                    *algo_name,
-                          const cs_iter_algo_info_t     *info,
-                          double                         div_l2)
-{
-  assert(algo_name != NULL);
-  cs_log_printf(CS_LOG_DEFAULT,
-                "%12s.It%02d-- %5.3e  %5d  %5d  %6.4e  %6.4e\n",
-                algo_name, info->n_algo_iter, info->res,
-                info->last_inner_iter, info->n_inner_iter, div_l2, info->tol);
-  cs_log_printf_flush(CS_LOG_DEFAULT);
 }
 
 /*============================================================================
@@ -227,7 +231,7 @@ cs_iter_algo_navsto_print(const char                    *algo_name,
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_info_t *
-cs_iter_algo_define(int          verbosity,
+cs_iter_algo_create(int          verbosity,
                     int          n_max_iter,
                     double       atol,
                     double       rtol,
@@ -236,6 +240,7 @@ cs_iter_algo_define(int          verbosity,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Check if something wrong happens during the iterative process
+ *         after one new iteration
  *
  * \param[in] func_name    name of the calling function
  * \param[in] eq_name      name of the equation being solved
@@ -245,31 +250,90 @@ cs_iter_algo_define(int          verbosity,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_check(const char            *func_name,
-                   const char            *eq_name,
-                   const char            *algo_name,
-                   cs_iter_algo_info_t   *iai);
+cs_iter_algo_post_check(const char            *func_name,
+                        const char            *eq_name,
+                        const char            *algo_name,
+                        cs_iter_algo_info_t   *iai);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Test if one has to do one more Picard iteration.
- *         Test if performed on the relative norm on the increment between
- *         two iterations but also on the divergence.
+ * \brief  Update the convergence state and the number of iterations
  *
- * \param[in]      pre_iterate    previous state of the mass flux iterate
- * \param[in]      cur_iterate    current state of the mass flux iterate
- * \param[in]      div_l2_norm    L2 norm of the velocity divergence
- * \param[in, out] iai            pointer to a cs_iter_algo_info_t structure
- *
- * \return the convergence state
+ * \param[in, out] iai      pointer to a cs_iter_algo_info_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_sles_convergence_state_t
-cs_iter_algo_navsto_fb_picard_cvg(const cs_real_t             *pre_iterate,
-                                  const cs_real_t             *cur_iterate,
-                                  cs_real_t                    div_l2_norm,
-                                  cs_iter_algo_info_t         *iai);
+void
+cs_iter_algo_update_cvg(cs_iter_algo_info_t         *iai);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a new cs_iter_algo_aa_t structure to handle the Anderson
+ *         acceleration
+ *
+ * \param[in] n_max_dir       max. number of directions stored
+ * \param[in] starting_iter   iteration at which the algorithm starts
+ * \param[in] droptol         tolerance under which terms are dropped
+ * \param[in] beta            relaxation coefficient
+ * \param[in] n_elts          number of elements by direction
+ *
+ * \return a pointer to the new allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_iter_algo_aa_t *
+cs_iter_algo_aa_create(int                   n_max_dir,
+                       int                   starting_iter,
+                       cs_real_t             droptol,
+                       cs_real_t             beta,
+                       cs_lnum_t             n_elts);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate arrays useful for the Anderson acceleration
+ *
+ * \param[in, out] aa     pointer to the structure managing the Anderson algo.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_aa_allocate_arrays(cs_iter_algo_aa_t  *aa);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free arrays used during the Anderson acceleration
+ *
+ * \param[in, out] aa     pointer to the structure managing the Anderson algo.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_aa_free_arrays(cs_iter_algo_aa_t  *aa);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_iter_algo_aa_t structure used to manage the Anderson
+ *         acceleration
+ *
+ * \param[in, out]  info
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_aa_free(cs_iter_algo_info_t  *info);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Apply one more iteration of the Anderson acceleration
+ *
+ * \param[in, out] iai           pointer to a cs_iter_algo_info_t structure
+ * \param[in, out] cur_iterate   current iterate
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
+                       cs_real_t                   *cur_iterate);
 
 /*----------------------------------------------------------------------------*/
 

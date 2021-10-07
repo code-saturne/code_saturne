@@ -97,6 +97,10 @@ Numerics:
   Gauss-Seidel block preconditioners can be easily defined. Previously,
   only additive block preconditioning was easily available.
 
+- CDO: Add the Anderson acceleration algorithm to improve the
+  convergence of the Picard algorithm when a non-linear problem has to
+  be solved. Joint work with Qingqing FENG.
+
 Architectural changes:
 
 - Simplify handling of timers, focusing on wall-time.

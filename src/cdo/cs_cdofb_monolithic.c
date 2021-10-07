@@ -1930,28 +1930,33 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
                                         void                     *cc_context)
 {
   /* Sanity checks */
+
   assert(nsp != NULL && cc_context != NULL);
   if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.\n", __func__);
 
   /* Navier-Stokes scheme context (SC) */
+
   cs_cdofb_monolithic_t  *sc = NULL;
 
   BFT_MALLOC(sc, 1, cs_cdofb_monolithic_t);
 
   /* Cast the coupling context (CC) */
+
   cs_navsto_monolithic_t  *cc = (cs_navsto_monolithic_t  *)cc_context;
   cs_equation_t  *mom_eq = cc->momentum;
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
 
   /* Quantities shared with the cs_navsto_system_t structure */
+
   sc->coupling_context = cc;
   sc->adv_field = adv_field;
   sc->mass_flux_array = mflux;
   sc->mass_flux_array_pre = mflux_pre;
 
   /* Quick access to the main fields */
+
   sc->velocity = cs_field_by_name("velocity");
   sc->pressure = cs_field_by_name("pressure");
 
@@ -1964,6 +1969,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
   sc->bf_type = bf_type;
 
   /* Processing of the pressure boundary condition */
+
   sc->pressure_bc = cs_cdo_bc_face_define(CS_CDO_BC_HMG_NEUMANN, /* Default */
                                           true,      /* Steady BC up to now */
                                           1,         /* Dimension */
@@ -1976,6 +1982,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
 
   /* Set the way to enforce the Dirichlet BC on the velocity
    * "fixed_wall" means a no-slip BC */
+
   mom_eqb->bd_msh_flag |= CS_FLAG_COMP_PFC;
 
   sc->apply_symmetry = cs_cdofb_symmetry;
@@ -2008,9 +2015,11 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
   }
 
   /* Source terms induced by the gravity effect */
+
   cs_cdofb_navsto_set_gravity_func(nsp, &(sc->add_gravity_term));
 
   /* Set the build function */
+
   sc->steady_build = _steady_build;
 
   switch (nsp->time_scheme) {
@@ -2036,9 +2045,11 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
   } /* Switch on time schme */
 
   /* Handle the resolution of a saddle-point system */
+
   cs_cdofb_monolithic_sles_t  *msles = cs_cdofb_monolithic_sles_create();
 
   /* Set the solve and assemble functions */
+
   switch (nsp->sles_param->strategy) {
 
   case CS_NAVSTO_SLES_BY_BLOCKS:
@@ -2175,18 +2186,29 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
   }
 
   /* Set the pointer storing linear algebra features */
+
   sc->msles = msles;
 
   /* Iterative algorithm to handle the non-linearity (Picard by default) */
+
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  sc->algo_info = cs_iter_algo_define(nslesp->nl_algo_verbosity,
+  sc->algo_info = cs_iter_algo_create(nslesp->nl_algo_verbosity,
                                       nslesp->n_max_nl_algo_iter,
                                       nslesp->nl_algo_atol,
                                       nslesp->nl_algo_rtol,
                                       nslesp->nl_algo_dtol);
 
+  if (nslesp->nl_algo == CS_PARAM_NL_ALGO_ANDERSON)
+    sc->algo_info->context =
+      cs_iter_algo_aa_create(nslesp->anderson_param.n_max_dir,
+                             nslesp->anderson_param.starting_iter,
+                             nslesp->anderson_param.droptol,
+                             nslesp->anderson_param.beta,
+                             cs_shared_quant->n_faces);
+
   /* Monitoring */
+
   CS_TIMER_COUNTER_INIT(sc->timer);
 
   return sc;
@@ -2211,10 +2233,12 @@ cs_cdofb_monolithic_free_scheme_context(void   *scheme_context)
     return sc;
 
   /* Free BC structure */
+
   sc->pressure_bc = cs_cdo_bc_free(sc->pressure_bc);
 
   /* Shared structures which have been allocated only for the function used
    * in the monolithic approach have to be freed */
+
   if (_shared_interface_set != NULL)
     cs_interface_set_destroy(&_shared_interface_set);
   if (_shared_range_set != NULL)
@@ -2225,6 +2249,7 @@ cs_cdofb_monolithic_free_scheme_context(void   *scheme_context)
     cs_matrix_structure_destroy(&_shared_matrix_structure);
 
   /* Unset shared pointers */
+
   cs_shared_range_set = NULL;
   cs_shared_matrix_structure = NULL;
   cs_shared_matrix_assembler = NULL;
@@ -2233,11 +2258,18 @@ cs_cdofb_monolithic_free_scheme_context(void   *scheme_context)
   BFT_FREE(sc->mav_structures);
 
   /* Free the context structure for solving saddle-point system */
+
   cs_cdofb_monolithic_sles_free(&(sc->msles));
+
+  /* If the context is not NULL, this means that an Anderson algorithm has been
+     activated otherwise nothing to do */
+
+  cs_iter_algo_aa_free(sc->algo_info);
 
   BFT_FREE(sc->algo_info);
 
   /* Other pointers are only shared (i.e. not owner) */
+
   BFT_FREE(sc);
 
   return NULL;
@@ -2373,6 +2405,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   cs_timer_t  t_start = cs_timer_time();
 
   /* Retrieve high-level structures */
+
   cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
@@ -2471,16 +2504,19 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /* Check the convergence status and update the nl_info structure related
    * to the convergence monitoring */
 
-  while (cs_iter_algo_navsto_fb_picard_cvg(sc->mass_flux_array_pre,
-                                           sc->mass_flux_array,
-                                           div_l2_norm,
-                                           nl_info) == CS_SLES_ITERATING) {
+  while (cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo,
+                                     sc->mass_flux_array_pre,
+                                     sc->mass_flux_array,
+                                     div_l2_norm,
+                                     nl_info) == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
+
     cs_timer_t  t_build_start = cs_timer_time();
 
     /* rhs set to zero and cs_sles_t structure is freed in order to do
      * the setup once again since the matrix should be modified */
+
     cs_cdofb_monolithic_sles_reset(msles);
 
     sc->steady_build(nsp,
@@ -2490,11 +2526,13 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
                      dir_values, enforced_ids, sc);
 
     /* End of the system building */
+
     t_build_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_build_start, &t_build_end);
 
     /* Solve the new system:
      * Update the value of mom_eqc->face_values and sc->pressure->val */
+
     t_solve_start = cs_timer_time();
 
     nl_info->n_inner_iter +=
@@ -2504,32 +2542,46 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
     /* Make sure that the DoFs are correctly enforced after the resolution */
+
     if (nsp->n_solid_cells > 0)
       _mono_enforce_face_velocity(nsp, mom_eqc->face_values);
 
     /* Compute the new velocity divergence and retrieve its L2-norm */
+
     div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                           sc->divergence->val);
 
     /* Compute the new mass flux used as the advection field */
+
     memcpy(sc->mass_flux_array_pre, sc->mass_flux_array,
            n_faces*sizeof(cs_real_t));
 
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
                               sc->mass_flux_array);
 
-  } /* Loop on Picard iterations */
+  } /* Loop on non-linear iterations */
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  cs_iter_algo_check(__func__, mom_eqp->name, "Picard", nl_info);
+  if (nsp->sles_param->nl_algo == CS_PARAM_NL_ALGO_PICARD)
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_info);
+
+  else {
+
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_info);
+
+    cs_iter_algo_aa_free_arrays(nl_info->context);
+
+  }
 
   /* Now compute/update the velocity and pressure fields */
+
   _mono_update_related_cell_fields(nsp, sc, mom_eqc);
 
   /* Frees */
+
   cs_cdofb_monolithic_sles_clean(msles);
   BFT_FREE(dir_values);
   BFT_FREE(enforced_ids);
@@ -2673,6 +2725,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_timer_t  t_start = cs_timer_time();
 
   /* Retrieve high-level structures */
+
   cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
@@ -2692,6 +2745,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Build an array storing the Dirichlet values at faces and ids of DoFs if
    * an enforcement of (internal) DoFs is requested */
+
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *enforced_ids = NULL;
 
@@ -2699,15 +2753,18 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
                         &dir_values, &enforced_ids);
 
   /* Initialize the rhs */
+
   cs_cdofb_monolithic_sles_init(n_cells, n_faces, sc->msles);
 
   /* Main loop on cells to define the linear system to solve */
+
   sc->build(nsp,
             mom_eqc->face_values, sc->velocity->val,
             mom_eqc->face_values_pre, sc->velocity->val_pre,
             dir_values, enforced_ids, sc);
 
   /* End of the system building */
+
   cs_timer_t  t_build_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_start, &t_build_end);
 
@@ -2716,9 +2773,11 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *--------------------------------------------------------------------------*/
 
   /* Current to previous for main variable fields */
+
   _mono_fields_to_previous(sc, cc);
 
   /* Solve the linear system */
+
   cs_timer_t  t_solve_start = cs_timer_time();
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
@@ -2728,23 +2787,27 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Solve the new system:
    * Update the value of mom_eqc->face_values and sc->pressure->val */
+
   cs_iter_algo_reset(nl_info);
 
-  nl_info->n_inner_iter =
-    (nl_info->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+  if (nsp->sles_param->nl_algo == CS_PARAM_NL_ALGO_ANDERSON)
+    cs_iter_algo_aa_allocate_arrays(nl_info->context);
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
   /* Make sure that the DoFs are correctly enforced after the resolution */
+
   if (mom_eqp->n_enforced_cells > 0 || mom_eqp->n_enforced_dofs > 0)
     _mono_enforce_face_velocity(nsp, mom_eqc->face_values);
 
   /* Compute the new velocity divergence and retrieve its L2-norm */
+
   cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                                    sc->divergence->val);
 
   /* Compute the new mass flux used as the advection field */
+
   cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
                             sc->mass_flux_array);
 
@@ -2761,10 +2824,11 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *   sc->mass_flux_array_pre -> flux at t^n= t^n,0 (= t^(n-1)
    *   sc->mass_flux_array     -> flux at t^n,1 (call to .._navsto_mass_flux */
 
-  cs_iter_algo_navsto_fb_picard_cvg(sc->mass_flux_array_pre,
-                                    sc->mass_flux_array,
-                                    div_l2_norm,
-                                    nl_info);
+  cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo,
+                              sc->mass_flux_array_pre,
+                              sc->mass_flux_array,
+                              div_l2_norm,
+                              nl_info);
 
   cs_real_t  *mass_flux_array_k = NULL;
   cs_real_t  *mass_flux_array_kp1 = sc->mass_flux_array;
@@ -2772,13 +2836,16 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   while (nl_info->cvg == CS_SLES_ITERATING) {
 
     /* Start of the system building */
+
     cs_timer_t  t_build_start = cs_timer_time();
 
     /* rhs set to zero and cs_sles_t structure is freed in order to do
      * the setup once again since the matrix should be modified */
+
     cs_cdofb_monolithic_sles_reset(msles);
 
     /* Main loop on cells to define the linear system to solve */
+
     sc->build(nsp,
               /* A current to previous op. has been done */
               mom_eqc->face_values_pre, sc->velocity->val_pre,
@@ -2786,10 +2853,12 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
               dir_values, enforced_ids, sc);
 
     /* End of the system building */
+
     t_build_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_build_start, &t_build_end);
 
     /* Solve the new system */
+
     t_solve_start = cs_timer_time();
 
     nl_info->n_inner_iter +=
@@ -2799,14 +2868,17 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
     /* Make sure that the DoFs are correctly enforced after the resolution */
+
     if (nsp->n_solid_cells > 0)
       _mono_enforce_face_velocity(nsp, mom_eqc->face_values);
 
     /* Compute the new velocity divergence and retrieve its L2-norm */
+
     div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                           sc->divergence->val);
 
     /* mass_flux_array_k <-- mass_flux_array_kp1; update mass_flux_array_kp1 */
+
     if (mass_flux_array_k == NULL)
       BFT_MALLOC(mass_flux_array_k, n_faces, cs_real_t);
     memcpy(mass_flux_array_k, mass_flux_array_kp1, n_faces*sizeof(cs_real_t));
@@ -2817,23 +2889,35 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
 
-    cs_iter_algo_navsto_fb_picard_cvg(mass_flux_array_k,
-                                      mass_flux_array_kp1,
-                                      div_l2_norm,
-                                      nl_info);
+    cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo,
+                                mass_flux_array_k,
+                                mass_flux_array_kp1,
+                                div_l2_norm,
+                                nl_info);
 
-  } /* Loop on Picard iterations */
+  } /* Loop on non-linear iterations */
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  cs_iter_algo_check(__func__, mom_eqp->name, "Picard", nl_info);
+  if (nsp->sles_param->nl_algo == CS_PARAM_NL_ALGO_PICARD)
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_info);
+
+  else {
+
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_info);
+
+    cs_iter_algo_aa_free_arrays(nl_info->context);
+
+  }
 
   /* Now compute/update the velocity and pressure fields */
+
   _mono_update_related_cell_fields(nsp, sc, mom_eqc);
 
   /* Frees */
+
   cs_cdofb_monolithic_sles_clean(msles);
   BFT_FREE(dir_values);
   BFT_FREE(enforced_ids);

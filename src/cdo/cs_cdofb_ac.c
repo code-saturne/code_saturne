@@ -918,13 +918,14 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
                                 cs_boundary_type_t        *fb_type,
                                 void                      *nsc_input)
 {
-  /* Sanity checks */
-  assert(nsp != NULL && nsc_input != NULL);
+  assert(nsp != NULL && nsc_input != NULL); /* Sanity checks */
 
   /* Cast the coupling context (CC) */
+
   cs_navsto_ac_t  *cc = (cs_navsto_ac_t  *)nsc_input;
 
   /* Navier-Stokes scheme context (SC) */
+
   cs_cdofb_ac_t  *sc = NULL;
 
   if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
@@ -934,12 +935,14 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
   BFT_MALLOC(sc, 1, cs_cdofb_ac_t);
 
   /* Quantities shared with the cs_navsto_system_t structure */
+
   sc->coupling_context = cc;
   sc->adv_field = adv_field;
   sc->mass_flux_array = mflux;
   sc->mass_flux_array_pre = mflux_pre;
 
   /* Quick access to the main fields */
+
   sc->velocity = cs_field_by_name("velocity");
   sc->pressure = cs_field_by_name("pressure");
 
@@ -949,12 +952,15 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
     sc->divergence = NULL;
 
   /* Parameters related to the AC algorithm */
+
   sc->is_zeta_uniform = true; /* s_property_is_uniform(cc->zeta); */
 
   /* Boundary treatment */
+
   sc->bf_type = fb_type;
 
   /* Processing of the pressure boundary condition */
+
   sc->pressure_bc = cs_cdo_bc_face_define(CS_CDO_BC_HMG_NEUMANN, /* Default */
                                           true, /* Steady BC up to now */
                                           1,    /* Dimension */
@@ -969,6 +975,7 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   /* Set the way to enforce the Dirichlet BC on the velocity
    * "fixed_wall" means a no-slip BC */
+
   sc->apply_symmetry = cs_cdofb_symmetry;
 
   switch (mom_eqp->default_enforcement) {
@@ -1005,18 +1012,29 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
   }
 
   /* Take into account the gravity effect if needed */
+
   cs_cdofb_navsto_set_gravity_func(nsp, &(sc->add_gravity_term));
 
   /* Iterative algorithm to handle the non-linearity (Picard by default) */
+
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  sc->algo_info = cs_iter_algo_define(nslesp->nl_algo_verbosity,
+  sc->algo_info = cs_iter_algo_create(nslesp->nl_algo_verbosity,
                                       nslesp->n_max_nl_algo_iter,
                                       nslesp->nl_algo_atol,
                                       nslesp->nl_algo_rtol,
                                       nslesp->nl_algo_dtol);
 
+  if (nslesp->nl_algo == CS_PARAM_NL_ALGO_ANDERSON)
+    sc->algo_info->context =
+      cs_iter_algo_aa_create(nslesp->anderson_param.n_max_dir,
+                             nslesp->anderson_param.starting_iter,
+                             nslesp->anderson_param.droptol,
+                             nslesp->anderson_param.beta,
+                             cs_shared_quant->n_faces);
+
   /* Monitoring */
+
   CS_TIMER_COUNTER_INIT(sc->timer);
 
   return sc;
@@ -1041,11 +1059,19 @@ cs_cdofb_ac_free_scheme_context(void   *scheme_context)
     return sc;
 
   /* Free BC structure */
+
   sc->pressure_bc = cs_cdo_bc_free(sc->pressure_bc);
+
+  /* If the context is not NULL, this means that an Anderson algorithm has been
+     activated otherwise nothing to do */
+
+  cs_iter_algo_aa_free(sc->algo_info);
+
 
   BFT_FREE(sc->algo_info);
 
   /* Other pointers are only shared (i.e. not owner) */
+
   BFT_FREE(sc);
 
   return NULL;
@@ -1291,6 +1317,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_timer_t  t_cmpt = cs_timer_time();
 
   /* Retrieve high-level structures */
+
   cs_cdofb_ac_t  *sc = (cs_cdofb_ac_t *)scheme_context;
   cs_navsto_ac_t *cc = sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
@@ -1310,6 +1337,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   const cs_lnum_t  n_faces = quant->n_faces;
 
   /* Retrieve fields */
+
   cs_real_t  *vel_f = mom_eqc->face_values;
   cs_real_t  *vel_c = sc->velocity->val;
   cs_real_t  *div = sc->divergence->val;
@@ -1323,6 +1351,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   /* Build an array storing the Dirichlet values at faces.
      Evaluation should be performed at t_cur + dt_cur */
+
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *enforced_ids = NULL;
 
@@ -1330,6 +1359,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
                         &dir_values, &enforced_ids);
 
   /* Initialize the linear system: matrix and rhs */
+
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
@@ -1342,6 +1372,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 #endif
 
   /* Main function for the building stage */
+
   _implicit_euler_build(nsp,
                         vel_f,  /* previous values for the velocity at faces */
                         vel_c,  /* previous values for the velocity at cells */
@@ -1352,6 +1383,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
                         matrix, rhs);
 
   /* End of the system building */
+
   cs_timer_t  t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_bld, &t_tmp);
 
@@ -1362,6 +1394,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_timer_t t_upd = cs_timer_time();
 
   /* Copy current field values to previous values */
+
   _ac_fields_to_previous(sc, cc);
 
   t_tmp = cs_timer_time();
@@ -1373,6 +1406,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   /* Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
+
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
 
@@ -1396,9 +1430,11 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
    *  1. the divergence: div = B.u_f
    *  2. the mass flux
    */
+
   cs_real_t  div_l2_norm = _ac_update_div(vel_f, div);
 
   /* Compute the new mass flux used as the advection field */
+
   cs_cdofb_navsto_mass_flux(nsp, quant, vel_f, sc->mass_flux_array);
 
   t_tmp = cs_timer_time();
@@ -1421,16 +1457,19 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   /* Check the convergence status and update the nl_info structure related
    * to the convergence monitoring */
 
-  while (cs_iter_algo_navsto_fb_picard_cvg(sc->mass_flux_array_pre,
-                                           sc->mass_flux_array,
-                                           div_l2_norm,
-                                           nl_info) == CS_SLES_ITERATING) {
+  while (cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo,
+                                     sc->mass_flux_array_pre,
+                                     sc->mass_flux_array,
+                                     div_l2_norm,
+                                     nl_info) == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
+
     cs_timer_t  t_build_start = cs_timer_time();
 
     /* rhs set to zero and cs_sles_t structure is freed in order to do
      * the setup once again since the matrix should be modified */
+
 #if defined(HAVE_OPENMP)
 # pragma omp parallel for if (3*n_faces > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
@@ -1440,6 +1479,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     cs_sles_free(sles); sles = NULL;
 
     /* Main loop on cells to define the linear system to solve */
+
     _implicit_euler_build(nsp,
                           vel_f_pre,  /* velocity at faces: previous values */
                           vel_c_pre,  /* velocity at cells: previous values */
@@ -1450,13 +1490,16 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
                           matrix, rhs);
 
     /* End of the system building */
+
     cs_timer_t t_build_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_build_start, &t_build_end);
 
     /* Solve the new system */
+
     t_solve_start = cs_timer_time();
 
     /* Redo the setup since the matrix is modified */
+
     sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
     cs_sles_setup(sles, matrix);
 
@@ -1475,32 +1518,48 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
     /* Compute the velocity divergence and retrieve its L2-norm */
+
     div_l2_norm = _ac_update_div(vel_f, div);
 
     /* Compute the new mass flux used as the advection field */
+
     memcpy(sc->mass_flux_array_pre, sc->mass_flux_array,
            n_faces*sizeof(cs_real_t));
 
     cs_cdofb_navsto_mass_flux(nsp, quant, vel_f, sc->mass_flux_array);
 
-  } /* Loop on Picard iterations */
+  } /* Loop on non linear iterations */
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  cs_iter_algo_check(__func__, mom_eqp->name, "Picard", nl_info);
+  if (nsp->sles_param->nl_algo == CS_PARAM_NL_ALGO_PICARD)
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_info);
+
+  else {
+
+    assert(nsp->sles_param->nl_algo == CS_PARAM_NL_ALGO_ANDERSON);
+
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_info);
+
+    cs_iter_algo_aa_free_arrays(nl_info->context);
+
+  }
 
   /* Update pressure and the cell velocity */
+
   t_upd = cs_timer_time();
 
   /* Updates after the resolution:
    *  the pressure field: pr -= dt / zeta * div(u_f)
    */
+
   _ac_update_pr(ts->t_cur, ts->dt[0], cc->zeta, mom_eqp, mom_eqb, div, pr);
 
   /* Compute values at cells vel_c from values at faces vel_f
      vel_c = acc^-1*(RHS - Acf*vel_f) */
+
   cs_static_condensation_recover_vector(connect->c2f,
                                         mom_eqc->rc_tilda, mom_eqc->acf_tilda,
                                         vel_f, vel_c);
@@ -1514,6 +1573,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 #endif
 
   /* Frees */
+
   BFT_FREE(dir_values);
   BFT_FREE(rhs);
   cs_sles_free(sles);

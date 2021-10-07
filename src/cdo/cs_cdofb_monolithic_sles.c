@@ -2981,7 +2981,7 @@ _init_gkb_builder(const cs_navsto_param_t    *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  gkb->info = cs_iter_algo_define(nslesp->il_algo_verbosity,
+  gkb->info = cs_iter_algo_create(nslesp->il_algo_verbosity,
                                   nslesp->n_max_il_algo_iter,
                                   nslesp->il_algo_atol,
                                   nslesp->il_algo_rtol,
@@ -3086,7 +3086,7 @@ _init_uzawa_builder(const cs_navsto_param_t      *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  uza->info = cs_iter_algo_define(nslesp->il_algo_verbosity,
+  uza->info = cs_iter_algo_create(nslesp->il_algo_verbosity,
                                   nslesp->n_max_il_algo_iter,
                                   nslesp->il_algo_atol,
                                   nslesp->il_algo_rtol,
@@ -4333,7 +4333,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
   cs_iter_algo_info_t
-    *saddle_info = cs_iter_algo_define(nslesp->il_algo_verbosity,
+    *saddle_info = cs_iter_algo_create(nslesp->il_algo_verbosity,
                                        nslesp->n_max_il_algo_iter,
                                        nslesp->il_algo_atol,
                                        nslesp->il_algo_rtol,
