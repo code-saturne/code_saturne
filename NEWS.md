@@ -3,6 +3,8 @@ Release 7.0.2 (not released yet)
 
 Bug fixes:
 
+- GUI: Fix setting of scalar diffusivity formulae over multiple zones
+
 - GUI: Fix list of available parameters for flow rates formulae
     * face coordinates were available to users, which should not be the
       case, and may lead to an error when trying to launch the case since
