@@ -1,3 +1,10 @@
+Release 7.0.3 (not released yet)
+--------------------------------
+
+Bug fixes:
+
+- GUI: fix crash on MEG expression with missing parentheses.
+
 Release 7.0.2 (October 8 2021)
 ------------------------------
 

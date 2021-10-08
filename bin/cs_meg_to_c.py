@@ -2121,8 +2121,11 @@ class meg_to_c_interpreter:
 
         if function_name in ('vol', 'bnd', 'src', 'ini', 'ibm', 'fsi',
                              'pfl', 'pwa'):
-            self.save_function(func_type=function_name,
-                               hard_path=self.tmp_path)
+            try:
+                self.save_function(func_type=function_name,
+                                   hard_path=self.tmp_path)
+            except Exception as e:
+                return -1, str(e), 1
 
         from code_saturne import cs_compile
 

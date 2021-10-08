@@ -674,17 +674,11 @@ class cs_math_parser:
                 if j+i < len(exp_lines):
                     err_msg.append(exp_lines[j-i])
 
-            """
             msg = ''
             for l in err_msg:
                 msg += l + '\n'
 
             raise Exception(msg)
-            """
-            for l in err_msg:
-                print(l)
-
-            return None
 
         return current
 
