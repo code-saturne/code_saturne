@@ -1656,11 +1656,9 @@ endif
 
 if (staggered.eq.1) then
   do iel = 1, ncel
-    if (cell_is_1d(iel).eq.1) then
-      smbr(1,iel) = 0
-      smbr(2,iel) = 0
-      smbr(3,iel) = 0
-    endif
+    smbr(1,iel) = 0
+    smbr(2,iel) = 0
+    smbr(3,iel) = 0
   enddo
 endif
 

@@ -126,8 +126,7 @@ static const int _type_flag_mask[] = {CS_VOLUME_ZONE_INITIALIZATION,
                                       CS_VOLUME_ZONE_SOURCE_TERM,
                                       CS_VOLUME_ZONE_MASS_SOURCE_TERM,
                                       CS_VOLUME_ZONE_GWF_SOIL,
-                                      CS_VOLUME_ZONE_SOLID,
-                                      CS_VOLUME_ZONE_1D};
+                                      CS_VOLUME_ZONE_SOLID};
 
 static const char *_type_flag_name[] = {N_("initialization"),
                                         N_("porosity"),
@@ -135,8 +134,7 @@ static const char *_type_flag_name[] = {N_("initialization"),
                                         N_("source term"),
                                         N_("mass source term"),
                                         N_("groundwater soil"),
-                                        N_("solid"),
-                                        N_("1d")};
+                                        N_("solid")};
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.

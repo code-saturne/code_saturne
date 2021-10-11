@@ -3228,18 +3228,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function returning 1 for 1d cells
-
-    function cs_f_velocity_pressure_cell_is_1d(cell_id) result(is_1d) &
-      bind(C, name='cs_f_velocity_pressure_cell_is_1d')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: cell_id
-      integer(kind=c_int) :: is_1d
-    end function cs_f_velocity_pressure_cell_is_1d
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for enthalpy-temperature conversion at cells
 
     subroutine cs_ht_convert_h_to_t_cells(h, t)                    &
@@ -5352,35 +5340,6 @@ contains
     call cs_atmo_set_aero_conc_file_name(c_name)
 
   end subroutine atmo_set_aero_conc_file_name
-
-  !=============================================================================
-
-  !> \brief Indicate if a cell is 1d
-
-  !> \param[in]     iel       cell number (cell_id + 1)
-  !> \result        is_1d
-
-  function cell_is_1d(iel) result(is_1d)
-
-    use, intrinsic :: iso_c_binding
-    implicit none
-
-    ! Arguments
-
-    integer :: iel
-    integer :: is_1d
-
-    ! Local variables
-
-    integer(kind=c_int) :: c_cell_id
-    integer(kind=c_int) :: c_is_1d
-
-
-    c_cell_id = iel - 1
-    c_is_1d = cs_f_velocity_pressure_cell_is_1d(c_cell_id)
-    is_1d = c_is_1d
-
-  end function cell_is_1d
 
   !=============================================================================
 

@@ -486,19 +486,23 @@ do ifac = 1, nfac
   iflux(ifac) = 0.d0
 enddo
 
-do ifac = 1, nfabor
-  iel = ifabor(ifac)
-  if (cell_is_1d(iel).eq.0) then
+if (staggered.eq.0) then
+  do ifac = 1, nfabor
     coefa_dp(ifac) = 0.d0
     coefaf_dp(ifac) = 0.d0
-  else
+    coefb_dp(ifac) = coefb_p(ifac)
+    coefbf_dp(ifac) = coefbf_p(ifac)
+    bflux(ifac) = 0.d0
+  enddo
+else
+  do ifac = 1, nfabor
     coefa_dp(ifac) = coefa_p(ifac)
     coefaf_dp(ifac) = coefaf_p(ifac)
-  endif
-  coefb_dp(ifac) = coefb_p(ifac)
-  coefbf_dp(ifac) = coefbf_p(ifac)
-  bflux(ifac) = 0.d0
-enddo
+    coefb_dp(ifac) = coefb_p(ifac)
+    coefbf_dp(ifac) = coefbf_p(ifac)
+    bflux(ifac) = 0.d0
+  enddo
+endif
 
 
 ! Compute a pseudo hydrostatic pressure increment stored
@@ -797,17 +801,13 @@ if (staggered.eq.1) then
   do ifac = 1, nfac
     ii = ifacel(1,ifac)
     jj = ifacel(2,ifac)
-    if (cell_is_1d(ii).eq.1.or.cell_is_1d(jj).eq.1) then
-      dtm = 0.5d0*(dt(ii)+dt(jj))
-      viscf(ifac) = taui(ifac) / dtm * viscf(ifac)
-    endif
+    dtm = 0.5d0*(dt(ii)+dt(jj))
+    viscf(ifac) = taui(ifac) / dtm * viscf(ifac)
   enddo
   call synsca(viscf)
   do ifac = 1, nfabor
     ii = ifabor(ifac)
-    if (cell_is_1d(ii).eq.1) then
-      viscb(ifac) = taub(ifac) / dt(ii) * viscb(ifac)
-    endif
+    viscb(ifac) = taub(ifac) / dt(ii) * viscb(ifac)
   enddo
   call synsca(viscb)
 endif
@@ -974,26 +974,22 @@ if (staggered.eq.1) then
     do ifac = 1, nfac
       ii = ifacel(1,ifac)
       jj = ifacel(2,ifac)
-      if (cell_is_1d(ii).eq.1.or.cell_is_1d(jj).eq.1) then
-        dtm = 0.5d0*(dt(ii)+dt(jj))
-        porosf = min(porosi(ii),porosi(jj))
-        imasfl(ifac) = taui(ifac) / dtm * imasfla(ifac)+porosf*taui(ifac)*sti(ifac)*suffan(ifac)
-      endif
+      dtm = 0.5d0*(dt(ii)+dt(jj))
+      porosf = min(porosi(ii),porosi(jj))
+      imasfl(ifac) = taui(ifac) / dtm * imasfla(ifac)+porosf*taui(ifac)*sti(ifac)*suffan(ifac)
     enddo
     do ifac = 1, nfabor
       ii = ifabor(ifac)
-      if (cell_is_1d(ii).eq.1) then
-        if ( itypfb(ifac).eq.ientre ) then
-          bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfl(ifac)
-        else
-          bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfla(ifac)
-        endif
+      if ( itypfb(ifac).eq.ientre ) then
+        bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfl(ifac)
+      else
+        bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfla(ifac)
       endif
     enddo
 
     do ifac = 1, nfabor
       ii = ifabor(ifac)
-      if (itypfb(ifac).eq.ientre.and.cell_is_1d(ii).eq.1) then
+      if (itypfb(ifac).eq.ientre) then
 
         dtm = 0.5d0*(dt(ii)+dt(jj))
         dimp = -(1.d0-dtm/taub(ifac))*bmasfl(ifac)/suffbn(ifac)
@@ -1010,25 +1006,21 @@ if (staggered.eq.1) then
     do ifac = 1, nfac
       ii = ifacel(1,ifac)
       jj = ifacel(2,ifac)
-      if (cell_is_1d(ii).eq.1.or.cell_is_1d(jj).eq.1) then
-        dtm = 0.5d0*(dt(ii)+dt(jj))
-        imasfl(ifac) = taui(ifac) / dtm * imasfla(ifac)+taui(ifac)*sti(ifac)*suffan(ifac)
-      endif
+      dtm = 0.5d0*(dt(ii)+dt(jj))
+      imasfl(ifac) = taui(ifac) / dtm * imasfla(ifac)+taui(ifac)*sti(ifac)*suffan(ifac)
     enddo
     do ifac = 1, nfabor
       ii = ifabor(ifac)
-      if (cell_is_1d(ii).eq.1) then
-        if ( itypfb(ifac).eq.ientre ) then
-          bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfl(ifac)
-        else
-          bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfla(ifac)
-        endif
+      if ( itypfb(ifac).eq.ientre ) then
+        bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfl(ifac)
+      else
+        bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfla(ifac)
       endif
     enddo
 
     do ifac = 1, nfabor
       ii = ifabor(ifac)
-      if (itypfb(ifac).eq.ientre.and.cell_is_1d(ii).eq.1) then
+      if (itypfb(ifac).eq.ientre) then
 
         dtm = 0.5d0*(dt(ii)+dt(jj))
         dimp = -(1.d0-dtm/taub(ifac))*bmasfl(ifac)/suffbn(ifac)
@@ -1283,26 +1275,34 @@ nswmpr = vcopt_p%nswrsm
 !       dphi       is the increment of the increment between sweeps
 !       cpro_divu  is the initial divergence of the predicted mass flux
 
-if (f_id_ph.ge.0) then
-  do iel = 1, ncel
-    if (cell_is_1d(iel).eq.0) then
+if (staggered.eq.0) then
+  if (f_id_ph.ge.0) then
+    do iel = 1, ncel
       phi(iel)  = cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)
-    else
-      phi(iel)  = cvara_pr(iel) + cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)
-    endif
-    dphi(iel) = 0.d0
-    phia(iel) = phi(iel)
-  enddo
-else
-  do iel = 1, ncel
-    if (cell_is_1d(iel).eq.0) then
+      dphi(iel) = 0.d0
+      phia(iel) = phi(iel)
+    enddo
+  else
+    do iel = 1, ncel
       phi(iel) = 0.d0
-    else
+      dphi(iel) = 0.d0
+      phia(iel) = phi(iel)
+    enddo
+  endif
+else
+  if (f_id_ph.ge.0) then
+    do iel = 1, ncel
+      phi(iel)  = cvara_pr(iel) + cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)
+      dphi(iel) = 0.d0
+      phia(iel) = phi(iel)
+    enddo
+  else
+    do iel = 1, ncel
       phi(iel)  = cvara_pr(iel)
-    endif
-    dphi(iel) = 0.d0
-    phia(iel) = phi(iel)
-  enddo
+      dphi(iel) = 0.d0
+      phia(iel) = phi(iel)
+    enddo
+  endif
 endif
 
 relaxp = vcopt_p%relaxv
@@ -2393,14 +2393,15 @@ if (idtvar.lt.0) then
     cvar_pr(iel) = cvar_pr(iel) + vcopt_p%relaxv*phi(iel)
   enddo
 else
-
-  do iel = 1, ncel
-    if (cell_is_1d(iel).eq.0) then
+  if (staggered.eq.0) then
+    do iel = 1, ncel
       cvar_pr(iel) = cvar_pr(iel) + phi(iel)
-    else
+    enddo
+  else
+    do iel = 1, ncel
       cvar_pr(iel) = phi(iel)
-    endif
-  enddo
+    enddo
+  endif
 endif
 
 ! Transformation of volumic mass fluxes into massic mass fluxes
