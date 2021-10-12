@@ -29,6 +29,11 @@ Physical modeling:
 
 - Solidification: Add a Stefan model for taking into account the phase
   change in a purely thermal model.
+- Solidification: Add a non-linear update of the thermal source term
+  with the Voller model relying on the variation of enthalpy.
+- Solidification: Add a new strategy to update the thermal source term
+  in the Voller (linear or non-linear) model relying on the
+  solidification path.
 
 Numerics:
 
