@@ -115,21 +115,6 @@ cs_control_comm_write(const void  *rec,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Read a record from a client.
- *
- * \param[out]  rec    pointer to data to read
- * \param[in]   size   size of each data element, in bytes
- * \param[in]   count  number of data elements
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_control_comm_read(void    *rec,
-                     size_t   size,
-                     size_t   count);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Read data from a client into a command queue
  *
  * The function updates a pointer (view) to the data.

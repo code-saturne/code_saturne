@@ -112,6 +112,9 @@ typedef struct {
                                                 for IP sockets) */
 
 #if defined(HAVE_SOCKET)
+  FILE                   *recv_log;          /* If active, log of date read */
+  FILE                   *trace;             /* If active, trace */
+
   int                     socket;            /* Socket number; */
 #endif
 
@@ -310,6 +313,15 @@ _comm_read_sock(const cs_control_comm_t  *comm,
 
     ret = read(comm->socket, _rec + start_id, n_loc);
 
+    if (comm->trace != NULL) {
+      fprintf(comm->trace, "read %d of %d bytes (size %d): [",
+              (int)ret, (int)n_bytes, (int)size);
+      for (ssize_t j = 0; j < ret; j++)
+        fprintf(comm->trace, "%c", _rec[start_id+j]);
+      fprintf(comm->trace, "]\n");
+      fflush(comm->trace);
+    }
+
     if (ret < 1)
       bft_error(__FILE__, __LINE__, errno,
                 _("Communication %s:\n"
@@ -373,6 +385,21 @@ _comm_write_sock(cs_control_comm_t  *comm,
       ret = write(comm->socket, _rec + start_id, n_loc);
     else
       ret = write(comm->socket, _rec_swap + start_id, n_loc);
+
+    if (comm->trace != NULL) {
+      fprintf(comm->trace, "write %d bytes (size %d): [",
+              (int)n_loc);
+      if (_rec_swap == NULL) {
+        for (ssize_t j = 0; j < n_loc; j++)
+          fprintf(comm->trace, "%c", _rec[start_id+j]);
+      }
+      else {
+        for (ssize_t j = 0; j < n_loc; j++)
+          fprintf(comm->trace, "%c", _rec_swap[start_id+j]);
+      }
+      fprintf(comm->trace, "]\n");
+      fflush(comm->trace);
+    }
 
     if (ret < 1) {
       if (comm->errors_are_fatal)
@@ -461,6 +488,15 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
 
     ssize_t  ret = read(comm->socket, queue->buf + start_id, n_loc_max);
 
+    if (comm->trace != NULL) {
+      fprintf(comm->trace, "read %d of %d: [",
+              (int)ret, (int)n_loc_max);
+      for (ssize_t j = 0; j < ret; j++)
+        fprintf(comm->trace, "%c", queue->buf[start_id+j]);
+      fprintf(comm->trace, "]\n");
+      fflush(comm->trace);
+    }
+
     if (ret < 1 && start_id == 0) {
       if (comm->errors_are_fatal)
         bft_error(__FILE__, __LINE__, errno,
@@ -504,6 +540,12 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
     else
       break;
 
+  }
+
+  if (comm->recv_log != NULL) {
+    for (size_t i = queue->buf_idx[0]; i < queue->buf_idx[1]; i++)
+      fprintf(comm->recv_log, "%c", queue->buf[i]);
+    fprintf(comm->recv_log, "\n");
   }
 }
 
@@ -747,6 +789,9 @@ _comm_initialize(const char             *port_name,
 #endif
 
 #if defined(HAVE_SOCKET)
+  comm->recv_log = NULL;
+  comm->trace = NULL;
+
   comm->socket = -1;
 #endif
 
@@ -765,6 +810,14 @@ _comm_initialize(const char             *port_name,
     if (type == CS_CONTROL_COMM_TYPE_SOCKET) {
 
 #if defined(HAVE_SOCKET)
+
+      const char *p;
+      p = getenv("CS_CONTROL_RECV_LOG");
+      if (p != NULL)
+        comm->recv_log = fopen(p, "w");
+      p = getenv("CS_CONTROL_COMM_TRACE");
+      if (p != NULL)
+        comm->trace = fopen(p, "w");
 
       _comm_sock_connect(comm);
       retval = _comm_sock_handshake(comm, CS_CONTROL_COMM_MAGIC_STRING, key);
@@ -826,8 +879,13 @@ _comm_finalize(cs_control_comm_t  **comm)
     }
 
 #if defined(HAVE_SOCKET)
-    if (_comm->socket > -1)
+    if (_comm->socket > -1) {
       _comm_sock_disconnect(_comm);
+      if (_comm->recv_log != NULL)
+        fclose(_comm->recv_log);
+      if (_comm->trace != NULL)
+        fclose(_comm->trace);
+    }
 #endif
 
     BFT_FREE(_comm->port_name);
@@ -1636,33 +1694,6 @@ cs_control_comm_write(const void  *rec,
 #if defined(HAVE_SOCKET)
     if (comm->socket > -1)
       _comm_write_sock(comm, rec, size, count);
-#endif
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Read a record from a client.
- *
- * \param[out]  rec    pointer to data to read
- * \param[in]   size   size of each data element, in bytes
- * \param[in]   count  number of data elements
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_control_comm_read(void    *rec,
-                     size_t   size,
-                     size_t   count)
-{
-  cs_control_comm_t *comm = _cs_glob_control_comm;
-
-  if (cs_glob_rank_id <= 0) {
-    assert(comm != NULL);
-
-#if defined(HAVE_SOCKET)
-    if (comm->socket > -1)
-      _comm_read_sock(comm, rec, size, count);
 #endif
   }
 }
