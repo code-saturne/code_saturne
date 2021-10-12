@@ -415,50 +415,6 @@ _variant_build_list(int                             n_fill_types,
 
   }
 
-  if (type_filter[CS_MATRIX_CSR_SYM]) {
-
-    for (i = 0, _n_fill_types = 0; i < n_fill_types; i++) {
-      if (fill_types[i] == CS_MATRIX_SCALAR_SYM) {
-        _fill_types[_n_fill_types++] = fill_types[i];
-      }
-    }
-
-    if (_n_fill_types > 0) {
-
-      _variant_add("CSR_SYM",
-                   NULL,
-                   CS_MATRIX_CSR_SYM,
-                   _n_fill_types,
-                   _fill_types,
-                   2, /* ed_flag */
-                   "standard",
-                   NULL,
-                   NULL,
-                   n_variants,
-                   &n_variants_max,
-                   m_variant);
-
-#if defined(HAVE_MKL)
-
-      _variant_add("CSR_SYM, with MKL",
-                   NULL,
-                   CS_MATRIX_CSR_SYM,
-                   _n_fill_types,
-                   _fill_types,
-                   0, /* ed_flag */
-                   "mkl",
-                   NULL,
-                   NULL,
-                   n_variants,
-                   &n_variants_max,
-                   m_variant);
-
-#endif /* defined(HAVE_MKL) */
-
-    }
-
-  }
-
   if (type_filter[CS_MATRIX_MSR]) {
 
     _variant_add("MSR",

@@ -56,9 +56,8 @@ typedef enum {
 
   CS_MATRIX_NATIVE,           /*!< Native (edge-based) matrix storage */
   CS_MATRIX_CSR,              /*!< Compressed Sparse Row storage */
-  CS_MATRIX_CSR_SYM,          /*!< Compressed Symmetric Sparse Row storage */
   CS_MATRIX_MSR,              /*!< Modified Compressed Sparse Row storage
-                                (separate diagonal) */
+                                   (separate diagonal) */
 
   CS_MATRIX_N_BUILTIN_TYPES,  /*!< Number of known and built-in matrix types */
 
@@ -965,11 +964,6 @@ cs_matrix_variant_apply(cs_matrix_t          *m,
  *     vector          (For vector machine with compatible numbering)
  *
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
- *     default
- *     standard
- *     mkl             (with MKL)
- *
- *   CS_MATRIX_CSR_SYM (for CS_MATRIX_SCALAR_SYM)
  *     default
  *     standard
  *     mkl             (with MKL)

@@ -480,76 +480,6 @@ _diag_dom_csr(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Measure Diagonal dominance of symmetric CSR matrix.
- *
- * parameters:
- *   matrix <-- Pointer to matrix structure
- *   dd     --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_diag_dom_csr_sym(const cs_matrix_t  *matrix,
-                  cs_real_t          *restrict dd)
-{
-  cs_lnum_t  ii, jj, n_cols;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
-
-  const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  cs_lnum_t sym_jj_start = 0;
-
-  /* By construction, the matrix has either a full or an empty
-     diagonal structure, so testing this on the first row is enough */
-
-  if (ms->col_id[ms->row_index[0]] == 0)
-    sym_jj_start = 1;
-
-  /* Initialize dd */
-
-  for (ii = 0; ii < ms->n_cols; ii++)
-    dd[ii] = 0.0;
-
-  /* Upper triangular + diagonal part in case of symmetric structure */
-
-  for (ii = 0; ii < n_rows; ii++) {
-    cs_real_t  sii = 0.0;
-    col_id = ms->col_id + ms->row_index[ii];
-    m_row = mc->val + ms->row_index[ii];
-    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-    for (jj = 0; jj < n_cols; jj++) {
-      double sign = (col_id[jj] == ii) ? 1. : -1.;
-      sii += sign * fabs(m_row[jj]);
-    }
-    dd[ii] += sii;
-    for (jj = sym_jj_start; jj < n_cols; jj++)
-      dd[col_id[jj]] -= fabs(m_row[jj]);
-  }
-
-  /* normalize */
-
-  for (ii = 0; ii < n_rows; ii++) {
-    cs_real_t sii = 0.0, d_val = 0.0;
-    col_id = ms->col_id + ms->row_index[ii];
-    m_row = mc->val + ms->row_index[ii];
-    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-    for (jj = 0; jj < n_cols; jj++) {
-      if (col_id[jj] == ii)
-        d_val = fabs(m_row[jj]);
-    }
-    if (d_val > 1.e-18)
-      sii /= d_val;
-    else if (sii > -1.e-18)
-      sii = -1.e18;
-    else
-      sii = 0;
-    dd[ii] = sii;
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Measure Diagonal dominance of MSR matrix.
  *
  * parameters:
@@ -983,92 +913,6 @@ _pre_dump_csr(const cs_matrix_t   *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Prepare dump of symmetric CSR matrix.
- *
- * parameters:
- *   matrix    <-- Pointer to matrix structure
- *   g_coo_num <-- Global coordinate numbers
- *   m_coo     --> Matrix coefficient coordinates array
- *   m_val     --> Matrix coefficient values array
- *
- * returns:
- *   number of matrix entries
- *----------------------------------------------------------------------------*/
-
-static cs_lnum_t
-_pre_dump_csr_sym(const cs_matrix_t  *matrix,
-                  const cs_gnum_t     *g_coo_num,
-                  cs_gnum_t          **m_coo,
-                  cs_real_t          **m_val)
-{
-  cs_lnum_t  ii, jj, n_cols;
-  cs_lnum_t  *restrict col_id;
-  cs_real_t  *restrict m_row;
-
-  cs_gnum_t   *restrict _m_coo;
-  cs_real_t   *restrict _m_val;
-
-  const cs_matrix_struct_csr_sym_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_sym_t  *mc = matrix->coeffs;
-  cs_lnum_t  dump_id = 0;
-  cs_lnum_t  n_rows = ms->n_rows;
-  cs_lnum_t sym_jj_start = 1;
-
-  cs_lnum_t  n_entries = ms->row_index[n_rows] * 2;
-
-  /* By construction, the matrix has either a full or an empty
-     diagonal structure, so testing this on the first row is enough */
-
-  if (ms->col_id[ms->row_index[0]] != 0)
-    n_entries += n_rows;
-  else
-    n_entries -= n_rows;
-
-  /* Allocate arrays */
-
-  BFT_MALLOC(_m_coo, n_entries*2, cs_gnum_t);
-  BFT_MALLOC(_m_val, n_entries, double);
-
-  *m_coo = _m_coo;
-  *m_val = _m_val;
-
-  if (ms->col_id[ms->row_index[0]] != 0) {
-    sym_jj_start = 0;
-#   pragma omp parallel for
-    for (ii = 0; ii < n_rows; ii++) {
-      _m_coo[ii*2] = g_coo_num[ii];
-      _m_coo[ii*2+1] = g_coo_num[ii];
-      _m_val[ii] = 0.0;
-    }
-    dump_id = n_rows;
-  }
-
-  for (ii = 0; ii < n_rows; ii++) {
-    col_id = ms->col_id + ms->row_index[ii];
-    m_row = mc->val + ms->row_index[ii];
-    n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-    /* Upper triangular + diagonal part */
-    for (jj = 0; jj < n_cols; jj++) {
-      _m_coo[dump_id*2] = g_coo_num[ii];
-      _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]];
-      _m_val[dump_id] = m_row[jj];
-      dump_id += 1;
-    }
-    /* Lower triangular part */
-    for (jj = sym_jj_start; jj < n_cols; jj++) {
-      _m_coo[dump_id*2] = g_coo_num[col_id[jj]];
-      _m_coo[dump_id*2+1] = g_coo_num[ii];
-      _m_val[dump_id] = m_row[jj];
-      dump_id += 1;
-    }
-  }
-
-  assert(n_entries == dump_id);
-
-  return n_entries;
-}
-
-/*----------------------------------------------------------------------------
  * Prepare dump of MSR matrix.
  *
  * parameters:
@@ -1366,10 +1210,6 @@ _prepare_matrix_dump_data(const cs_matrix_t   *m,
   case CS_MATRIX_CSR:
     assert(m->db_size[3] == 1);
     _n_entries = _pre_dump_csr(m, g_coo_num, &_m_coords, &_m_vals);
-    break;
-  case CS_MATRIX_CSR_SYM:
-    assert(m->db_size[3] == 1);
-    _n_entries = _pre_dump_csr_sym(m, g_coo_num, &_m_coords, &_m_vals);
     break;
   case CS_MATRIX_MSR:
     if (m->db_size[3] == 1)
@@ -1851,21 +1691,6 @@ _frobenius_norm(const cs_matrix_t  *m)
     }
     break;
 
-  case CS_MATRIX_CSR_SYM:
-    assert(ft == CS_MATRIX_SCALAR_SYM);
-    {
-      const cs_matrix_struct_csr_sym_t  *ms = m->structure;
-      const cs_matrix_coeff_csr_sym_t  *mc = m->coeffs;
-      cs_lnum_t n_vals = ms->row_index[ms->n_rows];
-      retval = cs_dot_xx(n_vals, mc->val);
-      if (ft == CS_MATRIX_SCALAR_SYM) {
-        const cs_real_t *d = cs_matrix_get_diagonal(m);
-        retval -= cs_dot_xx(m->n_rows, d);
-      }
-      cs_parall_sum(1, CS_DOUBLE, &retval);
-    }
-    break;
-
   case CS_MATRIX_MSR:
     if (   (m->eb_size[0]*m->eb_size[0] == m->eb_size[3])
         && (m->db_size[0]*m->db_size[0] == m->db_size[3])) {
@@ -1923,10 +1748,6 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
   case CS_MATRIX_CSR:
     assert(matrix->db_size[3] == 1);
     _diag_dom_csr(matrix, dd);
-    break;
-  case CS_MATRIX_CSR_SYM:
-    assert(matrix->db_size[3] == 1);
-    _diag_dom_csr_sym(matrix, dd);
     break;
   case CS_MATRIX_MSR:
     if (matrix->db_size[3] == 1)
@@ -2081,18 +1902,16 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
                         "matrix_native_sym",
                         "matrix_native_block",
                         "matrix_csr",
-                        "matrix_csr_sym",
                         "matrix_msr",
                         "matrix_msr_block"};
   const cs_matrix_type_t type[] = {CS_MATRIX_NATIVE,
                                    CS_MATRIX_NATIVE,
                                    CS_MATRIX_NATIVE,
                                    CS_MATRIX_CSR,
-                                   CS_MATRIX_CSR_SYM,
                                    CS_MATRIX_MSR,
                                    CS_MATRIX_MSR};
-  const bool sym_flag[] = {false, true, false, false, true, false, false};
-  const int block_flag[] = {0, 0, 1, 0, 0, 0, 1};
+  const bool sym_flag[] = {false, true, false, false, false, false};
+  const int block_flag[] = {0, 0, 1, 0, 0, 1};
 
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/

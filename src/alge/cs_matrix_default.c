@@ -560,11 +560,6 @@ cs_matrix_default(bool             symmetric,
   if (mft == CS_MATRIX_BLOCK)
     t = CS_MATRIX_NATIVE;
 
-  else if (t == CS_MATRIX_CSR_SYM) {
-    if (mft != CS_MATRIX_SCALAR_SYM)
-      t = CS_MATRIX_NATIVE;
-  }
-
   m = _get_matrix(t);
 
   return m;

@@ -54,7 +54,6 @@ BEGIN_C_DECLS
  *  - Native
  *  - Compressed Sparse Row (CSR)
  *  - Modified Compressed Sparse Row (MSR), with separate diagonal
- *  - Symmetric Compressed Sparse Row (CSR_SYM)
  */
 
 /*----------------------------------------------------------------------------
@@ -201,44 +200,6 @@ typedef struct _cs_matrix_coeff_csr_t {
                                          if queried */
 
 } cs_matrix_coeff_csr_t;
-
-/* CSR_SYM (Symmetric Compressed Sparse Row) matrix structure representation */
-/*---------------------------------------------------------------------------*/
-
-typedef struct _cs_matrix_struct_csr_sym_t {
-
-  cs_lnum_t         n_rows;           /* Local number of rows */
-  cs_lnum_t         n_cols;           /* Local number of columns
-                                         (> n_rows in case of ghost columns) */
-
-  /* Pointers to structure arrays and info (row_index, col_id) */
-
-  bool              have_diag;        /* Has non-zero diagonal */
-  bool              direct_assembly;  /* True if each value corresponds to
-                                         a unique face ; false if multiple
-                                         faces contribute to the same
-                                         value (i.e. we have split faces) */
-
-  cs_lnum_t        *row_index;        /* Row index (0 to n-1) */
-  cs_lnum_t        *col_id;           /* Column id (0 to n-1) */
-
-} cs_matrix_struct_csr_sym_t;
-
-/* symmetric CSR matrix coefficients representation */
-/*--------------------------------------------------*/
-
-typedef struct _cs_matrix_coeff_csr_sym_t {
-
-  cs_real_t        *val;              /* Matrix coefficients */
-
-  /* Pointers to auxiliary arrays used for queries */
-
-  const cs_real_t  *d_val;            /* Pointer to diagonal matrix
-                                         coefficients, if queried */
-  cs_real_t        *_d_val;           /* Diagonal matrix coefficients,
-                                         if queried */
-
-} cs_matrix_coeff_csr_sym_t;
 
 /* MSR matrix coefficients representation */
 /*----------------------------------------*/
