@@ -237,6 +237,7 @@ typedef struct {
   int                        space_poly_degree;
 
   /*!
+   * @}
    * @name Legacy Settings
    * @{
    *
