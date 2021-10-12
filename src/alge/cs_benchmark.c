@@ -693,16 +693,18 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
         da[ii] = 1.0 + cos(ii);
     }
 
-    const cs_gnum_t *face_gnum = cs_glob_mesh->global_i_face_num;
-    if (face_gnum != NULL) {
+    if (cell_gnum != NULL) {
 #     pragma omp parallel for
       for (ii = 0; ii < n_edges; ii++) {
-        cs_gnum_t jj = (face_gnum[ii] - 1)*se;
+        cs_lnum_t i0 = edges[ii][0];
+        cs_lnum_t i1 = edges[ii][1];
+        cs_gnum_t j0 = (cell_gnum[i0] - 1)*se;
+        cs_gnum_t j1 = (cell_gnum[i1] - 1)*se;
         for (cs_lnum_t kk = 0; kk < se; kk++) {
           xa[(ii*se+kk)*2]
-            = 0.5*(0.9 + cos(jj*se+kk));
+            = 0.5*(0.45 + cos(j0*se+kk) + cos(j1*se+kk));
           xa[(ii*se+kk)*2 + 1]
-            = -0.5*(0.9 + cos(jj*se+kk));
+            = -0.5*(0.45 + cos(j0*se+kk) + cos(j1*se+kk));
         }
       }
     }
@@ -711,6 +713,14 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
       for (ii = 0; ii < n_edges*se; ii++) {
         xa[ii*2] = 0.5*(0.9 + cos(ii));
         xa[ii*2 + 1] = -0.5*(0.9 + cos(ii));
+        cs_lnum_t i0 = edges[ii][0];
+        cs_lnum_t i1 = edges[ii][1];
+        for (cs_lnum_t kk = 0; kk < se; kk++) {
+          xa[(ii*se+kk)*2]
+            = 0.5*(0.45 + cos(i0*se+kk) + cos(i1*se+kk));
+          xa[(ii*se+kk)*2 + 1]
+            = -0.5*(0.45 + cos(i0*se+kk) + cos(i1*se+kk));
+        }
       }
     }
 
