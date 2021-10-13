@@ -43,54 +43,111 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* --------------------------------------------------------------------------
- * Modelling context for single-phase flows in porous (water is the component
- * at stake)
- * -------------------------------------------------------------------------- */
+/*! \struct cs_gwf_single_phase_t
+ *
+ * \brief Structure to handle the modelling of a single-phase flows in a porous
+ *        media considered as saturated or not. Several simplifications can be
+ *        be operated in this context. Only the liquid phase is taken into
+ *        account.
+ */
 
 typedef struct {
 
-  /* Set of equations associated to this module */
-  cs_equation_t   *richards;  /* "hydraulic_head" is the associated variable
-                                 "permeability" is the diffusion property
-                                 related to this equation */
+    /*!
+   * @name Equation
+   * @{
+   *
+   * \var richards
 
-  /* Additional fields/array relatde to heads */
-  cs_field_t      *pressure_head;    /* Allocated only if gravitation is active
-                                        Location depends on the discretization
-                                        scheme used to solve Richards eq.
-                                        pressure head is denoted by h
-                                        hydraulic head (solved in Richards eq.)
-                                        is denoted by H.
-                                        h = H - gravity_potential */
-  cs_real_t       *head_in_law;      /* Array used as an input in laws */
+   * The Richards equation is the governing equation which corresponds to the
+   * mass conservation of water. "hydraulic_head" is the associated variable
+   * "permeability" is the diffusion property related to this equation.
+   */
 
-  /* Properties */
-  /* ---------- */
+  cs_equation_t                *richards;
 
-  /* Moisture content: not constant for unsaturated soils */
-  cs_property_t   *moisture_content;
-  cs_field_t      *moisture_field;   /* Related cs_field_t structure at cells */
+  /*!
+   * @}
+   * @name Darcy advection field
+   * @{
+   *
+   * \var adv_field
+   * Pointer to a \ref cs_adv_field_t structure. Darcy advective flux in the
+   * liquid phase. This structure is used to define the advective term in
+   * tracer equations.
+   *
+   * \var flux location
+   * Indicate where the arrays defining the Darcy fluxes are located
+   *
+   * \var darcian_flux
+   * Array storing the liquid Darcian flux in each location (for instance the
+   * dual faces associated to each cell)
+   *
+   * \var darcian_boundary_flux
+   * Array storing the normal Darcian flux across the boundary of the
+   * computational domain for the liquid phase. This is an optional array.
+   */
 
-  /* Soil capacity: property attached to the unsteady term in the Richards
-     equation */
-  cs_property_t   *soil_capacity;
-  cs_field_t      *capacity_field;   /* Related cs_field_t structure at cells */
+  cs_adv_field_t               *adv_field;
+  cs_flag_t                     flux_location;
+  cs_real_t                    *darcian_flux;
+  cs_real_t                    *darcian_boundary_flux;
 
-  /* Advection field = Darcy flux/velocity */
-  /* ------------------------------------- */
+  /*!
+   * @}
+   * @name Properties related to the model
+   * @{
+   *
+   * \var moisture_content
+   * This quantity describes the level of saturation in a soil. This is a
+   * constant value in case of a satured soil and variable one in case of a
+   * unsaturated soil.
+   *
+   * \var soil_capacity
+   * property attached to the unsteady term in the Richards equation
+   */
 
-  cs_adv_field_t  *adv_field;
+  cs_property_t                *moisture_content;
+  cs_property_t                *soil_capacity;
 
-  /* Additional parameters related to the Darcy advection field */
-  cs_flag_t        flux_location;   /* Indicate where the array is defined */
+  /*!
+   * @}
+   * @name Additional fields/arrays
+   * @{
+   *
+   * \var moisture_field
+   * Pointer to a \ref cs_field_t structure. Structure storing the value of the
+   * moisture content in each cell. This is an optional structure i.e. it may
+   * be set to NULL (for instance in case of a satured soil on the full
+   * domain).
+   *
+   * \var capacity_field
+   * Pointer to a \ref cs_field_t structure. Structure storing the value of the
+   * soil capacity in each cell. This is an optional structure i.e. it is
+   * set to NULL in case of a satured soil on the full domain.
+   *
+   * \var pressure_head
+   * Pointer to a \ref cs_field_t structure. Allocated only if the gravitation
+   * effect is active. Location of this field depends on the discretization
+   * scheme used to solve the Richards equation.
+   * The pressure head is denoted by h, hydraulic head (unknowns solved in the
+   * Richards eq.) is denoted by H and there are linked by:
+   * h = H - gravity_potential
+   *
+   * \var head_in_law
+   * Array of values located at the same location as the hydraulic head solved
+   * in the Richards equation. The values stored in this array are used to
+   * update related quantities with law such as Van Genuchten/Mualen.
+   */
 
-  /* Array defining the advection field (optional) */
-  cs_real_t       *darcian_flux;
+  cs_field_t                   *moisture_field;
+  cs_field_t                   *capacity_field;
+  cs_field_t                   *pressure_head;
+  cs_real_t                    *head_in_law;
 
-  /* Array defining the normal flux of the advection field across the domain
-     boundary (optional) */
-  cs_real_t       *darcian_boundary_flux;
+  /*!
+   * @}
+   */
 
 } cs_gwf_single_phase_t;
 
