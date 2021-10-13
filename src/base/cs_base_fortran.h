@@ -243,6 +243,9 @@ cs_user_source_terms_wrapper(int         f_id,
                              cs_real_t  *st_imp);
 
 void
+cs_user_boundary_conditions_setup_wrapper(void);
+
+void
 cs_user_extra_operations_wrapper(void);
 
 void
