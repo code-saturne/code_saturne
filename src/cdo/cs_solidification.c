@@ -2653,12 +2653,9 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
   /* Retrieve the current values */
   cs_real_t  *enthalpy = solid->enthalpy->val;
 
-  cs_real_t  *hk = NULL, *tk = NULL;   /* enthalpy and temp at ^{n+1,k} */
+  cs_real_t  *hk = NULL;   /* enthalpy  ^{n+1,k} */
   BFT_MALLOC(hk, quant->n_cells, cs_real_t);
   memcpy(hk, enthalpy, csize);
-
-  /* BFT_MALLOC(tk, quant->n_cells, cs_real_t); */
-  /* memcpy(tk, solid->temperature->val, csize); */
 
   /* Non-linear iterations (k) are performed to converge on the relation
    * h^{n+1,k+1} = h^{n+1,k} + eps with eps a user-defined tolerance

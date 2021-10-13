@@ -469,6 +469,8 @@ cs_equation_prepare_system(int                     stride,
                 " n_matrix_columns: %d\n",
                 n_gather_elts, n_scatter_elts, cs_matrix_get_n_rows(matrix),
                 cs_matrix_get_n_columns(matrix));
+#else
+  CS_UNUSED(matrix);
 #endif
 
   if (rset != NULL) { /* Parallel or periodic mode

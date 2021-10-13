@@ -1425,7 +1425,6 @@ cs_benchmark_matrix(double                 t_measure,
 
   bool                   type_filter[CS_MATRIX_N_BUILTIN_TYPES] = {true,
                                                                    true,
-                                                                   true,
                                                                    true};
 
   int                    _n_fill_types_default = 4;
