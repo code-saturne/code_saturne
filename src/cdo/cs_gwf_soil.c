@@ -367,6 +367,39 @@ _update_genuchten_iso_soil(const cs_real_t              t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check that at least one soil has been defined and the model of soil
+ *         exists.
+ *         Raise an error if a problem is encoutered.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_check(void)
+{
+  if (_n_soils < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Groundwater module is activated but no soil is defined.",
+              __func__);
+  if (_soils == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The soil structure is not allocated whereas %d soils"
+              " have been added.\n", __func__, _n_soils);
+
+  for (int i = 0; i < _n_soils; i++) {
+
+    if (_soils[i]->model == CS_GWF_SOIL_N_HYDRAULIC_MODELS) {
+      cs_zone_t  *z = cs_volume_zone_by_id(_soils[i]->zone_id);
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid model of soil attached to zone %s\n",
+                __func__, z->name);
+    }
+
+  } /* Loop on soils */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create and add a new cs_gwf_soil_t structure. A first initialization
  *         of all members by default is performed.
  *
@@ -581,6 +614,28 @@ cs_gwf_soil_get_bulk_density(const cs_gwf_soil_t  *soil)
   }
 
   return bulk_density;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if all soils have been set as CS_GWF_SOIL_SATURATED
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_gwf_soil_all_saturated(void)
+{
+  for (int soil_id = 0; soil_id < _n_soils; soil_id++) {
+
+    const cs_gwf_soil_t  *soil = _soils[soil_id];
+    if (soil->model != CS_GWF_SOIL_SATURATED)
+      return false;
+
+  }
+
+  return true;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -205,6 +205,17 @@ cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check that at least one soil has been defined and the model of soil
+ *         exists.
+ *         Raise an error if a problem is encoutered.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_check(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create and add a new cs_gwf_soil_t structure. A first initialization
  *         of all members by default is performed.
  *
@@ -277,6 +288,17 @@ cs_gwf_soil_by_name(const char    *name);
 
 cs_real_t
 cs_gwf_soil_get_bulk_density(const cs_gwf_soil_t  *soil);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if all soils have been set as CS_GWF_SOIL_SATURATED
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_gwf_soil_all_saturated(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

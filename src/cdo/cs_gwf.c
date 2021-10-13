@@ -1743,7 +1743,6 @@ cs_gwf_add_user_tracer(const char                  *eq_name,
   return tracer;
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve the pointer to the cs_gwf_tracer_t structure associated to
@@ -1791,33 +1790,22 @@ cs_gwf_init_setup(void)
 
   /* Sanity checks */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+  cs_gwf_soil_check();
 
-  /* 1. Analyze the type of soils to handle */
-  const int  n_soils = cs_gwf_get_n_soils();
-  if (n_soils < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Groundwater module is activated but no soil is defined.",
-              __func__);
+  /* 1. Analyze the type of soils to handle.
+     Detect if all soils are considered as saturated. Update flags. If this
+     not the case, create new fields and properties are time-dependent.
+  */
+  bool  pty_has_previous;
 
-  /* Detect if all soils are considered as saturated. If this not the case,
-     create new fields. Check also if properties are time-dependent. */
-  bool  pty_has_previous = false;
-  int soil_id = 0;
-  for (soil_id = 0; soil_id < n_soils; soil_id++) {
-
-    const cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
-
-    /* Is there a unique model ? */
-    if (soil->model != CS_GWF_SOIL_SATURATED) {
-      gw->flag |= CS_GWF_SOIL_PROPERTY_UNSTEADY;
-      pty_has_previous = true;
-      break;
-    }
-
-  } /* Loop on soils */
-
-  if (soil_id == n_soils)
+  if (cs_gwf_soil_all_saturated()) {
     gw->flag |= CS_GWF_SOIL_ALL_SATURATED;
+    pty_has_previous = false;
+  }
+  else {
+    gw->flag |= CS_GWF_SOIL_PROPERTY_UNSTEADY;
+    pty_has_previous = true;
+  }
 
   switch (gw->model) {
 
@@ -1852,15 +1840,9 @@ cs_gwf_add_tracer_terms(void)
   /* Sanity checks */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
-  int  n_soils = cs_gwf_get_n_soils();
-  if (n_soils < 1)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Groundwater module is activated but no soil is defined."));
-
   /* Loop on tracer equations */
   for (int i = 0; i < gw->n_tracers; i++)
     gw->add_tracer_terms[i](gw->tracers[i]);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1896,6 +1878,7 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
   }
 
   /* Store the soil id for each cell */
+  cs_gwf_soil_check();
   cs_gwf_build_cell2soil(quant->n_cells);
 
   /* Loop on tracer equations. Link the advection field to each tracer
