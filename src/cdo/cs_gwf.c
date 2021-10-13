@@ -1778,7 +1778,8 @@ cs_gwf_tracer_by_name(const char   *eq_name)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Predefined settings for the Richards equation and the related
- *         equations defining the groundwater flow module
+ *         equations defining the groundwater flow module.
+ *         At this stage, all soils have been defined.
  *         Create new cs_field_t structures according to the setting
  */
 /*----------------------------------------------------------------------------*/

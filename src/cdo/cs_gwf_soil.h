@@ -271,7 +271,7 @@ cs_gwf_soil_by_name(const char    *name);
  *
  * \param[in] soil       pointer to a cs_gwf_soil_t structure
  *
- * \return
+ * \return the value of the bulk density for the given soil
  */
 /*----------------------------------------------------------------------------*/
 
