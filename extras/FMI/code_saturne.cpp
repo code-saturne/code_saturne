@@ -4,7 +4,6 @@
 
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
-
   Copyright (C) 1998-2021 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
@@ -28,6 +27,8 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <iostream>
@@ -75,6 +76,8 @@ static int _n_iter = 0;
 static int _master_socket = -1;
 static int _cs_socket = -1;
 
+static FILE *tracefile = stdout;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -85,7 +88,7 @@ static int
 _randrange(int   min,
            int   max)
 {
-   return min + rand() / (RAND_MAX / (max - min + 1) + 1);
+  return min + rand() / (RAND_MAX / (max - min + 1) + 1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -95,13 +98,48 @@ _randrange(int   min,
 static int
 _generate_key(void)
 {
-
   time_t t;
   srand(static_cast<unsigned int>(time(&t)));
 
   int key = _randrange(0, static_cast<int>(2e31));
 
   return key;
+}
+
+/*----------------------------------------------------------------------------
+ * Write string for buffer characters, including non-printable ones
+ *
+ * parameters:
+ *   f   <-- FILE
+ *   rec <-- record to trace
+ *   n   <-- number of elements
+ *----------------------------------------------------------------------------*/
+
+static void
+_trace_buf(FILE        *f,
+           const char   rec[],
+           size_t       n)
+{
+  for (size_t j = 0; j < n; j++) {
+    char c = rec[j];
+    if (isprint(c))
+      fprintf(f, "%c", c);
+    else {
+      switch(c) {
+      case '\r':
+        fprintf(f, "\\r");
+        break;
+      case '\n':
+        fprintf(f, "\\n");
+        break;
+      case '\t':
+        fprintf(f, "\\t");
+        break;
+      default:
+        fprintf(f, "'\\%u'", (int)c);
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -112,11 +150,24 @@ static void
 _send_sock(int         sock,
            const char *string)
 {
-  if (send(sock, string, strlen(string)+1, 0) > 0) {
-    cout << string << " sent" << endl;
-  } else {
-    cout << "Error sending " << string << endl;
+  size_t n = strlen(string)+1;
+
+  if (tracefile != NULL) {
+    fprintf(tracefile, "== send %d values: [", (int)n);
+    _trace_buf(tracefile, string, n);
+    fprintf(tracefile, "]...\n");
+    fflush(tracefile);
+  }
+
+  ssize_t ret = send(sock, string, n, 0);
+
+  if (ret < 1) {
+    cout << "Error sending " << string << " : " << strerror(errno) << endl;
     exit(1);
+  }
+  else if (tracefile != NULL) {
+    fprintf(tracefile, "   sent %d bytes\n", (int)ret);
+    fflush(tracefile);
   }
 }
 
@@ -132,11 +183,22 @@ _recv_sock(int    socket,
   /* Cleaning buffer */
   memset(buffer, 0, len_buffer);
 
-  if (recv(socket, buffer, len_buffer, 0) != -1) {
-    cout << "Received: " << buffer << endl;
-  } else {
-    cout << "Error receiving data" << endl;
+  if (tracefile != NULL) {
+    fprintf(tracefile, "== receiving up to %d bytes...\n",
+            (int)len_buffer);
+  }
+
+  ssize_t ret = recv(socket, buffer, len_buffer, 0);
+
+  if (ret < 1) {
+    cout << "Error receiving data: " << strerror(errno) << endl;
     exit(1);
+  }
+  else if (tracefile != NULL) {
+    fprintf(tracefile, "   received %d bytes: [", (int)ret);
+    _trace_buf(tracefile, buffer, ret);
+    fprintf(tracefile, "]\n");
+    fflush(tracefile);
   }
 }
 

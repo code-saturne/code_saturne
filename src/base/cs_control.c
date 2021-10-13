@@ -214,6 +214,42 @@ _queue_finalize(cs_control_queue_t  **queue)
 #if defined(HAVE_SOCKET)
 
 /*----------------------------------------------------------------------------
+ * Write string for buffer characters, including non-printable ones
+ *
+ * parameters:
+ *   f   <-- FILE
+ *   rec <-- record to trace
+ *   n   <-- number of elements
+ *----------------------------------------------------------------------------*/
+
+static void
+_trace_buf(FILE        *f,
+           const char   rec[],
+           size_t       n)
+{
+  for (size_t j = 0; j < n; j++) {
+    char c = rec[j];
+    if (isprint(c))
+      fprintf(f, "%c", c);
+    else {
+      switch(c) {
+      case '\r':
+        fprintf(f, "\\r");
+        break;
+      case '\n':
+        fprintf(f, "\\n");
+        break;
+      case '\t':
+        fprintf(f, "\\t");
+        break;
+      default:
+        fprintf(f, "'\\%u'", (int)c);
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Convert data from "little-endian" to "big-endian" or the reverse.
  *
  * The memory areas pointed to by src and dest should overlap either
@@ -311,22 +347,24 @@ _comm_read_sock(const cs_control_comm_t  *comm,
     end_id = CS_MIN(start_id + SSIZE_MAX, n_bytes);
     n_loc = end_id - start_id;
 
-    ret = read(comm->socket, _rec + start_id, n_loc);
-
     if (comm->trace != NULL) {
-      fprintf(comm->trace, "read %d of %d bytes (size %d): [",
-              (int)ret, (int)n_bytes, (int)size);
-      for (ssize_t j = 0; j < ret; j++)
-        fprintf(comm->trace, "%c", _rec[start_id+j]);
-      fprintf(comm->trace, "]\n");
-      fflush(comm->trace);
+      fprintf(comm->trace, "-- reading up to %d values of size %d...\n",
+              (int)count, (int)size);
     }
+
+    ret = read(comm->socket, _rec + start_id, n_loc);
 
     if (ret < 1)
       bft_error(__FILE__, __LINE__, errno,
                 _("Communication %s:\n"
                   "Error receiving data through socket."),
                 comm->port_name);
+    else if (comm->trace != NULL) {
+      fprintf(comm->trace, "   read %d bytes: [", (int)ret);
+      _trace_buf(comm->trace, _rec + start_id, ret);
+      fprintf(comm->trace, "]\n");
+      fflush(comm->trace);
+    }
 
     start_id += ret;
 
@@ -349,7 +387,6 @@ _comm_write_sock(cs_control_comm_t  *comm,
   size_t   start_id;
   size_t   end_id;
   size_t   n_loc;
-  size_t   n_bytes;
   ssize_t  ret;
 
   char        *_rec_swap = NULL;
@@ -363,7 +400,15 @@ _comm_write_sock(cs_control_comm_t  *comm,
 
   /* Determine associated size */
 
-  n_bytes = size * count;
+  size_t n_bytes = size * count;
+
+  if (comm->trace != NULL) {
+    fprintf(comm->trace, "-- write %d values of size %d: [",
+            (int)count, (int)size);
+    _trace_buf(comm->trace, _rec, n_bytes);
+    fprintf(comm->trace, "]...\n");
+    fflush(comm->trace);
+  }
 
   /* Convert if "little-endian" */
 
@@ -386,21 +431,6 @@ _comm_write_sock(cs_control_comm_t  *comm,
     else
       ret = write(comm->socket, _rec_swap + start_id, n_loc);
 
-    if (comm->trace != NULL) {
-      fprintf(comm->trace, "write %d bytes (size %d): [",
-              (int)n_loc);
-      if (_rec_swap == NULL) {
-        for (ssize_t j = 0; j < n_loc; j++)
-          fprintf(comm->trace, "%c", _rec[start_id+j]);
-      }
-      else {
-        for (ssize_t j = 0; j < n_loc; j++)
-          fprintf(comm->trace, "%c", _rec_swap[start_id+j]);
-      }
-      fprintf(comm->trace, "]\n");
-      fflush(comm->trace);
-    }
-
     if (ret < 1) {
       if (comm->errors_are_fatal)
         bft_error(__FILE__, __LINE__, errno,
@@ -413,6 +443,10 @@ _comm_write_sock(cs_control_comm_t  *comm,
                    comm->port_name);
         _comm_sock_disconnect(comm);
       }
+    }
+    else if (comm->trace != NULL) {
+      fprintf(comm->trace, "   wrote %d bytes\n", (int)ret);
+      fflush(comm->trace);
     }
 
     start_id += ret;
@@ -486,13 +520,16 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
 
     n_loc_max = queue->buf_idx[3] - start_id;
 
+    if (comm->trace != NULL) {
+      fprintf(comm->trace, "-- reading up to %d bytes...\n",
+              (int)n_loc_max);
+    }
+
     ssize_t  ret = read(comm->socket, queue->buf + start_id, n_loc_max);
 
     if (comm->trace != NULL) {
-      fprintf(comm->trace, "read %d of %d: [",
-              (int)ret, (int)n_loc_max);
-      for (ssize_t j = 0; j < ret; j++)
-        fprintf(comm->trace, "%c", queue->buf[start_id+j]);
+      fprintf(comm->trace, "   read %d bytes: [", (int)ret);
+      _trace_buf(comm->trace, queue->buf + start_id, ret);
       fprintf(comm->trace, "]\n");
       fflush(comm->trace);
     }
