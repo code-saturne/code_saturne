@@ -330,6 +330,34 @@ cs_property_get_type(const cs_property_t   *pty)
   return pty->type;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the dimension of the property
+ *
+ * \param[in]    pty    pointer to a property
+ *
+ * \return  the value of the dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline int
+cs_property_get_dim(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return 0; /* means undefined */
+
+  if (pty->type & CS_PROPERTY_ISO)
+    return 1;
+  else if (pty->type & CS_PROPERTY_ORTHO)
+    return 3;
+  else if (pty->type & CS_PROPERTY_ANISO_SYM)
+    return 6;
+  else if (pty->type & CS_PROPERTY_ANISO)
+    return 9;
+  else
+    return 0; /* means undefined */
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

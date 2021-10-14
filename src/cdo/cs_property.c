@@ -91,32 +91,6 @@ static cs_property_t  **_properties = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the dimension of a property
- *         iso = 1, ortho = 3, aniso_sym = 6, aniso = 9
- *
- * \param[in]  type      type of property
- *
- * \return the dimension associated to the type
- */
-/*----------------------------------------------------------------------------*/
-
-static inline int
-_get_pty_dim(cs_property_type_t      type)
-{
-  if (type & CS_PROPERTY_ISO)
-    return 1;
-  else if (type & CS_PROPERTY_ORTHO)
-    return 3;
-  else if (type & CS_PROPERTY_ANISO_SYM)
-    return 6;
-  else if (type & CS_PROPERTY_ANISO)
-    return 9;
-  else
-    return 0;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Check if the settings are valid
  *
  * \param[in]  tens      values of the tensor
@@ -1514,7 +1488,7 @@ cs_property_def_by_analytic(cs_property_t        *pty,
                                      .input = input,
                                      .free_input = NULL };
 
-  int  dim = _get_pty_dim(pty->type);
+  int  dim = cs_property_get_dim(pty);
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         dim,
@@ -1563,7 +1537,7 @@ cs_property_def_by_func(cs_property_t         *pty,
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = 0; /* metadata */
 
-  int  dim = _get_pty_dim(pty->type);
+  int  dim = cs_property_get_dim(pty);
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_FUNCTION,
                                         dim,
@@ -1614,7 +1588,7 @@ cs_property_def_by_array(cs_property_t    *pty,
               " Please modify your settings.",
               pty->n_definitions, pty->name);
 
-  int  dim = _get_pty_dim(pty->type);
+  int  dim = cs_property_get_dim(pty);
   cs_flag_t  state_flag = 0; /* Will be updated during the creation */
   cs_flag_t  meta_flag = 0;  /* metadata */
 
@@ -1675,7 +1649,7 @@ cs_property_def_by_field(cs_property_t    *pty,
     return;
 
   int  id = _add_new_def(pty);
-  int dim = _get_pty_dim(pty->type);
+  int  dim = cs_property_get_dim(pty);
 
   /* Sanity checks */
   assert(dim == field->dim);
@@ -1863,7 +1837,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
         } /* Loop on definitions */
 
-        int  b_dim = _get_pty_dim(b->type);
+        int  b_dim = cs_property_get_dim(b);
 
         /* 2. Evaluates the property B and operates the product */
         for (int i = 0; i < b->n_definitions; i++) {
@@ -1917,7 +1891,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
         } /* Loop on definitions */
 
-        int  a_dim = _get_pty_dim(a->type);
+        int  a_dim = cs_property_get_dim(a);
 
         /* 2. Evaluates the property A and operates the product */
         for (int i = 0; i < a->n_definitions; i++) {
