@@ -135,6 +135,35 @@ def load_coolprop_fluids(config):
                            'trans-2-Butene']
 
 #-------------------------------------------------------------------------------
+# Properties ref values
+#-------------------------------------------------------------------------------
+
+class propertiesIdInfo(object):
+
+    def __init__(self):
+
+        self._info = {}
+
+    def add_property(self, name, output, ref_tag, unit=''):
+
+        self._info[name] = {"name":name,
+                            "output":output,
+                            "ref_tag":ref_tag,
+                            "unit":unit}
+
+    def get_property(self, name):
+
+        prop = None
+        if name in self._info.keys():
+            prop = self._info[name]
+
+        return prop
+
+    def get_property_list(self):
+
+        return list(self._info.keys())
+
+#-------------------------------------------------------------------------------
 # Model class
 #-------------------------------------------------------------------------------
 
@@ -160,6 +189,29 @@ class FluidCharacteristicsModel(Variables, Model):
         self.mask_freesteam = 1 << 3
 
         self.tables = 0
+
+        # Properties id cards
+        self.properties_info = propertiesIdInfo()
+        self.properties_info.add_property(name="density",
+                                          output="Density",
+                                          ref_tag="rho0",
+                                          unit="kg/m^3")
+        self.properties_info.add_property(name="molecular_viscosity",
+                                          output="Molecular viscosity",
+                                          ref_tag="mu0",
+                                          unit="Pa.s")
+        self.properties_info.add_property(name="specific_heat",
+                                          output="Sepcific heat",
+                                          ref_tag="cp0",
+                                          unit="J/kg/K")
+        self.properties_info.add_property(name="thermal_conductivity",
+                                          output="Thermal conductivity",
+                                          ref_tag="lambda0",
+                                          unit="W/m/K")
+        self.properties_info.add_property(name="volume_viscosity",
+                                          output="Volume viscosity",
+                                          ref_tag="viscv0",
+                                          unit="kg/(m.s)")
 
         self.lib_properties = {}
         self.lib_properties['user_material'] = self.mask_builtin
@@ -279,6 +331,24 @@ class FluidCharacteristicsModel(Variables, Model):
             if node['name'] == name:
                 return node
 
+    def getListOfRefProperties(self, first_elt = None):
+        """
+        """
+
+        l = ['density', 'molecular_viscosity']
+
+        # Thermal properties
+        if self.tsm:
+            l.extend(['specific_heat', 'thermal_conductivity'])
+
+        # Compressible properties
+        if self.node_comp['model'] not in [None, "off"]:
+            l.append('volume_viscosity')
+
+        if first_elt in l:
+            l.insert(0, l.pop(l.index(first_elt)))
+
+        return l
 
     def getLibPropertiesDict(self):
        """
@@ -871,17 +941,10 @@ class FluidCharacteristicsModel(Variables, Model):
         """
         Return default formula
         """
-        self.isInList(tag, ('density', 'molecular_viscosity',
-                            'specific_heat', 'thermal_conductivity',
-                            'volume_viscosity'))
+        self.isInList(tag, self.properties_info.get_property_list())
 
-        d_value = {'density': 'rho0',
-                   'molecular_viscosity': 'mu0',
-                   'specific_heat': 'cp0',
-                   'thermal_conductivity': 'lambda0',
-                   'volume_viscosity': 'viscv0'}
-
-        formula = tag + " = " + d_value[tag] + ";"
+        prop_info = self.properties_info.get_property(name=tag)
+        formula = prop_info['name'] + " = " + prop_info['ref_tag'] + ";"
 
         return formula
 
@@ -892,9 +955,8 @@ class FluidCharacteristicsModel(Variables, Model):
         Gives a formula for 'density', 'molecular_viscosity',
         'specific_heat'or 'thermal_conductivity'
         """
-        self.isInList(tag, ('density', 'molecular_viscosity',
-                            'specific_heat', 'thermal_conductivity',
-                            'volume_viscosity'))
+        self.isInList(tag, self.properties_info.get_property_list())
+
         node = self.node_fluid.xmlGetNode('property', name=tag)
         if zone != "1":
             if node.xmlGetChildNode("zone", zone_id=zone):
@@ -907,9 +969,7 @@ class FluidCharacteristicsModel(Variables, Model):
     @Variables.noUndo
     def getPropertyMode(self, tag):
         """Return choice of node I{tag}. Choice is constant or variable"""
-        self.isInList(tag, ('density', 'molecular_viscosity',
-                            'specific_heat', 'thermal_conductivity',
-                            'volume_viscosity', 'dynamic_diffusion'))
+        self.isInList(tag, self.properties_info.get_property_list()+['dynamic_diffusion'])
         node = self.__nodeFromTag(tag)
         c = node['choice']
         self.isInList(c, ('constant', 'thermal_law', 'user_law', 'predefined_law'))
@@ -919,9 +979,7 @@ class FluidCharacteristicsModel(Variables, Model):
     @Variables.undoGlobal
     def setPropertyMode(self, tag, choice):
         """Put choice in xml file's node I{tag}"""
-        self.isInList(tag, ('density', 'molecular_viscosity',
-                            'specific_heat', 'thermal_conductivity',
-                            'volume_viscosity', 'dynamic_diffusion'))
+        self.isInList(tag, self.properties_info.get_property_list()+['dynamic_diffusion'])
         self.isInList(choice, ('constant', 'thermal_law',
                                'user_law', 'predefined_law'))
 
@@ -946,20 +1004,8 @@ class FluidCharacteristicsModel(Variables, Model):
         Get the formula components for a given tag
         """
 
-        if tag == 'density':
-            return self.getFormulaRhoComponents(zone)
-
-        elif tag == 'molecular_viscosity':
-            return self.getFormulaMuComponents(zone)
-
-        elif tag == 'specific_heat':
-            return self.getFormulaCpComponents(zone)
-
-        elif tag == 'thermal_conductivity':
-            return self.getFormulaAlComponents(zone)
-
-        elif tag == 'volume_viscosity':
-            return self.getFormulaViscv0Components(zone)
+        if tag in self.getListOfRefProperties():
+            return self.getFormulaPropertyComponents(tag, zone)
 
         elif tag == 'scalar_diffusivity' and scalar != None:
             return self.getFormulaDiffComponents(scalar, zone)
@@ -969,20 +1015,28 @@ class FluidCharacteristicsModel(Variables, Model):
             raise Exception(msg)
 
 
-    def getFormulaRhoComponents(self, zone="1"):
+    def getFormulaPropertyComponents(self, prop_name, zone="1"):
         """
         User formula for density
         """
 
-        exp = self.getFormula('density', zone)
-        req = [('density', 'Density')]
+        prop_info = self.properties_info.get_property(name=prop_name)
+
+        exp = self.getFormula(prop_name, zone)
+        req = [(prop_info['name'], prop_info['output'])]
 
         symbols = []
         for s in self.list_scalars:
            symbols.append(s)
 
-        rho0_value = self.getInitialValueDensity()
-        symbols.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
+        for pn in self.getListOfRefProperties(first_elt=prop_name):
+            p = self.properties_info.get_property(name=pn)
+
+            vstr  = str(self.getInitialValue(tag=p['name']))
+            tstr  = p['ref_tag']
+            ostr  = p['output']
+            ustr  = p['unit']
+            symbols.append((tstr, '{} (reference value, {}) = {}'.format(ostr, ustr, vstr)))
 
         ref_pressure = self.getPressure()
         symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
@@ -990,120 +1044,9 @@ class FluidCharacteristicsModel(Variables, Model):
         symbols.append(('volume', 'Zone volume'))
         symbols.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
 
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols;
-
-
-    def getFormulaMuComponents(self, zone="1"):
-        """
-        User formula for molecular viscosity
-        """
-
-        exp = self.getFormula('molecular_viscosity', zone)
-        req = [('molecular_viscosity', 'Molecular Viscosity')]
-
-        symbols = []
-
-        for s in self.list_scalars:
-           symbols.append(s)
-        mu0_value = self.getInitialValueViscosity()
-        symbols.append(('mu0', 'Viscosity (reference value) = ' + str(mu0_value)))
-
-        rho0_value = self.getInitialValueDensity()
-        symbols.append(('rho0', 'Density (reference value) = ' + str(rho0_value)))
-
-        ref_pressure = self.getPressure()
-        symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
-
-        symbols.append(('volume', 'Zone volume'))
-        symbols.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
-
-        from code_saturne.model.CompressibleModel import CompressibleModel
-        if CompressibleModel(self.case).getCompressibleModel() == 'on':
-            symbols.append(('T', 'Temperature'))
-            ref_temperature = self.getTemperature()
-            symbols.append(('t0', 'Reference temperature = '+str(ref_temperature)+' K'))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols;
-
-
-    def getFormulaCpComponents(self, zone="1"):
-        """
-        User formula for specific heat
-        """
-        exp = self.getFormula('specific_heat', zone)
-        req = [('specific_heat', 'Specific heat')]
-
-        symbols = []
-        for s in self.list_scalars:
-           symbols.append(s)
-
-        cp0_value = self.getInitialValueHeat()
-        symbols.append(('cp0', 'Specific heat (reference value) = ' + str(cp0_value)))
-
-        ref_pressure = self.getPressure()
-        symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
-
-        symbols.append(('volume', 'Zone volume'))
-        symbols.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols;
-
-
-    def getFormulaViscv0Components(self, zone="1"):
-        """
-        User formula for volumic viscosity
-        """
-        exp = self.getFormula('volume_viscosity', zone)
-        req = [('volume_viscosity', 'Volume viscosity')]
-
-        symbols = []
-        for s in self.list_scalars:
-           symbols.append(s)
-
-        viscv0_value = self.getInitialValueVolumeViscosity()
-        ref_pressure = self.getPressure()
-        ref_temperature = self.getTemperature()
-        symbols.append(('viscv0', 'Volume viscosity (J/kg/K) = '+str(viscv0_value)))
-        symbols.append(('p0', 'Reference pressure (Pa) = '+str(ref_pressure)))
-        symbols.append(('t0', 'Reference temperature (K) = '+str(ref_temperature)))
-        symbols.append(('T', 'Temperature'))
-
-        symbols.append(('volume', 'Zone volume'))
-        symbols.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symbols.append((nme, 'value (notebook) = ' + str(val)))
-
-        return exp, req, self.list_scalars, symbols;
-
-
-    def getFormulaAlComponents(self, zone="1"):
-        """
-        User formula for thermal conductivity
-        """
-        exp = self.getFormula('thermal_conductivity', zone)
-        req = [('thermal_conductivity', 'Thermal conductivity')]
-
-        symbols = []
-        for s in self.list_scalars:
-           symbols.append(s)
-
-        lambda0_value = self.getInitialValueCond()
-        ref_pressure = self.getPressure()
-        symbols.append(('lambda0', 'Thermal conductivity (reference value) = ' + str(lambda0_value)))
-        symbols.append(('p0', 'Reference pressure = ' + str(ref_pressure)))
-
-        symbols.append(('volume', 'Zone volume'))
-        symbols.append(('fluid_volume', 'Zone fluid volume (different if porous)'))
+        for _c in ['x', 'y', 'z']:
+            symbols.append(('g%s' % _c,
+                            'Gravity component along the %s axis' % _c))
 
         for (nme, val) in self.notebook.getNotebookList():
             symbols.append((nme, 'value (notebook) = ' + str(val)))

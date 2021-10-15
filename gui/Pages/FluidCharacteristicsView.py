@@ -1127,7 +1127,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         User formula for density
         """
         exp, req, sca, symbols_rho = \
-            self.mdl.getFormulaRhoComponents(self.zone_id)
+            self.mdl.getFormulaPropertyComponents('density', self.zone_id)
 
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
@@ -1167,7 +1167,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
 
         exp, req, sca, symbols_mu = \
-                self.mdl.getFormulaMuComponents(self.zone_id)
+                self.mdl.getFormulaPropertyComponents('molecular_viscosity', self.zone_id)
 
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()
@@ -1206,7 +1206,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         User formula for specific heat
         """
         exp, req, sca, symbols_cp = \
-                self.mdl.getFormulaCpComponents(self.zone_id)
+                self.mdl.getFormulaPropertyComponents('specific_heat', self.zone_id)
 
         exa = FluidCharacteristicsView.specific_heat
 
@@ -1234,7 +1234,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         User formula for volumic viscosity
         """
         exp, req, sca, symbols_viscv0 = \
-                self.mdl.getFormulaViscv0Components(self.zone_id)
+                self.mdl.getFormulaPropertyComponents('volume_viscosity', self.zone_id)
 
         exa = FluidCharacteristicsView.volume_viscosity
 
@@ -1262,7 +1262,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         User formula for thermal conductivity
         """
         exp, req, sca, symbols_al = \
-                self.mdl.getFormulaAlComponents(self.zone_id)
+                self.mdl.getFormulaPropertyComponents('thermal_conductivity', self.zone_id)
 
         self.m_th = ThermalScalarModel(self.case)
         s = self.m_th.getThermalScalarName()

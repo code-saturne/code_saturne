@@ -200,7 +200,10 @@ _base_tokens = {'dt':'const cs_real_t dt = cs_glob_time_step->dt[0];',
                 'fluid_surface':'const cs_real_t fluid_surface = zone->f_measure;',
                 'pi':'const cs_real_t pi = cs_math_pi;',
                 'uref':'const cs_real_t uref = cs_glob_turb_ref_values->uref;',
-                'almax':'const cs_real_t almax = cs_glob_turb_ref_values->almax;'}
+                'almax':'const cs_real_t almax = cs_glob_turb_ref_values->almax;',
+                'gx':'const cs_real_t gx = cs_glob_physical_constants->gravity[0];',
+                'gy':'const cs_real_t gy = cs_glob_physical_constants->gravity[1];',
+                'gz':'const cs_real_t gz = cs_glob_physical_constants->gravity[2];'}
 
 #---------------------------------------------------------------------------
 
@@ -488,7 +491,8 @@ class meg_to_c_interpreter:
                                           known_symbols,
                                           'vol',
                                           glob_tokens,
-                                          loop_tokens)
+                                          loop_tokens,
+                                          need_for_loop=True)
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
             usr_defs += parsed_exp[1]
