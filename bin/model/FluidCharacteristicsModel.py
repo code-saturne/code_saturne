@@ -139,12 +139,21 @@ def load_coolprop_fluids(config):
 #-------------------------------------------------------------------------------
 
 class propertiesIdInfo(object):
+    """
+    Class which handles physical properties id information.
+    """
 
     def __init__(self):
+        """
+        Constructor
+        """
 
         self._info = {}
 
     def add_property(self, name, output, ref_tag, unit=''):
+        """
+        Add a new property.
+        """
 
         self._info[name] = {"name":name,
                             "output":output,
@@ -152,6 +161,9 @@ class propertiesIdInfo(object):
                             "unit":unit}
 
     def get_property(self, name):
+        """
+        Returns the dictionnary related to a given property based on its name.
+        """
 
         prop = None
         if name in self._info.keys():
@@ -160,6 +172,9 @@ class propertiesIdInfo(object):
         return prop
 
     def get_property_list(self):
+        """
+        Returns a list containing the names of all properties.
+        """
 
         return list(self._info.keys())
 
@@ -333,6 +348,9 @@ class FluidCharacteristicsModel(Variables, Model):
 
     def getListOfRefProperties(self, first_elt = None):
         """
+        Returns a list of physical properties which need definition.
+        An optional argument 'first_elt' allows setting a given property
+        as the first member of the list.
         """
 
         l = ['density', 'molecular_viscosity']
@@ -1017,7 +1035,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
     def getFormulaPropertyComponents(self, prop_name, zone="1"):
         """
-        User formula for density
+        User formula for a given physical property other than diffusion.
         """
 
         prop_info = self.properties_info.get_property(name=prop_name)
