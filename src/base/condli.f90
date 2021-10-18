@@ -410,7 +410,7 @@ call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
 
 ! Check consistency with GUI definitions
 
-call uiclve(nozppm, itypfb, izfppp)
+call uiclve(nozppm)
 
 ! BC'based coupling with other code_saturne instances.
 

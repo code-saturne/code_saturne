@@ -98,13 +98,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
  * *****************
  *
  * integer          nozppm  <-- max number of boundary conditions zone
- * integer          itypfb  <-- type of boundary for each face
- * integer          izfppp  <-- zone number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
-                               int        *itypfb,
-                               int        *izfppp);
+void CS_PROCF (uiclve, UICLVE)(const int  *nozppm);
 
 /*=============================================================================
  * Public function prototypes

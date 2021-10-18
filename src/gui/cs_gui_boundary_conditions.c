@@ -2554,16 +2554,11 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
  * *****************
  *
  * integer          nozppm  <-- max number of boundary conditions zone
- * integer          itypfb  <-- type of boundary for each face
- * integer          izfppp  <-- zone number
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
-                               int        *itypfb,
-                               int        *izfppp)
+void CS_PROCF (uiclve, UICLVE)(const int  *nozppm)
 {
-  int inature = 0;
-  int inature2 = 0;
+  int inature = -1;
 
   for (int izone = 0; izone < boundaries->n_zones; izone++) {
     if (cs_gui_strcmp(boundaries->nature[izone], "inlet")) {
@@ -2594,10 +2589,11 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
     else if (cs_gui_strcmp(boundaries->nature[izone], "groundwater")) {
       inature = CS_INDEF;
     }
-    else
+
+    if (inature < 0)
       bft_error(__FILE__, __LINE__, 0,
-          _("boundary nature %s is unknown \n"),
-          boundaries->nature[izone]);
+                _("boundary nature %s is unknown \n"),
+                boundaries->nature[izone]);
 
     int zone_nbr = boundaries->bc_num[izone];
 
@@ -2606,58 +2602,6 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
                 _("zone's label number %i is greater than %i,"
                   " the maximum allowed \n"), zone_nbr, *nozppm);
 
-    /* Boundary types compatibilty:
-       the nature of the boundary can be changed from smooth wall to
-       rough wall or vice-versa between the GUI and the user code.
-       It can also be changed from inlet to convective inlet and
-       vice-versa */
-
-    int enature = inature;
-    if (inature == CS_ROUGHWALL)
-      enature = CS_SMOOTHWALL;
-    else if (inature == CS_CONVECTIVE_INLET)
-      enature = CS_INLET;
-
-    int atmo_auto = 0;
-    int compr_auto = 0;
-
-    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
-      if (boundaries->meteo[izone].automatic) {
-        if (inature == CS_INLET || inature == CS_OUTLET)
-          atmo_auto = inature;
-      }
-    }
-    else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
-      if (inature == CS_INLET || inature == CS_OUTLET)
-        compr_auto = inature;
-    }
-
-    cs_lnum_t n_faces = 0;
-    const cs_lnum_t *face_ids
-      = _get_boundary_faces(boundaries->label[izone], &n_faces);
-
-    for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
-      cs_lnum_t ifbr = face_ids[ifac];
-
-      inature2 = itypfb[ifbr];
-
-      int enature2 = inature2;
-      if (inature2 == CS_ROUGHWALL)
-        enature2 = CS_SMOOTHWALL;
-      else if (inature2 == CS_CONVECTIVE_INLET)
-        enature2 = CS_INLET;
-
-      if (atmo_auto  && inature2 == 0)
-        enature2 = inature;
-
-      else if (compr_auto) {
-        if (   (compr_auto == CS_INLET  && (   inature2 == CS_ESICF
-                                            || inature2 == CS_EPHCF))
-            || (compr_auto == CS_OUTLET &&  (   inature2 == CS_SSPCF
-                                             || inature2 == CS_SOPCF)))
-          enature2 = inature;
-      }
-    }
   } /*  for izone */
 }
 
