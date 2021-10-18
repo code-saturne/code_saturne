@@ -539,6 +539,17 @@ if (muzero.gt.epzero) then
       tauah2o(i) = aod_h2o_tot*deltaz/zqq(iaero_top+1)
     endif
     ! Estimation of the law of the cloud fraction
+
+    ! Calculation of SSA and Asymmetry factor for clouds using- Nielsen 2014
+    ! Note only the first two bands are taken, the third only is
+    ! approximately 0
+    ! Usefull for gas assymmetry, for albedo, either Chuang if BC, or Nielsen
+    pioco3_1 = 1.d0 - 33.d-9*req
+    pioco3_2 = 1.d0 - 1.d-7*req
+
+    pioch2o_1 = 0.99999d0 -149.d-7*req
+    pioch2o_2 = 0.9985d0 -92.d-5*req
+
     fnebmax(i) = max(fnebmax(i+1),fneray(i))
     if(black_carbon_frac .gt. epsc) then
       ! Calculation of SSA for clouds taking into account black carbon fraction - Chuang 2002
@@ -557,36 +568,34 @@ if (muzero.gt.epzero) then
 
       pic_h2o(i)=pioch2oC
       pic_o3(i)=pioco3C
-      pioco3C=0.d0
-      pioch2oC=0.d0
     else
 
       ! Calculation of SSA and Asymmetry factor for clouds using- Nielsen 2014
       ! Note only the first two bands are taken, the third only is
       ! approximately 0
-      pioco3_1 =( 1.d0 - 33.d-9*req)
-      pioco3_2 = ( 1.d0 - 1.d-7*req )
       pioco3=pioco3_1*0.24d0+pioco3_2*0.76d0
 
-      pioch2o_1 =( 0.99999d0 -149.d-7*req )
-      pioch2o_2 = ( 0.9985d0 -92.d-5*req )
       pioch2o=0.60d0*pioch2o_1+0.40d0*pioch2o_2
 
-      gasymo3 =( 0.868d0 + 14.d-5*req  &
-        - 61.d-4*dexp(-0.25*req))*pioco3_1*0.24d0 &
-        + ( 0.868d0 + 25.d-5*req  &
-        - 63.d-4*dexp(-0.25*req))*pioco3_2*0.76d0
 
-      gasymh2o = ( 0.867d0 + 31.d-5*req  &
-        - 78.d-4*dexp(-0.195d0*req))*0.60d0*pioch2o_1 &
-        + ( 0.864d0 + 54.d-5*req &
-        - 0.133d0*dexp(-0.194d0*req))*0.40d0*pioch2o_2
-
-      gco3(i)=gasymo3
-      gch2o(i)=gasymh2o
       pic_o3(i)=pioco3
       pic_h2o(i)=pioch2o
     endif
+
+    ! Gas assymmmetry: Nielsen
+    gasymo3 =( 0.868d0 + 14.d-5*req  &
+      - 61.d-4*dexp(-0.25*req))*pioco3_1*0.24d0 &
+      + ( 0.868d0 + 25.d-5*req  &
+      - 63.d-4*dexp(-0.25*req))*pioco3_2*0.76d0
+
+    gasymh2o = ( 0.867d0 + 31.d-5*req  &
+      - 78.d-4*dexp(-0.195d0*req))*0.60d0*pioch2o_1 &
+      + ( 0.864d0 + 54.d-5*req &
+      - 0.133d0*dexp(-0.194d0*req))*0.40d0*pioch2o_2
+
+    gco3(i)=gasymo3
+    gch2o(i)=gasymh2o
+
   enddo
 
   fnebmax(k1) = fnebmax(k1p1)
