@@ -3475,18 +3475,18 @@ cs_mesh_sync_var_tens(cs_real_t  *var)
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_sync_var_sym_tens(cs_real_t  *var)
+cs_mesh_sync_var_sym_tens(cs_real_6_t  *var)
 {
   const cs_halo_t  *halo = cs_glob_mesh->halo;
 
   if (halo == NULL) return;
 
-  cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, var, 6);
+  cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, (cs_real_t *)var, 6);
 
   if (cs_glob_mesh->n_init_perio > 0)
     cs_halo_perio_sync_var_sym_tens(halo,
                                     CS_HALO_STANDARD,
-                                    var);
+                                    (cs_real_t *)var);
 }
 
 /*----------------------------------------------------------------------------

@@ -8433,177 +8433,7 @@ void CS_PROCF (grdpor, GRDPOR)
  const int   *const inc          /* <-- 0 or 1: increment or not         */
 )
 {
-  const cs_mesh_t  *m = cs_glob_mesh;
-  cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
-  const cs_halo_t  *halo = m->halo;
-
-  const cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
-  cs_real_2_t *i_f_face_factor = mq->i_f_face_factor;
-  cs_real_t *b_f_face_factor = mq->b_f_face_factor;
-  cs_real_t *i_massflux = cs_field_by_name("inner_mass_flux")->val;
-  cs_real_t *b_massflux = cs_field_by_name("boundary_mass_flux")->val;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)mq->i_face_normal;
-  const cs_real_3_t *restrict i_f_face_normal
-    = (const cs_real_3_t *restrict)mq->i_f_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)mq->b_face_normal;
-  const cs_real_3_t *restrict b_f_face_normal
-    = (const cs_real_3_t *restrict)mq->b_f_face_normal;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *restrict)m->b_face_cells;
-  const cs_real_t *restrict i_f_face_surf = mq->i_f_face_surf;
-  const cs_real_t *restrict i_face_surf = mq->i_face_surf;
-  const cs_real_t *restrict b_f_face_surf = mq->b_f_face_surf;
-  const cs_real_t *restrict b_face_surf = mq->b_face_surf;
-
-  const int *restrict c_disable_flag = mq->c_disable_flag;
-  cs_lnum_t has_dc = mq->has_disable_flag; /* Has cells disabled? */
-
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t n_cells = m->n_cells;
-
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
-
-  /*Additional terms due to porosity */
-  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
-
-  if (f_i_poro_duq_0 == NULL)
-    return;
-
-  cs_real_t *i_poro_duq_0 = f_i_poro_duq_0->val;
-  cs_real_t *i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
-  cs_real_t *b_poro_duq = cs_field_by_name("b_poro_duq")->val;
-  cs_real_3_t *c_poro_div_duq
-    = (cs_real_3_t *restrict)cs_field_by_name("poro_div_duq")->val;
-
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    for (cs_lnum_t i = 0; i < 3; i++)
-      c_poro_div_duq[c_id][i] = 0.;
-  }
-
-  if (*inc == 1) {
-
-    /* Inner faces corrections */
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-
-        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             f_id++) {
-
-          cs_lnum_t ii = i_face_cells[f_id][0];
-          cs_lnum_t jj = i_face_cells[f_id][1];
-
-          cs_real_3_t normal;
-
-          cs_math_3_normalise(i_face_normal[f_id], normal);
-
-          cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
-          cs_real_t *vel_j = &(CS_F_(vel)->val_pre[3*jj]);
-
-          cs_real_t veli_dot_n =    (1. - i_f_face_factor[f_id][0])
-                                  * cs_math_3_dot_product(vel_i, normal);
-          cs_real_t velj_dot_n =    (1. - i_f_face_factor[f_id][1])
-                                  * cs_math_3_dot_product(vel_j, normal);
-
-          cs_real_t d_f_surf = 0.;
-          /* Is the cell disabled (for solid or porous)?
-             Not the case if coupled */
-          if (   has_dc * c_disable_flag[has_dc * ii] == 0
-              && has_dc * c_disable_flag[has_dc * jj] == 0)
-            d_f_surf = 1. / CS_MAX(i_f_face_surf[f_id],
-                                   cs_math_epzero * i_face_surf[f_id]);
-
-          i_poro_duq_0[f_id] = veli_dot_n * i_massflux[f_id] * d_f_surf;
-          i_poro_duq_1[f_id] = velj_dot_n * i_massflux[f_id] * d_f_surf;
-
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            c_poro_div_duq[ii][i] +=   i_poro_duq_0[f_id]
-                                     * i_f_face_normal[f_id][i];
-            c_poro_div_duq[jj][i] -=   i_poro_duq_1[f_id]
-                                    * i_f_face_normal[f_id][i];
-          }
-        }
-      }
-
-    }
-
-    /* Boundary faces corrections */
-    for (int g_id = 0; g_id < n_b_groups; g_id++) {
-
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-
-        for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             f_id++) {
-
-          cs_lnum_t ii = b_face_cells[f_id];
-
-          cs_real_3_t normal;
-
-          cs_math_3_normalise(b_face_normal[f_id], normal);
-
-          cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
-
-          cs_real_t veli_dot_n =   (1. - b_f_face_factor[f_id])
-                                 * cs_math_3_dot_product(vel_i, normal);
-
-          cs_real_t d_f_surf = 0.;
-          /* Is the cell disabled (for solid or porous)?
-             Not the case if coupled */
-          if (has_dc * c_disable_flag[has_dc * ii] == 0)
-            d_f_surf = 1. / CS_MAX(b_f_face_surf[f_id],
-                                   cs_math_epzero * b_face_surf[f_id]);
-
-          b_poro_duq[f_id] = veli_dot_n * b_massflux[f_id] * d_f_surf;
-
-          for (cs_lnum_t i = 0; i < 3; i++)
-            c_poro_div_duq[ii][i] +=   b_poro_duq[f_id]
-                                     * b_f_face_normal[f_id][i];
-        }
-
-        /* Finalisation of cell terms */
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          /* Is the cell disabled (for solid or porous)?
-             Not the case if coupled */
-          cs_real_t dvol = 0.;
-          if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-            dvol = 1. / cell_f_vol[c_id];
-
-          for (cs_lnum_t i = 0; i < 3; i++)
-            c_poro_div_duq[c_id][i] *= dvol;
-        }
-      }
-    }
-
-    /* Handle parallelism and periodicity */
-    if (halo != NULL)
-      cs_halo_sync_var_strided(halo,
-                               CS_HALO_STANDARD,
-                               (cs_real_t *)c_poro_div_duq,
-                               3);
-
-  }
-  else {
-#   pragma omp parallel for
-    for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++) {
-      i_poro_duq_0[f_id] = 0.;
-      i_poro_duq_1[f_id] = 0.;
-    }
-
-  }
+  cs_gradient_porosity_balance(*inc);
 }
 
 /*----------------------------------------------------------------------------
@@ -10243,6 +10073,191 @@ cs_gradient_type_by_imrgra(int                  imrgra,
   default:
     *gradient_type = CS_GRADIENT_GREEN_ITER;
     break;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief compute the steady balance due to porous modelling for the pressure
+ *        gradient.
+ *
+ * \param[in]  inc  if 0, solve on increment; 1 otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_porosity_balance(int inc)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
+  const cs_halo_t  *halo = m->halo;
+
+  const cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
+  cs_real_2_t *i_f_face_factor = mq->i_f_face_factor;
+  cs_real_t *b_f_face_factor = mq->b_f_face_factor;
+  cs_real_t *i_massflux = cs_field_by_name("inner_mass_flux")->val;
+  cs_real_t *b_massflux = cs_field_by_name("boundary_mass_flux")->val;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)mq->i_face_normal;
+  const cs_real_3_t *restrict i_f_face_normal
+    = (const cs_real_3_t *restrict)mq->i_f_face_normal;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)mq->b_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)mq->b_f_face_normal;
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+  const cs_real_t *restrict i_f_face_surf = mq->i_f_face_surf;
+  const cs_real_t *restrict i_face_surf = mq->i_face_surf;
+  const cs_real_t *restrict b_f_face_surf = mq->b_f_face_surf;
+  const cs_real_t *restrict b_face_surf = mq->b_face_surf;
+
+  const int *restrict c_disable_flag = mq->c_disable_flag;
+  cs_lnum_t has_dc = mq->has_disable_flag; /* Has cells disabled? */
+
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  /*Additional terms due to porosity */
+  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
+
+  if (f_i_poro_duq_0 == NULL)
+    return;
+
+  cs_real_t *i_poro_duq_0 = f_i_poro_duq_0->val;
+  cs_real_t *i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
+  cs_real_t *b_poro_duq = cs_field_by_name("b_poro_duq")->val;
+  cs_real_3_t *c_poro_div_duq
+    = (cs_real_3_t *restrict)cs_field_by_name("poro_div_duq")->val;
+
+# pragma omp parallel for
+  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+    for (cs_lnum_t i = 0; i < 3; i++)
+      c_poro_div_duq[c_id][i] = 0.;
+  }
+
+  if (inc == 1) {
+
+    /* Inner faces corrections */
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+
+        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             f_id++) {
+
+          cs_lnum_t ii = i_face_cells[f_id][0];
+          cs_lnum_t jj = i_face_cells[f_id][1];
+
+          cs_real_3_t normal;
+
+          cs_math_3_normalise(i_face_normal[f_id], normal);
+
+          cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
+          cs_real_t *vel_j = &(CS_F_(vel)->val_pre[3*jj]);
+
+          cs_real_t veli_dot_n =    (1. - i_f_face_factor[f_id][0])
+                                  * cs_math_3_dot_product(vel_i, normal);
+          cs_real_t velj_dot_n =    (1. - i_f_face_factor[f_id][1])
+                                  * cs_math_3_dot_product(vel_j, normal);
+
+          cs_real_t d_f_surf = 0.;
+          /* Is the cell disabled (for solid or porous)?
+             Not the case if coupled */
+          if (   has_dc * c_disable_flag[has_dc * ii] == 0
+              && has_dc * c_disable_flag[has_dc * jj] == 0)
+            d_f_surf = 1. / CS_MAX(i_f_face_surf[f_id],
+                                   cs_math_epzero * i_face_surf[f_id]);
+
+          i_poro_duq_0[f_id] = veli_dot_n * i_massflux[f_id] * d_f_surf;
+          i_poro_duq_1[f_id] = velj_dot_n * i_massflux[f_id] * d_f_surf;
+
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            c_poro_div_duq[ii][i] +=   i_poro_duq_0[f_id]
+                                     * i_f_face_normal[f_id][i];
+            c_poro_div_duq[jj][i] -=   i_poro_duq_1[f_id]
+                                    * i_f_face_normal[f_id][i];
+          }
+        }
+      }
+
+    }
+
+    /* Boundary faces corrections */
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+
+        for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+             f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+             f_id++) {
+
+          cs_lnum_t ii = b_face_cells[f_id];
+
+          cs_real_3_t normal;
+
+          cs_math_3_normalise(b_face_normal[f_id], normal);
+
+          cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
+
+          cs_real_t veli_dot_n =   (1. - b_f_face_factor[f_id])
+                                 * cs_math_3_dot_product(vel_i, normal);
+
+          cs_real_t d_f_surf = 0.;
+          /* Is the cell disabled (for solid or porous)?
+             Not the case if coupled */
+          if (has_dc * c_disable_flag[has_dc * ii] == 0)
+            d_f_surf = 1. / CS_MAX(b_f_face_surf[f_id],
+                                   cs_math_epzero * b_face_surf[f_id]);
+
+          b_poro_duq[f_id] = veli_dot_n * b_massflux[f_id] * d_f_surf;
+
+          for (cs_lnum_t i = 0; i < 3; i++)
+            c_poro_div_duq[ii][i] +=   b_poro_duq[f_id]
+                                     * b_f_face_normal[f_id][i];
+        }
+
+        /* Finalisation of cell terms */
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          /* Is the cell disabled (for solid or porous)?
+             Not the case if coupled */
+          cs_real_t dvol = 0.;
+          if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+            dvol = 1. / cell_f_vol[c_id];
+
+          for (cs_lnum_t i = 0; i < 3; i++)
+            c_poro_div_duq[c_id][i] *= dvol;
+        }
+      }
+    }
+
+    /* Handle parallelism and periodicity */
+    if (halo != NULL)
+      cs_halo_sync_var_strided(halo,
+                               CS_HALO_STANDARD,
+                               (cs_real_t *)c_poro_div_duq,
+                               3);
+
+  }
+  else {
+#   pragma omp parallel for
+    for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++) {
+      i_poro_duq_0[f_id] = 0.;
+      i_poro_duq_1[f_id] = 0.;
+    }
+
   }
 }
 

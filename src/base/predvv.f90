@@ -34,7 +34,8 @@
 !>   an estimator on the predicted velocity is computed.
 !>
 !> - at the second call, a global estimator on Navier Stokes is computed.
-!>   This second call is done after the correction step (\ref resopv).
+!>   This second call is done after the correction step
+!>   (\ref cs_pressure_correction).
 !>
 !> Please refer to the
 !> <a href="../../theory.pdf#predvv"><b>predvv</b></b></a> section
@@ -326,7 +327,7 @@ endif
 ! Interpolation of rho^n-1/2 (stored in pcrom)
 ! Interpolation of the mass flux at (n+1/2)
 ! NB: the mass flux (n+1) is overwritten because not used after.
-! The mass flux for (n->n+1) will be recomputed in resopv
+! The mass flux for (n->n+1) will be recomputed in cs_pressure_correction
 ! FIXME irovar=1 and if dt varies, use theta(rho) = theta(u)*...
 if (vcopt_u%thetav .lt. 1.d0 .and. iappel.eq.1 .and. iterns.gt.1   &
     .and. itpcol .eq. 0) then
@@ -1703,7 +1704,7 @@ if (iappel.eq.1) then
      fimp   , smbr   , vel    , eswork )
 
   ! Store inverse of the velocity matrix for the correction step
-  !  if needed (otherwise vitenp is used in resopv)
+  !  if needed (otherwise vitenp is used in cs_pressure_correction)
   if (rcfact.eq.1) then
 
     do iel = 1, ncel

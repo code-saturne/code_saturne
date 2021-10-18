@@ -249,6 +249,12 @@ static cs_cavitation_parameters_t  _cavit_parameters =
 };
 
 /*============================================================================
+ * Global variables
+ *============================================================================*/
+
+const cs_vof_parameters_t *cs_glob_vof_parameters = &_vof_parameters;
+
+/*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/

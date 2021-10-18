@@ -179,7 +179,7 @@ do f_id = 0, nfld - 1
 
     ! Cell based variables
     if (f_loc.eq.1) then
-      ! Pressure time drift (computed in resopv.f90)
+      ! Pressure time drift (computed in cs_pressure_correction.c)
       dervar(1) = sinfo%dervar
 
       ! Scalar time drift for cell based variables (except pressure)

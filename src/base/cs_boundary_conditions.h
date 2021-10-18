@@ -258,6 +258,47 @@ cs_boundary_conditions_set_neumann_scalar(cs_real_t  *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set Neumann BC for a scalar for a given face.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   qimpv  flux value to impose
+ * \param[in]   hint   internal exchange coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_boundary_conditions_set_neumann_vector(cs_real_t        a[3],
+                                          cs_real_t        af[3],
+                                          cs_real_t        b[3][3],
+                                          cs_real_t        bf[3][3],
+                                          const cs_real_t  qimpv[3],
+                                          cs_real_t        hint)
+{
+  /* Gradient BCs */
+
+  for (size_t i = 0; i < 3; i++) {
+    a[i] = -qimpv[i] / fmax(hint, 1.e-300);
+  }
+
+  b[0][0] = 1., b[0][1] = 0., b[0][2] = 0.;
+  b[1][0] = 0., b[1][1] = 1., b[1][2] = 0.;
+  b[2][0] = 0., b[2][1] = 0., b[2][2] = 1.;
+
+  /* Flux BCs */
+
+  for (size_t i = 0; i < 3; i++) {
+    af[i] = qimpv[i];
+
+    for (size_t j = 0; j < 3; j++)
+      bf[i][j] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set Dirichlet BC for a scalar for a given face.
  *
  * \param[out]  a      explicit BC coefficient for gradients
@@ -386,7 +427,7 @@ cs_boundary_conditions_set_dirichlet_vector(cs_real_3_t    a,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa ,
+cs_boundary_conditions_set_convective_outlet_scalar(cs_real_t *coefa,
                                                     cs_real_t *cofaf,
                                                     cs_real_t *coefb,
                                                     cs_real_t *cofbf,

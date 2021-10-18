@@ -183,14 +183,15 @@ type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
 interface
 
-  subroutine resopv &
-   ( nvar   , iterns , ncesmp , nfbpcd , ncmast ,                 &
-     icetsm , ifbpcd , ltmast , isostd ,                          &
-     dt     , vel    , da_uu  ,                                   &
+  subroutine cs_pressure_correction &
+   ( iterns , nfbpcd , ncmast ,                                   &
+     ifbpcd , ltmast , isostd ,                                   &
+     vel    , da_uu  ,                                            &
      coefav , coefbv , coefa_dp        , coefb_dp ,               &
-     smacel , spcond , svcond ,                                   &
-     frcxt  , dfrcxt , tpucou ,                                   &
-     viscf  , viscb  ,  tslagr )
+     spcond , svcond ,                                            &
+     frcxt  , dfrcxt ,                                            &
+     viscf  , viscb  )                                            &
+    bind(C, name='cs_pressure_correction')
 
     use dimens, only: ndimfb
     use mesh
@@ -199,20 +200,17 @@ interface
 
     ! Arguments
 
-    integer          nvar  , iterns
-    integer          ncesmp, nfbpcd, ncmast
+    integer, value :: iterns
+    integer, value :: nfbpcd, ncmast
 
-    integer          icetsm(ncesmp), ifbpcd(nfbpcd)
+    integer          ifbpcd(nfbpcd)
     integer          ltmast(ncelet)
     integer          isostd(nfabor+1)
 
-    double precision, dimension (1:ncelet), target :: dt
-    double precision smacel(ncesmp,nvar), spcond(nfbpcd,nvar)
-    double precision svcond(ncelet,nvar)
+    double precision spcond(nfbpcd,*)
+    double precision svcond(ncelet,*)
     double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
-    double precision, dimension (1:6,1:ncelet), target :: tpucou
     double precision viscf(nfac), viscb(ndimfb)
-    double precision tslagr(ncelet,*)
     double precision coefav(3,ndimfb)
     double precision coefbv(3,3,ndimfb)
     double precision vel(3,ncelet)
@@ -220,7 +218,7 @@ interface
     double precision coefa_dp(ndimfb)
     double precision coefb_dp(ndimfb)
 
-  end subroutine resopv
+  end subroutine cs_pressure_correction
 
   !=============================================================================
 
@@ -858,14 +856,14 @@ endif
 
 if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
-  call resopv &
-( nvar   , iterns , ncetsm , nfbpcd , ncmast ,                   &
-  icetsm , ifbpcd , ltmast , isostd ,                            &
-  dt     , vel    , da_uu  ,                                     &
-  coefau , coefbu , coefa_dp        , coefb_dp ,                 &
-  smacel , spcond , svcond ,                                     &
-  frcxt  , dfrcxt , dttens ,                                     &
-  viscf  , viscb  , tslagr )
+  call cs_pressure_correction                &
+    (iterns, nfbpcd, ncmast,                 &
+     ifbpcd, ltmast, isostd,                 &
+     vel, da_uu,                             &
+     coefau, coefbu, coefa_dp, coefb_dp,     &
+     spcond, svcond,                         &
+     frcxt, dfrcxt,                          &
+     viscf, viscb)
 
 endif
 
@@ -1336,7 +1334,8 @@ endif
 
 !===============================================================================
 ! 10. VoF: void fraction solving and update the mixture density/viscosity
-!      and mass flux (resopv solved the convective flux of void fraction, divU)
+!      and mass flux (cs_pressure_correction solved the convective flux of
+!      void fraction, divU)
 !===============================================================================
 
 if (ivofmt.gt.0) then

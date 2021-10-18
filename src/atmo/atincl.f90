@@ -156,7 +156,7 @@ integer, save :: iprofm(nozppm)
 !> iautom = 1 corresponds to a Dirichlet on the pressure and a
 !> Neumann on the velocity, whereas iautom = 2 imposes a Dirichlet
 !> on both pressure and velocity
-integer, allocatable, dimension(:) :: iautom
+integer, allocatable, target, dimension(:) :: iautom
 
 !> use meteo profile for variables initialization
 !> (0: not used; 1: used (default))
@@ -624,6 +624,20 @@ contains
       return
 
     end subroutine atmo_get_meteo_file_name
+
+    !=============================================================================
+
+    !> \brief Return pointer to automatic face bc flag array
+
+    !> \return  auto_flag  pointer to automatic boundary condition array
+
+    function cs_atmo_get_auto_flag() result(auto_flag) &
+      bind(C, name='cs_atmo_get_auto_flag')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr) :: auto_flag
+      auto_flag = c_loc(iautom)
+    end function cs_atmo_get_auto_flag
 
   !=============================================================================
 

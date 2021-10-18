@@ -547,6 +547,18 @@ cs_gradient_type_by_imrgra(int                  imrgra,
                            cs_halo_type_t      *halo_type);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief compute the steady balance due to porous modelling for the pressure
+ *        gradient.
+ *
+ * \param[in]  inc  if 0, solve on increment; 1 otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_porosity_balance(int inc);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

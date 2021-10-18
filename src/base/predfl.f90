@@ -179,7 +179,6 @@ do ifac = 1, nfabor
   qimp = 0.d0
 
   call set_neumann_scalar &
-       !==================
      ( clapot(ifac), cfapot(ifac),             &
        clbpot(ifac), cfbpot(ifac),             &
        qimp        , hint )

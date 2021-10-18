@@ -377,26 +377,26 @@ void CS_PROCF (divrij, DIVRIJ)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mass_flux(const cs_mesh_t          *m,
-             cs_mesh_quantities_t     *fvq,
-             int                       f_id,
-             int                       itypfl,
-             int                       iflmb0,
-             int                       init,
-             int                       inc,
-             int                       imrgra,
-             int                       nswrgu,
-             int                       imligu,
-             int                       iwarnu,
-             double                    epsrgu,
-             double                    climgu,
-             const cs_real_t           rom[],
-             const cs_real_t           romb[],
-             const cs_real_3_t         vel[],
-             const cs_real_3_t         coefav[],
-             const cs_real_33_t        coefbv[],
-             cs_real_t       *restrict i_massflux,
-             cs_real_t       *restrict b_massflux)
+cs_mass_flux(const cs_mesh_t             *m,
+             const cs_mesh_quantities_t  *fvq,
+             int                          f_id,
+             int                          itypfl,
+             int                          iflmb0,
+             int                          init,
+             int                          inc,
+             int                          imrgra,
+             int                          nswrgu,
+             int                          imligu,
+             int                          iwarnu,
+             double                       epsrgu,
+             double                       climgu,
+             const cs_real_t              rom[],
+             const cs_real_t              romb[],
+             const cs_real_3_t            vel[],
+             const cs_real_3_t            coefav[],
+             const cs_real_33_t           coefbv[],
+             cs_real_t          *restrict i_massflux,
+             cs_real_t          *restrict b_massflux)
 {
   const cs_halo_t  *halo = m->halo;
 

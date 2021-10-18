@@ -145,7 +145,7 @@ _sles_default_native(int                f_id,
       sles_it_type = CS_SLES_FCG;
       multigrid = 1;
     }
-    else if (!strcmp(name, "Pr compress")) { /* resopv.f90 */
+    else if (!strcmp(name, "Pr compress")) { /* cs_pressure_correction.c */
       sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
     }
     else if (!strcmp(name, "PoissonL")) { /* _lageqp */

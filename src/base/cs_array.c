@@ -93,6 +93,30 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Copy real values from an array to another of the same dimensions.
+ *
+ * \param[in]   n_elts  number of associated elements
+ * \param[in]   dim     associated dimension
+ * \param[in]   src     source array values (size: n_elts*dim]
+ * \param[out]  dest    destination array values (size: n_elts*dim]
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_array_copy_real(cs_lnum_t        n_elts,
+                   cs_lnum_t        dim,
+                   const cs_real_t  src[],
+                   cs_real_t        dest[restrict])
+{
+  const cs_lnum_t _n_elts = dim * n_elts;
+
+# pragma omp parallel for if (_n_elts > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < _n_elts; ii++)
+    dest[ii] = src[ii];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Assign a constant value to an array.
  *
  * \param[in]   n_elts  number of associated elements

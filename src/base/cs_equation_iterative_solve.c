@@ -2546,7 +2546,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     /* --> Handle parallelism and periodicity */
 
     if (cs_glob_rank_id  >=0 || cs_glob_mesh->n_init_perio > 0)
-      cs_mesh_sync_var_sym_tens((cs_real_t *)pvar);
+      cs_mesh_sync_var_sym_tens(pvar);
 
     /* --- Update the right hand and compute the new residual */
 

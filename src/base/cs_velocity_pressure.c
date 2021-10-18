@@ -154,7 +154,7 @@ BEGIN_C_DECLS
         <a href="../../theory.pdf#iphydr"><b>handling of the hydrostatic pressure</b></a>
         section of the theory guide for more informations.
 
-  \var  cs_velocity_pressure_model_t::icalhy
+  \var  cs_velocity_pressure_param_t::icalhy
         compute the hydrostatic pressure in order to compute the Dirichlet
         conditions on the pressure at outlets
         - 1: calculation of the hydrostatic pressure at the outlet boundary

@@ -171,7 +171,7 @@ module pointe
   !> dimensionless factor. The user may give a value in
   !> \ref cs_user_boundary_conditions in the array
   !> \c rcodcl(ifac, \ref ipr, 2).
-  double precision, allocatable, dimension(:) :: b_head_loss
+  double precision, allocatable, target, dimension(:) :: b_head_loss
 
   !> \anchor ncetsm
   !> number of the \c ncetsm cells in which a mass source term is imposed.
@@ -201,7 +201,7 @@ module pointe
 
   !> liquid-vapor mass transfer term for cavitating flows
   !> and its derivative with respect to pressure
-  double precision, allocatable, dimension(:) :: gamcav, dgdpca
+  double precision, allocatable, target, dimension(:) :: gamcav, dgdpca
 
   !> number of the nfbpcd faces in which a condensation source terms is imposed.
   !> See \c ifbpcd and the user subroutine \ref cs_user_boundary_mass_source_terms
@@ -701,6 +701,48 @@ contains
     endif
 
   end subroutine cs_f_volume_mass_injection_get_arrays
+
+  !=============================================================================
+
+  !> \brief Return C pointer to b_head_loss array
+
+  !> \return  auto_flag  pointer to automatic boundary condition array
+
+  function cs_get_b_head_loss() result(c_b_head_loss) &
+    bind(C, name='cs_get_b_head_loss')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr) :: c_b_head_loss
+    c_b_head_loss = c_loc(b_head_loss)
+  end function cs_get_b_head_loss
+
+  !=============================================================================
+
+  !> \brief Return C pointer to cavitation "dgdpca" array
+
+  !> \return  cav_dgpd
+
+  function cs_get_cavitation_dgdp_st() result(cav_dgpd) &
+    bind(C, name='cs_get_cavitation_dgdp_st')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr) :: cav_dgpd
+    cav_dgpd = c_loc(dgdpca)
+  end function cs_get_cavitation_dgdp_st
+
+  !=============================================================================
+
+  !> \brief Return C pointer to cavitation "gamcav" array
+
+  !> \return  cav_gam
+
+  function cs_get_cavitation_gam() result(cav_gam) &
+    bind(C, name='cs_get_cavitation_gam')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr) :: cav_gam
+    cav_gam = c_loc(gamcav)
+  end function cs_get_cavitation_gam
 
   !=============================================================================
 

@@ -119,5 +119,14 @@ contains
 
   !=============================================================================
 
+  function cs_tagms_s_metal() result(c_s_metal) &
+    bind(C, name='cs_tagms_s_metal')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(kind=c_double) :: c_s_metal
+    c_s_metal = s_metal
+  end function cs_tagms_s_metal
+
+  !=============================================================================
 
 end module cs_tagms

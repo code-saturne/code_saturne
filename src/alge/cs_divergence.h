@@ -230,7 +230,7 @@ void CS_PROCF (divrij, DIVRIJ)
 
 void
 cs_mass_flux(const cs_mesh_t             *m,
-             cs_mesh_quantities_t        *fvq,
+             const cs_mesh_quantities_t  *fvq,
              int                          f_id,
              int                          itypfl,
              int                          iflmb0,

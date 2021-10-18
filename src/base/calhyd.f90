@@ -53,12 +53,14 @@ subroutine calhyd &
    phydr  , flumas , flumab ,                                     &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
-   dpvar  , rhs   )
+   dpvar  , rhs   )                                               &
+  bind(C, name='cs_hydrostatic_pressure_compute')
 
 !===============================================================================
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
 use atincl, only: iatmst
 use paramx
 use numvar
@@ -78,7 +80,8 @@ implicit none
 
 ! Arguments
 
-integer          indhyd, iterns
+integer(c_int) :: indhyd
+integer(c_int), value :: iterns
 
 double precision fext(3,ncelet)
 double precision dfext(3,ncelet)

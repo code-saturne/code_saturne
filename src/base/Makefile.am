@@ -148,6 +148,7 @@ cs_post_default.h \
 cs_post_util.h \
 cs_preprocess.h \
 cs_preprocessor_data.h \
+cs_pressure_correction.h \
 cs_probe.h \
 cs_prototypes.h \
 cs_random.h \
@@ -323,6 +324,7 @@ cs_post_default.c \
 cs_post_util.c \
 cs_preprocess.c \
 cs_preprocessor_data.c \
+cs_pressure_correction.c \
 cs_probe.c \
 cs_random.c \
 cs_range_set.c \
@@ -393,7 +395,6 @@ precli.f90 \
 predfl.f90 \
 predvv.f90 \
 pthrbm.f90 \
-resopv.f90 \
 resvoi.f90 \
 scalai.f90 \
 schtmp.f90 \

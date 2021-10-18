@@ -645,7 +645,7 @@ cs_mesh_sync_var_tens(cs_real_t  *var);
  *----------------------------------------------------------------------------*/
 
 void
-cs_mesh_sync_var_sym_tens(cs_real_t  *var);
+cs_mesh_sync_var_sym_tens(cs_real_6_t  *var);
 
 /*----------------------------------------------------------------------------
  * Order family numbers and remove duplicates
