@@ -299,7 +299,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the localstructures for the current cell.
+ * \brief   Initialize the local structures for the current cell.
  *          Case of vector-valued HHO schemes
  *
  * \param[in]      cm          pointer to a cellwise view of the mesh
@@ -698,7 +698,6 @@ cs_hho_vecteq_init_common(cs_flag_t                      scheme_flag,
 #endif /* openMP */
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Retrieve work buffers used for building a CDO system cellwise
@@ -714,7 +713,6 @@ cs_hho_vecteq_get(cs_cell_sys_t       **csys,
                   cs_cell_builder_t   **cb,
                   cs_hho_builder_t    **hhob)
 {
-
   int t_id = 0;
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -814,7 +812,6 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
                                              CS_CDO_CONNECT_FACE_VHP0);
     break;
 
-
   case CS_SPACE_SCHEME_HHO_P1:
     eqc->n_cell_dofs = 3*CS_N_CELL_DOFS_1ST;
     eqc->n_face_dofs = 3*CS_N_FACE_DOFS_1ST;
@@ -827,7 +824,6 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
     eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P1,
                                              CS_CDO_CONNECT_FACE_VHP1);
     break;
-
 
   case CS_SPACE_SCHEME_HHO_P2:
     eqc->n_cell_dofs = 3*CS_N_CELL_DOFS_2ND;
@@ -947,7 +943,6 @@ cs_hho_vecteq_free_context(void   *data)
   BFT_FREE(eqc);
 
   return NULL;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -990,7 +985,6 @@ cs_hho_vecteq_init_values(cs_real_t                     t_eval,
   memset(c_vals, 0, quant->n_cells * eqc->n_cell_dofs * sizeof(cs_real_t));
 
   /* TODO */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1008,7 +1002,6 @@ cs_hho_vecteq_compute_source(const cs_equation_param_t  *eqp,
                              cs_equation_builder_t      *eqb,
                              void                       *data)
 {
-
   cs_hho_vecteq_t  *eqc = (cs_hho_vecteq_t *)data;
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -1127,8 +1120,6 @@ cs_hho_vecteq_initialize_system(const cs_equation_param_t   *eqp,
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
-
-
 }
 
 /*----------------------------------------------------------------------------*/

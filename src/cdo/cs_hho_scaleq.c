@@ -289,7 +289,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the localstructures for the current cell.
+ * \brief   Initialize the local structures for the current cell.
  *          Case of scalar-valued HHO schemes
  *
  * \param[in]      cm          pointer to a cellwise view of the mesh
