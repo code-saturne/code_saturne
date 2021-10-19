@@ -3417,7 +3417,6 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
                          const cs_cdo_quantities_t  *cdoq,
                          const cs_time_step_t       *ts)
 {
-  CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(cdoq);
 
@@ -3491,22 +3490,31 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
       break;
     }
 
+    /* In case of postprocessing of the border faces, one has to check if there
+       is a mesh modification. In particular, a removal of 2D extruded border
+       faces*/
+
+    bool  use_parent = (mesh->n_g_b_faces_all > mesh->n_g_b_faces) ?
+      false : true;
+
     sprintf(postlabel, "%s.BdyFlux", eqp->name);
 
     /* Post-process the boundary fluxes (diffusive and convective) */
+
     cs_post_write_var(CS_POST_MESH_BOUNDARY,
                       CS_POST_WRITER_DEFAULT,
                       postlabel,
                       1,
-                      true,             // interlace
-                      true,             // true = original mesh
+                      true,                /* interlace */
+                      use_parent,
                       CS_POST_TYPE_cs_real_t,
-                      NULL,             // values on cells
-                      NULL,             // values at internal faces
-                      b->boundary_term, // values at border faces
-                      ts);              // time step management struct.
+                      NULL,                /* values on cells */
+                      NULL,                /* values at internal faces */
+                      b->boundary_term,    /* values at border faces */
+                      ts);                 /* time step structure */
 
     /* Free buffers */
+
     BFT_FREE(postlabel);
     cs_equation_balance_destroy(&b);
 

@@ -2055,7 +2055,14 @@ cs_cdofb_vecteq_extra_post(const cs_equation_param_t  *eqp,
   const cs_lnum_t  n_i_faces = cs_shared_connect->n_faces[CS_INT_FACES];
   const cs_real_t  *bface_values = eqc->face_values + 3*n_i_faces;
 
+  /* In case of postprocessing of the border faces, one has to check if there
+     is a mesh modification. In particular, a removal of 2D extruded border
+     faces*/
+
+  bool  use_parent = (cs_shared_quant->remove_boundary_faces) ? false : true;
+
   /* Field post-processing */
+
   char *postlabel = NULL;
   int  len = strlen(field->name) + 8 + 1;
   BFT_MALLOC(postlabel, len, char);
@@ -2065,13 +2072,13 @@ cs_cdofb_vecteq_extra_post(const cs_equation_param_t  *eqp,
                     CS_POST_WRITER_ALL_ASSOCIATED,
                     postlabel,
                     field->dim,
-                    true,
-                    true,                  // true = original mesh
+                    true,                  /* interlaced arrays */
+                    use_parent,
                     CS_POST_TYPE_cs_real_t,
-                    NULL,                  // values on cells
-                    NULL,                  // values at internal faces
-                    bface_values,          // values at border faces
-                    cs_shared_time_step);  // time step management structure
+                    NULL,                  /* values on cells */
+                    NULL,                  /* values at internal faces */
+                    bface_values,          /* values at border faces */
+                    cs_shared_time_step);  /* time step management structure */
 
   BFT_FREE(postlabel);
 

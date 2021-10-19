@@ -1617,7 +1617,16 @@ cs_navsto_system_extra_post(void                      *input,
     case CS_SPACE_SCHEME_HHO_P0:
       {
         /* Get the current values not the previous one */
+
         bool  need_prev = false;
+
+        /* In case of postprocessing of the border faces, one has to check if
+           there is a mesh modification. In particular, a removal of 2D
+           extruded border faces*/
+
+        bool  use_parent =
+          (cs_glob_mesh->n_g_b_faces_all > cs_glob_mesh->n_g_b_faces) ?
+          false : true;
 
         /* Mass flux is a scalar associated to each face (first interior faces
            then border faces */
@@ -1628,13 +1637,13 @@ cs_navsto_system_extra_post(void                      *input,
                           CS_POST_WRITER_DEFAULT,
                           "boundary_mass_flux",
                           1,
-                          false,                  // interlace
-                          true,                   // true = original mesh
+                          false,                  /* interlace */
+                          use_parent,             /* true = original mesh */
                           CS_POST_TYPE_cs_real_t,
-                          NULL,                   // values on cells
-                          NULL,                   // values at internal faces
-                          mass_bflux,             // values at border faces
-                          time_step);             // time step management struct.
+                          NULL,                   /* values on cells */
+                          NULL,                   /* values at internal faces */
+                          mass_bflux,             /* values at border faces */
+                          time_step);             /* time step structure */
 
       }
       break;
