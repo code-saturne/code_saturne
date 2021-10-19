@@ -705,7 +705,7 @@ cs_sles_hypre_solve(void                *context,
   cs_sles_hypre_t  *c = context;
   cs_sles_hypre_setup_t  *sd = c->setup_data;
   cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
-  int its;
+  HYPRE_Int its;
   double res;
 
   precision = precision;

@@ -306,10 +306,6 @@ _variant_build_list(int                             n_fill_types,
                     int                            *n_variants,
                     cs_matrix_timing_variant_t    **m_variant)
 {
-  int  i;
-  int  _n_fill_types;
-  cs_matrix_fill_type_t  _fill_types[CS_MATRIX_N_FILL_TYPES];
-
   int  n_variants_max = 0;
 
   *n_variants = 0;
@@ -548,9 +544,6 @@ _matrix_check(int                          n_variants,
               const cs_numbering_t        *numbering,
               cs_matrix_timing_variant_t  *m_variant)
 {
-  cs_lnum_t  ii;
-  int  v_id, f_id, ed_flag;
-
   bool print_subtitle = false;
   cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
   cs_real_t  *yr0 = NULL, *yr1 = NULL;
@@ -584,23 +577,25 @@ _matrix_check(int                          n_variants,
 
   /* Initialize arrays */
 
-# pragma omp parallel for
-  for (ii = 0; ii < n_cols_ext*d_block_size[3]; ii++)
-    da[ii] = 1.0 + cos(ii);
-
-# pragma omp parallel for
-  for (ii = 0; ii < n_edges*ed_block_size[3]; ii++) {
-    xa[ii*2] = 0.5*(0.9 + cos(ii));
-    xa[ii*2 + 1] = -0.5*(0.9 + cos(ii));
+  cs_gnum_t *cell_gnum = NULL;
+  BFT_MALLOC(cell_gnum, n_cols_ext, cs_gnum_t);
+  if (cs_glob_mesh->global_cell_num != NULL) {
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      cell_gnum[ii] = cs_glob_mesh->global_cell_num[ii];
   }
-
-# pragma omp parallel for
-  for (ii = 0; ii < n_cols_ext*d_block_size[1]; ii++)
-    x[ii] = sin(ii);
+  else {
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      cell_gnum[ii] = ii+1;
+  }
+  if (halo != NULL)
+    cs_halo_sync_untyped(halo,
+                         CS_HALO_STANDARD,
+                         sizeof(cs_gnum_t),
+                         cell_gnum);
 
   /* Loop on fill options */
 
-  for (f_id = 0; f_id < CS_MATRIX_N_FILL_TYPES; f_id++) {
+  for (int f_id = 0; f_id < CS_MATRIX_N_FILL_TYPES; f_id++) {
 
     const cs_lnum_t *_d_block_size
       = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size : NULL;
@@ -610,15 +605,53 @@ _matrix_check(int                          n_variants,
     const bool sym_coeffs = (   f_id == CS_MATRIX_SCALAR_SYM
                              || f_id == CS_MATRIX_BLOCK_D_SYM) ? true : false;
 
+    /* Generate matrix coefficients */
+
+    const cs_lnum_t stride
+      = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size[1] : 1;
+    const cs_lnum_t sd
+      = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size[3] : 1;
+    const cs_lnum_t se
+      = (f_id >= CS_MATRIX_BLOCK) ? ed_block_size[3] : 1;
+
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_cols_ext; ii++) {
+      cs_gnum_t jj = (cell_gnum[ii] - 1)*sd;
+      for (cs_lnum_t kk = 0; kk < sd; kk++) {
+        da[ii*sd+kk] = 1.0 + cos(jj*sd+kk);
+      }
+    }
+
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
+      cs_lnum_t i0 = edges[ii][0];
+      cs_lnum_t i1 = edges[ii][1];
+      cs_gnum_t j0 = (cell_gnum[i0] - 1)*se;
+      cs_gnum_t j1 = (cell_gnum[i1] - 1)*se;
+      for (cs_lnum_t kk = 0; kk < se; kk++) {
+        xa[(ii*se+kk)*2]
+          = 0.5*(0.45 + cos(j0*se+kk) + cos(j1*se+kk));
+        xa[(ii*se+kk)*2 + 1]
+          = -0.5*(0.45 + cos(j0*se+kk) + cos(j1*se+kk));
+      }
+    }
+
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_cols_ext; ii++) {
+      cs_gnum_t jj = (cell_gnum[ii] - 1)*stride;
+      for (cs_lnum_t kk = 0; kk < stride; kk++)
+        x[ii*stride+kk] = sin(jj*stride+kk);
+    }
+
     /* Loop on diagonal exclusion options */
 
-    for (ed_flag = 0; ed_flag < 2; ed_flag++) {
+    for (int ed_flag = 0; ed_flag < 2; ed_flag++) {
 
       print_subtitle = true;
 
       /* Loop on variant types */
 
-      for (v_id = 0; v_id < n_variants; v_id++) {
+      for (int v_id = 0; v_id < n_variants; v_id++) {
 
         cs_matrix_timing_variant_t *v = m_variant + v_id;
 
@@ -704,6 +737,8 @@ _matrix_check(int                          n_variants,
     } /* end of loop on ed_flag */
 
   } /* end of loop on fill types */
+
+  BFT_FREE(cell_gnum);
 
   BFT_FREE(yr1);
   BFT_FREE(yr0);

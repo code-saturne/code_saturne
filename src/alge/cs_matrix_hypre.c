@@ -115,6 +115,77 @@ static const char _hypre_ij_type_fullname[] = "HYPRE IJ (HYPRE_ParCSR)";
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
+ * Matrix.vector product y = A.x with HYPRE matrix
+ *
+ * Note that since this function creates vectors, it may have significant
+ * overhead. Since it is present for completednes, this should not be an issue.
+ * If used more often, vectors could be maintained in the coeffs structure
+ * along with the matrix.
+ *
+ * parameters:
+ *   matrix       <-- pointer to matrix structure
+ *   exclude_diag <-- exclude diagonal if true
+ *   sync         <-- synchronize ghost cells if true
+ *   x            <-> multipliying vector values
+ *   y            --> resulting vector
+ *----------------------------------------------------------------------------*/
+
+static void
+_mat_vec_p_parcsr(const cs_matrix_t  *matrix,
+                  bool                exclude_diag,
+                  bool                sync,
+                  cs_real_t          *restrict x,
+                  cs_real_t          *restrict y)
+{
+  assert(exclude_diag == false);
+
+  const cs_lnum_t  n_rows = matrix->n_rows * matrix->db_size[0];
+  const cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+
+  /* Get pointers to structures through coefficients,
+     and copy input values */
+
+  HYPRE_ParCSRMatrix p_a;
+  HYPRE_IJMatrixGetObject(coeffs->hm, (void **)&p_a);
+
+  HYPRE_Real *_t = NULL;
+
+  if (sizeof(cs_real_t) == sizeof(HYPRE_Real)) {
+    HYPRE_IJVectorSetValues(coeffs->hx, n_rows, NULL, x);
+  }
+  else {
+    BFT_MALLOC(_t, n_rows, HYPRE_Real);
+    for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
+      _t[ii] = x[ii];;
+    }
+    HYPRE_IJVectorSetValues(coeffs->hx, n_rows, NULL, _t);
+  }
+  if (sync)
+    HYPRE_IJVectorAssemble(coeffs->hx);
+
+  HYPRE_ParVector p_x, p_y;
+  HYPRE_IJVectorGetObject(coeffs->hx, (void **)&p_x);
+  HYPRE_IJVectorGetObject(coeffs->hy, (void **)&p_y);
+
+  /* SpMv operation */
+
+  HYPRE_ParCSRMatrixMatvec(1.0, p_a, p_x, 0, p_y);
+
+  /* Copy data back */
+
+  if (sizeof(cs_real_t) == sizeof(HYPRE_Real)) {
+    HYPRE_IJVectorGetValues(coeffs->hy, n_rows, NULL, y);
+  }
+  else {
+    HYPRE_IJVectorGetValues(coeffs->hy, n_rows, NULL, _t);
+    for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
+      y[ii] = _t[ii];
+    }
+    BFT_FREE(_t);
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Compute local and distant counts of matrix entries using an assembler
  *
  * The caller is responsible for freeing the returned diag_sizes and
@@ -168,6 +239,128 @@ _compute_diag_sizes_assembler(const cs_matrix_assembler_t   *ma,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute local and distant counts of matrix entries using an assembler
+ * with full diagonal blocks and A.I extradiangonal blocks fill.
+ *
+ * The caller is responsible for freeing the returned diag_sizes and
+ * offdiag_sizes arrays.
+ *
+ * parameters:
+ *   ma            <-- pointer to matrix assembler structure
+ *   db_size       <-- diagonal block size
+ *   diag_sizes    --> diagonal values
+ *   offdiag_sizes --> off-diagonal values
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_diag_sizes_assembler_db(const cs_matrix_assembler_t   *ma,
+                                 cs_lnum_t                     db_size,
+                                 HYPRE_Int                    **diag_sizes,
+                                 HYPRE_Int                    **offdiag_sizes)
+{
+  const cs_lnum_t n_rows = cs_matrix_assembler_get_n_rows(ma);
+
+  cs_lnum_t n_diag_add
+    = (cs_matrix_assembler_get_separate_diag(ma)) ? db_size : 0;
+
+  const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
+  const cs_lnum_t *col_ids = cs_matrix_assembler_get_col_ids(ma);
+
+  HYPRE_Int *_diag_sizes, *_offdiag_sizes;
+  BFT_MALLOC(_diag_sizes, n_rows*db_size, HYPRE_Int);
+  BFT_MALLOC(_offdiag_sizes, n_rows*db_size, HYPRE_Int);
+
+  /* Separate local and distant loops for better first touch logic */
+
+# pragma omp parallel for  if(n_rows > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+    cs_lnum_t s_id = row_index[i];
+    cs_lnum_t e_id = row_index[i+1];
+
+    HYPRE_Int n_r_diag = 0;
+    HYPRE_Int n_cols = e_id - s_id;
+
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      if (col_ids[j] < n_rows) {
+        n_r_diag++;
+        if (col_ids[j] == i)
+          n_r_diag += db_size -1;
+      }
+      else
+        break;
+    }
+
+    for (cs_lnum_t j = 0; j < db_size; j++) {
+      _diag_sizes[i*db_size + j] = n_r_diag + n_diag_add;
+      _offdiag_sizes[i*db_size + j] = n_cols - n_r_diag;
+    }
+  }
+
+  *diag_sizes = _diag_sizes;
+  *offdiag_sizes = _offdiag_sizes;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute local and distant counts of matrix entries using an assembler
+ * with full blocks fill.
+ *
+ * The caller is responsible for freeing the returned diag_sizes and
+ * offdiag_sizes arrays.
+ *
+ * parameters:
+ *   ma            <-- pointer to matrix assembler structure
+ *   b_size        <-- diagonal block size
+ *   diag_sizes    --> diagonal values
+ *   offdiag_sizes --> off-diagonal values
+ *----------------------------------------------------------------------------*/
+
+static void
+_compute_diag_sizes_assembler_b(const cs_matrix_assembler_t   *ma,
+                                cs_lnum_t                      b_size,
+                                HYPRE_Int                    **diag_sizes,
+                                HYPRE_Int                    **offdiag_sizes)
+{
+  const cs_lnum_t n_rows = cs_matrix_assembler_get_n_rows(ma);
+
+  cs_lnum_t n_diag_add
+    = (cs_matrix_assembler_get_separate_diag(ma)) ? 1 : 0;
+
+  const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
+  const cs_lnum_t *col_ids = cs_matrix_assembler_get_col_ids(ma);
+
+  HYPRE_Int *_diag_sizes, *_offdiag_sizes;
+  BFT_MALLOC(_diag_sizes, n_rows*b_size, HYPRE_Int);
+  BFT_MALLOC(_offdiag_sizes, n_rows*b_size, HYPRE_Int);
+
+  /* Separate local and distant loops for better first touch logic */
+
+# pragma omp parallel for  if(n_rows > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_rows; i++) {
+    cs_lnum_t s_id = row_index[i];
+    cs_lnum_t e_id = row_index[i+1];
+
+    HYPRE_Int n_r_diag = 0;
+    HYPRE_Int n_cols = e_id - s_id;
+
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      if (col_ids[j] < n_rows) {
+        n_r_diag++;
+      }
+      else
+        break;
+    }
+
+    for (cs_lnum_t j = 0; j < b_size; j++) {
+      _diag_sizes[i*b_size + j] = (n_r_diag + n_diag_add)*b_size;
+      _offdiag_sizes[i*b_size + j] = (n_cols - n_r_diag)*b_size;
+    }
+  }
+
+  *diag_sizes = _diag_sizes;
+  *offdiag_sizes = _offdiag_sizes;
+}
+
+/*----------------------------------------------------------------------------
  * Compute local and distant counts of a native matrix's entries.
  *
  * The caller is responsible for freeing the returned diag_sizes and
@@ -178,6 +371,7 @@ _compute_diag_sizes_assembler(const cs_matrix_assembler_t   *ma,
  *   have_diag     <-- does the matrix include a diagonal ?
  *   n_edges       <-- local number of graph edges
  *   edges         <-- edges (symmetric row <-> column) connectivity
+ *   g_e_id        <-- global element ids
  *   diag_sizes    --> diagonal values
  *   offdiag_sizes --> off-diagonal values
  *----------------------------------------------------------------------------*/
@@ -187,6 +381,7 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
                            bool                have_diag,
                            cs_lnum_t           n_edges,
                            const cs_lnum_t     edges[restrict][2],
+                           const cs_gnum_t     g_e_id[],
                            HYPRE_Int         **diag_sizes,
                            HYPRE_Int         **offdiag_sizes)
 {
@@ -197,6 +392,14 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
   BFT_MALLOC(_offdiag_sizes, n_rows, HYPRE_Int);
 
   int n_diag = (have_diag) ? 1 : 0;
+
+  cs_gnum_t g_id_lb = 0;
+  cs_gnum_t g_id_ub = 0;
+
+  if (n_rows > 0) {
+    g_id_lb = g_e_id[0];
+    g_id_ub = g_e_id[n_rows-1] + 1;
+  }
 
   /* Separate local and distant loops for better first touch logic */
 
@@ -228,17 +431,19 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
              edge_id++) {
           cs_lnum_t ii = edges[edge_id][0];
           cs_lnum_t jj = edges[edge_id][1];
+          cs_gnum_t g_ii = g_e_id[ii];
+          cs_gnum_t g_jj = g_e_id[jj];
           if (ii < n_rows) {
-            if (jj < n_rows) {
+            if (g_jj >= g_id_lb && g_jj < g_id_ub)
               _diag_sizes[ii] += 1;
-              _diag_sizes[jj] += 1;
-            }
-            else {
+            else
               _offdiag_sizes[ii] += 1;
-            }
           }
-          else {
-            _offdiag_sizes[jj] += 1;
+          if (jj < n_rows) {
+            if (g_ii >= g_id_lb && g_ii < g_id_ub)
+              _diag_sizes[jj] += 1;
+            else
+              _offdiag_sizes[jj] += 1;
           }
         }
       }
@@ -251,17 +456,19 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
     for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
       cs_lnum_t ii = edges[edge_id][0];
       cs_lnum_t jj = edges[edge_id][1];
+      cs_gnum_t g_ii = g_e_id[ii];
+      cs_gnum_t g_jj = g_e_id[jj];
       if (ii < n_rows) {
-        if (jj < n_rows) {
+        if (g_jj >= g_id_lb && g_jj < g_id_ub)
           _diag_sizes[ii] += 1;
-          _diag_sizes[jj] += 1;
-        }
-        else {
+        else
           _offdiag_sizes[ii] += 1;
-        }
       }
-      else {
-        _offdiag_sizes[jj] += 1;
+      if (jj < n_rows) {
+        if (g_ii >= g_id_lb && g_ii < g_id_ub)
+          _diag_sizes[jj] += 1;
+        else
+          _offdiag_sizes[jj] += 1;
       }
     }
 
@@ -292,87 +499,88 @@ _assembler_values_init(void              *matrix_p,
                        const cs_lnum_t    db_size[4],
                        const cs_lnum_t    eb_size[4])
 {
-  CS_UNUSED(db_size);
-
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
+  if (matrix->coeffs == NULL) {
+    cs_matrix_coeffs_hypre_t  *coeffs;
+    BFT_MALLOC(coeffs, 1, cs_matrix_coeffs_hypre_t);
+    memset(coeffs, 0, sizeof(HYPRE_IJMatrix));
+    coeffs->matrix_state = 0;
 
-  const cs_lnum_t n_rows = matrix->n_rows;
-  cs_lnum_t e_stride = 1;
-  if (eb_size != NULL)
-    e_stride = eb_size[3];
-
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-
-  /* Initialize diagonal values */
-
-  BFT_REALLOC(mc->_val, e_stride*ms->row_index[ms->n_rows], cs_real_t);
-  mc->val = mc->_val;
-
-# pragma omp parallel for  if(n_rows*db_size[0] > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-    cs_lnum_t n_s_cols = (ms->row_index[ii+1] - ms->row_index[ii])*e_stride;
-    cs_lnum_t displ = ms->row_index[ii]*e_stride;
-    for (cs_lnum_t jj = 0; jj < n_s_cols; jj++)
-      mc->_val[displ + jj] = 0;
+    matrix->coeffs = coeffs;
   }
-}
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add HYPRE matrix coefficients using global row ids
- *        and column indexes, using intermediate copy for indexes, and
- *        directly passing values.
- *
- * \warning  The matrix pointer must point to valid data when the selection
- *           function is called, so the life cycle of the data pointed to
- *           should be at least as long as that of the assembler values
- *           structure.
- *
- * \remark  Note that we pass column indexes (not ids) here; as the
- *          caller is already assumed to have identified the index
- *          matching a given column id.
- *
- * \param[in, out]  hm        HYPRE Matrix
- * \param[in]       n         number of values to add
- * \param[in]       stride    associated data block size
- * \param[in]       row_g_id  associated global row ids
- * \param[in]       col_g_id  associated global column ids
- * \param[in]       vals      pointer to values (size: n*stride)
- */
-/*----------------------------------------------------------------------------*/
+  /* Associated matrix assembler */
 
-static void
-_assembler_values_add_block_cd(HYPRE_IJMatrix   hm,
-                               HYPRE_Int        n,
-                               HYPRE_Int        stride,
-                               const cs_gnum_t  row_g_id[],
-                               const cs_gnum_t  col_g_id[],
-                               const cs_real_t  vals[])
-{
-  HYPRE_BigInt rows[COEFF_GROUP_SIZE];
-  HYPRE_BigInt cols[COEFF_GROUP_SIZE];
+  const cs_matrix_assembler_t  *ma = matrix->assembler;
 
-  HYPRE_Int block_step = COEFF_GROUP_SIZE / stride;
+  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
 
-  for (HYPRE_Int s_id = 0; s_id < n; s_id += block_step) {
+  /* Create HYPRE matrix */
 
-    HYPRE_Int n_group = block_step;
-    if (s_id + n_group > n)
-      n_group = n - s_id;
+  HYPRE_IJMatrix hm = coeffs->hm;
 
-    for (HYPRE_Int i = 0; i < n_group; i++) {
-      for (cs_lnum_t j = 0; j < stride; j++) {
-        rows[i*stride + j] = row_g_id[s_id + i];
-        cols[i*stride + j] = col_g_id[s_id + i];
-      }
-    }
+  if (coeffs->matrix_state == 0) {
 
-    const HYPRE_Real *values = (const HYPRE_Real *)(vals + s_id*stride);
+    MPI_Comm comm = cs_glob_mpi_comm;
+    if (comm == MPI_COMM_NULL)
+      comm = MPI_COMM_WORLD;
 
-    HYPRE_IJMatrixAddToValues(hm, n_group, NULL, rows, cols, values);
+    const cs_gnum_t *l_range = cs_matrix_assembler_get_l_range(ma);
 
+    HYPRE_BigInt b_size = db_size[0];
+    HYPRE_BigInt ilower = b_size*l_range[0];
+    HYPRE_BigInt iupper = b_size*l_range[1] - 1;
+
+    HYPRE_IJMatrixCreate(comm,
+                         ilower,
+                         iupper,
+                         ilower,
+                         iupper,
+                         &hm);
+
+    coeffs->l_range[0] = l_range[0];
+    coeffs->l_range[1] = l_range[1];
+
+    coeffs->hm = hm;
+
+    HYPRE_IJMatrixSetObjectType(hm, HYPRE_PARCSR);
+
+    HYPRE_Int *diag_sizes = NULL, *offdiag_sizes = NULL;
+
+    if (db_size[0] == 1)
+      _compute_diag_sizes_assembler(ma,
+                                    &diag_sizes,
+                                    &offdiag_sizes);
+    else if (eb_size[0] == 1)
+      _compute_diag_sizes_assembler_db(ma,
+                                      db_size[0],
+                                      &diag_sizes,
+                                      &offdiag_sizes);
+    else
+      _compute_diag_sizes_assembler_b(ma,
+                                      db_size[0],
+                                      &diag_sizes,
+                                      &offdiag_sizes);
+
+    HYPRE_IJMatrixSetDiagOffdSizes(hm, diag_sizes, offdiag_sizes);
+    HYPRE_IJMatrixSetMaxOffProcElmts(hm, 0);
+
+    BFT_FREE(diag_sizes);
+    BFT_FREE(offdiag_sizes);
+
+    HYPRE_IJMatrixSetOMPFlag(hm, 0);
+
+    HYPRE_MemoryLocation  memory_location = HYPRE_MEMORY_HOST;
+
+    HYPRE_IJMatrixInitialize_v2(hm, memory_location);
+
+    /* Also update SpMV function pointers, now that we know the matrix
+       is using an assembler: regardless of the fill type, we handle it as
+       a scalar IJ matrix with HYPRE during coefficient assignment */
+
+    if (matrix->vector_multiply[matrix->fill_type][0] == NULL)
+      matrix->vector_multiply[matrix->fill_type][0] = _mat_vec_p_parcsr;
   }
 }
 
@@ -391,17 +599,25 @@ _assembler_values_add_block_cd(HYPRE_IJMatrix   hm,
  *          matching a given column id.
  *
  * \param[in, out]  hm        HYPRE Matrix
+ * \param[in]       l_b       lower bound under which rows are ignored
+ * \param[in]       u_b       upper bound from which rows are ignored
  * \param[in]       n         number of values to add
+ * \param[in]       b_size    associated data block size
  * \param[in]       stride    associated data block size
  * \param[in]       row_g_id  associated global row ids
  * \param[in]       col_g_id  associated global column ids
  * \param[in]       vals      pointer to values (size: n*stride)
+ *
+ * \return  HYPRE error code
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static HYPRE_Int
 _assembler_values_add_block_cc(HYPRE_IJMatrix   hm,
+                               HYPRE_BigInt     l_b,
+                               HYPRE_BigInt     u_b,
                                HYPRE_Int        n,
+                               HYPRE_Int        b_size,
                                HYPRE_Int        stride,
                                const cs_gnum_t  row_g_id[],
                                const cs_gnum_t  col_g_id[],
@@ -419,17 +635,33 @@ _assembler_values_add_block_cc(HYPRE_IJMatrix   hm,
     if (s_id + n_group > n)
       n_group = n - s_id;
 
+    HYPRE_Int l = 0;
+
     for (HYPRE_Int i = 0; i < n_group; i++) {
-      for (cs_lnum_t j = 0; j < stride; j++) {
-        rows[i*stride + j] = row_g_id[s_id + i];
-        cols[i*stride + j] = col_g_id[s_id + i];
-        values[i*stride + j] = vals[(s_id + i)*stride + j];
+      HYPRE_Int r_g_id = row_g_id[s_id + i];
+      if (r_g_id >= l_b && r_g_id < u_b) {
+        for (cs_lnum_t j = 0; j < b_size; j++) {
+          for (cs_lnum_t k = 0; k < b_size; k++) {
+            rows[l*stride + j*b_size + k] = row_g_id[s_id + i]*b_size + j;
+            cols[l*stride + j*b_size + k] = col_g_id[s_id + i]*b_size + k;
+            values[l*stride + j*b_size + k]
+              = vals[(s_id + i)*stride + j*b_size + k];
+          }
+        }
+        l++;
       }
     }
 
-    HYPRE_IJMatrixAddToValues(hm, n_group, NULL, rows, cols, values);
+    HYPRE_Int hypre_ierr
+      = HYPRE_IJMatrixAddToValues(hm, l*stride,
+                                  NULL, rows, cols, values);
+
+    if (hypre_ierr != 0)
+      return hypre_ierr;
 
   }
+
+  return 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -448,18 +680,25 @@ _assembler_values_add_block_cc(HYPRE_IJMatrix   hm,
  *          matching a given column id.
  *
  * \param[in, out]  hm        HYPRE Matrix
+ * \param[in]       l_b       lower bound under which rows are ignored
+ * \param[in]       u_b       upper bound from which rows are ignored
  * \param[in]       n         number of values to add
+ * \param[in]       b_size    associated data block size
  * \param[in]       stride    associated data block size
  * \param[in]       row_g_id  associated global row ids
  * \param[in]       col_g_id  associated global column ids
  * \param[in]       vals      pointer to values (size: n*stride)
+ *
+ * \return  HYPRE error code
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static HYPRE_Int
 _assembler_values_add_block_d_e(HYPRE_IJMatrix   hm,
+                                HYPRE_BigInt     l_b,
+                                HYPRE_BigInt     u_b,
                                 HYPRE_Int        n,
-                                HYPRE_Int        stride,
+                                HYPRE_Int        b_size,
                                 const cs_gnum_t  row_g_id[],
                                 const cs_gnum_t  col_g_id[],
                                 const cs_real_t  vals[])
@@ -468,7 +707,7 @@ _assembler_values_add_block_d_e(HYPRE_IJMatrix   hm,
   HYPRE_BigInt cols[COEFF_GROUP_SIZE];
   HYPRE_Real values[COEFF_GROUP_SIZE];
 
-  HYPRE_Int block_step = COEFF_GROUP_SIZE / stride;
+  HYPRE_Int block_step = COEFF_GROUP_SIZE / b_size;
 
   for (HYPRE_Int s_id = 0; s_id < n; s_id += block_step) {
 
@@ -476,17 +715,30 @@ _assembler_values_add_block_d_e(HYPRE_IJMatrix   hm,
     if (s_id + n_group > n)
       n_group = n - s_id;
 
+    HYPRE_Int l = 0;
+
     for (HYPRE_Int i = 0; i < n_group; i++) {
-      for (cs_lnum_t j = 0; j < stride; j++) {
-        rows[i*stride + j] = row_g_id[s_id + i];
-        cols[i*stride + j] = col_g_id[s_id + i];
-        values[i*stride + j] = vals[s_id + i];
+      HYPRE_Int r_g_id = row_g_id[s_id + i];
+      if (r_g_id >= l_b && r_g_id < u_b) {
+        for (cs_lnum_t j = 0; j < b_size; j++) {
+          rows[l*b_size + j] = row_g_id[s_id + i]*b_size + j;
+          cols[l*b_size + j] = col_g_id[s_id + i]*b_size + j;
+          values[l*b_size + j] = vals[s_id + i];
+        }
+        l++;
       }
     }
 
-    HYPRE_IJMatrixAddToValues(hm, n_group, NULL, rows, cols, values);
+    HYPRE_Int hypre_ierr
+      = HYPRE_IJMatrixAddToValues(hm, l*b_size,
+                                  NULL, rows, cols, values);
+
+    if (hypre_ierr != 0)
+      return hypre_ierr;
 
   }
+
+  return 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -533,121 +785,93 @@ _assembler_values_add_g(void             *matrix_p,
   cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
   HYPRE_IJMatrix hm = coeffs->hm;
 
+  HYPRE_BigInt l_b = coeffs->l_range[0];
+  HYPRE_BigInt u_b = coeffs->l_range[1];
+
+  assert(hm != NULL);
+
+  HYPRE_Int hypre_ierr = 0;
   HYPRE_Int nrows = n;
+  HYPRE_Int b_size = matrix->db_size[0];
 
   /* Scalar matrix
      ------------- */
 
-  if (stride == 1) {
+  if (b_size == 1) {
 
-    /* Same value type sizes, no copy needed */
+    HYPRE_BigInt rows[COEFF_GROUP_SIZE];
+    HYPRE_BigInt cols[COEFF_GROUP_SIZE];
+    HYPRE_Real values[COEFF_GROUP_SIZE];
 
-    if (sizeof(cs_real_t) == sizeof(HYPRE_Real)) {
+    HYPRE_Int l = 0;
 
-      /* Same id type sizes, no copy needed */
-
-      if (sizeof(cs_gnum_t) == sizeof(HYPRE_Int)) {
-        const HYPRE_BigInt *rows = (const HYPRE_BigInt *)row_g_id;
-        const HYPRE_BigInt *cols = (const HYPRE_BigInt *)col_g_id;
-        const HYPRE_Real *values = (const HYPRE_Real *)vals;
-
-        HYPRE_IJMatrixAddToValues(hm, nrows, NULL, rows, cols, values);
-      }
-
-      /* Different type sizes, copy needed */
-
-      else {
-
-        HYPRE_BigInt rows[COEFF_GROUP_SIZE];
-        HYPRE_BigInt cols[COEFF_GROUP_SIZE];
-
-        for (HYPRE_Int s_id = 0; s_id < nrows; s_id += COEFF_GROUP_SIZE) {
-          HYPRE_Int n_group = COEFF_GROUP_SIZE;
-          if (s_id + n_group > n)
-            n_group = n - s_id;
-
-          for (HYPRE_Int i = 0; i < n_group; i++) {
-            rows[i] = row_g_id[s_id + i];
-            cols[i] = col_g_id[s_id + i];
-          }
-
-          const HYPRE_Real *values = (const HYPRE_Real *)(vals + s_id);
-
-          HYPRE_IJMatrixAddToValues(hm, n_group, NULL, rows, cols, values);
-        }
-
-      }
-
-    }
-
-    /* Different value type sizes, copy needed
-       (also copy ids in this case, regardless of their size, as this
-       case is not expected, and could be better optimized later) */
-
-    else {
-
-      HYPRE_BigInt rows[COEFF_GROUP_SIZE];
-      HYPRE_BigInt cols[COEFF_GROUP_SIZE];
-      HYPRE_Real values[COEFF_GROUP_SIZE];
-
-      for (HYPRE_Int s_id = 0; s_id < nrows; s_id += COEFF_GROUP_SIZE) {
+    for (HYPRE_Int s_id = 0; s_id < nrows; s_id += COEFF_GROUP_SIZE) {
 
         HYPRE_Int n_group = COEFF_GROUP_SIZE;
         if (s_id + n_group > n)
           n_group = nrows - s_id;
 
+        HYPRE_Int l = 0;
+
         for (HYPRE_Int i = 0; i < n_group; i++) {
-          rows[i] = row_g_id[s_id + i];
-          cols[i] = col_g_id[s_id + i];
-          values[i] = vals[s_id + i];
+          HYPRE_Int r_g_id = row_g_id[s_id + i];
+          if (r_g_id >= l_b && r_g_id < u_b) {
+            rows[l] = row_g_id[s_id + i];
+            cols[l] = col_g_id[s_id + i];
+            values[l] = vals[s_id + i];
+            l++;
+          }
         }
 
-        HYPRE_IJMatrixAddToValues(hm, n_group, NULL, rows, cols, values);
+        hypre_ierr
+          = HYPRE_IJMatrixAddToValues(hm, l, NULL, rows, cols, values);
 
-      }
+        if (hypre_ierr != 0)
+          break;
 
     }
-
   }
 
   /* Block matrix
      ------------ */
 
-  else if (n < 1) {
+  else {
 
     /* Full blocks (including diagonal terms for diagonal fill) */
 
     if (   matrix->fill_type >= CS_MATRIX_BLOCK
-        || row_g_id[0] == col_g_id[0]) {
-
-      if (sizeof(cs_real_t) == sizeof(HYPRE_Real))
-        _assembler_values_add_block_cd(hm,
-                                       nrows,
-                                       stride,
-                                       row_g_id,
-                                       col_g_id,
-                                       vals);
-
-      else
-        _assembler_values_add_block_cc(hm,
-                                       nrows,
-                                       stride,
-                                       row_g_id,
-                                       col_g_id,
-                                       vals);
-
-    }
+        || row_g_id[0] == col_g_id[0])
+      hypre_ierr = _assembler_values_add_block_cc(hm,
+                                                  l_b,
+                                                  u_b,
+                                                  nrows,
+                                                  b_size,
+                                                  stride,
+                                                  row_g_id,
+                                                  col_g_id,
+                                                  vals);
 
     /* Diagonal bloc extra-diagonal terms only */
 
     else if (matrix->fill_type >= CS_MATRIX_BLOCK_D)
-      _assembler_values_add_block_d_e(hm,
-                                      nrows,
-                                      stride,
-                                      row_g_id,
-                                      col_g_id,
-                                      vals);
+      hypre_ierr = _assembler_values_add_block_d_e(hm,
+                                                   l_b,
+                                                   u_b,
+                                                   nrows,
+                                                   b_size,
+                                                   row_g_id,
+                                                   col_g_id,
+                                                   vals);
 
+  }
+
+  if (hypre_ierr != 0) {
+    char err_desc_buffer[64];
+    HYPRE_DescribeError(hypre_ierr, err_desc_buffer);
+    err_desc_buffer[63] = '\0';
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: error in HYPRE matrix assembly:\n  %s"),
+              __func__, err_desc_buffer);
   }
 }
 
@@ -667,66 +891,13 @@ _assembler_values_add_g(void             *matrix_p,
 static void
 _assembler_values_begin(void  *matrix_p)
 {
-  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
+  CS_UNUSED(matrix_p);
 
-  if (matrix->coeffs == NULL) {
-    cs_matrix_coeffs_hypre_t  *coeffs;
-    BFT_MALLOC(coeffs, 1, cs_matrix_coeffs_hypre_t);
-    memset(coeffs, 0, sizeof(HYPRE_IJMatrix));
-    coeffs->matrix_state = 0;
-
-    matrix->coeffs = coeffs;
-  }
-
-  /* Associated matrix assembler */
-
-  const cs_matrix_assembler_t  *ma = matrix->assembler;
-
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
-
-  /* Create HYPRE matrix */
-
-  HYPRE_IJMatrix hm = coeffs->hm;
-
-  if (coeffs->matrix_state == 0) {
-
-    MPI_Comm comm = cs_glob_mpi_comm;
-    if (comm == MPI_COMM_NULL)
-      comm = MPI_COMM_WORLD;
-
-    const cs_gnum_t *l_range = cs_matrix_assembler_get_l_range(ma);
-    HYPRE_BigInt ilower = l_range[0];
-    HYPRE_BigInt iupper = l_range[1];
-
-    HYPRE_IJMatrixCreate(comm,
-                         ilower,
-                         iupper,
-                         ilower,
-                         iupper,
-                         &hm);
-
-    coeffs->hm = hm;
-
-    HYPRE_IJMatrixSetObjectType(hm, HYPRE_PARCSR);
-
-    HYPRE_Int *diag_sizes = NULL, *offdiag_sizes = NULL;
-
-    _compute_diag_sizes_assembler(ma,
-                                  &diag_sizes,
-                                  &offdiag_sizes);
-
-    HYPRE_IJMatrixSetDiagOffdSizes(hm, diag_sizes, offdiag_sizes);
-    HYPRE_IJMatrixSetMaxOffProcElmts(hm, 0);
-
-    BFT_FREE(diag_sizes);
-    BFT_FREE(offdiag_sizes);
-
-    HYPRE_IJMatrixSetOMPFlag(hm, 0);
-
-    HYPRE_MemoryLocation  memory_location = HYPRE_MEMORY_HOST;
-
-    HYPRE_IJMatrixInitialize_v2(hm, memory_location);
-  }
+  /* Note: this function is called once all coefficients have
+   *       been added, and before assembly is finalized.
+   *       It could be used in a threading or tasking context to signify
+   *       assembly finalization can start, returning immediately
+   *       so the calling task can continue working during this finalization */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -763,13 +934,10 @@ _assembler_values_end(void  *matrix_p)
        (and possible overhead) where used */
 
     const HYPRE_Int  n_off_proc = matrix->n_cols_ext - matrix->n_rows;
+    const HYPRE_BigInt b_size = matrix->db_size[0];
 
-    HYPRE_BigInt ilower, iupper, jlower, jupper;
-    HYPRE_IJMatrixGetLocalRange(coeffs->hm,
-                                &ilower,
-                                &iupper,
-                                &jlower,
-                                &jupper);
+    HYPRE_BigInt ilower = b_size*(coeffs->l_range[0]);
+    HYPRE_BigInt iupper = b_size*(coeffs->l_range[1]) - 1;
 
     HYPRE_IJVectorCreate(comm, ilower, iupper, &(coeffs->hx));
     HYPRE_IJVectorSetObjectType(coeffs->hx, HYPRE_PARCSR);
@@ -874,10 +1042,21 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
 
   HYPRE_IJMatrix hm = coeffs->hm;
 
+  cs_gnum_t  l_range[2] = {0, 0};
+
+  if (n_rows > 0) {
+    l_range[0] = g_id[0];
+    l_range[1] = g_id[n_rows-1] + 1;
+  }
+
   if (coeffs->matrix_state == 0) {
 
-    HYPRE_BigInt ilower = g_id[0];
-    HYPRE_BigInt iupper = g_id[n_rows-1];
+    HYPRE_BigInt b_size = matrix->db_size[0];
+    HYPRE_BigInt ilower = b_size*l_range[0];
+    HYPRE_BigInt iupper = b_size*l_range[1] - 1;
+
+    coeffs->l_range[0] = l_range[0];
+    coeffs->l_range[1] = l_range[1];
 
     HYPRE_IJMatrixCreate(comm,
                          ilower,
@@ -896,6 +1075,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
                                have_diag,
                                n_edges,
                                edges,
+                               g_id,
                                &diag_sizes,
                                &offdiag_sizes);
 
@@ -957,16 +1137,17 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
            e_id++) {
         cs_lnum_t ii = edges[e_id][0];
         cs_lnum_t jj = edges[e_id][1];
-
+        cs_gnum_t g_ii = g_id[ii];
+        cs_gnum_t g_jj = g_id[jj];
         if (ii < n_rows) {
-          rows[ic] = g_id[ii];
-          cols[ic] = g_id[jj];
+          rows[ic] = g_ii;
+          cols[ic] = g_jj;
           aij[ic] = xa[e_id];
           ic++;
         }
         if (jj < n_rows) {
-          rows[ic] = g_id[jj];
-          cols[ic] = g_id[ii];
+          rows[ic] = g_jj;
+          cols[ic] = g_ii;
           aij[ic] = xa[e_id];
           ic++;
         }
@@ -994,16 +1175,18 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
            e_id++) {
         cs_lnum_t ii = edges[e_id][0];
         cs_lnum_t jj = edges[e_id][1];
+        cs_gnum_t g_ii = g_id[ii];
+        cs_gnum_t g_jj = g_id[jj];
 
         if (ii < n_rows) {
-          rows[ic] = g_id[ii];
-          cols[ic] = g_id[jj];
+          rows[ic] = g_ii;
+          cols[ic] = g_jj;
           aij[ic] = xa[e_id*2];
           ic++;
         }
         if (jj < n_rows) {
-          rows[ic] = g_id[jj];
-          cols[ic] = g_id[ii];
+          rows[ic] = g_jj;
+          cols[ic] = g_ii;
           aij[ic] = xa[e_id*2+1];
           ic++;
         }
@@ -1109,14 +1292,11 @@ _copy_diagonal_ij(const cs_matrix_t  *matrix,
 {
   const cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
 
-  const HYPRE_BigInt n_rows = matrix->n_rows;
+  const HYPRE_BigInt b_size = matrix->db_size[0];
 
-  HYPRE_BigInt ilower, iupper, jlower, jupper;
-  HYPRE_IJMatrixGetLocalRange(coeffs->hm,
-                              &ilower,
-                              &iupper,
-                              &jlower,
-                              &jupper);
+  HYPRE_BigInt ilower = b_size*(coeffs->l_range[0]);
+
+  const HYPRE_BigInt n_rows = matrix->n_rows * b_size;
 
   HYPRE_BigInt *rows, *cols;
   HYPRE_Int *n_rcols;
@@ -1155,79 +1335,6 @@ _copy_diagonal_ij(const cs_matrix_t  *matrix,
   BFT_FREE(cols);
   BFT_FREE(rows);
   BFT_FREE(n_rcols);
-}
-
-/*----------------------------------------------------------------------------
- * Matrix.vector product y = A.x with HYPRE matrix
- *
- * Note that since this function creates vectors, it may have significant
- * overhead. Since it is present for completednes, this should not be an issue.
- * If used more often, vectors could be maintained in the coeffs structure
- * along with the matrix.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_mat_vec_p_parcsr(const cs_matrix_t  *matrix,
-                  bool                exclude_diag,
-                  bool                sync,
-                  cs_real_t          *restrict x,
-                  cs_real_t          *restrict y)
-{
-  assert(exclude_diag == false);
-
-  const cs_lnum_t  n_rows = matrix->n_rows;
-  const cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
-
-  /* Get pointers to structures through coefficients,
-     and copy input values */
-
-  HYPRE_ParCSRMatrix p_a;
-  HYPRE_IJMatrixGetObject(coeffs->hm, (void **)&p_a);
-
-  HYPRE_Real *_t = NULL;
-
-  if (sizeof(cs_real_t) == sizeof(HYPRE_Real)) {
-    HYPRE_IJVectorSetValues(coeffs->hx, n_rows, NULL, x);
-  }
-  else {
-    BFT_MALLOC(_t, n_rows, HYPRE_Real);
-    for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
-      _t[ii] = x[ii];;
-    }
-    HYPRE_IJVectorSetValues(coeffs->hx, n_rows, NULL, _t);
-  }
-  bft_printf("sync %d\n", (int)sync);
-  if (sync)
-    HYPRE_IJVectorAssemble(coeffs->hx);
-
-  HYPRE_ParVector p_x, p_y;
-  HYPRE_IJVectorGetObject(coeffs->hx, (void **)&p_x);
-  HYPRE_IJVectorGetObject(coeffs->hy, (void **)&p_y);
-
-  /* SpMv operation */
-
-  HYPRE_ParCSRMatrixMatvec(1.0, p_a, p_x, 0, p_y);
-
-  /* Copy data back */
-
-  if (sizeof(cs_real_t) == sizeof(HYPRE_Real)) {
-    HYPRE_IJVectorGetValues(coeffs->hy, n_rows, NULL, y);
-  }
-  else {
-    HYPRE_IJVectorGetValues(coeffs->hy, n_rows, NULL, _t);
-    for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
-      y[ii] = _t[ii];
-    }
-    BFT_FREE(_t);
-  }
-
 }
 
 /*============================================================================
@@ -1301,10 +1408,10 @@ cs_matrix_set_type_hypre(cs_matrix_t  *matrix)
     matrix->vector_multiply[i][1] = NULL;
   }
 
-  /* Remark: allowed fill type based on current "set coefficients.".
-     using a matrix assembler, block values are transformed into
-     scalar values, so SpMv products should be possible.
-     HYPRE also has support for block matrixes (hypre_ParCSRBlockMatrix)
+  /* Remark: allowed fill type is initially based on current "set coefficients.",
+     but using a matrix assembler, block values are transformed into scalar values,
+     so SpMv products should be possible, (and the function pointers updated).
+     HYPRE also seems to have support for block matrixes (hypre_ParCSRBlockMatrix)
      but the high-level documentation does not mention it. */
 
   cs_matrix_fill_type_t mft[] = {CS_MATRIX_SCALAR,

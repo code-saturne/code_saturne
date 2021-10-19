@@ -88,6 +88,10 @@
 #include "cs_matrix_tuning.h"
 #include "cs_timer.h"
 
+#if defined(HAVE_HYPRE)
+#include "cs_matrix_hypre.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -551,11 +555,9 @@ _matrix_check_compare(cs_lnum_t        n_elts,
                       const cs_real_t  y[],
                       cs_real_t        yr[])
 {
-  cs_lnum_t  ii;
-
   double dmax = 0.0;
 
-  for (ii = 0; ii < n_elts; ii++) {
+  for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
     double d = CS_ABS(y[ii] - yr[ii]);
     if (d > dmax)
       dmax = d;
@@ -593,7 +595,6 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
                    const cs_lnum_2_t     *edges,
                    const cs_halo_t       *halo)
 {
-  cs_lnum_t  ii;
   int  f_id;
 
   cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
@@ -626,16 +627,20 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
   BFT_MALLOC(xa, n_edges*2*ed_block_size[3], cs_real_t);
 
   cs_gnum_t *cell_gnum = NULL;
+  BFT_MALLOC(cell_gnum, n_cols_ext, cs_gnum_t);
   if (cs_glob_mesh->global_cell_num != NULL) {
-    BFT_MALLOC(cell_gnum, n_cols_ext, cs_gnum_t);
-    for (ii = 0; ii < n_rows; ii++)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       cell_gnum[ii] = cs_glob_mesh->global_cell_num[ii];
-    if (halo != NULL)
-      cs_halo_sync_untyped(halo,
-                           CS_HALO_STANDARD,
-                           sizeof(cs_gnum_t),
-                           cell_gnum);
   }
+  else {
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      cell_gnum[ii] = ii+1;
+  }
+  if (halo != NULL)
+    cs_halo_sync_untyped(halo,
+                         CS_HALO_STANDARD,
+                         sizeof(cs_gnum_t),
+                         cell_gnum);
 
   /* Global cell ids, based on range/scan */
 
@@ -656,7 +661,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
   cs_gnum_t *r_g_id;
   BFT_MALLOC(r_g_id, n_cols_ext, cs_gnum_t);
-  for (ii = 0; ii < n_rows; ii++)
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     r_g_id[ii] = ii + l_range[0];
   if (halo != NULL)
     cs_halo_sync_untyped(halo,
@@ -666,7 +671,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
   /* Loop on fill options */
 
-  for (f_id = 0; f_id < 2; f_id++) {
+  for (int f_id = 0; f_id < 2; f_id++) {
 
     const cs_lnum_t *_d_block_size
       = (f_type[f_id] >= CS_MATRIX_BLOCK_D) ? d_block_size : NULL;
@@ -678,64 +683,33 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
        the array values are consisten across MPI ranks.
        This requires using a specific initialiation for each fill type. */
 
-    if (cell_gnum != NULL) {
-#     pragma omp parallel for
-      for (ii = 0; ii < n_cols_ext; ii++) {
-        cs_gnum_t jj = (cell_gnum[ii] - 1)*sd;
-        for (cs_lnum_t kk = 0; kk < sd; kk++) {
-          da[ii*sd+kk] = 1.0 + cos(jj*sd+kk);
-        }
-      }
-    }
-    else {
-#     pragma omp parallel for
-      for (ii = 0; ii < n_cols_ext*sd; ii++)
-        da[ii] = 1.0 + cos(ii);
-    }
-
-    if (cell_gnum != NULL) {
-#     pragma omp parallel for
-      for (ii = 0; ii < n_edges; ii++) {
-        cs_lnum_t i0 = edges[ii][0];
-        cs_lnum_t i1 = edges[ii][1];
-        cs_gnum_t j0 = (cell_gnum[i0] - 1)*se;
-        cs_gnum_t j1 = (cell_gnum[i1] - 1)*se;
-        for (cs_lnum_t kk = 0; kk < se; kk++) {
-          xa[(ii*se+kk)*2]
-            = 0.5*(0.45 + cos(j0*se+kk) + cos(j1*se+kk));
-          xa[(ii*se+kk)*2 + 1]
-            = -0.5*(0.45 + cos(j0*se+kk) + cos(j1*se+kk));
-        }
-      }
-    }
-    else {
-#     pragma omp parallel for
-      for (ii = 0; ii < n_edges*se; ii++) {
-        xa[ii*2] = 0.5*(0.9 + cos(ii));
-        xa[ii*2 + 1] = -0.5*(0.9 + cos(ii));
-        cs_lnum_t i0 = edges[ii][0];
-        cs_lnum_t i1 = edges[ii][1];
-        for (cs_lnum_t kk = 0; kk < se; kk++) {
-          xa[(ii*se+kk)*2]
-            = 0.5*(0.45 + cos(i0*se+kk) + cos(i1*se+kk));
-          xa[(ii*se+kk)*2 + 1]
-            = -0.5*(0.45 + cos(i0*se+kk) + cos(i1*se+kk));
-        }
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_cols_ext; ii++) {
+      cs_gnum_t jj = (cell_gnum[ii] - 1)*sd;
+      for (cs_lnum_t kk = 0; kk < sd; kk++) {
+        da[ii*sd+kk] = 1.0 + cos(jj*sd+kk);
       }
     }
 
-    if (cell_gnum != NULL) {
-#     pragma omp parallel for
-      for (ii = 0; ii < n_cols_ext; ii++) {
-        cs_gnum_t jj = (cell_gnum[ii] - 1)*stride;
-        for (cs_lnum_t kk = 0; kk < stride; kk++)
-          x[ii*stride+kk] = sin(jj*stride+kk);
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
+      cs_lnum_t i0 = edges[ii][0];
+      cs_lnum_t i1 = edges[ii][1];
+      cs_gnum_t j0 = (cell_gnum[i0] - 1)*se;
+      cs_gnum_t j1 = (cell_gnum[i1] - 1)*se;
+      for (cs_lnum_t kk = 0; kk < se; kk++) {
+        xa[(ii*se+kk)*2]
+          = 0.5*(0.45 + cos(j0*se+kk) + cos(j1*se+kk));
+        xa[(ii*se+kk)*2 + 1]
+          = -0.5*(0.45 + cos(j0*se+kk) + cos(j1*se+kk));
       }
     }
-    else {
-#     pragma omp parallel for
-      for (ii = 0; ii < n_cols_ext*stride; ii++)
-        x[ii] = sin(ii);
+
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_cols_ext; ii++) {
+      cs_gnum_t jj = (cell_gnum[ii] - 1)*stride;
+      for (cs_lnum_t kk = 0; kk < stride; kk++)
+        x[ii*stride+kk] = sin(jj*stride+kk);
     }
 
     /* Reference */
@@ -784,7 +758,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
         if (c_id == 0) { /* Rank contributions through global edges */
           cs_lnum_t jj = 0;
-          for (ii = 0; ii < n_edges; ii++) {
+          for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
             cs_lnum_t i0 = edges[ii][0];
             cs_lnum_t i1 = edges[ii][1];
             g_row_id[jj] = r_g_id[i0];
@@ -802,7 +776,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
         }
         else { /* Rank contributions are local */
           cs_lnum_t jj = 0;
-          for (ii = 0; ii < n_edges; ii++) {
+          for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
             cs_lnum_t i0 = edges[ii][0];
             cs_lnum_t i1 = edges[ii][1];
             if (i0 < n_rows) {
@@ -834,98 +808,118 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
                                                     halo);
       }
 
-      cs_matrix_structure_t  *ms
-        = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
-
-      cs_matrix_t  *m = cs_matrix_create(ms);
-
-      cs_matrix_assembler_values_t *mav = NULL;
-
-      if (f_type[f_id] == CS_MATRIX_SCALAR)
-        mav = cs_matrix_assembler_values_init(m, NULL, NULL);
-      else if (f_type[f_id] == CS_MATRIX_BLOCK_D)
-        mav = cs_matrix_assembler_values_init(m, d_block_size, NULL);
-
-      cs_matrix_assembler_values_add_g(mav, n_rows,
-                                       r_g_id, r_g_id, da);
-
-      if (c_id == 0) { /* Rank contributions through global edges */
-        cs_lnum_t jj = 0;
-        for (ii = 0; ii < n_edges; ii++) {
-          cs_lnum_t i0 = edges[ii][0];
-          cs_lnum_t i1 = edges[ii][1];
-          g_row_id[jj] = r_g_id[i0];
-          g_col_id[jj] = r_g_id[i1];
-          if (i0 < n_rows && i1 < n_rows)
-            val[jj] = xa[ii*2];
-          else
-            val[jj] = xa[ii*2]*0.5; /* count half contribution twice */
-          jj++;
-          g_row_id[jj] = r_g_id[i1];
-          g_col_id[jj] = r_g_id[i0];
-          if (i0 < n_rows && i1 < n_rows)
-            val[jj] = xa[ii*2+1];
-          else
-            val[jj] = xa[ii*2+1]*0.5;
-          jj++;
-          if (jj >= block_size - 1) {
-            cs_matrix_assembler_values_add_g(mav, jj,
-                                             g_row_id, g_col_id, val);
-            jj = 0;
-          }
-        }
-        for (ii = 0; ii < jj; ii++) {
-        }
-
-        cs_matrix_assembler_values_add_g(mav, jj, g_row_id, g_col_id, val);
-      }
-      else { /* Rank contributions are local */
-        cs_lnum_t jj = 0;
-        for (ii = 0; ii < n_edges; ii++) {
-          cs_lnum_t i0 = edges[ii][0];
-          cs_lnum_t i1 = edges[ii][1];
-          if (i0 < n_rows) {
-            g_row_id[jj] = r_g_id[i0];
-            g_col_id[jj] = r_g_id[i1];
-            val[jj] = xa[ii*2];
-            jj++;
-          }
-          if (i1 < n_rows) {
-            g_row_id[jj] = r_g_id[i1];
-            g_col_id[jj] = r_g_id[i0];
-            val[jj] = xa[ii*2+1];
-            jj++;
-          }
-          if (jj >= block_size - 1) {
-            cs_matrix_assembler_values_add_g(mav, jj,
-                                             g_row_id, g_col_id, val);
-            jj = 0;
-          }
-        }
-        cs_matrix_assembler_values_add_g(mav, jj, g_row_id, g_col_id, val);
-      }
-
-      cs_matrix_assembler_values_finalize(&mav);
-
-      cs_matrix_vector_multiply(m, x, y);
-
-      cs_matrix_release_coefficients(m);
-
-      cs_matrix_destroy(&m);
-      cs_matrix_structure_destroy(&ms);
-
       if (f_id == 0) /* no need to log multiple identical assemblers */
         cs_matrix_assembler_log_rank_counts(ma, CS_LOG_DEFAULT, ma_name[c_id]);
 
-      cs_matrix_assembler_destroy(&ma);
+      cs_matrix_structure_t  *ms
+        = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
-      double dmax = _matrix_check_compare(n_rows*stride, y, yr0);
-      bft_printf("\n%s\n",
-                 _matrix_operation_name[f_type[f_id]][0]);
-      bft_printf("  %-32s : %12.5e\n",
-                 t_name[c_id],
-                 dmax);
-      bft_printf_flush();
+      for (int m_type_idx = 0; m_type_idx < 2; m_type_idx++) {
+
+        cs_matrix_t  *m = cs_matrix_create(ms);
+
+        switch (m_type_idx) {
+        case 0:
+          break;
+        case 1:
+#if defined(HAVE_HYPRE)
+          cs_matrix_set_type_hypre(m);
+#else
+          continue;
+#endif
+          break;
+        default:
+          continue;
+        }
+
+        cs_matrix_assembler_values_t *mav = NULL;
+
+        if (f_type[f_id] == CS_MATRIX_SCALAR)
+          mav = cs_matrix_assembler_values_init(m, NULL, NULL);
+        else if (f_type[f_id] == CS_MATRIX_BLOCK_D)
+          mav = cs_matrix_assembler_values_init(m, d_block_size, NULL);
+
+        cs_matrix_assembler_values_add_g(mav, n_rows,
+                                         r_g_id, r_g_id, da);
+
+        if (c_id == 0) { /* Rank contributions through global edges */
+          cs_lnum_t jj = 0;
+          for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
+            cs_lnum_t i0 = edges[ii][0];
+            cs_lnum_t i1 = edges[ii][1];
+            g_row_id[jj] = r_g_id[i0];
+            g_col_id[jj] = r_g_id[i1];
+            if (i0 < n_rows && i1 < n_rows)
+              val[jj] = xa[ii*2];
+            else
+              val[jj] = xa[ii*2]*0.5; /* count half contribution twice */
+            jj++;
+            g_row_id[jj] = r_g_id[i1];
+            g_col_id[jj] = r_g_id[i0];
+            if (i0 < n_rows && i1 < n_rows)
+              val[jj] = xa[ii*2+1];
+            else
+              val[jj] = xa[ii*2+1]*0.5;
+            jj++;
+            if (jj >= block_size - 1) {
+              cs_matrix_assembler_values_add_g(mav, jj,
+                                               g_row_id, g_col_id, val);
+              jj = 0;
+            }
+          }
+          for (cs_lnum_t ii = 0; ii < jj; ii++) {
+          }
+
+          cs_matrix_assembler_values_add_g(mav, jj, g_row_id, g_col_id, val);
+        }
+        else { /* Rank contributions are local */
+          cs_lnum_t jj = 0;
+          for (cs_lnum_t ii = 0; ii < n_edges; ii++) {
+            cs_lnum_t i0 = edges[ii][0];
+            cs_lnum_t i1 = edges[ii][1];
+            if (i0 < n_rows) {
+              g_row_id[jj] = r_g_id[i0];
+              g_col_id[jj] = r_g_id[i1];
+              val[jj] = xa[ii*2];
+              jj++;
+            }
+            if (i1 < n_rows) {
+              g_row_id[jj] = r_g_id[i1];
+              g_col_id[jj] = r_g_id[i0];
+              val[jj] = xa[ii*2+1];
+              jj++;
+            }
+            if (jj >= block_size - 1) {
+              cs_matrix_assembler_values_add_g(mav, jj,
+                                               g_row_id, g_col_id, val);
+              jj = 0;
+            }
+          }
+          cs_matrix_assembler_values_add_g(mav, jj, g_row_id, g_col_id, val);
+        }
+
+        cs_matrix_assembler_values_finalize(&mav);
+
+        cs_matrix_vector_multiply(m, x, y);
+
+        cs_matrix_release_coefficients(m);
+
+        double dmax = _matrix_check_compare(n_rows*stride, y, yr0);
+        bft_printf("\n%s (%s)\n",
+                   _matrix_operation_name[f_type[f_id]][0],
+                   cs_matrix_get_type_name(m));
+        bft_printf("  %-32s : %12.5e\n",
+                   t_name[c_id],
+                   dmax);
+        bft_printf_flush();
+
+        cs_matrix_destroy(&m);
+
+      }  /* End of loop on matrix types */
+
+      cs_matrix_structure_destroy(&ms);
+
+      cs_matrix_assembler_destroy(&ma);
 
     } /* end of loop on construction method */
 
