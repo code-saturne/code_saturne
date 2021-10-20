@@ -964,10 +964,6 @@ cs_pressure_correction(int        iterns,
 
     if (cs_glob_porous_model >= 1) {
 
-      /* FIXME: the loops on boundary faces (2nd and 3rd loop)
-         seem identical to those of the non-porous case below;
-         they could be placed after this test and refactored. */
-
       const cs_real_t *c_porosity = cs_field_by_name("porosity")->val;
 
       for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
@@ -979,28 +975,7 @@ cs_pressure_correction(int        iterns,
                        * imasfla[f_id]+porosf*taui[f_id]*sti[f_id]
                        * i_f_face_surf[f_id];
       }
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        cs_lnum_t c_id = b_face_cells[f_id];
-        if (bc_type[f_id] == CS_INLET)
-          bmasfl[f_id] = taub[f_id] / dt[c_id] * bmasfl[f_id];
-        else
-          bmasfl[f_id] = taub[f_id] / dt[c_id] * bmasfla[f_id];
-      }
 
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        if (bc_type[f_id] == CS_INLET) {
-          cs_lnum_t c_id = b_face_cells[f_id];
-
-          cs_real_t dimp =   -(1. - dt[c_id]/taub[f_id])
-                           * bmasfl[f_id]/b_f_face_surf[f_id];
-          cs_real_t hint = taub[f_id] / b_dist[f_id];
-
-        cs_boundary_conditions_set_neumann_scalar
-          (&(coefa_dp[f_id]), &(coefaf_dp[f_id]),
-           &(coefb_dp[f_id]), &(coefbf_dp[f_id]),
-           dimp, hint);
-        }
-      }
     }
 
     else { /* cs_glob_porous_model == 0) */
@@ -1013,29 +988,30 @@ cs_pressure_correction(int        iterns,
                        * imasfla[f_id]+taui[f_id]*sti[f_id]
                        * i_f_face_surf[f_id];
       }
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        cs_lnum_t c_id = b_face_cells[f_id];
-        if (bc_type[f_id] == CS_INLET)
-          bmasfl[f_id] = taub[f_id] / dt[c_id] * bmasfl[f_id];
-        else
-          bmasfl[f_id] = taub[f_id] / dt[c_id] * bmasfla[f_id];
-      }
-
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        if (bc_type[f_id] == CS_INLET) {
-          cs_lnum_t c_id = b_face_cells[f_id];
-          cs_real_t dimp =   -(1. - dt[c_id]/taub[f_id])
-                           * bmasfl[f_id]/b_f_face_surf[f_id];
-          cs_real_t hint = taub[f_id] / b_dist[f_id];
-
-          cs_boundary_conditions_set_neumann_scalar
-            (&(coefa_dp[f_id]), &(coefaf_dp[f_id]),
-             &(coefb_dp[f_id]), &(coefbf_dp[f_id]),
-             dimp, hint);
-        }
-      }
 
     } /* end of test on cs_glob_porous_model */
+
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+      cs_lnum_t c_id = b_face_cells[f_id];
+      if (bc_type[f_id] == CS_INLET)
+        bmasfl[f_id] = taub[f_id] / dt[c_id] * bmasfl[f_id];
+      else
+        bmasfl[f_id] = taub[f_id] / dt[c_id] * bmasfla[f_id];
+    }
+
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+      if (bc_type[f_id] == CS_INLET) {
+        cs_lnum_t c_id = b_face_cells[f_id];
+        cs_real_t dimp =   -(1. - dt[c_id]/taub[f_id])
+                         * bmasfl[f_id]/b_f_face_surf[f_id];
+        cs_real_t hint = taub[f_id] / b_dist[f_id];
+
+        cs_boundary_conditions_set_neumann_scalar
+          (&(coefa_dp[f_id]), &(coefaf_dp[f_id]),
+           &(coefb_dp[f_id]), &(coefbf_dp[f_id]),
+           dimp, hint);
+      }
+    }
 
   } /* end if (vp_param->staggered == 1) */
 
