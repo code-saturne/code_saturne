@@ -37,8 +37,11 @@ Physical modeling:
 
 Numerics:
 
-- Add Basic support for HYPRE solvers.
-  * Only BoomerAMG and PCG are handled at this stage.
+- Add support for HYPRE solvers.
+  * Most general purpose solvers and preconditioners supported by HYPRE
+    for the IJ interface are supported. See
+    [HYPRE documentation](https://hypre.readthedocs.io/en/latest/ch-solvers.html)
+    for details.
   * Settings for GPU use are not handled yet.
   * HYPRE uses its own matrices, handled in cs_matrix_hypre, so not additional
     copy of coefficients is needed in code_saturne (though building

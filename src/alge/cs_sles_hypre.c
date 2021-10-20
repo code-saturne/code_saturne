@@ -546,6 +546,10 @@ cs_sles_hypre_setup(void               *context,
   if (comm == MPI_COMM_NULL)
     comm = MPI_COMM_WORLD;
 
+  bool have_set_pc = true;
+  HYPRE_PtrToParSolverFcn solve_ftn[2] = {NULL, NULL};
+  HYPRE_PtrToParSolverFcn setup_ftn[2] = {NULL, NULL};
+
   for (int i = 0; i < 2; i++) {
 
     HYPRE_Solver hs = (i == 0) ? sd->precond : sd->solver;
@@ -553,9 +557,6 @@ cs_sles_hypre_setup(void               *context,
 
     /* hs should be NULL at this point, unless we do not relly free
      it (when cs_sles_hypre_free is called (for example to amortize setup) */
-
-    HYPRE_PtrToParSolverFcn precond_solve = NULL;
-    HYPRE_PtrToParSolverFcn precond_setup = NULL;
 
     if (hs != NULL || hs_type >= CS_SLES_HYPRE_NONE)
       continue;
@@ -566,6 +567,11 @@ cs_sles_hypre_setup(void               *context,
       {
         HYPRE_BoomerAMGCreate(&hs);
 
+        if (verbosity > 2 ) {
+          HYPRE_BoomerAMGSetPrintLevel(hs, 1);
+          HYPRE_BoomerAMGSetPrintFileName(hs, "hypre.log");
+        }
+
         HYPRE_BoomerAMGSetCoarsenType(hs, 10);        /* HMIS */
         HYPRE_BoomerAMGSetAggNumLevels(hs, 2);
         HYPRE_BoomerAMGSetPMaxElmts(hs, 4);
@@ -574,19 +580,171 @@ cs_sles_hypre_setup(void               *context,
         HYPRE_BoomerAMGSetRelaxType(hs, 6);   /* Sym G.S./Jacobi hybrid */
         HYPRE_BoomerAMGSetRelaxOrder(hs, 0);
 
+        solve_ftn[i] = HYPRE_BoomerAMGSolve;
+        setup_ftn[i] = HYPRE_BoomerAMGSetup;
+
         if (i == 0) { /* preconditioner */
           HYPRE_BoomerAMGSetTol(hs, 0.0);
           HYPRE_BoomerAMGSetMaxIter(hs, 1);
-          precond_solve = HYPRE_BoomerAMGSolve;
-          precond_setup = HYPRE_BoomerAMGSetup;
         }
         else { /* solver */
+          have_set_pc = false;
           HYPRE_BoomerAMGSetMaxIter(hs, 1000);
         }
 
+      }
+      break;
+
+    case CS_SLES_HYPRE_HYBRID:
+      {
+        HYPRE_ParCSRHybridCreate(&hs);
+
         if (verbosity > 2 ) {
-          HYPRE_BoomerAMGSetPrintLevel(hs, 1);
-          HYPRE_BoomerAMGSetPrintFileName(hs, "hypre.log");
+          HYPRE_ParCSRHybridSetPrintLevel(hs, 2);  /* Print solve info */
+          HYPRE_ParCSRHybridSetLogging(hs, 1);     /* Needed to get info later */
+        }
+
+        solve_ftn[i] = HYPRE_ParCSRHybridSolve;
+        setup_ftn[i] = HYPRE_ParCSRHybridSetup;
+
+        if (i == 1 && solve_ftn[0] != NULL) {  /* solver */
+          HYPRE_ParCSRHybridSetPrecond(hs,
+                                       solve_ftn[0],
+                                       setup_ftn[0],
+                                       sd->precond);
+        }
+      }
+      break;
+
+    case CS_SLES_HYPRE_ILU:
+      {
+        HYPRE_ILUCreate(&hs);
+
+        solve_ftn[i] = HYPRE_ILUSolve;
+        setup_ftn[i] = HYPRE_ILUSetup;
+
+        if (i == 0) { /* preconditioner */
+          HYPRE_ILUSetTol(sd->solver, 0.);
+        }
+        else { /* solver */
+          have_set_pc = false;
+        }
+
+        if (verbosity > 2 ) {
+          HYPRE_ILUSetPrintLevel(hs, 2);  /* Print solve info */
+          HYPRE_ILUSetLogging(hs, 1);     /* Needed to get info later */
+        }
+      }
+      break;
+
+    case CS_SLES_HYPRE_BICGSTAB:
+      {
+        HYPRE_ParCSRBiCGSTABCreate(comm, &hs);
+
+        if (verbosity > 2 ) {
+          HYPRE_BiCGSTABSetPrintLevel(hs, 2);  /* Print solve info */
+          HYPRE_BiCGSTABSetLogging(hs, 1);     /* Needed to get run info later */
+        }
+
+        solve_ftn[i] = HYPRE_ParCSRBiCGSTABSolve;
+        setup_ftn[i] = HYPRE_ParCSRBiCGSTABSetup;
+
+        if (i == 0) { /* preconditioner */
+          HYPRE_ParCSRBiCGSTABSetTol(hs, 0.0);
+          HYPRE_ParCSRBiCGSTABSetMaxIter(hs, 1);
+          solve_ftn[i] = HYPRE_ParCSRBiCGSTABSolve;
+          setup_ftn[i] = HYPRE_ParCSRBiCGSTABSetup;
+        }
+        else { /* solver */
+          HYPRE_BiCGSTABSetMaxIter(hs, 1000);  /* Max iterations */
+          if (solve_ftn[0] != NULL)
+            HYPRE_ParCSRBiCGSTABSetPrecond(hs,
+                                           solve_ftn[0],
+                                           setup_ftn[0],
+                                           sd->precond);
+        }
+      }
+      break;
+
+    case CS_SLES_HYPRE_GMRES:
+      {
+        HYPRE_ParCSRGMRESCreate(comm, &hs);
+
+        if (verbosity > 2 ) {
+          HYPRE_GMRESSetPrintLevel(hs, 2);  /* Print solve info */
+          HYPRE_GMRESSetLogging(hs, 1);     /* Needed to get run info later */
+          solve_ftn[i] = HYPRE_ParCSRGMRESSolve;
+          setup_ftn[i] = HYPRE_ParCSRGMRESSetup;
+        }
+
+        solve_ftn[i] = HYPRE_ParCSRGMRESSolve;
+        setup_ftn[i] = HYPRE_ParCSRGMRESSetup;
+
+        if (i == 0) { /* preconditioner */
+          HYPRE_ParCSRGMRESSetTol(hs, 0.0);
+          HYPRE_ParCSRGMRESSetMaxIter(hs, 1);
+        }
+        else { /* solver */
+          HYPRE_GMRESSetMaxIter(hs, 1000);  /* Max iterations */
+          if (solve_ftn[0] != NULL)
+            HYPRE_ParCSRGMRESSetPrecond(hs,
+                                        solve_ftn[0],
+                                        setup_ftn[0],
+                                        sd->precond);
+        }
+      }
+      break;
+
+    case CS_SLES_HYPRE_FLEXGMRES:
+      {
+        HYPRE_ParCSRFlexGMRESCreate(comm, &hs);
+
+        if (verbosity > 2 ) {
+          HYPRE_FlexGMRESSetPrintLevel(hs, 2);  /* Print solve info */
+          HYPRE_FlexGMRESSetLogging(hs, 1);     /* Needed to get run info later */
+        }
+
+        solve_ftn[i] = HYPRE_ParCSRFlexGMRESSolve;
+        setup_ftn[i] = HYPRE_ParCSRFlexGMRESSetup;
+
+        if (i == 0) { /* preconditioner */
+          HYPRE_ParCSRFlexGMRESSetTol(hs, 0.0);
+          HYPRE_ParCSRFlexGMRESSetMaxIter(hs, 1);
+        }
+        else { /* solver */
+          HYPRE_FlexGMRESSetMaxIter(hs, 1000);  /* Max iterations */
+          if (solve_ftn[0] != NULL)
+            HYPRE_ParCSRFlexGMRESSetPrecond(hs,
+                                            solve_ftn[0],
+                                            setup_ftn[0],
+                                            sd->precond);
+        }
+      }
+      break;
+
+    case CS_SLES_HYPRE_LGMRES:
+      {
+        HYPRE_ParCSRLGMRESCreate(comm, &hs);
+
+        if (verbosity > 2 ) {
+          HYPRE_LGMRESSetPrintLevel(hs, 2);  /* Print solve info */
+          HYPRE_LGMRESSetLogging(hs, 1);     /* Needed to get run info later */
+        }
+
+        solve_ftn[i] = HYPRE_ParCSRLGMRESSolve;
+        setup_ftn[i] = HYPRE_ParCSRLGMRESSetup;
+
+        if (i == 0) { /* preconditioner */
+          HYPRE_ParCSRLGMRESSetTol(hs, 0.0);
+          HYPRE_ParCSRLGMRESSetMaxIter(hs, 1);
+        }
+        else { /* solver */
+          HYPRE_LGMRESSetMaxIter(hs, 1000);  /* Max iterations */
+          if (solve_ftn[0] != NULL)
+            HYPRE_ParCSRLGMRESSetPrecond(hs,
+                                         solve_ftn[0],
+                                         setup_ftn[0],
+                                         sd->precond);
         }
       }
       break;
@@ -594,24 +752,67 @@ cs_sles_hypre_setup(void               *context,
     case CS_SLES_HYPRE_PCG:
       {
         HYPRE_ParCSRPCGCreate(comm, &hs);
-        HYPRE_PCGSetMaxIter(hs, 1000);  /* Max iterations */
 
         if (verbosity > 2 ) {
           HYPRE_PCGSetPrintLevel(hs, 2);  /* Print solve info */
           HYPRE_PCGSetLogging(hs, 1);     /* Needed to get run info later */
         }
 
-        if (precond_solve != NULL) {
-          HYPRE_ParCSRPCGSetPrecond(hs,
-                                    precond_solve,
-                                    precond_setup,
-                                    sd->precond);
+        solve_ftn[i] = HYPRE_ParCSRPCGSolve;
+        setup_ftn[i] = HYPRE_ParCSRPCGSetup;
+
+        if (i == 0) { /* preconditioner */
+          HYPRE_ParCSRPCGSetTol(hs, 0.0);
+          HYPRE_ParCSRPCGSetMaxIter(hs, 1);
+        }
+        else { /* solver */
+          HYPRE_PCGSetMaxIter(hs, 1000);  /* Max iterations */
+          if (solve_ftn[0] != NULL)
+            HYPRE_ParCSRPCGSetPrecond(hs,
+                                      solve_ftn[0],
+                                      setup_ftn[0],
+                                      sd->precond);
         }
       }
       break;
 
+    case CS_SLES_HYPRE_EUCLID:
+      {
+        HYPRE_EuclidCreate(comm, &hs);
+
+        solve_ftn[i] = HYPRE_EuclidSolve;
+        setup_ftn[i] = HYPRE_EuclidSetup;
+
+        if (i > 0) /* solver */
+          bft_error(__FILE__, __LINE__, 0,
+                    _("HYPRE: type (%s) is a preconditioner, not a solver."),
+                    _cs_hypre_type_name(c->solver_type));
+
+      }
+      break;
+
+    case CS_SLES_HYPRE_PARASAILS:
+      {
+        HYPRE_ParCSRParaSailsCreate(comm, &hs);
+
+        if (verbosity > 2 ) {
+          HYPRE_ParCSRParaSailsSetLogging(hs, 1);     /* Needed to get run
+                                                         info later */
+        }
+
+        solve_ftn[i] = HYPRE_ParCSRParaSailsSolve;
+        setup_ftn[i] = HYPRE_ParCSRParaSailsSetup;
+        if (i > 0) /* solver */
+          bft_error(__FILE__, __LINE__, 0,
+                    _("HYPRE: type (%s) is a preconditioner, not a solver."),
+                    _cs_hypre_type_name(c->solver_type));
+      }
+      break;
+
     default:
-      assert(0);
+      bft_error(__FILE__, __LINE__, 0,
+                _("HYPRE: solver type (%s) not currently handled."),
+                _cs_hypre_type_name(c->solver_type));
 
     }
 
@@ -620,6 +821,12 @@ cs_sles_hypre_setup(void               *context,
     else
       sd->solver = hs;
   }
+
+  if (sd->precond != NULL && have_set_pc == false)
+    bft_error(__FILE__, __LINE__, 0,
+              _("HYPRE: solver (%s) will ignore preconditioner (%s)."),
+              _cs_hypre_type_name(c->solver_type),
+              _cs_hypre_type_name(c->precond_type));
 
   /* Call optional setup hook for user setting changes */
 
@@ -636,21 +843,12 @@ cs_sles_hypre_setup(void               *context,
   HYPRE_IJVectorGetObject(sd->coeffs->hx, (void **)&p_x);
   HYPRE_IJVectorGetObject(sd->coeffs->hy, (void **)&p_rhs);
 
-  switch(c->solver_type) {
-
-  case CS_SLES_HYPRE_BOOMERAMG:
-    HYPRE_BoomerAMGSetup(sd->solver, par_a, p_rhs, p_x);
-    break;
-
-  case CS_SLES_HYPRE_PCG:
-    HYPRE_ParCSRPCGSetup(sd->solver, par_a, p_rhs, p_x);
-    break;
-
-  default:
+  if (setup_ftn[1] != NULL)
+    setup_ftn[1](sd->solver, par_a, p_rhs, p_x);
+  else
     bft_error(__FILE__, __LINE__, 0,
-              _("HYPRE: solver type (%s) not handled yet."),
+              _("HYPRE: setup function for solver type (%s) not set."),
               _cs_hypre_type_name(c->solver_type));
-  }
 
   /* Update return values */
   c->n_setups += 1;
@@ -759,6 +957,78 @@ cs_sles_hypre_solve(void                *context,
     }
     break;
 
+  case CS_SLES_HYPRE_HYBRID:
+    {
+      /* Finalize setup and solve */
+      HYPRE_ParCSRHybridSetAbsoluteTol(sd->solver, precision*r_norm);
+      HYPRE_ParCSRHybridSolve(sd->solver, par_a, p_rhs, p_x);
+
+      /* Get solution and information */
+      HYPRE_ParCSRHybridGetFinalRelativeResidualNorm(sd->solver, &res);
+      HYPRE_ParCSRHybridGetNumIterations(sd->solver, &its);
+    }
+    break;
+
+  case CS_SLES_HYPRE_ILU:
+    {
+      /* Finalize setup and solve */
+      HYPRE_ILUSetTol(sd->solver, precision*r_norm);
+      HYPRE_ILUSolve(sd->solver, par_a, p_rhs, p_x);
+
+      /* Get solution and information */
+      HYPRE_ILUGetFinalRelativeResidualNorm(sd->solver, &res);
+      HYPRE_ILUGetNumIterations(sd->solver, &its);
+    }
+    break;
+
+  case CS_SLES_HYPRE_BICGSTAB:
+    {
+      /* Finalize setup and solve */
+      HYPRE_BiCGSTABSetAbsoluteTol(sd->solver, precision*r_norm);
+      HYPRE_ParCSRBiCGSTABSolve(sd->solver, par_a, p_rhs, p_x);
+
+      /* Get solution and information */
+      HYPRE_ParCSRBiCGSTABGetFinalRelativeResidualNorm(sd->solver, &res);
+      HYPRE_ParCSRBiCGSTABGetNumIterations(sd->solver, &its);
+    }
+    break;
+
+  case CS_SLES_HYPRE_GMRES:
+    {
+      /* Finalize setup and solve */
+      HYPRE_GMRESSetAbsoluteTol(sd->solver, precision*r_norm);
+      HYPRE_ParCSRGMRESSolve(sd->solver, par_a, p_rhs, p_x);
+
+      /* Get solution and information */
+      HYPRE_ParCSRGMRESGetFinalRelativeResidualNorm(sd->solver, &res);
+      HYPRE_ParCSRGMRESGetNumIterations(sd->solver, &its);
+    }
+    break;
+
+  case CS_SLES_HYPRE_FLEXGMRES:
+    {
+      /* Finalize setup and solve */
+      HYPRE_FlexGMRESSetAbsoluteTol(sd->solver, precision*r_norm);
+      HYPRE_ParCSRFlexGMRESSolve(sd->solver, par_a, p_rhs, p_x);
+
+      /* Get solution and information */
+      HYPRE_ParCSRFlexGMRESGetFinalRelativeResidualNorm(sd->solver, &res);
+      HYPRE_ParCSRFlexGMRESGetNumIterations(sd->solver, &its);
+    }
+    break;
+
+  case CS_SLES_HYPRE_LGMRES:
+    {
+      /* Finalize setup and solve */
+      HYPRE_LGMRESSetAbsoluteTol(sd->solver, precision*r_norm);
+      HYPRE_ParCSRLGMRESSolve(sd->solver, par_a, p_rhs, p_x);
+
+      /* Get solution and information */
+      HYPRE_ParCSRLGMRESGetFinalRelativeResidualNorm(sd->solver, &res);
+      HYPRE_ParCSRLGMRESGetNumIterations(sd->solver, &its);
+    }
+    break;
+
   case CS_SLES_HYPRE_PCG:
     {
       /* Finalize setup and solve */
@@ -773,7 +1043,7 @@ cs_sles_hypre_solve(void                *context,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _("HYPRE: solver type (%s) not handled yet."),
+              _("HYPRE: solver type (%s) not handled."),
               _cs_hypre_type_name(c->solver_type));
   }
 
@@ -846,13 +1116,38 @@ cs_sles_hypre_free(void  *context)
         HYPRE_BoomerAMGDestroy(hs);
         break;
 
+      case CS_SLES_HYPRE_HYBRID:
+        HYPRE_ParCSRHybridDestroy(hs);
+        break;
+
+      case CS_SLES_HYPRE_ILU:
+        HYPRE_ILUDestroy(hs);
+        break;
+
+      case CS_SLES_HYPRE_BICGSTAB:
+        HYPRE_ParCSRBiCGSTABDestroy(hs);
+        break;
+
+      case CS_SLES_HYPRE_GMRES:
+        HYPRE_ParCSRGMRESDestroy(hs);
+        break;
+
+      case CS_SLES_HYPRE_FLEXGMRES:
+        HYPRE_ParCSRFlexGMRESDestroy(hs);
+        break;
+
+      case CS_SLES_HYPRE_LGMRES:
+        HYPRE_ParCSRLGMRESDestroy(hs);
+        break;
+
       case CS_SLES_HYPRE_PCG:
         HYPRE_ParCSRPCGDestroy(hs);
         break;
 
       default:
-        assert(0);
-
+        bft_error(__FILE__, __LINE__, 0,
+                  _("HYPRE: solver type (%s) not handled."),
+                  _cs_hypre_type_name(c->solver_type));
       }
 
       if (i == 0)

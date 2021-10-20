@@ -73,6 +73,9 @@ typedef enum {
 
   CS_SLES_HYPRE_EUCLID,        /*!< hypre-ILU (incomplete LU) */
   CS_SLES_HYPRE_PARASAILS,     /*!< ParaSails (sparse approximate inverse)) */
+
+  /* End  of allowable solvers */
+
   CS_SLES_HYPRE_NONE           /*!< No solver or preconditioner */
 
 } cs_sles_hypre_type_t;
