@@ -196,8 +196,7 @@ class MainFieldsModel(Variables, Model):
                                  phase,
                                  carrierfield,
                                  hmodel,
-                                 compressible,
-                                 labNum)
+                                 compressible)
 
         return fieldId
 
@@ -1113,7 +1112,7 @@ class MainFieldsTestCase(ModelTest):
     def checkaddDefinedField(self):
         """Check whether the MainFieldsModel class could add defined field"""
         mdl = MainFieldsModel(self.case)
-        mdl.addDefinedField('1', 'field1', 'dispersed', 'gas', 'on', 'on', 'off', 1)
+        mdl.addDefinedField('1', 'field1', 'dispersed', 'gas', 'on', 'on', 'off')
         doc = '''<fields>
                          <field field_id="1" label="field1">
                                  <type choice="dispersed"/>
@@ -1140,7 +1139,7 @@ class MainFieldsTestCase(ModelTest):
         """Check whether the MainFieldsModel class could set and get ContinuousFieldList"""
         mdl = MainFieldsModel(self.case)
         mdl.addField()
-        mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
+        mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off')
         assert mdl.getContinuousFieldList() == ['1'],\
             'Could not get continuous field list'
 
@@ -1149,7 +1148,7 @@ class MainFieldsTestCase(ModelTest):
         """Check whether the MainFieldsModel class could set and get DispersedFieldList"""
         mdl = MainFieldsModel(self.case)
         mdl.addField()
-        mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
+        mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off')
         assert mdl.getDispersedFieldList() == ['2'],\
             'Could not get dispersed field list'
 
@@ -1158,7 +1157,7 @@ class MainFieldsTestCase(ModelTest):
         """Check whether the MainFieldsModel class could set and get FieldIdList"""
         mdl = MainFieldsModel(self.case)
         mdl.addField()
-        mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
+        mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off')
         assert mdl.getGasPhaseList() == ['2'],\
             'Could not get GasPhaseList'
 
@@ -1167,7 +1166,7 @@ class MainFieldsTestCase(ModelTest):
         """Check whether the MainFieldsModel class could set and get SolidFieldIdList"""
         mdl = MainFieldsModel(self.case)
         mdl.addField()
-        mdl.addDefinedField('2', 'field2', 'dispersed', 'solid', 'on', 'on', 'off', 2)
+        mdl.addDefinedField('2', 'field2', 'dispersed', 'solid', 'on', 'on', 'off')
         assert mdl.getSolidFieldIdList() == ['2'],\
             'Could not get SolidFieldIdList'
 
@@ -1185,7 +1184,7 @@ class MainFieldsTestCase(ModelTest):
         """Check whether the MainFieldsModel class could set and get FirstGasField"""
         mdl = MainFieldsModel(self.case)
         mdl.addField()
-        mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off', 2)
+        mdl.addDefinedField('2', 'field2', 'dispersed', 'gas', 'on', 'on', 'off')
         assert mdl.getFirstGasField() == '2' ,\
             'Could not get FirstGasField'
 
