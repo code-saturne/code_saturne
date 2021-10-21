@@ -46,6 +46,7 @@ typedef enum {
 } cs_mesh_cartesian_law_t;
 
 typedef struct _cs_mesh_cartesian_params_t cs_mesh_cartesian_params_t;
+
 /*============================================================================
  * Public C function prototypes
  *============================================================================*/
@@ -98,6 +99,34 @@ void
 cs_mesh_cartesian_define_dir_user(int       idir,
                                   int       ncells,
                                   cs_real_t vtx_coord[]);
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Define direction parameters based on a piecewise definition. Each
+ *         part follows a geometric (or uniform) sequence. To get the uniform
+ *         sequence, set the amplification factor to 1 in the wanted part.
+ *
+ *         A direction is split in several parts. Each part contains a number
+ *         of cells, its starting and ending position (stored in a compact way)
+ *         inside part_coords, the amplification factor (f) between the first
+ *         and last cell size of each part. Notice that if f = 1, this leads to
+ *         a uniform refinement. If f > 1, (resp f < 1) this leads to a growing
+ *         (resp. decreasing) geometric progression of the cell size when
+ *         moving along the direction of increasing coordinates.
+ *
+ * \param[in] idir          Direction index. 0->X, 1->Y, 2->Z
+ * \param[in] n_parts       Number of parts to define the direction
+ * \param[in] part_coords   Position delimiting each part (size = n_parts + 1)
+ * \param[in] n_part_cells  Number of cells in each part (size = n_parts)
+ * \param[in] amp_factors   Amplification factor in each part (size = n_parts)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_define_dir_geom_by_part(int                idir,
+                                          int                n_parts,
+                                          const cs_real_t    part_coords[],
+                                          const cs_lnum_t    n_part_cells[],
+                                          const cs_real_t    amp_factors[]);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Define a simple cartesian mesh based on a CSV file.

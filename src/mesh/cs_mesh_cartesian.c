@@ -552,6 +552,102 @@ cs_mesh_cartesian_define_dir_user(int       idir,
 }
 
 /*----------------------------------------------------------------------------*/
+/*! \brief Define direction parameters based on a piecewise definition. Each
+ *         part follows a geometric (or uniform) sequence. To get the uniform
+ *         sequence, set the amplification factor to 1 in the wanted part.
+ *
+ *         A direction is split in several parts. Each part contains a number
+ *         of cells, its starting and ending position (stored in a compact way)
+ *         inside part_coords, the amplification factor (f) between the first
+ *         and last cell size of each part. Notice that if f = 1, this leads to
+ *         a uniform refinement. If f > 1, (resp f < 1) this leads to a growing
+ *         (resp. decreasing) geometric progression of the cell size when
+ *         moving along the direction of increasing coordinates.
+ *
+ * \param[in] idir          Direction index. 0->X, 1->Y, 2->Z
+ * \param[in] n_parts       Number of parts to define the direction
+ * \param[in] part_coords   Position delimiting each part (size = n_parts + 1)
+ * \param[in] n_part_cells  Number of cells in each part (size = n_parts)
+ * \param[in] amp_factors   Amplification factor in each part (size = n_parts)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cartesian_define_dir_geom_by_part(int                idir,
+                                          int                n_parts,
+                                          const cs_real_t    part_coords[],
+                                          const cs_lnum_t    n_part_cells[],
+                                          const cs_real_t    amp_factors[])
+{
+  if (n_parts == 0)
+    return;
+
+  assert(part_coords != NULL && n_part_cells != NULL && amp_factors != NULL);
+
+  /* Compute the cumulated number of cells along this direction */
+
+  cs_lnum_t  n_tot_cells = 0;
+  for (int i = 0; i < n_parts; i++)
+    n_tot_cells += n_part_cells[i];
+
+  /* There are n_cells + 1 coordinates to define */
+
+  cs_real_t  *vtx_coord = NULL;
+  BFT_MALLOC(vtx_coord, n_tot_cells + 1, cs_real_t);
+
+  vtx_coord[0] = part_coords[0];
+
+  cs_lnum_t  shift = 0;
+
+  for (int i = 0; i < n_parts; i++) {
+
+    const cs_lnum_t  _n_cells = n_part_cells[i];
+    const cs_real_t  part_length = part_coords[i+1] - part_coords[i];
+
+    cs_real_t  *_coord = vtx_coord + shift;
+
+    if (fabs(amp_factors[i] - 1.0) < 1e-6) {
+
+      /* Simple case: uniform refinement for this part */
+
+      const cs_real_t  dx = part_length/_n_cells;
+
+      for (cs_lnum_t ix = 1; ix < _n_cells; ix++)
+        _coord[ix] = part_coords[i] + ix*dx;
+
+    }
+    else { /* geometric progression (or sequence) */
+
+      const cs_real_t  common_ratio = pow(amp_factors[i], 1./(_n_cells-1));
+      const cs_real_t  l0 = part_length *
+        (1 - common_ratio) / (1 - pow(common_ratio, _n_cells));
+
+      cs_real_t  coef = l0;
+      for (cs_lnum_t ix = 1; ix < _n_cells; ix++) {
+        _coord[ix] = _coord[ix-1] + coef;
+        coef *= common_ratio;
+      }
+
+    }
+
+    /* Ending coordinates for this part */
+
+    _coord[_n_cells] = part_coords[i+1];
+
+    /* Update the shift value */
+
+    shift += _n_cells;
+
+  } /* Loop on parts */
+
+  /* Finally, one relies on the user-defined API to build the direction */
+
+  cs_mesh_cartesian_define_dir_user(idir, n_tot_cells, vtx_coord);
+
+  BFT_FREE(vtx_coord);
+}
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Define a simple cartesian mesh based on a CSV file.
  *         CSV file needs to contain :
  *         (1) First line which is empty or contains a header
