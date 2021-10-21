@@ -595,8 +595,6 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
                    const cs_lnum_2_t     *edges,
                    const cs_halo_t       *halo)
 {
-  int  f_id;
-
   cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
   cs_real_t  *yr0 = NULL;
   cs_lnum_t d_block_size[4] = {3, 3, 3, 9};
@@ -823,7 +821,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
           break;
         case 1:
 #if defined(HAVE_HYPRE)
-          cs_matrix_set_type_hypre(m);
+          cs_matrix_set_type_hypre(m, 0);
 #else
           continue;
 #endif

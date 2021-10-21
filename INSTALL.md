@@ -688,6 +688,11 @@ The list of third-party software usable with code_saturne is provided here:
   `--prefix` configure option are correctly detected by the
   code_saturne build scripts.
 
+* [HYPRE](http://www.llnl.gov/casc/hypre/) (high performance preconditioners)
+  is a library of high performance preconditioners and solvers featuring
+  multigrid methods for the solution of large, sparse linear systems of equations
+  on massively parallel computers.
+
 * [AmgX](https://developer.nvidia.com/amgx/) is a high performance
   multigrid and preconditioned iterative method library for NVIDIA GPUs.
   It includes a flexible solver composition system that allows

@@ -571,9 +571,7 @@ _assembler_values_init(void              *matrix_p,
 
     HYPRE_IJMatrixSetOMPFlag(hm, 0);
 
-    HYPRE_MemoryLocation  memory_location = HYPRE_MEMORY_HOST;
-
-    HYPRE_IJMatrixInitialize_v2(hm, memory_location);
+    HYPRE_IJMatrixInitialize_v2(hm, coeffs->memory_location);
 
     /* Also update SpMV function pointers, now that we know the matrix
        is using an assembler: regardless of the fill type, we handle it as
@@ -803,8 +801,6 @@ _assembler_values_add_g(void             *matrix_p,
     HYPRE_BigInt cols[COEFF_GROUP_SIZE];
     HYPRE_Real values[COEFF_GROUP_SIZE];
 
-    HYPRE_Int l = 0;
-
     for (HYPRE_Int s_id = 0; s_id < nrows; s_id += COEFF_GROUP_SIZE) {
 
         HYPRE_Int n_group = COEFF_GROUP_SIZE;
@@ -947,8 +943,8 @@ _assembler_values_end(void  *matrix_p)
     HYPRE_IJVectorSetObjectType(coeffs->hy, HYPRE_PARCSR);
     HYPRE_IJVectorSetMaxOffProcElmts(coeffs->hy, n_off_proc);
 
-    HYPRE_IJVectorInitialize(coeffs->hx);
-    HYPRE_IJVectorInitialize(coeffs->hy);
+    HYPRE_IJVectorInitialize_v2(coeffs->hx, coeffs->memory_location);
+    HYPRE_IJVectorInitialize_v2(coeffs->hy, coeffs->memory_location);
   }
 
   /* Set stat flag */
@@ -1087,9 +1083,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
 
     HYPRE_IJMatrixSetOMPFlag(hm, 0);
 
-    HYPRE_MemoryLocation  memory_location = HYPRE_MEMORY_HOST;
-
-    HYPRE_IJMatrixInitialize_v2(hm, memory_location);
+    HYPRE_IJMatrixInitialize_v2(hm, coeffs->memory_location);
   }
 
   HYPRE_Int max_chunk_size = 32768 - 1;
@@ -1367,17 +1361,19 @@ cs_matrix_hypre_get_coeffs(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Switch matrix type to hypre.
+ * \brief Switch matrix type to HYPRE.
  *
  * This releases previous coefficients if present, so should be called
  * just after matrix creation, before assigning coefficients.
  *
- * \param[in, out]  matrix  pointer to matrix structure
+ * \param[in, out]  matrix      pointer to matrix structure
+ * \param[in]       use_device  0 for host, 1 for device (GPU)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_set_type_hypre(cs_matrix_t  *matrix)
+cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
+                         int           use_device)
 {
   matrix->type = CS_MATRIX_N_BUILTIN_TYPES;
 
@@ -1393,6 +1389,11 @@ cs_matrix_set_type_hypre(cs_matrix_t  *matrix)
   BFT_MALLOC(coeffs, 1, cs_matrix_coeffs_hypre_t);
   memset(coeffs, 0, sizeof(HYPRE_IJMatrix));
   coeffs->matrix_state = 0;
+
+  if (use_device == 1)
+    coeffs->memory_location = HYPRE_MEMORY_DEVICE;
+  else
+    coeffs->memory_location = HYPRE_MEMORY_HOST;
 
   matrix->coeffs = coeffs;
 

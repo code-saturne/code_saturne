@@ -313,6 +313,32 @@ cs_sles_hypre_log(const void  *context,
                   cs_log_t     log_type);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define whether the solver should run on the host or accelerated device.
+ *
+ * \param[in,out]  context       pointer to HYPRE linear solver info
+ * \param[in]      use_device    0 for host, 1 for device (GPU)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_hypre_set_host_device(cs_sles_hypre_t   *context,
+                              int                use_device);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query whether the solver should run on the host or accelerated device.
+ *
+ * \param[in,out]  context       pointer to HYPRE linear solver info
+ *
+ * \return   0 for host, 1 for device (GPU)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_sles_hypre_get_host_device(const cs_sles_hypre_t   *context);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

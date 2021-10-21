@@ -672,7 +672,7 @@ _matrix_check(int                          n_variants,
 
 #if defined(HAVE_HYPRE)
         if (strcmp(v->external_type, "HYPRE") == 0)
-          cs_matrix_set_type_hypre(m);
+          cs_matrix_set_type_hypre(m, 0);
 #endif
 
         bool is_external_type = (strlen(v->external_type) == 0) ? false : true;

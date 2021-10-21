@@ -42,10 +42,9 @@ Numerics:
     for the IJ interface are supported. See
     [HYPRE documentation](https://hypre.readthedocs.io/en/latest/ch-solvers.html)
     for details.
-  * Settings for GPU use are not handled yet.
-  * HYPRE uses its own matrices, handled in cs_matrix_hypre, so not additional
-    copy of coefficients is needed in code_saturne (though building
-    through a matrix assembler is not tested yet).
+  * GPU use may be enabled using the `cs_sles_hypre_set_host_device` function.
+  * HYPRE uses its own matrices, handled in cs_matrix_hypre, so no additional
+    copy of coefficients is needed in code_saturne.
 
 - Add GCR (Generalized Conjugate Residual) which enables a flexible
   preconditioning for non-symmetric linear system. Equivalent to a flexible

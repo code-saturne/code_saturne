@@ -59,17 +59,19 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Switch matrix type to hypre.
+ * \brief Switch matrix type to HYPRE.
  *
  * This releases previous coefficients if present, so should be called
  * just after matrix creation, before assigning coefficients.
  *
- * \param[in, out]  matrix  pointer to matrix structure
+ * \param[in, out]  matrix      pointer to matrix structure
+ * \param[in]       use_device  0 for host, 1 for device (GPU)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_set_type_hypre(cs_matrix_t  *matrix);
+cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
+                         int           use_device);
 
 /*----------------------------------------------------------------------------*/
 

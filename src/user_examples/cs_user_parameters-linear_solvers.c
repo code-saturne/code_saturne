@@ -70,6 +70,12 @@
 #include "cs_sles_petsc.h"
 #endif
 
+#if defined(HAVE_HYPRE)
+#  include <HYPRE_krylov.h>
+#  include <HYPRE_parcsr_ls.h>
+#  include <HYPRE_utilities.h>
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -283,6 +289,9 @@ cs_user_sles_petsc_hook(void               *context,
  * when the selection function is called so that value or structure should
  * not be temporary (i.e. local);
  *
+ * Check HYPRE documentation for available options:
+ * https://hypre.readthedocs.io/en/latest/index.html
+ *
  * parameters:
  *   verbosity <-- verbosity level
  *   context   <-> pointer to optional (untyped) value or structure
@@ -308,7 +317,7 @@ _hypre_p_setup_hook(int    verbosity,
   HYPRE_PCGGetPrecond(solver, &precond);
 
   /* Assuming the preconditioner is BoomerAMG, set options */
-  HYPRE_BoomerAMGSetCoarsenType(precond, 10);        /* HMIS */
+  HYPRE_BoomerAMGSetCoarsenType(precond, 8) ;        /* HMIS */
   HYPRE_BoomerAMGSetAggNumLevels(precond, 2);
   HYPRE_BoomerAMGSetPMaxElmts(precond, 4);
   HYPRE_BoomerAMGSetInterpType(precond, 7);          /* extended+i */
@@ -687,7 +696,7 @@ cs_user_linear_solvers(void)
   }
   /*! [sles_hypre_1] */
 
-  /* Setting pressure solver with Hypre with Default PCG+BoomerAMG options */
+  /* Setting pressure solver with hypre with Default PCG+BoomerAMG options */
   /*-----------------------------------------------------------------------*/
 
   /*! [sles_hypre_2] */
@@ -702,18 +711,20 @@ cs_user_linear_solvers(void)
   }
   /*! [sles_hypre_2] */
 
-  /* Setting pressure solver with Hypre and user-defined options */
-  /*-------------------------------------------------------------*/
+  /* Setting pressure solver with hypre on GPU and  user-defined options */
+  /*---------------------------------------------------------------------*/
 
   /*! [sles_hypre_3] */
   {
-    cs_sles_hypre_define(CS_F_(p)->id,
-                         NULL,
-                         CS_SLES_HYPRE_PCG,            /* solver type */
-                         CS_SLES_HYPRE_BOOMERAMG,      /* preconditioner type */
-                         _hypre_p_setup_hook,
-                         NULL);
+    cs_sles_hypre_t *sc
+      = cs_sles_hypre_define(CS_F_(p)->id,
+                             NULL,
+                             CS_SLES_HYPRE_PCG,            /* solver type */
+                             CS_SLES_HYPRE_BOOMERAMG,      /* preconditioner type */
+                             _hypre_p_setup_hook,
+                             NULL);
 
+    cs_sles_hypre_set_host_device(sc, 1);  /* run on GPU */
   }
   /*! [sles_hypre_3] */
 

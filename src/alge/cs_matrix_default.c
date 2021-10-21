@@ -649,7 +649,7 @@ cs_matrix_external(const char       *type_name,
   }
 
 #if defined(HAVE_HYPRE)
-  {
+  if (strncmp(type_name, "HYPRE_ParCSR", 12) == 0) {
     cs_matrix_t *m_r = NULL;
 
     if (_matrix_struct[CS_MATRIX_MSR] != NULL) {
@@ -664,7 +664,12 @@ cs_matrix_external(const char       *type_name,
                                                 diag_block_size,
                                                 extra_diag_block_size);
 
-    cs_matrix_set_type_hypre(m);
+    int use_device = 0;
+    if (strcmp(type_name, "HYPRE_ParCSR, device") == 0)
+      use_device = 1;
+
+    cs_matrix_set_type_hypre(m, use_device);
+
     return m;
   }
 #endif

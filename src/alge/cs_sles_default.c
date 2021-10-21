@@ -67,6 +67,10 @@
 #include "cs_sles_pc.h"
 #include "cs_timer.h"
 
+#if defined(HAVE_HYPRE)
+#include "cs_sles_hypre.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -268,9 +272,8 @@ _sles_setup_matrix_native(int                  f_id,
   const cs_mesh_t *m = cs_glob_mesh;
 
   bool need_msr = false;
-#if defined(HAVE_HYPRE)
-  bool need_hypre = false;
-#endif
+  bool need_external = false;
+  char external_type[32] = "";
 
   /* If context has not been defined yet, temporarily set
      matrix coefficients (using native matrix, which has lowest
@@ -330,8 +333,15 @@ _sles_setup_matrix_native(int                  f_id,
     mg = cs_sles_get_context(sc);
 
 #if defined(HAVE_HYPRE)
-  else if (strcmp(cs_sles_get_type(sc), "cs_sles_hypre_t") == 0)
-    need_hypre = true;
+  else if (strcmp(cs_sles_get_type(sc), "cs_sles_hypre_t") == 0) {
+    cs_sles_hypre_t *c = cs_sles_get_context(sc);
+    int use_device = cs_sles_hypre_get_host_device(c);
+    if (use_device)
+      strncpy(external_type, "HYPRE_ParCSR, device", 31);
+    else
+      strncpy(external_type, "HYPRE_ParCSR", 31);
+    need_external = true;
+  }
 #endif
 
   if (mg != NULL) {
@@ -351,13 +361,12 @@ _sles_setup_matrix_native(int                  f_id,
     a = cs_matrix_msr(symmetric,
                       diag_block_size,
                       extra_diag_block_size);
-#if defined(HAVE_HYPRE)
-  else if (need_hypre)
-    a = cs_matrix_external("HYPRE_PARCSR",
+  else if (need_external) {
+    a = cs_matrix_external(external_type,
                            symmetric,
                            diag_block_size,
                            extra_diag_block_size);
-#endif
+  }
   else
     a = cs_matrix_default(symmetric,
                           diag_block_size,

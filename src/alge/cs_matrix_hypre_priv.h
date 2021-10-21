@@ -67,6 +67,7 @@ typedef struct _cs_matrix_coeffs_hypre_t {
 
   HYPRE_BigInt   l_range[2];               /* Local rows range
                                               (block range if block size > 1) */
+  HYPRE_MemoryLocation  memory_location;   /* Memory location */
 
   HYPRE_IJMatrix hm;                       /* HYPRE matrix */
   HYPRE_IJVector hx;                       /* x (input) vector */
