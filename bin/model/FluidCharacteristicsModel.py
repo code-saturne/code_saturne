@@ -356,7 +356,7 @@ class FluidCharacteristicsModel(Variables, Model):
         l = ['density', 'molecular_viscosity']
 
         # Thermal properties
-        if self.tsm:
+        if self.tsm != 'off':
             l.extend(['specific_heat', 'thermal_conductivity'])
 
         # Compressible properties
