@@ -504,7 +504,7 @@ cs_pressure_correction(int        iterns,
 
     /* This computation is needed only if there are outlet faces */
 
-    if (ifcsor > 0 || open_bcs_flag == 0)
+    if (ifcsor > 0 || open_bcs_flag != 0)
       cs_hydrostatic_pressure_compute(&indhyd, iterns,
                                       frcxt, dfrcxt, cvar_hydro_pres,
                                       iflux, bflux, i_visc, b_visc,
@@ -885,16 +885,21 @@ cs_pressure_correction(int        iterns,
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t arsr = arak/crom[c_id];
+        cs_real_t travn[3];
 
-        trav[c_id][0] = arsr * (  da_uu[c_id][0]*trav[c_id][0]
-                                + da_uu[c_id][3]*trav[c_id][1]
-                                + da_uu[c_id][5]*trav[c_id][2]);
-        trav[c_id][1] = arsr * (  da_uu[c_id][3]*trav[c_id][0]
-                                + da_uu[c_id][1]*trav[c_id][1]
-                                + da_uu[c_id][4]*trav[c_id][2]);
-        trav[c_id][2] = arsr * (  da_uu[c_id][5]*trav[c_id][0]
-                                + da_uu[c_id][4]*trav[c_id][1]
-                                + da_uu[c_id][2]*trav[c_id][2]);
+        travn[0] = arsr * (  da_uu[c_id][0]*trav[c_id][0]
+                           + da_uu[c_id][3]*trav[c_id][1]
+                           + da_uu[c_id][5]*trav[c_id][2]);
+        travn[1] = arsr * (  da_uu[c_id][3]*trav[c_id][0]
+                           + da_uu[c_id][1]*trav[c_id][1]
+                           + da_uu[c_id][4]*trav[c_id][2]);
+        travn[2] = arsr * (  da_uu[c_id][5]*trav[c_id][0]
+                           + da_uu[c_id][4]*trav[c_id][1]
+                           + da_uu[c_id][2]*trav[c_id][2]);
+
+        trav[c_id][0] = travn[0];
+        trav[c_id][1] = travn[1];
+        trav[c_id][2] = travn[2];
       }
 
     }
@@ -1667,7 +1672,7 @@ cs_pressure_correction(int        iterns,
     = N_(" %-16s : sweep = %d, right hand side norm = %14.6e, relaxp = %g\n");
   const char fmt_sweep_residual_info[]
     = N_(" %-16s : Current reconstruction sweep = %d\n"
-         "         sweep residual = %e12.5 norm = %e12.5\n"
+         "         sweep residual = %12.5e norm = %12.5e\n"
          "         number of sweeps for solver = %d\n");
 
   /* Writing */
@@ -1837,11 +1842,11 @@ cs_pressure_correction(int        iterns,
       if (eqp_p->verbosity >= 2) {
         cs_log_printf
           (CS_LOG_DEFAULT,
-           _(" %-16s : sweep = %d, Dynamic relaxation: alpha = %e12.5 "
-             "beta = %e12.5\n"
-             "    < dI^k  ; R^k > = %e12.5 ||dI^k  ||^2 = %e12.5\n"
-             "    < dI^k-1; R^k > = %e12.5 ||dI^k-1||^2 = %e12.5\n"
-             "    < dI^k-1; dI^k > = %e12.5\n"),
+           _(" %-16s : sweep = %d, Dynamic relaxation: alpha = %12.5e "
+             "beta = %12.5e\n"
+             "    < dI^k  ; R^k > = %12.5e ||dI^k  ||^2 = %12.5e\n"
+             "    < dI^k-1; R^k > = %12.5e ||dI^k-1||^2 = %12.5e\n"
+             "    < dI^k-1; dI^k > = %12.5e\n"),
            f_p->name, isweep, alph, beta,
            paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax);
       }
