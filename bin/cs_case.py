@@ -160,17 +160,18 @@ def get_case_dir(case=None, param=None, coupling=None, id=None):
             data = os.path.join(casedir, 'DATA')
             src = os.path.join(casedir, 'SRC')
         else:
-            casedir = cwd
-            while os.path.basename(casedir):
-                data = os.path.join(casedir, 'DATA')
-                src = os.path.join(casedir, 'SRC')
+            testdir = cwd
+            while os.path.basename(testdir):
+                data = os.path.join(testdir, 'DATA')
+                src = os.path.join(testdir, 'SRC')
                 cfg = os.path.join(data, 'run.cfg')
                 if (os.path.isdir(data) and os.path.isdir(src)) \
                    or os.path.isfile(cfg):
+                    casedir = testdir
                     break
-                casedir = os.path.split(casedir)[0]
+                testdir = os.path.split(casedir)[0]
 
-        if not (os.path.isdir(data) and os.path.isdir(src)):
+        if not (os.path.isdir(data)):
             casedir = None
 
     # Return casedir or None
