@@ -159,6 +159,20 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Scale a mesh using a factor based on the current mesh center position
+ *
+ * \param[in] mi         pointer to the cs_medcoupling_intersector_t struct
+ * \param[in] factor     scaling factor (cs_real_t)
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_intersector_scale_auto(cs_medcoupling_intersector_t *mi,
+                                      cs_real_t                     factor);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Transform a mesh, but takes as input the initial position of the mesh
  *
  * \param[in] mi         pointer to the cs_medcoupling_intersector_t struct

@@ -844,6 +844,82 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Scale a mesh using a factor based on the current mesh center position
+ *
+ * \param[in] mi         pointer to the cs_medcoupling_intersector_t struct
+ * \param[in] factor     scaling factor (cs_real_t)
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_intersector_scale_auto(cs_medcoupling_intersector_t *mi,
+                                      cs_real_t                     factor)
+{
+
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  /* If no MEDCoupling support exit */
+  CS_NO_WARN_IF_UNUSED(mi);
+  CS_NO_WARN_IF_UNUSED(factor);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+
+#elif MEDCOUPLING_VERSION_MAJOR > 9 || \
+  (MEDCOUPLING_VERSION_MAJOR == 9 && MEDCOUPLING_VERSION_MINOR > 6)
+  /* If medcoupling is available and V >= 9.7 */
+  DataArrayDouble *com = mi->source_mesh->computeMeshCenterOfMass();
+  mi->source_mesh->scale(com, factor);
+  mi->matrix_needs_update = 1;
+
+  cs_real_t matrix[3][4];
+
+  /* Scaling matrix :
+   * p' = factor * (p - p0) + p0
+   *    = factor * p + (1 - factor) * p0
+   *    = factor * Id_tr * p + Translation
+   *
+   *        [f   0   0   (1-f)*p0x]
+   *    M = [0   f   0   (1-f)*p0y]
+   *        [0   0   f   (1-f)*p0z]
+   */
+
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 4; j++)
+      matrix[i][j] = 0.;
+
+  for (int i = 0; i < 3; i++) {
+    matrix[i][i] = factor;
+    matrix[i][3] = (1. - factor) * com[i];
+  }
+
+  /* Update the copy of the mesh coordinates */
+  const cs_lnum_t n_vtx = mi->source_mesh->getNumberOfNodes();
+  for (cs_lnum_t i = 0; i < n_vtx; i++)
+    _transform_coord(matrix, mi->init_coords[i]);
+
+  /* Update of the boundary mesh coordinates
+   * and of the initial boundary mesh copy coordinates */
+  const cs_lnum_t n_b_vtx = mi->n_b_vertices;
+  for (cs_lnum_t i = 0; i < n_b_vtx; i++) {
+    _transform_coord(matrix, mi->boundary_coords[i]);
+    _transform_coord(matrix, mi->init_boundary_coords[i]);
+  }
+#else
+  /* Version is too low, exit */
+  CS_NO_WARN_IF_UNUSED(mi);
+  CS_NO_WARN_IF_UNUSED(factor);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without MEDCoupling"
+              "v9.7 or later."
+              "You are using MEDCoupling '%s'.\n"),
+            MEDCOUPLING_VERSION_STR);
+#endif
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Transform a mesh, but takes as input the initial position of the mesh
  * \brief Transformation is thus applied on the initial coordiantes and the
  * \brief mesh is modified accordingly.
