@@ -1115,7 +1115,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
         ic++;
       }
 
-      s_id = ic;
+      s_id += ic;
 
       if (direct_assembly)
         HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
@@ -1153,7 +1153,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
         }
       }
 
-      s_e_id = ic;
+      s_e_id += ic;
 
       if (direct_assembly)
         HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
@@ -1192,7 +1192,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
         }
       }
 
-      s_e_id = ic;
+      s_e_id += ic;
 
       if (direct_assembly)
         HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
