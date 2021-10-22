@@ -1599,5 +1599,23 @@ cs_sles_amgx_log(const void  *context,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information on AmgX library.
+ *
+ * \param[in]  log_type  log type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_amgx_library_info(cs_log_t  log_type)
+{
+  int major = 0, minor = 0;
+  AMGX_get_api_version(&major, &minor);
+
+  cs_log_printf(log_type,
+                "    AmgX %d.%d\n", major, minor);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

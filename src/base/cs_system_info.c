@@ -54,16 +54,34 @@
 #include <pwd.h>
 #endif
 
-#if defined(HAVE_CUDA)
-#include "cs_base_cuda.h"
-#endif
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft_printf.h"
 #include "cs_log.h"
+
+#if defined(HAVE_CUDA)
+#include "cs_base_cuda.h"
+#endif
+
+#if defined(HAVE_PETSC)
+#if 0
+#include "cs_sles_petsc.h"
+#else
+/* Duplicate prototype here to avoid requiring PETSc headers */
+void
+cs_sles_petsc_library_info(cs_log_t  log_type);
+#endif
+#endif
+
+#if defined(HAVE_HYPRE)
+#include "cs_sles_hypre.h"
+#endif
+
+#if defined(HAVE_AMGX)
+#include "cs_sles_amgx.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -710,6 +728,56 @@ _omp_version_info(bool  log)
 #endif
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print external library info.
+ *
+ * This may be incomplete.
+ *
+ * \param[in]  log   if true, standard logging; otherwise, single output
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_ext_library_version_info(bool  log)
+{
+  int  n_logs = (log) ? 2 : 1;
+  cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
+
+  int n_ext = 0;
+
+#if defined(HAVE_PETSC)
+  n_ext += 1;
+#endif
+
+#if defined(HAVE_HYPRE)
+  n_ext += 1;
+#endif
+
+#if defined(HAVE_AMGX)
+  n_ext += 1;
+#endif
+
+  if (n_ext < 1)
+    return;
+
+  for (int log_id = 0; log_id < n_logs; log_id++) {
+
+    cs_log_printf(logs[log_id],
+                  "\n  External libraries:\n");
+
+#if defined(HAVE_PETSC)
+    cs_sles_petsc_library_info(log_id);
+#endif
+#if defined(HAVE_HYPRE)
+    cs_sles_hypre_library_info(log_id);
+#endif
+#if defined(HAVE_AMGX)
+    cs_sles_amgx_library_info(log_id);
+#endif
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -774,6 +842,8 @@ cs_system_info_no_log(void)
 #endif
 
   _omp_version_info(false);
+
+  _ext_library_version_info(false);
 }
 
 /*-----------------------------------------------------------------------------*/

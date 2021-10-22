@@ -339,6 +339,17 @@ int
 cs_sles_hypre_get_host_device(const cs_sles_hypre_t   *context);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information on hypre library.
+ *
+ * \param[in]  log_type  log type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_hypre_library_info(cs_log_t  log_type);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

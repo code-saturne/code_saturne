@@ -120,23 +120,8 @@ cs_user_sles_petsc_hook(void               *context,
  * Initialize PETSc if needed
  *----------------------------------------------------------------------------*/
 
-static inline void
-cs_sles_petsc_init(void)
-{
-  /* Initialization must be called before setting options;
-     it does not need to be called before calling
-     cs_sles_petsc_define(), as this is handled automatically. */
-
-  PetscBool is_initialized;
-  PetscInitialized(&is_initialized);
-
-  if (is_initialized == PETSC_FALSE) {
-#if defined(HAVE_MPI)
-    PETSC_COMM_WORLD = cs_glob_mpi_comm;
-#endif
-    PetscInitializeNoArguments();
-  }
-}
+void
+cs_sles_petsc_init(void);
 
 /*----------------------------------------------------------------------------
  * \brief Output the settings of a KSP structure
@@ -355,6 +340,17 @@ cs_sles_petsc_error_post_and_abort(cs_sles_t                    *sles,
 void
 cs_sles_petsc_log(const void  *context,
                   cs_log_t     log_type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information on PETSc library.
+ *
+ * \param[in]  log_type  log type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_petsc_library_info(cs_log_t  log_type);
 
 /*----------------------------------------------------------------------------*/
 

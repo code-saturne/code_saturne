@@ -497,6 +497,28 @@ cs_user_sles_petsc_hook(void               *context,
  * Public function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Initialize PETSc if needed
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_petsc_init(void)
+{
+  /* Initialization must be called before setting options;
+     it does not need to be called before calling
+     cs_sles_petsc_define(), as this is handled automatically. */
+
+  PetscBool is_initialized;
+  PetscInitialized(&is_initialized);
+
+  if (is_initialized == PETSC_FALSE) {
+#if defined(HAVE_MPI)
+    PETSC_COMM_WORLD = cs_glob_mpi_comm;
+#endif
+    PetscInitializeNoArguments();
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define and associate a PETSc linear system solver
@@ -1615,6 +1637,24 @@ cs_sles_petsc_log(const void  *context,
                   c->t_solve.nsec*1e-9);
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information on PETSc library.
+ *
+ * \param[in]  log_type  log type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_petsc_library_info(cs_log_t  log_type)
+{
+  cs_log_printf(log_type,
+                "    PETSc %d.%d.%d\n",
+                PETSC_VERSION_MAJOR,
+                PETSC_VERSION_MINOR,
+                PETSC_VERSION_SUBMINOR);
 }
 
 /*----------------------------------------------------------------------------*/

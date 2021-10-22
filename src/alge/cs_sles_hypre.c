@@ -510,6 +510,9 @@ cs_sles_hypre_log(const void  *context,
       cs_log_printf(log_type,
                     _("    Preconditioning:                 %s\n"),
                     _cs_hypre_type_name(c->precond_type));
+    if (c->use_device)
+      cs_log_printf(log_type,
+                    _("    Accelerated device:              enabled\n"));
 
   }
 
@@ -532,6 +535,9 @@ cs_sles_hypre_log(const void  *context,
       cs_log_printf(log_type,
                     _("    Preconditioning:             %s\n"),
                     _cs_hypre_type_name(c->precond_type));
+    if (c->use_device)
+      cs_log_printf(log_type,
+                    _("    Accelerated device:          enabled\n"));
     cs_log_printf(log_type,
                   _("  Number of setups:              %12d\n"
                     "  Number of calls:               %12d\n"
@@ -1296,6 +1302,60 @@ int
 cs_sles_hypre_get_host_device(const cs_sles_hypre_t   *context)
 {
   return context->use_device;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information on hypre library.
+ *
+ * \param[in]  log_type  log type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_hypre_library_info(cs_log_t  log_type)
+{
+ char hypre_config_options[256] = "";
+ size_t l_max = 255;
+ size_t l = l_max;
+
+ snprintf(hypre_config_options, l, "%s %s (",
+          HYPRE_RELEASE_NAME, HYPRE_RELEASE_VERSION);
+
+ l -= strlen(hypre_config_options);
+
+#if defined(HYPRE_USING_GPU)
+ strncat(hypre_config_options, "GPU support, ", l);
+ l -= strlen(hypre_config_options);
+#endif
+
+#if defined(HYPRE_SEQUENTIAL)
+ strncat(hypre_config_options, "sequential, ", l);
+ l -= strlen(hypre_config_options);
+#endif
+
+#if defined(HYPRE_USING_OPENMP)
+ strncat(hypre_config_options, "OpenMP, ", l);
+ l -= strlen(hypre_config_options);
+#endif
+
+
+#if defined(HYPRE_BIGINT)
+ strncat(hypre_config_options, "large integers, ", l);
+ l -= strlen(hypre_config_options);
+#endif
+
+ l = strlen(hypre_config_options) - 2;
+ if (hypre_config_options[l] == ',') {
+   hypre_config_options[l] = ')';
+   hypre_config_options[l+1] = '\0';
+ }
+ else {
+   hypre_config_options[l] = '\0';
+ }
+
+ cs_log_printf(log_type,
+               "    %s\n", hypre_config_options);
 }
 
 /*----------------------------------------------------------------------------*/

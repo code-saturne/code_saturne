@@ -381,6 +381,17 @@ cs_sles_amgx_log(const void  *context,
                  cs_log_t     log_type);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information on AmgX library.
+ *
+ * \param[in]  log_type  log type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_amgx_library_info(cs_log_t  log_type);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
