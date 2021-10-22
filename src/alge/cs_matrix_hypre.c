@@ -1130,7 +1130,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
 
     while (s_e_id < n_edges) {
 
-      HYPRE_Int ic = 0;
+      HYPRE_Int ic = 0, ec = 0;
 
       for (cs_lnum_t e_id = s_e_id;
            e_id < n_edges && ic < max_chunk_size;
@@ -1151,9 +1151,10 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
           aij[ic] = xa[e_id];
           ic++;
         }
+        ec++;
       }
 
-      s_e_id += ic;
+      s_e_id += ec;
 
       if (direct_assembly)
         HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
@@ -1168,7 +1169,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
 
     while (s_e_id < n_edges) {
 
-      HYPRE_Int ic = 0;
+      HYPRE_Int ic = 0, ec = 0;
 
       for (cs_lnum_t e_id = s_e_id;
            e_id < n_edges && ic < max_chunk_size;
@@ -1190,9 +1191,10 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
           aij[ic] = xa[e_id*2+1];
           ic++;
         }
+        ec++;
       }
 
-      s_e_id += ic;
+      s_e_id += ec;
 
       if (direct_assembly)
         HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
