@@ -105,9 +105,9 @@ BEGIN_C_DECLS
  * \brief The dynamic system of equations is associated with an energy equation
  *        solved using the enthalpy as variable (not fully available).
  *
- * \def CS_SOLIDIFICATION_USE_FROZEN_VELOCITY_FIELD
+ * \def CS_SOLIDIFICATION_NO_VELOCITY_FIELD
  * \brief The system of equations does not involve the Navier-Stokes equations.
- *        By default, no velocity is taken into account.
+ *        No velocity is taken into account.
  *
  * \def CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM
  * \brief The solute equation related to the transport of the bulk concentration
@@ -129,7 +129,7 @@ BEGIN_C_DECLS
  */
 
 #define CS_SOLIDIFICATION_USE_ENTHALPY_VARIABLE             (1 << 0) /*=    1 */
-#define CS_SOLIDIFICATION_USE_FROZEN_VELOCITY_FIELD         (1 << 1) /*=    2 */
+#define CS_SOLIDIFICATION_NO_VELOCITY_FIELD                 (1 << 1) /*=    2 */
 #define CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM           (1 << 2) /*=    4 */
 #define CS_SOLIDIFICATION_USE_EXTRAPOLATION                 (1 << 3) /*=    8 */
 #define CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC           (1 << 4) /*=   16 */
@@ -724,6 +724,24 @@ cs_solidification_set_voller_model(cs_real_t    beta,
                                    cs_real_t    t_liquidus,
                                    cs_real_t    latent_heat,
                                    cs_real_t    s_das);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the main physical parameters which describe the Voller and
+ *         Prakash modelling
+ *
+ * \param[in]  beta           thermal dilatation coefficient
+ * \param[in]  t_ref          reference temperature (for the Boussinesq approx)
+ * \param[in]  t_solidus      solidus temperature (in K)
+ * \param[in]  t_liquidus     liquidus temperature (in K)
+ * \param[in]  latent_heat    latent heat
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_voller_model_no_velocity(cs_real_t    t_solidus,
+                                               cs_real_t    t_liquidus,
+                                               cs_real_t    latent_heat);
 
 /*----------------------------------------------------------------------------*/
 /*!
