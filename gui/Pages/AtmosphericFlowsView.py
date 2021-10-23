@@ -199,7 +199,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
     @pyqtSlot(int)
     def __slotComboBoxUrefOrDlmo(self, indCurrent):
-        text = self.lineEditUstarOrDlmo.text()
+        text = self.lineEditUrefOrDlmo.text()
         val = from_qvariant(text, float)
         if indCurrent==0:
             self.labelDimRefVel.setText("m/s")
