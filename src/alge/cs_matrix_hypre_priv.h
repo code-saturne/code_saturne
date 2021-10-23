@@ -77,6 +77,12 @@ typedef struct _cs_matrix_coeffs_hypre_t {
                                               0: not created
                                               1: created and assembled */
 
+  HYPRE_Int max_chunk_size;                /* Chunk size */
+  HYPRE_BigInt  *row_buf;                  /* row ids buffer */
+  HYPRE_BigInt  *col_buf;                  /* column ids buffer */
+  HYPRE_Real    *val_buf;                  /* values ids buffer */
+
+
 } cs_matrix_coeffs_hypre_t;
 
 /*=============================================================================

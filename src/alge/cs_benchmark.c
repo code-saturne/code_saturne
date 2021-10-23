@@ -75,6 +75,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_base_accel.h"
 #include "cs_blas.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
@@ -90,6 +91,7 @@
 
 #if defined(HAVE_HYPRE)
 #include "cs_matrix_hypre.h"
+#include "cs_sles_hypre.h"
 #endif
 
 /*----------------------------------------------------------------------------
@@ -821,7 +823,11 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
           break;
         case 1:
 #if defined(HAVE_HYPRE)
-          cs_matrix_set_type_hypre(m, 0);
+          {
+            int device_id = cs_get_device_id();
+            int use_device = (device_id < 0) ? 0 : 1;
+            cs_matrix_set_type_hypre(m, use_device);
+          }
 #else
           continue;
 #endif
@@ -989,6 +995,12 @@ cs_benchmark(int  mpi_trace_mode)
                 "Benchmark mode activated\n"
                 "========================\n");
 
+#if defined(HAVE_HYPRE)
+  /* Force HYPRE initialization */
+  void *hypre_sles
+    = cs_sles_hypre_create(CS_SLES_HYPRE_NONE, CS_SLES_HYPRE_NONE, NULL, NULL);
+#endif
+
   /* Run some feature tests */
   /*------------------------*/
 
@@ -1075,6 +1087,10 @@ cs_benchmark(int  mpi_trace_mode)
   cs_mesh_adjacencies_finalize();
 
   cs_log_separator(CS_LOG_PERFORMANCE);
+
+#if defined(HAVE_HYPRE)
+  cs_sles_hypre_destroy(&hypre_sles);
+#endif
 
   /* Free working arrays */
   /*---------------------*/

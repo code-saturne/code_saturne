@@ -671,8 +671,11 @@ _matrix_check(int                          n_variants,
         m = cs_matrix_create(ms);
 
 #if defined(HAVE_HYPRE)
-        if (strcmp(v->external_type, "HYPRE") == 0)
-          cs_matrix_set_type_hypre(m, 0);
+        if (strcmp(v->external_type, "HYPRE") == 0) {
+          int device_id = cs_get_device_id();
+          int use_device = (device_id < 0) ? 0 : 1;
+          cs_matrix_set_type_hypre(m, use_device);
+          }
 #endif
 
         bool is_external_type = (strlen(v->external_type) == 0) ? false : true;

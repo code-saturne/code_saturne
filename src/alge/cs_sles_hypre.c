@@ -45,6 +45,14 @@
  * HYPRE headers
  *----------------------------------------------------------------------------*/
 
+/* Avoid warnings due to previous values */
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_URL
+#undef PACKAGE_VERSION
+
 #include <HYPRE_krylov.h>
 #include <HYPRE_parcsr_ls.h>
 #include <HYPRE_utilities.h>
@@ -62,6 +70,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_base_accel.h"
 #include "cs_log.h"
 #include "cs_fp_exception.h"
 #include "cs_halo.h"
@@ -171,7 +180,6 @@ typedef struct _cs_sles_hypre_t {
  *============================================================================*/
 
 static int  _n_hypre_systems = 0;
-static bool _device_is_setup = false;
 
 /*============================================================================
  * Private function definitions
@@ -360,7 +368,8 @@ cs_sles_hypre_create(cs_sles_hypre_type_t         solver_type,
   c->solver_type = solver_type;
   c->precond_type = precond_type;
 
-  c->use_device = 0;
+  int device_id = cs_get_device_id();
+  c->use_device = (device_id < 0) ? 0 : 1;
 
   c->n_setups = 0;
   c->n_solves = 0;
@@ -599,43 +608,6 @@ cs_sles_hypre_setup(void               *context,
   if (comm == MPI_COMM_NULL)
     comm = MPI_COMM_WORLD;
 
-
-  /* Settings for host or device */
-
-  if (_device_is_setup == false) {
-
-#if HYPRE_RELEASE_NUMBER >=  22100
-
-    if (c->use_device == 1) {
-
-      HYPRE_SetMemoryLocation(HYPRE_MEMORY_DEVICE);
-      HYPRE_SetExecutionPolicy(HYPRE_EXEC_DEVICE); /* setup AMG on GPUs */
-      HYPRE_SetSpGemmUseCusparse(0);               /* use hypre's SpGEMM
-                                                      instead of cuSPARSE */
-      HYPRE_SetUseGpuRand(1);                      /* use GPU RNG */
-
-#     if defined(HYPRE_USING_CUDA) && defined(HYPRE_USING_DEVICE_POOL)
-#     if defined(HYPRE_USING_UMPIRE)
-      HYPRE_SetUmpireUMPoolName("HYPRE_UM_POOL_CODE_SATURNE");
-      HYPRE_SetUmpireDevicePoolName("HYPRE_DEVICE_POOL_CODE_SATURNE");
-      #else
-      /* HYPRE_SetGPUMemoryPoolSize(bin_growth,
-         min_bin, max_bin, max_bytes); */
-#     endif
-#     endif
-
-    }
-    else {
-      HYPRE_SetMemoryLocation(HYPRE_MEMORY_HOST);
-      HYPRE_SetExecutionPolicy(HYPRE_EXEC_HOST);
-    }
-
-#endif /* HYPRE_RELEASE_NUMBER >=  22100 */
-
-    _device_is_setup = true;
-
-  }
-
   bool have_set_pc = true;
   HYPRE_PtrToParSolverFcn solve_ftn[2] = {NULL, NULL};
   HYPRE_PtrToParSolverFcn setup_ftn[2] = {NULL, NULL};
@@ -668,8 +640,8 @@ cs_sles_hypre_setup(void               *context,
           HYPRE_BoomerAMGSetRelaxType(hs, 6);       /* 3, 4, 6, 7, 18, 11, 12 */
           HYPRE_BoomerAMGSetRelaxOrder(hs, 0);      /* must be false */
           HYPRE_BoomerAMGSetCoarsenType(hs, 8);     /* PMIS */
-          // HYPRE_BoomerAMGSetInterpType(hs, 15);     /* 3, 15, 6, 14, 18 */
-          // HYPRE_BoomerAMGSetAggInterpType(hs, 7);   /* 5 or 7 */
+          HYPRE_BoomerAMGSetInterpType(hs, 15);     /* 3, 15, 6, 14, 18 */
+          HYPRE_BoomerAMGSetAggInterpType(hs, 7);   /* 5 or 7 */
           HYPRE_BoomerAMGSetKeepTranspose(hs, 1);   /* keep transpose to
                                                        avoid SpMTV */
           HYPRE_BoomerAMGSetRAP2(hs, 0);            /* RAP in two multiplications
@@ -680,7 +652,7 @@ cs_sles_hypre_setup(void               *context,
         else if (c->use_device == 0) {
           HYPRE_BoomerAMGSetCoarsenType(hs, 10);        /* HMIS */
           HYPRE_BoomerAMGSetPMaxElmts(hs, 4);
-          HYPRE_BoomerAMGSetInterpType(hs, 7);          /* extended+i */
+          HYPRE_BoomerAMGSetInterpType(hs, 7);          /* extended+e */
           HYPRE_BoomerAMGSetRelaxType(hs, 6);   /* Sym G.S./Jacobi hybrid */
           HYPRE_BoomerAMGSetRelaxOrder(hs, 0);
         }
@@ -1024,16 +996,20 @@ cs_sles_hypre_solve(void                *context,
   HYPRE_ParCSRMatrix par_a;              /* Associted matrix */
   HYPRE_IJMatrixGetObject(sd->coeffs->hm, (void **)&par_a);
 
+  cs_alloc_mode_t  amode = CS_ALLOC_HOST;
+  if (sd->coeffs->memory_location != HYPRE_MEMORY_HOST)
+    amode = CS_ALLOC_HOST_DEVICE_SHARED;
+
   HYPRE_Real *_t = NULL;
 
   /* Set RHS and starting solution */
 
-  if (sizeof(cs_real_t) == sizeof(HYPRE_Real)) {
+  if (sizeof(cs_real_t) == sizeof(HYPRE_Real) && amode == CS_ALLOC_HOST) {
     HYPRE_IJVectorSetValues(sd->coeffs->hx, n_rows, NULL, vx);
     HYPRE_IJVectorSetValues(sd->coeffs->hy, n_rows, NULL, rhs);
   }
   else {
-    BFT_MALLOC(_t, n_rows, HYPRE_Real);
+    CS_MALLOC_HD(_t, n_rows, HYPRE_Real, amode);
     for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
       _t[ii] = vx[ii];;
     }
@@ -1156,7 +1132,7 @@ cs_sles_hypre_solve(void                *context,
               _cs_hypre_type_name(c->solver_type));
   }
 
-  if (sizeof(cs_real_t) == sizeof(HYPRE_Real)) {
+  if (_t == NULL) {
     HYPRE_IJVectorGetValues(sd->coeffs->hx, n_rows, NULL, vx);
   }
   else {
@@ -1164,7 +1140,7 @@ cs_sles_hypre_solve(void                *context,
     for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
       vx[ii] = _t[ii];
     }
-    BFT_FREE(_t);
+    CS_FREE_HD(_t);
   }
 
   *residue = res;
@@ -1274,7 +1250,10 @@ cs_sles_hypre_free(void  *context)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define whether the solver should run on the host or accelerated device.
+ * \brief Define whether the solver should run on the host or
+ *        accelerated device.
+ *
+ * If no device is available, this setting is ignored.
  *
  * \param[in,out]  context       pointer to HYPRE linear solver info
  * \param[in]      use_device    0 for host, 1 for device (GPU)
@@ -1285,6 +1264,10 @@ void
 cs_sles_hypre_set_host_device(cs_sles_hypre_t   *context,
                               int                use_device)
 {
+  int device_id = cs_get_device_id();
+  if (device_id < 0)
+    use_device = 0;
+
   context->use_device = use_device;
 }
 

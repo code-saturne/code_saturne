@@ -138,6 +138,29 @@ typedef enum {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return currently associated device id.
+ *
+ * \returns currently available device id, or -1 if none is available.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+int
+cs_get_device_id(void);
+
+#else
+
+static inline int
+cs_get_device_id(void)
+{
+  return -1;
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate memory on host and device for ni elements of size bytes.
  *
  * This function calls the appropriate allocation function based on

@@ -258,6 +258,17 @@ cs_base_cuda_version_info(cs_log_t  log_id);
 int
 cs_base_cuda_select_default_device(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return currently selected CUDA devices.
+ *
+ * \return  selected device id, or -1 if no usable device is available
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_base_cuda_get_device(void);
+
 #endif
 
 /*----------------------------------------------------------------------------*/

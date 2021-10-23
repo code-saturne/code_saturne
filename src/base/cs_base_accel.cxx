@@ -159,6 +159,28 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return currently associated device id.
+ *
+ * \returns currently available device id, or -1 if none is available.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_get_device_id(void)
+{
+  int retval = -1;
+
+#if defined(HAVE_CUDA)
+
+  retval = cs_base_cuda_get_device();
+
+#endif
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate memory on host and device for ni elements of size bytes.
  *
  * This function calls the appropriate allocation function based on

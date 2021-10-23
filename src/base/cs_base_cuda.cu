@@ -328,7 +328,7 @@ cs_base_cuda_device_info(cs_log_t  log_id)
 void
 cs_base_cuda_version_info(cs_log_t  log_id)
 {
-  int n_devices = 0, runtime_version = -1, driver_version = -1;
+  int runtime_version = -1, driver_version = -1;
 
   if (cudaDriverGetVersion(&driver_version) == cudaSuccess)
     cs_log_printf(log_id,
@@ -384,6 +384,30 @@ cs_base_cuda_select_default_device(void)
                "cudaSetDevice", __func__);
     return -1;
   }
+
+  return device_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return currently selected CUDA devices.
+ *
+ * \return  selected device id, or -1 if no usable device is available
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_base_cuda_get_device(void)
+{
+  int device_id = -1, n_devices = 0;
+
+  cudaError_t ret_code = cudaGetDeviceCount(&n_devices);
+
+  if (cudaSuccess == ret_code)
+    ret_code = cudaGetDevice(&device_id);
+
+  if (cudaSuccess != ret_code)
+    device_id = -1;
 
   return device_id;
 }
