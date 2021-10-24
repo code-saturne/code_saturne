@@ -214,7 +214,6 @@ _variant_add(const char                        *name,
              cs_matrix_timing_variant_t       **m_variant)
 {
   cs_matrix_timing_variant_t  *v;
-  int j;
   int i = *n_variants;
 
   if (*n_variants_max == *n_variants) {
@@ -238,9 +237,9 @@ _variant_add(const char                        *name,
   v->vector_multiply_name[0][1][0] = '\0';
   v->type = type;
 
-  for (j = 0; j < n_fill_types; j++) {
+  for (int j = 0; j < n_fill_types; j++) {
 
-    cs_matrix_fill_type_t mft =  fill_types[j];
+    cs_matrix_fill_type_t mft = fill_types[j];
 
     switch(mft) {
 
@@ -465,8 +464,8 @@ _variant_build_list(int                             n_fill_types,
                  fill_types,
                  0, /* ed_flag */
                  "external",
-                 NULL,
-                 NULL,
+                 "external",
+                 "external",
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -675,7 +674,7 @@ _matrix_check(int                          n_variants,
           int device_id = cs_get_device_id();
           int use_device = (device_id < 0) ? 0 : 1;
           cs_matrix_set_type_hypre(m, use_device);
-          }
+        }
 #endif
 
         bool is_external_type = (strlen(v->external_type) == 0) ? false : true;
@@ -944,9 +943,9 @@ _matrix_time_test(double                       t_measure,
             cs_matrix_variant_destroy(&mv);
           }
 
-          vector_multiply = m->vector_multiply[f_id][ed_flag];
-
         }
+
+        vector_multiply = m->vector_multiply[f_id][ed_flag];
 
         if (vector_multiply == NULL)
           continue;

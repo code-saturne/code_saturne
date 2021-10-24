@@ -430,8 +430,9 @@ _compute_diag_sizes_assembler_b(const cs_matrix_assembler_t   *ma,
  *   n_edges       <-- local number of graph edges
  *   edges         <-- edges (symmetric row <-> column) connectivity
  *   g_e_id        <-- global element ids
- *   diag_sizes    --> diagonal values
- *   offdiag_sizes --> off-diagonal values
+ *   da            <-- diagonal values
+ *   diag_sizes    --> diagonal sizes
+ *   offdiag_sizes --> off-diagonal sizes
  *----------------------------------------------------------------------------*/
 
 static void
@@ -440,29 +441,36 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
                            cs_lnum_t           n_edges,
                            const cs_lnum_t     edges[restrict][2],
                            const cs_gnum_t     g_e_id[],
+                           const cs_real_t     da[restrict],
                            HYPRE_Int         **diag_sizes,
                            HYPRE_Int         **offdiag_sizes)
 {
   cs_lnum_t  n_rows = matrix->n_rows;
+  cs_lnum_t  b_size = matrix->db_size[0];
+  cs_lnum_t  e_size = matrix->eb_size[0];
+  cs_lnum_t  b_stride = matrix->db_size[3];
+
+  cs_lnum_t _n_rows = n_rows*b_size;
 
   HYPRE_Int *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, n_rows, HYPRE_Int);
-  BFT_MALLOC(_offdiag_sizes, n_rows, HYPRE_Int);
+  BFT_MALLOC(_diag_sizes, _n_rows, HYPRE_Int);
+  BFT_MALLOC(_offdiag_sizes, _n_rows, HYPRE_Int);
 
-  int n_diag = (have_diag) ? 1 : 0;
+  /* Case with b_size > e_size handled later */
+  int n_diag = (have_diag && b_size == e_size) ? e_size : 0;
 
   cs_gnum_t g_id_lb = 0;
   cs_gnum_t g_id_ub = 0;
 
-  if (n_rows > 0) {
+  if (_n_rows > 0) {
     g_id_lb = g_e_id[0];
     g_id_ub = g_e_id[n_rows-1] + 1;
   }
 
   /* Separate local and distant loops for better first touch logic */
 
-# pragma omp parallel for  if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_rows; i++) {
+# pragma omp parallel for  if(_n_rows > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < _n_rows; i++) {
     _diag_sizes[i] = n_diag;
     _offdiag_sizes[i] = 0;
   }
@@ -493,15 +501,15 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
           cs_gnum_t g_jj = g_e_id[jj];
           if (ii < n_rows) {
             if (g_jj >= g_id_lb && g_jj < g_id_ub)
-              _diag_sizes[ii] += 1;
+              _diag_sizes[ii*b_size] += e_size;
             else
-              _offdiag_sizes[ii] += 1;
+              _offdiag_sizes[ii*b_size] += e_size;
           }
           if (jj < n_rows) {
             if (g_ii >= g_id_lb && g_ii < g_id_ub)
-              _diag_sizes[jj] += 1;
+              _diag_sizes[jj*b_size] += e_size;
             else
-              _offdiag_sizes[jj] += 1;
+              _offdiag_sizes[jj*b_size] += e_size;
           }
         }
       }
@@ -518,15 +526,43 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
       cs_gnum_t g_jj = g_e_id[jj];
       if (ii < n_rows) {
         if (g_jj >= g_id_lb && g_jj < g_id_ub)
-          _diag_sizes[ii] += 1;
+          _diag_sizes[ii*b_size] += e_size;
         else
-          _offdiag_sizes[ii] += 1;
+          _offdiag_sizes[ii*b_size] += e_size;
       }
       if (jj < n_rows) {
         if (g_ii >= g_id_lb && g_ii < g_id_ub)
-          _diag_sizes[jj] += 1;
+          _diag_sizes[jj*b_size] += e_size;
         else
-          _offdiag_sizes[jj] += 1;
+          _offdiag_sizes[jj*b_size] += e_size;
+      }
+    }
+
+  }
+
+  /* Adjustment for "block" cases */
+
+  if (b_size > 1) {
+
+#   pragma omp parallel for  if(_n_rows > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_rows; i++) {
+      for (cs_lnum_t j = 1; j < b_size; j++) {
+        _diag_sizes[i*b_size + j] = _diag_sizes[i*b_size];
+        _offdiag_sizes[i*b_size + j] = _offdiag_sizes[i*b_size];
+      }
+    }
+
+    /* Delayed diagonal terms for block diagonal */
+    if (have_diag && e_size == 1) {
+#     pragma omp parallel for  if(_n_rows > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_rows; i++) {
+        for (cs_lnum_t j = 0; j < b_size; j++) {
+          for (cs_lnum_t k = 0; k < b_size; k++) {
+            cs_real_t a = da[i*b_stride + j*b_size + k];
+            if (a < -0.0 || a > 0.0)
+              _diag_sizes[i*b_size + j] += 1;
+          }
+        }
       }
     }
 
@@ -667,13 +703,6 @@ _assembler_values_init(void              *matrix_p,
     HYPRE_IJMatrixSetOMPFlag(hm, 0);
 
     HYPRE_IJMatrixInitialize_v2(hm, coeffs->memory_location);
-
-    /* Also update SpMV function pointers, now that we know the matrix
-       is using an assembler: regardless of the fill type, we handle it as
-       a scalar IJ matrix with HYPRE during coefficient assignment */
-
-    if (matrix->vector_multiply[matrix->fill_type][0] == NULL)
-      matrix->vector_multiply[matrix->fill_type][0] = _mat_vec_p_parcsr;
   }
 }
 
@@ -706,6 +735,7 @@ _assembler_values_add_block_cc(cs_matrix_coeffs_hypre_t  *coeffs,
   HYPRE_IJMatrix hm = coeffs->hm;
   assert(hm != NULL);
 
+  HYPRE_BigInt h_b_size = b_size;
   HYPRE_BigInt l_b = coeffs->l_range[0];
   HYPRE_BigInt u_b = coeffs->l_range[1];
 
@@ -728,8 +758,10 @@ _assembler_values_add_block_cc(cs_matrix_coeffs_hypre_t  *coeffs,
       if (r_g_id >= l_b && r_g_id < u_b) {
         for (cs_lnum_t j = 0; j < b_size; j++) {
           for (cs_lnum_t k = 0; k < b_size; k++) {
-            rows[l*stride + j*b_size + k] = row_g_id[s_id + i]*b_size + j;
-            cols[l*stride + j*b_size + k] = col_g_id[s_id + i]*b_size + k;
+            rows[l*stride + j*b_size + k]
+              = row_g_id[s_id + i]*h_b_size + (HYPRE_BigInt)j;
+            cols[l*stride + j*b_size + k]
+              = col_g_id[s_id + i]*h_b_size + (HYPRE_BigInt)k;
             values[l*stride + j*b_size + k]
               = vals[(s_id + i)*stride + j*b_size + k];
           }
@@ -779,6 +811,8 @@ _assembler_values_add_block_d_e(cs_matrix_coeffs_hypre_t  *coeffs,
   HYPRE_IJMatrix hm = coeffs->hm;
   assert(hm != NULL);
 
+  HYPRE_BigInt h_b_size = b_size;
+
   HYPRE_BigInt l_b = coeffs->l_range[0];
   HYPRE_BigInt u_b = coeffs->l_range[1];
 
@@ -800,8 +834,8 @@ _assembler_values_add_block_d_e(cs_matrix_coeffs_hypre_t  *coeffs,
       HYPRE_Int r_g_id = row_g_id[s_id + i];
       if (r_g_id >= l_b && r_g_id < u_b) {
         for (cs_lnum_t j = 0; j < b_size; j++) {
-          rows[l*b_size + j] = row_g_id[s_id + i]*b_size + j;
-          cols[l*b_size + j] = col_g_id[s_id + i]*b_size + j;
+          rows[l*b_size + j] = row_g_id[s_id + i]*h_b_size + (HYPRE_BigInt)j;
+          cols[l*b_size + j] = col_g_id[s_id + i]*h_b_size + (HYPRE_BigInt)j;
           values[l*b_size + j] = vals[s_id + i];
         }
         l++;
@@ -1072,10 +1106,381 @@ _assembler_values_create_hypre(cs_matrix_t      *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Set HYPRE ParCSR matrix coefficients.
+ * Set HYPRE ParCSR matrix coefficients for block-diagonal cases.
  *
- * Depending on current options and initialization, values will be copied
- * or simply mapped.
+ * parameters:
+ *   matrix    <-- pointer to matrix structure
+ *   symmetric <-- indicates if extradiagonal values are symmetric
+ *   n_edges   <-- local number of graph edges
+ *   edges     <-- edges (symmetric row <-> column) connectivity
+ *   da        <-- diagonal values
+ *   xa        <-- extradiagonal values
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_coeffs_ij_db(cs_matrix_t        *matrix,
+                  bool                symmetric,
+                  cs_lnum_t           n_edges,
+                  const cs_lnum_t     edges[restrict][2],
+                  const cs_real_t     da[restrict],
+                  const cs_real_t     xa[restrict])
+{
+  bool direct_assembly = false;
+
+  const cs_lnum_t  n_rows = matrix->n_rows;
+
+  const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(n_rows, matrix->halo);
+  const bool have_diag = (xa != NULL) ? true : false;
+
+  MPI_Comm comm = cs_glob_mpi_comm;
+  if (comm == MPI_COMM_NULL)
+    comm = MPI_COMM_WORLD;
+
+  assert(n_rows > 0);
+
+  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+
+  /* Sizes and buffers */
+
+  HYPRE_IJMatrix hm = coeffs->hm;
+  HYPRE_BigInt h_b_size = matrix->db_size[0];
+
+  cs_lnum_t b_size = matrix->db_size[0];
+  cs_lnum_t b_stride = matrix->db_size[3];
+
+  assert(b_stride == b_size*b_size);
+
+  HYPRE_Int max_chunk_size = coeffs->max_chunk_size;
+
+  HYPRE_BigInt *rows = coeffs->row_buf;
+  HYPRE_BigInt *cols = coeffs->col_buf;
+  HYPRE_Real *aij = coeffs->val_buf;
+
+  /* Diagonal part
+     ------------- */
+
+  if (have_diag) {
+
+    HYPRE_Int ic = 0;
+
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+
+      for (cs_lnum_t j = 0; j < b_size; j++) {
+        for (cs_lnum_t k = 0; k < b_size; k++) {
+          cs_real_t a = da[ii*b_stride + j*b_size + k];
+          if (a < -0.0 || a > 0.0) {
+            rows[ic] = g_id[ii]*h_b_size + (HYPRE_BigInt)j;
+            cols[ic] = g_id[ii]*h_b_size + (HYPRE_BigInt)k;
+            aij[ic] = a;
+            ic++;
+          }
+        }
+      }
+      if (ic + b_stride > max_chunk_size) {
+        if (direct_assembly)
+          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
+        else
+          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
+        ic = 0;
+      }
+
+    }
+
+    if (ic > 0) {
+      if (direct_assembly)
+        HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
+      else
+        HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
+    }
+
+  }
+
+  /* Extradiagonal part */
+
+  HYPRE_Int max_b_chunk_size = max_chunk_size / b_size;
+
+  if (symmetric) {
+
+    cs_lnum_t s_e_id = 0;
+
+    while (s_e_id < n_edges) {
+
+      HYPRE_Int ic = 0, ec = 0;
+
+      for (cs_lnum_t e_id = s_e_id;
+           e_id < n_edges && ic < max_b_chunk_size;
+           e_id++) {
+        cs_lnum_t ii = edges[e_id][0];
+        cs_lnum_t jj = edges[e_id][1];
+        cs_gnum_t g_ii = g_id[ii];
+        cs_gnum_t g_jj = g_id[jj];
+        if (ii < n_rows) {
+          for (cs_lnum_t k = 0; k < b_size; k++) {
+            rows[ic*b_size + k] = g_ii*h_b_size + (HYPRE_BigInt)k;
+            cols[ic*b_size + k] = g_jj*h_b_size + (HYPRE_BigInt)k;
+            aij[ic*b_size + k] = xa[e_id];
+          }
+          ic += 1;
+        }
+        if (jj < n_rows) {
+          for (cs_lnum_t k = 0; k < b_size; k++) {
+            rows[ic*b_size + k] = g_jj*h_b_size + (HYPRE_BigInt)k;
+            cols[ic*b_size + k] = g_ii*h_b_size + (HYPRE_BigInt)k;
+            aij[ic*b_size + k] = xa[e_id];
+          }
+          ic += 1;
+        }
+        ec++;
+      }
+
+      s_e_id += ec;
+
+      if (direct_assembly)
+        HYPRE_IJMatrixSetValues(hm, ic*b_size, NULL, rows, cols, aij);
+      else
+        HYPRE_IJMatrixAddToValues(hm, ic*b_size, NULL, rows, cols, aij);
+    }
+
+  }
+  else { /* non-symmetric variant */
+
+    cs_lnum_t s_e_id = 0;
+
+    while (s_e_id < n_edges) {
+
+      HYPRE_Int ic = 0, ec = 0;
+
+      for (cs_lnum_t e_id = s_e_id;
+           e_id < n_edges && ic < max_b_chunk_size;
+           e_id++) {
+        cs_lnum_t ii = edges[e_id][0];
+        cs_lnum_t jj = edges[e_id][1];
+        cs_gnum_t g_ii = g_id[ii];
+        cs_gnum_t g_jj = g_id[jj];
+        if (ii < n_rows) {
+          for (cs_lnum_t k = 0; k < b_size; k++) {
+            rows[ic*b_size + k] = g_ii*h_b_size + (HYPRE_BigInt)k;
+            cols[ic*b_size + k] = g_jj*h_b_size + (HYPRE_BigInt)k;
+            aij[ic*b_size + k] = xa[e_id*2];
+          }
+          ic++;
+        }
+        if (jj < n_rows) {
+          for (cs_lnum_t k = 0; k < b_size; k++) {
+            rows[ic*b_size + k] = g_jj*h_b_size + (HYPRE_BigInt)k;
+            cols[ic*b_size + k] = g_ii*h_b_size + (HYPRE_BigInt)k;
+            aij[ic*b_size + k] = xa[e_id*2+1];
+          }
+          ic++;
+        }
+        ec++;
+      }
+
+      s_e_id += ec;
+
+      if (direct_assembly)
+        HYPRE_IJMatrixSetValues(hm, ic*b_size, NULL, rows, cols, aij);
+      else
+        HYPRE_IJMatrixAddToValues(hm, ic*b_size, NULL, rows, cols, aij);
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Set HYPRE ParCSR matrix coefficients for full block cases.
+ *
+ * parameters:
+ *   matrix    <-- pointer to matrix structure
+ *   symmetric <-- indicates if extradiagonal values are symmetric
+ *   n_edges   <-- local number of graph edges
+ *   edges     <-- edges (symmetric row <-> column) connectivity
+ *   da        <-- diagonal values
+ *   xa        <-- extradiagonal values
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_coeffs_ij_b(cs_matrix_t        *matrix,
+                 bool                symmetric,
+                 cs_lnum_t           n_edges,
+                 const cs_lnum_t     edges[restrict][2],
+                 const cs_real_t     da[restrict],
+                 const cs_real_t     xa[restrict])
+{
+  bool direct_assembly = false;
+
+  const cs_lnum_t  n_rows = matrix->n_rows;
+
+  const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(n_rows, matrix->halo);
+  const bool have_diag = (xa != NULL) ? true : false;
+
+  MPI_Comm comm = cs_glob_mpi_comm;
+  if (comm == MPI_COMM_NULL)
+    comm = MPI_COMM_WORLD;
+
+  assert(n_rows > 0);
+
+  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+
+  /* Sizes and buffers */
+
+  HYPRE_IJMatrix hm = coeffs->hm;
+  HYPRE_BigInt h_b_size = matrix->db_size[0];
+
+  cs_lnum_t b_size = matrix->db_size[0];
+  cs_lnum_t b_stride = matrix->db_size[3];
+
+  assert(b_stride == b_size*b_size);
+
+  HYPRE_Int max_chunk_size = coeffs->max_chunk_size;
+
+  HYPRE_BigInt *rows = coeffs->row_buf;
+  HYPRE_BigInt *cols = coeffs->col_buf;
+  HYPRE_Real *aij = coeffs->val_buf;
+
+  /* Diagonal part
+     ------------- */
+
+  if (have_diag) {
+
+    cs_lnum_t s_id = 0;
+    HYPRE_Int max_b_chunk_size = max_chunk_size / b_stride;
+
+    while (s_id < n_rows) {
+
+      HYPRE_Int ic = 0;
+
+      for (cs_lnum_t ii = s_id;
+           ii < n_rows && ic < max_b_chunk_size;
+           ii++) {
+        for (cs_lnum_t j = 0; j < b_size; j++) {
+          for (cs_lnum_t k = 0; k < b_size; k++) {
+            rows[ic*b_stride + j*b_size + k]
+              = g_id[ii]*h_b_size + (HYPRE_BigInt)j;
+            cols[ic*b_stride + j*b_size + k]
+              = g_id[ii]*h_b_size + (HYPRE_BigInt)k;
+            aij[ic*b_stride + j*b_size + k] = da[ii*b_stride + j*b_size + k];
+          }
+        }
+        ic++;
+      }
+
+      s_id += ic;
+
+      if (direct_assembly)
+        HYPRE_IJMatrixSetValues(hm, ic*b_stride, NULL, rows, cols, aij);
+      else
+        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, NULL, rows, cols, aij);
+    }
+
+  }  /* End of diagonal block addition */
+
+  /* Extradiagonal part */
+
+  HYPRE_Int max_b_chunk_size = max_chunk_size / b_stride;
+
+  if (symmetric) {
+
+    cs_lnum_t s_e_id = 0;
+
+    while (s_e_id < n_edges) {
+
+      HYPRE_Int ic = 0, ec = 0;
+
+      for (cs_lnum_t e_id = s_e_id;
+           e_id < n_edges && ic < max_b_chunk_size;
+           e_id++) {
+        cs_lnum_t ii = edges[e_id][0];
+        cs_lnum_t jj = edges[e_id][1];
+        cs_gnum_t g_ii = g_id[ii];
+        cs_gnum_t g_jj = g_id[jj];
+        if (ii < n_rows) {
+          for (cs_lnum_t k = 0; k < b_size; k++) {
+            for (cs_lnum_t l = 0; l < b_size; l++) {
+              rows[ic*b_stride + k*b_size + l] = g_ii*h_b_size + (HYPRE_BigInt)k;
+              cols[ic*b_stride + k*b_size + l] = g_jj*h_b_size + (HYPRE_BigInt)l;
+              aij[ic*b_stride + k*b_size + l] = xa[e_id*b_stride + k*b_size + l];
+            }
+          }
+          ic += 1;
+        }
+        if (jj < n_rows) {
+          for (cs_lnum_t k = 0; k < b_size; k++) {
+            for (cs_lnum_t l = 0; l < b_size; l++) {
+              rows[ic*b_stride + k*b_size + l] = g_jj*h_b_size + (HYPRE_BigInt)k;
+              cols[ic*b_stride + k*b_size + l] = g_ii*h_b_size + (HYPRE_BigInt)l;
+              aij[ic*b_stride + k*b_size + l] = xa[e_id*b_stride + k*b_size + l];
+            }
+          }
+          ic += 1;
+        }
+        ec++;
+      }
+
+      s_e_id += ec;
+
+      if (direct_assembly)
+        HYPRE_IJMatrixSetValues(hm, ic*b_stride, NULL, rows, cols, aij);
+      else
+        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, NULL, rows, cols, aij);
+    }
+
+  }
+  else { /* non-symmetric variant */
+
+    cs_lnum_t s_e_id = 0;
+
+    while (s_e_id < n_edges) {
+
+      HYPRE_Int ic = 0, ec = 0;
+
+      for (cs_lnum_t e_id = s_e_id;
+           e_id < n_edges && ic < max_b_chunk_size;
+           e_id++) {
+        cs_lnum_t ii = edges[e_id][0];
+        cs_lnum_t jj = edges[e_id][1];
+        cs_gnum_t g_ii = g_id[ii];
+        cs_gnum_t g_jj = g_id[jj];
+        if (ii < n_rows) {
+          for (cs_lnum_t k = 0; k < b_size; k++) {
+            for (cs_lnum_t l = 0; l < b_size; l++) {
+              rows[ic*b_stride + k*b_size + l] = g_ii*h_b_size + (HYPRE_BigInt)k;
+              cols[ic*b_stride + k*b_size + l] = g_jj*h_b_size + (HYPRE_BigInt)l;
+              aij[ic*b_stride + k*b_size + l]
+                = xa[e_id*2*b_stride + k*b_size + l];
+            }
+          }
+          ic += 1;
+        }
+        if (jj < n_rows) {
+          for (cs_lnum_t k = 0; k < b_size; k++) {
+            for (cs_lnum_t l = 0; l < b_size; l++) {
+              rows[ic*b_stride + k*b_size + l] = g_jj*h_b_size + (HYPRE_BigInt)k;
+              cols[ic*b_stride + k*b_size + l] = g_ii*h_b_size + (HYPRE_BigInt)l;
+              aij[ic*b_stride + k*b_size + l]
+                = xa[(e_id*2+1)*b_stride + k*b_size + l];
+            }
+          }
+          ic += 1;
+        }
+        ec++;
+      }
+
+      s_e_id += ec;
+
+      if (direct_assembly)
+        HYPRE_IJMatrixSetValues(hm, ic*b_stride, NULL, rows, cols, aij);
+      else
+        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, NULL, rows, cols, aij);
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Set HYPRE ParCSR matrix coefficients.
  *
  * parameters:
  *   matrix    <-- pointer to matrix structure
@@ -1124,6 +1529,12 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
     l_range[1] = g_id[n_rows-1] + 1;
   }
 
+  cs_lnum_t b_size = matrix->db_size[0];
+  cs_lnum_t e_size = matrix->eb_size[0];
+  cs_lnum_t b_stride = matrix->db_size[3];
+
+  assert(b_stride == b_size*b_size);
+
   if (coeffs->matrix_state == 0) {
 
     cs_alloc_mode_t  amode = CS_ALLOC_HOST;
@@ -1134,7 +1545,6 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
     CS_MALLOC_HD(coeffs->col_buf, coeffs->max_chunk_size, HYPRE_BigInt, amode);
     CS_MALLOC_HD(coeffs->val_buf, coeffs->max_chunk_size, HYPRE_Real, amode);
 
-    HYPRE_BigInt b_size = matrix->db_size[0];
     HYPRE_BigInt ilower = b_size*l_range[0];
     HYPRE_BigInt iupper = b_size*l_range[1] - 1;
 
@@ -1159,6 +1569,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
                                n_edges,
                                edges,
                                g_id,
+                               da,
                                &diag_sizes,
                                &offdiag_sizes);
 
@@ -1179,110 +1590,138 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
   HYPRE_BigInt *cols = coeffs->col_buf;
   HYPRE_Real *aij = coeffs->val_buf;
 
-  if (have_diag) {
-    cs_lnum_t s_id = 0;
-    while (s_id < n_rows) {
+  /* Scalar case */
 
-      HYPRE_Int ic = 0;
+  if (b_size == 1) {
 
-      for (cs_lnum_t ii = s_id;
-           ii < n_rows && ic < max_chunk_size;
-           ii++) {
-        rows[ic] = g_id[ii];
-        cols[ic] = g_id[ii];
-        aij[ic] = da[ii];
-        ic++;
+    if (have_diag) {
+
+      cs_lnum_t s_id = 0;
+
+      while (s_id < n_rows) {
+        HYPRE_Int ic = 0;
+
+        for (cs_lnum_t ii = s_id;
+             ii < n_rows && ic < max_chunk_size;
+             ii++) {
+          rows[ic] = g_id[ii];
+          cols[ic] = g_id[ii];
+          aij[ic] = da[ii];
+          ic++;
+        }
+
+        s_id += ic;
+
+        if (direct_assembly)
+          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
+        else
+          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
       }
-
-      s_id += ic;
-
-      if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
-      else
-        HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
-    }
-  }
-
-  if (symmetric) {
-
-    cs_lnum_t s_e_id = 0;
-
-    while (s_e_id < n_edges) {
-
-      HYPRE_Int ic = 0, ec = 0;
-
-      for (cs_lnum_t e_id = s_e_id;
-           e_id < n_edges && ic < max_chunk_size;
-           e_id++) {
-        cs_lnum_t ii = edges[e_id][0];
-        cs_lnum_t jj = edges[e_id][1];
-        cs_gnum_t g_ii = g_id[ii];
-        cs_gnum_t g_jj = g_id[jj];
-        if (ii < n_rows) {
-          rows[ic] = g_ii;
-          cols[ic] = g_jj;
-          aij[ic] = xa[e_id];
-          ic++;
-        }
-        if (jj < n_rows) {
-          rows[ic] = g_jj;
-          cols[ic] = g_ii;
-          aij[ic] = xa[e_id];
-          ic++;
-        }
-        ec++;
-      }
-
-      s_e_id += ec;
-
-      if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
-      else
-        HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
-    }
-
-  }
-  else { /* non-symmetric variant */
-
-    cs_lnum_t s_e_id = 0;
-
-    while (s_e_id < n_edges) {
-
-      HYPRE_Int ic = 0, ec = 0;
-
-      for (cs_lnum_t e_id = s_e_id;
-           e_id < n_edges && ic < max_chunk_size;
-           e_id++) {
-        cs_lnum_t ii = edges[e_id][0];
-        cs_lnum_t jj = edges[e_id][1];
-        cs_gnum_t g_ii = g_id[ii];
-        cs_gnum_t g_jj = g_id[jj];
-
-        if (ii < n_rows) {
-          rows[ic] = g_ii;
-          cols[ic] = g_jj;
-          aij[ic] = xa[e_id*2];
-          ic++;
-        }
-        if (jj < n_rows) {
-          rows[ic] = g_jj;
-          cols[ic] = g_ii;
-          aij[ic] = xa[e_id*2+1];
-          ic++;
-        }
-        ec++;
-      }
-
-      s_e_id += ec;
-
-      if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
-      else
-        HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
 
     }
 
+    if (symmetric) {
+
+      cs_lnum_t s_e_id = 0;
+
+      while (s_e_id < n_edges) {
+
+        HYPRE_Int ic = 0, ec = 0;
+
+        for (cs_lnum_t e_id = s_e_id;
+             e_id < n_edges && ic < max_chunk_size;
+             e_id++) {
+          cs_lnum_t ii = edges[e_id][0];
+          cs_lnum_t jj = edges[e_id][1];
+          cs_gnum_t g_ii = g_id[ii];
+          cs_gnum_t g_jj = g_id[jj];
+          if (ii < n_rows) {
+            rows[ic] = g_ii;
+            cols[ic] = g_jj;
+            aij[ic] = xa[e_id];
+            ic++;
+          }
+          if (jj < n_rows) {
+            rows[ic] = g_jj;
+            cols[ic] = g_ii;
+            aij[ic] = xa[e_id];
+            ic++;
+          }
+          ec++;
+        }
+
+        s_e_id += ec;
+
+        if (direct_assembly)
+          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
+        else
+          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
+      }
+
+    }
+    else { /* non-symmetric variant */
+
+      cs_lnum_t s_e_id = 0;
+
+      while (s_e_id < n_edges) {
+
+        HYPRE_Int ic = 0, ec = 0;
+
+        for (cs_lnum_t e_id = s_e_id;
+             e_id < n_edges && ic < max_chunk_size;
+             e_id++) {
+          cs_lnum_t ii = edges[e_id][0];
+          cs_lnum_t jj = edges[e_id][1];
+          cs_gnum_t g_ii = g_id[ii];
+          cs_gnum_t g_jj = g_id[jj];
+
+          if (ii < n_rows) {
+            rows[ic] = g_ii;
+            cols[ic] = g_jj;
+            aij[ic] = xa[e_id*2];
+            ic++;
+          }
+          if (jj < n_rows) {
+            rows[ic] = g_jj;
+            cols[ic] = g_ii;
+            aij[ic] = xa[e_id*2+1];
+            ic++;
+          }
+          ec++;
+        }
+
+        s_e_id += ec;
+
+        if (direct_assembly)
+          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
+        else
+          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
+
+      }
+
+    }
+
   }
+
+  /* Block diagonal only */
+
+  else if (b_size > 1 && e_size == 1)
+    _set_coeffs_ij_db(matrix,
+                      symmetric,
+                      n_edges,
+                      edges,
+                      da,
+                      xa);
+
+  /* Full block */
+
+  else /* if (b_size > 1 && e_size > 1) */
+    _set_coeffs_ij_b(matrix,
+                     symmetric,
+                     n_edges,
+                     edges,
+                     da,
+                     xa);
 
   /* Finalize asembly and update state */
 
@@ -1480,22 +1919,15 @@ cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
 
   matrix->get_diagonal = NULL;
 
+  /* Remark: block values are transformed into scalar values, so SpMv products
+     should be possible, (and the function pointers updated). HYPRE also seems
+     to have support for block matrixes (hypre_ParCSRBlockMatrix)  but the
+     high-level documentation does not mention it. */
+
   for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
-    matrix->vector_multiply[i][0] = NULL;
+    matrix->vector_multiply[i][0] = _mat_vec_p_parcsr;
     matrix->vector_multiply[i][1] = NULL;
   }
-
-  /* Remark: allowed fill type is initially based on current "set coefficients.",
-     but using a matrix assembler, block values are transformed into scalar values,
-     so SpMv products should be possible, (and the function pointers updated).
-     HYPRE also seems to have support for block matrixes (hypre_ParCSRBlockMatrix)
-     but the high-level documentation does not mention it. */
-
-  cs_matrix_fill_type_t mft[] = {CS_MATRIX_SCALAR,
-                                 CS_MATRIX_SCALAR_SYM};
-
-  for (int i = 0; i < 2; i++)
-    matrix->vector_multiply[mft[i]][0] = _mat_vec_p_parcsr;
 
   matrix->copy_diagonal = _copy_diagonal_ij;
 
