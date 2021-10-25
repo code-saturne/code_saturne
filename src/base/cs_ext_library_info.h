@@ -1,8 +1,8 @@
-#ifndef __CS_SYSTEM_INFO_H__
-#define __CS_SYSTEM_INFO_H__
+#ifndef __CS_EXT_LIBRARY_INFO_H__
+#define __CS_EXT_LIBRARY_INFO_H__
 
 /*============================================================================
- * Base system information (System and Library dependent)
+ * External library information.
  *============================================================================*/
 
 /*
@@ -43,46 +43,24 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print available system information.
- *
- * \param[in]  comm  associated MPI communicator
+ * \brief Print available external library information.
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI)
-
 void
-cs_system_info(MPI_Comm comm);
-
-#else
-
-void
-cs_system_info(void);
-
-#endif
+cs_ext_library_info(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Print available system information, without additional logging
- *
- * \param[in]  comm  associated MPI communicator
+ * \brief Print available library information, without additional logging.
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI)
-
 void
-cs_system_info_no_log(MPI_Comm comm);
-
-#else
-
-void
-cs_system_info_no_log(void);
-
-#endif
+cs_ext_library_info_no_log(void);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_SYSTEM_INFO_H__ */
+#endif /* __CS_EXT_LIBRARY_INFO_H__ */

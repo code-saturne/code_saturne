@@ -34,6 +34,7 @@
 #include "cs_defs.h"
 
 #include "cs_base.h"
+#include "cs_log.h"
 
 #include "cs_mesh.h"
 #include "cs_mesh_builder.h"
@@ -125,10 +126,13 @@ typedef enum {
 
 /*----------------------------------------------------------------------------
  * Print information on external libraries
+ *
+ * parameters:
+ *   log_type  <--  log type
  *----------------------------------------------------------------------------*/
 
 void
-cs_partition_external_library_info(void);
+cs_partition_external_library_info(cs_log_t  log_type);
 
 /*----------------------------------------------------------------------------
  * Set algorithm for domain partitioning for a given partitioning stage.

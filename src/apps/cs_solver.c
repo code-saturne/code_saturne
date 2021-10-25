@@ -58,6 +58,7 @@
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
 #include "cs_domain_setup.h"
+#include "cs_ext_library_info.h"
 #include "cs_fan.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
@@ -95,7 +96,6 @@
 #include "cs_param_cdo.h"
 #include "cs_paramedmem_coupling.h"
 #include "cs_parameters.h"
-#include "cs_partition.h"
 #include "cs_physical_properties.h"
 #include "cs_post.h"
 #include "cs_post_default.h"
@@ -175,6 +175,7 @@ _run(void)
 #else
   cs_system_info();
 #endif
+  cs_ext_library_info();
 
 #if defined(HAVE_CUDA)
   cs_base_cuda_select_default_device();
@@ -192,8 +193,6 @@ _run(void)
   cs_file_defaults_info();
 
   cs_gui_mpi_algorithms();
-
-  cs_partition_external_library_info();
 
   bft_printf("\n");
 

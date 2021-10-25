@@ -104,6 +104,7 @@ cs_coupling.h \
 cs_crystal_router.h \
 cs_defs.h \
 cs_equation_iterative_solve.h \
+cs_ext_library_info.h \
 cs_ext_neighborhood.h \
 cs_fan.h \
 cs_field.h \
@@ -287,6 +288,7 @@ csopli.f90 \
 csprnt.f90 \
 cs_control.c \
 cs_coupling.c \
+cs_ext_library_info.c \
 cs_ext_neighborhood.c \
 cs_equation_iterative_solve.c \
 cs_fan.c \

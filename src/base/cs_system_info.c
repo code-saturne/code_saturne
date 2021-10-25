@@ -812,8 +812,7 @@ cs_system_info(void)
   _system_info(true);
 #endif
 
-  _omp_version_info(false);
-  _ext_library_version_info(false);
+  _omp_version_info(true);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -845,7 +844,6 @@ cs_system_info_no_log(void)
 #endif
 
   _omp_version_info(false);
-  _ext_library_version_info(false);
 }
 
 /*-----------------------------------------------------------------------------*/

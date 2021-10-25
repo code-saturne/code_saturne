@@ -53,10 +53,10 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_ext_library_info.h"
 #include "cs_gui_util.h"
 #include "cs_notebook.h"
 #include "cs_parameters.h"
-#include "cs_partition.h"
 #include "cs_system_info.h"
 
 /*----------------------------------------------------------------------------
@@ -293,7 +293,7 @@ cs_opts_define(int         argc,
 #else
       cs_system_info_no_log();
 #endif
-      cs_partition_external_library_info();
+      cs_ext_library_info();
       cs_exit(EXIT_SUCCESS);
     }
 

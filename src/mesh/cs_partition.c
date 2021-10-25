@@ -2815,60 +2815,56 @@ _select_algorithm(cs_partition_stage_t  stage)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Print information on external libraries
+ *
+ * \param[in]  log_type  log type
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_partition_external_library_info(void)
+cs_partition_external_library_info(cs_log_t  log_type)
 {
-  int  n_ext_libs = 0;
-
-  if (cs_glob_rank_id >= 1)
-    return;
-
-#if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
-  n_ext_libs++;
-#endif
-#if defined(HAVE_SCOTCH) || defined(HAVE_PTSCOTCH)
-  n_ext_libs++;
-#endif
-
-  if (n_ext_libs >= 1)
-    bft_printf(_("\n  External libraries for partitioning:\n"));
-
 #if defined(HAVE_METIS)
 #if defined(HAVE_METIS_H) && defined(METIS_VER_MAJOR)
-  bft_printf("    METIS %d.%d.%d\n",
-             METIS_VER_MAJOR, METIS_VER_MINOR, METIS_VER_SUBMINOR);
+  cs_log_printf(log_type,
+                "    METIS %d.%d.%d\n",
+                METIS_VER_MAJOR, METIS_VER_MINOR, METIS_VER_SUBMINOR);
 #else
-  bft_printf("    METIS\n");
+  cs_log_printf(log_type,
+                "    METIS\n");
 #endif
 #elif defined(HAVE_PARMETIS)
 #if defined(PARMETIS_MAJOR_VERSION) && defined(PARMETIS_SUBMINOR_VERSION)
-  bft_printf("    ParMETIS %d.%d.%d\n",
-             PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION,
-             PARMETIS_SUBMINOR_VERSION);
+  cs_log_printf(log_type,
+                "    ParMETIS %d.%d.%d\n",
+                PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION,
+                PARMETIS_SUBMINOR_VERSION);
 #elif defined(PARMETIS_MAJOR_VERSION)
-  bft_printf("    ParMETIS %d.%d\n",
-             PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION);
+  cs_log_printf(log_type,
+                "    ParMETIS %d.%d\n",
+                PARMETIS_MAJOR_VERSION, PARMETIS_MINOR_VERSION);
 #else
-  bft_printf("    ParMETIS\n");
+  cs_log_printf(log_type,
+                "    ParMETIS\n");
 #endif
 #endif
 
 #if defined(HAVE_SCOTCH)
 #if defined(SCOTCH_VERSION) && defined(SCOTCH_RELEASE)
-  bft_printf("    SCOTCH %d.%d.%d\n",
-             SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+  cs_log_printf(log_type,
+                "    SCOTCH %d.%d.%d\n",
+                SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
 #else
-  bft_printf("    SCOTCH\n");
+  cs_log_printf(log_type,
+                "    SCOTCH\n");
 #endif
 #elif defined(HAVE_PTSCOTCH)
 #if defined(SCOTCH_VERSION) && defined(SCOTCH_RELEASE)
-  bft_printf("    PT-SCOTCH %d.%d.%d\n",
-             SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
+  cs_log_printf(log_type,
+                "    PT-SCOTCH %d.%d.%d\n",
+                SCOTCH_VERSION, SCOTCH_RELEASE, SCOTCH_PATCHLEVEL);
 #else
-  bft_printf("    PT-SCOTCH\n");
+  cs_log_printf(log_type,
+                "    PT-SCOTCH\n");
 #endif
 #endif
 }
