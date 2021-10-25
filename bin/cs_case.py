@@ -169,7 +169,7 @@ def get_case_dir(case=None, param=None, coupling=None, id=None):
                    or os.path.isfile(cfg):
                     casedir = testdir
                     break
-                testdir = os.path.split(casedir)[0]
+                testdir = os.path.split(testdir)[0]
 
         if not (os.path.isdir(data)):
             casedir = None
