@@ -227,6 +227,15 @@ cs_stl_set_porosity_seed(cs_stl_mesh_t  *stl_mesh,
                          int            n_points,
                          cs_real_t      *coords);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return writer_id used for stl meshes. 0 means unused.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_stl_post_get_writer_id(void);
+
 /*----------------------------------------------------------------------------
  * Create a new writer that will contains the STL mesh added by the user
  * The writer_id is stored in the cs_glob_stl_meshes structure.

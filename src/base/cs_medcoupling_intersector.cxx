@@ -993,6 +993,20 @@ cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t  *mi,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return writer id used for medcoupling meshes, 0 means unused.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_mi_post_get_writer_id(void)
+{
+
+  return _writer_id;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create a new writer that will contains the boundary MED mesh added
  * \brief by the user. The writer_id is stored locally..
  *
