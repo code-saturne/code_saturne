@@ -63,11 +63,12 @@ implicit none
 ! Local variables
 
 integer          imode, iel
+integer          k,ii, isc
 double precision d2s3
 double precision zent,xuent,xvent, xwent, xkent,xeent,tpent,qvent,ncent
-
-integer k,ii, isc
 double precision xcent
+double precision r_nt
+double precision vel_dir(3), shear_dir(3)
 
 type(var_cal_opt) :: vcopt_p, vcopt_u
 
@@ -341,6 +342,15 @@ if (isuite.eq.0) then
         vel(2,iel) = xvent
         vel(3,iel) = xwent
 
+        ! Velocity direction normalized
+        vel_dir(1) = xuent
+        vel_dir(2) = xvent
+        vel_dir(3) = xwent
+        call vector_normalize(vel_dir, vel_dir)
+        shear_dir(1) = 0.d0
+        shear_dir(2) = 0.d0
+        shear_dir(3) = 1.d0
+
         ! ITYTUR est un indicateur qui vaut ITURB/10
         if    (itytur.eq.2) then
 
@@ -349,20 +359,30 @@ if (isuite.eq.0) then
 
         elseif (itytur.eq.3) then
 
+          r_nt = - sqrt(cmu) * xkent
           if (irijco.eq.1) then
             cvar_rij(1,iel) = d2s3*xkent
             cvar_rij(2,iel) = d2s3*xkent
             cvar_rij(3,iel) = d2s3*xkent
-            cvar_rij(4,iel) = 0.d0
-            cvar_rij(5,iel) = 0.d0
-            cvar_rij(6,iel) = 0.d0
+            ! Rxy
+            cvar_rij(4,iel) = r_nt * &
+              (vel_dir(1)*shear_dir(2)+vel_dir(2)*shear_dir(1))
+            ! Ryz
+            cvar_rij(5,iel) = r_nt * &
+              (vel_dir(2)*shear_dir(3)+vel_dir(3)*shear_dir(2))
+            ! Rxz
+            cvar_rij(6,iel) = r_nt * &
+              (vel_dir(1)*shear_dir(3)+vel_dir(3)*shear_dir(1))
           else
             cvar_r11(iel) = d2s3*xkent
             cvar_r22(iel) = d2s3*xkent
             cvar_r33(iel) = d2s3*xkent
-            cvar_r12(iel) = 0.d0
-            cvar_r13(iel) = 0.d0
-            cvar_r23(iel) = 0.d0
+            cvar_r12(iel) = r_nt * &
+              (vel_dir(1)*shear_dir(2)+vel_dir(2)*shear_dir(1))
+            cvar_r23(iel) = r_nt * &
+              (vel_dir(2)*shear_dir(3)+vel_dir(3)*shear_dir(2))
+            cvar_r13(iel) = r_nt * &
+              (vel_dir(1)*shear_dir(3)+vel_dir(3)*shear_dir(1))
           endif
           cvar_ep(iel)  = xeent
 

@@ -946,12 +946,15 @@ module cs_c_bindings
 
     subroutine turbulence_bc_inlet_k_eps(face_num,                             &
                                          k, eps,                               &
+                                         vel_dir, shear_dir,                   &
                                          rcodcl)                               &
       bind(C, name='cs_f_turbulence_bc_inlet_k_eps')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: face_num
       real(c_double), value :: k, eps
+      real(kind=c_double), dimension(3) :: vel_dir
+      real(kind=c_double), dimension(3) :: shear_dir
       real(kind=c_double), dimension(*) :: rcodcl
     end subroutine turbulence_bc_inlet_k_eps
 
@@ -963,16 +966,21 @@ module cs_c_bindings
     !> \param[in]     face_id       boundary face id
     !> \param[in]     k             turbulent kinetic energy
     !> \param[in]     epsilon       turbulent dissipation
+    !> \param[in]     vel_dir       velocity direction
+    !> \param[in]     shear_dir     shear direction
     !> \param[out]    rcodcl        boundary condition values
 
     subroutine turbulence_bc_set_uninit_inlet_k_eps(face_num,                  &
                                                     k, eps,                    &
+                                                    vel_dir, shear_dir,        &
                                                     rcodcl)                    &
       bind(C, name='cs_f_turbulence_bc_set_uninit_inlet_k_eps')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: face_num
       real(c_double), value :: k, eps
+      real(kind=c_double), dimension(3) :: vel_dir
+      real(kind=c_double), dimension(3) :: shear_dir
       real(kind=c_double), dimension(*) :: rcodcl
     end subroutine turbulence_bc_set_uninit_inlet_k_eps
 
@@ -2854,6 +2862,19 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(in) :: m
       real(kind=c_double), dimension(*), intent(out) :: eig_vals
     end subroutine calc_symtens_eigvals
+
+    !---------------------------------------------------------------------------
+
+
+    ! Interface to C function cs_math_3_normalize
+
+    subroutine vector_normalize(vin, vout)                   &
+      bind(C, name='cs_f_math_3_normalize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(in) :: vin
+      real(kind=c_double), dimension(*), intent(out) :: vout
+    end subroutine vector_normalize
 
     !---------------------------------------------------------------------------
 

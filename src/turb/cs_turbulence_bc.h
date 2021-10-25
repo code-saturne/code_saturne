@@ -244,6 +244,8 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
  * \param[in]     face_id    boundary face id
  * \param[in]     k          turbulent kinetic energy
  * \param[in]     eps        turbulent dissipation
+ * \param[in]     vel_dir    velocity direction
+ * \param[in]     shear_dir  shear direction
  * \param[out]    rcodcl     boundary condition values
  */
 /*----------------------------------------------------------------------------*/
@@ -252,6 +254,8 @@ void
 cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
                                         double      k,
                                         double      eps,
+                                        double      vel_dir[],
+                                        double      shear_dir[],
                                         double     *rcodcl);
 
 /*----------------------------------------------------------------------------*/

@@ -157,6 +157,10 @@ void
 cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t  s[3][3],
                                    cs_real_t        sout[6][6]);
 
+void
+cs_f_math_3_normalize(const cs_real_t vin[3],
+                      cs_real_t       vout[3]);
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -193,6 +197,17 @@ cs_f_math_reduce_sym_prod_33_to_66(const cs_real_t  s[3][3],
                                    cs_real_t        sout[6][6])
 {
   cs_math_reduce_sym_prod_33_to_66(s, sout);
+}
+
+/*----------------------------------------------------------------------------
+ * Wrapper
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_math_3_normalize(const cs_real_t vin[3],
+                      cs_real_t       vout[3])
+{
+  cs_math_3_normalize(vin, vout);
 }
 
 /*============================================================================

@@ -104,6 +104,7 @@ integer          ifac, iel, izone
 integer          ii
 integer          jsp, isc, ivar
 double precision d2s3, zent, vs, xuent, xvent, xwent
+double precision vel_dir(3), shear_dir(3)
 double precision xkent, xeent, tpent, qvent,ncent
 double precision xcent
 double precision viscla, uref2, rhomoy, dhy, xiturb
@@ -336,6 +337,14 @@ do ifac = 1, nfabor
 
     vs = xuent*surfbo(1,ifac) + xvent*surfbo(2,ifac)
 
+    ! Velocity direction, will be normalized afterwards
+    vel_dir(1) = xuent
+    vel_dir(2) = xvent
+    vel_dir(3) = xwent
+    shear_dir(1) = 0.d0
+    shear_dir(2) = 0.d0
+    shear_dir(3) = 1.d0
+
     ! On met a jour le type de face de bord s'il n'a pas ete specifie
     !   par l'utilisateur.
     ! Pour une entree, on remplit la condition de Dirichlet si elle n'a pas
@@ -355,7 +364,8 @@ do ifac = 1, nfabor
       if (rcodcl(ifac,iv,1).gt.rinfin*0.5d0) rcodcl(ifac,iv,1) = xvent
       if (rcodcl(ifac,iw,1).gt.rinfin*0.5d0) rcodcl(ifac,iw,1) = xwent
 
-      call turbulence_bc_set_uninit_inlet_k_eps(ifac, xkent, xeent, rcodcl)
+      call turbulence_bc_set_uninit_inlet_k_eps(ifac, xkent, xeent, &
+                                                vel_dir, shear_dir, rcodcl)
 
       if (iscalt.ne.-1) then
 
@@ -403,7 +413,8 @@ do ifac = 1, nfabor
         rcodcl(ifac,ipr,1) = coefap(ifac)
 
         ! Dirichlet on turbulent variables
-        call turbulence_bc_set_uninit_inlet_k_eps(ifac, xkent, xeent, rcodcl)
+        call turbulence_bc_set_uninit_inlet_k_eps(ifac, xkent, xeent, &
+                                                  vel_dir, shear_dir, rcodcl)
 
         if (iautom(ifac).eq.1) then
 
