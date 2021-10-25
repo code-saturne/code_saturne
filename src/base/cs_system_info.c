@@ -728,56 +728,6 @@ _omp_version_info(bool  log)
 #endif
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Print external library info.
- *
- * This may be incomplete.
- *
- * \param[in]  log   if true, standard logging; otherwise, single output
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_ext_library_version_info(bool  log)
-{
-  int  n_logs = (log) ? 2 : 1;
-  cs_log_t logs[] = {CS_LOG_DEFAULT, CS_LOG_PERFORMANCE};
-
-  int n_ext = 0;
-
-#if defined(HAVE_PETSC)
-  n_ext += 1;
-#endif
-
-#if defined(HAVE_HYPRE)
-  n_ext += 1;
-#endif
-
-#if defined(HAVE_AMGX)
-  n_ext += 1;
-#endif
-
-  if (n_ext < 1)
-    return;
-
-  for (int log_id = 0; log_id < n_logs; log_id++) {
-
-    cs_log_printf(logs[log_id],
-                  "\n  External libraries:\n");
-
-#if defined(HAVE_PETSC)
-    cs_sles_petsc_library_info(log_id);
-#endif
-#if defined(HAVE_HYPRE)
-    cs_sles_hypre_library_info(log_id);
-#endif
-#if defined(HAVE_AMGX)
-    cs_sles_amgx_library_info(log_id);
-#endif
-  }
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
