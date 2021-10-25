@@ -391,7 +391,6 @@ _monitor_cell_state(const cs_cdo_connect_t      *connect,
 {
   for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++) solid->n_g_cells[i] = 0;
 
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
 
     if (connect->cell_flag[c] & CS_FLAG_SOLID_CELL)
