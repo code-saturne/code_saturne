@@ -69,14 +69,13 @@ use entsor
 use optcal
 use cstphy
 use cstnum
-use pointe, only: thermal_condensation_flux, flthr, dflthr
 use parall
 use period
 use field
 use mesh
 use cs_c_bindings
 use cs_f_interfaces
-use cs_nz_condensation, only: iztag1d, ztpar
+use cs_nz_condensation, only: thermal_condensation_flux, iztag1d, ztpar,flthr, dflthr
 use cs_nz_tagmr, only: ztpar0, ztmur
 
 use condensation_module

@@ -161,6 +161,7 @@ call cs_gui_physical_model_select
 ! Flow model selection through user Fortran subroutine
 
 call usppmo(1)
+call cs_wall_condensation_set_onoff_state(icondb)
 
 ! Other models selection through GUI
 

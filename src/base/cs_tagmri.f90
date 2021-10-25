@@ -90,7 +90,7 @@ use entsor
 use pointe
 use field
 use mesh, only:ifabor
-use cs_nz_condensation, only: izzftcd, iztag1d, ztpar
+use cs_nz_condensation, only: nfbpcd, izzftcd, iztag1d, ztpar, ifbpcd
 use cs_nz_tagmr, only: ztmur
 
 !===============================================================================

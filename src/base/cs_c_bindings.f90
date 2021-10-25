@@ -1990,6 +1990,16 @@ module cs_c_bindings
     end subroutine user_boundary_conditions
 
     !---------------------------------------------------------------------------
+    ! Interface to C user function for boundary mass source terms (condensation) 
+
+    subroutine cs_user_boundary_mass_source_terms(nvar, nscal, iappel)  &
+      bind(C, name='cs_user_boundary_mass_source_terms')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int), intent(in), value :: nvar, nscal, iappel
+    end subroutine cs_user_boundary_mass_source_terms
+
+    !---------------------------------------------------------------------------
 
     ! Interface to C user function for extra operations
 
@@ -2279,6 +2289,59 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine finalize_gas_mix
+
+    !---------------------------------------------------------------------------
+    !> \brief Set wall condensation model 
+    !
+    !> \param[in]   model     Integer related to the choice of model 
+    !---------------------------------------------------------------------------
+    subroutine cs_wall_condensation_set_model(model)   &
+      bind(C, name='cs_wall_condensation_set_model')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: model 
+    end subroutine cs_wall_condensation_set_model 
+
+    !---------------------------------------------------------------------------
+    !> \brief Set wall condensation regime 
+    !
+    !> \param[in]   regime     Integer related to the choice of regime 
+    !---------------------------------------------------------------------------
+    subroutine cs_wall_condensation_set_regime(regime)   &
+      bind(C, name='cs_wall_condensation_set_regime')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: regime 
+    end subroutine cs_wall_condensation_set_regime
+
+    !---------------------------------------------------------------------------
+    !> \brief Set wall condensation on/off state 
+    !
+    !> \param[in]   icondb     Integer related to the onoff state of wall
+   !                           condensation modeling (-1: off, O: on) 
+    !---------------------------------------------------------------------------
+    subroutine cs_wall_condensation_set_onoff_state(icondb)   &
+      bind(C, name='cs_wall_condensation_set_onoff_state')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value ::icondb 
+    end subroutine cs_wall_condensation_set_onoff_state
+
+    !---------------------------------------------------------------------------
+    !> \brief Compute wall condensation mass and energy source terms 
+    !
+    !> \param[in]   nvar      Number of variables (?) 
+    !> \param[in]   izzftcd   Correspondance between faces and condensation zones 
+    !---------------------------------------------------------------------------
+    subroutine cs_wall_condensation_compute(nvar, nfbpcd, ifbpcd, &
+                                            izzftcd, spcond, hpcond)   &
+      bind(C, name='cs_wall_condensation_compute')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: nvar, nfbpcd 
+      integer(kind=c_int), dimension(*), intent(in) :: ifbpcd, izzftcd 
+      real(kind=c_double), dimension(*), intent(in) :: spcond, hpcond
+    end subroutine cs_wall_condensation_compute
 
     !---------------------------------------------------------------------------
 
@@ -3380,8 +3443,6 @@ module cs_c_bindings
       implicit none
       integer(c_int), intent(in), value :: ncel, iclip
     end subroutine clipke
-
-    !---------------------------------------------------------------------------
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 

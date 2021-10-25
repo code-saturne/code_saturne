@@ -29,6 +29,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_wall_condensation_1d_thermal.h"
+#include "cs_wall_condensation.h"
 #include "cs_1d_wall_thermal.h"
 #include "cs_1d_wall_thermal_check.h"
 #include "cs_ale.h"

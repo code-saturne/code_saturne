@@ -597,15 +597,15 @@ if (nftcdt.gt.0) then
     enddo
   enddo
 
-  call cs_user_boundary_mass_source_terms &
+  call cs_f_user_boundary_mass_source_terms &
 ( nvar   , nscal  ,                                              &
-  nfbpcd , iappel ,                                              &
-  ifbpcd , itypcd ,                                              &
-  spcond )
+  iappel)
+
+  call cs_user_boundary_mass_source_terms(nvar, nscal, iappel)
 
   ! Use empiric correlations to compute heat and mass transfer due to wall condensation
-  call condensation_model(nvar, nfbpcd, ifbpcd, izzftcd, &
-                          spcond, hpcond)
+  call cs_wall_condensation_compute(nvar, nfbpcd, ifbpcd, izzftcd, &
+                                    spcond, hpcond)
 
 endif
 

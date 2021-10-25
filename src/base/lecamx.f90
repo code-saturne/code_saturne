@@ -82,7 +82,7 @@ use field
 use cavitation
 use vof
 use cs_c_bindings
-use cs_nz_condensation, only: izzftcd, nztag1d, ztpar
+use cs_nz_condensation, only: nfbpcd, izzftcd, nztag1d, ztpar, ifbpcd
 use cs_nz_tagmr, only: znmurx, znmur, ztmur
 
 !===============================================================================

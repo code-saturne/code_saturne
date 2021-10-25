@@ -82,6 +82,8 @@ EXTRA_DIST = cs_version.h.in
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_wall_condensation.h \
+cs_wall_condensation_1d_thermal.h \
 cs_1d_wall_thermal.h \
 cs_1d_wall_thermal_check.h \
 cs_ale.h \
@@ -260,13 +262,14 @@ copain_model.f90 \
 copain_benteboula_dabbene.f90 \
 dehbi_model.f90 \
 uchida_model.f90 \
-condensation_model.f90 \
 condensation_source_terms.f90 \
 condli.f90 \
 cou1di.f90 \
 cou1do.f90 \
 covofi.f90 \
 covofv.f90 \
+cs_wall_condensation.c \
+cs_wall_condensation_1d_thermal.c \
 cs_1d_wall_thermal.c \
 cs_1d_wall_thermal_check.c \
 cs_ale.c \

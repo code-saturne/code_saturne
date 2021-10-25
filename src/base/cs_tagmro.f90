@@ -68,8 +68,7 @@ use radiat
 use parall
 use mesh
 use field
-use pointe, only:flthr, dflthr
-use cs_nz_condensation, only:nzones,iztag1d
+use cs_nz_condensation, only:nzones,iztag1d,flthr,dflthr
 use cs_nz_tagmr
 
 !===============================================================================

@@ -56,7 +56,7 @@ use cavitation
 use darcy_module
 use radiat
 use turbomachinery
-use cs_nz_condensation, only: nzones
+use cs_nz_condensation, only: nfbpcd, nzones, init_sizes_pcond
 use ctincl
 use cfpoin
 use vof
@@ -152,6 +152,7 @@ call vof_model_init
 call cavitation_model_init
 
 call map_turbomachinery_model(iturbo, ityint)
+call init_sizes_pcond()
 
 !===============================================================================
 ! 2. ENTREES SORTIES entsor.f90

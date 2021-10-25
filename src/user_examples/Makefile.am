@@ -84,6 +84,7 @@ cs_user_porosity-from_cad.c
 
 examplefiles = \
 cs_user_1d_wall_thermal.c \
+cs_user_boundary_mass_source_terms.c \
 cs_user_boundary_conditions.c \
 cs_user_boundary_conditions-electric_arcs_ieljou_3_or_4.c \
 cs_user_boundary_conditions-medcoupling_remapper_2d.c \

@@ -24,7 +24,7 @@
 !> Module for parameters options, numerical and physical properties of the
 !> thermal 1D model for each specific zone with condensation on the wall.
 !> The zones number is defined by the user with the subroutine :
-!> cs_user_boundary_mass_source_terms.
+!> cs_f_user_boundary_mass_source_terms.
 
 module cs_nz_tagmr
 
@@ -55,7 +55,7 @@ module cs_nz_tagmr
   !> \anchor znmur
   !> number of discretized points associated to the (ii)th face
   !> with the 1-D thermal model coupled with condensation
-  integer, allocatable, dimension(:) :: znmur
+  integer, dimension(:), pointer, save :: znmur
 
   !> \anchor zdxp
   !> space step associated to the spatial discretization of the 1-D thermal model
@@ -65,7 +65,7 @@ module cs_nz_tagmr
   !> \anchor ztheta-scheme of the 1-D thermal model
   !>    - 0 : explicit scheme
   !>    - 1 : implicit scheme
-  double precision, allocatable, dimension(:) :: ztheta
+  double precision, dimension(:), pointer, save :: ztheta
 
   !> \anchor zdxmin
   !> the minimal space step of 1-D thermal model
@@ -73,11 +73,11 @@ module cs_nz_tagmr
   !> this numerical parameter is used to impose a geometric progression
   !> ratio of the mesh refinement associated to (ii)th face with
   !> the 1-D thermal model.
-  double precision, allocatable, dimension(:) :: zdxmin
+  double precision, dimension(:), pointer, save :: zdxmin
 
   !> \anchor zepais
   !> the wall thickness associated to the (ii)th face with 1-D thermal module
-  double precision, allocatable, dimension(:) :: zepais
+  double precision, dimension(:), pointer, save :: zepais
 
   !> \}
 
@@ -92,27 +92,27 @@ module cs_nz_tagmr
 
   !> \anchor zxrob
   !> the concrete density associated to solid material
-  double precision, allocatable, dimension(:) :: zrob
+  double precision, dimension(:), pointer, save :: zrob
 
   !> \anchor zcondb
   !> the concrete conductivity coefficient associated to solid material
-  double precision, allocatable, dimension(:) :: zcondb
+  double precision, dimension(:), pointer, save :: zcondb
 
   !> \anchor zcpb
   !> the concrete specific heat coefficient associated to solid material
-  double precision, allocatable, dimension(:) :: zcpb
+  double precision, dimension(:), pointer, save :: zcpb
 
   !> \anchor zhext
   !> the exterior exchange coefficient associated to solid material
-  double precision, allocatable, dimension(:) :: zhext
+  double precision, dimension(:), pointer, save :: zhext
 
   !> \anchor ztext
   !> the exterior temperature associated to solid material
-  double precision, allocatable, dimension(:) :: ztext
+  double precision, dimension(:), pointer, save :: ztext
 
   !> \anchor ztpar0
   !> the initial temperature associated to solid material
-  double precision, allocatable, dimension(:) :: ztpar0
+  double precision, dimension(:), pointer, save :: ztpar0
 
   !> \anchor ztmur
   !> the wall temperature computed with the 1-D thermal model
@@ -123,39 +123,66 @@ module cs_nz_tagmr
 
   !> \}
 
+interface
+
+  subroutine cs_f_wall_condensation_1d_thermal_get_pointers(znmur, ztheta, zdxmin,&
+                                                            zepais, zrob, zcondb,&
+                                                            zcpb, zhext, ztext,&
+                                                            ztpar0) &
+    bind(C, name='cs_f_wall_condensation_1d_thermal_get_pointers')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), intent(out) :: znmur, ztheta, zdxmin, zepais, zrob, zcondb 
+    type(c_ptr), intent(out) :: zcpb, zhext, ztext, ztpar0
+  end subroutine cs_f_wall_condensation_1d_thermal_get_pointers
+
+  subroutine cs_f_wall_condensation_1d_thermal_create(nzones) &
+    bind(C, name='cs_wall_condensation_1d_thermal_create')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value, intent(in) :: nzones 
+  end subroutine cs_f_wall_condensation_1d_thermal_create
+
+  subroutine cs_f_wall_condensation_1d_thermal_free() &
+    bind(C, name='cs_wall_condensation_1d_thermal_free')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_f_wall_condensation_1d_thermal_free
+
+end interface
+
+
 contains
 
   !=============================================================================
 
   subroutine init_nz_tagmr
 
+    use, intrinsic :: iso_c_binding
     use cs_nz_condensation, only:nzones
 
+    implicit none
+    type(c_ptr) :: c_znmur, c_ztheta, c_zdxmin 
+    type(c_ptr) :: c_zepais, c_zrob, c_zcondb 
+    type(c_ptr) :: c_zcpb, c_zhext, c_ztext, c_ztpar0
+
     if (nzones.lt.1) nzones = 1
+    call cs_f_wall_condensation_1d_thermal_create(nzones)
+    call cs_f_wall_condensation_1d_thermal_get_pointers(c_znmur, c_ztheta, c_zdxmin,&
+                                                        c_zepais, c_zrob, c_zcondb,&
+                                                        c_zcpb, c_zhext, c_ztext,&
+                                                        c_ztpar0)
 
-    allocate(znmur (nzones))
-    allocate(ztheta(nzones))
-    allocate(zdxmin(nzones))
-    allocate(zepais(nzones))
-    allocate(zrob  (nzones))
-    allocate(zcondb(nzones))
-    allocate(zcpb  (nzones))
-    allocate(zhext (nzones))
-    allocate(ztext (nzones))
-    allocate(ztpar0(nzones))
-
-    !---> Array initialization
-
-    znmur(:)  = 0
-    ztheta(:) = 0.d0
-    zdxmin(:) = 0.d0
-    zepais(:) = 0.d0
-    zrob(:)   = 0.d0
-    zcondb(:) = 0.d0
-    zcpb(:)   = 0.d0
-    zhext(:)  = 0.d0
-    ztext(:)  = 0.d0
-    ztpar0(:) = 0.d0
+    call c_f_pointer(c_znmur , znmur , [nzones])
+    call c_f_pointer(c_ztheta, ztheta, [nzones])
+    call c_f_pointer(c_zdxmin, zdxmin, [nzones])
+    call c_f_pointer(c_zepais, zepais, [nzones])
+    call c_f_pointer(c_zrob  , zrob  , [nzones])
+    call c_f_pointer(c_zcondb, zcondb, [nzones])
+    call c_f_pointer(c_zcpb  , zcpb  , [nzones])
+    call c_f_pointer(c_zhext , zhext , [nzones])
+    call c_f_pointer(c_ztext , ztext , [nzones])
+    call c_f_pointer(c_ztpar0, ztpar0, [nzones])
 
   end subroutine init_nz_tagmr
 
@@ -163,16 +190,7 @@ contains
 
   subroutine finalize_nz_tagmr
 
-    deallocate(znmur )
-    deallocate(ztheta)
-    deallocate(zdxmin)
-    deallocate(zepais)
-    deallocate(zrob  )
-    deallocate(zcondb)
-    deallocate(zcpb  )
-    deallocate(zhext )
-    deallocate(ztext )
-    deallocate(ztpar0)
+    call cs_f_wall_condensation_1d_thermal_free()
 
   end subroutine finalize_nz_tagmr
 

@@ -68,7 +68,7 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use pointe, only:itypfb, icetsm, ifbpcd, ltmast
+use pointe, only:itypfb, icetsm, ltmast
 use entsor
 use parall
 use period
@@ -76,6 +76,7 @@ use ppincl, only:icondv
 use mesh
 use field
 use cs_tagms, only:s_metal
+use cs_nz_condensation, only: ifbpcd
 
 !===============================================================================
 

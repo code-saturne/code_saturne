@@ -203,45 +203,8 @@ module pointe
   !> and its derivative with respect to pressure
   double precision, allocatable, target, dimension(:) :: gamcav, dgdpca
 
-  !> number of the nfbpcd faces in which a condensation source terms is imposed.
-  !> See \c ifbpcd and the user subroutine \ref cs_user_boundary_mass_source_terms
-  integer, save :: nfbpcd
-
-  !> list on the nfbpcd faces in which a condensation source terms is imposed.
-  !> See \c ifbpcd and the user subroutine \ref cs_user_boundary_mass_source_terms
-  integer, allocatable, dimension(:) :: ifbpcd
-
   !> reference point for wall condensation, used in forced and mixed convection regimes
   double precision, allocatable, dimension(:,:) :: xref_cond
-
-  !> type of condensation source terms for each variable
-  !> - 0 for an variable at ambient value,
-  !> - 1 for an variable at imposed value.
-  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
-  integer, allocatable, dimension(:,:) :: itypcd
-
-  !> value of the condensation source terms for pressure.
-  !> For the other variables, eventual imposed specific value.
-  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
-  double precision, allocatable, dimension(:,:) :: spcond
-
-  !> value of the thermal flux for the condensation model.
-  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
-  double precision, allocatable, dimension(:) :: thermal_condensation_flux
-
-  !> value of the thermal exchange coefficient associated to
-  !> the condensation model used.
-  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
-  double precision, allocatable, dimension(:) :: hpcond
-
-  !> Specific 1D thermal model with implicit time scheme (only used
-  !> with condensation modelling to the cold wall)
-  !> flthr     ! external heat flux used as flux conditions
-  !>           ! of the 1d thermal model (in unit \f$W.m^{-2}\f$).
-  double precision, allocatable, dimension(:) :: flthr
-  !> dflthr    ! external heat flux derivative used as flux conditions
-  !>           ! of the 1d thermal model (in unit \f$W.m^{-3}\f$).
-  double precision, allocatable, dimension(:) :: dflthr
 
   !> number of the ncmast cells in which a condensation source terms is imposed.
   !> See \c lstmast list and the subroutine \ref cs_user_metal_structures_source_terms
@@ -469,39 +432,6 @@ contains
     deallocate(smacel)
 
   end subroutine finalize_tsma
-
-  !=============================================================================
-
-  subroutine init_pcond ( nvar )
-
-    implicit none
-
-    integer :: nvar
-
-    allocate(ifbpcd(nfbpcd))
-    allocate(itypcd(nfbpcd,nvar))
-    allocate(spcond(nfbpcd,nvar))
-    allocate(thermal_condensation_flux(nfbpcd))
-    allocate(hpcond(nfbpcd))
-    allocate(flthr(nfbpcd),dflthr(nfbpcd))
-
-    !---> Array initialization
-    flthr(:)  = 0.d0
-    dflthr(:) = 0.d0
-
-  end subroutine init_pcond
-
-  !=============================================================================
-
-  subroutine finalize_pcond
-    deallocate(ifbpcd)
-    deallocate(itypcd)
-    deallocate(spcond)
-    deallocate(thermal_condensation_flux)
-    deallocate(hpcond)
-    deallocate(flthr, dflthr)
-
-  end subroutine finalize_pcond
 
   !=============================================================================
 

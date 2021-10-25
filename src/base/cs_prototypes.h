@@ -335,6 +335,15 @@ cs_user_1d_wall_thermal(int iappel,
                         int isuit1);
 
 /*----------------------------------------------------------------------------
+ * Data Entry of the wall condensation module 
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_boundary_mass_source_terms(int nvar,
+                                   int nscal,
+                                   int iappel);
+
+/*----------------------------------------------------------------------------
  * Setup boundary conditions to be applied.
  *----------------------------------------------------------------------------*/
 

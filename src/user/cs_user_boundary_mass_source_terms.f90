@@ -90,8 +90,6 @@
 !>
 !> \section the specific variables to define with is user subroutine
 !>
-!>  - nfbpcd: number of faces where a condensation source term is imposed
-!>
 !>  - ifbpcd(ieltcd): identification of the faces where a condensation
 !>                    source term is imposed.
 !>
@@ -133,19 +131,11 @@
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     iappel        indicates which at which stage the routine is
-!> \param[in]     nfbpcd        number of faces with condensation source terms
-!> \param[in]     ifbpcd        index of faces with condensation source terms
-!> \param[in]     itypcd        type of condensation source term for each ivar
-!> \param[out]    spcond        variable value associated to the condensation
-!>                              source term (for ivar=ipr, spcond is the flow rate
-!>                              \f$ \Gamma_{cond}^n \f$)
 !_______________________________________________________________________________
 
-subroutine cs_user_boundary_mass_source_terms &
+subroutine cs_f_user_boundary_mass_source_terms &
  ( nvar   , nscal  ,                                              &
-   nfbpcd , iappel ,                                              &
-   ifbpcd , itypcd ,                                              &
-   spcond )
+   iappel)
 
 !===============================================================================
 
@@ -177,11 +167,6 @@ implicit none
 
 integer          nvar   , nscal
 integer          iappel
-integer          nfbpcd
-
-integer          ifbpcd(nfbpcd), itypcd(nfbpcd,nvar)
-
-double precision spcond(nfbpcd,nvar)
 
 ! Local variables
 
@@ -242,4 +227,4 @@ endif
 deallocate(lstelt)
 
 return
-end subroutine cs_user_boundary_mass_source_terms
+end subroutine cs_f_user_boundary_mass_source_terms

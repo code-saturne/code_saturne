@@ -115,7 +115,6 @@ base/cs_c_bindings.lo: base/paramx.lo base/entsor.lo base/mesh.lo \
  base/period.lo base/field.lo base/cplsat.lo
 base/cs_f_interfaces.lo: base/cs_c_bindings.lo base/paramx.lo base/dimens.lo \
  base/mesh.lo base/optcal.lo base/field.lo lagr/lagran.lo
-base/cs_nz_condensation.lo: base/pointe.lo
 base/cs_nz_tagmr.lo: base/optcal.lo base/pointe.lo base/parall.lo \
  base/cs_nz_condensation.lo
 base/cs_tagms.lo: base/mesh.lo

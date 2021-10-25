@@ -75,6 +75,7 @@ AM_LDFLAGS =
 
 EXTRA_DIST = cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 cs_user_extra_operations.f90 \
+cs_user_boundary_mass_source_terms.f90 \
 cs_user_initialization.f90  \
 cs_user_parameters.f90 \
 cs_user_physical_properties.f90 \
@@ -87,7 +88,7 @@ userfiles = \
 cs_user_1d_wall_thermal.c \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions.c \
-cs_user_boundary_mass_source_terms.f90 \
+cs_user_boundary_mass_source_terms.c \
 cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations.c \
@@ -129,6 +130,17 @@ cs_f_user_boundary_conditions.obj: $(cs_user_f_boundary_conditions)
 
 cs_f_user_boundary_conditions.lo: $(cs_user_f_boundary_conditions)
 	$(LTFCCOMPILE) -c -o cs_f_user_boundary_conditions.o $(cs_user_f_boundary_conditions)
+
+cs_user_f_boundary_mass_source_terms = $(top_srcdir)/src/user/cs_user_boundary_mass_source_terms.f90
+
+cs_f_user_boundary_mass_source_terms.o: $(cs_user_f_boundary_mass_source_terms)
+	$(FCCOMPILE) -c -o cs_f_user_boundary_mass_source_terms.o  $(cs_user_f_boundary_mass_source_terms)
+
+cs_f_user_boundary_mass_source_terms.obj: $(cs_user_f_boundary_mass_source_terms)
+	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_boundary_mass_source_terms)`
+
+cs_f_user_boundary_mass_source_terms.lo: $(cs_user_f_boundary_mass_source_terms)
+	$(LTFCCOMPILE) -c -o cs_f_user_boundary_mass_source_terms.o $(cs_user_f_boundary_mass_source_terms)
 
 cs_user_f_parameters = $(top_srcdir)/src/user/cs_user_parameters.f90
 
@@ -201,12 +213,13 @@ libcsuser_la_SOURCES = $(userfiles)
 libcsuser_la_LIBADD = cs_f_user_parameters.lo cs_f_user_extra_operations.lo \
 cs_f_user_initialization.lo cs_f_user_physical_properties.lo \
 cs_f_user_source_terms.lo cs_f_user_boundary_conditions.lo \
-cs_f_user_porosity.lo
+cs_f_user_porosity.lo cs_f_user_boundary_mass_source_terms.lo
 libcsuser_la_LDFLAGS = -no-undefined
 
 userdir = $(pkgdatadir)/user_sources/REFERENCE
 user_DATA = $(userfiles) cs_user_modules.f90 \
 cs_user_boundary_conditions.f90 \
+cs_user_boundary_mass_source_terms.f90 \
 cs_user_parameters.f90 \
 cs_user_extra_operations.f90 \
 cs_user_initialization.f90 \
