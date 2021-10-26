@@ -97,7 +97,6 @@ integer          itrale
 integer          nvar   , nscal
 
 double precision, pointer, dimension(:)   :: dt
-double precision, pointer, dimension(:,:) :: frcxt => null()
 
 ! Local variables
 
@@ -142,6 +141,7 @@ double precision, allocatable, dimension(:) :: prdv2f
 double precision, allocatable, dimension(:) :: mass_source
 double precision, dimension(:), pointer :: brom, crom, cpro_rho_mass
 
+double precision, pointer, dimension(:,:) :: frcxt => null()
 double precision, pointer, dimension(:,:) :: trava
 double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:,:), pointer :: cvar_vec
