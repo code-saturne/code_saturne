@@ -66,6 +66,9 @@ BEGIN_C_DECLS
  *  Global variables
  *============================================================================*/
 
+/* Keep track of active device id; usually queried dynamically, but
+   saving the value in this varaible can be useful when debugging */
+
 int  cs_glob_cuda_device_id = -1;
 
 /*============================================================================
@@ -384,6 +387,8 @@ cs_base_cuda_select_default_device(void)
                "cudaSetDevice", __func__);
     return -1;
   }
+
+  cs_glob_cuda_device_id = device_id;
 
   return device_id;
 }
