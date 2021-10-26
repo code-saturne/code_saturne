@@ -1699,7 +1699,7 @@ cs_pressure_correction(int        iterns,
 
     if (eqp_p->iswdyn >= 1) {
 
-      // Computation of the variable ralaxation coefficient
+      // Computation of the variable relaxation coefficient
 
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
@@ -2544,7 +2544,7 @@ cs_pressure_correction(int        iterns,
     }
   }
 
-  /* Transformation of volumic mass fluxes into massic mass fluxes */
+  /* Transformation of volume fluxes into mass fluxes */
 
   if (idilat == 4) {
 
