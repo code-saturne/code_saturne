@@ -196,9 +196,8 @@ do iel = 1, ncel
   next_fext(3 ,iel) = fext(3 ,iel) * cell_is_active(iel) + dfext(3 ,iel)
 enddo
 
-if (irangp.ge.0) then
-  call synvin(next_fext)
-endif
+! Parallel or periodicity synchronization
+call synvin(next_fext)
 
 !===============================================================================
 ! 2. Prepare matrix and boundary conditions

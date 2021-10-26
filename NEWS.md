@@ -3,6 +3,9 @@ Release 7.0.3 (not released yet)
 
 Bug fixes:
 
+- Fix bug in hydrostatic pressure computation
+  (synchronisation missing in periodic computation).
+
 - GUI: fix bad initialization in meteo preprocessor.
 
 - GUI: fix crash on MEG expression with missing parentheses.
