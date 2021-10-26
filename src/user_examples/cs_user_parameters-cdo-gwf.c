@@ -60,7 +60,7 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_parameters-cdo-gwf.c
  *
- * \brief User functions for setting a calcultion using the groundwater flow
+ * \brief User functions for setting a calculation using the groundwater flow
  *        module with CDO schemes
  *
  * See \ref parameters for examples.
@@ -72,14 +72,15 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Permeability in each subdomain */
+
 static const double k1 = 1e5, k2 = 1;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the explicit definition of the problem for the Richards eq.
+ * \brief  Get the initial condition for the tracer attached to the GWF problem
  *         Generic function pointer for an evaluation relying on an analytic
- *         function
- *         pt_ids is optional. If not NULL, it enables to access to the coords
+ *         function.
+ *         pt_ids is optional. If not NULL, it enables to access to the xyz
  *         array with an indirection. The same indirection can be applied to
  *         fill retval if dense_output is set to false.
  *
@@ -94,55 +95,35 @@ static const double k1 = 1e5, k2 = 1;
 /*----------------------------------------------------------------------------*/
 
 static inline void
-get_tracer_sol(cs_real_t          time,
-               cs_lnum_t          n_elts,
-               const cs_lnum_t   *pt_ids,
-               const cs_real_t   *xyz,
-               bool               dense_output,
-               void              *input,
-               cs_real_t         *retval)
+get_tracer_ic(cs_real_t          time,
+              cs_lnum_t          n_elts,
+              const cs_lnum_t   *pt_ids,
+              const cs_real_t   *xyz,
+              bool               dense_output,
+              void              *input,
+              cs_real_t         *retval)
 {
   CS_UNUSED(input);
 
   /* Physical parameters */
+
   const double  magnitude = 2*k1/(k1 + k2);
   const double  x_front = magnitude * time;
 
-  if (pt_ids != NULL && !dense_output) {
+  /* Fill retval array */
 
-    for (cs_lnum_t  i = 0; i < n_elts; i++) {
+  for (cs_lnum_t  i = 0; i < n_elts; i++) {
 
-      const cs_lnum_t  id = pt_ids[i];
-      const double  x = xyz[3*id];
-      if (x <= x_front)
-        retval[id] = 1;
-      else
-        retval[id] = 0;
-    }
+    const cs_lnum_t  id = (pt_ids == NULL) ? i : pt_ids[i];
+    const cs_lnum_t  r_id = (dense_output) ? i : id;
+    const double  x = xyz[3*id];
 
-  }
-  else if (pt_ids != NULL && dense_output) {
+    if (x <= x_front)
+      retval[r_id] = 1;
+    else
+      retval[r_id] = 0;
 
-    for (cs_lnum_t  i = 0; i < n_elts; i++) {
-      const double  x = xyz[3*pt_ids[i]];
-      if (x <= x_front)
-        retval[i] = 1;
-      else
-        retval[i] = 0;
-    }
-
-  }
-  else {
-
-    for (cs_lnum_t  i = 0; i < n_elts; i++) {
-      const double  x = xyz[3*i];
-      if (x <= x_front)
-        retval[i] = 1;
-      else
-        retval[i] = 0;
-    }
-
-  }
+  } /* Loop on selected elements */
 
 }
 
@@ -171,9 +152,11 @@ cs_user_model(void)
   cs_boundary_t  *bdy = domain->boundaries;
 
   /* Choose a boundary by default */
+
   cs_boundary_set_default(bdy, CS_BOUNDARY_SYMMETRY);
 
   /* Add new boundaries */
+
   cs_boundary_add(bdy, CS_BOUNDARY_INLET, "left");
   cs_boundary_add(bdy, CS_BOUNDARY_OUTLET, "right");
 
@@ -213,11 +196,14 @@ cs_user_model(void)
 
   cs_domain_def_time_step_by_value(domain, 1.0);
 
-  /* ================================
-     Activate groundwater flow module
-     ================================
+  /* =================================
+     Define the groundwater flow model
+     ================================= */
 
-     For the groundwater flow module:
+  /* 1. Activate groundwater flow module */
+  /* ----------------------------------- */
+
+  /* For the groundwater flow module:
      >> cs_gwf_activate(permeability_type, model_type, option_flag);
 
      * permeability_type is one of the following keywords:
@@ -225,18 +211,12 @@ cs_user_model(void)
 
      * model_type = CS_GWF_MODEL_SINGLE_PHASE_RICHARDS
 
-     * richards_flag are
-     CS_GWF_GRAVITATION, CS_GWF_RICHARDS_UNSTEADY, CS_GWF_SOIL_PROPERTY_UNSTEADY
-     CS_GWF_SOIL_ALL_SATURATED
-     or 0 if there is no option to set
-
-     * Consequences of the activation of the groundwater flow module are:
-     - add a new equation named "Richards" along with an associated field named
-       "hydraulic_head". The default boundary condition set is a homogeneous
-       Neumann.
-     - define a new advection field named "darcian_flux"
-     - define a new property called "permeability".
-     - define a new property called "soil_capacity" if "unsteady" is chosen
+     * option_flag can be defined from the following flags
+       CS_GWF_GRAVITATION
+       CS_GWF_RICHARDS_UNSTEADY
+       CS_GWF_SOIL_PROPERTY_UNSTEADY
+       CS_GWF_SOIL_ALL_SATURATED
+       or 0 if there is no option to set
   */
 
   /*! [param_cdo_activate_gwf] */
@@ -263,38 +243,108 @@ cs_user_model(void)
   }
   /*! [param_cdo_activate_gwf_b] */
 
-  /* =========
-     Add soils (must be done before adding tracers)
-     ========= */
+  /* 2. Add and define soils (must be done before adding tracers) */
+  /* ----------------------- */
 
-  /*! [param_cdo_gwf_add_soil] */
+  /*! [param_cdo_gwf_add_define_simple_soil] */
   {
-    cs_gwf_soil_add("soil1", CS_GWF_SOIL_SATURATED);
-    cs_gwf_soil_add("soil2", CS_GWF_SOIL_SATURATED);
+    /* Example 1: two "saturated" soils (simple case) */
+
+    /* Two (volume) zones have be defined called "soil1" and "soil2". */
+
+    cs_gwf_soil_t  *s1 = cs_gwf_soil_add("soil1", CS_GWF_SOIL_SATURATED);
+
+    cs_gwf_set_iso_saturated_soil(s1,
+                                  k1,     /* saturated permeability */
+                                  1.0,    /* saturated moisture */
+                                  1.0);   /* bulk density of the soil */
+
+    /* For "simple" soil definitions, definition can be made here. For more
+       complex definition, please use \ref cs_user_gwf_setup */
+
+    cs_gwf_soil_t  *s2 = cs_gwf_soil_add("soil2", CS_GWF_SOIL_SATURATED);
+
+    cs_gwf_set_iso_saturated_soil(s2,
+                                  k2,     /* saturated permeability */
+                                  1.0,    /* saturated moisture */
+                                  1.0);   /* bulk density (useless) */
   }
-  /*! [param_cdo_gwf_add_soil] */
+  /*! [param_cdo_gwf_add_define_simple_soil] */
 
-  /* ====================
-     Add tracer equations
-     ====================
+  /*! [param_cdo_gwf_add_user_soil] */
+  {
+    /* Example 2: Add a new user-defined soil for all the cells */
 
-     Add a tracer equation which is unsteady and convected by the darcean flux
-     This implies the creation of a new equation called eqname along with a new
-     field called varname.
+    cs_gwf_soil_add("cells", CS_GWF_SOIL_USER);
 
-     For standard tracer:
+    /* The explicit definition of this soil is done in \ref cs_user_gwf_setup */
+  }
+  /*! [param_cdo_gwf_add_user_soil] */
+
+  /*! [param_cdo_gwf_get_soil] */
+  {
+    /* If the soil structure is not already defined, one can retrieve it thanks
+     * to \ref cs_gwf_soil_by_name
+     *
+     * The name of the soil is the same as the name of the volume zone used at
+     * the creation of the soil
+     */
+
+    cs_gwf_soil_t  *s1 = cs_gwf_soil_by_name("soil1");
+  }
+  /*! [param_cdo_gwf_get_soil] */
+
+  /* 3. Add and define tracer equations */
+  /* ---------------------------------- */
+
+  /*
+    Add a tracer equation which is unsteady and convected by the darcean flux
+    This implies the creation of a new equation called eqname along with a new
+    field called varname.
+
+    For standard tracer:
        cs_gwf_add_tracer(eqname, varname);
-     For user-defined tracer
+    For user-defined tracer
        cs_gwf_add_user_tracer(eqname, varname, setup_func);
   */
 
   /*! [param_cdo_gwf_add_tracer] */
   {
     cs_gwf_tracer_model_t  model = 0; /* default model */
-    cs_gwf_add_tracer(model, "Tracer_01","C1");
+
+    cs_gwf_tracer_t  *tr = cs_gwf_add_tracer(model,       /* tracer model */
+                                             "Tracer_01", /* eq. name */
+                                             "C1");       /* var. name */
+
+    /* For "simple" tracer definitions, definition can be made here. For more
+     * complex definition, please use \ref cs_user_gwf_setup
+     *
+     * The parameters defining the tracer behavior can be set soil by soil
+     * (give the soil name as the second argument) or to all soils in one call
+     * (give NULL as the second argument)
+     */
+
+    cs_gwf_set_main_tracer_param(tr,
+                                 NULL,     /* soil name or NULL for all */
+                                 0.,       /* water molecular diffusivity */
+                                 0., 0.,   /* alpha (longi. and transvesal) */
+                                 0.,       /* distribution coef. */
+                                 0.);      /* 1st order decay coef. */
   }
   /*! [param_cdo_gwf_add_tracer] */
 
+  /*! [param_cdo_gwf_get_tracer] */
+  {
+    /* If the tracer structure is not already defined, one can retrieve it
+     * thanks to \ref cs_gwf_tracer_by_name
+     *
+     * The name of the tracer is the same as the name of the associated
+     * equation given at the creation of the tracer
+     */
+
+    cs_gwf_tracer_t *tr = cs_gwf_tracer_by_name("Tracer_01");
+  }
+  /*! [param_cdo_gwf_get_tracer] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -312,36 +362,39 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 
-  /*=============
-    Set equations
-    ============= */
+  /* 1. Set the Richards equation */
+  /* ---------------------------- */
 
-  /* Richards equation */
   cs_equation_param_t  *r_eqp = cs_equation_param_by_name("Richards");
 
   /* Define the boundary conditions  */
-  cs_real_t  val0 = 0.0, val1 = 1.0;
+
+  cs_real_t  right_val = 0.0, left_val = 1.0;
 
   cs_equation_add_bc_by_value(r_eqp,
                               CS_PARAM_BC_DIRICHLET,
-                              "left", // boundary zone name
-                              &val1);  // value to set
+                              "left",       /* boundary zone name */
+                              &left_val);   /* value to set */
 
   cs_equation_add_bc_by_value(r_eqp,
                               CS_PARAM_BC_DIRICHLET,
-                              "right", // boundary zone name
-                              &val0);  // value to set
+                              "right",       /* boundary zone name */
+                              &right_val);   /* value to set */
 
-  /* Tracer equation */
+  /* 2. Set the Richards equation */
+  /* ---------------------------- */
+
   cs_equation_param_t  *t_eqp = cs_equation_param_by_name("Tracer_01");
 
   cs_equation_add_bc_by_value(t_eqp,
                               CS_PARAM_BC_DIRICHLET,
-                              "left",  // boundary zone name
-                              &val1);  // value to set
+                              "left",      /* boundary zone name */
+                              &left_val);  /* value to set */
 
-  /* Define the initial condition (By default: zero is set) */
-  cs_equation_add_ic_by_analytic(t_eqp, "cells", get_tracer_sol, NULL);
+  /* Define the initial condition with an analytic function (if nothing is
+     done, the default initialization is zero) */
+
+  cs_equation_add_ic_by_analytic(t_eqp, "cells", get_tracer_ic, NULL);
 }
 
 /*----------------------------------------------------------------------------*/
