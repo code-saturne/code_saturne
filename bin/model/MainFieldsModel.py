@@ -857,13 +857,14 @@ class MainFieldsModel(Variables, Model):
                     carrierField = "off"
                 if not overwriteEnergy:
                     energyModel = self.getEnergyModel(fieldId)
-                compressible = "off"
                 self.case.undoStop()
                 if not (create_fields):
-                    self.setDefinedField(field_id_list[id], typeChoice, phase, carrierField, energyModel,
+                    compressible = self.getCompressibleStatus(fieldId)
+                    self.setDefinedField(fieldId, typeChoice, phase, carrierField, energyModel,
                                          compressible)
                 else:  # Otherwise create a new field
-                    self.addDefinedField(field_id_list[id], label_list[id], typeChoice, phase, carrierField,
+                    compressible = "off"
+                    self.addDefinedField(fieldId, label_list[id], typeChoice, phase, carrierField,
                                          energyModel,
                                          compressible)
 
