@@ -601,7 +601,7 @@ _setup_coeffs(cs_matrix_t  *matrix,
     else
       coeffs->memory_location = HYPRE_MEMORY_HOST;
 
-    coeffs->max_chunk_size = 32768;
+    coeffs->max_chunk_size = 0; /* Defined later */
 
     matrix->coeffs = coeffs;
   }
@@ -649,6 +649,21 @@ _assembler_values_init(void              *matrix_p,
     if (coeffs->memory_location != HYPRE_MEMORY_HOST)
       amode = CS_ALLOC_HOST_DEVICE_SHARED;
 
+    /* We seem to have memory issues when allocating by parts
+       on GPU, so prepare buffers to transfer in a single step
+       (we will also need to delay transfer of smaller pieces).
+       On CPU, use smaller array to avoid excess duplicate memory */
+
+    if (amode == CS_ALLOC_HOST) {
+      coeffs->max_chunk_size = 32768;
+    }
+    else {
+      const cs_lnum_t n_rows = cs_matrix_assembler_get_n_rows(ma);
+      const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
+      cs_lnum_t nnz =   row_index[n_rows] * eb_size[3]
+                      + n_rows*db_size[3];
+      coeffs->max_chunk_size = nnz;
+    }
     CS_MALLOC_HD(coeffs->row_buf, coeffs->max_chunk_size, HYPRE_BigInt, amode);
     CS_MALLOC_HD(coeffs->col_buf, coeffs->max_chunk_size, HYPRE_BigInt, amode);
     CS_MALLOC_HD(coeffs->val_buf, coeffs->max_chunk_size, HYPRE_Real, amode);
@@ -1034,6 +1049,9 @@ _assembler_values_end(void  *matrix_p)
   HYPRE_IJMatrixAssemble(hm);
 
   if (coeffs->matrix_state == 0) {
+
+    CS_FREE_HD(coeffs->row_buf);
+    CS_FREE_HD(coeffs->col_buf);
 
     MPI_Comm comm = cs_glob_mpi_comm;
     if (comm == MPI_COMM_NULL)
@@ -1541,6 +1559,18 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
     if (coeffs->memory_location != HYPRE_MEMORY_HOST)
       amode = CS_ALLOC_HOST_DEVICE_SHARED;
 
+    /* We seem to have memory issues when allocating by parts
+       on GPU, so prepare buffers to transfer in a single step.
+       On CPU, use smaller array to avoid excess duplicate memory */
+
+    if (amode == CS_ALLOC_HOST) {
+      coeffs->max_chunk_size = 32768;
+    }
+    else {
+      cs_lnum_t nnz = n_edges*2*matrix->eb_size[3] + n_rows*matrix->db_size[3];
+      coeffs->max_chunk_size = nnz;
+    }
+
     CS_MALLOC_HD(coeffs->row_buf, coeffs->max_chunk_size, HYPRE_BigInt, amode);
     CS_MALLOC_HD(coeffs->col_buf, coeffs->max_chunk_size, HYPRE_BigInt, amode);
     CS_MALLOC_HD(coeffs->val_buf, coeffs->max_chunk_size, HYPRE_Real, amode);
@@ -1757,9 +1787,9 @@ _release_coeffs_ij(cs_matrix_t  *matrix)
       HYPRE_IJVectorDestroy(coeffs->hx);
       HYPRE_IJVectorDestroy(coeffs->hy);
 
-      CS_FREE_HD(coeffs->row_buf);
-      CS_FREE_HD(coeffs->col_buf);
-      CS_FREE_HD(coeffs->val_buf);
+      CS_FREE_HD(coeffs->row_buf); /* precaution; usually done earlier */
+      CS_FREE_HD(coeffs->col_buf); /* precaution; usually done earlier */
+      CS_FREE_HD(coeffs->val_buf); /* only done here */
 
       coeffs->matrix_state = 0;
     }
