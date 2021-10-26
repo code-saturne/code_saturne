@@ -577,16 +577,16 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
   enddo
 
   do iel = 1, ncel
-      cvara_r(1,1) = cvara_var(1,iel)
-      cvara_r(2,2) = cvara_var(2,iel)
-      cvara_r(3,3) = cvara_var(3,iel)
-      cvara_r(1,2) = cvara_var(4,iel)
-      cvara_r(2,3) = cvara_var(5,iel)
-      cvara_r(1,3) = cvara_var(6,iel)
-      cvara_r(2,1) = cvara_var(4,iel)
-      cvara_r(3,2) = cvara_var(5,iel)
-      cvara_r(3,1) = cvara_var(6,iel)
-  ! Compute Gij: (i,j) component of the Coriolis production
+    cvara_r(1,1) = cvara_var(1,iel)
+    cvara_r(2,2) = cvara_var(2,iel)
+    cvara_r(3,3) = cvara_var(3,iel)
+    cvara_r(1,2) = cvara_var(4,iel)
+    cvara_r(2,3) = cvara_var(5,iel)
+    cvara_r(1,3) = cvara_var(6,iel)
+    cvara_r(2,1) = cvara_var(4,iel)
+    cvara_r(3,2) = cvara_var(5,iel)
+    cvara_r(3,1) = cvara_var(6,iel)
+    ! Compute Gij: (i,j) component of the Coriolis production
     do isou = 1, 6
       if (isou.eq.1) then
         ii = 1

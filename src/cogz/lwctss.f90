@@ -123,7 +123,7 @@ double precision, allocatable, dimension(:) :: w10, w11
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: visct
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: cvara_scal
 double precision, dimension(:), pointer :: cvara_yfm, cvara_fm
 type(pmapper_double_r1), dimension(:), pointer :: cpro_fmel, cpro_fmal
@@ -154,9 +154,7 @@ if (itytur.eq.2.or.iturb.eq.50) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 elseif (itytur.eq.3) then
-  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+  call field_get_val_prev_v(ivarfl(irij), cvara_rij)
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 elseif (iturb.eq.60) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
@@ -277,9 +275,9 @@ if (ivar.eq.isca(icoyfp)) then
   elseif (itytur.eq.3) then
 
     do iel = 1, ncel
-      w10(iel) = ( cvara_r11(iel)                          &
-                  +cvara_r22(iel)                          &
-                  +cvara_r33(iel) ) / 2.d0
+      w10(iel) = ( cvara_rij(1,iel)                          &
+                  +cvara_rij(2,iel)                          &
+                  +cvara_rij(3,iel) ) / 2.d0
       w11(iel) = cvara_ep(iel)
     enddo
 

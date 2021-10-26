@@ -61,7 +61,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet, ncel
+integer          ncel
 
 ! Local variables
 

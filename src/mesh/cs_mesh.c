@@ -2044,7 +2044,7 @@ void CS_PROCF(syntis, SYNTIS)
  cs_real_t  var[]
 )
 {
-  cs_mesh_sync_var_sym_tens(var);
+  cs_mesh_sync_var_sym_tens((cs_real_6_t *)var);
 }
 
 /*=============================================================================

@@ -359,12 +359,7 @@ if (isto2t.gt.0) then
     call add_source_term_prev_field(ivarfl(ik))
     call add_source_term_prev_field(ivarfl(iep))
   else if (itytur.eq.3) then
-    call add_source_term_prev_field(ivarfl(ir11))
-    call add_source_term_prev_field(ivarfl(ir22))
-    call add_source_term_prev_field(ivarfl(ir33))
-    call add_source_term_prev_field(ivarfl(ir12))
-    call add_source_term_prev_field(ivarfl(ir13))
-    call add_source_term_prev_field(ivarfl(ir23))
+    call add_source_term_prev_field(ivarfl(irij))
     call add_source_term_prev_field(ivarfl(iep))
     if (iturb.eq.32) then
       call add_source_term_prev_field(ivarfl(ial))

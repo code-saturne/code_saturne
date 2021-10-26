@@ -79,54 +79,6 @@ cs_halo_perio_sync_var_vect(const cs_halo_t  *halo,
                             int               incvar);
 
 /*----------------------------------------------------------------------------
- * Synchronize values for a real vector between periodic cells.
- *
- * parameters:
- *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
- *   var_x     <-> component of the vector to update
- *   var_y     <-> component of the vector to update
- *   var_z     <-> component of the vector to update
- *----------------------------------------------------------------------------*/
-
-void
-cs_halo_perio_sync_var_vect_ni(const cs_halo_t     *halo,
-                               cs_halo_type_t       sync_mode,
-                               cs_real_t            var_x[],
-                               cs_real_t            var_y[],
-                               cs_real_t            var_z[]);
-
-/*----------------------------------------------------------------------------
- * Synchronize values for a real tensor between periodic cells.
- *
- * parameters:
- *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
- *   var11     <-> component of the tensor to update
- *   var12     <-> component of the tensor to update
- *   var13     <-> component of the tensor to update
- *   var21     <-> component of the tensor to update
- *   var22     <-> component of the tensor to update
- *   var23     <-> component of the tensor to update
- *   var31     <-> component of the tensor to update
- *   var32     <-> component of the tensor to update
- *   var33     <-> component of the tensor to update
- *----------------------------------------------------------------------------*/
-
-void
-cs_halo_perio_sync_var_tens_ni(const cs_halo_t *halo,
-                               cs_halo_type_t   sync_mode,
-                               cs_real_t        var11[],
-                               cs_real_t        var12[],
-                               cs_real_t        var13[],
-                               cs_real_t        var21[],
-                               cs_real_t        var22[],
-                               cs_real_t        var23[],
-                               cs_real_t        var31[],
-                               cs_real_t        var32[],
-                               cs_real_t        var33[]);
-
-/*----------------------------------------------------------------------------
  * Synchronize values for a real tensor (interleaved) between periodic cells.
  *
  * parameters:

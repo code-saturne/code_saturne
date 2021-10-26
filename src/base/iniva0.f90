@@ -78,7 +78,7 @@ integer          nscal
 integer          iis   , iscal
 integer          iel   , ifac
 integer          iclip , ii    , jj    , idim, f_dim
-integer          ifcvsl
+integer          ifcvsl, isou
 integer          iflid, nfld, ifmaip, bfmaip, iflmas, iflmab
 integer          kscmin
 integer          f_type, idftnp
@@ -99,8 +99,6 @@ double precision, dimension(:), pointer :: cpro_diff_lim
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_al
 double precision, dimension(:), pointer :: cvar_phi, cvar_fb, cvar_omg, cvar_nusa
-double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_prtot
 double precision, dimension(:), pointer :: cpro_viscls, cproa_viscls, cvar_tempk
@@ -391,18 +389,17 @@ if(itytur.eq.2 .or. itytur.eq.5) then
     enddo
   endif
 
-elseif(itytur.eq.3) then
+elseif (itytur.eq.3) then
 
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
-  if (irijco.eq.1) then
-    call field_get_val_v(ivarfl(irij), cvar_rij)
+  call field_get_val_v(ivarfl(irij), cvar_rij)
 
-    if (uref.ge.0.d0) then
+  if (uref.ge.0.d0) then
 
-      trii   = (0.02d0*uref)**2
+     trii   = (0.02d0*uref)**2
 
-      do iel = 1, ncelet
+     do iel = 1, ncelet
         cvar_rij(1,iel) = trii
         cvar_rij(2,iel) = trii
         cvar_rij(3,iel) = trii
@@ -412,63 +409,25 @@ elseif(itytur.eq.3) then
         xxk = 0.5d0*(cvar_rij(1,iel)+                             &
              cvar_rij(2,iel)+cvar_rij(3,iel))
         cvar_ep(iel) = xxk**1.5d0*cmu/almax
-      enddo
-      iclip = 1
-      call clprij2(ncel)
+     enddo
+     iclip = 1
+     if (irijco.eq.1) then
+        call clprij2(ncel)
+     else
+        call clprij(ncel, iclip)
+     end if
 
-    else
-
-      do iel = 1, ncelet
-        cvar_rij(1,iel) = -grand
-        cvar_rij(2,iel) = -grand
-        cvar_rij(3,iel) = -grand
-        cvar_rij(4,iel) = -grand
-        cvar_rij(5,iel) = -grand
-        cvar_rij(6,iel) = -grand
-        cvar_ep(iel)  = -grand
-      enddo
-
-    endif
   else
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
 
-    if (uref.ge.0.d0) then
-
-      trii   = (0.02d0*uref)**2
-
-      do iel = 1, ncelet
-        cvar_r11(iel) = trii
-        cvar_r22(iel) = trii
-        cvar_r33(iel) = trii
-        cvar_r12(iel) = 0.d0
-        cvar_r13(iel) = 0.d0
-        cvar_r23(iel) = 0.d0
-        xxk = 0.5d0*(cvar_r11(iel)+                             &
-             cvar_r22(iel)+cvar_r33(iel))
-        cvar_ep(iel) = xxk**1.5d0*cmu/almax
-      enddo
-      iclip = 1
-      call clprij(ncel, iclip)
-
-    else
-
-      do iel = 1, ncelet
-        cvar_r11(iel) = -grand
-        cvar_r22(iel) = -grand
-        cvar_r33(iel) = -grand
-        cvar_r12(iel) = -grand
-        cvar_r13(iel) = -grand
-        cvar_r23(iel) = -grand
-        cvar_ep(iel)  = -grand
-      enddo
-    endif
+    do iel = 1, ncelet
+       do isou =1,6
+         cvar_rij(isou,iel) = -grand
+       end do
+      cvar_ep(iel)  = -grand
+    enddo
   endif
-  if(iturb.eq.32)then
+
+  if (iturb.eq.32)then
     call field_get_val_s(ivarfl(ial), cvar_al)
     do iel = 1, ncelet
       cvar_al(iel) = 1.d0

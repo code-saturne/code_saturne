@@ -973,13 +973,6 @@ typedef struct {
   /* Omega from k-omega SST model*/
   cs_field_t *cvar_omg;
 
-  /* Reynolds stress component Rxx */
-  cs_field_t *cvar_r11;
-  /* Reynolds stress component Ryy */
-  cs_field_t *cvar_r22;
-  /* Reynolds stress component Rzz */
-  cs_field_t *cvar_r33;
-
   /* Reynolds Stress Tensor */
   cs_field_t *cvar_rij;
 

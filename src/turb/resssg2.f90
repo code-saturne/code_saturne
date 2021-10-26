@@ -133,7 +133,6 @@ integer          st_prv_id
 integer          iprev , inc, iccocg, ll
 integer          icvflb
 integer          ivoid(1)
-integer          dimrij
 integer          t2v(3,3)
 integer          iv2t(6), jv2t(6)
 integer          f_id
@@ -187,11 +186,9 @@ double precision, dimension(:,:), pointer:: c_st_prv, lagr_st_rij
 double precision, dimension(:,:), pointer :: cpro_buoyancy
 
 type(var_cal_opt) :: vcopt
-type(var_cal_opt), target   :: vcopt_loc
-type(var_cal_opt), pointer  :: p_k_value
-type(c_ptr)                 :: c_k_value
-
-character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
 
 !===============================================================================
 
@@ -247,8 +244,6 @@ if (iturb.ne.31) call field_get_val_s(ivarfl(ial), cvar_al)
 
 call field_get_val_v(ivarfl(ivar), cvar_var)
 call field_get_val_prev_v(ivarfl(ivar), cvara_var)
-call field_get_dim(ivarfl(ivar),dimrij)! dimension of Rij
-!dimrij = 6 if irijco = 1
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -302,7 +297,7 @@ endif
 ! If we extrapolate the source terms
 if (st_prv_id.ge.0) then
   do iel = 1, ncel
-    do isou = 1, dimrij
+    do isou = 1, 6
       ! Save for exchange
       tuexpr = c_st_prv(isou,iel)
       ! For continuation and the next time step
@@ -310,7 +305,7 @@ if (st_prv_id.ge.0) then
       ! Second member of the previous time step
       ! We suppose -rovsdt > 0: we implicite
       !    the user source term (the rest)
-      do jsou = 1, dimrij
+      do jsou = 1, 6
         smbr(isou,iel) = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel)  - thets*tuexpr
         ! Diagonal
         rovsdt(jsou,isou,iel) = - thetv*rovsdt(jsou,isou,iel)
@@ -319,9 +314,9 @@ if (st_prv_id.ge.0) then
   enddo
 else
   do iel = 1, ncel
-    do isou = 1, dimrij
-      do jsou = 1, dimrij
-        smbr(isou,iel)   = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel) + smbr(isou,iel)
+    do isou = 1, 6
+      do jsou = 1, 6
+        smbr(isou,iel) = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel) + smbr(isou,iel)
       enddo
       rovsdt(isou,isou,iel) = max(-rovsdt(isou,isou,iel), 0.d0)
     enddo
@@ -336,7 +331,7 @@ endif
 if (iilagr.eq.2 .and. ltsdyn.eq.1) then
   call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
   do iel = 1,ncel
-    do isou = 1, dimrij
+    do isou = 1, 6
       smbr(isou, iel) = smbr(isou, iel) + lagr_st_rij(isou,iel)
       rovsdt(isou,isou,iel) = rovsdt(isou,isou, iel) + max(-tslagi(iel),zero)
     enddo
@@ -383,7 +378,7 @@ endif
 ! ---> Added in the matrix diagonal
 
 do iel=1,ncel
-  do isou = 1, dimrij
+  do isou = 1, 6
     rovsdt(isou,isou,iel) = rovsdt(isou, isou,iel)                            &
               + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
   enddo
@@ -489,7 +484,7 @@ do iel = 1, ncel
   xprod(3,2) = xprod(2,3)
 
   trprod = d1s2 * (xprod(1,1) + xprod(2,2) + xprod(3,3) )
-  trrij  = d1s2 * (cvara_var(1 ,iel) + cvara_var(2 ,iel) + cvara_var(3 ,iel))
+  trrij  = d1s2 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
   !-----> aII = aijaij
   aii    = 0.d0
   aklskl = 0.d0
@@ -497,12 +492,12 @@ do iel = 1, ncel
   aikrjk = 0.d0
   aikakj = 0.d0
   ! aij
-  xaniso(1,1) = cvara_var(1 ,iel)/trrij - d2s3
-  xaniso(2,2) = cvara_var(2 ,iel)/trrij - d2s3
-  xaniso(3,3) = cvara_var(3 ,iel)/trrij - d2s3
-  xaniso(1,2) = cvara_var(4 ,iel)/trrij
-  xaniso(1,3) = cvara_var(6 ,iel)/trrij
-  xaniso(2,3) = cvara_var(5 ,iel)/trrij
+  xaniso(1,1) = cvara_var(1,iel)/trrij - d2s3
+  xaniso(2,2) = cvara_var(2,iel)/trrij - d2s3
+  xaniso(3,3) = cvara_var(3,iel)/trrij - d2s3
+  xaniso(1,2) = cvara_var(4,iel)/trrij
+  xaniso(1,3) = cvara_var(6,iel)/trrij
+  xaniso(2,3) = cvara_var(5,iel)/trrij
   xaniso(2,1) = xaniso(1,2)
   xaniso(3,1) = xaniso(1,3)
   xaniso(3,2) = xaniso(2,3)
@@ -555,7 +550,7 @@ do iel = 1, ncel
 
   ! Inversing the matrix
   call symmetric_matrix_inverse(matrn, oo_matrn)
-  do isou = 1, dimrij
+  do isou = 1, 6
     oo_matrn(isou) = oo_matrn(isou)/trrij
   end do
 
@@ -654,7 +649,7 @@ do iel = 1, ncel
   endif
 
 
-  do isou = 1, dimrij
+  do isou = 1, 6
     if (isou.eq.1)then
       iii = 1
       jjj = 1
@@ -679,17 +674,17 @@ do iel = 1, ncel
     aikakj = 0
     do kk = 1,3
       ! aiksjk = aik.Sjk+ajk.Sik
-      aiksjk = aiksjk + xaniso(iii,kk)*xstrai(jjj,kk)              &
-                +xaniso(jjj,kk)*xstrai(iii,kk)
+      aiksjk =   aiksjk + xaniso(iii,kk)*xstrai(jjj,kk)              &
+               + xaniso(jjj,kk)*xstrai(iii,kk)
       ! aikrjk = aik.Omega_jk + ajk.omega_ik
-      aikrjk = aikrjk + xaniso(iii,kk)*xrotac(jjj,kk)              &
-                +xaniso(jjj,kk)*xrotac(iii,kk)
+      aikrjk =   aikrjk + xaniso(iii,kk)*xrotac(jjj,kk)              &
+               + xaniso(jjj,kk)*xrotac(iii,kk)
       ! aikakj = aik*akj
       aikakj = aikakj + xaniso(iii,kk)*xaniso(kk,jjj)
     enddo
 
     ! If we extrapolate the source terms (rarely),
-    ! we put all in the previous ST..
+    ! we put all in the previous ST.
     ! We do not implicit the term with Cs1*aij neither the term with Cr1*P*aij.
     ! Otherwise, we put all in smbr and we can implicit Cs1*aij
     ! and Cr1*P*aij. Here we store the second member and the implicit term
@@ -717,9 +712,8 @@ do iel = 1, ncel
       w1(iel) = cromo(iel)*cell_f_vol(iel)*(pij+phiij1+phiij2+epsij)
 
       ! Implicit terms
-      w2(iel) = cell_f_vol(iel)/trrij*crom(iel)*(                              &
-             cssgs1*cvara_ep(iel) + cssgr1*max(trprod,0.d0) )
-
+      w2(iel) =   cell_f_vol(iel)/trrij*crom(iel)                          &
+                * (cssgs1*cvara_ep(iel) + cssgr1*max(trprod,0.d0))
 
     ! EBRSM
     else
@@ -756,9 +750,9 @@ do iel = 1, ncel
 
       ! Calculation of the almost homogeneous term \f$ \phi_{ij}^h \f$ --> W4
       phiij1 = -cvara_ep(iel)*cebms1*xaniso(iii,jjj)
-      phiij2 = -cebmr1*trprod*xaniso(iii,jjj)                       &
-                 +trrij*xstrai(iii,jjj)*(cebmr2-cebmr3*sqrt(aii))   &
-                 +cebmr4*trrij   *(aiksjk-d2s3*deltij(isou)*aklskl)       &
+      phiij2 = -cebmr1*trprod*xaniso(iii,jjj)                        &
+                 +trrij*xstrai(iii,jjj)*(cebmr2-cebmr3*sqrt(aii))    &
+                 +cebmr4*trrij   *(aiksjk-d2s3*deltij(isou)*aklskl)  &
                  +cebmr5*trrij   * aikrjk
 
       ! Calculation of \f $\e_{ij}^w \f$ --> W5 (Rotta model)
@@ -778,7 +772,7 @@ do iel = 1, ncel
               + (1.d0-alpha3)*phiijw + alpha3*(phiij1+phiij2)       &
               - (1.d0-alpha3)*epsijw - alpha3*epsij)
 
-      !  Implicite term
+      !  Implicit term
 
       ! The term below corresponds to the implicit part of SSG
       ! in the context of elliptical weighting, it is multiplied by
@@ -834,7 +828,7 @@ if (igrari.eq.1) then
 
   call rijthe2(nscal, gradro, cpro_buoyancy)
 
-  do isou = 1, dimrij
+  do isou = 1, 6
     ! If we extrapolate the source terms: previous ST
     if (st_prv_id.ge.0) then
       do iel = 1, ncel
@@ -933,9 +927,9 @@ if (igrari.eq.1) then
     ! A . R = M . R + R . M^t
     call reduce_symprod33_to_66(implmat2add, impl_drsm)
 
-    do isou = 1, dimrij
-      do jsou = 1, dimrij
-        ! Carefull ! Inversion of the order of the coefficients since
+    do isou = 1, 6
+      do jsou = 1, 6
+        ! Careful ! Inversion of the order of the coefficients since
         ! rovsdt matrix is then used by a c function for the linear solving
         rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) + cell_f_vol(iel) &
                                 * impl_drsm(isou,jsou)
@@ -981,10 +975,7 @@ else
 
   imvisp = vcopt%imvisf
 
-  call viscfa                    &
-  ( imvisp ,                     &
-   w1     ,                      &
-   viscf  , viscb  )
+  call viscfa(imvisp, w1, viscf, viscb)
 
 endif
 
@@ -995,7 +986,7 @@ endif
 if (st_prv_id.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    do isou = 1, dimrij
+    do isou = 1, 6
       smbr(isou,iel) = smbr(isou,iel) + thetp1*c_st_prv(isou,iel)
     enddo
   enddo
@@ -1009,8 +1000,6 @@ call field_get_coefb_v(ivarfl(ivar), coefbp)
 call field_get_coefaf_v(ivarfl(ivar), cofafp)
 call field_get_coefbf_v(ivarfl(ivar), cofbfp)
 
-c_name = trim(nomva0)//c_null_char
-
 vcopt_loc = vcopt
 
 vcopt_loc%istat  = -1
@@ -1023,14 +1012,12 @@ vcopt_loc%extrag = 0
 p_k_value => vcopt_loc
 c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
-call cs_equation_iterative_solve_tensor           &
- ( idtvar , ivarfl(ivar)    , c_name ,            &
-   c_k_value,                                     &
-   cvara_var       , cvara_var       ,            &
-   coefap , coefbp , cofafp , cofbfp ,            &
-   imasfl , bmasfl , viscf  ,                     &
-   viscb  , viscf  , viscb  , viscce ,            &
-   weighf , weighb , icvflb , ivoid  ,            &
+call cs_equation_iterative_solve_tensor(idtvar, ivarfl(ivar), c_null_char,     &
+                                        c_k_value, cvara_var, cvara_var,       &
+                                        coefap, coefbp, cofafp, cofbfp,        &
+                                        imasfl, bmasfl, viscf,                 &
+                                        viscb, viscf, viscb, viscce,           &
+                                        weighf, weighb, icvflb, ivoid,         &
    rovsdt , smbr   , cvar_var        )
 
 ! Free memory

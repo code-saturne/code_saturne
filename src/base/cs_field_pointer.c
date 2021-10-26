@@ -289,12 +289,6 @@ cs_field_pointer_map_base(void)
   cs_field_pointer_map(CS_ENUMF_(eps),
                        cs_field_by_name_try("epsilon"));
 
-  cs_field_pointer_map(CS_ENUMF_(r11), cs_field_by_name_try("r11"));
-  cs_field_pointer_map(CS_ENUMF_(r22), cs_field_by_name_try("r22"));
-  cs_field_pointer_map(CS_ENUMF_(r33), cs_field_by_name_try("r33"));
-  cs_field_pointer_map(CS_ENUMF_(r12), cs_field_by_name_try("r12"));
-  cs_field_pointer_map(CS_ENUMF_(r23), cs_field_by_name_try("r23"));
-  cs_field_pointer_map(CS_ENUMF_(r13), cs_field_by_name_try("r13"));
   cs_field_pointer_map(CS_ENUMF_(rij), cs_field_by_name_try("rij"));
 
   cs_field_pointer_map(CS_ENUMF_(phi), cs_field_by_name_try("phi"));

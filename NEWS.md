@@ -37,6 +37,16 @@ Physical modeling:
 
 Numerics:
 
+- Major change to the uncoupled RSM solver (`irijco = 0`):
+  * The Rij components are handled as a single tensor, similarly to
+    the coupled mode.
+  * Extra-diagonal terms in local Rij component coupling matrices
+    (such as boundary condition components) are set to zero
+    in this uncoupled mode.
+  * The numerical behavior should be basically unchanged, but switching
+    from the coupled to the uncoupled solver does not require specific
+    tests in user code any more.
+
 - Add support for HYPRE solvers.
   * Most general purpose solvers and preconditioners supported by HYPRE
     for the IJ interface are supported. See

@@ -546,7 +546,7 @@ call field_get_key_id("variable_id", keyvar)
 
 ! allocate temporary arrays
 allocate(velipb(nfabor,3))
-if (irij.ge.1 .and. irijco.eq.1) then
+if (irij.ge.1) then
   call field_get_dim(ivarfl(irij), dimrij) ! dimension of Rij
   allocate(pimpts(dimrij))
   allocate(hextts(dimrij))
@@ -557,7 +557,7 @@ if (irij.ge.1 .and. irijco.eq.1) then
     hextts(isou) = 0
     qimpts(isou) = 0
     cflts(isou) = 0
-  enddo
+ enddo
 endif
 ! coefa and coefb are required to compute the cell gradients for the wall
 !  turbulent boundary conditions.
@@ -935,94 +935,42 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
   ! allocate a work array to store rij values at boundary faces
   allocate(rijipb(nfabor,6))
 
-  if (irijco.eq.1) then
-    if (ntcabs.gt.1.and.irijrb.eq.1) then
+  if (ntcabs.gt.1.and.irijrb.eq.1) then
 
-      call field_get_val_v(ivarfl(irij), cvar_ts)
+    call field_get_val_v(ivarfl(irij), cvar_ts)
 
-      inc = 1
-      iprev = 1
+    inc = 1
+    iprev = 1
 
-      call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
 
-      ! allocate a temporary array
-      allocate(gradts(6,3,ncelet))
+    ! allocate a temporary array
+    allocate(gradts(6,3,ncelet))
 
-      call field_gradient_tensor(ivarfl(irij), iprev, 0, inc, gradts)
+    call field_gradient_tensor(ivarfl(irij), iprev, 0, inc, gradts)
 
-      do ifac = 1 , nfabor
-        iel = ifabor(ifac)
-        do isou = 1, 6
-          rijipb(ifac,isou) = cvar_ts(isou,iel)                  &
-                            + vcopt%ircflu                       &
-                            * (                                  &
-                              + gradts(isou,1,iel)*diipb(1,ifac) &
-                              + gradts(isou,2,iel)*diipb(2,ifac) &
-                              + gradts(isou,3,iel)*diipb(3,ifac) &
-                              )
-        enddo
+    do ifac = 1 , nfabor
+      iel = ifabor(ifac)
+      do isou = 1, 6
+        rijipb(ifac,isou) =   cvar_ts(isou,iel)                     &
+                            + vcopt%ircflu                          &
+                            * (  gradts(isou,1,iel)*diipb(1,ifac)   &
+                               + gradts(isou,2,iel)*diipb(2,ifac)   &
+                               + gradts(isou,3,iel)*diipb(3,ifac))
       enddo
+    enddo
 
     ! nb: at the first time step, coefa and coefb are unknown, so the walue
     !     in i is stored instead of the value in i'
-    else
-
-      call field_get_val_prev_v(ivarfl(irij), cvara_ts)
-
-      do ifac = 1 , nfabor
-        iel = ifabor(ifac)
-        do isou = 1, 6
-          rijipb(ifac,isou) = cvara_ts(isou, iel)
-        enddo
-      enddo
-    endif
-
   else
-    do isou = 1 , 6
 
-      if (isou.eq.1) ivar = ir11
-      if (isou.eq.2) ivar = ir22
-      if (isou.eq.3) ivar = ir33
-      if (isou.eq.4) ivar = ir12
-      if (isou.eq.5) ivar = ir23
-      if (isou.eq.6) ivar = ir13
+    call field_get_val_prev_v(ivarfl(irij), cvara_ts)
 
-      call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-
-      if (ntcabs.gt.1.and.irijrb.eq.1) then
-
-        call field_get_val_s(ivarfl(ivar), cvar_s)
-
-        inc = 1
-        iprev = 1
-        iccocg = 1
-
-        call field_gradient_scalar(ivarfl(ivar), iprev, 0, inc, iccocg, grad)
-
-        do ifac = 1 , nfabor
-          iel = ifabor(ifac)
-          rijipb(ifac,isou) = cvar_s(iel)                 &
-                            + vcopt%ircflu                &
-                            * (                           &
-                              + grad(1,iel)*diipb(1,ifac) &
-                              + grad(2,iel)*diipb(2,ifac) &
-                              + grad(3,iel)*diipb(3,ifac) &
-                              )
-        enddo
-
-      ! nb: at the first time step, coefa and coefb are unknown, so the value
-      !     in i is stored instead of the value in i'
-      else
-
-        call field_get_val_prev_s(ivarfl(ivar), cvara_s)
-
-        do ifac = 1 , nfabor
-          iel = ifabor(ifac)
-          rijipb(ifac,isou) = cvara_s(iel)
-        enddo
-
-      endif
-
+    do ifac = 1 , nfabor
+      iel = ifabor(ifac)
+      do isou = 1, 6
+        rijipb(ifac,isou) = cvara_ts(isou, iel)
+      enddo
     enddo
   endif
 
@@ -1690,324 +1638,159 @@ if (itytur.eq.2.or.iturb.eq.60) then
 elseif (itytur.eq.3) then
 
   ! --> rij
-  if (irijco.eq.1) then
-    ivar = irij
-    call field_get_coefa_v(ivarfl(irij), coefats)
-    call field_get_coefb_v(ivarfl(irij), coefbts)
-    call field_get_coefaf_v(ivarfl(irij), cofafts)
-    call field_get_coefbf_v(ivarfl(irij), cofbfts)
-    call field_get_coefad_v(ivarfl(irij), cofadts)
-    call field_get_coefbd_v(ivarfl(irij), cofbdts)
+  ivar = irij
+  call field_get_coefa_v(ivarfl(irij), coefats)
+  call field_get_coefb_v(ivarfl(irij), coefbts)
+  call field_get_coefaf_v(ivarfl(irij), cofafts)
+  call field_get_coefbf_v(ivarfl(irij), cofbfts)
+  call field_get_coefad_v(ivarfl(irij), cofadts)
+  call field_get_coefbd_v(ivarfl(irij), cofbdts)
 
-    call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
+  call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
 
-    if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-      call field_get_val_v(ivsten, visten)
+  if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+    call field_get_val_v(ivsten, visten)
+  endif
+
+  do ifac = 1, nfabor
+
+    iel = ifabor(ifac)
+
+    ! --- physical propreties
+    visclc = viscl(iel)
+
+    ! --- geometrical quantities
+    distbf = distb(ifac)
+
+    ! symmetric tensor diffusivity (daly harlow - ggdh) TODO
+    if (iand(vcopt%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
+
+      visci(1,1) = visclc + visten(1,iel)
+      visci(2,2) = visclc + visten(2,iel)
+      visci(3,3) = visclc + visten(3,iel)
+      visci(1,2) =          visten(4,iel)
+      visci(2,1) =          visten(4,iel)
+      visci(2,3) =          visten(5,iel)
+      visci(3,2) =          visten(5,iel)
+      visci(1,3) =          visten(6,iel)
+      visci(3,1) =          visten(6,iel)
+
+      ! ||ki.s||^2
+      viscis =   (  visci(1,1)*surfbo(1,ifac)       &
+                  + visci(1,2)*surfbo(2,ifac)       &
+                  + visci(1,3)*surfbo(3,ifac))**2   &
+               + (  visci(2,1)*surfbo(1,ifac)       &
+                  + visci(2,2)*surfbo(2,ifac)       &
+                  + visci(2,3)*surfbo(3,ifac))**2   &
+               + (  visci(3,1)*surfbo(1,ifac)       &
+                  + visci(3,2)*surfbo(2,ifac)       &
+                  + visci(3,3)*surfbo(3,ifac))**2
+
+      ! if.ki.s
+      fikis = (  (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
+               + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
+               + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
+               )*surfbo(1,ifac)                              &
+            + (  (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
+               + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
+               + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
+               )*surfbo(2,ifac)                              &
+            + (  (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
+               + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
+               + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
+              )*surfbo(3,ifac)
+
+      distfi = distb(ifac)
+
+      ! take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
+      ! nb: eps =1.d-1 must be consistent with vitens.f90
+      fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
+
+      hint = viscis/surfbn(ifac)/fikis
+
+    ! scalar diffusivity
+    else
+      visctc = visct(iel)
+      hint = (visclc+visctc*csrij/cmu)/distbf
     endif
 
-    do ifac = 1, nfabor
+    do isou = 1, dimrij
+      ivar = irij + isou - 1
 
-      iel = ifabor(ifac)
+      ! allocate(pimpts(dimrij))
+      ! allocate(hextts(dimrij))
+      ! allocate(qimpts(dimrij))
+      ! allocate(cflts(dimrij))
+      ! Dirichlet Boundary Condition
+      !-----------------------------
 
-      ! --- physical propreties
-      visclc = viscl(iel)
+      if (icodcl(ifac,ivar).eq.1) then
+        pimpts(isou) = rcodcl(ifac,ivar,1)
+        hextts(isou) = rcodcl(ifac,ivar,2)
 
-      ! --- geometrical quantities
-      distbf = distb(ifac)
-
-      ! symmetric tensor diffusivity (daly harlow - ggdh) TODO
-      if (iand(vcopt%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
-
-        visci(1,1) = visclc + visten(1,iel)
-        visci(2,2) = visclc + visten(2,iel)
-        visci(3,3) = visclc + visten(3,iel)
-        visci(1,2) =          visten(4,iel)
-        visci(2,1) =          visten(4,iel)
-        visci(2,3) =          visten(5,iel)
-        visci(3,2) =          visten(5,iel)
-        visci(1,3) =          visten(6,iel)
-        visci(3,1) =          visten(6,iel)
-
-        ! ||ki.s||^2
-        viscis = ( visci(1,1)*surfbo(1,ifac)       &
-                 + visci(1,2)*surfbo(2,ifac)       &
-                 + visci(1,3)*surfbo(3,ifac))**2   &
-               + ( visci(2,1)*surfbo(1,ifac)       &
-                 + visci(2,2)*surfbo(2,ifac)       &
-                 + visci(2,3)*surfbo(3,ifac))**2   &
-               + ( visci(3,1)*surfbo(1,ifac)       &
-                 + visci(3,2)*surfbo(2,ifac)       &
-                 + visci(3,3)*surfbo(3,ifac))**2
-
-        ! if.ki.s
-        fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
-                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
-                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
-                )*surfbo(1,ifac)                              &
-              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
-                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
-                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
-                )*surfbo(2,ifac)                              &
-              + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
-                + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
-                + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
-                )*surfbo(3,ifac)
-
-        distfi = distb(ifac)
-
-        ! take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
-        ! nb: eps =1.d-1 must be consistent with vitens.f90
-        fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
-
-        hint = viscis/surfbn(ifac)/fikis
-
-      ! scalar diffusivity
-      else
-        visctc = visct(iel)
-        hint = (visclc+visctc*csrij/cmu)/distbf
-      endif
-
-      !dimrij = 6 if irijco = 1 TODO : Rij coupled with eps
-
-      do isou = 1, dimrij
-        ivar = irij + isou - 1
-
-       ! allocate(pimpts(dimrij))
-       ! allocate(hextts(dimrij))
-       ! allocate(qimpts(dimrij))
-       ! allocate(cflts(dimrij))
-        ! Dirichlet Boundary Condition
-        !-----------------------------
-
-        if (icodcl(ifac,ivar).eq.1) then
-          pimpts(isou) = rcodcl(ifac,ivar,1)
-          hextts(isou) = rcodcl(ifac,ivar,2)
-
-          call set_dirichlet_tensor &
+        call set_dirichlet_tensor &
              ( coefats(:, ifac), cofafts(:,ifac),                        &
                coefbts(:,:,ifac), cofbfts(:,:,ifac),                     &
                pimpts            , hint              , hextts )
 
-          ! Boundary conditions for the momentum equation
-          cofadts(isou, ifac)       = coefats(isou, ifac)
-          cofbdts(isou, isou, ifac) = coefbts(isou, isou, ifac)
-        endif
+        ! Boundary conditions for the momentum equation
+        cofadts(isou, ifac)       = coefats(isou, ifac)
+        cofbdts(isou, isou, ifac) = coefbts(isou, isou, ifac)
+      endif
 
-        ! Neumann Boundary Conditions
-        !----------------------------
+      ! Neumann Boundary Conditions
+      !----------------------------
 
-        if (icodcl(ifac,ivar).eq.3) then
-          qimpts(isou) = rcodcl(ifac,ivar,3)
+      if (icodcl(ifac,ivar).eq.3) then
+        qimpts(isou) = rcodcl(ifac,ivar,3)
 
-          call set_neumann_tensor &
+        call set_neumann_tensor &
              ( coefats(:,ifac), cofafts(:,ifac),                         &
                coefbts(:,:,ifac), cofbfts(:,:,ifac),                     &
                qimpts              , hint )
 
-          ! Boundary conditions for the momentum equation
-          cofadts(isou, ifac)       = coefats(isou, ifac)
-          cofbdts(isou, isou, ifac) = coefbts(isou ,isou ,ifac)
+        ! Boundary conditions for the momentum equation
+        cofadts(isou, ifac)       = coefats(isou, ifac)
+        cofbdts(isou, isou, ifac) = coefbts(isou ,isou ,ifac)
 
-        ! Convective Boundary Conditions
-        !-------------------------------
+      ! Convective Boundary Conditions
+      !-------------------------------
 
-        elseif (icodcl(ifac,ivar).eq.2) then
-          pimpts(isou) = rcodcl(ifac,ivar,1)
-          cflts(isou)  = rcodcl(ifac,ivar,2)
+      elseif (icodcl(ifac,ivar).eq.2) then
+        pimpts(isou) = rcodcl(ifac,ivar,1)
+        cflts(isou)  = rcodcl(ifac,ivar,2)
 
-          call set_convective_outlet_tensor &
+        call set_convective_outlet_tensor &
              ( coefats(:, ifac), cofafts(:, ifac),                        &
-               coefbts(:,:, ifac), cofbfts(:,:, ifac),                        &
+               coefbts(:,:, ifac), cofbfts(:,:, ifac),                    &
                pimpts              , cflts               , hint )
-          ! Boundary conditions for the momentum equation
-          cofadts(isou, ifac)       = coefats(isou, ifac)
-          cofbdts(isou, isou, ifac) = coefbts(isou, isou, ifac)
+        ! Boundary conditions for the momentum equation
+        cofadts(isou, ifac)       = coefats(isou, ifac)
+        cofbdts(isou, isou, ifac) = coefbts(isou, isou, ifac)
 
-        ! Imposed value for the convection operator, imposed flux for diffusion
-        !----------------------------------------------------------------------
+      ! Imposed value for the convection operator, imposed flux for diffusion
+      !----------------------------------------------------------------------
 
-        elseif (icodcl(ifac,ivar).eq.13) then
+      elseif (icodcl(ifac,ivar).eq.13) then
 
-          pimpts(isou) = rcodcl(ifac,ivar,1)
-          qimpts(isou) = rcodcl(ifac,ivar,3)
+        pimpts(isou) = rcodcl(ifac,ivar,1)
+        qimpts(isou) = rcodcl(ifac,ivar,3)
 
-          call set_dirichlet_conv_neumann_diff_tensor &
+        call set_dirichlet_conv_neumann_diff_tensor &
              ( coefats(:, ifac), cofafts(:, ifac),                         &
                coefbts(:,:, ifac), cofbfts(:,:, ifac),                     &
                pimpts              , qimpts )
 
-          ! Boundary conditions for the momentum equation
-          cofadts(isou, ifac)       = coefats(isou, ifac)
-          cofbdts(isou, isou, ifac) = coefbts(isou, isou, ifac)
+        ! Boundary conditions for the momentum equation
+        cofadts(isou, ifac)       = coefats(isou, ifac)
+        cofbdts(isou, isou, ifac) = coefbts(isou, isou, ifac)
 
-        endif
-
-      enddo
-    enddo
-  else
-    do isou = 1, 6
-
-      if(isou.eq.1) then
-        ivar   = ir11
-      elseif(isou.eq.2) then
-        ivar   = ir22
-      elseif(isou.eq.3) then
-        ivar   = ir33
-      elseif(isou.eq.4) then
-        ivar   = ir12
-      elseif(isou.eq.5) then
-        ivar   = ir23
-      elseif(isou.eq.6) then
-        ivar   = ir13
       endif
 
-      call field_get_coefa_s(ivarfl(ivar), coefap)
-      call field_get_coefb_s(ivarfl(ivar), coefbp)
-      call field_get_coefaf_s(ivarfl(ivar), cofafp)
-      call field_get_coefbf_s(ivarfl(ivar), cofbfp)
-      call field_get_coefad_s(ivarfl(ivar), cofadp)
-      call field_get_coefbd_s(ivarfl(ivar), cofbdp)
-
-      call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-
-      if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-        call field_get_val_v(ivsten, visten)
-      endif
-
-      do ifac = 1, nfabor
-
-        iel = ifabor(ifac)
-
-        ! --- Physical Propreties
-        visclc = viscl(iel)
-
-        ! --- Geometrical quantities
-        distbf = distb(ifac)
-
-        ! Symmetric tensor diffusivity (Daly Harlow -- GGDH)
-        if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-
-          visci(1,1) = visclc + visten(1,iel)
-          visci(2,2) = visclc + visten(2,iel)
-          visci(3,3) = visclc + visten(3,iel)
-          visci(1,2) =          visten(4,iel)
-          visci(2,1) =          visten(4,iel)
-          visci(2,3) =          visten(5,iel)
-          visci(3,2) =          visten(5,iel)
-          visci(1,3) =          visten(6,iel)
-          visci(3,1) =          visten(6,iel)
-
-          ! ||Ki.S||^2
-          viscis = ( visci(1,1)*surfbo(1,ifac)       &
-                   + visci(1,2)*surfbo(2,ifac)       &
-                   + visci(1,3)*surfbo(3,ifac))**2   &
-                 + ( visci(2,1)*surfbo(1,ifac)       &
-                   + visci(2,2)*surfbo(2,ifac)       &
-                   + visci(2,3)*surfbo(3,ifac))**2   &
-                 + ( visci(3,1)*surfbo(1,ifac)       &
-                   + visci(3,2)*surfbo(2,ifac)       &
-                   + visci(3,3)*surfbo(3,ifac))**2
-
-          ! IF.Ki.S
-          fikis = ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,1)   &
-                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,1)   &
-                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,1)   &
-                  )*surfbo(1,ifac)                              &
-                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,2)   &
-                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,2)   &
-                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,2)   &
-                  )*surfbo(2,ifac)                              &
-                + ( (cdgfbo(1,ifac)-xyzcen(1,iel))*visci(1,3)   &
-                  + (cdgfbo(2,ifac)-xyzcen(2,iel))*visci(2,3)   &
-                  + (cdgfbo(3,ifac)-xyzcen(3,iel))*visci(3,3)   &
-                  )*surfbo(3,ifac)
-
-          distfi = distb(ifac)
-
-          ! Take I" so that I"F= eps*||FI||*Ki.n when J" is in cell rji
-          ! NB: eps =1.d-1 must be consistent with vitens.f90
-          fikis = max(fikis, 1.d-1*sqrt(viscis)*distfi)
-
-          hint = viscis/surfbn(ifac)/fikis
-
-        ! Scalar diffusivity
-        else
-          visctc = visct(iel)
-          hint = (visclc+visctc*csrij/cmu)/distbf
-        endif
-
-        ! Dirichlet Boundary Condition
-        !-----------------------------
-
-        if (icodcl(ifac,ivar).eq.1) then
-          pimp = rcodcl(ifac,ivar,1)
-          hext = rcodcl(ifac,ivar,2)
-
-          call set_dirichlet_scalar &
-             ( coefap(ifac), cofafp(ifac),                        &
-               coefbp(ifac), cofbfp(ifac),                        &
-               pimp              , hint              , hext )
-
-          ! Boundary conditions for the momentum equation
-          cofadp(ifac) = coefap(ifac)
-          cofbdp(ifac) = coefbp(ifac)
-        endif
-
-        ! Neumann Boundary Conditions
-        !----------------------------
-
-        if (icodcl(ifac,ivar).eq.3) then
-          dimp = rcodcl(ifac,ivar,3)
-
-          call set_neumann_scalar &
-             ( coefap(ifac), cofafp(ifac),                        &
-               coefbp(ifac), cofbfp(ifac),                        &
-               dimp              , hint )
-
-          ! Boundary conditions for the momentum equation
-          cofadp(ifac) = coefap(ifac)
-          cofbdp(ifac) = coefbp(ifac)
-
-        ! Convective Boundary Conditions
-        !-------------------------------
-
-        elseif (icodcl(ifac,ivar).eq.2) then
-          pimp = rcodcl(ifac,ivar,1)
-          cfl = rcodcl(ifac,ivar,2)
-
-          call set_convective_outlet_scalar &
-             ( coefap(ifac), cofafp(ifac),                        &
-               coefbp(ifac), cofbfp(ifac),                        &
-               pimp              , cfl               , hint )
-          ! Boundary conditions for the momentum equation
-          cofadp(ifac) = coefap(ifac)
-          cofbdp(ifac) = coefbp(ifac)
-
-        ! Imposed value for the convection operator, imposed flux for diffusion
-        !----------------------------------------------------------------------
-
-        elseif (icodcl(ifac,ivar).eq.13) then
-
-          pimp = rcodcl(ifac,ivar,1)
-          dimp = rcodcl(ifac,ivar,3)
-
-          call set_dirichlet_conv_neumann_diff_scalar &
-             ( coefap(ifac), cofafp(ifac),                         &
-               coefbp(ifac), cofbfp(ifac),                         &
-               pimp              , dimp )
-
-          ! Boundary conditions for the momentum equation
-          cofadp(ifac) = coefap(ifac)
-          cofbdp(ifac) = coefbp(ifac)
-
-        endif
-
-      enddo
-
     enddo
-  endif
+  enddo
 
-  ! --> epsilon
+   ! --> epsilon
 
   ivar   = iep
 

@@ -120,8 +120,6 @@ double precision, dimension(:,:), pointer :: xuta, cvara_rij
 double precision, dimension(:), pointer :: brom, crom, cpro_beta
 double precision, dimension(:), pointer :: viscl, viscls
 double precision, dimension(:), pointer :: cvara_ep
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
-double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 double precision, dimension(:), pointer :: cvara_tt
 double precision, dimension(:), pointer :: cvar_al
 
@@ -226,17 +224,7 @@ if (turb_flux_model_type.ne.3) then
 
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
-  if (irijco.eq.1) then
-    call field_get_val_prev_v(ivarfl(irij), cvara_rij)
-  else
-    call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-    call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-    call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
-    call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
-    call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
-    call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
-  endif
-
+  call field_get_val_prev_v(ivarfl(irij), cvara_rij)
   allocate(w1(3,ncelet))
 
   do ifac = 1, nfac
@@ -250,29 +238,15 @@ if (turb_flux_model_type.ne.3) then
 
   do iel = 1, ncel
     !Rij
-    ! Coupled version
-    if(irijco.eq.1) then
-      xrij(1,1) = cvara_rij(1,iel)
-      xrij(2,2) = cvara_rij(2,iel)
-      xrij(3,3) = cvara_rij(3,iel)
-      xrij(1,2) = cvara_rij(4,iel)
-      xrij(2,3) = cvara_rij(5,iel)
-      xrij(1,3) = cvara_rij(6,iel)
-      xrij(2,1) = xrij(1,2)
-      xrij(3,1) = xrij(1,3)
-      xrij(3,2) = xrij(2,3)
-    else
-    ! Uncoupled version
-      xrij(1,1) = cvara_r11(iel)
-      xrij(2,2) = cvara_r22(iel)
-      xrij(3,3) = cvara_r33(iel)
-      xrij(1,2) = cvara_r12(iel)
-      xrij(1,3) = cvara_r13(iel)
-      xrij(2,3) = cvara_r23(iel)
-      xrij(2,1) = xrij(1,2)
-      xrij(3,1) = xrij(1,3)
-      xrij(3,2) = xrij(2,3)
-    endif
+    xrij(1,1) = cvara_rij(1,iel)
+    xrij(2,2) = cvara_rij(2,iel)
+    xrij(3,3) = cvara_rij(3,iel)
+    xrij(1,2) = cvara_rij(4,iel)
+    xrij(2,3) = cvara_rij(5,iel)
+    xrij(1,3) = cvara_rij(6,iel)
+    xrij(2,1) = xrij(1,2)
+    xrij(3,1) = xrij(1,3)
+    xrij(3,2) = xrij(2,3)
     ! Epsilon
     xe = cvara_ep(iel)
     ! Kinetic turbulent energy

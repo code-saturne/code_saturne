@@ -268,47 +268,22 @@ enddo
 ! Daly Harlow (GGDH) on Rij and epsilon by default
 if (itytur.eq.3) then
 
-  if (irijco.eq.1) then
-    call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt1)
-    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+  call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt1)
+  call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
 
-    ! Diffusivity model:
-    ! Daly Harlow (GGDH) on Rij and epsilon by default
-    if (idirsm.ne.0) then
-      vcopt1%idften = ANISOTROPIC_RIGHT_DIFFUSION
-      vcopt%idften  = ANISOTROPIC_RIGHT_DIFFUSION
-      ! Scalar diffusivity (Shir model) elswhere (idirsm = 0)
-    else
-      vcopt1%idften = ISOTROPIC_DIFFUSION
-      vcopt%idften  = ISOTROPIC_DIFFUSION
-    endif
-
-    call field_set_key_struct_var_cal_opt(ivarfl(irij), vcopt1)
-    call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+  ! Diffusivity model:
+  ! Daly Harlow (GGDH) on Rij and epsilon by default
+  if (idirsm.ne.0) then
+     vcopt1%idften = ANISOTROPIC_RIGHT_DIFFUSION
+     vcopt%idften  = ANISOTROPIC_RIGHT_DIFFUSION
+     ! Scalar diffusivity (Shir model) elswhere (idirsm = 0)
   else
-    call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt1)
-    call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
-
-    ! Diffusivity model:
-    ! Daly Harlow (GGDH) on Rij and epsilon by default
-    if (idirsm.ne.0) then
-      vcopt1%idften = ANISOTROPIC_RIGHT_DIFFUSION
-      vcopt%idften  = ANISOTROPIC_RIGHT_DIFFUSION
-      ! Scalar diffusivity (Shir model) elswhere (idirsm = 0)
-    else
-      vcopt1%idften = ISOTROPIC_DIFFUSION
-      vcopt%idften  = ISOTROPIC_DIFFUSION
-    endif
-
-    call field_set_key_struct_var_cal_opt(ivarfl(ir11), vcopt1)
-    call field_set_key_struct_var_cal_opt(ivarfl(ir22), vcopt1)
-    call field_set_key_struct_var_cal_opt(ivarfl(ir33), vcopt1)
-    call field_set_key_struct_var_cal_opt(ivarfl(ir12), vcopt1)
-    call field_set_key_struct_var_cal_opt(ivarfl(ir13), vcopt1)
-    call field_set_key_struct_var_cal_opt(ivarfl(ir23), vcopt1)
-    call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+     vcopt1%idften = ISOTROPIC_DIFFUSION
+     vcopt%idften  = ISOTROPIC_DIFFUSION
   endif
 
+  call field_set_key_struct_var_cal_opt(ivarfl(irij), vcopt1)
+  call field_set_key_struct_var_cal_opt(ivarfl(iep), vcopt)
 endif
 
 ! ---> ISSTPC

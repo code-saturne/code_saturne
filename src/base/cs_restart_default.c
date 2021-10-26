@@ -331,19 +331,6 @@ _sync_field_vals(cs_field_t  *f,
         cs_halo_perio_sync_var_sym_tens(m->halo, halo_type, v);
       else if (f->dim == 9)
         cs_halo_perio_sync_var_tens(m->halo, halo_type, v);
-      else if (f->dim == 1 && f == CS_F_(r13)) {
-        cs_halo_perio_sync_var_tens_ni(m->halo,
-                                       halo_type,
-                                       CS_F_(r11)->vals[t_id],
-                                       CS_F_(r12)->vals[t_id],
-                                       CS_F_(r13)->vals[t_id],
-                                       CS_F_(r12)->vals[t_id],
-                                       CS_F_(r22)->vals[t_id],
-                                       CS_F_(r23)->vals[t_id],
-                                       CS_F_(r13)->vals[t_id],
-                                       CS_F_(r23)->vals[t_id],
-                                       CS_F_(r33)->vals[t_id]);
-      }
     }
 
   }
@@ -505,18 +492,6 @@ _read_field_vals_legacy(cs_restart_t  *r,
     }
     else if (f == CS_F_(p))
       strncpy(old_name, "pression", 96);
-    else if (f == CS_F_(r11))
-      strncpy(old_name, "R11", 96);
-    else if (f == CS_F_(r22))
-      strncpy(old_name, "R22", 96);
-    else if (f == CS_F_(r33))
-      strncpy(old_name, "R33", 96);
-    else if (f == CS_F_(r12))
-      strncpy(old_name, "R12", 96);
-    else if (f == CS_F_(r13))
-      strncpy(old_name, "R13", 96);
-    else if (f == CS_F_(r23))
-      strncpy(old_name, "R23", 96);
     else if (f == CS_F_(rij))
       strncpy(old_name, "Rij", 96);
     else if (f == CS_F_(eps))
@@ -1273,7 +1248,8 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       if (err_sum == 0)
         read_flag[CS_F_(k)->id] += t_mask;
 
-    } else if (iturb_old == 60) { /* k-omega to k-epsilon (k already read) */
+    }
+    else if (iturb_old == 60) { /* k-omega to k-epsilon (k already read) */
 
       cs_real_t *v_eps = CS_F_(eps)->vals[t_id];
       const cs_real_t *v_k = CS_F_(eps)->vals[t_id];
@@ -1289,8 +1265,8 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
         read_flag[CS_F_(eps)->id] += t_mask;
     }
 
-  } else if (itytur_cur == 3 && CS_F_(rij) != NULL) { /* New computation
-                                                         is in Rij-epsilon */
+  }
+  else if (itytur_cur == 3) { /* New computation is in Rij-epsilon */
 
     if (itytur_old == 2 || iturb_old == 50) { /* k-epsilon or v2f
                                                  (phi-fbar or BL-v2/k) to-> Rij
@@ -1357,89 +1333,6 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
         read_flag[CS_F_(rij)->id] += t_mask;
 
       BFT_FREE(v_k);
-    }
-
-  } else if (itytur_cur == 3) { /* New computation is in Rij-epsilon */
-                                /* using the older, non-interleaved variant */
-
-    if (itytur_old == 2 || iturb_old == 50) { /* k-epsilon or v2f
-                                                 (phi-fbar or BL-v2/k) to-> Rij
-                                                 (epsilon already read) */
-
-      cs_real_t *v_r11 = CS_F_(r11)->vals[t_id];
-      cs_real_t *v_r22 = CS_F_(r22)->vals[t_id];
-      cs_real_t *v_r33 = CS_F_(r33)->vals[t_id];
-      cs_real_t *v_r12 = CS_F_(r12)->vals[t_id];
-      cs_real_t *v_r23 = CS_F_(r23)->vals[t_id];
-      cs_real_t *v_r13 = CS_F_(r13)->vals[t_id];
-
-      err_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_r11);
-
-      double d2s3 = 2./3.;
-
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
-        double d2s3xk = v_r11[i]*d2s3;
-        v_r11[i] = d2s3xk;
-        v_r22[i] = d2s3xk;
-        v_r33[i] = d2s3xk;
-        v_r12[i] = 0.;
-        v_r23[i] = 0.;
-        v_r13[i] = 0.;
-      }
-
-      if (err_sum == 0) {
-        read_flag[CS_F_(r11)->id] += t_mask;
-        read_flag[CS_F_(r22)->id] += t_mask;
-        read_flag[CS_F_(r33)->id] += t_mask;
-        read_flag[CS_F_(r12)->id] += t_mask;
-        read_flag[CS_F_(r23)->id] += t_mask;
-        read_flag[CS_F_(r13)->id] += t_mask;
-      }
-
-    }
-
-    /* if (itytur_old == 3) Rij to Rij variant; nothing to do
-     *                      (when switching to EBRSM to another model,
-     *                      keep alpha to default initialization) */
-
-    else if (iturb_old == 60) { /* k-omega to Rij */
-
-      cs_real_t *v_r11 = CS_F_(r11)->vals[t_id];
-      cs_real_t *v_r22 = CS_F_(r22)->vals[t_id];
-      cs_real_t *v_r33 = CS_F_(r33)->vals[t_id];
-      cs_real_t *v_r12 = CS_F_(r12)->vals[t_id];
-      cs_real_t *v_r13 = CS_F_(r13)->vals[t_id];
-      cs_real_t *v_r23 = CS_F_(r23)->vals[t_id];
-      cs_real_t *v_eps = CS_F_(eps)->vals[t_id];
-
-      err_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_r11);
-      err_sum += _read_turb_array_1d_compat(r, "omega", "omega", t_id, v_eps);
-
-      /* Now transform omega to epsilon */
-
-      for (cs_lnum_t i = 0; i < n_cells; i++)
-        v_eps[i] = cs_turb_cmu*v_eps[i]*v_r11[i];
-
-      double d2s3 = 2./3.;
-
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
-        double d2s3xk = v_r11[i]*d2s3;
-        v_r11[i] = d2s3xk;
-        v_r22[i] = d2s3xk;
-        v_r33[i] = d2s3xk;
-        v_r12[i] = 0.;
-        v_r13[i] = 0.;
-        v_r23[i] = 0.;
-      }
-
-      if (err_sum == 0) {
-        read_flag[CS_F_(r11)->id] += t_mask;
-        read_flag[CS_F_(r22)->id] += t_mask;
-        read_flag[CS_F_(r33)->id] += t_mask;
-        read_flag[CS_F_(r12)->id] += t_mask;
-        read_flag[CS_F_(r23)->id] += t_mask;
-        read_flag[CS_F_(r13)->id] += t_mask;
-      }
     }
 
   } else if (itytur_cur == 5) { /* New computation is in v2f; */

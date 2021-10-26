@@ -121,22 +121,9 @@ cs_turbulence_inflow_volume_mass_injection_k_eps(const char  *zone_name,
   else if (itytur == 3) {
     cs_real_t val[6] = {2./3.*k, 2./3.*k, 2./3.*k, 0, 0, 0};
 
-    if (cs_glob_turb_rans_model->irijco == 1) {
+    cs_equation_add_volume_mass_injection_by_value
+      (cs_field_get_equation_param(CS_F_(rij)), zone_name, val);
 
-      cs_equation_add_volume_mass_injection_by_value
-        (cs_field_get_equation_param(CS_F_(rij)), zone_name, val);
-
-    }
-    else {
-
-      cs_equation_add_volume_mass_injection_by_value
-        (cs_field_get_equation_param(CS_F_(r11)), zone_name, val);
-      cs_equation_add_volume_mass_injection_by_value
-        (cs_field_get_equation_param(CS_F_(r22)), zone_name, val+1);
-      cs_equation_add_volume_mass_injection_by_value
-        (cs_field_get_equation_param(CS_F_(r33)), zone_name, val+2);
-
-    }
   }
   else if (iturb == CS_TURB_V2F_PHI) {
 

@@ -150,8 +150,6 @@ double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cvar_k, cvara_k, cvar_ep, cvara_ep
 double precision, dimension(:), pointer :: cvar_omg, cvara_omg
 double precision, dimension(:), pointer :: cvar_nusa, cvara_nusa
-double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cpro_prtot
 double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt
 

@@ -205,8 +205,6 @@ double precision, dimension(:), pointer :: f_uet, f_uk
 double precision, dimension(:), allocatable :: byplus, bdplus, buk
 double precision, dimension(:), allocatable, target :: buet, bcfnns_loc
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, bcfnns
-double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 
 double precision, dimension(:), pointer :: cvar_totwt, cvar_t, cpro_liqwt
@@ -215,18 +213,6 @@ double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
 double precision, dimension(:), pointer :: coefa_k, coefb_k, coefaf_k, coefbf_k
 double precision, dimension(:), pointer :: coefa_ep, coefaf_ep
 double precision, dimension(:), pointer :: coefb_ep, coefbf_ep
-double precision, dimension(:), pointer :: coefa_r11, coefaf_r11, coefad_r11
-double precision, dimension(:), pointer :: coefb_r11, coefbf_r11, coefbd_r11
-double precision, dimension(:), pointer :: coefa_r22, coefaf_r22, coefad_r22
-double precision, dimension(:), pointer :: coefb_r22, coefbf_r22, coefbd_r22
-double precision, dimension(:), pointer :: coefa_r33, coefaf_r33, coefad_r33
-double precision, dimension(:), pointer :: coefb_r33, coefbf_r33, coefbd_r33
-double precision, dimension(:), pointer :: coefa_r12, coefaf_r12, coefad_r12
-double precision, dimension(:), pointer :: coefb_r12, coefbf_r12, coefbd_r12
-double precision, dimension(:), pointer :: coefa_r13, coefaf_r13, coefad_r13
-double precision, dimension(:), pointer :: coefb_r13, coefbf_r13, coefbd_r13
-double precision, dimension(:), pointer :: coefa_r23, coefaf_r23, coefad_r23
-double precision, dimension(:), pointer :: coefb_r23, coefbf_r23, coefbd_r23
 double precision, dimension(:), pointer :: coefa_omg, coefaf_omg
 double precision, dimension(:), pointer :: coefb_omg, coefbf_omg
 double precision, dimension(:), pointer :: coefa_al, coefaf_al
@@ -387,108 +373,12 @@ else
 endif
 
 if (itytur.eq.3) then! Also have boundary conditions for the momentum equation
-
-  if (irijco.eq.1) then
-    call field_get_coefa_v(ivarfl(irij), coefa_rij)
-    call field_get_coefb_v(ivarfl(irij), coefb_rij)
-    call field_get_coefaf_v(ivarfl(irij), coefaf_rij)
-    call field_get_coefbf_v(ivarfl(irij), coefbf_rij)
-    call field_get_coefad_v(ivarfl(irij), coefad_rij)
-    call field_get_coefbd_v(ivarfl(irij), coefbd_rij)
-
-    coefb_r11 => null()
-    coefaf_r11 => null()
-    coefbf_r11 => null()
-    coefad_r11 => null()
-    coefbd_r11 => null()
-
-    coefa_r22 => null()
-    coefb_r22 => null()
-    coefaf_r22 => null()
-    coefbf_r22 => null()
-    coefad_r22 => null()
-    coefbd_r22 => null()
-
-    coefa_r33 => null()
-    coefb_r33 => null()
-    coefaf_r33 => null()
-    coefbf_r33 => null()
-    coefad_r33 => null()
-    coefbd_r33 => null()
-
-    coefa_r12 => null()
-    coefb_r12 => null()
-    coefaf_r12 => null()
-    coefbf_r12 => null()
-    coefad_r12 => null()
-    coefbd_r12 => null()
-
-    coefa_r13 => null()
-    coefb_r13 => null()
-    coefaf_r13 => null()
-    coefbf_r13 => null()
-    coefad_r13 => null()
-    coefbd_r13 => null()
-
-    coefa_r23 => null()
-    coefb_r23 => null()
-    coefaf_r23 => null()
-    coefbf_r23 => null()
-    coefad_r23 => null()
-    coefbd_r23 => null()
-
-
-  else
-
-    call field_get_coefa_s(ivarfl(ir11), coefa_r11)
-    call field_get_coefb_s(ivarfl(ir11), coefb_r11)
-    call field_get_coefaf_s(ivarfl(ir11), coefaf_r11)
-    call field_get_coefbf_s(ivarfl(ir11), coefbf_r11)
-    call field_get_coefad_s(ivarfl(ir11), coefad_r11)
-    call field_get_coefbd_s(ivarfl(ir11), coefbd_r11)
-
-    call field_get_coefa_s(ivarfl(ir22), coefa_r22)
-    call field_get_coefb_s(ivarfl(ir22), coefb_r22)
-    call field_get_coefaf_s(ivarfl(ir22), coefaf_r22)
-    call field_get_coefbf_s(ivarfl(ir22), coefbf_r22)
-    call field_get_coefad_s(ivarfl(ir22), coefad_r22)
-    call field_get_coefbd_s(ivarfl(ir22), coefbd_r22)
-
-    call field_get_coefa_s(ivarfl(ir33), coefa_r33)
-    call field_get_coefb_s(ivarfl(ir33), coefb_r33)
-    call field_get_coefaf_s(ivarfl(ir33), coefaf_r33)
-    call field_get_coefbf_s(ivarfl(ir33), coefbf_r33)
-    call field_get_coefad_s(ivarfl(ir33), coefad_r33)
-    call field_get_coefbd_s(ivarfl(ir33), coefbd_r33)
-
-    call field_get_coefa_s(ivarfl(ir12), coefa_r12)
-    call field_get_coefb_s(ivarfl(ir12), coefb_r12)
-    call field_get_coefaf_s(ivarfl(ir12), coefaf_r12)
-    call field_get_coefbf_s(ivarfl(ir12), coefbf_r12)
-    call field_get_coefad_s(ivarfl(ir12), coefad_r12)
-    call field_get_coefbd_s(ivarfl(ir12), coefbd_r12)
-
-    call field_get_coefa_s(ivarfl(ir13), coefa_r13)
-    call field_get_coefb_s(ivarfl(ir13), coefb_r13)
-    call field_get_coefaf_s(ivarfl(ir13), coefaf_r13)
-    call field_get_coefbf_s(ivarfl(ir13), coefbf_r13)
-    call field_get_coefad_s(ivarfl(ir13), coefad_r13)
-    call field_get_coefbd_s(ivarfl(ir13), coefbd_r13)
-
-    call field_get_coefa_s(ivarfl(ir23), coefa_r23)
-    call field_get_coefb_s(ivarfl(ir23), coefb_r23)
-    call field_get_coefaf_s(ivarfl(ir23), coefaf_r23)
-    call field_get_coefbf_s(ivarfl(ir23), coefbf_r23)
-    call field_get_coefad_s(ivarfl(ir23), coefad_r23)
-    call field_get_coefbd_s(ivarfl(ir23), coefbd_r23)
-
-    coefa_rij => null()
-    coefb_rij => null()
-    coefaf_rij => null()
-    coefbf_rij => null()
-    coefad_rij => null()
-    coefbd_rij => null()
-  endif
+  call field_get_coefa_v(ivarfl(irij), coefa_rij)
+  call field_get_coefb_v(ivarfl(irij), coefb_rij)
+  call field_get_coefaf_v(ivarfl(irij), coefaf_rij)
+  call field_get_coefbf_v(ivarfl(irij), coefbf_rij)
+  call field_get_coefad_v(ivarfl(irij), coefad_rij)
+  call field_get_coefbd_v(ivarfl(irij), coefbd_rij)
 endif
 
 if (ial.gt.0) then
@@ -569,16 +459,7 @@ endif
 if (itytur.eq.3) then
   call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt_rij)
   call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt_ep)
-  if (irijco.eq.1) then
-    call field_get_val_v(ivarfl(irij), cvar_rij)
-  else
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
-  endif
+  call field_get_val_v(ivarfl(irij), cvar_rij)
 endif
 
 ! min. and max. of wall tangential velocity
@@ -785,23 +666,13 @@ do ifac = 1, nfabor
       ! TODO: we could add 2*nu_T dv/dy to rnnb
       rnnb = 2.d0 / 3.d0 * ek
     else if (itytur.eq.3) then
-      if (irijco.eq.1) then
-        ek = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-        rxx = cvar_rij(1,iel)
-        rxy = cvar_rij(4,iel)
-        rxz = cvar_rij(6,iel)
-        ryy = cvar_rij(2,iel)
-        ryz = cvar_rij(5,iel)
-        rzz = cvar_rij(3,iel)
-      else
-        ek = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-        rxx = cvar_r11(iel)
-        rxy = cvar_r12(iel)
-        rxz = cvar_r13(iel)
-        ryy = cvar_r22(iel)
-        ryz = cvar_r23(iel)
-        rzz = cvar_r33(iel)
-      endif
+      ek = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
+      rxx = cvar_rij(1,iel)
+      rxy = cvar_rij(4,iel)
+      rxz = cvar_rij(6,iel)
+      ryy = cvar_rij(2,iel)
+      ryz = cvar_rij(5,iel)
+      rzz = cvar_rij(3,iel)
       rnnb =   rnx * (rxx * rnx + rxy * rny + rxz * rnz) &
              + rny * (rxy * rnx + ryy * rny + ryz * rnz) &
              + rnz * (rxz * rnx + ryz * rny + rzz * rnz)
@@ -1472,9 +1343,7 @@ do ifac = 1, nfabor
               endif
               coefbd_rij(isou,ii, ifac) = 0.d0
             enddo
-
           else
-
             fcoefa(isou) = 0.d0
             fcofad(isou) = 0.d0
             fcoefb(isou) = 0.d0
@@ -1490,49 +1359,17 @@ do ifac = 1, nfabor
 
       if (irijco.ne.1) then
         do isou = 1, 6
-          if (isou.eq.1) then
-            coefa_r11(ifac) = fcoefa(isou)
-            coefb_r11(ifac) = fcoefb(isou)
-            coefaf_r11(ifac) = fcofaf(isou)
-            coefbf_r11(ifac) = fcofbf(isou)
-            coefad_r11(ifac) = fcofad(isou)
-            coefbd_r11(ifac) = fcofbd(isou)
-          else if (isou.eq.2) then
-            coefa_r22(ifac) = fcoefa(isou)
-            coefb_r22(ifac) = fcoefb(isou)
-            coefaf_r22(ifac) = fcofaf(isou)
-            coefbf_r22(ifac) = fcofbf(isou)
-            coefad_r22(ifac) = fcofad(isou)
-            coefbd_r22(ifac) = fcofbd(isou)
-          else if (isou.eq.3) then
-            coefa_r33(ifac) = fcoefa(isou)
-            coefb_r33(ifac) = fcoefb(isou)
-            coefaf_r33(ifac) = fcofaf(isou)
-            coefbf_r33(ifac) = fcofbf(isou)
-            coefad_r33(ifac) = fcofad(isou)
-            coefbd_r33(ifac) = fcofbd(isou)
-          else if (isou.eq.4) then
-            coefa_r12(ifac) = fcoefa(isou)
-            coefb_r12(ifac) = fcoefb(isou)
-            coefaf_r12(ifac) = fcofaf(isou)
-            coefbf_r12(ifac) = fcofbf(isou)
-            coefad_r12(ifac) = fcofad(isou)
-            coefbd_r12(ifac) = fcofbd(isou)
-          else if (isou.eq.5) then
-            coefa_r23(ifac) = fcoefa(isou)
-            coefb_r23(ifac) = fcoefb(isou)
-            coefaf_r23(ifac) = fcofaf(isou)
-            coefbf_r23(ifac) = fcofbf(isou)
-            coefad_r23(ifac) = fcofad(isou)
-            coefbd_r23(ifac) = fcofbd(isou)
-          else if (isou.eq.6) then
-            coefa_r13(ifac) = fcoefa(isou)
-            coefb_r13(ifac) = fcoefb(isou)
-            coefaf_r13(ifac) = fcofaf(isou)
-            coefbf_r13(ifac) = fcofbf(isou)
-            coefad_r13(ifac) = fcofad(isou)
-            coefbd_r13(ifac) = fcofbd(isou)
-          endif
+          coefa_rij(isou,ifac) = fcoefa(isou)
+          coefaf_rij(isou,ifac) = fcofaf(isou)
+          coefad_rij(isou,ifac) = fcofad(isou)
+          do ii = 1,6
+            coefb_rij(isou,ii,ifac) = 0
+            coefbf_rij(isou,ii,ifac) = 0
+            coefbd_rij(isou,ii,ifac) = 0
+          enddo
+          coefb_rij(isou,isou,ifac) = fcoefb(isou)
+          coefbf_rij(isou,isou,ifac) = fcofbf(isou)
+          coefbd_rij(isou,isou,ifac) = fcofbd(isou)
         enddo
       endif
 

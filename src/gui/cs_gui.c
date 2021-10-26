@@ -2896,30 +2896,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                 cs_field_t *c_rij = cs_field_by_name_try("rij");
                 cs_field_t *c_eps = cs_field_by_name("epsilon");
 
-                if (c_rij != NULL) {
-                  for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                    cs_lnum_t c_id = cell_ids[e_id];
-                    for (int drij = 0; drij < 6; drij++) {
-                      c_rij->val[6*c_id + drij] = ini_vals[7*e_id + drij];
-                      c_eps->val[c_id] = ini_vals[7 * e_id + 6];
-                    }
-                  }
-                }
-                else {
-                  cs_field_t *c_r11 = cs_field_by_name("r11");
-                  cs_field_t *c_r22 = cs_field_by_name("r22");
-                  cs_field_t *c_r33 = cs_field_by_name("r33");
-                  cs_field_t *c_r12 = cs_field_by_name("r12");
-                  cs_field_t *c_r13 = cs_field_by_name("r13");
-                  cs_field_t *c_r23 = cs_field_by_name("r23");
-                  for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                    cs_lnum_t c_id = cell_ids[e_id];
-                    c_r11->val[c_id] = ini_vals[7 * e_id];
-                    c_r22->val[c_id] = ini_vals[7 * e_id + 1];
-                    c_r33->val[c_id] = ini_vals[7 * e_id + 2];
-                    c_r12->val[c_id] = ini_vals[7 * e_id + 3];
-                    c_r23->val[c_id] = ini_vals[7 * e_id + 4];
-                    c_r13->val[c_id] = ini_vals[7 * e_id + 5];
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
+                  for (int drij = 0; drij < 6; drij++) {
+                    c_rij->val[6*c_id + drij] = ini_vals[7*e_id + drij];
                     c_eps->val[c_id] = ini_vals[7 * e_id + 6];
                   }
                 }
@@ -2929,31 +2909,10 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
                 cs_field_t *c_eps = cs_field_by_name("epsilon");
                 cs_field_t *c_alp = cs_field_by_name("alpha");
 
-                if (c_rij != NULL) {
-                  for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                    cs_lnum_t c_id = cell_ids[e_id];
-                    for (int drij = 0; drij < 6; drij++) {
-                      c_rij->val[6*c_id + drij] = ini_vals[8*e_id + drij];
-                      c_eps->val[c_id] = ini_vals[8 * e_id + 6];
-                      c_alp->val[c_id] = ini_vals[8 * e_id + 7];
-                    }
-                  }
-                }
-                else {
-                  cs_field_t *c_r11 = cs_field_by_name("r11");
-                  cs_field_t *c_r22 = cs_field_by_name("r22");
-                  cs_field_t *c_r33 = cs_field_by_name("r33");
-                  cs_field_t *c_r12 = cs_field_by_name("r12");
-                  cs_field_t *c_r13 = cs_field_by_name("r13");
-                  cs_field_t *c_r23 = cs_field_by_name("r23");
-                  for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                    cs_lnum_t c_id = cell_ids[e_id];
-                    c_r11->val[c_id] = ini_vals[8 * e_id];
-                    c_r22->val[c_id] = ini_vals[8 * e_id + 1];
-                    c_r33->val[c_id] = ini_vals[8 * e_id + 2];
-                    c_r12->val[c_id] = ini_vals[8 * e_id + 3];
-                    c_r23->val[c_id] = ini_vals[8 * e_id + 4];
-                    c_r13->val[c_id] = ini_vals[8 * e_id + 5];
+                for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+                  cs_lnum_t c_id = cell_ids[e_id];
+                  for (int drij = 0; drij < 6; drij++) {
+                    c_rij->val[6*c_id + drij] = ini_vals[8*e_id + drij];
                     c_eps->val[c_id] = ini_vals[8 * e_id + 6];
                     c_alp->val[c_id] = ini_vals[8 * e_id + 7];
                   }
@@ -4482,35 +4441,7 @@ cs_gui_time_moments(void)
 
       cs_field_t *f = cs_field_by_name_try(f_name);
 
-      /* If we failed to find Rij, we search for Rxx.
-       * This test is needed for the case where irijco = 0 */
-
-      if (f == NULL && cs_gui_strcmp(f_name, "rij")) {
-        switch(idim) {
-        case 0:
-          f = CS_F_(r11);
-          break;
-        case 1:
-          f = CS_F_(r22);
-          break;
-        case 2:
-          f = CS_F_(r33);
-          break;
-        case 3:
-          f = CS_F_(r12);
-          break;
-        case 4:
-          f = CS_F_(r23);
-          break;
-        case 5:
-          f = CS_F_(r13);
-          break;
-        }
-        m_f_id[j] = f->id;
-        m_c_id[j] = 0;
-      }
-
-      else if (f != NULL) {
+      if (f != NULL) {
         m_f_id[j] = f->id;
         m_c_id[j] = idim;
       }

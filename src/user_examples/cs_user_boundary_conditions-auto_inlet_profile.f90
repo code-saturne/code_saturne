@@ -134,8 +134,6 @@ double precision acc(2), fmprsc, fmul, uref2, vnrm
 integer, allocatable, dimension(:) :: lstelt, mrkcel
 
 double precision, dimension(:), pointer :: bfpro_rom
-double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_r12, cvar_r23, cvar_r13
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_omg
 double precision, dimension(:), pointer :: cvar_al, cvar_fb
@@ -162,17 +160,7 @@ if (itytur.eq.2) then
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
 elseif (itytur.eq.3) then
-  if(irijco.eq.1) then
-    call field_get_val_v(ivarfl(irij), cvar_rij)
-  else
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
-  end if
-
+  call field_get_val_v(ivarfl(irij), cvar_rij)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 
   if (iturb.eq.32) then
@@ -364,21 +352,12 @@ else
 
     elseif (itytur.eq.3) then
 
-      if (irijco.eq.1) then
         rcodcl(ifac,ir11,1) = cvar_rij(1,iel)
         rcodcl(ifac,ir22,1) = cvar_rij(2,iel)
         rcodcl(ifac,ir33,1) = cvar_rij(3,iel)
         rcodcl(ifac,ir12,1) = cvar_rij(4,iel)
         rcodcl(ifac,ir13,1) = cvar_rij(6,iel)
         rcodcl(ifac,ir23,1) = cvar_rij(5,iel)
-      else
-        rcodcl(ifac,ir11,1) = cvar_r11(iel)
-        rcodcl(ifac,ir22,1) = cvar_r22(iel)
-        rcodcl(ifac,ir33,1) = cvar_r33(iel)
-        rcodcl(ifac,ir12,1) = cvar_r12(iel)
-        rcodcl(ifac,ir13,1) = cvar_r13(iel)
-        rcodcl(ifac,ir23,1) = cvar_r23(iel)
-      endif
 
       rcodcl(ifac,iep,1)  = cvar_ep(iel)
 

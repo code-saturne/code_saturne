@@ -740,24 +740,11 @@ cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
                                   coords, /* coords */
                                   rij);
   } else {
-    if (turb_rans_mdl->irijco == 0) {
-      for (cs_lnum_t i = 0; i < n_cells; i++) {
-        cs_lnum_t c_id = cell_ids[i];
-        rij[i][0] = CS_F_(r11)->val[c_id];
-        rij[i][1] = CS_F_(r22)->val[c_id];
-        rij[i][2] = CS_F_(r33)->val[c_id];
-        rij[i][3] = CS_F_(r12)->val[c_id];
-        rij[i][4] = CS_F_(r23)->val[c_id];
-        rij[i][5] = CS_F_(r13)->val[c_id];
-      }
-    } else {
-       cs_real_6_t *cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
-       for (cs_lnum_t i = 0; i < n_cells; i++) {
-         cs_lnum_t c_id = cell_ids[i];
-         for (cs_lnum_t j = 0; j < 6; j++)
-           rij[i][j] = cvar_rij[c_id][j];
-        }
-
+    cs_real_6_t *cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
+      cs_lnum_t c_id = cell_ids[i];
+      for (cs_lnum_t j = 0; j < 6; j++)
+        rij[i][j] = cvar_rij[c_id][j];
     }
   }
 

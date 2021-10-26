@@ -76,8 +76,6 @@ double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
 double precision, dimension(:,:), pointer :: cvar_rij
-double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:), pointer :: cvar_despgi, cvar_sc
 double precision, dimension(:), pointer :: cvar_scalt, cvar_totwt, cvar_ntdrp
 double precision, dimension(:,:), pointer :: cpro_met_vel
@@ -103,17 +101,8 @@ if (itytur.eq.2) then
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 elseif (itytur.eq.3) then
-  if (irijco.eq.1) then
-    call field_get_val_v(ivarfl(irij), cvar_rij)
-  else
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
-  endif
-  call field_get_val_s(ivarfl(iep), cvar_ep)
+   call field_get_val_v(ivarfl(irij), cvar_rij)
+   call field_get_val_s(ivarfl(iep), cvar_ep)
 elseif (iturb.eq.50) then
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
@@ -360,30 +349,18 @@ if (isuite.eq.0) then
         elseif (itytur.eq.3) then
 
           r_nt = - sqrt(cmu) * xkent
-          if (irijco.eq.1) then
-            cvar_rij(1,iel) = d2s3*xkent
-            cvar_rij(2,iel) = d2s3*xkent
-            cvar_rij(3,iel) = d2s3*xkent
-            ! Rxy
-            cvar_rij(4,iel) = r_nt * &
-              (vel_dir(1)*shear_dir(2)+vel_dir(2)*shear_dir(1))
-            ! Ryz
-            cvar_rij(5,iel) = r_nt * &
-              (vel_dir(2)*shear_dir(3)+vel_dir(3)*shear_dir(2))
-            ! Rxz
-            cvar_rij(6,iel) = r_nt * &
-              (vel_dir(1)*shear_dir(3)+vel_dir(3)*shear_dir(1))
-          else
-            cvar_r11(iel) = d2s3*xkent
-            cvar_r22(iel) = d2s3*xkent
-            cvar_r33(iel) = d2s3*xkent
-            cvar_r12(iel) = r_nt * &
-              (vel_dir(1)*shear_dir(2)+vel_dir(2)*shear_dir(1))
-            cvar_r23(iel) = r_nt * &
-              (vel_dir(2)*shear_dir(3)+vel_dir(3)*shear_dir(2))
-            cvar_r13(iel) = r_nt * &
-              (vel_dir(1)*shear_dir(3)+vel_dir(3)*shear_dir(1))
-          endif
+          cvar_rij(1,iel) = d2s3*xkent
+          cvar_rij(2,iel) = d2s3*xkent
+          cvar_rij(3,iel) = d2s3*xkent
+          ! Rxy
+          cvar_rij(4,iel) = r_nt * &
+             (vel_dir(1)*shear_dir(2)+vel_dir(2)*shear_dir(1))
+          ! Ryz
+          cvar_rij(5,iel) = r_nt * &
+             (vel_dir(2)*shear_dir(3)+vel_dir(3)*shear_dir(2))
+          ! Rxz
+          cvar_rij(6,iel) = r_nt * &
+             (vel_dir(1)*shear_dir(3)+vel_dir(3)*shear_dir(1))
           cvar_ep(iel)  = xeent
 
         elseif (iturb.eq.50) then
@@ -603,8 +580,6 @@ double precision, dimension(:,:), pointer :: vel
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_fb, cvar_omg, cvar_nusa
 double precision, dimension(:,:), pointer :: cvar_rij
-double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cpro_met_vel
 double precision, dimension(:), pointer :: cpro_met_potemp
 double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
@@ -625,16 +600,7 @@ if (itytur.eq.2) then
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 elseif (itytur.eq.3) then
-  if (irijco.eq.1) then
-    call field_get_val_v(ivarfl(irij), cvar_rij)
-  else
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
-  endif
+  call field_get_val_v(ivarfl(irij), cvar_rij)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 elseif (iturb.eq.50) then
   call field_get_val_s(ivarfl(ik), cvar_k)

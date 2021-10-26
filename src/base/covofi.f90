@@ -205,7 +205,6 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, croma, pcrom
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:), pointer :: visct, viscl, cpro_cp, cproa_scal_st
@@ -224,7 +223,6 @@ double precision, dimension(:), pointer :: cpro_rad_cool
 double precision, dimension(:), pointer :: cpro_liqwt
 double precision, dimension(:), pointer :: cpro_tempc
 double precision, dimension(:), pointer :: cvar_ntdrp
-double precision, dimension(:), pointer :: cvar_pottemp
 double precision, dimension(:), pointer :: cpro_met_p
 ! Darcy arrays
 double precision, allocatable, dimension(:) :: diverg
@@ -955,13 +953,7 @@ if (itspdv.eq.1) then
       call field_get_val_prev_s(ivarfl(iep), cvara_ep)
     elseif (itytur.eq.3) then
       call field_get_val_prev_s(ivarfl(iep), cvara_ep)
-      if (irijco.eq.1) then
-        call field_get_val_prev_v(ivarfl(irij), cvara_rij)
-      else
-        call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-        call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-        call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
-      endif
+      call field_get_val_prev_v(ivarfl(irij), cvara_rij)
       ! EB- AFM or EB-DFM or EB-GGDH
       if (variance_turb_flux_model.eq.11 .or. &
           variance_turb_flux_model.eq.21 .or. &
@@ -982,13 +974,8 @@ if (itspdv.eq.1) then
         xk = cvara_k(iel)
         xe = cvara_ep(iel)
       elseif (itytur.eq.3) then
-        if (irijco.eq.1) then
-          xk = 0.5d0*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
-          xe = cvara_ep(iel)
-        else
-          xk = 0.5d0*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
-          xe = cvara_ep(iel)
-        endif
+         xk = 0.5d0*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
+         xe = cvara_ep(iel)
       elseif(iturb.eq.60) then
         xk = cvara_k(iel)
         xe = cmu*xk*cvara_omg(iel)
@@ -1463,13 +1450,8 @@ if (idilat.ge.4.and.itspdv.eq.1) then
       xk = cvara_k(iel)
       xe = cvara_ep(iel)
     elseif (itytur.eq.3) then
-        if (irijco.eq.1) then
-          xk = 0.5d0*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
-          xe = cvara_ep(iel)
-        else
-          xk = 0.5d0*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
-          xe = cvara_ep(iel)
-        endif
+        xk = 0.5d0*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
+        xe = cvara_ep(iel)
     elseif(iturb.eq.60) then
       xk = cvara_k(iel)
       xe = cmu*xk*cvara_omg(iel)

@@ -500,99 +500,46 @@ elseif (itytur.eq.3) then
 
   ! Prepare data: interpolate Rij at J'
 
-  if (irijco.eq.0) then
+  call field_get_val_v(ivarfl(irij), cvar_rij)
 
-    do isou = 1, 6
+  ! allocate a temporary array
+  allocate(gradts(6,3,ncelet))
 
-      if (isou.eq.1) ivar = ir11
-      if (isou.eq.2) ivar = ir22
-      if (isou.eq.3) ivar = ir33
-      if (isou.eq.4) ivar = ir12
-      if (isou.eq.5) ivar = ir23
-      if (isou.eq.6) ivar = ir13
+  call field_gradient_tensor(ivarfl(irij), iprev, 0, inc, gradts)
 
-      call field_get_val_s(ivarfl(ivar), cvar_var)
+  do ipt = 1, nptdis
 
-      call field_gradient_scalar(ivarfl(ivar), iprev, 0, inc, iccocg, grad)
+    iel = locpts(ipt)
 
-      ! For a specific face to face coupling, geometric assumptions are made
+    xjjp = djppts(1,ipt)
+    yjjp = djppts(2,ipt)
+    zjjp = djppts(3,ipt)
 
-      do ipt = 1, nptdis
+    trav1(ipt) = cvar_var(iel) + xjjp*gradts(1,1,iel)  &
+                               + yjjp*gradts(1,2,iel)  &
+                               + zjjp*gradts(1,3,iel)
 
-        iel = locpts(ipt)
+    trav2(ipt) = cvar_var(iel) + xjjp*gradts(2,1,iel)  &
+                               + yjjp*gradts(2,2,iel)  &
+                               + zjjp*gradts(2,3,iel)
 
-        xjjp = djppts(1,ipt)
-        yjjp = djppts(2,ipt)
-        zjjp = djppts(3,ipt)
+    trav3(ipt) = cvar_var(iel) + xjjp*gradts(3,1,iel)  &
+                               + yjjp*gradts(3,2,iel)  &
+                               + zjjp*gradts(3,3,iel)
 
-        if (isou.eq.1) then
-          trav1(ipt) =   cvar_var(iel) &
-                       + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        else if (isou.eq.2) then
-          trav2(ipt) =   cvar_var(iel) &
-                      + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        else if (isou.eq.3) then
-          trav3(ipt) =   cvar_var(iel) &
-                       + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        else if (isou.eq.4) then
-          trav4(ipt) =   cvar_var(iel) &
-                       + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        else if (isou.eq.5) then
-          trav5(ipt) =   cvar_var(iel) &
-                       + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        else if (isou.eq.6) then
-          trav6(ipt) =   cvar_var(iel) &
-                       + xjjp*grad(1,iel) + yjjp*grad(2,iel) + zjjp*grad(3,iel)
-        endif
+    trav4(ipt) = cvar_var(iel) + xjjp*gradts(4,1,iel)  &
+                               + yjjp*gradts(4,2,iel)  &
+                               + zjjp*gradts(4,3,iel)
 
-      enddo
+    trav5(ipt) = cvar_var(iel) + xjjp*gradts(5,1,iel)  &
+                               + yjjp*gradts(5,2,iel)  &
+                               + zjjp*gradts(5,3,iel)
 
-    enddo
+    trav6(ipt) = cvar_var(iel) + xjjp*gradts(6,1,iel)  &
+                               + yjjp*gradts(6,2,iel)  &
+                               + zjjp*gradts(6,3,iel)
 
-  else if (irijco.eq.1) then
-
-    call field_get_val_v(ivarfl(irij), cvar_rij)
-
-    ! allocate a temporary array
-    allocate(gradts(6,3,ncelet))
-
-    call field_gradient_tensor(ivarfl(irij), iprev, 0, inc, gradts)
-
-    do ipt = 1, nptdis
-
-      iel = locpts(ipt)
-
-      xjjp = djppts(1,ipt)
-      yjjp = djppts(2,ipt)
-      zjjp = djppts(3,ipt)
-
-      trav1(ipt) = cvar_var(iel) + xjjp*gradts(1,1,iel)  &
-                                 + yjjp*gradts(1,2,iel)  &
-                                 + zjjp*gradts(1,3,iel)
-
-      trav2(ipt) = cvar_var(iel) + xjjp*gradts(2,1,iel)  &
-                                 + yjjp*gradts(2,2,iel)  &
-                                 + zjjp*gradts(2,3,iel)
-
-      trav3(ipt) = cvar_var(iel) + xjjp*gradts(3,1,iel)  &
-                                 + yjjp*gradts(3,2,iel)  &
-                                 + zjjp*gradts(3,3,iel)
-
-      trav4(ipt) = cvar_var(iel) + xjjp*gradts(4,1,iel)  &
-                                 + yjjp*gradts(4,2,iel)  &
-                                 + zjjp*gradts(4,3,iel)
-
-      trav5(ipt) = cvar_var(iel) + xjjp*gradts(5,1,iel)  &
-                                 + yjjp*gradts(5,2,iel)  &
-                                 + zjjp*gradts(5,3,iel)
-
-      trav6(ipt) = cvar_var(iel) + xjjp*gradts(6,1,iel)  &
-                                 + yjjp*gradts(6,2,iel)  &
-                                 + zjjp*gradts(6,3,iel)
-
-    enddo
-
-  endif
+  enddo
 
   ! Prepare data: interpolation of epsilon at J'
 

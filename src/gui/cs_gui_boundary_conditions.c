@@ -2157,12 +2157,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
             cs_real_t *new_vals = cs_meg_boundary_function(bz,
                                                            "turbulence_rije",
                                                            "formula");
-            cs_field_t *cfld_rij;
-            if (cs_glob_turb_rans_model->irijco == 1)
-              cfld_rij = cs_field_by_name("rij");
-            else
-              cfld_rij = cs_field_by_name("r11");
-
+            cs_field_t *cfld_rij = cs_field_by_name("rij");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
             int ivarrij = cs_field_get_key_int(cfld_rij, var_key_id) - 1;
             int ivare   = cs_field_get_key_int(c_eps, var_key_id) -1;
@@ -2186,11 +2181,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                                            "turbulence_rij_ebrsm",
                                                            "formula");
 
-            cs_field_t *cfld_rij;
-            if (cs_glob_turb_rans_model->irijco == 1)
-              cfld_rij = cs_field_by_name("rij");
-            else
-              cfld_rij = cs_field_by_name("r11");
+            cs_field_t *cfld_rij = cs_field_by_name("rij");
             cs_field_t *c_eps = cs_field_by_name("epsilon");
             cs_field_t *c_a   = cs_field_by_name("alpha");
 

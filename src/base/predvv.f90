@@ -213,8 +213,6 @@ double precision, dimension(:), allocatable, target :: cproa_rho_tc
 double precision, dimension(:), pointer :: coefa_k, coefb_k
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:,:), allocatable :: rij
-double precision, dimension(:), pointer :: coef1, coef2, coef3
-double precision, dimension(:), pointer :: coef4, coef5, coef6
 double precision, dimension(:,:), pointer :: coefap
 double precision, dimension(:,:,:), pointer :: coefbp
 double precision, dimension(:,:), allocatable :: coefat
@@ -223,8 +221,6 @@ double precision, dimension(:,:), allocatable :: tflmas, tflmab
 double precision, allocatable, dimension(:,:), target :: divt
 double precision, dimension(:,:), pointer :: forbr, c_st_vel
 double precision, dimension(:), pointer :: cvar_pr, cvara_k
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
-double precision, dimension(:), pointer :: cvara_r12, cvara_r23, cvara_r13
 double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: viscl, visct, c_estim
 double precision, dimension(:,:), pointer :: lapla, lagr_st_vel
@@ -379,16 +375,7 @@ if (iappel.eq.2) then
     call field_get_val_s(ivarfl(ik), cvara_k)
   endif
   if (itytur.eq.3.and.iterns.eq.1) then
-    if (irijco.eq.1) then
-      call field_get_val_v(ivarfl(irij), cvara_rij)
-    else
-      call field_get_val_s(ivarfl(ir11), cvara_r11)
-      call field_get_val_s(ivarfl(ir22), cvara_r22)
-      call field_get_val_s(ivarfl(ir33), cvara_r33)
-      call field_get_val_s(ivarfl(ir12), cvara_r12)
-      call field_get_val_s(ivarfl(ir23), cvara_r23)
-      call field_get_val_s(ivarfl(ir13), cvara_r13)
-    endif
+    call field_get_val_v(ivarfl(irij), cvara_rij)
   endif
 else
   if (iforbr.ge.0 .and. iterns.eq.1 .or. ivofmt.gt.0) then
@@ -399,16 +386,7 @@ else
       call field_get_val_prev_s(ivarfl(ik), cvara_k)
   endif
   if (itytur.eq.3.and.iterns.eq.1) then
-    if (irijco.eq.1) then
-      call field_get_val_v(ivarfl(irij), cvara_rij)
-    else
-      call field_get_val_s(ivarfl(ir11), cvara_r11)
-      call field_get_val_s(ivarfl(ir22), cvara_r22)
-      call field_get_val_s(ivarfl(ir33), cvara_r33)
-      call field_get_val_s(ivarfl(ir12), cvara_r12)
-      call field_get_val_s(ivarfl(ir23), cvara_r23)
-      call field_get_val_s(ivarfl(ir13), cvara_r13)
-    endif
+    call field_get_val_v(ivarfl(irij), cvara_rij)
   endif
 endif
 
@@ -997,48 +975,19 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
   allocate(coefbt(6,6,nfabor))
 
   ! Reynolds Stress Models
-  if(itytur.eq.3) then
+  if (itytur.eq.3) then
 
-    if(irijco.eq.1) then !TODO change index of rij
-      do iel = 1, ncelet
-        rij(1,iel) = cvara_rij(1,iel)
-        rij(2,iel) = cvara_rij(2,iel)
-        rij(3,iel) = cvara_rij(3,iel)
-        rij(4,iel) = cvara_rij(4,iel)
-        rij(5,iel) = cvara_rij(5,iel)
-        rij(6,iel) = cvara_rij(6,iel)
-      enddo
-    else
-      do iel = 1, ncelet
-        rij(1,iel) = cvara_r11(iel)
-        rij(2,iel) = cvara_r22(iel)
-        rij(3,iel) = cvara_r33(iel)
-        rij(4,iel) = cvara_r12(iel)
-        rij(5,iel) = cvara_r23(iel)
-        rij(6,iel) = cvara_r13(iel)
-      enddo
-    endif
+    do iel = 1, ncelet
+      rij(1,iel) = cvara_rij(1,iel)
+      rij(2,iel) = cvara_rij(2,iel)
+      rij(3,iel) = cvara_rij(3,iel)
+      rij(4,iel) = cvara_rij(4,iel)
+      rij(5,iel) = cvara_rij(5,iel)
+      rij(6,iel) = cvara_rij(6,iel)
+    enddo
     ! --- Boundary conditions on the components of the tensor Rij
-
-    if(irijco.eq.1) then
-      call field_get_coefad_v(ivarfl(irij),coefap)
-      coefat = coefap
-    else
-      call field_get_coefad_s(ivarfl(ir11),coef1)
-      call field_get_coefad_s(ivarfl(ir22),coef2)
-      call field_get_coefad_s(ivarfl(ir33),coef3)
-      call field_get_coefad_s(ivarfl(ir12),coef4)
-      call field_get_coefad_s(ivarfl(ir23),coef5)
-      call field_get_coefad_s(ivarfl(ir13),coef6)
-      do ifac = 1, nfabor
-        coefat(1,ifac) = coef1(ifac)
-        coefat(2,ifac) = coef2(ifac)
-        coefat(3,ifac) = coef3(ifac)
-        coefat(4,ifac) = coef4(ifac)
-        coefat(5,ifac) = coef5(ifac)
-        coefat(6,ifac) = coef6(ifac)
-      enddo
-    endif
+    call field_get_coefad_v(ivarfl(irij),coefap)
+    coefat = coefap
 
     do ifac = 1, nfabor
       do ii = 1, 6
@@ -1048,25 +997,8 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
       enddo
     enddo
 
-    if(irijco.eq.1) then
-      call field_get_coefbd_v(ivarfl(irij),coefbp)
-      coefbt = coefbp
-    else
-      call field_get_coefbd_s(ivarfl(ir11),coef1)
-      call field_get_coefbd_s(ivarfl(ir22),coef2)
-      call field_get_coefbd_s(ivarfl(ir33),coef3)
-      call field_get_coefbd_s(ivarfl(ir12),coef4)
-      call field_get_coefbd_s(ivarfl(ir23),coef5)
-      call field_get_coefbd_s(ivarfl(ir13),coef6)
-      do ifac = 1, nfabor
-        coefbt(1,1,ifac) = coef1(ifac)
-        coefbt(2,2,ifac) = coef2(ifac)
-        coefbt(3,3,ifac) = coef3(ifac)
-        coefbt(4,4,ifac) = coef4(ifac)
-        coefbt(5,5,ifac) = coef5(ifac)
-        coefbt(6,6,ifac) = coef6(ifac)
-      enddo
-    endif
+    call field_get_coefbd_v(ivarfl(irij),coefbp)
+    coefbt = coefbp
 
   ! Baglietto et al. quadratic k-epislon model
   else if(iturb.eq.23) then
@@ -1092,7 +1024,7 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
   inc  = 1
   iflmb0 = 0
   if(itytur.eq.3) then
-    call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
+    call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
   else
     call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
   end if

@@ -113,7 +113,7 @@ double precision, allocatable, dimension(:) :: w7
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: visct
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: cvar_f1m, cvar_f2m, cvar_f3m
 double precision, dimension(:), pointer :: cvar_varsc, cvara_varsc
 
@@ -154,9 +154,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 ) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 elseif ( itytur.eq.3 ) then
-  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+  call field_get_val_prev_v(ivarfl(irij), cvara_rij)
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 elseif ( iturb.eq.60 ) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
@@ -261,7 +259,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
       xk = cvara_k(iel)
       xe = cvara_ep(iel)
     elseif ( itytur.eq.3 ) then
-      xk = 0.5d0*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
+      xk = 0.5d0*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
       xe = cvara_ep(iel)
     elseif ( iturb.eq.60 ) then
       xk = cvara_k(iel)

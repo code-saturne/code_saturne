@@ -100,7 +100,6 @@ double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: cvar_al, cvara_al, cvara_ep
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
 double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:,:), pointer :: cvara_rij
 
@@ -123,13 +122,7 @@ call field_get_val_s(ivisct, visct)
 call field_get_val_s(f_id, cvar_al)
 call field_get_val_prev_s(f_id, cvara_al)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
-if (irijco.eq.1) then
-  call field_get_val_prev_v(ivarfl(irij), cvara_rij)
-else
-  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
-endif
+call field_get_val_prev_v(ivarfl(irij), cvara_rij)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -183,12 +176,8 @@ endif
 
 !FIXME the source term extrapolation is not well done!!!!
 do iel = 1, ncel
-  if (irijco.eq.1) then
-    xk = d1s2*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
-  else
-    xk = d1s2*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
-  endif
-  xnu  = viscl(iel)/crom(iel)
+   xk = d1s2*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
+   xnu  = viscl(iel)/crom(iel)
 
   ! Integral length scale
   xllke = xk**d3s2/cvara_ep(iel)

@@ -1792,33 +1792,13 @@ cs_turbomachinery_rotate_fields(const cs_real_t dt[])
 
   /* Specific handling of Reynolds stresses */
 
-  cs_field_t  *fr11 = cs_field_by_name("r11");
-  if (fr11 != NULL) {
-
-    cs_field_t  *fr22 = cs_field_by_name("r22");
-    cs_field_t  *fr33 = cs_field_by_name("r33");
-    cs_field_t  *fr12 = cs_field_by_name("r12");
-    cs_field_t  *fr13 = cs_field_by_name("r13");
-    cs_field_t  *fr23 = cs_field_by_name("r23");
-
-    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(fr11->location_id);
+  cs_field_t  *frij = cs_field_by_name("rij");
+  if (frij != NULL) {
+    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(frij->location_id);
     cs_lnum_t _n_elts = n_elts[2];
-
+    cs_real_6_t *cvar_r = (cs_real_6_t *)(frij->val);
     for (i = 0; i < _n_elts; i++) {
-      double t[6];
-      t[0] = fr11->val[i];
-      t[1] = fr22->val[i];
-      t[2] = fr33->val[i];
-      t[3] = fr12->val[i];
-      t[4] = fr13->val[i];
-      t[5] = fr23->val[i];
-      _apply_sym_tensor_rotation(m[tbm->cell_rotor_num[i]], t);
-      fr11->val[i] = t[0];
-      fr22->val[i] = t[1];
-      fr33->val[i] = t[2];
-      fr12->val[i] = t[3];
-      fr13->val[i] = t[4];
-      fr23->val[i] = t[5];
+      _apply_sym_tensor_rotation(m[tbm->cell_rotor_num[i]], cvar_r[i]);
     }
 
   }

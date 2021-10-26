@@ -113,7 +113,7 @@ integer          ivar, iel
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, dimension(:), pointer ::  crom
 double precision, dimension(:), pointer :: cvara_k, cvara_ep, cvara_omg
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: cvara_scal
 
 type(var_cal_opt) :: vcopt
@@ -146,9 +146,7 @@ if (itytur.eq.2.or.iturb.eq.50) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 elseif (itytur.eq.3) then
-  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+  call field_get_val_prev_v(ivarfl(irij), cvara_rij)
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 elseif (iturb.eq.60) then
   call field_get_val_prev_s(ivarfl(ik), cvara_k)
@@ -181,9 +179,9 @@ if ( ivar.eq.isca(iygfm) ) then
   elseif (itytur.eq.3) then
 
     do iel = 1, ncel
-      w1(iel) = 0.5d0 *( cvara_r11(iel)                    &
-                        +cvara_r22(iel)                    &
-                        +cvara_r33(iel) )
+      w1(iel) = 0.5d0 *( cvara_rij(1,iel)                    &
+                        +cvara_rij(2,iel)                    &
+                        +cvara_rij(3,iel) )
       w2(iel) = cvara_ep(iel)
     enddo
 

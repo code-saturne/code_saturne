@@ -92,8 +92,7 @@ double precision, allocatable, dimension(:) :: w2, w3, w4, w6
 double precision, dimension(:), pointer :: crom, cromo
 double precision, dimension(:), pointer :: w_dist
 double precision, dimension(:), pointer :: cvara_ep
-double precision, dimension(:), pointer :: cvara_rkm, cvara_rki, cvara_rkj
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
+double precision, dimension(:,:), pointer :: cvara_rij
 
 !===============================================================================
 
@@ -132,9 +131,7 @@ endif
 
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
-call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+call field_get_val_prev_v(ivarfl(irij), cvara_rij)
 
 deltij = 1.0d0
 if(isou.gt.3) then
@@ -182,7 +179,7 @@ deallocate(grad)
 
 do iel = 1 , ncel
   produk(iel) = 0.5d0 * (produc(1,iel)  + produc(2,iel)  + produc(3,iel))
-  xk          = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+  xk          = 0.5d0 * (cvara_rij(1,iel) + cvara_rij(2,iel) + cvara_rij(3,iel))
   epsk(iel)   = cvara_ep(iel)/xk
 enddo
 
@@ -227,22 +224,16 @@ do kk = 1, 3
     !  --> R km
 
     if     ((kk*mm).eq.1) then
-      call field_get_val_prev_s(ivarfl(ir11), cvara_rkm)
       iskm = 1
     elseif ((kk*mm).eq.4) then
-      call field_get_val_prev_s(ivarfl(ir22), cvara_rkm)
       iskm = 2
     elseif ((kk*mm).eq.9) then
-      call field_get_val_prev_s(ivarfl(ir33), cvara_rkm)
       iskm = 3
     elseif ((kk*mm).eq.2) then
-      call field_get_val_prev_s(ivarfl(ir12), cvara_rkm)
       iskm = 4
     elseif ((kk*mm).eq.6) then
-      call field_get_val_prev_s(ivarfl(ir23), cvara_rkm)
       iskm = 5
     elseif ((kk*mm).eq.3) then
-      call field_get_val_prev_s(ivarfl(ir13), cvara_rkm)
       iskm = 6
     endif
 
@@ -267,7 +258,7 @@ do kk = 1, 3
       endif
 
       w6(iel) = w6(iel) + vnk*vnm*deltij*(                        &
-             crijp1*cvara_rkm(iel)*epsk(iel)                      &
+             crijp1*cvara_rij(iskm,iel)*epsk(iel)                 &
             -crijp2                                               &
              *crij2*(produc(iskm,iel)-d2s3*produk(iel)*deltkm) )
     enddo
@@ -280,44 +271,32 @@ do kk = 1, 3
   !  --> R ki
 
   if     ((kk*ii).eq.1) then
-    call field_get_val_prev_s(ivarfl(ir11), cvara_rki)
     iski = 1
   elseif ((kk*ii).eq.4) then
-    call field_get_val_prev_s(ivarfl(ir22), cvara_rki)
     iski = 2
   elseif ((kk*ii).eq.9) then
-    call field_get_val_prev_s(ivarfl(ir33), cvara_rki)
     iski = 3
   elseif ((kk*ii).eq.2) then
-    call field_get_val_prev_s(ivarfl(ir12), cvara_rki)
     iski = 4
   elseif ((kk*ii).eq.6) then
-    call field_get_val_prev_s(ivarfl(ir23), cvara_rki)
     iski = 5
   elseif ((kk*ii).eq.3) then
-    call field_get_val_prev_s(ivarfl(ir13), cvara_rki)
     iski = 6
   endif
 
   !  --> R kj
 
   if     ((kk*jj).eq.1) then
-    call field_get_val_prev_s(ivarfl(ir11), cvara_rkj)
     iskj = 1
   elseif ((kk*jj).eq.4) then
-    call field_get_val_prev_s(ivarfl(ir22), cvara_rkj)
     iskj = 2
   elseif ((kk*jj).eq.9) then
-    call field_get_val_prev_s(ivarfl(ir33), cvara_rkj)
     iskj = 3
   elseif ((kk*jj).eq.2) then
-    call field_get_val_prev_s(ivarfl(ir12), cvara_rkj)
     iskj = 4
   elseif ((kk*jj).eq.6) then
-    call field_get_val_prev_s(ivarfl(ir23), cvara_rkj)
     iskj = 5
   elseif ((kk*jj).eq.3) then
-    call field_get_val_prev_s(ivarfl(ir13), cvara_rkj)
     iskj = 6
   endif
 
@@ -363,10 +342,10 @@ do kk = 1, 3
         vnj    = w4(iel)
       endif
 
-    w6(iel) = w6(iel) + 1.5d0*vnk*(                               &
-    -crijp1*(cvara_rki(iel)*vnj+cvara_rkj(iel)*vni)*epsk(iel)     &
-    +crijp2                                                       &
-     *crij2*((produc(iski,iel)-d2s3*produk(iel)*deltki)*vnj       &
+    w6(iel) = w6(iel) + 1.5d0*vnk*(                                         &
+    -crijp1*(cvara_rij(iski,iel)*vnj+cvara_rij(iskj,iel)*vni)*epsk(iel)     &
+    +crijp2                                                                 &
+     *crij2*((produc(iski,iel)-d2s3*produk(iel)*deltki)*vnj                 &
             +(produc(iskj,iel)-d2s3*produk(iel)*deltkj)*vni) )
 
   enddo
@@ -379,7 +358,7 @@ enddo
 
 do iel = 1, ncel
   distxn =  max(w_dist(iel),epzero)
-  trrij  = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+  trrij  = 0.5d0 * (cvara_rij(1,iel) + cvara_rij(2,iel) + cvara_rij(3,iel))
   aa = 1.d0
   bb = cmu075*trrij**1.5d0/(xkappa*cvara_ep(iel)*distxn)
   w3(iel) = min(aa, bb)

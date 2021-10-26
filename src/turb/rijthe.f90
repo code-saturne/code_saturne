@@ -85,8 +85,7 @@ double precision aa, bb
 double precision turb_schmidt
 
 double precision, dimension(:), pointer :: cvara_ep
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
-double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
+double precision, dimension(:,:), pointer :: cvara_rij
 
 !===============================================================================
 
@@ -106,12 +105,7 @@ uns3  = 1.d0/3.d0
 
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
-call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
-call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
-call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
-call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
+call field_get_val_prev_v(ivarfl(irij), cvara_rij)
 
 !===============================================================================
 ! 2. Terms for Rij:
@@ -126,17 +120,17 @@ if     (ivar.eq.ir11) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(1,iel)                            &
-        + cvara_r12(iel)*gradro(2,iel)                            &
-        + cvara_r13(iel)*gradro(3,iel)
-    r2t = cvara_r12(iel)*gradro(1,iel)                            &
-        + cvara_r22(iel)*gradro(2,iel)                            &
-        + cvara_r23(iel)*gradro(3,iel)
-    r3t = cvara_r13(iel)*gradro(1,iel)                            &
-        + cvara_r23(iel)*gradro(2,iel)                            &
-        + cvara_r33(iel)*gradro(3,iel)
+    r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
+        + cvara_rij(4,iel)*gradro(2,iel)                            &
+        + cvara_rij(6,iel)*gradro(3,iel)
+    r2t = cvara_rij(4,iel)*gradro(1,iel)                            &
+        + cvara_rij(2,iel)*gradro(2,iel)                            &
+        + cvara_rij(5,iel)*gradro(3,iel)
+    r3t = cvara_rij(6,iel)*gradro(1,iel)                            &
+        + cvara_rij(5,iel)*gradro(2,iel)                            &
+        + cvara_rij(3,iel)*gradro(3,iel)
 
-    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+    kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
            /(2.d0*cvara_ep(iel))
 
     g11 = const*kseps*2.d0*(r1t*gx       )
@@ -154,17 +148,17 @@ elseif (ivar.eq.ir22) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(1,iel)                            &
-        + cvara_r12(iel)*gradro(2,iel)                            &
-        + cvara_r13(iel)*gradro(3,iel)
-    r2t = cvara_r12(iel)*gradro(1,iel)                            &
-        + cvara_r22(iel)*gradro(2,iel)                            &
-        + cvara_r23(iel)*gradro(3,iel)
-    r3t = cvara_r13(iel)*gradro(1,iel)                            &
-        + cvara_r23(iel)*gradro(2,iel)                            &
-        + cvara_r33(iel)*gradro(3,iel)
+    r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
+        + cvara_rij(4,iel)*gradro(2,iel)                            &
+        + cvara_rij(6,iel)*gradro(3,iel)
+    r2t = cvara_rij(4,iel)*gradro(1,iel)                            &
+        + cvara_rij(2,iel)*gradro(2,iel)                            &
+        + cvara_rij(5,iel)*gradro(3,iel)
+    r3t = cvara_rij(6,iel)*gradro(1,iel)                            &
+        + cvara_rij(5,iel)*gradro(2,iel)                            &
+        + cvara_rij(3,iel)*gradro(3,iel)
 
-    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+    kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
            /(2.d0*cvara_ep(iel))
 
     g11 = const*kseps*2.d0*(r1t*gx       )
@@ -182,17 +176,17 @@ elseif (ivar.eq.ir33) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(1,iel)                            &
-        + cvara_r12(iel)*gradro(2,iel)                            &
-        + cvara_r13(iel)*gradro(3,iel)
-    r2t = cvara_r12(iel)*gradro(1,iel)                            &
-        + cvara_r22(iel)*gradro(2,iel)                            &
-        + cvara_r23(iel)*gradro(3,iel)
-    r3t = cvara_r13(iel)*gradro(1,iel)                            &
-        + cvara_r23(iel)*gradro(2,iel)                            &
-        + cvara_r33(iel)*gradro(3,iel)
+    r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
+        + cvara_rij(4,iel)*gradro(2,iel)                            &
+        + cvara_rij(6,iel)*gradro(3,iel)
+    r2t = cvara_rij(4,iel)*gradro(1,iel)                            &
+        + cvara_rij(2,iel)*gradro(2,iel)                            &
+        + cvara_rij(5,iel)*gradro(3,iel)
+    r3t = cvara_rij(6,iel)*gradro(1,iel)                            &
+        + cvara_rij(5,iel)*gradro(2,iel)                            &
+        + cvara_rij(3,iel)*gradro(3,iel)
 
-    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+    kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
            /(2.d0*cvara_ep(iel))
 
     g11 = const*kseps*2.d0*(r1t*gx       )
@@ -210,14 +204,14 @@ elseif (ivar.eq.ir12) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(1,iel)                            &
-        + cvara_r12(iel)*gradro(2,iel)                            &
-        + cvara_r13(iel)*gradro(3,iel)
-    r2t = cvara_r12(iel)*gradro(1,iel)                            &
-        + cvara_r22(iel)*gradro(2,iel)                            &
-        + cvara_r23(iel)*gradro(3,iel)
+    r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
+        + cvara_rij(4,iel)*gradro(2,iel)                            &
+        + cvara_rij(6,iel)*gradro(3,iel)
+    r2t = cvara_rij(4,iel)*gradro(1,iel)                            &
+        + cvara_rij(2,iel)*gradro(2,iel)                            &
+        + cvara_rij(5,iel)*gradro(3,iel)
 
-    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+    kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
            /(2.d0*cvara_ep(iel))
 
     g12 = const*kseps*     (r1t*gy+r2t*gx)
@@ -232,14 +226,14 @@ elseif (ivar.eq.ir13) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(1,iel)                            &
-        + cvara_r12(iel)*gradro(2,iel)                            &
-        + cvara_r13(iel)*gradro(3,iel)
-    r3t = cvara_r13(iel)*gradro(1,iel)                            &
-        + cvara_r23(iel)*gradro(2,iel)                            &
-        + cvara_r33(iel)*gradro(3,iel)
+    r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
+        + cvara_rij(4,iel)*gradro(2,iel)                            &
+        + cvara_rij(6,iel)*gradro(3,iel)
+    r3t = cvara_rij(6,iel)*gradro(1,iel)                            &
+        + cvara_rij(5,iel)*gradro(2,iel)                            &
+        + cvara_rij(3,iel)*gradro(3,iel)
 
-    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+    kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
            /(2.d0*cvara_ep(iel))
 
     g13 = const*kseps*     (r1t*gz+r3t*gx)
@@ -254,14 +248,14 @@ elseif (ivar.eq.ir23) then
 
   do iel = 1, ncel
 
-    r2t = cvara_r12(iel)*gradro(1,iel)                            &
-        + cvara_r22(iel)*gradro(2,iel)                            &
-        + cvara_r23(iel)*gradro(3,iel)
-    r3t = cvara_r13(iel)*gradro(1,iel)                            &
-        + cvara_r23(iel)*gradro(2,iel)                            &
-        + cvara_r33(iel)*gradro(3,iel)
+    r2t = cvara_rij(4,iel)*gradro(1,iel)                            &
+        + cvara_rij(2,iel)*gradro(2,iel)                            &
+        + cvara_rij(5,iel)*gradro(3,iel)
+    r3t = cvara_rij(6,iel)*gradro(1,iel)                            &
+        + cvara_rij(5,iel)*gradro(2,iel)                            &
+        + cvara_rij(3,iel)*gradro(3,iel)
 
-    kseps = (cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))  &
+    kseps = (cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))  &
            /(2.d0*cvara_ep(iel))
 
     g23 = const*kseps*(r2t*gz+r3t*gy)
@@ -289,15 +283,15 @@ elseif (ivar.eq.iep ) then
 
   do iel = 1, ncel
 
-    r1t = cvara_r11(iel)*gradro(1,iel)                            &
-        + cvara_r12(iel)*gradro(2,iel)                            &
-        + cvara_r13(iel)*gradro(3,iel)
-    r2t = cvara_r12(iel)*gradro(1,iel)                            &
-        + cvara_r22(iel)*gradro(2,iel)                            &
-        + cvara_r23(iel)*gradro(3,iel)
-    r3t = cvara_r13(iel)*gradro(1,iel)                            &
-        + cvara_r23(iel)*gradro(2,iel)                            &
-        + cvara_r33(iel)*gradro(3,iel)
+    r1t = cvara_rij(1,iel)*gradro(1,iel)                            &
+        + cvara_rij(4,iel)*gradro(2,iel)                            &
+        + cvara_rij(6,iel)*gradro(3,iel)
+    r2t = cvara_rij(4,iel)*gradro(1,iel)                            &
+        + cvara_rij(2,iel)*gradro(2,iel)                            &
+        + cvara_rij(5,iel)*gradro(3,iel)
+    r3t = cvara_rij(6,iel)*gradro(1,iel)                            &
+        + cvara_rij(5,iel)*gradro(2,iel)                            &
+        + cvara_rij(3,iel)*gradro(3,iel)
 
     g11p = const*2.d0*(r1t*gx)
     g22p = const*2.d0*(r2t*gy)

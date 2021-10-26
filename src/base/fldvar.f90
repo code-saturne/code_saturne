@@ -248,26 +248,16 @@ if (itytur.eq.2) then
   call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)
   call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
 else if (itytur.eq.3) then
-  if (irijco.eq.1) then
-    call add_variable_field('rij', 'Rij', 6, irij)
-    call field_set_key_int(ivarfl(irij), keycpl, 1)
+  call add_variable_field('rij', 'Rij', 6, irij)
+  call field_set_key_int(ivarfl(irij), keycpl, 1)
 
-    ! All rij components point to same field
-    ir11 = irij
-    ir22 = ir11 + 1
-    ir33 = ir22 + 1
-    ir12 = ir33 + 1
-    ir23 = ir12 + 1
-    ir13 = ir23 + 1
-  else
-    call add_variable_field('r11', 'R11', 1, ir11)
-    irij = ir11
-    call add_variable_field('r22', 'R22', 1, ir22)
-    call add_variable_field('r33', 'R33', 1, ir33)
-    call add_variable_field('r12', 'R12', 1, ir12)
-    call add_variable_field('r23', 'R23', 1, ir23)
-    call add_variable_field('r13', 'R13', 1, ir13)
-  endif
+  ! All rij components point to same field
+  ir11 = irij
+  ir22 = ir11 + 1
+  ir33 = ir22 + 1
+  ir12 = ir33 + 1
+  ir23 = ir12 + 1
+  ir13 = ir23 + 1
 
   call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
   if (iturb.eq.32) then

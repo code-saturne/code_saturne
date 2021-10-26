@@ -128,7 +128,6 @@ subroutine usipph &
 !===============================================================================
 
 use entsor, only: nfecra ! No other module should appear here
-use optcal, only: irijco ! No other module should appear here
 
 !===============================================================================
 

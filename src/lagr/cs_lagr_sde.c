@@ -1169,15 +1169,9 @@ _lagesd(cs_real_t             dtp,
     enertur  = extra->cvar_k->vals[_prev_id][cell_id];
 
   else if (extra->itytur == 3) {
-    if (extra->cvar_rij == NULL) {
-      enertur  = 0.5 * (  extra->cvar_r11->vals[_prev_id][cell_id]
-                        + extra->cvar_r22->vals[_prev_id][cell_id]
-                        + extra->cvar_r33->vals[_prev_id][cell_id]);
-    } else {
-      enertur  = 0.5 * (  extra->cvar_rij->vals[_prev_id][6*cell_id    ]
-                        + extra->cvar_rij->vals[_prev_id][6*cell_id + 1]
-                        + extra->cvar_rij->vals[_prev_id][6*cell_id + 2]);
-    }
+    enertur  = 0.5 * (  extra->cvar_rij->vals[_prev_id][6*cell_id    ]
+                      + extra->cvar_rij->vals[_prev_id][6*cell_id + 1]
+                      + extra->cvar_rij->vals[_prev_id][6*cell_id + 2]);
   }
 
   cs_lnum_t marko  = cs_lagr_particle_get_lnum(particle, p_am,
@@ -2332,7 +2326,6 @@ _lagdep(cs_real_t           dtp,
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
   const cs_temperature_scale_t t_scl = cs_glob_thermal_model->itpscl;
-  const cs_thermal_model_variable_t t_var = cs_glob_thermal_model->itherm;
 
   const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
   const cs_real_3_t *cvar_vel

@@ -135,10 +135,6 @@ double precision, pointer, dimension(:) :: tslagi
 double precision, dimension(:,:), pointer :: coefau
 double precision, dimension(:,:,:), pointer :: coefbu
 double precision, dimension(:), pointer :: brom, crom
-double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
-double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
 double precision, dimension(:), pointer :: cvara_scalt
 double precision, dimension(:), pointer :: cvar_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvara_rij, cvar_rij, vel
@@ -164,10 +160,8 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbr(ncelet), rovsdt(ncelet))
 allocate(gradv(3, 3, ncelet))
-if (irijco.eq.1) then
-  allocate(smbrts(6,ncelet))
-  allocate(rovsdtts(6,6,ncelet))
-endif
+allocate(smbrts(6,ncelet))
+allocate(rovsdtts(6,6,ncelet))
 
 ! Allocate other arrays, depending on user options
 call field_get_id_try("rij_production", f_id)
@@ -187,17 +181,7 @@ call field_get_val_s(ivarfl(iep), cvar_ep)
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
-if (irijco.eq.1) then
-  call field_get_val_prev_v(ivarfl(irij), cvara_rij)
-else
-  call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-  call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-  call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
-  call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
-  call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
-  call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
-endif
-
+call field_get_val_prev_v(ivarfl(irij), cvara_rij)
 call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
 
 if(vcopt%iwarni.ge.1) then
@@ -217,31 +201,27 @@ call field_get_key_id("time_extrapolated", key_t_ext_id)
 ! 1.1 Call source terms for Rij
 !===============================================================================
 
-if (irijco.eq.1) then
-  do iel = 1, ncel
-    do isou = 1 ,6
-      smbrts(isou,iel) = 0.d0
+do iel = 1, ncel
+  do isou = 1 ,6
+    smbrts(isou,iel) = 0.d0
+  enddo
+enddo
+do iel = 1, ncel
+  do isou = 1, 6
+    do jsou = 1, 6
+      rovsdtts(isou,jsou,iel) = 0.d0
     enddo
   enddo
-  do iel = 1, ncel
-    do isou = 1, 6
-      do jsou = 1, 6
-        rovsdtts(isou,jsou,iel) = 0.d0
-      enddo
-    enddo
-  enddo
+enddo
 
-  call cs_user_turbulence_source_terms2 &
-   ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-     ivarfl(irij)    ,                                              &
-     icepdc , icetsm , itypsm ,                                     &
-     ckupdc , smacel ,                                              &
-     smbrts , rovsdtts)
+call cs_user_turbulence_source_terms2(nvar, nscal, ncepdp, ncesmp,   &
+                                      ivarfl(irij),                  &
+                                      icepdc, icetsm, itypsm,        &
+                                      ckupdc, smacel,                &
+                                      smbrts, rovsdtts)
 
-  ! C version
-  call user_source_terms(ivarfl(irij), smbrts, rovsdtts)
-
-endif
+! C version
+call user_source_terms(ivarfl(irij), smbrts, rovsdtts)
 
 !===============================================================================
 ! 1.1 Advanced init for EBRSM
@@ -268,17 +248,7 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
 
   call field_gradient_scalar(ivarfl(ial), iprev, 0, inc, iccocg, grad)
 
-  if (irijco.eq.1) then
-    call field_get_val_v(ivarfl(irij), cvar_rij)
-  else
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
-  endif
-
+  call field_get_val_v(ivarfl(irij), cvar_rij)
   utaurf=0.05d0*uref
 
   call field_get_val_s(ivarfl(iep), cvar_ep)
@@ -339,40 +309,19 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
            * exp(-ypa/25.d0)**2                         &
           + ut2**2/0.3d0*(1.d0-exp(-ypa/25.d0))**2
 
-    if (irijco.eq.0) then
-      cvar_r11(iel) = alpha**3       *2.d0/3.d0        *tke &
+    cvar_rij(1,iel) = alpha**3       *2.d0/3.d0        *tke &
                     + (1.d0-alpha**3)*(1.d0-xnal(1)**2)*tke
-      cvar_r22(iel) = alpha**3       *2.d0/3.d0        *tke &
+    cvar_rij(2,iel) = alpha**3       *2.d0/3.d0        *tke &
                     + (1.d0-alpha**3)*(1.d0-xnal(2)**2)*tke
-      cvar_r33(iel) = alpha**3       *2.d0/3.d0        *tke &
+    cvar_rij(3,iel) = alpha**3       *2.d0/3.d0        *tke &
                     + (1.d0-alpha**3)*(1.d0-xnal(3)**2)*tke
-      cvar_r12(iel) = -(1.d0-alpha**3)*(xnal(1)*xnal(2))*tke
-      cvar_r23(iel) = -(1.d0-alpha**3)*(xnal(2)*xnal(3))*tke
-      cvar_r13(iel) = -(1.d0-alpha**3)*(xnal(1)*xnal(3))*tke
-    else
-      cvar_rij(1,iel) = alpha**3       *2.d0/3.d0        *tke &
-                    + (1.d0-alpha**3)*(1.d0-xnal(1)**2)*tke
-      cvar_rij(2,iel) = alpha**3       *2.d0/3.d0        *tke &
-                    + (1.d0-alpha**3)*(1.d0-xnal(2)**2)*tke
-      cvar_rij(3,iel) = alpha**3       *2.d0/3.d0        *tke &
-                    + (1.d0-alpha**3)*(1.d0-xnal(3)**2)*tke
-      cvar_rij(4,iel) = -(1.d0-alpha**3)*(xnal(1)*xnal(2))*tke
-      cvar_rij(5,iel) = -(1.d0-alpha**3)*(xnal(2)*xnal(3))*tke
-      cvar_rij(6,iel) = -(1.d0-alpha**3)*(xnal(1)*xnal(3))*tke
-    end if
+    cvar_rij(4,iel) = -(1.d0-alpha**3)*(xnal(1)*xnal(2))*tke
+    cvar_rij(5,iel) = -(1.d0-alpha**3)*(xnal(2)*xnal(3))*tke
+    cvar_rij(6,iel) = -(1.d0-alpha**3)*(xnal(1)*xnal(3))*tke
   enddo
 
   call field_current_to_previous(ivarfl(iu))
-  if (irijco.eq.0) then
-    call field_current_to_previous(ivarfl(ir11))
-    call field_current_to_previous(ivarfl(ir22))
-    call field_current_to_previous(ivarfl(ir33))
-    call field_current_to_previous(ivarfl(ir12))
-    call field_current_to_previous(ivarfl(ir23))
-    call field_current_to_previous(ivarfl(ir13))
-  else
-    call field_current_to_previous(ivarfl(irij))
-  endif
+  call field_current_to_previous(ivarfl(irij))
 
   deallocate(grad)
 endif
@@ -391,17 +340,16 @@ call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 ! 2.2 Compute the production term for Rij
 !===============================================================================
 
-if (irijco.eq.1) then
-  do iel = 1, ncel
+do iel = 1, ncel
 
-    ! Pij = - (Rik dUk/dXj + dUk/dXi Rkj)
-    ! Pij is stored as (P11, P22, P33, P12, P23, P13)
-    cpro_produc(1,iel) = &
+   ! Pij = - (Rik dUk/dXj + dUk/dXi Rkj)
+   ! Pij is stored as (P11, P22, P33, P12, P23, P13)
+   cpro_produc(1,iel) = &
                   - 2.0d0*(cvara_rij(1,iel)*gradv(1, 1, iel) +           &
                            cvara_rij(4,iel)*gradv(2, 1, iel) +           &
                            cvara_rij(6,iel)*gradv(3, 1, iel) )
 
-    cpro_produc(4,iel) = &
+   cpro_produc(4,iel) = &
                   - (cvara_rij(4,iel)*gradv(1, 1, iel) +                 &
                      cvara_rij(2,iel)*gradv(2, 1, iel) +                 &
                      cvara_rij(5,iel)*gradv(3, 1, iel) )                 &
@@ -409,7 +357,7 @@ if (irijco.eq.1) then
                      cvara_rij(4,iel)*gradv(2, 2, iel) +                 &
                      cvara_rij(6,iel)*gradv(3, 2, iel) )
 
-    cpro_produc(6,iel) = &
+   cpro_produc(6,iel) = &
                   - (cvara_rij(6,iel)*gradv(1, 1, iel) +                 &
                      cvara_rij(5,iel)*gradv(2, 1, iel) +                 &
                      cvara_rij(3,iel)*gradv(3, 1, iel) )                 &
@@ -417,12 +365,12 @@ if (irijco.eq.1) then
                      cvara_rij(4,iel)*gradv(2, 3, iel) +                 &
                      cvara_rij(6,iel)*gradv(3, 3, iel) )
 
-    cpro_produc(2,iel) = &
+   cpro_produc(2,iel) = &
                   - 2.0d0*(cvara_rij(4,iel)*gradv(1, 2, iel) +           &
                            cvara_rij(2,iel)*gradv(2, 2, iel) +           &
                            cvara_rij(5,iel)*gradv(3, 2, iel) )
 
-    cpro_produc(5,iel) = &
+   cpro_produc(5,iel) = &
                   - (cvara_rij(6,iel)*gradv(1, 2, iel) +                 &
                      cvara_rij(5,iel)*gradv(2, 2, iel) +                 &
                      cvara_rij(3,iel)*gradv(3, 2, iel) )                 &
@@ -430,57 +378,12 @@ if (irijco.eq.1) then
                      cvara_rij(2,iel)*gradv(2, 3, iel) +                 &
                      cvara_rij(5,iel)*gradv(3, 3, iel) )
 
-    cpro_produc(3,iel) = &
+   cpro_produc(3,iel) = &
                   - 2.0d0*(cvara_rij(6,iel)*gradv(1, 3, iel) +           &
                            cvara_rij(5,iel)*gradv(2, 3, iel) +           &
                            cvara_rij(3,iel)*gradv(3, 3, iel) )
 
-  enddo
-else
-  do iel = 1 , ncel
-
-    ! Pij = - (Rik dUk/dXj + dUk/dXi Rkj)
-    cpro_produc(1,iel) = &
-                  - 2.0d0*(cvara_r11(iel)*gradv(1, 1, iel) +           &
-                           cvara_r12(iel)*gradv(2, 1, iel) +           &
-                           cvara_r13(iel)*gradv(3, 1, iel) )
-
-    cpro_produc(4,iel) = &
-                  - (cvara_r12(iel)*gradv(1, 1, iel) +                 &
-                     cvara_r22(iel)*gradv(2, 1, iel) +                 &
-                     cvara_r23(iel)*gradv(3, 1, iel) )                 &
-                  - (cvara_r11(iel)*gradv(1, 2, iel) +                 &
-                     cvara_r12(iel)*gradv(2, 2, iel) +                 &
-                     cvara_r13(iel)*gradv(3, 2, iel) )
-
-    cpro_produc(6,iel) = &
-                  - (cvara_r13(iel)*gradv(1, 1, iel) +                 &
-                     cvara_r23(iel)*gradv(2, 1, iel) +                 &
-                     cvara_r33(iel)*gradv(3, 1, iel) )                 &
-                  - (cvara_r11(iel)*gradv(1, 3, iel) +                 &
-                     cvara_r12(iel)*gradv(2, 3, iel) +                 &
-                     cvara_r13(iel)*gradv(3, 3, iel) )
-
-    cpro_produc(2,iel) = &
-                  - 2.0d0*(cvara_r12(iel)*gradv(1, 2, iel) +           &
-                           cvara_r22(iel)*gradv(2, 2, iel) +           &
-                           cvara_r23(iel)*gradv(3, 2, iel) )
-
-    cpro_produc(5,iel) = &
-                  - (cvara_r13(iel)*gradv(1, 2, iel) +                 &
-                     cvara_r23(iel)*gradv(2, 2, iel) +                 &
-                     cvara_r33(iel)*gradv(3, 2, iel) )                 &
-                  - (cvara_r12(iel)*gradv(1, 3, iel) +                 &
-                     cvara_r22(iel)*gradv(2, 3, iel) +                 &
-                     cvara_r23(iel)*gradv(3, 3, iel) )
-
-    cpro_produc(3,iel) = &
-                  - 2.0d0*(cvara_r13(iel)*gradv(1, 3, iel) +           &
-                           cvara_r23(iel)*gradv(2, 3, iel) +           &
-                           cvara_r33(iel)*gradv(3, 3, iel) )
-
-  enddo
-endif
+enddo
 
 !===============================================================================
 ! 2.3 Compute the pressure correlation  term for Rij
@@ -493,8 +396,7 @@ endif
 if (f_id_phij.ge.0) then
   d1s3 = 1.0d0/3.0d0
   d2s3 = 2.0d0/3.0d0
-  if (irijco.eq.1) then
-    do iel = 1, ncel
+  do iel = 1, ncel
       k=0.5*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
       P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
       do isou=1,3
@@ -505,31 +407,7 @@ if (f_id_phij.ge.0) then
         cpro_press_correl(isou, iel) = -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel))  &
                                        -crij2*(cpro_produc(isou,iel))
       enddo
-    enddo
-  else
-    do iel = 1, ncel
-      k=0.5*(cvara_r11(iel)+cvara_r22(iel)+cvara_r33(iel))
-      P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
-
-      cpro_press_correl(1, iel)= -crij1*cvar_ep(iel)/k*(cvara_r11(iel)-d2s3*k)  &
-                                 -crij2*(cpro_produc(1,iel)-d2s3*P)
-
-      cpro_press_correl(2, iel)= -crij1*cvar_ep(iel)/k*(cvara_r22(iel)-d2s3*k)  &
-                                 -crij2*(cpro_produc(2,iel)-d2s3*P)
-
-      cpro_press_correl(3, iel)= -crij1*cvar_ep(iel)/k*(cvara_r33(iel)-d2s3*k)  &
-                                 -crij2*(cpro_produc(3,iel)-d2s3*P)
-
-      cpro_press_correl(4, iel)= -crij1*cvar_ep(iel)/k*cvara_r12(iel)  &
-                                 -crij2*cpro_produc(4,iel)
-
-      cpro_press_correl(5, iel)= -crij1*cvar_ep(iel)/k*cvara_r22(iel)  &
-                                 -crij2*cpro_produc(5,iel)
-
-      cpro_press_correl(6, iel)= -crij1*cvar_ep(iel)/k*cvara_r13(iel)  &
-                                 -crij2*cpro_produc(6,iel)
-    enddo
-  endif
+   enddo
 endif
 
 !===============================================================================
@@ -623,11 +501,9 @@ else if (igrari.eq.1) then
       call field_get_val_s(ibrom, bromo)
     endif
 
-    call gradient_s                                                 &
-      ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,       &
-      iwarnp , epsrgp , climgp ,                                    &
-      cromo  , bromo  , viscb           ,                           &
-      gradro )
+    call gradient_s(f_id0, imrgrp, inc, iccocg, nswrgp, imligp,      &
+                    iwarnp, epsrgp, climgp, cromo, bromo, viscb,     &
+                    gradro)
 
   endif
 endif
@@ -645,102 +521,79 @@ else
   lagr_st_rij => null()
 endif
 
-if (irijco.eq.1) then
-  ivar = irij
+if (iilagr.eq.2) then
+  tslagi => tslagr(1:ncelet,itsli)
+endif
 
-  if (iilagr.eq.2) then
-    tslagi  => tslagr(1:ncelet,itsli)
-  endif
+ivar = irij
+
+if (irijco.eq.1) then
 
   ! Rij-epsilon standard (LRR)
   if (iturb.eq.30) then !TODO
 
-    call resrij2 &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   gradv  , cpro_produc , gradro ,                                &
-   ckupdc , smacel ,                                              &
-   viscf  , viscb  ,                                              &
-   tslagi ,                                                       &
-   smbrts , rovsdtts )
+    call resrij2(nvar, nscal, ncepdp, ncesmp,                     &
+                icepdc, icetsm, itypsm,                           &
+                dt, gradv, cpro_produc, gradro,                   &
+                ckupdc, smacel, viscf, viscb, tslagi,             &
+                smbrts, rovsdtts)
 
   ! Rij-epsilon SSG or EBRSM
   elseif (iturb.eq.31.or.iturb.eq.32) then
 
-    call resssg2 &
-  ( nvar    , nscal  , ncesmp ,                                     &
-    ivar    ,                                                       &
-    icetsm , itypsm ,                                               &
-    dt      ,                                                       &
-    gradv   , cpro_produc, gradro ,                                 &
-    smacel ,                                                        &
-    viscf   , viscb  ,                                              &
-    tslagi ,                                                        &
-    smbrts  , rovsdtts )
+    call resssg2(nvar, nscal , ncesmp, ivar,                      &
+                 icetsm, itypsm,                                  &
+                 dt, gradv, cpro_produc, gradro,                  &
+                 smacel, viscf, viscb, tslagi,                    &
+                 smbrts, rovsdtts)
   endif
+
 else
-  do isou = 1, 6
-    if    (isou.eq.1) then
-      ivar   = ir11
-    elseif(isou.eq.2) then
-      ivar   = ir22
-    elseif(isou.eq.3) then
-      ivar   = ir33
-    elseif(isou.eq.4) then
-      ivar   = ir12
-    elseif(isou.eq.5) then
-      ivar   = ir23
-    elseif(isou.eq.6) then
-      ivar   = ir13
-    endif
 
-    if (iilagr.eq.2) then
-      tslagi => tslagr(1:ncelet,itsli)
-    endif
+  ! Rij-epsilon standard (LRR)
+  if (iturb.eq.30) then
+    do isou = 1, 6
+      if    (isou.eq.1) then
+        ivar   = ir11
+      elseif(isou.eq.2) then
+        ivar   = ir22
+      elseif(isou.eq.3) then
+        ivar   = ir33
+      elseif(isou.eq.4) then
+        ivar   = ir12
+      elseif(isou.eq.5) then
+        ivar   = ir23
+      elseif(isou.eq.6) then
+        ivar   = ir13
+      endif
 
-    ! Rij-epsilon standard (LRR)
-    if (iturb.eq.30) then
-      call resrij &
-   ( nvar   , nscal  , ncesmp ,                                     &
-     ivar   , isou   ,                                              &
-     icetsm , itypsm ,                                              &
-     dt     ,                                                       &
-     cpro_produc , gradro ,                                         &
-     smacel ,                                                       &
-     viscf  , viscb  ,                                              &
-     tslagi ,                                                       &
-     smbr   , rovsdt )
+      call resrij(nvar, nscal, ncesmp, ivar, isou,                &
+                  icetsm, itypsm,                                 &
+                  dt, cpro_produc, gradro,                        &
+                  smacel, viscf, viscb, tslagi,                   &
+                  smbr, rovsdt)
+
+    enddo
 
     ! Rij-epsilon SSG or EBRSM
-    elseif (iturb.eq.31.or.iturb.eq.32) then
-      call resssg &
-      ( nvar   , nscal  , ncesmp ,                                     &
-        ivar   , isou   ,                                              &
-        icetsm , itypsm ,                                              &
-        dt     ,                                                       &
-        gradv  , gradro ,                                              &
-        smacel ,                                                       &
-        viscf  , viscb  ,                                              &
-        tslagi ,                                                       &
-        smbr   , rovsdt )
-    endif
+  else if (iturb.eq.31.or.iturb.eq.32) then
+    call resssg(nvar, nscal, ncesmp, ivar,                        &
+                icetsm, itypsm,                                   &
+                dt, gradv, cpro_produc, gradro,                   &
+                smacel, viscf, viscb, tslagi,                     &
+                smbrts, rovsdtts)
+  endif
 
-  enddo
 endif
 
 !===============================================================================
 ! 5. Solve Epsilon
 !===============================================================================
 
-call reseps &
- ( nvar   , nscal  , ncesmp ,                                     &
-   icetsm , itypsm ,                                              &
-   dt     ,                                                       &
-   gradv  , cpro_produc , gradro ,                                &
-   smacel ,                                                       &
-   viscf  , viscb  ,                                              &
-   smbr   , rovsdt )
+call reseps(nvar, nscal, ncesmp, icetsm, itypsm,             &
+            dt, gradv, cpro_produc, gradro,                  &
+            smacel, viscf, viscb,                            &
+            smbr, rovsdt)
 
 !===============================================================================
 ! 6. Clipping
@@ -758,13 +611,15 @@ else
   call clprij(ncel, iclip)
 endif
 
-
 ! Free memory
 deallocate(viscf, viscb)
 deallocate(smbr, rovsdt)
 if (allocated(gradro)) deallocate(gradro)
 if (allocated(produc)) deallocate(produc)
 deallocate(gradv)
+
+deallocate(smbrts)
+deallocate(rovsdtts)
 
 !--------
 ! Formats

@@ -652,7 +652,6 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
 
   const cs_real_3_t  *vel = NULL;
   const cs_real_t    *cvar_k = NULL;
-  const cs_real_t    *cvar_r11 = NULL, *cvar_r22 = NULL, *cvar_r33 = NULL;
   const cs_real_6_t  *cvar_rij = NULL;
 
   vel = (const cs_real_3_t *)extra->vel->vals[time_id];
@@ -670,16 +669,9 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
     if (extra->cvar_k != NULL)
       cvar_k = (const cs_real_t *)extra->cvar_k->vals[time_id];
 
-    else if (extra->cvar_rij != NULL)
+    else if (extra->cvar_rij != NULL) {
       cvar_rij = (const cs_real_6_t *) extra->cvar_rij->vals[time_id];
-
-    /* Deprecated irijco = 0 */
-    else if (extra->cvar_r11 != NULL) {
-      cvar_r11 = (const cs_real_t *)extra->cvar_r11->vals[time_id];
-      cvar_r22 = (const cs_real_t *)extra->cvar_r22->vals[time_id];
-      cvar_r33 = (const cs_real_t *)extra->cvar_r33->vals[time_id];
     }
-
     else {
       bft_error
         (__FILE__, __LINE__, 0,
@@ -748,9 +740,6 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
 
         if (cvar_k != NULL)
           w = d2s3 * cvar_k[cell_id];
-        /* Deprecated irijco = 0 */
-        else if (cvar_r11 != NULL)
-          w = (cvar_r11[cell_id] + cvar_r22[cell_id] + cvar_r33[cell_id]) / 3.;
 
         sym_rij[cell_id][0][0] = w;
         sym_rij[cell_id][1][1] = w;

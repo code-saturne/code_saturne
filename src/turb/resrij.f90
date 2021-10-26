@@ -120,8 +120,8 @@ double precision smbr(ncelet), rovsdt(ncelet)
 
 ! Local variables
 
-integer          iel
-integer          ii    , jj    , kk    , comp_id
+integer          iel, ifac
+integer          ii    , jj    , kk    , comp_id, isou_ik, isou_jk
 integer          iflmas, iflmab
 integer          iwarnp
 integer          imvisp
@@ -129,7 +129,7 @@ integer          iescap
 integer          st_prv_id
 integer          isoluc
 integer          imucpp
-integer          ivar_r(3,3)
+integer          isou_r(3,3)
 integer          icvflb
 integer          init
 integer          ivoid(1)
@@ -152,15 +152,16 @@ double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
+double precision, allocatable, dimension(:) :: cvar_var, cvara_var
+double precision, allocatable, dimension(:) :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
-double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:,:), pointer :: visten, lagr_st_rij
+double precision, dimension(:,:), pointer :: coefap_rij, cofafp_rij
+double precision, dimension(:,:,:), pointer:: coefbp_rij, cofbfp_rij
+double precision, dimension(:,:), pointer :: visten, c_st_prv, lagr_st_rij
 double precision, dimension(:), pointer :: cvara_ep
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
-double precision, dimension(:), pointer :: cvar_var, cvara_var
-double precision, dimension(:), pointer :: cvara_rik, cvara_rjk
-double precision, dimension(:), pointer :: viscl, c_st_prv
+double precision, dimension(:,:), pointer :: cvara_rij, cvar_rij
+double precision, dimension(:), pointer :: viscl
 
 type(var_cal_opt) :: vcopt
 type(var_cal_opt), target :: vcopt_loc
@@ -204,17 +205,32 @@ call field_get_val_s(iflmab, bmasfl)
 
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
-call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
+call field_get_val_v(ivarfl(irij), cvar_rij)
+call field_get_val_prev_v(ivarfl(irij), cvara_rij)
 
-call field_get_val_s(ivarfl(ivar), cvar_var)
-call field_get_val_prev_s(ivarfl(ivar), cvara_var)
+call field_get_coefa_v(ivarfl(irij), coefap_rij)
+call field_get_coefb_v(ivarfl(irij), coefbp_rij)
+call field_get_coefaf_v(ivarfl(irij), cofafp_rij)
+call field_get_coefbf_v(ivarfl(irij), cofbfp_rij)
 
-call field_get_coefa_s(ivarfl(ivar), coefap)
-call field_get_coefb_s(ivarfl(ivar), coefbp)
-call field_get_coefaf_s(ivarfl(ivar), cofafp)
-call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+! Copy field components to scalar value
+
+allocate(coefap(nfabor), coefbp(nfabor))
+allocate(cofafp(nfabor), cofbfp(nfabor))
+allocate(cvar_var(ncelet))
+allocate(cvara_var(ncelet))
+
+do iel = 1, ncel
+  cvar_var(iel) = cvar_rij(isou,iel)
+  cvara_var(iel) = cvara_rij(isou,iel)
+enddo
+
+do ifac = 1, nfabor
+  coefap(ifac) = coefap_rij(isou,ifac)
+  cofafp(ifac) = cofafp_rij(isou,ifac)
+  coefbp(ifac) = coefbp_rij(isou,isou,ifac)
+  cofbfp(ifac) = cofbfp_rij(isou,isou,ifac)
+enddo
 
 deltij = 1.0d0
 if (isou.gt.3) then
@@ -229,7 +245,7 @@ thetv  = vcopt%thetav
 
 call field_get_key_int(ivarfl(ivar), kstprv, st_prv_id)
 if (st_prv_id.ge.0) then
-  call field_get_val_s(st_prv_id, c_st_prv)
+  call field_get_val_v(st_prv_id, c_st_prv)
 else
   c_st_prv=> null()
 endif
@@ -264,18 +280,18 @@ endif
 
 call user_source_terms(ivarfl(ivar), smbr, rovsdt)
 
-!     If we extrapolate the source terms
+! If we extrapolate the source terms
 if (st_prv_id.ge.0) then
   do iel = 1, ncel
-!       Save for exchange
-    tuexpr = c_st_prv(iel)
-!       For continuation and next time step
-    c_st_prv(iel) = smbr(iel)
-!       Second member of previous time step
-!       We suppose -rovsdt > 0: we implicite
-!          the user source term (the rest)
-    smbr(iel) = rovsdt(iel)*cvara_var(iel)  - thets*tuexpr
-!       Diagonal
+    ! Save for exchange
+    tuexpr = c_st_prv(isou,iel)
+    ! For continuation and next time step
+    c_st_prv(isou,iel) = smbr(iel)
+    ! Right hand side of previous time step
+    ! We suppose -rovsdt > 0: we implicit
+    ! the user source term (the rest)
+    smbr(iel) = rovsdt(iel)*cvara_var(iel) - thets*tuexpr
+    ! Diagonal
     rovsdt(iel) = - thetv*rovsdt(iel)
   enddo
 else
@@ -311,14 +327,14 @@ endif
 if (ncesmp.gt.0) then
 
   ! We increment smbr with -Gamma.var_prev. and rovsdt with Gamma
-  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),                     &
-              cell_f_vol, cvara_var, smacel(:,ivar), smacel(:,ipr),  &
+  call catsmt(ncesmp, 1, icetsm, itypsm(:,irij+isou-1),                     &
+              cell_f_vol, cvara_var, smacel(:,irij+isou-1), smacel(:,ipr),  &
               smbr,  rovsdt, w1)
 
   ! If we extrapolate the source terms we put Gamma Pinj in c_st_prv
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
-      c_st_prv(iel) = c_st_prv(iel) + w1(iel)
+      c_st_prv(isou,iel) = c_st_prv(isou,iel) + w1(iel)
     enddo
   ! Otherwise we put it directly in smbr
   else
@@ -333,11 +349,10 @@ endif
 ! 5. Unsteady term
 !===============================================================================
 
-do iel=1,ncel
-  rovsdt(iel) = rovsdt(iel)                                          &
-              + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
+do iel = 1, ncel
+  rovsdt(iel) =   rovsdt(iel)                                          &
+                + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
 enddo
-
 
 !===============================================================================
 ! 6. Production, Pressure-Strain correlation, dissipation
@@ -346,7 +361,7 @@ enddo
 ! ---> Calculation of k for the sub-routine continuation
 !       we use a work array
 do iel = 1, ncel
-  w8(iel) = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+  w8(iel) = 0.5d0 * (cvara_rij(1,iel) + cvara_rij(2,iel) + cvara_rij(3,iel))
 enddo
 
 ! ---> Source term
@@ -385,11 +400,11 @@ if (st_prv_id.ge.0) then
     !       In c_st_prv:
     !       = rhoPij-C1rho eps/k(   -2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
     !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij           }
-    c_st_prv(iel) = c_st_prv(iel) + cromo(iel) * cell_f_vol(iel)  &
-      *(   deltij*d2s3*                                           &
-           (  crij2*trprod                                        &
-            +(crij1-1.d0)* cvara_ep(iel)  )                       &
-         +(1.0d0-crij2)*produc(isou,iel)               )
+    c_st_prv(isou,iel) = c_st_prv(isou,iel) + cromo(iel) * cell_f_vol(iel)  &
+                *(   deltij*d2s3*                                           &
+                     (  crij2*trprod                                        &
+                      +(crij1-1.d0)* cvara_ep(iel)  )                       &
+                +(1.0d0-crij2)*produc(isou,iel)               )
     !       In smbr
     !       =       -C1rho eps/k(Rij         )
     !       = rho{                                     -C1eps/kRij}
@@ -412,8 +427,8 @@ if (st_prv_id.ge.0) then
 
      !    We remove of cromo
      !       =       -C1rho eps/k(   -1/3Rij dij)
-      c_st_prv(iel) = c_st_prv(iel) - cromo(iel) * cell_f_vol(iel)    &
-      *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * cvara_var(iel))
+      c_st_prv(isou,iel) = c_st_prv(isou,iel) - cromo(iel) * cell_f_vol(iel)          &
+                           *(deltij*d1s3*crij1*cvara_ep(iel)/trrij * cvara_var(iel))
       !    We add to smbr (with crom)
       !       =       -C1rho eps/k(   -1/3Rij dij)
       smbr(iel)                 = smbr(iel)                       &
@@ -465,15 +480,15 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
   enddo
 
   ! Index connectivity (i,j) <-> ivar
-  ivar_r(1,1) = ir11
-  ivar_r(2,2) = ir22
-  ivar_r(3,3) = ir33
-  ivar_r(1,2) = ir12
-  ivar_r(1,3) = ir13
-  ivar_r(2,3) = ir23
-  ivar_r(2,1) = ivar_r(1,2)
-  ivar_r(3,1) = ivar_r(1,3)
-  ivar_r(3,2) = ivar_r(2,3)
+  isou_r(1,1) = 1
+  isou_r(2,2) = 2
+  isou_r(3,3) = 3
+  isou_r(1,2) = 4
+  isou_r(1,3) = 6
+  isou_r(2,3) = 5
+  isou_r(2,1) = isou_r(1,2)
+  isou_r(3,1) = isou_r(1,3)
+  isou_r(3,2) = isou_r(2,3)
 
   if (ivar.eq.ir11) then
     ii = 1
@@ -497,14 +512,14 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
 
   ! Compute Gij: (i,j) component of the Coriolis production
   do kk = 1, 3
-    call field_get_val_prev_s(ivarfl(ivar_r(ii,kk)), cvara_rik)
-    call field_get_val_prev_s(ivarfl(ivar_r(jj,kk)), cvara_rjk)
+    isou_ik = isou_r(ii,kk)
+    isou_jk = isou_r(jj,kk)
 
     do iel = 1, ncel
       call coriolis_t(irotce(iel), 1.d0, matrot)
 
-      w7(iel) = w7(iel) - ccorio*(  matrot(ii,kk)*cvara_rjk(iel) &
-                                  + matrot(jj,kk)*cvara_rik(iel) )
+      w7(iel) = w7(iel) - ccorio*(  matrot(ii,kk)*cvara_rij(isou_jk,iel)  &
+                                  + matrot(jj,kk)*cvara_rij(isou_ik,iel))
     enddo
   enddo
 
@@ -518,7 +533,7 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
   ! If source terms are extrapolated
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
-      c_st_prv(iel) = c_st_prv(iel) + w7(iel)
+      c_st_prv(isou,iel) = c_st_prv(isou,iel) + w7(iel)
     enddo
   ! Otherwise, directly in smbr
   else
@@ -544,7 +559,7 @@ if (irijec.eq.1) then
   ! If we extrapolate the source terms: c_st_prv
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
-       c_st_prv(iel) = c_st_prv(iel) + w7(iel)
+       c_st_prv(isou,iel) = c_st_prv(isou,iel) + w7(iel)
      enddo
   ! Otherwise smbr
   else
@@ -554,7 +569,6 @@ if (irijec.eq.1) then
   endif
 
 endif
-
 
 !===============================================================================
 ! 8. Buoyancy source term
@@ -571,7 +585,7 @@ if (igrari.eq.1) then
   ! If source terms are extrapolated
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
-      c_st_prv(iel) = c_st_prv(iel) + w7(iel)
+      c_st_prv(isou,iel) = c_st_prv(isou,iel) + w7(iel)
     enddo
   else
     do iel = 1, ncel
@@ -610,7 +624,7 @@ if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 else
 
   do iel = 1, ncel
-    trrij = 0.5d0 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+    trrij = 0.5d0 * (cvara_rij(1,iel) + cvara_rij(2,iel) + cvara_rij(3,iel))
     rctse = crom(iel) * csrij * trrij**2 / cvara_ep(iel)
     w1(iel) = viscl(iel) + vcopt%idifft*rctse
   enddo
@@ -631,7 +645,7 @@ endif
 if (st_prv_id.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbr(iel) = smbr(iel) + thetp1*c_st_prv(iel)
+    smbr(iel) = smbr(iel) + thetp1*c_st_prv(isou,iel)
   enddo
 endif
 
@@ -669,7 +683,18 @@ call cs_equation_iterative_solve_scalar          &
    rovsdt , smbr   , cvar_var        , dpvar  ,  &
    rvoid  , rvoid  )
 
+! Retrieve solution component
+
+do iel = 1, ncel
+  cvar_rij(isou,iel) = cvar_var(iel)
+enddo
+
 ! Free memory
+
+deallocate(cvar_var, cvara_var)
+deallocate(coefap, coefbp)
+deallocate(cofafp, cofbfp)
+
 deallocate(w1)
 deallocate(w7, w8)
 deallocate(dpvar)

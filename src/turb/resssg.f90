@@ -29,13 +29,6 @@
 !> \brief This subroutine performs the solving of the Reynolds stress components
 !> in \f$ R_{ij} - \varepsilon \f$ RANS (SSG) turbulence model.
 !>
-!> Remark:
-!> - isou=1 for \f$ R_{11} \f$
-!> - isou=2 for \f$ R_{22} \f$
-!> - isou=3 for \f$ R_{33} \f$
-!> - isou=4 for \f$ R_{12} \f$
-!> - isou=5 for \f$ R_{13} \f$
-!> - isou=6 for \f$ R_{23} \f$
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -47,13 +40,13 @@
 !> \param[in]     nscal         total number of scalars
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     ivar          variable number
-!> \param[in]     isou          local variable number (7 here)
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for each variable
 !>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     gradv         work array for the velocity grad term
 !>                                 only for iturb=31
+!> \param[in]     produc        work array for production
 !> \param[in]     gradro        work array for grad rom
 !>                              (without rho volume) only for iturb=30
 !> \param[in]     smacel        value associated to each variable in the mass
@@ -68,10 +61,10 @@
 
 subroutine resssg &
  ( nvar   , nscal  , ncesmp ,                                     &
-   ivar   , isou   ,                                              &
+   ivar   ,                                                       &
    icetsm , itypsm ,                                              &
    dt     ,                                                       &
-   gradv  , gradro ,                                              &
+   gradv  , produc , gradro ,                                     &
    smacel ,                                                       &
    viscf  , viscb  ,                                              &
    tslagi ,                                                       &
@@ -108,37 +101,37 @@ implicit none
 
 integer          nvar   , nscal
 integer          ncesmp
-integer          ivar   , isou
+integer          ivar
 
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision gradv(3, 3, ncelet)
+double precision produc(6,ncelet)
 double precision gradro(3,ncelet)
 double precision smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision tslagi(ncelet)
-double precision smbr(ncelet), rovsdt(ncelet)
+double precision smbr(6,ncelet)
+double precision rovsdt(6,6,ncelet)
 
 ! Local variables
 
-integer          iel
+integer          iel, isou, jsou, jvar
 integer          ii    , jj    , kk    , iii   , jjj
 integer          iflmas, iflmab
 integer          iwarnp
 integer          imvisp
-integer          iescap
-integer          st_prv_id, comp_id
+integer          st_prv_id
 integer          iprev , inc, iccocg, ll
-integer          imucpp
 integer          ivar_r(3,3)
 integer          icvflb
-integer          init
 integer          ivoid(1)
 integer          key_t_ext_id
 integer          iroext
 
-double precision trprod, trrij , deltij
+double precision trprod, trrij
+double precision deltij(6)
 double precision tuexpr, thets , thetv , thetp1
 double precision aiksjk, aikrjk, aii ,aklskl, aikakj
 double precision xaniso(3,3), xstrai(3,3), xrotac(3,3), xprod(3,3), matrot(3,3)
@@ -149,39 +142,30 @@ double precision pij, phiij1, phiij2, epsij
 double precision phiijw, epsijw
 double precision ccorio
 double precision rctse
-double precision normp
-
-double precision rvoid(1)
+double precision, dimension(3,3) :: cvara_r
 
 character(len=80) :: label
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: w7
 double precision, allocatable, dimension(:) :: dpvar
-double precision, allocatable, dimension(:,:) :: viscce
+double precision, allocatable, dimension(:,:) :: gatinj, viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
-double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
-double precision, dimension(:,:), pointer :: visten, lagr_st_rij
+double precision, dimension(:,:), pointer :: coefap, cofafp
+double precision, dimension(:,:,:), pointer :: coefbp, cofbfp
+double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep, cvar_al
-double precision, dimension(:), pointer :: cvara_r11, cvara_r22, cvara_r33
-double precision, dimension(:), pointer :: cvara_r12, cvara_r13, cvara_r23
-double precision, dimension(:), pointer :: cvar_var, cvara_var
-double precision, dimension(:), pointer :: viscl, c_st_prv, visct
-
-type pmapper_double_r1
-   double precision, dimension(:),  pointer :: p !< rank 1 array pointer
-end type pmapper_double_r1
-type(pmapper_double_r1), allocatable, dimension(:,:) :: cvara_r
+double precision, dimension(:,:), pointer :: cvar_var, cvara_var
+double precision, dimension(:,:), pointer:: c_st_prv, lagr_st_rij
+double precision, dimension(:), pointer :: viscl, visct
 
 type(var_cal_opt) :: vcopt
 type(var_cal_opt), target :: vcopt_loc
 type(var_cal_opt), pointer :: p_k_value
 type(c_ptr) :: c_k_value
-
-character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 
@@ -219,15 +203,8 @@ call field_get_val_s(ivisct, visct)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 if (iturb.ne.31) call field_get_val_s(ivarfl(ial), cvar_al)
 
-call field_get_val_prev_s(ivarfl(ir11), cvara_r11)
-call field_get_val_prev_s(ivarfl(ir22), cvara_r22)
-call field_get_val_prev_s(ivarfl(ir33), cvara_r33)
-call field_get_val_prev_s(ivarfl(ir12), cvara_r12)
-call field_get_val_prev_s(ivarfl(ir13), cvara_r13)
-call field_get_val_prev_s(ivarfl(ir23), cvara_r23)
-
-call field_get_val_s(ivarfl(ivar), cvar_var)
-call field_get_val_prev_s(ivarfl(ivar), cvara_var)
+call field_get_val_v(ivarfl(ivar), cvar_var)
+call field_get_val_prev_v(ivarfl(ivar), cvara_var)
 
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -238,18 +215,19 @@ d1s2   = 1.d0/2.d0
 d1s3   = 1.d0/3.d0
 d2s3   = 2.d0/3.d0
 
-deltij = 1.0d0
-if (isou.gt.3) then
-  deltij = 0.0d0
-endif
-
+do isou = 1, 6
+  deltij(isou) = 1.0d0
+  if (isou.gt.3) then
+    deltij(isou) = 0.0d0
+  endif
+enddo
 !     S as Source, V as Variable
 thets  = thetst
 thetv  = vcopt%thetav
 
 call field_get_key_int(ivarfl(ivar), kstprv, st_prv_id)
 if (st_prv_id .ge. 0) then
-  call field_get_val_s(st_prv_id, c_st_prv)
+  call field_get_val_v(st_prv_id, c_st_prv)
 else
   c_st_prv=> null()
 endif
@@ -259,13 +237,6 @@ if (st_prv_id.ge.0.and.iroext.gt.0) then
 else
   call field_get_val_s(icrom, cromo)
 endif
-
-do iel = 1, ncel
-  smbr(iel) = 0.d0
-enddo
-do iel = 1, ncel
-  rovsdt(iel) = 0.d0
-enddo
 
 if (icorio.eq.1 .or. iturbo.eq.1) then
 
@@ -279,14 +250,6 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
   ivar_r(2,1) = ivar_r(1,2)
   ivar_r(3,1) = ivar_r(1,3)
   ivar_r(3,2) = ivar_r(2,3)
-
-  ! Build the interleaved Reynolds tensor
-  allocate(cvara_r(3,3))
-  do ii = 1, 3
-    do kk = 1, 3
-      call field_get_val_prev_s(ivarfl(ivar_r(ii,kk)), cvara_r(ii,kk)%p)
-    enddo
-  enddo
 
   ! Coefficient of the "Coriolis-type" term
   if (icorio.eq.1) then
@@ -303,26 +266,32 @@ endif
 ! 2. User source terms
 !===============================================================================
 
-call user_source_terms(ivarfl(ivar), smbr, rovsdt)
-
-!     If we extrapolate the source terms
+! If we extrapolate the source terms
 if (st_prv_id.ge.0) then
   do iel = 1, ncel
-    !       Save for exchange
-    tuexpr = c_st_prv(iel)
-    !       For continuation and the next time step
-    c_st_prv(iel) = smbr(iel)
-    !       Second member of the previous time step
-    !       We suppose -rovsdt > 0: we implicite
-    !          the user source term (the rest)
-    smbr(iel) = rovsdt(iel)*cvara_var(iel)  - thets*tuexpr
-    !       Diagonal
-    rovsdt(iel) = - thetv*rovsdt(iel)
+    do isou = 1, 6
+      ! Save for exchange
+      tuexpr = c_st_prv(isou,iel)
+      ! For continuation and the next time step
+      c_st_prv(isou,iel) = smbr(isou,iel)
+      ! Second member of the previous time step
+      ! We suppose -rovsdt > 0: we implicite
+      !    the user source term (the rest)
+      do jsou = 1, 6
+        smbr(isou,iel) = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel)  - thets*tuexpr
+        ! Diagonal
+        rovsdt(jsou,isou,iel) = - thetv*rovsdt(jsou,isou,iel)
+      enddo
+    enddo
   enddo
 else
   do iel = 1, ncel
-    smbr(iel)   = rovsdt(iel)*cvara_var(iel) + smbr(iel)
-    rovsdt(iel) = max(-rovsdt(iel),zero)
+    do isou = 1, 6
+      do jsou = 1, 6
+        smbr(isou,iel) = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel) + smbr(isou,iel)
+      enddo
+      rovsdt(isou,isou,iel) = max(-rovsdt(isou,isou,iel), 0.d0)
+    enddo
   enddo
 endif
 
@@ -330,20 +299,16 @@ endif
 ! 3. Lagrangian source terms
 !===============================================================================
 
- !     2nd order is not taken into account
- if (iilagr.eq.2 .and. ltsdyn.eq.1) then
-   call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
-   comp_id = isou
-   if (isou .eq. 5) then
-     comp_id = 6
-   else if (isou .eq.6) then
-     comp_id = 5
-   endif
-   do iel = 1,ncel
-     smbr(iel)   = smbr(iel)   + lagr_st_rij(comp_id,iel)
-     rovsdt(iel) = rovsdt(iel) + max(-tslagi(iel),zero)
-   enddo
- endif
+!     2nd order is not taken into account
+if (iilagr.eq.2 .and. ltsdyn.eq.1) then
+  call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
+  do iel = 1,ncel
+    do isou = 1, 6
+      smbr(isou, iel) = smbr(isou, iel) + lagr_st_rij(isou,iel)
+      rovsdt(isou,isou,iel) = rovsdt(isou,isou, iel) + max(-tslagi(iel),zero)
+    enddo
+  enddo
+endif
 
 !===============================================================================
 ! 4. Mass source term
@@ -351,22 +316,30 @@ endif
 
 if (ncesmp.gt.0) then
 
-  ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
-  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),                     &
-              cell_f_vol, cvara_var, smacel(:,ivar), smacel(:,ipr),  &
-              smbr,  rovsdt, w1)
+  allocate(gatinj(6,ncelet))
 
-  ! If we extrapolate the source terms we put Gamma Pinj in the previous st
-  if (st_prv_id.ge.0) then
-    do iel = 1, ncel
-      c_st_prv(iel) = c_st_prv(iel) + w1(iel)
-    enddo
-  ! Otherwise we put it directly in the RHS
-  else
-    do iel = 1, ncel
-      smbr(iel) = smbr(iel) + w1(iel)
-    enddo
-  endif
+  ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
+  call catsmt(ncesmp, 6, icetsm, itypsm(:,ivar),                            &
+              cell_f_vol, cvara_var, smacel(:,ivar+isou-1), smacel(:,ipr),  &
+              smbr, rovsdt, gatinj)
+
+  do isou = 1, 6
+
+    ! If we extrapolate the source terms we put Gamma Pinj in the previous st
+    if (st_prv_id.ge.0) then
+      do iel = 1, ncel
+        c_st_prv(isou,iel) = c_st_prv(isou,iel) + gatinj(isou,iel)
+      enddo
+    ! Otherwise we put it directly in the RHS
+    else
+      do iel = 1, ncel
+        smbr(isou, iel) = smbr(isou, iel) + gatinj(isou,iel)
+      enddo
+    endif
+
+  enddo
+
+  deallocate(gatinj)
 
 endif
 
@@ -376,11 +349,12 @@ endif
 
 ! ---> Added in the matrix diagonal
 
-do iel = 1, ncel
-  rovsdt(iel) = rovsdt(iel)                                       &
-            + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
+do iel=1,ncel
+  do isou = 1, 6
+    rovsdt(isou,isou,iel) = rovsdt(isou, isou,iel)                            &
+              + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
+  enddo
 enddo
-
 
 !===============================================================================
 ! 6. Production, Pressure-Strain correlation, dissipation, Coriolis
@@ -392,26 +366,6 @@ enddo
 !     +Cr4*rho*k(aik*sjk+ajk*sik-2/3*akl*skl*deltaij)
 !     +Cr5*rho*k*(aik*rjk + ajk*rik)
 !     -2/3*epsilon*deltaij
-
-if (isou.eq.1)then
-  iii = 1
-  jjj = 1
-elseif (isou.eq.2)then
-  iii = 2
-  jjj = 2
-elseif (isou.eq.3)then
-  iii = 3
-  jjj = 3
-elseif (isou.eq.4)then
-  iii = 1
-  jjj = 2
-elseif (isou.eq.5)then
-  iii = 2
-  jjj = 3
-elseif (isou.eq.6)then
-  iii = 1
-  jjj = 3
-endif
 
 ! EBRSM
 if (iturb.eq.32) then
@@ -426,7 +380,7 @@ if (iturb.eq.32) then
 
 endif
 
-do iel=1,ncel
+do iel = 1, ncel
 
   ! EBRSM
   if (iturb.eq.32) then
@@ -448,47 +402,34 @@ do iel=1,ncel
   endif
 
   ! Pij
-  xprod(1,1) = -2.0d0*(cvara_r11(iel)*gradv(1, 1, iel) +         &
-                       cvara_r12(iel)*gradv(2, 1, iel) +         &
-                       cvara_r13(iel)*gradv(3, 1, iel) )
-  xprod(1,2) = -(      cvara_r11(iel)*gradv(1, 2, iel) +         &
-                       cvara_r12(iel)*gradv(2, 2, iel) +         &
-                       cvara_r13(iel)*gradv(3, 2, iel) )         &
-               -(      cvara_r12(iel)*gradv(1, 1, iel) +         &
-                       cvara_r22(iel)*gradv(2, 1, iel) +         &
-                       cvara_r23(iel)*gradv(3, 1, iel) )
-  xprod(1,3) = -(      cvara_r11(iel)*gradv(1, 3, iel) +         &
-                       cvara_r12(iel)*gradv(2, 3, iel) +         &
-                       cvara_r13(iel)*gradv(3, 3, iel) )         &
-               -(      cvara_r13(iel)*gradv(1, 1, iel) +         &
-                       cvara_r23(iel)*gradv(2, 1, iel) +         &
-                       cvara_r33(iel)*gradv(3, 1, iel) )
-  xprod(2,2) = -2.0d0*(cvara_r12(iel)*gradv(1, 2, iel) +         &
-                       cvara_r22(iel)*gradv(2, 2, iel) +         &
-                       cvara_r23(iel)*gradv(3, 2, iel) )
-  xprod(2,3) = -(      cvara_r12(iel)*gradv(1, 3, iel) +         &
-                       cvara_r22(iel)*gradv(2, 3, iel) +         &
-                       cvara_r23(iel)*gradv(3, 3, iel) )         &
-               -(      cvara_r13(iel)*gradv(1, 2, iel) +         &
-                       cvara_r23(iel)*gradv(2, 2, iel) +         &
-                       cvara_r33(iel)*gradv(3, 2, iel) )
-  xprod(3,3) = -2.0d0*(cvara_r13(iel)*gradv(1, 3, iel) +         &
-                       cvara_r23(iel)*gradv(2, 3, iel) +         &
-                       cvara_r33(iel)*gradv(3, 3, iel) )
+  xprod(1,1) = produc(1, iel)
+  xprod(1,2) = produc(4, iel)
+  xprod(1,3) = produc(6, iel)
+  xprod(2,2) = produc(2, iel)
+  xprod(2,3) = produc(5, iel)
+  xprod(3,3) = produc(3, iel)
 
   ! Rotating frame of reference => "Coriolis production" term
 
   if (icorio.eq.1 .or. iturbo.eq.1) then
 
     call coriolis_t(irotce(iel), 1.d0, matrot)
-
+    cvara_r(1,1) = cvara_var(1,iel)
+    cvara_r(2,2) = cvara_var(2,iel)
+    cvara_r(3,3) = cvara_var(3,iel)
+    cvara_r(1,2) = cvara_var(4,iel)
+    cvara_r(2,3) = cvara_var(5,iel)
+    cvara_r(1,3) = cvara_var(6,iel)
+    cvara_r(2,1) = cvara_var(4,iel)
+    cvara_r(3,2) = cvara_var(5,iel)
+    cvara_r(3,1) = cvara_var(6,iel)
     if (irotce(iel).gt.0) then
       do ii = 1, 3
         do jj = ii, 3
           do kk = 1, 3
             xprod(ii,jj) = xprod(ii,jj)                             &
-                     - ccorio*( matrot(ii,kk)*cvara_r(jj,kk)%p(iel) &
-                     + matrot(jj,kk)*cvara_r(ii,kk)%p(iel) )
+                            - ccorio*( matrot(ii,kk)*cvara_r(jj,kk) &
+                            + matrot(jj,kk)*cvara_r(ii,kk) )
           enddo
         enddo
       enddo
@@ -500,7 +441,7 @@ do iel=1,ncel
   xprod(3,2) = xprod(2,3)
 
   trprod = d1s2 * (xprod(1,1) + xprod(2,2) + xprod(3,3) )
-  trrij  = d1s2 * (cvara_r11(iel) + cvara_r22(iel) + cvara_r33(iel))
+  trrij  = d1s2 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
   !-----> aII = aijaij
   aii    = 0.d0
   aklskl = 0.d0
@@ -508,12 +449,12 @@ do iel=1,ncel
   aikrjk = 0.d0
   aikakj = 0.d0
   ! aij
-  xaniso(1,1) = cvara_r11(iel)/trrij - d2s3
-  xaniso(2,2) = cvara_r22(iel)/trrij - d2s3
-  xaniso(3,3) = cvara_r33(iel)/trrij - d2s3
-  xaniso(1,2) = cvara_r12(iel)/trrij
-  xaniso(1,3) = cvara_r13(iel)/trrij
-  xaniso(2,3) = cvara_r23(iel)/trrij
+  xaniso(1,1) = cvara_var(1,iel)/trrij - d2s3
+  xaniso(2,2) = cvara_var(2,iel)/trrij - d2s3
+  xaniso(3,3) = cvara_var(3,iel)/trrij - d2s3
+  xaniso(1,2) = cvara_var(4,iel)/trrij
+  xaniso(1,3) = cvara_var(6,iel)/trrij
+  xaniso(2,3) = cvara_var(5,iel)/trrij
   xaniso(2,1) = xaniso(1,2)
   xaniso(3,1) = xaniso(1,3)
   xaniso(3,2) = xaniso(2,3)
@@ -556,136 +497,154 @@ do iel=1,ncel
     enddo
   enddo
 
-  do kk = 1,3
-    ! aiksjk = aik.Sjk+ajk.Sik
-    aiksjk = aiksjk + xaniso(iii,kk)*xstrai(jjj,kk)              &
-              +xaniso(jjj,kk)*xstrai(iii,kk)
-    ! aikrjk = aik.Omega_jk + ajk.omega_ik
-    aikrjk = aikrjk + xaniso(iii,kk)*xrotac(jjj,kk)              &
-              +xaniso(jjj,kk)*xrotac(iii,kk)
-    ! aikakj = aik*akj
-    aikakj = aikakj + xaniso(iii,kk)*xaniso(kk,jjj)
-  enddo
-
-  !     If we extrapolate the source terms (rarely), we put all in the previous ST..
-  !     We do not implicit the term with Cs1*aij neither the term with Cr1*P*aij.
-  !     Otherwise, we put all in smbr and we can implicit Cs1*aij
-  !     and Cr1*P*aij. Here we store the second member and the implicit term
-  !     in W1 and W2, to avoid the test(ST_PRV_ID.GE.0)
-  !     in the ncel loop
-  !     In the term with W1, which is dedicated to be extrapolated, we use
-  !     cromo.
-  !     The implicitation of the two terms can also be done in the case of
-  !     extrapolation, by isolating those two terms and by putting it in
-  !     the RHS but not in the prev. ST and by using ipcrom .... to be modified if needed
-
-  if (iturb.eq.31) then
-
-    pij = xprod(iii,jjj)
-    phiij1 = -cvara_ep(iel)* &
-       (cssgs1*xaniso(iii,jjj)+cssgs2*(aikakj-d1s3*deltij*aii))
-    phiij2 = - cssgr1*trprod*xaniso(iii,jjj)                             &
-           +   trrij*xstrai(iii,jjj)*(cssgr2-cssgr3*sqrt(aii))           &
-           +   cssgr4*trrij*(aiksjk-d2s3*deltij*aklskl)                  &
-           +   cssgr5*trrij* aikrjk
-    epsij = -d2s3*cvara_ep(iel)*deltij
-
-    w1(iel) = cromo(iel)*cell_f_vol(iel)*(pij+phiij1+phiij2+epsij)
-
-    w2(iel) = cell_f_vol(iel)/trrij*crom(iel)*(                              &
-           cssgs1*cvara_ep(iel) + cssgr1*max(trprod,0.d0) )
-
-  ! EBRSM
-  else
-
-    xrij(1,1) = cvara_r11(iel)
-    xrij(2,2) = cvara_r22(iel)
-    xrij(3,3) = cvara_r33(iel)
-    xrij(1,2) = cvara_r12(iel)
-    xrij(1,3) = cvara_r13(iel)
-    xrij(2,3) = cvara_r23(iel)
-    xrij(2,1) = xrij(1,2)
-    xrij(3,1) = xrij(1,3)
-    xrij(3,2) = xrij(2,3)
-
-    ! Compute the explicit term
-
-    ! Calculation of the terms near the walls and et almost homogeneous
-    ! of phi and epsilon
-
-    ! Calculation of the term near the wall \f$ \Phi_{ij}^w \f$ --> W3
-    phiijw = 0.d0
-    xnnd = d1s2*( xnal(iii)*xnal(jjj) + deltij )
-    do kk = 1, 3
-      phiijw = phiijw + xrij(iii,kk)*xnal(jjj)*xnal(kk)
-      phiijw = phiijw + xrij(jjj,kk)*xnal(iii)*xnal(kk)
-      do ll = 1, 3
-        phiijw = phiijw - xrij(kk,ll)*xnal(kk)*xnal(ll)*xnnd
-      enddo
+  do isou = 1, 6
+    if (isou.eq.1)then
+      iii = 1
+      jjj = 1
+    elseif (isou.eq.2)then
+      iii = 2
+      jjj = 2
+    elseif (isou.eq.3)then
+      iii = 3
+      jjj = 3
+    elseif (isou.eq.4)then
+      iii = 1
+      jjj = 2
+    elseif (isou.eq.5)then
+      iii = 2
+      jjj = 3
+    elseif (isou.eq.6)then
+      iii = 1
+      jjj = 3
+    endif
+    aiksjk = 0
+    aikrjk = 0
+    aikakj = 0
+    do kk = 1,3
+      ! aiksjk = aik.Sjk+ajk.Sik
+      aiksjk =   aiksjk + xaniso(iii,kk)*xstrai(jjj,kk)              &
+               + xaniso(jjj,kk)*xstrai(iii,kk)
+      ! aikrjk = aik.Omega_jk + ajk.omega_ik
+      aikrjk =   aikrjk + xaniso(iii,kk)*xrotac(jjj,kk)              &
+               + xaniso(jjj,kk)*xrotac(iii,kk)
+      ! aikakj = aik*akj
+      aikakj = aikakj + xaniso(iii,kk)*xaniso(kk,jjj)
     enddo
-    phiijw = -5.d0*cvara_ep(iel)/trrij * phiijw
 
-    ! Calculation of the almost homogeneous term \f$ \phi_{ij}^h \f$ --> W4
-    phiij1 = -cvara_ep(iel)*cebms1*xaniso(iii,jjj)
-    phiij2 = -cebmr1*trprod*xaniso(iii,jjj)                       &
-               +trrij*xstrai(iii,jjj)*(cebmr2-cebmr3*sqrt(aii))   &
-               +cebmr4*trrij   *(aiksjk-d2s3*deltij*aklskl)       &
-               +cebmr5*trrij   * aikrjk
+    ! If we extrapolate the source terms (rarely),
+    ! we put all in the previous ST.
+    ! We do not implicit the term with Cs1*aij neither the term with Cr1*P*aij.
+    ! Otherwise, we put all in smbr and we can implicit Cs1*aij
+    ! and Cr1*P*aij. Here we store the second member and the implicit term
+    ! in W1 and W2, to avoid the test(ST_PRV_ID.GE.0)
+    ! in the ncel loop
+    ! In the term with W1, which is dedicated to be extrapolated, we use
+    ! cromo.
+    ! The implicitation of the two terms can also be done in the case of
+    ! extrapolation, by isolating those two terms and by putting it in
+    ! the RHS but not in the prev. ST and by using ipcrom .... to be modified
+    ! if needed.
 
-    ! Calculation of \f $\e_{ij}^w \f$ --> W5 (Rotta model)
-    ! Rij/k*epsilon
-    epsijw =  xrij(iii,jjj)/trrij   *cvara_ep(iel)
+    if (iturb.eq.31) then
 
-    ! Calcul de \e_{ij}^h --> W6
-    epsij =  d2s3*cvara_ep(iel)*deltij
+      ! Explicit terms
+      pij = xprod(iii,jjj)
+      phiij1 = -cvara_ep(iel)* &
+         (cssgs1*xaniso(iii,jjj)+cssgs2*(aikakj-d1s3*deltij(isou)*aii))
+      phiij2 = - cssgr1*trprod*xaniso(iii,jjj)                             &
+             +   trrij*xstrai(iii,jjj)*(cssgr2-cssgr3*sqrt(aii))           &
+             +   cssgr4*trrij*(aiksjk-d2s3*deltij(isou)*aklskl)            &
+             +   cssgr5*trrij* aikrjk
+      epsij = -d2s3*cvara_ep(iel)*deltij(isou)
 
-    ! Calcul du terme source explicite de l'equation des Rij
-    !  \f[ P_{ij} + (1-\alpha^3)\Phi_{ij}^w + \alpha^3\Phi_{ij}^h
-    !            - (1-\alpha^3)\e_{ij}^w   - \alpha^3\e_{ij}^h  ]\f$ --> W1
-    alpha3 = cvar_al(iel)**3
+      w1(iel) = cromo(iel)*cell_f_vol(iel)*(pij+phiij1+phiij2+epsij)
 
-    w1(iel) = cell_f_vol(iel)*crom(iel)*(                             &
-               xprod(iii,jjj)                                     &
-            + (1.d0-alpha3)*phiijw + alpha3*(phiij1+phiij2)       &
-            - (1.d0-alpha3)*epsijw - alpha3*epsij)
+      ! Implicit terms
+      w2(iel) =   cell_f_vol(iel)/trrij*crom(iel)                          &
+                * (cssgs1*cvara_ep(iel) + cssgr1*max(trprod,0.d0))
 
-    !  Implicite term
+    ! EBRSM
+    else
 
-    ! The term below corresponds to the implicit part of SSG
-    ! in the context of elliptical weighting, it is multiplied by
-    ! \f$ \alpha^3 \f$
-    w2(iel) = cell_f_vol(iel)*crom(iel)*(                             &
-              cebms1*cvara_ep(iel)/trrij*alpha3                       &
-             +cebmr1*max(trprod/trrij,0.d0)*alpha3                &
-    ! Implicitation of epsijw
-    ! (the factor 5 appears when we calculate \f$ Phi_{ij}^w - epsijw\f$)
-            + 5.d0 * (1.d0-alpha3)*cvara_ep(iel)/trrij                &
-            +        (1.d0-alpha3)*cvara_ep(iel)/trrij)
-  endif
+      xrij(1,1) = cvara_var(1,iel)
+      xrij(2,2) = cvara_var(2,iel)
+      xrij(3,3) = cvara_var(3,iel)
+      xrij(1,2) = cvara_var(4,iel)
+      xrij(2,3) = cvara_var(5,iel)
+      xrij(1,3) = cvara_var(6,iel)
+      xrij(2,1) = xrij(1,2)
+      xrij(3,1) = xrij(1,3)
+      xrij(3,2) = xrij(2,3)
 
+      ! Compute the explicit term
+
+      ! Calculation of the terms near the walls and et almost homogeneous
+      ! of phi and epsilon
+
+      ! Calculation of the term near the wall \f$ \Phi_{ij}^w \f$ --> W3
+      !
+      ! Phiw = -5.0 * (eps/k) * [ R*Xn + Xn^T*R - 0.5*tr(Xn*R)*(Xn + Id) ]
+      !
+      phiijw = 0.d0
+      xnnd = d1s2*( xnal(iii)*xnal(jjj) + deltij(isou) )
+      do kk = 1, 3
+        phiijw = phiijw + xrij(iii,kk)*xnal(jjj)*xnal(kk)
+        phiijw = phiijw + xrij(jjj,kk)*xnal(iii)*xnal(kk)
+        do ll = 1, 3
+          phiijw = phiijw - xrij(kk,ll)*xnal(kk)*xnal(ll)*xnnd
+        enddo
+      enddo
+      phiijw = -5.d0*cvara_ep(iel)/trrij * phiijw
+
+      ! Calculation of the almost homogeneous term \f$ \phi_{ij}^h \f$ --> W4
+      phiij1 = -cvara_ep(iel)*cebms1*xaniso(iii,jjj)
+      phiij2 = -cebmr1*trprod*xaniso(iii,jjj)                        &
+                 +trrij*xstrai(iii,jjj)*(cebmr2-cebmr3*sqrt(aii))    &
+                 +cebmr4*trrij   *(aiksjk-d2s3*deltij(isou)*aklskl)  &
+                 +cebmr5*trrij   * aikrjk
+
+      ! Calculation of \f $\e_{ij}^w \f$ --> W5 (Rotta model)
+      ! Rij/k*epsilon
+      epsijw =  xrij(iii,jjj)/trrij   *cvara_ep(iel)
+
+      ! Calcul de \e_{ij}^h --> W6
+      epsij =  d2s3*cvara_ep(iel)*deltij(isou)
+
+      ! Calcul du terme source explicite de l'equation des Rij
+      !  \f[ P_{ij} + (1-\alpha^3)\Phi_{ij}^w + \alpha^3\Phi_{ij}^h
+      !            - (1-\alpha^3)\e_{ij}^w   - \alpha^3\e_{ij}^h  ]\f$ --> W1
+      alpha3 = cvar_al(iel)**3
+
+      w1(iel) = cell_f_vol(iel)*crom(iel)*(                             &
+                 xprod(iii,jjj)                                     &
+              + (1.d0-alpha3)*phiijw + alpha3*(phiij1+phiij2)       &
+              - (1.d0-alpha3)*epsijw - alpha3*epsij)
+
+      !  Implicit term
+
+      ! The term below corresponds to the implicit part of SSG
+      ! in the context of elliptical weighting, it is multiplied by
+      ! \f$ \alpha^3 \f$
+      w2(iel) = cell_f_vol(iel)*crom(iel)*(                             &
+                cebms1*cvara_ep(iel)/trrij*alpha3                       &
+               +cebmr1*max(trprod/trrij,0.d0)*alpha3                    &
+      ! Implicitation of epsijw
+      ! (the factor 5 appears when we calculate \f$ Phi_{ij}^w - epsijw\f$)
+              + 5.d0 * (1.d0-alpha3)*cvara_ep(iel)/trrij                &
+              +        (1.d0-alpha3)*cvara_ep(iel)/trrij)
+    endif
+
+    if (st_prv_id.ge.0) then
+      c_st_prv(isou,iel) = c_st_prv(isou,iel) + w1(iel)
+    else
+      smbr(isou,iel) = smbr(isou,iel) + w1(iel)
+      rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel) + w2(iel)
+    endif
+  enddo
 enddo
-
-if (icorio.eq.1 .or. iturbo.eq.1) then
-  deallocate(cvara_r)
-endif
 
 if (iturb.eq.32) then
   deallocate(grad)
-endif
-
-if (st_prv_id.ge.0) then
-
-  do iel = 1, ncel
-    c_st_prv(iel) = c_st_prv(iel) + w1(iel)
-  enddo
-
-else
-
-  do iel = 1, ncel
-    smbr(iel) = smbr(iel) + w1(iel)
-    rovsdt(iel) = rovsdt(iel) + w2(iel)
-  enddo
-
 endif
 
 !===============================================================================
@@ -697,23 +656,28 @@ if (igrari.eq.1) then
   ! Allocate a work array
   allocate(w7(ncelet))
 
-  do iel = 1, ncel
-    w7(iel) = 0.d0
+  do isou = 1, 6
+
+    do iel = 1, ncel
+      w7(iel) = 0.d0
+    enddo
+
+    jvar = ivar + isou - 1
+    call rijthe(nscal, jvar, gradro, w7)
+
+    ! If we extrapolate the source terms: previous ST
+    if (st_prv_id.ge.0) then
+      do iel = 1, ncel
+        c_st_prv(isou,iel) = c_st_prv(isou,iel) + w7(iel)
+      enddo
+    ! Otherwise smbr
+    else
+      do iel = 1, ncel
+        smbr(isou, iel) = smbr(isou, iel) + w7(iel)
+      enddo
+    endif
+
   enddo
-
-  call rijthe(nscal, ivar, gradro, w7)
-
-  ! If we extrapolate the source terms: previous ST
-  if (st_prv_id.ge.0) then
-    do iel = 1, ncel
-      c_st_prv(iel) = c_st_prv(iel) + w7(iel)
-    enddo
-  ! Otherwise smbr
-  else
-    do iel = 1, ncel
-      smbr(iel) = smbr(iel) + w7(iel)
-    enddo
-  endif
 
   ! Free memory
   deallocate(w7)
@@ -755,10 +719,7 @@ else
 
   imvisp = vcopt%imvisf
 
-  call viscfa                    &
- ( imvisp ,                      &
-   w1     ,                      &
-   viscf  , viscb  )
+  call viscfa(imvisp, w1, viscf, viscb)
 
 endif
 
@@ -769,23 +730,19 @@ endif
 if (st_prv_id.ge.0) then
   thetp1 = 1.d0 + thets
   do iel = 1, ncel
-    smbr(iel) = smbr(iel) + thetp1*c_st_prv(iel)
+    do isou = 1, 6
+      smbr(isou,iel) = smbr(isou,iel) + thetp1*c_st_prv(isou,iel)
+    enddo
   enddo
 endif
 
-iescap = 0
-imucpp = 0
 ! all boundary convective flux with upwind
 icvflb = 0
-normp = -1.d0
-init   = 1
 
-call field_get_coefa_s(ivarfl(ivar), coefap)
-call field_get_coefb_s(ivarfl(ivar), coefbp)
-call field_get_coefaf_s(ivarfl(ivar), cofafp)
-call field_get_coefbf_s(ivarfl(ivar), cofbfp)
-
-c_name = trim(nomva0)//c_null_char
+call field_get_coefa_v(ivarfl(ivar), coefap)
+call field_get_coefb_v(ivarfl(ivar), coefbp)
+call field_get_coefaf_v(ivarfl(ivar), cofafp)
+call field_get_coefbf_v(ivarfl(ivar), cofbfp)
 
 vcopt_loc = vcopt
 
@@ -799,20 +756,16 @@ vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
 p_k_value => vcopt_loc
 c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
-call cs_equation_iterative_solve_scalar          &
- ( idtvar , init   ,                             &
-   ivarfl(ivar)    , c_name ,                    &
-   iescap , imucpp , normp  , c_k_value       ,  &
-   cvara_var       , cvara_var       ,           &
-   coefap , coefbp , cofafp , cofbfp ,           &
-   imasfl , bmasfl ,                             &
-   viscf  , viscb  , viscf  , viscb  ,           &
-   viscce , weighf , weighb ,                    &
-   icvflb , ivoid  ,                             &
-   rovsdt , smbr   , cvar_var        , dpvar  ,  &
-   rvoid  , rvoid  )
+call cs_equation_iterative_solve_tensor(idtvar, ivarfl(ivar), c_null_char,      &
+                                        c_k_value, cvara_var, cvara_var,        &
+                                        coefap, coefbp, cofafp, cofbfp,         &
+                                        imasfl, bmasfl, viscf,                  &
+                                        viscb, viscf, viscb, viscce,            &
+                                        weighf, weighb, icvflb, ivoid,          &
+                                        rovsdt, smbr, cvar_var)
 
 ! Free memory
+
 deallocate(w1, w2)
 deallocate(dpvar)
 deallocate(viscce)
@@ -822,7 +775,7 @@ deallocate(weighf, weighb)
 ! Formats
 !--------
 
- 1000 format(/,'           Solving variable ',A8           ,/)
+ 1000 format(/,'           Solving variable ', a8          ,/)
 
 !----
 ! End

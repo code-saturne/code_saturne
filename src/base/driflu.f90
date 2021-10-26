@@ -133,7 +133,6 @@ double precision, dimension(:), pointer :: cpro_x1, bpro_x1
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:,:), pointer :: vel, vela
 double precision, dimension(:), pointer :: cvar_k
-double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: visct, cpro_viscls
 double precision, dimension(:), pointer :: cvara_var
@@ -215,13 +214,7 @@ call field_get_val_s(ibrom, brom)
 call field_get_val_s(ivisct, visct)
 
 if (itytur.eq.3) then
-  if (irijco.eq.1) then
-    call field_get_val_v(ivarfl(irij), cvar_rij)
-  else
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-  endif
+  call field_get_val_v(ivarfl(irij), cvar_rij)
 elseif (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
   call field_get_val_s(ivarfl(ik), cvar_k)
 endif
@@ -337,17 +330,9 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     if (itytur.eq.3) then
 
       allocate(rtrace(ncel))
-
-      if (irijco.eq.1) then
-        do iel = 1, ncel
-          rtrace(iel) = cvar_rij(1,iel) + cvar_rij(2,iel) + cvar_rij(3,iel)
-        enddo
-      else
-        do iel = 1, ncel
-          rtrace(iel) = cvar_r11(iel) + cvar_r22(iel) + cvar_r33(iel)
-        enddo
-      endif
-
+      do iel = 1, ncel
+        rtrace(iel) = cvar_rij(1,iel) + cvar_rij(2,iel) + cvar_rij(3,iel)
+      enddo
       do iel = 1, ncel
         ! Correction by Omega
         omegaa = cpro_taup(iel)/cpro_taufpt(iel)

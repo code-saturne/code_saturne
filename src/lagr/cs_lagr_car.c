@@ -286,28 +286,14 @@ cs_lagr_car(int              iprev,
     }
     else if (extra->itytur == 3) {
 
-      if (extra->cvar_rij == NULL) {
-        /* Deprecated irijco = 0 */
-        for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
+      for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
 
-          energi[cell_id] = 0.5 * (  extra->cvar_r11->vals[iprev][cell_id]
-                                   + extra->cvar_r22->vals[iprev][cell_id]
-                                   + extra->cvar_r33->vals[iprev][cell_id]);
-          dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
-
-        }
+        energi[cell_id] = 0.5 * (  extra->cvar_rij->vals[iprev][6*cell_id]
+                                 + extra->cvar_rij->vals[iprev][6*cell_id + 1]
+                                 + extra->cvar_rij->vals[iprev][6*cell_id + 2]);
+        dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
       }
-      else {
-        /* irijco = 1 */
-        for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
 
-          energi[cell_id] = 0.5 * ( extra->cvar_rij->vals[iprev][6*cell_id]
-                                  + extra->cvar_rij->vals[iprev][6*cell_id + 1]
-                                  + extra->cvar_rij->vals[iprev][6*cell_id + 2]
-                                  );
-          dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
-        }
-      }
     }
     else if (extra->iturb == 60) {
 
@@ -424,30 +410,13 @@ cs_lagr_car(int              iprev,
 
           if (extra->itytur == 3) {
 
-            /* Deprecated irijco = 0 */
-            if (extra->cvar_rij == NULL) {
-              cs_real_t rij[6] = {
-                extra->cvar_r11->vals[iprev][cell_id],
-                extra->cvar_r22->vals[iprev][cell_id],
-                extra->cvar_r33->vals[iprev][cell_id],
-                0,//FIXME extra->cvar_r12->vals[iprev][cell_id],
-                0,//extra->cvar_r23->vals[iprev][cell_id],
-                0};//extra->cvar_r13->vals[iprev][cell_id]};
-              /* Note that n.R.n = R : n(x)n */
-              cs_real_t rnn = cs_math_3_sym_33_3_dot_product(dir, rij, dir);
-              cs_real_t tr_r = cs_math_6_trace(rij);
-              // bbn * R : n(x)n + bbt * R : (1 - n(x)n)
-              ktil = 3.0 * (rnn * bbi[0] + (tr_r -rnn) * bbi[1]) /* bbi[1] == bbi[2] is used */
-                         / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
-            } else {
-              cs_real_t *rij = &(extra->cvar_rij->vals[iprev][6*cell_id]);
-              /* Note that n.R.n = R : n(x)n */
-              cs_real_t rnn = cs_math_3_sym_33_3_dot_product(dir, rij, dir);
-              cs_real_t tr_r = cs_math_6_trace(rij);
-              // bbn * R : n(x)n + bbt * R : (1 - n(x)n)
-              ktil = 3.0 * (rnn * bbi[0] + (tr_r -rnn) * bbi[1]) /* bbi[1] == bbi[2] is used */
-                         / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
-            }
+            cs_real_t *rij = &(extra->cvar_rij->vals[iprev][6*cell_id]);
+            /* Note that n.R.n = R : n(x)n */
+            cs_real_t rnn = cs_math_3_sym_33_3_dot_product(dir, rij, dir);
+            cs_real_t tr_r = cs_math_6_trace(rij);
+            // bbn * R : n(x)n + bbt * R : (1 - n(x)n)
+            ktil = 3.0 * (rnn * bbi[0] + (tr_r -rnn) * bbi[1]) /* bbi[1] == bbi[2] is used */
+                       / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
 
           }
           else if (   extra->itytur == 2 || extra->itytur == 4

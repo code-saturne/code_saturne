@@ -97,7 +97,7 @@ integer          ivar, iel, ifac, iscal, f_id
 integer          ii, jj, iok, iok1, iok2, iisct, idfm, iggafm, iebdfm
 integer          nn, isou
 integer          mbrom, ifcvsl, iscacp
-integer          iclipc, idftnp
+integer          idftnp
 integer          iprev , inc, iccocg
 integer          kturt, turb_flux_model, turb_flux_model_type
 
@@ -105,7 +105,7 @@ double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
 double precision xrij(3,3), xnal(3), xnoral
 double precision xfmu, xmu, xmut
 double precision nusa, xi3, fv1, cv13
-double precision varmn(4), varmx(4), tt, ttmin, ttke, viscto, visls_0
+double precision varmn(4), varmx(4), tt, ttmin, ttke, visls_0
 double precision xttkmg, xttdrb
 double precision trrij,rottke
 double precision alpha3, xrnn
@@ -115,8 +115,6 @@ double precision, dimension(:), pointer :: field_s_v, field_s_b
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi, cvar_nusa
 double precision, dimension(:), pointer :: cvar_al
-double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: sval
 double precision, dimension(:,:), pointer :: visten, vistes, cpro_visma_v
@@ -362,17 +360,7 @@ elseif (itytur.eq.3) then
   call field_get_val_s(ivisct, visct)
   call field_get_val_s(icrom, crom)
   call field_get_val_s(ivarfl(iep), cvar_ep)
-  if (irijco.eq.1) then
-    call field_get_val_v(ivarfl(irij), cvar_rij)
-  else
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
-  endif
-
+  call field_get_val_v(ivarfl(irij), cvar_rij)
   ! In case we are in EB-RSM, we compute the normals
   if (iturb.eq.32) then
     call field_get_val_s(ivarfl(ial), cvar_al)
@@ -389,28 +377,15 @@ elseif (itytur.eq.3) then
 
   do iel = 1, ncel
 
-    if (irijco.eq.1) then
-      xrij(1,1) = cvar_rij(1,iel)
-      xrij(2,2) = cvar_rij(2,iel)
-      xrij(3,3) = cvar_rij(3,iel)
-      xrij(1,2) = cvar_rij(4,iel)
-      xrij(2,3) = cvar_rij(5,iel)
-      xrij(1,3) = cvar_rij(6,iel)
-      xrij(2,1) = xrij(1,2)
-      xrij(3,1) = xrij(1,3)
-      xrij(3,2) = xrij(2,3)
-    else
-      xrij(1,1) = cvar_r11(iel)
-      xrij(2,2) = cvar_r22(iel)
-      xrij(3,3) = cvar_r33(iel)
-      xrij(1,2) = cvar_r12(iel)
-      xrij(1,3) = cvar_r13(iel)
-      xrij(2,3) = cvar_r23(iel)
-      xrij(2,1) = xrij(1,2)
-      xrij(3,1) = xrij(1,3)
-      xrij(3,2) = xrij(2,3)
-    endif
-
+    xrij(1,1) = cvar_rij(1,iel)
+    xrij(2,2) = cvar_rij(2,iel)
+    xrij(3,3) = cvar_rij(3,iel)
+    xrij(1,2) = cvar_rij(4,iel)
+    xrij(2,3) = cvar_rij(5,iel)
+    xrij(1,3) = cvar_rij(6,iel)
+    xrij(2,1) = xrij(1,2)
+    xrij(3,1) = xrij(1,3)
+    xrij(3,2) = xrij(2,3)
     alpha3 = 1.d0
     xrnn = 0.d0
 
@@ -420,7 +395,7 @@ elseif (itytur.eq.3) then
              +   grad(2,iel)*grad(2,iel)          &
              +   grad(3,iel)*grad(3,iel) )
       xnoral = sqrt(xnoral)
-     ! Compute the unitary vector of Alpha
+      ! Compute the unitary vector of Alpha
       if (xnoral.le.epzero) then
         xnal(1) = 0.d0
         xnal(2) = 0.d0
@@ -566,166 +541,93 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
   call field_get_val_v(ivsten, visten)
 
   if (itytur.eq.3) then
-    if (irijco.eq.1) then
-      call field_get_val_s(icrom, crom)
-      call field_get_val_s(iviscl, viscl)
+    call field_get_val_s(icrom, crom)
+    call field_get_val_s(iviscl, viscl)
 
-      call field_get_val_s(ivarfl(iep), cvar_ep)
+    call field_get_val_s(ivarfl(iep), cvar_ep)
 
-      call field_get_val_v(ivarfl(irij), cvar_rij)
+    call field_get_val_v(ivarfl(irij), cvar_rij)
 
-      ! EBRSM
-      if (iturb.eq.32) then
-        do iel = 1, ncel
-          trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-          ttke  = trrij/cvar_ep(iel)
-          ! Durbin scale
-          xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
-          xttdrb = max(ttke,xttkmg)
-          rottke  = csrij * crom(iel) * xttdrb * cell_is_active(iel)
+    if (iturb.eq.32) then
 
-          do isou = 1, 6
-            visten(isou, iel) = rottke*cvar_rij(isou, iel)
-          enddo
+      do iel = 1, ncel
+        trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
+        ttke  = trrij/cvar_ep(iel)
+        ! Durbin scale
+        xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
+        xttdrb = max(ttke,xttkmg)
+        rottke  = csrij * crom(iel) * xttdrb * cell_is_active(iel)
+
+        do isou = 1, 6
+          visten(isou, iel) = rottke*cvar_rij(isou, iel)
         enddo
+      enddo
 
-        ! Other damping for EBDFM model (see F. Dehoux thesis)
-        if (iebdfm.eq.1) then
-          call field_get_val_v(ivstes, vistes) !FIXME one by scalar
+      ! Other damping for EBDFM model (see F. Dehoux thesis)
+      if (iebdfm.eq.1) then
+        call field_get_val_v(ivstes, vistes)
 
-          do iel = 1, ncel
-            trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
+      ! No damping with Durbing scale for the scalar
+      else if (iggafm.eq.1) then
+        call field_get_val_v(ivstes, vistes)
 
-            do isou = 1, 6
-              vistes(isou, iel) = rottke*cvar_rij(isou, iel)
-            enddo
-          enddo
-
-          ! No damping with Durbing scale for the scalar
-        else if (iggafm.eq.1) then
-          call field_get_val_v(ivstes, vistes)
-
-          do iel = 1, ncel
-            trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
-
-            do isou = 1, 6
-              vistes(isou, iel) = rottke*cvar_rij(isou, iel)
-            enddo
-          enddo
-        endif
-
-      ! LRR or SSG
-      else
         do iel = 1, ncel
           trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
           rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
 
           do isou = 1, 6
-            visten(isou, iel) = rottke*cvar_rij(isou, iel)
+            vistes(isou, iel) = rottke*cvar_rij(isou, iel)
           enddo
         enddo
+
       endif
 
-    ! Uncoupled version
+    ! LRR or SSG
     else
-      call field_get_val_s(icrom, crom)
-      call field_get_val_s(iviscl, viscl)
+      do iel = 1, ncel
+        trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
+        rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
 
-      call field_get_val_s(ivarfl(iep), cvar_ep)
+        do isou = 1, 6
+          visten(isou, iel) = rottke*cvar_rij(isou, iel)
+        enddo
+      enddo
+    endif
 
-      call field_get_val_s(ivarfl(ir11), cvar_r11)
-      call field_get_val_s(ivarfl(ir22), cvar_r22)
-      call field_get_val_s(ivarfl(ir33), cvar_r33)
-      call field_get_val_s(ivarfl(ir12), cvar_r12)
-      call field_get_val_s(ivarfl(ir13), cvar_r13)
-      call field_get_val_s(ivarfl(ir23), cvar_r23)
+    ! EBRSM Terms handled differently for coupled and uncoupled models
 
-      ! EBRSM
-      if (iturb.eq.32) then
+    ! EBRSM
+    if (iturb.eq.32 .and. iebdfm.eq.1) then
+
+      ! Other damping for EBDFM model (see F. Dehoux thesis)
+      if (irijco.eq.1) then
         do iel = 1, ncel
-          trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
+          trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
+          rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
+
+          do isou = 1, 6
+            vistes(isou, iel) = rottke*cvar_rij(isou, iel)
+          enddo
+        enddo
+      else
+        do iel = 1, ncel
+          trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
           ttke  = trrij/cvar_ep(iel)
           ! Durbin scale
           xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
           xttdrb = max(ttke,xttkmg)
+          !FIXME xttdrbt = xttdrb*sqrt((1.d0-alpha3)*PR/XRH + alpha3)
           rottke  = csrij * crom(iel) * xttdrb * cell_is_active(iel)
 
-          visten(1,iel) = rottke*cvar_r11(iel)
-          visten(2,iel) = rottke*cvar_r22(iel)
-          visten(3,iel) = rottke*cvar_r33(iel)
-          visten(4,iel) = rottke*cvar_r12(iel)
-          visten(5,iel) = rottke*cvar_r23(iel)
-          visten(6,iel) = rottke*cvar_r13(iel)
-        enddo
-
-        ! Other damping for EBDFM model (see F. Dehoux thesis)
-        if (iebdfm.eq.1) then
-          call field_get_val_v(ivstes, vistes)
-
-          do iel = 1, ncel
-            trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-            ttke  = trrij/cvar_ep(iel)
-            ! Durbin scale
-            xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
-            xttdrb = max(ttke,xttkmg)
-            !FIXME xttdrbt = xttdrb*sqrt((1.d0-alpha3)*PR/XRH + alpha3)
-            rottke  = csrij * crom(iel) * xttdrb * cell_is_active(iel)
-
-            vistes(1,iel) = rottke*cvar_r11(iel)
-            vistes(2,iel) = rottke*cvar_r22(iel)
-            vistes(3,iel) = rottke*cvar_r33(iel)
-            vistes(4,iel) = rottke*cvar_r12(iel)
-            vistes(5,iel) = rottke*cvar_r23(iel)
-            vistes(6,iel) = rottke*cvar_r13(iel)
+          do isou = 1, 6
+            vistes(isou, iel) = rottke*cvar_rij(isou, iel)
           enddo
-
-          ! No damping with Durbing scale for the scalar
-        else if (iggafm.eq.1) then
-          call field_get_val_v(ivstes, vistes)
-
-          do iel = 1, ncel
-            trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
-
-            vistes(1,iel) = rottke*cvar_r11(iel)
-            vistes(2,iel) = rottke*cvar_r22(iel)
-            vistes(3,iel) = rottke*cvar_r33(iel)
-            vistes(4,iel) = rottke*cvar_r12(iel)
-            vistes(5,iel) = rottke*cvar_r23(iel)
-            vistes(6,iel) = rottke*cvar_r13(iel)
-          enddo
-        endif
-
-
-      ! LRR or SSG
-      else
-        do iel = 1, ncel
-          trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-          rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
-
-          visten(1,iel) = rottke*cvar_r11(iel)
-          visten(2,iel) = rottke*cvar_r22(iel)
-          visten(3,iel) = rottke*cvar_r33(iel)
-          visten(4,iel) = rottke*cvar_r12(iel)
-          visten(5,iel) = rottke*cvar_r23(iel)
-          visten(6,iel) = rottke*cvar_r13(iel)
         enddo
       endif
+
     endif
-  else
 
-    do iel = 1, ncel
-      visten(1,iel) = 0.d0
-      visten(2,iel) = 0.d0
-      visten(3,iel) = 0.d0
-      visten(4,iel) = 0.d0
-      visten(5,iel) = 0.d0
-      visten(6,iel) = 0.d0
-    enddo
-
-  endif
+  endif ! itytur = 3
 endif
 
 !===============================================================================

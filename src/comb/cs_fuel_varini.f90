@@ -91,8 +91,7 @@ double precision wmo2 , wmn2 , wmco2 , wmh2o
 
 double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
 double precision, dimension(:), pointer :: cvar_fb, cvar_omg
-double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
-double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
+double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvar_yfolcl, cvar_ngcl, cvar_h2cl
 double precision, dimension(:), pointer :: cvar_scalt
 double precision, dimension(:), pointer :: cvar_fvap, cvar_f7m, cvar_fvp2m
@@ -114,12 +113,7 @@ if (itytur.eq.2) then
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 elseif (itytur.eq.3) then
-  call field_get_val_s(ivarfl(ir11), cvar_r11)
-  call field_get_val_s(ivarfl(ir22), cvar_r22)
-  call field_get_val_s(ivarfl(ir33), cvar_r33)
-  call field_get_val_s(ivarfl(ir12), cvar_r12)
-  call field_get_val_s(ivarfl(ir13), cvar_r13)
-  call field_get_val_s(ivarfl(ir23), cvar_r23)
+  call field_get_val_v(ivarfl(irij), cvar_rij)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 elseif (iturb.eq.50) then
   call field_get_val_s(ivarfl(ik), cvar_k)
@@ -170,12 +164,12 @@ if (isuite.eq.0) then
   elseif (itytur.eq.3) then
 
     do iel = 1, ncel
-      cvar_r11(iel) = d2s3*xkent
-      cvar_r22(iel) = d2s3*xkent
-      cvar_r33(iel) = d2s3*xkent
-      cvar_r12(iel) = 0.d0
-      cvar_r13(iel) = 0.d0
-      cvar_r23(iel) = 0.d0
+      cvar_rij(1,iel) = d2s3*xkent
+      cvar_rij(2,iel) = d2s3*xkent
+      cvar_rij(3,iel) = d2s3*xkent
+      cvar_rij(4,iel) = 0.d0
+      cvar_rij(5,iel) = 0.d0
+      cvar_rij(6,iel) = 0.d0
       cvar_ep(iel)  = xeent
     enddo
 

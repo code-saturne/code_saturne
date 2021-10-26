@@ -64,7 +64,6 @@ implicit none
 ! Local variables
 
 integer jj, isc
-double precision visls_0
 
 type(var_cal_opt) :: vcopt
 

@@ -364,9 +364,6 @@ static cs_lagr_extra_module_t _lagr_extra_module
      .cvar_k = NULL,
      .cvar_ep = NULL,
      .cvar_omg = NULL,
-     .cvar_r11 = NULL,
-     .cvar_r22 = NULL,
-     .cvar_r33 = NULL,
      .cvar_rij = NULL,
      .grad_pr = NULL,
      .grad_vel = NULL};
@@ -764,9 +761,6 @@ _lagr_map_fields_default(void)
     _lagr_extra_module.cvar_k      = cs_field_by_name_try("k");
     _lagr_extra_module.cvar_ep     = cs_field_by_name_try("epsilon");
     _lagr_extra_module.cvar_omg    = cs_field_by_name_try("omega");
-    _lagr_extra_module.cvar_r11    = cs_field_by_name_try("r11");
-    _lagr_extra_module.cvar_r22    = cs_field_by_name_try("r22");
-    _lagr_extra_module.cvar_r33    = cs_field_by_name_try("r33");
     _lagr_extra_module.cvar_rij    = cs_field_by_name_try("rij");
     _lagr_extra_module.viscl       = cs_field_by_name_try("molecular_viscosity");
     _lagr_extra_module.cpro_viscls = NULL;

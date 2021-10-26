@@ -190,48 +190,4 @@ contains
 
   !=============================================================================
 
-  ! Resize a tensor interleaved array and synchronize halo
-
-  subroutine resize_tens_real_array ( array )
-
-    use mesh, only: ncel, ncelet, ndim
-
-    implicit none
-
-    ! Arguments
-
-    double precision, pointer, dimension(:,:,:) :: array
-
-    ! Local variables
-
-    integer iel, ii, jj
-    double precision, allocatable, dimension(:,:,:) :: buffer
-
-    allocate(buffer(ndim,ndim,ncel))
-    do iel = 1, ncel
-      do jj = 1, ndim
-        do ii = 1, ndim
-          buffer(ii,jj,iel) = array(ii,jj,iel)
-        enddo
-      enddo
-    enddo
-    deallocate(array)
-
-    allocate(array(ndim,ndim,ncelet))
-    do iel = 1, ncel
-      do jj = 1, ndim
-        do ii = 1, ndim
-          array(ii,jj,iel) = buffer(ii,jj,iel)
-        enddo
-      enddo
-    enddo
-    deallocate(buffer)
-
-    call syntin (array)
-    !==========
-
-  end subroutine resize_tens_real_array
-
-  !=============================================================================
-
 end module ptrglo

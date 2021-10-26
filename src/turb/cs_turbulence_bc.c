@@ -106,13 +106,7 @@ typedef struct {
   int  k;      /* variable id for k */
   int  eps;    /* variable id for epsilon */
 
-  int  r11;    /* variable id for R_xx */
-  int  r22;    /* variable id for R_yy */
-  int  r33;    /* variable id for R_zz */
-  int  r12;    /* variable id for R_xy */
-  int  r23;    /* variable id for R_yz */
-  int  r13;    /* variable id for R_xz */
-  int  rij;    /* variable id for R_ij tensor (irijco=1) */
+  int  rij;    /* variable id for R_ij tensor */
 
   int  phi;    /* variable id for phi */
   int  f_bar;  /* variable id for f_bar */
@@ -140,12 +134,6 @@ _turb_bc_id =
   -1, /* k */
   -1, /* eps */
 
-  -1, /* r11 */
-  -1, /* r22 */
-  -1, /* r33 */
-  -1, /* r12 */
-  -1, /* r23 */
-  -1, /* r13 */
   -1, /* rij */
 
   -1, /* phi */
@@ -353,53 +341,38 @@ _inlet_bc(cs_lnum_t   face_id,
 
   else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
+    cs_lnum_t s_r_11 =  _turb_bc_id.rij      * n_b_faces;
+    cs_lnum_t s_r_22 = (_turb_bc_id.rij + 1) * n_b_faces;
+    cs_lnum_t s_r_33 = (_turb_bc_id.rij + 2) * n_b_faces;
+    cs_lnum_t s_r_12 = (_turb_bc_id.rij + 3) * n_b_faces;
+    cs_lnum_t s_r_23 = (_turb_bc_id.rij + 4) * n_b_faces;
+    cs_lnum_t s_r_13 = (_turb_bc_id.rij + 5) * n_b_faces;
+
     double d2s3 = 2./3.;
     double r_nt = - sqrt(cs_turb_cmu) * k;
-    if (_turb_bc_id.rij == -1) {
-      rcodcl[_turb_bc_id.r11*n_b_faces + face_id] = d2s3 * k;
-      rcodcl[_turb_bc_id.r22*n_b_faces + face_id] = d2s3 * k;
-      rcodcl[_turb_bc_id.r33*n_b_faces + face_id] = d2s3 * k;
-      if (vel_dir != NULL) {
-        cs_math_3_normalize(vel_dir, vel_dir);
-        cs_math_3_normalize(shear_dir, shear_dir);
-        rcodcl[_turb_bc_id.r12*n_b_faces + face_id] = r_nt *
-          (vel_dir[0] * shear_dir[1] + vel_dir[1] * shear_dir[0]);
-        rcodcl[_turb_bc_id.r23*n_b_faces + face_id] = r_nt *
-          (vel_dir[1] * shear_dir[2] + vel_dir[2] * shear_dir[1]);
-        rcodcl[_turb_bc_id.r13*n_b_faces + face_id] = r_nt *
-          (vel_dir[0] * shear_dir[2] + vel_dir[2] * shear_dir[0]);
-      }
-      else {
-        rcodcl[_turb_bc_id.r12*n_b_faces + face_id] = 0.;
-        rcodcl[_turb_bc_id.r23*n_b_faces + face_id] = 0.;
-        rcodcl[_turb_bc_id.r13*n_b_faces + face_id] = 0.;
-      }
-      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+
+    rcodcl[s_r_11 + face_id] = d2s3 * k;
+    rcodcl[s_r_22 + face_id] = d2s3 * k;
+    rcodcl[s_r_33 + face_id] = d2s3 * k;
+    if (vel_dir != NULL) {
+      cs_math_3_normalize(vel_dir, vel_dir);
+      cs_math_3_normalize(shear_dir, shear_dir);
+      /* Rxy */
+      rcodcl[s_r_12 + face_id]
+        = r_nt * (vel_dir[0]*shear_dir[1] + vel_dir[1]*shear_dir[0]);
+      /* Ryz */
+      rcodcl[s_r_23 + face_id]
+        = r_nt * (vel_dir[1]*shear_dir[2] + vel_dir[2]*shear_dir[1]);
+      /* Rxz */
+      rcodcl[s_r_13 + face_id]
+        =  r_nt * (vel_dir[0]*shear_dir[2] + vel_dir[2]*shear_dir[0]);
     }
     else {
-      rcodcl[_turb_bc_id.rij*n_b_faces + face_id] = d2s3 * k;
-      rcodcl[(_turb_bc_id.rij + 1)*n_b_faces + face_id] = d2s3 * k;
-      rcodcl[(_turb_bc_id.rij + 2)*n_b_faces + face_id] = d2s3 * k;
-      if (vel_dir != NULL) {
-        cs_math_3_normalize(vel_dir, vel_dir);
-        cs_math_3_normalize(shear_dir, shear_dir);
-        /* Rxy */
-        rcodcl[(_turb_bc_id.rij + 3)*n_b_faces + face_id] = r_nt *
-          (vel_dir[0] * shear_dir[1] + vel_dir[1] * shear_dir[0]);
-        /* Ryz */
-        rcodcl[(_turb_bc_id.rij + 4)*n_b_faces + face_id] = r_nt *
-          (vel_dir[1] * shear_dir[2] + vel_dir[2] * shear_dir[1]);
-        /* Rxz */
-        rcodcl[(_turb_bc_id.rij + 5)*n_b_faces + face_id] =  r_nt *
-          (vel_dir[0] * shear_dir[2] + vel_dir[2] * shear_dir[0]);
-      }
-      else {
-        rcodcl[(_turb_bc_id.rij + 3)*n_b_faces + face_id] = 0.;
-        rcodcl[(_turb_bc_id.rij + 4)*n_b_faces + face_id] = 0.;
-        rcodcl[(_turb_bc_id.rij + 5)*n_b_faces + face_id] = 0.;
-      }
-      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+      rcodcl[s_r_12 + face_id] = 0.;
+      rcodcl[s_r_23 + face_id] = 0.;
+      rcodcl[s_r_13 + face_id] = 0.;
     }
+    rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
 
     if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
       rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 1.;
@@ -486,74 +459,48 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
 
   else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
+    cs_lnum_t s_r_11 =  _turb_bc_id.rij      * n_b_faces;
+    cs_lnum_t s_r_22 = (_turb_bc_id.rij + 1) * n_b_faces;
+    cs_lnum_t s_r_33 = (_turb_bc_id.rij + 2) * n_b_faces;
+    cs_lnum_t s_r_12 = (_turb_bc_id.rij + 3) * n_b_faces;
+    cs_lnum_t s_r_23 = (_turb_bc_id.rij + 4) * n_b_faces;
+    cs_lnum_t s_r_13 = (_turb_bc_id.rij + 5) * n_b_faces;
+
     double d2s3 = 2./3.;
     double r_nt = - sqrt(cs_turb_cmu) * k;
-    if (_turb_bc_id.rij == -1) {
-      if (rcodcl[_turb_bc_id.r11*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[_turb_bc_id.r11*n_b_faces + face_id] = d2s3 * k;
-      if (rcodcl[_turb_bc_id.r22*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[_turb_bc_id.r22*n_b_faces + face_id] = d2s3 * k;
-      if (rcodcl[_turb_bc_id.r33*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[_turb_bc_id.r33*n_b_faces + face_id] = d2s3 * k;
-
-      if (vel_dir != NULL) {
-        cs_math_3_normalize(vel_dir, vel_dir);
-        cs_math_3_normalize(shear_dir, shear_dir);
-        if (rcodcl[_turb_bc_id.r12*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[_turb_bc_id.r12*n_b_faces + face_id] = r_nt *
-            (vel_dir[0] * shear_dir[1] + vel_dir[1] * shear_dir[0]);
-        if (rcodcl[_turb_bc_id.r23*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[_turb_bc_id.r23*n_b_faces + face_id] = r_nt *
-            (vel_dir[1] * shear_dir[2] + vel_dir[2] * shear_dir[1]);
-        if (rcodcl[_turb_bc_id.r13*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[_turb_bc_id.r13*n_b_faces + face_id] = r_nt *
-            (vel_dir[0] * shear_dir[2] + vel_dir[2] * shear_dir[0]);
-      }
-      else {
-        if (rcodcl[_turb_bc_id.r12*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[_turb_bc_id.r12*n_b_faces + face_id] = 0.;
-        if (rcodcl[_turb_bc_id.r23*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[_turb_bc_id.r23*n_b_faces + face_id] = 0.;
-        if (rcodcl[_turb_bc_id.r13*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[_turb_bc_id.r13*n_b_faces + face_id] = 0.;
-      }
-      if (rcodcl[_turb_bc_id.eps*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+    if (rcodcl[s_r_11 + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[s_r_11 + face_id] = d2s3 * k;
+    if (rcodcl[s_r_22 + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[s_r_22 + face_id] = d2s3 * k;
+    if (rcodcl[s_r_33 + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[s_r_33 + face_id] = d2s3 * k;
+    if (vel_dir != NULL) {
+      cs_math_3_normalize(vel_dir, vel_dir);
+      cs_math_3_normalize(shear_dir, shear_dir);
+      if (rcodcl[s_r_12 + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[s_r_12 + face_id]
+          = r_nt * (vel_dir[0]*shear_dir[1] + vel_dir[1]*shear_dir[0]);
+      if (rcodcl[s_r_23 + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[s_r_23 + face_id]
+          = r_nt * (vel_dir[1]*shear_dir[2] + vel_dir[2]*shear_dir[1]);
+      if (rcodcl[s_r_13 + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[s_r_13 + face_id]
+          = r_nt * (vel_dir[0]*shear_dir[2] + vel_dir[2]*shear_dir[0]);
     }
     else {
-      if (rcodcl[_turb_bc_id.rij*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[_turb_bc_id.rij*n_b_faces + face_id] = d2s3 * k;
-      if (rcodcl[(_turb_bc_id.rij + 1)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[(_turb_bc_id.rij + 1)*n_b_faces + face_id] = d2s3 * k;
-      if (rcodcl[(_turb_bc_id.rij + 2)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[(_turb_bc_id.rij + 2)*n_b_faces + face_id] = d2s3 * k;
-      if (vel_dir != NULL) {
-        cs_math_3_normalize(vel_dir, vel_dir);
-        cs_math_3_normalize(shear_dir, shear_dir);
-        if (rcodcl[(_turb_bc_id.rij + 3)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[(_turb_bc_id.rij + 3)*n_b_faces + face_id] = r_nt *
-            (vel_dir[0] * shear_dir[1] + vel_dir[1] * shear_dir[0]);
-        if (rcodcl[(_turb_bc_id.rij + 4)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[(_turb_bc_id.rij + 4)*n_b_faces + face_id] = r_nt *
-            (vel_dir[1] * shear_dir[2] + vel_dir[2] * shear_dir[1]);
-        if (rcodcl[(_turb_bc_id.rij + 5)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[(_turb_bc_id.rij + 5)*n_b_faces + face_id] = r_nt *
-            (vel_dir[0] * shear_dir[2] + vel_dir[2] * shear_dir[0]);
-      }
-      else {
-        if (rcodcl[(_turb_bc_id.rij + 3)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[(_turb_bc_id.rij + 3)*n_b_faces + face_id] = 0.;
-        if (rcodcl[(_turb_bc_id.rij + 4)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[(_turb_bc_id.rij + 4)*n_b_faces + face_id] = 0.;
-        if (rcodcl[(_turb_bc_id.rij + 5)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[(_turb_bc_id.rij + 5)*n_b_faces + face_id] = 0.;
-      }
-      if (rcodcl[_turb_bc_id.eps*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-        rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
+      if (rcodcl[s_r_12 + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[s_r_12 + face_id] = 0.;
+      if (rcodcl[s_r_23 + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[s_r_23 + face_id] = 0.;
+      if (rcodcl[s_r_13 + face_id] > 0.5*cs_math_infinite_r)
+        rcodcl[s_r_13 + face_id] = 0.;
     }
+    if (rcodcl[_turb_bc_id.eps*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+      rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
 
     if (turb_model->iturb == 32)
-      if (rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+      if (  rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id]
+          > 0.5*cs_math_infinite_r)
         rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 1.;
 
     /* Initialization of the turbulent fluxes to 0 if DFM or
@@ -563,18 +510,22 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
 
     if (_turb_bc_id.size_ut > 0) {
       for (int var_id = 0; var_id < _turb_bc_id.size_ut; var_id++) {
-        if (rcodcl[_turb_bc_id.ut[var_id]*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        if (  rcodcl[_turb_bc_id.ut[var_id]*n_b_faces + face_id]
+            > 0.5*cs_math_infinite_r)
           rcodcl[_turb_bc_id.ut[var_id]*n_b_faces + face_id] = 0.;
-        if (rcodcl[(_turb_bc_id.ut[var_id]+1)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        if (  rcodcl[(_turb_bc_id.ut[var_id]+1)*n_b_faces + face_id]
+            > 0.5*cs_math_infinite_r)
           rcodcl[(_turb_bc_id.ut[var_id]+1)*n_b_faces + face_id] = 0.;
-        if (rcodcl[(_turb_bc_id.ut[var_id]+2)*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        if (  rcodcl[(_turb_bc_id.ut[var_id]+2)*n_b_faces + face_id]
+            > 0.5*cs_math_infinite_r)
           rcodcl[(_turb_bc_id.ut[var_id]+2)*n_b_faces + face_id] = 0.;
       }
     }
 
     if (_turb_bc_id.size_alp_bl_t > 0) {
       for (int var_id = 0; var_id < _turb_bc_id.size_alp_bl_t; var_id++) {
-        if (rcodcl[_turb_bc_id.alp_bl_t[var_id]*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+        if (  rcodcl[_turb_bc_id.alp_bl_t[var_id]*n_b_faces + face_id]
+            > 0.5*cs_math_infinite_r)
           rcodcl[_turb_bc_id.alp_bl_t[var_id]*n_b_faces + face_id] = 1.;
       }
     }
@@ -590,12 +541,14 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
     if (rcodcl[_turb_bc_id.phi*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[_turb_bc_id.phi*n_b_faces + face_id] = 2./3.;
     if (turb_model->iturb == 50) {
-      if (rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
+      if (  rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id]
+          > 0.5*cs_math_infinite_r)
         rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] = 0.;
     }
     else if (turb_model->iturb == 51) {
-        if (rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
-          rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 0.;
+      if (  rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id]
+          > 0.5*cs_math_infinite_r)
+        rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 0.;
     }
 
   }
@@ -748,18 +701,6 @@ cs_turbulence_model_init_bc_ids(void)
   if (CS_F_(eps) != NULL)
     _turb_bc_id.eps = cs_field_get_key_int(CS_F_(eps), var_key_id) -1;
 
-  if (CS_F_(r11) != NULL)
-    _turb_bc_id.r11 = cs_field_get_key_int(CS_F_(r11), var_key_id) -1;
-  if (CS_F_(r22) != NULL)
-    _turb_bc_id.r22 = cs_field_get_key_int(CS_F_(r22), var_key_id) -1;
-  if (CS_F_(r33) != NULL)
-    _turb_bc_id.r33 = cs_field_get_key_int(CS_F_(r33), var_key_id) -1;
-  if (CS_F_(r12) != NULL)
-    _turb_bc_id.r12 = cs_field_get_key_int(CS_F_(r12), var_key_id) -1;
-  if (CS_F_(r23) != NULL)
-    _turb_bc_id.r23 = cs_field_get_key_int(CS_F_(r23), var_key_id) -1;
-  if (CS_F_(r13) != NULL)
-    _turb_bc_id.r13 = cs_field_get_key_int(CS_F_(r13), var_key_id) -1;
   if (CS_F_(rij) != NULL)
     _turb_bc_id.rij = cs_field_get_key_int(CS_F_(rij), var_key_id) -1;
 
