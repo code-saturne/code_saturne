@@ -522,7 +522,6 @@ do f_id = 0, nfld - 1
       ityloc = 1 ! cells
 
       call field_create(name, itycat, ityloc, f_dim, inoprv, ifctsl)
-      call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)
       call field_set_key_int(ifctsl, keylog, 1)
 
       call field_set_key_int(f_id, kcvlim, ifctsl)
