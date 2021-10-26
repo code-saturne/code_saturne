@@ -534,13 +534,13 @@ CS_AC_TEST_CUDA
 if test "x$auto_flags" = "xyes" ; then
   if test "$cs_have_cuda" = "yes"; then
     cs_have_accel=yes
-    $NVCCFLAGS="$NVCCFLAGS $nvccflags_default"
+    NVCCFLAGS="$NVCCFLAGS $nvccflags_default"
     if test "x$debug" = xyes; then
-      $NVCCFLAGS_DBG="$nvccflags_default_dbg"
+      NVCCFLAGS_DBG="$nvccflags_default_dbg"
     else
-      $NVCCFLAGS="$NVCCFLAGS $nvccflags_default_opt"
+      NVCCFLAGS="$NVCCFLAGS $nvccflags_default_opt"
       if test "x$profile" = xyes; then
-	$NVCCFLAGS="$NVCCFLAGS $nvccflags_default_prf"
+	NVCCFLAGS="$NVCCFLAGS $nvccflags_default_prf"
       fi
     fi
     AC_SUBST(NVCCFLAGS_DBG)
