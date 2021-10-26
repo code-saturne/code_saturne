@@ -1461,6 +1461,8 @@ _set_pc(const cs_saddle_system_t          *ssys,
   return NULL;
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

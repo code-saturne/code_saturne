@@ -42,7 +42,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * @defgroup cdo_field_interpolation
+ * @defgroup cdo_field_interpolation Interpolation flags for CDO
  *   Flags specifying which kind of interpolation will be used
  *   This enables to activate/add equations at the setup stage
  * @{

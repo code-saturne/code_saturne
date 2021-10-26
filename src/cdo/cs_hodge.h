@@ -149,36 +149,30 @@ typedef enum {
  * \struct cs_hodge_param_t
  * \brief Structure storing all metadata/parameters related to the usage of a
  *        discrete Hodge operator
- *
- * \var inv_pty
- * Each Hodge operator is associated to a property. Since either the value or
- * its reciprocal is considered, this parameter helps one to know in
- * which situation we are.
- * true = need to consider the reciprocal of the associated property
- *
- * \var type
- * type of discrete Hodge operator. The available choices are described in
- * \ref cs_hodge_type_t
- *
- * \var algo
- * type of algorithm used to build the discrete Hodge operator. The available
- * choices are described cs_hodge_algo_t
- *
- * \var coef
- * Value of the stabilization parameter needed in some algorithms. This is the
- * case if the COST or OCS2 algo. is used, otherwise this parameter is ignored.
  */
 
 typedef struct {
 
-  /* Each Hodge operator is associated to a property */
   bool              inv_pty;
 
-  cs_hodge_type_t   type;   /* type of discrete Hodge operator */
-  cs_hodge_algo_t   algo;   /* type of algorithm used to build this op. */
-  double            coef;   /* Value of the stabilization parameter
-                             * if the COST or OCS2 algo. is used, otherwise 0.
-                             */
+  /*!< \brief Inversion of the property evaluation or not
+   *
+   * Each Hodge operator is associated to a property. Since either the value or
+   * its reciprocal is considered, this parameter helps one to know in which
+   * situation we are.  If this is set to true, then one needs to consider the
+   * reciprocal of the associated property */
+
+  cs_hodge_type_t   type;   /*!< Type of discrete Hodge operator */
+  cs_hodge_algo_t   algo;   /*!< Type of algorithm used to build the operator */
+
+  double            coef;
+
+  /*!< \brief Scaling coefficient value
+   *
+   * Value of the coefficient scaling the stabilization part if the COST or
+   * OCS2 algorithm is used. Otherwise the value is set to 0 and ignored.
+   */
+
 } cs_hodge_param_t;
 
 /* DISCRETE HODGE OPERATORS */
@@ -186,20 +180,22 @@ typedef struct {
 
 /*!
  * \struct cs_hodge_t
- * \brief Structure associated to a discrete Hodge operator
- *
- * \var pty
- * Pointer to a structure storing the evaluation of the associated property
- *
+ * \brief Structure associated to a discrete Hodge operator *
  */
 
 typedef struct {
 
-  /* Each Hodge operator is associated to a property */
-  const cs_hodge_param_t  *param;      /* shared */
+  const cs_hodge_param_t  *param;      /*!< Set of parameters (shared) */
 
   cs_property_data_t      *pty_data;
-  cs_sdm_t                *matrix;
+
+  /*!< \brief Data evaluation
+   *
+   * Each Hodge operator is associated to a property. Pointer to a structure
+   * storing the evaluation of the associated property
+   */
+
+  cs_sdm_t                *matrix;    /*!< Matrix storing operator values  */
 
 } cs_hodge_t;
 

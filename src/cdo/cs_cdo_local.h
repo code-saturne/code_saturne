@@ -50,52 +50,91 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*! \struct cs_cell_builder_t
- *  \brief Set of local and temporary buffers useful for building the algebraic
- *  system with a cellwise process. This structure belongs to one thread.
+ *  \brief Set of local and temporary buffers
  *
- * \var t_pty_val
- * Time at which one evaluates the properties
- *
- * \var t_bc_eval
- * Time at which one evaluates the boundary conditions
- *
- * \var t_st_eval
- * Time at which one evaluates the source terms
- *
- * \var cell_flag
- * Metadata related to the current cell
+ *  This set of data is useful for building the algebraic system with a
+ *  cellwise process. This structure belongs to one thread and so enable to
+ *  build the local systems in a multi-threaded environnement.
  */
 
 typedef struct {
 
+  /*!
+   * @name Evaluation times
+   * @{
+   *
+   * \var t_pty_eval
+   * Time at which one evaluates the properties
+   *
+   * \var t_bc_eval
+   * Time at which one evaluates the boundary conditions
+   *
+   * \var t_st_eval
+   * Time at which one evaluates the source terms
+   *
+   * @}
+   */
+
   cs_real_t     t_pty_eval;
   cs_real_t     t_bc_eval;
   cs_real_t     t_st_eval;
-  cs_flag_t     cell_flag;
 
-  /* Store the cellwise value for the grad-div, the time and reaction properties
-   * since the associated Hodge operator is linked to the unity as related
-   * property */
+  cs_flag_t     cell_flag;    /*!< Metadata related to the current cell */
 
-  double        gpty_val;  /*!< Property value for the grad-div operator */
-  double        tpty_val;  /*!< Property value for the time operator */
+  /*!
+   * @name Scaling coefficients
+   * @{
+   *
+   * \var gpty_val
+   * Store the cellwise coefficient value scaling the grad-div term since the
+   * associated Hodge operator is linked to the unity property
+   *
+   * \var tpty_val
+   * Store the cellwise coefficient value scaling the unsteady term since the
+   * associated Hodge operator is linked to the unity property
+   *
+   * \var rpty_vals
+   * Set of coefficient values for each reaction term. The maximum number of
+   * reaction terms associated to an equation is limited to
+   * CS_CDO_N_MAX_REACTIONS
+   *
+   * \var rpty_val
+   * Sum of all coefficient values associated to a reaction term
+   *
+   * @}
+   */
 
-  /*! Property values for the reaction operator */
+  double        gpty_val;
+  double        tpty_val;
   double        rpty_vals[CS_CDO_N_MAX_REACTIONS];
-  double        rpty_val;  /*!< Sum of all reaction property values  */
+  double        rpty_val;
 
-  /* Advection-related values */
-  double       *adv_fluxes;
+  double       *adv_fluxes;  /*!< Values of the advection flux */
 
-  /* Temporary buffers (erase and updated several times during the system
-     build */
+  /*!
+   * @name Temporary buffers
+   * @{
+   *
+   * \var loc
+   * Small dense matrix storing one term like the diffusion term or the
+   * advection term. This local matrix is a square matrix of size n_cell_dofs.
+   * This buffer is erased and updated several times during the system build.
+   *
+   * \var aux
+   * Additional small dense square matrix of size n_cell_dofs.
+   * This buffer is erased and updated several times during the system build.
+   */
+
   int          *ids;     /*!< local ids */
   double       *values;  /*!< local values */
   cs_real_3_t  *vectors; /*!< local 3-dimensional vectors */
 
-  /* Structures used to build specific terms composing the algebraic system */
-  cs_sdm_t     *loc;   /*!< local square matrix of size n_cell_dofs */
-  cs_sdm_t     *aux;   /*!< auxiliary local square matrix of size n_cell_dofs */
+  cs_sdm_t     *loc;
+  cs_sdm_t     *aux;
+
+  /*!
+   * @}
+   */
 
 } cs_cell_builder_t;
 
@@ -118,35 +157,39 @@ typedef struct {
   double     *val_n;    /*!< values of the unkown at previous time t_n */
   double     *val_nm1;  /*!< values of the unkown at previous time t_{n-1} */
 
-  /* Boundary conditions for the local system */
+  /*!
+   * @name Boundary conditions for the local system
+   * @{
+   */
+
   short int   n_bc_faces;  /*!< Number of border faces associated to a cell */
   short int  *_f_ids;      /*!< List of face ids in the cell numbering */
   cs_lnum_t  *bf_ids;      /*!< List of face ids in the border face numbering */
   cs_flag_t  *bf_flag;     /*!< Boundary face flag; size n_bc_faces */
 
-  /* Dirichlet BCs */
   bool        has_dirichlet; /*!< Dirichlet BCs ?*/
   double     *dir_values;    /*!< Values of the Dirichlet BCs (size = n_dofs) */
 
-  /* Neumann BCs */
   bool        has_nhmg_neumann; /*!< Non-homogeneous Neumann BCs ? */
   double     *neu_values;       /*!< Neumann BCs values; size = n_dofs */
 
-  /* Robin BCs */
   bool        has_robin;     /*!< Robin BCs ? */
   double     *rob_values;    /*!< Robin BCs values; size = 3*n_dofs */
 
-  /* Sliding BCs */
   bool        has_sliding;   /*!< Sliding BCs ? */
 
-  /* Internal enforcement of DoFs */
   bool        has_internal_enforcement;  /*!< Internal enforcement ? */
   cs_lnum_t  *intern_forced_ids;         /*!< Id in the enforcement array */
+
+  /*!
+   * @}
+   */
 
 } cs_cell_sys_t;
 
 /*! \struct cs_cell_mesh_t
  *  \brief Set of local quantities and connectivities related to a mesh cell
+ *
  *  This is a key structure for all cellwise processes. This structure belongs
  *  to one thread and only.
  *  This structure used allows one to get a better memory locality.
