@@ -110,7 +110,8 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
                             {0., 0., 1., 0.}},
   .nb_sources = 0,
   .sources = NULL,
-  .source_c_ids = NULL
+  .source_c_ids = NULL,
+  .threshold = 10
 };
 
 /*============================================================================
@@ -444,7 +445,7 @@ _count_from_file(const cs_mesh_t             *m,
   location_mesh = fvm_nodal_destroy(location_mesh);
 
   /* Solid cells should have enough points */
-  const cs_real_t _threshold = 10;
+  const cs_real_t _threshold = _porosity_from_scan_opt.threshold;
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
     cell_f_vol[cell_id] = mq->cell_vol[cell_id];
     if (f_nb_scan->val[cell_id]/cell_f_vol[cell_id] > _threshold) {
