@@ -203,24 +203,26 @@ cs_user_model(void)
   /* 1. Activate groundwater flow module */
   /* ----------------------------------- */
 
-  /* For the groundwater flow module:
-     >> cs_gwf_activate(permeability_type, model_type, option_flag);
+  /*! [param_cdo_activate_gwf] */
+  {
+    /* For the groundwater flow module:
+       cs_gwf_activate(permeability_type,
+                       model_type,
+                       option_flag);
 
-     * permeability_type is one of the following keywords:
+     - permeability_type is one of the following keywords:
        CS_PROPERTY_ISO, CS_PROPERTY_ORTHO or CS_PROPERTY_ANISO
 
-     * model_type = CS_GWF_MODEL_SINGLE_PHASE_RICHARDS
+     - model_type = CS_GWF_MODEL_SINGLE_PHASE_RICHARDS
 
-     * option_flag can be defined from the following flags
+     - option_flag can be defined from the following flags
        CS_GWF_GRAVITATION
        CS_GWF_RICHARDS_UNSTEADY
        CS_GWF_SOIL_PROPERTY_UNSTEADY
        CS_GWF_SOIL_ALL_SATURATED
        or 0 if there is no option to set
-  */
+    */
 
-  /*! [param_cdo_activate_gwf] */
-  {
     cs_flag_t  option_flag = 0;
 
     cs_gwf_activate(CS_PROPERTY_ISO,
@@ -232,6 +234,7 @@ cs_user_model(void)
   /*! [param_cdo_activate_gwf_b] */
   {
     /* Take into account the gravity effect */
+
     cs_flag_t  option_flag = CS_GWF_GRAVITATION;
 
     /* In this case, the gravity vector has to be defined (either using the GUI
@@ -283,8 +286,8 @@ cs_user_model(void)
 
   /*! [param_cdo_gwf_get_soil] */
   {
-    /* If the soil structure is not already defined, one can retrieve it thanks
-     * to \ref cs_gwf_soil_by_name
+    /* If a soil structure has been added but not already defined, one can
+     * retrieve it thanks to \ref cs_gwf_soil_by_name
      *
      * The name of the soil is the same as the name of the volume zone used at
      * the creation of the soil
@@ -297,19 +300,19 @@ cs_user_model(void)
   /* 3. Add and define tracer equations */
   /* ---------------------------------- */
 
-  /*
-    Add a tracer equation which is unsteady and convected by the darcean flux
-    This implies the creation of a new equation called eqname along with a new
-    field called varname.
-
-    For standard tracer:
-       cs_gwf_add_tracer(eqname, varname);
-    For user-defined tracer
-       cs_gwf_add_user_tracer(eqname, varname, setup_func);
-  */
-
   /*! [param_cdo_gwf_add_tracer] */
   {
+    /*
+      Add a tracer equation which is unsteady and convected by the darcean flux
+      This implies the creation of a new equation called eqname along with a
+      new field called varname.
+
+      For standard tracer:
+       cs_gwf_add_tracer(eqname, varname);
+       For user-defined tracer
+       cs_gwf_add_user_tracer(eqname, varname, setup_func);
+    */
+
     cs_gwf_tracer_model_t  model = 0; /* default model */
 
     cs_gwf_tracer_t  *tr = cs_gwf_add_tracer(model,       /* tracer model */
@@ -335,8 +338,8 @@ cs_user_model(void)
 
   /*! [param_cdo_gwf_get_tracer] */
   {
-    /* If the tracer structure is not already defined, one can retrieve it
-     * thanks to \ref cs_gwf_tracer_by_name
+    /* If the tracer structure has been added but not already defined, one can
+     * retrieve it thanks to \ref cs_gwf_tracer_by_name
      *
      * The name of the tracer is the same as the name of the associated
      * equation given at the creation of the tracer

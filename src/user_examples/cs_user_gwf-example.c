@@ -64,6 +64,8 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [param_cdo_gwf_tracy_struct] */
+
 /* Parameters defining the saturated hydraulic Tracy model */
 
 typedef struct {
@@ -76,6 +78,7 @@ typedef struct {
   double    theta_r;
 
 } cs_tracy_param_t;
+/*! [param_cdo_gwf_tracy_struct] */
 
 /*============================================================================
  * Private function prototypes
@@ -98,6 +101,7 @@ typedef struct {
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [param_cdo_gwf_set_user_update_soil] */
 static void
 _tracy_update(const cs_real_t              t_eval,
               const cs_mesh_t             *mesh,
@@ -145,6 +149,7 @@ _tracy_update(const cs_real_t              t_eval,
   } /* Loop on selected cells */
 
 }
+/*! [param_cdo_gwf_set_user_update_soil] */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -154,6 +159,7 @@ _tracy_update(const cs_real_t              t_eval,
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [param_cdo_gwf_set_user_free_soil] */
 static void
 _tracy_free(void         *input)
 {
@@ -161,6 +167,7 @@ _tracy_free(void         *input)
 
   BFT_FREE(tp);
 }
+/*! [param_cdo_gwf_set_user_free_soil] */
 
 /*============================================================================
  * Public function prototypes
