@@ -502,7 +502,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   }
 
   /* Linear algebra default settings */
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "filtered");
 
   /* Set and return pointer */
   cs_thermal_system = thm;

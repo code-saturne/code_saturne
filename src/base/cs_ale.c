@@ -1528,7 +1528,7 @@ cs_ale_activate(void)
 
   cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
 
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "filtered");
 
   /* BC settings */
   cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");

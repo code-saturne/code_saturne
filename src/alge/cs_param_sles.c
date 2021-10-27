@@ -1751,7 +1751,7 @@ cs_param_sles_create(int          field_id,
   slesp->eps = 1e-6;                         /* relative tolerance to stop
                                                 an iterative solver */
 
-  slesp->resnorm_type = CS_PARAM_RESNORM_NONE;
+  slesp->resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
   slesp->setup_done = false;
 
   slesp->name = NULL;
