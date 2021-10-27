@@ -630,6 +630,7 @@ _create_property(const char           *name,
   BFT_MALLOC(pty, 1, cs_property_t);
 
   /* Copy name */
+
   size_t  len = strlen(name);
   BFT_MALLOC(pty->name, len + 1, char);
   strncpy(pty->name, name, len);
@@ -1449,7 +1450,8 @@ cs_property_def_by_time_func(cs_property_t      *pty,
 
   pty->defs[new_id] = d;
 
-  /* Set the state flag */
+  /* Set the state flag for the property */
+
   pty->state_flag |= CS_FLAG_STATE_CELLWISE;
   if (z_id == 0)
     pty->state_flag |= CS_FLAG_STATE_UNIFORM;
@@ -2229,7 +2231,7 @@ cs_property_log_setup(void)
 
   for (int i = 0; i < _n_properties; i++) {
 
-    bool  is_uniform = false, is_steady = true;
+    bool  is_uniform = false, is_steady = false;
     const cs_property_t  *pty = _properties[i];
 
     if (pty == NULL)
