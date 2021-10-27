@@ -116,6 +116,7 @@ integer          ii    , inod, itypfl, f_id, f_iddp
 integer          isou, ivar, iitsm
 integer          init, iautof
 integer          iflmas, iflmab
+integer          ivolfl_id, bvolfl_id
 integer          iflmb0
 integer          imrgrp, nswrgp, imligp, iwarnp
 integer          nbrval, iappel
@@ -134,7 +135,7 @@ double precision distbf, srfbnf, hint
 double precision rnx, rny, rnz
 double precision vr(3), vr1(3), vr2(3), vrn
 double precision disp_fac(3)
-double precision mass_fl_drhovol1, mass_fl_drhovol2
+double precision vol_fl_drhovol1, vol_fl_drhovol2
 
 double precision, allocatable, dimension(:,:,:), target :: viscf
 double precision, allocatable, dimension(:), target :: viscb
@@ -161,6 +162,7 @@ double precision, dimension(:,:), pointer :: coefau, cofafu, claale
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, clbale
 double precision, dimension(:), pointer :: coefa_p
 double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: ivolfl, bvolfl
 double precision, dimension(:), pointer :: brom, broma, crom, croma, viscl, visct
 double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
@@ -1049,104 +1051,113 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
     ! vel = 1 / (rho Vol) SUM mass_flux (X_f - X_i)
     if (ivofmt.eq.0) then
+
       do ifac = 1, nfac
 
         iel1 = ifacel(1,ifac)
         iel2 = ifacel(2,ifac)
 
-        mass_fl_drhovol1 = 0.d0
+        vol_fl_drhovol1 = 0.d0
         ! If it is not a solid cell
         if (cell_is_active(iel1).eq.1) &
-          mass_fl_drhovol1 = imasfl(ifac) / (crom(iel1) * cell_f_vol(iel1))
+          vol_fl_drhovol1 = imasfl(ifac) / (crom(iel1) * cell_f_vol(iel1))
 
 
-        mass_fl_drhovol2 = 0.d0
+        vol_fl_drhovol2 = 0.d0
         ! If it is not a solid cell
         if (cell_is_active(iel2).eq.1) &
-          mass_fl_drhovol2 = imasfl(ifac) / (crom(iel2) * cell_f_vol(iel2))
+          vol_fl_drhovol2 = imasfl(ifac) / (crom(iel2) * cell_f_vol(iel2))
 
         vel(1, iel1) = vel(1, iel1) &
-          + mass_fl_drhovol1 * (cdgfac(1, ifac) - xyzcen(1, iel1))
+          + vol_fl_drhovol1 * (cdgfac(1, ifac) - xyzcen(1, iel1))
         vel(2, iel1) = vel(2, iel1) &
-          + mass_fl_drhovol1 * (cdgfac(2, ifac) - xyzcen(2, iel1))
+          + vol_fl_drhovol1 * (cdgfac(2, ifac) - xyzcen(2, iel1))
         vel(3, iel1) = vel(3, iel1) &
-          + mass_fl_drhovol1 * (cdgfac(3, ifac) - xyzcen(3, iel1))
+          + vol_fl_drhovol1 * (cdgfac(3, ifac) - xyzcen(3, iel1))
 
         vel(1, iel2) = vel(1, iel2) &
-          - mass_fl_drhovol2 * (cdgfac(1, ifac) - xyzcen(1, iel2))
+          - vol_fl_drhovol2 * (cdgfac(1, ifac) - xyzcen(1, iel2))
         vel(2, iel2) = vel(2, iel2) &
-          - mass_fl_drhovol2 * (cdgfac(2, ifac) - xyzcen(2, iel2))
+          - vol_fl_drhovol2 * (cdgfac(2, ifac) - xyzcen(2, iel2))
         vel(3, iel2) = vel(3, iel2) &
-          - mass_fl_drhovol2 * (cdgfac(3, ifac) - xyzcen(3, iel2))
+          - vol_fl_drhovol2 * (cdgfac(3, ifac) - xyzcen(3, iel2))
 
       enddo
 
       do ifac = 1, nfabor
         iel1 = ifabor(ifac)
 
-        mass_fl_drhovol1 = 0.d0
+        vol_fl_drhovol1 = 0.d0
         ! If it is not a solid cell
         if (cell_is_active(iel1).eq.1) &
-          mass_fl_drhovol1 = bmasfl(ifac) / (crom(iel1) * cell_f_vol(iel1))
+          vol_fl_drhovol1 = bmasfl(ifac) / (crom(iel1) * cell_f_vol(iel1))
 
         vel(1, iel1) = vel(1, iel1) &
-          + mass_fl_drhovol1 * (cdgfbo(1, ifac) - xyzcen(1, iel1))
+          + vol_fl_drhovol1 * (cdgfbo(1, ifac) - xyzcen(1, iel1))
         vel(2, iel1) = vel(2, iel1) &
-          + mass_fl_drhovol1 * (cdgfbo(2, ifac) - xyzcen(2, iel1))
+          + vol_fl_drhovol1 * (cdgfbo(2, ifac) - xyzcen(2, iel1))
         vel(3, iel1) = vel(3, iel1) &
-          + mass_fl_drhovol1 * (cdgfbo(3, ifac) - xyzcen(3, iel1))
+          + vol_fl_drhovol1 * (cdgfbo(3, ifac) - xyzcen(3, iel1))
 
       enddo
 
+      ! VOF module
       ! vel = 1 / (Vol) SUM vol_flux (X_f - X_i)
     else
 
+      ! Id of the volume flux
+      call field_get_key_int(ivarfl(ivolf2), kimasf, ivolfl_id)
+      call field_get_key_int(ivarfl(ivolf2), kbmasf, bvolfl_id)
+
+      ! Pointers to the mass fluxes
+      call field_get_val_s(ivolfl_id, ivolfl)
+      call field_get_val_s(bvolfl_id, bvolfl)
+
       do ifac = 1, nfac
 
         iel1 = ifacel(1,ifac)
         iel2 = ifacel(2,ifac)
 
-        mass_fl_drhovol1 = 0.d0
+        vol_fl_drhovol1 = 0.d0
         ! If it is not a solid cell
         if (cell_is_active(iel1).eq.1) &
-          mass_fl_drhovol1 = imasfl(ifac) / cell_f_vol(iel1)
+          vol_fl_drhovol1 = ivolfl(ifac) / cell_f_vol(iel1)
 
-
-        mass_fl_drhovol2 = 0.d0
+        vol_fl_drhovol2 = 0.d0
         ! If it is not a solid cell
         if (cell_is_active(iel2).eq.1) &
-          mass_fl_drhovol2 = imasfl(ifac) / cell_f_vol(iel2)
+          vol_fl_drhovol2 = ivolfl(ifac) / cell_f_vol(iel2)
 
         vel(1, iel1) = vel(1, iel1) &
-          + mass_fl_drhovol1 * (cdgfac(1, ifac) - xyzcen(1, iel1))
+          + vol_fl_drhovol1 * (cdgfac(1, ifac) - xyzcen(1, iel1))
         vel(2, iel1) = vel(2, iel1) &
-          + mass_fl_drhovol1 * (cdgfac(2, ifac) - xyzcen(2, iel1))
+          + vol_fl_drhovol1 * (cdgfac(2, ifac) - xyzcen(2, iel1))
         vel(3, iel1) = vel(3, iel1) &
-          + mass_fl_drhovol1 * (cdgfac(3, ifac) - xyzcen(3, iel1))
+          + vol_fl_drhovol1 * (cdgfac(3, ifac) - xyzcen(3, iel1))
 
         vel(1, iel2) = vel(1, iel2) &
-          - mass_fl_drhovol2 * (cdgfac(1, ifac) - xyzcen(1, iel2))
+          - vol_fl_drhovol2 * (cdgfac(1, ifac) - xyzcen(1, iel2))
         vel(2, iel2) = vel(2, iel2) &
-          - mass_fl_drhovol2 * (cdgfac(2, ifac) - xyzcen(2, iel2))
+          - vol_fl_drhovol2 * (cdgfac(2, ifac) - xyzcen(2, iel2))
         vel(3, iel2) = vel(3, iel2) &
-          - mass_fl_drhovol2 * (cdgfac(3, ifac) - xyzcen(3, iel2))
+          - vol_fl_drhovol2 * (cdgfac(3, ifac) - xyzcen(3, iel2))
 
       enddo
 
       do ifac = 1, nfabor
         iel1 = ifabor(ifac)
 
-        mass_fl_drhovol1 = 0.d0
+        vol_fl_drhovol1 = 0.d0
         ! If it is not a solid cell
         if (cell_is_active(iel1).eq.1) &
-          mass_fl_drhovol1 = bmasfl(ifac) / cell_f_vol(iel1)
+          vol_fl_drhovol1 = bvolfl(ifac) / cell_f_vol(iel1)
 
         vel(1, iel1) = vel(1, iel1) &
-          + mass_fl_drhovol1 * (cdgfbo(1, ifac) - xyzcen(1, iel1))
+          + vol_fl_drhovol1 * (cdgfbo(1, ifac) - xyzcen(1, iel1))
         vel(2, iel1) = vel(2, iel1) &
-          + mass_fl_drhovol1 * (cdgfbo(2, ifac) - xyzcen(2, iel1))
+          + vol_fl_drhovol1 * (cdgfbo(2, ifac) - xyzcen(2, iel1))
         vel(3, iel1) = vel(3, iel1) &
-          + mass_fl_drhovol1 * (cdgfbo(3, ifac) - xyzcen(3, iel1))
+          + vol_fl_drhovol1 * (cdgfbo(3, ifac) - xyzcen(3, iel1))
 
       enddo
 
@@ -1632,6 +1643,16 @@ if (vcopt_u%iwarni.ge.1) then
     endif
   endif
 
+  if (ivofmt.gt.0) then
+    ! Id of the volume flux
+    call field_get_key_int(ivarfl(ivolf2), kimasf, ivolfl_id)
+    call field_get_key_int(ivarfl(ivolf2), kbmasf, bvolfl_id)
+
+    ! Pointers to the mass fluxes
+    call field_get_val_s(ivolfl_id, ivolfl)
+    call field_get_val_s(bvolfl_id, bvolfl)
+  endif
+
   rnorma = -grand
   rnormi =  grand
   do ifac = 1, nfac
@@ -1644,7 +1665,11 @@ if (vcopt_u%iwarni.ge.1) then
     endif
     ! Deal with null fluid section
     if (suffan(ifac)/surfan(ifac).gt.epzero) then
-      rnorm = abs(imasfl(ifac))/(suffan(ifac)*rhom)
+      if (ivofmt.gt.0) then
+        rnorm = abs(ivolfl(ifac))/suffan(ifac)
+      else
+        rnorm = abs(imasfl(ifac))/(suffan(ifac)*rhom)
+      endif
     else
       rnorm = 0.d0
     endif
@@ -1656,18 +1681,26 @@ if (vcopt_u%iwarni.ge.1) then
     call parmin (rnormi)
   endif
   write(nfecra,2300)rnorma, rnormi
-
   rnorma = -grand
   rnormi =  grand
   do ifac = 1, nfabor
-    if (iporos.eq.1.or.iporos.eq.2) then
-      rnorm = bmasfl(ifac)/(surfbn(ifac)*brom(ifac)*porosi(ifabor(ifac)))
-    else
+    if (ivofmt.gt.0) then
       ! Deal with null fluid section
       if (suffbn(ifac)/surfbn(ifac).gt.epzero) then
-        rnorm = bmasfl(ifac)/(suffbn(ifac)*brom(ifac))
+        rnorm = bvolfl(ifac)/(suffbn(ifac))
       else
         rnorm = 0.d0
+      endif
+    else
+      if (iporos.eq.1.or.iporos.eq.2) then
+        rnorm = bmasfl(ifac)/(surfbn(ifac)*brom(ifac)*porosi(ifabor(ifac)))
+      else
+        ! Deal with null fluid section
+        if (suffbn(ifac)/surfbn(ifac).gt.epzero) then
+          rnorm = bmasfl(ifac)/(suffbn(ifac)*brom(ifac))
+        else
+          rnorm = 0.d0
+        endif
       endif
     endif
     rnorma = max(rnorma,rnorm)
