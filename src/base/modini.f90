@@ -372,6 +372,13 @@ if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) then
     vcopt%blencv = 0.d0
     call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
   endif
+else if (ivofmt.gt.0) then
+  ii = ivolf2
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  if (abs(vcopt%blencv+1.d0).lt.epzero) then
+    vcopt%blencv = 1.d0
+    call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  endif
 endif
 
 do jj = 1, nscaus
