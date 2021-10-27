@@ -142,10 +142,17 @@ type(var_cal_opt) :: vcopt_u, vcopt_p
 !===============================================================================
 
 ! Pointers to the mass fluxes
-call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-call field_get_val_s(iflmas, imasfl)
-call field_get_val_s(iflmab, bmasfl)
+if (ivofmt.eq.0) then
+  call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+  call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+  call field_get_val_s(iflmas, imasfl)
+  call field_get_val_s(iflmab, bmasfl)
+else
+  call field_get_key_int(ivarfl(ivolf2), kimasf, iflmas)
+  call field_get_key_int(ivarfl(ivolf2), kbmasf, iflmab)
+  call field_get_val_s(iflmas, imasfl)
+  call field_get_val_s(iflmab, bmasfl)
+endif
 
 ! Allocate temporary arrays for the time-step resolution
 allocate(viscf(nfac), viscb(nfabor))
@@ -346,12 +353,18 @@ if (idtvar.ge.0) then
       isym = 2
 
       call matrdt &
-     ( vcopt_u%iconv, idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, &
-       viscb, dam)
+        ( vcopt_u%iconv, idiff0, isym, coefbt, cofbft, imasfl, bmasfl, viscf, &
+        viscb, dam)
 
-      do iel = 1, ncel
-        w1(iel) = dam(iel)/(crom(iel)*volume(iel))
-      enddo
+      if (ivofmt.eq.0) then
+        do iel = 1, ncel
+          w1(iel) = dam(iel)/(crom(iel)*volume(iel))
+        enddo
+      else
+        do iel = 1, ncel
+          w1(iel) = dam(iel)/volume(iel)
+        enddo
+      endif
 
       ! ---> CALCUL DE W1 = PAS DE TEMPS VARIABLE VERIFIANT
       !       LE NOMBRE DE COURANT MAXIMUM PRESCRIT PAR L'UTILISATEUR
