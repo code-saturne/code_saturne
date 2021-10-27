@@ -530,7 +530,12 @@ cs_user_parameters(cs_domain_t *domain)
   {
     cs_velocity_pressure_param_t *vp_param
       = cs_get_glob_velocity_pressure_param();
+    /* Switch off Rhie & Chow filter */
     vp_param->arak = 0.;
+
+    /* Activate RT0 reconstruction for the velocity from
+     * mass fluxes */
+    vp_param->irevmc = 1;
   }
   /*! [param_vp_arak] */
 
