@@ -460,7 +460,7 @@ cs_vof_compute_linear_rho_mu(const cs_domain_t *domain)
   const cs_real_t mu1 = _vof_parameters.mu1;
   const cs_real_t mu2 = _vof_parameters.mu2;
 
-  /*  Update mixture density and viscocity on cells */
+  /* Update mixture density and viscosity on cells */
 
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -479,7 +479,7 @@ cs_vof_compute_linear_rho_mu(const cs_domain_t *domain)
     cs_lnum_t c_id = b_face_cells[f_id];
     cs_real_t vf = a_voidf[f_id] + b_voidf[f_id]*cvar_voidf[c_id];
 
-    bpro_rom[f_id]   = rho2*vf + rho1*(1. - vf);
+    bpro_rom[f_id] = rho2*vf + rho1*(1. - vf);
   }
 }
 

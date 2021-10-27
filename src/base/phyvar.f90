@@ -159,7 +159,7 @@ ipass = ipass + 1
 
 mbrom = 0
 
-! Densities at boundaries are computed in cs_f_vof_update_phys_prop for VoF
+! Densities at boundaries are computed in cs_f_vof_compute_linear_rho_mu for VoF
 if (ivofmt.gt.0) then
   mbrom = 1
 endif
