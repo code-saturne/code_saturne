@@ -42,6 +42,7 @@
 #include "cs_interpolate.h"
 #include "cs_probe.h"
 #include "cs_time_step.h"
+#include "cs_time_control.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -968,6 +969,19 @@ cs_post_enable_writer(int   writer_id);
 
 fvm_writer_t *
 cs_post_get_writer(int  writer_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to the time control associated to a writer_id.
+ *
+ * \param[in]  writer_id  associated writer id
+ *
+ * \return  a pointer to a cs_time_control_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_time_control_t *
+cs_post_get_time_control(int  writer_id);
 
 /*----------------------------------------------------------------------------*/
 /*!

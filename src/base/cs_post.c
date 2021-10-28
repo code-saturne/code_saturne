@@ -5331,6 +5331,29 @@ cs_post_get_writer(int  writer_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return a pointer to the time control associated to a writer_id.
+ *
+ * \param[in]  writer_id  associated writer id
+ *
+ * \return  a pointer to a cs_time_control_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_time_control_t *
+cs_post_get_time_control(int  writer_id)
+{
+  int  id;
+  cs_post_writer_t  *writer = NULL;
+
+  id = _cs_post_writer_id(writer_id);
+  writer = _cs_post_writers + id;
+
+  return &(writer->tc);
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return time dependency associated to a writer_id.
  *
  * \param[in]  writer_id  associated writer id
