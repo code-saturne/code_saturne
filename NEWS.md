@@ -3,6 +3,8 @@ Release 7.0.3 (not released yet)
 
 Bug fixes:
 
+- Rij-epsilon (SSG and EBRSM): fix mass injection source terms.
+
 - Fix incorrect ghost cell exchange for convective limiter.
 
 - Fix bug in hydrostatic pressure computation

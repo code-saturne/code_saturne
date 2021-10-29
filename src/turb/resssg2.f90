@@ -170,6 +170,7 @@ double precision implmat2add(3,3)
 double precision impl_lin_cst, impl_id_cst
 double precision grav(3)
 double precision gkks3
+double precision, dimension(3,3) :: cvara_r
 
 character(len=80) :: label
 double precision, allocatable, dimension(:,:) :: grad
@@ -190,8 +191,6 @@ double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:,:), pointer:: c_st_prv, lagr_st_rij
 double precision, dimension(:,:), pointer :: cpro_buoyancy
 
-double precision, allocatable, dimension(:,:) :: cvara_r
-
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
@@ -208,7 +207,7 @@ call field_get_key_int(icrom, key_t_ext_id, iroext)
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet))
 allocate(dpvar(ncelet))
-allocate(gatinj(6,ncelet), viscce(6,ncelet))
+allocate(viscce(6,ncelet))
 allocate(weighf(2,nfac))
 allocate(weighb(nfabor))
 
@@ -284,7 +283,6 @@ else
 endif
 
 if (icorio.eq.1 .or. iturbo.eq.1) then
-allocate(cvara_r(3,3))
 
   ! Coefficient of the "Coriolis-type" term
   if (icorio.eq.1) then
@@ -351,14 +349,16 @@ endif
 
 if (ncesmp.gt.0) then
 
-  do isou = 1, dimrij
+  allocate(gatinj(6,ncelet))
 
-    ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
-    call catsmt(ncesmp, 1, icetsm, itypsm(:,ivar+isou-1),                     &
-                cell_f_vol, cvara_var, smacel(:,ivar+isou-1), smacel(:,ipr),  &
-                smbr, rovsdt, gatinj)
+  ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
+  call catsmt(ncesmp, 6, icetsm, itypsm(:,ivar),                            &
+              cell_f_vol, cvara_var, smacel(:,ivar+isou-1), smacel(:,ipr),  &
+              smbr, rovsdt, gatinj)
 
-   ! If we extrapolate the source terms we put Gamma Pinj in the previous st
+  do isou = 1, 6
+
+    ! If we extrapolate the source terms we put Gamma Pinj in the previous st
     if (st_prv_id.ge.0) then
       do iel = 1, ncel
         c_st_prv(isou,iel) = c_st_prv(isou,iel) + gatinj(isou,iel)
@@ -371,6 +371,8 @@ if (ncesmp.gt.0) then
     endif
 
   enddo
+
+  deallocate(gatinj)
 
 endif
 
@@ -797,7 +799,7 @@ do iel = 1, ncel
       smbr(isou,iel) = smbr(isou,iel) + w1(iel)
       rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel) + w2(iel)
 
-      ! Carefull ! Inversion of the order of the coefficients since
+      ! Careful ! Inversion of the order of the coefficients since
       ! rovsdt matrix is then used by a c function for the linear solving
       do jsou = 1, 6
         rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) + cell_f_vol(iel) &
@@ -807,10 +809,6 @@ do iel = 1, ncel
     endif
   enddo
 enddo
-
-if (icorio.eq.1 .or. iturbo.eq.1) then
-  deallocate(cvara_r)
-endif
 
 if (iturb.eq.32) then
   deallocate(grad)
@@ -1047,7 +1045,7 @@ call coditts &
 ! Free memory
 deallocate(w1, w2)
 deallocate(dpvar)
-deallocate(gatinj, viscce)
+deallocate(viscce)
 deallocate(weighf, weighb)
 
 !--------
