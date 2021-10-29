@@ -639,7 +639,7 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
                                         CS_PROPERTY_ISO);
 
   nsp->lam_viscosity = cs_property_add(CS_NAVSTO_LAM_VISCOSITY,
-                                         CS_PROPERTY_ISO);
+                                       CS_PROPERTY_ISO);
 
   if (nsp->turbulence->model->iturb == CS_TURB_NONE)
     nsp->tot_viscosity = nsp->lam_viscosity;

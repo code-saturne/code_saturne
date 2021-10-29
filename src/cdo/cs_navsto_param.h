@@ -106,7 +106,8 @@ typedef enum {
  * An additional equation is created involving the thermal equation.
  * The advection field is automatically set as the mass flux. By default,
  * the temperature is solved in Celsius and homogeneous Neumann boundary
- * conditions (no flux) are set.
+ * conditions (no flux) are set. This option is not compatible with the option
+ * \ref CS_NAVSTO_MODEL_BOUSSINESQ
  *
  * \var CS_NAVSTO_MODEL_BOUSSINESQ
  * An additional equation is created involving the thermal equation. The

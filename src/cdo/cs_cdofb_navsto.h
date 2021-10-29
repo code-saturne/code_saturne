@@ -61,6 +61,38 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*!
+ * \enum cs_cdofb_navsto_boussinesq_type_t
+ * \brief Type of algorithm to compute the Boussinesq approximation
+ */
+
+typedef enum {
+
+  /*!
+   * \brief Boussinesq approximation relyong on a cell contribution
+   *
+   * This algorithm uses cell DoFs for the Boussinesq part corresponding to
+   * rho0 * beta * (var[c_id] - var0) * g[] while the constant part equal to
+   * rho0 * g[] is built in order to be in balance with the pressure gradient
+   * (face DoF contributions).
+   */
+
+  CS_CDOFB_NAVSTO_BOUSSINESQ_CELL_DOF,
+
+  /*!
+   * \brief Boussinesq approximation relyong on face contributions
+   *
+   * This algorithm uses only face DoFs for the Boussinesq approximation.
+   * For the constant part (rho0 * g[]) as well as the variable part
+   * rho0 * beta * (var[c_id] - var0) * g[]
+   * The aim is to be in balance with the pressure gradient
+   */
+
+  CS_CDOFB_NAVSTO_BOUSSINESQ_FACE_DOF
+
+} cs_cdofb_navsto_boussinesq_type_t;
+
+
 /*! \struct cs_cdofb_navsto_builder_t
  *
  * \brief Structure storing additional arrays related to the building of the
@@ -177,6 +209,17 @@ cs_cdofb_navsto_divergence_vect(const cs_cell_mesh_t  *cm,
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the way to compute the Boussinesq approximation
+ *
+ * \param[in] type     type of algorithm to use
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_set_boussinesq_algo(cs_cdofb_navsto_boussinesq_type_t   type);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -588,7 +631,9 @@ cs_cdofb_navsto_gravity_term(const cs_navsto_param_t           *nsp,
 /*!
  * \brief  Take into account the buoyancy force with the Boussinesq approx.
  *         Compute and add the source term to the local RHS.
- *         This is the standard case where only the cell DoFs are involved.
+ *         This is the standard case where the face DoFs are used for the
+ *         constant part rho0 . g[] and only the cell DoFs are involved for the
+ *         remaining part (the Boussinesq approximation).
  *
  * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
@@ -598,10 +643,31 @@ cs_cdofb_navsto_gravity_term(const cs_navsto_param_t           *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_boussinesq_term(const cs_navsto_param_t           *nsp,
-                                const cs_cell_mesh_t              *cm,
-                                const cs_cdofb_navsto_builder_t   *nsb,
-                                cs_cell_sys_t                     *csys);
+cs_cdofb_navsto_boussinesq_by_vol(const cs_navsto_param_t           *nsp,
+                                  const cs_cell_mesh_t              *cm,
+                                  const cs_cdofb_navsto_builder_t   *nsb,
+                                  cs_cell_sys_t                     *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account the buoyancy force with the Boussinesq approx.
+ *         Compute and add the source term to the local RHS.
+ *         This way to compute the Boussinesq approximation relies only on DoFs
+ *         at faces. This should enable to keep a stable (no velocity) in case
+ *         of a stratified configuration.
+ *
+ * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb     pointer to a builder structure for the NavSto system
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_boussinesq_by_surf(const cs_navsto_param_t           *nsp,
+                                   const cs_cell_mesh_t              *cm,
+                                   const cs_cdofb_navsto_builder_t   *nsb,
+                                   cs_cell_sys_t                     *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
