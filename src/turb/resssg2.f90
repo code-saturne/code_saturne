@@ -511,12 +511,6 @@ do iel = 1, ncel
   xstrai(3,1) = xstrai(1,3)
   xstrai(3,2) = xstrai(2,3)
   xstrai(3,3) = gradv(3, 3, iel)
-  sym_strain(1) = xstrai(1,1)
-  sym_strain(2) = xstrai(2,2)
-  sym_strain(3) = xstrai(3,3)
-  sym_strain(4) = xstrai(1,2)
-  sym_strain(5) = xstrai(2,3)
-  sym_strain(6) = xstrai(1,3)
   ! omegaij
   xrotac(1,1) = 0.d0
   xrotac(1,2) = d1s2*(gradv(2, 1, iel)-gradv(1, 2, iel))
@@ -539,6 +533,14 @@ do iel = 1, ncel
 
   ! Computation of implicit components
   ! -----------------------------------
+
+  sym_strain(1) = xstrai(1,1)
+  sym_strain(2) = xstrai(2,2)
+  sym_strain(3) = xstrai(3,3)
+  sym_strain(4) = xstrai(1,2)
+  sym_strain(5) = xstrai(2,3)
+  sym_strain(6) = xstrai(1,3)
+
   ! Global variables needed for SSG and EBRSM
   ! -------------
   ! Computing the inverse matrix of R^n
@@ -647,7 +649,6 @@ do iel = 1, ncel
       enddo
     enddo
   endif
-
 
   do isou = 1, 6
     if (isou.eq.1)then
@@ -787,6 +788,7 @@ do iel = 1, ncel
 !              + 5.d0 * (1.d0-alpha3)*cvara_ep(iel)/trrij                &
 !              +        (1.d0-alpha3)*cvara_ep(iel)/trrij)
     endif
+
     if (st_prv_id.ge.0) then
       c_st_prv(isou,iel) = c_st_prv(isou,iel) + w1(iel)
     else
@@ -1004,10 +1006,9 @@ vcopt_loc = vcopt
 
 vcopt_loc%istat  = -1
 vcopt_loc%idifft = -1
-vcopt_loc%iwgrec = 0
+vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
 vcopt_loc%thetav = thetv
 vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
-vcopt_loc%extrag = 0
 
 p_k_value => vcopt_loc
 c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
@@ -1018,9 +1019,10 @@ call cs_equation_iterative_solve_tensor(idtvar, ivarfl(ivar), c_null_char,     &
                                         imasfl, bmasfl, viscf,                 &
                                         viscb, viscf, viscb, viscce,           &
                                         weighf, weighb, icvflb, ivoid,         &
-   rovsdt , smbr   , cvar_var        )
+                                        rovsdt, smbr, cvar_var)
 
 ! Free memory
+
 deallocate(w1, w2)
 deallocate(dpvar)
 deallocate(viscce)

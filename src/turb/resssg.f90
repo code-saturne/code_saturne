@@ -479,15 +479,6 @@ do iel = 1, ncel
   xrotac(3,2) = -xrotac(2,3)
   xrotac(3,3) = 0.d0
 
-  ! Rotating frame of reference => "absolute" vorticity
-  if (icorio.eq.1) then
-    do ii = 1, 3
-      do jj = 1, 3
-        xrotac(ii,jj) = xrotac(ii,jj) + matrot(ii,jj)
-      enddo
-    enddo
-  endif
-
   do ii=1,3
     do jj = 1,3
       ! aii = aij.aij
@@ -496,6 +487,14 @@ do iel = 1, ncel
       aklskl = aklskl + xaniso(ii,jj)*xstrai(ii,jj)
     enddo
   enddo
+  ! Rotating frame of reference => "absolute" vorticity
+  if (icorio.eq.1) then
+    do ii = 1, 3
+      do jj = 1, 3
+        xrotac(ii,jj) = xrotac(ii,jj) + matrot(ii,jj)
+      enddo
+    enddo
+  endif
 
   do isou = 1, 6
     if (isou.eq.1)then
@@ -747,7 +746,6 @@ call field_get_coefbf_v(ivarfl(ivar), cofbfp)
 vcopt_loc = vcopt
 
 vcopt_loc%istat  = -1
-vcopt_loc%icoupl = -1
 vcopt_loc%idifft = -1
 vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
 vcopt_loc%thetav = thetv
