@@ -164,37 +164,6 @@ cs_user_model(void)
 
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_ONLY);
 
-  /* =========================
-     Generic output management
-     ========================= */
-
-  cs_domain_set_output_param(domain,
-                             -1,      // restart frequency
-                             100,     // output log frequency
-                             3);      // verbosity (-1: no, 0, ...)
-
-  /* ====================
-     Time step management
-     ==================== */
-
-  /*
-    If there is an inconsistency between the max. number of iteration in
-    time and the final physical time, the first condition encountered stops
-    the calculation.
-  */
-
-  cs_domain_set_time_param(domain,
-                           500,     // nt_max or -1 (automatic)
-                           -1.);    // t_max or < 0. (automatic)
-
-  /* Define the value of the time step
-     >> cs_domain_def_time_step_by_value(domain, dt_val);
-     >> cs_domain_def_time_step_by_func(domain, dt_func, context);
-     context may be NULL.
-     This second way to define the time step enable complex definitions.
-  */
-
-  cs_domain_def_time_step_by_value(domain, 1.0);
 
   /* =================================
      Define the groundwater flow model
@@ -210,19 +179,7 @@ cs_user_model(void)
                        model_type,
                        option_flag);
 
-     - permeability_type is one of the following keywords:
-       CS_PROPERTY_ISO, CS_PROPERTY_ORTHO or CS_PROPERTY_ANISO
-
-     - model_type is one among
-       CS_GWF_MODEL_SATURATED_SINGLE_PHASE
-       CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE
-
-     - option_flag can be defined from the following flags
-       CS_GWF_GRAVITATION
-       CS_GWF_RICHARDS_UNSTEADY
-       CS_GWF_SOIL_PROPERTY_UNSTEADY
-       CS_GWF_SOIL_ALL_SATURATED
-       or 0 if there is no option to set
+       If option_flag = 0, then there is no option to set.
     */
 
     cs_flag_t  option_flag = 0;
@@ -242,43 +199,88 @@ cs_user_model(void)
     /* In this case, the gravity vector has to be defined (either using the GUI
        or in cs_user_parameters() function */
 
-    cs_gwf_activate(CS_PROPERTY_ISO,
-                    CS_GWF_MODEL_SATURATED_SINGLE_PHASE,
+    cs_gwf_activate(CS_PROPERTY_ANISO,
+                    CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
                     option_flag);
   }
   /*! [param_cdo_activate_gwf_b] */
 
+
+  /*! [param_cdo_post_gwf] */
+  /* Specify post-processing options */
+
+  cs_gwf_set_post_options(CS_GWF_POST_PERMEABILITY |
+                          CS_GWF_POST_DARCY_FLUX_BALANCE |
+                          CS_GWF_POST_DARCY_FLUX_DIVERGENCE |
+                          CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY,
+                          false); /* No reset */
+
+  /*! [param_cdo_post_gwf] */
+
   /* 2. Add and define soils (must be done before adding tracers) */
   /* ----------------------- */
 
-  /*! [param_cdo_gwf_add_define_simple_soil] */
+  /*! [param_cdo_gwf_add_define_saturated_soil] */
   {
-    /* Example 1: two "saturated" soils (simple case) */
+    /* Example 1: two "saturated" and anisotropic soils */
 
-    const cs_real_t  theta_s = 1;
+    /* saturated anisotropic permeability */
+
+    const double  aniso_val1[3][3] = {{1e-3, 0,    0},
+                                      {   0, 1,    0},
+                                      {   0, 0, 1e-1}};
+    const double  theta_s = 1;
     const cs_real_t  bulk_density = 1.0; /* useless if no tracer is
                                             considered */
 
     /* Two (volume) zones have be defined called "soil1" and "soil2". */
 
     cs_gwf_soil_t  *s1 = cs_gwf_add_soil("soil1",
-                                         CS_GWF_SOIL_SATURATED,
+                                         bulk_density,
                                          theta_s,
-                                         bulk_density);
+                                         CS_GWF_SOIL_SATURATED);
 
-    cs_gwf_soil_set_iso_saturated(s1, k1);  /* saturated permeability */
+    cs_gwf_soil_set_aniso_saturated(s1, aniso_val1);
 
-    /* For "simple" soil definitions, definition can be made here. For more
-       complex definition, please use \ref cs_user_gwf_setup */
+    /* For "simple" soil definitions, definition can be made here. */
 
     cs_gwf_soil_t  *s2 = cs_gwf_add_soil("soil2",
-                                         CS_GWF_SOIL_SATURATED,
+                                         bulk_density,
                                          theta_s,
-                                         bulk_density);
+                                         CS_GWF_SOIL_SATURATED);
 
-    cs_gwf_soil_set_iso_saturated(s2, k2);  /* saturated permeability */
+    /* saturated anisotropic permeability */
+
+    const double  aniso_val2[3][3] = {{1e-5, 0,    0},
+                                      {   0, 1,    0},
+                                      {   0, 0, 1e-2}};
+
+    cs_gwf_soil_set_aniso_saturated(s2, aniso_val2);
   }
-  /*! [param_cdo_gwf_add_define_simple_soil] */
+  /*! [param_cdo_gwf_add_define_saturated_soil] */
+
+  /*! [param_cdo_gwf_add_define_genuchten_soil] */
+  {
+    /* Example 2: Add a new user-defined soil for all the cells */
+
+    const cs_real_t  theta_s = 0.9;         /* max. liquid saturation */
+    const cs_real_t  bulk_density = 1800.0; /* useless if no tracer is
+                                               considered */
+
+    cs_gwf_soil_t  *s = cs_gwf_add_soil("cells",          /* volume zone name */
+                                        bulk_density,
+                                        theta_s,
+                                        CS_GWF_SOIL_GENUCHTEN); /* soil model */
+
+    cs_gwf_soil_set_iso_genuchten(s,
+                                  3e-1,       /* saturated permeability */
+                                  0.078,      /* residual moisture */
+                                  0.036,      /* scaling parameter */
+                                  1.56,       /* (n) shape parameter */
+                                  0.5);       /* (L) tortuosity */
+
+  }
+  /*! [param_cdo_gwf_add_define_genuchten_soil] */
 
   /*! [param_cdo_gwf_add_user_soil] */
   {
@@ -288,9 +290,11 @@ cs_user_model(void)
     const cs_real_t  bulk_density = 1800.0; /* useless if no tracer is
                                                considered */
 
-    cs_gwf_add_soil("cells", CS_GWF_SOIL_USER, theta_s, bulk_density);
+    cs_gwf_add_soil("cells",
+                    bulk_density,
+                    theta_s,
+                    CS_GWF_SOIL_USER);
 
-    /* The explicit definition of this soil is done in \ref cs_user_gwf_setup */
   }
   /*! [param_cdo_gwf_add_user_soil] */
 
@@ -316,21 +320,16 @@ cs_user_model(void)
       Add a tracer equation which is unsteady and convected by the darcean flux
       This implies the creation of a new equation called eqname along with a
       new field called varname.
-
-      For standard tracer:
-       cs_gwf_add_tracer(eqname, varname);
-       For user-defined tracer
-       cs_gwf_add_user_tracer(eqname, varname, setup_func);
     */
 
-    cs_gwf_tracer_model_t  model = 0; /* default model */
+    cs_gwf_tracer_model_t  model = 0; /* default model without precipitation
+                                         effect */
 
-    cs_gwf_tracer_t  *tr = cs_gwf_add_tracer(model,       /* tracer model */
-                                             "Tracer_01", /* eq. name */
-                                             "C1");       /* var. name */
+    cs_gwf_tracer_t  *tr = cs_gwf_add_tracer(model,     /* tracer model */
+                                             "Tracer",  /* eq. name */
+                                             "C");      /* var. name */
 
-    /* For "simple" tracer definitions, definition can be made here. For more
-     * complex definition, please use \ref cs_user_gwf_setup
+    /* For "simple" tracer definitions, definition can be made here.
      *
      * The parameters defining the tracer behavior can be set soil by soil
      * (give the soil name as the second argument) or to all soils in one call
@@ -340,9 +339,9 @@ cs_user_model(void)
     cs_gwf_set_main_tracer_param(tr,
                                  NULL,     /* soil name or NULL for all */
                                  0.,       /* water molecular diffusivity */
-                                 0., 0.,   /* alpha (longi. and transvesal) */
-                                 0.,       /* distribution coef. */
-                                 0.);      /* 1st order decay coef. */
+                                 1., 0.,   /* alpha (longi. and transvesal) */
+                                 1e-4,     /* distribution coef. */
+                                 0.01);    /* 1st order decay coef. */
   }
   /*! [param_cdo_gwf_add_tracer] */
 

@@ -34,6 +34,7 @@ Physical modeling:
 - Solidification: Add a new strategy to update the thermal source term
   in the Voller (linear or non-linear) model relying on the
   solidification path.
+- GWF: Major change in the way to use this module.
 
 Numerics:
 

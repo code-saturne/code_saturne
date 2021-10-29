@@ -1,0 +1,261 @@
+/*============================================================================
+ * Code_Saturne documentation page
+ *============================================================================*/
+
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2021 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*!
+  \page cs_gwf_cdo Groundwater flow module using CDO schemes
+
+  The groundwater flow module (GWF) relies on CDO vertex-based or CDO
+  vertex+cell-based schemes.
+
+  To set-up a GWF computation, one has to update the cs_user_parameters.c file
+  and edit the function \ref cs_user_model at least in simple cases. In more complex
+  cases, editing \ref cs_user_finalize_setup should be necessary.
+
+  \section cs_gwf_cdo_activate Activate the GWF module
+
+  --------
+
+  The first step is to activate the CDO module in the function \ref cs_user_model
+  (please refer to \ref cs_user_parameters_h_cdo_activation).
+
+  Then, one has to activate the groundwater flow module (GWF) in the function
+  \ref cs_user_model.  The function to call is \ref cs_gwf_activate.
+
+  There are three parameters:
+
+  1. The type of permeability to consider. Two choices: \ref CS_PROPERTY_ISO or
+  \ref CS_PROPERTY_ANISO
+
+  2. The main model to consider (i.e. which equations to solve). Please refer
+  to \ref cs_gwf_cdo_models
+
+  3. Optional flags to specify a physical phenomena to take into account or to
+  specify a numerical treatment to apply.
+
+  Here are listed the available option flags:
+
+  - \ref CS_GWF_GRAVITATION
+  - \ref CS_GWF_FORCE_RICHARDS_ITERATIONS
+  - \ref CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE
+  - \ref CS_GWF_ENFORCE_DIVERGENCE_FREE
+
+
+  \subsection cs_gwf_cdo_models Main models available in the GWF
+
+  There are currently two models :
+
+  - \ref CS_GWF_MODEL_SATURATED_SINGLE_PHASE
+  - \ref CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE
+
+  _First example: Activate the GWF model with an isotropic permeability and a
+  fully saturated single-phase flow model._
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_activate_gwf
+
+
+  _Second example: Activate the GWF model with an anisotropic permeability and
+  an unsaturated single-phase flow model. Moreover, one takes into account the
+  gravity effect._
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_activate_gwf_b
+
+
+
+  \section cs_gwf_cdo_soil Soils
+
+  --------
+
+  The second step is to add at least one new soil. The add of soil(s) should be
+  done before adding tracers. The function which adds a soil is \ref
+  cs_gwf_add_soil to be located inside the function \ref cs_user_model. The
+  last parameter of this function is the bulk density. This parameter is only
+  useful if there is at least one tracer defined.
+
+  \subsection cs_gwf_cdo_soil_models Predefined soil models
+
+  There are two predefined soil models
+
+  - \ref CS_GWF_SOIL_SATURATED (see \ref cs_gwf_cdo_soil_saturated)
+  - \ref CS_GWF_SOIL_GENUCHTEN (see \ref cs_gwf_cdo_soil_genuchten)
+
+  and one user-defined soil model
+
+  - \ref CS_GWF_SOIL_USER (see \ref cs_gwf_cdo_soil_user)
+
+  _Remark:_ If a \ref CS_GWF_MODEL_SATURATED_SINGLE_PHASE is set at the
+  activation step, then one expects that all soil models are defined by the
+  type \ref CS_GWF_SOIL_SATURATED
+
+
+  \subsection cs_gwf_cdo_soil_saturated Case of a saturated model
+
+  If the soil is saturated then this is a simple definition which can be
+  located inside the function \ref cs_user_model.
+
+  _Example for two saturated soils defined by an anisotropic (saturated)
+  permeability_
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_define_saturated_soil
+
+  Use \ref cs_gwf_set_iso_saturated_soil to set a saturated soil defined by an
+  isotropic permeability instead of an anisotropic permeability. In this case,
+  the second parameter is simply a ``double''.
+
+
+  \subsection cs_gwf_cdo_soil_genuchten Case of a Van Genuchten-Mualen model
+
+  Soils which behave according to a Van Genuchten-Mualen model can be specified
+  using \ref cs_gwf_soil_set_aniso_genuchten or \ref
+  cs_gwf_soil_set_iso_genuchten according to the type of permeability which has
+  been defined.
+
+  _Example of a soil relying on a Van Genuchten-Mualen and considering a
+  isotropic permeability_
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_define_genuchten_soil
+
+
+
+  \subsection cs_gwf_cdo_soil_user User-defined soils
+
+  If the predefined models are not sufficient, it is possible to add a
+  user-defined soil. In this case, the add of the new soil is made as follows
+
+  1. Add a user-defined model and set constant members of the soil structure
+  and then call \ref cs_gwf_soil_set_user (inside the function \ref cs_user_model)
+
+  2. Set the remaing model parameters (inside the function \ref
+  cs_user_finalize_setup)
+
+  Here is a complete example of a soil model devised by Tracy (called a soil context)
+
+  _Example of the structure used to handle the soil model_
+
+  \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_tracy_struct
+
+  _Example of the first step_
+
+  \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_add_user_soil
+
+  with the two requested functions (defined for instance as a static function
+  in the file cs_user_parameters.c). These functions have to fullfill the
+  prototype defined in \ref cs_gwf_soil_update_t (for the update of the soil
+  properties) and in \ref cs_gwf_soil_free_context_t (for the free of the soil
+  context).
+
+  First, an example of how to update soil properties (_tracy_update_)
+
+  \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_set_user_update_soil
+
+  and an example of how to free the soil context (_tracy_free_context_)
+
+  \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_set_user_free_soil
+
+  _Example of the second step_
+
+  \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_set_user_soil
+
+
+
+  \section cs_gwf_cdo_tracer Tracers
+
+  -------
+
+  The third step (which is not mandatory) is to add tracer(s) thanks to the
+  function \ref cs_gwf_add_tracer This tracer will be advected by the Darcy
+  flux arising from the Richards equation.
+
+  There are currently two models :
+
+  - a default model (the predefined one; see \ref cs_gwf_cdo_predef_tracer)
+  - a user-defined model (see \ref cs_gwf_cdo_user_tracer)
+
+  The first parameter in \ref cs_gwf_add_tracer is a flag which can be built with
+
+  - \ref CS_GWF_TRACER_USER (to switch to a user-defined tracer)
+  - \ref CS_GWF_TRACER_PRECIPITATION (to add the precipitation effect)
+
+
+  \subsection cs_gwf_cdo_predef_tracer Predefined tracers
+
+  Here is a simple example for a standard tracer which can be added in the
+  function \ref cs_user_model
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_tracer
+
+  Remark: Get a tracer structure.
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_tracer
+
+
+  \subsection cs_gwf_cdo_user_tracer User-defined tracers
+
+  TODO
+
+
+
+
+  \section cs_gwf_cdo_postprocess Automatic postprocessings
+
+  -------
+
+  It is possible to activate an automatic post-processing of several
+  postprocessings of fields or properties. Here are available flags to activate
+  through the usage of \ref cs_gwf_set_post_options
+
+  - \ref CS_GWF_POST_SOIL_CAPACITY
+  - \ref CS_GWF_POST_LIQUID_SATURATION
+  - \ref CS_GWF_POST_PERMEABILITY
+  - \ref CS_GWF_POST_DARCY_FLUX_BALANCE
+  - \ref CS_GWF_POST_DARCY_FLUX_DIVERGENCE
+  - \ref CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_post_gwf
+
+
+
+
+  \section cs_gwf_cdo_helper  Helper functions
+
+  -------
+
+  \subsection cs_gwf_cdo_helper_soil Helper functions for soils
+
+  Get a soil structure from its name.
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_soil
+
+  There is a similar which retrieve the soil structure from its id (see \ref
+  cs_gwf_soil_by_id).
+
+  \subsection cs_gwf_cdo_helper_tracer  Helper functions for tracers
+
+  Get a tracer structure from its name.
+
+  \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_get_tracer
+
+
+*/

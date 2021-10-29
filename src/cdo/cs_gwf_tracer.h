@@ -87,46 +87,55 @@ typedef void
  * Structure definitions
  *============================================================================*/
 
-
 /*!
- * @name Flags specifying the general behavior of a tracer associated to
- *       the groundwater flow module
- * @{
- *
  * \enum cs_gwf_tracer_model_bit_t
- * \brief elemental modelling choice either from the physical viewpoint or the
+ * \brief Flags specifying the general behavior of a tracer associated to
+ *        the groundwater flow module
+ *
+ * Elemental modelling choice either from the physical viewpoint or the
  * numerical viewpoint for the transport of a tracer
  *
- * \def CS_GWF_TRACER_USER
- * \brief user-defined tracer. All terms can be modified with user functions
- *
- * \def CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS
- * \brief Add the sorption phenomena to the default tracer equation. Case of
- *        the EK model with 3 parameters. Sorption is assumed to be infinite
- *
- * \def CS_GWF_TRACER_SORPTION_EK_5_PARAMETERS
- * \brief Add the sorption phenomena to the default tracer equation. Case of the
- *        EK model with 5 parameters. Sorption is assumed to be finite.  An
- *        additional equation related to the concentration of sorpted tracer in
- *        the second kind of sites.
- *
- * \def CS_GWF_TRACER_PRECIPITATION
- * \brief Add the precipitation phenomena to the default tracer equation
  */
 
 /* Type of predefined modelling for the groundwater flows */
 typedef enum {
 
-     CS_GWF_TRACER_USER                        = 1<< 0, /* =    1 */
+  /*!
+   * \brief User-defined tracer.
+   *
+   * All terms can be modified with user functions
+   */
 
-     /* Physical phenomena to consider */
-     /* ------------------------------ */
+  CS_GWF_TRACER_USER                        = 1<< 0, /* =    1 */
 
-     CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS    = 1<< 1, /* =    2 */
-     CS_GWF_TRACER_SORPTION_EK_5_PARAMETERS    = 1<< 2, /* =    4 */
+  /* Physical phenomena to consider */
+  /* ------------------------------ */
 
+  /*!
+   * \brief EK model with 3 parameters
+   *
+   * Add the sorption phenomena to the default tracer equation. Case of the EK
+   * model with 3 parameters. Sorption is assumed to be infinite
+   */
 
-     CS_GWF_TRACER_PRECIPITATION               = 1<< 4, /* =    16 */
+  CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS    = 1<< 1, /* =    2 */
+
+  /*!
+   * \brief EK model with 5 parameters.
+   *
+   * Add the sorption phenomena to the default tracer equation in the case of
+   * the EK model with 5 parameters. Sorption is assumed to be finite.  An
+   * additional equation related to the concentration of sorpted tracer in the
+   * second kind of sites.
+   */
+
+  CS_GWF_TRACER_SORPTION_EK_5_PARAMETERS    = 1<< 2, /* =    4 */
+
+  /*!
+   * \brief Add the precipitation phenomena to the default tracer equation
+   */
+
+  CS_GWF_TRACER_PRECIPITATION               = 1<< 4, /* =    16 */
 
 } cs_gwf_tracer_model_bit_t;
 

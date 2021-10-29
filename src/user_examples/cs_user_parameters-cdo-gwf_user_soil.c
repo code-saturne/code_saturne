@@ -71,7 +71,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*! [param_cdo_gwf_tracy_struct] */
-/* Parameters defining the saturated hydraulic Tracy model */
+/* Parameters defining the unsaturated hydraulic Tracy model */
 
 typedef struct {
 
@@ -103,7 +103,7 @@ typedef struct {
  *         The purpose of this function is to update soil properties such as
  *         the moisture content (liquid saturation), (full) permeability and
  *         the soil capacity.
- *         The model follows in this function has been defined by Tracy et al.
+ *         The model follows in this function has been defined by Tracy
  *         for verification purposes in the case of unsaturated single phase
  *         flows.
  *

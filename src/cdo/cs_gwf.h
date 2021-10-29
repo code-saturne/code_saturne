@@ -45,86 +45,100 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * @name Flags specifying the general behavior of the groundwater flow module
- * @{
- *
  * \enum cs_gwf_model_type_t
  * \brief Type of system of equation(s) to consider for the physical modelling
- *
- * \def CS_GWF_MODEL_SATURATED_SINGLE_PHASE
- * \brief Single phase (liquid phase) modelling in a porous media. All soils
- * assumed to be saturated. This yields several simplifications in the Richards
- * equation governing the water conservation. The Richards equation is steady.
- * The saturation is constant and there is no relative permeability.
- *
- * \def CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE
- * \brief Single phase (liquid phase) modelling in a porous media. Some soils
- * are not saturated and are described by a more complex model such as the Van
- * Genuchten-Mualen model. Simplifications made in the case of \ref
- * CS_GWF_MODEL_SATURATED_SINGLE_PHASE do not hold anymore.
- *
- * \def CS_GWF_MODEL_TWO_PHASE
- * \brief Two phase flow modelling (gaz and liquid phases) in porous media. A
- * Richards-like equation is considered in each phase to take into account the
- * mass conservation of water and one other component. The component can be
- * disolved in the liquid phase. No water vapour is taken into account. Please
- * refer to \ref cs_gwf_miscible_two_phase_t for more details.
  */
 
 typedef enum {
 
+  /*!
+   * \brief Single phase (liquid phase) modelling in a porous media.
+   *
+   * All soils are assumed to be saturated. This yields several simplifications
+   * in the Richards equation governing the water conservation. The Richards
+   * equation is steady. The saturation is constant and there is no relative
+   * permeability.
+   */
+
   CS_GWF_MODEL_SATURATED_SINGLE_PHASE,
+
+  /*!
+   * \brief Single phase (liquid phase) modelling in a porous media.
+   *
+   * Some soils are not saturated and are described by a more complex model
+   * such as the Van Genuchten-Mualen model. Simplifications made in the case
+   * of \ref CS_GWF_MODEL_SATURATED_SINGLE_PHASE do not hold anymore. Richards
+   * equation is unsteady and there may be a non-linearity to handle according
+   * to the type of soil model. Soil properties such as permeability, soil
+   * capacity and liquid saturation (also called moisture content) are neither
+   * uniform nor steady.
+   */
+
   CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
+
+  /*!
+   * \brief Two phase flow modelling (gaz and liquid phases) in porous media.
+   *
+   * A Richards-like equation is considered in each phase to take into account
+   * the mass conservation of water and one other component. The component can
+   * be disolved in the liquid phase. No water vapour is taken into
+   * account. Please refer to \ref cs_gwf_miscible_two_phase_t for more details.
+   */
+
   CS_GWF_MODEL_TWO_PHASE,
-  CS_GWF_N_MODEL_TYPES
+
+  CS_GWF_N_MODEL_TYPES     /*!< Number of predefined models (not a model) */
 
 } cs_gwf_model_type_t;
 
 typedef cs_flag_t  cs_gwf_option_flag_t;
 
 /*!
- * @name Flags specifying the general behavior of the groundwater flow module
- * @{
- *
  * \enum cs_gwf_model_bit_t
- * \brief elemental modelling choice either from the physical viewpoint or the
- * numerical viewpoint
-
- * \def CS_GWF_GRAVITATION
- * \brief Gravitation effects are taken into account in the Richards equation
- *
- * \def CS_GWF_FORCE_RICHARDS_ITERATIONS
- * \brief Even if the Richards equation is steady-state, this equation is
- *        solved at each iteration.
- *
- * \def CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE
- * \brief Compute the mean-value of the hydraulic head field and subtract this
- *        mean-value to get a field with zero mean-value. It's important to set
- *        this flag if no boundary condition is given.
- *
- * \def CS_GWF_ENFORCE_DIVERGENCE_FREE
- * \brief Activate a treatment to enforce a Darcy flux to be divergence-free
- *
+ * \brief Elemental modelling choice either from the physical viewpoint or the
+ *        numerical viewpoint
  */
 
 typedef enum {
 
-  /* Main physical modelling */
-  /* ----------------------- */
+  /* --------  Main physical modelling */
+
+  /*!
+   * \brief Gravitation effects are taken into account in the Richards equation
+   */
 
   CS_GWF_GRAVITATION                     = 1<< 0, /* =   1 */
 
-  /* Main numerical options */
-  /* ---------------------- */
+  /* --------- Main numerical options */
+
+  /*!
+   * \brief Even if the Richards equation is steady-state, this equation is
+   *        solved at each iteration.
+   */
 
   CS_GWF_FORCE_RICHARDS_ITERATIONS       = 1<< 6, /* =   64 */
+
+  /*!
+   * \brief Compute the mean-value of the hydraulic head field and subtract
+   *        this mean-value to get a field with zero mean-value. It's important
+   *        to set this flag if no boundary condition is given.
+   */
+
   CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE = 1<< 7, /* =  128 */
+
+  /*!
+   * \brief Activate a treatment to enforce a Darcy flux to be divergence-free
+   */
+
   CS_GWF_ENFORCE_DIVERGENCE_FREE         = 1<< 8  /* =  256 */
+
+  /*!
+   * @}
+   */
 
 } cs_gwf_model_bit_t;
 
-/*! @}
- *!
+/*!
  * @name Flags specifying the kind of post-processing to perform in
  *       the groundwater flow module
  * @{
@@ -160,7 +174,9 @@ typedef enum {
 #define CS_GWF_POST_DARCY_FLUX_DIVERGENCE      (1 << 4)
 #define CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY     (1 << 5)
 
-/*! @} */
+/*!
+ * @}
+ */
 
 /*============================================================================
  * Type definitions
