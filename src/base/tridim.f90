@@ -450,32 +450,6 @@ if (irangp.ge.0 .or. iperio.eq.1) then
 
 endif
 
-! ---> Periodicity of rotation for related fields
-
-if (iperio.eq.1) then
-
-  !  -- Reynolds stress tensor
-
-  if (itytur.eq.3 .and. irijco.eq.0) then
-    call field_get_val_s(ivarfl(ir11), cvar_r11)
-    call field_get_val_s(ivarfl(ir22), cvar_r22)
-    call field_get_val_s(ivarfl(ir33), cvar_r33)
-    call field_get_val_s(ivarfl(ir12), cvar_r12)
-    call field_get_val_s(ivarfl(ir13), cvar_r13)
-    call field_get_val_s(ivarfl(ir23), cvar_r23)
-
-    call perrte &
-    ( cvar_r11, cvar_r12, cvar_r13,           &
-      cvar_r12, cvar_r22, cvar_r23,           &
-      cvar_r13, cvar_r23, cvar_r33 )
-  endif
-
-  !  -- Note for v2f:
-  !     v2 (thus phi) is oriented locally, and is handled as a scalar
-  !     regarding periodicity of rotation
-
-endif
-
 !===============================================================================
 ! 4.  POUR IPHYDR ON DOIT COMMUNIQUER FRCXT AU PREMIER PASSAGE
 !     (FRCXT SERT DANS TYPECL)

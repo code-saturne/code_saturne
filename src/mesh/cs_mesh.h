@@ -270,26 +270,6 @@ void CS_PROCF(synsce, SYNSCE)
  *
  * Fortran interface:
  *
- * subroutine synvec(var)
- * *****************
- *
- * var1   : <-> : vector component 1 array
- * var2   : <-> : vector component 2 array
- * var3   : <-> : vector component 3 array
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(synvec, SYNVEC)
-(
- cs_real_t  var1[],
- cs_real_t  var2[],
- cs_real_t  var3[]
-);
-
-/*----------------------------------------------------------------------------
- * Update a vector array in case of parallelism and/or periodicity.
- *
- * Fortran interface:
- *
  * subroutine synvin(var)
  * *****************
  *
@@ -316,38 +296,6 @@ void CS_PROCF(synvin, SYNVIN)
 void CS_PROCF(synvie, SYNVIE)
 (
  cs_real_t  var[]
-);
-
-/*----------------------------------------------------------------------------
- * Update a tensor array in case of parallelism and/or periodicity.
- *
- * Fortran interface:
- *
- * subroutine synten(var)
- * *****************
- *
- * var11   : <-> : tensor component 11 array
- * var12   : <-> : tensor component 12 array
- * var13   : <-> : tensor component 13 array
- * var21   : <-> : tensor component 21 array
- * var22   : <-> : tensor component 22 array
- * var23   : <-> : tensor component 23 array
- * var31   : <-> : tensor component 31 array
- * var32   : <-> : tensor component 32 array
- * var33   : <-> : tensor component 33 array
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(synten, SYNTEN)
-(
- cs_real_t  var11[],
- cs_real_t  var12[],
- cs_real_t  var13[],
- cs_real_t  var21[],
- cs_real_t  var22[],
- cs_real_t  var23[],
- cs_real_t  var31[],
- cs_real_t  var32[],
- cs_real_t  var33[]
 );
 
 /*----------------------------------------------------------------------------
@@ -556,20 +504,6 @@ cs_mesh_sync_var_scal_ext(cs_real_t  *var);
  * Update a vector array in case of parallelism and/or periodicity.
  *
  * parameters:
- *   var1  <->  vector component 1 array
- *   var2  <->  vector component 2 array
- *   var3  <->  vector component 3 array
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_vect_ni(cs_real_t  *var1,
-                         cs_real_t  *var2,
-                         cs_real_t  *var3);
-
-/*----------------------------------------------------------------------------
- * Update a vector array in case of parallelism and/or periodicity.
- *
- * parameters:
  *   var  <->  interleaved vector (of dimension 3)
  *----------------------------------------------------------------------------*/
 
@@ -599,32 +533,6 @@ cs_mesh_sync_var_vect_ext(cs_real_t  *var);
 void
 cs_mesh_sync_var_diag_ni(cs_real_t  *var11,
                          cs_real_t  *var22,
-                         cs_real_t  *var33);
-
-/*----------------------------------------------------------------------------
- * Update a tensor array in case of parallelism and/or periodicity.
- *
- * parameters:
- *   var11  <->  tensor component 11 array
- *   var12  <->  tensor component 12 array
- *   var13  <->  tensor component 13 array
- *   var21  <->  tensor component 21 array
- *   var22  <->  tensor component 22 array
- *   var23  <->  tensor component 23 array
- *   var31  <->  tensor component 31 array
- *   var32  <->  tensor component 32 array
- *   var33  <->  tensor component 33 array
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_tens_ni(cs_real_t  *var11,
-                         cs_real_t  *var12,
-                         cs_real_t  *var13,
-                         cs_real_t  *var21,
-                         cs_real_t  *var22,
-                         cs_real_t  *var23,
-                         cs_real_t  *var31,
-                         cs_real_t  *var32,
                          cs_real_t  *var33);
 
 /*----------------------------------------------------------------------------

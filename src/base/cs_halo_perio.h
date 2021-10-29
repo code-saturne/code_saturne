@@ -44,40 +44,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*============================================================================
- *  Public function header for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Rotate tensor values for periodic cells on extended halos.
- *
- * Fortran API:
- *
- * subroutine perrte
- * *****************
- *
- * double precision var11(ncelet) : <-> : component 11 of rank 2 tensor
- * double precision var12(ncelet) : <-> : component 12 of rank 2 tensor
- * double precision var13(ncelet) : <-> : component 13 of rank 2 tensor
- * double precision var21(ncelet) : <-> : component 21 of rank 2 tensor
- * double precision var22(ncelet) : <-> : component 22 of rank 2 tensor
- * double precision var23(ncelet) : <-> : component 23 of rank 2 tensor
- * double precision var31(ncelet) : <-> : component 31 of rank 2 tensor
- * double precision var32(ncelet) : <-> : component 32 of rank 2 tensor
- * double precision var33(ncelet) : <-> : component 33 of rank 2 tensor
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (perrte, PERRTE) (cs_real_t  var11[],
-                           cs_real_t  var12[],
-                           cs_real_t  var13[],
-                           cs_real_t  var21[],
-                           cs_real_t  var22[],
-                           cs_real_t  var23[],
-                           cs_real_t  var31[],
-                           cs_real_t  var32[],
-                           cs_real_t  var33[]);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
