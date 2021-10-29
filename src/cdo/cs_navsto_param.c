@@ -1532,6 +1532,8 @@ cs_navsto_param_add_boussinesq_term(cs_navsto_param_t    *nsp,
   if (nsp == NULL)
     return NULL;
 
+  nsp->model_flag |= CS_NAVSTO_MODEL_BOUSSINESQ;
+
   int  b_id = nsp->n_boussinesq_terms;
 
   nsp->n_boussinesq_terms += 1;
