@@ -1758,34 +1758,31 @@ cs_cdofb_navsto_boussinesq_term(const cs_navsto_param_t           *nsp,
   CS_UNUSED(nsb);
   assert(nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ);
 
-  /* Boussinesq term: rho0 * g[] * ( 1 -beta * (var[c] - var0) ) */
+  /* Boussinesq term: rho0 * g[] * ( 1 - beta * (var[c] - var0) ) */
 
   const cs_real_t  rho0 = nsp->mass_density->ref_value;
   const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
+  const cs_real_t  rho0g_xc[3] = { rho0 * gravity_vector[0] * cm->xc[0],
+                                   rho0 * gravity_vector[1] * cm->xc[1],
+                                   rho0 * gravity_vector[2] * cm->xc[2] };
 
-  const cs_real_t  cell_contrib[3] = { rho0 * gravity_vector[0] * cm->xc[0],
-                                       rho0 * gravity_vector[1] * cm->xc[1],
-                                       rho0 * gravity_vector[2] * cm->xc[2] };
+  /* Boussinesq coefficient */
 
-  /* Face contribution (balance with the pressure gradient) : rho_ref * g[] */
-  for (int f = 0; f < cm->n_fc; f++) {
-    const cs_real_t  *_div_f = nsb->div_op + 3*f;
-    for (int k = 0; k < 3; k++)
-      csys->rhs[3*f+k] += _div_f[k] * cell_contrib[k];
-  }
-
-  /* Cell contribution (volumic source term) */
-  cs_real_t  cell_variation = 0;
+  cs_real_t  boussi_coef = 1;
   for (int i = 0; i < nsp->n_boussinesq_terms; i++) {
 
     cs_navsto_param_boussinesq_t  *bp = nsp->boussinesq_param + i;
-    cell_variation += -bp->beta*(bp->var[cm->c_id] - bp->var0);
+    boussi_coef += -bp->beta*(bp->var[cm->c_id] - bp->var0);
 
   }
-  cell_variation *= cm->vol_c;
 
-  for (int k = 0; k < 3; k++)
-    csys->rhs[3*cm->n_fc+k] += cell_variation * gravity_vector[k];
+  /* Face contribution (balance with the pressure gradient) : rho_ref * g[] */
+
+  for (int f = 0; f < cm->n_fc; f++) {
+    const cs_real_t  *_div_f = nsb->div_op + 3*f;
+    for (int k = 0; k < 3; k++)
+      csys->rhs[3*f+k] += boussi_coef * _div_f[k] * rho0g_xc[k];
+  }
 
 }
 
