@@ -47,25 +47,27 @@ BEGIN_C_DECLS
 /*! \struct cs_gwf_darcy_flux_t
  *
  * \brief Structure to handle the Darcy flux
- *
- * \var adv_field
- * Pointer to a \ref cs_adv_field_t structure. Darcy advective flux in the
- * liquid phase. This structure is used to define the advective term in
- * tracer equations.
- *
- * \var flux location
- * Indicate where the arrays defining the Darcy fluxes are located
- *
- * \var flux_val
- * Array storing the liquid Darcian flux in each location (for instance the
- * dual faces associated to each cell)
- *
- * \var boundary_flux_val
- * Array storing the normal Darcian flux across the boundary of the
- * computational domain for the liquid phase. This is an optional array.
  */
 
 typedef struct {
+
+  /*!
+   * \var adv_field
+   * Pointer to a \ref cs_adv_field_t structure. Darcy advective flux in the
+   * liquid phase. This structure is used to define the advective term in
+   * tracer equations.
+   *
+   * \var flux_location
+   * Indicate where the arrays defining the Darcy fluxes are located
+   *
+   * \var flux_val
+   * Array storing the liquid Darcian flux in each location (for instance the
+   * dual faces associated to each cell)
+   *
+   * \var boundary_flux_val
+   * Array storing the normal Darcian flux across the boundary of the
+   * computational domain for the liquid phase. This is an optional array.
+   */
 
   cs_adv_field_t               *adv_field;
   cs_flag_t                     flux_location;
@@ -78,13 +80,15 @@ typedef struct {
 /*! \struct cs_gwf_saturated_single_phase_t
  *
  * \brief Structure to handle the modelling of a single-phase flows in a porous
- *        media considered as saturated. Several simplifications are operated
- *        in this context. Only the liquid phase is taken into account.
+ *        media considered as saturated.
+ *
+ * Several simplifications are operated in this context. Only the liquid phase
+ * is taken into account.
  */
 
 typedef struct {
 
-    /*!
+  /*!
    * @name Equation
    * @{
    *
@@ -102,7 +106,7 @@ typedef struct {
    * @name Darcy (advection) field
    * @{
    *
-   * \var darcy_flux
+   * \var darcy
    * Pointer to a \ref cs_gwf_darcy_flux_t structure. Darcy advective flux in
    * the liquid phase. This structure is used to define the advective term in
    * tracer equations.
@@ -172,7 +176,7 @@ typedef struct {
    * @name Darcy (advection) field
    * @{
    *
-   * \var darcy_flux
+   * \var darcy
    * Pointer to a \ref cs_gwf_darcy_flux_t structure. Darcy advective flux in
    * the liquid phase. This structure is used to define the advective term in
    * tracer equations.
@@ -253,21 +257,22 @@ typedef struct {
 /*! \struct cs_gwf_miscible_two_phase_t
  *
  * \brief Structure to handle the modelling of miscible two-phase flows in a
- *        porous media as depicted in "Finite volume approximation of a
- *        diffusion-dissolution model and application to nuclear waste storage"
- *        O. Angelini, C. Chavant, E. Chénier, R. Eymard and S. Granet in
- *        Mathematics and Computers in Simulation (2011), 81 (10),
- *        pp. 2001--2017
+ *        porous media.
+
+ * The model follows what is depicted in "Finite volume approximation of a
+ * diffusion-dissolution model and application to nuclear waste storage"
+ * O. Angelini, C. Chavant, E. Chénier, R. Eymard and S. Granet in Mathematics
+ * and Computers in Simulation (2011), 81 (10), pp. 2001--2017
  *
- *        Main assumptions are:
- *        - No water in the gas phase
- *        - Incompressibility of the liquid phase
- *        - Hydrogen pressure is given by the "perfect gas" law in the gas
- *          phase and the Henry's law in the liquid phase
+ * Main assumptions are:
+ *   - No water in the gas phase
+ *   - Incompressibility of the liquid phase
+ *   - Hydrogen pressure is given by the "perfect gas" law in the gas phase and
+ *     the Henry's law in the liquid phase
  *
- *        The two primitive variables are the liquid and gas pressures with a
- *        specific treatment in the saturated case to handle the gaz pressure
- *        (cf. the cited article or Angelini's PhD thesis
+ * The two primitive variables are the liquid and gas pressures with a specific
+ * treatment in the saturated case to handle the gaz pressure (cf. the cited
+ * article or Angelini's PhD thesis
  *
  * Notations are the following :
  * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by g
