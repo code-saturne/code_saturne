@@ -3,6 +3,8 @@ Release 7.0.3 (not released yet)
 
 Bug fixes:
 
+- Fix incorrect ghost cell exchange for convective limiter.
+
 - Fix bug in hydrostatic pressure computation
   (synchronisation missing in periodic computation).
 

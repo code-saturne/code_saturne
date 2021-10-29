@@ -315,7 +315,7 @@ if (st_id .ge.0) then
   end do
   ! Handle parallelism and periodicity
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synvec(cpro_vect_st)
+    call synvin(cpro_vect_st)
   endif
 end if
 
