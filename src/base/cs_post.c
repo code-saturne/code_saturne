@@ -5342,15 +5342,11 @@ cs_post_get_writer(int  writer_id)
 cs_time_control_t *
 cs_post_get_time_control(int  writer_id)
 {
-  int  id;
-  cs_post_writer_t  *writer = NULL;
-
-  id = _cs_post_writer_id(writer_id);
-  writer = _cs_post_writers + id;
+  int id = _cs_post_writer_id(writer_id);
+  cs_post_writer_t  *writer = _cs_post_writers + id;
 
   return &(writer->tc);
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
