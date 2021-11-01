@@ -139,18 +139,11 @@ _needs_solving_steady_state_thermal(void)
   if (cs_thermal_system_is_activated() == false)
     return false;
 
-  cs_flag_t  thm_model = cs_thermal_system_get_model();
   cs_equation_param_t  *thm_eqp =
     cs_equation_get_param(cs_equation_by_name(CS_THERMAL_EQNAME));
 
-  /* Is there an advection term arising from the Navier--Stokes ? */
-  if (thm_model & CS_THERMAL_MODEL_NAVSTO_ADVECTION)
-    return false; /* This is managed inside the function
-                     cs_navsto_system_compute_steady_state() */
-
-  else if (cs_equation_param_has_time(thm_eqp))
+  if (cs_equation_param_has_time(thm_eqp))
     return false;
-
   else
     return true;
 }
