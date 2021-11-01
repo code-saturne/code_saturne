@@ -549,7 +549,7 @@ _lages1(cs_real_t           dtp,
         if (extra->temperature != NULL) {
           if (t_scl == CS_TEMPERATURE_SCALE_KELVIN)
             tempf = extra->temperature->val[cell_id];
-          else if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
+          else /* if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS) */
             tempf = extra->temperature->val[cell_id] + tkelvi;
         }
 
@@ -559,7 +559,8 @@ _lages1(cs_real_t           dtp,
             tempf += tkelvi;
         }
 
-        cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
+        cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am,
+                                                     CS_LAGR_MASS);
 
         cs_real_t ddbr = sqrt(2.0 * _k_boltz * tempf / (p_mass * taup_r[id]));
 
