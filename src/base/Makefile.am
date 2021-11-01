@@ -177,6 +177,7 @@ cs_timer.h \
 cs_timer_stats.h \
 cs_tree.h \
 cs_turbomachinery.h \
+cs_utilities.h \
 cs_velocity_pressure.h \
 cs_vof.h \
 cs_volume_zone.h \
@@ -352,6 +353,7 @@ cs_time_plot.c \
 cs_time_step.c \
 cs_timer_stats.c \
 cs_turbomachinery.c \
+cs_utilities.c \
 cs_velocity_pressure.c \
 cs_vof.c \
 cs_volume_mass_injection.c \

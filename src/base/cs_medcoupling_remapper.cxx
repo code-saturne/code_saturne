@@ -1030,14 +1030,12 @@ void
 cs_medcoupling_remapper_destroy_all(void)
 {
 
-#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling support.\n"));
-#else
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   for (int r_id = 0; r_id < _n_remappers; r_id++)
     _cs_medcoupling_remapper_destroy(_remapper[r_id]);
 #endif
+
+  return;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -118,6 +118,7 @@
 #include "cs_timer_stats.h"
 #include "cs_tree.h"
 #include "cs_turbomachinery.h"
+#include "cs_utilities.h"
 #include "cs_volume_mass_injection.h"
 #include "cs_volume_zone.h"
 
@@ -510,6 +511,9 @@ _run(void)
 #endif
 
   cs_control_finalize();
+
+  /* Free remapping/intersector related structures (stl or medcoupling) */
+  cs_utilities_destroy_all_remapping();
 
   /* Free the checkpoint multiwriter structure */
   cs_restart_multiwriters_destroy_all();

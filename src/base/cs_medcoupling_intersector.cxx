@@ -645,16 +645,16 @@ cs_medcoupling_intersector_destroy(cs_medcoupling_intersector_t  *mi)
 void
 cs_medcoupling_intersector_destroy_all(void)
 {
-#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling support.\n"));
-#else
+
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   for (int i = 0; i < _n_intersects; i++)
     cs_medcoupling_intersector_destroy(_intersects[i]);
 
   BFT_FREE(_intersects);
 #endif
+
+  return;
+
 }
 
 /*----------------------------------------------------------------------------*/
