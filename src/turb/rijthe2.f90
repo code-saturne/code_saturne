@@ -36,14 +36,12 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     gradro        work array for \f$ \grad{\rho} \f$
 !> \param[in,out] buoyancy      Buoyancy term for the Reynolds stress model
 !______________________________________________________________________________!
 
 subroutine rijthe2 &
- ( nscal  ,                                                       &
-   gradro , buoyancy   )
+ ( gradro , buoyancy )
 
 !===============================================================================
 ! Module files
@@ -63,14 +61,12 @@ implicit none
 
 ! Arguments
 
-integer          nscal
-
 double precision gradro(3,ncelet)
 double precision buoyancy(6,ncelet)
 
 ! Local variables
 
-integer          iel, dimrij, isou, i, j
+integer          iel, isou, i, j
 double precision dij
 
 double precision uns3, const, kseps
@@ -87,7 +83,7 @@ double precision, dimension(:,:), pointer :: cvara_rij
 ! 1. Initialization
 !===============================================================================
 
-if(iscalt.gt.0.and.nscal.ge.iscalt) then
+if (iscalt.gt.0) then
   call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
   const = -1.5d0 * cmu / turb_schmidt
 else
@@ -103,8 +99,6 @@ grav(3) = gz
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 
 call field_get_val_prev_v(ivarfl(irij), cvara_rij)
-
-call field_get_dim(ivarfl(irij), dimrij)
 
 !===============================================================================
 ! 2. Terms for Rij:
@@ -137,7 +131,7 @@ do iel = 1, ncel
 
   gkks3 = uns3*(gij(1,1) + gij(2,2) + gij(3,3))
 
-  do isou = 1, dimrij
+  do isou = 1, 6
 
     if     (isou.eq.1) then
       i = 1
@@ -187,14 +181,12 @@ end subroutine rijthe2
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     gradro        work array for \f$ \grad{\rho} \f$
 !> \param[in,out] smbr          work array for second member
 !______________________________________________________________________________!
 
 subroutine rijtheps &
- ( nscal  ,                                                       &
-   gradro , smbr   )
+ ( gradro , smbr   )
 
 !===============================================================================
 ! Module files
@@ -213,8 +205,6 @@ use field
 implicit none
 
 ! Arguments
-
-integer          nscal
 
 double precision gradro(3,ncelet)
 double precision smbr(ncelet)
@@ -238,7 +228,7 @@ double precision, dimension(:,:), pointer :: cvara_rij
 ! 1. Initialization
 !===============================================================================
 
-if(iscalt.gt.0.and.nscal.ge.iscalt) then
+if (iscalt.gt.0) then
   call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
   const = -1.5d0 * cmu / turb_schmidt
 else

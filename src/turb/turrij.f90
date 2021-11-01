@@ -532,16 +532,16 @@ if (irijco.eq.1) then
   ! Rij-epsilon standard (LRR)
   if (iturb.eq.30) then !TODO
 
-    call resrij2(nvar, nscal, ncepdp, ncesmp,                     &
-                icepdc, icetsm, itypsm,                           &
+    call resrij2(nvar, ncesmp,                                    &
+                icetsm, itypsm,                                   &
                 dt, gradv, cpro_produc, gradro,                   &
-                ckupdc, smacel, viscf, viscb, tslagi,             &
+                smacel, viscf, viscb, tslagi,                     &
                 smbrts, rovsdtts)
 
   ! Rij-epsilon SSG or EBRSM
   elseif (iturb.eq.31.or.iturb.eq.32) then
 
-    call resssg2(nvar, nscal , ncesmp, ivar,                      &
+    call resssg2(nvar, ncesmp, ivar,                              &
                  icetsm, itypsm,                                  &
                  dt, gradv, cpro_produc, gradro,                  &
                  smacel, viscf, viscb, tslagi,                    &
@@ -567,7 +567,7 @@ else
         ivar   = ir13
       endif
 
-      call resrij(nvar, nscal, ncesmp, ivar, isou,                &
+      call resrij(nvar, ncesmp, ivar, isou,                       &
                   icetsm, itypsm,                                 &
                   dt, cpro_produc, gradro,                        &
                   smacel, viscf, viscb, tslagi,                   &
@@ -577,7 +577,7 @@ else
 
     ! Rij-epsilon SSG or EBRSM
   else if (iturb.eq.31.or.iturb.eq.32) then
-    call resssg(nvar, nscal, ncesmp, ivar,                        &
+    call resssg(nvar, ncesmp, ivar,                               &
                 icetsm, itypsm,                                   &
                 dt, gradv, cpro_produc, gradro,                   &
                 smacel, viscf, viscb, tslagi,                     &
@@ -590,7 +590,7 @@ endif
 ! 5. Solve Epsilon
 !===============================================================================
 
-call reseps(nvar, nscal, ncesmp, icetsm, itypsm,             &
+call reseps(nvar, ncesmp, icetsm, itypsm,                    &
             dt, gradv, cpro_produc, gradro,                  &
             smacel, viscf, viscb,                            &
             smbr, rovsdt)

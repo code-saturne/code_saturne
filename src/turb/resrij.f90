@@ -44,7 +44,6 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     ivar          variable number
 !> \param[in]     isou          local variable number (7 here)
@@ -66,7 +65,7 @@
 !______________________________________________________________________________!
 
 subroutine resrij &
- ( nvar   , nscal  , ncesmp ,                                     &
+ ( nvar   , ncesmp ,                                              &
    ivar   , isou   ,                                              &
    icetsm , itypsm ,                                              &
    dt     ,                                                       &
@@ -104,7 +103,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar
 integer          ncesmp
 integer          ivar   , isou
 
@@ -580,7 +579,7 @@ if (igrari.eq.1) then
     w7(iel) = 0.d0
   enddo
 
-  call rijthe(nscal, ivar, gradro, w7)
+  call rijthe(ivar, gradro, w7)
 
   ! If source terms are extrapolated
   if (st_prv_id.ge.0) then

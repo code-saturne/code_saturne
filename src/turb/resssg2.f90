@@ -44,7 +44,6 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     ivar          variable number
 !> \param[in]     icetsm        index of cells with mass source term
@@ -67,7 +66,7 @@
 !_______________________________________________________________________________
 
 subroutine resssg2 &
- ( nvar   , nscal  , ncesmp ,                                     &
+ ( nvar   , ncesmp ,                                              &
    ivar   ,                                                       &
    icetsm , itypsm ,                                              &
    dt     ,                                                       &
@@ -106,7 +105,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar
 integer          ncesmp
 integer          ivar
 
@@ -828,7 +827,7 @@ if (igrari.eq.1) then
     cpro_buoyancy => buoyancy
   endif
 
-  call rijthe2(nscal, gradro, cpro_buoyancy)
+  call rijthe2(gradro, cpro_buoyancy)
 
   do isou = 1, 6
     ! If we extrapolate the source terms: previous ST
@@ -848,7 +847,7 @@ if (igrari.eq.1) then
   if (allocated(buoyancy)) deallocate(buoyancy)
 
   ! Implicit buoyancy term
-  if (iscalt.gt.0 .and. nscal.ge.iscalt) then
+  if (iscalt.gt.0) then
     call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
     const = -1.5d0 * cmu / turb_schmidt
   else

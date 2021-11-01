@@ -37,7 +37,6 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     ivar          variable number
 !> \param[in]     icetsm        index of cells with mass source term
@@ -60,7 +59,7 @@
 !_______________________________________________________________________________
 
 subroutine resssg &
- ( nvar   , nscal  , ncesmp ,                                     &
+ ( nvar   , ncesmp ,                                              &
    ivar   ,                                                       &
    icetsm , itypsm ,                                              &
    dt     ,                                                       &
@@ -99,7 +98,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar
 integer          ncesmp
 integer          ivar
 
@@ -124,7 +123,6 @@ integer          iwarnp
 integer          imvisp
 integer          st_prv_id
 integer          iprev , inc, iccocg, ll
-integer          ivar_r(3,3)
 integer          icvflb
 integer          ivoid(1)
 integer          key_t_ext_id
@@ -239,17 +237,6 @@ else
 endif
 
 if (icorio.eq.1 .or. iturbo.eq.1) then
-
-  ! Index connectivity (i,j) -> ivar
-  ivar_r(1,1) = ir11
-  ivar_r(2,2) = ir22
-  ivar_r(3,3) = ir33
-  ivar_r(1,2) = ir12
-  ivar_r(1,3) = ir13
-  ivar_r(2,3) = ir23
-  ivar_r(2,1) = ivar_r(1,2)
-  ivar_r(3,1) = ivar_r(1,3)
-  ivar_r(3,2) = ivar_r(2,3)
 
   ! Coefficient of the "Coriolis-type" term
   if (icorio.eq.1) then
@@ -662,7 +649,7 @@ if (igrari.eq.1) then
     enddo
 
     jvar = ivar + isou - 1
-    call rijthe(nscal, jvar, gradro, w7)
+    call rijthe(jvar, gradro, w7)
 
     ! If we extrapolate the source terms: previous ST
     if (st_prv_id.ge.0) then
@@ -672,7 +659,7 @@ if (igrari.eq.1) then
     ! Otherwise smbr
     else
       do iel = 1, ncel
-        smbr(isou, iel) = smbr(isou, iel) + w7(iel)
+        smbr(isou,iel) = smbr(isou,iel) + w7(iel)
       enddo
     endif
 
@@ -754,12 +741,12 @@ vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
 p_k_value => vcopt_loc
 c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
-call cs_equation_iterative_solve_tensor(idtvar, ivarfl(ivar), c_null_char,      &
-                                        c_k_value, cvara_var, cvara_var,        &
-                                        coefap, coefbp, cofafp, cofbfp,         &
-                                        imasfl, bmasfl, viscf,                  &
-                                        viscb, viscf, viscb, viscce,            &
-                                        weighf, weighb, icvflb, ivoid,          &
+call cs_equation_iterative_solve_tensor(idtvar, ivarfl(ivar), c_null_char,     &
+                                        c_k_value, cvara_var, cvara_var,       &
+                                        coefap, coefbp, cofafp, cofbfp,        &
+                                        imasfl, bmasfl, viscf,                 &
+                                        viscb, viscf, viscb, viscce,           &
+                                        weighf, weighb, icvflb, ivoid,         &
                                         rovsdt, smbr, cvar_var)
 
 ! Free memory

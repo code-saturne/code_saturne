@@ -44,10 +44,7 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for each variable
 !>                               (see \ref cs_user_mass_source_terms)
@@ -57,7 +54,6 @@
 !> \param[in]     produc        work array for production
 !> \param[in]     gradro        work array for grad rom
 !>                              (without rho volume) only for iturb=30
-!> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        value associated to each variable in the mass
 !>                               source terms or mass rate (see \ref cs_user_mass_source_terms)
 !> \param[in]     viscf         visc*surface/dist at internal faces
@@ -68,11 +64,11 @@
 !______________________________________________________________________________!
 
 subroutine resrij2 &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
+ ( nvar   , ncesmp ,                                              &
+   icetsm , itypsm ,                                              &
    dt     ,                                                       &
    gradv  , produc , gradro ,                                     &
-   ckupdc , smacel ,                                              &
+   smacel ,                                                       &
    viscf  , viscb  ,                                              &
    tslagi ,                                                       &
    smbr   , rovsdt )
@@ -105,17 +101,16 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
+integer          nvar
+integer          ncesmp
 
-integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision gradv(3, 3, ncelet)
 double precision produc(6,ncelet)
 double precision gradro(3,ncelet)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
+double precision smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision tslagi(ncelet)
 double precision smbr(6,ncelet), rovsdt(6,6,ncelet)
@@ -692,7 +687,7 @@ if (igrari.eq.1) then
     cpro_buoyancy => buoyancy
   endif
 
-  call rijthe2(nscal, gradro, cpro_buoyancy)
+  call rijthe2(gradro, cpro_buoyancy)
 
   ! If we extrapolate the source terms: previous ST
   if (st_prv_id.ge.0) then

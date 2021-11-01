@@ -37,7 +37,6 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
@@ -60,7 +59,7 @@
 !_______________________________________________________________________________
 
 subroutine reseps &
- ( nvar   , nscal  , ncesmp ,                                     &
+ ( nvar   , ncesmp ,                                              &
    icetsm , itypsm ,                                              &
    dt     ,                                                       &
    gradv  , produc , gradro ,                                     &
@@ -95,7 +94,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
+integer          nvar
 integer          ncesmp
 
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
@@ -431,9 +430,9 @@ if (igrari.eq.1) then
 
   ! Note that w7 is positive.
   if (irijco.eq.1) then
-    call rijtheps(nscal, gradro, w7)
+    call rijtheps(gradro, w7)
   else
-    call rijthe(nscal, ivar, gradro, w7)
+    call rijthe(ivar, gradro, w7)
   endif
 
   ! Extrapolation of source terms (2nd order in time)

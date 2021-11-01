@@ -37,15 +37,13 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     nscal         total number of scalars
 !> \param[in]     ivar          variable number
 !> \param[in]     gradro        work array for \f$ \grad{\rho} \f$
 !> \param[in,out] smbr          work array for second member
 !______________________________________________________________________________!
 
 subroutine rijthe &
- ( nscal  ,                                                       &
-   ivar   ,                                                       &
+ ( ivar   ,                                                       &
    gradro , smbr   )
 
 !===============================================================================
@@ -66,7 +64,6 @@ implicit none
 
 ! Arguments
 
-integer          nscal
 integer          ivar
 
 double precision gradro(3,ncelet)
@@ -93,7 +90,7 @@ double precision, dimension(:,:), pointer :: cvara_rij
 ! 1. Initialization
 !===============================================================================
 
-if(iscalt.gt.0.and.nscal.ge.iscalt) then
+if (iscalt.gt.0) then
   call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
   prdtur = turb_schmidt
 else
