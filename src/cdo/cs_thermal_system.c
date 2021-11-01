@@ -555,6 +555,38 @@ cs_thermal_system_get_equation(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the current temperature at face values
+ *
+ * \return the pointer to the array of face values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_thermal_system_get_face_temperature(void)
+{
+  cs_thermal_system_t  *thm = cs_thermal_system;
+
+  if (thm == NULL)
+    return NULL;
+
+  else {
+
+    if (_is_solved_with_temperature())
+      return cs_equation_get_face_values(thm->thermal_eq, false);
+
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: The thermal is not solved with the temperature.\n"
+                " Conversion and interpolation are not done automatically.",
+                __func__);
+
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Start setting-up the thermal system
  *         At this stage, numerical settings should be completely determined
  *         but connectivity and geometrical information is not yet available.

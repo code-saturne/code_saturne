@@ -269,6 +269,17 @@ cs_thermal_system_get_equation(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the current temperature at face values
+ *
+ * \return the pointer to the array of face values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_thermal_system_get_face_temperature(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Start setting-up the thermal system
  *         At this stage, numerical settings should be completely determined
  *         but connectivity and geometrical information is not yet available.
