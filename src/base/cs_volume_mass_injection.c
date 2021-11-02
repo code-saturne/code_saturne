@@ -122,6 +122,129 @@ cs_volume_mass_injection_t  *_mass_injection = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate a symmeytric-tensor-valued quantity for a list of elements
+ *         This function complies with the generic function type defined as
+ *         cs_xdef_eval_t
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of element ids
+ * \param[in]      dense_output  perform an indirection for output (true/false)
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      context       NULL or pointer to a context structure
+ * \param[in, out] eval          array storing the result (must be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_eval_sym_tensor_by_val(cs_lnum_t                    n_elts,
+                        const cs_lnum_t             *elt_ids,
+                        bool                         dense_output,
+                        void                        *context,
+                        cs_real_t                   *eval)
+{
+  if (n_elts == 0)
+    return;
+
+  const cs_real_t  *constant_val = (cs_real_t *)context;
+
+  /* Sanity checks */
+  assert(eval != NULL && constant_val != NULL);
+
+  if (elt_ids != NULL && !dense_output) {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      cs_real_t  *_res = eval + 6*elt_ids[i];
+
+      _res[0] = constant_val[0];
+      _res[1] = constant_val[1];
+      _res[2] = constant_val[2];
+      _res[3] = constant_val[3];
+      _res[4] = constant_val[4];
+      _res[5] = constant_val[5];
+
+    }
+
+  }
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+      cs_real_t  *_res = eval + 3*i;
+
+      _res[0] = constant_val[0];
+      _res[1] = constant_val[1];
+      _res[2] = constant_val[2];
+      _res[3] = constant_val[3];
+      _res[4] = constant_val[4];
+      _res[5] = constant_val[5];
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate a symmetric-tensor-valued quantity with only a
+ *        time-dependent variation for a list of elements
+ *        This function complies with the generic function type defined as
+ *        cs_xdef_eval_t
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of element ids
+ * \param[in]      dense_output  perform an indirection for output (true/false)
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      context       NULL or pointer to a context structure
+ * \param[in, out] eval          array storing the result (must be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_eval_sym_tensor_at_cells_by_time_func(cs_lnum_t              n_elts,
+                                       const cs_lnum_t       *elt_ids,
+                                       bool                   dense_output,
+                                       cs_real_t              time_eval,
+                                       void                  *context,
+                                       cs_real_t             *eval)
+{
+  cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
+
+  /* Sanity checks */
+  assert(tfc != NULL);
+
+  /* Evaluate the quantity */
+  cs_real_t  _eval[6];
+  tfc->func(time_eval, tfc->input, _eval);
+
+  if (elt_ids != NULL && !dense_output) {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      for (int k = 0; k < 6; k++)
+        eval[6*elt_ids[i] + k] = _eval[k];
+
+  }
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      for (int k = 0; k < 6; k++)
+        eval[6*i+k] = _eval[k];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Implicit and explicit mass source terms computation.
  *
  * \param[in,out]  xdef      volume injection definition
@@ -231,15 +354,11 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
         }
       }
       else if (dim == 6) {
-        cs_xdef_eval_tensor_by_val(z->n_elts,
-                                   z->elt_ids,
-                                   dense,
-                                   m,
-                                   connect,
-                                   quant,
-                                   t_eval,
-                                   def->context,
-                                   st_loc);
+        _eval_sym_tensor_by_val(z->n_elts,
+                                z->elt_ids,
+                                dense,
+                                def->context,
+                                st_loc);
         for (cs_lnum_t i = 0; i < z->n_elts; i++) {
           for (cs_lnum_t j = 0; j < 6; j++)
             st_loc[i*6 + j] /= z->f_measure;
@@ -276,15 +395,12 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                                 def->context,
                                                 st_loc);
     else if (dim == 6)
-      cs_xdef_eval_tensor_at_cells_by_time_func(z->n_elts,
-                                                z->elt_ids,
-                                                dense,
-                                                m,
-                                                connect,
-                                                quant,
-                                                t_eval,
-                                                def->context,
-                                                st_loc);
+      _eval_sym_tensor_at_cells_by_time_func(z->n_elts,
+                                             z->elt_ids,
+                                             dense,
+                                             t_eval,
+                                             def->context,
+                                             st_loc);
     break;
 
   case CS_XDEF_BY_VALUE:
@@ -309,15 +425,11 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                  def->context,
                                  st_loc);
     else if (dim == 6)
-      cs_xdef_eval_tensor_by_val(z->n_elts,
-                                 z->elt_ids,
-                                 dense,
-                                 m,
-                                 connect,
-                                 quant,
-                                 t_eval,
-                                 def->context,
-                                 st_loc);
+      _eval_sym_tensor_by_val(z->n_elts,
+                              z->elt_ids,
+                              dense,
+                              def->context,
+                              st_loc);
     break;
 
   default:
