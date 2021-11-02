@@ -1,5 +1,8 @@
+#ifndef __CS_UTILITIES_H__
+#define __CS_UTILITIES_H__
+
 /*============================================================================
- * Global utilities functions used for initialize and finalize calls
+ * Global utilities functions used for initialize and finalize calls.
  *============================================================================*/
 
 /*
@@ -41,8 +44,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Destroy different intersectors/remapping structures related to STL or
- * medcoupling.
- *
+ * MEDCoupling.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -52,3 +54,5 @@ cs_utilities_destroy_all_remapping(void);
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#endif /* __CS_UTILITIES_H__ */

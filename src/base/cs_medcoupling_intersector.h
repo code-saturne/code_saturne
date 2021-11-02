@@ -238,6 +238,8 @@ cs_mi_post_init_writer(const char             *case_name,
 void
 cs_mi_post_add_mesh(cs_medcoupling_intersector_t  *mi);
 
+/*----------------------------------------------------------------------------*/
+
 END_C_DECLS
 
 #endif /* __CS_MEDCOUPLING_INTERSECTOR_HXX__ */

@@ -150,7 +150,6 @@ static cs_medcoupling_intersector_t  **_intersects   = NULL;
 static cs_medcoupling_intersector_t *
 _create_intersector(void)
 {
-
   cs_medcoupling_intersector_t *mi = NULL;
   BFT_MALLOC(mi, 1, cs_medcoupling_intersector_t);
 
@@ -214,9 +213,10 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   DataArrayDouble *med_coords = DataArrayDouble::New();
   med_coords = mi->source_mesh->getCoordinatesAndOwner();
 
-  for (cs_lnum_t i = 0; i < n_vtx; i++)
+  for (cs_lnum_t i = 0; i < n_vtx; i++) {
     for (cs_lnum_t j = 0; j < dim; j++)
       mi->init_coords[i][j] = med_coords->getIJ(i,j);
+  }
 
   /* Copy med mesh boundary coordinates */
   MEDCouplingUMesh  *b_mesh = mi->source_mesh->buildBoundaryMesh(false);
@@ -645,16 +645,12 @@ cs_medcoupling_intersector_destroy(cs_medcoupling_intersector_t  *mi)
 void
 cs_medcoupling_intersector_destroy_all(void)
 {
-
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   for (int i = 0; i < _n_intersects; i++)
     cs_medcoupling_intersector_destroy(_intersects[i]);
 
   BFT_FREE(_intersects);
 #endif
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -890,9 +886,10 @@ cs_medcoupling_intersector_scale_auto(cs_medcoupling_intersector_t *mi,
    *        [0   0   f   (1-f)*p0z]
    */
 
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < 3; i++) {
     for (int j = 0; j < 4; j++)
       matrix[i][j] = 0.;
+  }
 
   for (int i = 0; i < 3; i++) {
     matrix[i][i] = factor;
@@ -1006,9 +1003,7 @@ cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t  *mi,
 int
 cs_mi_post_get_writer_id(void)
 {
-
   return _writer_id;
-
 }
 
 /*----------------------------------------------------------------------------*/

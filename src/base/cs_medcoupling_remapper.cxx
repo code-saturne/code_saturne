@@ -177,8 +177,9 @@ _cs_medcoupling_read_field_real(const char  *medfile_path,
 
   /* Case 2: Field is a float, and we convert it to double */
   {
-    MCAuto<MEDFileFloatField1TS> f1(MEDCoupling::DynamicCast<MEDFileAnyTypeField1TS,
-                                                             MEDFileFloatField1TS>(f));
+    MCAuto<MEDFileFloatField1TS>
+      f1(MEDCoupling::DynamicCast<MEDFileAnyTypeField1TS,
+                                  MEDFileFloatField1TS>(f));
     if(f1.isNotNull()) {
       MEDCouplingFieldFloat *float_field(f1->field(mesh));
       MEDCouplingFieldDouble *dble_field = float_field->convertToDblField();
@@ -243,8 +244,9 @@ _create_remapper(const char                        *name,
   r->target_mesh = new_mesh;
 
   /* Get the time step values from the file */
-  MCAuto<MEDFileAnyTypeFieldMultiTS> tf(MEDFileAnyTypeFieldMultiTS::New(medfile_path,
-                                                                        field_names[0]));
+  MCAuto<MEDFileAnyTypeFieldMultiTS>
+    tf(MEDFileAnyTypeFieldMultiTS::New(medfile_path,
+                                       field_names[0]));
 
   std::vector<double> t2s;
   std::vector< std::pair<int,int> > ito = tf->getTimeSteps(t2s);
@@ -275,14 +277,14 @@ _create_remapper(const char                        *name,
                                                            field_names[ii],
                                                            iteration,
                                                            order);
-
   }
 
   // Set the interpolation type (P0P0 or P1P0) based on source_fields type
   BFT_MALLOC(r->interp_method, 5, char);
   if (r->source_fields[0]->getTypeOfField() == MEDCoupling::ON_CELLS) {
     r->interp_method = "P0P0";
-  } else if (r->source_fields[0]->getTypeOfField() == MEDCoupling::ON_NODES) {
+  }
+  else if (r->source_fields[0]->getTypeOfField() == MEDCoupling::ON_NODES) {
     r->interp_method = "P1P0";
   }
 
@@ -533,7 +535,6 @@ _setup_with_bbox(cs_medcoupling_remapper_t  *r)
     r->remapper->prepare(source_field->getMesh(),
                          r->target_mesh->med_mesh,
                          r->interp_method);
-
   }
 }
 
@@ -548,7 +549,6 @@ _setup_with_bbox(cs_medcoupling_remapper_t  *r)
 void
 _cs_medcoupling_remapper_destroy(cs_medcoupling_remapper_t *r)
 {
-
   BFT_FREE(r->name);
   BFT_FREE(r->medfile_path);
   BFT_FREE(r->bbox_source_mesh);
@@ -564,9 +564,6 @@ _cs_medcoupling_remapper_destroy(cs_medcoupling_remapper_t *r)
   cs_medcoupling_mesh_destroy(r->target_mesh);
 
   BFT_FREE(r);
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -842,7 +839,6 @@ cs_medcoupling_remapper_copy_values(cs_medcoupling_remapper_t  *r,
                                     int                         field_id,
                                     double                      default_val)
 {
-
   cs_real_t *new_vals = NULL;
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
@@ -933,7 +929,6 @@ cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
                                         int                       *id1,
                                         int                       *id2)
 {
-
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
@@ -957,8 +952,6 @@ cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
     }
   }
 #endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1029,13 +1022,10 @@ cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
 void
 cs_medcoupling_remapper_destroy_all(void)
 {
-
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   for (int r_id = 0; r_id < _n_remappers; r_id++)
     _cs_medcoupling_remapper_destroy(_remapper[r_id]);
 #endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/
