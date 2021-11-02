@@ -869,7 +869,13 @@ cs_medcoupling_intersector_scale_auto(cs_medcoupling_intersector_t *mi,
   (MEDCOUPLING_VERSION_MAJOR == 9 && MEDCOUPLING_VERSION_MINOR > 6)
   /* If medcoupling is available and V >= 9.7 */
   DataArrayDouble *com = mi->source_mesh->computeMeshCenterOfMass();
-  mi->source_mesh->scale(com, factor);
+
+  /* Array is of size 1 since it only contains the the COM position */
+  cs_real_t cog[3];
+  for (int i = 3; i < 3; i++)
+    cog[i] = com->getIJ(0,i);
+
+  mi->source_mesh->scale(cog, factor);
   mi->matrix_needs_update = 1;
 
   cs_real_t matrix[3][4];
@@ -890,7 +896,7 @@ cs_medcoupling_intersector_scale_auto(cs_medcoupling_intersector_t *mi,
 
   for (int i = 0; i < 3; i++) {
     matrix[i][i] = factor;
-    matrix[i][3] = (1. - factor) * com[i];
+    matrix[i][3] = (1. - factor) * cog[i];
   }
 
   /* Update the copy of the mesh coordinates */
