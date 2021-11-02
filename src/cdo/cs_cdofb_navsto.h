@@ -61,20 +61,56 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Structure storing additional arrays related to the building of the system in
-   case of CDO Face-based scheme. This structure is associated to a cell-wise
-   building */
+/*! \struct cs_cdofb_navsto_builder_t
+ *
+ * \brief Structure storing additional arrays related to the building of the
+ *        Navier-Stokes system.
+ *
+ * This structure is associated to a cell-wise building in case of CDO
+ * face-based scheme.
+ */
 
 typedef struct {
 
-  /* Value of the mass density for the current cell */
+  /*!
+   * \var rho_c
+   * Value of the mass density for the current cell
+   *
+   */
+
   cs_real_t            rho_c;
 
-  /* Operator */
-  cs_real_t           *div_op;           /* Size: 3*n_fc
-                                            div_op = -|c|div */
+  /*!
+   * @}
+   * @name Operator(s)
+   * @{
+   *
+   * \var div_op
+   * Cell-wise divergence operator (in fact div_op = -|c| div).
+   * This operator is stored in an array of size 3*n_fc
+   *
+   */
 
-  /* Boundary conditions */
+  cs_real_t           *div_op;
+
+  /*!
+   * @}
+   * @name Boundary conditions
+   * @{
+   *
+   * \var bf_type
+   * Type of boundary to apply to each face.
+   *
+   * Array of size n_fc.  Zero is set for interior faces.
+   *
+   *
+   * \var pressure_bc_val
+   * Store the value of the pressure on boundary faces.
+   *
+   * Array of size n_fc. Only useful if a Dirichlet boundary condition is set
+   * on a boundary face.
+   */
+
   cs_boundary_type_t  *bf_type;          /* Size: n_fc */
   cs_real_t           *pressure_bc_val;  /* Size: n_fc */
 
