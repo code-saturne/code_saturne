@@ -826,11 +826,9 @@ double precision mult
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: dam
-double precision, allocatable, dimension(:) :: wcf
-double precision, allocatable, dimension(:) :: cofbft, coefbt, coefbr
+double precision, allocatable, dimension(:) :: cofbft, coefbt
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
-double precision, allocatable, dimension(:,:) :: grad
-double precision, allocatable, dimension(:) :: w1, w2
+double precision, allocatable, dimension(:) :: w1
 double precision, dimension(:), pointer :: dt
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom

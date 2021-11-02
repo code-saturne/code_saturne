@@ -146,9 +146,6 @@ module entsor
   !> \addtogroup log
   !> \{
 
-  !> temporary variable name for some algebraic operations
-  character(len=80), save :: nomva0
-
   !> writing period in the execution report file.
   !>   - -1: no writing
   !>   - \> 0: period (every \ref ntlist time step). The value of

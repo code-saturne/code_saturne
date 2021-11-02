@@ -79,6 +79,8 @@ subroutine resrij2 &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use numvar
 use entsor
@@ -176,8 +178,6 @@ type(var_cal_opt) :: vcopt_rij
 type(var_cal_opt), target   :: vcopt_loc
 type(var_cal_opt), pointer  :: p_k_value
 type(c_ptr)                 :: c_k_value
-
-character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 
@@ -766,9 +766,6 @@ endif
 ! all boundary convective flux with upwind
 icvflb = 0
 
-! Fromcs_c_bindings
-c_name = trim(nomva0)//c_null_char
-
 vcopt_loc = vcopt_rij
 
 vcopt_loc%istat  = -1
@@ -782,7 +779,7 @@ p_k_value => vcopt_loc
 c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
 call cs_equation_iterative_solve_tensor           &
- ( idtvar , ivarfl(irij)    , c_name ,            &
+ ( idtvar , ivarfl(irij)    , c_null_char ,       &
    c_k_value,                                     &
    cvara_var       , cvara_var       ,            &
    coefap , coefbp , cofafp , cofbfp ,            &

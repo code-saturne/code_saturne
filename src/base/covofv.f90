@@ -70,6 +70,8 @@ subroutine covofv &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use numvar
 use entsor
@@ -169,8 +171,6 @@ type(var_cal_opt), pointer :: p_k_value
 type(c_ptr) :: c_k_value
 
 type(gwf_soilwater_partition) :: sorption_scal
-
-character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 
@@ -648,8 +648,6 @@ call field_get_coefb_v(iflid, coefbp)
 call field_get_coefaf_v(iflid, cofafp)
 call field_get_coefbf_v(iflid, cofbfp)
 
-c_name = trim(nomva0)//c_null_char
-
 vcopt_loc = vcopt
 
 vcopt_loc%istat  = -1
@@ -664,7 +662,7 @@ c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
 call cs_equation_iterative_solve_vector                     &
  ( idtvar , iterns ,                                        &
-   iflid  , c_name ,                                        &
+   iflid  , c_null_char ,                                   &
    ivissv , iescap , c_k_value       ,                      &
    cvara_var       , cvara_var       ,                      &
    coefap , coefbp , cofafp , cofbfp ,                      &

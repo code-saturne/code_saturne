@@ -110,16 +110,16 @@ integer itop,ibase,itopp1,itopp2,ibasem1
 integer          ifac, iz1, iz2, f_id, c_id, iel
 double precision muzero,fo,rr1,m,mbar,rabar,rabar2,rbar
 double precision rabarc,rbarc, refx, trax, refx0, trax0
-double precision qqvtot,ym1,y,ystarm1,ystar
-double precision zqm1,zq,xm1,x,xstar,xstarm1,fabs
-double precision rrbar,rrbar2s,foo3,foo3c,foh2o
+double precision qqvtot,y,ystar
+double precision zqm1,zq,xm1,x,xstar,xstarm1
+double precision rrbar,rrbar2s
 double precision tauctot,wh2ol,rm,req,deltaz
-double precision extlnp,extlnm,pioc,zbas,dud1
+double precision pioc,zbas,dud1
 double precision gasym,drt,tln,drtt1,dtrb1
-double precision kn(8),pkn(8),dowtot1,dqqv
+double precision kn(8),pkn(8),dqqv
 double precision cphum,qureel
 double precision taua(kmx+1),tauatot
-double precision rabara,rabar2a,rbara
+double precision rabara,rbara
 double precision tauca(kmx+1,8)
 double precision gama1,gama2,kt,gas,fas
 double precision omega, var, zent
@@ -152,12 +152,10 @@ double precision, dimension(:,:), pointer :: bpro_rad_inc
 double precision, dimension(:,:), pointer :: cpro_ck_up
 double precision, dimension(:,:), pointer :: cpro_ck_down
 ! For computing albedo PIC, PIOC
-double precision dqqvt, epsc
+double precision epsc
 double precision pioco3,pioch2o,gasymo3,gasymh2o
 double precision pic_o3(kmx+1),pic_h2o(kmx+1),gco3(kmx+1),gch2o(kmx+1)
-double precision pioco3_1, pioco3_2,pioch2o_1, pioch2o_2, pioch2o_3
-double precision m_k(kmx+1),Trpsi(kmx+1),Trdz,Trdzs,Rrdz,Rrdzs,taur
-double precision direct(kmray+1,ivertc+1)
+double precision pioco3_1, pioco3_2,pioch2o_1, pioch2o_2
 double precision rayst_h2o(kmx),rayst_o3(kmx)
 double precision tabara, tabarc
 ! 5 minor gas (NO, NO2, CO2, O2, CO)

@@ -109,6 +109,8 @@ subroutine predvv &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use numvar
 use entsor
@@ -239,8 +241,6 @@ type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 type(var_cal_opt), target :: vcopt_loc
 type(var_cal_opt), pointer :: p_k_value
 type(c_ptr) :: c_k_value
-
-character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 
@@ -1608,8 +1608,6 @@ if (iappel.eq.1) then
 
   iescap = iescal(iespre)
 
-  c_name = trim(nomva0)//c_null_char
-
   vcopt_loc = vcopt_u
 
   vcopt_loc%istat  = -1
@@ -1625,7 +1623,7 @@ if (iappel.eq.1) then
   ! of the predicted velocity
   call cs_equation_iterative_solve_vector                     &
    ( idtvar , iterns ,                                        &
-     ivarfl(iu)      , c_name ,                               &
+     ivarfl(iu)      , c_null_char     ,                      &
      ivisse , iescap , c_k_value       ,                      &
      vela   , velk   ,                                        &
      coefav , coefbv , cofafv , cofbfv ,                      &
@@ -1695,7 +1693,7 @@ if (iappel.eq.1) then
 
     call cs_equation_iterative_solve_vector                 &
  ( idtvar , iterns ,                                        &
-   ivarfl(iu)      , c_name ,                               &
+   ivarfl(iu)      , c_null_char     ,                      &
    ivisep , iescap , c_k_value       ,                      &
    vect   , vect   ,                                        &
    coefav , coefbv , cofafv , cofbfv ,                      &

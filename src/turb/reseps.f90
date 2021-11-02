@@ -73,6 +73,8 @@ subroutine reseps &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use numvar
 use entsor
@@ -151,8 +153,6 @@ type(var_cal_opt) :: vcopt
 type(var_cal_opt), target :: vcopt_loc
 type(var_cal_opt), pointer :: p_k_value
 type(c_ptr) :: c_k_value
-
-character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 !===============================================================================
 
@@ -510,8 +510,6 @@ icvflb = 0
 normp = -1.d0
 init   = 1
 
-c_name = trim(nomva0)//c_null_char
-
 vcopt_loc = vcopt
 
 vcopt_loc%istat  = -1
@@ -526,7 +524,7 @@ c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
 call cs_equation_iterative_solve_scalar          &
  ( idtvar , init   ,                             &
-   ivarfl(ivar)     , c_name ,                   &
+   ivarfl(ivar)     , c_null_char ,              &
    iescap , imucpp , normp  , c_k_value       ,  &
    cvara_ep        , cvara_ep        ,           &
    coefap , coefbp , cofafp , cofbfp ,           &

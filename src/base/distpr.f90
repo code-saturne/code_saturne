@@ -49,6 +49,8 @@ subroutine distpr(itypfb)
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use numvar
 use entsor
@@ -102,10 +104,7 @@ type(var_cal_opt), target :: vcopt_loc
 type(var_cal_opt), pointer :: p_k_value
 type(c_ptr) :: c_k_value
 
-character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
-
 !===============================================================================
-
 
 !===============================================================================
 ! 1. Initialization
@@ -241,8 +240,6 @@ icvflb = 0
 init   = 1
 normp = -1.d0
 
-c_name = trim(nomva0)//c_null_char
-
 vcopt_loc = vcopt
 
 vcopt_loc%istat  = -1
@@ -270,7 +267,7 @@ enddo
 
 call cs_equation_iterative_solve_scalar                           &
  ( idtvar , init   ,                                              &
-   f_id   , c_name ,                                              &
+   f_id   , c_null_char ,                                         &
    iescap , imucpp , normp  , c_k_value       ,                   &
    cvara_var       , cvara_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &

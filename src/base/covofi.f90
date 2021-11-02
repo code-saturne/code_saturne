@@ -92,6 +92,8 @@ subroutine covofi &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use numvar
 use entsor
@@ -231,7 +233,6 @@ double precision, dimension(:), pointer :: cproa_delay, cproa_sat
 ! Radiat arrays
 double precision, dimension(:), pointer :: cpro_tsre1, cpro_tsre, cpro_tsri1
 character(len=80) :: f_name
-character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 type(var_cal_opt) :: vcopt, vcopt_varsc
 type(var_cal_opt), target :: vcopt_loc
@@ -1334,8 +1335,6 @@ iescap = 0
 icvflb = 0
 normp = -1.d0
 
-c_name = trim(nomva0)//c_null_char
-
 vcopt_loc = vcopt
 
 vcopt_loc%istat  = -1
@@ -1354,7 +1353,7 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 
 call cs_equation_iterative_solve_scalar          &
  ( idtvar , iterns ,                             &
-   ivarfl(ivar)    , c_name,                     &
+   ivarfl(ivar)    , c_null_char     ,           &
    iescap , imucpp , normp  , c_k_value       ,  &
    cvara_var       , cvark_var       ,           &
    coefap , coefbp , cofafp , cofbfp ,           &

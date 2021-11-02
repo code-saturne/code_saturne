@@ -77,6 +77,8 @@ subroutine distyp &
 ! Module files
 !===============================================================================
 
+use, intrinsic :: iso_c_binding
+
 use paramx
 use numvar
 use entsor
@@ -145,8 +147,6 @@ type(var_cal_opt) :: vcopt
 type(var_cal_opt), target :: vcopt_loc
 type(var_cal_opt), pointer :: p_k_value
 type(c_ptr) :: c_k_value
-
-character(len=len_trim(nomva0)+1, kind=c_char) :: c_name
 
 integer          ipass
 data             ipass /0/
@@ -490,8 +490,6 @@ isweep = -1
 
 ! Warning: no diffusion so no need of other diffusive Boundary coefficient
 
-c_name = trim(nomva0)//c_null_char
-
 vcopt_loc = vcopt
 
 vcopt_loc%istat  = -1
@@ -506,7 +504,7 @@ c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
 call cs_equation_iterative_solve_scalar                           &
  ( idtva0 , isweep ,                                              &
-   f_id_yplus      , c_name  ,                                    &
+   f_id_yplus      , c_null_char ,                                &
    iescap , imucpp , xnorm0  , c_k_value      ,                   &
    dvarp  , dvarp  ,                                              &
    coefap , coefbp , cofafp  , cofbfp ,                           &

@@ -573,7 +573,7 @@ cs_gwf_soil_free_all(void)
         break;
 
       default:
-        cs_base_warn(__FILE__, __FILE__);
+        cs_base_warn(__FILE__, __LINE__);
         bft_printf("%s: The context structure of a soil may not be freed.\n",
                    __func__);
         break;
