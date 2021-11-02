@@ -55,6 +55,7 @@
 #include "cs_equation_iterative_solve.h"
 #include "cs_face_viscosity.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
 #include "cs_gradient.h"
@@ -287,7 +288,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   const cs_real_t uref = cs_glob_turb_ref_values->uref;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   const int var_key_id = cs_field_key_id("variable_id");
 
   cs_field_t  *f_k = CS_F_(k);
@@ -447,13 +447,13 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     }
   }
 
-  cs_var_cal_opt_t *vcopt_k
-    = cs_field_get_key_struct_ptr(f_k, key_cal_opt_id);
+  const cs_equation_param_t *eqp_k
+    = cs_field_get_equation_param_const(f_k);
 
-  cs_var_cal_opt_t *vcopt_eps
-    = cs_field_get_key_struct_ptr(f_eps, key_cal_opt_id);
+  const cs_equation_param_t *eqp_eps
+    = cs_field_get_equation_param_const(f_eps);
 
-  if (vcopt_k->verbosity >= 1) {
+  if (eqp_k->verbosity >= 1) {
     if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON) {
       cs_log_printf(CS_LOG_DEFAULT,
                     "\n"
@@ -635,8 +635,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 # pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     cs_real_t romvsd = crom[c_id] * cell_f_vol[c_id] / dt[c_id];
-    tinstk[c_id] = vcopt_k->istat*romvsd;
-    tinste[c_id] = vcopt_eps->istat*romvsd;
+    tinstk[c_id] = eqp_k->istat*romvsd;
+    tinste[c_id] = eqp_eps->istat*romvsd;
   }
 
   /* Compute the first part of the production term: muT (S^D)**2
@@ -919,7 +919,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       cs_halo_type_t halo_type = CS_HALO_STANDARD;
       cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-      cs_gradient_type_by_imrgra(vcopt_k->imrgra,
+      cs_gradient_type_by_imrgra(eqp_k->imrgra,
                                  &gradient_type,
                                  &halo_type);
 
@@ -928,14 +928,14 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                          halo_type,
                          1,     /* inc */
                          true,  /* iccocg */
-                         vcopt_k->nswrgr,
+                         eqp_k->nswrgr,
                          0,
                          0,
                          1,     /* w_stride */
-                         vcopt_k->verbosity,
-                         vcopt_k->imligr,
-                         vcopt_k->epsrgr,
-                         vcopt_k->climgr,
+                         eqp_k->verbosity,
+                         eqp_k->imligr,
+                         eqp_k->epsrgr,
+                         eqp_k->climgr,
                          NULL,
                          bromo,
                          viscb,
@@ -1010,7 +1010,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
     cs_face_viscosity(m,
                       fvq,
-                      vcopt_k->imvisf,
+                      eqp_k->imvisf,
                       w3,
                       viscf,
                       viscb);
@@ -1039,15 +1039,15 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                            fvq,
                            1,     /* init */
                            1,     /* inc */
-                           vcopt_k->imrgra,
+                           eqp_k->imrgra,
                            true,  /* iccocg */
-                           vcopt_k->nswrgr,
-                           vcopt_k->imligr,
+                           eqp_k->nswrgr,
+                           eqp_k->imligr,
                            0,     /* iphydp */
-                           vcopt_k->iwgrec,
-                           vcopt_k->verbosity,
-                           vcopt_k->epsrgr,
-                           vcopt_k->climgr,
+                           eqp_k->iwgrec,
+                           eqp_k->verbosity,
+                           eqp_k->epsrgr,
+                           eqp_k->climgr,
                            NULL,
                            cvara_k,
                            coefap,
@@ -1128,7 +1128,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
     cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-    cs_gradient_type_by_imrgra(vcopt_k->imrgra,
+    cs_gradient_type_by_imrgra(eqp_k->imrgra,
                                &gradient_type,
                                &halo_type);
 
@@ -1137,14 +1137,14 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                        halo_type,
                        1,     /* inc */
                        true,  /* iccocg */
-                       vcopt_k->nswrgr,
+                       eqp_k->nswrgr,
                        0,
                        0,
                        1,     /* w_stride */
-                       vcopt_k->verbosity,
-                       vcopt_k->imligr,
-                       vcopt_k->epsrgr,
-                       vcopt_k->climgr,
+                       eqp_k->verbosity,
+                       eqp_k->imligr,
+                       eqp_k->epsrgr,
+                       eqp_k->climgr,
                        NULL,
                        coefa_sqk,
                        coefb_sqk,
@@ -1161,7 +1161,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       coefb_sqs[face_id] = 1.;
     }
 
-    cs_gradient_type_by_imrgra(vcopt_k->imrgra,
+    cs_gradient_type_by_imrgra(eqp_k->imrgra,
                                &gradient_type,
                                &halo_type);
 
@@ -1170,14 +1170,14 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                        halo_type,
                        1,     /* inc */
                        true,  /* iccocg */
-                       vcopt_k->nswrgr,
+                       eqp_k->nswrgr,
                        0,
                        0,
                        1,     /* w_stride */
-                       vcopt_k->verbosity,
-                       vcopt_k->imligr,
-                       vcopt_k->epsrgr,
-                       vcopt_k->climgr,
+                       eqp_k->verbosity,
+                       eqp_k->imligr,
+                       eqp_k->epsrgr,
+                       eqp_k->climgr,
                        NULL,
                        coefa_sqs,
                        coefb_sqs,
@@ -1383,8 +1383,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   /* If source terms are extrapolated over time */
   if (istprv >= 0) {
 
-    cs_real_t thetak = vcopt_k->thetav;
-    cs_real_t thetae = vcopt_eps->thetav;
+    cs_real_t thetak = eqp_k->thetav;
+    cs_real_t thetae = eqp_eps->thetav;
 
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -1560,16 +1560,16 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     cofafp = f_k->bc_coeffs->af;
     cofbfp = f_k->bc_coeffs->bf;
 
-    if (vcopt_k->idiff >=  1) {
+    if (eqp_k->idiff >=  1) {
 
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        w4[c_id] = viscl[c_id] + vcopt_k->idifft*cvisct[c_id]/sigmak;
+        w4[c_id] = viscl[c_id] + eqp_k->idifft*cvisct[c_id]/sigmak;
       }
 
       cs_face_viscosity(m,
                         fvq,
-                        vcopt_k->imvisf,
+                        eqp_k->imvisf,
                         w4,
                         viscf,
                         viscb);
@@ -1585,8 +1585,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       }
 
     }
-    cs_var_cal_opt_t vcopt_k_loc = *vcopt_k;
-    vcopt_k_loc.idften = CS_ISOTROPIC_DIFFUSION;
+    cs_equation_param_t eqp_k_loc = *eqp_k;
+    eqp_k_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
                       f_k->id,
@@ -1594,7 +1594,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                       1,     /* imasac */
                       1,     /* inc */
                       true,  /* iccocg */
-                      &vcopt_k_loc,
+                      &eqp_k_loc,
                       cvara_k,
                       cvara_k,
                       coefap,
@@ -1613,7 +1613,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                       NULL,
                       w7);
 
-    if (vcopt_k->verbosity >= 2) {
+    if (eqp_k->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: explicit balance = %12.5e\n",
                     cs_field_get_label(f_k),
@@ -1628,16 +1628,16 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     cofafp = f_eps->bc_coeffs->af;
     cofbfp = f_eps->bc_coeffs->bf;
 
-    if (vcopt_eps->idiff >=  1) {
+    if (eqp_eps->idiff >=  1) {
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         w4[c_id] = viscl[c_id]
-                 + vcopt_eps->idifft*cvisct[c_id]/sigmae;
+                 + eqp_eps->idifft*cvisct[c_id]/sigmae;
       }
 
       cs_face_viscosity(m,
                         fvq,
-                        vcopt_eps->imvisf,
+                        eqp_eps->imvisf,
                         w4,
                         viscf,
                         viscb);
@@ -1654,8 +1654,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
     }
 
-    cs_var_cal_opt_t vcopt_eps_loc = *vcopt_eps;;
-    vcopt_eps_loc.idften = CS_ISOTROPIC_DIFFUSION;
+    cs_equation_param_t eqp_eps_loc = *eqp_eps;;
+    eqp_eps_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
                       f_eps->id,
@@ -1663,7 +1663,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                       1,    /* imasac */
                       1,    /* inc */
                       true, /* iccocg */
-                      &vcopt_eps_loc,
+                      &eqp_eps_loc,
                       cvara_ep,
                       cvara_ep,
                       coefap,
@@ -1682,7 +1682,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                       NULL,
                       w8);
 
-    if (vcopt_eps->verbosity >= 2) {
+    if (eqp_eps->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_eps),
@@ -1783,7 +1783,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   cofbfp = f_k->bc_coeffs->bf;
 
   /* Face viscosity */
-  if (vcopt_k->idiff >= 1) {
+  if (eqp_k->idiff >= 1) {
 
     if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -1797,16 +1797,16 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     /* Variable Schmidt number */
     if (sigmak_id >= 0) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        w1[c_id] += vcopt_k->idifft*cvisct[c_id]/cpro_sigmak[c_id];
+        w1[c_id] += eqp_k->idifft*cvisct[c_id]/cpro_sigmak[c_id];
     }
     else {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        w1[c_id] += vcopt_k->idifft*cvisct[c_id]/sigmak;
+        w1[c_id] += eqp_k->idifft*cvisct[c_id]/sigmak;
     }
 
     cs_face_viscosity(m,
                       fvq,
-                      vcopt_k->imvisf,
+                      eqp_k->imvisf,
                       w1,
                       viscf,
                       viscb);
@@ -1825,6 +1825,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
   /* Solve k */
 
+  cs_equation_param_t eqp_k_loc = *eqp_k;
+
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
                                      1,  /* init */
                                      f_k->id,
@@ -1832,7 +1834,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                                      0,  /* iescap */
                                      0,  /* imucpp */
                                      -1, /* normp */
-                                     vcopt_k,
+                                     &eqp_k_loc,
                                      cvara_k,
                                      cvara_k,
                                      coefap,
@@ -1865,7 +1867,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
   cofbfp = f_eps->bc_coeffs->bf;
 
   /* Face viscosity */
-  if (vcopt_eps->idiff >= 1) {
+  if (eqp_eps->idiff >= 1) {
     if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         w1[c_id] = viscl[c_id]/2.;
@@ -1878,17 +1880,17 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     if (sigmae_id >= 0) {
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        w1[c_id] += vcopt_eps->idifft*cvisct[c_id]/cpro_sigmae[c_id];
+        w1[c_id] += eqp_eps->idifft*cvisct[c_id]/cpro_sigmae[c_id];
     }
     else {
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        w1[c_id] += vcopt_eps->idifft*cvisct[c_id]/sigmae;
+        w1[c_id] += eqp_eps->idifft*cvisct[c_id]/sigmae;
     }
 
     cs_face_viscosity(m,
                       fvq,
-                      vcopt_eps->imvisf,
+                      eqp_eps->imvisf,
                       w1,
                       viscf,
                       viscb);
@@ -1902,6 +1904,8 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
   /* Solve epsilon */
 
+  cs_equation_param_t eqp_eps_loc = *eqp_eps;
+
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
                                      1,    /* init */
                                      f_eps->id,
@@ -1909,7 +1913,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                                      0,   /* iescap */
                                      0,   /* imucpp */
                                      -1,  /* normp */
-                                     vcopt_eps,
+                                     eqp_eps,
                                      cvara_ep,
                                      cvara_ep,
                                      coefap,

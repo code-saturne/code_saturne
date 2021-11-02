@@ -55,6 +55,7 @@
 #include "cs_equation_iterative_solve.h"
 #include "cs_face_viscosity.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
 #include "cs_gradient.h"
@@ -161,7 +162,6 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   cs_real_t ro0 = phys_pro->ro0; /* reference density */
   const cs_real_t uref = cs_glob_turb_ref_values->uref;
 
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   const int var_key_id = cs_field_key_id("variable_id");
 
   cs_field_t  *f_k = CS_F_(k);
@@ -248,20 +248,20 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   cs_real_t *coefaf_o = (cs_real_t *)f_omg->bc_coeffs->af;
   cs_real_t *coefbf_o = (cs_real_t *)f_omg->bc_coeffs->bf;
 
-  cs_var_cal_opt_t *vcopt_k
-    = cs_field_get_key_struct_ptr(f_k, key_cal_opt_id);
+  const cs_equation_param_t *eqp_k
+    = cs_field_get_equation_param_const(f_k);
 
-  cs_var_cal_opt_t *vcopt_w
-    = cs_field_get_key_struct_ptr(f_omg, key_cal_opt_id);
+  const cs_equation_param_t *eqp_w
+    = cs_field_get_equation_param_const(f_omg);
 
-  cs_var_cal_opt_t vcopt_k_loc = *vcopt_k;
-  vcopt_k_loc.idften = CS_ISOTROPIC_DIFFUSION;
+  cs_equation_param_t eqp_k_loc = *eqp_k;
+  eqp_k_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
-  cs_var_cal_opt_t vcopt_w_loc = *vcopt_w;
-  vcopt_w_loc.idften = CS_ISOTROPIC_DIFFUSION;
+  cs_equation_param_t eqp_w_loc = *eqp_w;
+  eqp_w_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
-  cs_var_cal_opt_t vcopt_u;
-  cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &vcopt_u);
+  const cs_equation_param_t *eqp_u
+    = cs_field_get_equation_param_const(CS_F_(vel));
 
   const cs_real_t *cpro_s2kw = cs_field_by_name("s2")->val;
   const cs_real_t *cpro_divukw = cs_field_by_name("vel_gradient_trace")->val;
@@ -303,7 +303,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
   const cs_real_t *w_dist =  cs_field_by_name("wall_distance")->val;
 
-  if (vcopt_k->verbosity >= 1)
+  if (eqp_k->verbosity >= 1)
     cs_log_printf(CS_LOG_DEFAULT,
                   "\n"
                   "  ** Solving k-omega\n"
@@ -343,8 +343,8 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
   if (istprv >= 0) {
 
-    cs_real_t thetak = vcopt_k->thetav;
-    cs_real_t thetaw = vcopt_w->thetav;
+    cs_real_t thetak = eqp_k->thetav;
+    cs_real_t thetaw = eqp_w->thetav;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       /* Recover the value at time (n-1) */
@@ -469,7 +469,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
     cs_face_viscosity(m,
                       fvq,
-                      vcopt_u.imvisf,
+                      eqp_u->imvisf,
                       w1,
                       viscf,
                       viscb);
@@ -477,9 +477,8 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
     int icvflb = 0;
     int ivisep = 0;
 
-    cs_var_cal_opt_t vcopt_u_loc;
-    cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &vcopt_u_loc);
-    vcopt_u_loc.iconv = 0;
+    cs_equation_param_t eqp_u_loc = *eqp_u;
+    eqp_u_loc.iconv = 0;
 
     cs_real_3_t *vel_laplacian;
     BFT_MALLOC(vel_laplacian, n_cells_ext, cs_real_3_t);
@@ -490,7 +489,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                       0,  /* imasac */
                       1,  /* inc */
                       ivisep,
-                      &vcopt_u_loc,
+                      &eqp_u_loc,
                       cvar_vel,
                       cvar_vela,
                       coefav,
@@ -564,8 +563,8 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 #   pragma omp for nowait
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cs_real_t romvsd = crom[c_id]*cell_f_vol[c_id]/dt[c_id];
-      tinstk[c_id] += vcopt_k->istat*romvsd;
-      tinstw[c_id] += vcopt_w->istat*romvsd;
+      tinstk[c_id] += eqp_k->istat*romvsd;
+      tinstw[c_id] += eqp_w->istat*romvsd;
     }
 
     /* Compute production terms
@@ -698,7 +697,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
       cs_halo_type_t halo_type = CS_HALO_STANDARD;
       cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-      cs_gradient_type_by_imrgra(vcopt_k->imrgra,
+      cs_gradient_type_by_imrgra(eqp_k->imrgra,
                                  &gradient_type,
                                  &halo_type);
 
@@ -707,14 +706,14 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                          halo_type,
                          1,     /* inc */
                          true,  /* iccocg */
-                         vcopt_k->nswrgr,
+                         eqp_k->nswrgr,
                          0,
                          0,
                          1,             /* w_stride */
-                         vcopt_k->verbosity,
-                         vcopt_k->imligr,
-                         vcopt_k->epsrgr,
-                         vcopt_k->climgr,
+                         eqp_k->verbosity,
+                         eqp_k->imligr,
+                         eqp_k->epsrgr,
+                         eqp_k->climgr,
                          NULL,
                          bromo,
                          viscb,
@@ -1100,18 +1099,18 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
     /* Handle k */
 
-    if (vcopt_k->idiff >=  1) {
+    if (eqp_k->idiff >=  1) {
 
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t xxf1 = xf1[c_id];
         cs_real_t sigma = xxf1*cs_turb_ckwsk1 + (1. - xxf1)*cs_turb_ckwsk2;
-        w7[c_id] = viscl[c_id] + vcopt_k->idifft*cvisct[c_id]/sigma;
+        w7[c_id] = viscl[c_id] + eqp_k->idifft*cvisct[c_id]/sigma;
       }
 
       cs_face_viscosity(m,
                         fvq,
-                        vcopt_k->imvisf,
+                        eqp_k->imvisf,
                         w7,
                         viscf,
                         viscb);
@@ -1130,7 +1129,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                       1,     /* imasac */
                       1,     /* inc */
                       true,  /* iccocg */
-                      &vcopt_k_loc,
+                      &eqp_k_loc,
                       cvara_k,
                       cvara_k,
                       coefa_k,
@@ -1149,7 +1148,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                       NULL,
                       w5);
 
-    if (vcopt_k->verbosity >= 2) {
+    if (eqp_k->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_k),
@@ -1158,17 +1157,17 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 
     /* Handle omega */
 
-    if (vcopt_w->idiff >= 1) {
+    if (eqp_w->idiff >= 1) {
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t xxf1 = xf1[c_id];
         cs_real_t sigma = xxf1*cs_turb_ckwsw1 + (1.-xxf1)*cs_turb_ckwsw2;
-        w7[c_id] = viscl[c_id] + vcopt_w->idifft*cvisct[c_id]/sigma;
+        w7[c_id] = viscl[c_id] + eqp_w->idifft*cvisct[c_id]/sigma;
       }
 
       cs_face_viscosity(m,
                         fvq,
-                        vcopt_w->imvisf,
+                        eqp_w->imvisf,
                         w7,
                         viscf,
                         viscb);
@@ -1187,7 +1186,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                       1,     /* imasac */
                       1,     /* inc */
                       true,  /* iccocg */
-                      &vcopt_w_loc,
+                      &eqp_w_loc,
                       cvara_omg ,
                       cvara_omg ,
                       coefa_o,
@@ -1206,7 +1205,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                       NULL,
                       w6);
 
-    if (vcopt_w->verbosity >= 2) {
+    if (eqp_w->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_omg),
@@ -1293,18 +1292,18 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
      ---------------------------------- */
 
   /* Face viscosity */
-  if (vcopt_k->idiff >= 1) {
+  if (eqp_k->idiff >= 1) {
 
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cs_real_t xxf1 = xf1[c_id];
       cs_real_t sigma = xxf1*cs_turb_ckwsk1 + (1.-xxf1)*cs_turb_ckwsk2;
-      w1[c_id] = viscl[c_id] + vcopt_k->idifft*cvisct[c_id]/sigma;
+      w1[c_id] = viscl[c_id] + eqp_k->idifft*cvisct[c_id]/sigma;
     }
 
     cs_face_viscosity(m,
                       fvq,
-                      vcopt_k->imvisf,
+                      eqp_k->imvisf,
                       w1,
                       viscf,
                       viscb);
@@ -1329,7 +1328,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                                      0, /* iescap */
                                      0, /* imucpp */
                                      -1, /* normp */
-                                     &vcopt_k_loc,
+                                     &eqp_k_loc,
                                      cvara_k,
                                      cvara_k,
                                      coefa_k,
@@ -1357,17 +1356,17 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
   /* Solve for Omega */
 
   /* Face viscosity */
-  if (vcopt_w->idiff >=  1) {
+  if (eqp_w->idiff >=  1) {
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cs_real_t xxf1 = xf1[c_id];
       cs_real_t sigma = xxf1*cs_turb_ckwsw1 + (1. - xxf1)*cs_turb_ckwsw2;
-      w1[c_id] = viscl[c_id] + vcopt_w->idifft*cvisct[c_id]/sigma;
+      w1[c_id] = viscl[c_id] + eqp_w->idifft*cvisct[c_id]/sigma;
     }
 
     cs_face_viscosity(m,
                       fvq,
-                      vcopt_w->imvisf,
+                      eqp_w->imvisf,
                       w1,
                       viscf,
                       viscb);
@@ -1388,7 +1387,7 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                                      0,   /* iescap */
                                      0,   /* imucpp */
                                      -1,  /* normp */
-                                     &vcopt_w_loc,
+                                     &eqp_w_loc,
                                      cvara_omg,
                                      cvara_omg,
                                      coefa_o,
