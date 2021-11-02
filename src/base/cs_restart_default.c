@@ -428,6 +428,77 @@ _read_field_vals(cs_restart_t  *r,
 }
 
 /*----------------------------------------------------------------------------
+ * Read Rij field using interleaved or non-interleaved (legacy) sections.
+ *
+ * parameters:
+ *   r           <-- associated restart file pointer
+ *   location_id <-- mesh locartion id
+ *   t_id        <-- time id (0 for current, 1 for previous, ...)
+ *   rij         <-> Rij values for chosen time step
+ *
+ * returns:
+ *   CS_RESTART_SUCCESS in case of success, CS_RESTART_ERR_... otherwise
+ *----------------------------------------------------------------------------*/
+
+static int
+_read_rij(cs_restart_t  *r,
+          int            location_id,
+          int            t_id,
+          cs_real_t      rij[][6])
+{
+  int retcode = cs_restart_read_real_6_t_compat(r,
+                                                "rij::vals::0",
+                                                "r11::vals::0",
+                                                "r22::vals::0",
+                                                "r33::vals::0",
+                                                "r12::vals::0",
+                                                "r23::vals::0",
+                                                "r13::vals::0",
+                                                location_id,
+                                                rij);
+
+  if (retcode == CS_RESTART_ERR_EXISTS && t_id == 0) {
+
+    const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+    const char *old_names[] = {"R11", "R22", "R33", "R12", "R23", "R13"};
+
+    cs_real_t *v_tmp;
+    BFT_MALLOC(v_tmp, n_cells, cs_real_t);
+
+    for (cs_lnum_t j = 0; j < 6; j++) {
+      char old_sec_name[128];
+      snprintf(old_sec_name, 127, "%s_ce_phase01", old_names[j]);
+      old_sec_name[127] = '\0';
+
+      retcode = cs_restart_check_section(r,
+                                         old_sec_name,
+                                         location_id,
+                                         1,
+                                         CS_TYPE_cs_real_t);
+      if (retcode != CS_RESTART_SUCCESS)
+        break;
+
+      retcode = cs_restart_read_section(r,
+                                        old_sec_name,
+                                        location_id,
+                                        1,
+                                        CS_TYPE_cs_real_t,
+                                        v_tmp);
+
+      if (retcode != CS_RESTART_SUCCESS)
+        break;
+
+      for (cs_lnum_t i = 0; i < n_cells; i++)
+        rij[i][j] = v_tmp[i];
+    }
+
+    BFT_FREE(v_tmp);
+  }
+
+  return retcode;
+}
+
+/*----------------------------------------------------------------------------
  * Read field values from legacy checkpoint.
  *
  * Values are found using older names for compatibility with older files.
@@ -453,14 +524,12 @@ _read_field_vals_legacy(cs_restart_t  *r,
 {
   char sec_name[128] = "";
   char old_name_x[96] = "", old_name_y[96] = "", old_name_z[96] = "";
-  char old_name_xx[96] = "", old_name_yy[96] = "", old_name_zz[96] = "";
-  char old_name_xy[96] = "", old_name_yz[96] = "", old_name_xz[96] = "";
 
   int retcode = CS_RESTART_SUCCESS;
 
   /* Check for renaming */
 
-  char old_name[96] = "";
+  char old_name[72] = "";
   int ks = cs_field_key_id_try("scalar_id");
   int scalar_id = cs_field_get_key_int(f, ks);
 
@@ -483,66 +552,66 @@ _read_field_vals_legacy(cs_restart_t  *r,
      (old_name for partial section name, sec_name for direct section name) */
 
   else if (r_name == f->name) {
-    snprintf(old_name, 96, "%s", f->name);
+    snprintf(old_name, sizeof(old_name), "%s", f->name);
     if (f == CS_F_(vel)) {
       if (t_id == 0)
-        strncpy(old_name, "vitesse", 96);
+        strncpy(old_name, "vitesse", sizeof(old_name));
       else if (t_id == 1)
-        strncpy(sec_name, "velocity_prev", 96);
+        strncpy(sec_name, "velocity_prev", sizeof(old_name));
     }
     else if (f == CS_F_(p))
-      strncpy(old_name, "pression", 96);
+      strncpy(old_name, "pression", sizeof(old_name));
     else if (f == CS_F_(rij))
-      strncpy(old_name, "Rij", 96);
+      strncpy(old_name, "Rij", sizeof(old_name));
     else if (f == CS_F_(eps))
-      strncpy(old_name, "eps", 96);
+      strncpy(old_name, "eps", sizeof(old_name));
     else if (f == CS_F_(f_bar))
-      strncpy(old_name, "fb", 96);
+      strncpy(old_name, "fb", sizeof(old_name));
     else if (f == CS_F_(alp_bl)) {
       /* Special case: "al" also possible here, depending on turbulence model;
          check for either, with one test for main restart, the other for
          the auxilairy restart */
       int sec_code;
-      strncpy(old_name, "alp", 96);
+      strncpy(old_name, "alp", sizeof(old_name));
       sec_code = cs_restart_check_section(r, "al_ce_phase01",
                                           1, 1, CS_TYPE_cs_real_t);
       if (sec_code == CS_RESTART_SUCCESS)
-        strncpy(old_name, "al", 96);
+        strncpy(old_name, "al", sizeof(old_name));
       else
         sec_code = cs_restart_check_section(r, "fm_al_phase01",
                                             0, 1, CS_TYPE_int);
       if (sec_code == CS_RESTART_SUCCESS)
-        strncpy(old_name, "al", 96);
+        strncpy(old_name, "al", sizeof(old_name));
     }
     else if (f == CS_F_(nusa))
-      strncpy(old_name, "nusa", 96);
+      strncpy(old_name, "nusa", sizeof(old_name));
     else if (f == CS_F_(mesh_u))
-      strncpy(old_name, "vit_maillage", 96);
+      strncpy(old_name, "vit_maillage", sizeof(old_name));
     else if (f == CS_F_(rho)) {
       if (t_id == 0)
-        strncpy(old_name, "rho", 96);
+        strncpy(old_name, "rho", sizeof(old_name));
       else if (t_id == 1)
-        strncpy(old_name, "rho_old", 96);
+        strncpy(old_name, "rho_old", sizeof(old_name));
     }
     else if (f == CS_F_(rho_b))
       strncpy(sec_name, "rho_fb_phase01", 96);
 
     else if (f == CS_F_(cp))
-      strncpy(old_name, "cp", 96);
+      strncpy(old_name, "cp", sizeof(old_name));
 
     else if (f == CS_F_(mu))
-      strncpy(old_name, "viscl", 96);
+      strncpy(old_name, "viscl", sizeof(old_name));
     else if (f == CS_F_(mu_t))
-      strncpy(old_name, "visct", 96);
+      strncpy(old_name, "visct", sizeof(old_name));
 
     else if (f == CS_F_(t_b))
-      strncpy(old_name, "tparoi_fb", 96);
+      strncpy(old_name, "tparoi_fb", sizeof(old_name));
     else if (f == CS_F_(qinci))
-      strncpy(old_name, "qincid_fb", 96);
+      strncpy(old_name, "qincid_fb", sizeof(old_name));
     else if (f == CS_F_(hconv))
-      strncpy(old_name, "hfconv_fb", 96);
+      strncpy(old_name, "hfconv_fb", sizeof(old_name));
     else if (f == CS_F_(fconv))
-      strncpy(old_name, "flconv_fb", 96);
+      strncpy(old_name, "flconv_fb", sizeof(old_name));
 
     else if (strcmp(f->name, "dt") == 0)
       strncpy(sec_name, "dt_variable_espace_ce", 127);
@@ -568,7 +637,7 @@ _read_field_vals_legacy(cs_restart_t  *r,
     else if (strcmp(f->name, "joule_power") == 0)
       strncpy(sec_name, "tsource_sc_ce_joule", 127);
     else if (strcmp(f->name, "laplace_force") == 0)
-      strncpy(old_name, "laplace_force", 96);
+      strncpy(old_name, "laplace_force", sizeof(old_name));
   }
 
   if (sec_name[0] == '\0') {
@@ -638,30 +707,14 @@ _read_field_vals_legacy(cs_restart_t  *r,
   else if (f->dim == 6 && retcode == CS_RESTART_ERR_EXISTS) {
 
     if (strcmp(old_name, "Rij") == 0) {
-      snprintf(old_name_xx, 96, "r11::vals::0");
-      snprintf(old_name_yy, 96, "r22::vals::0");
-      snprintf(old_name_zz, 96, "r33::vals::0");
-      snprintf(old_name_xy, 96, "r12::vals::0");
-      snprintf(old_name_yz, 96, "r23::vals::0");
-      snprintf(old_name_xz, 96, "r13::vals::0");
-
       retcode = cs_restart_check_section(r,
-                                         old_name_xx,
+                                         "r11::vals::0",
                                          f->location_id,
                                          1,
                                          CS_TYPE_cs_real_t);
 
       if (retcode == CS_RESTART_SUCCESS)
-        retcode = cs_restart_read_real_6_t_compat(r,
-                                                  "rij::vals::0",
-                                                  old_name_xx,
-                                                  old_name_yy,
-                                                  old_name_zz,
-                                                  old_name_xy,
-                                                  old_name_yz,
-                                                  old_name_xz,
-                                                  f->location_id,
-                                                  (cs_real_6_t *)(f->vals[t_id]));
+        _read_rij(r, f->location_id, t_id, (cs_real_6_t *)(f->vals[t_id]));
     }
   }
 
@@ -1233,17 +1286,15 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
 
       cs_real_t *v_k = CS_F_(k)->vals[t_id];
 
-      err_sum += _read_turb_array_1d_compat(r, "r11", "R11", t_id, v_k);
+      cs_real_6_t *rij;
+      BFT_MALLOC(rij, n_cells, cs_real_6_t);
 
-      err_sum += _read_turb_array_1d_compat(r, "r22", "R22", t_id, v_tmp);
-
-      for (cs_lnum_t i = 0; i < n_cells; i++)
-        v_k[i] += v_tmp[i];
-
-      err_sum += _read_turb_array_1d_compat(r, "r33", "R33", t_id, v_tmp);
+      err_sum += _read_rij(r, CS_MESH_LOCATION_CELLS, 0, rij);
 
       for (cs_lnum_t i = 0; i < n_cells; i++)
-        v_k[i] = 0.5 * (v_k[i] + v_tmp[i]);
+        v_k[i] = 0.5 * (rij[i][0] + rij[i][1] + rij[i][2]);
+
+      BFT_FREE(rij);
 
       if (err_sum == 0)
         read_flag[CS_F_(k)->id] += t_mask;
@@ -1408,15 +1459,15 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
       cs_real_t *v_k = CS_F_(k)->vals[t_id];
       cs_real_t *v_omg = CS_F_(omg)->vals[t_id];
 
-      err_sum += _read_turb_array_1d_compat(r, "r11", "R11", t_id, v_k);
+      cs_real_6_t *rij;
+      BFT_MALLOC(rij, n_cells, cs_real_6_t);
 
-      err_sum += _read_turb_array_1d_compat(r, "r22", "R22", t_id, v_tmp);
-      for (cs_lnum_t i = 0; i < n_cells; i++)
-        v_k[i] += v_tmp[i];
+      err_sum += _read_rij(r, CS_MESH_LOCATION_CELLS, 0, rij);
 
-      err_sum += _read_turb_array_1d_compat(r, "r33", "R33", t_id, v_tmp);
       for (cs_lnum_t i = 0; i < n_cells; i++)
-        v_k[i] = 0.5 * (v_k[i] + v_tmp[i]);
+        v_k[i] = 0.5 * (rij[i][0] + rij[i][1] + rij[i][2]);
+
+      BFT_FREE(rij);
 
       err_sum += _read_turb_array_1d_compat(r, "epsilon", "eps", t_id, v_omg);
 
@@ -1468,29 +1519,8 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
                                              t_id, v_eps);
       if (itytur_old == 3) { /* Rij */
 
-        warn_sum += _read_turb_array_1d_compat(r, "r11", "R11", t_id, v_tmp);
-        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          rst[cell_id][0] = v_tmp[cell_id];
+        warn_sum += _read_rij(r, CS_MESH_LOCATION_CELLS, t_id, rst);
 
-        warn_sum += _read_turb_array_1d_compat(r, "r22", "R22", t_id, v_tmp);
-        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          rst[cell_id][1] = v_tmp[cell_id];
-
-        warn_sum += _read_turb_array_1d_compat(r, "r33", "R33", t_id, v_tmp);
-        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          rst[cell_id][2] = v_tmp[cell_id];
-
-        warn_sum += _read_turb_array_1d_compat(r, "r12", "R12", t_id, v_tmp);
-        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          rst[cell_id][3] = v_tmp[cell_id];
-
-        warn_sum += _read_turb_array_1d_compat(r, "r23", "R23", t_id, v_tmp);
-        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          rst[cell_id][4] = v_tmp[cell_id];
-
-        warn_sum += _read_turb_array_1d_compat(r, "r13", "R13", t_id, v_tmp);
-        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          rst[cell_id][5] = v_tmp[cell_id];
       }
 
       /* Eddy viscosity model */
@@ -2551,7 +2581,7 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
                                           f->dim,
                                           CS_TYPE_cs_real_t);
 
-        if ( f->dim == 6 && retval == CS_RESTART_ERR_EXISTS){
+        if (f->dim == 6 && retval == CS_RESTART_ERR_EXISTS) {
           sprintf(sec_name, "rij::%s", _coeff_name[c_id]);
             snprintf(old_name_xx, 127, "r11::%s", _coeff_name[c_id]);
             snprintf(old_name_yy, 127, "r22::%s", _coeff_name[c_id]);
