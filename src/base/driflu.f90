@@ -389,8 +389,8 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     iwarnp = vcopt%iwarni
     epsrgp = vcopt%epsrgr
     climgp = vcopt%climgr
-    extrap = vcopt%extrag
     imvisp = vcopt%imvisf
+    extrap = 0
 
     ! Face diffusivity of rho to compute rho*(Grad K . n)_face
     do iel = 1, ncel
@@ -488,7 +488,6 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
     vcopt_loc%epsilo = -1
     vcopt_loc%epsrsm = -1
-    vcopt_loc%extrag = -1
 
     p_k_value => vcopt_loc
     c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
@@ -575,7 +574,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     iwarnp = vcopt%iwarni
     epsrgp = vcopt%epsrgr
     climgp = vcopt%climgr
-    extrap = vcopt%extrag
+    extrap = 0
 
     call inimav &
      ( f_id0  , itypfl ,                                              &

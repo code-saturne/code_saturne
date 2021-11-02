@@ -93,7 +93,7 @@ integer          ifcvsl
 integer          kturt, turb_flux_model, turb_flux_model_type
 integer          kclipp, clprit
 
-double precision epsrgp, climgp, extrap
+double precision epsrgp, climgp
 double precision xk, xe, xtt
 double precision grav(3),xrij(3,3), temp(3)
 double precision xnal(3), xnoral
@@ -466,7 +466,6 @@ if (turb_flux_model_type.ne.3) then
   iwarnp = vcopt%iwarni
   epsrgp = vcopt%epsrgr
   climgp = vcopt%climgr
-  extrap = vcopt%extrag
 
   ! Local gradient boundary conditions: homogenous Neumann
   allocate(coefat(3,ndimfb))
@@ -532,7 +531,6 @@ else
   iwarnp = vcopt%iwarni
   epsrgp = vcopt%epsrgr
   climgp = vcopt%climgr
-  extrap = vcopt%extrag
 
   allocate(w1(3, ncelet))
 

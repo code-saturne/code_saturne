@@ -344,7 +344,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     iwarnp = vcopt%iwarni
     epsrgp = vcopt%epsrgr
     climgp = vcopt%climgr
-    extrap = vcopt%extrag
+    extrap = 0
     ! This option should be adapted to iphydr = 1
     iphydp = 0
 
@@ -398,7 +398,7 @@ imligp = vcopt%imligr
 iwarnp = vcopt%iwarni
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
-extrap = vcopt%extrag
+extrap = 0
 
 call itrmas &
  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,     &

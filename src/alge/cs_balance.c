@@ -233,7 +233,6 @@ cs_balance_scalar(int                idtvar,
     var_cal_opt_loc.epsrsm   = -1.; /* unused in balance */
     var_cal_opt_loc.epsrgr   = var_cal_opt->epsrgr;
     var_cal_opt_loc.climgr   = var_cal_opt->climgr;
-    var_cal_opt_loc.extrag   = var_cal_opt->extrag;
     var_cal_opt_loc.relaxv   = var_cal_opt->relaxv;
   } else {
     cs_field_t *f = cs_field_by_id(f_id);
@@ -492,7 +491,6 @@ cs_balance_vector(int                  idtvar,
     var_cal_opt_loc.epsrsm   = -1.; /* unused in balance */
     var_cal_opt_loc.epsrgr   = var_cal_opt->epsrgr;
     var_cal_opt_loc.climgr   = var_cal_opt->climgr;
-    var_cal_opt_loc.extrag = -1.;   /* unused in balance */
     var_cal_opt_loc.relaxv = var_cal_opt->relaxv;
   } else {
     cs_field_t *f = cs_field_by_id(f_id);
@@ -718,7 +716,6 @@ cs_balance_tensor(int                 idtvar,
     var_cal_opt_loc.epsrsm   = -1.; /* unused in balance */
     var_cal_opt_loc.epsrgr   = var_cal_opt->epsrgr;
     var_cal_opt_loc.climgr   = var_cal_opt->climgr;
-    var_cal_opt_loc.extrag = -1.;   /* unused in balance */
     var_cal_opt_loc.relaxv = var_cal_opt->relaxv;
   } else {
     cs_field_t *f = cs_field_by_id(f_id);

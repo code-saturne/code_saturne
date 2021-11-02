@@ -279,7 +279,6 @@ typedef struct {
   double  epsrsm;
   double  epsrgr;
   double  climgr;
-  double  extrag;
   double  relaxv;
 
 } cs_f_var_cal_opt_t;
@@ -352,7 +351,6 @@ static cs_equation_param_t _equation_param_default
    .epsrsm = 1.e-4,
    .epsrgr = 1.e-4,
    .climgr = 1.5,
-   .extrag = 0.,
    .relaxv = 1.,
 
    .default_bc = CS_PARAM_BC_HMG_NEUMANN,
@@ -662,7 +660,6 @@ _var_cal_opt_to_equation_params(const cs_f_var_cal_opt_t  *vcopt,
   eqp->epsrsm = vcopt->epsrsm;
   eqp->epsrgr = vcopt->epsrgr;
   eqp->climgr = vcopt->climgr;
-  eqp->extrag = vcopt->extrag;
   eqp->relaxv = vcopt->relaxv;
 }
 
@@ -779,7 +776,6 @@ cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
   vcopt->epsrsm = eqp->epsrsm;
   vcopt->epsrgr = eqp->epsrgr;
   vcopt->climgr = eqp->climgr;
-  vcopt->extrag = eqp->extrag;
   vcopt->relaxv = eqp->relaxv;
 }
 

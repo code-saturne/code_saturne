@@ -355,8 +355,8 @@ iwgrp  = vcopt_p%iwgrec
 iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_p%epsrgr
 climgp = vcopt_p%climgr
-extrap = vcopt_p%extrag
 ircflp = vcopt_p%ircflu
+extrap = 0
 
 if (darcy_anisotropic_permeability.eq.0) then
 
@@ -562,7 +562,7 @@ imligp = vcopt_p%imligr
 iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_p%epsrgr
 climgp = vcopt_p%climgr
-extrap = vcopt_p%extrag
+extrap = 0
 
 ! We compute the new mass flux, taking care not to reconstruct
 ! the last increment of the lopp on isweep, to ensure an

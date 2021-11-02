@@ -122,7 +122,7 @@ double precision xl11, xl22, xl33, xl12, xl13, xl23
 double precision xm11, xm22, xm33, xm12, xm13, xm23
 double precision smagma, smagmi, smagmy
 double precision scal1, scal2, scal3
-double precision epsrgp, climgp, extrap
+double precision epsrgp, climgp
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
 double precision, allocatable, dimension(:) :: w4, w5, w6
@@ -542,7 +542,6 @@ do jj = 1, nscal
     imligp = vcopt%imligr
     iwarnp = vcopt%iwarni
     climgp = vcopt%climgr
-    extrap = vcopt%extrag
     iccocg = 1
 
     call gradient_s                                                   &

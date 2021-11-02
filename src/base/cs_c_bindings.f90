@@ -106,7 +106,6 @@ module cs_c_bindings
     real(c_double) :: epsrsm
     real(c_double) :: epsrgr
     real(c_double) :: climgr
-    real(c_double) :: extrag
     real(c_double) :: relaxv
   end type var_cal_opt
 

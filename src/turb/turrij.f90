@@ -115,7 +115,7 @@ integer          iprev
 integer          key_t_ext_id
 integer          iroext
 integer          f_id_phij
-double precision epsrgp, climgp, extrap
+double precision epsrgp, climgp
 double precision rhothe
 double precision utaurf,ut2,ypa,ya,tke,xunorm, limiter, nu0,alpha
 double precision xnoral, xnal(3)
@@ -486,7 +486,6 @@ else if (igrari.eq.1) then
     iwarnp = vcopt%iwarni
     epsrgp = vcopt%epsrgr
     climgp = vcopt%climgr
-    extrap = vcopt%extrag
 
     f_id0 = -1
     iccocg = 1

@@ -655,7 +655,6 @@ vcopt_loc%idifft = -1
 vcopt_loc%iwgrec = 0
 vcopt_loc%thetav = thetv
 vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
-vcopt_loc%extrag = 0
 
 p_k_value => vcopt_loc
 c_k_value = equation_param_from_vcopt(c_loc(p_k_value))

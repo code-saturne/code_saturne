@@ -113,7 +113,7 @@ integer          isou  , jsou
 integer          iflmb0, itypfl
 integer          itsqdm, imasac
 
-double precision epsrgp, climgp, extrap, thetap, blencp, relaxp
+double precision epsrgp, climgp, thetap, blencp, relaxp
 double precision rom
 
 double precision, allocatable, dimension(:) :: w1
@@ -250,7 +250,6 @@ if (itsqdm.ne.0) then
   iwarnp = vcopt_u%iwarni
   epsrgp = vcopt_u%epsrgr
   climgp = vcopt_u%climgr
-  extrap = vcopt_u%extrag
   relaxp = vcopt_u%relaxv
   thetap = vcopt_u%thetav
 
@@ -353,7 +352,6 @@ if (itsqdm.ne.0) then
   vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
   vcopt_loc%epsilo = -1
   vcopt_loc%epsrsm = -1
-  vcopt_loc%extrag = -1
 
   p_k_value => vcopt_loc
   c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
@@ -428,7 +426,6 @@ imligp = vcopt_p%imligr
 iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_p%epsrgr
 climgp = vcopt_p%climgr
-extrap = vcopt_p%extrag
 
 ! Velocity flux (crom, brom not used)
 itypfl = 0

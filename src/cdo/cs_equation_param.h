@@ -429,9 +429,6 @@ typedef struct {
    * Relevant for all the variables using least-squares gradientsfor which
    * \ref imligr > CS_GRADIENT_LIMIT_NONE.
    *
-   * \var extrag
-   * Removed option, has no effect.
-
    * \var relaxv
    * Relaxation coefficient for the associated variable. This relaxation
    * parameter is only useful for the pressure with the unsteady algorithm (so
@@ -476,7 +473,6 @@ typedef struct {
   double epsrsm;
   double epsrgr;
   double climgr;
-  double extrag;
   double relaxv;
 
   /*!

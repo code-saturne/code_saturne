@@ -1106,7 +1106,6 @@ cs_equation_param_create(const char            *name,
   eqp->epsrsm = 1.e-4;
   eqp->epsrgr = 1.e-4;
   eqp->climgr = 1.5;
-  eqp->extrag = 0.;
   eqp->relaxv = 1.;
 
   /* Boundary conditions structure.
@@ -1266,7 +1265,6 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   dst->epsrsm = ref->epsrsm;
   dst->epsrgr = ref->epsrgr;
   dst->climgr = ref->climgr;
-  dst->extrag = ref->extrag;
   dst->relaxv = ref->relaxv;
 
   /* Boundary conditions structure */

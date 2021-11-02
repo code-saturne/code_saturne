@@ -1614,7 +1614,6 @@ if (iappel.eq.1) then
   vcopt_loc%idifft = -1
   vcopt_loc%iwgrec = 0
   vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
-  vcopt_loc%extrag = 0
 
   p_k_value => vcopt_loc
   c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
@@ -1748,7 +1747,6 @@ else if (iappel.eq.2) then
   vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
   vcopt_loc%epsilo = -1
   vcopt_loc%epsrsm = -1
-  vcopt_loc%extrag = -1
 
   p_k_value => vcopt_loc
   c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
