@@ -109,7 +109,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
     cs_lnum_t   n_selected_cells = 0;
     cs_lnum_t  *selected_cells = NULL;
 
-    cs_real_t balance[CS_BALANCE_P_N_TERMS];
+    cs_real_t balance[CS_BALANCE_N_TERMS];
 
     BFT_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
 

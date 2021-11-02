@@ -717,7 +717,6 @@ cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
                              cs_real_2_t             inv[])
 {
   const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
-  const cs_turb_rans_model_t *turb_rans_mdl = cs_glob_turb_rans_model;
 
   if (   turb_model->itytur != 2
       && turb_model->itytur != 3
@@ -898,10 +897,10 @@ cs_post_boundary_flux(const char       *scalar_name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_field_cell_to_b_face_values(cs_field_t       *f,
-                                    cs_lnum_t         n_loc_b_faces,
-                                    const cs_lnum_t   b_face_ids[],
-                                    cs_real_t        *b_val)
+cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
+                                    cs_lnum_t          n_loc_b_faces,
+                                    const cs_lnum_t    b_face_ids[],
+                                    cs_real_t         *b_val)
 {
   if (f->location_id != CS_MESH_LOCATION_CELLS)
     bft_error(__FILE__, __LINE__, 0,

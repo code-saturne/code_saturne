@@ -71,17 +71,15 @@ double precision dt(ncelet)
 
 double precision darcy_h
 double precision thetar_param, thetas_param, ks_param
-double precision kr_param, m_param, n_param, se_param
+double precision m_param, n_param, se_param
 double precision alpha_param, l_param, tmp_1, tmp_2
 double precision darcy_anisotropic_dispersion_l, darcy_anisotropic_dispersion_t
-double precision darcy_isotropic_dispersion, molecular_diffusion
-double precision velocity_norm, rho
+double precision molecular_diffusion
+double precision velocity_norm
 double precision ki, ki_xx, ki_yy, ki_zz, tmp_lt
-integer          iel, ii, fid
-integer          ncelt, icelt, ifcvsl
-character*80     fname
+integer          iel, fid
+integer          ifcvsl
 
-integer, allocatable, dimension(:) :: lstcel
 double precision, dimension(:), pointer :: capacity, permeability
 double precision, dimension(:), pointer :: saturation, soil_density
 double precision, dimension(:), pointer :: cpro_kd, cpro_kplus, cpro_kminus

@@ -364,10 +364,10 @@ cs_post_boundary_flux(const char       *scalar_name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_post_field_cell_to_b_face_values(cs_field_t       *f,
-                                    cs_lnum_t         n_loc_b_faces,
-                                    const cs_lnum_t   b_face_ids[],
-                                    cs_real_t        *b_val);
+cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
+                                    cs_lnum_t          n_loc_b_faces,
+                                    const cs_lnum_t    b_face_ids[],
+                                    cs_real_t         *b_val);
 
 /*----------------------------------------------------------------------------*/
 
