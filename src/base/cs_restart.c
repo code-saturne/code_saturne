@@ -3815,7 +3815,7 @@ cs_restart_read_real_6_t_compat(cs_restart_t  *restart,
   retval = cs_restart_read_section(restart,
                                    sec_name,
                                    location_id,
-                                   3,
+                                   6,
                                    CS_TYPE_cs_real_t,
                                    val);
 
