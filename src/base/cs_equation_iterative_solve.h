@@ -138,7 +138,7 @@ BEGIN_C_DECLS
  * \param[in]     rovsdt        \f$ f_s^{imp} \f$
  * \param[in]     smbrp         Right hand side \f$ Rhs^k \f$
  * \param[in,out] pvar          current variable
- * \param[in,out] dpvar         last variable increment
+ * \param[out]    dpvar         last variable increment
  * \param[in]     xcpp          array of specific heat (Cp)
  * \param[out]    eswork        prediction-stage error estimator
  *                              (if iescap > 0)

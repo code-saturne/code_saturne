@@ -71,7 +71,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel
+integer          ncel
 
 ! Local variables
 character(len=80) :: name
