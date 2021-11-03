@@ -263,11 +263,11 @@ cs_cdofb_navsto_create_builder(const cs_navsto_param_t  *nsp,
                                     .bf_type = NULL,
                                     .pressure_bc_val = NULL};
 
+  assert(nsp != NULL);
+  nsb.rho_c = nsp->mass_density->ref_value;
+
   if (connect == NULL)
     return nsb;
-  assert(nsp != NULL);
-
-  nsb.rho_c = nsp->mass_density->ref_value;
 
   BFT_MALLOC(nsb.div_op, 3*connect->n_max_fbyc, cs_real_t);
   BFT_MALLOC(nsb.bf_type, connect->n_max_fbyc, cs_boundary_type_t);
