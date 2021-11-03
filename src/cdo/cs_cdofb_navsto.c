@@ -1714,11 +1714,11 @@ cs_cdofb_navsto_set_gravity_func(const cs_navsto_param_t      *nsp,
     switch (cs_cdofb_navsto_boussinesq_type) {
 
     case CS_CDOFB_NAVSTO_BOUSSINESQ_FACE_DOF:
-      *p_func = cs_cdofb_navsto_boussinesq_by_surf;
+      *p_func = cs_cdofb_navsto_boussinesq_at_face;
       break;
 
     case CS_CDOFB_NAVSTO_BOUSSINESQ_CELL_DOF:
-      *p_func = cs_cdofb_navsto_boussinesq_by_vol;
+      *p_func = cs_cdofb_navsto_boussinesq_at_cell;
       break;
 
     default:
@@ -1758,16 +1758,20 @@ cs_cdofb_navsto_gravity_term(const cs_navsto_param_t           *nsp,
   assert(nsp->model_flag & CS_NAVSTO_MODEL_GRAVITY_EFFECTS);
 
   const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
-  const cs_real_t  cell_contrib[3] =
-    { nsb->rho_c * gravity_vector[0] * cm->xc[0],
-      nsb->rho_c * gravity_vector[1] * cm->xc[1],
-      nsb->rho_c * gravity_vector[2] * cm->xc[2] };
+  const cs_real_t  cell_coef = _dp3(gravity_vector, cm->xc);
 
   for (int f = 0; f < cm->n_fc; f++) {
+
     const cs_real_t  *_div_f = nsb->div_op + 3*f;
+    const cs_quant_t  pfq = cm->face[f];
+    const cs_real_t  face_coef = _dp3(gravity_vector, pfq.center);
+
+    /* div_op is built such that _div_f[k] = -i_{f,c} * |f| * n_f[k] */
+
     for (int k = 0; k < 3; k++)
-      csys->rhs[3*f+k] += _div_f[k] * cell_contrib[k];
-  }
+      csys->rhs[3*f+k] += _div_f[k] * nsb->rho_c * (cell_coef - face_coef);
+
+  } /* Loop on cell faces */
 
 }
 
@@ -1787,10 +1791,10 @@ cs_cdofb_navsto_gravity_term(const cs_navsto_param_t           *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_boussinesq_by_vol(const cs_navsto_param_t           *nsp,
-                                  const cs_cell_mesh_t              *cm,
-                                  const cs_cdofb_navsto_builder_t   *nsb,
-                                  cs_cell_sys_t                     *csys)
+cs_cdofb_navsto_boussinesq_at_cell(const cs_navsto_param_t           *nsp,
+                                   const cs_cell_mesh_t              *cm,
+                                   const cs_cdofb_navsto_builder_t   *nsb,
+                                   cs_cell_sys_t                     *csys)
 {
   CS_UNUSED(nsb);
   assert(nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ);
@@ -1835,9 +1839,9 @@ cs_cdofb_navsto_boussinesq_by_vol(const cs_navsto_param_t           *nsp,
 /*!
  * \brief  Take into account the buoyancy force with the Boussinesq approx.
  *         Compute and add the source term to the local RHS.
- *         This way to compute the Boussinesq approximation relies only on DoFs
- *         at faces. This should enable to keep a stable (no velocity) in case
- *         of a stratified configuration.
+ *         This way to compute the Boussinesq approximation applies only to
+ *         face DoFs. This should enable to keep a stable (no velocity) in
+ *         case of a stratified configuration.
  *
  * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
@@ -1847,7 +1851,7 @@ cs_cdofb_navsto_boussinesq_by_vol(const cs_navsto_param_t           *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_boussinesq_by_surf(const cs_navsto_param_t           *nsp,
+cs_cdofb_navsto_boussinesq_at_face(const cs_navsto_param_t           *nsp,
                                    const cs_cell_mesh_t              *cm,
                                    const cs_cdofb_navsto_builder_t   *nsb,
                                    cs_cell_sys_t                     *csys)
@@ -1855,10 +1859,10 @@ cs_cdofb_navsto_boussinesq_by_surf(const cs_navsto_param_t           *nsp,
   CS_UNUSED(nsb);
   assert(nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ);
 
-  /* Boussinesq term: rho0 * g[] * ( 1 - beta * (var[c] - var0) ).  The
-   * remaining part rho0 * g[] * ( -beta * (var - var_c) has a zero mean-value
-   * if one considers the reconstruction var = var_c + grad(vard)|_c * ( x -
-   * x_c) which has a mean value equal to var_c */
+  /* Boussinesq term: rho0 * g[] * ( 1 - beta * (var[c] - var0) ). */
+
+  /* 1. Compute the mass density for this cell taking into account the
+     Boussinesq approximation */
 
   double  boussi_coef = 1;
 
@@ -1867,21 +1871,23 @@ cs_cdofb_navsto_boussinesq_by_surf(const cs_navsto_param_t           *nsp,
     cs_navsto_param_boussinesq_t  *bp = nsp->boussinesq_param + i;
     boussi_coef += -bp->beta*(bp->var[cm->c_id] - bp->var0);
 
-  } /* Loop on Boussniesq terms */
+  } /* Loop on Boussinesq terms */
 
-  const cs_real_t  rho0 = nsp->mass_density->ref_value;
+  const cs_real_t  rho_c = nsp->mass_density->ref_value * boussi_coef;
   const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
-
-  const double  cell_coef[3] =
-    { rho0 * boussi_coef * gravity_vector[0] * cm->xc[0],
-      rho0 * boussi_coef * gravity_vector[1] * cm->xc[1],
-      rho0 * boussi_coef * gravity_vector[2] * cm->xc[2] };
+  const double  cell_coef = _dp3(gravity_vector, cm->xc);
 
   for (int f = 0; f < cm->n_fc; f++) {
 
+    /* div_op is built such that _div_f[k] = -i_{f,c} * |f| * n_f[k] */
+
     const cs_real_t  *_div_f = nsb->div_op + 3*f;
+    const cs_quant_t  pfq = cm->face[f];
+    const double  face_coef = _dp3(gravity_vector, pfq.center);
+    const double rhs_coef = rho_c * (cell_coef - face_coef);
+
     for (int k = 0; k < 3; k++)
-      csys->rhs[3*f+k] += cell_coef[k] * _div_f[k];
+      csys->rhs[3*f+k] += rhs_coef * _div_f[k];
 
   } /* Loop on cell faces */
 

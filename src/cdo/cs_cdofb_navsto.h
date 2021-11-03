@@ -643,10 +643,10 @@ cs_cdofb_navsto_gravity_term(const cs_navsto_param_t           *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_boussinesq_by_vol(const cs_navsto_param_t           *nsp,
-                                  const cs_cell_mesh_t              *cm,
-                                  const cs_cdofb_navsto_builder_t   *nsb,
-                                  cs_cell_sys_t                     *csys);
+cs_cdofb_navsto_boussinesq_at_cell(const cs_navsto_param_t           *nsp,
+                                   const cs_cell_mesh_t              *cm,
+                                   const cs_cdofb_navsto_builder_t   *nsb,
+                                   cs_cell_sys_t                     *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -664,7 +664,28 @@ cs_cdofb_navsto_boussinesq_by_vol(const cs_navsto_param_t           *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_navsto_boussinesq_by_surf(const cs_navsto_param_t           *nsp,
+cs_cdofb_navsto_boussinesq_at_face(const cs_navsto_param_t           *nsp,
+                                   const cs_cell_mesh_t              *cm,
+                                   const cs_cdofb_navsto_builder_t   *nsb,
+                                   cs_cell_sys_t                     *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Take into account the buoyancy force with the Boussinesq approx.
+ *         Compute and add the source term to the local RHS.
+ *         This way to compute the Boussinesq approximation relies only on DoFs
+ *         at faces. This should enable to keep a stable (no velocity) in case
+ *         of a stratified configuration.
+ *
+ * \param[in]      nsp     set of parameters to handle the Navier-Stokes system
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      nsb     pointer to a builder structure for the NavSto system
+ * \param[in, out] csys    pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_boussinesq_by_part(const cs_navsto_param_t           *nsp,
                                    const cs_cell_mesh_t              *cm,
                                    const cs_cdofb_navsto_builder_t   *nsb,
                                    cs_cell_sys_t                     *csys);
