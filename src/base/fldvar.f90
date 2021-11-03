@@ -159,17 +159,12 @@ if (iok.ne.0) then
   !==========
 endif
 
-! ---> On positionne l'indicateur global IPPMOD(IPHPAR)
-!         0 : pas de physique particuliere
-!         1 : physique particuliere enclenchee
-!         2 : physique particuliere avec definition du coefficient
-!             d'absorption par fichier parametrique pour le rayonnement
+! Set global indicator: ippmod(iphpar)
+!  0: no specific model
+!  1: active specific physical model
 ippmod(iphpar) = 0
 if (nmodpp.gt.0) then
   ippmod(iphpar) = 1
-  if (ippmod(icompf).eq.-1 .and. ippmod(iatmos).eq.-1           &
-                           .and. ippmod(iaeros).eq.-1)          &
-    ippmod(iphpar) = 2
   ! Ground water flows model is not considered as a specific physic.
   if (ippmod(idarcy).gt.-1) ippmod(iphpar) = 0
 endif

@@ -1073,6 +1073,7 @@ cs_rad_transfer_solve(int               bc_type[],
 {
   /* Shorter notation */
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+  const int *pm_flag = cs_glob_physical_model_flag;
 
   int nwsgg = rt_params->nwsgg;
 
@@ -1153,9 +1154,9 @@ cs_rad_transfer_solve(int               bc_type[],
 
   /* Numer of classes for Coal or Fuel combustion */
   int n_classes = 0;
-  if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0)
+  if (pm_flag[CS_COMBUSTION_COAL] >= 0)
     n_classes = cs_glob_combustion_model->coal.nclacp;
-  else if (cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
+  else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
     n_classes = cs_glob_combustion_model->fuel.nclafu;
 
   /* Irradiating flux density at walls.
@@ -1347,9 +1348,9 @@ cs_rad_transfer_solve(int               bc_type[],
 
     /* Coal particles or fuel droplets temperature */
     for (int class_id = 0; class_id < n_classes; class_id++) {
-      if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0)
+      if (pm_flag[CS_COMBUSTION_COAL] >= 0)
         snprintf(fname, 80, "t_p_%02d", class_id+1);
-      else if (cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
+      else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
         snprintf(fname, 80, "t_fuel_%02d", class_id+1);
       cs_field_t *f_temp2 = cs_field_by_name(fname);
       cs_lnum_t ipcla = class_id + 1;
@@ -1371,7 +1372,20 @@ cs_rad_transfer_solve(int               bc_type[],
      Warning: for the P-1 approximation, the absorption coefficient
      is required for boundary conditions. */
 
-  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 2)
+  /* TODO: check if joule effect and gas mix should be handled by
+     this function; with the previous test based on
+     "ippmod(iphpar) >= 2", they were handled here, but this may
+     have been a bug. */
+
+  if (   pm_flag[CS_COMBUSTION_3PT] >= 0
+      || pm_flag[CS_COMBUSTION_EBU] >= 0
+      || pm_flag[CS_COMBUSTION_LW] >= 0
+      || pm_flag[CS_COMBUSTION_PCLC] >= 0
+      || pm_flag[CS_COMBUSTION_COAL] >= 0
+      || pm_flag[CS_COMBUSTION_FUEL] >= 0
+      || pm_flag[CS_JOULE_EFFECT] >= 0
+      || pm_flag[CS_ELECTRIC_ARCS] >= 0
+      || pm_flag[CS_GAS_MIX] >= 0)
     cs_rad_transfer_absorption(tempk, ckg, kgi, agi, w_gg);
 
   else {
@@ -1389,7 +1403,6 @@ cs_rad_transfer_solve(int               bc_type[],
     cs_gui_rad_transfer_absorption(ckg);
 
     if (   rt_params->type == CS_RAD_TRANSFER_P1
-        && cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] <= 1
         && ipadom <= 3)
       cs_rad_transfer_absorption_check_p1(ckg);
 
@@ -1639,8 +1652,8 @@ cs_rad_transfer_solve(int               bc_type[],
         int_abso[cell_id] = ckg[cell_id] * int_rad_domega[cell_id];
 
       /* Emission and implicit ST */
-      if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == -1
-          && cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == -1) {
+      if (   pm_flag[CS_COMBUSTION_3PT] == -1
+          && pm_flag[CS_COMBUSTION_EBU] == -1) {
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
           int_emi[cell_id] =   -4.0 * ckg[cell_id]
                              * c_stefan * cs_math_pow4(tempk[cell_id]);
@@ -1672,8 +1685,8 @@ cs_rad_transfer_solve(int               bc_type[],
 
       /* -> Gas phase: Explicit source term of the ETR */
 
-      if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == -1
-          && cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == -1) {
+      if (   pm_flag[CS_COMBUSTION_3PT] == -1
+          && pm_flag[CS_COMBUSTION_EBU] == -1) {
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] =  c_stefan * ckg[cell_id]
                                      * cs_math_pow4(tempk[cell_id])
@@ -1814,9 +1827,9 @@ cs_rad_transfer_solve(int               bc_type[],
       cs_field_t *f_x2 = cs_field_by_name(fname);
 
       cs_real_t cp2 = 1.;
-      if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0)
+      if (pm_flag[CS_COMBUSTION_COAL] >= 0)
         cp2 = cp2ch[ichcor[class_id]-1];
-      else if (cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0)
+      else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
         cp2 = cp2fol;
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {

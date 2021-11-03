@@ -257,8 +257,6 @@ cs_gui_radiative_transfer_parameters(void)
 {
   const char *model = cs_gui_get_thermophysical_model("radiative_transfer");
 
-  int ac_type = 0;
-
   if (cs_gui_strcmp(model, "off"))
     cs_glob_rad_transfer_params->type = CS_RAD_TRANSFER_NONE;
   else if (cs_gui_strcmp(model, "dom"))
@@ -289,7 +287,8 @@ cs_gui_radiative_transfer_parameters(void)
                               &cs_glob_rad_transfer_params->iimpar);
     cs_gui_node_get_child_int(tn0, "intensity_resolution_listing_printing",
                               &cs_glob_rad_transfer_params->verbosity);
-    if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 2) {
+    {
+      int ac_type = 0;
       _radiative_transfer_type(tn0, "absorption_coefficient", &ac_type);
       if (ac_type == 3)
         cs_glob_rad_transfer_params->imodak = 1;
@@ -329,29 +328,26 @@ cs_gui_radiative_transfer_parameters(void)
 void
 cs_gui_rad_transfer_absorption(cs_real_t  ck[])
 {
-  double value = 0.;
-  int ac_type = 0;
 
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] < 2) {
-    cs_tree_node_t *tn
-      = cs_tree_get_node(cs_glob_tree,
-                         "thermophysical_models/radiative_transfer");
-
-    _radiative_transfer_type(tn, "absorption_coefficient", &ac_type);
-    if (ac_type == 0) {
-      cs_gui_node_get_child_real(tn, "absorption_coefficient", &value);
-      for(cs_lnum_t i = 0; i < n_cells; i++)
-        ck[i] = value;
-    }
-#if _XML_DEBUG_
-    bft_printf("==> %s\n", __func__);
-    bft_printf("--absorption coefficient type: %d\n", ac_type);
-    if (ac_type == 0)
-      bft_printf("--absorption coefficient value = %f\n", value);
-#endif
+  cs_tree_node_t *tn
+    = cs_tree_get_node(cs_glob_tree,
+                       "thermophysical_models/radiative_transfer");
+  int ac_type = 0;
+  _radiative_transfer_type(tn, "absorption_coefficient", &ac_type);
+  if (ac_type == 0) {
+    double value = 0.;
+    cs_gui_node_get_child_real(tn, "absorption_coefficient", &value);
+    for(cs_lnum_t i = 0; i < n_cells; i++)
+      ck[i] = value;
   }
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--absorption coefficient type: %d\n", ac_type);
+  if (ac_type == 0)
+    bft_printf("--absorption coefficient value = %f\n", value);
+#endif
 }
 
 /*----------------------------------------------------------------------------

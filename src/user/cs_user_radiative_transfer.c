@@ -86,8 +86,7 @@ cs_user_radiative_transfer_parameters(void)
  * It is necessary to define the value of the fluid's absorption coefficient Ck.
  *
  * This value is defined automatically for specific physical models, such
- * as gas and coal combustion, so this function should not be used with
- * these models.
+ * as gas and coal combustion, so this function is not used by these models.
  *
  * For a transparent medium, the coefficient should be set to 0.
  *

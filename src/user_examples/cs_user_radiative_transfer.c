@@ -175,8 +175,7 @@ cs_user_radiative_transfer_parameters(void)
  * It is necessary to define the value of the fluid's absorption coefficient Ck.
  *
  * This value is defined automatically for specific physical models, such
- * as gas and coal combustion, so this function should not be used with
- * these models.
+ * as gas and coal combustion, so this function is not used by these models.
  *
  * For a transparent medium, the coefficient should be set to 0.
  *
@@ -200,19 +199,11 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
 
   /*< [abso_coeff] */
   /*
-   * Absorption coefficient of the medium (m-1)
-   *
-   * In the case of specific physics (gas/coal/fuel combustion, elec),
-   * Ck must not be defined here (it is determined automatically, possibly
-   * from the parametric file)
-   *
-   * In other cases, Ck must be defined (it is zero by default)
+   * Absorption coefficient of the medium (m-1).
    */
 
-  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] <= 1) {
-    for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
-      ck[cell_id] = 0.;
-  }
+  for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
+    ck[cell_id] = 0.;
 
   /*< [abso_coeff]*/
 
