@@ -652,6 +652,22 @@ cs_navsto_system_init_setup(void)
 
   }
 
+  if ((nsp->post_flag & CS_NAVSTO_POST_MASS_DENSITY) &&
+      (nsp->model_flag & CS_NAVSTO_MODEL_BOUSSINESQ)) {
+
+
+    ns->mass_density = cs_field_find_or_create("mass_density",
+                                               p_mask,
+                                               location_id,
+                                               1, /* dimension */
+                                               has_previous);
+
+    /* Set default value for keys related to log and post-processing */
+    cs_field_set_key_int(ns->mass_density, log_key, 1);
+    cs_field_set_key_int(ns->mass_density, post_key, field_post_flag);
+
+  }
+
   if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION)
     nsp->post_flag |= CS_NAVSTO_POST_VORTICITY; /* automatic */
 

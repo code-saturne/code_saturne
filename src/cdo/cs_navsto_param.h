@@ -167,6 +167,9 @@ typedef enum {
  *
  * \var CS_NAVSTO_POST_ENSTROPHY
  * Compute  w \cdot w and associate a field to this quantity
+ *
+ * \var CS_NAVSTO_POST_MASS_DENSITY
+ * Compute the mass density (active only if a Boussinesq approximation is on)
  */
 
 typedef enum {
@@ -178,6 +181,7 @@ typedef enum {
   CS_NAVSTO_POST_STREAM_FUNCTION          = 1<< 4, /* =  16 */
   CS_NAVSTO_POST_HELICITY                 = 1<< 5, /* =  32 */
   CS_NAVSTO_POST_ENSTROPHY                = 1<< 6, /* =  64 */
+  CS_NAVSTO_POST_MASS_DENSITY             = 1<< 7, /* = 128 */
 
 } cs_navsto_param_post_bit_t;
 

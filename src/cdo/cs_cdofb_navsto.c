@@ -1048,6 +1048,31 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
   } /* Kinetic energy */
 
+  if (nsp->post_flag & CS_NAVSTO_POST_MASS_DENSITY) {
+
+    cs_field_t  *rho = cs_field_by_name("mass_density");
+    assert(rho != NULL);
+
+    cs_field_current_to_previous(rho);
+
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      double  boussi_coef = 1;
+
+      for (int i = 0; i < nsp->n_boussinesq_terms; i++) {
+
+        cs_navsto_param_boussinesq_t  *bp = nsp->boussinesq_param + i;
+        boussi_coef += -bp->beta*(bp->var[c_id] - bp->var0);
+
+      } /* Loop on Boussinesq terms */
+
+      rho->val[c_id] = nsp->mass_density->ref_value * boussi_coef;
+
+    } /* Loop on cells */
+
+  } /* Mass density */
+
   if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_GRADIENT) {
 
     cs_field_t  *velocity_gradient = cs_field_by_name("velocity_gradient");

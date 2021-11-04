@@ -230,6 +230,15 @@ typedef struct {
 
   cs_field_t                 *kinetic_energy;
 
+  /*! \var mass_density
+   *  Mass density
+   *
+   *  Available when a Boussinesq approximation is on and a postprocessing has
+   *  been requested. Pointer to a scalar-valued \ref cs_field_t
+   */
+
+  cs_field_t                 *mass_density;
+
   /*! \var vorticity
    *  Vorticity of the velocity field defined as curl(velocity)
    *  Pointer to a vector-valued \ref cs_field_t
