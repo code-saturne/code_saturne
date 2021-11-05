@@ -1147,7 +1147,6 @@ do ifac = 1, nfabor
           enddo
 
         else if (iclptr.eq.1) then
-
           do ii = 1, 6
             if (ii.ne.isou) then
               fcoefa(isou) = fcoefa(isou) + alpha(isou,ii) * rijipb(ifac,ii)

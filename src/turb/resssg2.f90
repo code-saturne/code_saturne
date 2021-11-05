@@ -253,11 +253,11 @@ d1s2   = 1.d0/2.d0
 d1s3   = 1.d0/3.d0
 d2s3   = 2.d0/3.d0
 
-do isou = 1, 6
+do isou = 1, 3
   deltij(isou) = 1.0d0
-  if (isou.gt.3) then
-    deltij(isou) = 0.0d0
-  endif
+enddo
+do isou = 4, 6
+  deltij(isou) = 0.0d0
 enddo
 !     S as Source, V as Variable
 thets  = thetst

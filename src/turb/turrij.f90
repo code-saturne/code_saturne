@@ -397,17 +397,17 @@ if (f_id_phij.ge.0) then
   d1s3 = 1.0d0/3.0d0
   d2s3 = 2.0d0/3.0d0
   do iel = 1, ncel
-      k=0.5*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
-      P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
-      do isou=1,3
-        cpro_press_correl(isou, iel) = -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel)-d2s3*k)  &
-                                       -crij2*(cpro_produc(isou,iel)-d2s3*P)
-      enddo
-      do isou=4,6
-        cpro_press_correl(isou, iel) = -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel))  &
-                                       -crij2*(cpro_produc(isou,iel))
-      enddo
-   enddo
+    k=0.5*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
+    P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
+    do isou=1,3
+      cpro_press_correl(isou, iel) = -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel)-d2s3*k)  &
+                                     -crij2*(cpro_produc(isou,iel)-d2s3*P)
+    enddo
+    do isou=4,6
+      cpro_press_correl(isou, iel) = -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel))  &
+                                     -crij2*(cpro_produc(isou,iel))
+    enddo
+  enddo
 endif
 
 !===============================================================================

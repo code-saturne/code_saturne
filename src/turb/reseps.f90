@@ -276,7 +276,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
                       + lagr_st_rij(2,iel)                        &
                       + lagr_st_rij(3,iel))
     ! quotient k/eps
-    kseps = 0.5d0 * ( cvara_rij(1,iel)                            &
+    kseps = 0.5d0 * (  cvara_rij(1,iel)                           &
                      + cvara_rij(2,iel)                           &
                      + cvara_rij(3,iel))                          &
                    / cvara_ep(iel)

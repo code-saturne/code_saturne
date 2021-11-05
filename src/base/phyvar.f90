@@ -548,6 +548,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
 
     call field_get_val_v(ivarfl(irij), cvar_rij)
 
+    ! EBRSM
     if (iturb.eq.32) then
 
       do iel = 1, ncel
@@ -565,7 +566,32 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
 
       ! Other damping for EBDFM model (see F. Dehoux thesis)
       if (iebdfm.eq.1) then
-        call field_get_val_v(ivstes, vistes)
+        call field_get_val_v(ivstes, vistes) !FIXME one by scalar
+
+        if (irijco.eq.1) then
+          do iel = 1, ncel
+            trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
+            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
+
+            do isou = 1, 6
+              vistes(isou, iel) = rottke*cvar_rij(isou, iel)
+            enddo
+          enddo
+        else
+          do iel = 1, ncel
+            trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
+            ttke  = trrij/cvar_ep(iel)
+            ! Durbin scale
+            xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
+            xttdrb = max(ttke,xttkmg)
+            !FIXME xttdrbt = xttdrb*sqrt((1.d0-alpha3)*PR/XRH + alpha3)
+            rottke  = csrij * crom(iel) * xttdrb * cell_is_active(iel)
+
+            do isou = 1, 6
+              vistes(isou, iel) = rottke*cvar_rij(isou, iel)
+            enddo
+          enddo
+        endif
 
       ! No damping with Durbing scale for the scalar
       else if (iggafm.eq.1) then
@@ -594,38 +620,16 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
       enddo
     endif
 
-    ! EBRSM Terms handled differently for coupled and uncoupled models
+  else
 
-    ! EBRSM
-    if (iturb.eq.32 .and. iebdfm.eq.1) then
-
-      ! Other damping for EBDFM model (see F. Dehoux thesis)
-      if (irijco.eq.1) then
-        do iel = 1, ncel
-          trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-          rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
-
-          do isou = 1, 6
-            vistes(isou, iel) = rottke*cvar_rij(isou, iel)
-          enddo
-        enddo
-      else
-        do iel = 1, ncel
-          trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-          ttke  = trrij/cvar_ep(iel)
-          ! Durbin scale
-          xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
-          xttdrb = max(ttke,xttkmg)
-          !FIXME xttdrbt = xttdrb*sqrt((1.d0-alpha3)*PR/XRH + alpha3)
-          rottke  = csrij * crom(iel) * xttdrb * cell_is_active(iel)
-
-          do isou = 1, 6
-            vistes(isou, iel) = rottke*cvar_rij(isou, iel)
-          enddo
-        enddo
-      endif
-
-    endif
+    do iel = 1, ncel
+      visten(1,iel) = 0.d0
+      visten(2,iel) = 0.d0
+      visten(3,iel) = 0.d0
+      visten(4,iel) = 0.d0
+      visten(5,iel) = 0.d0
+      visten(6,iel) = 0.d0
+    enddo
 
   endif ! itytur = 3
 endif
