@@ -1690,7 +1690,7 @@ cs_parameters_check(void)
   if (cs_glob_porous_model == 3) { /* integral formulation */
     const int imrgra_vals[5] ={0, 4, 5, 6, 7};
 
-    cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
+    cs_parameters_is_in_list_int(CS_WARNING,
                                _("while reading porous model,\n"
                                  "integral formulation "
                                  "(cs_glob_porous_model=3) "
