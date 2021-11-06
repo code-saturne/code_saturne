@@ -250,7 +250,6 @@ double precision, dimension(:,:,:), pointer :: coefbu, cofbfu, cfbale, clbale
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:,:), pointer :: coefav, cofafv
 double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
-double precision, dimension(:), pointer :: cofadp, cofbdp
 double precision, dimension(:,:), pointer :: coefats, cofafts, cofadts
 double precision, dimension(:,:,:), pointer :: cofbdts, coefbts, cofbfts
 double precision, dimension(:,:), pointer :: vel, vela
