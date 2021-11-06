@@ -134,8 +134,7 @@ integer          icvflb
 integer          ivoid(1)
 integer          t2v(3,3)
 integer          iv2t(6), jv2t(6)
-integer          f_id
-integer          key_t_ext_id
+integer          key_t_ext_id, f_id
 integer          iroext
 
 double precision trprod, trrij
@@ -161,8 +160,8 @@ double precision ceps_impl, cphi3impl, cphiw_impl
 double precision impl_drsm(6,6)
 double precision implmat2add(3,3)
 double precision impl_lin_cst, impl_id_cst
-double precision grav(3)
 double precision gkks3
+double precision grav(3)
 double precision, dimension(3,3) :: cvara_r
 
 character(len=80) :: label
@@ -964,10 +963,7 @@ if (iand(vcopt%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
 
   iwarnp = vcopt%iwarni
 
-  call vitens &
- ( viscce , iwarnp ,             &
-   weighf , weighb ,             &
-   viscf  , viscb  )
+  call vitens(viscce, iwarnp, weighf, weighb, viscf, viscb)
 
 ! Scalar diffusivity
 else

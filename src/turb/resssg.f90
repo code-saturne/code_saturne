@@ -123,7 +123,7 @@ double precision rovsdt(6,6,ncelet)
 
 ! Local variables
 
-integer          iel, isou, jsou, jvar
+integer          iel, isou, jsou
 integer          ii    , jj    , kk    , iii   , jjj
 integer          iflmas, iflmab
 integer          iwarnp
@@ -132,7 +132,7 @@ integer          st_prv_id
 integer          iprev , inc, iccocg, ll
 integer          icvflb
 integer          ivoid(1)
-integer          key_t_ext_id
+integer          key_t_ext_id, f_id
 integer          iroext
 
 double precision trprod, trrij
@@ -147,12 +147,13 @@ double precision pij, phiij1, phiij2, epsij
 double precision phiijw, epsijw
 double precision ccorio
 double precision rctse
+double precision grav(3)
 double precision, dimension(3,3) :: cvara_r
 
 character(len=80) :: label
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2
-double precision, allocatable, dimension(:) :: w7
+double precision, allocatable, dimension(:,:), target :: buoyancy
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:,:) :: gatinj, viscce
 double precision, allocatable, dimension(:,:) :: weighf
@@ -164,8 +165,9 @@ double precision, dimension(:,:,:), pointer :: coefbp, cofbfp
 double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvar_var, cvara_var
-double precision, dimension(:,:), pointer:: c_st_prv, lagr_st_rij
 double precision, dimension(:), pointer :: viscl, visct
+double precision, dimension(:,:), pointer:: c_st_prv, lagr_st_rij
+double precision, dimension(:,:), pointer :: cpro_buoyancy
 
 type(var_cal_opt) :: vcopt
 type(var_cal_opt), target :: vcopt_loc
@@ -649,34 +651,36 @@ endif
 
 if (igrari.eq.1) then
 
-  ! Allocate a work array
-  allocate(w7(ncelet))
+  grav(1) = gx
+  grav(2) = gy
+  grav(3) = gz
+  call field_get_id_try("rij_buoyancy", f_id)
+  if (f_id.ge.0) then
+    call field_get_val_v(f_id, cpro_buoyancy)
+  else
+    ! Allocate a work array
+    allocate(buoyancy(6,ncelet))
+    cpro_buoyancy => buoyancy
+  endif
+
+  call rijthe2(gradro, cpro_buoyancy)
 
   do isou = 1, 6
-
-    do iel = 1, ncel
-      w7(iel) = 0.d0
-    enddo
-
-    jvar = ivar + isou - 1
-    call rijthe(jvar, gradro, w7)
-
     ! If we extrapolate the source terms: previous ST
     if (st_prv_id.ge.0) then
       do iel = 1, ncel
-        c_st_prv(isou,iel) = c_st_prv(isou,iel) + w7(iel)
+        c_st_prv(isou,iel) = c_st_prv(isou,iel) + cpro_buoyancy(isou,iel) * cell_f_vol(iel)
       enddo
     ! Otherwise smbr
     else
       do iel = 1, ncel
-        smbr(isou,iel) = smbr(isou,iel) + w7(iel)
+        smbr(isou,iel) = smbr(isou,iel) + cpro_buoyancy(isou,iel) * cell_f_vol(iel)
       enddo
     endif
-
   enddo
 
   ! Free memory
-  deallocate(w7)
+  if (allocated(buoyancy)) deallocate(buoyancy)
 
 endif
 
@@ -700,10 +704,7 @@ if (iand(vcopt%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
 
   iwarnp = vcopt%iwarni
 
-  call vitens &
- ( viscce , iwarnp ,             &
-   weighf , weighb ,             &
-   viscf  , viscb  )
+  call vitens(viscce, iwarnp, weighf, weighb, viscf, viscb)
 
 ! Scalar diffusivity
 else
