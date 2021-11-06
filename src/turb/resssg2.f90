@@ -301,11 +301,14 @@ if (st_prv_id.ge.0) then
       tuexpr = c_st_prv(isou,iel)
       ! For continuation and the next time step
       c_st_prv(isou,iel) = smbr(isou,iel)
+
+      smbr(isou,iel) = - thets*tuexpr
       ! Second member of the previous time step
-      ! We suppose -rovsdt > 0: we implicite
+      ! We suppose -rovsdt > 0: we implicit
       !    the user source term (the rest)
       do jsou = 1, 6
-        smbr(isou,iel) = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel)  - thets*tuexpr
+        smbr(isou,iel) = smbr(isou, iel) &
+                       + rovsdt(jsou,isou,iel)*cvara_var(jsou,iel)
         ! Diagonal
         rovsdt(jsou,isou,iel) = - thetv*rovsdt(jsou,isou,iel)
       enddo
