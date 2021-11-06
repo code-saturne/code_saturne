@@ -345,8 +345,7 @@ if (.true.) then
       iok = iok + 1
     endif
 
-    !     En v2-f, phi-fbar ou BL-v2/k, on verifie aussi que phi est
-    !     compris entre 0 et 2
+    ! For v2-f, phi-fbar or BL-v2/k, check that phi is between 0 and 2.
     if (itytur.eq.5) then
 
       call field_get_val_s(ivarfl(iphi), cvar_phi)
@@ -362,15 +361,14 @@ if (.true.) then
         call parmax (xphmax)
       endif
 
-      !     Par coherence avec clpv2f, on ne clippe qu'a zero et pas a 2
-      !              IF(XPHMIN.LT.0.D0 .OR. XPHMAX.GT.2.D0) THEN
-      if(xphmin.lt.0.d0) then
+      ! For consistency with cs_turbulence_v2f.c:_clip_v2f,
+      ! we clip only to 0 and not to 2
+      if (xphmin.lt.0.d0) then
         write(nfecra,3021) xphmin,xphmax
         iok = iok + 1
       endif
 
-      !     En v2-f, BL-v2/k, on verifie aussi que alpha est
-      !     compris entre 0 et 1
+      ! For v2-f, BL-v2/k, also check that alpha is between 0 and 1.
       if (iturb.eq.51) then
         call field_get_val_s(ivarfl(ial), cvar_al)
         xalmin = cvar_al(1)

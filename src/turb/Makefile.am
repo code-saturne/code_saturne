@@ -101,7 +101,6 @@ cs_turbulence_v2f.c \
 cs_clip_ke.c \
 clpalp.f90 \
 clprij.f90 \
-clpv2f.f90 \
 cnlevm.f90 \
 divrit.f90 \
 resalp.f90 \

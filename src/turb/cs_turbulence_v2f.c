@@ -46,6 +46,7 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 
+#include "cs_array.h"
 #include "cs_blas.h"
 #include "cs_convection_diffusion.h"
 #include "cs_equation.h"
@@ -63,14 +64,11 @@
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_prototypes.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
-
-extern void
-cs_clip_v2f(cs_lnum_t  n_cells,
-            int        verbosity);
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -104,6 +102,139 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Clipping of \f$ v^2\f$ and \f$ \phi \f$ for the Bl v2/k
+ * turbulence model (no clipping on \f$ f \f$).
+ *
+ *  \param[in]  n_cells       number of cells
+ *  \param[in]  verbosity     verbosity level
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_clip_v2f(cs_lnum_t  n_cells,
+          int        verbosity)
+{
+  cs_real_t *cvar_phi = CS_F_(phi)->val;
+
+  int kclipp = cs_field_key_id("clipping_id");
+
+  cs_gnum_t nclp[2] =  {0, 0};  /* Min and max clipping values respectively */
+
+  /* Postprocess clippings ? */
+  cs_real_t *cpro_phi_clipped = NULL;
+  int clip_phi_id = cs_field_get_key_int(CS_F_(phi), kclipp);
+  if (clip_phi_id > -1) {
+    cpro_phi_clipped = cs_field_by_id(clip_phi_id)->val;
+    cs_array_set_value_real(n_cells, 1, 0, cpro_phi_clipped);
+  }
+
+  cs_real_t *cvar_al = NULL, *cpro_a_clipped = NULL;
+  if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    cvar_al = CS_F_(alp_bl)->val;
+    int  clip_a_id = cs_field_get_key_int(CS_F_(alp_bl), kclipp);
+    if (clip_a_id > -1) {
+      cpro_a_clipped = cs_field_by_id(clip_a_id)->val;
+      cs_array_set_value_real(n_cells, 1, 0, cpro_a_clipped);
+    }
+  }
+
+  /* Store Min and Max for logging */
+
+  cs_real_t vmin[2] = {cs_math_big_r, cs_math_big_r};
+  cs_real_t vmax[2] = {-cs_math_big_r, -cs_math_big_r};
+
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    cs_real_t var = cvar_phi[i];
+    vmin[0] = cs_math_fmin(vmin[0], var);
+    vmax[0] = cs_math_fmax(vmax[0], var);
+  }
+
+  if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+    vmin[1] = cs_math_big_r;
+    vmax[1] = -cs_math_big_r;
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
+      cs_real_t var = cvar_al[i];
+      vmin[1] = cs_math_fmin(vmin[1], var);
+      vmax[1] = cs_math_fmax(vmax[1], var);
+    }
+  }
+
+  cs_parall_min(2, CS_REAL_TYPE, vmin);
+  cs_parall_max(2, CS_REAL_TYPE, vmax);
+
+  /* For the phi-fbar and BL-v2 / k model, identification of the phi values
+     greater than 2 and phi clipping in absolute value for negative values
+     ---------------------------------------------------------------------- */
+
+  /* Identification of values ​​greater than 2, for display only */
+
+  if (verbosity > 1) {
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
+      if (cvar_phi[i] > 2)
+        nclp[1] += 1;
+    }
+  }
+
+  /* Clipping in absolute value for negative values */
+
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    if (cvar_phi[i] < 0) {
+      if (cpro_phi_clipped != NULL)
+        cpro_phi_clipped[i] = cvar_phi[i];
+      cvar_phi[i] = -cvar_phi[i];
+      nclp[0] += 1;
+    }
+  }
+
+  cs_parall_counter(nclp, 2);
+
+  if (nclp[1] > 0)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("Warning: variable phi, maximum physical value of 2 "
+                    "exceeded for, %llu cells"),
+                  (unsigned long long)nclp[1]);
+
+  cs_lnum_t nclpmn[1] = {nclp[0]}, nclpmx[1] = {nclp[1]};
+  cs_log_iteration_clipping_field(CS_F_(phi)->id,
+                                  nclpmn[0], 0,
+                                  vmin, vmax,
+                                  nclpmn, nclpmx);
+
+  /* For the BL-v2 / k model, clipping from alpha to 0 for negative values
+     and a 1 for values ​​greater than 1.
+     --------------------------------------------------------------------- */
+
+  if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+
+    nclp[0] = 0; nclp[1] = 0;
+
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
+      if (cvar_al[i] < 0) {
+        if (cpro_a_clipped != NULL)
+          cpro_a_clipped[i] = -cvar_al[i];
+        cvar_al[i] = 0;
+        nclp[0] += 1;
+      }
+      if (cvar_al[i] > 1) {
+        if (cpro_a_clipped != NULL)
+          cpro_a_clipped[i] = 1.0 - cvar_al[i];
+        cvar_al[i] = 1.0;
+        nclp[1] += 1;
+      }
+    }
+
+    cs_parall_counter(nclp, 2);
+
+    nclpmn[1] = nclp[0], nclpmx[1] = nclp[1];
+    cs_log_iteration_clipping_field(CS_F_(alp_bl)->id,
+                                    nclpmn[0], nclpmx[0],
+                                    vmin+1, vmax+1,
+                                    nclpmn, nclpmx);
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -508,7 +639,6 @@ _solve_eq_fbr_al(const int         istprv,
  * \param[in]        crom         density at current time step
  * \param[in]        cromo        density at previous (or current) time step
  * \param[in]        viscl        lam. visc. at current time step
- * \param[in]        cpro_pcvlo   lam. visc. at previous (or current) time step
  * \param[in]        prdv2f       storage table of term
  * \param[in]        grad_pk      Array to store the term grad(phi).grad(k)
  *                                prod of turbulence for the v2f
@@ -530,7 +660,6 @@ _solve_eq_phi(const int           istprv,
               const cs_real_t     crom[],
               const cs_real_t     cromo[],
               const cs_real_t     viscl[],
-              const cs_real_t     cpro_pcvlo[],
               const cs_real_t     prdv2f[],
               const cs_real_t     grad_pk[],
               const cs_real_t     i_massflux[],
@@ -691,7 +820,6 @@ _solve_eq_phi(const int           istprv,
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       const cs_real_t x_k = cvara_k[i];
       const cs_real_t x_rho = cromo[i];
-      const cs_real_t x_nu = viscl[i] / crom[i];
 
       /* The term in f_bar is taken at the current and not previous time step
        * ... a priori better.
@@ -1031,7 +1159,6 @@ cs_turbulence_v2f(cs_lnum_t         ncesmp,
                 crom,
                 cromo,
                 viscl,
-                cpro_pcvlo,
                 prdv2f,
                 grad_pk,
                 imasfl,
@@ -1046,7 +1173,7 @@ cs_turbulence_v2f(cs_lnum_t         ncesmp,
 
   /* Clipping */
 
-  cs_clip_v2f(n_cells, eqp_phi->verbosity);
+  _clip_v2f(n_cells, eqp_phi->verbosity);
 }
 
 /*----------------------------------------------------------------------------*/
