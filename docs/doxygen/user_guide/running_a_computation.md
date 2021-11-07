@@ -424,7 +424,7 @@ Running the solver directly {#sec_ug_cs_solver_direct}
 ===========================
 
 In the standard cases, the compilation of code_saturne main program (`cs_solver`)
-nd its execution are entirely controlled by the launch script (using the `code_saturne run`
+and its execution are entirely controlled by the launch script (using the `code_saturne run`
 or `code_saturne submit` command). The command line options for (`cs_solver`) are passed
 through user modifiable variables at the beginning of the `cs_user_scripts.py` file,
 if present (if needed, it may be copied from a case's `DATA/REFERENCE` subdirectory to its
