@@ -1,0 +1,23 @@
+#!/bin/sh
+
+PREFIX=`dirname $0`
+PREFIX="$PREFIX/.."
+
+RMBDIR=tmp_rmb
+
+mkdir $RMBDIR || exit 1
+
+for file in $PREFIX/src/*.h $PREFIX/src/*.c $PREFIX/tests/*.c
+do
+  tmpfile=`basename $file`
+  sed -e 's/ *$//' -e 's/	/        /g' $file > $RMBDIR/$tmpfile
+  diff $file $RMBDIR/$tmpfile > /dev/null 2>&1
+  if [ $? = 1 ]
+  then
+    echo $file
+    mv $RMBDIR/$tmpfile $file
+  fi
+done
+
+\rm -rf $RMBDIR
+

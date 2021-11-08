@@ -1,0 +1,137 @@
+/*============================================================================
+ * Main Code_Saturne documentation page
+ *============================================================================*/
+
+/*
+  This file is part of the PLE (Parallel Location and Exchange) library.
+
+  Copyright (C) 2010-2021 EDF S.A.
+
+  The PLE library is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by the
+  Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+
+  The PLE library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public License
+  along with this library; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+
+/*-----------------------------------------------------------------------------*/
+
+#include <ple_locator.h>
+
+/*!
+  \mainpage PLE (Parallel Location and Exchange) documentation
+
+  \anchor mainpage_ple
+
+  \section intro Introduction
+
+  PLE is a libary designed to simplify coupling of distributed parallel
+  computational codes. It is maintained as a part of Code_Saturne,
+  EDF's general purpose Computational Fluid Dynamics (CFD) software,
+  but it may also be used with other tools, and is distributed under
+  a more permissive licence (LGPL instead of GPL).
+
+  PLE provides support for 2 categories of tasks: synchronizing
+  parallel codes at predifined points, and enabling parallel mapping
+  of points to meshes, and transfer of variables using this mapping.
+
+  \subsection ple_coupling PLE Coupling API
+
+  The ple_coupling_...() functions allow identifying applications and
+  defining MPI communicators necessary to the ple_locator_...()
+  functions, as well as providing each of a set of coupled codes
+  with info on the other code's time steps, convergence status, and
+  other synchronization data at predifined points (usually once per
+  time step).
+
+  \subsection ple_locator PLE Locator subset
+
+  The ple_locator_...() functions allow mapping points to a mesh
+  in parallel, given serial functions providing this functionnality
+  for the associated data structures, then exchanging variables using
+  this mapping.
+
+  \subsection example Example
+
+  For example, consider the case described in the following figure. Fluid flows
+  along a channel (from left to right), and heat is exchanged at the domain
+  boundaries on the lower side of the channel. In addition, in this example,
+  we add a separate inlet channel, in which we will use a periodicity boundary
+  condition to simulate an infinite upstream channel, and based the inlet flow
+  conditions on those along a section inside the inlet domain.
+
+  \image html ple_coupling_example_domains.svg "Example coupling case"
+
+  For clarity, we will limit ourselves to this simple case, which allows
+  illustrating the main concepts without adding unneeded complexity.
+
+  \subsubsection ple_ex_coupling Communicators and ple_coupling API.
+
+  Let us in addition assume that we will assign the first /a np_inlet MPI
+  processes to the inlet domain, the second /a np_fluid processes to the fluid
+  domain, and the last /a np_solid processes to the solid domain. All
+  computational codes are started simultaneously by the MPI runtime environment.
+
+  - Each simulation tool/domain will have access to the top-level
+    (usually \c MPI_COMM_WORLD) communicator.
+  - For simulation tools parallelized using MPI, a communicator local to that
+    domain is needed for all parallel operations not directly involving the
+    other domains. This “main” communicator used by each tool is a subset of the
+    top communicator. We refer to it here as \c comm_domain, though each tool may
+    of course use its own variable name to refer to this.
+  - To communicate between themselves, coupled domains will build additional
+    communicators involving only them.
+
+  So finally, each domain can use the following communicators
+
+  1. The inlet domain can access the common top-level and local \c comm_domain
+     communicator (including ranks <em>[0, np_inlet[</em> of the top
+     communicator).
+     It will also use a communicator for exchanges with the fluid domain,
+     including ranks <em>[0, np_inlet + np_fluid[</em> of the top communicator.
+  2. The fluid domain can access the common top-level and local \c comm_domain
+     communicator (including ranks <em>[np_inlet , np_inlet + np_fluid[</em> of
+     the top communicator).
+     It will also use a communicator for exchanges with the inlet domain,
+     including ranks <em>[0, np_inlet + np_fluid[</em> of the top communicator,
+     and a different communicator for exchanges with the solid domain, including ranks
+     <em>[np_inlet + np_fluid, np_inlet + np_fluid + np_solid[</em>.
+  3. The solid domain can access the common top-level and local \c comm_domain
+     communicator (including ranks
+     <em>[np_inlet + np_fluid, np_inlet + np_fluid + np_solid[</em> of the
+     top communicator).
+     It will also use a communicator for exchanges with the fluid domain,
+     including ranks <em>[np_inlet + np_fluid, np_inlet + np_fluid + np_solid[</em>
+     of the main communicator.
+
+  These steps are shown on the following figure, with collective operations highlighted
+  using frames.
+
+  \image html ple_coupling_example_init.svg "Example initialization and MPI communicators"
+
+  Note also that when ending a computation, additional communicators must be freed
+  and the coupling structures finalized and destroyed using the appropriate
+  functions.
+
+  \subsubsection ple_ex_locator Mesh location, variable exchange, and ple_locator API.
+
+  We will then locate discretization points from computational domains relative
+  to their coupled domains, using a \ref ple_locator_t object, and the
+  \ref ple_locator_set_mesh and \ref ple_locator_exchange_point_var functions.
+  These steps are shown on the next figure, with collective operations highlighted
+  using frames. Note that use of a global \ref ple_coupling_mpi_set_t
+  synchronization object is not required, but when we have more than two domains,
+  such as here, it can be very practical so as to avoid deadlocks or crashes due
+  to computations stopping at different time steps.
+
+  \image html ple_coupling_example_exchange.svg "Example exchanges and MPI communicators"
+
+*/
