@@ -612,24 +612,36 @@ _compute_enthalpy(const cs_cdo_quantities_t    *quant,
 {
   assert(temp != NULL && g_l != NULL && enthalpy != NULL);
 
+  if (quant->n_cells < 1)
+    return;
+
+  cs_real_t  rho_c, cp_c;
+
   bool  rho_is_uniform = cs_property_is_uniform(rho);
   bool  cp_is_uniform = cs_property_is_uniform(cp);
 
-  cs_real_t  rho_c = 0., cp_c = 0.; /* Avoid a compiler warning */
+  /* Use cell with id 0 to evaluate the properties */
+
+  if (rho_is_uniform)
+    rho_c = cs_property_get_cell_value(0, t_eval, rho);
+
+  if (cp_is_uniform)
+    cp_c = cs_property_get_cell_value(0, t_eval, cp);
 
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
 
-    /* Retrieve the value of the properties */
-    if (!rho_is_uniform || c == 0)
+    /* Retrieve the value of the properties if non uniform */
+
+    if (!rho_is_uniform)
       rho_c = cs_property_get_cell_value(c, t_eval, rho);
-    if (!cp_is_uniform || c == 0)
+    if (!cp_is_uniform)
       cp_c = cs_property_get_cell_value(c, t_eval, cp);
 
-    enthalpy[c] =
+    enthalpy[c] = rho_c *
       /* part linked to the variation of  | part linked to the phase change
          temperature                      |                                 */
-      rho_c * cp_c * (temp[c] - temp_ref) + rho_c * latent_heat * g_l[c];
+      ( cp_c * (temp[c] - temp_ref)       +  latent_heat * g_l[c] );
 
   } /* Loop on cells */
 
@@ -2369,24 +2381,33 @@ _update_thm_stefan(const cs_mesh_t             *mesh,
                    const cs_cdo_quantities_t   *quant,
                    const cs_time_step_t        *ts)
 {
-  CS_UNUSED(mesh);
+  if (mesh->n_cells < 1)
+    return;
+
+  cs_real_t  rho_c, rhoLovdt;
 
   cs_solidification_t  *solid = cs_solidification_structure;
-
-  bool  rho_is_uniform = cs_property_is_uniform(solid->mass_density);
-
-  cs_real_t  rho_c = 0., rhoLovdt = 0.; /* Avoid a compiler warning */
 
   const cs_real_t  Lovdt = solid->latent_heat/ts->dt[0];
   const cs_real_t  *g_l = solid->g_l_field->val;
   const cs_real_t  *g_l_pre = solid->g_l_field->val_pre;
   const cs_real_t  *vol = quant->cell_vol;
 
+  bool  rho_is_uniform = cs_property_is_uniform(solid->mass_density);
+
+  /* Use the first cell to set the value */
+
+  if (rho_is_uniform) {
+    rho_c = cs_property_get_cell_value(0, ts->t_cur, solid->mass_density);
+    rhoLovdt = rho_c * Lovdt;
+  }
+
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
 
     /* Retrieve the value of the properties */
-    if (!rho_is_uniform || c == 0) {
+
+    if (!rho_is_uniform) {
       rho_c = cs_property_get_cell_value(c, ts->t_cur, solid->mass_density);
       rhoLovdt = rho_c * Lovdt;
     }
@@ -2396,6 +2417,7 @@ _update_thm_stefan(const cs_mesh_t             *mesh,
       continue; /* No update: 0 by default */
 
     /* reaction_coef_array is set to zero. Only the source term is updated */
+
     if (fabs(g_l[c] - g_l_pre[c]) > 0)
       solid->thermal_source_term_array[c] = rhoLovdt*vol[c]*(g_l_pre[c]-g_l[c]);
     else
@@ -2423,8 +2445,12 @@ _update_gl_stefan(const cs_mesh_t             *mesh,
                   const cs_cdo_quantities_t   *quant,
                   const cs_time_step_t        *ts)
 {
-  CS_UNUSED(mesh);
   CS_UNUSED(ts);
+
+  if (mesh->n_cells < 1)
+    return;
+
+  cs_real_t  cp_c, cpovL;
 
   cs_solidification_t  *solid = cs_solidification_structure;
   cs_solidification_stefan_t  *model =
@@ -2432,17 +2458,25 @@ _update_gl_stefan(const cs_mesh_t             *mesh,
 
   bool  cp_is_uniform = cs_property_is_uniform(solid->cp);
 
-  cs_real_t  cp_c = 0, cpovL = 0.; /* Avoid a compiler warning */
   cs_real_t  *temp = solid->temperature->val;
   cs_real_t  *g_l = solid->g_l_field->val;
 
+  /* Use the first cell to set the value */
+
+  if (cp_is_uniform) {
+    cp_c = cs_property_get_cell_value(0, ts->t_cur, solid->cp);
+    cpovL = cp_c/solid->latent_heat;
+  }
+
   /* Update g_l values in each cell as well as the cell state and the related
      count */
+
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
   for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
 
     /* Retrieve the value of the property */
-    if (!cp_is_uniform || c == 0) {
+
+    if (!cp_is_uniform) {
       cp_c = cs_property_get_cell_value(c, ts->t_cur, solid->cp);
       cpovL = cp_c/solid->latent_heat;
     }
@@ -2456,6 +2490,7 @@ _update_gl_stefan(const cs_mesh_t             *mesh,
       if (g_l[c] < 1) {  /* Not in a stable state */
 
         /* Compute a new g_l */
+
         g_l[c] += cpovL * (temp[c] - model->t_change);
         if (g_l[c] < 1) {
 
@@ -2484,6 +2519,7 @@ _update_gl_stefan(const cs_mesh_t             *mesh,
       if (g_l[c] > 0) { /* Not in a stable state */
 
         /* Compute a new g_l */
+
         g_l[c] += cpovL * (temp[c] - model->t_change);
 
         if (g_l[c] < 0) {       /* Undershoot of the liquid fraction */
