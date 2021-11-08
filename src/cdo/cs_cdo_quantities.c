@@ -1008,16 +1008,28 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   cs_timer_t t0 = cs_timer_time();
 
   /* Sanity checks */
+
   assert(topo != NULL && topo->c2f != NULL);
 
   cs_cdo_quantities_t  *cdoq = _create_cdo_quantities();
 
   /* Compute the volume of the whole domain */
+
   cdoq->vol_tot = mq->tot_vol;
 
   /* Is there a removal of boundary faces to speed-up 2D computations */
-  if (m->n_g_b_faces_all > m->n_g_b_faces)
+
+  if (m->n_g_b_faces_all > m->n_g_b_faces) {
+
     cdoq->remove_boundary_faces = true;
+
+    /* The computation of the cell barycenter with the Mirtich algorithm is
+       false when boundary faces are removed. Switch to a correct one. */
+
+    if (cs_cdo_cell_center_algo == CS_CDO_QUANTITIES_BARYC_CENTER)
+      cs_cdo_cell_center_algo = CS_CDO_QUANTITIES_MEANV_CENTER;
+
+  }
 
   /* 1) Initialize shared quantities */
   /*    ============================ */
@@ -1026,6 +1038,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   /* ----------------------- */
 
   /* Shared quantities related to faces (interior and border) */
+
   cdoq->n_i_faces = m->n_i_faces;
   cdoq->i_face_normal = mq->i_face_normal;
   cdoq->i_face_center = mq->i_face_cog;
@@ -1062,6 +1075,7 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   cdoq->cell_vol = mq->cell_vol;
 
   /* Compute the cell centers */
+
   switch (cs_cdo_cell_center_algo) {
 
   case CS_CDO_QUANTITIES_SATURNE_CENTER:
@@ -1103,9 +1117,11 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   /*    =============== */
 
   /* Define cs_quant_info_t structure */
+
   _compute_quant_info(cdoq);
 
   /* Monitoring */
+
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
