@@ -2089,6 +2089,262 @@ cs_evaluate_delta_3_square_wc2x_rnorm(const cs_real_t        *array,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the norm ||b - a||**2
+ *         The two arrays are defined at cells and the weigth is the cell
+ *         volume. The computed quantities are synchronized in parallel.
+ *
+ * \param[in]  a   first array
+ * \param[in]  b   second array
+ *
+ * \return the evaluation of ||b - a||**2
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_square_diff_norm(const cs_real_t        *a,
+                             const cs_real_t        *b)
+{
+  const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
+
+ /*
+  * The algorithm used is l3superblock60, based on the article:
+  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+  * 2008 Society for Industrial and Applied Mathematics
+  */
+
+  double  num = 0.;
+
+# pragma omp parallel reduction(+:num) if (n_cells > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n_cells, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
+    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
+    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
+    const cs_lnum_t  blocks_in_sblocks =
+      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double s_num = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double _num = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++)
+          _num += cs_cdo_quant->cell_vol[j] * (b[j] - a[j])*(b[j] - a[j]);
+
+        s_num += _num;
+
+      } /* Loop on blocks */
+
+      num += s_num;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel treatment */
+
+  if (cs_glob_n_ranks > 1) {
+
+    cs_real_t  sums = num;
+    cs_parall_sum(1, CS_REAL_TYPE, &sums);
+    num = sums;
+
+  }
+
+  return (cs_real_t)num;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the norm  ||array - ref||**2 / || ref||**2
+ *         Arrays are defined at cells and the weigth is the cell volume.
+ *         The computed quantities are synchronized in parallel.
+ *
+ * \param[in]  array   array to analyze
+ * \param[in]  ref     array used for normalization and difference
+ *
+ * \return the normalized square weighted L2-norm of the difference between the
+ *         two arrays
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_delta_square_norm(const cs_real_t        *array,
+                              const cs_real_t        *ref)
+{
+  const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
+
+ /*
+  * The algorithm used is l3superblock60, based on the article:
+  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+  * 2008 Society for Industrial and Applied Mathematics
+  */
+
+  double  num = 0., denum = 0.;
+
+# pragma omp parallel reduction(+:num) reduction(+:denum) \
+  if (n_cells > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n_cells, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
+    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
+    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
+    const cs_lnum_t  blocks_in_sblocks =
+      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double s_num = 0.0, s_denum = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double _num = 0.0, _denum = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+
+          const cs_real_t  vol_c = cs_cdo_quant->cell_vol[j];
+
+          _num += vol_c * (array[j] - ref[j])*(array[j] - ref[j]);
+          _denum += vol_c * ref[j] * ref[j];
+
+        } /* Loop on block_size */
+
+        s_num += _num;
+        s_denum += _denum;
+
+      } /* Loop on blocks */
+
+      num += s_num;
+      denum += s_denum;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel treatment */
+
+  if (cs_glob_n_ranks > 1) {
+
+    cs_real_t  sums[2] = {num, denum};
+    cs_parall_sum(2, CS_REAL_TYPE, sums);
+    num = sums[0], denum = sums[1];
+
+  }
+
+  if (fabs(denum) > cs_math_zero_threshold)
+    num /= denum;
+
+  return (cs_real_t)num;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the norm of an array defined at cells. The weigth is the cell
+ *         volume. The computed quantity is synchronized in parallel.
+ *
+ * \param[in]  array   array to analyze
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_square_norm(const cs_real_t        *array)
+{
+  const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
+
+ /*
+  * The algorithm used is l3superblock60, based on the article:
+  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+  * 2008 Society for Industrial and Applied Mathematics
+  */
+
+  double  num = 0.;
+
+# pragma omp parallel reduction(+:num) if (n_cells > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(n_cells, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
+    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
+    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
+    const cs_lnum_t  blocks_in_sblocks =
+      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double s_num = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double _num = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++)
+          _num += cs_cdo_quant->cell_vol[j] * array[j]*array[j];
+
+        s_num += _num;
+
+      } /* Loop on blocks */
+
+      num += s_num;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel treatment */
+
+  if (cs_glob_n_ranks > 1) {
+
+    cs_real_t  sum = num;
+    cs_parall_sum(1, CS_REAL_TYPE, &sum);
+    num = sum;
+
+  }
+
+  return (cs_real_t)num;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the value related to each DoF in the case of a density field
  *         The value defined by the analytic function is by unity of volume
  *

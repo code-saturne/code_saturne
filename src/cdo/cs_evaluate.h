@@ -255,6 +255,55 @@ cs_evaluate_delta_3_square_wc2x_rnorm(const cs_real_t        *array,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the norm ||b - a||**2
+ *         The two arrays are defined at cells and the weigth is the cell
+ *         volume. The computed quantities are synchronized in parallel.
+ *
+ * \param[in]  a   first array
+ * \param[in]  b   second array
+ *
+ * \return the evaluation of ||b - a||**2
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_square_diff_norm(const cs_real_t        *a,
+                             const cs_real_t        *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the norm  ||array - ref||**2 / || ref||**2
+ *         Arrays are defined at cells and the weigth is the cell volume.
+ *         The computed quantities are synchronized in parallel.
+ *
+ * \param[in]  array   array to analyze
+ * \param[in]  ref     array used for normalization and difference
+ *
+ * \return the normalized square weighted L2-norm of the difference between the
+ *         two arrays
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_delta_square_norm(const cs_real_t        *array,
+                              const cs_real_t        *ref);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the norm of an array defined at cells. The weigth is the cell
+ *         volume. The computed quantity is synchronized in parallel.
+ *
+ * \param[in]  array   array to analyze
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_square_norm(const cs_real_t        *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the value related to each DoF in the case of a density field
  *         The value defined by the analytic function is by unity of volume
  *
