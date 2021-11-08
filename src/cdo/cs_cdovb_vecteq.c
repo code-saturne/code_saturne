@@ -509,6 +509,16 @@ _vvb_apply_weak_bc(const cs_equation_param_t     *eqp,
 {
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
+    /* Neumann boundary conditions:
+     * The common practice is to define Phi_neu = - lambda * \grad(u) . n_fc
+     * An outward flux is a positive flux whereas an inward flux is negative
+     * The minus just above implies the minus just below */
+
+    if (csys->has_nhmg_neumann) {
+      for (short int i  = 0; i < 3*cm->n_vc; i++)
+        csys->rhs[i] -= csys->neu_values[i];
+    }
+
     /* The enforcement of the Dirichlet has to be done after all
        other contributions */
     if (cs_equation_param_has_diffusion(eqp)) {

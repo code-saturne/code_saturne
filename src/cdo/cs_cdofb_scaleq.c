@@ -455,10 +455,14 @@ _sfb_apply_bc_partly(const cs_equation_param_t     *eqp,
    * Operations that have to be performed BEFORE the static condensation */
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
-    /* Neumann boundary conditions */
+    /* Neumann boundary conditions:
+     * The common practice is to define Phi_neu = - lambda * grad(u) . n_fc
+     * An outward flux is a positive flux whereas an inward flux is negative
+     * The minus just above implies the minus just below */
+
     if (csys->has_nhmg_neumann)
       for (short int f  = 0; f < cm->n_fc; f++)
-        csys->rhs[f] += csys->neu_values[f];
+        csys->rhs[f] -= csys->neu_values[f];
 
     /* Weakly enforced Dirichlet BCs for cells attached to the boundary
        csys is updated inside (matrix and rhs) */

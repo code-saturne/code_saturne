@@ -533,10 +533,14 @@ _svcb_apply_weak_bc(const cs_equation_param_t     *eqp,
 
     }
 
-    /* Neumann boundary conditions */
+    /* Neumann boundary conditions:
+     * The common practice is to define Phi_neu = - lambda * grad(u) . n_fc
+     * An outward flux is a positive flux whereas an inward flux is negative
+     * The minus just above implies the minus just below */
+
     if (csys->has_nhmg_neumann) {
       for (short int v  = 0; v < cm->n_vc; v++)
-        csys->rhs[v] += csys->neu_values[v];
+        csys->rhs[v] -= csys->neu_values[v];
     }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1

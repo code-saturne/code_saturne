@@ -472,10 +472,14 @@ _ac_apply_bc_partly(const cs_cdofb_ac_t           *sc,
     /* Update the velocity-block and the right-hand side (part related to the
      * momentum equation). */
 
-    /* Neumann boundary conditions */
+    /* Neumann boundary conditions:
+     * The common practice is to define Phi_neu = - lambda * grad(u) . n_fc
+     * An outward flux is a positive flux whereas an inward flux is negative
+     * The minus just above implies the minus just below */
+
     if (csys->has_nhmg_neumann)
-      for (short int f  = 0; f < 3*cm->n_fc; f++)
-        csys->rhs[f] += csys->neu_values[f];
+      for (short int i  = 0; i < 3*cm->n_fc; i++)
+        csys->rhs[i] -= csys->neu_values[i];
 
     const cs_real_t  pc = sc->pressure->val[cm->c_id];
 

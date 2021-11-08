@@ -492,11 +492,14 @@ _svb_apply_weak_bc(const cs_equation_param_t     *eqp,
 {
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
-    /* Neumann boundary conditions */
+    /* Neumann boundary conditions:
+     * The common practice is to define Phi_neu = - lambda * grad(u) . n_fc
+     * An outward flux is a positive flux whereas an inward flux is negative
+     * The minus just above implies the minus just below */
+
     if (csys->has_nhmg_neumann) {
-      for (short int v  = 0; v < cm->n_vc; v++) {
-          csys->rhs[v] += csys->neu_values[v];
-      }
+      for (short int v  = 0; v < cm->n_vc; v++)
+        csys->rhs[v] -= csys->neu_values[v];
     }
 
     /* Contribution for the advection term: csys is updated inside
