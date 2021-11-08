@@ -186,7 +186,7 @@ cs_evaluate_3_square_weighted_norm(cs_lnum_t               size,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the norm of the difference of two arrays scanne by the same
+ * \brief  Compute the norm of the difference of two arrays scanned by the same
  *         \ref cs_adjacency_t structure with the reference array.
  *         The computed quantities are synchronized in parallel.
  *
