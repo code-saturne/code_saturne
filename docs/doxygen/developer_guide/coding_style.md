@@ -279,9 +279,9 @@ Integer types {#sec_prg_lang_integer_types}
 Several integer types are found in code_saturne:
 
 - `cs_lnum_t` should be used for local entity (i.e. vertex, face,
-      cell) numbers or connectivity. It is a signed integer, normally identical
-      to `int`, but a larger size could be used in the future for very
-      large meshes on shared memory machines.
+   cell) numbers or connectivity. It is a signed integer, normally identical
+   to `int`, but a larger size could be used in the future for very
+   large meshes on shared memory machines.
 
 - `cs_gnum_t` should be used for global entity numbers, usually
    necessary only for I/O aspects. It is an unsigned 32 or 64-bit integer,

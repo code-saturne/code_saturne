@@ -290,6 +290,7 @@ available yet, and is not yet handled by the code_saturne debug scripts,
 though a user familiar with it could of course set it up.
 
 The Valgrind tool suite
+-----------------------
 
 The [Valgrind](https://www.valgrind.org) tool suite allows the detection of
 many memory management (and other) bugs.
@@ -447,6 +448,7 @@ xterm*VT100.geometry: 120x60
 URxvt*geometry:  120x60
 URxvt.font: xft:Terminus:antialias=false:size=10
 ```
+
 Starting code_saturne under a debugger manually
 -----------------------------------------------
 
@@ -454,7 +456,7 @@ Starting the debugger manually in an execution directory avoids creating
 many directories and waiting for pre-processing before each run.
 
 - <span style="color: rgb(48,119,16)">`cd`</span> to the run directory under
-  <span style="color: rgb(0,91,187)>`RESU/<run_id>`</span>.
+  <span style="color: rgb(0,91,187)">`RESU/<run_id>`</span>.
 
 - To determine the code options already configured, run
   <span style="color: rgb(48,119,16)">`cat run_solver`</span> to view the

@@ -1,4 +1,4 @@
-<!--
+!--
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2021 EDF S.A.
@@ -270,7 +270,7 @@ C allows defining additional types, as well as structures.
 
 - `typedef double cs_real_t` defines a `cs_real_t` type
   identical to `double`
-- `typedef cs_real_t cs_real_3_t` defines a `cs_real_3_t` type
+- `typedef cs_real_t cs_real_3_t[3]` defines a `cs_real_3_t` type
   identical to an array of 3 `cs_real_t` types
   - indirectly equivalent to an array of 3 `double` types
 - code_saturne makes use of this to define additional types (see especially
@@ -621,9 +621,11 @@ on several rules.
    - `#include`, `#if`, `#ifdef`, `#ifndef`, `#define`,
 - Allows defining _macros_
   - Using a common coding convention, we write them in capitals.
-    ```{.c}
+
+```{.c}
 #define CS_MIN(a,b)   ((a) < (b) ?  (a) : (b))
-    ```
+```
+
   - No need for `;` at the end of the line (or statement).
 - Do not define macros if another solution is possible
   - Avoid arguments with side effects; for example,
@@ -634,17 +636,20 @@ on several rules.
   useful: `gcc -dM -E - < /dev/null`
 
 - One of the main uses of the preprocessor is conditional compilation
-    ```{.c}
+
+```{.c}
 #if defined (HAVE_MPI)
 ...
 #endif
-    ```
+```
+
 - To disable code containing comments, nothing beats:
     ```{.c}
 #if 0
 ...
 #endif
     ```
+
   - This avoids comment nesting issues, and some editors such as _vim_
     even colorize the block as a comment.
 
