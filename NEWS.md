@@ -3,6 +3,9 @@ Release 7.0.3 (not released yet)
 
 Bug fixes:
 
+- PLE: Fix behavior of location extension. In some cases, the
+  locations were not always updated to the closest points.
+
 - Fix restart when switching from an Rij-epsilon model to
   another turbulence model.
 

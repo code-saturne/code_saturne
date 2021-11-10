@@ -6,7 +6,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2020  EDF S.A.
+  Copyright (C) 2005-2021  EDF S.A.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -602,8 +602,6 @@ _point_extents(int                  dim,
     if (point_list != NULL) {
 
       for (j = 0; j < n_points; j++) {
-        if (location[j] >= 0)
-          continue;
         coord_idx = point_list[j] - point_list_base;
         for (i = 0; i < dim; i++) {
           if (extents[i]       > point_coords[(coord_idx * dim) + i])
@@ -617,8 +615,6 @@ _point_extents(int                  dim,
     else {
 
       for (coord_idx = 0; coord_idx < n_points; coord_idx++) {
-        if (location[coord_idx] >= 0)
-          continue;
         for (i = 0; i < dim; i++) {
           if (extents[i]       > point_coords[(coord_idx * dim) + i])
             extents[i]       = point_coords[(coord_idx * dim) + i];
