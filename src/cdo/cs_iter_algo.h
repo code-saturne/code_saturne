@@ -227,6 +227,23 @@ cs_iter_algo_define(int          verbosity,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check if something wrong happens during the iterative process
+ *
+ * \param[in] func_name    name of the calling function
+ * \param[in] eq_name      name of the equation being solved
+ * \param[in] algo_name    name of the iterative algo. used
+ * \param[in] iai          pointer to the iterative algo. structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_check(const char            *func_name,
+                   const char            *eq_name,
+                   const char            *algo_name,
+                   cs_iter_algo_info_t   *iai);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Test if one has to do one more Picard iteration.
  *         Test if performed on the relative norm on the increment between
  *         two iterations but also on the divergence.

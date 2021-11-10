@@ -48,7 +48,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
@@ -2509,19 +2508,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-
-  if (nl_info->cvg == CS_SLES_DIVERGED)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Picard iteration for equation \"%s\" diverged.\n"
-              " %s: last_iter=%d; last residual=%5.3e\n",
-              __func__, mom_eqp->name, __func__, nl_info->n_algo_iter,
-              nl_info->res);
-  else if (nl_info->cvg == CS_SLES_MAX_ITERATION) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(" %s: Picard algorithm reaches the max. number of iterations\n"
-               " %s: max_iter=%d; last residual=%5.3e\n",
-               __func__, __func__, nl_info->n_max_algo_iter, nl_info->res);
-  }
+  cs_iter_algo_check(__func__, mom_eqp->name, "Picard", nl_info);
 
   /* Now compute/update the velocity and pressure fields */
   _mono_update_related_cell_fields(nsp, sc, mom_eqc);
@@ -2820,18 +2807,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  if (nl_info->cvg == CS_SLES_DIVERGED)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Picard iteration for equation \"%s\" diverged.\n"
-              " %s: last_iter=%d; last residual=%5.3e\n",
-              __func__, mom_eqp->name, __func__, nl_info->n_algo_iter,
-              nl_info->res);
-  else if (nl_info->cvg == CS_SLES_MAX_ITERATION) {
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(" %s: Picard algorithm reaches the max. number of iterations\n"
-               " %s: max_iter=%d; last residual=%5.3e\n",
-               __func__, __func__, nl_info->n_max_algo_iter, nl_info->res);
-  }
+  cs_iter_algo_check(__func__, mom_eqp->name, "Picard", nl_info);
 
   /* Now compute/update the velocity and pressure fields */
   _mono_update_related_cell_fields(nsp, sc, mom_eqc);

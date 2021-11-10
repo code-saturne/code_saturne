@@ -47,7 +47,6 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
-#include <bft_printf.h>
 
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
@@ -1484,19 +1483,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  if (nl_info->cvg == CS_SLES_DIVERGED)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Picard iteration for equation \"%s\" diverged.\n",
-              __func__, mom_eqp->name);
-  else if (nl_info->cvg == CS_SLES_MAX_ITERATION) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "%8s.ItXXX-- %5.3e  Picard algorithm DID NOT CONVERGE "
-                  "within the prescribed max. number of iterations.\n",
-                  "Picard", nl_info->res);
-    cs_base_warn(__FILE__, __LINE__);
-    bft_printf(" %s: Picard algorithm reaches the max. number of iterations\n",
-                __func__);
-  }
+  cs_iter_algo_check(__func__, mom_eqp->name, "Picard", nl_info);
 
   /* Update pressure and the cell velocity */
   t_upd = cs_timer_time();

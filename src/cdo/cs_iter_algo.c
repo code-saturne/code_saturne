@@ -37,7 +37,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include <bft_error.h>
 #include <bft_mem.h>
+#include <bft_printf.h>
 
 #include "cs_cdo_sqnorm.h"
 
@@ -125,6 +127,48 @@ cs_iter_algo_define(int          verbosity,
   cs_iter_algo_reset(info);
 
   return info;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if something wrong happens during the iterative process
+ *
+ * \param[in] func_name    name of the calling function
+ * \param[in] eq_name      name of the equation being solved
+ * \param[in] algo_name    name of the iterative algo. used
+ * \param[in] iai          pointer to the iterative algo. structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_check(const char            *func_name,
+                   const char            *eq_name,
+                   const char            *algo_name,
+                   cs_iter_algo_info_t   *iai)
+{
+  if (iai == NULL)
+    return;
+
+  if (iai->cvg == CS_SLES_DIVERGED)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: %s algorithm divergence detected.\n"
+              "%s: Equation \"%s\" can not be solved correctly.\n"
+              "%s: Last iteration=%d; last residual=%5.3e\n",
+              func_name, algo_name,
+              func_name, eq_name,
+              func_name, iai->n_algo_iter, iai->res);
+
+  else if (iai->cvg == CS_SLES_MAX_ITERATION) {
+
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(" %s: %s algorithm reaches the max. number of iterations"
+               " when solving equation \"%s\"\n"
+               " %s: max_iter=%d; last residual=%5.3e\n",
+               func_name, algo_name, eq_name,
+               func_name, iai->n_max_algo_iter, iai->res);
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
