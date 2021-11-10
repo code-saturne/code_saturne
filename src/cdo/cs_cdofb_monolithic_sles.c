@@ -58,8 +58,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_blas.h"
+#include "cs_cdo_sqnorm.h"
 #include "cs_equation.h"
-#include "cs_evaluate.h"
 #include "cs_fp_exception.h"
 #include "cs_iter_algo.h"
 #include "cs_matrix_default.h"
@@ -255,9 +255,7 @@ _get_cbscal_norm(cs_real_t  *a)
 static inline double
 _get_fbvect_norm(cs_real_t  *a)
 {
-  double norm2 = cs_evaluate_3_square_wc2x_norm(a,
-                                                cs_shared_connect->c2f,
-                                                cs_shared_quant->pvol_fc);
+  double norm2 = cs_cdo_sqnorm_pfvp(a);
 
   assert(norm2 > -DBL_MIN);
   return sqrt(norm2);
@@ -5366,8 +5364,6 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   assert(cs_shared_range_set != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
-
   const cs_real_t  gamma = msles->graddiv_coef;
   const cs_real_t  *div_op = msles->div_op;
 
@@ -5440,9 +5436,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   cs_param_sles_copy_from(eqp->sles_param, slesp);
   slesp->eps = nsp->sles_param->il_algo_rtol;
 
-  cs_real_t  normalization = cs_evaluate_3_square_wc2x_norm(uza->rhs,
-                                                            c2f,
-                                                            quant->pvol_fc);
+  cs_real_t  normalization = cs_cdo_sqnorm_pfvp(uza->rhs);
 
   if (fabs(normalization) > 0)
     normalization = sqrt(normalization);
@@ -5513,8 +5507,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                           delta_u,
                                           uza->rhs));
 
-    delta_u_l2 = cs_evaluate_3_square_wc2x_norm(delta_u,
-                                                c2f, quant->pvol_fc);
+    delta_u_l2 = cs_cdo_sqnorm_pfvp(delta_u);
     if (fabs(delta_u_l2) > 0)
       delta_u_l2 = sqrt(delta_u_l2);
     else

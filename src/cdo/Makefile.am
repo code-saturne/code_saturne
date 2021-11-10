@@ -71,6 +71,7 @@ cs_cdo_field_interpolation.h \
 cs_cdo_local.h \
 cs_cdo_main.h \
 cs_cdo_quantities.h \
+cs_cdo_sqnorm.h \
 cs_cdo_turbulence.h \
 cs_cdoeb_priv.h \
 cs_cdoeb_vecteq.h \
@@ -146,6 +147,7 @@ cs_cdo_field_interpolation.c \
 cs_cdo_local.c \
 cs_cdo_main.c \
 cs_cdo_quantities.c \
+cs_cdo_sqnorm.c \
 cs_cdo_turbulence.c \
 cs_cdoeb_vecteq.c \
 cs_cdofb_monolithic.c \

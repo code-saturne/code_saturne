@@ -40,6 +40,7 @@
 
 #include "cs_ale.h"
 #include "cs_boundary_zone.h"
+#include "cs_cdo_sqnorm.h"
 #include "cs_evaluate.h"
 #include "cs_equation.h"
 #include "cs_equation_assemble.h"
@@ -582,6 +583,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
 
   /* Manage checkpoint/restart settings
    * Use the same default values for t_interval and wt_interval as the FV */
+
   double  t_interval = -1.0, wt_interval = -1.0;
   cs_restart_checkpoint_set_defaults(domain->restart_nt,
                                      t_interval,
@@ -589,6 +591,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
 
   /* Build additional connectivity structures
      Update mesh structure with range set structures */
+
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
   domain->connect = cs_cdo_connect_init(domain->mesh,
                                         cc->eb_scheme_flag,
@@ -598,6 +601,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                                         cc->hho_scheme_flag);
 
   /* Build additional mesh quantities in a separate structure */
+
   cs_flag_t  cdo_quantities_flag = 0;
   if (cc->eb_scheme_flag)
     cdo_quantities_flag |= CS_CDO_QUANTITIES_EB_SCHEME;
@@ -618,16 +622,24 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
 
   /* Main generic structures are shared with low-level files.
      Avoid the declaration of global variables by sharing pointers */
-  cs_source_term_set_shared_pointers(domain->cdo_quantities,
-                                     domain->connect);
-  cs_evaluate_set_shared_pointers(domain->cdo_quantities,
-                                  domain->connect);
-  cs_property_set_shared_pointers(domain->cdo_quantities,
-                                  domain->connect);
+
   cs_advection_field_set_shared_pointers(domain->cdo_quantities,
                                          domain->connect);
 
+  cs_cdo_sqnorm_set_shared_pointers(domain->cdo_quantities,
+                                    domain->connect);
+
+  cs_evaluate_set_shared_pointers(domain->cdo_quantities,
+                                  domain->connect);
+
+  cs_property_set_shared_pointers(domain->cdo_quantities,
+                                  domain->connect);
+
+  cs_source_term_set_shared_pointers(domain->cdo_quantities,
+                                     domain->connect);
+
   /* Allocate common structures for solving equations */
+
   cs_equation_common_init(domain->connect,
                           domain->cdo_quantities,
                           domain->time_step,
@@ -638,6 +650,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                           cc->hho_scheme_flag);
 
   /* Allocate matrix-related structures for the assembly stage */
+
   cs_equation_assemble_init(domain->connect,
                             cc->eb_scheme_flag,
                             cc->fb_scheme_flag,
@@ -646,6 +659,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                             cc->hho_scheme_flag);
 
   /* Set the range set structure for synchronization in parallel computing */
+
   cs_equation_set_range_set(domain->connect);
 
   cs_equation_set_shared_structures(domain->connect,

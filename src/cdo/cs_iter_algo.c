@@ -39,7 +39,7 @@
 
 #include <bft_mem.h>
 
-#include "cs_evaluate.h"
+#include "cs_cdo_sqnorm.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -153,12 +153,14 @@ cs_iter_algo_navsto_fb_picard_cvg(const cs_cdo_connect_t      *connect,
   const cs_real_t  pre_picard_res = a_info->res;
 
   /* Storage of the initial residual to build a relative tolerance */
+
   if (a_info->n_algo_iter == 0) {
 
-    a_info->res0 = cs_evaluate_delta_square_wc2x_norm(pre_iterate,
-                                                      cur_iterate,
-                                                      connect->c2f,
-                                                      quant->pvol_fc);
+    /* Compute the norm of the difference between the two mass fluxes (the
+       current one and the previous one) */
+
+    a_info->res0 = cs_cdo_sqnorm_pfsf_diff(pre_iterate, cur_iterate);
+
     assert(a_info->res0 > -DBL_MIN);
     a_info->res0 = sqrt(a_info->res0);
     a_info->res = a_info->res0;
@@ -167,19 +169,22 @@ cs_iter_algo_navsto_fb_picard_cvg(const cs_cdo_connect_t      *connect,
   }
   else {
 
-    a_info->res = cs_evaluate_delta_square_wc2x_norm(pre_iterate,
-                                                     cur_iterate,
-                                                     connect->c2f,
-                                                     quant->pvol_fc);
+    /* Compute the norm of the difference between the two mass fluxes (the
+       current one and the previous one) */
+
+    a_info->res = cs_cdo_sqnorm_pfsf_diff(pre_iterate, cur_iterate);
+
     assert(a_info->res > -DBL_MIN);
     a_info->res = sqrt(a_info->res);
 
   }
 
   /* Increment the number of Picard iterations */
+
   a_info->n_algo_iter += 1;
 
   /* Set the convergence status */
+
   if (a_info->res < a_info->tol)
     a_info->cvg = CS_SLES_CONVERGED;
 
