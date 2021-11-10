@@ -2453,13 +2453,13 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
 
-  cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                    sc->mass_flux_array_pre,
-                                    sc->mass_flux_array,
-                                    div_l2_norm,
-                                    nl_info);
+  /* Check the convergence status and update the nl_info structure related
+   * to the convergence monitoring */
 
-  while (nl_info->cvg == CS_SLES_ITERATING) {
+  while (cs_iter_algo_navsto_fb_picard_cvg(sc->mass_flux_array_pre,
+                                           sc->mass_flux_array,
+                                           div_l2_norm,
+                                           nl_info) == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
     cs_timer_t  t_build_start = cs_timer_time();
@@ -2503,19 +2503,12 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
                               sc->mass_flux_array);
 
-    /* Check the convergence status and update the nl_info structure related
-     * to the convergence monitoring */
-    cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                      sc->mass_flux_array_pre,
-                                      sc->mass_flux_array,
-                                      div_l2_norm,
-                                      nl_info);
-
   } /* Loop on Picard iterations */
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
+
 
   if (nl_info->cvg == CS_SLES_DIVERGED)
     bft_error(__FILE__, __LINE__, 0,
@@ -2757,10 +2750,10 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *--------------------------------------------------------------------------*/
 
   /* Since a current to previous op. has been done:
-   *   sc->mass_flux_array_pre -> flux at t^n= t^n,0 (not t^(n-1)
+   *   sc->mass_flux_array_pre -> flux at t^n= t^n,0 (= t^(n-1)
    *   sc->mass_flux_array     -> flux at t^n,1 (call to .._navsto_mass_flux */
-  cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                    sc->mass_flux_array_pre,
+
+  cs_iter_algo_navsto_fb_picard_cvg(sc->mass_flux_array_pre,
                                     sc->mass_flux_array,
                                     div_l2_norm,
                                     nl_info);
@@ -2815,8 +2808,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
     /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
-    cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
-                                      mass_flux_array_k,
+
+    cs_iter_algo_navsto_fb_picard_cvg(mass_flux_array_k,
                                       mass_flux_array_kp1,
                                       div_l2_norm,
                                       nl_info);

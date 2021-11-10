@@ -29,8 +29,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_connect.h"
-#include "cs_cdo_quantities.h"
 #include "cs_math.h"
 #include "cs_sles.h"
 
@@ -233,19 +231,17 @@ cs_iter_algo_define(int          verbosity,
  *         Test if performed on the relative norm on the increment between
  *         two iterations but also on the divergence.
  *
- * \param[in]      connect        set of additional connectivities for CDO
- * \param[in]      quant          set of additional geometrical quantities
  * \param[in]      pre_iterate    previous state of the mass flux iterate
  * \param[in]      cur_iterate    current state of the mass flux iterate
  * \param[in]      div_l2_norm    L2 norm of the velocity divergence
  * \param[in, out] a_info         pointer to a cs_iter_algo_info_t struct.
+ *
+ * \return the convergence state
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_iter_algo_navsto_fb_picard_cvg(const cs_cdo_connect_t      *connect,
-                                  const cs_cdo_quantities_t   *quant,
-                                  const cs_real_t             *pre_iterate,
+cs_sles_convergence_state_t
+cs_iter_algo_navsto_fb_picard_cvg(const cs_real_t             *pre_iterate,
                                   const cs_real_t             *cur_iterate,
                                   cs_real_t                    div_l2_norm,
                                   cs_iter_algo_info_t         *a_info);

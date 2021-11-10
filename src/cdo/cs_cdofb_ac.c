@@ -1413,13 +1413,13 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
 
-  cs_iter_algo_navsto_fb_picard_cvg(connect, quant,
-                                    sc->mass_flux_array_pre,
-                                    sc->mass_flux_array,
-                                    div_l2_norm,
-                                    nl_info);
+  /* Check the convergence status and update the nl_info structure related
+   * to the convergence monitoring */
 
-  while (nl_info->cvg == CS_SLES_ITERATING) {
+  while (cs_iter_algo_navsto_fb_picard_cvg(sc->mass_flux_array_pre,
+                                           sc->mass_flux_array,
+                                           div_l2_norm,
+                                           nl_info) == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
     cs_timer_t  t_build_start = cs_timer_time();
@@ -1435,14 +1435,14 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     cs_sles_free(sles); sles = NULL;
 
     /* Main loop on cells to define the linear system to solve */
-  _implicit_euler_build(nsp,
-                        vel_f_pre,  /* velocity at faces: previous values */
-                        vel_c_pre,  /* velocity at cells: previous values */
-                        pr_c_pre,   /* pressure at cells: previous values */
-                        enforced_ids,
-                        dir_values,
-                        sc,
-                        matrix, rhs);
+    _implicit_euler_build(nsp,
+                          vel_f_pre,  /* velocity at faces: previous values */
+                          vel_c_pre,  /* velocity at cells: previous values */
+                          pr_c_pre,   /* pressure at cells: previous values */
+                          enforced_ids,
+                          dir_values,
+                          sc,
+                          matrix, rhs);
 
     /* End of the system building */
     cs_timer_t t_build_end = cs_timer_time();
@@ -1477,14 +1477,6 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
            n_faces*sizeof(cs_real_t));
 
     cs_cdofb_navsto_mass_flux(nsp, quant, vel_f, sc->mass_flux_array);
-
-    /* Check the convergence status and update the nl_info structure related
-     * to the convergence monitoring */
-    cs_iter_algo_navsto_fb_picard_cvg(connect, quant,
-                                      sc->mass_flux_array_pre,
-                                      sc->mass_flux_array,
-                                      div_l2_norm,
-                                      nl_info);
 
   } /* Loop on Picard iterations */
 
