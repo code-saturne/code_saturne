@@ -34,3 +34,5 @@ itself and for writing user-defined functions.
 \subpage cs_dg_build_system
 
 \subpage cs_dg_further_reading
+
+\subpage cs_dg_debugging

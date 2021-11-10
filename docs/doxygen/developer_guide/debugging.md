@@ -1,528 +1,561 @@
-% All settings, including handout. See style directory.
-\input{cs_beamer_settings}
-\geometry{paperwidth=140mm,paperheight=105mm}
+<!--
+  This file is part of Code_Saturne, a general-purpose CFD tool.
 
-%%%%%%%%%%%%%%%%%%%%%%%
-% Background image if needed
-%%%%%%%%%%%%%%%%%%%%%%%
-\setbeamertemplate{background canvas}{
-\includegraphics[width=\paperwidth]{bg_title_EDF_green.pdf}
-}
+  Copyright (C) 1998-2021 EDF S.A.
 
-%%%%%%%%%%%%%%%%%%%%%%%
-% To debug
-%%%%%%%%%%%%%%%%%%%%%%%
-%\includeonlyframes{current}
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
 
-\title[\CS: advanced developer training]{
-\vspace{1cm}\\
-\Huge \textbf{\CS advanced user and developer training: debugging}
-}
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
 
-\author[\bf{\CS~dev. team}]{
- \textcolor{white}{\mbox{\CS~development team
- %\inst{1}
- }}
-}
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
 
-\date{
-  \flushleft \textcolor{white}{\tiny \the\year}
-\vspace{-1cm}\\
-\flushright \includegraphics[width=0.15\textwidth]{LOGO-blanc-HD.png}
-}
+<!--
 
-\institute{
-\textcolor{white}{\inst{1}Fluid Mechanics, Energy and Environment, EDF R\&D, Chatou, France,\\
-}}
+Colors
+------
 
+blueedf          rgb(0,91,187)
+blueedf_light    rgb(0,91,187)
+blueedf_dark     rgb(9,53,122)
 
-%%%%%%%%%%%%
-% LOGO TITLE PAGE
-%%%%%%%%%%%%
-%\logo{}%\includegraphics[width=0.1\textwidth]{Docs/EDF_Logo_PMS_v_F.pdf}}
+greenedf         rgb(0,158,47)
+greenedf_light   rgb(127,175,16)
+greenbed_dark    rgb(48,119,16)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%TO PUT THE TABLE OF CONTENTS
-% AT THE BEGINNING OF EACH SECTION
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\AtBeginSection[] %
-{ \begin{frame}<beamer>
-\frametitle{Overview}
-\begin{small}
-\tableofcontents[currentsection]
-\end{small}
-\end{frame} }
+orangeedf        rgb(255,160,47)
+orangeedf_light  rgb(255,122,0)
+orangeedf_dark   rgb(254,88,21)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%BEGIN DOC
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{document}
+antiquewhite  rgb(0.98, 0.92, 0.84)
+whitesmoke    rgb(0.96, 0.96, 0.96)
 
-%%%%%%%%%%%%%
-%TITLE
-%%%%%%%%%%%%%
-\begin{frame}[plain]
-	\titlepage
-\end{frame}
+-->
 
-%Cancel the logos for the following and the background
-\logo{}
-\setbeamertemplate{background canvas}{}
+\page cs_dg_debugging Debugging
 
-\mainfootline
+[TOC]
 
-\lstdefinestyle{LFrame}{frame=single,frameround=tttf,xrightmargin=3pt,fillcolor=\color{whitesmoke},backgroundcolor=\color{whitesmoke},rulecolor=\color{greenedf}}
-
-\lstdefinestyle{FFrame}{frame=single,frameround=tttf,xrightmargin=3pt,fillcolor=\color{whitesmoke},backgroundcolor=\color{whitesmoke},rulecolor=\color{blueedf}}
-
-\lstdefinestyle{Cstyle}{language=C,basicstyle=\footnotesize\ttfamily,keywordstyle=\color{blue}\bfseries,commentstyle=\color{red},stringstyle=\color{greenedf}\ttfamily,showstringspaces=false,labelstyle=\tiny,escapeinside={!@}{@!}}
-
-\lstdefinestyle{Fstyle}{language={[95]Fortran},basicstyle=\footnotesize\ttfamily,keywordstyle=\color{blue}\bfseries,commentstyle=\color{red},stringstyle=\color{greenedf}\ttfamily,showstringspaces=false,labelstyle=\tiny,escapeinside={!@}{@!}}
-
-\lstdefinestyle{VBScriptstyle}{language=VBScript, basicstyle=\footnotesize\ttfamily, keywordstyle=\color{blueedf}\ttfamily, stringstyle=\color{orangededf}\ttfamily, commentstyle=\color{greenedf}\ttfamily, morecomment=[l][\color{magenta}]{\#}}
-
-\def\inlinec{\lstinline[style=Cstyle]}
-
-%\lstset{Cstyle}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{frame}
-\frametitle{Overview}
-\begin{small}
-\tableofcontents
-\end{small}
-\end{frame}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Toolchain
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\section{Introduction}
-
-\begin{frame}[t]{\CS Debugging}
+Introduction
+============
 
 All non-trivial software has bugs, at least at first,
 so debugging is a part of code development.
 
-\begin{block}{}
+- Is is often easier to debug newly written code than older code
 
-\begin{itemize}
-  \blueitem<+-> Is is often easier to debug newly written code than older code
-  \begin{itemize}
-    \item At least when done by the same person
-    \item Test and debug early, before you forget the details of your code
-  \end{itemize}
-  \blueitem<+-> Multiple tools and techniques are available
-  \begin{itemize}
-    \item Mastering debugging tools and techniques make debugging less painful
-  \end{itemize}
-  \blueitem<+-> Bugs detected late are much more costly then those detected early
-  \begin{itemize}
-    \item May require re-validation
-    \item Often harder to debug, because the code details need to be ``re-learned''
-    \item Be proactive, try to detect as many bugs as possible by testing
-  \end{itemize}
-\end{itemize}
+  * At least when done by the same person
 
-\end{block}
+  * Test and debug early, before you forget the details of your code
 
-\end{frame}
+- Multiple tools and techniques are available
 
-\section{Tools}
+  * Mastering debugging tools and techniques make debugging less painful
 
-\subsection{Debugging methods}
+- Bugs detected late are much more costly then those detected early
 
-\begin{frame}[t]{Debugging methods}
+  * May require re-validation
+
+  * Often harder to debug, because the code details need to be ``re-learned''
+
+  * Be *proactive*, try to detect as many bugs as possible by testing
+
+Debugging Tools
+===============
+
+Debugging methods
+-----------------
 
 When encountering or suspecting a bug, choosing the best debugging technique for
 the situation can lead to one or more orders of magnitude in time savings.
 
-\begin{block}{}
-
-\begin{itemize}
-  \blueitem<+-> Choosing which tool to use is the difficult part, and
+- Choosing which tool to use is the difficult part, and
   can be based on several factors:
-  \begin{itemize}
-    \item<+-> Comparison of experience to observed effects
-    \item<+-> Leveraging theoretical knowledge and experience
-    \begin{itemize}
-      \item<+-> Guessing at whether bugs may be due to uninitialized values,
-        out-of-bounds arrays accesses, bad option settings, numerical errors, ...
-    \end{itemize}
-    \item<+-> Sometimes, a bit of luck...
-  \end{itemize}
-  \blueitem<+-> \CS tries to help, so always check for \textcolor{orangeedf}{error messages}
-  \begin{itemize}
-    \item<+-> In \CS, \textcolor{greenedf}{error*}, \textcolor{greenedf}{listing},
-      and error logs in batch run logs (or in the console) should be checked
-    \begin{itemize}
-      \item<+-> For parallel runs, when both \textcolor{greenedf}{error*} and \textcolor{greenedf}{error\_r*} are present, the \textcolor{greenedf}{error\_r*} files are the ones which contain the useful information
-    \end{itemize}
-    \item<+-> Some graphical checks with
-      \textcolor{greenedf}{postprocessing/error.*} are also available for
-      boundary conditions and linear solvers.
-  \end{itemize}
-\end{itemize}
 
-\end{block}
+  * Comparison of experience to observed effects
 
-\end{frame}
+  * Leveraging theoretical knowledge and experience
 
-\begin{frame}[t]{}
+    - Guessing at whether bugs may be due to uninitialized values,
+      out-of-bounds arrays accesses, bad option settings, numerical errors, ...
 
-Some debugging tools that should be considered
+  * Sometimes, a bit of luck...
 
-\begin{block}{}
+- code_saturne tries to help, so always check for
+  <span style="color:rgb(254,88,21)"> **error messages** </span>
 
-\begin{itemize}
-   \blueitem<+-> Source code proofreading
-  \begin{itemize}
-    \item \textcolor{orangeedf}{Re}-checking for compiler warnings
-  \end{itemize}
-  \blueitem<+-> Interactive debugging
-  \blueitem<+-> Memory debugging
-  \blueitem<+-> Checks/instrumentation in code...
-  \begin{itemize}
-    \item Use \alerttt{--enable-debug} to configure builds
-      for debug
-    \begin{itemize}
-      \item Enables use of many \alerttt{assert} checks in C code
-      \item Enables arrays bounds-checking in Fortran
-    \end{itemize}
-    \item Using recent versions of the \toolname{GCC} or \toolname{clang} compiler, compile/run with
-      \toolname{AddressSanitizer}, \toolname{UndefinedBehaviorSanitizer}, and \toolname{ThreadSanitizer} occasionally
-    \begin{itemize}
-      \item Code built this way not compatible with runs under \toolname{Valgrind}
-      \item Not compatible either with some resource limits set on some clusters
-      \item Overhead: usually x3
-    \end{itemize}
-  \end{itemize}
-  \blueitem<+-> When you known where to search, \textcolor{orangeedf}{print} statements may be useful...
-\end{itemize}
+  * In code_saturne, <span style="color:rgb(48,119,16)"><b>`error*`</b></span>,
+    <span style="color:rgb(48,119,16)"><b>`run_solver.log`</b></span>,
+    messages in batch output logs (or in the console) should be checked.
 
-\end{block}
+    - For parallel runs, when both, <span style="color:rgb(48,119,16)">`error`</span>
+      and <span style="color:rgb(48,119,16)">`error_r*`</span> are present,
+      the latter are the ones which contain the useful information.
 
-\end{frame}
+  * See [section in user guide](@ref sec_ug_troubleshhoting) for more details.
 
-\subsection{The GNU debugger}
+  * Some graphical checks with
+    <span style="color:rgb(48,119,16)"><b>`postprocessing/error*`</b></span>
+    outputs are also available for boundary conditions and linear solvers.
 
-\begin{frame}[t]{The GNU debugger}
+### Some debugging tools that should be considered
 
-The GNU debugger \textcolor{blueedf}{\url{http://www.gnu.org/software/gdb}} is a broadly available, interactive debugger for compiled languages including C, C++, and Fortran.
+-  Source code proofreading
 
-\begin{block}{}
+   * (Re-) <span style="color:rgb(255,160,47)"><b>checking for compiler warnings</b></span>.
 
-\begin{itemize}
-  \blueitem<+-> To debug an executable, run \alerttt{gdb <executable>}
-  \begin{itemize}
-    \item Under the gdb prompt, type \alerttt{help} for built-in help, \alerttt{q} to quit
-    \begin{itemize}
-      \item Help is grouped in categories
-      \item The most common options are \alerttt{b} (set breakpoint), \alerttt{n} (continue to next statement), \alerttt{c} (continue to next breakpoint), and \alerttt{p} (print)
-    \end{itemize}
-  \end{itemize}
-  \blueitem<+-> Many front-ends are available, such as \toolname{Emacs}, \toolname{vim} (3 modes), and the graphical \toolname{ddd}, \toolname{Nemiver}, \toolname{Kdevelop}, an \toolname{gdbgui}
-  \blueitem<+-> GDB can provide some information on any program, but can provide more detailed and useful information when the program was compiled with debugging info. The matching compiler option is usually \textcolor{orangeedf}{-g}, and in the case of \CS, is provided using the \alerttt{--enable-debug} configure option at installation
-\end{itemize}
+   * Interactive debugging
 
-\end{block}
+   * Memory debugging
 
-\end{frame}
+   * Checks/instrumentation in code...
 
-\begin{frame}[t]{}
+     - Use <span style="color:rgb(48,119,16)">`--enable-debug`</span>
+       to configure builds for debug.
+
+       * Enables use of many `assert` checks in C code.
+
+       * Enables arrays bounds-checking in Fortran.
+
+   * Using recent versions of the [GCC](https://gcc.gnu.org/)
+     or [clang](https://clang.llvm.org/) compiler, compile/run with
+     [AddressSanitizer](https://github.com/google/sanitizers/wiki/AddressSanitizer),
+     [UndefinedBehaviorSanitizer](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html),
+     and other tools of this [series](https://github.com/google/sanitizers) frequently.
+
+     - Code built this way not compatible with runs under
+       [Valgrind](https://valgrind.org/).
+
+     - Not compatible either with some resource limits set on some clusters.
+
+     - Overhead: usually about x3.
+
+- When you known where to search,
+   <span style="color:rgb(255,160,47)"><b>print</b></span>
+   statements may be useful...
+
+The GNU debugger
+----------------
+
+The GNU debugger
+[<https://www.gnu.org/software/gdb>](<https://www.gnu.org/software/gdb>)
+is a broadly available, interactive debugger for compiled languages
+including C, C++, and Fortran.
+
+- To debug an executable, run
+  <span style="color:rgb(48,119,16)">`gdb <executable>`</span>
+
+  * Under the gdb prompt, type
+    <span style="color:rgb(48,119,16)">`help`</span> for built-in help,
+    <span style="color:rgb(48,119,16)">`q`</span> to quit.
+
+  * Help is grouped in categories
+
+    - The most common options are:
+
+      * <span style="color:rgb(48,119,16)">`b`</span> (set breakpoint),
+
+      * <span style="color:rgb(48,119,16)">`c`</span>
+        (continue to next statement),
+
+      * <span style="color:rgb(48,119,16)">`s`</span>
+        (step into function),
+
+      * <span style="color:rgb(48,119,16)">`p`</span>
+        (print).
+
+  * Many front-ends are available, including:
+
+    - A built-in user interface for terminals.
+
+    - integration with text editors, especially
+
+      * <span style="color:rgb(48,119,16)">Emacs</span> (built-in),
+
+      * <span style="color:rgb(48,119,16)">vim</span>
+        ([Conque GDB](https://www.vim.org/scripts/script.php?script_id=4582),
+        Termdebug).
+
+      * [Neovim](https://neovim.io)
+        ([NeoDebug](https://github.com/cpiger/NeoDebug),
+        [nvim-gdb](https://github.com/sakhnik/nvim-gdb/blob/master/test/prerequisites.sh)).
+
+    - Standalone graphical interfaces:
+
+      * [gdbgui](https://www.gdbgui.com/)
+
+      * [KDbg](https://www.kdbg.org/),
+
+      * [Nemiver](https://www.gnu.org/software/ddd),
+
+      * [DDD](https://www.gnu.org/software/ddd),
+
+    - integration in development environments:
+
+      * [Kdevelop](https://www.kdevelop.org/)
+
+      * [Anjuta](https://gitlab.gnome.org/GNOME/anjuta)
+
+      * [Qt Creator](https://www.qt.io/download)
+
+- GDB can provide some information on any compiled program, but provides
+  more detailed and useful information when the program was compiled
+  with debugging info. The matching compiler option is usually
+  <span style="color:rgb(48,119,16)">`-g`</span>, and in the
+  case of code_saturne, is provided using the
+  <span style="color:rgb(48,119,16)">`--enable-debug`</span>
+  configure option at installation.
+
+### GDB basic interface
 
 When used directly, GDB runs in a single terminal frame, as shown here.
-Only the current line of code is shown, though the \alerttt{list} command allows showing more.
-\vskip5pt
-\centering
-\includegraphics[width=0.8\textwidth]{graphics/gdb_screen.png}
+Only the current line of code is shown, though the
+<span style="color:rgb(48,119,16)">`list`</span>
+command allows showing more.
 
-\end{frame}
+\image html dg/gdb_screen.png "GDB in terminal mode" width=80%
 
-\begin{frame}[t]{}
+When started with the
+<span style="color:rgb(48,119,16)">`-tui`</span> option, GDB runs
+in a split terminal, with source on top, commands on bottom.
 
-When started with the \alerttt{--tui} option, GDB runs in a split terminal, with source on top, commands on bottom. Using the \textcolor{orangeedf}{CTRL+x+o} key combination allows changing focus from one to the other. Using \textcolor{orangeedf}{CTRL+l} allows refreshing the display.
+- Using the <span style="color:rgb(255,160,47)">`CTRL+x+o`</span> key
+  combination allows changing focus from one to the other.
 
-\vskip5pt
-\centering
-\includegraphics[width=0.8\textwidth]{graphics/gdb_tui_screen.png}
+- Using the <span style="color:rgb(255,160,47)">`CTRL+l`</span> key
+  allows refreshing the display.
 
-\end{frame}
+\image html dg/gdb_tui_screen.png "GDB with split screen" width=80%
 
-\begin{frame}[t]{}
+GDB may also be run under Emacs, which provides syntax highlighting of
+source code.
 
-GDB may also be run under Emacs, which provides syntax highlighting of source code.
+\image html dg/emacs_gud_screen.png "GDB under Emacs" width=55%
 
-\vskip5pt
-\centering
-\includegraphics[width=0.65\textwidth]{graphics/emacs_gud_screen.png}
+### Graphical front-end recommendations
 
-\end{frame}
+Many graphical front-ends are available for gdb. When evaluating
+a front-end, we recommend to check for the following features:
 
-\begin{frame}[t]{}
+- **Must** provide a console to allow combining text-based commands
+  with the graphical elements, or at least easily-accessible
+  widgets in which watchpoints and expressions to print can be typed.
 
-The DDD (Data Display Debugger) front-end uses a dated graphical toolkit, but has the advantage of combining a command prompt with graphical tools, and is very easy to use.
+- Should allow some means (such as command-line options) to connect
+  to a GDB server through a socket interface (more on this later)
 
-\vskip5pt
-\centering
-\includegraphics[width=0.6\textwidth]{graphics/ddd_screen.png}
+The [DDD (Data Display Debugger)](https://www.gnu.org/software/ddd)
+front-end is obsolete and uses a dated graphical toolkit, but has the
+advantage of combining a command prompt with graphical tools, and is
+very easy to use, so it might remain an option.
 
-\end{frame}
+The [Nemiver](https://www.gnu.org/software/ddd) debugger also has a
+GDB back-end. It offers a clean display, but lacks the possibility
+of typing commands; everything must be done using the mouse and menus,
+which is often tedious. The project seems abandoned.
+[KDbg](https://www.kdbg.org/) is similar, slightly more practical,
+but does not seem to have been very active since 2018.
 
-\begin{frame}[t]{}
+The [gdbgui](https://www.gdbgui.com/) debugger seems promising, and
+a good potential successor to DDD. It is based on a web-browser interface,
 
-The GNOME Nemiver debugger also has a GDB backend. This debugger offers a clean display, but lacks the possibility of typing commands; everything must be done using the mouse and menus, which is often tedious.
+\image html dg/gdbgui_screen.png "gdbgui" width=80%
 
-\vskip5pt
-\centering
-\includegraphics[width=0.7\textwidth]{graphics/nemiver_screen.png}
+Full integrated development environments (including Qt Creator,
+Visual Studio Code, Eclipse, Kdevelop, Anjuta) are outside the
+scope of this documentation. Most members of the code_saturne development
+team mostly use lighter, less integrated tools, so will not be able
+to provide recommendations regarding their use.
 
-\end{frame}
+GDB alternatives
+----------------
 
-\subsection{The GNU Valgrind tool suite}
+The [Eclipse CDT](https://projects.eclipse.org/projects/tools.cdt)
+and [Eclipse PTP (Parallel Tools Platform)](https://www.eclipse.org/ptp/downloads.php)
+environments integrate debuggers, including a parallel debugger,
+but may use a different syntax than "standalone" GDB, so they are not considered
+here (though feedback and recommendations around these tools are welcome).
 
-\begin{frame}[t]{The Valgrind tool suite}
+The [LLDB](https://lldb.llvm.org) debugger is an interesting competitor to GDB,
+with a different (similar but more verbose) syntax. Is is not as widely
+available yet, and is not yet handled by the code_saturne debug scripts,
+though a user familiar with it could of course set it up.
 
-The Valgrind tools \textcolor{blueedf}{\url{http://www.valgrind.org}} allows the
-detection of many memory management (and other) bugs.
+The Valgrind tool suite
 
-\begin{block}{}
+The [Valgrind](https://www.valgrind.org) tool suite allows the detection of
+many memory management (and other) bugs.
 
-\begin{itemize}
-  \blueitem<+-> Dynamic instrumentation
-  \begin{itemize}
-    \item No need for recompilation
-    \begin{itemize}
-      \item Provides more info (i.e. code line numbers) with code compiled in
-        debug mode
-    \end{itemize}
-    \item Depending on tool used, run time and memory overhead from 10-100x
-    \begin{itemize}
-      \item With default tool (\textcolor{blueedf}{Memcheck}), 10x30
-      \item Use proactively, to detect bugs on small cases, before they become a
-        problem in production cases
-    \end{itemize}
-  \end{itemize}
-  \blueitem<+-> May be combined with an interactive debugger
-\end{itemize}
+- Dynamic instrumentation
 
-\end{block}
+  * No need for recompilation
 
-\end{frame}
+    - Usable with any binary, but provides more info (i.e. code line numbers)
+      with code compiled in debug mode
 
-\begin{frame}[t]{}
+    - Depending on tool used, run time and memory overhead from 10-100x.
+
+      * With default tool (<span style="color:rgb(48,119,16)">Memcheck</span>),
+        10x30.
+
+      * Use proactively, to detect bugs on small cases, before they
+        become a problem in production cases.
 
 Valgrind is easy to run:
 
-\begin{block}{}
+- Prefix a standard command with <span style="color:rgb(48,119,16)">`valgrind`</span>
 
-\begin{itemize}
-  \blueitem<+-> Prefix a standard command with \alerttt{valgrind}
-  \begin{itemize}
-    \item By default, uses the \textcolor{orangeedf}{\texttt{memcheck}} tool
-    \item Tool may be changed using \alerttt{valgrind --tool=/cachegrind/callgrind/drd/massif/...}
-  \end{itemize}
-  \blueitem<+-> Valgrind can be combined with the \textcolor{orangeedf}{\texttt{gdb}} debugger, using its \textcolor{orangeedf}{\texttt{gdbserver}} mode
-  \begin{itemize}
-    \item To use this mode, call \alerttt{valgrind --vgdb-error=<number>} where the number represents the number of errors after which the gdbserver is invoked (0 to start immediatedly)
-  \end{itemize}
-\end{itemize}
+  * By default, uses the <span style="color:rgb(255,160,47)">`memcheck`</span> tool.
 
-\end{block}
+  * Tool may be changed using
+    <span style="color:rgb(48,119,16)">`valgrind –tool=/cachegrind/callgrind/drd/massif/...`</span>
 
-\end{frame}
+- Valgrind may be combined with GDB using its
+  <span style="color:rgb(48,119,16)">`gdbserver`</span> mode.
 
-\begin{frame}[t]{}
+  * To use this mode, call
+    <span style="color:rgb(48,119,16)">`valgrind –vgdb-error=<number>`</span>
 
-\vskip5pt
-\centering
-\includegraphics[width=0.8\textwidth]{graphics/valgrind_screen.png}
+    - The number represents the number of errors after which the
+       gdbserver is invoked (0 to start immediately).
 
-\end{frame}
+\image html dg/valgrind_screen.png "Valgrind in a terminal" width=60%
 
-\begin{frame}[t]{GCC and clang sanitizers}
+GCC and clang sanitizers
+========================
 
-Recent versions of the LLVM clang and GCC compilers have additional instrumentation options, allowing memory debugging with a lower overhead than Valgrind.
+Recent versions of the LLVM clang and GCC compilers have additional
+instrumentation options, allowing memory debugging with a lower overhead
+than Valgrind.
 
-\begin{block}{}
+Address Sanitizer
+-----------------
 
-\begin{itemize}
-  \blueitem<+-> For the most common errors, use \toolname{AddressSanitizer}, a fast memory error detector
-  \begin{itemize}
-    \item For the \CS configure options, this means \alerttt{CFLAGS=-fsanitize=address}, \alerttt{FCFLAGS=-fsanitize=address}, and \alerttt{LDFLAGS=-fsanitize=address}
-    \item This may sometimes require specifying \alerttt{export LD\_LIBRARY\_FLAGS=<path\_to\_compiler\_libraries} when the compiler is installed in a nonstandard path on older systems
-    \item On some machines, this may be unusable if memory resource limits are set (check using \alerttt{ulimit -c})
-    \item Note that the resulting code will not be usable under Valgrind
-    \item Uninitialized values are not detected by Address Sanitizer (but may be detected by UndefinedBehaviorSanitizer)
-    \item Out-of-bounds errors for arrays on stack (fixed size, usually small) are not detected by Valgrind, but may be detected by AddressSanitizer
-  \end{itemize}
-\end{itemize}
+For the most common errors, use
+<span style="color:rgb(48,119,16)">AddressSanitizer</span>,
+a fast memory error detector.
 
-\end{block}
+- For the code_saturne configure options, this means
+  <span style="color:rgb(48,119,16)">`CFLAGS=-fsanitize=address`</span>
+  <span style="color:rgb(48,119,16)">`FCFLAGS=-fsanitize=address`</span>
+  <span style="color:rgb(48,119,16)">`LDFLAGS=-fsanitize=address`</span>
 
-export ASAN_OPTIONS=detect_leaks=0
+- This may sometimes require specifying
+  <span style="color:rgb(48,119,16)">`export LD_LIBRARY_FLAGS=<path_to_compiler_libraries`</span>
+  when the compiler is installed in a nonstandard path on older systems.
 
-\end{frame}
+- On some machines, this may be unusable if memory resource limits
+  are set (check using <span style="color:rgb(48,119,16)">`ulimit -c`</span>
 
-\begin{frame}[t]{}
+- Note that the resulting code will not be usable under Valgrind.
 
-\begin{block}{}
+- Uninitialized values are not detected by Address Sanitizer (but
+  may be detected by UndefinedBehaviorSanitizer).
 
-\begin{itemize}
-  \blueitem<+-> The \toolname{UndefinedBehaviorSanitizer} instrumentation is also useful to detect other types of bugs, such as division by zero, some memory errors, integer overflows, and more
-  \begin{itemize}
-    \item This may sometimes require also specifying \alerttt{-lubsan} and even in some cases specify \alerttt{LD\_LIBRARY\_FLAGS} as above
-    \item For the \CS configure options, this means \alerttt{CFLAGS=-fsanitize=undefined}, \alerttt{FCFLAGS=-fsanitize=undefined}, and \alerttt{LDFLAGS=-fsanitize=undefined}
-    \item This may sometimes require specifying \alerttt{LD\_LIBRARY\_FLAGS} as per AddressSanitizer
-  \end{itemize}
-  \blueitem<+-> Note that only code compiled with those options is instrumented
-  \blueitem<+-> The \toolname{ThreadSanitizer} is useful to detect OpenMP errors, but requires a specific build of GCC to avoid false errors; its use is detailed in the ``Parallel Debugging'' section
-\end{itemize}
+- Out-of-bounds errors for arrays on stack (fixed size, usually small)
+  are not detected by Valgrind, but may be detected by AddressSanitizer.
 
-\end{block}
+- AddressSanitizer also includes a memory leak checker, which is useful
+  but may also report errors due to system libraries, so to allow a "clean"
+  exit, we may use:
 
-\end{frame}
+    ```
+    export ASAN_OPTIONS=detect_leaks=0
+    ```
 
-\section{Application to \CS}
+UndefinedBehaviorSanitizer
+--------------------------
 
-\begin{frame}[t]{Starting \CS under a debugger}
+The <span style="color:rgb(48,119,16)">UndefinedBehaviorSanitizer</span>
+instrumentation is also useful to detect other types of bugs, such
+as division by zero, some memory errors, integer overflows, and more.
 
-Several ways of running \CS under a debugger are possible:
+- This may sometimes require also specifying
+  <span style="color:rgb(48,119,16)">`-lubsan`</span>
+  and even in some cases specify
+  <span style="color:rgb(48,119,16)">`LD_LIBRARY_FLAGS`</span>
 
-\begin{itemize}
-  \blueitem<+-> Using the GUI or the \exmplett{domain.debug} setting in \exmplett{cs\_user\_scripts.py} to automatically run the code under a debugger
-  \begin{itemize}
-    \item Set options in \exmplett{Run computation/Advanced options}
-    \item As for regular runs, this will create a new directory under \exmplett{RESU} for each run and test
-  \end{itemize}
-  \blueitem<+-> Preparing a run directory using \alerttt{code\_saturne~run~[options]~--initialize}, then running the debugger manually from the run directory
-  \begin{itemize}
-    \item If the code has crashed during a previous run, this is not necessary, as the matching run directory remains in a initialized state
-  \end{itemize}
-  \blueitem<+-> Combining both approaches:
-  \begin{itemize}
-    \item Prepare a first run using the GUI or user script to handle the debugger syntax, then (re-)run the debugger manually
-  \end{itemize}
-\end{itemize}
+- For the code_saturne configure options, this means
+  <span style="color:rgb(48,119,16)">`CFLAGS=-fsanitize=undefined`</span>
+  <span style="color:rgb(48,119,16)">`FCFLAGS=-fsanitize=undefined`</span>
+  <span style="color:rgb(48,119,16)">`LDFLAGS=-fsanitize=undefined`</span>
 
-\end{frame}
+- This may sometimes require specifying
+  <span style="color:rgb(48,119,16)">`export LD_LIBRARY_FLAGS=<path_to_compiler_libraries`</span>
+  as per AddressSanitizer.
 
-\begin{frame}{Example of use of debugger wrapper}
-  \centering
-  \includegraphics[width=1.0\textwidth]{graphics/debug_wrapper.png}
-\end{frame}
+- Note that only code compiled with those options is instrumented.
 
-\begin{frame}[fragile]{A XTerm configuration example}{file \alerttt{.Xresources} on your home}
-  %
-  \begin{lstlisting}[style=VBScriptstyle]
+Application to code_saturne
+===========================
+
+Starting code_saturne under a debugger
+--------------------------------------
+
+Several ways of running code_saturne under a debugger are possible:
+
+- Using the GUI or the <span style="color: rgb(0,91,187)">`domain.debug`</span>
+  setting in <span style="color: rgb(0,91,187)">`cs_user_scripts.py`</span> to
+  automatically run the code under a debugger.
+
+  * Set options in
+    <span style="color: rgb(0,91,187)">Run computation/Advanced options`</span>
+
+  * As for regular runs, this will create a new directory under
+    <span style="color: rgb(0,91,187)">`RESU`</span> for each run and test.
+
+- Preparing a run directory using
+  <span style="color: rgb(48,119,16)">`code_saturne run [options] –initialize`</span>
+  then running the debugger manually from the run directory.
+
+  * If the code has crashed during a previous run, this is not necessary,
+    as the matching run directory remains in a initialized state.
+
+- Combining both approaches:
+
+  * Prepare a first run using the GUI or user script to handle the
+    debugger syntax, then (re-)run the debugger manually.
+
+\image html dg/debug_wrapper.png "Example of use of debugger wrapper" width=60%
+
+To allow for debugging parallel runs and combining GDB and Valgrind, GDB is
+run under a new terminal.
+
+- The type of terminal chosen can by defined using the `--terminal` option.
+
+  * Known issue: on some Debian 10-based systems, running under `gnome-terminal`
+    crashes GDB. Running under the default `xterm` or `konsole` works fine.
+
+By default, <span style="color: rgb(48,119,16)">`xterm`</span> will be used.
+This usually leads to very small, hard to read fonts. This can be fixed
+by editing <span style="color: rgb(48,119,16)">`$HOME/.Xresources`</span>
+such as in the following example:
+
+``` {style="VBScriptstyle"}
 !xterm*font:     *-fixed-*-*-*-18-*
 xterm*faceName: Liberation Mono:size=10:antialias=false
 xterm*font: 7x13
 xterm*VT100.geometry: 120x60
 URxvt*geometry:  120x60
 URxvt.font: xft:Terminus:antialias=false:size=10
-  \end{lstlisting}
-\end{frame}
+```
+Starting code_saturne under a debugger manually
+-----------------------------------------------
 
+Starting the debugger manually in an execution directory avoids creating
+many directories and waiting for pre-processing before each run.
 
-\begin{frame}[t]{Starting \CS under a debugger manually}
+- <span style="color: rgb(48,119,16)">`cd`</span> to the run directory under
+  <span style="color: rgb(0,91,187)>`RESU/<run_id>`</span>.
 
-Starting the debugger manually in an execution directory avoids creating many directories and waiting for preprocessing before each run.
+- To determine the code options already configured, run
+  <span style="color: rgb(48,119,16)">`cat run_solver`</span> to view the
+  execution commands.
 
-\begin{itemize}
-  \blueitem<+-> \alerttt{cd} to the run directory under \exmplett{RESU/<run\_id>}
-  \item To determine the code options already configured, run \alerttt{cat~run\_solver} To view the execution commands
-  \blueitem<+-> Add the debugger commands to this to run (unless already done through the GUI or user script)
-  \begin{itemize}
-    \item To make this easier, \CS provides a \exmplett{cs\_debug\_wrapper.py} script, in the \exmplett{bin} directory of the source tree (and in the \exmplett{lib/python<version>/site-packages/code\_saturne} directory of an installed build)
-    \item Run  \alerttt{cs\_debug\_wrapper.py~--help} for instructions
-  \end{itemize}
-  \blueitem<+-> The XML file may be modified directly using \alerttt{code\_saturne gui <file>} (ignoring the directory warning)
-  \blueitem<+-> When modifying user-defined functions, do not forget to run \alerttt{code\_saturne~compile~-s~src\_saturne} to update the \exmplett{cs\_solver} executable
-\end{itemize}
+- Add the debugger commands to this to run (unless already done
+  through the GUI or user script).
 
-\end{frame}
+  * To make this easier, code_saturne provides a
+    <span style="color: rgb(0,91,187)">`cs_debug_wrapper.py`</span> script, in the
+    <span style="color: rgb(0,91,187)">`bin`</span> directory of the source tree
+    (and in the
+    <span style="color: rgb(0,91,187)">`lib/python<version>/site-packages/code_saturne`</span>
+    directory of an installed build).
 
-\section{Parallel Debugging}
+  * Run <span style="color: rgb(48,119,16)">`cs_debug_wrapper.py --help`</span> for
+    instructions.
 
-\begin{frame}[t]{Parallel Debugging: MPI}
+- The XML file may be modified directly using
+  <span style="color: rgb(48,119,16)">`code_saturne gui <file>`</span>
+  (ignoring the directory warning).
 
-\begin{block}{}
+  * If mathematical expressions are modified, and additional step is required.
+    in this case, it is simpler to generate a new run.
 
-Debugging parallel \CS runs is not very different from debugging serial runs.
+- When modifying user-defined functions, do not forget to run
+  <span style="color: rgb(48,119,16)">`code_saturne compile -s src_saturne`</span>
+  to update the <span style="color: rgb(0,91,187)">`cs_solver`</span> executable.
 
-\begin{itemize}
-  \blueitem<+-> If a true parallel debugger such as \toolname{TotalView} or \toolname{Arm DDT} is available, do not hesitate to use it, and ignore the rest of this slide
-  \blueitem<+-> When no true parallel debugger is available, serial debuggers may be used
-  \begin{itemize}
-    \item Usually one for each process, though using multiple program features allows running only selected ranks under a debugger
-    \begin{itemize}
-      \item For example: \alerttt{mpiexec -n 2 <program> : - n 1 <debug\_wrapper> <program> : -n 3 <program>} to debug rank 2 of 6
-    \end{itemize}
-    \item The execution may not be restarted from the debugger; the whole parallel run must be restarted
-    \begin{itemize}
-      \item Very painful if not automated
-      \item This is where the \exmplett{cs\_debug\_wrapper.py} script really becomes useful
-    \end{itemize}
-  \end{itemize}
-  \blueitem<+-> For \CS under \toolname{GDB}, to determine a given process's rank, type: \alerttt{print cs\_glob\_rank\_id}
-\end{itemize}
+### Running under vim
 
-\end{block}
+The code_saturne debug wrapper does not yet launching GDB under Vim.
+Various examples of use of that module are found on the web, explaining
+how [Termdebug](https://www.dannyadam.com/blog/2019/05/debugging-in-vim/)
+for example can be used.
 
-\end{frame}
+Parallel Debugging
+==================
 
-\begin{frame}[t]{Parallel Debugging: OpenMP}
+Parallel Debugging: MPI
+-----------------------
 
-\begin{block}{}
+Debugging parallel code_saturne runs is not very different from
+debugging serial runs.
+
+- If a true parallel debugger such as
+  <span style="color: rgb(48,119,16)">TotalView</span> or
+  <span style="color: rgb(48,119,16)">Arm DDT</span> or
+  is available, do not hesitate to use it (by adapting the
+  <span style="color: rgb(48,119,16)">`run_solver`</span> script in the
+  exection directory), and ignore the rest of this slide.
+
+- When no true parallel debugger is available, serial debuggers may be
+  used.
+
+  * Usually one for each process, though using multiple program
+    features allows running only selected ranks under a debugger.
+
+    - For example:
+      <span style="color: rgb(48,119,16)">`mpiexec -n 2 <program> : - n 1 <debug_wrapper> <program> : -n 3 <program>`</span>
+      to debug rank 2 of 6
+
+  * The execution may not be restarted from the debugger; the whole
+    parallel run must be restarted.
+
+    - Very painful if not automated.
+
+    - This is where the
+      <span style="color: rgb(0,91,187)">`cs_debug_wrapper.py`</span> script
+      really becomes useful.
+
+- For code_saturne under GDB, to determine a given process's rank, type:
+  <span style="color: rgb(48,119,16)">`print cs_glob_rank_id`</span>
+
+Parallel Debugging: OpenMP
+--------------------------
 
 Debugging OpenMP data races is much more tricky.
 
-\begin{itemize}
-  \blueitem<+-> Most errors are due to missing \exmplett{private} attributes in OpenMP pragmas
-  \begin{itemize}
-    \item In C, using local variable declarations avoids most of these, as those variables are automatically thread-private
-  \end{itemize}
-  \blueitem<+-> Valgrind's \toolname{DRD} (Data Race Detector) tool is quite useful here
-  \begin{itemize}
-     \item \alerttt{valgrind --tool=drd --check-stack-var=yes --read-var-info=yes}
-     \item Check \textcolor{blueedf}{\url{http://valgrind.org/docs/manual/drd-manual.html\#drd-manual.openmp}} for more information
-  \end{itemize}
-  \blueitem<+-> GCC's \toolname{ThreadSanitizer} is also very useful here
-  \blueitem<+-> In both cases, to avoid false positives, GCC must be built with the \alerttt{--disable-linux-futex} configure option, so this requires a special build of GCC
-  \begin{itemize}
-     \item With more recent versions of GCC, this may not be sufficient to avoid false positives...
-  \end{itemize}
-\end{itemize}
+- Most errors are due to missing <span style="color: rgb(0,91,187)">`private`</span>
+  attributes in OpenMP pragmas.
 
-\end{block}
+  * In C, using local variable declarations avoids most of these, as
+    those variables are automatically thread-private.
 
-\end{frame}
+  * Valgrind's <span style="color: rgb(48,119,16)">DRD</span> (Data Race Detector) tool
+    is quite useful here.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% END
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    - <span style="color: rgb(48,119,16)">`valgrind –tool=drd –check-stack-var=yes –read-var-info=yes`</span>
 
-\section[]{Questions}
+    - Check
+      [https://valgrind.org/docs/manual/drd-manual.html#drd-manual.openmp](https://valgrind.org/docs/manual/drd-manual.html#drd-manual.openmp>) for more information.
 
-\begin{frame}[label=end]
-\begin{center}
-\begin{Huge}
-\alert{
-\Huge Thank you for your attention...
+  * GCC's or clang's <span style="color: rgb(48,119,16)">ThreadSanitizer</span>
+    is also very useful here.
 
-Any question?
-}
-\end{Huge}
-\end{center}
-\end{frame}
+- In both cases, to avoid false positives, GCC must be built with the
+  <span style="color: rgb(48,119,16)">`–disable-linux-futex`</span>
+  configure option, so this requires a special build of GCC.
 
+  * With more recent versions of GCC, this may not be sufficient to
+    avoid false positives...
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%The end of the document
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\end{document}
-%
+    - probably due to some optimizations in thread management.
