@@ -47,65 +47,89 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*! \struct cs_iter_algo_info_t
- *  \brief Set of information related to the convergence of the iterative
- *         algorithm (Picard or Uzawa for instance)
+ *  \brief Information related to the convergence of an iterative algorithm
+ *
+ *  Metadata to manage an iterative algorithm such as Picard or Uzawa for
+ *  instance. This structure can handle embedded iterative algorithm since the
+ *  notion of inner and outer iterations is defined. Nevertheless, only the
+ *  outer iterative algorithm is managed (information about inner iterations
+ *  are only for monitoring purposes).
+ */
+
+typedef struct {
+
+/*!
+ * @name Generic parameters
+ * @{
  *
  * \var verbosity
  * Level of printed information
  *
+ * \var context
+ * pointer to structure cast on the fly
+ *
+ * @}
+ * @name Stoppping criteria
+ * Set of tolerances to drive the convergence of the iterative algorithm or
+ * max. number of iterations
+ * @{
+ *
+ * \var n_max_algo_iter
+ * Maximal number of iterations for the algorithm
+ *
  * \var atol
- * absolute tolerance
+ * Absolute tolerance
  *
  * \var rtol
- * relative tolerance
+ * Relative tolerance
  *
  * \var dtol
- * tolerance to detect a divergence of the algorithm. Not used if < 0
+ * Tolerance to detect a divergence of the algorithm. Not used if < 0
+ *
+ * @}
+ * @name Convergence indicators
+ * @{
  *
  * \var cvg
- * converged, iterating or diverged status
+ * Converged, iterating or diverged status
  *
  * \var res
- * value of the residual for the iterative algorithm
+ * Value of the residual for the iterative algorithm
  *
  * \var res0
  * Initial value of the residual for the iterative algorithm
  *
  * \var tol
- * tolerance computed as tol = max(atol, res0*rtol) where
+ * Tolerance computed as tol = max(atol, res0*rtol) where
  * atol and rtol are respectively the absolute and relative tolerance associated
  * to the algorithm
  *
  * \var n_algo_iter
- * number of iterations for the algorithm (outer iterations)
- *
- * \var n_max_algo_iter
- * maximal number of iterations for the algorithm
+ * Current number of iterations for the algorithm (outer iterations)
  *
  * \var n_inner_iter
- * cumulated number of inner iterations (sum over the outer iterations)
+ * Curent cumulated number of inner iterations (sum over the outer iterations)
  *
  * \var last_inner_iter
- * last number of iterations for the inner solver
+ * Last number of iterations for the inner solver
+ *
+ * @}
  */
 
-typedef struct {
-
   int                              verbosity;
+  void                            *context;
 
-  /* Set of tolerances to drive the convergence of the iterative algorithm */
+  int                              n_max_algo_iter;
   double                           atol;
   double                           rtol;
   double                           dtol;
 
-  /* Variable convergence indicators */
   cs_sles_convergence_state_t      cvg;
   double                           res;
   double                           res0;
   double                           tol;
 
   int                              n_algo_iter;
-  int                              n_max_algo_iter;
   int                              n_inner_iter;
   int                              last_inner_iter;
 
