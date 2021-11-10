@@ -3472,6 +3472,9 @@ _gkb_cvg_test(cs_gkb_builder_t           *gkb)
 
   gkb->info->res = sqrt(err2_energy);
 
+  if (gkb->info->n_algo_iter < 2)
+    gkb->info->res0 = gkb->info->res;
+
   /* Set the convergence status */
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
   cs_log_printf(CS_LOG_DEFAULT,
@@ -3485,7 +3488,8 @@ _gkb_cvg_test(cs_gkb_builder_t           *gkb)
   else if (gkb->info->n_algo_iter >= gkb->info->n_max_algo_iter)
     gkb->info->cvg = CS_SLES_MAX_ITERATION;
 
-  else if (gkb->info->res > gkb->info->dtol * prev_res)
+  else if (gkb->info->res > gkb->info->dtol * prev_res ||
+           gkb->info->res > gkb->info->dtol * gkb->info->res0)
     gkb->info->cvg = CS_SLES_DIVERGED;
 
   else
@@ -3520,7 +3524,8 @@ _uza_cg_cvg_test(cs_uza_builder_t           *uza)
 
   /* Compute the new residual based on the norm of the divergence constraint */
   const cs_real_t  prev_res = uza->info->res;
-  const double  tau = fmax(uza->info->rtol*uza->info->res0, uza->info->atol);
+  const double  tau = fmax(uza->info->rtol*uza->info->normalization,
+                           uza->info->atol);
 
   /* Set the convergence status */
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
@@ -3536,7 +3541,8 @@ _uza_cg_cvg_test(cs_uza_builder_t           *uza)
   else if (uza->info->n_algo_iter >= uza->info->n_max_algo_iter)
     uza->info->cvg = CS_SLES_MAX_ITERATION;
 
-  else if (uza->info->res > uza->info->dtol * prev_res)
+  else if (uza->info->res > uza->info->dtol * prev_res ||
+           uza->info->res > uza->info->dtol * uza->info->res0)
     uza->info->cvg = CS_SLES_DIVERGED;
 
   else
@@ -4783,7 +4789,8 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   /* dk0 <-- gk0 */
   memcpy(dk, gk, uza->n_p_dofs*sizeof(cs_real_t));
 
-  uza->info->res0 = cs_gdot(uza->n_p_dofs, rk, gk);
+  uza->info->normalization = cs_gdot(uza->n_p_dofs, rk, gk);
+  uza->info->res0 = uza->info->normalization;
   uza->info->res = uza->info->res0;
 
   /* Main loop knowing g0, r0, d0, u0, p0 */
@@ -5017,6 +5024,7 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
 
   double div_l2_norm = _get_cbscal_norm(uza->d__v);
 
+  uza->info->normalization = div_l2_norm;
   uza->info->res0 = div_l2_norm;
   uza->info->res = div_l2_norm;
 

@@ -95,10 +95,17 @@ typedef struct {
  * Value of the residual for the iterative algorithm
  *
  * \var res0
- * Initial value of the residual for the iterative algorithm
+ * Value of the first residual of the iterative process. This is used for
+ * detecting the divergence of the algorithm.
+ *
+ * \var normalization
+ * Value of the normalization for the relative tolerance.
+ *
+ * The stopping criterion is such that res < rtol * normalization. By default,
+ * the normalization is set to 1.
  *
  * \var tol
- * Tolerance computed as tol = max(atol, res0*rtol) where
+ * Tolerance computed as tol = max(atol, normalization*rtol) where
  * atol and rtol are respectively the absolute and relative tolerance associated
  * to the algorithm
  *
@@ -125,6 +132,7 @@ typedef struct {
   cs_sles_convergence_state_t      cvg;
   double                           res;
   double                           res0;
+  double                           normalization;
   double                           tol;
 
   int                              n_algo_iter;
@@ -251,7 +259,7 @@ cs_iter_algo_check(const char            *func_name,
  * \param[in]      pre_iterate    previous state of the mass flux iterate
  * \param[in]      cur_iterate    current state of the mass flux iterate
  * \param[in]      div_l2_norm    L2 norm of the velocity divergence
- * \param[in, out] a_info         pointer to a cs_iter_algo_info_t struct.
+ * \param[in, out] iai            pointer to a cs_iter_algo_info_t structure
  *
  * \return the convergence state
  */
@@ -261,7 +269,7 @@ cs_sles_convergence_state_t
 cs_iter_algo_navsto_fb_picard_cvg(const cs_real_t             *pre_iterate,
                                   const cs_real_t             *cur_iterate,
                                   cs_real_t                    div_l2_norm,
-                                  cs_iter_algo_info_t         *a_info);
+                                  cs_iter_algo_info_t         *iai);
 
 /*----------------------------------------------------------------------------*/
 

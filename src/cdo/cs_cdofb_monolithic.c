@@ -51,6 +51,7 @@
 
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
+#include "cs_cdo_sqnorm.h"
 #include "cs_cdofb_priv.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
@@ -2391,6 +2392,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   /* Build an array storing the Dirichlet values at faces and ids of DoFs if
    * an enforcement of (internal) DoFs is requested */
+
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *enforced_ids = NULL;
 
@@ -2398,15 +2400,18 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
                         &dir_values, &enforced_ids);
 
   /* Initialize the rhs */
+
   cs_cdofb_monolithic_sles_init(n_cells, n_faces, sc->msles);
 
   /* Main loop on cells to define the linear system to solve */
+
   sc->steady_build(nsp,
                    mom_eqc->face_values, sc->velocity->val,
                    NULL, NULL,  /* no value at time step n-1 */
                    dir_values, enforced_ids, sc);
 
   /* End of the system building */
+
   cs_timer_t  t_build_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_start, &t_build_end);
 
@@ -2415,9 +2420,11 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    *--------------------------------------------------------------------------*/
 
   /* Current to previous for main variable fields */
+
   _mono_fields_to_previous(sc, cc);
 
   /* Solve the linear system */
+
   cs_timer_t  t_solve_start = cs_timer_time();
 
   cs_iter_algo_reset(nl_info);
@@ -2430,6 +2437,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   /* Solve the new system:
    * Update the value of mom_eqc->face_values and sc->pressure->val */
+
   nl_info->n_inner_iter =
     (nl_info->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
@@ -2437,16 +2445,24 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
   /* Make sure that the DoFs are correctly enforced after the resolution */
+
   if (nsp->n_solid_cells > 0)
     _mono_enforce_face_velocity(nsp, mom_eqc->face_values);
 
   /* Compute the new velocity divergence and retrieve its L2-norm */
+
   cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                                    sc->divergence->val);
 
   /* Compute the new current mass flux used as the advection field */
+
   cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
                             sc->mass_flux_array);
+
+  /* Set the normalization of the non-linear algo to the value of the first
+     mass flux norm */
+
+  nl_info->normalization = cs_cdo_sqnorm_pfsf(sc->mass_flux_array);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
@@ -2731,6 +2747,11 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   /* Compute the new mass flux used as the advection field */
   cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
                             sc->mass_flux_array);
+
+  /* Set the normalization of the non-linear algo to the value of the first
+     mass flux norm */
+
+  nl_info->normalization = cs_cdo_sqnorm_pfsf(sc->mass_flux_array);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START

@@ -123,6 +123,7 @@ cs_iter_algo_define(int          verbosity,
   info->rtol = rtol;
   info->dtol = dtol;
   info->n_max_algo_iter = n_max_iter;
+  info->normalization = 1.0;
 
   cs_iter_algo_reset(info);
 
@@ -180,7 +181,7 @@ cs_iter_algo_check(const char            *func_name,
  * \param[in]      pre_iterate    previous state of the mass flux iterate
  * \param[in]      cur_iterate    current state of the mass flux iterate
  * \param[in]      div_l2_norm    L2 norm of the velocity divergence
- * \param[in, out] a_info         pointer to a cs_iter_algo_info_t struct.
+ * \param[in, out] iai            pointer to a cs_iter_algo_info_t structure
  *
  * \return the convergence state
  */
@@ -190,23 +191,27 @@ cs_sles_convergence_state_t
 cs_iter_algo_navsto_fb_picard_cvg(const cs_real_t             *pre_iterate,
                                   const cs_real_t             *cur_iterate,
                                   cs_real_t                    div_l2_norm,
-                                  cs_iter_algo_info_t         *a_info)
+                                  cs_iter_algo_info_t         *iai)
 {
-  const cs_real_t  pre_picard_res = a_info->res;
+  cs_real_t  previous_res;
 
-  /* Storage of the initial residual to build a relative tolerance */
+  /* Set the tolerance criterion (one at each call if the normalization is
+     modified between two successive calls) */
 
-  if (a_info->n_algo_iter == 0) {
+  iai->tol = fmax(iai->rtol*iai->normalization, iai->atol);
 
-    /* Compute the norm of the difference between the two mass fluxes (the
-       current one and the previous one) */
+  /* Compute the norm of the difference between the two mass fluxes (the
+     current one and the previous one) */
 
-    a_info->res0 = cs_cdo_sqnorm_pfsf_diff(pre_iterate, cur_iterate);
+  if (iai->n_algo_iter == 0) {
 
-    assert(a_info->res0 > -DBL_MIN);
-    a_info->res0 = sqrt(a_info->res0);
-    a_info->res = a_info->res0;
-    a_info->tol = fmax(a_info->rtol*a_info->res0, a_info->atol);
+    /* Store the first residual to detect a divergence */
+
+    iai->res0 = cs_cdo_sqnorm_pfsf_diff(pre_iterate, cur_iterate);
+    assert(iai->res0 > -DBL_MIN);
+    iai->res0 = sqrt(iai->res0);
+    previous_res = iai->res0;
+    iai->res = iai->res0;
 
   }
   else {
@@ -214,39 +219,38 @@ cs_iter_algo_navsto_fb_picard_cvg(const cs_real_t             *pre_iterate,
     /* Compute the norm of the difference between the two mass fluxes (the
        current one and the previous one) */
 
-    a_info->res = cs_cdo_sqnorm_pfsf_diff(pre_iterate, cur_iterate);
-
-    assert(a_info->res > -DBL_MIN);
-    a_info->res = sqrt(a_info->res);
+    previous_res = iai->res;
+    iai->res = cs_cdo_sqnorm_pfsf_diff(pre_iterate, cur_iterate);
+    assert(iai->res > -DBL_MIN);
+    iai->res = sqrt(iai->res);
 
   }
 
   /* Increment the number of Picard iterations */
 
-  a_info->n_algo_iter += 1;
+  iai->n_algo_iter += 1;
 
   /* Set the convergence status */
 
-  if (a_info->res < a_info->tol)
-    a_info->cvg = CS_SLES_CONVERGED;
+  if (iai->res < iai->tol)
+    iai->cvg = CS_SLES_CONVERGED;
 
-  else if (a_info->n_algo_iter >= a_info->n_max_algo_iter)
-    a_info->cvg = CS_SLES_MAX_ITERATION;
+  else if (iai->n_algo_iter >= iai->n_max_algo_iter)
+    iai->cvg = CS_SLES_MAX_ITERATION;
 
-  else if (a_info->res > a_info->dtol * pre_picard_res ||
-           a_info->res > a_info->dtol * a_info->res0)
-    a_info->cvg = CS_SLES_DIVERGED;
+  else if (iai->res > iai->dtol*previous_res || iai->res > iai->dtol*iai->res0)
+    iai->cvg = CS_SLES_DIVERGED;
 
   else
-    a_info->cvg = CS_SLES_ITERATING;
+    iai->cvg = CS_SLES_ITERATING;
 
-  if (a_info->verbosity > 0) {
-    if (a_info->n_algo_iter == 1)
+  if (iai->verbosity > 0) {
+    if (iai->n_algo_iter == 1)
       cs_iter_algo_navsto_print_header("## Picard");
-    cs_iter_algo_navsto_print("## Picard", a_info, div_l2_norm);
+    cs_iter_algo_navsto_print("## Picard", iai, div_l2_norm);
   }
 
-  return a_info->cvg;
+  return iai->cvg;
 }
 
 /*----------------------------------------------------------------------------*/
