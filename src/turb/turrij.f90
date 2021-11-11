@@ -526,31 +526,17 @@ endif
 
 ivar = irij
 
-if (irijco.eq.1) then
+! Rij-epsilon standard (LRR)
+if (iturb.eq.30) then
 
-  ! Rij-epsilon standard (LRR)
-  if (iturb.eq.30) then !TODO
-
+  if (irijco.eq.1) then
     call resrij2(nvar, ncesmp,                                    &
                 icetsm, itypsm,                                   &
                 dt, gradv, cpro_produc, gradro,                   &
                 smacel, viscf, viscb, tslagi,                     &
                 smbrts, rovsdtts)
+  else
 
-  ! Rij-epsilon SSG or EBRSM
-  elseif (iturb.eq.31.or.iturb.eq.32) then
-
-    call resssg2(nvar, ncesmp, ivar,                              &
-                 icetsm, itypsm,                                  &
-                 dt, gradv, cpro_produc, gradro,                  &
-                 smacel, viscf, viscb, tslagi,                    &
-                 smbrts, rovsdtts)
-  endif
-
-else
-
-  ! Rij-epsilon standard (LRR)
-  if (iturb.eq.30) then
     do isou = 1, 6
       if    (isou.eq.1) then
         ivar   = ir11
@@ -571,17 +557,17 @@ else
                   dt, cpro_produc, gradro,                        &
                   smacel, viscf, viscb, tslagi,                   &
                   smbr, rovsdt)
-
     enddo
-
-    ! Rij-epsilon SSG or EBRSM
-  else if (iturb.eq.31.or.iturb.eq.32) then
-    call resssg(nvar, ncesmp, ivar,                               &
-                icetsm, itypsm,                                   &
-                dt, gradv, cpro_produc, gradro,                   &
-                smacel, viscf, viscb, tslagi,                     &
-                smbrts, rovsdtts)
   endif
+
+! Rij-epsilon SSG or EBRSM
+elseif (iturb.eq.31.or.iturb.eq.32) then
+
+  call resssg2(nvar, ncesmp, ivar,                                &
+               icetsm, itypsm,                                    &
+               dt, gradv, cpro_produc, gradro,                    &
+               smacel, viscf, viscb, tslagi,                      &
+               smbrts, rovsdtts)
 
 endif
 

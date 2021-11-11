@@ -26,16 +26,16 @@
 
 !> \file resssg2.f90
 !>
-!> \brief This subroutine performs the solving of the Reynolds stress components
-!> in \f$ R_{ij} - \varepsilon \f$ RANS (SSG) turbulence model.
+!> \brief This subroutine performs the solving of the coupled Reynolds stress
+!> components in \f$ R_{ij} - \varepsilon \f$ RANS (SSG) turbulence model.
 !>
-!> Remark:
-!> - isou=1 for \f$ R_{11} \f$
-!> - isou=2 for \f$ R_{22} \f$
-!> - isou=3 for \f$ R_{33} \f$
-!> - isou=4 for \f$ R_{12} \f$
-!> - isou=5 for \f$ R_{23} \f$
-!> - isou=6 for \f$ R_{13} \f$
+!> \remark
+!> - cvar_var(1,*) for \f$ R_{11} \f$
+!> - cvar_var(2,*) for \f$ R_{22} \f$
+!> - cvar_var(3,*) for \f$ R_{33} \f$
+!> - cvar_var(4,*) for \f$ R_{12} \f$
+!> - cvar_var(5,*) for \f$ R_{23} \f$
+!> - cvar_var(6,*) for \f$ R_{13} \f$
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -81,6 +81,8 @@ subroutine resssg2 &
 !===============================================================================
 ! Module files
 !===============================================================================
+
+use, intrinsic :: iso_c_binding
 
 use paramx
 use numvar
@@ -147,7 +149,7 @@ double precision xrij(3,3), xnal(3), xnoral, xnnd
 double precision d1s2, d1s3, d2s3
 double precision alpha3
 double precision pij, phiij1, phiij2, epsij
-double precision phiijw, epsijw
+double precision phiijw, epsijw, epsijw_imp
 double precision ccorio
 double precision rctse
 double precision eigen_max
@@ -180,7 +182,7 @@ double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvar_var, cvara_var
 double precision, dimension(:), pointer :: viscl, visct
-double precision, dimension(:,:), pointer:: c_st_prv, lagr_st_rij
+double precision, dimension(:,:), pointer :: c_st_prv, lagr_st_rij
 double precision, dimension(:,:), pointer :: cpro_buoyancy
 
 type(var_cal_opt) :: vcopt
@@ -191,7 +193,7 @@ type(c_ptr) :: c_k_value
 !===============================================================================
 
 !===============================================================================
-! 1. Initialization
+! Initialization
 !===============================================================================
 
 ! Time extrapolation?
@@ -206,22 +208,21 @@ allocate(viscce(6,ncelet))
 allocate(weighf(2,nfac))
 allocate(weighb(nfabor))
 
-! Initialize variables to avoid compiler warnings
-iii = 0
-jjj = 0
+! Generating the tensor to vector (t2v) and vector to tensor (v2t) mask arrays
 
-! Generating the tensor to vector (t2v) and vector to tensor (v2t) mask
-! arrays
 ! a) t2v
 t2v(1,1) = 1; t2v(1,2) = 4; t2v(1,3) = 6;
 t2v(2,1) = 4; t2v(2,2) = 2; t2v(2,3) = 5;
 t2v(3,1) = 6; t2v(3,2) = 5; t2v(3,3) = 3;
+
 ! b) i index of v2t
 iv2t(1) = 1; iv2t(2) = 2; iv2t(3) = 3;
 iv2t(4) = 1; iv2t(5) = 2; iv2t(6) = 1;
+
 ! c) j index of v2t
 jv2t(1) = 1; jv2t(2) = 2; jv2t(3) = 3;
 jv2t(4) = 2; jv2t(5) = 3; jv2t(6) = 3;
+
 ! d) kronecker symbol
 dij(:,:) = 0.0d0;
 dij(1,1) = 1.0d0; dij(2,2) = 1.0d0; dij(3,3) = 1.0d0;
@@ -248,9 +249,9 @@ call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-d1s2   = 1.d0/2.d0
-d1s3   = 1.d0/3.d0
-d2s3   = 2.d0/3.d0
+d1s2 = 1.d0/2.d0
+d1s3 = 1.d0/3.d0
+d2s3 = 2.d0/3.d0
 
 do isou = 1, 3
   deltij(isou) = 1.0d0
@@ -258,6 +259,7 @@ enddo
 do isou = 4, 6
   deltij(isou) = 0.0d0
 enddo
+
 !     S as Source, V as Variable
 thets  = thetst
 thetv  = vcopt%thetav
@@ -275,21 +277,19 @@ else
   call field_get_val_s(icrom, cromo)
 endif
 
-if (icorio.eq.1 .or. iturbo.eq.1) then
-
-  ! Coefficient of the "Coriolis-type" term
-  if (icorio.eq.1) then
-    ! Relative velocity formulation
-    ccorio = 2.d0
-  elseif (iturbo.eq.1) then
-    ! Mixed relative/absolute velocity formulation
-    ccorio = 1.d0
-  endif
-
+! Coefficient of the "Coriolis-type" term
+if (icorio.eq.1) then
+  ! Relative velocity formulation
+  ccorio = 2.d0
+elseif (iturbo.eq.1) then
+  ! Mixed relative/absolute velocity formulation
+  ccorio = 1.d0
+else
+  ccorio = 0.d0
 endif
 
 !===============================================================================
-! 2. User source terms
+! User source terms
 !===============================================================================
 
 ! If we extrapolate the source terms
@@ -302,11 +302,11 @@ if (st_prv_id.ge.0) then
       c_st_prv(isou,iel) = smbr(isou,iel)
 
       smbr(isou,iel) = - thets*tuexpr
-      ! Second member of the previous time step
+      ! Right hand side of the previous time step
       ! We suppose -rovsdt > 0: we implicit
       !    the user source term (the rest)
       do jsou = 1, 6
-        smbr(isou,iel) = smbr(isou, iel) &
+        smbr(isou,iel) = smbr(isou,iel) &
                        + rovsdt(jsou,isou,iel)*cvara_var(jsou,iel)
         ! Diagonal
         rovsdt(jsou,isou,iel) = - thetv*rovsdt(jsou,isou,iel)
@@ -325,10 +325,10 @@ else
 endif
 
 !===============================================================================
-! 3. Lagrangian source terms
+! Lagrangian source terms
 !===============================================================================
 
-!     2nd order is not taken into account
+! 2nd order is not taken into account
 if (iilagr.eq.2 .and. ltsdyn.eq.1) then
   call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
   do iel = 1,ncel
@@ -340,7 +340,7 @@ if (iilagr.eq.2 .and. ltsdyn.eq.1) then
 endif
 
 !===============================================================================
-! 4. Mass source term
+! Mass source term
 !===============================================================================
 
 if (ncesmp.gt.0) then
@@ -373,28 +373,30 @@ if (ncesmp.gt.0) then
 endif
 
 !===============================================================================
-! 5. Unsteady term
+! Unsteady term
 !===============================================================================
 
 ! ---> Added in the matrix diagonal
 
-do iel=1,ncel
-  do isou = 1, 6
-    rovsdt(isou,isou,iel) = rovsdt(isou, isou,iel)                            &
-              + vcopt%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
+if (vcopt%istat .eq. 1) then
+  do iel = 1, ncel
+    do isou = 1, 6
+      rovsdt(isou,isou,iel) =   rovsdt(isou,isou,iel)                              &
+                              + (crom(iel)/dt(iel))*cell_f_vol(iel)
+    enddo
   enddo
-enddo
+endif
 
 !===============================================================================
-! 6. Production, Pressure-Strain correlation, dissipation, Coriolis
+! Production, Pressure-Strain correlation, dissipation, Coriolis
 !===============================================================================
 
-! ---> Source term
-!     -rho*epsilon*( Cs1*aij + Cs2*(aikajk -1/3*aijaij*deltaij))
-!     -Cr1*P*aij + Cr2*rho*k*sij - Cr3*rho*k*sij*sqrt(aijaij)
-!     +Cr4*rho*k(aik*sjk+ajk*sik-2/3*akl*skl*deltaij)
-!     +Cr5*rho*k*(aik*rjk + ajk*rik)
-!     -2/3*epsilon*deltaij
+! Source term
+!  -rho*epsilon*( Cs1*aij + Cs2*(aikajk -1/3*aijaij*deltaij))
+!  -Cr1*P*aij + Cr2*rho*k*sij - Cr3*rho*k*sij*sqrt(aijaij)
+!  +Cr4*rho*k(aik*sjk+ajk*sik-2/3*akl*skl*deltaij)
+!  +Cr5*rho*k*(aik*rjk + ajk*rik)
+!  -2/3*epsilon*deltaij
 
 ! EBRSM
 if (iturb.eq.32) then
@@ -429,21 +431,6 @@ do iel = 1, ncel
       xnal(3) = grad(3,iel)/xnoral
     endif
   endif
-
-  ! Initalize implicit matrices at 0
-  do isou = 1, 6
-    do jsou = 1, 6
-      impl_drsm(isou, jsou) = 0.0d0
-    end do
-  end do
-  do isou = 1, 3
-    do jsou = 1, 3
-      implmat2add(isou, jsou) = 0.0d0
-    end do
-  end do
-
-  impl_lin_cst = 0.0d0
-  impl_id_cst  = 0.0d0
 
   ! Pij
   xprod(1,1) = produc(1, iel)
@@ -486,12 +473,14 @@ do iel = 1, ncel
 
   trprod = d1s2 * (xprod(1,1) + xprod(2,2) + xprod(3,3) )
   trrij  = d1s2 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
+
   !-----> aII = aijaij
   aii    = 0.d0
   aklskl = 0.d0
   aiksjk = 0.d0
   aikrjk = 0.d0
   aikakj = 0.d0
+
   ! aij
   xaniso(1,1) = cvara_var(1,iel)/trrij - d2s3
   xaniso(2,2) = cvara_var(2,iel)/trrij - d2s3
@@ -502,6 +491,7 @@ do iel = 1, ncel
   xaniso(2,1) = xaniso(1,2)
   xaniso(3,1) = xaniso(1,3)
   xaniso(3,2) = xaniso(2,3)
+
   ! Sij
   xstrai(1,1) = gradv(1, 1, iel)
   xstrai(1,2) = d1s2*(gradv(2, 1, iel)+gradv(1, 2, iel))
@@ -512,6 +502,7 @@ do iel = 1, ncel
   xstrai(3,1) = xstrai(1,3)
   xstrai(3,2) = xstrai(2,3)
   xstrai(3,3) = gradv(3, 3, iel)
+
   ! omegaij
   xrotac(1,1) = 0.d0
   xrotac(1,2) = d1s2*(gradv(2, 1, iel)-gradv(1, 2, iel))
@@ -532,115 +523,131 @@ do iel = 1, ncel
     enddo
   enddo
 
-  ! Computation of implicit components
-  ! -----------------------------------
+  if (irijco .ne. 0) then
 
-  sym_strain(1) = xstrai(1,1)
-  sym_strain(2) = xstrai(2,2)
-  sym_strain(3) = xstrai(3,3)
-  sym_strain(4) = xstrai(1,2)
-  sym_strain(5) = xstrai(2,3)
-  sym_strain(6) = xstrai(1,3)
-
-  ! Global variables needed for SSG and EBRSM
-  ! -------------
-  ! Computing the inverse matrix of R^n
-  ! Scaling by tr(R) in order to dodge inversion errors
-  do isou = 1, 6
-    matrn(isou) = cvara_var(isou,iel)/trrij
-    oo_matrn(isou) = 0.0d0
-  end do
-
-  ! Inversing the matrix
-  call symmetric_matrix_inverse(matrn, oo_matrn)
-  do isou = 1, 6
-    oo_matrn(isou) = oo_matrn(isou)/trrij
-  end do
-
-  ! Computing the maximal eigenvalue (in terms of norm!) of S
-  call calc_symtens_eigvals(sym_strain, eigen_vals)
-  eigen_max = maxval(abs(eigen_vals))
-
-  ! Constant for the dissipation
-  ceps_impl = d1s3 * cvara_ep(iel)
-
-
-  if (iturb .eq. 31 ) then ! SSG - Epsilon
-
-    ! Identity constant for phi3
-    cphi3impl = abs(cssgr2 - cssgr3*sqrt(aii))
-
-    ! Identity constant
-    impl_id_cst = - d2s3*cssgr1*min(trprod,0.0d0)         & ! Phi1
-                  - d1s3*cssgs2*cvara_ep(iel)*aii         & ! Phi2
-                  + cphi3impl * trrij * eigen_max         & ! Phi3
-                  + 2.0d0*d2s3*cssgr4*trrij*eigen_max     & ! Phi4
-                  + d2s3*trrij*cssgr4*max(aklskl,0.0d0)     ! Phi4
-
-    ! Linear constant
-    impl_lin_cst = eigen_max *     ( &
-                   1.0d0             & ! Production
-                 + cssgr4            & ! Phi 4 linear part
-                 + cssgr5          )   ! Phi 5 linear part
-
-    do jsou = 1, 3
-      do isou = 1 ,3
-        iii = t2v(isou,jsou)
-        implmat2add(isou,jsou) = xrotac(isou,jsou)              &
-                               + impl_lin_cst*deltij(iii)       &
-                               + impl_id_cst*d1s2*oo_matrn(iii) &
-                               + ceps_impl*oo_matrn(iii)
+    ! Initalize implicit matrices at 0
+    do isou = 1, 6
+      do jsou = 1, 6
+        impl_drsm(isou, jsou) = 0.0d0
+      end do
+    end do
+    do isou = 1, 3
+      do jsou = 1, 3
+        implmat2add(isou, jsou) = 0.0d0
       end do
     end do
 
-    impl_drsm(:,:) = 0.0d0
-    call reduce_symprod33_to_66(implmat2add, impl_drsm)
+    impl_lin_cst = 0.0d0
+    impl_id_cst  = 0.0d0
 
-  else ! EBRSM
+    ! Computation of implicit components
+    ! -----------------------------------
 
-    alpha3 = cvar_al(iel)**3
+    sym_strain(1) = xstrai(1,1)
+    sym_strain(2) = xstrai(2,2)
+    sym_strain(3) = xstrai(3,3)
+    sym_strain(4) = xstrai(1,2)
+    sym_strain(5) = xstrai(2,3)
+    sym_strain(6) = xstrai(1,3)
 
-    ! Phi3 constant
-    cphi3impl = abs(cebmr2 - cebmr3*sqrt(aii))
-
-    ! PhiWall + epsilon_wall constants for EBRSM
-    cphiw_impl = 6.0d0*(1.0d0-alpha3)*cvara_ep(iel)/trrij
-
+    ! Global variables needed for SSG and EBRSM
     ! -------------
-    ! The implicit components of Phi (pressure-velocity fluctuations)
-    ! are split into the linear part (A*R) and Id part (A*Id).
-    ! -------------
-
-    ! Identity constant
-    impl_id_cst = alpha3 * (                             &
-                  - d2s3*cebmr1*min(trprod,0.0d0)        & ! Phi1
-                  + cphi3impl * trrij * eigen_max        & ! Phi3
-                  + 2.0d0*d2s3*cebmr4*trrij*eigen_max    & ! Phi4
-                  + d2s3*trrij*cebmr4*max(aklskl,0.d0) )   ! Phi4
-
-
-    ! Linear constant
-    impl_lin_cst = eigen_max * (                  &
-                   1.0d0                          & ! Production
-                   + cebmr4 * alpha3              & ! Phi4 Linear part
-                   + cebmr5 * alpha3            ) & ! Phi5 Linear part
-                   + cphiw_impl                     ! Epsilon + Phi wall
-
-
-    do jsou = 1, 3
-      do isou = 1, 3
-        iii = t2v(isou,jsou)
-        implmat2add(isou,jsou) = xrotac(isou,jsou)                  &
-                               + impl_lin_cst*deltij(iii)           &
-                               + impl_id_cst*d1s2*oo_matrn(iii)     &
-                               + alpha3*ceps_impl*oo_matrn(iii)
-      end do
+    ! Computing the inverse matrix of R^n
+    ! Scaling by tr(R) in order to dodge inversion errors
+    do isou = 1, 6
+      matrn(isou) = cvara_var(isou,iel)/trrij
+      oo_matrn(isou) = 0.0d0
     end do
 
-    impl_drsm(:,:) = 0.0d0
-    call reduce_symprod33_to_66(implmat2add, impl_drsm)
+    ! Inversing the matrix
+    call symmetric_matrix_inverse(matrn, oo_matrn)
+    do isou = 1, 6
+      oo_matrn(isou) = oo_matrn(isou)/trrij
+    end do
 
-  end if
+    ! Computing the maximal eigenvalue (in terms of norm!) of S
+    call calc_symtens_eigvals(sym_strain, eigen_vals)
+    eigen_max = maxval(abs(eigen_vals))
+
+    ! Constant for the dissipation
+    ceps_impl = d1s3 * cvara_ep(iel)
+
+    if (iturb .eq. 31 ) then ! SSG - Epsilon
+
+      ! Identity constant for phi3
+      cphi3impl = abs(cssgr2 - cssgr3*sqrt(aii))
+
+      ! Identity constant
+      impl_id_cst = - d2s3*cssgr1*min(trprod,0.0d0)         & ! Phi1
+                    - d1s3*cssgs2*cvara_ep(iel)*aii         & ! Phi2
+                    + cphi3impl * trrij * eigen_max         & ! Phi3
+                    + 2.0d0*d2s3*cssgr4*trrij*eigen_max     & ! Phi4
+                    + d2s3*trrij*cssgr4*max(aklskl,0.0d0)     ! Phi4
+
+      ! Linear constant
+      impl_lin_cst = eigen_max *     ( &
+                     1.0d0             & ! Production
+                   + cssgr4            & ! Phi 4 linear part
+                   + cssgr5          )   ! Phi 5 linear part
+
+      do jsou = 1, 3
+        do isou = 1 ,3
+          iii = t2v(isou,jsou)
+          implmat2add(isou,jsou) = xrotac(isou,jsou)              &
+                                 + impl_lin_cst*deltij(iii)       &
+                                 + impl_id_cst*d1s2*oo_matrn(iii) &
+                                 + ceps_impl*oo_matrn(iii)
+        end do
+      end do
+
+      impl_drsm(:,:) = 0.0d0
+      call reduce_symprod33_to_66(implmat2add, impl_drsm)
+
+    else ! EBRSM
+
+      alpha3 = cvar_al(iel)**3
+
+      ! Phi3 constant
+      cphi3impl = abs(cebmr2 - cebmr3*sqrt(aii))
+
+      ! PhiWall + epsilon_wall constants for EBRSM
+      cphiw_impl = 6.0d0*(1.0d0-alpha3)*cvara_ep(iel)/trrij
+
+      ! -------------
+      ! The implicit components of Phi (pressure-velocity fluctuations)
+      ! are split into the linear part (A*R) and Id part (A*Id).
+      ! -------------
+
+      ! Identity constant
+      impl_id_cst = alpha3 * (                             &
+                    - d2s3*cebmr1*min(trprod,0.0d0)        & ! Phi1
+                    + cphi3impl * trrij * eigen_max        & ! Phi3
+                    + 2.0d0*d2s3*cebmr4*trrij*eigen_max    & ! Phi4
+                    + d2s3*trrij*cebmr4*max(aklskl,0.d0) )   ! Phi4
+
+      ! Linear constant
+      impl_lin_cst = eigen_max * (                  &
+                     1.0d0                          & ! Production
+                     + cebmr4 * alpha3              & ! Phi4 Linear part
+                     + cebmr5 * alpha3            ) & ! Phi5 Linear part
+                     + cphiw_impl                     ! Epsilon + Phi wall
+
+      do jsou = 1, 3
+        do isou = 1, 3
+          iii = t2v(isou,jsou)
+          implmat2add(isou,jsou) = xrotac(isou,jsou)                  &
+                                 + impl_lin_cst*deltij(iii)           &
+                                 + impl_id_cst*d1s2*oo_matrn(iii)     &
+                                 + alpha3*ceps_impl*oo_matrn(iii)
+        end do
+      end do
+
+      impl_drsm(:,:) = 0.0d0
+      call reduce_symprod33_to_66(implmat2add, impl_drsm)
+
+    end if   ! EBRSM
+
+  endif   ! (irijco .ne. 0)
 
   ! Rotating frame of reference => "absolute" vorticity
   if (icorio.eq.1) then
@@ -652,25 +659,8 @@ do iel = 1, ncel
   endif
 
   do isou = 1, 6
-    if (isou.eq.1)then
-      iii = 1
-      jjj = 1
-    elseif (isou.eq.2)then
-      iii = 2
-      jjj = 2
-    elseif (isou.eq.3)then
-      iii = 3
-      jjj = 3
-    elseif (isou.eq.4)then
-      iii = 1
-      jjj = 2
-    elseif (isou.eq.5)then
-      iii = 2
-      jjj = 3
-    elseif (isou.eq.6)then
-      iii = 1
-      jjj = 3
-    endif
+    iii = iv2t(isou)
+    jjj = jv2t(isou)
     aiksjk = 0
     aikrjk = 0
     aikakj = 0
@@ -769,26 +759,33 @@ do iel = 1, ncel
       !            - (1-\alpha^3)\e_{ij}^w   - \alpha^3\e_{ij}^h  ]\f$ --> W1
       alpha3 = cvar_al(iel)**3
 
-      w1(iel) = cell_f_vol(iel)*crom(iel)*(                             &
-                 xprod(iii,jjj)                                     &
-              + (1.d0-alpha3)*phiijw + alpha3*(phiij1+phiij2)       &
+      w1(iel) = cell_f_vol(iel)*crom(iel)*(                            &
+                 xprod(iii,jjj)                                        &
+              + (1.d0-alpha3)*phiijw + alpha3*(phiij1+phiij2)          &
               - (1.d0-alpha3)*epsijw - alpha3*epsij)
 
       !  Implicit term
 
+      if (irijco.eq.0) then
+        ! Implicitation of epsijw
+        ! (the factor 5 appears when we calculate \f$ Phi_{ij}^w - epsijw\f$)
+        ! epsijw_imp = 5.d0 * (1.d0-alpha3)*cvara_ep(iel)/trrij           &
+        !                   + (1.d0-alpha3)*cvara_ep(iel)/trrij
+        epsijw_imp = 6.d0 * (1.d0-alpha3)*cvara_ep(iel)/trrij
+      else
+        ! FIXME
+        epsijw_imp = 0.d0
+      endif
+
       ! The term below corresponds to the implicit part of SSG
       ! in the context of elliptical weighting, it is multiplied by
       ! \f$ \alpha^3 \f$
-      w2(iel) = cell_f_vol(iel)*crom(iel)*(                             &
-                cebms1*cvara_ep(iel)/trrij*alpha3                       &
-               +cebmr1*max(trprod/trrij,0.d0)*alpha3)
+      w2(iel) =   cell_f_vol(iel)*crom(iel)                             &
+                * (  cebms1*cvara_ep(iel)/trrij*alpha3                  &
+                   + cebmr1*max(trprod/trrij,0.d0)*alpha3               &
+                   + epsijw_imp)
 
-!FIXME               +cebmr1*max(trprod/trrij,0.d0)*alpha3                &
-!      ! Implicitation of epsijw
-!      ! (the factor 5 appears when we calculate \f$ Phi_{ij}^w - epsijw\f$)
-!              + 5.d0 * (1.d0-alpha3)*cvara_ep(iel)/trrij                &
-!              +        (1.d0-alpha3)*cvara_ep(iel)/trrij)
-    endif
+    endif ! EBRSM
 
     if (st_prv_id.ge.0) then
       c_st_prv(isou,iel) = c_st_prv(isou,iel) + w1(iel)
@@ -796,13 +793,14 @@ do iel = 1, ncel
       smbr(isou,iel) = smbr(isou,iel) + w1(iel)
       rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel) + w2(iel)
 
-      ! Careful ! Inversion of the order of the coefficients since
-      ! rovsdt matrix is then used by a c function for the linear solving
-      do jsou = 1, 6
-        rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) + cell_f_vol(iel) &
-                                *crom(iel) * impl_drsm(isou,jsou)
-      end do
-
+      if (irijco.ne.0) then
+        ! Careful ! Inversion of the order of the coefficients since
+        ! rovsdt matrix is then used by a c function for the linear solving
+        do jsou = 1, 6
+          rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) + cell_f_vol(iel) &
+                                  *crom(iel) * impl_drsm(isou,jsou)
+        end do
+      endif
     endif
   enddo
 enddo
@@ -812,14 +810,11 @@ if (iturb.eq.32) then
 endif
 
 !===============================================================================
-! 7. Buoyancy source term
+! Buoyancy source term
 !===============================================================================
 
 if (igrari.eq.1) then
 
-  grav(1) = gx
-  grav(2) = gy
-  grav(3) = gz
   call field_get_id_try("rij_buoyancy", f_id)
   if (f_id.ge.0) then
     call field_get_val_v(f_id, cpro_buoyancy)
@@ -831,120 +826,131 @@ if (igrari.eq.1) then
 
   call rijthe2(gradro, cpro_buoyancy)
 
-  do isou = 1, 6
-    ! If we extrapolate the source terms: previous ST
-    if (st_prv_id.ge.0) then
-      do iel = 1, ncel
+  ! If we extrapolate the source terms: previous ST
+  if (st_prv_id.ge.0) then
+    do iel = 1, ncel
+      do isou = 1, 6
         c_st_prv(isou,iel) = c_st_prv(isou,iel) + cpro_buoyancy(isou,iel) * cell_f_vol(iel)
       enddo
-    ! Otherwise smbr
-    else
-      do iel = 1, ncel
+    enddo
+  ! Otherwise smbr
+  else
+    do iel = 1, ncel
+      do isou = 1, 6
         smbr(isou,iel) = smbr(isou,iel) + cpro_buoyancy(isou,iel) * cell_f_vol(iel)
       enddo
-    endif
-  enddo
+    enddo
+  endif
 
   ! Free memory
   if (allocated(buoyancy)) deallocate(buoyancy)
 
-  ! Implicit buoyancy term
-  if (iscalt.gt.0) then
-    call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
-    const = -1.5d0 * cmu / turb_schmidt
-  else
-    const = -1.5d0 * cmu
-  end if
+  if (irijco.ne.0) then
 
-  do iel = 1, ncel
+    grav(1) = gx
+    grav(2) = gy
+    grav(3) = gz
 
-    do jsou = 1, 6
-      do isou = 1, 6
-        impl_drsm(isou,jsou) = 0.0d0
-      end do
-    end do
-    implmat2add(:,:) = 0.0d0
-
-    kseps = (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel)) &
-      / (2.0d0*cvara_ep(iel))
-
-    xrij(1,1) = cvara_var(1,iel)
-    xrij(2,2) = cvara_var(2,iel)
-    xrij(3,3) = cvara_var(3,iel)
-    xrij(1,2) = cvara_var(4,iel)
-    xrij(2,3) = cvara_var(5,iel)
-    xrij(1,3) = cvara_var(6,iel)
-    xrij(2,1) = xrij(1,2)
-    xrij(3,1) = xrij(1,3)
-    xrij(3,2) = xrij(2,3)
-
-    trrij = 0.5d0 * (xrij(1,1) + xrij(2,2) + xrij(3,3))
-
-    gkks3 = 0.d0
-    do jsou = 1, 3
-      do isou = 1, 3
-        gkks3 = gkks3 + grav(isou) * gradro(jsou,iel) * xrij(isou, jsou)
-      enddo
-    enddo
-    gkks3 = const * kseps * gkks3 * crij3 * 2.d0 / 3.d0
-
-    if (gkks3.le.0.d0) then
-      ! Term "C3 tr(G) Id"
-      ! Computing the inverse matrix of R^n
-      ! Scaling by tr(R) in order to dodge inversion errors
-      do isou = 1, 6
-        matrn(isou) = cvara_var(isou,iel)/trrij
-        oo_matrn(isou) = 0.0d0
-      end do
-
-      ! Inversing the matrix
-      call symmetric_matrix_inverse(matrn, oo_matrn)
-      do isou = 1, 6
-        oo_matrn(isou) = oo_matrn(isou)/trrij
-      end do
-
-      do jsou = 1, 3
-        do isou = 1, 3
-          iii = t2v(isou,jsou)
-          implmat2add(isou,jsou) = - 0.5d0 * gkks3 * oo_matrn(iii)
-        end do
-      end do
-
-    endif
-
-    gradchk = grav(1)*gradro(1,iel) + grav(2)*gradro(2,iel) + grav(3)*gradro(3,iel)
-    if (gradchk .gt. 0.0d0) then
-
-      ! Implicit term written as:
-      !   Po . R^n+1 + R^n+1 . Po^t
-      ! with Po proportional to "g (x) Grad rho"
-      gradro_impl = const * (1.0d0-crij3) * kseps
-      do jsou = 1, 3
-        do isou = 1, 3
-          implmat2add(isou,jsou) = implmat2add(isou,jsou) - gradro_impl * grav(isou) * gradro(jsou,iel)
-        end do
-      end do
+    ! Implicit buoyancy term
+    if (iscalt.gt.0) then
+      call field_get_key_double(ivarfl(isca(iscalt)), ksigmas, turb_schmidt)
+      const = -1.5d0 * cmu / turb_schmidt
+    else
+      const = -1.5d0 * cmu
     end if
 
-    ! Compute the 6x6 matrix A which verifies
-    ! A . R = M . R + R . M^t
-    call reduce_symprod33_to_66(implmat2add, impl_drsm)
+    do iel = 1, ncel
 
-    do isou = 1, 6
       do jsou = 1, 6
-        ! Careful ! Inversion of the order of the coefficients since
-        ! rovsdt matrix is then used by a c function for the linear solving
-        rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) + cell_f_vol(iel) &
-                                * impl_drsm(isou,jsou)
+        do isou = 1, 6
+          impl_drsm(isou,jsou) = 0.0d0
+        end do
       end do
+      implmat2add(:,:) = 0.0d0
+
+      kseps = (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel)) &
+        / (2.0d0*cvara_ep(iel))
+
+      xrij(1,1) = cvara_var(1,iel)
+      xrij(2,2) = cvara_var(2,iel)
+      xrij(3,3) = cvara_var(3,iel)
+      xrij(1,2) = cvara_var(4,iel)
+      xrij(2,3) = cvara_var(5,iel)
+      xrij(1,3) = cvara_var(6,iel)
+      xrij(2,1) = xrij(1,2)
+      xrij(3,1) = xrij(1,3)
+      xrij(3,2) = xrij(2,3)
+
+      trrij = 0.5d0 * (xrij(1,1) + xrij(2,2) + xrij(3,3))
+
+      gkks3 = 0.d0
+      do jsou = 1, 3
+        do isou = 1, 3
+          gkks3 = gkks3 + grav(isou) * gradro(jsou,iel) * xrij(isou, jsou)
+        enddo
+      enddo
+      gkks3 = const * kseps * gkks3 * crij3 * 2.d0 / 3.d0
+
+      if (gkks3.le.0.d0) then
+        ! Term "C3 tr(G) Id"
+        ! Computing the inverse matrix of R^n
+        ! Scaling by tr(R) in order to dodge inversion errors
+        do isou = 1, 6
+          matrn(isou) = cvara_var(isou,iel)/trrij
+          oo_matrn(isou) = 0.0d0
+        end do
+
+        ! Inversing the matrix
+        call symmetric_matrix_inverse(matrn, oo_matrn)
+        do isou = 1, 6
+          oo_matrn(isou) = oo_matrn(isou)/trrij
+        end do
+
+        do jsou = 1, 3
+          do isou = 1, 3
+            iii = t2v(isou,jsou)
+            implmat2add(isou,jsou) = - 0.5d0 * gkks3 * oo_matrn(iii)
+          end do
+        end do
+
+      endif
+
+      gradchk = grav(1)*gradro(1,iel) + grav(2)*gradro(2,iel) + grav(3)*gradro(3,iel)
+      if (gradchk .gt. 0.0d0) then
+
+        ! Implicit term written as:
+        !   Po . R^n+1 + R^n+1 . Po^t
+        ! with Po proportional to "g (x) Grad rho"
+        gradro_impl = const * (1.0d0-crij3) * kseps
+        do jsou = 1, 3
+          do isou = 1, 3
+            implmat2add(isou,jsou) =   implmat2add(isou,jsou)   &
+                                     - gradro_impl * grav(isou) * gradro(jsou,iel)
+          end do
+        end do
+      end if
+
+      ! Compute the 6x6 matrix A which verifies
+      ! A . R = M . R + R . M^t
+      call reduce_symprod33_to_66(implmat2add, impl_drsm)
+
+      do isou = 1, 6
+        do jsou = 1, 6
+          ! Careful ! Inversion of the order of the coefficients since
+          ! rovsdt matrix is then used by a c function for the linear solving
+          rovsdt(jsou,isou,iel) =   rovsdt(jsou,isou,iel)       &
+                                  + cell_f_vol(iel) * impl_drsm(isou,jsou)
+        end do
+      end do
+
     end do
 
-  end do
+  endif ! (irijco .ne. 0)
 
 endif
 
 !===============================================================================
-! 8. Diffusion term (Daly Harlow: generalized gradient hypothesis method)
+! Diffusion term (Daly Harlow: generalized gradient hypothesis method)
 !===============================================================================
 
 ! Symmetric tensor diffusivity (GGDH)
@@ -980,7 +986,7 @@ else
 endif
 
 !===============================================================================
-! 9. Solving
+! Solving
 !===============================================================================
 
 if (st_prv_id.ge.0) then
