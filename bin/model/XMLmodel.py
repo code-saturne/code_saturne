@@ -107,6 +107,10 @@ class XMLmodel(Variables):
         elif model in ('Spalart-Allmaras'):
             nodeList.append(nodeTurb.xmlGetNode('variable', name='nu_tilda'))
 
+        for n in nodeList:
+            if n == None:
+                nodeList.remove(None)
+
         return nodeList
 
 
