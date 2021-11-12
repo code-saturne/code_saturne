@@ -758,7 +758,8 @@ class meg_to_c_interpreter:
                                           known_symbols,
                                           'src',
                                           glob_tokens,
-                                          loop_tokens)
+                                          loop_tokens,
+                                          need_for_loop=True)
 
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
@@ -872,7 +873,8 @@ class meg_to_c_interpreter:
                                           known_symbols,
                                           'ini',
                                           glob_tokens,
-                                          loop_tokens)
+                                          loop_tokens,
+                                          need_for_loop=True)
 
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
