@@ -306,7 +306,8 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
 
   /* Set the non-linear algorithm (only useful if advection is implicit and
    * Navier-Stokes or Oseen model is set) */
-  nslesp->nl_algo = CS_NAVSTO_NL_PICARD_ALGO;
+
+  nslesp->nl_algo = CS_PARAM_NL_ALGO_PICARD;
   nslesp->n_max_nl_algo_iter = 25;
   nslesp->nl_algo_rtol = 1e-5;
   nslesp->nl_algo_atol = 1e-5;
@@ -314,6 +315,7 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
   nslesp->nl_algo_verbosity = 1;
 
   /* Set the default solver options for the main linear algorithm */
+
   nslesp->n_max_il_algo_iter = 100;
   nslesp->il_algo_rtol = 1e-08;
   nslesp->il_algo_atol = 1e-08;
@@ -348,6 +350,7 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
 
   /* Settings for driving the linear algebra related to the Schur complement
      approximation */
+
   cs_param_sles_t  *schur_slesp = cs_param_sles_create(-1,
                                                        "schur_approximation");
 
@@ -1043,9 +1046,10 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
   case CS_NSKEY_NL_ALGO:
     {
-      if (strcmp(val, "picard") == 0 ||
-          strcmp(val, "fixed-point") == 0)
-        nsp->sles_param->nl_algo = CS_NAVSTO_NL_PICARD_ALGO;
+      if (strcmp(val, "picard") == 0 || strcmp(val, "fixed-point") == 0)
+        nsp->sles_param->nl_algo = CS_PARAM_NL_ALGO_PICARD;
+      else if (strcmp(val, "anderson") == 0)
+        nsp->sles_param->nl_algo = CS_PARAM_NL_ALGO_ANDERSON;
       else {
         const char *_val = val;
         bft_error(__FILE__, __LINE__, 0,
@@ -1371,6 +1375,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   const char  navsto[16] = "  * NavSto |";
 
   /* Sanity checks */
+
   if (nsp->model == CS_NAVSTO_N_MODELS)
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid model for Navier-Stokes.\n",
               __func__);
@@ -1382,6 +1387,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   cs_log_printf(CS_LOG_SETUP, "%s Verbosity: %d\n", navsto, nsp->verbosity);
 
   /* Describe the physical modelling */
+
   cs_log_printf(CS_LOG_SETUP, "%s Model: %s\n",
                 navsto, cs_navsto_param_get_model_name(nsp->model));
 
@@ -1417,6 +1423,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   } /* Boussinesq term(s) added */
 
   /* Describe the space-time discretization */
+
   cs_log_printf(CS_LOG_SETUP, "%s Coupling: %s\n",
                 navsto, cs_navsto_param_coupling_name[nsp->coupling]);
 
@@ -1449,6 +1456,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   if (nsp->model == CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES) {
 
     /* Advection treament */
+
     cs_log_printf(CS_LOG_SETUP, "%s Advection scheme: %s\n",
                   navsto, cs_param_get_advection_scheme_name(nsp->adv_scheme));
     cs_log_printf(CS_LOG_SETUP, "%s Advection formulation: %s\n",
@@ -1461,28 +1469,26 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                   cs_param_get_advection_extrapol_name(nsp->adv_extrapol));
 
     /* Describe if needed the SLES settings for the non-linear algorithm */
+
     if (nsp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_FULL) {
 
-      const char algo_name[] = "Picard";
-      if (nsp->sles_param->nl_algo != CS_NAVSTO_NL_PICARD_ALGO)
-        bft_error(__FILE__, __LINE__, 0, "%s: Invalid non-linear algo.",
-                  __func__);
+      const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
       cs_log_printf(CS_LOG_SETUP, "%s Non-linear algo: %s\n",
-                    navsto, algo_name);
+                    navsto, cs_param_get_nl_algo_name(nslesp->nl_algo));
       cs_log_printf(CS_LOG_SETUP, "%s Tolerances of non-linear algo:"
                     " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
-                    navsto, nsp->sles_param->nl_algo_rtol,
-                    nsp->sles_param->nl_algo_atol,
-                    nsp->sles_param->nl_algo_dtol);
+                    navsto, nslesp->nl_algo_rtol, nslesp->nl_algo_atol,
+                    nslesp->nl_algo_dtol);
       cs_log_printf(CS_LOG_SETUP, "%s Max of non-linear iterations: %d\n",
-                    navsto, nsp->sles_param->n_max_nl_algo_iter);
+                    navsto, nslesp->n_max_nl_algo_iter);
 
     } /* A non-linear treatment is requested */
 
   } /* Navier-Stokes */
 
   /* Describe the strategy to inverse the (inner) linear system */
+
   _navsto_param_sles_log(nsp->sles_param);
 
   if (nsp->gd_scale_coef > 0)
@@ -1490,10 +1496,12 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                   navsto, nsp->gd_scale_coef);
 
   /* Default quadrature type */
+
   cs_log_printf(CS_LOG_SETUP, "%s Default quadrature: %s\n",
                 navsto, cs_quadrature_get_type_name(nsp->qtype));
 
   /* Initial conditions for the velocity */
+
   cs_log_printf(CS_LOG_SETUP,
                 "%s Velocity.Init.Cond | Number of definitions %2d\n",
                 navsto, nsp->n_velocity_ic_defs);
@@ -1505,6 +1513,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   }
 
   /* Initial conditions for the pressure */
+
   cs_log_printf(CS_LOG_SETUP,
                 "%s Pressure.Init.Cond | Number of definitions: %d\n",
                 navsto, nsp->n_pressure_ic_defs);

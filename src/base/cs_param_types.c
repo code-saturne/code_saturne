@@ -151,6 +151,12 @@ cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
     N_("weak using the symmetrized Nitsche method") };
 
 static const char
+cs_param_nl_algo_name[CS_PARAM_N_NL_ALGOS][CS_BASE_STRING_LEN] =
+  { N_("Picard (or fixed-point) algorithm"),
+    N_("Anderson acceleration algorithm"),
+  };
+
+static const char
 cs_param_precond_block_name[CS_PARAM_N_PCD_BLOCK_TYPES][CS_BASE_STRING_LEN] =
   { N_("No block preconditioner"),
     N_("Diagonal block preconditioner"),
@@ -414,6 +420,29 @@ cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type)
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
     return cs_param_bc_enforcement_name[type];
+
+  default:
+    return NULL;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the non-linear algorithm
+ *
+ * \param[in] algo     type of algorithm
+ *
+ * \return the associated algorithm name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_nl_algo_name(cs_param_nl_algo_t   algo)
+{
+  switch (algo) {
+  case CS_PARAM_NL_ALGO_PICARD:
+  case CS_PARAM_NL_ALGO_ANDERSON:
+    return cs_param_nl_algo_name[algo];
 
   default:
     return NULL;

@@ -454,25 +454,6 @@ typedef enum {
 
 } cs_navsto_sles_t;
 
-/*! \enum cs_navsto_nl_algo_t
- *
- *  \brief Type of algorithm used to tackle the non-linearity arising from
- *  the Navier-Stokes system.
- *
- * \var CS_NAVSTO_NL_PICARD_ALGO
- * Associated keyword: "picard" or "fixed-point"
- * This is the default algorithm.
- *
- */
-
-typedef enum {
-
-  CS_NAVSTO_NL_PICARD_ALGO,
-
-  CS_NAVSTO_NL_ALGO_TYPES
-
-} cs_navsto_nl_algo_t;
-
 /*! \struct cs_navsto_param_sles_t
  *  \brief Structure storing the parameters for solving the Navier-Stokes system
  */
@@ -482,11 +463,13 @@ typedef struct {
   /*! \var strategy
    *  Choice of strategy for solving the Navier--Stokes system
    */
+
   cs_navsto_sles_t              strategy;
 
   /*! \var schur_strategy
    *  Choice of the way of preconditioning the schur approximation
    */
+
   cs_param_schur_approx_t       schur_approximation;
 
   /*!
@@ -501,34 +484,40 @@ typedef struct {
    *  Uzawa or GKB algorithm. This is incorporated in a non-linear process in
    *  case of Navier--Stokes equations.
    */
+
   cs_real_t                     il_algo_rtol;
 
   /*! \var il_algo_atol
    *  Similar to \ref il_algo_rtol but in the case of an absolute tolerance
    *  factor.
    */
+
   cs_real_t                     il_algo_atol;
 
   /*! \var il_algo_dtol
    *  Similar to \ref il_algo_rtol but in the case of a divergence tolerance
    *  factor. (default 1e3)
    */
+
   cs_real_t                     il_algo_dtol;
 
   /*! \var il_algo_restart
    *  Number of iterations before restarting the iterative solver associated to
    *  the inner linear system
    */
+
   int                           il_algo_restart;
 
   /*! \var n_max_il_algo_iter
    *  Maximal number of iterations to solve the inner linear system
    */
+
   int                           n_max_il_algo_iter;
 
   /*! \var il_algo_verbosity
    *  Level of verbosity related to the inner linear system
    */
+
   int                           il_algo_verbosity;
 
   /*!
@@ -540,37 +529,44 @@ typedef struct {
    */
 
   /*! \var nl_algo
-   *  Type of algorithm used to tackle the non-linearity
+   *  Type of algorithm used to tackle the non-linearity arising from the
+   *  advection term
    */
-  cs_navsto_nl_algo_t           nl_algo;
+
+  cs_param_nl_algo_t            nl_algo;
 
   /*! \var nl_algo_rtol
    *  Relative tolerance factor used in the algorithm used for tackling the
    *  non-linearity.
    */
+
   cs_real_t                     nl_algo_rtol;
 
   /*! \var nl_algo_atol
    *  Absolute tolerance factor used in the algorithm used for tackling the
    *  non-linearity.
    */
+
   cs_real_t                     nl_algo_atol;
 
   /*! \var nl_algo_dtol
    *  Divergence tolerance factor used in the algorithm used for tackling the
    *  non-linearity.
    */
+
   cs_real_t                     nl_algo_dtol;
 
   /*! \var n_max_nl_algo_iter
    *  Maximal number of iterations for the Picard algorithm used to handle
    *  the non-linearity arising from the advection term.
    */
+
   int                           n_max_nl_algo_iter;
 
   /*! \var il_algo_verbosity
    *  Level of verbosity related to the non-linear algorithm
    */
+
   int                           nl_algo_verbosity;
 
   /*! @} */
@@ -993,7 +989,7 @@ typedef struct {
  * Set the maximal number of iteration for solving the inner linear system.
  *
  * \var CS_NSKEY_MAX_NL_ALGO_ITER
- * Set the maximal number of Picard iterations for solving the non-linearity
+ * Set the maximal number of iterations for solving the non-linearity
  * arising from the advection form
  *
  * \var CS_NSKEY_MAX_OUTER_ITER
@@ -1002,22 +998,22 @@ typedef struct {
  *
  * \var CS_NSKEY_NL_ALGO
  * Type of algorithm to consider to solve the non-linearity arising from the
- * Navier-Stokes system
+ * Navier-Stokes system (Picard or Anderson)
  *
  * \var CS_NSKEY_NL_ALGO_ATOL
  * Absolute tolerance at which the non-linearity arising from the advection
- * term is resolved using a Picard (fixed-point) algorithm
+ * term is resolved
  *
  * \var CS_NSKEY_NL_ALGO_DTOL
  * Divergence tolerance at which the non-linearity arising from the advection
- * term is resolved using a Picard (fixed-point) algorithm
+ * term is detected
  *
  * \var CS_NSKEY_NL_ALGO_RTOL
  * Relative tolerance at which the non-linearity arising from the advection
- * term is resolved using a Picard (fixed-point) algorithm
+ * term is resolved
  *
  * \var CS_NSKEY_NL_ALGO_VERBOSITY
- * Level of verbosity related to the non-linear algorithm (Picar for instance)
+ * Level of verbosity related to the non-linear algorithm
  *
  * \var CS_NSKEY_QUADRATURE
  * Set the type to use in all functions involving quadrature (similar to

@@ -488,6 +488,31 @@ typedef enum {
 
 /*!
  * @}
+ * @name Settings for non-linear algorithms
+ * @{
+ *
+ * \enum cs_param_nl_algo_t
+ * \brief Class of non-linear iterative algorithm
+ *
+ * \var CS_PARAM_NL_ALGO_PICARD
+ * Picard (also called fixed point) algorithm
+ *
+ * \var CS_PARAM_NL_ALGO_ANDERSON
+ * Anderson acceleration
+ *
+ * \var CS_PARAM_N_NL_ALGOS
+ */
+
+typedef enum {
+
+  CS_PARAM_NL_ALGO_PICARD,
+  CS_PARAM_NL_ALGO_ANDERSON,
+  CS_PARAM_N_NL_ALGOS
+
+} cs_param_nl_algo_t;
+
+/*!
+ * @}
  * @name Settings for the linear solvers or SLES (Sparse Linear Equation Solver)
  * @{
  *
@@ -1016,6 +1041,19 @@ cs_param_get_bc_name(cs_param_bc_type_t  bc);
 
 const char *
 cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the non-linear algorithm
+ *
+ * \param[in] algo     type of algorithm
+ *
+ * \return the associated algorithm name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_nl_algo_name(cs_param_nl_algo_t   algo);
 
 /*----------------------------------------------------------------------------*/
 /*!
