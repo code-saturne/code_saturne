@@ -168,7 +168,7 @@ _vort_trace(cs_real_t   vort[],
  *  \param[in]      b_face_type  boundary face type
  *  \param[in]      tr_gr_nu     trace of the gradient of field nusa
  *  \param[in]      vort         vorticity
- *  \param[in]      cpro_rho     density
+ *  \param[in]      cpro_rho_o   density (at current or previous time step)
  *  \param[in]      cpro_viscl   laminar viscosity
  *  \param[in,out]  st_exp       explicit source terms
  *  \param[in,out]  st_imp       implicit user source terms
@@ -180,7 +180,7 @@ _src_terms(const cs_real_t    dt[],
            const int          b_face_type[],
            const cs_real_t    tr_gr_nu[],
            const cs_real_t    vort[],
-           const cs_real_t    cpro_rho[],
+           const cs_real_t    cpro_rho_o[],
            const cs_real_t    cpro_viscl[],
            cs_real_t          st_exp[],
            cs_real_t          st_imp[])
@@ -213,7 +213,7 @@ _src_terms(const cs_real_t    dt[],
 
     cs_real_t s[2] = {0, 0};
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-      if (b_face_type[f_id] == CS_SMOOTHWALL  && b_roughness[f_id] > 0) {
+      if (b_face_type[f_id] == CS_SMOOTHWALL && b_roughness[f_id] > 0) {
         const cs_real_t cofbnu = coefbp[f_id];
         /* Roughness of the wall */
         s[0] += b_dist[f_id] * cofbnu/(1.0 - cofbnu);  /* dsa0 */
@@ -261,22 +261,22 @@ _src_terms(const cs_real_t    dt[],
 
   const cs_real_t cv13 = cs_math_pow3(cs_turb_csav1);
 
-  for (cs_lnum_t i = 0;  i < n_cells; i++) {
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-    const cs_real_t rho = cpro_rho[i];
+    const cs_real_t rho = cpro_rho_o[i];
 
     /* kinematic viscosity */
-    const cs_real_t nu0   = cpro_viscl[i]/rho;
+    const cs_real_t nu0 = cpro_viscl[i]/rho;
 
     /* We have to know if there is any rough wall */
     cs_real_t distbf = w_dist[i];
 
     /* viscosity of SA */
-    const cs_real_t nusa  = cvara_nusa[i];
+    const cs_real_t nusa = cvara_nusa[i];
 
     cs_real_t chi = nusa/nu0;
     /* If we have a rough wall */
-    if (f_r != NULL) {
+    if (dsa0 > -998) {
       distbf += dsa0;
       chi += 0.50* hssa/distbf;
     }
@@ -292,8 +292,8 @@ _src_terms(const cs_real_t    dt[],
     if (sbar >= -cst2*omega)
       taussa = omega + sbar;
     else
-      taussa = omega * (1.0 + (  (cs_math_pow2(cst2)*omega + cst3*sbar)
-                               / (cst3 - 2.*cst2) * omega-sbar));
+      taussa = omega * (1.0 + (cs_math_pow2(cst2)*omega + cst3*sbar)
+                               / ((cst3 - 2.*cst2) * omega-sbar));
 
     /* Compute fw */
     cs_real_t rsa;
@@ -436,6 +436,7 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
     = cs_field_get_equation_param_const(CS_F_(nusa));
 
   const cs_real_t *cpro_rho = CS_F_(rho)->val;
+  const cs_real_t *cpro_rho_o = CS_F_(rho)->val;
   const cs_real_t *cpro_viscl = CS_F_(mu)->val;
 
   int key_t_ext_id = cs_field_key_id("time_extrapolated");
@@ -447,7 +448,7 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
   if (istprv >= 0) {
     c_st_nusa_p = cs_field_by_id(istprv)->val;
     if (cs_field_get_key_int(CS_F_(rho), key_t_ext_id) > 0)
-      cpro_rho = CS_F_(rho)->val_pre;
+      cpro_rho_o = CS_F_(rho)->val_pre;
   }
 
   if (eqp_nusa->verbosity >= 1)
