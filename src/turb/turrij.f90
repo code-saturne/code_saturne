@@ -76,7 +76,6 @@ use entsor
 use cstphy
 use cstnum
 use optcal
-use pointe, only: rvoid1
 use ppincl
 use mesh
 use field
@@ -107,20 +106,23 @@ double precision, dimension(:), pointer :: bromo, cromo
 ! Local variables
 
 integer          ifac  , iel   , ivar  , isou, jsou
+integer          iflmas, iflmab
 integer          inc   , iccocg
 integer          iwarnp, iclip
 integer          imrgrp, nswrgp, imligp
-integer          f_id0 , f_id
+integer          f_id0 , f_id, st_prv_id
 integer          iprev
 integer          key_t_ext_id
 integer          iroext
 integer          f_id_phij
+integer          icvflb
+integer          ivoid(1)
 double precision epsrgp, climgp
 double precision rhothe
-double precision utaurf,ut2,ypa,ya,tke,xunorm, limiter, nu0,alpha
+double precision utaurf, ut2, ypa, ya, tke, xunorm, limiter, nu0, alpha
 double precision xnoral, xnal(3)
-double precision k,P
-double precision d1s3,d2s3
+double precision k, p, thets, thetv, tuexpr, thetp1
+double precision d1s3, d2s3
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
@@ -128,8 +130,11 @@ double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:,:), target :: produc
 double precision, allocatable, dimension(:,:) :: gradro
 double precision, allocatable, dimension(:,:) :: grad
-double precision, allocatable, dimension(:,:) :: smbrts
-double precision, allocatable, dimension(:,:,:) ::rovsdtts
+double precision, allocatable, dimension(:,:) :: smbrts, gatinj
+double precision, allocatable, dimension(:,:,:) :: rovsdtts
+double precision, allocatable, dimension(:,:) :: viscce
+double precision, allocatable, dimension(:,:) :: weighf
+double precision, allocatable, dimension(:) :: weighb
 
 double precision, pointer, dimension(:) :: tslagi
 double precision, dimension(:,:), pointer :: coefau
@@ -138,20 +143,25 @@ double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvara_scalt
 double precision, dimension(:), pointer :: cvar_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvara_rij, cvar_rij, vel
-double precision, dimension(:,:), pointer :: lagr_st_rij
+double precision, dimension(:,:), pointer :: c_st_prv, lagr_st_rij
 double precision, dimension(:,:), pointer :: cpro_produc
 double precision, dimension(:,:), pointer :: cpro_press_correl
 double precision, dimension(:), pointer :: cpro_beta
 
+double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:,:), pointer :: coefa_rij, cofaf_rij
+double precision, dimension(:,:,:), pointer :: coefb_rij, cofbf_rij
+
 type(var_cal_opt) :: vcopt
+type(var_cal_opt), target :: vcopt_loc
+type(var_cal_opt), pointer :: p_k_value
+type(c_ptr) :: c_k_value
 
 !===============================================================================
 
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
-
-tslagi  => rvoid1
 
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
@@ -181,10 +191,14 @@ call field_get_val_s(ivarfl(iep), cvar_ep)
 call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 
+call field_get_val_v(ivarfl(irij), cvar_rij)
 call field_get_val_prev_v(ivarfl(irij), cvara_rij)
-call field_get_key_struct_var_cal_opt(ivarfl(iep), vcopt)
+call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
 
-if(vcopt%iwarni.ge.1) then
+thets  = thetst
+thetv  = vcopt%thetav
+
+if (vcopt%iwarni.ge.1) then
   if (iturb.eq.30) then
     write(nfecra,1000)
   elseif (iturb.eq.31) then
@@ -197,31 +211,18 @@ endif
 ! Time extrapolation?
 call field_get_key_id("time_extrapolated", key_t_ext_id)
 
-!===============================================================================
-! 1.1 Call source terms for Rij
-!===============================================================================
+call field_get_key_int(ivarfl(irij), kstprv, st_prv_id)
+if (st_prv_id .ge. 0) then
+  call field_get_val_v(st_prv_id, c_st_prv)
+else
+  c_st_prv=> null()
+endif
 
-do iel = 1, ncel
-  do isou = 1 ,6
-    smbrts(isou,iel) = 0.d0
-  enddo
-enddo
-do iel = 1, ncel
-  do isou = 1, 6
-    do jsou = 1, 6
-      rovsdtts(isou,jsou,iel) = 0.d0
-    enddo
-  enddo
-enddo
-
-call cs_user_turbulence_source_terms2(nvar, nscal, ncepdp, ncesmp,   &
-                                      ivarfl(irij),                  &
-                                      icepdc, icetsm, itypsm,        &
-                                      ckupdc, smacel,                &
-                                      smbrts, rovsdtts)
-
-! C version
-call user_source_terms(ivarfl(irij), smbrts, rovsdtts)
+! Mass flux
+call field_get_key_int(ivarfl(iu), kimasf, iflmas)
+call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
+call field_get_val_s(iflmas, imasfl)
+call field_get_val_s(iflmab, bmasfl)
 
 !===============================================================================
 ! 1.1 Advanced init for EBRSM
@@ -326,7 +327,6 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
   deallocate(grad)
 endif
 
-
 !===============================================================================
 ! 2.1 Compute the velocity gradient
 !===============================================================================
@@ -398,10 +398,10 @@ if (f_id_phij.ge.0) then
   d2s3 = 2.0d0/3.0d0
   do iel = 1, ncel
     k=0.5*(cvara_rij(1,iel)+cvara_rij(2,iel)+cvara_rij(3,iel))
-    P=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
+    p=0.5*(cpro_produc(1,iel)+cpro_produc(2,iel)+cpro_produc(3,iel))
     do isou=1,3
       cpro_press_correl(isou, iel) = -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel)-d2s3*k)  &
-                                     -crij2*(cpro_produc(isou,iel)-d2s3*P)
+                                     -crij2*(cpro_produc(isou,iel)-d2s3*p)
     enddo
     do isou=4,6
       cpro_press_correl(isou, iel) = -crij1*cvar_ep(iel)/k*(cvara_rij(isou,iel))  &
@@ -478,7 +478,6 @@ else if (igrari.eq.1) then
     enddo
 
     ! The choice below has the advantage to be simple
-    call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
 
     imrgrp = vcopt%imrgra
     nswrgp = vcopt%nswrgr
@@ -508,68 +507,216 @@ else if (igrari.eq.1) then
 endif
 
 !===============================================================================
-! 4.  Loop on the variables Rij (6 variables)
-!     The order is R11 R22 R33 R12 R23 R13 (The place of those variables
-!      is IR11.    ..
+! 4.1 Prepare to solve Rij
 !     We solve the equation in a routine similar to covofi.f90
 !===============================================================================
 
-if (iilagr.eq.2) then
-  call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
+!===============================================================================
+! 4.1.1 Source terms for Rij
+!===============================================================================
+
+do iel = 1, ncel
+  do isou = 1 ,6
+    smbrts(isou,iel) = 0.d0
+  enddo
+enddo
+do iel = 1, ncel
+  do isou = 1, 6
+    do jsou = 1, 6
+      rovsdtts(isou,jsou,iel) = 0.d0
+    enddo
+  enddo
+enddo
+
+! User source terms
+!------------------
+
+call cs_user_turbulence_source_terms2(nvar, nscal, ncepdp, ncesmp,   &
+                                      ivarfl(irij),                  &
+                                      icepdc, icetsm, itypsm,        &
+                                      ckupdc, smacel,                &
+                                      smbrts, rovsdtts)
+
+! C version
+call user_source_terms(ivarfl(irij), smbrts, rovsdtts)
+
+! If we extrapolate the source terms
+if (st_prv_id.ge.0) then
+  !     S as Source, V as Variable
+  do iel = 1, ncel
+    do isou = 1, 6
+      ! Save for exchange
+      tuexpr = c_st_prv(isou,iel)
+      ! For continuation and the next time step
+      c_st_prv(isou,iel) = smbrts(isou,iel)
+
+      smbrts(isou,iel) = - thets*tuexpr
+      ! Right hand side of the previous time step
+      ! We suppose -rovsdt > 0: we implicit
+      !    the user source term (the rest)
+      do jsou = 1, 6
+        smbrts(isou,iel) =   smbrts(isou,iel) &
+                           + rovsdtts(jsou,isou,iel)*cvara_rij(jsou,iel)
+        ! Diagonal
+        rovsdtts(jsou,isou,iel) = - thetv*rovsdtts(jsou,isou,iel)
+      enddo
+    enddo
+  enddo
 else
-  lagr_st_rij => null()
+  do iel = 1, ncel
+    do isou = 1, 6
+      do jsou = 1, 6
+        smbrts(isou,iel) =   smbrts(isou,iel) &
+                           + rovsdtts(jsou,isou,iel)*cvara_rij(jsou,iel)
+      enddo
+      rovsdtts(isou,isou,iel) = max(-rovsdtts(isou,isou,iel), 0.d0)
+    enddo
+  enddo
 endif
 
-if (iilagr.eq.2) then
+! Lagrangian source terms
+!------------------------
+
+! 2nd order is not taken into account
+if (iilagr.eq.2 .and. ltsdyn.eq.1) then
+
+  call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
   tslagi => tslagr(1:ncelet,itsli)
+
+  do iel = 1,ncel
+    do isou = 1, 6
+      smbrts(isou, iel) = smbrts(isou, iel) + lagr_st_rij(isou,iel)
+      rovsdtts(isou,isou,iel) = rovsdtts(isou,isou, iel) + max(-tslagi(iel),zero)
+    enddo
+  enddo
+
+endif
+
+! Mass source term
+!-----------------
+
+if (ncesmp.gt.0) then
+
+  allocate(gatinj(6,ncelet))
+
+  ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
+  call catsmt(ncesmp, 6, icetsm, itypsm(:,ivar),                            &
+              cell_f_vol, cvara_rij, smacel(:,ivar+isou-1), smacel(:,ipr),  &
+              smbrts, rovsdtts, gatinj)
+
+  do isou = 1, 6
+
+    ! If we extrapolate the source terms we put Gamma Pinj in the previous st
+    if (st_prv_id.ge.0) then
+      do iel = 1, ncel
+        c_st_prv(isou,iel) = c_st_prv(isou,iel) + gatinj(isou,iel)
+      enddo
+    ! Otherwise we put it directly in the RHS
+    else
+      do iel = 1, ncel
+        smbrts(isou, iel) = smbrts(isou, iel) + gatinj(isou,iel)
+      enddo
+    endif
+
+  enddo
+
+  deallocate(gatinj)
+
+endif
+
+!===============================================================================
+! 4.1.2 Unsteady term
+!===============================================================================
+
+! ---> Added in the matrix diagonal
+
+if (vcopt%istat .eq. 1) then
+  do iel = 1, ncel
+    do isou = 1, 6
+      rovsdtts(isou,isou,iel) =   rovsdtts(isou,isou,iel)                     &
+                                + (crom(iel)/dt(iel))*cell_f_vol(iel)
+    enddo
+  enddo
 endif
 
 ivar = irij
+
+!===============================================================================
+! 4.1.3 Rij-epsilon model-specific terms
+!===============================================================================
+
+allocate(viscce(6,ncelet))
+allocate(weighf(2,nfac))
+allocate(weighb(nfabor))
 
 ! Rij-epsilon standard (LRR)
 if (iturb.eq.30) then
 
   if (irijco.eq.1) then
-    call resrij2(nvar, ncesmp,                                    &
-                icetsm, itypsm,                                   &
-                dt, gradv, cpro_produc, gradro,                   &
-                smacel, viscf, viscb, tslagi,                     &
-                smbrts, rovsdtts)
+    call resrij2(ivar,                                       &
+                 gradv, cpro_produc, gradro,                 &
+                 viscf, viscb, viscce,                       &
+                 smbrts, rovsdtts,                           &
+                 weighf, weighb)
   else
-
-    do isou = 1, 6
-      if    (isou.eq.1) then
-        ivar   = ir11
-      elseif(isou.eq.2) then
-        ivar   = ir22
-      elseif(isou.eq.3) then
-        ivar   = ir33
-      elseif(isou.eq.4) then
-        ivar   = ir12
-      elseif(isou.eq.5) then
-        ivar   = ir23
-      elseif(isou.eq.6) then
-        ivar   = ir13
-      endif
-
-      call resrij(nvar, ncesmp, ivar, isou,                       &
-                  icetsm, itypsm,                                 &
-                  dt, cpro_produc, gradro,                        &
-                  smacel, viscf, viscb, tslagi,                   &
-                  smbr, rovsdt)
-    enddo
+    call resrij(ivar,                                        &
+                cpro_produc, gradro,                         &
+                viscf, viscb, viscce,                        &
+                smbrts, rovsdtts,                            &
+                weighf, weighb)
   endif
 
 ! Rij-epsilon SSG or EBRSM
 elseif (iturb.eq.31.or.iturb.eq.32) then
 
-  call resssg2(nvar, ncesmp, ivar,                                &
-               icetsm, itypsm,                                    &
-               dt, gradv, cpro_produc, gradro,                    &
-               smacel, viscf, viscb, tslagi,                      &
-               smbrts, rovsdtts)
+  call resssg2(ivar,                                         &
+               gradv, cpro_produc, gradro,                   &
+               viscf, viscb, viscce,                         &
+               smbrts, rovsdtts,                             &
+               weighf, weighb)
 
 endif
+
+!===============================================================================
+! 4.2 Solve Rij
+!===============================================================================
+
+if (st_prv_id.ge.0) then
+  thetp1 = 1.d0 + thets
+  do iel = 1, ncel
+    do isou = 1, 6
+      smbrts(isou,iel) = smbrts(isou,iel) + thetp1*c_st_prv(isou,iel)
+    enddo
+  enddo
+endif
+
+! all boundary convective flux with upwind
+icvflb = 0
+
+call field_get_coefa_v(ivarfl(ivar), coefa_rij)
+call field_get_coefb_v(ivarfl(ivar), coefb_rij)
+call field_get_coefaf_v(ivarfl(ivar), cofaf_rij)
+call field_get_coefbf_v(ivarfl(ivar), cofbf_rij)
+
+vcopt_loc = vcopt
+
+vcopt_loc%istat  = -1
+vcopt_loc%idifft = -1
+vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
+vcopt_loc%thetav = thetv
+vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
+
+p_k_value => vcopt_loc
+c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
+
+call cs_equation_iterative_solve_tensor(idtvar, ivarfl(ivar), c_null_char,     &
+                                        c_k_value, cvara_rij, cvara_rij,       &
+                                        coefa_rij, coefb_rij,                  &
+                                        cofaf_rij, cofbf_rij,                  &
+                                        imasfl, bmasfl, viscf,                 &
+                                        viscb, viscf, viscb, viscce,           &
+                                        weighf, weighb, icvflb, ivoid,         &
+                                        rovsdtts, smbrts, cvar_rij)
 
 !===============================================================================
 ! 5. Solve Epsilon

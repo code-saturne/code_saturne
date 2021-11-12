@@ -26,7 +26,7 @@
 
 !> \file resrij2.f90
 !>
-!> \brief This subroutine performs the solving of the coupled Reynolds stress
+!> \brief This subroutine prepares the solving of the coupled Reynolds stress
 !> components in \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
 !>
 !> \remark
@@ -43,35 +43,27 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     icetsm        index of cells with mass source term
-!> \param[in]     itypsm        type of mass source term for each variable
-!>                               (see \ref cs_user_mass_source_terms)
-!> \param[in]     dt            time step (per cell)
+!> \param[in]     ivar          variable number
 !> \param[in]     gradv         work array for the velocity grad term
 !>                                 only for iturb=31
 !> \param[in]     produc        work array for production
 !> \param[in]     gradro        work array for grad rom
 !>                              (without rho volume) only for iturb=30
-!> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate (see \ref cs_user_mass_source_terms)
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at edge faces
-!> \param[in]     tslagi        implicit source terms for the Lagrangian module
+!> \param[out]    viscce        Daly Harlow diffusion term
 !> \param[in]     smbr          working array
 !> \param[in]     rovsdt        working array
-!______________________________________________________________________________!
+!> \param[out]    weighf        working array
+!> \param[out]    weighb        working array
+!_______________________________________________________________________________
 
 subroutine resrij2 &
- ( nvar   , ncesmp ,                                              &
-   icetsm , itypsm ,                                              &
-   dt     ,                                                       &
+ ( ivar   ,                                                       &
    gradv  , produc , gradro ,                                     &
-   smacel ,                                                       &
-   viscf  , viscb  ,                                              &
-   tslagi ,                                                       &
-   smbr   , rovsdt )
+   viscf  , viscb  , viscce ,                                     &
+   smbr   , rovsdt ,                                              &
+   weighf , weighb )
 
 !===============================================================================
 
@@ -103,19 +95,15 @@ implicit none
 
 ! Arguments
 
-integer          nvar
-integer          ncesmp
+integer          ivar
 
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet)
 double precision gradv(3, 3, ncelet)
-double precision produc(6,ncelet)
-double precision gradro(3,ncelet)
-double precision smacel(ncesmp,nvar)
-double precision viscf(nfac), viscb(nfabor)
-double precision tslagi(ncelet)
-double precision smbr(6,ncelet), rovsdt(6,6,ncelet)
+double precision produc(6, ncelet)
+double precision gradro(3, ncelet)
+double precision viscf(nfac), viscb(nfabor), viscce(6, ncelet)
+double precision smbr(6, ncelet)
+double precision rovsdt(6, 6, ncelet)
+double precision weighf(2, nfac), weighb(nfabor)
 
 ! Local variables
 
@@ -126,40 +114,34 @@ integer          iflmas, iflmab
 integer          iwarnp
 integer          imvisp
 integer          st_prv_id
-integer          icvflb
-integer          ivoid(1)
-integer          dimrij, f_id
-integer          key_t_ext_id
+integer          t2v(3,3)
+integer          iv2t(6), jv2t(6)
+integer          key_t_ext_id, f_id
 integer          iroext
 
-double precision trprod, trrij , deltij(6)
-double precision tuexpr, thets , thetv , thetp1
-double precision d1s3  , d2s3
-double precision ccorio, matrot(3,3)
+double precision trprod, trrij
+double precision deltij(6), dij(3,3)
+double precision thets , thetv
+double precision matrot(3,3)
+double precision d1s2, d1s3, d2s3
+double precision ccorio
 double precision rctse
+double precision, dimension(3,3) :: cvara_r
 
 character(len=80) :: label
 double precision, allocatable, dimension(:,:), target :: buoyancy
 double precision, allocatable, dimension(:) :: w1
-double precision, allocatable, dimension(:,:) :: w7
-double precision, allocatable, dimension(:) :: dpvar
-double precision, allocatable, dimension(:,:) :: viscce
-double precision, allocatable, dimension(:,:) :: weighf
-double precision, allocatable, dimension(:) :: weighb
+double precision, allocatable, dimension(:,:) :: w2
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
-double precision, dimension(:,:), pointer :: coefap, cofafp
-double precision, dimension(:,:,:), pointer :: coefbp, cofbfp
 double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep
 double precision, dimension(:,:), pointer :: cvar_var, cvara_var
-double precision, allocatable, dimension(:,:) :: cvara_r
-double precision, dimension(:,:), pointer :: c_st_prv, lagr_st_rij
 double precision, dimension(:), pointer :: viscl
+double precision, dimension(:,:), pointer :: c_st_prv
 double precision, dimension(:,:), pointer :: cpro_buoyancy
 
-integer iii,jjj
-integer t2v(3,3)
+integer iii, jjj
 
 double precision impl_drsm(6,6)
 double precision implmat2add(3,3)
@@ -172,17 +154,13 @@ double precision eigen_vals(3)
 double precision ceps_impl
 double precision eigen_max
 double precision pij, phiij1, phiij2, epsij
-double precision d1s2
 
-type(var_cal_opt) :: vcopt_rij
-type(var_cal_opt), target   :: vcopt_loc
-type(var_cal_opt), pointer  :: p_k_value
-type(c_ptr)                 :: c_k_value
+type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
 !===============================================================================
-! 1. Initialization
+! Initialization
 !===============================================================================
 
 ! Time extrapolation?
@@ -192,53 +170,64 @@ call field_get_key_int(icrom, key_t_ext_id, iroext)
 
 ! Allocate work arrays
 allocate(w1(ncelet))
-allocate(w7(6,ncelet))
-allocate(dpvar(ncelet))
-allocate(viscce(6,ncelet))
-allocate(weighf(2,nfac))
-allocate(weighb(nfabor))
+allocate(w2(6,ncelet))
 
-call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt_rij)
+! Generating the tensor to vector (t2v) and vector to tensor (v2t) mask arrays
 
-if (vcopt_rij%iwarni.ge.1) then
-  call field_get_label(ivarfl(irij), label)
+! a) t2v
+t2v(1,1) = 1; t2v(1,2) = 4; t2v(1,3) = 6;
+t2v(2,1) = 4; t2v(2,2) = 2; t2v(2,3) = 5;
+t2v(3,1) = 6; t2v(3,2) = 5; t2v(3,3) = 3;
+
+! b) i index of v2t
+iv2t(1) = 1; iv2t(2) = 2; iv2t(3) = 3;
+iv2t(4) = 1; iv2t(5) = 2; iv2t(6) = 1;
+
+! c) j index of v2t
+jv2t(1) = 1; jv2t(2) = 2; jv2t(3) = 3;
+jv2t(4) = 2; jv2t(5) = 3; jv2t(6) = 3;
+
+! d) kronecker symbol
+dij(:,:) = 0.0d0;
+dij(1,1) = 1.0d0; dij(2,2) = 1.0d0; dij(3,3) = 1.0d0;
+
+call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+if (vcopt%iwarni.ge.1) then
+  call field_get_label(ivarfl(ivar), label)
   write(nfecra,1000) label
 endif
 
 call field_get_val_s(icrom, crom)
 call field_get_val_s(iviscl, viscl)
+
+call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+
+call field_get_val_v(ivarfl(ivar), cvar_var)
+call field_get_val_prev_v(ivarfl(ivar), cvara_var)
+
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
-call field_get_val_prev_s(ivarfl(iep), cvara_ep)
-
-
-call field_get_val_v(ivarfl(irij), cvar_var)
-call field_get_val_prev_v(ivarfl(irij), cvara_var)
-call field_get_dim(ivarfl(irij),dimrij)! dimension of Rij
-
-call field_get_coefa_v(ivarfl(irij), coefap)
-call field_get_coefb_v(ivarfl(irij), coefbp)
-call field_get_coefaf_v(ivarfl(irij), cofafp)
-call field_get_coefbf_v(ivarfl(irij), cofbfp)
-
-do isou = 1, 6
-  deltij(isou) = 1.0d0
-  if (isou.gt.3) then
-    deltij(isou) = 0.0d0
-  endif
-enddo
+d1s2 = 1.d0/2.d0
 d1s3 = 1.d0/3.d0
 d2s3 = 2.d0/3.d0
 
+do isou = 1, 3
+  deltij(isou) = 1.0d0
+enddo
+do isou = 4, 6
+  deltij(isou) = 0.0d0
+enddo
+
 !     S as Source, V as Variable
 thets  = thetst
-thetv  = vcopt_rij%thetav
+thetv  = vcopt%thetav
 
-call field_get_key_int(ivarfl(irij), kstprv, st_prv_id)
-if (st_prv_id.ge.0) then
+call field_get_key_int(ivarfl(ivar), kstprv, st_prv_id)
+if (st_prv_id .ge. 0) then
   call field_get_val_v(st_prv_id, c_st_prv)
 else
   c_st_prv=> null()
@@ -261,104 +250,8 @@ else
   ccorio = 0.d0
 endif
 
-d1s2   = 1.d0/2.d0
-
-t2v(1,1) = 1; t2v(1,2) = 4; t2v(1,3) = 6;
-t2v(2,1) = 4; t2v(2,2) = 2; t2v(2,3) = 5;
-t2v(3,1) = 6; t2v(3,2) = 5; t2v(3,3) = 3;
-
 !===============================================================================
-! 2. User source terms
-!===============================================================================
-
-! If we extrapolate the source terms
-if (st_prv_id.ge.0) then
-  do iel = 1, ncel
-    do isou = 1, dimrij
-      ! Save for exchange
-      tuexpr = c_st_prv(isou,iel)
-      ! For continuation and the next time step
-      c_st_prv(isou,iel) = smbr(isou,iel)
-      ! Second member of the previous time step
-      ! We suppose -rovsdt > 0: we implicite
-      !    the user source term (the rest)
-      do jsou = 1, dimrij
-        smbr(isou,iel) = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel)  - thets*tuexpr
-        ! Diagonal
-        rovsdt(jsou,isou,iel) = - thetv*rovsdt(jsou,isou,iel)
-      enddo
-    enddo
-  enddo
-else
-  do iel = 1, ncel
-    do isou = 1, dimrij
-      do jsou = 1, dimrij
-        smbr(isou,iel)   = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel) + smbr(isou,iel)
-      enddo
-      rovsdt(isou,isou,iel) = max(-rovsdt(isou,isou,iel), 0.d0)
-    enddo
-  enddo
-endif
-
-!===============================================================================
-! 3. Lagrangian source terms
-!===============================================================================
-
-!     2nd order is not taken into account
-if (iilagr.eq.2 .and. ltsdyn.eq.1) then
-  call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
-  do iel = 1,ncel
-    do isou = 1, dimrij
-      smbr(isou, iel) = smbr(isou, iel) + lagr_st_rij(isou,iel)
-      rovsdt(isou,isou,iel) = rovsdt(isou,isou, iel) + max(-tslagi(iel),zero)
-    enddo
-  enddo
-endif
-
-!===============================================================================
-! 4. Mass source term
-!===============================================================================
-
-if (ncesmp.gt.0) then
-
-  do isou = 1, dimrij
-
-    ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
-    call catsmt(ncesmp, 1, icetsm, itypsm(:,irij+isou-1),                     &
-                cell_f_vol, cvara_var, smacel(:,irij+isou-1), smacel(:,ipr),  &
-                smbr, rovsdt, w1)
-
-    ! If we extrapolate the source terms we put Gamma Pinj in the previous st
-    if (st_prv_id.ge.0) then
-      do iel = 1, ncel
-        c_st_prv(isou,iel) = c_st_prv(isou,iel) + w1(iel)
-      enddo
-    ! Otherwise we put it directly in the RHS
-    else
-      do iel = 1, ncel
-        smbr(isou, iel) = smbr(isou, iel) + w1(iel)
-      enddo
-    endif
-
-  enddo
-endif
-
-!===============================================================================
-! 5. Unsteady term
-!===============================================================================
-
-! ---> Added in the matrix diagonal
-
-do iel=1,ncel
-  do isou = 1, dimrij
-    rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel)                              &
-              + vcopt_rij%istat*(crom(iel)/dt(iel))*cell_f_vol(iel)
-  enddo
-enddo
-
-
-!===============================================================================
-! 6. Production, Pressure-Strain correlation, dissipation
+! Production, Pressure-Strain correlation, dissipation
 !===============================================================================
 
 do iel = 1, ncel
@@ -391,7 +284,7 @@ do iel = 1, ncel
   xprod(3,2) = xprod(2,3)
 
   trprod = d1s2 * (xprod(1,1) + xprod(2,2) + xprod(3,3) )
-  trrij  = d1s2 * (cvara_var(1 ,iel) + cvara_var(2 ,iel) + cvara_var(3 ,iel))
+  trrij  = d1s2 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
 
   !-----> aII = aijaij
   aii    = 0.d0
@@ -399,16 +292,18 @@ do iel = 1, ncel
   aiksjk = 0.d0
   aikrjk = 0.d0
   aikakj = 0.d0
+
   ! aij
-  xaniso(1,1) = cvara_var(1 ,iel)/trrij - d2s3
-  xaniso(2,2) = cvara_var(2 ,iel)/trrij - d2s3
-  xaniso(3,3) = cvara_var(3 ,iel)/trrij - d2s3
-  xaniso(1,2) = cvara_var(4 ,iel)/trrij
-  xaniso(1,3) = cvara_var(6 ,iel)/trrij
-  xaniso(2,3) = cvara_var(5 ,iel)/trrij
+  xaniso(1,1) = cvara_var(1,iel)/trrij - d2s3
+  xaniso(2,2) = cvara_var(2,iel)/trrij - d2s3
+  xaniso(3,3) = cvara_var(3,iel)/trrij - d2s3
+  xaniso(1,2) = cvara_var(4,iel)/trrij
+  xaniso(1,3) = cvara_var(6,iel)/trrij
+  xaniso(2,3) = cvara_var(5,iel)/trrij
   xaniso(2,1) = xaniso(1,2)
   xaniso(3,1) = xaniso(1,3)
   xaniso(3,2) = xaniso(2,3)
+
   ! Sij
   xstrai(1,1) = gradv(1, 1, iel)
   xstrai(1,2) = d1s2*(gradv(2, 1, iel)+gradv(1, 2, iel))
@@ -419,12 +314,7 @@ do iel = 1, ncel
   xstrai(3,1) = xstrai(1,3)
   xstrai(3,2) = xstrai(2,3)
   xstrai(3,3) = gradv(3, 3, iel)
-  sym_strain(1) = xstrai(1,1)
-  sym_strain(2) = xstrai(2,2)
-  sym_strain(3) = xstrai(3,3)
-  sym_strain(4) = xstrai(1,2)
-  sym_strain(5) = xstrai(2,3)
-  sym_strain(6) = xstrai(1,3)
+
   ! omegaij
   xrotac(1,1) = 0.d0
   xrotac(1,2) = d1s2*(gradv(2, 1, iel)-gradv(1, 2, iel))
@@ -447,6 +337,13 @@ do iel = 1, ncel
 
   ! Computation of implicit components
 
+  sym_strain(1) = xstrai(1,1)
+  sym_strain(2) = xstrai(2,2)
+  sym_strain(3) = xstrai(3,3)
+  sym_strain(4) = xstrai(1,2)
+  sym_strain(5) = xstrai(2,3)
+  sym_strain(6) = xstrai(1,3)
+
   do isou = 1, 6
     matrn(isou) = cvara_var(isou,iel)/trrij
     oo_matrn(isou) = 0.0d0
@@ -454,7 +351,7 @@ do iel = 1, ncel
 
   ! Inversing the matrix
   call symmetric_matrix_inverse(matrn, oo_matrn)
-  do isou = 1, dimrij
+  do isou = 1, 6
     oo_matrn(isou) = oo_matrn(isou)/trrij
   end do
 
@@ -475,9 +372,9 @@ do iel = 1, ncel
   do jsou = 1, 3
     do isou = 1 ,3
       iii = t2v(isou,jsou)
-      implmat2add(isou,jsou) = (1.d0-crij2)*xrotac(isou,jsou)              &
-                             + impl_lin_cst*deltij(iii)       &
-                             + impl_id_cst*d1s2*oo_matrn(iii) &
+      implmat2add(isou,jsou) = (1.d0-crij2)*xrotac(isou,jsou)    &
+                             + impl_lin_cst*deltij(iii)          &
+                             + impl_id_cst*d1s2*oo_matrn(iii)    &
                              + ceps_impl*oo_matrn(iii)
     end do
   end do
@@ -494,36 +391,19 @@ do iel = 1, ncel
     enddo
   endif
 
-  do isou = 1, dimrij
-    if (isou.eq.1)then
-      iii = 1
-      jjj = 1
-    elseif (isou.eq.2)then
-      iii = 2
-      jjj = 2
-    elseif (isou.eq.3)then
-      iii = 3
-      jjj = 3
-    elseif (isou.eq.4)then
-      iii = 1
-      jjj = 2
-    elseif (isou.eq.5)then
-      iii = 2
-      jjj = 3
-    elseif (isou.eq.6)then
-      iii = 1
-      jjj = 3
-    endif
+  do isou = 1, 6
+    iii = iv2t(isou)
+    jjj = jv2t(isou)
     aiksjk = 0
     aikrjk = 0
     aikakj = 0
     do kk = 1,3
       ! aiksjk = aik.Sjk+ajk.Sik
-      aiksjk = aiksjk + xaniso(iii,kk)*xstrai(jjj,kk)              &
-                +xaniso(jjj,kk)*xstrai(iii,kk)
+      aiksjk =   aiksjk + xaniso(iii,kk)*xstrai(jjj,kk)              &
+               + xaniso(jjj,kk)*xstrai(iii,kk)
       ! aikrjk = aik.Omega_jk + ajk.omega_ik
-      aikrjk = aikrjk + xaniso(iii,kk)*xrotac(jjj,kk)              &
-                +xaniso(jjj,kk)*xrotac(iii,kk)
+      aikrjk =   aikrjk + xaniso(iii,kk)*xrotac(jjj,kk)              &
+               + xaniso(jjj,kk)*xrotac(iii,kk)
       ! aikakj = aik*akj
       aikakj = aikakj + xaniso(iii,kk)*xaniso(kk,jjj)
     enddo
@@ -544,7 +424,7 @@ do iel = 1, ncel
       rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel) &
         + cell_f_vol(iel)/trrij*crom(iel)*(crij1*cvara_ep(iel))
 
-      ! Carefull ! Inversion of the order of the coefficients since
+      ! Careful ! Inversion of the order of the coefficients since
       ! rovsdt matrix is then used by a c function for the linear solving
       do jsou = 1, 6
         rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) + cell_f_vol(iel) &
@@ -557,21 +437,16 @@ do iel = 1, ncel
 
 enddo
 
-
-
 !===============================================================================
-! 6-bis. Coriolis terms in the Phi1 and production
+! Coriolis terms in the Phi1 and production
 !===============================================================================
 
 if (icorio.eq.1 .or. iturbo.eq.1) then
-  allocate(cvara_r(3,3))
-  do iel = 1, ncel
-    do isou = 1, 6
-      w7(isou,iel) = 0.d0
-    enddo
-  enddo
 
   do iel = 1, ncel
+
+    call coriolis_t(irotce(iel), 1.d0, matrot)
+
     cvara_r(1,1) = cvara_var(1,iel)
     cvara_r(2,2) = cvara_var(2,iel)
     cvara_r(3,3) = cvara_var(3,iel)
@@ -581,32 +456,16 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
     cvara_r(2,1) = cvara_var(4,iel)
     cvara_r(3,2) = cvara_var(5,iel)
     cvara_r(3,1) = cvara_var(6,iel)
+
     ! Compute Gij: (i,j) component of the Coriolis production
     do isou = 1, 6
-      if (isou.eq.1) then
-        ii = 1
-        jj = 1
-      else if (isou.eq.2) then
-        ii = 2
-        jj = 2
-      else if (isou.eq.3) then
-        ii = 3
-        jj = 3
-      else if (isou.eq.4) then
-        ii = 1
-        jj = 2
-      else if (isou.eq.5) then
-        ii = 2
-        jj = 3
-      else if (isou.eq.6) then
-        ii = 1
-        jj = 3
-      end if
+      ii = iv2t(isou)
+      jj = jv2t(isou)
+
+      w2(isou,iel) = 0.d0
       do kk = 1, 3
 
-        call coriolis_t(irotce(iel), 1.d0, matrot)
-
-        w7(isou,iel) = w7(isou,iel) - ccorio*(  matrot(ii,kk)*cvara_r(jj,kk) &
+        w2(isou,iel) = w2(isou,iel) - ccorio*(  matrot(ii,kk)*cvara_r(jj,kk) &
                                     + matrot(jj,kk)*cvara_r(ii,kk) )
       enddo
     enddo
@@ -616,7 +475,7 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
   if (icorio.eq.1) then
     do iel = 1, ncel
       do isou = 1, 6
-        w7(isou,iel) = crom(iel)*cell_f_vol(iel)*(1.d0 - 0.5d0*crij2)*w7(isou,iel)
+        w2(isou,iel) = crom(iel)*cell_f_vol(iel)*(1.d0 - 0.5d0*crij2)*w2(isou,iel)
       enddo
     enddo
   endif
@@ -625,14 +484,14 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
       do isou = 1, 6
-        c_st_prv(isou,iel) = c_st_prv(isou,iel) + w7(isou,iel)
+        c_st_prv(isou,iel) = c_st_prv(isou,iel) + w2(isou,iel)
       enddo
     enddo
   ! Otherwise, directly in smbr
   else
     do iel = 1, ncel
       do isou = 1, 6
-        smbr(isou,iel) = smbr(isou,iel) + w7(isou,iel)
+        smbr(isou,iel) = smbr(isou,iel) + w2(isou,iel)
       enddo
     enddo
   endif
@@ -640,40 +499,39 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
 endif
 
 !===============================================================================
-! 7. Wall echo terms
+! Wall echo terms
 !===============================================================================
 
 if (irijec.eq.1) then !todo
 
   do iel = 1, ncel
     do isou = 1, 6
-      w7(isou,iel) = 0.d0
+      w2(isou,iel) = 0.d0
     enddo
   enddo
 
-  call rijech2(produc, w7)
+  call rijech2(produc, w2)
 
   ! If we extrapolate the source terms: c_st_prv
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
       do isou = 1, 6
-        c_st_prv(isou,iel) = c_st_prv(isou,iel) + w7(isou,iel)
+        c_st_prv(isou,iel) = c_st_prv(isou,iel) + w2(isou,iel)
       enddo
     enddo
   ! Otherwise smbr
   else
     do iel = 1, ncel
       do isou = 1, 6
-        smbr(isou,iel) = smbr(isou,iel) + w7(isou,iel)
+        smbr(isou,iel) = smbr(isou,iel) + w2(isou,iel)
       enddo
     enddo
   endif
 
 endif
 
-
 !===============================================================================
-! 8. Buoyancy source term
+! Buoyancy source term
 !===============================================================================
 
 if (igrari.eq.1) then
@@ -692,14 +550,14 @@ if (igrari.eq.1) then
   ! If we extrapolate the source terms: previous ST
   if (st_prv_id.ge.0) then
     do iel = 1, ncel
-      do isou = 1, dimrij
+      do isou = 1, 6
         c_st_prv(isou,iel) = c_st_prv(isou,iel) + cpro_buoyancy(isou,iel) * cell_f_vol(iel)
       enddo
     enddo
-    ! Otherwise smbr
+  ! Otherwise smbr
   else
     do iel = 1, ncel
-      do isou = 1, dimrij
+      do isou = 1, 6
         smbr(isou,iel) = smbr(isou,iel) + cpro_buoyancy(isou,iel) * cell_f_vol(iel)
       enddo
     enddo
@@ -711,11 +569,11 @@ if (igrari.eq.1) then
 endif
 
 !===============================================================================
-! 9. Diffusion term (Daly Harlow: generalized gradient hypothesis method)
+! Diffusion term (Daly Harlow: generalized gradient hypothesis method)
 !===============================================================================
 
 ! Symmetric tensor diffusivity (GGDH)
-if (iand(vcopt_rij%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
+if (iand(vcopt%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
 
   call field_get_val_v(ivsten, visten)
 
@@ -728,12 +586,9 @@ if (iand(vcopt_rij%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
     viscce(6,iel) = visten(6,iel)
   enddo
 
-  iwarnp = vcopt_rij%iwarni
+  iwarnp = vcopt%iwarni
 
-  call vitens &
- ( viscce , iwarnp ,             &
-   weighf , weighb ,             &
-   viscf  , viscb  )
+  call vitens(viscce, iwarnp, weighf, weighb, viscf, viscb)
 
 ! Scalar diffusivity
 else
@@ -741,58 +596,18 @@ else
   do iel = 1, ncel
     trrij = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
     rctse = crom(iel) * csrij * trrij**2 / cvara_ep(iel)
-    w1(iel) = viscl(iel) + vcopt_rij%idifft*rctse
+    w1(iel) = viscl(iel) + vcopt%idifft*rctse
   enddo
 
-  imvisp = vcopt_rij%imvisf
+  imvisp = vcopt%imvisf
 
   call viscfa(imvisp, w1, viscf, viscb)
 
 endif
 
-!===============================================================================
-! 10. Solving
-!===============================================================================
-
-if (st_prv_id.ge.0) then
-  thetp1 = 1.d0 + thets
-  do iel = 1, ncel
-    do isou = 1, dimrij
-      smbr(isou,iel) = smbr(isou,iel) + thetp1*c_st_prv(isou,iel)
-    enddo
-  enddo
-endif
-
-! all boundary convective flux with upwind
-icvflb = 0
-
-vcopt_loc = vcopt_rij
-
-vcopt_loc%istat  = -1
-vcopt_loc%idifft = -1
-vcopt_loc%iwgrec = 0
-vcopt_loc%thetav = thetv
-vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
-
-p_k_value => vcopt_loc
-c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
-
-call cs_equation_iterative_solve_tensor           &
- ( idtvar , ivarfl(irij)    , c_null_char ,       &
-   c_k_value,                                     &
-   cvara_var       , cvara_var       ,            &
-   coefap , coefbp , cofafp , cofbfp ,            &
-   imasfl , bmasfl , viscf  ,                     &
-   viscb  , viscf  , viscb  , viscce ,            &
-   weighf , weighb , icvflb , ivoid  ,            &
-   rovsdt , smbr   , cvar_var        )
-
 ! Free memory
-deallocate(w1)
-deallocate(w7)
-deallocate(dpvar)
-deallocate(viscce)
-deallocate(weighf, weighb)
+
+deallocate(w1, w2)
 
 !--------
 ! Formats

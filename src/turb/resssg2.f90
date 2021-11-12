@@ -26,7 +26,7 @@
 
 !> \file resssg2.f90
 !>
-!> \brief This subroutine performs the solving of the coupled Reynolds stress
+!> \brief This subroutine prepares the solving of the coupled Reynolds stress
 !> components in \f$ R_{ij} - \varepsilon \f$ RANS (SSG) turbulence model.
 !>
 !> \remark
@@ -43,38 +43,27 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     nvar          total number of variables
-!> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     ivar          variable number
-!> \param[in]     icetsm        index of cells with mass source term
-!> \param[in]     itypsm        type of mass source term for each variable
-!>                               (see \ref cs_user_mass_source_terms)
-!> \param[in]     dt            time step (per cell)
 !> \param[in]     gradv         work array for the velocity grad term
 !>                                 only for iturb=31
 !> \param[in]     produc        work array for production
 !> \param[in]     gradro        work array for grad rom
 !>                              (without rho volume) only for iturb=30
-!> \param[in]     smacel        value associated to each variable in the mass
-!>                               source terms or mass rate
-!>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at edge faces
-!> \param[in]     tslagi        implicit source terms for the Lagrangian module
+!> \param[out]    viscce        Daly Harlow diffusion term
 !> \param[in]     smbr          working array
 !> \param[in]     rovsdt        working array
+!> \param[out]    weighf        working array
+!> \param[out]    weighb        working array
 !_______________________________________________________________________________
 
 subroutine resssg2 &
- ( nvar   , ncesmp ,                                              &
-   ivar   ,                                                       &
-   icetsm , itypsm ,                                              &
-   dt     ,                                                       &
+ ( ivar   ,                                                       &
    gradv  , produc , gradro ,                                     &
-   smacel ,                                                       &
-   viscf  , viscb  ,                                              &
-   tslagi ,                                                       &
-   smbr   , rovsdt )
+   viscf  , viscb  , viscce ,                                     &
+   smbr   , rovsdt ,                                              &
+   weighf , weighb )
 
 !===============================================================================
 
@@ -107,33 +96,24 @@ implicit none
 
 ! Arguments
 
-integer          nvar
-integer          ncesmp
 integer          ivar
 
-integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
-
-double precision dt(ncelet)
 double precision gradv(3, 3, ncelet)
-double precision produc(6,ncelet)
-double precision gradro(3,ncelet)
-double precision smacel(ncesmp,nvar)
-double precision viscf(nfac), viscb(nfabor)
-double precision tslagi(ncelet)
-double precision smbr(6,ncelet)
-double precision rovsdt(6,6,ncelet)
+double precision produc(6, ncelet)
+double precision gradro(3, ncelet)
+double precision viscf(nfac), viscb(nfabor), viscce(6, ncelet)
+double precision smbr(6, ncelet)
+double precision rovsdt(6, 6, ncelet)
+double precision weighf(2, nfac), weighb(nfabor)
 
 ! Local variables
 
 integer          iel, isou, jsou
 integer          ii    , jj    , kk    , iii   , jjj
-integer          iflmas, iflmab
 integer          iwarnp
 integer          imvisp
 integer          st_prv_id
 integer          iprev , inc, iccocg, ll
-integer          icvflb
-integer          ivoid(1)
 integer          t2v(3,3)
 integer          iv2t(6), jv2t(6)
 integer          key_t_ext_id, f_id
@@ -141,7 +121,7 @@ integer          iroext
 
 double precision trprod, trrij
 double precision deltij(6), dij(3,3)
-double precision tuexpr, thets , thetv , thetp1
+double precision thets , thetv
 double precision aiksjk, aikrjk, aii ,aklskl, aikakj
 double precision xaniso(3,3), xstrai(3,3), xrotac(3,3), xprod(3,3), matrot(3,3)
 double precision sym_strain(6)
@@ -170,25 +150,15 @@ character(len=80) :: label
 double precision, allocatable, dimension(:,:) :: grad
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:,:), target :: buoyancy
-double precision, allocatable, dimension(:) :: dpvar
-double precision, allocatable, dimension(:,:) :: gatinj, viscce
-double precision, allocatable, dimension(:,:) :: weighf
-double precision, allocatable, dimension(:) :: weighb
-double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: crom, cromo
-double precision, dimension(:,:), pointer :: coefap, cofafp
-double precision, dimension(:,:,:), pointer :: coefbp, cofbfp
 double precision, dimension(:,:), pointer :: visten
 double precision, dimension(:), pointer :: cvara_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvar_var, cvara_var
 double precision, dimension(:), pointer :: viscl, visct
-double precision, dimension(:,:), pointer :: c_st_prv, lagr_st_rij
+double precision, dimension(:,:), pointer :: c_st_prv
 double precision, dimension(:,:), pointer :: cpro_buoyancy
 
 type(var_cal_opt) :: vcopt
-type(var_cal_opt), target :: vcopt_loc
-type(var_cal_opt), pointer :: p_k_value
-type(c_ptr) :: c_k_value
 
 !===============================================================================
 
@@ -203,10 +173,6 @@ call field_get_key_int(icrom, key_t_ext_id, iroext)
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet))
-allocate(dpvar(ncelet))
-allocate(viscce(6,ncelet))
-allocate(weighf(2,nfac))
-allocate(weighb(nfabor))
 
 ! Generating the tensor to vector (t2v) and vector to tensor (v2t) mask arrays
 
@@ -243,11 +209,6 @@ if (iturb.ne.31) call field_get_val_s(ivarfl(ial), cvar_al)
 
 call field_get_val_v(ivarfl(ivar), cvar_var)
 call field_get_val_prev_v(ivarfl(ivar), cvara_var)
-
-call field_get_key_int(ivarfl(iu), kimasf, iflmas)
-call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
-call field_get_val_s(iflmas, imasfl)
-call field_get_val_s(iflmab, bmasfl)
 
 d1s2 = 1.d0/2.d0
 d1s3 = 1.d0/3.d0
@@ -289,105 +250,6 @@ else
 endif
 
 !===============================================================================
-! User source terms
-!===============================================================================
-
-! If we extrapolate the source terms
-if (st_prv_id.ge.0) then
-  do iel = 1, ncel
-    do isou = 1, 6
-      ! Save for exchange
-      tuexpr = c_st_prv(isou,iel)
-      ! For continuation and the next time step
-      c_st_prv(isou,iel) = smbr(isou,iel)
-
-      smbr(isou,iel) = - thets*tuexpr
-      ! Right hand side of the previous time step
-      ! We suppose -rovsdt > 0: we implicit
-      !    the user source term (the rest)
-      do jsou = 1, 6
-        smbr(isou,iel) = smbr(isou,iel) &
-                       + rovsdt(jsou,isou,iel)*cvara_var(jsou,iel)
-        ! Diagonal
-        rovsdt(jsou,isou,iel) = - thetv*rovsdt(jsou,isou,iel)
-      enddo
-    enddo
-  enddo
-else
-  do iel = 1, ncel
-    do isou = 1, 6
-      do jsou = 1, 6
-        smbr(isou,iel) = rovsdt(jsou,isou,iel)*cvara_var(jsou,iel) + smbr(isou,iel)
-      enddo
-      rovsdt(isou,isou,iel) = max(-rovsdt(isou,isou,iel), 0.d0)
-    enddo
-  enddo
-endif
-
-!===============================================================================
-! Lagrangian source terms
-!===============================================================================
-
-! 2nd order is not taken into account
-if (iilagr.eq.2 .and. ltsdyn.eq.1) then
-  call field_get_val_v_by_name('rij_st_lagr', lagr_st_rij)
-  do iel = 1,ncel
-    do isou = 1, 6
-      smbr(isou, iel) = smbr(isou, iel) + lagr_st_rij(isou,iel)
-      rovsdt(isou,isou,iel) = rovsdt(isou,isou, iel) + max(-tslagi(iel),zero)
-    enddo
-  enddo
-endif
-
-!===============================================================================
-! Mass source term
-!===============================================================================
-
-if (ncesmp.gt.0) then
-
-  allocate(gatinj(6,ncelet))
-
-  ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
-  call catsmt(ncesmp, 6, icetsm, itypsm(:,ivar),                            &
-              cell_f_vol, cvara_var, smacel(:,ivar+isou-1), smacel(:,ipr),  &
-              smbr, rovsdt, gatinj)
-
-  do isou = 1, 6
-
-    ! If we extrapolate the source terms we put Gamma Pinj in the previous st
-    if (st_prv_id.ge.0) then
-      do iel = 1, ncel
-        c_st_prv(isou,iel) = c_st_prv(isou,iel) + gatinj(isou,iel)
-      enddo
-    ! Otherwise we put it directly in the RHS
-    else
-      do iel = 1, ncel
-        smbr(isou, iel) = smbr(isou, iel) + gatinj(isou,iel)
-      enddo
-    endif
-
-  enddo
-
-  deallocate(gatinj)
-
-endif
-
-!===============================================================================
-! Unsteady term
-!===============================================================================
-
-! ---> Added in the matrix diagonal
-
-if (vcopt%istat .eq. 1) then
-  do iel = 1, ncel
-    do isou = 1, 6
-      rovsdt(isou,isou,iel) =   rovsdt(isou,isou,iel)                              &
-                              + (crom(iel)/dt(iel))*cell_f_vol(iel)
-    enddo
-  enddo
-endif
-
-!===============================================================================
 ! Production, Pressure-Strain correlation, dissipation, Coriolis
 !===============================================================================
 
@@ -400,6 +262,7 @@ endif
 
 ! EBRSM
 if (iturb.eq.32) then
+
   allocate(grad(3,ncelet))
 
   ! Compute the gradient of Alpha
@@ -985,52 +848,9 @@ else
 
 endif
 
-!===============================================================================
-! Solving
-!===============================================================================
-
-if (st_prv_id.ge.0) then
-  thetp1 = 1.d0 + thets
-  do iel = 1, ncel
-    do isou = 1, 6
-      smbr(isou,iel) = smbr(isou,iel) + thetp1*c_st_prv(isou,iel)
-    enddo
-  enddo
-endif
-
-! all boundary convective flux with upwind
-icvflb = 0
-
-call field_get_coefa_v(ivarfl(ivar), coefap)
-call field_get_coefb_v(ivarfl(ivar), coefbp)
-call field_get_coefaf_v(ivarfl(ivar), cofafp)
-call field_get_coefbf_v(ivarfl(ivar), cofbfp)
-
-vcopt_loc = vcopt
-
-vcopt_loc%istat  = -1
-vcopt_loc%idifft = -1
-vcopt_loc%iwgrec = 0 ! Warning, may be overwritten if a field
-vcopt_loc%thetav = thetv
-vcopt_loc%blend_st = 0 ! Warning, may be overwritten if a field
-
-p_k_value => vcopt_loc
-c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
-
-call cs_equation_iterative_solve_tensor(idtvar, ivarfl(ivar), c_null_char,     &
-                                        c_k_value, cvara_var, cvara_var,       &
-                                        coefap, coefbp, cofafp, cofbfp,        &
-                                        imasfl, bmasfl, viscf,                 &
-                                        viscb, viscf, viscb, viscce,           &
-                                        weighf, weighb, icvflb, ivoid,         &
-                                        rovsdt, smbr, cvar_var)
-
 ! Free memory
 
 deallocate(w1, w2)
-deallocate(dpvar)
-deallocate(viscce)
-deallocate(weighf, weighb)
 
 !--------
 ! Formats
