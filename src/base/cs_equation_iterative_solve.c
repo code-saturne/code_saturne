@@ -480,9 +480,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* Incrementation and rebuild of right hand side */
 
-  /*  On est entre avec un smb explicite base sur PVARA.
-      si on initialise avec PVAR avec autre chose que PVARA
-      on doit donc corriger SMBR (c'est le cas lorsqu'on itere sur navsto) */
+  /* We entered with an explicit RHS based on PVARA.
+     If we initialize with PVAR with something else than PVARA
+     we must correc the RHS (this is the case when iterating on navsto) */
 
   iccocg = 1;
 
@@ -547,7 +547,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     rnorm = normp;
 
   else {
-    /* --- Normalization residual
+    /* Normalization residual
        (L2-norm of B.C. + source terms + non-orthogonality terms)
 
        Caution: when calling a matrix-vector product, here for a variable
@@ -599,7 +599,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /* Free memory */
   BFT_FREE(w1);
 
-  /* Warning: for Weight Matrix, one and only one sweep is done. */
+  /* Warning: for weight matrix, one and only one sweep is done. */
   nswmod = CS_MAX(var_cal_opt->nswrsm, 1);
 
   /* Reconstruction loop (beginning) */
@@ -609,7 +609,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   while ((isweep <= nswmod && residu > epsrsp*rnorm) || isweep == 1) {
 
-    /* --- Solving on the increment dpvar */
+    /* Solving on the increment: dpvar */
 
     if (iswdyp >= 1) {
 #     pragma omp parallel for
@@ -758,8 +758,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
         pvar[iel] += alph*dpvar[iel] + beta*dpvarm1[iel];
     }
 
-    /*  ---> Handle parallelism and periodicity
-        (periodicity of rotation is not ensured here) */
+    /*  ---> Handle parallelism and periodicity */
     if (cs_glob_rank_id >= 0 || cs_glob_mesh->n_init_perio > 0) {
       cs_mesh_sync_var_scal(pvar);
     }
@@ -972,7 +971,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    *==========================================================================*/
 
   if (iescap > 0) {
-    /* ---> Computation of the estimator of the current component */
+    /*  Computation of the estimator of the current component */
 
     /* smbini already contains unsteady terms and mass source terms
        of the RHS updated at each sweep */
@@ -1016,7 +1015,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 #   pragma omp parallel for
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       eswork[iel] = pow(smbrp[iel] / cell_vol[iel],2);
-
   }
 
   /*==========================================================================
