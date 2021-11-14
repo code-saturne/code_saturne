@@ -695,14 +695,6 @@ if (iperot.gt.0.and.iirayo.gt.0) then
   endif
 endif
 
-! Periodicite of rotation incompatible with RSM using separate components.
-if (iperot.gt.0) then
-  if (itytur.eq.3 .and. irijco.eq.0) then
-    write(nfecra,5009)iperio,iturb
-    iok = iok + 1
-  endif
-endif
-
 !===============================================================================
 ! 5. TABLEAUX DE parall : formats 6000 (limitations)
 !===============================================================================
@@ -1564,22 +1556,7 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
- 5009 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@   WARNING :      WHILE READING INPUT DATA',               /,&
-'@    =========',                                               /,&
-'@    ROTATION PERIODICITY IS NOT COMPATIBLE WITH RIJ-EPSILON', /,&
-'@    WITH SEPARATELY SOLVED COMPONENTS (IRIJCO = 0).',         /,&
-'@',                                                            /,&
-'@  The calculation could NOT run.',                            /,&
-'@',                                                            /,&
-'@  At least one rotational periodicity has been defined.',     /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
- 6005 format(                                                     &
+6005 format(                                                     &
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
