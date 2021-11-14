@@ -51,6 +51,9 @@
  * This macro calls cs_malloc_hd(), automatically setting the
  * allocated variable name and source file name and line arguments.
  *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer is returned.
+ *
  * parameters:
  *   _ptr  --> pointer to allocated memory.
  *   _ni   <-- number of items.
@@ -72,9 +75,10 @@ _ptr = (_type *) cs_malloc_hd(_mode, _ni, sizeof(_type), \
  *   _ptr  <->  pointer to allocated memory.
  *   _ni   <-- number of items.
  *   _type <-- element type.
+ *   _mode <-- allocation mode.
  */
 
-#define CS_REALLOC_HD(_ptr, _ni, _type) \
+#define CS_REALLOC_HD(_ptr, _ni, _type, _mode) \
 _ptr = (_type *) cs_realloc_hd(_ptr, _ni, sizeof(_type), \
                                #_ptr, __FILE__, __LINE__)
 
@@ -85,6 +89,10 @@ _ptr = (_type *) cs_realloc_hd(_ptr, _ni, sizeof(_type), \
  * allocated variable name and source file name and line arguments.
  *
  * The freed pointer is set to NULL to avoid accidental reuse.
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be used with this
+ * function.
  *
  * parameters:
  *   _ptr  <->  pointer to allocated memory.
@@ -100,6 +108,10 @@ cs_free_hd(_ptr, #_ptr, __FILE__, __LINE__), _ptr = NULL
  * allocated variable name and source file name and line arguments.
  *
  * The freed pointer is set to NULL to avoid accidental reuse.
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be used with this
+ * function.
  *
  * parameters:
  *   _ptr  <->  pointer to allocated memory.
@@ -122,9 +134,14 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_ALLOC_HOST,               /*!< allocation on host only */
-  CS_ALLOC_HOST_DEVICE,        /*!< allocation on host and device */
-  CS_ALLOC_HOST_DEVICE_SHARED  /*!< allocation on host and device */
+  CS_ALLOC_HOST,                /*!< allocation on host only */
+  CS_ALLOC_HOST_DEVICE,         /*!< allocation on host and device */
+  CS_ALLOC_HOST_DEVICE_PINNED,  /*!< allocation on host and device,
+                                  using page-locked memory on host
+                                  if possible */
+  CS_ALLOC_HOST_DEVICE_SHARED,  /*!< allocation on host and device,
+                                  using mapped/shared memory */
+  CS_ALLOC_DEVICE               /*!< allocation on device only */
 
 } cs_alloc_mode_t;
 
@@ -165,6 +182,9 @@ cs_get_device_id(void)
  *
  * This function calls the appropriate allocation function based on
  * the requested mode, and allows introspection of the allocated memory.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer is returned.
  *
  * \param [in]  mode       allocation mode
  * \param [in]  ni         number of elements
@@ -210,7 +230,10 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
  * This function calls the appropriate reallocation function based on
  * the requested mode, and allows introspection of the allocated memory.
  *
- * \param [in]  host_ptr   host pointer
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * \param [in]  ptr        pointer to previously allocated memory
  * \param [in]  mode       allocation mode
  * \param [in]  ni         number of elements
  * \param [in]  size       element size
@@ -225,7 +248,7 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
 #if defined(HAVE_ACCEL)
 
 void *
-cs_realloc_hd(void            *host_ptr,
+cs_realloc_hd(void            *ptr,
               cs_alloc_mode_t  mode,
               size_t           ni,
               size_t           size,
@@ -236,14 +259,16 @@ cs_realloc_hd(void            *host_ptr,
 #else
 
 inline static void *
-cs_realloc_hd(void             *host_ptr,
+cs_realloc_hd(void             *ptr,
+              cs_alloc_mode_t   mode,
               size_t            ni,
               size_t            size,
               const char       *var_name,
               const char       *file_name,
               int               line_num)
 {
-  return bft_mem_realloc(host_ptr, ni, size, var_name, file_name, line_num);
+  CS_UNUSED(mode);
+  return bft_mem_realloc(ptr, ni, size, var_name, file_name, line_num);
 }
 
 #endif
@@ -252,7 +277,10 @@ cs_realloc_hd(void             *host_ptr,
 /*!
  * \brief Free memory on host and device for a given host pointer.
  *
- * \param [in]  host_ptr   host pointer to free
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * \param [in]  ptr        pointer to free
  * \param [in]  var_name   allocated variable name string
  * \param [in]  file_name  name of calling source file
  * \param [in]  line_num   line number in calling source file
@@ -262,7 +290,7 @@ cs_realloc_hd(void             *host_ptr,
 #if defined(HAVE_ACCEL)
 
 void
-cs_free_hd(void         *host_ptr,
+cs_free_hd(void         *ptr,
            const char   *var_name,
            const char   *file_name,
            int           line_num);
@@ -270,24 +298,24 @@ cs_free_hd(void         *host_ptr,
 #else
 
 inline static void
-cs_free_hd(void         *host_ptr,
+cs_free_hd(void         *ptr,
            const char   *var_name,
            const char   *file_name,
            int           line_num)
 {
-  bft_mem_free(host_ptr, var_name, file_name, line_num);
+  bft_mem_free(ptr, var_name, file_name, line_num);
 }
 
 #endif
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Free memory on host and device for a given host pointer.
+ * \brief Free memory on host and device for a given pointer.
  *
  * Compared to \cs_free_hd, this function also allows freeing memory
- * allocated through BFT_MEM_MALLOC.
+ * allocated through BFT_MEM_MALLOC / bft_mem_malloc.
  *
- * \param [in]  host_ptr   host pointer to free
+ * \param [in]  ptr        pointer to free
  * \param [in]  var_name   allocated variable name string
  * \param [in]  file_name  name of calling source file
  * \param [in]  line_num   line number in calling source file
@@ -297,7 +325,7 @@ cs_free_hd(void         *host_ptr,
 #if defined(HAVE_ACCEL)
 
 void
-cs_free(void        *host_ptr,
+cs_free(void        *ptr,
         const char  *var_name,
         const char  *file_name,
         int          line_num);
@@ -305,21 +333,24 @@ cs_free(void        *host_ptr,
 #else
 
 inline static void
-cs_free(void         *host_ptr,
+cs_free(void         *ptr,
         const char   *var_name,
         const char   *file_name,
         int           line_num)
 {
-  bft_mem_free(host_ptr, var_name, file_name, line_num);
+  bft_mem_free(ptr, var_name, file_name, line_num);
 }
 
 #endif
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return device pointer for a given host pointer.
+ * \brief Return matching device pointer for a given pointer.
  *
- * \param [in]  host_ptr   host pointer
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * \param [in]  ptr  pointer
  *
  * \returns pointer to device memory.
  */
@@ -328,37 +359,40 @@ cs_free(void         *host_ptr,
 #if defined(HAVE_ACCEL)
 
 void *
-cs_get_device_ptr(void  *host_ptr);
+cs_get_device_ptr(void  *ptr);
 
 #else
 
 inline static void *
-cs_get_device_ptr(void  *host_ptr)
+cs_get_device_ptr(void  *ptr)
 {
-  return host_ptr;
+  return ptr;
 }
 
 #endif
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check if a host pointer is associated with a  device.
+ * \brief Check if a pointer is associated with a device.
  *
- * \returns allocation mode associated with host pointer
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * \returns allocation mode associated with pointer
  */
 /*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_ACCEL)
 
 cs_alloc_mode_t
-cs_check_device_ptr(void  *host_ptr);
+cs_check_device_ptr(void  *ptr);
 
 #else
 
 inline static cs_alloc_mode_t
-cs_check_device_ptr(void  *host_ptr)
+cs_check_device_ptr(void  *ptr)
 {
-  CS_UNUSED(host_ptr);
+  CS_UNUSED(ptr);
   return CS_ALLOC_HOST;
 }
 
@@ -437,6 +471,64 @@ cs_set_alloc_mode(void             **host_ptr,
 #else
 
 #define cs_set_alloc_mode(_host_ptr, mode);
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize data from host to device.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * The user should assume that memory may be shared, or that this function
+ * may return on the host before the copy is finished, so should not modify
+ * it on the host before using it on the device.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_sync_h2d(void  *host_ptr);
+
+#else
+
+static inline void
+cs_sync_h2d(void  *host_ptr)
+{
+  CS_UNUSED(host_ptr);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Synchronize data from device to host.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_sync_d2h(void  *host_ptr);
+
+#else
+
+static inline void
+cs_sync_d2h(void  *host_ptr)
+{
+  CS_UNUSED(host_ptr);
+}
 
 #endif
 

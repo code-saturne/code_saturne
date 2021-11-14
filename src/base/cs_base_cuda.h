@@ -187,7 +187,6 @@ cs_cuda_mem_free(void         *p,
                  const char   *file_name,
                  int           line_num);
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Free CUDA-allocated host memory associated with a given pointer.
@@ -213,6 +212,129 @@ cs_cuda_mem_free_host(void         *p,
                       const char   *var_name,
                       const char   *file_name,
                       int           line_num);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device.
+ *
+ * This is simply a wrapper over cudaMemcpy.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_copy_h2d(void    *dst,
+                 void    *src,
+                 size_t   size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device, possibly returning on the host
+ *        before the copy is finished.
+ *
+ * This is simply a wrapper over cudaMemcpyAsync.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_copy_h2d_async(void    *dst,
+                       void    *src,
+                       size_t   size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from device to host.
+ *
+ * This is simply a wrapper over cudaMemcpy.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_copy_d2h(void    *dst,
+                 void    *src,
+                 size_t   size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device.
+ *
+ * This is simply a wrapper over cudaMemcpy.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_copy_d2h_async(void    *dst,
+                       void    *src,
+                       size_t   size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prefetch data from host to device.
+ *
+ * This is simply a wrapper over cudaMemPrefetchAsync.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_prefetch_h2d(void    *dst,
+                     size_t   size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prefetch data from device to host.
+ *
+ * This is simply a wrapper over cudaMemPrefetchAsync.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_prefetch_d2h(void    *dst,
+                     size_t   size);
 
 #endif
 

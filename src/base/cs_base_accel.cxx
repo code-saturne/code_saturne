@@ -186,6 +186,9 @@ cs_get_device_id(void)
  * This function calls the appropriate allocation function based on
  * the requested mode, and allows introspection of the allocated memory.
  *
+ * If separate pointers are used on the host and device,
+ * the host pointer is returned.
+ *
  * \param [in]  mode       allocation mode
  * \param [in]  ni         number of elements
  * \param [in]  size       element size
@@ -198,12 +201,12 @@ cs_get_device_id(void)
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_malloc_hd(cs_alloc_mode_t  mode,
-             size_t           ni,
-             size_t           size,
-             const char      *var_name,
-             const char      *file_name,
-             int              line_num)
+cs_malloc_hd(cs_alloc_mode_t   mode,
+             size_t            ni,
+             size_t            size,
+             const char       *var_name,
+             const char       *file_name,
+             int               line_num)
 {
   if (_initialized == false)
     _initialize();
@@ -214,12 +217,12 @@ cs_malloc_hd(cs_alloc_mode_t  mode,
     .size = ni * size,
     .mode = mode};
 
-  if (mode < CS_ALLOC_HOST_DEVICE)
+  if (mode < CS_ALLOC_HOST_DEVICE_PINNED)
     me.host_ptr = bft_mem_malloc(ni, size, var_name, file_name, line_num);
 
 #if defined(HAVE_CUDA)
 
-  else if (mode == CS_ALLOC_HOST_DEVICE)
+  else if (mode == CS_ALLOC_HOST_DEVICE_PINNED)
     me.host_ptr = cs_cuda_mem_malloc_host(me.size,
                                           var_name,
                                           file_name,
@@ -233,6 +236,12 @@ cs_malloc_hd(cs_alloc_mode_t  mode,
     me.device_ptr = me.host_ptr;
   }
 
+  else if (mode == CS_ALLOC_DEVICE)
+    me.device_ptr = cs_cuda_mem_malloc_device(me.size,
+                                              var_name,
+                                              file_name,
+                                              line_num);
+
 #elif defined(HAVE_ONEAPI)
 
   // TODO add OneApi wrapper for managed allocation
@@ -241,6 +250,8 @@ cs_malloc_hd(cs_alloc_mode_t  mode,
 
   if (me.host_ptr != NULL)
     _hd_alloc_map[me.host_ptr] = me;
+  else if (me.device_ptr != NULL)
+    _hd_alloc_map[me.device_ptr] = me;
 
   /* Return pointer to allocated memory */
 
@@ -254,7 +265,10 @@ cs_malloc_hd(cs_alloc_mode_t  mode,
  * This function calls the appropriate reallocation function based on
  * the requested mode, and allows introspection of the allocated memory.
  *
- * \param [in]  host_ptr   host pointer
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * \param [in]  ptr        pointer to previously allocated memory
  * \param [in]  mode       allocation mode
  * \param [in]  ni         number of elements
  * \param [in]  size       element size
@@ -267,7 +281,7 @@ cs_malloc_hd(cs_alloc_mode_t  mode,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_realloc_hd(void            *host_ptr,
+cs_realloc_hd(void            *ptr,
               cs_alloc_mode_t  mode,
               size_t           ni,
               size_t           size,
@@ -275,48 +289,53 @@ cs_realloc_hd(void            *host_ptr,
               const char      *file_name,
               int              line_num)
 {
-  void *ret_ptr = host_ptr;
+  void *ret_ptr = ptr;
   size_t new_size = ni*size;
 
-  if (host_ptr == NULL) {
+  if (ptr == NULL) {
     return cs_malloc_hd(mode, ni, size, var_name, file_name, line_num);
   }
   else if (new_size == 0) {
-    cs_free_hd(host_ptr, var_name, file_name, line_num);
+    cs_free_hd(ptr, var_name, file_name, line_num);
     return NULL;
   }
 
   _cs_base_accel_mem_map  me;
 
-  if (_hd_alloc_map.count(host_ptr) == 0) {
-    me = {.host_ptr = host_ptr,
+  if (_hd_alloc_map.count(ptr) == 0) {  /* Case where memory was allocated
+                                           on host only (through BFT_MALLOC) */
+    me = {.host_ptr = ptr,
           .device_ptr = NULL,
-          .size = bft_mem_get_block_size(host_ptr),
+          .size = bft_mem_get_block_size(ptr),
           .mode = CS_ALLOC_HOST};
     _hd_alloc_map[me.host_ptr] = me;
   }
   else {
-    me = _hd_alloc_map[host_ptr];
+    me = _hd_alloc_map[ptr];
   }
 
-  if (new_size == me.size)
-    return me.host_ptr;
+  if (new_size == me.size) {
+    if (me.host_ptr != NULL)
+      return me.host_ptr;
+    else
+      return me.device_ptr;
+  }
 
   if (   me.mode <= CS_ALLOC_HOST
       && me.mode == mode) {
     me.host_ptr = bft_mem_realloc(me.host_ptr, ni, size,
                                   var_name, file_name, line_num);
     me.size = new_size;
-    _hd_alloc_map.erase(host_ptr);
+    _hd_alloc_map.erase(ptr);
     _hd_alloc_map[me.host_ptr] = me;
   }
   else {
     ret_ptr = cs_malloc_hd(me.mode, 1, me.size,
                            var_name, file_name, line_num);
 
-    memcpy(ret_ptr, host_ptr, me.size);
+    memcpy(ret_ptr, ptr, me.size);
 
-    cs_free_hd(host_ptr, var_name, file_name, line_num);
+    cs_free_hd(ptr, var_name, file_name, line_num);
   }
 
   return ret_ptr;
@@ -326,7 +345,10 @@ cs_realloc_hd(void            *host_ptr,
 /*!
  * \brief Free memory on host and device for a given host pointer.
  *
- * \param [in]  host_ptr   host pointer to free
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * \param [in]  ptr        pointer to free
  * \param [in]  var_name   allocated variable name string
  * \param [in]  file_name  name of calling source file
  * \param [in]  line_num   line number in calling source file
@@ -334,31 +356,32 @@ cs_realloc_hd(void            *host_ptr,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_free_hd(void        *host_ptr,
+cs_free_hd(void        *ptr,
            const char  *var_name,
            const char  *file_name,
            int          line_num)
 {
-  if (host_ptr == NULL)
+  if (ptr == NULL)
     return;
 
-  if (_hd_alloc_map.count(host_ptr) == 0)
+  if (_hd_alloc_map.count(ptr) == 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("%s: No host pointer matching %p."), __func__, host_ptr);
+              _("%s: No host or device pointer matching %p."),
+              __func__, ptr);
 
-  _cs_base_accel_mem_map  me = _hd_alloc_map[host_ptr];
+  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
 
-  if (me.mode < CS_ALLOC_HOST_DEVICE)
+  if (me.mode < CS_ALLOC_HOST_DEVICE_PINNED)
     bft_mem_free(me.host_ptr, var_name, file_name, line_num);
 
   if (me.device_ptr != NULL) {
 
 #if defined(HAVE_CUDA)
 
-    if (me.mode == CS_ALLOC_HOST_DEVICE)
+    if (me.host_ptr != NULL)
       cs_cuda_mem_free(me.host_ptr, var_name, file_name, line_num);
 
-    if (me.mode >= CS_ALLOC_HOST_DEVICE)
+    if (me.mode != CS_ALLOC_HOST_DEVICE_SHARED)
       cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
 
 #elif defined(HAVE_ONEAPI)
@@ -369,17 +392,17 @@ cs_free_hd(void        *host_ptr,
 
   }
 
-  _hd_alloc_map.erase(host_ptr);
+  _hd_alloc_map.erase(ptr);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Free memory on host and device for a given host pointer.
+ * \brief Free memory on host and device for a given pointer.
  *
  * Compared to \cs_free_hd, this function also allows freeing memory
  * allocated through BFT_MEM_MALLOC / bft_mem_malloc.
  *
- * \param [in]  host_ptr   host pointer to free
+ * \param [in]  ptr        pointer to free
  * \param [in]  var_name   allocated variable name string
  * \param [in]  file_name  name of calling source file
  * \param [in]  line_num   line number in calling source file
@@ -387,45 +410,48 @@ cs_free_hd(void        *host_ptr,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_free(void        *host_ptr,
+cs_free(void        *ptr,
         const char  *var_name,
         const char  *file_name,
         int          line_num)
 {
-  if (host_ptr == NULL)
+  if (ptr == NULL)
     return;
 
-  else if (_hd_alloc_map.count(host_ptr) == 0) {
-    bft_mem_free(host_ptr, var_name, file_name, line_num);
+  else if (_hd_alloc_map.count(ptr) == 0) {
+    bft_mem_free(ptr, var_name, file_name, line_num);
     return;
   }
   else
-    cs_free_hd(host_ptr, var_name, file_name, line_num);
+    cs_free_hd(ptr, var_name, file_name, line_num);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return device pointer for a given host pointer.
+ * \brief Return matching device pointer for a given pointer.
  *
- * \param [in]  host_ptr   host pointer
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * \param [in]  ptr  pointer
  *
  * \returns pointer to device memory.
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_get_device_ptr(void  *host_ptr)
+cs_get_device_ptr(void  *ptr)
 {
-  if (host_ptr == NULL)
+  if (ptr == NULL)
     return NULL;
 
-  if (_hd_alloc_map.count(host_ptr) == 0) {
+  if (_hd_alloc_map.count(ptr) == 0) {
     bft_error(__FILE__, __LINE__, 0,
-              _("%s: No host pointer matching %p."), __func__, host_ptr);
+              _("%s: No host or device pointer matching %p."), __func__, ptr);
     return NULL;
   }
 
-  _cs_base_accel_mem_map  me = _hd_alloc_map[host_ptr];
+  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
 
   if (me.device_ptr == NULL) {
     if (me.mode == CS_ALLOC_HOST_DEVICE) {
@@ -435,7 +461,7 @@ cs_get_device_ptr(void  *host_ptr)
                                                 "me.device_ptr",
                                                 __FILE__,
                                                 __LINE__);
-      _hd_alloc_map[host_ptr] = me;
+      _hd_alloc_map[ptr] = me;
 
 #elif defined(HAVE_ONEAPI)
 
@@ -450,19 +476,22 @@ cs_get_device_ptr(void  *host_ptr)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check if a host pointer is associated with a  device.
+ * \brief Check if a pointer is associated with a device.
  *
- * \returns allocation mode associated with host pointer
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * \returns allocation mode associated with pointer
  */
 /*----------------------------------------------------------------------------*/
 
 cs_alloc_mode_t
-cs_check_device_ptr(void  *host_ptr)
+cs_check_device_ptr(void  *ptr)
 {
-  if (_hd_alloc_map.count(host_ptr) == 0)
+  if (_hd_alloc_map.count(ptr) == 0)
     return CS_ALLOC_HOST;
 
-  _cs_base_accel_mem_map  me = _hd_alloc_map[host_ptr];
+  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
   return me.mode;
 }
 
@@ -603,6 +632,109 @@ cs_set_alloc_mode(void             **host_ptr,
   }
 
   *host_ptr = ret_ptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy from host to device.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sync_h2d(void  *ptr)
+{
+  if (_hd_alloc_map.count(ptr) == 0)
+    return;
+
+  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
+
+#if defined(HAVE_CUDA)
+
+  switch (me.mode) {
+  case CS_ALLOC_HOST:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: %p allocated on host only."),
+              __func__, ptr);
+    break;
+  case CS_ALLOC_HOST_DEVICE:
+    cs_cuda_copy_d2h(me.device_ptr, me.host_ptr, me.size);
+    break;
+  case CS_ALLOC_HOST_DEVICE_PINNED:
+    cs_cuda_copy_d2h_async(me.device_ptr, me.host_ptr, me.size);
+    break;
+  case CS_ALLOC_HOST_DEVICE_SHARED:
+    cs_cuda_prefetch_d2h(me.device_ptr, me.size);
+    break;
+  case CS_ALLOC_DEVICE:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: %p allocated on device only."),
+              __func__, ptr);
+    break;
+  }
+
+#elif defined(HAVE_ONEAPI)
+
+  // TODO add OneApi wrapper for shared allocation
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy from device to host.
+ *
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be passed to this
+ * function.
+ *
+ * Depending on the allocaton type, this can imply a copy, data prefetch,
+ * or a no-op.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sync_d2h(void  *ptr)
+{
+  if (_hd_alloc_map.count(ptr) == 0)
+    return;
+
+  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
+
+#if defined(HAVE_CUDA)
+
+  switch (me.mode) {
+  case CS_ALLOC_HOST:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: %p allocated on host only."),
+              __func__, ptr);
+    break;
+  case CS_ALLOC_HOST_DEVICE:
+    cs_cuda_copy_d2h(me.host_ptr, me.device_ptr, me.size);
+    break;
+  case CS_ALLOC_HOST_DEVICE_PINNED:
+    cs_cuda_copy_d2h_async(me.host_ptr, me.device_ptr, me.size);
+    break;
+  case CS_ALLOC_HOST_DEVICE_SHARED:
+    cs_cuda_prefetch_d2h(me.host_ptr, me.size);
+    break;
+  case CS_ALLOC_DEVICE:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: %p allocated on device only."),
+              __func__, ptr);
+    break;
+  }
+
+#elif defined(HAVE_ONEAPI)
+
+  // TODO add OneApi wrapper for shared allocation
+
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

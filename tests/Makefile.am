@@ -210,18 +210,10 @@ cs_map_test_SOURCES  = cs_map_test.c
 cs_map_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_map_test_LDADD    = $(LDADD_CS_TESTS)
 
-cs_matrix_test_SOURCES  = \
-cs_matrix_test.c \
-cs_halo.c \
-cs_range_set.c \
-cs_sort.c \
-cs_matrix.c \
-cs_matrix_assembler.c
-cs_matrix_test_CPPFLAGS  = \
--D_CS_UNIT_MATRIX_TEST \
-$(AM_CPPFLAGS)
-cs_matrix_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
-cs_matrix_test_LDADD    = $(LDADD_CS_TESTS)
+cs_matrix_test$(EXEEXT):
+	PYTHONPATH=$(top_srcdir)/bin \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	-o cs_matrix_test $(top_srcdir)/tests/cs_matrix_test.c
 
 cs_moment_test_SOURCES  = cs_moment_test.c
 cs_moment_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)

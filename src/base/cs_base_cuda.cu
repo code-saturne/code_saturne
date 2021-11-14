@@ -1,5 +1,5 @@
 /*============================================================================
- * Low-level functions and global variables definition for CUDA.
+ * Definitions, global variables, and base functions for CUDA
  *============================================================================*/
 
 /*
@@ -67,7 +67,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Keep track of active device id; usually queried dynamically, but
-   saving the value in this varaible can be useful when debugging */
+   saving the value in this variable can be useful when debugging */
 
 int  cs_glob_cuda_device_id = -1;
 
@@ -252,6 +252,147 @@ cs_cuda_mem_free_host(void         *p,
 #if 0
   CS_CUDA_CHECK_CALL((cudaDeviceSynchronize(), file_name, line_num);
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device.
+ *
+ * This is simply a wrapper over cudaMemcpy.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_copy_h2d(void    *dst,
+                 void    *src,
+                 size_t   size)
+{
+  CS_CUDA_CHECK(cudaMemcpy(dst, src, size, cudaMemcpyHostToDevice));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device, possibly returning on the host
+ *        before the copy is finished.
+ *
+ * This is simply a wrapper over cudaMemcpyAsync.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_copy_h2d_async(void    *dst,
+                       void    *src,
+                       size_t   size)
+{
+  CS_CUDA_CHECK(cudaMemcpyAsync(dst, src, size, cudaMemcpyHostToDevice));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from device to host.
+ *
+ * This is simply a wrapper over cudaMemcpy.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_copy_d2h(void    *dst,
+                 void    *src,
+                 size_t   size)
+{
+  CS_CUDA_CHECK(cudaMemcpy(dst, src, size, cudaMemcpyDeviceToHost));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device.
+ *
+ * This is simply a wrapper over cudaMemcpy.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_copy_d2h_async(void    *dst,
+                       void    *src,
+                       size_t   size)
+{
+  CS_CUDA_CHECK(cudaMemcpyAsync(dst, src, size, cudaMemcpyDeviceToHost));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device.
+ *
+ * This is simply a wrapper over cudaMemcpy.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_prefetch_h2d(void    *dst,
+                     size_t   size)
+{
+  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, cudaCpuDeviceId, 0));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device.
+ *
+ * This is simply a wrapper over cudaMemcpy.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_prefetch_d2h(void    *dst,
+                     size_t   size)
+{
+  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, cs_glob_cuda_device_id, 0));
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
