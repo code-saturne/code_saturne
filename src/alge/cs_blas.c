@@ -629,7 +629,7 @@ _cs_dot_xx_yy_xy_xz_yz_superblock(cs_lnum_t                    n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return the global residual of 2 extensive vectors:
+ * \brief Return the global residual of 2 intensive vectors:
  *        1/sum(vol) . sum(X.Y.vol)
  *        using a superblock algorithm.
  *
@@ -1620,8 +1620,8 @@ cs_gdot(cs_lnum_t         n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return the global residual of 2 extensive vectors:
- *        1/sum(vol) . sum(X.Y.vol)
+ * \brief Return the global residual of 2 intensive vectors:
+ *        1/sum(vol) . sum(x.y.vol)
  *
  * In parallel mode, the local results are summed on the default
  * global communicator.

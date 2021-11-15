@@ -300,8 +300,8 @@ cs_gdot(cs_lnum_t         n,
         const cs_real_t  *y);
 
 /*----------------------------------------------------------------------------
- * Return the global residual of 2 extensive vectors:
- *  1/sum(vol) . sum(X.Y/vol)
+ * Return the global residual of 2 intensive vectors:
+ *  1/sum(vol) . sum(vol.x.y)
  *
  * parameters:
  *   n   <-- size of arrays x and y

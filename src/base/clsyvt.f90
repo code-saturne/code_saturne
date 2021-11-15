@@ -750,7 +750,7 @@ do ifac = 1, nfabor
   if (icodcl(ifac,iu).eq.4) then
 
     iel = ifabor(ifac)
-    ! --- Physical Propreties
+    ! --- Physical Properties
     visclc = viscl(iel)
     cpp = 1.d0
     if (iscacp.eq.1) then
@@ -978,7 +978,7 @@ do ifac = 1, nfabor
   if (icodcl(ifac,ivar).eq.4) then
 
     iel = ifabor(ifac)
-    ! --- Physical Propreties
+    ! --- Physical Properties
     visclc = viscl(iel)
 
     ! --- Geometrical quantities
