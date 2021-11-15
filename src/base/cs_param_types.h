@@ -909,6 +909,20 @@ typedef enum {
 
 } cs_param_resnorm_type_t;
 
+/*!
+ * \enum cs_param_dotprod_type_t
+ * Way to compute a dot product or its related norm
+ */
+
+typedef enum {
+
+  CS_PARAM_DOTPROD_EUCLIDEAN,   /*!< Usual Eucliean 2-norm (no weight) */
+  CS_PARAM_DOTPROD_CDO,         /*!< Weighted 2-norm from CDO quantities */
+
+  CS_PARAM_N_DOTPROD_TYPES
+
+} cs_param_dotprod_type_t;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -1054,6 +1068,19 @@ cs_param_get_bc_enforcement_name(cs_param_bc_enforce_t  type);
 
 const char *
 cs_param_get_nl_algo_name(cs_param_nl_algo_t   algo);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of dot product to apply
+ *
+ * \param[in] dp_type     type of dot product
+ *
+ * \return the associated type name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_dotprod_type_name(cs_param_dotprod_type_t   dp_type);
 
 /*----------------------------------------------------------------------------*/
 /*!

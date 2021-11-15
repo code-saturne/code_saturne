@@ -35,6 +35,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_blas.h"
 #include "cs_math.h"
 #include "cs_parall.h"
 
@@ -617,6 +618,49 @@ cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the dot product of two arrays using the classical Euclidean
+ *         dot product (without weight).
+ *         Case of a scalar-valued arrays defined at primal faces.
+ *         The computed quantity is synchronized in parallel.
+ *
+ * \param[in]  a   first array to analyze
+ * \param[in]  b   second array to analyze
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_dotprod_face(const cs_real_t        *a,
+                         const cs_real_t        *b)
+{
+  return cs_gdot(cs_cdo_quant->n_faces, a, b);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the square norm of an array using an Euclidean 2-norm.
+ *         Case of a scalar-valued array defined at primal faces.
+ *         The computed quantities are synchronized in parallel.
+ *
+ * \param[in]  array   array to analyze
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_square_norm_face(const cs_real_t        *array)
+{
+  cs_real_t  retval = cs_dot_xx(cs_cdo_quant->n_faces, array);
+
+  cs_parall_sum(1, CS_DOUBLE, &retval);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the square norm of an array
  *         Case of a scalar-valued array defined as a potential at primal
  *         faces. Thus, the weigth is the pyramid of apex the cell center and
@@ -669,6 +713,101 @@ cs_cdo_blas_square_norm_pfvp(const cs_real_t        *array)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the dot product of two arrays using a weighted Euclidean
+ *         dot product relying on CDO quantities.
+ *         Case of a scalar-valued arrays defined as a flux at primal
+ *         faces. Thus, the weigth is the pyramid of apex the cell center and
+ *         of basis the face. Each face quantity is normalized by the face
+ *         surface. The computed quantity is synchronized in parallel.
+ *
+ * \param[in]  a   first array to analyze
+ * \param[in]  b   second array to analyze
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_dotprod_pfsf(const cs_real_t        *a,
+                         const cs_real_t        *b)
+{
+  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
+  const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
+  const cs_real_t  *i_surf = cs_cdo_quant->i_face_surf;
+  const cs_real_t  *b_surf = cs_cdo_quant->b_face_surf;
+  const cs_lnum_t  size = c2f->idx[cs_cdo_quant->n_cells];
+  const cs_lnum_t  n_i_faces = cs_cdo_quant->n_i_faces;
+
+  _sanity_checks(__func__, c2f, w_c2f);
+
+  /*
+   * The algorithm used is l3superblock60, based on the article:
+   * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+   * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+   * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+   * 2008 Society for Industrial and Applied Mathematics
+   */
+
+  double  dp = 0;
+
+# pragma omp parallel reduction(+:dp) if (size > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(size, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_lnum_t  *_ids = c2f->ids + s_id;
+    const cs_real_t  *_w = w_c2f + s_id;
+    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
+    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
+    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
+    const cs_lnum_t  blocks_in_sblocks =
+      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double  s_dp = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double  _dp = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+
+          const cs_lnum_t  id = _ids[j];
+          const cs_real_t  osurf =
+            (id < n_i_faces) ? 1./i_surf[id] : 1./b_surf[id - n_i_faces];
+          const cs_real_t  va = a[id]*osurf, vb = b[id]*osurf;
+
+          _dp += _w[j] * va*vb;
+
+        } /* Loop on block_size */
+
+        s_dp += _dp;
+
+      } /* Loop on blocks */
+
+      dp += s_dp;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel treatment */
+  cs_parall_sum(1, CS_REAL_TYPE, &dp);
+
+  return (cs_real_t)dp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the square norm of an array
  *         Case of a scalar-valued array defined as a flux at primal
  *         faces. Thus, the weigth is the pyramid of apex the cell center and
@@ -693,13 +832,13 @@ cs_cdo_blas_square_norm_pfsf(const cs_real_t        *array)
 
   _sanity_checks(__func__, c2f, w_c2f);
 
-   /*
-  * The algorithm used is l3superblock60, based on the article:
-  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
-  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
-  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
-  * 2008 Society for Industrial and Applied Mathematics
-  */
+  /*
+   * The algorithm used is l3superblock60, based on the article:
+   * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+   * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+   * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+   * 2008 Society for Industrial and Applied Mathematics
+   */
 
   double  l2norm = 0;
 
@@ -787,13 +926,13 @@ cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t        *a,
 
   _sanity_checks(__func__, c2f, w_c2f);
 
-   /*
-  * The algorithm used is l3superblock60, based on the article:
-  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
-  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
-  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
-  * 2008 Society for Industrial and Applied Mathematics
-  */
+  /*
+   * The algorithm used is l3superblock60, based on the article:
+   * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+   * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+   * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+   * 2008 Society for Industrial and Applied Mathematics
+   */
 
   double  l2norm = 0;
 

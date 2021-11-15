@@ -180,6 +180,13 @@ cs_param_schur_approx_name[CS_PARAM_N_SCHUR_APPROX][CS_BASE_STRING_LEN] =
     N_("Based on the diagonal + mass scaling"),
     N_("Lumped inverse + mass scaling") };
 
+static const char
+cs_param_dotprod_name[CS_PARAM_N_DOTPROD_TYPES][CS_BASE_STRING_LEN] =
+  { N_("Classical Euclidean"),
+    N_("Based on CDO quantities"),
+  };
+
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -443,6 +450,29 @@ cs_param_get_nl_algo_name(cs_param_nl_algo_t   algo)
   case CS_PARAM_NL_ALGO_PICARD:
   case CS_PARAM_NL_ALGO_ANDERSON:
     return cs_param_nl_algo_name[algo];
+
+  default:
+    return NULL;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the name of the type of dot product to apply
+ *
+ * \param[in] dp_type     type of dot product
+ *
+ * \return the associated type name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_dotprod_type_name(cs_param_dotprod_type_t   dp_type)
+{
+  switch (dp_type) {
+  case CS_PARAM_DOTPROD_EUCLIDEAN:
+  case CS_PARAM_DOTPROD_CDO:
+    return cs_param_dotprod_name[dp_type];
 
   default:
     return NULL;

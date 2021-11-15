@@ -29,7 +29,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_cdo_blas.h"
 #include "cs_math.h"
+#include "cs_param_types.h"
 #include "cs_sles.h"
 
 /*----------------------------------------------------------------------------*/
@@ -168,12 +170,16 @@ typedef struct {
  * \var beta
  * Value of the relaxation coefficient (if this is equal to zero then there is
  * non relaxation to perform)
+ *
+ * \var dp_type
+ * Type of dot product to apply (usual Euclidean 2-norm or CDO-based one)
  */
 
   int                        n_max_dir;
   int                        starting_iter;
   double                     droptol;
   double                     beta;
+  cs_param_dotprod_type_t    dp_type;
 
 } cs_iter_algo_param_aa_t;
 
@@ -268,13 +274,9 @@ cs_iter_algo_update_cvg(cs_iter_algo_info_t         *iai);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new cs_iter_algo_aa_t structure to handle the Anderson
- *         acceleration
+ * \brief  Create a new cs_iter_algo_aa_t structure
  *
- * \param[in] n_max_dir       max. number of directions stored
- * \param[in] starting_iter   iteration at which the algorithm starts
- * \param[in] droptol         tolerance under which terms are dropped
- * \param[in] beta            relaxation coefficient
+ * \param[in] aap             set of parameters for the Anderson acceleration
  * \param[in] n_elts          number of elements by direction
  *
  * \return a pointer to the new allocated structure
@@ -282,11 +284,21 @@ cs_iter_algo_update_cvg(cs_iter_algo_info_t         *iai);
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_aa_t *
-cs_iter_algo_aa_create(int                   n_max_dir,
-                       int                   starting_iter,
-                       cs_real_t             droptol,
-                       cs_real_t             beta,
-                       cs_lnum_t             n_elts);
+cs_iter_algo_aa_create(cs_iter_algo_param_aa_t    aap,
+                       cs_lnum_t                  n_elts);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the set of parameters for an Anderson algorithm
+ *
+ * \param[in, out] iai      pointer to a cs_iter_algo_info_t structure
+ *
+ * \return a cs_iter_algo_param_aa_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_iter_algo_param_aa_t
+cs_iter_algo_get_anderson_param(cs_iter_algo_info_t         *iai);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -328,12 +340,16 @@ cs_iter_algo_aa_free(cs_iter_algo_info_t  *info);
  *
  * \param[in, out] iai           pointer to a cs_iter_algo_info_t structure
  * \param[in, out] cur_iterate   current iterate
+ * \param[in]      dotprod       function to compute a dot product
+ * \param[in]      sqnorm        function to compute a square norm
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
-                       cs_real_t                   *cur_iterate);
+                       cs_real_t                   *cur_iterate,
+                       cs_cdo_blas_dotprod_t       *dotprod,
+                       cs_cdo_blas_square_norm_t   *sqnorm);
 
 /*----------------------------------------------------------------------------*/
 

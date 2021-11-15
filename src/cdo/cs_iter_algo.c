@@ -42,9 +42,6 @@
 #include <bft_mem.h>
 #include <bft_printf.h>
 
-#include "cs_blas.h"
-#include "cs_cdo_blas.h"
-#include "cs_math.h"
 #include "cs_parall.h"
 #include "cs_sdm.h"
 
@@ -117,8 +114,21 @@ struct _cs_iter_algo_aa_t {
    * \var AAFirst
    *
    *
+   * \var fval
    *
    *
+   * \var fold
+   *
+   *
+   * \var df
+   *
+   *
+   * \var gval
+   *
+   * \var gold
+   *
+   *
+   * \var DG
    *
    * \var Q
    * Matrix Q in the Q.R factorization (seen as a bundle of vectors)
@@ -431,10 +441,7 @@ cs_iter_algo_update_cvg(cs_iter_algo_info_t         *iai)
 /*!
  * \brief  Create a new cs_iter_algo_aa_t structure
  *
- * \param[in] n_max_dir       max. number of directions stored
- * \param[in] starting_iter   iteration at which the algorithm starts
- * \param[in] droptol         tolerance under which terms are dropped
- * \param[in] beta            relaxation coefficient
+ * \param[in] aap             set of parameters for the Anderson acceleration
  * \param[in] n_elts          number of elements by direction
  *
  * \return a pointer to the new allocated structure
@@ -442,11 +449,8 @@ cs_iter_algo_update_cvg(cs_iter_algo_info_t         *iai)
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_aa_t *
-cs_iter_algo_aa_create(int                   n_max_dir,
-                       int                   starting_iter,
-                       cs_real_t             droptol,
-                       cs_real_t             beta,
-                       cs_lnum_t             n_elts)
+cs_iter_algo_aa_create(cs_iter_algo_param_aa_t    aap,
+                       cs_lnum_t                  n_elts)
 {
   cs_iter_algo_aa_t  *aa = NULL;
 
@@ -454,10 +458,11 @@ cs_iter_algo_aa_create(int                   n_max_dir,
 
   /* Parameters */
 
-  aa->param.n_max_dir = n_max_dir;
-  aa->param.starting_iter = starting_iter;
-  aa->param.droptol = droptol;
-  aa->param.beta = beta;
+  aa->param.n_max_dir = aap.n_max_dir;
+  aa->param.starting_iter = aap.starting_iter;
+  aa->param.droptol = aap.droptol;
+  aa->param.beta = aap.beta;
+  aa->param.dp_type = aap.dp_type;
 
   aa->n_elts = n_elts;
 
@@ -484,6 +489,38 @@ cs_iter_algo_aa_create(int                   n_max_dir,
   aa->R = NULL;
 
   return aa;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the set of parameters for an Anderson algorithm
+ *
+ * \param[in, out] iai      pointer to a cs_iter_algo_info_t structure
+ *
+ * \return a cs_iter_algo_param_aa_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_iter_algo_param_aa_t
+cs_iter_algo_get_anderson_param(cs_iter_algo_info_t         *iai)
+{
+  cs_iter_algo_param_aa_t  aap = {
+    .n_max_dir = 4,
+    .starting_iter = 2,
+    .droptol = 500,
+    .beta = 0.,
+    .dp_type = CS_PARAM_DOTPROD_EUCLIDEAN };
+
+  if (iai != NULL) {
+
+    cs_iter_algo_aa_t  *aa = iai->context;
+
+    if (aa != NULL)
+      return aa->param;
+
+  }
+
+  return aap;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -590,12 +627,16 @@ cs_iter_algo_aa_free(cs_iter_algo_info_t  *info)
  *
  * \param[in, out] iai           pointer to a cs_iter_algo_info_t structure
  * \param[in, out] cur_iterate   current iterate
+ * \param[in]      dotprod       function to compute a dot product
+ * \param[in]      sqnorm        function to compute a square norm
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
-                       cs_real_t                   *cur_iterate)
+                       cs_real_t                   *cur_iterate,
+                       cs_cdo_blas_dotprod_t       *dotprod,
+                       cs_cdo_blas_square_norm_t   *sqnorm)
 {
   if (iai == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -618,7 +659,7 @@ cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
 
   if (!aa->is_initialized) {
 
-    if (aa->gval == NULL)
+    if (aa->gval == NULL) /* Allocate arrays */
       cs_iter_algo_aa_allocate_arrays(aa);
 
     memcpy(aa->gval, cur_iterate, dir_size); /* set gval = cur_iterate */
@@ -670,9 +711,7 @@ cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
 
     if (aa->mAA == 1) {
 
-      double  square_norm_df = cs_dot_xx(aa->n_elts, aa->df);
-
-      cs_parall_sum(1, CS_DOUBLE, &square_norm_df);
+      double  square_norm_df = sqnorm(aa->df);
 
       aa->R->val[0] = sqrt(square_norm_df); /* R(0,0) = |df|_L2 */
 
@@ -697,7 +736,7 @@ cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
 
         cs_real_t *Qj = aa->Q + j*aa->n_elts; /* get row j */
 
-        const double  prod = cs_gdot(aa->n_elts, aa->df, Qj);
+        const double  prod = dotprod(aa->df, Qj);
 
         aa->R->val[j*_mMax + (aa->mAA-1)] = prod;  /* R(j, mAA) = Qj*df */
 
@@ -707,9 +746,7 @@ cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
 
       }
 
-      double  square_norm_df = cs_dot_xx(aa->n_elts, aa->df);
-
-      cs_parall_sum(1, CS_DOUBLE, &square_norm_df);
+      double  square_norm_df = sqnorm(aa->df);
 
       /* R(mAA,mAA) = |df|_L2 */
 
@@ -754,7 +791,7 @@ cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
 
     for (int i = aa->mAA-1; i >= 0; i--) {
 
-      double s = cs_gdot(aa->n_elts, aa->fval, aa->Q + i*aa->n_elts);
+      double  s = dotprod(aa->fval, aa->Q + i*aa->n_elts);
       for (int j = i+1; j < aa->mAA; j++)
         s -= aa->R->val[i*_mMax+j] * aa->gamma[j];
 

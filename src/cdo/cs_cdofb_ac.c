@@ -1026,12 +1026,8 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
                                       nslesp->nl_algo_dtol);
 
   if (nslesp->nl_algo == CS_PARAM_NL_ALGO_ANDERSON)
-    sc->algo_info->context =
-      cs_iter_algo_aa_create(nslesp->anderson_param.n_max_dir,
-                             nslesp->anderson_param.starting_iter,
-                             nslesp->anderson_param.droptol,
-                             nslesp->anderson_param.beta,
-                             cs_shared_quant->n_faces);
+    sc->algo_info->context = cs_iter_algo_aa_create(nslesp->anderson_param,
+                                                    cs_shared_quant->n_faces);
 
   /* Monitoring */
 

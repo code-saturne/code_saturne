@@ -1785,8 +1785,31 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t           nl_algo,
 {
   assert(iai != NULL);
 
-  if (nl_algo == CS_PARAM_NL_ALGO_ANDERSON && iai->n_algo_iter > 0)
-    cs_iter_algo_aa_update(iai, cur_iterate);
+  if (nl_algo == CS_PARAM_NL_ALGO_ANDERSON && iai->n_algo_iter > 0) {
+
+    cs_iter_algo_param_aa_t  aap = cs_iter_algo_get_anderson_param(iai);
+
+    switch (aap.dp_type) {
+
+    case CS_PARAM_DOTPROD_EUCLIDEAN:
+      cs_iter_algo_aa_update(iai,
+                             cur_iterate,
+                             cs_cdo_blas_dotprod_face,
+                             cs_cdo_blas_square_norm_face);
+      break;
+    case CS_PARAM_DOTPROD_CDO:
+      cs_iter_algo_aa_update(iai,
+                             cur_iterate,
+                             cs_cdo_blas_dotprod_pfsf,
+                             cs_cdo_blas_square_norm_pfsf);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid case.\n", __func__);
+
+    }
+
+  } /* Anderson acceleration */
 
   /* Update the residual values. Compute the norm of the difference between the
      two mass fluxes (the current one and the previous one) */
