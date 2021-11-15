@@ -700,6 +700,9 @@ if (icp.ge.0) then
   call field_get_val_s(icp, cpro_cp)
 endif
 
+! Reference diffusivity of the primal scalar
+call field_get_key_double(f_id, kvisl0, visls_0)
+
 call field_get_key_int (f_id, kivisl, ifcvsl)
 if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
@@ -717,9 +720,6 @@ call field_get_name(ivarfl(ivar), fname)
 
 ! Index of the corresponding turbulent flux
 call field_get_id(trim(fname)//'_turbulent_flux', f_id)
-
-! Reference diffusivity
-call field_get_key_double(f_id, kvisl0, visls_0)
 
 call field_get_coefa_v(f_id,coefaut)
 call field_get_coefb_v(f_id,coefbut)
@@ -1000,9 +1000,9 @@ do ifac = 1, nfabor
       hintt(1) = (vcopt%idifft*max(visct(iel),zero)/turb_schmidt + rkl)/distbf
       hintt(2) = hintt(1)
       hintt(3) = hintt(1)
-      hintt(4) = hintt(1)
-      hintt(5) = hintt(1)
-      hintt(6) = hintt(1)
+      hintt(4) = 0.d0
+      hintt(5) = 0.d0
+      hintt(6) = 0.d0
     ! Symmetric tensor diffusivity
     elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
       temp = vcopt%idifft*ctheta(iscal)/csrij
