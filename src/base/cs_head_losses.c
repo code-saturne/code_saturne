@@ -125,12 +125,10 @@ cs_head_losses_compute(cs_real_6_t cku[])
      non-interleaved variant still used in Fortran */
 
   cs_lnum_t n_loc_cells = 0;
-  cs_lnum_t n_hl_cells = 0;
 
   for (int i = 0; i < n_zones; i++) {
     const cs_zone_t  *z = cs_volume_zone_by_id(i);
     if (z->type & CS_VOLUME_ZONE_HEAD_LOSS) {
-      n_hl_cells += z->n_elts;
       if (z->n_elts > n_loc_cells)
         n_loc_cells = z->n_elts;
     }

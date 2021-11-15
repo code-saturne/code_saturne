@@ -484,7 +484,7 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
   case CS_NAVSTO_SLES_MINRES:
     cs_log_printf(CS_LOG_SETUP, "in-house MINRES\n");
     break;
-  case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:+
+  case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
     cs_log_printf(CS_LOG_SETUP, "Multiplicative block preconditioner"
                   " + GMRES\n");
     break;

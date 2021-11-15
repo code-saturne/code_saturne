@@ -69,7 +69,7 @@ integer          iprev
 double precision s11, s22, s33, f1, ft1, ft2
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision xk, xe, xrom, xnu
-double precision ttke, ttmin, ttlim, tt
+double precision ttke, ttmin
 
 double precision, allocatable, dimension(:) :: s2
 double precision, dimension(:,:,:), allocatable :: gradv

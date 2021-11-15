@@ -2585,7 +2585,6 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
                                  ECS_ELT_TYP_CEL_HEXA};
 
   ecs_int_t   cpt_cel_erreur = 0;
-  ecs_int_t   cpt_cel_correc = 0;
 
   int  foam2vtk = 0;  /* tentative adaptation to meshes transformed with
                          foam2vtk; solves most issues but a few remain */
@@ -2740,7 +2739,6 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
 
       else if (ret_orient > 0) {
         cpt_orient_correc[typ_elt] += 1;
-        cpt_cel_correc += 1;
       }
     }
 

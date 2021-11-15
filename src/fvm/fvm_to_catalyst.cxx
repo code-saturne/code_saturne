@@ -69,7 +69,7 @@
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkUnstructuredGrid.h>
-#include <vtkPVConfig.h>
+#include <vtkPVConfig.h>    // vtkPVVersion.h preferred from version 5.10 on.
 
 #include <vtkCPDataDescription.h>
 #include <vtkCPInputDataDescription.h>

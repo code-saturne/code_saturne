@@ -1646,7 +1646,6 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
   unsigned long  n_ent_blocks;
 
   ecs_int_t   type_ecs;
-  ecs_int_t   nbr_elt_lus;
   ecs_int_t   ind_nod_elt;
   ecs_int_t   ind_som_elt;
   ecs_int_t   nbr_som_elt;
@@ -1887,8 +1886,6 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
   }
   else {
 
-    nbr_elt_lus = 0;
-
     for (unsigned long eb = 0; eb < n_ent_blocks; eb++) {
 
       int tag_ent = -1;
@@ -2007,7 +2004,6 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
 
       }
 
-      nbr_elt_lus += n_ent_elt;
     }
 
     ecs_file_set_type(fic_maillage, ECS_FILE_TYPE_TEXT);

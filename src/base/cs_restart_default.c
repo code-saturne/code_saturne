@@ -529,7 +529,7 @@ _read_field_vals_legacy(cs_restart_t  *r,
 
   /* Check for renaming */
 
-  char old_name[72] = "";
+  char old_name[96] = "";
   int ks = cs_field_key_id_try("scalar_id");
   int scalar_id = cs_field_get_key_int(f, ks);
 

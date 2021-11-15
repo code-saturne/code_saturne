@@ -65,7 +65,7 @@ integer          iscal
 integer          ivar, iel, iflid
 integer          iclmax(1), iclmin(1), iiscav
 integer          kscmin, kscmax, f_id
-double precision vmin(1), vmax(1), vfmin, vfmax
+double precision vmin(1), vmax(1), vfmax
 double precision scmax, scmin
 double precision scmaxp, scminp
 

@@ -1218,7 +1218,7 @@ _uza_schur_pc_apply(cs_saddle_system_t          *ssys,
   /* 3. Solve S z2 = r2_hat (S -> Schur approximation for the m22 block)
      =================================================================== */
 
-    n_iter += _solve_schur_approximation(ssys, sbp, r2_hat, z2);
+  n_iter += _solve_schur_approximation(ssys, sbp, r2_hat, z2);
 
   /* 4. Build r1_tilda = Bt.z2 (minus to apply after)
      ========================= */

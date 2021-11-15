@@ -412,17 +412,10 @@ _crystal_create_meta_i(size_t            n_elts,
 
   cs_crystal_router_t *cr = _crystal_create(n_elts, flags, comm);
 
-  size_t comp_size = 0;
   size_t elt_size = cs_datatype_size[datatype];
   size_t align_size = sizeof(cs_lnum_t);
 
-  /* Ensure alignement on integer size at least */
-
-  if (elt_size % sizeof(int) > 0)
-    comp_size += sizeof(int) - elt_size % sizeof(int);
-
   cr->datatype = datatype;
-
   cr->elt_size = elt_size;
 
   /* Compute data size and alignment */
