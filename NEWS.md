@@ -3,6 +3,9 @@ Release 7.0.3 (not released yet)
 
 Bug fixes:
 
+- Fix usage of wrong diffusivity in Differential Flux Model
+  symmetry boundary conditions.
+
 - PLE: Fix behavior of location extension. In some cases, the
   locations were not always updated to the closest points.
 
