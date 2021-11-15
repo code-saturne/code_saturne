@@ -319,6 +319,24 @@ cs_gres(cs_lnum_t         n,
         const cs_real_t  *x,
         const cs_real_t  *y);
 
+/*----------------------------------------------------------------------------
+ * Return the global volume weighted mean
+ *  1/sum(vol) . sum(vol.x)
+ *
+ * parameters:
+ *   n   <-- size of arrays x
+ *   vol <-- array of floating-point values
+ *   x   <-- array of floating-point values
+ *
+ * returns:
+ *   global residual
+ *----------------------------------------------------------------------------*/
+
+double
+cs_gmean(cs_lnum_t         n,
+         const cs_real_t  *vol,
+         const cs_real_t  *x);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

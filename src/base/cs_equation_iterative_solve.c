@@ -560,10 +560,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     cs_real_t *w2;
     BFT_MALLOC(w2, n_cells_ext, cs_real_t);
 
-    cs_real_t p_mean = sqrt(cs_gres(n_cells, mq->cell_vol, pvar, pvar));
+    cs_real_t p_mean = cs_gmean(n_cells, mq->cell_vol, pvar);
 
     if (iwarnp >= 2)
-      bft_printf("L2 norm ||X^n|| = %f\n", p_mean);
+      bft_printf("Spatial average of X^n = %f\n", p_mean);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       w2[cell_id] = (pvar[cell_id]-p_mean);
 
@@ -1492,12 +1492,10 @@ cs_equation_iterative_solve_vector(int                   idtvar,
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       pvar_i[cell_id] = pvar[cell_id][i];
 
-    cs_real_t p_mean =
-      sqrt(cs_gres(n_cells, mq->cell_vol,
-            pvar_i, pvar_i));
+    cs_real_t p_mean = cs_gmean(n_cells, mq->cell_vol, pvar_i);
 
     if (iwarnp >= 2)
-      bft_printf("L2 norm ||X_%d^n|| = %f\n", i, p_mean);
+      bft_printf("Spatial average of X_%d^n = %f\n", i, p_mean);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       w2[cell_id][i] = (pvar[cell_id][i] - p_mean);
@@ -2328,12 +2326,10 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       pvar_i[cell_id] = pvar[cell_id][i];
 
-    cs_real_t p_mean =
-      sqrt(cs_gres(n_cells, mq->cell_vol,
-            pvar_i, pvar_i));
+    cs_real_t p_mean = cs_gmean(n_cells, mq->cell_vol, pvar_i);
 
     if (iwarnp >= 2)
-      bft_printf("L2 norm ||X_%d^n|| = %f\n", i, p_mean);
+      bft_printf("Spatial average of X_%d^n = %f\n", i, p_mean);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       w2[cell_id][i] = (pvar[cell_id][i] - p_mean);

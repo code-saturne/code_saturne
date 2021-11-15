@@ -706,6 +706,80 @@ _cs_gres_superblock(cs_lnum_t         n,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return the global spatial mean of an intensive vector:
+ *        1/sum(vol) . sum(x.vol)
+ *        using a superblock algorithm.
+ *
+ * In parallel mode, the local results are summed on the default
+ * global communicator.
+ *
+ * \param[in]  n    size of arrays x
+ * \param[in]  vol  array of floating-point values
+ * \param[in]  x    array of floating-point values
+ *
+ * \return  global residual
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_cs_gmean_superblock(cs_lnum_t         n,
+                     const cs_real_t  *vol,
+                     const cs_real_t  *x)
+{
+  double dot = 0.;
+  double vtot = 0.;
+
+# pragma omp parallel reduction(+:dot, vtot) if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_t *_vol = vol + s_id;
+    const cs_real_t *_x = x + s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double sdot = 0.;
+      double svtot = 0.;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double cdot = 0.;
+        double cvtot = 0.;
+        for (cs_lnum_t i = start_id; i < end_id; i++) {
+          cdot += _x[i] * _vol[i];
+          cvtot += _vol[i];
+        }
+        sdot += cdot;
+        svtot += cvtot;
+      }
+
+      dot += sdot;
+      vtot += svtot;
+
+    }
+
+  }
+
+  double atot[2] = {dot, vtot};
+  cs_parall_sum(2, CS_DOUBLE, atot);
+
+  dot = atot[0] / atot[1];
+
+  return dot;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return the dot product of 2 vectors: x.y
  *        using Kahan summation.
  *
@@ -1187,6 +1261,7 @@ static cs_dot_xx_yy_xy_xz_yz_t  *_cs_glob_dot_xx_yy_xy_xz_yz
   = _cs_dot_xx_yy_xy_xz_yz_superblock;
 
 static cs_gres_t      *_cs_glob_gres      = _cs_gres_superblock;
+static cs_dot_t *_cs_glob_gmean = _cs_gmean_superblock;
 
 /*============================================================================
  * Public function definitions
@@ -1642,6 +1717,30 @@ cs_gres(cs_lnum_t         n,
         const cs_real_t  *y)
 {
   return _cs_glob_gres(n, vol, x, y);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the global spacial average of an intensive vectors:
+ *        1/sum(vol) . sum(x.vol)
+ *
+ * In parallel mode, the local results are summed on the default
+ * global communicator.
+ *
+ * \param[in]  n    size of arrays x
+ * \param[in]  vol  array of floating-point values
+ * \param[in]  x    array of floating-point values
+ *
+ * \return  global residual
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_gmean(cs_lnum_t         n,
+         const cs_real_t  *vol,
+         const cs_real_t  *x)
+{
+  return _cs_glob_gmean(n, vol, x);
 }
 
 /*----------------------------------------------------------------------------*/
