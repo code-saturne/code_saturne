@@ -43,7 +43,7 @@
 #include <bft_printf.h>
 
 #include "cs_blas.h"
-#include "cs_cdo_sqnorm.h"
+#include "cs_cdo_blas.h"
 #include "cs_math.h"
 #include "cs_parall.h"
 #include "cs_sdm.h"

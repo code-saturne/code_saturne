@@ -58,7 +58,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_blas.h"
-#include "cs_cdo_sqnorm.h"
+#include "cs_cdo_blas.h"
 #include "cs_equation.h"
 #include "cs_fp_exception.h"
 #include "cs_iter_algo.h"
@@ -255,7 +255,7 @@ _get_cbscal_norm(cs_real_t  *a)
 static inline double
 _get_fbvect_norm(cs_real_t  *a)
 {
-  double norm2 = cs_cdo_sqnorm_pfvp(a);
+  double norm2 = cs_cdo_blas_square_norm_pfvp(a);
 
   assert(norm2 > -DBL_MIN);
   return sqrt(norm2);
@@ -5444,7 +5444,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   cs_param_sles_copy_from(eqp->sles_param, slesp);
   slesp->eps = nsp->sles_param->il_algo_rtol;
 
-  cs_real_t  normalization = cs_cdo_sqnorm_pfvp(uza->rhs);
+  cs_real_t  normalization = cs_cdo_blas_square_norm_pfvp(uza->rhs);
 
   if (fabs(normalization) > 0)
     normalization = sqrt(normalization);
@@ -5515,7 +5515,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                           delta_u,
                                           uza->rhs));
 
-    delta_u_l2 = cs_cdo_sqnorm_pfvp(delta_u);
+    delta_u_l2 = cs_cdo_blas_square_norm_pfvp(delta_u);
     if (fabs(delta_u_l2) > 0)
       delta_u_l2 = sqrt(delta_u_l2);
     else

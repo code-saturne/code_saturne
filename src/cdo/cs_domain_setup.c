@@ -40,7 +40,7 @@
 
 #include "cs_ale.h"
 #include "cs_boundary_zone.h"
-#include "cs_cdo_sqnorm.h"
+#include "cs_cdo_blas.h"
 #include "cs_evaluate.h"
 #include "cs_equation.h"
 #include "cs_equation_assemble.h"
@@ -626,8 +626,8 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
   cs_advection_field_set_shared_pointers(domain->cdo_quantities,
                                          domain->connect);
 
-  cs_cdo_sqnorm_set_shared_pointers(domain->cdo_quantities,
-                                    domain->connect);
+  cs_cdo_blas_set_shared_pointers(domain->cdo_quantities,
+                                  domain->connect);
 
   cs_evaluate_set_shared_pointers(domain->cdo_quantities,
                                   domain->connect);

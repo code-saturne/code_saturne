@@ -42,7 +42,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_sqnorm.h"
+#include "cs_cdo_blas.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -321,8 +321,8 @@ _c2x_vector_sqnorm(const cs_lnum_t         size,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_sqnorm_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                  const cs_cdo_connect_t       *connect)
+cs_cdo_blas_set_shared_pointers(const cs_cdo_quantities_t    *quant,
+                                const cs_cdo_connect_t       *connect)
 {
   /* Assign static const pointers */
   cs_cdo_quant = quant;
@@ -343,7 +343,7 @@ cs_cdo_sqnorm_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pcsp(const cs_real_t        *array)
+cs_cdo_blas_square_norm_pcsp(const cs_real_t        *array)
 {
   const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
 
@@ -425,8 +425,8 @@ cs_cdo_sqnorm_pcsp(const cs_real_t        *array)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pcsp_diff(const cs_real_t        *a,
-                        const cs_real_t        *b)
+cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t        *a,
+                                  const cs_real_t        *b)
 {
   const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
 
@@ -510,8 +510,8 @@ cs_cdo_sqnorm_pcsp_diff(const cs_real_t        *a,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pcsp_ndiff(const cs_real_t        *a,
-                         const cs_real_t        *ref)
+cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
+                                   const cs_real_t        *ref)
 {
   const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
 
@@ -604,7 +604,7 @@ cs_cdo_sqnorm_pcsp_ndiff(const cs_real_t        *a,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pvsp(const cs_real_t        *array)
+cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array)
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
   const cs_real_t  *w_c2v = cs_cdo_quant->dcell_vol;
@@ -630,7 +630,7 @@ cs_cdo_sqnorm_pvsp(const cs_real_t        *array)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pfsp(const cs_real_t        *array)
+cs_cdo_blas_square_norm_pfsp(const cs_real_t        *array)
 {
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
@@ -656,7 +656,7 @@ cs_cdo_sqnorm_pfsp(const cs_real_t        *array)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pfvp(const cs_real_t        *array)
+cs_cdo_blas_square_norm_pfvp(const cs_real_t        *array)
 {
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
@@ -682,7 +682,7 @@ cs_cdo_sqnorm_pfvp(const cs_real_t        *array)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pfsf(const cs_real_t        *array)
+cs_cdo_blas_square_norm_pfsf(const cs_real_t        *array)
 {
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
@@ -775,8 +775,8 @@ cs_cdo_sqnorm_pfsf(const cs_real_t        *array)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pfsf_diff(const cs_real_t        *a,
-                        const cs_real_t        *b)
+cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t        *a,
+                                  const cs_real_t        *b)
 {
   const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
   const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;

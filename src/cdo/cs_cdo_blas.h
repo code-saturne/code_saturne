@@ -1,8 +1,9 @@
-#ifndef __CS_CDO_SQNORM_H__
-#define __CS_CDO_SQNORM_H__
+#ifndef __CS_CDO_BLAS_H__
+#define __CS_CDO_BLAS_H__
 
 /*============================================================================
- * Functions computing square norms from CDO quantities
+ * Functions computing BLAS 1 operations (like square norms and dot products
+ * from CDO quantities)
  *============================================================================*/
 
 /*
@@ -49,7 +50,24 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generic function pointer for computing a square norm.
+ * \brief  Generic function pointer for computing a dot product. Parallel
+ *         synchronization is performed.
+ *
+ * \param[in]  a   first array to analyze
+ * \param[in]  b   second array to analyze
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef cs_real_t
+(cs_cdo_blas_dotprod_t) (const cs_real_t     *a,
+                         const cs_real_t     *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Generic function pointer for computing a square norm. Parallel
+ *         synchronization is performed.
  *
  * \param[in]  array   array to analyze
  *
@@ -58,14 +76,14 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 typedef cs_real_t
-(cs_cdo_sqnorm_t) (const cs_real_t     *array);
+(cs_cdo_blas_square_norm_t) (const cs_real_t     *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Generic function pointer for computing a square norm of the
  *         difference between two arrays (defined at the same location and of
  *         the same dimension). The result may be normalized by the norm of the
- *         second array.
+ *         second array. Parallel synchronization is performed.
  *
  * \param[in]  a     first array
  * \param[in]  b     second array
@@ -75,8 +93,8 @@ typedef cs_real_t
 /*----------------------------------------------------------------------------*/
 
 typedef cs_real_t
-(cs_cdo_sqnorm_diff_t) (const cs_real_t     *a,
-                        const cs_real_t     *b);
+(cs_cdo_blas_square_norm_diff_t) (const cs_real_t     *a,
+                                  const cs_real_t     *b);
 
 /*============================================================================
  * Public function prototypes
@@ -92,8 +110,8 @@ typedef cs_real_t
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_sqnorm_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                  const cs_cdo_connect_t       *connect);
+cs_cdo_blas_set_shared_pointers(const cs_cdo_quantities_t    *quant,
+                                const cs_cdo_connect_t       *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -109,7 +127,7 @@ cs_cdo_sqnorm_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pcsp(const cs_real_t        *array);
+cs_cdo_blas_square_norm_pcsp(const cs_real_t        *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -126,8 +144,8 @@ cs_cdo_sqnorm_pcsp(const cs_real_t        *array);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pcsp_diff(const cs_real_t        *a,
-                        const cs_real_t        *b);
+cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t        *a,
+                                  const cs_real_t        *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -146,8 +164,8 @@ cs_cdo_sqnorm_pcsp_diff(const cs_real_t        *a,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pcsp_ndiff(const cs_real_t        *a,
-                         const cs_real_t        *ref);
+cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
+                                   const cs_real_t        *ref);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -163,7 +181,7 @@ cs_cdo_sqnorm_pcsp_ndiff(const cs_real_t        *a,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pvsp(const cs_real_t        *array);
+cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -180,7 +198,7 @@ cs_cdo_sqnorm_pvsp(const cs_real_t        *array);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pfsp(const cs_real_t        *array);
+cs_cdo_blas_pfsp(const cs_real_t        *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -197,7 +215,7 @@ cs_cdo_sqnorm_pfsp(const cs_real_t        *array);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pfvp(const cs_real_t        *array);
+cs_cdo_blas_square_norm_pfvp(const cs_real_t        *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -214,7 +232,7 @@ cs_cdo_sqnorm_pfvp(const cs_real_t        *array);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pfsf(const cs_real_t        *array);
+cs_cdo_blas_square_norm_pfsf(const cs_real_t        *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -232,11 +250,11 @@ cs_cdo_sqnorm_pfsf(const cs_real_t        *array);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_sqnorm_pfsf_diff(const cs_real_t        *a,
-                        const cs_real_t        *b);
+cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t        *a,
+                                  const cs_real_t        *b);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_CDO_SQNORM_H__ */
+#endif /* __CS_CDO_BLAS_H__ */

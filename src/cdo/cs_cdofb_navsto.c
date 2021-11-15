@@ -46,7 +46,7 @@
 
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
-#include "cs_cdo_sqnorm.h"
+#include "cs_cdo_blas.h"
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"
 #endif
@@ -1792,7 +1792,7 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t           nl_algo,
      two mass fluxes (the current one and the previous one) */
 
   iai->prev_res = iai->res;
-  iai->res = cs_cdo_sqnorm_pfsf_diff(pre_iterate, cur_iterate);
+  iai->res = cs_cdo_blas_square_norm_pfsf_diff(pre_iterate, cur_iterate);
   assert(iai->res > -DBL_MIN);
   iai->res = sqrt(iai->res);
 

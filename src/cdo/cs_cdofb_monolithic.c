@@ -51,7 +51,7 @@
 
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
-#include "cs_cdo_sqnorm.h"
+#include "cs_cdo_blas.h"
 #include "cs_cdofb_priv.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
@@ -2495,7 +2495,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  nl_info->normalization = cs_cdo_sqnorm_pfsf(sc->mass_flux_array);
+  nl_info->normalization = cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
@@ -2814,7 +2814,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  nl_info->normalization = cs_cdo_sqnorm_pfsf(sc->mass_flux_array);
+  nl_info->normalization = cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
