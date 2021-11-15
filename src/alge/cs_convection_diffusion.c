@@ -2571,7 +2571,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
     /* Sum number of clippings */
     cs_parall_counter(&n_upwind, 1);
 
-    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
+    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_c_faces);
   }
@@ -3881,7 +3881,7 @@ cs_face_convection_scalar(int                       idtvar,
     /* Sum number of clippings */
     cs_parall_counter(&n_upwind, 1);
 
-    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
+    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_c_faces);
   }
@@ -5126,7 +5126,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     /* Sum number of clippings */
     cs_parall_counter(&n_upwind, 1);
 
-    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
+    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_c_faces);
   }
@@ -6628,7 +6628,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
     /* Sum number of clippings */
     cs_parall_counter(&n_upwind, 1);
 
-    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
+    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_c_faces);
   }
@@ -7794,7 +7794,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
     /* Sum number of clippings */
     cs_parall_counter(&n_upwind, 1);
 
-    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces \n"),
+    bft_printf(_(" %s: %llu Faces with upwind on %llu interior faces\n"),
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_c_faces);
   }

@@ -247,7 +247,7 @@ write(nfecra,9900)
 
  2100 format(                                                     &
                                                                 /,&
-' ** CAVITATION MODEL                        ',                 /,&
+' ** CAVITATION MODEL'                        ,                 /,&
 '    ----------------------------------------',                 /)
  2120 format(                                                     &
 '  -- Liquid phase: fluid 1',                                   /)
@@ -265,7 +265,7 @@ write(nfecra,9900)
 
  2101 format(                                                     &
                                                                 /,&
-' ** HOMOGENEOUS MIXTURE MODEL VoF           ',                 /,&
+' ** HOMOGENEOUS MIXTURE MODEL VoF'           ,                 /,&
 '    ----------------------------------------',                 /)
  2111 format(                                                     &
 '       IVOFMT = ',4x,i10,    ' ( 0  : disabled              )',/,&
@@ -379,8 +379,7 @@ write(nfecra,9900)
 '       ISCHTP = ',4x,i10,    ' (1: order 1; 2: order 2      )'  )
  3062 format(                                                     &
 '       ITPCOL = ',4x,i10,    ' (0: staggered; 1: collocated )'  )
- 3063 format(                                                     &
-'                                                             '  )
+ 3063 format(/)
 
 ! --- Stokes
 write(nfecra,4114)istmpf,     &
