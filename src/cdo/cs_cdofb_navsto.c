@@ -123,7 +123,7 @@ _nl_algo_print_header(const char   *algo_name)
 {
   assert(algo_name != NULL);
   cs_log_printf(CS_LOG_DEFAULT,
-                "%12s.It  -- Algo.Res   Inner  Cumul  ||div(u)||  Tolerance\n",
+                "%12s.It    Algo.Res   Inner  Cumul  ||div(u)||  Tolerance\n",
                 algo_name);
 }
 
@@ -144,7 +144,7 @@ _nl_algo_print_entry(const char                    *algo_name,
 {
   assert(algo_name != NULL);
   cs_log_printf(CS_LOG_DEFAULT,
-                "%12s.It%02d-- %5.3e  %5d  %5d  %6.4e  %6.4e\n",
+                "%12s.It%02d   %5.3e  %5d  %5d  %6.4e  %6.4e\n",
                 algo_name, info->n_algo_iter, info->res,
                 info->last_inner_iter, info->n_inner_iter, div_l2, info->tol);
   cs_log_printf_flush(CS_LOG_DEFAULT);
@@ -1794,12 +1794,15 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t           nl_algo,
     case CS_PARAM_DOTPROD_EUCLIDEAN:
       cs_iter_algo_aa_update(iai,
                              cur_iterate,
+                             pre_iterate,
                              cs_cdo_blas_dotprod_face,
                              cs_cdo_blas_square_norm_face);
       break;
+
     case CS_PARAM_DOTPROD_CDO:
       cs_iter_algo_aa_update(iai,
                              cur_iterate,
+                             pre_iterate,
                              cs_cdo_blas_dotprod_pfsf,
                              cs_cdo_blas_square_norm_pfsf);
       break;

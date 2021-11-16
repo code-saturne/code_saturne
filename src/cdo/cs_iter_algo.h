@@ -340,6 +340,7 @@ cs_iter_algo_aa_free(cs_iter_algo_info_t  *info);
  *
  * \param[in, out] iai           pointer to a cs_iter_algo_info_t structure
  * \param[in, out] cur_iterate   current iterate
+ * \param[in]      pre_iterate   previous iterate
  * \param[in]      dotprod       function to compute a dot product
  * \param[in]      sqnorm        function to compute a square norm
  */
@@ -348,6 +349,7 @@ cs_iter_algo_aa_free(cs_iter_algo_info_t  *info);
 void
 cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
                        cs_real_t                   *cur_iterate,
+                       const cs_real_t             *pre_iterate,
                        cs_cdo_blas_dotprod_t       *dotprod,
                        cs_cdo_blas_square_norm_t   *sqnorm);
 

@@ -305,7 +305,7 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
   BFT_MALLOC(nslesp, 1, cs_navsto_param_sles_t);
 
   /* Set the non-linear algorithm (only useful if advection is implicit and
-   * Navier-Stokes or Oseen model is set) */
+   * Navier-Stokes is set) */
 
   nslesp->nl_algo = CS_PARAM_NL_ALGO_PICARD;
   nslesp->n_max_nl_algo_iter = 25;
@@ -314,10 +314,10 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
   nslesp->nl_algo_dtol = 1e3;
   nslesp->nl_algo_verbosity = 1;
 
-  nslesp->anderson_param.n_max_dir = 8;
-  nslesp->anderson_param.starting_iter = 4;
-  nslesp->anderson_param.max_cond = 500;
-  nslesp->anderson_param.beta = 0.0;
+  nslesp->anderson_param.n_max_dir = 6;
+  nslesp->anderson_param.starting_iter = 3;
+  nslesp->anderson_param.max_cond = -1; /* No test by default */
+  nslesp->anderson_param.beta = 1.0;    /* No damping by default */
   nslesp->anderson_param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
 
   /* Set the default solver options for the main linear algorithm */
