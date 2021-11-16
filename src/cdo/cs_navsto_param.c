@@ -316,7 +316,7 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
 
   nslesp->anderson_param.n_max_dir = 8;
   nslesp->anderson_param.starting_iter = 4;
-  nslesp->anderson_param.droptol = 500;
+  nslesp->anderson_param.max_cond = 500;
   nslesp->anderson_param.beta = 0.0;
   nslesp->anderson_param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
 
@@ -1494,7 +1494,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
         cs_log_printf(CS_LOG_SETUP, "%s Anderson param: max. dir: %d; "
                       " start: %d; drop. tol: %5.3e; relax: %5.3e\n",
-                      navsto, aap.n_max_dir, aap.starting_iter, aap.droptol,
+                      navsto, aap.n_max_dir, aap.starting_iter, aap.max_cond,
                       aap.beta);
         cs_log_printf(CS_LOG_SETUP, "%s Anderson param: Dot product type: %s\n",
                       navsto, cs_param_get_dotprod_type_name(aap.dp_type));

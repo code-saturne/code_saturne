@@ -99,36 +99,36 @@ struct _cs_iter_algo_aa_t {
    * Boolean to store if the initialization step has been done
    *
    * \var is_activated
-   * Booelan to store is the Anderson is activated (in case of delay for the
+   * Boolean to store is the Anderson is activated (in case of delay for the
    * activation of the Anderson acceleration)
    *
+   * \var perform_first_iter
+   * Boolean to store if one has to perform the first Anderson step which is
+   * a bit different from the other iterations
+   *
    * \var n_aa_iter
+   * Current of Anderson acceleration performed
    *
-   *
-   * \var mAA
-   *
-   *
-   * \var rowNumber
-   *
-   *
-   * \var AAFirst
-   *
+   * \var n_dir
+   * Number of directions currently at stake
    *
    * \var fval
-   *
+   * Current values for f
    *
    * \var fold
-   *
+   * Previous values for f
    *
    * \var df
-   *
+   * Difference between the current and previous values of f
    *
    * \var gval
+   * Current values for g
    *
    * \var gold
+   * Previous values for g
    *
-   *
-   * \var DG
+   * \var dg
+   * Difference between the current and previous values of g
    *
    * \var Q
    * Matrix Q in the Q.R factorization (seen as a bundle of vectors)
@@ -144,11 +144,11 @@ struct _cs_iter_algo_aa_t {
 
   bool            is_activated;
   bool            is_initialized;
+  bool            perform_first_iter;
 
   int             n_aa_iter;
-  int             mAA;
-  int             rowNumber;
-  int             AAFirst;
+  int             n_dir;
+  int             n_dg_cols;
 
   cs_real_t      *fval;
   cs_real_t      *fold;
@@ -156,7 +156,7 @@ struct _cs_iter_algo_aa_t {
 
   cs_real_t      *gval;
   cs_real_t      *gold;
-  cs_real_t      *DG;
+  cs_real_t      *dg;
 
   cs_real_t      *Q;
   cs_sdm_t       *R;
@@ -171,7 +171,7 @@ struct _cs_iter_algo_aa_t {
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
-#define CS_ITER_ALGO_DBG      0
+#define CS_ITER_ALGO_DBG      2
 
 /*============================================================================
  * Private variables
@@ -183,38 +183,38 @@ struct _cs_iter_algo_aa_t {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Remove rows during the Anderson process
+ * \brief Remove one row during the Anderson acceleration process
  *
  * \param[in, out] aa    pointer to the structure managing the Anderson algo.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_shiftRows_aa(cs_iter_algo_aa_t    *aa)
+_aa_shift_rows(cs_iter_algo_aa_t    *aa)
 {
   size_t  row_size = sizeof(cs_real_t)*aa->n_elts;
 
-  for (int j = 0; j < aa->rowNumber-1; j++) { /* delayed by 1 */
+  aa->n_dg_cols--;
 
-    cs_real_t *DGj = aa->DG + j*aa->n_elts;
-    cs_real_t *DG_jp1 = aa->DG + (j+1)*aa->n_elts;
+  for (int j = 0; j < aa->n_dg_cols; j++) {
 
-    memcpy(DGj, DG_jp1, row_size); /* DGj <= DG_(j+1) */
+    cs_real_t *dg_j = aa->dg + j*aa->n_elts;
+    cs_real_t *dg_jp1 = aa->dg + (j+1)*aa->n_elts;
+
+    memcpy(dg_j, dg_jp1, row_size); /* dg_j <= dg_(j+1) */
 
   }
 
-  cs_real_t  *DG_max = aa->DG + (aa->rowNumber-1)*aa->n_elts;
-  memcpy(DG_max, aa->DG, row_size);
-
-  aa->rowNumber--;
+  memcpy(aa->dg + aa->n_dg_cols*aa->n_elts, aa->dg, row_size);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute an estimation of the condition number of the matrix R
+ * \brief  Compute an estimation of the condition number of the matrix R based
+ *         on the diagonal entries
  *
- * \param[in]  R       pointer to the matrix R
  * \param[in]  n_rows  number of rows to consider
+ * \param[in]  R       pointer to the matrix R
  *
  * \return the estimation of the condition number
  */
@@ -223,7 +223,6 @@ _shiftRows_aa(cs_iter_algo_aa_t    *aa)
 static cs_real_t
 _condition_number(int               n_rows,
                   const cs_sdm_t   *R)
-
 {
   int  n_cols = R->n_cols;
   cs_real_t  vmax = fabs(R->val[0]);
@@ -231,8 +230,8 @@ _condition_number(int               n_rows,
 
   for (int i = 1; i < n_rows; i++){
 
-    vmax = fmax(vmax, fabs(R->val[i+i*n_cols]));
-    vmin = fmin(vmin, fabs(R->val[i+i*n_cols]));
+    vmax = fmax(vmax, fabs(R->val[i*(1+n_cols)]));
+    vmin = fmin(vmin, fabs(R->val[i*(1+n_cols)]));
 
   }
 
@@ -256,54 +255,55 @@ _qrdelete(int          m,
           cs_real_t   *Q,
           cs_sdm_t    *R)
 {
+  assert(R->n_rows == R->n_cols); /* square matrix */
+
   const int  n_cols = R->n_cols;
 
   for (int i = 0; i < m-1; i++) {
 
-    assert(R->n_rows == R->n_cols); /* square matrix */
+    cs_real_t  *R_i = R->val + i*n_cols;
+    cs_real_t  *R_ip1 = R->val + (i+1)*n_cols;
 
-    cs_real_t  *_Ri = R->val + i*n_cols;
-    cs_real_t  *_Rip1 = R->val + (i+1)*n_cols;
+    const double  temp = sqrt(R_i[i+1]*R_i[i+1] + R_ip1[i+1]*R_ip1[i+1]);
+    const double  c = R_i[i+1]/temp;
+    const double  s = R_ip1[i+1]/temp;
 
-    const double  temp = sqrt(_Ri[i+1]*_Ri[i+1] + _Rip1[i+1]*_Rip1[i+1]);
-    const double  c = _Ri[i+1]/temp;
-    const double  s = _Rip1[i+1]/temp;
-
-     _Ri[i+1] = temp;
-     _Rip1[i+1] = 0.0;
+     R_i[i+1] = temp;
+     R_ip1[i+1] = 0.0;
 
      if (i < m-2) { //diff % matlab
 
        for (int j = i+2; j < m; j++) {
-         _Rip1[j] = -s*_Ri[j] + c*_Rip1[j];
-         _Ri[j] = c*_Ri[j] + s*_Rip1[j];
+         R_ip1[j] = -s*R_i[j] + c*R_ip1[j];
+         R_i[j] = c*R_i[j] + s*R_ip1[j];
        }
 
      }
 
-     cs_real_t *Qi = Q + i*n_elts;
-     cs_real_t *Qip1 = Q + (i+1)*n_elts;
+     cs_real_t *Q_i = Q + i*n_elts;
+     cs_real_t *Q_ip1 = Q + (i+1)*n_elts;
 
      for (cs_lnum_t l = 0; l < n_elts; l++) {
-       Qip1[l] = -s*Qi[l] + c*Qip1[l];
-       Qi[l] = c*Qi[l] + s*Qip1[l];
+       Q_ip1[l] = -s*Q_i[l] + c*Q_ip1[l];
+       Q_i[l] = c*Q_i[l] + s*Q_ip1[l];
      }
 
   } /* Loop on m */
 
-  cs_sdm_t *R_temp = cs_sdm_square_create(R->n_cols) ;
-  cs_sdm_square_init(R->n_cols, R_temp);
+  cs_sdm_t *R_temp = cs_sdm_square_create(n_cols) ;
 
-  /* Diff % matlab the Q and R matrices are not resized
+  cs_sdm_square_init(n_cols, R_temp);
+
+  /* The Q and R matrices are not resized.
    * A block version should be used */
 
   for (int i = 0; i < m-1; i++) {
 
-    const cs_real_t  *_Ri = R->val + i*n_cols;
-    cs_real_t  *_Rti = R_temp->val + i*n_cols;
+    const cs_real_t  *R_i = R->val + i*n_cols;
+    cs_real_t  *Rt_i = R_temp->val + i*n_cols;
 
     for (int j = i; j < m-1; j++)
-      _Rti[j] = _Ri[j+1];
+      Rt_i[j] = R_i[j+1];
 
   }
 
@@ -312,6 +312,44 @@ _qrdelete(int          m,
 
   cs_real_t *Q_imax = Q + (m-1)*n_elts;
   memset(Q_imax, 0, sizeof(cs_real_t)*n_elts);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the coefficient used in the linear combination for the
+ *        Anderson acceleration
+ *
+ * \param[in, out] aa        pointer to the structure managing the Anderson algo.
+ * \param[in]      dotprod   function to compute a dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_aa_compute_gamma(cs_iter_algo_aa_t           *aa,
+                  cs_cdo_blas_dotprod_t       *dotprod)
+{
+  int  n_cols = aa->R->n_cols;
+
+  for (int i = aa->n_dir-1; i >= 0; i--) {
+
+    /* s = (fval, Q_i) */
+
+    double  s = dotprod(aa->fval, aa->Q + i*aa->n_elts);
+
+    for (int j = i+1; j < aa->n_dir; j++)
+      s -= aa->R->val[i*n_cols+j] * aa->gamma[j];
+
+    aa->gamma[i] = s/aa->R->val[i*(n_cols+1)];
+
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_ITER_ALGO_DBG > 0
+  cs_log_printf(CS_LOG_DEFAULT, " %s:l%d >> Gamma coefficients:",
+                __func__, __LINE__);
+  for (int i = 0; i < aa->n_dir; i++)
+    cs_log_printf(CS_LOG_DEFAULT, " (%d:=%5.3e)", i, aa->gamma[i]);
+  cs_log_printf(CS_LOG_DEFAULT, "\n");
+#endif
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -460,7 +498,7 @@ cs_iter_algo_aa_create(cs_iter_algo_param_aa_t    aap,
 
   aa->param.n_max_dir = aap.n_max_dir;
   aa->param.starting_iter = aap.starting_iter;
-  aa->param.droptol = aap.droptol;
+  aa->param.max_cond = aap.max_cond;
   aa->param.beta = aap.beta;
   aa->param.dp_type = aap.dp_type;
 
@@ -470,11 +508,11 @@ cs_iter_algo_aa_create(cs_iter_algo_param_aa_t    aap,
 
   aa->is_initialized = false;
   aa->is_activated = false;
+  aa->perform_first_iter = false;
 
   aa->n_aa_iter = 0;
-  aa->mAA = 0;
-  aa->rowNumber = 0;
-  aa->AAFirst = 0;
+  aa->n_dir = 0;
+  aa->n_dg_cols = 0;
 
   /* Work arrays and structures */
 
@@ -483,7 +521,7 @@ cs_iter_algo_aa_create(cs_iter_algo_param_aa_t    aap,
   aa->df = NULL;
   aa->gval = NULL;
   aa->gold = NULL;
-  aa->DG = NULL;
+  aa->dg = NULL;
   aa->gamma = NULL;
   aa->Q = NULL;
   aa->R = NULL;
@@ -507,7 +545,7 @@ cs_iter_algo_get_anderson_param(cs_iter_algo_info_t         *iai)
   cs_iter_algo_param_aa_t  aap = {
     .n_max_dir = 4,
     .starting_iter = 2,
-    .droptol = 500,
+    .max_cond = 500,
     .beta = 0.,
     .dp_type = CS_PARAM_DOTPROD_EUCLIDEAN };
 
@@ -555,8 +593,8 @@ cs_iter_algo_aa_allocate_arrays(cs_iter_algo_aa_t  *aa)
   BFT_MALLOC(aa->gold, aa->n_elts, cs_real_t);
   memset(aa->gold, 0, s);
 
-  BFT_MALLOC(aa->DG, aa->n_elts*n_max_dir, cs_real_t);
-  memset(aa->DG, 0, s*n_max_dir);
+  BFT_MALLOC(aa->dg, aa->n_elts*n_max_dir, cs_real_t);
+  memset(aa->dg, 0, s*n_max_dir);
 
   BFT_MALLOC(aa->gamma, n_max_dir, cs_real_t);
   memset(aa->gamma, 0, sizeof(cs_real_t)*n_max_dir);
@@ -588,7 +626,7 @@ cs_iter_algo_aa_free_arrays(cs_iter_algo_aa_t  *aa)
 
   BFT_FREE(aa->gval);
   BFT_FREE(aa->gold);
-  BFT_FREE(aa->DG);
+  BFT_FREE(aa->dg);
 
   BFT_FREE(aa->gamma);
 
@@ -665,180 +703,205 @@ cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
     memcpy(aa->gval, cur_iterate, dir_size); /* set gval = cur_iterate */
     memcpy(aa->fval, cur_iterate, dir_size); /* set fval = cur_iterate */
 
-    aa->AAFirst = 1;
+    aa->perform_first_iter = true;
     aa->is_initialized = true;
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_ITER_ALGO_DBG > 1
+    cs_log_printf(CS_LOG_DEFAULT, " %s:l%d >> Initialize Anderson acc.\n",
+                  __func__, __LINE__);
+#endif
+
+    return;
   }
-  else if (aa->is_initialized) {
 
-    int  _mMax = aa->param.n_max_dir;
+  /* Anderson acceleration has been initialized */
 
-    memcpy(aa->gval, cur_iterate, dir_size); /* set gval = cur_iterate */
+  int  m_max = aa->param.n_max_dir;
 
-    /* set fval = gval - cur_iterate */
+  memcpy(aa->gval, cur_iterate, dir_size); /* set gval = cur_iterate */
+
+  /* set fval = gval - cur_iterate */
+
+# pragma omp parallel if (aa->n_elts > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < aa->n_elts; i++)
+    aa->fval[i] = cur_iterate[i] - aa->fval[i];
+
+  if (!aa->perform_first_iter) {
+
+    /* Not the first iteration of the Anderson algo */
+
+#   pragma omp parallel if (aa->n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < aa->n_elts; i++) {
+
+      aa->df[i] = aa->fval[i] - aa->fold[i];   /* df = fval - fold */
+      aa->gold[i] = aa->gval[i] - aa->gold[i]; /* gold = gval - gold */
+
+    }
+
+    /* dg append gold */
+
+    if (aa->n_dg_cols == m_max)
+      _aa_shift_rows(aa);
+
+    cs_real_t *dg_max = aa->dg + aa->n_dg_cols*aa->n_elts;
+    memcpy(dg_max, aa->gold, dir_size);
+
+    aa->n_dir++;
+    aa->n_dg_cols++;
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_ITER_ALGO_DBG > 1
+    cs_log_printf(CS_LOG_DEFAULT, " %s:l%d >> Not the first iter. (n_dir: %d)\n",
+                  __func__, __LINE__, aa->n_dir);
+#endif
+
+  } /* perform_first_iter == false */
+
+  memcpy(aa->fold, aa->fval, dir_size); /* fold = fval */
+  memcpy(aa->gold, aa->gval, dir_size); /* gold = gval */
+
+  if (aa->n_dir == 1) {
+
+    double  square_norm_df = sqnorm(aa->df);
+
+    aa->R->val[0] = sqrt(square_norm_df); /* R(0,0) = |df|_L2 */
+
+    cs_real_t  *Q0 = aa->Q; /* get row 0 */
+    const cs_real_t  coef = 1.0/aa->R->val[0];
 
 #   pragma omp parallel if (aa->n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < aa->n_elts; i++)
-      aa->fval[i] = cur_iterate[i] - aa->fval[i];
+      Q0[i] = aa->df[i]*coef; /* Q(0) = df/|df|_L2 */
 
-    if (aa->AAFirst == 0) {
+#if defined(DEBUG) && !defined(NDEBUG) && CS_ITER_ALGO_DBG > 1
+    cs_log_printf(CS_LOG_DEFAULT, " %s:l%d >> Case n_dir=1\n",
+                  __func__, __LINE__);
+#endif
 
-#     pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < aa->n_elts; i++) {
+  }
+  else if (aa->n_dir > 1) {
 
-        aa->df[i] = aa->fval[i] - aa->fold[i];   /* df = fval - fold */
-        aa->gold[i] = aa->gval[i] - aa->gold[i]; /* gold = gval - gold */
+    if (aa->n_dir == (m_max+1)) {
 
-      }
-
-      /* DG append(gold) */
-
-      if (aa->rowNumber == _mMax)
-        _shiftRows_aa(aa);
-
-      cs_real_t *DG_max = aa->DG + aa->rowNumber*aa->n_elts;
-      memcpy(DG_max, aa->gold, dir_size);
-
-      /* fin DG_.append(gold_) */
-
-      aa->rowNumber++;
-      aa->mAA++;  /* size of DG */
-
-    } /* AAFirst == 0 */
-
-    memcpy(aa->fold, aa->fval, dir_size); /* fold = fval */
-    memcpy(aa->gold, aa->gval, dir_size); /* gold = gval */
-
-    if (aa->mAA == 1) {
-
-      double  square_norm_df = sqnorm(aa->df);
-
-      aa->R->val[0] = sqrt(square_norm_df); /* R(0,0) = |df|_L2 */
-
-      cs_real_t  *Q0 = aa->Q; /* get row 0 */
-      const cs_real_t  coef = 1.0/aa->R->val[0];
-
-#     pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < aa->n_elts; i++)
-        Q0[i] = aa->df[i]*coef; /* Q(0) = df/|df|_L2 */
-
-    }
-    else if (aa->mAA > 1) {
-
-      if (aa->mAA == (_mMax+1)) {
-
-        _qrdelete(_mMax, aa->n_elts, aa->Q, aa->R);
-        aa->mAA = aa->mAA-1;
-
-      }
-
-      for (int j = 0; j < aa->mAA-1; j++) {
-
-        cs_real_t *Qj = aa->Q + j*aa->n_elts; /* get row j */
-
-        const double  prod = dotprod(aa->df, Qj);
-
-        aa->R->val[j*_mMax + (aa->mAA-1)] = prod;  /* R(j, mAA) = Qj*df */
-
-#       pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-        for (cs_lnum_t l = 0; l < aa->n_elts; l++)
-          aa->df[l] -= prod*Qj[l];  /* update df = df - R(j, mAA)*Qj */
-
-      }
-
-      double  square_norm_df = sqnorm(aa->df);
-
-      /* R(mAA,mAA) = |df|_L2 */
-
-      aa->R->val[(aa->mAA-1)*_mMax+(aa->mAA-1)] = sqrt(square_norm_df);
-
-      const cs_real_t  coef = 1.0/aa->R->val[(aa->mAA-1)*_mMax+(aa->mAA-1)];
-
-      cs_real_t *Q_mAA = aa->Q + (aa->mAA-1)*aa->n_elts;  /* get row mAA-1 */
-
-#     pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < aa->n_elts; i++)
-        Q_mAA[i] = aa->df[i]*coef;  /* Q(mAA-1) = df/|df|_L2 */
+      _qrdelete(m_max, aa->n_elts, aa->Q, aa->R);
+      aa->n_dir--;
 
     }
 
-    /* Drop residuals to improve conditioning if necessary */
+    for (int j = 0; j < aa->n_dir-1; j++) {
 
-    if ((aa->param.droptol > 0) && (aa->mAA > 0)) {
+      cs_real_t *Qj = aa->Q + j*aa->n_elts; /* get row j */
 
-      /* Compute the first condition number of R */
+      const double  prod = dotprod(aa->df, Qj);
 
-      cs_real_t  cond = _condition_number(aa->rowNumber, aa->R);
+      aa->R->val[j*m_max + (aa->n_dir-1)] = prod;  /* R(j, n_dir) = Qj*df */
 
-      while ((cond > aa->param.droptol) && (aa->mAA>1)) {
-
-        _qrdelete(aa->mAA, aa->n_elts, aa->Q, aa->R);
-        _shiftRows_aa(aa); /* shift rows of DG */
-        aa->mAA--;
-
-        /* Evaluate the new condition number */
-
-        cond = _condition_number(aa->rowNumber, aa->R);
-
-      } /* End of while */
-
-    } /* if drop tol */
-
-    /* Solve least square problem */
-    /* -------------------------- */
-
-    /* Upper Triangular Solve */
-
-    for (int i = aa->mAA-1; i >= 0; i--) {
-
-      double  s = dotprod(aa->fval, aa->Q + i*aa->n_elts);
-      for (int j = i+1; j < aa->mAA; j++)
-        s -= aa->R->val[i*_mMax+j] * aa->gamma[j];
-
-      aa->gamma[i] = s/aa->R->val[i*_mMax+i];
-
-    }
-
-    /* Update cur_iterate by cur_iterate = gval[i] - gamma.DG */
-
-    for (int j = 0; j < aa->mAA; j++) {
-
-      const cs_real_t *DGj = aa->DG + j*aa->n_elts;
+#     pragma omp parallel if (aa->n_elts > CS_THR_MIN)
       for (cs_lnum_t l = 0; l < aa->n_elts; l++)
-        cur_iterate[l] -= aa->gamma[j] * DGj[l];
+        aa->df[l] -= prod*Qj[l];  /* update df = df - R(j, n_dir)*Qj */
 
     }
 
-    if ((aa->param.beta > 0.0) && (aa->param.beta < 1.0)) {
+    double  square_norm_df = sqnorm(aa->df);
 
-      /* Relaxation */
+    /* R(n_dir,n_dir) = |df|_L2 */
 
-      const double  omb = 1.0 - aa->param.beta;
+    aa->R->val[(aa->n_dir-1)*m_max+(aa->n_dir-1)] = sqrt(square_norm_df);
 
-      for (int j = 0; j < aa->mAA; j++) {
+    const cs_real_t  coef = 1.0/aa->R->val[(aa->n_dir-1)*m_max+(aa->n_dir-1)];
 
-        double  R_gamma = 0.;
-        for (int k = j; k < aa->mAA; k++)  /* R is upper diag */
-          R_gamma += aa->R->val[j*_mMax+k] * aa->gamma[k];
+    /* Get row n_dir-1 */
 
-        /* cur_iterate = cur_iterate - (1-beta)*(fval-Q*R*gamma) */
+    cs_real_t *q_n_dir = aa->Q + (aa->n_dir-1)*aa->n_elts;
 
-        const cs_real_t  *Qj = aa->Q + j*aa->n_elts;  /* get row j */
-#       pragma omp parallel if (aa->n_elts > CS_THR_MIN)
-        for (cs_lnum_t l = 0; l < aa->n_elts; l++)
-          cur_iterate[l] += omb * (Qj[l] * R_gamma - aa->fval[l]);
+#   pragma omp parallel if (aa->n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < aa->n_elts; i++)
+      q_n_dir[i] = aa->df[i]*coef;  /* Q(n_dir-1) = df/|df|_L2 */
 
-      }
+#if defined(DEBUG) && !defined(NDEBUG) && CS_ITER_ALGO_DBG > 1
+    cs_log_printf(CS_LOG_DEFAULT, " %s:l%d >> Case n_dir=%d\n",
+                  __func__, __LINE__, aa->n_dir);
+#endif
 
-    } /* Relaxation */
+  } /* n_dir > 1 */
 
-    memcpy(aa->fval, cur_iterate, dir_size); /* fval = cur_iterate */
+  /* Improve the conditioning if necessary */
 
-    aa->AAFirst = 0;
-    aa->n_aa_iter = aa->n_aa_iter + 1;
+  if ((aa->param.max_cond > 0) && (aa->n_dir > 1)) {
 
-  } /* aa->is_initialized */
+    /* Compute the first condition number of R */
 
+    cs_real_t  cond = _condition_number(aa->n_dir, aa->R);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_ITER_ALGO_DBG > 0
+    cs_real_t  init_cond = cond;
+    int  n_init_dir = aa->n_dir;
+#endif
+
+    while ((cond > aa->param.max_cond) && (aa->n_dir > 1)) {
+
+      _qrdelete(aa->n_dir, aa->n_elts, aa->Q, aa->R);
+      _aa_shift_rows(aa); /* shift rows of dg */
+      aa->n_dir--;
+
+      /* Evaluate the new condition number */
+
+      cond = _condition_number(aa->n_dir, aa->R);
+
+    } /* End of while */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_ITER_ALGO_DBG > 0
+    if (n_init_dir > aa->n_dir)
+      cs_log_printf(CS_LOG_DEFAULT, " %s:l%d >>\n"
+                    "   %6d -->   %6d directions to improve conditioning.\n"
+                    " %5.2e --> %5.2e for the condition number\n",
+                    __func__, __LINE__, n_init_dir, aa->n_dir, init_cond, cond);
+#endif
+
+  } /* if drop tol */
+
+  /* Solve the least square problem (upper triangular solve) */
+
+  _aa_compute_gamma(aa, dotprod);
+
+  /* Update cur_iterate by cur_iterate = gval[i] - gamma.dg */
+
+  for (int j = 0; j < aa->n_dir; j++) {
+
+    const cs_real_t *dg_j = aa->dg + j*aa->n_elts;
+
+#   pragma omp parallel if (aa->n_elts > CS_THR_MIN)
+    for (cs_lnum_t l = 0; l < aa->n_elts; l++)
+      cur_iterate[l] -= aa->gamma[j] * dg_j[l];
+
+  }
+
+  if ((aa->param.beta > 0.0) && (aa->param.beta < 1.0)) {
+
+    /* Relaxation */
+
+    const double  omb = 1.0 - aa->param.beta;
+
+    for (int j = 0; j < aa->n_dir; j++) {
+
+      double  R_gamma = 0.;
+      for (int k = j; k < aa->n_dir; k++)  /* R is upper diag */
+        R_gamma += aa->R->val[j*m_max+k] * aa->gamma[k];
+
+      /* cur_iterate = cur_iterate - (1-beta)*(fval-Q*R*gamma) */
+
+      const cs_real_t  *Qj = aa->Q + j*aa->n_elts;  /* get row j */
+#     pragma omp parallel if (aa->n_elts > CS_THR_MIN)
+      for (cs_lnum_t l = 0; l < aa->n_elts; l++)
+        cur_iterate[l] += omb * (Qj[l] * R_gamma - aa->fval[l]);
+
+    }
+
+  } /* Relaxation */
+
+  memcpy(aa->fval, cur_iterate, dir_size); /* fval = cur_iterate */
+
+  aa->perform_first_iter = false;
+  aa->n_aa_iter += 1;
 }
 
 /*----------------------------------------------------------------------------*/

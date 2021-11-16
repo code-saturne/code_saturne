@@ -163,7 +163,7 @@ typedef struct {
  * \var starting_iter
  * Anderson acceleration starts at this iteration number
  *
- * \var droptol
+ * \var max_cond
  * Tolerance under which terms are dropped in order to improve the
  * conditionning number of the QR factorization
  *
@@ -177,7 +177,7 @@ typedef struct {
 
   int                        n_max_dir;
   int                        starting_iter;
-  double                     droptol;
+  double                     max_cond;
   double                     beta;
   cs_param_dotprod_type_t    dp_type;
 

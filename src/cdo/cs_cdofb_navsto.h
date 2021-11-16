@@ -612,7 +612,7 @@ cs_cdofb_fixed_wall(short int                       fb,
 cs_sles_convergence_state_t
 cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t           nl_algo,
                             const cs_real_t             *pre_iterate,
-                            const cs_real_t             *cur_iterate,
+                            cs_real_t                   *cur_iterate,
                             cs_real_t                    div_l2_norm,
                             cs_iter_algo_info_t         *iai);
 
