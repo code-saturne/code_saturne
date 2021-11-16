@@ -264,18 +264,19 @@ _qrdelete(int          m,
     cs_real_t  *R_i = R->val + i*n_cols;
     cs_real_t  *R_ip1 = R->val + (i+1)*n_cols;
 
-    const double  temp = sqrt(R_i[i+1]*R_i[i+1] + R_ip1[i+1]*R_ip1[i+1]);
-    const double  c = R_i[i+1]/temp;
-    const double  s = R_ip1[i+1]/temp;
+    double  tempR = sqrt(R_i[i+1]*R_i[i+1] + R_ip1[i+1]*R_ip1[i+1]);
+    const double  c = R_i[i+1]/tempR;
+    const double  s = R_ip1[i+1]/tempR;
 
-     R_i[i+1] = temp;
+     R_i[i+1] = tempR;
      R_ip1[i+1] = 0.0;
 
-     if (i < m-2) { //diff % matlab
+     if (i < m-2) {
 
        for (int j = i+2; j < m; j++) {
+         tempR = c*R_i[j] + s*R_ip1[j];
          R_ip1[j] = -s*R_i[j] + c*R_ip1[j];
-         R_i[j] = c*R_i[j] + s*R_ip1[j];
+         R_i[j] = tempR;
        }
 
      }
@@ -284,8 +285,12 @@ _qrdelete(int          m,
      cs_real_t *Q_ip1 = Q + (i+1)*n_elts;
 
      for (cs_lnum_t l = 0; l < n_elts; l++) {
+
+       double  tempQ = c*Q_i[l] + s*Q_ip1[l];
+
        Q_ip1[l] = -s*Q_i[l] + c*Q_ip1[l];
-       Q_i[l] = c*Q_i[l] + s*Q_ip1[l];
+       Q_i[l] = tempQ;
+
      }
 
   } /* Loop on m */
@@ -332,7 +337,7 @@ _aa_compute_gamma(cs_iter_algo_aa_t           *aa,
 
   for (int i = aa->n_dir-1; i >= 0; i--) {
 
-    /* s = (fval, Q_i) */
+    /* Solve R gamma = (fval, Q_i) */
 
     double  s = dotprod(aa->fval, aa->Q + i*aa->n_elts);
 
