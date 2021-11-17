@@ -158,34 +158,6 @@ _apply_vector_transfo(cs_real_t    matrix[3][4],
 }
 
 /*----------------------------------------------------------------------------
- * Compute a matrix/vector product to apply a rotation to a given vector.
- *
- * parameters:
- *   matrix[3][4] --> matrix of the transformation in homogeneous coord.
- *                    last line = [0; 0; 0; 1] (Not used here)
- *   x_in         --> X coord. of the incoming vector
- *   y_in         --> Y coord. of the incoming vector
- *   z_in         --> Z coord. of the incoming vector
- *   x_out        <-- pointer to the X coord. of the output
- *   y_out        <-- pointer to the Y coord. of the output
- *   z_out        <-- pointer to the Z coord. of the output
- *----------------------------------------------------------------------------*/
-
-static void
-_apply_vector_rotation_ni(cs_real_t   matrix[3][4],
-                       cs_real_t   x_in,
-                       cs_real_t   y_in,
-                       cs_real_t   z_in,
-                       cs_real_t   *x_out,
-                       cs_real_t   *y_out,
-                       cs_real_t   *z_out)
-{
-  *x_out = matrix[0][0] * x_in + matrix[0][1] * y_in + matrix[0][2] * z_in;
-  *y_out = matrix[1][0] * x_in + matrix[1][1] * y_in + matrix[1][2] * z_in;
-  *z_out = matrix[2][0] * x_in + matrix[2][1] * y_in + matrix[2][2] * z_in;
-}
-
-/*----------------------------------------------------------------------------
  * Compute a matrix/vector product to apply a transformation to a given
  * interleaved vector.
  *
