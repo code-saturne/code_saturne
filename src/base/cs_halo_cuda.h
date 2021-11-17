@@ -51,31 +51,24 @@ BEGIN_C_DECLS
 /*!
  * \brief Pack cs_real_t halo data to send into dense buffer, using CUDA.
  *
- * A local state handler may be provided, or the default state handler will
- * be used.
- *
  * A local state and/or buffer may be provided, or the default (global) state
  * and buffer will be used. If provided explicitely,
  * the buffer must be of sufficient size.
  *
- * \param[in]       halo        pointer to halo structure
- * \param[in]       sync_mode   synchronization mode (standard or extended)
- * \param[in]       data_type   data type
- * \param[in]       stride      number of (interlaced) values by entity
- * \param[in]       val         pointer to value array (device)
- * \param[out]      send_buf    pointer to send buffer, NULL for global buffer
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[in]   halo         pointer to halo structure
+ * \param[in]   sync_mode    synchronization mode (standard or extended)
+ * \param[in]   stride       number of (interlaced) values by entity
+ * \param[in]   var          pointer to value array (device)
+ * \param[out]  send_buffer  pointer to send buffer, NULL for global buffer
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_halo_sync_pack_cuda_real(const cs_halo_t  *halo,
-                            cs_halo_type_t    sync_mode,
-                            cs_datatype_t     data_type,
-                            int               stride,
-                            cs_real_t        *val,
-                            void             *send_buf,
-                            cs_halo_state_t  *hs);
+cs_halo_cuda_pack_send_buffer_real(const cs_halo_t  *halo,
+                                   cs_halo_type_t    sync_mode,
+                                   cs_lnum_t         stride,
+                                   const cs_real_t   var[],
+                                   cs_real_t         send_buffer[]);
 
 /*----------------------------------------------------------------------------*/
 

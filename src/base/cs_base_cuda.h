@@ -198,7 +198,7 @@ cs_cuda_mem_free(void         *p,
  *
  * A safety check is added.
  *
- * \param [in]  p          pointer to device memory
+$ * \param [in]  p          pointer to device memory
  * \param [in]  var_name   allocated variable name string
  * \param [in]  file_name  name of calling source file
  * \param [in]  line_num   line number in calling source file
@@ -228,9 +228,9 @@ cs_cuda_mem_free_host(void         *p,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cuda_copy_h2d(void    *dst,
-                 void    *src,
-                 size_t   size);
+cs_cuda_copy_h2d(void         *dst,
+                 const void   *src,
+                 size_t        size);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -250,9 +250,9 @@ cs_cuda_copy_h2d(void    *dst,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cuda_copy_h2d_async(void    *dst,
-                       void    *src,
-                       size_t   size);
+cs_cuda_copy_h2d_async(void        *dst,
+                       const void  *src,
+                       size_t       size);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -271,9 +271,9 @@ cs_cuda_copy_h2d_async(void    *dst,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cuda_copy_d2h(void    *dst,
-                 void    *src,
-                 size_t   size);
+cs_cuda_copy_d2h(void        *dst,
+                 const void  *src,
+                 size_t       size);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -292,9 +292,9 @@ cs_cuda_copy_d2h(void    *dst,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cuda_copy_d2h_async(void    *dst,
-                       void    *src,
-                       size_t   size);
+cs_cuda_copy_d2h_async(void        *dst,
+                       const void  *src,
+                       size_t       size);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -335,6 +335,25 @@ cs_cuda_prefetch_h2d(void    *dst,
 void
 cs_cuda_prefetch_d2h(void    *dst,
                      size_t   size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from device to device.
+ *
+ * This is simply a wrapper over cudaMemcpy.
+ *
+ * A safety check is added.
+ *
+ * \param [out]  dst   pointer to destination data
+ * \param [in]   src   pointer to source data
+ * \param [in]   size  size of data to copy
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cuda_copy_d2d(void        *dst,
+                 const void  *src,
+                 size_t       size);
 
 #endif
 

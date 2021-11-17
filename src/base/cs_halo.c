@@ -57,11 +57,27 @@
 
 #include "cs_halo.h"
 
+#if defined(HAVE_CUDA)
+#include "cs_halo_cuda.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*=============================================================================
+ * Local macro definitions
+ *============================================================================*/
+
+#if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
+  #define _CS_MPI_DEVICE_SUPPORT 1
+#else
+  #if defined(_CS_MPI_DEVICE_SUPPORT)
+    #undef _CS_MPI_DEVICE_SUPPORT
+  #endif
+#endif
 
 /*=============================================================================
  * Local type definitions
@@ -77,16 +93,22 @@ struct _cs_halo_state_t {
   cs_datatype_t   data_type;      /* Datatype */
   int             stride;         /* Number of values per location */
 
+  cs_alloc_mode_t var_location;   /* Allocation info for exchanged variable */
+
   void        *send_buffer_cur;   /* Send buffer used for current progress
                                      (either _send_buffer or passed by caller) */
 
   int       n_requests;        /* Number of MPI requests */
   int       local_rank_id;     /* Id of halo for own rank, -1 if not present */
 
-  /* Send buffer for synchronization */
+  /* Buffers for synchronization;
+     receive buffers only needed for some communication modes */
 
   size_t       send_buffer_size;  /* Size of send buffer, in bytes */
-  void        *send_buffer;       /* Send buffer (amintained by this object) */
+  size_t       recv_buffer_size;  /* Size of receive buffer, in bytes */
+
+  void        *send_buffer;       /* Send buffer (maintained by this object) */
+  void        *recv_buffer;       /* Send buffer (maintained by this object) */
 
 #if defined(HAVE_MPI)
 
@@ -106,8 +128,12 @@ struct _cs_halo_state_t {
 /* Number of defined halos */
 static int _n_halos = 0;
 
-/* Allocation mode for arrays which might be used on accelerator device */
-static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+/* Allocation mode for arrays which might be used on accelerator device
+   Note that an alternative option would be to use shared memory with
+   prefetching. We will need to do performance comparisons first, but
+   in the case of similar performance, going for the shared approach
+   would be preferred for its "more generic" aspect. */
+static cs_alloc_mode_t _halo_buffer_alloc_mode = CS_ALLOC_HOST_DEVICE_PINNED;
 
 /* Should we use barriers after posting receives ? */
 static int _halo_use_barrier = false;
@@ -198,10 +224,13 @@ _update_requests(const cs_halo_t  *halo,
  * as far as data encoding goes).
  *
  * parameters:
- *   halo      <-- pointer to halo structure
- *   sync_mode <-- synchronization mode (standard or extended)
- *   size      <-- datatype size
- *   num       <-> pointer to local number value array
+ *   halo          <-- pointer to halo structure
+ *   local_rank_id <-- id of local rank
+ *   sync_mode     <-- synchronization mode (standard or extended)
+ *   size          <-- datatype size
+ *   var_location  <-- Allocation info for exchanged variable (host/device)
+ *   send_buf      <-> pointer to send data
+ *   val           <-> pointer to destination data
  *----------------------------------------------------------------------------*/
 
 static void
@@ -209,6 +238,7 @@ _sync_local(const cs_halo_t  *halo,
             int               local_rank_id,
             cs_halo_type_t    sync_mode,
             size_t            size,
+            cs_alloc_mode_t   var_location,
             const void       *send_buf,
             void             *val)
 {
@@ -222,12 +252,22 @@ _sync_local(const cs_halo_t  *halo,
   cs_lnum_t length = (  halo->send_index[2*local_rank_id + end_shift]
                       - halo->send_index[2*local_rank_id]);
 
-  const unsigned char *buffer = (const unsigned char *)send_buf;
-  const unsigned char *_buffer = buffer + start;
-
   size_t count = length * size;
 
-  memcpy(recv, _buffer, count);
+  if (var_location == CS_ALLOC_HOST) {
+    const unsigned char *buffer = (const unsigned char *)send_buf;
+    const unsigned char *_buffer = buffer + start;
+    memcpy(recv, _buffer, count);
+  }
+
+#if defined(HAVE_ACCEL)
+  else {
+    const unsigned char *buffer
+      = (const unsigned char *)cs_get_device_ptr_const(send_buf);
+    const unsigned char *_buffer = buffer + start;
+    cs_copy_d2d(recv, _buffer, count);
+  }
+#endif
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -667,6 +707,10 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
   BFT_FREE(request);
   BFT_FREE(status);
 
+  /* Make buffer available on device if relevant */
+  cs_sync_h2d(halo->send_index);
+  cs_sync_h2d(halo->send_list);
+
   /* Create default state if first halo */
   if (_n_halos == 0)
     _halo_state = cs_halo_state_create();
@@ -734,11 +778,14 @@ cs_halo_state_create(void)
     .sync_mode = CS_HALO_STANDARD,
     .data_type = CS_DATATYPE_NULL,
     .stride = 0,
+    .var_location = CS_ALLOC_HOST,
     .send_buffer_cur = NULL,
     .n_requests = 0,
     .local_rank_id = -1,
     .send_buffer_size = 0,
-    .send_buffer = NULL
+    .recv_buffer_size = 0,
+    .send_buffer = NULL,
+    .recv_buffer = NULL
 #if defined(HAVE_MPI)
     ,
     .request_size = 0,
@@ -811,6 +858,7 @@ cs_halo_renumber_cells(cs_halo_t        *halo,
     for (cs_lnum_t j = 0; j < n_elts; j++)
       halo->send_list[j] = new_cell_id[halo->send_list[j]];
 
+    cs_sync_h2d(halo->send_list);
   }
 }
 
@@ -954,6 +1002,8 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
       halo->send_list[j] = send_buf[j];
   }
 
+  cs_sync_h2d(halo->send_list);
+
   BFT_FREE(send_buf);
 }
 
@@ -975,7 +1025,6 @@ cs_halo_renumber_ghost_cells(cs_halo_t        *halo,
  * \param[in]       sync_mode   synchronization mode (standard or extended)
  * \param[in]       data_type   data type
  * \param[in]       stride      number of (interlaced) values by entity
- * \param[in]       val         pointer to variable value array
  * \param[out]      send_buf    pointer to send buffer, NULL for global buffer
  * \param[in, out]  hs          pointer to halo state, NULL for global state
  *
@@ -988,7 +1037,6 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
                              cs_halo_type_t    sync_mode,
                              cs_datatype_t     data_type,
                              int               stride,
-                             void             *val,
                              void             *send_buf,
                              cs_halo_state_t  *hs)
 {
@@ -1016,6 +1064,7 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
     _send_buffer = _hs->send_buffer;
   }
 
+  _hs->var_location = CS_ALLOC_HOST;
   _hs->send_buffer_cur = _send_buffer;
 
   _hs->sync_mode = sync_mode;
@@ -1062,7 +1111,6 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
                                                     sync_mode,
                                                     data_type,
                                                     stride,
-                                                    val,
                                                     send_buf,
                                                     hs);
 
@@ -1141,6 +1189,78 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
   }
 }
 
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Pack halo data to send into dense buffer on accelerator device.
+ *
+ * A local state handler may be provided, or the default state handler will
+ * be used.
+ *
+ * A local state and/or buffer may be provided, or the default (global) state
+ * and buffer will be used. If provided explicitely,
+ * the buffer must be of sufficient size.
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       sync_mode   synchronization mode (standard or extended)
+ * \param[in]       data_type   data type
+ * \param[in]       stride      number of (interlaced) values by entity
+ * \param[in]       val         pointer to variable value array (on device)
+ * \param[out]      send_buf    pointer to send buffer (on device),
+ *                              NULL for global buffer
+ * \param[in, out]  hs          pointer to halo state, NULL for global state
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_sync_pack_d(const cs_halo_t  *halo,
+                    cs_halo_type_t    sync_mode,
+                    cs_datatype_t     data_type,
+                    int               stride,
+                    void             *val,
+                    void             *send_buf,
+                    cs_halo_state_t  *hs)
+{
+  if (halo == NULL)
+    return;
+
+  cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
+
+  void *_send_buf = cs_halo_sync_pack_init_state(halo,
+                                                 sync_mode,
+                                                 data_type,
+                                                 stride,
+                                                 send_buf,
+                                                 _hs);
+
+  void *_send_buf_d = cs_get_device_ptr(_send_buf);
+
+#if defined(HAVE_CUDA)
+
+  cs_halo_cuda_pack_send_buffer_real(halo,
+                                     sync_mode,
+                                     stride,
+                                     val,
+                                     _send_buf_d);
+
+#else
+
+  cs_halo_sync_pack(halo,
+                    sync_mode,
+                    data_type,
+                    stride,
+                    val,
+                    send_buf,
+                    _hs);
+
+#endif
+
+  _hs->var_location = CS_ALLOC_HOST;
+}
+
+#endif /* defined(HAVE_ACCEL) */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Launch update array of values in case of parallelism or periodicity.
@@ -1168,14 +1288,39 @@ cs_halo_sync_start(const cs_halo_t  *halo,
 
   cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
 
-  unsigned char *buffer = (unsigned char *)(_hs->send_buffer_cur);
-
   cs_lnum_t end_shift = (_hs->sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
   cs_lnum_t stride = _hs->stride;
   size_t elt_size = cs_datatype_size[_hs->data_type] * stride;
   size_t n_loc_elts = halo->n_local_elts;
 
   unsigned char *restrict _val = val;
+  unsigned char *restrict _val_dest = _val + n_loc_elts*elt_size;
+
+  unsigned char *buffer = (unsigned char *)(_hs->send_buffer_cur);
+
+  if (_hs->var_location > CS_ALLOC_HOST) {
+#   if defined(_CS_MPI_DEVICE_SUPPORT)
+    /* For CUDA-aware MPI, directly work with buffer on device */
+    buffer = cs_get_device_ptr(buffer);
+# else
+    /* For host-based MPI, copy or prefetch buffer */
+    cs_sync_d2h(buffer);
+
+    /* When array passed is defined on device but is not shared, use
+       separate (smaller) CPU for receive (as we cannot know whether
+       a matching host beffer without complexifying the API);
+       this will be copied back to device at the next step */
+    if (_hs->var_location != CS_ALLOC_HOST_DEVICE_SHARED) {
+      if (_hs->recv_buffer_size < _hs->send_buffer_size) {
+        _hs->recv_buffer_size = _hs->send_buffer_size;
+        CS_FREE_HD(_hs->recv_buffer);
+        CS_MALLOC_HD(_hs->recv_buffer, _hs->recv_buffer_size, unsigned char,
+                     CS_ALLOC_HOST_DEVICE_PINNED);
+      }
+      _val_dest = _hs->recv_buffer;
+    }
+#endif
+  }
 
 #if defined(HAVE_MPI)
 
@@ -1197,7 +1342,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
 
       if (length > 0) {
         size_t start = (size_t)(halo->index[2*rank_id]);
-        unsigned char *dest = _val + (n_loc_elts + start) * elt_size;
+        unsigned char *dest = _val_dest + start*elt_size;
 
         MPI_Irecv(dest,
                   length*_hs->stride,
@@ -1279,12 +1424,34 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
 
 #endif /* defined(HAVE_MPI) */
 
+#if defined(HAVE_ACCEL)
+#if !defined(_CS_MPI_DEVICE_SUPPORT)
+  if (_hs->var_location > CS_ALLOC_HOST) {
+
+    size_t n_loc_elts = halo->n_local_elts;
+    size_t n_elts = (   _hs->sync_mode
+                     == CS_HALO_EXTENDED) ? halo->n_elts[1] : halo->n_elts[0];
+    size_t elt_size = cs_datatype_size[_hs->data_type] * _hs->stride;
+    size_t n_bytes = n_elts*elt_size;
+
+    unsigned char *restrict _val = val;
+    unsigned char *restrict _val_dest = _val + n_loc_elts*elt_size;
+
+    if (_hs->var_location == CS_ALLOC_HOST_DEVICE_SHARED)
+      cs_prefetch_h2d(_val_dest, n_bytes);
+    else
+      cs_copy_h2d(_val_dest, _hs->recv_buffer, n_bytes);
+
+  }
+#endif
+#endif /* defined(HAVE_ACCEL) */
+
   /* Copy local values in case of periodicity */
 
   if (_hs->local_rank_id > -1) {
     size_t elt_size = cs_datatype_size[_hs->data_type] * _hs->stride;
     _sync_local(halo, _hs->local_rank_id, _hs->sync_mode, elt_size,
-                _hs->send_buffer_cur, val);
+                _hs->var_location, _hs->send_buffer_cur, val);
   }
 
   /* Cleanup */

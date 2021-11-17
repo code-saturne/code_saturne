@@ -350,6 +350,9 @@ cs_free(void         *ptr,
  * If separate pointers are used on the host and device,
  * the host pointer should be used with this function.
  *
+ * If memory is not allocated on device yet at the call site, it will
+ * be allocated automatically by this function.
+ *
  * \param [in]  ptr  pointer
  *
  * \returns pointer to device memory.
@@ -373,6 +376,34 @@ cs_get_device_ptr(void  *ptr)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return matching device pointer for a given constant pointer.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * \param [in]  ptr  pointer
+ *
+ * \returns pointer to device memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+const void *
+cs_get_device_ptr_const(const void  *ptr);
+
+#else
+
+inline static const void *
+cs_get_device_ptr_const(const void  *ptr)
+{
+  return ptr;
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check if a pointer is associated with a device.
  *
  * If separate pointers are used on the host and device,
@@ -385,12 +416,12 @@ cs_get_device_ptr(void  *ptr)
 #if defined(HAVE_ACCEL)
 
 cs_alloc_mode_t
-cs_check_device_ptr(void  *ptr);
+cs_check_device_ptr(const void  *ptr);
 
 #else
 
 inline static cs_alloc_mode_t
-cs_check_device_ptr(void  *ptr)
+cs_check_device_ptr(const void  *ptr)
 {
   CS_UNUSED(ptr);
   return CS_ALLOC_HOST;
@@ -484,23 +515,25 @@ cs_set_alloc_mode(void             **host_ptr,
  * Depending on the allocation type, this can imply a copy, data prefetch,
  * or a no-op.
  *
- * The user should assume that memory may be shared, or that this function
- * may return on the host before the copy is finished, so should not modify
- * it on the host before using it on the device.
+ * This function assumes the provided pointer was allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  host pointer to values to copy or prefetch
  */
 /*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_ACCEL)
 
 void
-cs_sync_h2d(void  *host_ptr);
+cs_sync_h2d(void  *ptr);
 
 #else
 
 static inline void
-cs_sync_h2d(void  *host_ptr)
+cs_sync_h2d(void  *ptr)
 {
-  CS_UNUSED(host_ptr);
+  CS_UNUSED(ptr);
 }
 
 #endif
@@ -509,28 +542,155 @@ cs_sync_h2d(void  *host_ptr)
 /*!
  * \brief Synchronize data from device to host.
  *
- * If separate pointers are used on the host and device,
- * the host pointer should be used with this function.
+ * If separate allocations are used on the host and device
+ * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be passed to this
+ * function.
  *
- * Depending on the allocation type, this can imply a copy, data prefetch,
+ * Depending on the allocaton type, this can imply a copy, data prefetch,
  * or a no-op.
+ *
+ * This function assumes the provided pointer was allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  pointer to values to copy or prefetch
  */
 /*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_ACCEL)
 
 void
-cs_sync_d2h(void  *host_ptr);
+cs_sync_d2h(void  *ptr);
 
 #else
 
 static inline void
-cs_sync_d2h(void  *host_ptr)
+cs_sync_d2h(void  *ptr)
 {
-  CS_UNUSED(host_ptr);
+  CS_UNUSED(ptr);
 }
 
 #endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prefetch data from host to device.
+ *
+ * This function should only be used on arrays using shared host and device
+ * memory, shuch as those allocated using CS_ALLOC_HOST_DEVICE_SHARED.
+ * It should be usable on a subset of such an array.
+ *
+ * \param [in, out]  ptr   pointer to data to prefetch
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_prefetch_h2d(void    *ptr,
+                size_t   size);
+
+#else
+
+static inline void
+cs_prefetch_h2d(void    *ptr,
+                size_t   size)
+{
+  CS_UNUSED(ptr);
+  CS_UNUSED(size);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prefetch data from device to host.
+ *
+ * This function should only be used on arrays using shared host and device
+ * memory, shuch as those allocated using CS_ALLOC_HOST_DEVICE_SHARED.
+ * It should be usable on a subset of such an array.
+ *
+ * \param [in, out]  ptr   pointer to data to prefetch
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_prefetch_d2h(void    *ptr,
+                size_t   size);
+
+#else
+
+static inline void
+cs_prefetch_d2h(void    *ptr,
+                size_t   size)
+{
+  CS_UNUSED(ptr);
+  CS_UNUSED(size);
+}
+
+#endif
+
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device.
+ *
+ * This function should be usable on subsets of arrays allocated on the host
+ * and device.
+ *
+ * \param [out]      dest  pointer to destination data on device
+ * \param [in, out]  src   pointer to source data on host
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_copy_h2d(void        *dest,
+            const void  *src,
+            size_t       size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from device to host.
+ *
+ * This function should be usable on subsets of arrays allocated on the host
+ * and device.
+ *
+ * \param [out]      dest  pointer to destination data on host
+ * \param [in, out]  src   pointer to source data on device
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_copy_d2h(void        *dest,
+            const void  *src,
+            size_t       size);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from device to device.
+ *
+ * This function should be usable on subsets of arrays allocated on the host
+ * and device.
+ *
+ * \param [out]      dest  pointer to destination data on host
+ * \param [in, out]  src   pointer to source data on device
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_copy_d2d(void        *dest,
+            const void  *src,
+            size_t       size);
+
+#endif /* defined(HAVE_ACCEL) */
 
 /*----------------------------------------------------------------------------*/
 /*!

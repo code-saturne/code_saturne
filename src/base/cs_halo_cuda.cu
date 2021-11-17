@@ -63,50 +63,49 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * CUDA kernel to gather sparse data to a dense array.
+ * Gather real values from a source buffer to another buffer.
  *
  * parameters:
- *   length  <-- length of sub-list to gather
- *   src_ids <-- ids of elements to gather
- *   src     <-- source values
- *   var     <-> destination values
+ *   n    <-- number of elements to gather
+ *   ids  <-- ids of values in src array
+ *   src  <-- array of values to gather from (source)
+ *   dest <-- array of gathered values (destination)
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_gather_from_var(cs_lnum_t         length,
-                 const cs_lnum_t  *src_ids,
-                 const cs_real_t  *src,
-                 cs_real_t        *dest)
+_gather_real(cs_lnum_t        n,
+             const cs_lnum_t  ids[],
+             const cs_real_t  src[],
+             cs_real_t        dest[])
 {
-  cs_lnum_t i = blockIdx.x*blockDim.x + threadIdx.x;
-
-  if (i < length)
-    dest[i] = src[src_ids[i]];
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+  if (ii < n)
+    dest[ii] = src[ids[ii]];
 }
 
 /*----------------------------------------------------------------------------
- * CUDA kernel to gather strided sparse data to a dense array.
+ * Gather strided real values from a source buffer to another buffer.
  *
  * parameters:
- *   stride    <-- data stride
- *   length    <-- length of sub-list to gather
- *   src_ids   <-- src_ids of elements to send
- *   src       <-- source values
- *   var       <-> destination values
+ *   n      <-- number of elements to gather
+ *   stride <-- stride (dimension) of elements to gather
+ *   ids    <-- ids of values in src array
+ *   src    <-- array of values to gather from (source)
+ *   dest   <-- array of gathered values (destination)
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_gather_from_var_strided(cs_lnum_t   stride,
-                         cs_lnum_t   length,
-                         cs_lnum_t  *src_ids,
-                         cs_real_t  *src,
-                         cs_real_t  *dest)
+_gather_real_strided(cs_lnum_t        n,
+                     cs_lnum_t        stride,
+                     const cs_lnum_t  ids[],
+                     const cs_real_t  src[],
+                     cs_real_t        dest[])
 {
   cs_lnum_t i = blockIdx.x*blockDim.x + threadIdx.x;
 
-  if (i < length) {
+  if (i < n) {
     for (cs_lnum_t j = 0; j < stride; j++)
-      dest[i*stride + j] = src[src_ids[i]*stride + j];
+      dest[i*stride + j] = src[ids[i]*stride + j];
   }
 }
 
@@ -122,80 +121,54 @@ BEGIN_C_DECLS
 /*!
  * \brief Pack cs_real_t halo data to send into dense buffer, using CUDA.
  *
- * A local state handler may be provided, or the default state handler will
- * be used.
- *
  * A local state and/or buffer may be provided, or the default (global) state
  * and buffer will be used. If provided explicitely,
  * the buffer must be of sufficient size.
  *
- * \param[in]       halo        pointer to halo structure
- * \param[in]       sync_mode   synchronization mode (standard or extended)
- * \param[in]       data_type   data type
- * \param[in]       stride      number of (interlaced) values by entity
- * \param[in]       var         pointer to value array (device)
- * \param[out]      send_buf    pointer to send buffer, NULL for global buffer
- * \param[in, out]  hs          pointer to halo state, NULL for global state
+ * \param[in]   halo         pointer to halo structure
+ * \param[in]   sync_mode    synchronization mode (standard or extended)
+ * \param[in]   stride       number of (interlaced) values by entity
+ * \param[in]   var          pointer to value array (device)
+ * \param[out]  send_buffer  pointer to send buffer, NULL for global buffer
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_halo_sync_pack_cuda_real(const cs_halo_t  *halo,
-                            cs_halo_type_t    sync_mode,
-                            cs_datatype_t     data_type,
-                            int               stride,
-                            cs_real_t        *var,
-                            void             *send_buf,
-                            cs_halo_state_t  *hs)
+cs_halo_cuda_pack_send_buffer_real(const cs_halo_t  *halo,
+                                   cs_halo_type_t    sync_mode,
+                                   cs_lnum_t         stride,
+                                   const cs_real_t   var[],
+                                   cs_real_t         send_buffer[])
 {
-  if (halo == NULL)
-    return;
+  const cs_lnum_t end_shift = (sync_mode == CS_HALO_STANDARD) ? 1 : 2;
 
-  void *_send_buffer_p = cs_halo_sync_pack_init_state(halo,
-                                                      sync_mode,
-                                                      CS_REAL_TYPE,
-                                                      stride,
-                                                      var,
-                                                      send_buf,
-                                                      hs);
-
-  cs_real_t *_send_buffer = (cs_real_t *)cs_get_device_ptr(_send_buffer_p);
-
-  cs_lnum_t end_shift = 0;
-
-  if (sync_mode == CS_HALO_STANDARD)
-    end_shift = 1;
-
-  else if (sync_mode == CS_HALO_EXTENDED)
-    end_shift = 2;
-
-  cs_lnum_t *send_list = (cs_lnum_t *)cs_get_device_ptr(halo->send_list);
-
-  /* Assemble buffers for halo exchange. */
+  const cs_lnum_t *send_list = (cs_lnum_t *)cs_get_device_ptr(halo->send_list);
 
   cudaStream_t nstream[halo->n_c_domains];
-  for (cs_lnum_t ii = 0; ii < halo->n_c_domains; ii++)
-    cudaStreamCreate(&nstream[ii]);
+  for (cs_lnum_t i = 0; i < halo->n_c_domains; i++)
+    cudaStreamCreate(&nstream[i]);
 
   for (cs_lnum_t rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
     cs_lnum_t start = halo->send_index[2*rank_id];
     cs_lnum_t length =   halo->send_index[2*rank_id + end_shift]
                        - halo->send_index[2*rank_id];
-    if (length > 0) {
-      unsigned int blocksize = (length < 256)? length:256;
-      unsigned int gridsize = (unsigned int)ceil((double)length/blocksize);
-      if (stride == 1)
-        _gather_from_var<<<gridsize, blocksize, 0, nstream[rank_id]>>>
-          (length, send_list+start, var, _send_buffer+start);
-      else
-        _gather_from_var_strided<<<gridsize, blocksize, 0, nstream[rank_id]>>>
-          (stride, length, send_list+start, var, _send_buffer+stride*start);
-    }
+    if (length == 0)
+      continue;
+
+    unsigned int blocksize = (length < 256)? length:256;
+    unsigned int gridsize = (unsigned int)ceil((double)length/blocksize);
+
+    if (stride == 1)
+      _gather_real<<<gridsize, blocksize, 0, nstream[rank_id]>>>
+        (length, send_list+start, var, send_buffer+start);
+    else
+      _gather_real_strided<<<gridsize, blocksize, 0, nstream[rank_id]>>>
+        (length, stride, send_list+start, var, send_buffer);
   }
 
-  for (cs_lnum_t ii = 0; ii < halo->n_c_domains; ii++){
-    CS_CUDA_CHECK(cudaStreamSynchronize(nstream[ii]));
-    cudaStreamDestroy(nstream[ii]);
+  for (cs_lnum_t i = 0; i < halo->n_c_domains; i++) {
+    CS_CUDA_CHECK(cudaStreamSynchronize(nstream[i]));
+    cudaStreamDestroy(nstream[i]);
   }
 }
 

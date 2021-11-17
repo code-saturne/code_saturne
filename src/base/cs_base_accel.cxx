@@ -81,7 +81,7 @@ typedef struct
  *  Global variables
  *============================================================================*/
 
-static std::map<void *, _cs_base_accel_mem_map> _hd_alloc_map;
+static std::map<const void *, _cs_base_accel_mem_map> _hd_alloc_map;
 
 static bool _initialized = false;
 
@@ -433,6 +433,9 @@ cs_free(void        *ptr,
  * If separate pointers are used on the host and device,
  * the host pointer should be used with this function.
  *
+ * If memory is not allocated on device yet at the call site, it will
+ * be allocated automatically by this function.
+ *
  * \param [in]  ptr  pointer
  *
  * \returns pointer to device memory.
@@ -476,6 +479,36 @@ cs_get_device_ptr(void  *ptr)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return matching device pointer for a given constant pointer.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ *
+ * \param [in]  ptr  pointer
+ *
+ * \returns pointer to device memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+const void *
+cs_get_device_ptr_const(const void  *ptr)
+{
+  if (ptr == NULL)
+    return NULL;
+
+  if (_hd_alloc_map.count(ptr) == 0) {
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: No host or device pointer matching %p."), __func__, ptr);
+    return NULL;
+  }
+
+  _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
+
+  return me.device_ptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check if a pointer is associated with a device.
  *
  * If separate pointers are used on the host and device,
@@ -486,7 +519,7 @@ cs_get_device_ptr(void  *ptr)
 /*----------------------------------------------------------------------------*/
 
 cs_alloc_mode_t
-cs_check_device_ptr(void  *ptr)
+cs_check_device_ptr(const void  *ptr)
 {
   if (_hd_alloc_map.count(ptr) == 0)
     return CS_ALLOC_HOST;
@@ -636,13 +669,19 @@ cs_set_alloc_mode(void             **host_ptr,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Copy from host to device.
+ * \brief Synchronize data from host to device.
  *
  * If separate pointers are used on the host and device,
  * the host pointer should be used with this function.
  *
  * Depending on the allocation type, this can imply a copy, data prefetch,
  * or a no-op.
+ *
+ * This function assumes the provided pointer was allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  host pointer to values to copy or prefetch
  */
 /*----------------------------------------------------------------------------*/
 
@@ -663,13 +702,13 @@ cs_sync_h2d(void  *ptr)
               __func__, ptr);
     break;
   case CS_ALLOC_HOST_DEVICE:
-    cs_cuda_copy_d2h(me.device_ptr, me.host_ptr, me.size);
+    cs_cuda_copy_h2d(me.device_ptr, me.host_ptr, me.size);
     break;
   case CS_ALLOC_HOST_DEVICE_PINNED:
-    cs_cuda_copy_d2h_async(me.device_ptr, me.host_ptr, me.size);
+    cs_cuda_copy_h2d_async(me.device_ptr, me.host_ptr, me.size);
     break;
   case CS_ALLOC_HOST_DEVICE_SHARED:
-    cs_cuda_prefetch_d2h(me.device_ptr, me.size);
+    cs_cuda_prefetch_h2d(me.device_ptr, me.size);
     break;
   case CS_ALLOC_DEVICE:
     bft_error(__FILE__, __LINE__, 0,
@@ -687,7 +726,7 @@ cs_sync_h2d(void  *ptr)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Copy from device to host.
+ * \brief Synchronize data from device to host.
  *
  * If separate allocations are used on the host and device
  * (mode == CS_ALLOC_HOST_DEVICE), the host pointer should be passed to this
@@ -695,6 +734,12 @@ cs_sync_h2d(void  *ptr)
  *
  * Depending on the allocaton type, this can imply a copy, data prefetch,
  * or a no-op.
+ *
+ * This function assumes the provided pointer was allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  pointer to values to copy or prefetch
  */
 /*----------------------------------------------------------------------------*/
 
@@ -733,6 +778,149 @@ cs_sync_d2h(void  *ptr)
 #elif defined(HAVE_ONEAPI)
 
   // TODO add OneApi wrapper for shared allocation
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prefetch data from host to device.
+ *
+ * This function should only be used on arrays using shared host and device
+ * memory, shuch as those allocated using CS_ALLOC_HOST_DEVICE_SHARED.
+ * It should be usable on a subset of such an array.
+ *
+ * \param [in, out]  ptr   pointer to data to prefetch
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_prefetch_h2d(void    *ptr,
+                size_t   size)
+{
+#if defined(HAVE_CUDA)
+
+  cs_cuda_prefetch_h2d(ptr, size);
+
+#elif defined(HAVE_ONEAPI)
+
+  // TODO add OneApi wrapper for shared allocation
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prefetch data from device to host.
+ *
+ * This function should only be used on arrays using shared host and device
+ * memory, shuch as those allocated using CS_ALLOC_HOST_DEVICE_SHARED.
+ * It should be usable on a subset of such an array.
+ *
+ * \param [in, out]  ptr   pointer to data to prefetch
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_prefetch_d2h(void    *ptr,
+                size_t   size)
+{
+#if defined(HAVE_CUDA)
+
+  cs_cuda_prefetch_d2h(ptr, size);
+
+#elif defined(HAVE_ONEAPI)
+
+  // TODO add OneApi wrapper for shared allocation
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from host to device.
+ *
+ * This function should be usable on subsets of arrays allocated on the host
+ * and device.
+ *
+ * \param [out]      dest  pointer to destination data on device
+ * \param [in, out]  src   pointer to source data on host
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_copy_h2d(void        *dest,
+            const void  *src,
+            size_t       size)
+{
+#if defined(HAVE_CUDA)
+
+  cs_cuda_copy_h2d(dest, src, size);
+
+#elif defined(HAVE_ONEAPI)
+
+  // TODO add OneApi wrapper for copy
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from device to host.
+ *
+ * This function should be usable on subsets of arrays allocated on the host
+ * and device.
+ *
+ * \param [out]      dest  pointer to destination data on host
+ * \param [in, out]  src   pointer to source data on device
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_copy_d2h(void        *dest,
+            const void  *src,
+            size_t       size)
+{
+#if defined(HAVE_CUDA)
+
+  cs_cuda_copy_d2h(dest, src, size);
+
+#elif defined(HAVE_ONEAPI)
+
+  // TODO add OneApi wrapper for copy
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Copy data from device to device.
+ *
+ * This function should be usable on subsets of arrays allocated on the host
+ * and device.
+ *
+ * \param [out]      dest  pointer to destination data on host
+ * \param [in, out]  src   pointer to source data on device
+ * \param [in]       size  number of bytes to prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_copy_d2d(void        *dest,
+            const void  *src,
+            size_t       size)
+{
+#if defined(HAVE_CUDA)
+
+  cs_cuda_copy_d2d(dest, src, size);
+
+#elif defined(HAVE_ONEAPI)
+
+  // TODO add OneApi wrapper for copy
 
 #endif
 }
