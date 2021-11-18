@@ -2872,6 +2872,8 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
     cs_interface_set_destroy(&face_interfaces);
 
+    cs_halo_create_complete(mesh->halo);
+
     t2 = cs_timer_wtime();
     halo_time = t2-t1;
 

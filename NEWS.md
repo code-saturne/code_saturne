@@ -103,6 +103,9 @@ Numerics:
 
 Architectural changes:
 
+- Add optional MPI one-sided communications mode for ghost cells
+  synchronization, using active target RMA "get" semantics.
+
 - Simplify handling of timers, focusing on wall-time.
 
 Release 7.0.0 (June 15 2021)

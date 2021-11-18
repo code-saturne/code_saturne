@@ -51,15 +51,25 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Halo type */
+/*!> Halo type */
 
 typedef enum {
 
-  CS_HALO_STANDARD,
-  CS_HALO_EXTENDED,
+  CS_HALO_STANDARD,   /*!< standard halo */
+  CS_HALO_EXTENDED,   /*!< extended halo (vertex-adjacent cells) */
   CS_HALO_N_TYPES
 
 } cs_halo_type_t;
+
+/* Halo communication mode */
+
+typedef enum {
+
+  CS_HALO_COMM_P2P,      /*!< non-blocking point-to-point communication */
+  CS_HALO_COMM_RMA_GET   /*!< MPI-3 one-sided with get semantics and
+                           active target synchronization */
+
+} cs_halo_comm_mode_t;
 
 /* Structure for halo management */
 /* ----------------------------- */
@@ -148,6 +158,13 @@ typedef struct {
 
   */
 
+#if defined(HAVE_MPI)
+
+  MPI_Group   c_domain_group;    /* Group of connected domains */
+  cs_lnum_t  *c_domain_s_shift;  /* Target buffer shift for distant
+                                    ranks using one-sided get */
+#endif
+
 } cs_halo_t;
 
 /*! Structure to maintain halo exchange state */
@@ -178,6 +195,23 @@ typedef struct _cs_halo_state_t  cs_halo_state_t;
 
 cs_halo_t *
 cs_halo_create(const cs_interface_set_t  *ifs);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Ready halo for use.
+ *
+ * This function should be called after building a halo using the
+ * cs_halo_create_function and defined locally.
+ * It is called automatically by cs_halo_create_from_ref and
+ * cs_halo_create_from_rank_neigbors so does not need to be called again
+ * using these functions.
+ *
+ * \param[in]  halo  pointer to halo structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_create_complete(cs_halo_t  *halo);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -592,6 +626,28 @@ cs_halo_get_use_barrier(void);
 
 void
 cs_halo_set_use_barrier(bool use_barrier);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get default communication mode for halo exchange.
+ *
+ * \return  allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_halo_comm_mode_t
+cs_halo_get_comm_mode(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set default communication mode for halo exchange.
+ *
+ * \param[in]  mode  allocation mode to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_set_comm_mode(cs_halo_comm_mode_t  mode);
 
 /*----------------------------------------------------------------------------*/
 /*!

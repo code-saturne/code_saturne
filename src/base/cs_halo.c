@@ -67,6 +67,25 @@ BEGIN_C_DECLS
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
+/* Remarks:
+ *
+ * The current available mode for MPI-3 RMA uses "get" semantics.
+ * A "put" semantics variant could easily be added, either:
+ * - Using MPI_Win_create_dynamic and attaching the halo section of the
+ *   current array to that window (which would seem cumbersome as this also
+ *   requires exchanging base addresses obtained with MPI_Get_Address for
+ *   each array, but could be amortized for iterative algorithms).
+ * - Using a fixed receive buffer, and copying data to the tail section of
+ *   the array afterwards (as is done for accelerators when the MPI library
+ *   used is not no accelerator-aware). This would add an extra copy, but
+ *   be much simpler.
+ *
+ * It may also be useful to allow this setting on a "per halo" basis, as
+ * some publications report better performance with RMA for large data,
+ * and better performance with P2P for small data, so in uses such
+ * as multigrid solvers, either may be preferred for different levels.
+*/
+
 /*=============================================================================
  * Local macro definitions
  *============================================================================*/
@@ -108,7 +127,7 @@ struct _cs_halo_state_t {
   size_t       recv_buffer_size;  /* Size of receive buffer, in bytes */
 
   void        *send_buffer;       /* Send buffer (maintained by this object) */
-  void        *recv_buffer;       /* Send buffer (maintained by this object) */
+  void        *recv_buffer;       /* Recv. buffer (maintained by this object) */
 
 #if defined(HAVE_MPI)
 
@@ -116,6 +135,8 @@ struct _cs_halo_state_t {
 
   MPI_Request  *request;          /* Array of MPI requests */
   MPI_Status   *status;           /* Array of MPI status */
+
+  MPI_Win       win;              /* MPI-3 RMA window */
 
 #endif
 
@@ -140,6 +161,9 @@ static int _halo_use_barrier = false;
 
 /* Default halo state handler */
 static cs_halo_state_t *_halo_state = NULL;
+
+/* Halo communications mode */
+static int _halo_comm_mode = CS_HALO_COMM_P2P;
 
 /*============================================================================
  * Private function definitions
@@ -181,6 +205,8 @@ _order_int_test(const int  list[],
     return 0;
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------
  * Update state request arrays so as to be usable with a given halo.
  *
@@ -201,16 +227,67 @@ _update_requests(const cs_halo_t  *halo,
 
   int n_requests = halo->n_c_domains*2;
 
-#if defined(HAVE_MPI)
-
   if (n_requests > hs->request_size) {
     hs->request_size = n_requests;
     BFT_REALLOC(hs->request, hs->request_size, MPI_Request);
     BFT_REALLOC(hs->status, hs->request_size,  MPI_Status);
   }
 
-#endif
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Exchange send shift in send buffer for one-sided get.
+ *
+ * \param[in]  halo  halo structure to update
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_exchange_send_shift(cs_halo_t  *halo)
+{
+  MPI_Comm comm = cs_glob_mpi_comm;
+  MPI_Request *request = NULL;
+  MPI_Status *status = NULL;
+
+  BFT_MALLOC(request, halo->n_c_domains*2, MPI_Request);
+  BFT_MALLOC(status, halo->n_c_domains*2, MPI_Status);
+
+  BFT_REALLOC(halo->c_domain_s_shift, halo->n_c_domains, cs_lnum_t);
+
+  /* Exchange local range with neighbor ranks */
+
+  const int local_rank = CS_MAX(cs_glob_rank_id, 0);
+
+  for (int i = 0; i < halo->n_c_domains; i++) {
+    int rank_id = halo->c_domain_rank[i];
+    MPI_Irecv(halo->c_domain_s_shift + i,
+              1,
+              CS_MPI_LNUM,
+              rank_id,
+              local_rank,
+              comm,
+              &(request[i]));
+  }
+
+  for (int i = 0; i < halo->n_c_domains; i++) {
+    int rank_id = halo->c_domain_rank[i];
+    MPI_Isend(halo->send_index + 2*i,
+              1,
+              CS_MPI_LNUM,
+              rank_id,
+              rank_id,
+              comm,
+              &(request[halo->n_c_domains + i]));
+  }
+
+  MPI_Waitall(halo->n_c_domains*2, request, status);
+
+  BFT_FREE(request);
+  BFT_FREE(status);
+}
+
+#endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
  * Local copy from halo send buffer to destination array.
@@ -269,6 +346,135 @@ _sync_local(const cs_halo_t  *halo,
   }
 #endif
 }
+
+#if defined(HAVE_MPI)
+#if (MPI_VERSION >= 3)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Launch update of ghost values in case of parallelism
+ *        for one-sided communication.
+ *
+ * The cs_halo_sync_pack function should have been called before this function,
+ * using the same hs argument.
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       val         pointer to variable value array
+ * \param[in, out]  hs          pointer to halo state, NULL for global state
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_halo_sync_start_one_sided(const cs_halo_t  *halo,
+                           void             *val,
+                           cs_halo_state_t  *hs)
+{
+  cs_lnum_t end_shift = (hs->sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
+  cs_lnum_t stride = hs->stride;
+  size_t elt_size = cs_datatype_size[hs->data_type] * stride;
+  size_t n_loc_elts = halo->n_local_elts;
+
+  unsigned char *restrict _val = val;
+  unsigned char *restrict _val_dest = _val + n_loc_elts*elt_size;
+
+  MPI_Datatype mpi_datatype = cs_datatype_to_mpi[hs->data_type];
+
+  const int local_rank = CS_MAX(cs_glob_rank_id, 0);
+
+  /* Get data from distant ranks */
+
+  if (_halo_comm_mode == CS_HALO_COMM_RMA_GET) {
+
+    /* Use active target synchronization */
+
+    if (halo->c_domain_group != MPI_GROUP_NULL) {
+      /* Start RMA exposure epoch */
+      MPI_Win_post(halo->c_domain_group,
+                   MPI_MODE_NOPUT,          /* program assertion */
+                   hs->win);
+
+      /* Access Epoch */
+      MPI_Win_start(halo->c_domain_group,
+                    0,                      /* program assertion */
+                    hs->win);
+    }
+    else {
+      MPI_Win_fence(0, hs->win);
+    }
+
+    for (int rank_id = 0; rank_id < halo->n_c_domains; rank_id++) {
+
+      int  length = (  halo->index[2*rank_id + end_shift]
+                     - halo->index[2*rank_id]) * stride;
+
+      if (halo->c_domain_rank[rank_id] != local_rank) {
+
+        if (length > 0) {
+          cs_lnum_t start = halo->index[2*rank_id]*elt_size;
+          unsigned char *dest = _val_dest + start;
+          MPI_Aint displacement = halo->c_domain_s_shift[rank_id]*elt_size;
+
+          MPI_Get(dest,
+                  length,                        /* origin count */
+                  mpi_datatype,                  /* origin datatype */
+                  halo->c_domain_rank[rank_id],  /* target rank */
+                  displacement,                  /* target displacement */
+                  length,                        /* target count */
+                  mpi_datatype,                  /* target datatype */
+                  hs->win);
+        }
+
+      }
+      else
+        hs->local_rank_id = rank_id;
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize update of ghost values in case of parallelism
+ *        for one-sided communication.
+ *
+ * The cs_halo_sync_pack function should have been called before this function,
+ * using the same hs argument.
+ *
+ * \param[in]       halo        pointer to halo structure
+ * \param[in]       val         pointer to variable value array
+ * \param[in, out]  hs          pointer to halo state, NULL for global state
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_halo_sync_complete_one_sided(const cs_halo_t  *halo,
+                              void             *val,
+                              cs_halo_state_t  *hs)
+{
+  /* Use active target synchronization */
+
+  /* Access Epoch */
+  if (halo->c_domain_group != MPI_GROUP_NULL) {
+    MPI_Win_complete(hs->win);
+
+    /* Complete RMA exposure epoch */
+    MPI_Win_wait(hs->win);
+  }
+  else {
+    MPI_Win_fence(0, hs->win);
+  }
+
+  /* Copy local values in case of periodicity */
+
+  if (hs->local_rank_id > -1) {
+    size_t elt_size = cs_datatype_size[hs->data_type] * hs->stride;
+    _sync_local(halo, hs->local_rank_id, hs->sync_mode, elt_size,
+                hs->var_location, hs->send_buffer_cur, val);
+  }
+}
+
+#endif /* (MPI_VERSION >= 3) */
+#endif /* defined(HAVE_MPI) */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -403,13 +609,78 @@ cs_halo_create(const cs_interface_set_t  *ifs)
 
   halo->send_list = NULL;
 
-  /* Create default state if first halo */
-  if (_n_halos == 0)
-    _halo_state = cs_halo_state_create();
+#if defined(HAVE_MPI)
+  halo->c_domain_group = MPI_GROUP_NULL;
+  halo->c_domain_s_shift = NULL;
+#endif
 
   _n_halos += 1;
 
   return halo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Ready halo for use.
+ *
+ * This function should be called after building a halo using the
+ * cs_halo_create_function and defined locally.
+ * It is called automatically by cs_halo_create_from_ref and
+ * cs_halo_create_from_rank_neighbors so does not need to be called again
+ * using these functions.
+ *
+ * \param[in]  halo  pointer to halo structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_create_complete(cs_halo_t  *halo)
+{
+#if defined(HAVE_MPI)
+
+  /* Make buffer available on device if relevant */
+  cs_sync_h2d(halo->send_index);
+  cs_sync_h2d(halo->send_list);
+
+  /* Create group for one-sided communication */
+  if (_halo_comm_mode > CS_HALO_COMM_P2P) {
+    const int local_rank = CS_MAX(cs_glob_rank_id, 0);
+    int n_group_ranks = 0;
+    int *group_ranks = NULL;
+    BFT_MALLOC(group_ranks, halo->n_c_domains + 1, int);
+    for (int i = 0; i < halo->n_c_domains; i++) {
+      if (halo->c_domain_rank[i] < local_rank)
+        group_ranks[n_group_ranks++] = halo->c_domain_rank[i];
+    }
+    group_ranks[n_group_ranks++] = local_rank;
+    for (int i = 0; i < halo->n_c_domains; i++) {
+      if (halo->c_domain_rank[i] > local_rank)
+        group_ranks[n_group_ranks++] = halo->c_domain_rank[i];
+    }
+
+    if (_order_int_test(group_ranks, n_group_ranks)) {
+
+      MPI_Group glob_group;
+      MPI_Comm_group(cs_glob_mpi_comm, &glob_group);
+      MPI_Group_incl(glob_group,
+                     n_group_ranks,
+                     group_ranks,
+                     &(halo->c_domain_group));
+      MPI_Group_free(&glob_group);
+
+    }
+
+    BFT_FREE(group_ranks);
+  }
+
+  /* Exchange shifts for one-sided communication */
+  if (_halo_comm_mode == CS_HALO_COMM_RMA_GET)
+    _exchange_send_shift(halo);
+
+  if (_halo_state == NULL)
+    _halo_state = cs_halo_state_create();
+
+#endif /* defined(HAVE_MPI) */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -472,7 +743,14 @@ cs_halo_create_from_ref(const cs_halo_t  *ref)
 
   halo->send_list = NULL;
 
+#if defined(HAVE_MPI)
+  halo->c_domain_group = MPI_GROUP_NULL;
+  halo->c_domain_s_shift = NULL;
+#endif
+
   _n_halos += 1;
+
+  cs_halo_create_complete(halo);
 
   return halo;
 }
@@ -525,6 +803,11 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
   halo->send_perio_lst = NULL;
   halo->perio_lst = NULL;
 
+#if defined(HAVE_MPI)
+  halo->c_domain_group = MPI_GROUP_NULL;
+  halo->c_domain_s_shift = NULL;
+#endif
+
   halo->n_local_elts = n_local_elts;
 
   for (int i = 0; i < CS_HALO_N_TYPES; i++) {
@@ -557,7 +840,7 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
     elt_prev = elt_id[i];
   }
 
-  /* Now exchange counts with neighboring elaments */
+  /* Now exchange counts with neighboring elements */
 
   MPI_Comm comm = cs_glob_mpi_comm;
   MPI_Request *request = NULL;
@@ -707,15 +990,9 @@ cs_halo_create_from_rank_neighbors(const cs_rank_neighbors_t  *rn,
   BFT_FREE(request);
   BFT_FREE(status);
 
-  /* Make buffer available on device if relevant */
-  cs_sync_h2d(halo->send_index);
-  cs_sync_h2d(halo->send_list);
-
-  /* Create default state if first halo */
-  if (_n_halos == 0)
-    _halo_state = cs_halo_state_create();
-
   _n_halos += 1;
+
+  cs_halo_create_complete(halo);
 
   return halo;
 }
@@ -740,6 +1017,13 @@ cs_halo_destroy(cs_halo_t  **halo)
     return;
 
   cs_halo_t  *_halo = *halo;
+
+#if defined(HAVE_MPI)
+  if (_halo->c_domain_group != MPI_GROUP_NULL)
+    MPI_Group_free(&(_halo->c_domain_group));
+
+  BFT_FREE(_halo->c_domain_s_shift);
+#endif
 
   BFT_FREE(_halo->c_domain_rank);
 
@@ -790,7 +1074,9 @@ cs_halo_state_create(void)
     ,
     .request_size = 0,
     .request = NULL,
-    .status = NULL
+    .status = NULL,
+    .win = MPI_WIN_NULL
+
 #endif
   };
 
@@ -813,6 +1099,15 @@ cs_halo_state_destroy(cs_halo_state_t  **halo_state)
 {
   if (halo_state != NULL) {
     cs_halo_state_t *hs = *halo_state;
+
+#if defined(HAVE_MPI)
+#if (MPI_VERSION >= 3)
+    if (hs->win != MPI_WIN_NULL) {
+      MPI_Win_free(&(hs->win));
+      hs->win = MPI_WIN_NULL;
+    }
+#endif
+#endif
 
     CS_FREE_HD(hs->send_buffer);
 
@@ -859,6 +1154,7 @@ cs_halo_renumber_cells(cs_halo_t        *halo,
       halo->send_list[j] = new_cell_id[halo->send_list[j]];
 
     cs_sync_h2d(halo->send_list);
+
   }
 }
 
@@ -1054,11 +1350,33 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
       cs_alloc_mode_t alloc_mode = cs_check_device_ptr(halo->send_list);
 
       _hs->send_buffer_size = send_buffer_size;
+
+#if defined(HAVE_MPI)
+#if (MPI_VERSION >= 3)
+      if (_hs->win != MPI_WIN_NULL) {
+        MPI_Win_free(&(_hs->win));
+        _hs->win = MPI_WIN_NULL;
+      }
+#endif
+#endif
+
       CS_FREE_HD(_hs->send_buffer);
       CS_MALLOC_HD(_hs->send_buffer,
                    _hs->send_buffer_size,
                    char,
                    alloc_mode);
+
+#if defined(HAVE_MPI)
+#if (MPI_VERSION >= 3)
+      if (_halo_comm_mode == CS_HALO_COMM_RMA_GET)
+        MPI_Win_create(_hs->send_buffer,
+                       _hs->send_buffer_size,
+                       1,   /* displacement unit */
+                       MPI_INFO_NULL,
+                       MPI_COMM_WORLD,
+                       &(_hs->win));
+#endif
+#endif
     }
 
     _send_buffer = _hs->send_buffer;
@@ -1288,6 +1606,13 @@ cs_halo_sync_start(const cs_halo_t  *halo,
 
   cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
 
+#if (MPI_VERSION >= 3)
+  if (_halo_comm_mode > CS_HALO_COMM_P2P) {
+    _halo_sync_start_one_sided(halo, val, _hs);
+    return;
+  }
+#endif
+
   cs_lnum_t end_shift = (_hs->sync_mode == CS_HALO_EXTENDED) ? 2 : 1;
   cs_lnum_t stride = _hs->stride;
   size_t elt_size = cs_datatype_size[_hs->data_type] * stride;
@@ -1358,7 +1683,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
       _hs->local_rank_id = rank_id;
   }
 
-  /* We wait for posting all receives (often recommended) */
+  /* We may wait for posting all receives (sometimes recommended) */
 
   if (_halo_use_barrier)
     MPI_Barrier(cs_glob_mpi_comm);
@@ -1414,6 +1739,13 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
     return;
 
   cs_halo_state_t  *_hs = (hs != NULL) ? hs : _halo_state;
+
+#if (MPI_VERSION >= 3)
+  if (_halo_comm_mode > CS_HALO_COMM_P2P) {
+    _halo_sync_complete_one_sided(halo, val, _hs);
+    return;
+  }
+#endif
 
 #if defined(HAVE_MPI)
 
@@ -1625,6 +1957,35 @@ void
 cs_halo_set_use_barrier(bool use_barrier)
 {
   _halo_use_barrier = use_barrier;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get default communication mode for halo exchange.
+ *
+ * \return  allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_halo_comm_mode_t
+cs_halo_get_comm_mode(void)
+{
+  return _halo_comm_mode;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set default communication mode for halo exchange.
+ *
+ * \param[in]  mode  allocation mode to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_halo_set_comm_mode(cs_halo_comm_mode_t  mode)
+{
+  if (mode >= CS_HALO_COMM_P2P && mode <= CS_HALO_COMM_RMA_GET)
+    _halo_comm_mode = mode;
 }
 
 /*----------------------------------------------------------------------------*/
