@@ -46,6 +46,7 @@
 #include "bft_printf.h"
 
 #include "cs_halo.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
@@ -79,25 +80,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 #define CS_MESH_QUALITY_N_SUBS  10
-
-#undef _CROSS_PRODUCT_3D
-#undef _DOT_PRODUCT_3D
-#undef _MODULE_3D
-#undef _COSINE_3D
-
-#define _CROSS_PRODUCT_3D(cross_v1_v2, v1, v2) ( \
- cross_v1_v2[0] = v1[1]*v2[2] - v1[2]*v2[1],   \
- cross_v1_v2[1] = v1[2]*v2[0] - v1[0]*v2[2],   \
- cross_v1_v2[2] = v1[0]*v2[1] - v1[1]*v2[0]  )
-
-#define _DOT_PRODUCT_3D(v1, v2) ( \
- v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2])
-
-#define _MODULE_3D(v) \
- sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
-
-#define _COSINE_3D(v1, v2) (\
- _DOT_PRODUCT_3D(v1, v2) / (_MODULE_3D(v1) * _MODULE_3D(v2)) )
 
 /*============================================================================
  * Static global variables
@@ -169,7 +151,12 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
     for (i = 0; i < dim; i++)
       vect[i] = cell_center2[i] - cell_center1[i];
 
-    cos_alpha = _COSINE_3D(vect, face_normal);
+    cs_real_t v1[3], v2[3];
+
+    cs_math_3_normalize(vect, v1);
+    cs_math_3_normalize(face_normal, v2);
+
+    cos_alpha = cs_math_3_dot_product(v1, v2);
 
     i_face_ortho = cos_alpha;
 
@@ -205,7 +192,12 @@ _compute_ortho_norm(const cs_mesh_t             *mesh,
     for (i = 0; i < dim; i++)
       vect[i] = face_center[i] - cell_center1[i];
 
-    cos_alpha = _COSINE_3D(vect, face_normal);
+    cs_real_t v1[3], v2[3];
+
+    cs_math_3_normalize(vect, v1);
+    cs_math_3_normalize(face_normal, v2);
+
+    cos_alpha = cs_math_3_dot_product(v1, v2);
 
     b_face_ortho = cos_alpha;
 
@@ -255,7 +247,7 @@ _compute_offsetting(const cs_mesh_t             *mesh,
 
     v_of = &(mesh_quantities->dofij[face_id*3]);
     v_n = &(mesh_quantities->i_face_normal[face_id*3]);
-    of_n = _MODULE_3D(v_of) * _MODULE_3D(v_n);
+    of_n = cs_math_3_norm(v_of) * cs_math_3_norm(v_n);
 
     off_1 = 1 - pow(of_n / mesh_quantities->cell_vol[cell1], 1/3.);
     off_2 = 1 - pow(of_n / mesh_quantities->cell_vol[cell2], 1/3.);
@@ -304,7 +296,7 @@ _compute_least_squares(const cs_mesh_t             *mesh,
   cs_real_3_t   cell_center1, cell_center2, vect, dij, eigenvalues;
   cs_real_33_t  w2;
 
-  double unsdij, surfn, surf_n_inv, min_diag, max_diag;
+  double surfn, min_diag, max_diag;
   double xam, q, p, r, phi;
 
   cs_real_t *w1 = NULL;
@@ -331,10 +323,11 @@ _compute_least_squares(const cs_mesh_t             *mesh,
       vect[i] = cell_center2[i] - cell_center1[i];
     }
 
-    unsdij = 1.0 / _MODULE_3D(vect);
+    cs_real_t v[3];
+    cs_math_3_normalize(vect, v);
 
     for (i = 0; i < dim; i++)
-      dij[i] = vect[i] * unsdij;
+      dij[i] = v[i];
 
     w1[cell1] += dij[0] * dij[0];
     w1[cell1 + n_cells_wghosts] += dij[1] * dij[1];
@@ -358,12 +351,13 @@ _compute_least_squares(const cs_mesh_t             *mesh,
   for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
     cell1 = mesh->b_face_cells[face_id];
 
-    surfn = _MODULE_3D(b_face_normal[face_id]);
+    cs_real_t bn[3];
 
-    surf_n_inv = 1.0 / surfn;
+    cs_math_3_normalize(b_face_normal[face_id], bn);
+    surfn = cs_math_3_norm(b_face_normal[face_id]);
 
     for (i = 0; i < dim; i++)
-      dij[i] = b_face_normal[face_id][i] * surf_n_inv;
+      dij[i] = bn[i];
 
     w1[cell1] += dij[0] * dij[0];
     w1[cell1 + n_cells_wghosts] += dij[1] * dij[1];
@@ -1153,15 +1147,6 @@ cs_mesh_bad_cells_postprocess(const cs_mesh_t             *mesh,
 
   _call_type_visualize = 1; /* Prevent future calls from doing anything */
 }
-
-/*----------------------------------------------------------------------------*/
-
-/* Delete local macros */
-
-#undef _CROSS_PRODUCT_3D
-#undef _DOT_PRODUCT_3D
-#undef _MODULE_3D
-#undef _COSINE_3D
 
 /*----------------------------------------------------------------------------*/
 
