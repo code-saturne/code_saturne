@@ -52,7 +52,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 //   typedef struct {
-// 
+//
 //   int                              mMax_aa;
 //   int                              AAStart;
 //   /* Set of tolerances of matrix conditioning number */
@@ -61,19 +61,19 @@ BEGIN_C_DECLS
 //   double                           beta_;
 //   /* Number of Anderson accelerations */
 //   int                              n_aa_iter;
-//   
+//
 //   bool                             aa_activated;
-// 
+//
 //   cs_real_t                        fval_;
 //   cs_real_t                        gold_;
 //   cs_real_t                        fold_;
 //   cs_real_t                        df_;
 //
-// 
+//
 //   Eigen::MatrixXd R_;
-// 
-// 
-// } cs_cdo_anderson_t; 
+//
+//
+// } cs_cdo_anderson_t;
 
 static const int                        mMax_aa = 4;
 static const int                        AAStart = 0;
@@ -150,27 +150,27 @@ inline void aa_term() {
 /*----------------------------------------------------------------------------*/
 
  inline void qrdelete(cs_real_t *Q, cs_sdm_t *R, int n_faces, int mMax){
-   
+
    int n_rows = R->n_rows;
    for (int i=0 ; i<mMax-1 ; i++)
-   {  
+   {
      cs_log_printf(CS_LOG_DEFAULT, " n_rows   %d \n", n_rows);
      //int n_cols = R->n_cols;
      assert(R->n_cols == R->n_rows);
      const double temp = sqrt(R->val[i*n_rows+i+1]*R->val[i*n_rows+i+1]+R->val[(i+1)*n_rows+i+1]*R->val[(i+1)*n_rows+i+1]);
-        
+
      const double c = R->val[i*n_rows+i+1]/temp;
      const double s = R->val[(i+1)*n_rows+i+1]/temp;
-     
+
      R->val[i*n_rows+i+1] = temp;
      R->val[(i+1)*n_rows+i+1]=0.0;
      if (i<mMax-2)
      { //diff % matlab
        for (int j=i+2 ; j<mMax ; j++)
        {
-	 const double temp0 = c*R->val[i*n_rows+j]+s*R->val[(i+1)*n_rows+j];
-	 R->val[(i+1)*n_rows+j] = -s*R->val[i*n_rows+j]+c*R->val[(i+1)*n_rows+j];
-	 R->val[i*n_rows+j] = temp0;
+         const double temp0 = c*R->val[i*n_rows+j]+s*R->val[(i+1)*n_rows+j];
+         R->val[(i+1)*n_rows+j] = -s*R->val[i*n_rows+j]+c*R->val[(i+1)*n_rows+j];
+         R->val[i*n_rows+j] = temp0;
        }
      }
     cs_real_t *Q_i = Q + i*n_faces;
