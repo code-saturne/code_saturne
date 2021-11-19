@@ -116,7 +116,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
                         "antal": 'Antal',
                         "tomiyama": 'Tomiyama',
                         "ishii": 'Ishii',
-                        "inclusions": 'Gobin et al.',
+                        "Gobin": 'Gobin et al.',
                         "Wen_Yu": 'Wen and Yu',
                         "standard": 'Standard',
                         "zuber": 'Zuber',

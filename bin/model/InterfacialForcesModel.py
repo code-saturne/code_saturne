@@ -58,7 +58,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         self.__availableContinuousDragModelList = ["Large_Interface_Model", "G_Large_Interface_Model",
                                                    "Large_Bubble_Model"]
         self.__availableGasDispersedDragModelList = ["ishii", "Wen_Yu"]
-        self.__availableSolidLiquidDispersedDragModelList = ["inclusions"]
+        self.__availableSolidLiquidDispersedDragModelList = ["Gobin"]
 
         self.__availableAddedMassModelsLists = ["none", "standard", "zuber"]
         self.__availableLiftModelsLists = ["none", "coef_cst", "Tomiyama_SMD", "Zeng_Baalbaki"]
@@ -160,7 +160,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         predefined_flow = self.getPredefinedFlow()
 
         default['gasdisperseddragmodel'] = 'ishii'
-        default['liquidsoliddisperseddragmodel'] = 'inclusions'
+        default['liquidsoliddisperseddragmodel'] = 'Gobin'
         default['addedmassmodel'] = 'zuber'
         default['liftmodel'] = 'Tomiyama_SMD'
         default['turbulent_dispersion_model'] = "none"
@@ -630,7 +630,7 @@ class InterfacialForcesTestCase(ModelTest):
         assert mdl.getAvailableDragModels('1','2') == ["none", "ishii", "Wen_Yu"],\
             'Could not get AvailableDragModels'
         MainFieldsModel(self.case).setFieldNature('2','solid')
-        assert mdl.getAvailableDragModels('1','2') == ["none", "inclusions"],\
+        assert mdl.getAvailableDragModels('1','2') == ["none", "Gobin"],\
             'Could not get AvailableDragModels'
 
 
