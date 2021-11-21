@@ -94,7 +94,7 @@ integer          istr, ii, iel, ifac, ntab
 integer          iflmas, iflmab
 integer          indast
 integer          icvext, icvint, icved
-integer          f_dim
+integer          f_dim, i
 
 double precision delta
 
@@ -327,17 +327,15 @@ if (itrfin.ne.-1) then
         cvar_var(iel) = cvara_var(iel)
       enddo
 
-    ! Vector fields
-    else if (f_dim.eq.3) then
+    ! Vector or tensor fields
+    else
       call field_get_val_v(ivarfl(ii), cvar_varv)
       call field_get_val_prev_v(ivarfl(ii), cvara_varv)
       do iel = 1, ncelet
-        cvar_varv(1, iel) = cvara_varv(1, iel)
-        cvar_varv(2, iel) = cvara_varv(2, iel)
-        cvar_varv(3, iel) = cvara_varv(3, iel)
+        do i = 1, f_dim
+          cvar_varv(i, iel) = cvara_varv(i, iel)
+        enddo
       enddo
-    else
-      call csexit(1)
     endif
   enddo
   do ifac = 1, nfac
