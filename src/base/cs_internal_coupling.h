@@ -287,7 +287,7 @@ cs_internal_coupling_exchange_by_face_id(const cs_internal_coupling_t  *cpl,
 
 void
 cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
-                                           cs_real_33_t                   cocg[]);
+                                           cs_real_6_t                    cocg[]);
 
 /*----------------------------------------------------------------------------
  * Modify LSQ COCG matrix to include internal coupling
@@ -302,7 +302,7 @@ cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
 void
 cs_internal_coupling_lsq_cocg_weighted(const cs_internal_coupling_t  *cpl,
                                        const cs_real_t               *c_weight,
-                                       cs_real_33_t                   cocg[]);
+                                       cs_real_6_t                   cocg[]);
 
 /*----------------------------------------------------------------------------
  * Modify iterative COCG matrix to include internal coupling

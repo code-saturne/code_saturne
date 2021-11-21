@@ -2202,7 +2202,7 @@ cs_internal_coupling_lsq_vector_gradient(
 
 void
 cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
-                                           cs_real_33_t                   cocg[])
+                                           cs_real_6_t                    cocg[])
 {
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
@@ -2215,18 +2215,18 @@ cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
     cs_lnum_t face_id = faces_local[ii];
     cs_lnum_t cell_id = b_face_cells[face_id];
-    cs_real_3_t dddij;
-    for (cs_lnum_t ll = 0; ll < 3; ll++)
-      dddij[ll] = ci_cj_vect[ii][ll];
 
-    cs_real_t umdddij = 1./ cs_math_3_norm(dddij);
+    cs_real_t dc[3];
     for (cs_lnum_t ll = 0; ll < 3; ll++)
-      dddij[ll] *= umdddij;
+      dc[ll] = ci_cj_vect[ii][ll];
+    cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-    for (cs_lnum_t ll = 0; ll < 3; ll++) {
-      for (cs_lnum_t mm = 0; mm < 3; mm++)
-        cocg[cell_id][ll][mm] += dddij[ll]*dddij[mm];
-    }
+    cocg[cell_id][0] += dc[0]*dc[0]*ddc;
+    cocg[cell_id][1] += dc[1]*dc[1]*ddc;
+    cocg[cell_id][2] += dc[2]*dc[2]*ddc;
+    cocg[cell_id][3] += dc[0]*dc[1]*ddc;
+    cocg[cell_id][4] += dc[1]*dc[2]*ddc;
+    cocg[cell_id][5] += dc[0]*dc[2]*ddc;
   }
 }
 
@@ -2243,7 +2243,7 @@ cs_internal_coupling_lsq_cocg_contribution(const cs_internal_coupling_t  *cpl,
 void
 cs_internal_coupling_lsq_cocg_weighted(const cs_internal_coupling_t  *cpl,
                                        const cs_real_t               *c_weight,
-                                       cs_real_33_t                   cocg[])
+                                       cs_real_6_t                    cocg[])
 {
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
@@ -2280,10 +2280,12 @@ cs_internal_coupling_lsq_cocg_weighted(const cs_internal_coupling_t  *cpl,
 
     cs_real_t i_dci = 1./ (dc_i[0]*dc_i[0] + dc_i[1]*dc_i[1] + dc_i[2]*dc_i[2]);
 
-    for (cs_lnum_t ll = 0; ll < 3; ll++) {
-      for (cs_lnum_t mm = 0; mm < 3; mm++)
-        cocg[cell_id][ll][mm] += dc_i[mm] * dc_i[ll] * i_dci;
-    }
+    cocg[cell_id][0] += dc_i[0] * dc_i[0] * i_dci;
+    cocg[cell_id][1] += dc_i[1] * dc_i[1] * i_dci;
+    cocg[cell_id][2] += dc_i[2] * dc_i[2] * i_dci;
+    cocg[cell_id][3] += dc_i[0] * dc_i[1] * i_dci;
+    cocg[cell_id][4] += dc_i[1] * dc_i[2] * i_dci;
+    cocg[cell_id][5] += dc_i[0] * dc_i[2] * i_dci;
   }
 
   BFT_FREE(cwgt_local);
