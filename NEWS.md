@@ -3,6 +3,8 @@ Release 7.0.3 (not released yet)
 
 Bug fixes:
 
+- Fix bug for internal coupling for structures and Rij turbulence models.
+
 - Fix usage of wrong diffusivity in Differential Flux Model
   symmetry boundary conditions.
 
