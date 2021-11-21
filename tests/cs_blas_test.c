@@ -63,12 +63,16 @@
 #include "cs_blas.h"
 #include "cs_defs.h"
 #include "cs_math.h"
+#include "cs_parall.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------*/
 
 /* Minimum size for OpenMP loops (needs benchmarking to adjust) */
 #define THR_MIN 128
+
+/* Block size for superblock algorithm */
+#define CS_SBLOCK_BLOCK_SIZE 60
 
 #if defined(HAVE_ACML)
 const char ext_blas_type[] = "ACML";
@@ -192,6 +196,88 @@ _ddot_canonical(cs_lnum_t      n,
     s += (x[i] * y[i]);
 
   return s;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute blocks sizes for superblock algorithm.
+ *
+ * \param[in]   n                 size of array
+ * \param[in]   block_size        block size
+ * \param[out]  n_sblocks         number of superblocks
+ * \param[out]  blocks_in_sblocks number of blocks per superblock
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_sbloc_sizes(cs_lnum_t   n,
+             cs_lnum_t   block_size,
+             cs_lnum_t  *n_sblocks,
+             cs_lnum_t  *blocks_in_sblocks)
+{
+  cs_lnum_t n_blocks = (n + block_size - 1) / block_size;
+  *n_sblocks = (n_blocks > 1) ? sqrt(n_blocks) : 1;
+
+  cs_lnum_t n_b = block_size * *n_sblocks;
+  *blocks_in_sblocks = (n + n_b - 1) / n_b;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the dot product of 2 vectors: x.y
+ *        using a superblock algorithm with different x and y precision.
+ *
+ * \param[in]  n  size of arrays x and y
+ * \param[in]  x  array of floating-point values
+ * \param[in]  y  array of floating-point values
+ *
+ * \return  dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_cs_dot_superblock_m(cs_lnum_t         n,
+                     const double     *x,
+                     const float      *y)
+{
+  double dot = 0.0;
+
+# pragma omp parallel reduction(+:dot) if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const double *_x = x + s_id;
+    const float  *_y = y + s_id;
+
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double sdot = 0.0;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double cdot = 0.0;
+        for (cs_lnum_t i = start_id; i < end_id; i++)
+        cdot += _x[i]*_y[i];
+        sdot += cdot;
+      }
+
+      dot += sdot;
+
+    }
+
+  }
+
+  return dot;
 }
 
 /*----------------------------------------------------------------------------
@@ -759,6 +845,103 @@ _dot_product_2(double  t_measure)
 
     BFT_FREE(x);
     BFT_FREE(y);
+  }
+
+  return test_sum;
+}
+
+/*----------------------------------------------------------------------------
+ * Simple dot product with mixed precision (double/float)
+ *
+ * parameters:
+ *   t_measure <-- minimum time for each measure (< 0 for single pass)
+ *   global    <-- 0 for local use, 1 for MPI sum
+ *
+ * returns:
+ *   test sum (ensures compiler may not optimize loops out)
+ *----------------------------------------------------------------------------*/
+
+static double
+_dot_product_m(double   t_measure,
+               int      global)
+{
+  double wt0, wt1;
+  int sub_id, run_id, n_runs;
+  long n_ops;
+  cs_lnum_t n, ii;
+
+  double test_sum = 0.0;
+  int _global = global;
+
+  double *x = NULL;
+  float  *y = NULL;
+
+  if (cs_glob_n_ranks == 1)
+    _global = 0;
+
+  for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
+
+    n = _n_elts[sub_id];
+    n_ops = n*2 - 1;
+
+    /* Realloc and initialize arrays for each test, as
+       first touch may affect memory locality on some systems */
+
+    BFT_MALLOC(x, n, double);
+    BFT_MALLOC(y, n, float);
+
+#   pragma omp parallel for
+    for (ii = 0; ii < n; ii++) {
+      x[ii] = (ii%10 + 1)*_pi;
+      y[ii] = (ii%10 + 1);
+    }
+
+    test_sum = test_sum - floor(test_sum);
+
+    wt0 = cs_timer_wtime(), wt1 = wt0;
+    if (t_measure > 0)
+      n_runs = 8;
+    else
+      n_runs = 1;
+    run_id = 0;
+    while (run_id < n_runs) {
+      double test_sum_mult = 1.0/n_runs;
+      while (run_id < n_runs) {
+        double s1 = _cs_dot_superblock_m(n, x, y);
+#if defined(HAVE_MPI)
+        if (_global) {
+          double s1_glob = 0.0;
+          MPI_Allreduce(&s1, &s1_glob, 1, MPI_DOUBLE, MPI_SUM,
+                        cs_glob_mpi_comm);
+          s1 = s1_glob;
+        }
+#endif
+        test_sum += test_sum_mult*s1;
+        run_id++;
+      }
+      wt1 = cs_timer_wtime();
+      if (wt1 - wt0 < t_measure)
+        n_runs *= 2;
+    }
+
+    if (_global == 0)
+      bft_printf("\n"
+                 "Local dot product X.Y (sb, %d elts, mixed precision)\n"
+                 "-----------------\n",
+                 (int)n);
+    else
+      bft_printf("\n"
+                 "Global dot product X.Y (sb, %d elts/rank, mixed precision)\n"
+                 "------------------\n",
+                 (int)n);
+
+    bft_printf("  (calls: %d)\n", n_runs);
+
+    _print_stats(n_runs, n_ops, 0, wt1 - wt0);
+
+    BFT_FREE(y);
+    BFT_FREE(x);
+
   }
 
   return test_sum;
@@ -2823,6 +3006,8 @@ main (int argc, char *argv[])
   test_sum += _dot_product_1(t_measure, 0);
 
   test_sum += _dot_product_2(t_measure);
+
+  test_sum += _dot_product_m(t_measure, 0);
 
   test_sum += _axpy_test(t_measure);
 

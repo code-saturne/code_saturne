@@ -40,6 +40,7 @@
 
 #include <bft_error.h>
 #include <bft_mem.h>
+#include <bft_printf.h>
 
 #include "cs_fp_exception.h"
 #include "cs_log.h"

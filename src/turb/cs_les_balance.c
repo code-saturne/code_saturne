@@ -275,14 +275,14 @@ _les_balance_get_tm_label(int         isca,
                           char       *buffer)
 {
   /* Initializing an empty string with name */
-  char csca[5];
+  char csca[12];
 
   memset(buffer, '\0', 32);
   strcpy(buffer, name);
 
   /* Add the scalar number to this name */
-  snprintf(csca, 4, "_%d", isca);
-  csca[4] = '\0';
+  snprintf(csca, 12, "_%d", isca);
+  csca[11] = '\0';
   strcat(buffer, csca);
 }
 
