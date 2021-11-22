@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_base_accel.h"
 #include "cs_halo.h"
 #include "cs_mesh.h"
 
@@ -180,6 +181,20 @@ cs_mesh_adjacencies_update_cell_cells_e(void);
 
 void
 cs_mesh_adjacencies_update_cell_i_faces(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map some global mesh adjacency arrays for use on device.
+ *
+ * More elements may be mapped dependin on which arrays are used in
+ * accelerated algorithms.
+ *
+ * \param[in]  alloc_mode  chosen allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_adjacencies_update_device(cs_alloc_mode_t  alloc_mode);
 
 /*----------------------------------------------------------------------------*/
 /*!

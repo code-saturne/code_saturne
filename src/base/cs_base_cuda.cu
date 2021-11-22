@@ -444,7 +444,7 @@ cs_base_cuda_device_info(cs_log_t  log_id)
   else if (retval)
     cs_log_printf(log_id,
                   _("  CUDA device:         %s\n"),
-		  cudaGetErrorString(retval));
+                  cudaGetErrorString(retval));
 
   char buffer[256] = "";
 

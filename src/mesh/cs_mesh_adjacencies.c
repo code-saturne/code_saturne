@@ -560,6 +560,18 @@ _update_cell_vertices(cs_mesh_adjacencies_t  *ma,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get non-const pointer to cs_glob_mesh_adacencies.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_adjacencies_t *
+cs_mesh_adjacencies_get_global(void)
+{
+  return &_cs_glob_mesh_adjacencies;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize mesh adjacencies helper API.
  */
 /*----------------------------------------------------------------------------*/
@@ -683,6 +695,55 @@ cs_mesh_adjacencies_update_cell_i_faces(void)
 
   if (ma->cell_i_faces == NULL)
     _update_cell_i_faces(ma);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map some global mesh adjacency arrays for use on device.
+ *
+ * More elements may be mapped dependin on which arrays are used in
+ * accelerated algorithms.
+ *
+ * \param[in]  alloc_mode  chosen allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_adjacencies_update_device(cs_alloc_mode_t  alloc_mode)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  cs_mesh_adjacencies_t *ma = &_cs_glob_mesh_adjacencies;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_b_cells = m->n_b_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  ma->cell_cells_e_idx = m->cell_cells_idx;
+  ma->cell_cells_e = m->cell_cells_lst;
+
+  if (ma->cell_cells_idx != NULL) {
+    CS_REALLOC_HD(ma->cell_cells_idx, n_cells+1, cs_lnum_t, alloc_mode);
+    CS_REALLOC_HD(ma->cell_cells, ma->cell_cells_idx[n_cells], cs_lnum_t,
+                  alloc_mode);
+  }
+
+  if (ma->cell_i_faces != NULL) {
+    CS_REALLOC_HD(ma->cell_i_faces, ma->cell_cells_idx[n_cells], cs_lnum_t,
+                  alloc_mode);
+  }
+  if (ma->cell_i_faces_sgn != NULL) {
+    CS_REALLOC_HD(ma->cell_i_faces_sgn, ma->cell_cells_idx[n_cells], short int,
+                  alloc_mode);
+  }
+
+  {
+    CS_REALLOC_HD(ma->cell_b_faces_idx, n_cells, cs_lnum_t, alloc_mode);
+    CS_REALLOC_HD(ma->cell_b_faces, ma->cell_b_faces_idx[n_cells], cs_lnum_t,
+                  alloc_mode);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

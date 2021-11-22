@@ -597,5 +597,79 @@ cs_preprocess_mesh_update_fortran(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map some mesh arrays for use on device.
+ *
+ * More elements may be mapped dependin on which arrays are used in
+ * accelerated algorithms.
+ *
+ * \param[in]  alloc_mode  chosen allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_preprocess_mesh_update_device(cs_alloc_mode_t  alloc_mode)
+{
+  cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_b_cells = m->n_b_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  /* Mesh structures
+     --------------- */
+
+  {
+    CS_REALLOC_HD(m->i_face_cells, n_i_faces, cs_lnum_2_t, alloc_mode);
+    CS_REALLOC_HD(m->b_face_cells, n_b_faces, cs_lnum_t, alloc_mode);
+
+    if (m->b_cells != NULL)
+      CS_REALLOC_HD(m->b_cells, n_b_cells, cs_lnum_t, alloc_mode);
+  }
+
+  if (m->cell_cells_idx != NULL) {
+    CS_REALLOC_HD(m->cell_cells_idx, n_cells+1, cs_lnum_t, alloc_mode);
+    CS_REALLOC_HD(m->cell_cells_lst, m->cell_cells_idx[n_cells], cs_lnum_t,
+                  alloc_mode);
+  }
+
+  /* Additional adjacencies
+     ---------------------- */
+
+  cs_mesh_adjacencies_update_device(alloc_mode);
+
+  /* Mesh quantities
+     --------------- */
+
+  {
+    if (mq->cell_cen != NULL)
+      CS_REALLOC_HD(mq->cell_cen, n_cells_ext*3, cs_real_t, alloc_mode);
+
+    if (mq->b_face_normal != NULL)
+      CS_REALLOC_HD(mq->b_face_normal, n_b_faces*3, cs_real_t, alloc_mode);
+
+    if (mq->i_face_cog != NULL)
+      CS_REALLOC_HD(mq->i_face_cog, n_i_faces*3, cs_real_t, alloc_mode);
+    if (mq->b_face_cog != NULL)
+      CS_REALLOC_HD(mq->b_face_cog, n_b_faces*3, cs_real_t, alloc_mode);
+
+    if (mq->b_face_surf != NULL)
+      CS_REALLOC_HD(mq->b_face_surf, n_b_faces, cs_real_t, alloc_mode);
+
+    if (mq->diipb != NULL)
+      CS_REALLOC_HD(mq->diipb, n_b_faces*3, cs_real_t, alloc_mode);
+
+    if (mq->b_dist != NULL)
+      CS_REALLOC_HD(mq->b_dist, n_b_faces, cs_real_t, alloc_mode);
+
+    if (mq->weight != NULL)
+      CS_REALLOC_HD(mq->weight, n_i_faces, cs_real_t, alloc_mode);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

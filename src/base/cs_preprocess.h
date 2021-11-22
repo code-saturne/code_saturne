@@ -35,6 +35,7 @@
 
 #include "cs_halo.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
@@ -108,6 +109,20 @@ cs_preprocess_mesh_selected_b_faces_ignore(cs_mesh_t             *m,
 
 void
 cs_preprocess_mesh_update_fortran(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map some mesh arrays for use on device.
+ *
+ * More elements may be mapped dependin on which arrays are used in
+ * accelerated algorithms.
+ *
+ * \param[in]  alloc_mode  chosen allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_preprocess_mesh_update_device(cs_alloc_mode_t  alloc_mode);
 
 /*----------------------------------------------------------------------------*/
 

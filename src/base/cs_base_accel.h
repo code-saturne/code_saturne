@@ -71,6 +71,9 @@ _ptr = (_type *) cs_malloc_hd(_mode, _ni, sizeof(_type), \
  * This macro calls cs_realloc_hd(), automatically setting the
  * allocated variable name and source file name and line arguments.
  *
+ * If the allocation parameters are unchanged, no actual reallocation
+ * occurs.
+ *
  * parameters:
  *   _ptr  <->  pointer to allocated memory.
  *   _ni   <-- number of items.
@@ -79,7 +82,7 @@ _ptr = (_type *) cs_malloc_hd(_mode, _ni, sizeof(_type), \
  */
 
 #define CS_REALLOC_HD(_ptr, _ni, _type, _mode) \
-_ptr = (_type *) cs_realloc_hd(_ptr, _ni, sizeof(_type), \
+_ptr = (_type *) cs_realloc_hd(_ptr, _mode, _ni, sizeof(_type), \
                                #_ptr, __FILE__, __LINE__)
 
 /*
@@ -232,6 +235,9 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
  *
  * If separate pointers are used on the host and device,
  * the host pointer should be used with this function.
+ *
+ * If the allocation parameters are unchanged, no actual reallocation
+ * occurs.
  *
  * \param [in]  ptr        pointer to previously allocated memory
  * \param [in]  mode       allocation mode
@@ -526,12 +532,12 @@ cs_set_alloc_mode(void             **host_ptr,
 #if defined(HAVE_ACCEL)
 
 void
-cs_sync_h2d(void  *ptr);
+cs_sync_h2d(const void  *ptr);
 
 #else
 
 static inline void
-cs_sync_h2d(void  *ptr)
+cs_sync_h2d(const void  *ptr)
 {
   CS_UNUSED(ptr);
 }

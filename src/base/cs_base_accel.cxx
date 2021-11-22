@@ -268,6 +268,9 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
  * If separate pointers are used on the host and device,
  * the host pointer should be used with this function.
  *
+ * If the allocation parameters are unchanged, no actual reallocation
+ * occurs.
+ *
  * \param [in]  ptr        pointer to previously allocated memory
  * \param [in]  mode       allocation mode
  * \param [in]  ni         number of elements
@@ -314,14 +317,14 @@ cs_realloc_hd(void            *ptr,
     me = _hd_alloc_map[ptr];
   }
 
-  if (new_size == me.size) {
+  if (new_size == me.size && mode == me.mode) {
     if (me.host_ptr != NULL)
       return me.host_ptr;
     else
       return me.device_ptr;
   }
 
-  if (   me.mode <= CS_ALLOC_HOST
+  if (   me.mode <= CS_ALLOC_HOST_DEVICE
       && me.mode == mode) {
     me.host_ptr = bft_mem_realloc(me.host_ptr, ni, size,
                                   var_name, file_name, line_num);
@@ -686,7 +689,7 @@ cs_set_alloc_mode(void             **host_ptr,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sync_h2d(void  *ptr)
+cs_sync_h2d(const void  *ptr)
 {
   if (_hd_alloc_map.count(ptr) == 0)
     return;

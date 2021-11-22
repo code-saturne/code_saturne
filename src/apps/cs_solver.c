@@ -328,6 +328,10 @@ _run(void)
   cs_preprocess_mesh(halo_type);
   cs_mesh_adjacencies_initialize();
 
+#if defined(HAVE_ACCEL)
+  cs_preprocess_mesh_update_device(CS_ALLOC_HOST_DEVICE_SHARED);
+#endif
+
   /* Initialization for turbomachinery computations */
 
   cs_turbomachinery_initialize();

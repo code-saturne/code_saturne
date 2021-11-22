@@ -9,7 +9,8 @@ mkdir -p $RMBDIR || exit 1
 
 cd $PREFIX
 
-for file in src/*/*.[ch] src/*/*.f90 src/*/*.[ch]xx tests/*.c build-aux/*.py \
+for file in src/*/*.[ch] src/*/*.f90 src/*/*.[ch]xx src/*/*.cu \
+            tests/*.c build-aux/*.py \
             gui/*/*.py bin/*.py bin/studymanager/*py bin/*.in bin/runcase* \
             libple/*/*.[ch] preprocessor/*/*.[ch] \
             NEWS.md

@@ -1105,6 +1105,12 @@ _update_mesh(bool     restart_mode,
 
   cs_preprocess_mesh_update_fortran();
 
+  /* Update mapping for accelerated devices */
+
+#if defined(HAVE_ACCEL)
+  cs_preprocess_mesh_update_device(CS_ALLOC_HOST_DEVICE_SHARED);
+#endif
+
   /* Update rotor cells flag array in case of parallelism and/or periodicity */
 
   if (cs_glob_mesh->halo != NULL) {
