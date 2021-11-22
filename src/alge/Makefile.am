@@ -30,6 +30,10 @@ else
   CPPFLAGS_PLE = $(PLE_CPPFLAGS)
 endif
 
+# Libtool modified for CUDA
+
+LIBTOOL_CUDA = $(SHELL) $(top_builddir)/libtool_cuda
+
 # Main part
 
 AM_CPPFLAGS = \
@@ -99,6 +103,7 @@ cs_convection_diffusion.h \
 cs_divergence.h \
 cs_face_viscosity.h \
 cs_gradient.h \
+cs_gradient_priv.h \
 cs_grid.h \
 cs_matrix.h \
 cs_matrix_building.h \
@@ -172,8 +177,12 @@ cs_sles_it.c \
 cs_sles_it_priv.c \
 cs_sles_pc.c
 libcsalge_la_LDFLAGS = -no-undefined
-
 libcsalge_la_LIBADD =
+
+if HAVE_CUDA
+libcsalge_la_SOURCES += \
+cs_gradient_cuda.cu
+endif
 
 noinst_LTLIBRARIES += libcsalge_extension.la
 libcsalge_la_LIBADD += libcsalge_extension.la
@@ -213,3 +222,6 @@ endif
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
+
+.cu.lo:
+	$(LIBTOOL_CUDA) --tag=CC --mode=compile $(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) -c -o $@ $<

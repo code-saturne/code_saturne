@@ -50,17 +50,18 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_bad_cells_regularisation.h"
 #include "cs_blas.h"
 #include "cs_cell_to_vertex.h"
+#include "cs_ext_neighborhood.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_internal_coupling.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_ext_neighborhood.h"
 #include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
@@ -68,14 +69,13 @@
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
-#include "cs_bad_cells_regularisation.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_gradient.h"
-#include "cs_math.h"
+#include "cs_gradient_priv.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -108,31 +108,6 @@ BEGIN_C_DECLS
  * Local type definitions
  *============================================================================*/
 
-/* Type for symmetric least-squares covariance matrices
-   as they are adimensional, single-precision should be usable here */
-
-typedef cs_real_t  cs_cocg_t;
-typedef cs_real_t  cs_cocg_6_t[6];
-typedef cs_real_t  cs_cocg_33_t[3][3];
-
-/* Basic per gradient computation options and logging */
-/*----------------------------------------------------*/
-
-typedef struct _cs_gradient_info_t {
-
-  char                *name;               /* System name */
-  cs_gradient_type_t   type;               /* Gradient type */
-
-  unsigned             n_calls;            /* Number of times system solved */
-
-  int                  n_iter_min;         /* Minimum number of iterations */
-  int                  n_iter_max;         /* Minimum number of iterations */
-  unsigned long        n_iter_tot;         /* Total number of iterations */
-
-  cs_timer_counter_t   t_tot;              /* Total time used */
-
-} cs_gradient_info_t;
-
 /* Structure associated to gradient quantities management */
 
 typedef struct {
@@ -151,6 +126,24 @@ typedef struct {
                                       squares gradients with ext. neighbors */
 
 } cs_gradient_quantities_t;
+
+/* Basic per gradient computation options and logging */
+/*----------------------------------------------------*/
+
+typedef struct _cs_gradient_info_t {
+
+  char                *name;               /* System name */
+  cs_gradient_type_t   type;               /* Gradient type */
+
+  unsigned             n_calls;            /* Number of times system solved */
+
+  int                  n_iter_min;         /* Minimum number of iterations */
+  int                  n_iter_max;         /* Minimum number of iterations */
+  unsigned long        n_iter_tot;         /* Total number of iterations */
+
+  cs_timer_counter_t   t_tot;              /* Total time used */
+
+} cs_gradient_info_t;
 
 /*============================================================================
  *  Global variables
@@ -273,12 +266,14 @@ _math_6_inv_cramer_sym_in_place(cs_cocg_t  a[6])
 /*!
  * \brief  Return a gradient quantities structure, adding one if needed
  *
+ * \param[in]  id  id of structure to return
+
  * \return  pointer to gradient quantities structure
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_gradient_quantities_t  *
-_gradient_quantities_get(int id)
+_gradient_quantities_get(int  id)
 {
   assert(id >= 0);
 
@@ -2240,6 +2235,8 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
  * parameters:
  *   m          <--  mesh
  *   halo_type  <--  halo type
+ *   accel      <--  use accelerator device (if true, cocg and cocgb
+ *                   pointers returned are device pointers)
  *   fvq        <--  mesh quantities
  *   ce         <--  coupling entity
  *   cocg       -->  coupling coeffiences (covariance matrices)
@@ -2249,6 +2246,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 static void
 _get_cell_cocg_lsq(const cs_mesh_t               *m,
                    cs_halo_type_t                 halo_type,
+                   bool                           accel,
                    const cs_mesh_quantities_t    *fvq,
                    const cs_internal_coupling_t  *ce,
                    cs_cocg_6_t                   *restrict *cocg,
@@ -2257,20 +2255,50 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
   int gq_id = (ce == NULL) ? 0 : ce->id+1;
   cs_gradient_quantities_t  *gq = _gradient_quantities_get(gq_id);
 
-  cs_cocg_6_t *_cocg = NULL;
+  cs_cocg_6_t *_cocg = NULL, *_cocgb = NULL;
 
   bool extended = (   halo_type == CS_HALO_EXTENDED
                    && m->cell_cells_idx) ? true : false;
 
-  if (extended)
+  if (extended) {
     _cocg = gq->cocg_lsq_ext;
-  else
+    _cocgb = gq->cocgb_s_lsq_ext;
+  }
+  else {
     _cocg = gq->cocg_lsq;
+    _cocgb = gq->cocgb_s_lsq;
+  }
 
-  /* Compute if not present yet */
+  /* Compute if not present yet.
+   *
+   * TODO: when using accelerators, this imples a first computation will be
+   *       run on the host. This will usually be amortized, but could be
+   *       further improved. */
 
   if (_cocg == NULL)
     _compute_cell_cocg_lsq(m, extended, fvq, ce, gq);
+
+  /* If used on acclelerator, ensure arrays are available there */
+
+  if (accel) {
+
+    cs_alloc_mode_t alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+
+    void *_cocg_p = _cocg, *_cocgb_p = _cocgb;
+
+    cs_set_alloc_mode(&_cocg_p, alloc_mode);
+    cs_set_alloc_mode(&_cocgb_p, alloc_mode);
+
+    if (extended) {
+      gq->cocg_lsq_ext = _cocg_p;
+      gq->cocgb_s_lsq_ext = _cocgb_p;
+    }
+    else {
+      gq->cocg_lsq = _cocg_p;
+      gq->cocgb_s_lsq = _cocgb_p;
+    }
+
+  }
 
   /* Set pointers */
 
@@ -2284,6 +2312,19 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
       *cocgb = gq->cocgb_s_lsq_ext;
     else
       *cocgb = gq->cocgb_s_lsq;
+  }
+
+  /* If used on acclelerator, copy/prefetch values and switch to
+     device pointers */
+
+  if (accel) {
+    cs_sync_h2d(*cocg);
+    *cocg = cs_get_device_ptr(*cocg);
+
+    if (cocgb != NULL) {
+      cs_sync_h2d(*cocgb);
+      *cocgb = cs_get_device_ptr(*cocgb);
+    }
   }
 }
 
@@ -2366,14 +2407,45 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   cs_cocg_6_t  *restrict cocgb = NULL;
   cs_cocg_6_t  *restrict cocg = NULL;
 
+#if defined(HAVE_CUDA)
+  bool accel = (cpl == NULL && hyd_p_flag == 0) ? true : false;
+#else
+  bool accel = false;
+#endif
+
   _get_cell_cocg_lsq(m,
                      halo_type,
+                     accel,
                      fvq,
                      cpl,
                      &cocg,
                      &cocgb);
 
-  /*Additional terms due to porosity */
+#if defined(HAVE_CUDA)
+  if (accel) {
+
+    cs_gradient_scalar_lsq_cuda(m,
+                                fvq,
+                                halo_type,
+                                recompute_cocg,
+                                hyd_p_flag,
+                                inc,
+                                f_ext,
+                                coefap,
+                                coefbp,
+                                pvar,
+                                c_weight,
+                                cocg,
+                                cocgb,
+                                grad);
+
+    return;
+
+  }
+
+#endif
+
+  /* Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
   cs_real_t *i_poro_duq_0;
@@ -6088,7 +6160,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   cs_cocg_6_t  *restrict cocgb_s = NULL;
   cs_cocg_6_t *restrict cocg = NULL;
-  _get_cell_cocg_lsq(m, halo_type, fvq, cpl, &cocg, &cocgb_s);
+  _get_cell_cocg_lsq(m, halo_type, false, fvq, cpl, &cocg, &cocgb_s);
 
   cs_real_33_t *rhs;
 
@@ -6741,7 +6813,7 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
 
   cs_cocg_6_t *restrict cocgb_s = NULL;
   cs_cocg_6_t *restrict cocg = NULL;
-  _get_cell_cocg_lsq(m, halo_type, fvq, NULL, &cocg, &cocgb_s);
+  _get_cell_cocg_lsq(m, halo_type, false, fvq, NULL, &cocg, &cocgb_s);
 
   cs_real_63_t *rhs;
 
