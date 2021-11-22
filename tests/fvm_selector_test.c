@@ -453,7 +453,7 @@ test_3 (void)
   int n_gc;
   int gc[205];
 
-  int criteria_id = fvm_selector_get_gc_list(s, criteria, &n_gc, gc);
+  fvm_selector_get_gc_list(s, criteria, &n_gc, gc);
 
   bft_printf("groups selection:\n");
   for (ii = 0; ii < n_gc; ii++)

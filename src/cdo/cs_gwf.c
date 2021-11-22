@@ -1562,6 +1562,10 @@ _mtpf_updates(const cs_mesh_t             *mesh,
               bool                         cur2prev,
               cs_gwf_miscible_two_phase_t          *mc)
 {
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+  CS_UNUSED(quant);
+
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw != NULL && mc != NULL);
 

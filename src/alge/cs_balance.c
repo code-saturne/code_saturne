@@ -685,6 +685,8 @@ cs_balance_tensor(int                 idtvar,
                   const int           icvfli[],
                   cs_real_6_t         smbrp[])
 {
+  CS_UNUSED(icvfli);
+
   /* Local variables */
   int iconvp = var_cal_opt->iconv;
   int idiffp = var_cal_opt->idiff;

@@ -373,6 +373,8 @@ cs_thermal_table_set(const char                        *material,
       _cs_eos_create(cs_glob_thermal_table->method,
                      _reference);
     }
+#else
+    CS_UNUSED(reference);
 #endif
   }
   cs_glob_thermal_table->thermo_plane = thermo_plane;

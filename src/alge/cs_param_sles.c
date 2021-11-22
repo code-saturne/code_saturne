@@ -397,7 +397,10 @@ _petsc_pchypre_hook(const char              *prefix,
                     bool                     is_symm,
                     PC                       pc)
 {
+  CS_UNUSED(is_symm);
+
   /* Sanity checks */
+
   assert(prefix != NULL);
   assert(slesp != NULL);
   assert(slesp->precond == CS_PARAM_PRECOND_AMG);
