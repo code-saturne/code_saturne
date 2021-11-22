@@ -419,6 +419,51 @@ _initial_rhsv(cs_lnum_t         size,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Synchronize of copy a cs_real_t type array from the host to a device.
+ *
+ * parameters:
+ *   val_h          <-- pointer to host data
+ *   n_vals         <-- number of data values
+ *   device_id      <-- associated device id
+ *   stream         <-- associated stream (for async prefetch only)
+ *   val_d          --> matching pointer on device
+ *   buf_d          --> matching allocation pointer on device (should be freed
+ *                      after use if non-NULL)
+ *----------------------------------------------------------------------------*/
+
+static void
+_sync_or_copy_real_h2d(const  cs_real_t   *val_h,
+                       cs_lnum_t           n_vals,
+                       int                 device_id,
+                       cudaStream_t        stream,
+                       const cs_real_t   **val_d,
+                       void              **buf_d)
+{
+  const cs_real_t  *_val_d = NULL;
+  void             *_buf_d = NULL;
+
+  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(val_h);
+  size_t size = n_vals * sizeof(cs_real_t);
+
+  if (alloc_mode == CS_ALLOC_HOST) {
+    CS_CUDA_CHECK(cudaMalloc(&_val_d, size));
+    cs_cuda_copy_h2d(_buf_d, val_h, size);
+    _val_d = (const cs_real_t *)_buf_d;
+  }
+  else {
+    _val_d = (const cs_real_t *)cs_get_device_ptr((void *)val_h);
+
+    if (alloc_mode == CS_ALLOC_HOST_DEVICE_SHARED)
+      cudaMemPrefetchAsync(val_h, size, device_id, stream);
+    else
+      cs_sync_h2d(val_h);
+  }
+
+  *val_d = _val_d;
+  *buf_d = _buf_d;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -473,6 +518,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
   const cs_lnum_t n_cells     = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_b_faces   = m->n_b_faces;
 
   static bool init_cocg = true;  /* A copy from CPU would suffice, or better,
                                     a separate device computation. */
@@ -487,26 +533,16 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   cs_real_4_t *rhsv;
   CS_CUDA_CHECK(cudaMalloc(&rhsv, n_cells_ext * sizeof(cs_real_4_t)));
 
-  void *_pvar_d = NULL;
-  const cs_real_t *pvar_d = NULL;
+  void *_pvar_d = NULL, *_coefa_d = NULL, *_coefb_d = NULL;
+  const cs_real_t *pvar_d = NULL, *coefa_d = NULL, *coefb_d = NULL;
 
-  if (cs_check_device_ptr(pvar) == CS_ALLOC_HOST) {
-    size_t size = n_cells_ext * sizeof(cs_real_t);
-    CS_CUDA_CHECK(cudaMalloc(&_pvar_d, size));
-    cs_cuda_copy_h2d(_pvar_d, pvar, size);
-    pvar_d = (const cs_real_t *)_pvar_d;
-  }
-  else {
-    cs_sync_h2d(pvar);
-    pvar_d = (const cs_real_t *)cs_get_device_ptr((void *)pvar);
-    cs_sync_h2d(pvar_d);
-  }
+  _sync_or_copy_real_h2d(pvar, n_cells_ext, device_id, stream1,
+                         &pvar_d, &_pvar_d);
 
-  size_t size  = m->n_b_faces * sizeof(cs_real_t);
-  size_t size3 = n_cells_ext * sizeof(cs_real_3_t);
-  cudaMemPrefetchAsync(coefap, size, device_id, stream1);
-  cudaMemPrefetchAsync(coefbp, size, device_id, stream1);
-  cudaMemPrefetchAsync(grad, size3, device_id, stream1);
+  _sync_or_copy_real_h2d(coefap, n_b_faces, device_id, stream1,
+                         &coefa_d, &_coefa_d);
+  _sync_or_copy_real_h2d(coefbp, n_b_faces, device_id, stream1,
+                         &coefb_d, &_coefb_d);
 
   unsigned int blocksize = 256;
   unsigned int gridsize_b
@@ -555,26 +591,9 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   _initial_rhsv<<<gridsize_ext, blocksize, 0, stream>>>
     (n_cells_ext, rhsv, pvar_d);
 
-  /*Additional terms due to porosity */
-  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
+  /* External forces not handled yet */
 
-  cs_real_t *i_poro_duq_0;
-  cs_real_t *i_poro_duq_1;
-  cs_real_t *b_poro_duq;
-  cs_real_t  _f_ext = 0.;
-
-  int is_porous = 0;
-  if (f_i_poro_duq_0 != NULL) {
-    is_porous    = 1;
-    i_poro_duq_0 = f_i_poro_duq_0->val;
-    i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
-    b_poro_duq   = cs_field_by_name("b_poro_duq")->val;
-  }
-  else {
-    i_poro_duq_0 = &_f_ext;
-    i_poro_duq_1 = &_f_ext;
-    b_poro_duq   = &_f_ext;
-  }
+  CS_NO_WARN_IF_UNUSED(f_ext);
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
   /*---------------------------------------------------------------------*/
@@ -612,8 +631,8 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
        b_face_surf,
        b_dist,
        diipb,
-       coefap,
-       coefbp,
+       coefa_d,
+       coefb_d,
        cocg,
        rhsv);
 
@@ -639,8 +658,8 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
          b_face_surf,
          b_dist,
          diipb,
-         coefap,
-         coefbp,
+         coefa_d,
+         coefb_d,
          cocg,
          rhsv);
 
@@ -660,8 +679,8 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
          b_face_surf,
          b_dist,
          diipb,
-         coefap,
-         coefbp,
+         coefa_d,
+         coefb_d,
          rhsv);
 
     _compute_rhsv_lsq_s_i_face<<<gridsize, blocksize, 0, stream>>>
@@ -707,6 +726,8 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   _compute_gradient_lsq_s<<<gridsize, blocksize, 0, stream>>>
     (n_cells, grad, cocg, rhsv);
 
+  cudaStreamSynchronize(stream);
+
   /* Sync to host */
   if (_grad_d != NULL) {
     size_t size = n_cells_ext * sizeof(cs_real_t) * 3;
@@ -715,15 +736,14 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   else
     cs_sync_d2h(grad);
 
-  cudaStreamSynchronize(stream);
-
   if (_pvar_d != NULL)
     CS_CUDA_CHECK(cudaFree(_pvar_d));
+  if (_coefa_d != NULL)
+    CS_CUDA_CHECK(cudaFree(_coefa_d));
+  if (_coefb_d != NULL)
+    CS_CUDA_CHECK(cudaFree(_coefb_d));
 
   CS_CUDA_CHECK(cudaFree(rhsv));
-
-  /* Sync to CPU*/
-  cudaMemPrefetchAsync(grad, size3, cudaCpuDeviceId);
 
   /* Synchronize halos */
 
