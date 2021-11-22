@@ -83,7 +83,7 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Local Macro definitions
+ * Local macro definitions
  *============================================================================*/
 
 #define CS_EQUATION_DBG  0
@@ -110,6 +110,18 @@ static cs_equation_t  **_equations = NULL;
 static const char _err_empty_eq[] =
   N_(" %s: Stop setting an empty cs_equation_t structure.\n"
      " Please check your settings.\n");
+
+/*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+solve_steady_state_cdo_equation(const char       *eqname);
+
+void
+solve_cdo_equation(bool         cur2prev,
+                   const char  *eqname);
 
 /*============================================================================
  * Private function prototypes
@@ -2704,8 +2716,9 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
     cs_timer_stats_start(eq->main_ts_id);
 
   /* Allocate, build and solve the algebraic system:
-     The linear solver is called inside and the field value is updated inside
-  */
+   * The linear solver is called inside and the field value is updated inside
+   */
+
   eq->solve_steady_state(false, /* current to previous */
                          mesh,
                          eq->field_id,
@@ -2741,10 +2754,86 @@ cs_equation_solve(bool                        cur2prev,
     cs_timer_stats_start(eq->main_ts_id);
 
   /* Allocate, build and solve the algebraic system:
+   * The linear solver is called inside and the field value is updated inside
+   */
+
+  eq->solve(cur2prev,
+            mesh,
+            eq->field_id,
+            eq->param,
+            eq->builder,
+            eq->scheme_context);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and then solve the linear system for a steady-state equation.
+ *         This is wrapper for the FORTRAN interface (limitation of the
+ *         parameters to simple types).
+ *
+ * \param[in] eqname     name of the equation to solve
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_solve_steady_state_wrapper(const char                 *eqname)
+{
+  cs_equation_t  *eq = cs_equation_by_name(eqname);
+
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
+  assert(cs_equation_uses_new_mechanism(eq));
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  /* Allocate, build and solve the algebraic system:
+     The linear solver is called inside and the field value is updated inside
+  */
+
+  eq->solve_steady_state(false, /* current to previous */
+                         cs_glob_mesh,
+                         eq->field_id,
+                         eq->param,
+                         eq->builder,
+                         eq->scheme_context);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and then solve the linear system for an equation with an
+ *         unsteady term. This is wrapper for the FORTRAN interface (limitation
+ *         of the parameters to simple types)
+ *
+ * \param[in] cur2prev   true="current to previous" operation is performed
+ * \param[in] eqname     name of the equation to solve
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_solve_wrapper(bool                        cur2prev,
+                          const char                 *eqname)
+{
+  cs_equation_t  *eq = cs_equation_by_name(eqname);
+
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
+  assert(cs_equation_uses_new_mechanism(eq));
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  /* Allocate, build and solve the algebraic system:
      The linear solver is called inside and the field value is updated inside
   */
   eq->solve(cur2prev,
-            mesh,
+            cs_glob_mesh,
             eq->field_id,
             eq->param,
             eq->builder,

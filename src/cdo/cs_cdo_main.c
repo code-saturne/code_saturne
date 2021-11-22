@@ -195,18 +195,26 @@ _compute_steady_user_equations(cs_domain_t   *domain)
 
       if (type == CS_EQUATION_TYPE_USER) {
 
-        if (cs_equation_uses_new_mechanism(eq))
-          cs_equation_solve_steady_state(domain->mesh, eq);
+        cs_flag_t  eq_flag = cs_equation_get_flag(eq);
 
-        else { /* Deprecated */
+        if ((eq_flag & CS_EQUATION_USER_TRIGGERED) == 0) {
 
-          /* Define the algebraic system */
-          cs_equation_build_system(domain->mesh, eq);
+          if (cs_equation_uses_new_mechanism(eq))
+            cs_equation_solve_steady_state(domain->mesh, eq);
 
-          /* Solve the algebraic system */
-          cs_equation_solve_deprecated(eq);
+          else { /* Deprecated */
 
-        }
+            /* Define the algebraic system */
+
+            cs_equation_build_system(domain->mesh, eq);
+
+            /* Solve the algebraic system */
+
+            cs_equation_solve_deprecated(eq);
+
+          }
+
+        } /* Not triggered by user */
 
       } /* User-defined equation */
 
@@ -243,20 +251,30 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 
         if (type == CS_EQUATION_TYPE_USER) {
 
-          if (cs_equation_uses_new_mechanism(eq))
-            /* By default, a current to previous operation is
-               performed */
-            cs_equation_solve(true, domain->mesh, eq);
+          cs_flag_t  eq_flag = cs_equation_get_flag(eq);
 
-          else { /* Deprecated */
+          if ((eq_flag & CS_EQUATION_USER_TRIGGERED) == 0) {
 
-            /* Define the algebraic system */
-            cs_equation_build_system(domain->mesh, eq);
+            if (cs_equation_uses_new_mechanism(eq))
 
-            /* Solve domain */
-            cs_equation_solve_deprecated(eq);
+              /* By default, a current to previous operation is
+                 performed */
 
-          }
+              cs_equation_solve(true, domain->mesh, eq);
+
+            else { /* Deprecated */
+
+              /* Define the algebraic system */
+
+              cs_equation_build_system(domain->mesh, eq);
+
+              /* Solve domain */
+
+              cs_equation_solve_deprecated(eq);
+
+            }
+
+          } /* Not triggered by user */
 
         } /* User-defined equation */
 

@@ -82,15 +82,17 @@ BEGIN_C_DECLS
  *
  */
 
-#define CS_EQUATION_LOCKED        (1 <<  0)  /*   1 */
-#define CS_EQUATION_UNSTEADY      (1 <<  1)  /*   2 */
-#define CS_EQUATION_CONVECTION    (1 <<  2)  /*   4 */
-#define CS_EQUATION_DIFFUSION     (1 <<  3)  /*   8 */
-#define CS_EQUATION_CURLCURL      (1 <<  4)  /*  16 */
-#define CS_EQUATION_GRADDIV       (1 <<  5)  /*  32 */
-#define CS_EQUATION_REACTION      (1 <<  6)  /*  64 */
-#define CS_EQUATION_FORCE_VALUES  (1 <<  7)  /* 128 */
-#define CS_EQUATION_USER_HOOK     (1 <<  8)  /* 256 */
+#define CS_EQUATION_LOCKED         (1 <<  0)  /*   1 */
+#define CS_EQUATION_UNSTEADY       (1 <<  1)  /*   2 */
+#define CS_EQUATION_CONVECTION     (1 <<  2)  /*   4 */
+#define CS_EQUATION_DIFFUSION      (1 <<  3)  /*   8 */
+#define CS_EQUATION_CURLCURL       (1 <<  4)  /*  16 */
+#define CS_EQUATION_GRADDIV        (1 <<  5)  /*  32 */
+#define CS_EQUATION_REACTION       (1 <<  6)  /*  64 */
+#define CS_EQUATION_FORCE_VALUES   (1 <<  7)  /* 128 */
+#define CS_EQUATION_USER_HOOK      (1 <<  8)  /* 256 */
+#define CS_EQUATION_USER_TRIGGERED (1 <<  9)  /* 512 */
+
 
 /*!
  * @}
@@ -167,8 +169,8 @@ BEGIN_C_DECLS
  * Equation related to the solidification module
  *
  * \var CS_EQUATION_TYPE_USER
- * User-defined equation
- *
+ * User-defined equation (no interaction with energy and momentum equations)
+ * Resolution is performed after all predefined equations have been solved.
  */
 
 typedef enum {
