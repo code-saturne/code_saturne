@@ -75,8 +75,7 @@ if (almax.le.0.d0) then
   endif
 endif
 
- 1000 format(                                                           &
-'                                                             '  )
+ 1000 format('')
  1100 format(                                                           &
 '       ALMAX  = ', E14.5,    ' (Characteristic length       )'  )
  1101 format(                                                           &

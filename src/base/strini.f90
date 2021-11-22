@@ -353,115 +353,115 @@ write(nfecra,3000)
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
  2000 format( &
-    /,'COUPLING MODE FOR STRUCTURES NOT ACTIVATED ',/,&
+    /,'COUPLING MODE FOR STRUCTURES NOT ACTIVATED'             ,/,&
       '              NBSTRU = ',I10                            ,/)
  2001 format( &
-      '            NALIMX USELESS AND SET TO 1                ',/)
+      '            NALIMX USELESS AND SET TO 1'                ,/)
  2002 format( &
-    /,'CODE_ASTER COUPLING MODE NOT ACTIVATED     ',/,&
+    /,'CODE_ASTER COUPLING MODE NOT ACTIVATED'     ,/,&
       '              NBASTE = ',I10                            ,/)
  2010 format( &
-    /,'COUPLING MODE FOR STRUCTURES ACTIVATED     ',/,&
-      '              WITH NBSTRU = ',I10   ,' STRUCTURE(S)    ',/,&
-      '                                                       ',/,&
-      '            NEWMARK COEFFICIENTS:                      ',/,&
+    /,'COUPLING MODE FOR STRUCTURES ACTIVATED'     ,/,&
+      '              WITH NBSTRU = ',I10   ,' STRUCTURE(S)'    ,/,&
+      ''                                                       ,/,&
+      '            NEWMARK COEFFICIENTS:'                      ,/,&
       '              ALPNMK = ',E12.4                          ,/,&
       '              BETNMK = ',E12.4                          ,/,&
       '              GAMNMK = ',E12.4                          ,/,&
-      '                                                       ',/,&
-      '            MONITORING FILES FOR STRUCTURES:           ',/,&
-      '                 IHISTR = ',I4,' ( 1 : activated)      ',/)
+      ''                                                       ,/,&
+      '            MONITORING FILES FOR STRUCTURES:'           ,/,&
+      '                 IHISTR = ',I4,' ( 1 : activated)'      ,/)
  2012 format( &
-    /,'CODE_ASTER COUPLING MODE ACTIVATED         ',/,&
-      '              WITH NBASTE = ',I10   ,' STRUCTURE(S)    ',/)
+    /,'CODE_ASTER COUPLING MODE ACTIVATED'         ,/,&
+      '              WITH NBASTE = ',I10   ,' STRUCTURE(S)'    ,/)
  2020 format( &
-    /,'EXPLICIT SCHEME FOR COUPLING ACTIVATED     ',/,&
-      '                                                       ',/,&
-      '            SCHEME COEFFICIENTS:                       ',/,&
+    /,'EXPLICIT SCHEME FOR COUPLING ACTIVATED'     ,/,&
+      ''                                                       ,/,&
+      '            SCHEME COEFFICIENTS:'                       ,/,&
       '              AEXXST = ',E12.4                          ,/,&
       '              BEXXST = ',E12.4                          ,/,&
       '              CFOPRE = ',E12.4                          ,/)
- 2030 format(                                                           &
-    /,'IMPLICIT SCHEME FOR COUPING ACTIVATED      ',/,&
-      '                                                       ',/,&
+ 2030 format( &
+    /,'IMPLICIT SCHEME FOR COUPING ACTIVATED'                  ,/,&
+      ''                                                       ,/,&
       '            NB OF MAX INNER ITERATIONS : ',I10          ,/,&
       '            CONVERGENCE THRESHOLD      : ',E12.4        ,/)
 
  3000 format( &
 '-------------------------------------------------------------',/)
  4000 format( &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE INTERNAL STRUCTURES SPECIFICATION ',/,&
-'@                                                            ',/,&
-'@    The number of defined structures is greater than the    ',/,&
-'@      allowed maximum NSTRMX:                               ',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN THE INTERNAL STRUCTURES SPECIFICATION' ,/,&
+'@'                                                            ,/,&
+'@    The number of defined structures is greater than the'    ,/,&
+'@      allowed maximum NSTRMX:'                               ,/,&
 '@      Number of defined structures: ',I10                    ,/,&
 '@      Number of allowed structures: ',I10                    ,/,&
-'@                                                            ',/,&
-'@    The calculation will not be run.                        ',/,&
-'@                                                            ',/,&
-'@    Decrease the number of structures                       ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@    The calculation will not be run.'                        ,/,&
+'@'                                                            ,/,&
+'@    Decrease the number of structures'                       ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  4001 format( &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE INTERNAL MOBILE STRUCTURES        ',/,&
-'@             SPECIFICATION                                  ',/,&
-'@                                                            ',/,&
-'@    The number of defined structures is different from the  ',/,&
-'@      previous calculation:                                 ',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN THE INTERNAL MOBILE STRUCTURES'        ,/,&
+'@             SPECIFICATION'                                  ,/,&
+'@'                                                            ,/,&
+'@    The number of defined structures is different from the'  ,/,&
+'@      previous calculation:'                                 ,/,&
 '@      Number of structures previous calculation: ',I10       ,/,&
 '@      Number of structures current  calculation: ',I10       ,/,&
-'@                                                            ',/,&
-'@    The calculation will not be run.                        ',/,&
-'@                                                            ',/,&
-'@    Verify the auxiliary restart file or the structures     ',/,&
-'@      specifications in usstru.                             ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@    The calculation will not be run.'                        ,/,&
+'@'                                                            ,/,&
+'@    Verify the auxiliary restart file or the structures'     ,/,&
+'@      specifications in usstru.'                             ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  4002 format( &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE EXTERNAL MOBILE STRUCTURES        ',/,&
-'@             SPECIFICATION (CODE_ASTER COUPLING)            ',/,&
-'@                                                            ',/,&
-'@    The number of defined structures is greater than the    ',/,&
-'@      allowed maximum NASTMX:                               ',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN THE EXTERNAL MOBILE STRUCTURES'        ,/,&
+'@             SPECIFICATION (CODE_ASTER COUPLING)'            ,/,&
+'@'                                                            ,/,&
+'@    The number of defined structures is greater than the'    ,/,&
+'@      allowed maximum NASTMX:'                               ,/,&
 '@      Number of defined structures: ',I10                    ,/,&
 '@      Number of allowed structures: ',I10                    ,/,&
-'@                                                            ',/,&
-'@    The calculation will not be run.                        ',/,&
-'@                                                            ',/,&
-'@    Decrease the number of structures                       ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@    The calculation will not be run.'                        ,/,&
+'@'                                                            ,/,&
+'@    Decrease the number of structures'                       ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
  4003 format( &
-'@                                                            ',/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ABORT IN THE EXTERNAL MOBILE STRUCTURES        ',/,&
-'@             SPECIFICATION (CODE_ASTER COUPLING)            ',/,&
-'@                                                            ',/,&
-'@    The number of defined structures is different from the  ',/,&
-'@      previous calculation:                                 ',/,&
+'@'                                                            ,/,&
+'@ @@ WARNING: ABORT IN THE EXTERNAL MOBILE STRUCTURES'        ,/,&
+'@             SPECIFICATION (CODE_ASTER COUPLING)'            ,/,&
+'@'                                                            ,/,&
+'@    The number of defined structures is different from the'  ,/,&
+'@      previous calculation:'                                 ,/,&
 '@      Number of structures previous calculation: ',I10       ,/,&
 '@      Number of structures current  calculation: ',I10       ,/,&
-'@                                                            ',/,&
-'@    The calculation will not be run.                        ',/,&
-'@                                                            ',/,&
-'@    Verify the auxiliary restart file or the structures     ',/,&
-'@      specifications in usstru.                             ',/,&
-'@                                                            ',/,&
+'@'                                                            ,/,&
+'@    The calculation will not be run.'                        ,/,&
+'@'                                                            ,/,&
+'@    Verify the auxiliary restart file or the structures'     ,/,&
+'@      specifications in usstru.'                             ,/,&
+'@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@'                                                            ,/)
 
 !----
 ! End

@@ -374,8 +374,7 @@ do f_id = 0, nfld - 1
 enddo
 
 write(nfecra,'(a)') line(1:max_line_width)
-write(nfecra,*) ' '
-write(nfecra,*) ' '
+write(nfecra,'(/)')
 
 deallocate(w1, w2)
 
