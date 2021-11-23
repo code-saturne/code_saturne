@@ -204,6 +204,12 @@ real(c_double), pointer, save:: xlon
 !> latitude of the domain origin
 real(c_double), pointer, save:: xlat
 
+!> x coordinate of the domain origin in Lambert-93
+real(c_double), pointer, save:: xl93
+
+!> y coordinate of the domain origin in Lambert-93
+real(c_double), pointer, save:: yl93
+
 ! 2.3 Data specific to the meteo profile above the domain
 !--------------------------------------------------------
 !> Number of vertical levels (cf. 1D radiative scheme
@@ -424,6 +430,7 @@ double precision, save:: zaero
     subroutine cs_f_atmo_get_pointers(ps,                               &
         syear, squant, shour, smin, ssec,                               &
         longitude, latitude,                                            &
+        x_l93, y_l93,                                                     &
         compute_z_ground, iatmst,                                       &
         sedimentation_model, deposition_model, nucleation_model,        &
         subgrid_model, distribution_model,                              &
@@ -443,6 +450,7 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: subgrid_model, distribution_model
       type(c_ptr), intent(out) :: syear, squant, shour, smin, ssec
       type(c_ptr), intent(out) :: longitude, latitude
+      type(c_ptr), intent(out) :: x_l93, y_l93
       type(c_ptr), intent(out) :: iaerosol, frozen_gas_chem
       type(c_ptr), intent(out) :: init_gas_with_lib, init_aero_with_lib
       type(c_ptr), intent(out) :: n_aero, n_sizebin, chem_with_photo
@@ -660,6 +668,7 @@ contains
     type(c_ptr) :: c_distribution_model
     type(c_ptr) :: c_syear, c_squant, c_shour, c_smin, c_ssec
     type(c_ptr) :: c_longitude, c_latitude
+    type(c_ptr) :: c_xl93, c_yl93
     type(c_ptr) :: c_modelaero, c_frozen_gas_chem, c_nlayer, c_nsize
     type(c_ptr) :: c_init_gas_with_lib, c_init_aero_with_lib, c_chem_with_photo
     type(c_ptr) :: c_imeteo
@@ -669,6 +678,7 @@ contains
     call cs_f_atmo_get_pointers(c_ps,             &
       c_syear, c_squant, c_shour, c_smin, c_ssec, &
       c_longitude, c_latitude,                    &
+      c_xl93, c_yl93,                             &
       c_compute_z_ground, c_iatmst,               &
       c_sedimentation_model, c_deposition_model,  &
       c_nucleation_model, c_subgrid_model,        &
@@ -690,6 +700,8 @@ contains
 
     call c_f_pointer(c_longitude, xlon)
     call c_f_pointer(c_latitude, xlat)
+    call c_f_pointer(c_xl93, xl93)
+    call c_f_pointer(c_yl93, yl93)
 
     call c_f_pointer(c_compute_z_ground, compute_z_ground)
     call c_f_pointer(c_iatmst, iatmst)

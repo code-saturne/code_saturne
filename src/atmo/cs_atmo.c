@@ -128,6 +128,8 @@ static cs_atmo_option_t  _atmo_option = {
   .ssec = -1.,
   .longitude = 1e12, // TODO use cs_math_big_r
   .latitude = 1e12,
+  .x_l93= 1e12,
+  .y_l93 = 1e12,
   .domain_orientation = 0.,
   .compute_z_ground = false,
   .open_bcs_treatment = 0,
@@ -246,6 +248,8 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **ssec,
                        cs_real_t              **longitude,
                        cs_real_t              **latitude,
+                       cs_real_t              **x_l93,
+                       cs_real_t              **y_l93,
                        bool                   **compute_z_ground,
                        int                    **open_bcs_treatment,
                        int                    **sedimentation_model,
@@ -391,6 +395,8 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **ssec,
                        cs_real_t              **longitude,
                        cs_real_t              **latitude,
+                       cs_real_t              **x_l93,
+                       cs_real_t              **y_l93,
                        bool                   **compute_z_ground,
                        int                    **open_bcs_treatment,
                        int                    **sedimentation_model,
@@ -423,6 +429,8 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *ssec      = &(_atmo_option.ssec);
   *longitude = &(_atmo_option.longitude);
   *latitude  = &(_atmo_option.latitude);
+  *x_l93 = &(_atmo_option.x_l93);
+  *y_l93 = &(_atmo_option.y_l93);
   *compute_z_ground = &(_atmo_option.compute_z_ground);
   *open_bcs_treatment = &(_atmo_option.open_bcs_treatment);
   *sedimentation_model = &(_atmo_option.sedimentation_model);
@@ -534,7 +542,6 @@ _strtolower(char        *dest,
   }
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -829,6 +836,54 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   BFT_FREE(c_visc);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert coordinates from Lambert-93 to WGS84 inside atmo options
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_convert_fromL93_to_WGS84(void)
+{
+  //computation from https://georezo.net/forum/viewtopic.php?id=94465
+  cs_real_t  c = 11754255.426096; // projection constant
+  cs_real_t  e = 0.0818191910428158; // ellipsoid excentricity
+  cs_real_t  n = 0.725607765053267; // projection exponent
+  cs_real_t  xs = 700000; // projection's pole x-coordinate
+  cs_real_t  ys = 12655612.049876;  // projection's pole y-coordinate
+  cs_real_t a=(log(c/(sqrt(cs_math_pow2(cs_glob_atmo_option->x_l93-xs)+cs_math_pow2(cs_glob_atmo_option->y_l93-ys))))/n);
+  
+  cs_glob_atmo_option->longitude = ((atan(-(cs_glob_atmo_option->x_l93-xs)/(cs_glob_atmo_option->y_l93-ys)))/n+3*cs_math_pi/180)/cs_math_pi*180;
+  cs_glob_atmo_option->latitude = asin(tanh((log(c/sqrt(cs_math_pow2(cs_glob_atmo_option->x_l93-xs)+cs_math_pow2(cs_glob_atmo_option->y_l93-ys)))/n)+e*atanh(e*(tanh(a+e*atanh(e*(tanh(a+e*atanh(e*(tanh(a+e*atanh(e*(tanh(a+e*atanh(e*(tanh(a+e*atanh(e*(tanh(a+e*atanh(e*sin(1))))))))))))))))))))))/cs_math_pi*180;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert coordinates from WGS84 to Lambert-93 inside atmo options
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_convert_fromWGS84_to_L93(void)
+{
+  //computation from https://georezo.net/forum/viewtopic.php?id=94465
+  cs_real_t  c = 11754255.426096; // projection constant
+  cs_real_t  e = 0.0818191910428158; // ellipsoid excentricity
+  cs_real_t  n = 0.725607765053267; // projection exponent
+  cs_real_t  xs = 700000; // projection's pole x-coordinate
+  cs_real_t  ys = 12655612.049876;  // projection's pole y-coordinate
+  
+  cs_real_t lat_rad= cs_glob_atmo_option->latitude*cs_math_pi/180; //latitude in rad
+  cs_real_t lat_iso= atanh(sin(lat_rad))-e*atanh(e*sin(lat_rad)); // isometric latitude
+
+  cs_glob_atmo_option->x_l93= ((c*exp(-n*(lat_iso)))*sin(n*(cs_glob_atmo_option->longitude-3)*cs_math_pi/180)+xs);
+  cs_glob_atmo_option->y_l93= (ys-(c*exp(-n*(lat_iso)))*cos(n*(cs_glob_atmo_option->longitude-3)*cs_math_pi/180));
+}
+
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -967,6 +1022,29 @@ cs_atmo_init_meteo_profiles(void)
 
   /* Friction temperature */
   aopt->meteo_tstar = cs_math_pow2(ustar0) * theta0 * dlmo / (kappa * g);
+
+  /* Center of the domain */
+  /* if neither latitude/longitude nor lambert coordinates are given */
+  if (((aopt->latitude > 0.5 * cs_math_big_r || aopt->longitude > 0.5 * cs_math_big_r)
+      && (aopt->x_l93 > 0.5 * cs_math_big_r || aopt->y_l93 > 0.5 * cs_math_big_r))){
+    bft_printf("Neither latitude nor center in Lambert-93 was given \n");
+    bft_printf("It is set to Paris values \n");
+    aopt->latitude = 45.44;
+    aopt->longitude = 4.39;
+    _convert_fromWGS84_to_L93();
+  }
+  /* else if latitude/longitude are given */
+  else if (aopt->x_l93 > 0.5 * cs_math_big_r || aopt->y_l93 > 0.5 * cs_math_big_r){
+    bft_printf("Latitude and longitude were given, Lambert center's coordinates"
+               "are automatically computed\n");
+    _convert_fromWGS84_to_L93();
+  }
+  /* All other cases */
+  else{
+    bft_printf("Lambert coordinates were given, latitude"
+                "and longitude are automatically computed\n");
+    _convert_fromL93_to_WGS84();
+  }
 
   /* BL height according to Marht 1982 formula */
   /* value of C=0.2, 0.185, 0.06, 0.14, 0.07, 0.04 */
@@ -1971,9 +2049,13 @@ cs_atmo_log_setup(void)
     (CS_LOG_SETUP,
      _("  Domain center:\n"
        "    latitude:  %6f\n"
-       "    longitude: %6f\n\n"),
+       "    longitude: %6f\n"
+       "    x center (in Lambert-93) : %6f\n"
+       "    y center (in Lmabert-93) : %6f\n\n"),
      cs_glob_atmo_option->latitude,
-     cs_glob_atmo_option->longitude);
+     cs_glob_atmo_option->longitude,
+     cs_glob_atmo_option->x_l93,
+     cs_glob_atmo_option->y_l93);
 
   if (cs_glob_atmo_option->meteo_profile == 1) {
     cs_log_printf

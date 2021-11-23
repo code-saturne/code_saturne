@@ -121,6 +121,10 @@ typedef struct {
   cs_real_t longitude;
   /*! latitude of the domain origin */
   cs_real_t latitude;
+  /*! x coordinate of the domain origin in Lambert-93 */
+  cs_real_t x_l93;
+  /*! y coordinate of the domain origin in Lambert-93 */
+  cs_real_t y_l93;
   /*! numbers of altitudes for the dynamics */
   int nbmetd;
   /*! numbers of altitudes for the temperature and specific humidity */
