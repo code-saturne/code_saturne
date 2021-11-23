@@ -181,7 +181,7 @@ double precision temp
 double precision turb_schmidt, visls_0
 double precision xR, prdtl, alpha_theta
 double precision normp
-double precision l2norm, l2errork
+double precision l2norm, l2errork, dl2norm
 double precision dum
 double precision qliqmax
 
@@ -1505,8 +1505,12 @@ if (iterns.ge.1.and.vcopt%iwarni.ge.1) then
   deallocate(errork)
 
   l2norm = sqrt(cs_gres(ncel, cell_f_vol, cvara_var, cvara_var))
+  dl2norm = 1.d0
+  if (l2norm.gt.0.d0) then
+    dl2norm = 1.d0 / l2norm
+  endif
 
-  write(nfecra,2601) ivarfl(ivar), iterns, l2errork, l2errork/l2norm, l2norm
+  write(nfecra,2601) ivarfl(ivar), iterns, l2errork, l2errork*dl2norm, l2norm
 
 endif
 
