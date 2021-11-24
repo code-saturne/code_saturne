@@ -1435,19 +1435,21 @@ cs_divergence(const cs_mesh_t          *m,
     ==========================================================================*/
 
   if (init >= 1) {
+
 #   pragma omp parallel for
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
       diverg[cell_id] = 0.;
-    }
-  } else if (init == 0 && n_cells_ext > n_cells) {
-#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
-    for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++) {
-      diverg[cell_id] = 0.;
-    }
-  } else if (init != 0) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of init"));
+
   }
+  else if (init == 0 && n_cells_ext > n_cells) {
+
+#   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
+    for (cs_lnum_t cell_id = n_cells+0; cell_id < n_cells_ext; cell_id++)
+      diverg[cell_id] = 0.;
+
+  }
+  else if (init != 0)
+    bft_error(__FILE__, __LINE__, 0, _("invalid value of init"));
 
 
   /*==========================================================================
@@ -1455,6 +1457,7 @@ cs_divergence(const cs_mesh_t          *m,
     ==========================================================================*/
 
   for (int g_id = 0; g_id < n_i_groups; g_id++) {
+
 #   pragma omp parallel for
     for (int t_id = 0; t_id < n_i_threads; t_id++) {
       for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
@@ -1469,7 +1472,8 @@ cs_divergence(const cs_mesh_t          *m,
 
       }
     }
-  }
+
+  } /* Loop on openMP groups */
 
 
   /*==========================================================================
@@ -1477,6 +1481,7 @@ cs_divergence(const cs_mesh_t          *m,
     ==========================================================================*/
 
   for (int g_id = 0; g_id < n_b_groups; g_id++) {
+
 #   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
       for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
@@ -1488,7 +1493,8 @@ cs_divergence(const cs_mesh_t          *m,
 
       }
     }
-  }
+
+  } /* Loop on openMP groups */
 
 }
 
@@ -1663,6 +1669,7 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     = (const cs_real_3_t *restrict)fvq->djjpf;
 
   /*Additional terms due to porosity */
+
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
   cs_real_t *i_poro_duq_0;
@@ -1670,16 +1677,21 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   cs_real_t *b_poro_duq;
   cs_real_t _f_ext = 0.;
 
-  int is_p = 0; /* Is porous? */
+  int is_p = 0; /* Is porous ? */
   if (f_i_poro_duq_0 != NULL) {
+
     is_p = 1;
     i_poro_duq_0 = f_i_poro_duq_0->val;
     i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
-  } else {
+
+  }
+  else {
+
     i_poro_duq_0 = &_f_ext;
     i_poro_duq_1 = &_f_ext;
     b_poro_duq = &_f_ext;
+
   }
 
   /*==========================================================================*/
@@ -1689,17 +1701,15 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     ==========================================================================*/
 
   if (init == 1) {
-    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
-      i_massflux[face_id] = 0.;
-    }
-    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
-      b_massflux[face_id] = 0.;
-    }
 
-  } else if (init != 0) {
-    bft_error(__FILE__, __LINE__, 0,
-              _("invalid value of init"));
+    for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++)
+      i_massflux[face_id] = 0.;
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++)
+      b_massflux[face_id] = 0.;
+
   }
+  else if (init != 0)
+    bft_error(__FILE__, __LINE__, 0, _("invalid value of init"));
 
   /*==========================================================================
     2. Update mass flux without reconstruction technics
@@ -1714,27 +1724,19 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
-      cs_real_2_t poro = {
-        i_poro_duq_0[is_p*face_id],
-        i_poro_duq_1[is_p*face_id]
-      };
+      cs_real_2_t poro = { i_poro_duq_0[is_p*face_id],
+                           i_poro_duq_1[is_p*face_id] };
 
-      i_massflux[face_id] += i_visc[face_id]*(
-                                              ( i_face_cog[face_id][0]
-                                               -cell_cen[ii][0] )*frcxt[ii][0]
-                                             +( i_face_cog[face_id][1]
-                                               -cell_cen[ii][1] )*frcxt[ii][1]
-                                             +( i_face_cog[face_id][2]
-                                               -cell_cen[ii][2] )*frcxt[ii][2]
-                                             + poro[0]
-                                             -( i_face_cog[face_id][0]
-                                               -cell_cen[jj][0] )*frcxt[jj][0]
-                                             -( i_face_cog[face_id][1]
-                                               -cell_cen[jj][1] )*frcxt[jj][1]
-                                             -( i_face_cog[face_id][2]
-                                               -cell_cen[jj][2] )*frcxt[jj][2]
-                                             - poro[1]
-                                             );
+      i_massflux[face_id] +=
+        i_visc[face_id]*(  (i_face_cog[face_id][0]-cell_cen[ii][0])*frcxt[ii][0]
+                         + (i_face_cog[face_id][1]-cell_cen[ii][1])*frcxt[ii][1]
+                         + (i_face_cog[face_id][2]-cell_cen[ii][2])*frcxt[ii][2]
+                         + poro[0]
+                         - (i_face_cog[face_id][0]-cell_cen[jj][0])*frcxt[jj][0]
+                         - (i_face_cog[face_id][1]-cell_cen[jj][1])*frcxt[jj][1]
+                         - (i_face_cog[face_id][2]-cell_cen[jj][2])*frcxt[jj][2]
+                         - poro[1]
+                        );
 
     }
 
@@ -1745,16 +1747,14 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       cs_lnum_t ii = b_face_cells[face_id];
 
       /* To avoid division by 0, no division by the fluid surface */
+
       cs_real_3_t normal;
       cs_math_3_normalise(b_face_normal[face_id], normal);
 
       cs_real_t poro = b_poro_duq[is_p*face_id];
 
-      b_massflux[face_id] += b_visc[face_id]
-                            * cofbfp[face_id]
-                            * (cs_math_3_dot_product(frcxt[ii], normal)
-                                * b_dist[face_id] + poro
-                              );
+      b_massflux[face_id] += b_visc[face_id] * cofbfp[face_id] *
+        ( cs_math_3_dot_product(frcxt[ii], normal) * b_dist[face_id] + poro );
 
     }
 
@@ -1762,8 +1762,8 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     3. Update mass flux with reconstruction technics
     ==========================================================================*/
 
-  } else {
-
+  }
+  else {
 
     /* Mass flux through interior faces */
 
@@ -1772,40 +1772,31 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
 
-      cs_real_2_t poro = {
-        i_poro_duq_0[is_p*face_id],
-        i_poro_duq_1[is_p*face_id]
-      };
+      cs_real_2_t poro = { i_poro_duq_0[is_p*face_id],
+                           i_poro_duq_1[is_p*face_id] };
 
       double surfn = i_f_face_surf[face_id];
 
-      i_massflux[face_id] += i_visc[face_id]*(
-                                               ( i_face_cog[face_id][0]
-                                                -cell_cen[ii][0] )*frcxt[ii][0]
-                                              +( i_face_cog[face_id][1]
-                                                -cell_cen[ii][1] )*frcxt[ii][1]
-                                              +( i_face_cog[face_id][2]
-                                                -cell_cen[ii][2] )*frcxt[ii][2]
-                                              + poro[0]
-                                              -( i_face_cog[face_id][0]
-                                                -cell_cen[jj][0] )*frcxt[jj][0]
-                                              -( i_face_cog[face_id][1]
-                                                -cell_cen[jj][1] )*frcxt[jj][1]
-                                              -( i_face_cog[face_id][2]
-                                                -cell_cen[jj][2] )*frcxt[jj][2]
-                                              - poro[1]
-                                              )
-                            + surfn/i_dist[face_id]*0.5
-                             *( (djjpf[face_id][0]-diipf[face_id][0])*( viselx[ii]*frcxt[ii][0]
-                                                                       +viselx[jj]*frcxt[jj][0] )
-                               +(djjpf[face_id][1]-diipf[face_id][1])*( visely[ii]*frcxt[ii][1]
-                                                                       +visely[jj]*frcxt[jj][1] )
-                               +(djjpf[face_id][2]-diipf[face_id][2])*( viselz[ii]*frcxt[ii][2]
-                                                                       +viselz[jj]*frcxt[jj][2] )
-                              );
+      i_massflux[face_id] += i_visc[face_id]*
+        ( ( i_face_cog[face_id][0] - cell_cen[ii][0] ) * frcxt[ii][0] +
+          ( i_face_cog[face_id][1] - cell_cen[ii][1] ) * frcxt[ii][1] +
+          ( i_face_cog[face_id][2] - cell_cen[ii][2] ) * frcxt[ii][2] +
+          poro[0] -
+          ( i_face_cog[face_id][0] - cell_cen[jj][0] ) * frcxt[jj][0] -
+          ( i_face_cog[face_id][1] - cell_cen[jj][1] ) * frcxt[jj][1] -
+          ( i_face_cog[face_id][2] - cell_cen[jj][2] ) * frcxt[jj][2] -
+          poro[1]
+        )
+       + surfn/i_dist[face_id]*0.5
+        *( (djjpf[face_id][0] - diipf[face_id][0])*
+           (viselx[ii]*frcxt[ii][0] + viselx[jj]*frcxt[jj][0])
+         + (djjpf[face_id][1] - diipf[face_id][1])*
+           (visely[ii]*frcxt[ii][1] + visely[jj]*frcxt[jj][1])
+         + (djjpf[face_id][2] - diipf[face_id][2])*
+           (viselz[ii]*frcxt[ii][2] + viselz[jj]*frcxt[jj][2])
+         );
 
-    }
-
+    } /* Loop on interior faces */
 
     /* Mass flux through boundary faces */
 
@@ -1819,14 +1810,11 @@ cs_ext_force_flux(const cs_mesh_t          *m,
 
       cs_real_t poro = b_poro_duq[is_p*face_id];
 
-      b_massflux[face_id] += b_visc[face_id]
-                            * cofbfp[face_id]
-                            * (cs_math_3_dot_product(frcxt[ii], normal)
-                                *  b_dist[face_id]
-                                + poro
-                              );
+      b_massflux[face_id] += b_visc[face_id] * cofbfp[face_id] *
+        (cs_math_3_dot_product(frcxt[ii], normal) * b_dist[face_id] + poro);
 
-    }
+    } /* Loop on border faces */
+
   }
 
 }
