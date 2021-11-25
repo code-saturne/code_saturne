@@ -146,44 +146,44 @@ _get_id(int    m,
  * \brief Test if one needs one more iteration. The residual criterion is
  *        computed inside the main algorithm.
  *
- * \param[in, out] info     pointer to a Uzawa builder structure
+ * \param[in, out] ia     pointer to an iterative algo. structure
  *
- * \return true (one moe iteration) otherwise false
+ * \return true (one more iteration) otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
 static bool
-_cvg_test(cs_iter_algo_info_t       *info)
+_cvg_test(cs_iter_algo_t       *ia)
 {
   /* Increment the number of algo. iterations */
-  info->n_algo_iter += 1;
+  ia->n_algo_iter += 1;
 
-  const cs_real_t  prev_res = info->res;
-  const double  epsilon = fmax(info->rtol*info->res0, info->atol);
+  const cs_real_t  prev_res = ia->res;
+  const double  epsilon = fmax(ia->param.rtol * ia->res0, ia->param.atol);
 
   /* Set the convergence status */
-  if (info->res < epsilon)
-    info->cvg = CS_SLES_CONVERGED;
+  if (ia->res < epsilon)
+    ia->cvg = CS_SLES_CONVERGED;
 
-  else if (info->n_algo_iter >= info->n_max_algo_iter)
-    info->cvg = CS_SLES_MAX_ITERATION;
+  else if (ia->n_algo_iter >= ia->param.n_max_algo_iter)
+    ia->cvg = CS_SLES_MAX_ITERATION;
 
-  else if (info->res > info->dtol * prev_res)
-    info->cvg = CS_SLES_DIVERGED;
+  else if (ia->res > ia->param.dtol * prev_res)
+    ia->cvg = CS_SLES_DIVERGED;
 
-  else if (info->res > info->dtol * info->res0)
-    info->cvg = CS_SLES_DIVERGED;
+  else if (ia->res > ia->param.dtol * ia->res0)
+    ia->cvg = CS_SLES_DIVERGED;
 
   else
-    info->cvg = CS_SLES_ITERATING;
+    ia->cvg = CS_SLES_ITERATING;
 
-  if (info->verbosity > 0)
+  if (ia->param.verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   "<Krylov.It%02d> res %5.3e | %4d %6d cvg%d | fit.eps %5.3e\n",
-                  info->n_algo_iter, info->res, info->last_inner_iter,
-                  info->n_inner_iter, info->cvg, epsilon);
+                  ia->n_algo_iter, ia->res, ia->last_inner_iter,
+                  ia->n_inner_iter, ia->cvg, epsilon);
 
-  if (info->cvg == CS_SLES_ITERATING)
+  if (ia->cvg == CS_SLES_ITERATING)
     return true;
   else
     return false;
@@ -1494,21 +1494,25 @@ cs_saddle_block_precond_create(cs_param_precond_block_t    block_type,
   sbp->schur_type = schur_type;
 
   /* Block 11 settings */
+
   sbp->m11_slesp = m11_slesp;
   sbp->m11_sles = m11_sles;
 
   /* According to the settings an approximation of the Schur complement may be
      requested*/
+
   sbp->schur_matrix = NULL;
   sbp->schur_slesp = NULL;
   sbp->schur_sles = NULL;
   sbp->schur_scaling = 1.;
 
   /* Native arrays for the Schur matrix */
+
   sbp->schur_diag = NULL;
   sbp->schur_xtra = NULL;
 
   /* Other approximations */
+
   sbp->mass22_diag = NULL;
   sbp->m11_inv_diag = NULL;
 
@@ -1538,6 +1542,7 @@ cs_saddle_block_precond_free(cs_saddle_block_precond_t  **p_sbp)
   BFT_FREE(sbp->m11_inv_diag);
 
   /* Free the main pointer */
+
   BFT_FREE(sbp);
   *p_sbp = NULL;
 }
@@ -1554,7 +1559,7 @@ cs_saddle_block_precond_free(cs_saddle_block_precond_t  **p_sbp)
  * \param[in]      sbp     Block-preconditioner for the Saddle-point problem
  * \param[in, out] x1      array for the first part
  * \param[in, out] x2      array for the second part
- * \param[in, out] info    pointer to a cs_iter_algo_info_t structure
+ * \param[in, out] ia      pointer to a cs_iter_algo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1563,9 +1568,10 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
                  cs_saddle_block_precond_t   *sbp,
                  cs_real_t                   *x1,
                  cs_real_t                   *x2,
-                 cs_iter_algo_info_t         *info)
+                 cs_iter_algo_t              *ia)
 {
   /* Workspace */
+
   const cs_lnum_t  ssys_size = ssys->max_x1_size + ssys->max_x2_size;
   const size_t  n_bytes = sizeof(cs_real_t)*ssys_size;
   cs_lnum_t  wsp_size = 7*ssys_size;
@@ -1583,6 +1589,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
   cs_real_t  *mz    = wsp + 6*ssys_size;
 
   /* Set pointer for the block preconditioning */
+
   cs_lnum_t  pc_wsp_size = 0;
   cs_real_t  *pc_wsp = NULL;
   cs_saddle_pc_apply_t  *pc_apply = _set_pc(ssys, sbp, &pc_wsp_size, &pc_wsp);
@@ -1590,28 +1597,33 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
   /* --- ALGO BEGIN --- */
 
   /* Compute the first residual: v = b - M.x */
+
   _compute_residual_3(ssys, x1, x2, v);
 
   /* Apply preconditioning: M.z = v */
-  info->n_inner_iter += pc_apply(ssys, sbp, v, z, pc_wsp);
 
-  info->res0 = _norm(ssys, v); /* ||v|| */
-  info->res = info->res0;
+  ia->n_inner_iter += pc_apply(ssys, sbp, v, z, pc_wsp);
+
+  ia->res0 = _norm(ssys, v); /* ||v|| */
+  ia->res = ia->res0;
 
   /* dp = eta = <v, z>; beta = sqrt(dp) */
+
   double  dp = _dot_product(ssys, v, z);
   double  beta = sqrt(fabs(dp));
   double  eta = beta;
 
   /* Initialization */
+
   double  betaold = 1;
   double  c=1.0, cold=1.0, s=0.0, sold=0.0;
 
   /* --- MAIN LOOP --- */
 
-  while (info->cvg == CS_SLES_ITERATING) {
+  while (ia->cvg == CS_SLES_ITERATING) {
 
     /* z = z * ibeta; */
+
     assert(fabs(beta) > 0.);
     const double  ibeta = 1./beta;
     _scalar_scaling(ssys, ibeta, z);
@@ -1621,11 +1633,13 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
     _matvec_product(ssys, z, mz);
 
     /* alpha = <z, mz> */
+
     const double  alpha =  _dot_product(ssys, z, mz);
     const double  alpha_ibeta = alpha * ibeta;
     const double  beta_ibetaold = beta/betaold;
 
     /* v(k+1) = mz(k) - alpha*v(k) - beta v(k-1) */
+
 #   pragma omp parallel for if (ssys->x1_size > CS_THR_MIN)
     for (cs_lnum_t i1 = 0; i1 < ssys->x1_size; i1++) {
       const cs_real_t  _v = v[i1], _vold = vold[i1];
@@ -1645,20 +1659,24 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
     }
 
     /* Apply preconditionning: M.z(k+1) = v(k+1) */
+
     memcpy(zold, z, n_bytes);
-    info->n_inner_iter += pc_apply(ssys, sbp, v, z, pc_wsp);
+    ia->n_inner_iter += pc_apply(ssys, sbp, v, z, pc_wsp);
 
     /* New value for beta: beta = sqrt(<v, z>) */
+
     betaold = beta;
     beta = sqrt(fabs(_dot_product(ssys, v, z)));
 
     /* QR factorization */
+
     double rho0 = c*alpha - cold*s*betaold;
     double rho1 = sqrt(rho0*rho0 + beta*beta);
     double rho2 = s*alpha + cold*c*betaold;
     double rho3 = sold*betaold;
 
     /* Givens rotation (update c and s)*/
+
     assert(fabs(rho1) > DBL_MIN);
     const double  irho1 = 1./rho1;
     cold = c, sold = s;
@@ -1666,6 +1684,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
     s = beta*irho1;
 
     /* w(k+1) = irho1 * ( z(k) - rho2*w(k) - rho3 w(k-1) )*/
+
 #   pragma omp parallel for if (ssys->x1_size > CS_THR_MIN)
     for (cs_lnum_t i1 = 0; i1 < ssys->x1_size; i1++) {
       const cs_real_t  _w = w[i1], _wold = wold[i1];
@@ -1686,6 +1705,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
 
     /* Update the solution vector */
     /* x1(k+1) = x1(k) + c*eta*w(k+1) */
+
     const double  ceta = c*eta;
 
 #   pragma omp parallel for if (ssys->x1_size > CS_THR_MIN)
@@ -1697,28 +1717,34 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
       x2[i2] = x2[i2] + ceta*w2[i2];
 
     /* Compute the current residual */
-    info->res *= fabs(s);
+
+    ia->res *= fabs(s);
 
     /* Last updates */
+
     eta = -s*eta;
 
     /* Check the convergence criteria */
-    _cvg_test(info);
+
+    _cvg_test(ia);
 
   } /* main loop */
 
   /* --- ALGO END --- */
 
-  if (info->verbosity > 1) {
+  if (ia->param.verbosity > 1) {
+
     /* Compute the real residual norm at exit */
+
     _compute_residual_3(ssys, x1, x2, v);
     beta = _norm(ssys, v); /* ||v|| */
     cs_log_printf(CS_LOG_DEFAULT,
                   " %s: Residual norm at exit= %6.4e in %d iterations\n",
-                  __func__, beta, info->n_algo_iter);
+                  __func__, beta, ia->n_algo_iter);
   }
 
   /* Free temporary workspace */
+
   BFT_FREE(wsp);
   BFT_FREE(pc_wsp);
 }
@@ -1738,7 +1764,7 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
  * \param[in]      sbp      block-preconditioner for the Saddle-point problem
  * \param[in, out] x1       array for the first part
  * \param[in, out] x2       array for the second part
- * \param[in, out] info     pointer to a cs_iter_algo_info_t structure
+ * \param[in, out] ia       pointer to a cs_iter_algo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1748,7 +1774,7 @@ cs_saddle_gcr(int                          restart,
               cs_saddle_block_precond_t   *sbp,
               cs_real_t                   *x1,
               cs_real_t                   *x2,
-              cs_iter_algo_info_t         *info)
+              cs_iter_algo_t              *ia)
 {
   /* Workspace: Specific buffers for this algorithm */
   const int  triangular_size = (restart*(restart+1))/2;
@@ -1773,6 +1799,7 @@ cs_saddle_gcr(int                          restart,
   cs_real_t  *r     = c_tmp + ssys_size;
 
   /* Set pointer for the block preconditioning */
+
   cs_lnum_t  pc_wsp_size = 0;
   cs_real_t  *pc_wsp = NULL;
   cs_saddle_pc_apply_t  *pc_apply = _set_pc(ssys, sbp, &pc_wsp_size, &pc_wsp);
@@ -1791,16 +1818,16 @@ cs_saddle_gcr(int                          restart,
 
   _compute_residual_3(ssys, x1, x2, r);
 
-  info->res0 = _norm(ssys, r); /* ||r|| */
-  info->res = info->res0;
+  ia->res0 = _norm(ssys, r); /* ||r|| */
+  ia->res = ia->res0;
 
   /* --- MAIN LOOP --- */
 
   int  _restart = restart;
 
-  while (info->cvg == CS_SLES_ITERATING) {
+  while (ia->cvg == CS_SLES_ITERATING) {
 
-    if (info->n_algo_iter > 0)
+    if (ia->n_algo_iter > 0)
       _compute_residual_3(ssys, x1, x2, r);
 
     for (int j = 0; j < _restart; j++) {
@@ -1808,7 +1835,7 @@ cs_saddle_gcr(int                          restart,
       /* Apply preconditioning: M.z = r */
 
       cs_real_t  *zj = zsave + j*ssys_size;
-      info->n_inner_iter += pc_apply(ssys, sbp, r, zj, pc_wsp);
+      ia->n_inner_iter += pc_apply(ssys, sbp, r, zj, pc_wsp);
 
       /* Compute the matrix-vector product M.z = cj
        * cj plays the role of the temporary buffer during the first part of the
@@ -1854,13 +1881,13 @@ cs_saddle_gcr(int                          restart,
 
       /* New residual norm */
 
-      info->res = _norm(ssys, r); /* ||r|| */
+      ia->res = _norm(ssys, r); /* ||r|| */
 
       /* Check convergence */
 
-      _cvg_test(info);
+      _cvg_test(ia);
 
-      if (info->cvg != CS_SLES_ITERATING)
+      if (ia->cvg != CS_SLES_ITERATING)
         _restart = j + 1; /* Stop the loop on j */
 
     } /* j < _restart */
@@ -1898,16 +1925,17 @@ cs_saddle_gcr(int                          restart,
 
   /* --- ALGO END --- */
 
-  if (info->verbosity > 1) {
+  if (ia->param.verbosity > 1) {
     /* Compute the real residual norm at exit */
     _compute_residual_3(ssys, x1, x2, r);
     double _beta = _norm(ssys, r); /* ||r|| */
     cs_log_printf(CS_LOG_DEFAULT,
                   " %s: Residual norm at exit= %6.4e in %d iterations\n",
-                  __func__, _beta, info->n_algo_iter);
+                  __func__, _beta, ia->n_algo_iter);
   }
 
   /* Free temporary workspace */
+
   BFT_FREE(gamma);
   BFT_FREE(alpha);
   BFT_FREE(wsp);

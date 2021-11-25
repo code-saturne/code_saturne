@@ -46,14 +46,8 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*! \struct cs_iter_algo_info_t
- *  \brief Information related to the convergence of an iterative algorithm
- *
- *  Metadata to manage an iterative algorithm such as Picard or Uzawa for
- *  instance. This structure can handle embedded iterative algorithm since the
- *  notion of inner and outer iterations is defined. Nevertheless, only the
- *  outer iterative algorithm is managed (information about inner iterations
- *  are only for monitoring purposes).
+/*! \struct cs_iter_algo_t
+ *  \brief Set of common parameters to manage an iterative algorithm
  */
 
 typedef struct {
@@ -64,9 +58,6 @@ typedef struct {
  *
  * \var verbosity
  * Level of printed information
- *
- * \var context
- * pointer to structure cast on the fly
  *
  * @}
  * @name Stoppping criteria
@@ -85,6 +76,39 @@ typedef struct {
  *
  * \var dtol
  * Tolerance to detect a divergence of the algorithm. Not used if < 0
+ *
+ * @}
+ */
+
+  int                  verbosity;
+  int                  n_max_algo_iter;
+  double               atol;
+  double               rtol;
+  double               dtol;
+
+} cs_iter_algo_param_t;
+
+/*! \struct cs_iter_algo_t
+ *  \brief Structure to handle the convergence of an iterative algorithm
+ *
+ *  Metadata to manage an iterative algorithm such as Picard or Uzawa for
+ *  instance. This structure can handle embedded iterative algorithm since the
+ *  notion of inner and outer iterations is defined. Nevertheless, only the
+ *  outer iterative algorithm is managed (information about inner iterations
+ *  are only for monitoring purposes).
+ */
+
+typedef struct {
+
+/*!
+ * @name Generic parameters
+ * @{
+ *
+ * \var param
+ * structure storing the main settings
+ *
+ * \var context
+ * pointer to structure cast on the fly
  *
  * @}
  * @name Convergence indicators
@@ -126,13 +150,9 @@ typedef struct {
  * @}
  */
 
-  int                              verbosity;
-  void                            *context;
+  cs_iter_algo_param_t             param;
 
-  int                              n_max_algo_iter;
-  double                           atol;
-  double                           rtol;
-  double                           dtol;
+  void                            *context;
 
   cs_sles_convergence_state_t      cvg;
   double                           normalization;
@@ -146,7 +166,7 @@ typedef struct {
   int                              n_inner_iter;
   int                              last_inner_iter;
 
-} cs_iter_algo_info_t;
+} cs_iter_algo_t;
 
 /*! \struct cs_iter_algo_param_aa_t
 
@@ -197,14 +217,14 @@ typedef struct _cs_iter_algo_aa_t  cs_iter_algo_aa_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reset a cs_iter_algo_info_t structure
+ * \brief  Reset a cs_iter_algo_t structure
  *
- * \param[in, out]  info   pointer to a cs_iter_algo_info_t
+ * \param[in, out]  info   pointer to a cs_iter_algo_t
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_iter_algo_reset(cs_iter_algo_info_t    *info)
+cs_iter_algo_reset(cs_iter_algo_t    *info)
 {
   if (info == NULL)
     return;
@@ -224,7 +244,7 @@ cs_iter_algo_reset(cs_iter_algo_info_t    *info)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a new cs_iter_algo_info_t structure
+ * \brief  Create and initialize a new cs_iter_algo_t structure
  *
  * \param[in] verbosity    set the level of information printed
  * \param[in] n_max_iter   maximal number of iteration
@@ -236,7 +256,7 @@ cs_iter_algo_reset(cs_iter_algo_info_t    *info)
  */
 /*----------------------------------------------------------------------------*/
 
-cs_iter_algo_info_t *
+cs_iter_algo_t *
 cs_iter_algo_create(int          verbosity,
                     int          n_max_iter,
                     double       atol,
@@ -251,7 +271,7 @@ cs_iter_algo_create(int          verbosity,
  * \param[in] func_name    name of the calling function
  * \param[in] eq_name      name of the equation being solved
  * \param[in] algo_name    name of the iterative algo. used
- * \param[in] iai          pointer to the iterative algo. structure
+ * \param[in] ia           pointer to the iterative algo. structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -259,18 +279,18 @@ void
 cs_iter_algo_post_check(const char            *func_name,
                         const char            *eq_name,
                         const char            *algo_name,
-                        cs_iter_algo_info_t   *iai);
+                        cs_iter_algo_t        *ia);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Update the convergence state and the number of iterations
  *
- * \param[in, out] iai      pointer to a cs_iter_algo_info_t structure
+ * \param[in, out] ia      pointer to a cs_iter_algo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_update_cvg(cs_iter_algo_info_t         *iai);
+cs_iter_algo_update_cvg(cs_iter_algo_t         *ia);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -291,14 +311,14 @@ cs_iter_algo_aa_create(cs_iter_algo_param_aa_t    aap,
 /*!
  * \brief  Retrieve the set of parameters for an Anderson algorithm
  *
- * \param[in, out] iai      pointer to a cs_iter_algo_info_t structure
+ * \param[in, out] ia      pointer to a cs_iter_algo_t structure
  *
  * \return a cs_iter_algo_param_aa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_param_aa_t
-cs_iter_algo_get_anderson_param(cs_iter_algo_info_t         *iai);
+cs_iter_algo_get_anderson_param(cs_iter_algo_t         *ia);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -320,7 +340,7 @@ cs_iter_algo_aa_allocate_arrays(cs_iter_algo_aa_t  *aa);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_free_arrays(cs_iter_algo_aa_t  *aa);
+cs_iter_algo_aa_free_arrays(cs_iter_algo_aa_t     *aa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -332,13 +352,13 @@ cs_iter_algo_aa_free_arrays(cs_iter_algo_aa_t  *aa);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_free(cs_iter_algo_info_t  *info);
+cs_iter_algo_aa_free(cs_iter_algo_t  *info);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Apply one more iteration of the Anderson acceleration
  *
- * \param[in, out] iai           pointer to a cs_iter_algo_info_t structure
+ * \param[in, out] ia           pointer to a cs_iter_algo_t structure
  * \param[in, out] cur_iterate   current iterate
  * \param[in]      pre_iterate   previous iterate
  * \param[in]      dotprod       function to compute a dot product
@@ -347,7 +367,7 @@ cs_iter_algo_aa_free(cs_iter_algo_info_t  *info);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
+cs_iter_algo_aa_update(cs_iter_algo_t              *ia,
                        cs_real_t                   *cur_iterate,
                        const cs_real_t             *pre_iterate,
                        cs_cdo_blas_dotprod_t       *dotprod,

@@ -167,16 +167,19 @@ typedef struct {
    *  \var adv_field
    *  Pointer to the cs_adv_field_t related to the Navier-Stokes eqs (Shared)
    */
+
   cs_adv_field_t           *adv_field;
 
   /*! \var mass_flux_array
    *  Current values of the mass flux at primal faces (Shared)
    */
+
   cs_real_t                *mass_flux_array;
 
   /*! \var mass_flux_array_pre
    *  Previous values of the mass flux at primal faces (Shared)
    */
+
   cs_real_t                *mass_flux_array_pre;
 
   /*!
@@ -236,7 +239,7 @@ typedef struct {
    * @{
    */
 
-  cs_iter_algo_info_t            *algo_info;
+  cs_iter_algo_t                *algo_info;
 
   /*!
    * @}
@@ -249,7 +252,8 @@ typedef struct {
   /*! \var timer
    *  Cumulated elapsed time for building and solving the Navier--Stokes system
    */
-  cs_timer_counter_t  timer;
+
+  cs_timer_counter_t             timer;
 
   /*! @} */
 
@@ -1320,7 +1324,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
-  cs_iter_algo_info_t  *nl_info = sc->algo_info;
+  cs_iter_algo_t  *nl_info = sc->algo_info;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START

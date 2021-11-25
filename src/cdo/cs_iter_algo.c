@@ -360,7 +360,7 @@ _aa_damping(cs_iter_algo_aa_t    *aa,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create and initialize a new cs_iter_algo_info_t structure
+ * \brief  Create and initialize a new cs_iter_algo_t structure
  *
  * \param[in] verbosity    set the level of information printed
  * \param[in] n_max_iter   maximal number of iteration
@@ -372,29 +372,29 @@ _aa_damping(cs_iter_algo_aa_t    *aa,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_iter_algo_info_t *
+cs_iter_algo_t *
 cs_iter_algo_create(int          verbosity,
                     int          n_max_iter,
                     double       atol,
                     double       rtol,
                     double       dtol)
 {
-  cs_iter_algo_info_t  *iai = NULL;
+  cs_iter_algo_t  *ia = NULL;
 
-  BFT_MALLOC(iai, 1, cs_iter_algo_info_t);
+  BFT_MALLOC(ia, 1, cs_iter_algo_t);
 
-  iai->verbosity = verbosity;
-  iai->atol = atol;
-  iai->rtol = rtol;
-  iai->dtol = dtol;
-  iai->n_max_algo_iter = n_max_iter;
-  iai->normalization = 1.0;
+  ia->param.verbosity = verbosity;
+  ia->param.atol = atol;
+  ia->param.rtol = rtol;
+  ia->param.dtol = dtol;
+  ia->param.n_max_algo_iter = n_max_iter;
 
-  iai->context = NULL;
+  ia->normalization = 1.0;
+  ia->context = NULL;
 
-  cs_iter_algo_reset(iai);
+  cs_iter_algo_reset(ia);
 
-  return iai;
+  return ia;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -405,74 +405,74 @@ cs_iter_algo_create(int          verbosity,
  * \param[in] func_name    name of the calling function
  * \param[in] eq_name      name of the equation being solved
  * \param[in] algo_name    name of the iterative algo. used
- * \param[in] iai          pointer to the iterative algo. structure
+ * \param[in] ia           pointer to the iterative algo. structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_post_check(const char            *func_name,
-                        const char            *eq_name,
-                        const char            *algo_name,
-                        cs_iter_algo_info_t   *iai)
+cs_iter_algo_post_check(const char          *func_name,
+                        const char          *eq_name,
+                        const char          *algo_name,
+                        cs_iter_algo_t      *ia)
 {
-  if (iai == NULL)
+  if (ia == NULL)
     return;
 
-  if (iai->cvg == CS_SLES_DIVERGED)
+  if (ia->cvg == CS_SLES_DIVERGED)
     bft_error(__FILE__, __LINE__, 0,
               "%s: %s algorithm divergence detected.\n"
               "%s: Equation \"%s\" can not be solved correctly.\n"
               "%s: Last iteration=%d; last residual=%5.3e\n",
               func_name, algo_name,
               func_name, eq_name,
-              func_name, iai->n_algo_iter, iai->res);
+              func_name, ia->n_algo_iter, ia->res);
 
-  else if (iai->cvg == CS_SLES_MAX_ITERATION) {
+  else if (ia->cvg == CS_SLES_MAX_ITERATION) {
 
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(" %s: %s algorithm reaches the max. number of iterations"
                " when solving equation \"%s\"\n"
                " %s: max_iter=%d; last residual=%5.3e\n",
                func_name, algo_name, eq_name,
-               func_name, iai->n_max_algo_iter, iai->res);
+               func_name, ia->param.n_max_algo_iter, ia->res);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Update the convergence state and the number of iterations
  *
- * \param[in, out] iai      pointer to a cs_iter_algo_info_t structure
+ * \param[in, out] ia      pointer to a cs_iter_algo_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_update_cvg(cs_iter_algo_info_t         *iai)
+cs_iter_algo_update_cvg(cs_iter_algo_t         *ia)
 {
   /* Set the tolerance criterion (computed at each call if the normalization is
      modified between two successive calls) */
 
-  iai->tol = fmax(iai->rtol*iai->normalization, iai->atol);
+  ia->tol = fmax(ia->param.rtol*ia->normalization, ia->param.atol);
 
   /* Increment the number of Picard iterations */
 
-  iai->n_algo_iter += 1;
+  ia->n_algo_iter += 1;
 
   /* Set the convergence status */
 
-  if (iai->res < iai->tol)
-    iai->cvg = CS_SLES_CONVERGED;
+  if (ia->res < ia->tol)
+    ia->cvg = CS_SLES_CONVERGED;
 
-  else if (iai->n_algo_iter >= iai->n_max_algo_iter)
-    iai->cvg = CS_SLES_MAX_ITERATION;
+  else if (ia->n_algo_iter >= ia->param.n_max_algo_iter)
+    ia->cvg = CS_SLES_MAX_ITERATION;
 
-  else if (iai->res > iai->dtol*iai->prev_res || iai->res > iai->dtol*iai->res0)
-    iai->cvg = CS_SLES_DIVERGED;
+  else if (ia->res > ia->param.dtol * ia->prev_res ||
+           ia->res > ia->param.dtol * ia->res0)
+    ia->cvg = CS_SLES_DIVERGED;
 
   else
-    iai->cvg = CS_SLES_ITERATING;
+    ia->cvg = CS_SLES_ITERATING;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -524,30 +524,32 @@ cs_iter_algo_aa_create(cs_iter_algo_param_aa_t    aap,
 /*!
  * \brief  Retrieve the set of parameters for an Anderson algorithm
  *
- * \param[in, out] iai      pointer to a cs_iter_algo_info_t structure
+ * \param[in, out] ia      pointer to a cs_iter_algo_t structure
  *
  * \return a cs_iter_algo_param_aa_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_param_aa_t
-cs_iter_algo_get_anderson_param(cs_iter_algo_info_t         *iai)
+cs_iter_algo_get_anderson_param(cs_iter_algo_t         *ia)
 {
+  if (ia != NULL) {
+
+    cs_iter_algo_aa_t  *aa = ia->context;
+
+    if (aa != NULL)
+      return aa->param;
+
+  }
+
+  /* Define a set of parameters by default */
+
   cs_iter_algo_param_aa_t  aap = {
     .n_max_dir = 4,
     .starting_iter = 2,
     .max_cond = 500,
     .beta = 0.,
     .dp_type = CS_PARAM_DOTPROD_EUCLIDEAN };
-
-  if (iai != NULL) {
-
-    cs_iter_algo_aa_t  *aa = iai->context;
-
-    if (aa != NULL)
-      return aa->param;
-
-  }
 
   return aap;
 }
@@ -627,7 +629,7 @@ cs_iter_algo_aa_free_arrays(cs_iter_algo_aa_t  *aa)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_free(cs_iter_algo_info_t  *info)
+cs_iter_algo_aa_free(cs_iter_algo_t  *info)
 {
   if (info == NULL)
     return;
@@ -646,7 +648,7 @@ cs_iter_algo_aa_free(cs_iter_algo_info_t  *info)
 /*!
  * \brief  Apply one more iteration of the Anderson acceleration
  *
- * \param[in, out] iai           pointer to a cs_iter_algo_info_t structure
+ * \param[in, out] ia            pointer to a cs_iter_algo_t structure
  * \param[in, out] cur_iterate   current iterate
  * \param[in]      pre_iterate   previous iterate
  * \param[in]      dotprod       function to compute a dot product
@@ -655,22 +657,22 @@ cs_iter_algo_aa_free(cs_iter_algo_info_t  *info)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_iter_algo_aa_update(cs_iter_algo_info_t         *iai,
+cs_iter_algo_aa_update(cs_iter_algo_t              *ia,
                        cs_real_t                   *cur_iterate,
                        const cs_real_t             *pre_iterate,
                        cs_cdo_blas_dotprod_t       *dotprod,
                        cs_cdo_blas_square_norm_t   *sqnorm)
 {
-  if (iai == NULL)
+  if (ia == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Structure not allocated.\n", __func__);
 
-  cs_iter_algo_aa_t  *aa = (cs_iter_algo_aa_t *)iai->context;
+  cs_iter_algo_aa_t  *aa = (cs_iter_algo_aa_t *)ia->context;
   assert(aa != NULL);
 
   /* Check if anderson has to begin */
 
-  const int shifted_iter = iai->n_algo_iter - aa->param.starting_iter;
+  const int shifted_iter = ia->n_algo_iter - aa->param.starting_iter;
   if (shifted_iter < 0)
     return;
 

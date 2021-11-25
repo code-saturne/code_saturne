@@ -132,21 +132,21 @@ _nl_algo_print_header(const char   *algo_name)
  * \brief  Print a new line in the iterative process
  *
  * \param[in]  algo_name     name of the algorithm
- * \param[in]  info          pointer to cs_iter_algo_info_t structure
+ * \param[in]  algo          pointer to cs_iter_algo_t structure
  * \param[in]  div_l2        l2 norm of the divergence
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_nl_algo_print_entry(const char                    *algo_name,
-                     const cs_iter_algo_info_t     *info,
-                     double                         div_l2)
+_nl_algo_print_entry(const char                *algo_name,
+                     const cs_iter_algo_t      *algo,
+                     double                     div_l2)
 {
   assert(algo_name != NULL);
   cs_log_printf(CS_LOG_DEFAULT,
                 "%12s.It%02d   %5.3e  %5d  %5d  %6.4e  %6.4e\n",
-                algo_name, info->n_algo_iter, info->res,
-                info->last_inner_iter, info->n_inner_iter, div_l2, info->tol);
+                algo_name, algo->n_algo_iter, algo->res, algo->last_inner_iter,
+                algo->n_inner_iter, div_l2, algo->tol);
   cs_log_printf_flush(CS_LOG_DEFAULT);
 }
 
@@ -1766,33 +1766,33 @@ cs_cdofb_fixed_wall(short int                       fb,
  *         Test if performed on the relative norm on the increment between
  *         two iterations but also on the divergence.
  *
- * \param[in]      nl_algo        type of non-linear algorithm
+ * \param[in]      nl_algo_type   type of non-linear algorithm
  * \param[in]      pre_iterate    previous state of the mass flux iterate
  * \param[in]      cur_iterate    current state of the mass flux iterate
  * \param[in]      div_l2_norm    L2 norm of the velocity divergence
- * \param[in, out] iai            pointer to a cs_iter_algo_info_t structure
+ * \param[in, out] algo           pointer to a cs_iter_algo_t structure
  *
  * \return the convergence state
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sles_convergence_state_t
-cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t           nl_algo,
-                            const cs_real_t             *pre_iterate,
-                            cs_real_t                   *cur_iterate,
-                            cs_real_t                    div_l2_norm,
-                            cs_iter_algo_info_t         *iai)
+cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
+                            const cs_real_t          *pre_iterate,
+                            cs_real_t                *cur_iterate,
+                            cs_real_t                 div_l2_norm,
+                            cs_iter_algo_t           *algo)
 {
-  assert(iai != NULL);
+  assert(algo != NULL);
 
-  if (nl_algo == CS_PARAM_NL_ALGO_ANDERSON && iai->n_algo_iter > 0) {
+  if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON && algo->n_algo_iter > 0) {
 
-    cs_iter_algo_param_aa_t  aap = cs_iter_algo_get_anderson_param(iai);
+    cs_iter_algo_param_aa_t  aap = cs_iter_algo_get_anderson_param(algo);
 
     switch (aap.dp_type) {
 
     case CS_PARAM_DOTPROD_EUCLIDEAN:
-      cs_iter_algo_aa_update(iai,
+      cs_iter_algo_aa_update(algo,
                              cur_iterate,
                              pre_iterate,
                              cs_cdo_blas_dotprod_face,
@@ -1800,7 +1800,7 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t           nl_algo,
       break;
 
     case CS_PARAM_DOTPROD_CDO:
-      cs_iter_algo_aa_update(iai,
+      cs_iter_algo_aa_update(algo,
                              cur_iterate,
                              pre_iterate,
                              cs_cdo_blas_dotprod_pfsf,
@@ -1817,46 +1817,46 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t           nl_algo,
   /* Update the residual values. Compute the norm of the difference between the
      two mass fluxes (the current one and the previous one) */
 
-  iai->prev_res = iai->res;
-  iai->res = cs_cdo_blas_square_norm_pfsf_diff(pre_iterate, cur_iterate);
-  assert(iai->res > -DBL_MIN);
-  iai->res = sqrt(iai->res);
+  algo->prev_res = algo->res;
+  algo->res = cs_cdo_blas_square_norm_pfsf_diff(pre_iterate, cur_iterate);
+  assert(algo->res > -DBL_MIN);
+  algo->res = sqrt(algo->res);
 
-  if (iai->n_algo_iter < 1) /* Store the first residual to detect a
+  if (algo->n_algo_iter < 1) /* Store the first residual to detect a
                                divergence */
-    iai->res0 = iai->res;
+    algo->res0 = algo->res;
 
   /* Update the convergence members */
 
-  cs_iter_algo_update_cvg(iai);
+  cs_iter_algo_update_cvg(algo);
 
-  if (iai->verbosity > 0) {
+  if (algo->param.verbosity > 0) {
 
-    switch (nl_algo) {
+    switch (nl_algo_type) {
 
     case CS_PARAM_NL_ALGO_ANDERSON:
-      if (iai->n_algo_iter == 1)
+      if (algo->n_algo_iter == 1)
         _nl_algo_print_header("## Anderson");
-      _nl_algo_print_entry("## Anderson", iai, div_l2_norm);
+      _nl_algo_print_entry("## Anderson", algo, div_l2_norm);
       break;
 
     case  CS_PARAM_NL_ALGO_PICARD:
-      if (iai->n_algo_iter == 1)
+      if (algo->n_algo_iter == 1)
         _nl_algo_print_header("## Picard");
-      _nl_algo_print_entry("## Picard", iai, div_l2_norm);
+      _nl_algo_print_entry("## Picard", algo, div_l2_norm);
       break;
 
     default:
-      if (iai->n_algo_iter == 1)
+      if (algo->n_algo_iter == 1)
         _nl_algo_print_header("##       ");
-      _nl_algo_print_entry("##       ", iai, div_l2_norm);
+      _nl_algo_print_entry("##       ", algo, div_l2_norm);
       break;
 
     }
 
   } /* verbosity > 0 */
 
-  return iai->cvg;
+  return algo->cvg;
 }
 
 /*----------------------------------------------------------------------------*/

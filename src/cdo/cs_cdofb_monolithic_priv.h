@@ -341,7 +341,7 @@ struct _cdofb_monolithic_t {
    * Structure used to drive the convergence of high-level iterative algorithms
    */
 
-  cs_iter_algo_info_t              *algo_info;
+  cs_iter_algo_t                   *algo_info;
 
   /*!
    * @}

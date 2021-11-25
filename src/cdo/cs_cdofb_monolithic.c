@@ -2408,7 +2408,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
-  cs_iter_algo_info_t  *nl_info = sc->algo_info;
+  cs_iter_algo_t  *nl_algo = sc->algo_info;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START
@@ -2456,7 +2456,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   cs_timer_t  t_solve_start = cs_timer_time();
 
-  cs_iter_algo_reset(nl_info);
+  cs_iter_algo_reset(nl_algo);
 
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
@@ -2467,8 +2467,8 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /* Solve the new system:
    * Update the value of mom_eqc->face_values and sc->pressure->val */
 
-  nl_info->n_inner_iter =
-    (nl_info->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+  nl_algo->n_inner_iter =
+    (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2491,20 +2491,20 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  nl_info->normalization = cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array);
+  nl_algo->normalization = cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
 
-  /* Check the convergence status and update the nl_info structure related
+  /* Check the convergence status and update the nl_algo structure related
    * to the convergence monitoring */
 
   while (cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo,
                                      sc->mass_flux_array_pre,
                                      sc->mass_flux_array,
                                      div_l2_norm,
-                                     nl_info) == CS_SLES_ITERATING) {
+                                     nl_algo) == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
 
@@ -2531,8 +2531,8 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
     t_solve_start = cs_timer_time();
 
-    nl_info->n_inner_iter +=
-      (nl_info->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+    nl_algo->n_inner_iter +=
+      (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2562,13 +2562,13 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    *--------------------------------------------------------------------------*/
 
   if (nsp->sles_param->nl_algo == CS_PARAM_NL_ALGO_PICARD)
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_info);
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_algo);
 
   else {
 
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_info);
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_algo);
 
-    cs_iter_algo_aa_free_arrays(nl_info->context);
+    cs_iter_algo_aa_free_arrays(nl_algo->context);
 
   }
 
@@ -2728,7 +2728,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
-  cs_iter_algo_info_t  *nl_info = sc->algo_info;
+  cs_iter_algo_t  *nl_algo = sc->algo_info;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START
@@ -2784,10 +2784,10 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   /* Solve the new system:
    * Update the value of mom_eqc->face_values and sc->pressure->val */
 
-  cs_iter_algo_reset(nl_info);
+  cs_iter_algo_reset(nl_algo);
 
   if (nsp->sles_param->nl_algo == CS_PARAM_NL_ALGO_ANDERSON)
-    cs_iter_algo_aa_allocate_arrays(nl_info->context);
+    cs_iter_algo_aa_allocate_arrays(nl_algo->context);
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2810,7 +2810,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  nl_info->normalization = cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array);
+  nl_algo->normalization = cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
@@ -2824,12 +2824,12 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
                               sc->mass_flux_array_pre,
                               sc->mass_flux_array,
                               div_l2_norm,
-                              nl_info);
+                              nl_algo);
 
   cs_real_t  *mass_flux_array_k = NULL;
   cs_real_t  *mass_flux_array_kp1 = sc->mass_flux_array;
 
-  while (nl_info->cvg == CS_SLES_ITERATING) {
+  while (nl_algo->cvg == CS_SLES_ITERATING) {
 
     /* Start of the system building */
 
@@ -2857,8 +2857,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
     t_solve_start = cs_timer_time();
 
-    nl_info->n_inner_iter +=
-      (nl_info->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+    nl_algo->n_inner_iter +=
+      (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2882,14 +2882,14 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
                               mass_flux_array_kp1);
 
-    /* Check the convergence status and update the nl_info structure related
+    /* Check the convergence status and update the nl_algo structure related
      * to the convergence monitoring */
 
     cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo,
                                 mass_flux_array_k,
                                 mass_flux_array_kp1,
                                 div_l2_norm,
-                                nl_info);
+                                nl_algo);
 
   } /* Loop on non-linear iterations */
 
@@ -2898,13 +2898,13 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *--------------------------------------------------------------------------*/
 
   if (nsp->sles_param->nl_algo == CS_PARAM_NL_ALGO_PICARD)
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_info);
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_algo);
 
   else {
 
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_info);
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_algo);
 
-    cs_iter_algo_aa_free_arrays(nl_info->context);
+    cs_iter_algo_aa_free_arrays(nl_algo->context);
 
   }
 

@@ -603,18 +603,18 @@ cs_cdofb_fixed_wall(short int                       fb,
  * \param[in]      pre_iterate    previous state of the mass flux iterate
  * \param[in]      cur_iterate    current state of the mass flux iterate
  * \param[in]      div_l2_norm    L2 norm of the velocity divergence
- * \param[in, out] iai            pointer to a cs_iter_algo_info_t structure
+ * \param[in, out] algo            pointer to a cs_iter_algo_t structure
  *
  * \return the convergence state
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sles_convergence_state_t
-cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t           nl_algo,
-                            const cs_real_t             *pre_iterate,
-                            cs_real_t                   *cur_iterate,
-                            cs_real_t                    div_l2_norm,
-                            cs_iter_algo_info_t         *iai);
+cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo,
+                            const cs_real_t          *pre_iterate,
+                            cs_real_t                *cur_iterate,
+                            cs_real_t                 div_l2_norm,
+                            cs_iter_algo_t           *algo);
 
 /*----------------------------------------------------------------------------*/
 /*!
