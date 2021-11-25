@@ -315,6 +315,80 @@ _get_dgl_mushy(const cs_solidification_binary_alloy_t     *alloy,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check the convergence of the non-linear algorithm
+ *
+ * \param[in]       nl_algo_type  type of non-linear algorithm
+ * \param[in]       pre_iter      previous iterate values
+ * \param[in, out]  cur_iter      current iterate values
+ * \param[in, out]  algo          pointer to a cs_iter_algo_t structure
+ *
+ * \return the convergence state
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_check_nl_cvg(cs_param_nl_algo_t        nl_algo_type,
+              const cs_real_t          *pre_iter,
+              cs_real_t                *cur_iter,
+              cs_iter_algo_t           *algo)
+{
+  assert(algo != NULL);
+
+  if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON && algo->n_algo_iter > 0) {
+
+    /* TODO */
+
+  } /* Anderson acceleration */
+
+  algo->prev_res = algo->res;
+  algo->res = cs_cdo_blas_square_norm_pcsp_diff(pre_iter, cur_iter);
+  assert(algo->res > -DBL_MIN);
+  algo->res = sqrt(algo->res);
+
+  if (algo->n_algo_iter < 1) /* Store the first residual to detect a
+                                divergence */
+    algo->res0 = algo->res;
+
+  /* Update the convergence members */
+
+  cs_iter_algo_update_cvg(algo);
+
+  if (algo->param.verbosity > 0) {
+
+    switch (nl_algo_type) {
+
+    case CS_PARAM_NL_ALGO_ANDERSON:
+      if (algo->n_algo_iter == 1)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "### SOLIDIFICATION %12s.It      Algo.Res  Tolerance\n",
+                      "Anderson");
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "### SOLIDIFICATION %12s.It%02d   %5.3e  %6.4e\n",
+                    "Anderson", algo->n_algo_iter, algo->res, algo->tol);
+      break;
+
+    case  CS_PARAM_NL_ALGO_PICARD:
+      if (algo->n_algo_iter == 1)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "### SOLIDIFICATION %12s.It      Algo.Res  Tolerance\n",
+                      "Picard");
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "### SOLIDIFICATION %12s.It%02d   %5.3e  %6.4e\n",
+                    "Picard", algo->n_algo_iter, algo->res, algo->tol);
+      break;
+
+    default:
+      break;
+
+    }
+
+  } /* verbosity > 0 */
+
+  return algo->cvg;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create the structure dedicated to the management of the
  *         solidification module
  *
@@ -2766,17 +2840,29 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
   cs_solidification_t  *solid = cs_solidification_structure;
 
   /* Solidification process with a pure component without segregation */
+
   cs_solidification_voller_t  *v_model =
     (cs_solidification_voller_t *)solid->model_context;
+
+  cs_iter_algo_t  *algo = v_model->nl_algo;
+
+  assert(algo != NULL);
 
   const size_t  csize = quant->n_cells*sizeof(cs_real_t);
 
   /* Retrieve the current values */
-  cs_real_t  *enthalpy = solid->enthalpy->val;
 
+  cs_real_t  *hkp1 = solid->enthalpy->val;
   cs_real_t  *hk = NULL;   /* enthalpy  ^{n+1,k} */
   BFT_MALLOC(hk, quant->n_cells, cs_real_t);
-  memcpy(hk, enthalpy, csize);
+
+  /* Initialize the stopping criteria */
+
+  cs_iter_algo_reset(algo);
+
+  algo->normalization = sqrt(cs_cdo_blas_square_norm_pcsp(hkp1));
+  if (algo->normalization < cs_math_zero_threshold)
+    algo->normalization = 1.0;
 
   /* Non-linear iterations (k) are performed to converge on the relation
    * h^{n+1,k+1} = h^{n+1,k} + eps with eps a user-defined tolerance
@@ -2791,12 +2877,7 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
   cs_field_current_to_previous(solid->g_l_field);
   cs_field_current_to_previous(solid->enthalpy);
 
-  /* Initialize the stopping criteria */
-
-  cs_real_t  delta_h = 1 + v_model->max_delta_h;
-  int iter = 0;
-
-  while ( delta_h > v_model->max_delta_h && iter < v_model->n_iter_max) {
+  do {
 
     /* Compute the new thermal source term */
 
@@ -2817,6 +2898,8 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
      * enthalpy stores k+1,n+1 and hk stores k,n+1
      */
 
+    memcpy(hk, hkp1, csize);
+
     _compute_enthalpy(quant,
                       time_step->t_cur,        /* t_eval */
                       solid->temperature->val, /* temperature */
@@ -2825,26 +2908,11 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
                       solid->latent_heat,      /* latent heat coeff. */
                       solid->mass_density,     /* rho */
                       solid->cp,               /* cp */
-                      enthalpy);               /* computed enthalpy */
-
-    delta_h = -1;
-    for (cs_lnum_t c = 0; c < quant->n_cells; c++) {
-
-      cs_real_t  dh = fabs(enthalpy[c] - hk[c]);
-      hk[c] = enthalpy[c];
-
-      if (dh > delta_h)
-        delta_h = dh;
-
-    } /* Loop on cells */
-
-    iter++;
-    if (solid->verbosity > 1)
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "### Solidification.NL: k= %d | delta_enthalpy= %5.3e\n",
-                    iter, delta_h);
+                      hkp1);                   /* computed enthalpy */
 
   } /* Until convergence */
+  while (_check_nl_cvg(v_model->nl_algo_type,
+                       hk, hkp1, algo) == CS_SLES_ITERATING);
 
   BFT_FREE(hk);
 
@@ -2852,8 +2920,9 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
 
   if (solid->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
-                  "## Solidification: Stop after %d iters, delta = %5.3e\n",
-                  iter, delta_h);
+                  "## Solidification: Stop non-linear algo. after %d iters,"
+                  " residual = %5.3e\n",
+                  algo->n_algo_iter, algo->res);
 
   /* Monitoring */
 
@@ -3271,10 +3340,24 @@ cs_solidification_activate(cs_solidification_model_t       model,
       v_model->t_solidus = 0.;
       v_model->t_liquidus = 1.0;
 
-      v_model->max_delta_h = 1e-2;
-      v_model->n_iter_max = 1;
-      if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_NL)
-        v_model->n_iter_max = 15;
+      /* Non-linear algorithm */
+
+      if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_NL) {
+
+        v_model->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
+        v_model->nl_algo = cs_iter_algo_create(0,     /* verbosity */
+                                               15,    /* n_max_iter */
+                                               1e-6,  /* abs. tolerance */
+                                               1e-2,  /* rel. tolerance */
+                                               1e3);  /* div. tolerance */
+
+      }
+      else {
+
+        v_model->nl_algo_type = CS_PARAM_N_NL_ALGOS;
+        v_model->nl_algo = NULL;
+
+      }
 
       /* Function pointers */
 
@@ -4003,6 +4086,9 @@ cs_solidification_destroy_all(void)
       cs_solidification_voller_t  *v_model
         = (cs_solidification_voller_t *)solid->model_context;
 
+      if (CS_SOLIDIFICATION_MODEL_VOLLER_NL)
+        BFT_FREE(v_model->nl_algo);
+
       BFT_FREE(v_model);
 
     } /* Voller and Prakash modelling */
@@ -4513,6 +4599,9 @@ cs_solidification_log_setup(void)
       cs_solidification_voller_t  *v_model
         = (cs_solidification_voller_t *)solid->model_context;
 
+      cs_iter_algo_t  *ia = v_model->nl_algo;
+      assert(ia != NULL);
+
       cs_log_printf(CS_LOG_SETUP, "  * %s |"
                     " Model: Voller-Prakash (1987) with non-linearities\n",
                     module);
@@ -4521,20 +4610,24 @@ cs_solidification_log_setup(void)
         cs_log_printf(CS_LOG_SETUP,
                       "  * %s | Tliq: %5.3e; Tsol: %5.3e\n"
                       "  * %s | Latent heat: %5.3e\n"
-                      "  * %s | Max. iter: %d; Max. delta enthalpy: %5.3e\n",
+                      "  * %s | NL Algo: max. iter: %d; rtol: %5.3e,"
+                      " atol: %5.3e, dtol: %5.3e\n",
                       module, v_model->t_liquidus, v_model->t_solidus,
                       module, solid->latent_heat,
-                      module, v_model->n_iter_max, v_model->max_delta_h);
+                      module, ia->param.n_max_algo_iter, ia->param.rtol,
+                      ia->param.atol, ia->param.dtol);
       else
         cs_log_printf(CS_LOG_SETUP,
                       "  * %s | Tliq: %5.3e; Tsol: %5.3e\n"
                       "  * %s | Latent heat: %5.3e\n"
                       "  * %s | Forcing coef: %5.3e s_das: %5.3e\n"
-                      "  * %s | Max. iter: %d; Max. delta enthalpy: %5.3e\n",
+                      "  * %s | NL Algo: max. iter: %d; rtol: %5.3e,"
+                      " atol: %5.3e, dtol: %5.3e\n",
                       module, v_model->t_liquidus, v_model->t_solidus,
                       module, solid->latent_heat,
                       module, solid->forcing_coef, v_model->s_das,
-                      module, v_model->n_iter_max, v_model->max_delta_h);
+                      module, ia->param.n_max_algo_iter, ia->param.rtol,
+                      ia->param.atol, ia->param.dtol);
     }
     break;
 

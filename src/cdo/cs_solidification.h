@@ -32,6 +32,7 @@
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_equation.h"
+#include "cs_iter_algo.h"
 #include "cs_navsto_param.h"
 #include "cs_time_plot.h"
 #include "cs_time_step.h"
@@ -338,8 +339,8 @@ typedef struct {
   /* Numerical parameters */
   /* -------------------- */
 
-  int                            n_iter_max;
-  double                         max_delta_h;
+  cs_param_nl_algo_t             nl_algo_type;
+  cs_iter_algo_t                *nl_algo;
 
 } cs_solidification_voller_t;
 
