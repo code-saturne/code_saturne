@@ -907,6 +907,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
     = (cs_solidification_voller_t *)solid->model_context;
 
   /* Sanity checks */
+
   assert(v_model != NULL);
   assert(solid->temperature != NULL);
 
@@ -915,6 +916,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
   assert(temp != NULL && temp_pre != NULL);
 
   /* 1./(t_liquidus - t_solidus) = \partial g_l/\partial Temp */
+
   const cs_real_t  dgldT = 1./(v_model->t_liquidus - v_model->t_solidus);
   const cs_real_t  coef =
     solid->mass_density->ref_value*solid->latent_heat/ts->dt[0];
@@ -925,6 +927,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
     if (connect->cell_flag[c_id] & CS_FLAG_SOLID_CELL) {
 
       /* Keep the solid state during all the computation */
+
       solid->thermal_reaction_coef_array[c_id] = 0;
       solid->thermal_source_term_array[c_id] = 0;
 
@@ -934,6 +937,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
       if (temp_pre[c_id] > v_model->t_liquidus) {
 
         /* Liquid --> solid state */
+
         solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
         solid->thermal_source_term_array[c_id] =
           dgldT_coef*v_model->t_liquidus*quant->cell_vol[c_id];
@@ -942,6 +946,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
       else if (temp_pre[c_id] < v_model->t_solidus) {
 
         /* Solid --> Solid state */
+
         solid->thermal_reaction_coef_array[c_id] = 0;
         solid->thermal_source_term_array[c_id] = 0;
 
@@ -964,6 +969,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
       if (temp_pre[c_id] > v_model->t_liquidus) {
 
         /* Liquid --> liquid state */
+
         solid->thermal_reaction_coef_array[c_id] = 0;
         solid->thermal_source_term_array[c_id] = 0;
 
@@ -971,6 +977,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
       else if (temp_pre[c_id] < v_model->t_solidus) {
 
         /* Solid --> liquid state */
+
         solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
         solid->thermal_source_term_array[c_id] =
           dgldT_coef*v_model->t_solidus*quant->cell_vol[c_id];
@@ -990,6 +997,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
       if (temp_pre[c_id] > v_model->t_liquidus) {
 
         /* Liquid --> mushy state */
+
         solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
         solid->thermal_source_term_array[c_id] =
           dgldT_coef*v_model->t_liquidus*quant->cell_vol[c_id];
@@ -998,6 +1006,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
       else if (temp_pre[c_id] < v_model->t_solidus) {
 
         /* Solid --> mushy state */
+
         solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
         solid->thermal_source_term_array[c_id] =
           dgldT_coef*v_model->t_solidus*quant->cell_vol[c_id];

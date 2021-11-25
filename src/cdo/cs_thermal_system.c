@@ -404,16 +404,19 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   /* ---------------------------------------------------- */
 
   /* Mass density */
+
   thm->rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
   if (thm->rho == NULL)
     thm->rho = cs_property_add(CS_PROPERTY_MASS_DENSITY, CS_PROPERTY_ISO);
 
   /* Thermal capacity */
+
   thm->cp = cs_property_by_name(CS_THERMAL_CP_NAME);
   if (thm->cp == NULL)
     thm->cp = cs_property_add(CS_THERMAL_CP_NAME, CS_PROPERTY_ISO);
 
   /* Thermal conductivity */
+
   cs_property_type_t  pty_type = CS_PROPERTY_ISO;
   if (model & CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY)
     pty_type = CS_PROPERTY_ANISO;
@@ -421,6 +424,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
 
   /* Add the associated equation related to this module with respect to
    * the settings */
+
   cs_equation_t  *eq = NULL;
   cs_equation_param_t  *eqp = NULL;
 
@@ -458,6 +462,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
     eqp = cs_equation_get_param(eq);
 
     /* Always add a diffusion term */
+
     cs_equation_add_diffusion(eqp, thm->lambda);
 
     if (has_time) {
@@ -476,6 +481,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   thm->thermal_eq = eq;
 
   /* Add an advection term  */
+
   if (thm->model & CS_THERMAL_MODEL_NAVSTO_ADVECTION) {
 
     cs_equation_add_advection(eqp,
@@ -488,6 +494,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
     cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
 
     /* Set a space discretization by default */
+
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "ocs");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
@@ -502,9 +509,11 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   }
 
   /* Linear algebra default settings */
+
   cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "filtered");
 
   /* Set and return pointer */
+
   cs_thermal_system = thm;
 
   return cs_thermal_system;

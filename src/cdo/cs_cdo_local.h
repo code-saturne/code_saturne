@@ -197,7 +197,7 @@ typedef struct {
  *  compact one dedicated to a cell. Arrays are allocated to the max number of
  *  related entities (e.g. n_max_vbyc or to n_max_ebyc).
  *  The cell-wise numbering is based on the c2v, c2e and c2f connectivity.
-*/
+ */
 
 typedef struct {
 

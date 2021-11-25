@@ -280,9 +280,11 @@ typedef struct {
   /* ----------------- */
 
   /* Function to update the liquid fraction */
+
   cs_solidification_func_t      *update_gl;
 
   /* Function to update the source term for the thermal equation */
+
   cs_solidification_func_t      *update_thm_st;
 
   /* Numerical parameters */
@@ -308,6 +310,7 @@ typedef struct {
 typedef struct {
 
   /* Secondary dendrite arm spacing */
+
   cs_real_t                      s_das;
 
   /* Physical parameters to specify the law of variation of the liquid fraction
@@ -325,9 +328,11 @@ typedef struct {
   /* ----------------- */
 
   /* Function to update the liquid fraction */
+
   cs_solidification_func_t      *update_gl;
 
   /* Function to update the source term for the thermal equation */
+
   cs_solidification_func_t      *update_thm_st;
 
   /* Numerical parameters */
@@ -349,17 +354,19 @@ typedef struct {
   /* -------------- */
 
   /* Reference mixture concentration (used in the Boussinesq approximation and
-   * for normalization
-   */
+   * for normalization */
+
   cs_real_t    ref_concentration;
 
   /* Phase diagram features for an alloy with the component A and B */
   /* -------------------------------------------------------------- */
 
   /* Secondary dendrite arm spacing */
+
   cs_real_t    s_das;
 
   /* Physical parameters */
+
   cs_real_t    kp;       /* distribution coefficient */
   cs_real_t    inv_kp;   /* reciprocal of kp */
   cs_real_t    inv_kpm1; /* 1/(kp - 1) */
@@ -367,9 +374,11 @@ typedef struct {
   cs_real_t    inv_ml;   /* reciprocal of ml */
 
   /* Temperature of phase change for the pure material (conc = 0) */
+
   cs_real_t    t_melt;
 
   /* Eutectic point: temperature and concentration */
+
   cs_real_t    t_eut;
   cs_real_t    t_eut_inf;
   cs_real_t    t_eut_sup;
@@ -388,15 +397,19 @@ typedef struct {
    */
 
   /* Function to update the liquid fraction */
+
   cs_solidification_func_t     *update_gl;
 
   /* Function to update the source term for the thermal equation */
+
   cs_solidification_func_t     *update_thm_st;
 
   /* Function to update the velocity forcing in the momentum equation */
+
   cs_solidification_func_t     *update_velocity_forcing;
 
   /* Function to update c_l in each cell */
+
   cs_solidification_func_t     *update_clc;
 
   /* Drive the convergence of the coupled system (solute transport and thermal
@@ -430,6 +443,7 @@ typedef struct {
    *
    * Same thing for the bulk concentration.
    */
+
   cs_real_t         *tk_bulk;
   cs_real_t         *ck_bulk;
   cs_real_t         *tx_bulk;
@@ -438,10 +452,12 @@ typedef struct {
   /* Solute concentration in the liquid phase
    * 1) array of the last computed values at cells
    * 2) array of the last computed values at faces (interior and border) */
+
   cs_real_t         *c_l_cells;
   cs_real_t         *c_l_faces;
 
   /* Temperature values at faces (this is not owned by the structure) */
+
   const cs_real_t   *temp_faces;
 
   /* Equation for the solute transport and related quantities */
@@ -451,6 +467,7 @@ typedef struct {
 
   /* Diffusion coefficient for the solute in the liquid phase
    * diff_pty_val = rho * g_l * diff_coef */
+
   cs_real_t          diff_coef;
   cs_property_t     *diff_pty;
   cs_real_t         *diff_pty_array;
@@ -462,9 +479,11 @@ typedef struct {
   /* ------------------------------ */
 
   /* Liquidus temperature (values at cell centers) */
+
   cs_real_t         *t_liquidus;
 
   /* Quantities for advanced analysis */
+
   cs_real_t         *tbulk_minus_tliq;
   cs_real_t         *cliq_minus_cbulk;
 
@@ -487,20 +506,24 @@ typedef struct  {
   /* ---------------------------------------- */
 
   /* Mass density of the liquid/solid media */
+
   cs_property_t   *mass_density;
 
   /* Reference value for the heat capacity in the solidification/melting area
    * (assumed to be uniform) */
+
   cs_property_t   *cp;
 
   /* Viscosity (pointer to the total viscosity which should be equal to the
   *  laminar viscosity since no turbulence modelling is usually taken into
   *  account */
+
   cs_property_t   *viscosity;
 
   /* Physical parameter for computing the source term in the energy equation
    * Latent heat between the liquid and solid phase
    */
+
   cs_real_t        latent_heat;
 
 
@@ -512,12 +535,15 @@ typedef struct  {
   cs_property_t   *g_l;         /* liquid fraction property */
 
   /* array storing the state (solid, mushy, liquid) for each cell */
+
   cs_solidification_state_t     *cell_state;
 
   /* Plot evolution of the solidification process */
+
   cs_time_plot_t                *plot_state;
 
   /* Monitoring related to this module */
+
   cs_real_t        state_ratio[CS_SOLIDIFICATION_N_STATES];
   cs_gnum_t        n_g_cells[CS_SOLIDIFICATION_N_STATES];
 
@@ -536,22 +562,26 @@ typedef struct  {
 
 
   /* A reaction term and source term are introduced in the thermal model */
+
   cs_property_t   *thermal_reaction_coef;
   cs_real_t       *thermal_reaction_coef_array;
   cs_real_t       *thermal_source_term_array;
 
   /* Additional settings related to the choice of solidification modelling */
+
   void            *model_context;
 
   /* Strategy to update quantities during the solidification process. These
    * quantities are the liquid fraction, the thermal source term for
    * instance */
+
   cs_solidification_strategy_t   strategy;
 
   /* A reaction term is introduced in the momentum equation. This terms tends to
    * a huge number when the liquid fraction tends to 0 in order to penalize
    * the velocity to zero when the whole cell is solid
    */
+
   cs_real_t       *forcing_mom_array; /* values of the forcing reaction
                                          coefficient in each cell */
   cs_property_t   *forcing_mom;
@@ -563,10 +593,12 @@ typedef struct  {
    * dendrite arm spacing
    * F(u) = forcing_coef * (1- gl)^2/(gl^3 + forcing_eps) * u
    */
+
   cs_real_t        forcing_coef;
 
   /* First cell associated to a fluid/solid area (i.e. not associated to
    * a permanent solid zone) */
+
   cs_lnum_t        first_cell;
 
 } cs_solidification_t;
