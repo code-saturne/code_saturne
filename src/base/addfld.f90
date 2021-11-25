@@ -645,6 +645,7 @@ if (imeteo.ge.2) then
   f_label = 'Meteo Temperature'
   ! Now create matching property
   call add_property_field(f_name, f_label, 1, .false., iflid)
+  call field_set_key_int(iflid, keylog, 1)
 
   f_name  = 'meteo_pot_temperature'
   f_label = 'Meteo pot Temperature'

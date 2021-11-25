@@ -134,7 +134,7 @@ use field
 use field_operator
 use cavitation
 use vof
-use atincl, only: kopint, iatmst
+use atincl, only: kopint, iatmst, ps
 
 !===============================================================================
 
@@ -194,6 +194,7 @@ double precision d2s3  , thetap, thetp1, thets
 double precision diipbx, diipby, diipbz
 double precision dvol
 double precision tensor(6)
+double precision rscp, tref
 
 double precision rvoid(1)
 
@@ -611,9 +612,16 @@ else if (idilat.eq.0) then
   call field_get_val_s(ibeta, cpro_beta)
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
 
-  ! Delta rho = - rho_0 beta Delta T
+  ! Delta rho = - rho_0 beta (T-T0)
+  tref = t0
+  ! for atmospheric flows, variable is potential temperature
+  if (ippmod(iatmos).gt.0) then
+    rscp = rair/cp0
+    tref = t0 * (ps / p0)**rscp
+  endif
+
   do iel = 1, ncel
-    drom = - ro0 * cpro_beta(iel) * (cvar_t(iel) - t0)
+    drom = - crom(iel) * cpro_beta(iel) * (cvar_t(iel) - tref)
     trav(1,iel) = trav(1,iel) + (drom * gx - cpro_gradp(1,iel)) * cell_f_vol(iel)
     trav(2,iel) = trav(2,iel) + (drom * gy - cpro_gradp(2,iel)) * cell_f_vol(iel)
     trav(3,iel) = trav(3,iel) + (drom * gz - cpro_gradp(3,iel)) * cell_f_vol(iel)
@@ -1236,9 +1244,16 @@ if (iappel.eq.1.and.iphydr.eq.1) then
     call field_get_val_s(ibeta, cpro_beta)
     call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
 
-    ! Delta rho = - rho_0 beta Delta T
+    ! Delta rho = - rho_0 beta (T-T0)
+    tref = t0
+    ! for atmospheric flows, variable is potential temperature
+    if (ippmod(iatmos).gt.0) then
+      rscp = rair/cp0
+      tref = t0 * (ps / p0)**rscp
+    endif
+
     do iel = 1, ncel
-      drom = - ro0 * cpro_beta(iel) * (cvar_t(iel) - t0) * cell_is_active(iel)
+      drom = - crom(iel) * cpro_beta(iel) * (cvar_t(iel) - tref) * cell_is_active(iel)
       dfrcxt(1, iel) = drom*gx - frcxt(1, iel) * cell_is_active(iel)
       dfrcxt(2, iel) = drom*gy - frcxt(2, iel) * cell_is_active(iel)
       dfrcxt(3, iel) = drom*gz - frcxt(3, iel) * cell_is_active(iel)

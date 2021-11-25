@@ -84,6 +84,7 @@
 #include "cs_sles_default.h"
 #include "cs_face_viscosity.h"
 #include "cs_divergence.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1479,6 +1480,11 @@ cs_atmo_hydrostatic_profiles_compute(void)
   cs_real_t rair = phys_pro->r_pg_cnst;
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0; /* Around 2/7 */
+  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
+
+  const cs_velocity_pressure_model_t  *vp_model
+    = cs_glob_velocity_pressure_model;
+  const int idilat = vp_model->idilat;
 
   /* Get the lowest altitude (should also be minimum of z_ground)
    *=============================================================*/
@@ -1506,6 +1512,14 @@ cs_atmo_hydrostatic_profiles_compute(void)
     f->val[cell_id] = p_ground * pow(factor, rscp)
                     * exp(- g/(rair*temp->val[cell_id]) * (z - zt));
     density->val[cell_id] = f->val[cell_id] / (rair * temp->val[cell_id]);
+  }
+
+  /* Boussinesq hypothesis */
+  if (idilat==0) {
+    bft_printf(
+        "Meteo profiles are computed according to Boussinesq approximation.\n"
+        "Using adiabatic profiles for temperature and pressure."
+        "Density is computed accordingly.\n");
   }
 
   cs_real_t *i_massflux = NULL;
@@ -1597,9 +1611,13 @@ cs_atmo_hydrostatic_profiles_compute(void)
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
       inf_norm = fmax(fabs(f->val[cell_id] - f->val_pre[cell_id])/pref, inf_norm);
 
+      /* Boussinesq hypothesis: do not update adiabatic temperature profile */
+      if (idilat > 0) {
+        temp->val[cell_id] = potemp->val[cell_id]
+                           * pow((f->val[cell_id]/pref), rscp);
+      }
+
       /* f_ext = rho^k * g */
-      temp->val[cell_id] = potemp->val[cell_id]
-                         * pow((f->val[cell_id]/pref), rscp);
       cs_real_t rho_k = f->val[cell_id] / (rair * temp->val[cell_id]);
       density->val[cell_id] = rho_k;
 
