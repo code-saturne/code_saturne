@@ -955,7 +955,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
 
         solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
         solid->thermal_source_term_array[c_id] =
-          dgldT_coef*temp[c_id]*quant->cell_vol[c_id];
+          dgldT_coef*temp_pre[c_id]*quant->cell_vol[c_id];
 
         /* Strictly speaking this should not be divided by 1/dt but with a
            smaller time step (Tsolidus is reached before the end of the time
@@ -987,7 +987,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
 
         solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
         solid->thermal_source_term_array[c_id] =
-          dgldT_coef*temp[c_id]*quant->cell_vol[c_id];
+          dgldT_coef*temp_pre[c_id]*quant->cell_vol[c_id];
 
       }
 
@@ -1016,7 +1016,7 @@ _update_thm_voller_path(const cs_mesh_t             *mesh,
 
         solid->thermal_reaction_coef_array[c_id] = dgldT_coef;
         solid->thermal_source_term_array[c_id] =
-          dgldT_coef*temp[c_id]*quant->cell_vol[c_id];
+          dgldT_coef*temp_pre[c_id]*quant->cell_vol[c_id];
 
       } /* State for the previous temp (n-1) */
 
