@@ -1452,7 +1452,8 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  nl_info->normalization = cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array);
+  nl_info->normalization =
+    sqrt(cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array));
 
   /* Check the convergence status and update the nl_info structure related
    * to the convergence monitoring */
