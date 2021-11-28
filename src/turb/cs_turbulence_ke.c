@@ -1913,7 +1913,7 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                                      0,   /* iescap */
                                      0,   /* imucpp */
                                      -1,  /* normp */
-                                     eqp_eps,
+                                     &eqp_eps_loc,
                                      cvara_ep,
                                      cvara_ep,
                                      coefap,
