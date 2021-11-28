@@ -2661,22 +2661,28 @@ cs_mesh_update_auxiliary(cs_mesh_t  *mesh)
   cs_mesh_update_b_cells(mesh);
 }
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
  * Creation and initialization of halo structures.
  *
  * Treatment of parallel and/or periodic halos for standard and extended
  * ghost cells according to halo type requested by global options.
  *
  * parameters:
- *   mesh       <->  pointer to mesh structure
- *   mb         <->  pointer to mesh builder (in case of periodicity)
- *   halo_type  <->  type of halo (standard or extended)
+ *   \param[in, out]  mesh                   pointer to mesh structure
+ *   \param[in, out]  mb                     pointer to mesh builder
+ *                                           (for periodicity)
+ *   \param[in]       halo_type              type of halo (standard or extended)
+ *   \param[in]       verbosity              verbosity
+ *   \param[in]       rebuild_vtx_interface  also rebuild vertex interfaces ?
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_init_halo(cs_mesh_t          *mesh,
                   cs_mesh_builder_t  *mb,
-                  cs_halo_type_t      halo_type)
+                  cs_halo_type_t      halo_type,
+                  int                 verbosity,
+                  bool                rebuild_vtx_interface)
 {
   cs_lnum_t  i;
   double  t1, t2;
@@ -2693,6 +2699,9 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
   const cs_lnum_t  n_i_faces = mesh->n_i_faces;
   const cs_lnum_t  n_vertices = mesh->n_vertices;
+
+  int s_verbosity = mesh->verbosity;
+  s_verbosity = verbosity;
 
   /* Build halo */
 
@@ -2712,20 +2721,20 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
     t1 = cs_timer_wtime();
 
-    if (mesh->verbosity > 0)
+    if (verbosity > 0)
       bft_printf("\n"
                  " ----------------------------------------------------------"
                  "\n");
 
     if (mesh->periodicity != NULL) {
       if (fvm_periodicity_get_n_levels(mesh->periodicity) == 1) {
-        if (mesh->verbosity > 0)
+        if (verbosity > 0)
           bft_printf(_(" Composing periodicities\n"));
         fvm_periodicity_combine(mesh->periodicity, 0);
       }
     }
 
-    if (mesh->verbosity > 0) {
+    if (verbosity > 0) {
       if (halo_type ==  CS_HALO_EXTENDED)
         bft_printf(_("\n Halo construction with extended neighborhood\n"
                      " ============================================\n\n"));
@@ -2743,7 +2752,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
         perio_num[i] = i+1;
     }
 
-    if (mesh->verbosity > 0)
+    if (verbosity > 0)
       bft_printf(_(" Face interfaces creation\n"));
 
     /* Build purely parallel cs_interface_set structure */
@@ -2816,17 +2825,24 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
     }
 
-    if (mesh->verbosity > 0)
-      bft_printf(_(" Vertex interfaces creation\n"));
+    if (rebuild_vtx_interface) {
 
-    mesh->vtx_interfaces = cs_interface_set_create(n_vertices,
-                                                   NULL,
-                                                   g_vertex_num,
-                                                   mesh->periodicity,
-                                                   mesh->n_init_perio,
-                                                   perio_num,
-                                                   n_periodic_couples,
-                         (const cs_gnum_t *const *)periodic_couples);
+      if (verbosity > 0)
+        bft_printf(_(" Vertex interfaces creation\n"));
+
+      if (mesh->vtx_interfaces != NULL)
+        cs_interface_set_destroy(&mesh->vtx_interfaces);
+
+      mesh->vtx_interfaces = cs_interface_set_create(n_vertices,
+                                                     NULL,
+                                                     g_vertex_num,
+                                                     mesh->periodicity,
+                                                     mesh->n_init_perio,
+                                                     perio_num,
+                                                     n_periodic_couples,
+                           (const cs_gnum_t *const *)periodic_couples);
+
+    }
 
     if (mesh->global_vtx_num != g_vertex_num)
       BFT_FREE(g_vertex_num);
@@ -2852,14 +2868,14 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
     /* Creation of the cs_halo_t structure. */
 
-    if (mesh->verbosity > 0) {
+    if (verbosity > 0) {
       bft_printf(_(" Halo creation\n"));
       bft_printf_flush();
     }
 
     mesh->halo = cs_halo_create(mesh->vtx_interfaces);
 
-    if (mesh->verbosity > 0) {
+    if (verbosity > 0) {
       bft_printf(_(" Halo definition\n"));
       bft_printf_flush();
     }
@@ -2885,7 +2901,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
   if (halo_type == CS_HALO_EXTENDED) {
 
     t1 = cs_timer_wtime();
-    if (mesh->verbosity > 0) {
+    if (verbosity > 0) {
       bft_printf(_(" Extended neighborhood structures definition\n"));
       bft_printf_flush();
     }
@@ -2907,7 +2923,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
   /* Output for log */
 
-  if (mesh->verbosity > 0) {
+  if (verbosity > 0) {
 
     if (mesh->halo_type != CS_HALO_N_TYPES)
       _print_halo_info(mesh,
@@ -2926,6 +2942,8 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
     _print_mesh_info(mesh);
 
   }
+
+  mesh->verbosity = s_verbosity;
 }
 
 /*----------------------------------------------------------------------------

@@ -2158,7 +2158,7 @@ cs_mesh_extrude(cs_mesh_t                        *m,
   if (m->halo != NULL || m->halo_type == CS_HALO_EXTENDED) {
     cs_halo_destroy(&(m->halo));
     cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;
-    cs_mesh_init_halo(m, mb, m->halo_type);
+    cs_mesh_init_halo(m, mb, m->halo_type, m->verbosity, true);
   }
 
   cs_mesh_update_auxiliary(cs_glob_mesh);

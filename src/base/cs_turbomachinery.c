@@ -1051,7 +1051,8 @@ _update_mesh(bool     restart_mode,
   /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
 
-  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type);
+  cs_mesh_init_halo(cs_glob_mesh, cs_glob_mesh_builder, halo_type,
+                    cs_glob_mesh->verbosity, true);
   cs_mesh_update_auxiliary(cs_glob_mesh);
 
   /* Destroy the temporary structure used to build the main mesh */

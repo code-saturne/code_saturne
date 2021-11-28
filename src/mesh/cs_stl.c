@@ -2045,10 +2045,6 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
         cs_halo_sync_num(m->halo, CS_HALO_STANDARD, cell_tag);
       }
 
-      const cs_lnum_2_t *restrict i_face_cells
-        = (const cs_lnum_2_t *restrict)m->i_face_cells;
-
-
       /* Here we add additionnal layers of refined cells
        * around the original STL selected cells */
       int nn = 1;
@@ -2086,8 +2082,8 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
 
     BFT_FREE(selected_cells);
 
-    /* Every 2 refinemet stage or at the end, re-partition
-     * of the mesh to avoid unbalance in the processors load */
+    /* Every 2 refinemet stages and at the end, re-partition
+     * the mesh to limit imbalance in the processors load */
 
     if ((n_level%2 == 0 || n_level == n_ref -1)
         && cs_glob_rank_id > -1) {
@@ -2099,7 +2095,7 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
       cs_partition(m, cs_glob_mesh_builder, CS_PARTITION_MAIN);
 
       cs_mesh_from_builder(m, cs_glob_mesh_builder);
-      cs_mesh_init_halo(m, cs_glob_mesh_builder, m->halo_type);
+      cs_mesh_init_halo(m, cs_glob_mesh_builder, m->halo_type, -1, true);
     }
 
     cs_mesh_update_auxiliary(m);

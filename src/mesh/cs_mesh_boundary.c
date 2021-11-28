@@ -1991,7 +1991,7 @@ cs_mesh_boundary_remove_periodicity(cs_mesh_t  *mesh)
     }
     cs_halo_destroy(&(mesh->halo));
     cs_interface_set_destroy(&(mesh->vtx_interfaces));
-    cs_mesh_init_halo(mesh, NULL, mesh->halo_type);
+    cs_mesh_init_halo(mesh, NULL, mesh->halo_type, mesh->verbosity, true);
   }
 
   cs_mesh_update_auxiliary(cs_glob_mesh);

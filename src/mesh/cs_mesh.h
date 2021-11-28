@@ -441,22 +441,28 @@ void
 cs_mesh_init_interfaces(cs_mesh_t          *mesh,
                         cs_mesh_builder_t  *mb);
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
  * Creation and initialization of halo structures.
  *
  * Treatment of parallel and/or periodic halos for standard and extended
  * ghost cells according to halo type requested by global options.
  *
  * parameters:
- *   mesh       <->  pointer to mesh structure
- *   mb         <->  pointer to mesh builder (in case of periodicity)
- *   halo_type  <->  type of halo (standard or extended)
+ *   \param[in, out]  mesh                   pointer to mesh structure
+ *   \param[in, out]  mb                     pointer to mesh builder
+ *                                           (for periodicity)
+ *   \param[in]       halo_type              type of halo (standard or extended)
+ *   \param[in]       verbosity              verbosity
+ *   \param[in]       rebuild_vtx_interface  also rebuild vertex interfaces ?
  *----------------------------------------------------------------------------*/
 
 void
 cs_mesh_init_halo(cs_mesh_t          *mesh,
                   cs_mesh_builder_t  *mb,
-                  cs_halo_type_t      halo_type);
+                  cs_halo_type_t      halo_type,
+                  int                 verbosity,
+                  bool                rebuild_vtx_interace);
 
 /*----------------------------------------------------------------------------
  * Get the global number of ghost cells.
