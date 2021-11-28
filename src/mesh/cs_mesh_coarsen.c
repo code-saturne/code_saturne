@@ -56,21 +56,16 @@
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
+#include "cs_mesh_builder.h"
 #include "cs_mesh_quantities.h"
+#include "cs_mesh_to_builder.h"
 #include "cs_order.h"
+#include "cs_sort.h"
 #include "cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
-
-#if 1
-#include "fvm_nodal.h"
-#include "fvm_nodal_order.h"
-#include "fvm_nodal_from_desc.h"
-#include "fvm_writer.h"
-#include "cs_mesh_connect.h"
-#endif
 
 #include "cs_mesh_coarsen.h"
 
@@ -103,8 +98,9 @@ typedef struct {
   cs_lnum_2_t  *e2v;               /* edge to vertices */
 
   cs_lnum_t     n_edges;           /* number of edges */
-  int           n_edges_max;       /* Maximum number of edges */
-  int           n_vertices_max;    /* Maximum number of vertices */
+  cs_lnum_t     n_edges_max;       /* Maximum number of edges */
+  cs_lnum_t     n_vertices;        /* number of edges */
+  cs_lnum_t     n_vertices_max;    /* Maximum number of vertices */
 
 } cs_mesh_face_merge_state_t;
 
@@ -299,6 +295,66 @@ _build_n2o(cs_lnum_t          n_old,
 }
 
 /*----------------------------------------------------------------------------
+ * Build indexed mapping from new to old array.
+ *
+ * The caller is responsible for freeing the returned array.
+ *
+ * parameters:
+ *   n_old      <-- old number of elements
+ *   n_new      <-- new number of elements
+ *   o2n        <-- old to new array
+ *   n2o_idx    --> new to old index
+ *   n2o        --> new to old values
+ *----------------------------------------------------------------------------*/
+
+static void
+_build_n2o_indexed(cs_lnum_t          n_old,
+                   cs_lnum_t          n_new,
+                   const cs_lnum_t    o2n[],
+                   cs_lnum_t         *n2o_idx[],
+                   cs_lnum_t         *n2o[])
+{
+  cs_lnum_t *_n2o_idx, *_n2o;
+
+  BFT_MALLOC(_n2o_idx, n_new+1, cs_lnum_t);
+
+  for (cs_lnum_t i = 0; i < n_new+1; i++)
+    _n2o_idx[i] = 0;
+
+  /* Count occurences */
+
+  for (cs_lnum_t i = 0; i < n_old; i++)
+    _n2o_idx[o2n[i] + 1] += 1;
+
+  /* Transform count to index */
+
+  for (cs_lnum_t i = 0; i < n_new; i++)
+    _n2o_idx[i+1] += _n2o_idx[i];
+
+  /* Build array */
+
+  BFT_MALLOC(_n2o, _n2o_idx[n_new], cs_lnum_t);
+
+  cs_lnum_t *shift;
+  BFT_MALLOC(shift, n_new, cs_lnum_t);
+  for (cs_lnum_t i = 0; i < n_new; i++)
+    shift[i] = 0;
+
+  for (cs_lnum_t i = 0; i < n_old; i++) {
+    cs_lnum_t j = o2n[i];
+    _n2o[_n2o_idx[j] + shift[j]] = i;
+    shift[j] += 1;
+  }
+
+  BFT_FREE(shift);
+
+  /* Set return values */
+
+  *n2o_idx = _n2o_idx;
+  *n2o = _n2o;
+}
+
+/*----------------------------------------------------------------------------
  * Update a global numbering array in case of entity renumbering
  *
  * parameters:
@@ -451,6 +507,29 @@ _merge_cells(cs_mesh_t       *m,
 
   BFT_FREE(c_n2o);
 
+  /* Transfer (cell-based) halo information to (face-based) mesh builder
+     in case of periodicity, before operation modifying cell numbering  */
+
+  cs_mesh_builder_t *mb = NULL;
+
+  if (m->halo != NULL) {
+    if (m->n_init_perio > 0) {
+      const cs_gnum_t n_g_faces = m->n_g_i_faces + m->n_g_b_faces;
+      int rank_id = CS_MAX(cs_glob_rank_id, 0);
+      mb = cs_mesh_builder_create();
+      cs_mesh_builder_define_block_dist(mb,
+                                        rank_id,
+                                        cs_glob_n_ranks,
+                                        1,
+                                        0,
+                                        m->n_g_cells,
+                                        n_g_faces,
+                                        m->n_g_vertices);
+      cs_mesh_to_builder_perio_faces(m, mb);
+    }
+    cs_halo_destroy(&(m->halo));
+  }
+
   /* Update face references */
 
   const cs_lnum_t n_i_faces = m->n_i_faces;
@@ -479,6 +558,19 @@ _merge_cells(cs_mesh_t       *m,
 
   m->n_cells = n_new;
   m->n_cells_with_ghosts = n_new;
+
+  /* We can now rebuild halos (and in case of periodicity, do so before
+     faces are removed or merged, to convert face-based to cell-based
+     information) */
+
+  if (   m->n_domains > 1 || m->n_init_perio > 0
+      || m->halo_type == CS_HALO_EXTENDED) {
+
+    cs_mesh_init_halo(m, mb, m->halo_type, -1, false);
+
+    if (mb != NULL)
+      cs_mesh_builder_destroy(&mb);
+  }
 
   /* Remove excess interior faces */
 
@@ -517,7 +609,9 @@ _face_merge_state_create(void)
   cs_mesh_face_merge_state_t *s;
   BFT_MALLOC(s, 1, cs_mesh_face_merge_state_t);
 
+  s->n_edges = 0;
   s->n_edges_max = 3;
+  s->n_vertices = 0;
   s->n_vertices_max = 3;
 
   BFT_MALLOC(s->face_vertices, s->n_vertices_max, cs_lnum_t);
@@ -598,7 +692,8 @@ _build_merged_face(cs_lnum_t                    n_faces,
                    cs_lnum_t                    f2v_lst[],
                    cs_mesh_face_merge_state_t  *s)
 {
-  cs_lnum_t n_vertices = 0;
+  s->n_edges = 0;
+  s->n_vertices = 0;
 
   /* Loop over faces */
 
@@ -638,6 +733,7 @@ _build_merged_face(cs_lnum_t                    n_faces,
         if (e_vtx[1] == s->e2v[j][0] && e_vtx[0] == s->e2v[j][1]) {
           _face_merge_state_remove_edge(s, j);
           insert = false;
+          break;
         }
       }
 
@@ -663,31 +759,298 @@ _build_merged_face(cs_lnum_t                    n_faces,
     s->face_vertices[0] = s->e2v[0][0];
     s->face_vertices[1] = s->e2v[0][1];
 
-    n_vertices = 2;
+    s->n_vertices = 2;
 
     _face_merge_state_remove_edge(s, 0);
 
     while (s->n_edges > 0) {
       for (cs_lnum_t i = 0; i < s->n_edges; i++) {
-        if (s->e2v[i][0] == s->face_vertices[n_vertices-1]) {
-          n_vertices += 1;
-          if (n_vertices > s->n_vertices_max) {
+        if (s->e2v[i][0] == s->face_vertices[s->n_vertices-1]) {
+          s->n_vertices += 1;
+          if (s->n_vertices > s->n_vertices_max) {
             s->n_vertices_max *= 2;
             BFT_REALLOC(s->face_vertices, s->n_vertices_max, cs_lnum_t);
           }
-          s->face_vertices[n_vertices - 1] = s->e2v[0][1];
+          s->face_vertices[s->n_vertices - 1] = s->e2v[i][1];
           _face_merge_state_remove_edge(s, i);
           break;
         }
       }
-      /* We should not arrive here */
     }
 
   }
 
   /* Verification */
 
-  return n_vertices;
+  if (s->face_vertices[s->n_vertices - 1] == s->face_vertices[0])
+    s->n_vertices -= 1;
+
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: %d edges do not constitute a closed contour."),
+              __func__, (int)n_faces);
+
+  return s->n_vertices;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build interior faces equivalence array.
+ *
+ * \param[in, out]  m        mesh
+ * \param[out]      i_f_o2n  cell old to new renumbering
+ *
+ * return  number of new interior faces
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_i_faces_equiv(cs_mesh_t  *m,
+               cs_lnum_t  *i_f_o2n[])
+{
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+
+  /* Initialize arrays */
+
+  cs_lnum_t  *_i_f_o2n;
+  BFT_MALLOC(_i_f_o2n, n_i_faces, cs_lnum_t);
+
+# pragma omp for
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
+    _i_f_o2n[f_id] = f_id;
+
+  /* Build cell->faces connectivity to group associated faces */
+
+  cs_adjacency_t *c2f = cs_mesh_adjacency_c2f_lower(m, -1);
+
+  cs_lnum_t *c2c;
+  BFT_MALLOC(c2c, c2f->idx[n_cells], cs_lnum_t);
+
+# pragma omp for schedule(dynamic, CS_CL_SIZE)
+  for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
+
+    cs_lnum_t s_id = c2f->idx[c_id];
+    cs_lnum_t e_id = c2f->idx[c_id+1];
+
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t f_id = c2f->ids[j];
+
+      cs_lnum_t c_id_0 = i_face_cells[f_id][0];
+      cs_lnum_t c_id_1 = i_face_cells[f_id][1];
+
+      /* Handle face when referenced by the adjacent cell with lowest id */
+      if (c_id_0 == c_id)
+        c2c[j] = c_id_1;
+      else {
+        assert(c_id_1 == c_id);
+        c2c[j] = c_id_0;
+      }
+
+    }
+
+    cs_sort_coupled_shell(s_id, e_id, c2c, c2f->ids);
+
+    /* Now identify series of faces adjacent to the same cell */
+
+    cs_lnum_t c_id_prev = -1;
+    cs_lnum_t f_id_eq = -1;
+
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t f_id = c2f->ids[j];
+      cs_lnum_t c_id_0 = c2c[j];
+
+      if (c_id_0 != c_id_prev) {
+        c_id_prev = c_id_0;
+        f_id_eq = f_id;
+      }
+
+      _i_f_o2n[f_id] = f_id_eq;
+    }
+
+  }
+
+  BFT_FREE(c2c);
+  cs_adjacency_destroy(&c2f);
+
+  /* Now compact renumbering array */
+
+  cs_lnum_t n_i_f_new = 0;
+  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+    if (_i_f_o2n[i] == i) {
+      _i_f_o2n[i] = n_i_f_new;
+      n_i_f_new += 1;
+    }
+    else {
+      assert(_i_f_o2n[i] < i);
+      _i_f_o2n[i] = _i_f_o2n[_i_f_o2n[i]];
+    }
+  }
+
+  *i_f_o2n = _i_f_o2n;
+
+  return n_i_f_new;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Merge interior faces based on renumbering array.
+ *
+ * \param[in, out]  m      mesh
+ * \param[in]       n_new  new number of faces
+ * \param[in]       f_o2n  face old to new renumbering
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_merge_i_faces(cs_mesh_t       *m,
+               cs_lnum_t        n_new,
+               const cs_lnum_t  f_o2n[])
+{
+  const cs_lnum_t n_old = m->n_i_faces;
+
+  cs_lnum_t *n2o_idx = NULL, *n2o = NULL;
+  _build_n2o_indexed(n_old, n_new, f_o2n, &n2o_idx, &n2o);
+
+  cs_lnum_t *i_face_vtx_idx, *i_face_vtx;
+  BFT_MALLOC(i_face_vtx_idx, n_new+1, cs_lnum_t);
+  BFT_MALLOC(i_face_vtx, m->i_face_vtx_idx[n_old], cs_lnum_t);
+
+  i_face_vtx_idx[0] = 0;
+
+  cs_mesh_face_merge_state_t *s = _face_merge_state_create();
+
+  cs_lnum_t n_s_f_max = 0;
+  short int *f_orient = NULL;
+
+  for (cs_lnum_t i_n = 0; i_n < n_new; i_n++) {
+
+    cs_lnum_t s_id = n2o_idx[i_n], e_id = n2o_idx[i_n+1];
+    cs_lnum_t n_s_faces = e_id - s_id;
+
+    /* If face does not need to be merged, simply copy it */
+
+    if (n_s_faces == 1) {
+
+      cs_lnum_t f_id = n2o[s_id];
+
+      cs_lnum_t v_s_id_src = m->i_face_vtx_idx[f_id];
+      cs_lnum_t n_f_vtx = m->i_face_vtx_idx[f_id+1] - v_s_id_src;
+
+      cs_lnum_t v_s_id_dst = i_face_vtx_idx[i_n];
+
+      i_face_vtx_idx[i_n + 1] = v_s_id_dst + n_f_vtx;
+      for (cs_lnum_t i = 0; i < n_f_vtx; i++)
+        i_face_vtx[v_s_id_dst + i] = m->i_face_vtx_lst[v_s_id_src + i];
+
+    }
+
+    else {
+
+      /* Build orientation array */
+
+      if (n_s_faces > n_s_f_max) {
+        n_s_f_max = n_s_faces;
+        BFT_REALLOC(f_orient, n_s_f_max, short int);
+      }
+      cs_lnum_t c_id0_cur = m->i_face_cells[s_id][0];
+      f_orient[0] = 1;
+
+      for (cs_lnum_t i = 0; i < n_s_faces; i++) {
+        cs_lnum_t j = n2o[s_id + i];
+        if (m->i_face_cells[j][0] == c_id0_cur)
+          f_orient[i] = 1;
+        else {
+          assert(m->i_face_cells[j][1] == c_id0_cur);
+          f_orient[i] = -1;
+        }
+
+      }
+
+      _build_merged_face(n_s_faces,
+                         n2o + s_id,
+                         f_orient,
+                         m->i_face_vtx_idx,
+                         m->i_face_vtx_lst,
+                         s);
+
+      cs_lnum_t v_s_id_dst = i_face_vtx_idx[i_n];
+      i_face_vtx_idx[i_n + 1] = v_s_id_dst + s->n_vertices;
+
+      for (cs_lnum_t i = 0; i < s->n_vertices; i++)
+        i_face_vtx[v_s_id_dst + i] = s->face_vertices[i];
+
+    }
+
+  }
+
+  BFT_FREE(f_orient);
+
+  m->i_face_vtx_connect_size = i_face_vtx_idx[n_new];
+
+  _face_merge_state_destroy(&s);
+
+  BFT_REALLOC(i_face_vtx, i_face_vtx_idx[n_new], cs_lnum_t);
+
+  BFT_FREE(m->i_face_vtx_idx);
+  BFT_FREE(m->i_face_vtx_lst);
+
+  m->i_face_vtx_idx = i_face_vtx_idx;
+  m->i_face_vtx_lst = i_face_vtx;
+
+  i_face_vtx_idx = NULL;
+  i_face_vtx = NULL;
+
+  /* Transform indexed new->old array to simple array */
+
+  for (cs_lnum_t i = 0; i < n_new; i++) {
+    cs_lnum_t j = n2o_idx[i];
+    assert(j >= i);
+    n2o[i] = n2o[j];
+  }
+
+  BFT_FREE(n2o_idx);
+
+  /* Now update related arrays */
+
+  cs_lnum_2_t  *i_face_cells;
+  int  *i_face_family;
+  char *i_face_r_gen;
+  BFT_MALLOC(i_face_family, n_new, int);
+  BFT_MALLOC(i_face_cells, n_new, cs_lnum_2_t);
+  BFT_MALLOC(i_face_r_gen, n_new, char);
+
+  for (cs_lnum_t i = 0; i < n_new; i++) {
+    cs_lnum_t j = n2o[i];
+    i_face_cells[i][0] = m->i_face_cells[j][0];
+    i_face_cells[i][1] = m->i_face_cells[j][1];
+    i_face_family[i] = m->i_face_family[j];
+    i_face_r_gen[i] = m->i_face_r_gen[j];
+  }
+
+  BFT_FREE(m->i_face_cells);
+  m->i_face_cells = i_face_cells;
+  i_face_cells = NULL;
+
+  BFT_FREE(m->i_face_family);
+  m->i_face_family = i_face_family;
+  i_face_family = NULL;
+
+  BFT_FREE(m->i_face_r_gen);
+  m->i_face_r_gen = i_face_r_gen;
+  i_face_r_gen = NULL;
+
+  /* Update global numbering */
+
+  m->n_g_i_faces
+    = _n2o_update_global_num(n_new, n2o, &(m->global_i_face_num));
+
+  m->n_i_faces = n_new;
+
+  BFT_FREE(n2o);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -727,14 +1090,18 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
     cs_halo_type_t halo_type = m->halo_type;
     cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;
     cs_mesh_init_halo(m, mb, halo_type, -1, true);
-    cs_mesh_update_auxiliary(cs_glob_mesh);
   }
 
-  /* Free data that will be rebuilt */
+  /* Free data that can be rebuilt */
 
-  cs_mesh_free_rebuildable(m, true);
+  cs_mesh_free_rebuildable(m, false);
+
+  if (m->vtx_range_set != NULL)
+    cs_range_set_destroy(&(m->vtx_range_set));
 
   m->verbosity = mv_save;
+
+  /* Logging */
 
   if (m->verbosity > 0) {
     cs_log_printf(CS_LOG_DEFAULT, "\n");
@@ -760,24 +1127,22 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   _merge_cells(m, n_c_new, c_o2n);
 
+  cs_lnum_t  *i_f_o2n = NULL;
+  cs_lnum_t  n_i_f_new = _i_faces_equiv(m, &i_f_o2n);
+
+  _merge_i_faces(m, n_i_f_new, i_f_o2n);
+
+  BFT_FREE(i_f_o2n);
   BFT_FREE(c_o2n);
 
   m->modified |= (CS_MESH_MODIFIED | CS_MESH_MODIFIED_BALANCE);
 
   bft_printf("\nWarning mesh coarsening algorithm not complete yet\n");
 
-  /* Rebuild ghosts */
+  /* Rebuild auxiliary information  */
 
   mv_save = m->verbosity;
   m->verbosity = -1;
-
-  if (   m->n_domains > 1 || m->n_init_perio > 0
-      || m->halo_type == CS_HALO_EXTENDED) {
-    cs_halo_type_t halo_type = m->halo_type;
-    assert(m == cs_glob_mesh);
-    cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;
-    cs_mesh_init_halo(m, mb, halo_type, -1, true);
-  }
 
   cs_mesh_update_auxiliary(cs_glob_mesh);
 

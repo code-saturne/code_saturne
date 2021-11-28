@@ -137,6 +137,15 @@ extern const cs_mesh_adjacencies_t  *cs_glob_mesh_adjacencies;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get non-const pointer to cs_glob_mesh_adacencies.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_mesh_adjacencies_t *
+cs_mesh_adjacencies_get_global(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize mesh adjacencies helper API.
  */
 /*----------------------------------------------------------------------------*/
@@ -388,6 +397,34 @@ cs_adjacency_dump(const char           *name,
 cs_adjacency_t *
 cs_mesh_adjacency_c2f(const cs_mesh_t  *m,
                       int               boundary_order);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a partial cells to faces adjacency structure.
+ *
+ * With the boundary_order option set to 0, boundary faces come first, so
+ * interior face ids are shifted by the number of boundary faces.
+ * With boundary_order set to 1, boundary faces come last, so face ids are
+ * shifted by the number of interior faces.
+ * With boundary order set to -1, boundary faces are ignored.
+ *
+ * Only internal faces as seen from the cell with lowest cell id (out of 2
+ * cells adjacent to that face) are added to the structure, so each face
+ * appears only once, not twice. In other words, only the lower part
+ * of the corresponding cell-cells adjacency matrix is built.
+ *
+ * By construction, face ids adjacent to each cell are ordered.
+ *
+ * \param[in]  m               pointer to a cs_mesh_t structure
+ * \param[in]  boundary_order  boundaries first (0), last (1), or ignored (-1)
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_mesh_adjacency_c2f_lower(const cs_mesh_t  *m,
+                            int               boundary_order);
 
 /*----------------------------------------------------------------------------*/
 /*!

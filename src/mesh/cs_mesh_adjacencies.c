@@ -716,10 +716,6 @@ cs_mesh_adjacencies_update_device(cs_alloc_mode_t  alloc_mode)
   cs_mesh_adjacencies_t *ma = &_cs_glob_mesh_adjacencies;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t n_b_cells = m->n_b_cells;
-  const cs_lnum_t n_i_faces = m->n_i_faces;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
 
   ma->cell_cells_e_idx = m->cell_cells_idx;
   ma->cell_cells_e = m->cell_cells_lst;
@@ -1589,6 +1585,123 @@ cs_mesh_adjacency_c2f(const cs_mesh_t  *m,
     cell_shift[c_id] += 1;
 
   } /* End of loop on border faces */
+
+  /* Free memory */
+  BFT_FREE(cell_shift);
+
+  return c2f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a partial cells to faces adjacency structure.
+ *
+ * With the boundary_order option set to 0, boundary faces come first, so
+ * interior face ids are shifted by the number of boundary faces.
+ * With boundary_order set to 1, boundary faces come last, so face ids are
+ * shifted by the number of interior faces.
+ * With boundary order set to -1, boundary faces are ignored.
+ *
+ * Only internal faces as seen from the cell with lowest cell id (out of 2
+ * cells adjacent to that face) are added to the structure, so each face
+ * appears only once, not twice. In other words, only the lower part
+ * of the corresponding cell-cells adjacency matrix is built.
+ *
+ * By construction, face ids adjacent to each cell are ordered.
+ *
+ * \param[in]  m               pointer to a cs_mesh_t structure
+ * \param[in]  boundary_order  boundaries first (0), last (1), or ignored (-1)
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_mesh_adjacency_c2f_lower(const cs_mesh_t  *m,
+                            int               boundary_order)
+{
+  cs_lnum_t  *cell_shift = NULL;
+  cs_adjacency_t  *c2f = NULL;
+
+  const cs_lnum_t  n_cells = m->n_cells;
+  const cs_lnum_t  n_i_faces = m->n_i_faces;
+  const cs_lnum_t  n_b_faces = m->n_b_faces;
+
+  cs_lnum_t i_shift = 0, b_shift = 0;
+  if (boundary_order == 0)
+    i_shift = n_b_faces;
+  else if (boundary_order > 0)
+    b_shift = n_i_faces;
+
+  c2f = cs_adjacency_create(CS_ADJACENCY_SIGNED, /* flag */
+                            -1,                  /* indexed, no stride */
+                            n_cells);
+
+  /* Update index count */
+
+  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+
+    cs_lnum_t  c1_id = m->i_face_cells[i][0];
+    cs_lnum_t  c2_id = m->i_face_cells[i][1];
+
+    if (c1_id < c2_id)
+      c2f->idx[c1_id+1] += 1;
+    else
+      c2f->idx[c2_id+1] += 1;
+  }
+
+  if (boundary_order > -1) {
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
+      c2f->idx[m->b_face_cells[i]+1] += 1;
+  }
+
+  /* Build index */
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    c2f->idx[i+1] += c2f->idx[i];
+
+  const cs_lnum_t  idx_size = c2f->idx[n_cells];
+
+  /* Fill arrays */
+  BFT_MALLOC(c2f->ids, idx_size, cs_lnum_t);
+  BFT_MALLOC(c2f->sgn, idx_size, short int);
+
+  BFT_MALLOC(cell_shift, n_cells, cs_lnum_t);
+  memset(cell_shift, 0, n_cells*sizeof(cs_lnum_t));
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+    const cs_lnum_t  c1_id = m->i_face_cells[f_id][0];
+    const cs_lnum_t  c2_id = m->i_face_cells[f_id][1];
+
+    if (c1_id < c2_id) {
+      const cs_lnum_t  shift = c2f->idx[c1_id] + cell_shift[c1_id];
+      c2f->sgn[shift] = 1;      /* outward orientation */
+      c2f->ids[shift] = i_shift + f_id;
+      cell_shift[c1_id] += 1;
+    }
+    else {
+      const cs_lnum_t  shift = c2f->idx[c2_id] + cell_shift[c2_id];
+      c2f->sgn[shift] = -1;     /* inward orientation */
+      c2f->ids[shift] = i_shift + f_id;
+      cell_shift[c2_id] += 1;
+    }
+
+  } /* End of loop on internal faces */
+
+  if (boundary_order > -1) {
+
+    for (cs_lnum_t  f_id = 0; f_id < n_b_faces; f_id++) {
+
+      const cs_lnum_t  c_id = m->b_face_cells[f_id];
+      const cs_lnum_t  shift = c2f->idx[c_id] + cell_shift[c_id];
+
+      c2f->ids[shift] = b_shift + f_id;
+      c2f->sgn[shift] = 1;       /* always outward for a boundary face */
+      cell_shift[c_id] += 1;
+
+    } /* End of loop on border faces */
+
+  }
 
   /* Free memory */
   BFT_FREE(cell_shift);
