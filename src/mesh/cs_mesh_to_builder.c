@@ -520,7 +520,7 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
   /* Face refinement generation */
   /*----------------------------*/
 
-  if (mb->have_face_r_gen) {
+  if (mesh->have_r_gen) {
 
     char *face_r_gen = NULL;
 
@@ -648,15 +648,58 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
                                pp_out);
   }
 
-  if (transfer == true)
-    BFT_FREE(mesh->global_vtx_num);
-  else
-    BFT_FREE(mb->vertex_coords);
+  /* Vertex refinement generation */
+  /*------------------------------*/
+
+  if (mesh->have_r_gen) {
+
+    BFT_MALLOC(mb->vtx_r_gen,
+               (mb->vertex_bi.gnum_range[1] - mb->vertex_bi.gnum_range[0]),
+               char);
+
+    cs_part_to_block_copy_array(d,
+                                real_type,
+                                CS_CHAR,
+                                mesh->vtx_r_gen,
+                                mb->vtx_r_gen);
+
+    if (transfer == true)
+      BFT_FREE(mesh->vtx_r_gen);
+
+    if (pp_out != NULL) {
+      if (transfer == true)
+        cs_io_write_block("vertex_refinement_generation",
+                          mesh->n_g_vertices,
+                          mb->vertex_bi.gnum_range[0],
+                          mb->vertex_bi.gnum_range[1],
+                          3, /* location_id, */
+                          0, /* index id */
+                          1, /* n_location_vals */
+                          CS_CHAR,
+                          mb->vtx_r_gen,
+                          pp_out);
+    else
+      cs_io_write_block_buffer("vertex_refinement_generation",
+                               mesh->n_g_vertices,
+                               mb->vertex_bi.gnum_range[0],
+                               mb->vertex_bi.gnum_range[1],
+                               3, /* location_id, */
+                               0, /* index id */
+                               2, /* n_location_vals */
+                               CS_CHAR,
+                               mb->vtx_r_gen,
+                               pp_out);
+
+    }
+
+  }
 
   if (transfer == true)
     BFT_FREE(mesh->global_vtx_num);
-  else
+  else {
     BFT_FREE(mb->vertex_coords);
+    BFT_FREE(mb->vtx_r_gen);
+  }
 
   cs_part_to_block_destroy(&d);
 }
@@ -877,7 +920,7 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
 
   /* Face refinement generation */
 
-  if (mb->have_face_r_gen) {
+  if (mesh->have_r_gen) {
 
     BFT_MALLOC(mb->face_r_gen, n_faces, char);
 
@@ -1059,7 +1102,6 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
     for (k = 0; k <3; k++)
       mb->vertex_coords[i*3 + k] = mesh->vtx_coord[j*3 + k];
   }
-  BFT_FREE(order);
 
   if (transfer == true)
     BFT_FREE(mesh->vtx_coord);
@@ -1089,10 +1131,55 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
                                pp_out);
   }
 
+  /* Vertex refinement generation */
+
+  if (mesh->have_r_gen) {
+
+    BFT_MALLOC(mb->vtx_r_gen, mesh->n_vertices, char);
+
+    for (i = 0; i < mesh->n_vertices; i++) {
+      j = order[i];
+      mb->vtx_r_gen[i] = mesh->vtx_r_gen[j];
+    }
+
+    if (transfer == true)
+      BFT_FREE(mesh->vtx_r_gen);
+
+    if (pp_out != NULL) {
+      if (transfer == true)
+        cs_io_write_block("vtx_r_gen",
+                          mesh->n_g_vertices,
+                          1,
+                          mesh->n_vertices + 1,
+                          3, /* location_id, */
+                          0, /* index id */
+                          3, /* n_location_vals */
+                          real_type,
+                          mb->vtx_r_gen,
+                          pp_out);
+      else
+        cs_io_write_block_buffer("vtx_r_gen",
+                                 mesh->n_g_vertices,
+                                 1,
+                                 mesh->n_vertices + 1,
+                                 3, /* location_id, */
+                                 0, /* index id */
+                                 3, /* n_location_vals */
+                                 real_type,
+                                 mb->vtx_r_gen,
+                                 pp_out);
+    }
+
+  }
+
+  BFT_FREE(order);
+
   if (transfer == true)
     BFT_FREE(mesh->global_vtx_num);
-  else
+  else {
     BFT_FREE(mb->vertex_coords);
+    BFT_FREE(mb->vtx_r_gen);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -1470,26 +1557,6 @@ cs_mesh_to_builder(cs_mesh_t          *mesh,
                                 &g_b_face_vertices_size);
 
   mb->n_g_face_connect_size = g_i_face_vertices_size + g_b_face_vertices_size;
-
-  /* Get refinement info if needed */
-
-  int r_flag = 0;
-  for (cs_lnum_t j = 0; j < mesh->n_i_faces; j++) {
-    if (mesh->i_face_r_gen[j] != 0) {
-      r_flag = 1;
-      break;
-    }
-  }
-
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-    int _r_flag = r_flag;
-    MPI_Allreduce(&_r_flag, &r_flag, 1,
-                  MPI_INT, MPI_MAX, cs_glob_mpi_comm);
-  }
-#endif
-
-  mb->have_face_r_gen = (r_flag) ? true : false;
 
   /* Get periodic faces information if required */
 

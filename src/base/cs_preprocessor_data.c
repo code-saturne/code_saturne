@@ -1662,7 +1662,7 @@ _read_data(int                 file_id,
       else if (strncmp(header.sec_name, "face_refinement_generation",
                        CS_IO_NAME_LEN) == 0) {
 
-        mb->have_face_r_gen = true;
+        mesh->have_r_gen = true;
 
         /* Compute range for current file  */
         _data_range(&header,
@@ -1681,8 +1681,10 @@ _read_data(int                 file_id,
         val_offset_cur = mr->n_faces_read;
 
         /* Allocate for first file read */
-        if (mb->face_r_gen == NULL)
-          BFT_MALLOC(mb->face_r_gen, n_vals, char);
+        if (mb->face_r_gen == NULL) {
+          for (cs_lnum_t ii = 0; ii < n_vals; ii++)
+            mb->face_r_gen[ii] = 0;
+        }
 
         /* Read data */
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
@@ -1832,6 +1834,28 @@ _read_data(int                 file_id,
         }
       }
 
+      else if (strncmp(header.sec_name, "vertex_refinement_generation",
+                       CS_IO_NAME_LEN) == 0) {
+
+        mesh->have_r_gen = true;
+
+        n_vertices = n_vals_cur;
+        val_offset_cur = mr->n_vertices_read;
+
+        /* Allocate for first file read */
+        if (mb->vtx_r_gen == NULL) {
+          BFT_MALLOC(mb->vtx_r_gen, n_vals, char);
+          for (cs_lnum_t ii = 0; ii < n_vals; ii++)
+            mb->vtx_r_gen[ii] = 0;
+        }
+
+        /* Read data */
+        cs_io_assert_cs_real(&header, pp_in);
+        cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
+                         mb->vertex_coords + val_offset_cur, pp_in);
+
+      }
+
       /* Additional buffers for periodicity */
 
       else if (strncmp(header.sec_name, "periodicity_type_",
@@ -1906,8 +1930,7 @@ _read_data(int                 file_id,
 
           /* Shift referenced face numbers in case of appended data */
           if (mr->n_g_faces_read > 0) {
-            cs_lnum_t ii;
-            for (ii = 0; ii < n_vals; ii++) {
+            for (cs_lnum_t ii = 0; ii < n_vals; ii++) {
               if (mb->per_face_couples[perio_id][ii] != 0)
                 mb->per_face_couples[perio_id][ii] += mr->n_g_faces_read;
             }

@@ -64,7 +64,6 @@ typedef struct {
   int           n_perio;               /* Number of periodicities */
 
   bool          have_cell_rank;        /* True if cell_rank array is defined */
-  bool          have_face_r_gen;       /* True if face level is defined */
 
   /* Temporary mesh data */
 
@@ -78,6 +77,7 @@ typedef struct {
   /* Refinement features */
 
   char         *face_r_gen;
+  char         *vtx_r_gen;
 
   /* Periodic features */
 

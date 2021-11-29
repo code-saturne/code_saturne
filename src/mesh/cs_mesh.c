@@ -2157,7 +2157,9 @@ cs_mesh_create(void)
 
   /* Refinement */
 
+  mesh->have_r_gen = false;
   mesh->i_face_r_gen = NULL;
+  mesh->vtx_r_gen = NULL;
 
   /* Selector features */
 
@@ -2215,6 +2217,7 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   BFT_FREE(mesh->b_face_family);
 
   BFT_FREE(mesh->i_face_r_gen);
+  BFT_FREE(mesh->vtx_r_gen);
 
   /* Free periodic structures */
 
@@ -3736,6 +3739,12 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
     bft_printf("Refinement generation of each internal face:\n");
     for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
       bft_printf("   < %3ld >  %5d\n", (long)i, (int)(mesh->i_face_r_gen[i]));
+  }
+
+  if (mesh->vtx_r_gen != NULL) {
+    bft_printf("Refinement generation of each vertex:\n");
+    for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
+      bft_printf("   < %3ld >  %5d\n", (long)i, (int)(mesh->vtx_r_gen[i]));
   }
 
   if (mesh->global_i_face_num != NULL) {

@@ -1675,6 +1675,8 @@ _build_edge_vertices(cs_mesh_t             *m,
             m->vtx_coord[(id2+k)*3 + l] = r * (  m->vtx_coord[id0*3 + l]
                                                + m->vtx_coord[id1*3 + l]);
           m->global_vtx_num[id2+k] = gnum_shift + g_e_v_num[j] + (cs_gnum_t)k;
+          m->vtx_r_gen[id2+k] = CS_MAX(m->vtx_r_gen[id0],
+                                       m->vtx_r_gen[id1]) + 1;
         }
       }
     }
@@ -1694,6 +1696,8 @@ _build_edge_vertices(cs_mesh_t             *m,
           for (cs_lnum_t l = 0; l < 3; l++)
             m->vtx_coord[(id2+k)*3 + l] = r * (  m->vtx_coord[id0*3 + l]
                                                + m->vtx_coord[id1*3 + l]);
+          m->vtx_r_gen[id2+k] = CS_MAX(m->vtx_r_gen[id0],
+                                       m->vtx_r_gen[id1]) + 1;
         }
       }
     }
@@ -1866,6 +1870,7 @@ _element_centers(const cs_mesh_t              *m,
  * \param[in, out]  m         mesh
  * \param[in]       n_faces   number of faces
  * \param[in]       f_r_flag  face refinement flag
+ * \param[in]       f_r_gen   face refinement generation
  * \param[in]       f_v_idx   for each face, start index of added vertices
  * \param[in]       f_center  face centers
  *
@@ -1877,6 +1882,7 @@ static void
 _build_face_vertices(cs_mesh_t                    *m,
                      cs_lnum_t                     n_faces,
                      const cs_mesh_refine_type_t   f_r_flag[],
+                     const char                    f_r_gen[],
                      const cs_lnum_t               f_v_idx[],
                      const cs_real_t               f_center[][3])
 {
@@ -1889,6 +1895,8 @@ _build_face_vertices(cs_mesh_t                    *m,
     if (n_add == 1) {
       for (cs_lnum_t i = 0; i < 3; i++)
         m->vtx_coord[(f_v_idx[f_id]*3) + i] = f_center[f_id][i];
+      m->vtx_r_gen[f_v_idx[f_id]] = f_r_gen[f_id] + 1;
+
     }
     else if (n_add > 1) {
       CS_UNUSED(f_r_flag);
@@ -1910,6 +1918,7 @@ _build_face_vertices(cs_mesh_t                    *m,
  * \param[in, out]  m         mesh
  * \param[in]       n_cells   number of cells
  * \param[in]       c_r_flag  cell refinement flag
+ * \param[in]       c_r_gen   cell refinement generation
  * \param[in]       c_v_idx   for each cell, start index of added vertices
  * \param[in]       c_center  cell centers
  *
@@ -1921,6 +1930,7 @@ static void
 _build_cell_vertices(cs_mesh_t                    *m,
                      cs_lnum_t                     n_cells,
                      const cs_mesh_refine_type_t   c_r_flag[],
+                     const char                    c_r_gen[],
                      const cs_lnum_t               c_v_idx[],
                      const cs_real_t               c_center[][3])
 {
@@ -1937,6 +1947,7 @@ _build_cell_vertices(cs_mesh_t                    *m,
             const cs_lnum_t v_id = c_v_idx[c_id];
             for (cs_lnum_t i = 0; i < 3; i++)
               m->vtx_coord[v_id*3 + i] = c_center[c_id][i];
+            m->vtx_r_gen[v_id] = c_r_gen[c_id] + 1;
           }
           break;
       default:
@@ -4252,12 +4263,33 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   /* Compute some mesh quantities */
 
-  /* Build face generation if not available yet */
+  /* Build vertex and face generation if not available yet */
+
+  if (m->vtx_r_gen == NULL) {
+    BFT_MALLOC(m->vtx_r_gen, m->n_vertices, char);
+    for (cs_lnum_t i = 0; i < m->n_vertices; i++)
+      m->vtx_r_gen[i] = 0;
+  }
 
   if (m->i_face_r_gen == NULL) {
     BFT_MALLOC(m->i_face_r_gen, m->n_i_faces, char);
     for (cs_lnum_t i = 0; i < m->n_i_faces; i++)
       m->i_face_r_gen[i] = 0;
+  }
+
+  char *b_face_r_gen;
+  BFT_MALLOC(b_face_r_gen, m->n_b_faces, char);
+# pragma omp for schedule(dynamic, CS_CL_SIZE)
+  for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
+    char r_gen = 0;
+    cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
+    cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+      char v_r_gen = m->vtx_r_gen[i];
+      if (v_r_gen > r_gen)
+        r_gen = v_r_gen;
+      b_face_r_gen[f_id] = r_gen;
+    }
   }
 
   /* Determine current cell refinement level */
@@ -4270,6 +4302,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
     const cs_lnum_2_t *restrict i_face_cells
       = (const cs_lnum_2_t *restrict)m->i_face_cells;
+    const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
     for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++) {
       for (cs_lnum_t i = 0; i < 2; i++) {
@@ -4277,6 +4310,12 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
         if (m->i_face_r_gen[f_id] > c_r_level[c_id])
           c_r_level[c_id] = m->i_face_r_gen[f_id];
       }
+    }
+
+    for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
+      cs_lnum_t c_id = b_face_cells[f_id];
+      if (b_face_r_gen[f_id] > c_r_level[c_id])
+        c_r_level[c_id] = b_face_r_gen[f_id];
     }
 
     if (m->halo != NULL)
@@ -4413,6 +4452,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
 
   BFT_REALLOC(m->vtx_coord, n_vtx_new*3, cs_real_t);
+  BFT_REALLOC(m->vtx_r_gen, n_vtx_new, char);
   if (m->global_vtx_num != NULL)
     BFT_REALLOC(m->global_vtx_num, n_vtx_new, cs_gnum_t);
 
@@ -4424,16 +4464,20 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   _build_face_vertices(m,
                        m->n_b_faces,
                        f_r_flag,
+                       b_face_r_gen,
                        f_v_idx,
                        (const cs_real_3_t *)b_face_cen_o);
   _build_face_vertices(m,
                        m->n_i_faces,
                        f_r_flag + m->n_b_faces,
+                       m->i_face_r_gen,
                        f_v_idx + m->n_b_faces,
                        (const cs_real_3_t *)i_face_cen_o);
 
   BFT_FREE(b_face_cen_o);
   BFT_FREE(i_face_cen_o);
+
+  BFT_FREE(b_face_r_gen);
 
   _build_vertices_gnum(m, m->n_b_faces, m->n_g_b_faces,
                        f_v_idx, m->global_b_face_num);
@@ -4443,6 +4487,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   _build_cell_vertices(m,
                        m->n_cells,
                        c_r_flag,
+                       c_r_level,
                        c_v_idx,
                        (const cs_real_3_t *)cell_cen_o);
 

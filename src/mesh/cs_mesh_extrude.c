@@ -826,6 +826,15 @@ _add_extruded_vertices(cs_mesh_t          *m,
   else
     m->n_g_vertices += n_vertices_add;
 
+  /* Update refinement level */
+
+  if (m->have_r_gen) {
+    BFT_REALLOC(m->vtx_r_gen, (n_vertices_ini + n_vertices_add), char);
+
+    for (cs_lnum_t i = 0; i < n_vertices_add; i++)
+      m->vtx_r_gen[n_vertices_ini + i] = 0;
+  }
+
   m->n_vertices += n_vertices_add;
 
   /* Destroy vertex interfaces for future rebuild

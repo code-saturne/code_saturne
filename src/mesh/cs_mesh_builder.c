@@ -151,8 +151,6 @@ cs_mesh_builder_create(void)
 
   mb->have_cell_rank = false;
 
-  mb->have_face_r_gen = false;
-
   /* Temporary mesh data */
 
   mb->face_cells = NULL;
@@ -165,6 +163,7 @@ cs_mesh_builder_create(void)
   /* Refinement features */
 
   mb->face_r_gen = NULL;
+  mb->vtx_r_gen = NULL;
 
   /* Periodic features */
 
@@ -219,6 +218,7 @@ cs_mesh_builder_destroy(cs_mesh_builder_t  **mb)
     /* Refinement features */
 
     BFT_FREE(_mb->face_r_gen);
+    BFT_FREE(_mb->vtx_r_gen);
 
     /* Periodic features */
 

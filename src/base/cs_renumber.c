@@ -909,6 +909,11 @@ _cs_renumber_update_vertices(cs_mesh_t        *mesh,
 
   BFT_FREE(vtx_coord_old);
 
+  /* Update refinement level */
+
+  if (mesh->vtx_r_gen != NULL)
+    _update_r_gen(n_vertices, n2o_v, mesh->vtx_r_gen);
+
   /* Build the old --> new numbering */
 
   cs_lnum_t  *o2n_v = NULL;

@@ -201,7 +201,9 @@ typedef struct {
 
   /* Refinement features */
 
+  bool        have_r_gen;          /*!< has mesh refinement information */
   char       *i_face_r_gen;        /*!< interior face refinement generation */
+  char       *vtx_r_gen;           /*!< vertex refinement generation */
 
   /* Status flags */
 

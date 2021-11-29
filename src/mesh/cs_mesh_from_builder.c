@@ -1203,7 +1203,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   BFT_MALLOC(_face_r_gen, _n_faces, char);
 
-  if (mb->have_face_r_gen)
+  if (mesh->have_r_gen)
     cs_all_to_all_copy_array(d,
                              CS_CHAR,
                              1,
@@ -1268,6 +1268,16 @@ _decompose_data_g(cs_mesh_t          *mesh,
                                              NULL);
 
   BFT_FREE(mb->vertex_coords);
+
+  if (mesh->have_r_gen)
+    mesh->vtx_r_gen = cs_all_to_all_copy_array(d,
+                                               CS_CHAR,
+                                               1,
+                                               true,  /* reverse */
+                                               mb->vtx_r_gen,
+                                               NULL);
+
+  BFT_FREE(mb->vtx_r_gen);
 
   cs_all_to_all_destroy(&dv);
 
@@ -1459,6 +1469,9 @@ _decompose_data_l(cs_mesh_t          *mesh,
   mesh->vtx_coord = mb->vertex_coords;
   mb->vertex_coords = NULL;
 
+  mesh->vtx_r_gen = mb->vtx_r_gen;
+  mb->vtx_r_gen = NULL;
+
   /* We may now separate interior from boundary faces */
 
   BFT_MALLOC(face_type, _n_faces, char);
@@ -1508,7 +1521,7 @@ _decompose_data_l(cs_mesh_t          *mesh,
 
   BFT_FREE(mb->face_gc_id);
 
-  if (mb->have_face_r_gen) {
+  if (mesh->have_r_gen) {
     _extract_face_r_gen(mesh,
                         _n_faces,
                         mb->face_r_gen,
