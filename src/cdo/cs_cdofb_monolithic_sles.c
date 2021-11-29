@@ -3737,59 +3737,44 @@ static bool
 _uza_incr_cvg_test(cs_real_t                   delta_u_l2,
                    cs_uza_builder_t           *uza)
 {
-  /* Increment the number of algo. iterations */
-
-  uza->algo->n_algo_iter += 1;
+  cs_iter_algo_t  *algo = uza->algo;
 
   /* Compute the new residual based on the norm of the divergence constraint */
 
-  const cs_real_t  prev_res = uza->algo->res;
+  algo->prev_res = algo->res;
 
   cs_real_t  res_square = cs_dot_wxx(uza->n_p_dofs, uza->inv_mp, uza->d__v);
   cs_parall_sum(1, CS_DOUBLE, &res_square);
   assert(res_square > -DBL_MIN);
   cs_real_t  divu_l2 = sqrt(res_square);
-  uza->algo->res = fmax(delta_u_l2, divu_l2);
 
-  if (uza->algo->n_algo_iter == 1) { /* First call */
+  algo->res = fmax(delta_u_l2, divu_l2);
 
-    uza->algo->res0 = uza->algo->res;
-    uza->algo->tol = fmax(uza->algo->param.atol,
-                          uza->algo->param.rtol*uza->algo->res0);
+  if (algo->n_algo_iter == 0) { /* First call */
 
-    if (uza->algo->param.verbosity > 1)
-      cs_log_printf(CS_LOG_DEFAULT, "### UZAi.res0: %5.3e tol: %5.3e\n",
-                    uza->algo->res0, uza->algo->tol);
+    algo->res0 = algo->res;
+    algo->normalization = algo->res0;
+
+    if (algo->param.verbosity > 1)
+      cs_log_printf(CS_LOG_DEFAULT, "### UZAi.res0:%5.3e modified rtol:%5.3e"
+                    " atol:%5.3e\n",
+                    algo->res0, algo->normalization*algo->param.rtol,
+                    algo->param.atol);
+
   }
 
-  /* Set the convergence status */
+  /* Update the convergence status */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT,
-                "\nUZAi.It%02d-- res = %6.4e ?<? eps %6.4e\n",
-                uza->algo->n_algo_iter, uza->algo->res, uza->algo->param.rtol);
-#endif
+  cs_iter_algo_update_cvg(algo);
 
-  if (uza->algo->res < uza->algo->tol)
-    uza->algo->cvg = CS_SLES_CONVERGED;
-
-  else if (uza->algo->n_algo_iter >= uza->algo->param.n_max_algo_iter)
-    uza->algo->cvg = CS_SLES_MAX_ITERATION;
-
-  else if (uza->algo->res > uza->algo->param.dtol * prev_res)
-    uza->algo->cvg = CS_SLES_DIVERGED;
-
-  else
-    uza->algo->cvg = CS_SLES_ITERATING;
-
-  if (uza->algo->param.verbosity > 0)
+  if (algo->param.verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   "### UZAi.It%02d %5.3e %5d %6d cvg:%d div:%5.3e, du:%5.3e\n",
-                  uza->algo->n_algo_iter, uza->algo->res,
-                  uza->algo->last_inner_iter, uza->algo->n_inner_iter,
-                  uza->algo->cvg, divu_l2, delta_u_l2);
+                  algo->n_algo_iter, algo->res,
+                  algo->last_inner_iter, algo->n_inner_iter,
+                  algo->cvg, divu_l2, delta_u_l2);
 
-  if (uza->algo->cvg == CS_SLES_ITERATING)
+  if (algo->cvg == CS_SLES_ITERATING)
     return true;
   else
     return false;
@@ -5543,6 +5528,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                         cs_cdofb_monolithic_sles_t    *msles)
 {
   /* Sanity checks */
+
   assert(nsp != NULL && nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_AL);
   assert(cs_shared_range_set != NULL);
 
@@ -5556,6 +5542,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   cs_real_t  *b_c = msles->b_c;
 
   /* Allocate and initialize the ALU builder structure */
+
   cs_uza_builder_t  *uza = _init_uzawa_builder(nsp,
                                                gamma,
                                                3*msles->n_faces,
@@ -5563,6 +5550,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                                quant);
 
   /* Transformation of the initial right-hand side */
+
   cs_real_t  *btilda_c = uza->d__v;
 # pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
   for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
@@ -5585,6 +5573,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   }
 
   /* Update the modify right-hand side: b_tilda = b_f + gamma*Dt.W^-1.b_c */
+
 # pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
   for (cs_lnum_t iu = 0; iu < uza->n_u_dofs; iu++) {
     uza->b_tilda[iu] *= gamma;
@@ -5595,6 +5584,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   /* ============== */
 
   /* Compute the RHS for the Uzawa system: rhs = b_tilda - Dt.p_c */
+
   _apply_div_op_transpose(div_op, p_c, uza->rhs);
 
   if (cs_shared_range_set->ifs != NULL)
@@ -5611,6 +5601,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
   /* Solve AL.u_f = rhs */
   /* Modifiy the tolerance in order to be more accurate on this step */
+
   char  *system_name = NULL;
   BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":alu0") + 1, char);
   sprintf(system_name, "%s:alu0", eqp->name);
@@ -5639,6 +5630,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                         uza->rhs));
 
   /* Partia free */
+
   BFT_FREE(system_name);
   cs_param_sles_free(&slesp);
 
@@ -5649,10 +5641,12 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   cs_real_t  delta_u_l2 = normalization;
 
   /* Compute the divergence of u since this is a stopping criteria */
+
   _apply_div_op(div_op, u_f, uza->d__v);
 
   /* Update p_c = p_c - gamma * (D.u_f - b_c). Recall that B = -div
    * Compute the RHS for the Uzawa system: rhs = -gamma*B^T.W^-1.(B.u - g) */
+
 # pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
   for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++) {
     uza->d__v[ip] -= b_c[ip];
@@ -5663,6 +5657,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   while (_uza_incr_cvg_test(delta_u_l2, uza)) {
 
     /* Continue building the RHS */
+
     _apply_div_op_transpose(div_op, uza->res_p, uza->rhs);
 
     if (cs_shared_range_set->ifs != NULL)
@@ -5676,6 +5671,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
       uza->rhs[iu] *= -gamma;
 
     /* Solve AL.u_f = rhs */
+
     memset(delta_u, 0, sizeof(cs_real_t)*uza->n_u_dofs);
 
     uza->algo->n_inner_iter
@@ -5697,16 +5693,19 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
       delta_u_l2 = 1.0;
 
     /* Update the velocity */
+
 #   pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
     for (cs_lnum_t iu = 0; iu < uza->n_u_dofs; iu++)
       u_f[iu] += delta_u[iu];
 
     /* Update the divergence */
+
     _apply_div_op(div_op, u_f, uza->d__v);
 
     /* Update p_c = p_c - gamma * (D.u_f - b_c). Recall that B = -div
      * Prepare the computation of the RHS for the Uzawa system:
      * rhs = -gamma*B^T.W^-1.(B.u - g) */
+
 #   pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
     for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++) {
       uza->d__v[ip] -= b_c[ip];
