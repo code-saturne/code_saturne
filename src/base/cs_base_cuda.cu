@@ -225,7 +225,7 @@ cs_cuda_mem_free(void         *p,
 /*!
  * \brief Free CUDA-allocated host memory associated with a given pointer.
  *
- * This function simply wraps cudaFree, which could probably be
+ * This function simply wraps cudaFreeHost, which could probably be
  * directly called from C or C++, but whose use in such manner is not
  * well documented, and whose declaration in cuda_runtime.h requires
  * support of function attributes by compiler.

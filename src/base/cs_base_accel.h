@@ -152,6 +152,16 @@ typedef enum {
  * Global variable definitions
  *============================================================================*/
 
+#if defined(HAVE_ACCEL)
+
+extern cs_alloc_mode_t  cs_alloc_mode;
+
+#else
+
+#define cs_alloc_mode CS_ALLOC_HOST
+
+#endif
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -387,6 +397,9 @@ cs_get_device_ptr(void  *ptr)
  * If separate pointers are used on the host and device,
  * the host pointer should be used with this function.
  *
+ * If memory is not allocated on device yet at the call site, it will
+ * be allocated automatically by this function.
+ *
  * \param [in]  ptr  pointer
  *
  * \returns pointer to device memory.
@@ -402,6 +415,38 @@ cs_get_device_ptr_const(const void  *ptr);
 
 inline static const void *
 cs_get_device_ptr_const(const void  *ptr)
+{
+  return ptr;
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return matching device pointer for a given constant pointer,
+ *        prefetching if applicable.
+ *
+ * If separate pointers are used on the host and device, the host pointer
+ * should be used with this function. In this case, it is assumed that
+ * the host and device values have already been synchronized, unless
+ * memory is not allocated on device yet at the call site, in which case
+ * it will be allocated automatically by this function.
+ *
+ * \param [in]  ptr  pointer
+ *
+ * \returns pointer to device memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+const void *
+cs_get_device_ptr_const_pf(const void  *ptr);
+
+#else
+
+inline static const void *
+cs_get_device_ptr_const_pf(const void  *ptr)
 {
   return ptr;
 }
@@ -538,6 +583,45 @@ cs_sync_h2d(const void  *ptr);
 
 static inline void
 cs_sync_h2d(const void  *ptr)
+{
+  CS_UNUSED(ptr);
+}
+
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initiate synchronization of data from host to device for
+ *        future access.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer should be used with this function.
+ * In this case, synchronization is done are started (asynchronously
+ * if the allocation mode supports it).
+ *
+ * In other cases, synchronization will be delayed until actual use.
+ * the host pointer should be used with this function.
+ *
+ * Depending on the allocation type, this can imply a copy, data prefetch,
+ * or a no-op.
+ *
+ * This function assumes the provided pointer was allocated using
+ * CS_MALLOC_HD or CS_REALLOC_HD, as it uses the associated mapping to
+ * determine associated metadata.
+ *
+ * \param [in, out]  ptr  host pointer to values to copy or prefetch
+ */
+/*----------------------------------------------------------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+void
+cs_sync_h2d_future(const void  *ptr);
+
+#else
+
+static inline void
+cs_sync_h2d_future(const void  *ptr)
 {
   CS_UNUSED(ptr);
 }

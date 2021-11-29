@@ -328,10 +328,6 @@ _run(void)
   cs_preprocess_mesh(halo_type);
   cs_mesh_adjacencies_initialize();
 
-#if defined(HAVE_ACCEL)
-  cs_preprocess_mesh_update_device(CS_ALLOC_HOST_DEVICE_SHARED);
-#endif
-
   /* Initialization for turbomachinery computations */
 
   cs_turbomachinery_initialize();
@@ -381,6 +377,10 @@ _run(void)
                                  (opts.verif ? 1 : 0));
 
     cs_mesh_adjacencies_update_mesh();
+
+#if defined(HAVE_ACCEL)
+    cs_preprocess_mesh_update_device(cs_alloc_mode);
+#endif
 
     /* Initialization related to CDO/HHO schemes */
 
@@ -597,6 +597,14 @@ _run(void)
   cs_file_free_defaults();
 
   cs_base_time_summary();
+
+#if defined(HAVE_ACCEL)
+  int n_alloc_hd_remain = cs_get_n_allocations_hd();
+  if (n_alloc_hd_remain > 0)
+    bft_printf(_("Warning: %d remaining host-device allocations\n"
+                 "         (possible memory leak)\n"), n_alloc_hd_remain);
+#endif
+
   cs_base_mem_finalize();
 
   cs_log_printf_flush(CS_LOG_N_TYPES);

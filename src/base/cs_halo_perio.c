@@ -829,7 +829,6 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
   } /* End of loop on transformations for the local rank */
 }
 
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

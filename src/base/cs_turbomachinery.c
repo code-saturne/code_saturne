@@ -1109,7 +1109,7 @@ _update_mesh(bool     restart_mode,
   /* Update mapping for accelerated devices */
 
 #if defined(HAVE_ACCEL)
-  cs_preprocess_mesh_update_device(CS_ALLOC_HOST_DEVICE_SHARED);
+  cs_preprocess_mesh_update_device(cs_alloc_mode);
 #endif
 
   /* Update rotor cells flag array in case of parallelism and/or periodicity */

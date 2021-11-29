@@ -610,6 +610,7 @@ cs_preprocess_mesh_update_fortran(void)
 void
 cs_preprocess_mesh_update_device(cs_alloc_mode_t  alloc_mode)
 {
+  alloc_mode = CS_ALLOC_HOST_DEVICE_PINNED;
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
@@ -641,33 +642,9 @@ cs_preprocess_mesh_update_device(cs_alloc_mode_t  alloc_mode)
 
   cs_mesh_adjacencies_update_device(alloc_mode);
 
-  /* Mesh quantities
-     --------------- */
+  /* Update Fortran mappings as some addresses may have changed */
 
-  {
-    if (mq->cell_cen != NULL)
-      CS_REALLOC_HD(mq->cell_cen, n_cells_ext*3, cs_real_t, alloc_mode);
-
-    if (mq->b_face_normal != NULL)
-      CS_REALLOC_HD(mq->b_face_normal, n_b_faces*3, cs_real_t, alloc_mode);
-
-    if (mq->i_face_cog != NULL)
-      CS_REALLOC_HD(mq->i_face_cog, n_i_faces*3, cs_real_t, alloc_mode);
-    if (mq->b_face_cog != NULL)
-      CS_REALLOC_HD(mq->b_face_cog, n_b_faces*3, cs_real_t, alloc_mode);
-
-    if (mq->b_face_surf != NULL)
-      CS_REALLOC_HD(mq->b_face_surf, n_b_faces, cs_real_t, alloc_mode);
-
-    if (mq->diipb != NULL)
-      CS_REALLOC_HD(mq->diipb, n_b_faces*3, cs_real_t, alloc_mode);
-
-    if (mq->b_dist != NULL)
-      CS_REALLOC_HD(mq->b_dist, n_b_faces, cs_real_t, alloc_mode);
-
-    if (mq->weight != NULL)
-      CS_REALLOC_HD(mq->weight, n_i_faces, cs_real_t, alloc_mode);
-  }
+  cs_preprocess_mesh_update_fortran();
 }
 
 /*----------------------------------------------------------------------------*/

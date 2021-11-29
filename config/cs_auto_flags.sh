@@ -1289,9 +1289,9 @@ if test "x$NVCC" != "x" ; then
 
   # Default compiler flags
   nvccflags_default=""
-  nvccflags_default_dbg="-g"
+  nvccflags_default_dbg="-g -G"
   nvccflags_default_opt="-O2"
-  nvccflags_default_prf="-g"
+  nvccflags_default_prf="-g -lineinfo"
 
 fi
 

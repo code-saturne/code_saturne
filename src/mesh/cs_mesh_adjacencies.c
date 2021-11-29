@@ -736,7 +736,7 @@ cs_mesh_adjacencies_update_device(cs_alloc_mode_t  alloc_mode)
   }
 
   {
-    CS_REALLOC_HD(ma->cell_b_faces_idx, n_cells, cs_lnum_t, alloc_mode);
+    CS_REALLOC_HD(ma->cell_b_faces_idx, n_cells+1, cs_lnum_t, alloc_mode);
     CS_REALLOC_HD(ma->cell_b_faces, ma->cell_b_faces_idx[n_cells], cs_lnum_t,
                   alloc_mode);
   }

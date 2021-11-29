@@ -2278,7 +2278,7 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
   if (_cocg == NULL)
     _compute_cell_cocg_lsq(m, extended, fvq, ce, gq);
 
-  /* If used on acclelerator, ensure arrays are available there */
+  /* If used on accelerator, ensure arrays are available there */
 
   if (accel) {
 
@@ -2290,12 +2290,12 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
     cs_set_alloc_mode(&_cocgb_p, alloc_mode);
 
     if (extended) {
-      gq->cocg_lsq_ext = _cocg_p;
-      gq->cocgb_s_lsq_ext = _cocgb_p;
+      cs_set_alloc_mode(&(gq->cocg_lsq_ext), alloc_mode);
+      cs_set_alloc_mode(&(gq->cocgb_s_lsq_ext), alloc_mode);
     }
     else {
-      gq->cocg_lsq = _cocg_p;
-      gq->cocgb_s_lsq = _cocgb_p;
+      cs_set_alloc_mode(&(gq->cocg_lsq), alloc_mode);
+      cs_set_alloc_mode(&(gq->cocgb_s_lsq), alloc_mode);
     }
 
   }
@@ -2351,7 +2351,7 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
  *   pvar           <-- variable
  *   c_weight       <-- weighted gradient coefficient variable,
  *                      or NULL
- *   grad           <-> gradient of pvar (halo prepared for periodicity
+ *   grad           --> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
@@ -2428,7 +2428,8 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   }
 
 #if defined(HAVE_CUDA)
-  bool accel = (   cpl == NULL
+  bool accel = (   cs_get_device_id() > -1
+                && cpl == NULL
                 && hyd_p_flag == 0
                 && is_porous == false) ? true : false;
 #else
@@ -2444,6 +2445,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                      &cocgb);
 
 #if defined(HAVE_CUDA)
+
   if (accel) {
 
     cs_gradient_scalar_lsq_cuda(m,
@@ -7208,7 +7210,6 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
         grad[c_id][i][j] *= dvol;
     }
   }
-
 
   /* Periodicity and parallelism treatment */
 

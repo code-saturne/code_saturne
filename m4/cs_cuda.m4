@@ -76,9 +76,6 @@ if test "x$cs_have_cuda" != "xno" ; then
   rm -f conftest.cu conftest.o
 
   NVCCFLAGS="${NVCCFLAGS} --maxrregcount=64 -Xptxas -v"
-  if test "x$enable_shared" = "xyes" ; then
-    NVCCFLAGS="${NVCCFLAGS} --compiler-options -fPIC"
-  fi
 
   AC_DEFINE([HAVE_CUDA], 1, [CUDA offload support])
 

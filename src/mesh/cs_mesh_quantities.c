@@ -2282,19 +2282,19 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mq)
 void
 cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 {
-  BFT_FREE(mq->cell_cen);
+  CS_FREE_HD(mq->cell_cen);
   BFT_FREE(mq->cell_vol);
   BFT_FREE(mq->i_face_normal);
-  BFT_FREE(mq->b_face_normal);
+  CS_FREE_HD(mq->b_face_normal);
   BFT_FREE(mq->i_face_cog);
-  BFT_FREE(mq->b_face_cog);
+  CS_FREE_HD(mq->b_face_cog);
   BFT_FREE(mq->i_face_surf);
-  BFT_FREE(mq->b_face_surf);
+  CS_FREE_HD(mq->b_face_surf);
   BFT_FREE(mq->i_dist);
-  BFT_FREE(mq->b_dist);
-  BFT_FREE(mq->weight);
+  CS_FREE_HD(mq->b_dist);
+  CS_FREE_HD(mq->weight);
   BFT_FREE(mq->dijpf);
-  BFT_FREE(mq->diipb);
+  CS_FREE_HD(mq->diipb);
   BFT_FREE(mq->dofij);
   BFT_FREE(mq->diipf);
   BFT_FREE(mq->djjpf);
@@ -2324,29 +2324,29 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
 
   /* If this is not an update, allocate members of the structure */
 
+  if (mq->cell_cen == NULL)
+    CS_MALLOC_HD(mq->cell_cen, n_cells_with_ghosts*3, cs_real_t, cs_alloc_mode);
+
+  if (mq->cell_vol == NULL)
+    BFT_MALLOC(mq->cell_vol, n_cells_with_ghosts, cs_real_t);
+
   if (mq->i_face_normal == NULL)
     BFT_MALLOC(mq->i_face_normal, n_i_faces*3, cs_real_t);
+
+  if (mq->b_face_normal == NULL)
+    CS_MALLOC_HD(mq->b_face_normal, n_b_faces*3, cs_real_t, cs_alloc_mode);
 
   if (mq->i_face_cog == NULL)
     BFT_MALLOC(mq->i_face_cog, n_i_faces*3, cs_real_t);
 
-  if (mq->b_face_normal == NULL)
-    BFT_MALLOC(mq->b_face_normal, n_b_faces*3, cs_real_t);
-
   if (mq->b_face_cog == NULL)
-    BFT_MALLOC(mq->b_face_cog, n_b_faces*3, cs_real_t);
-
-  if (mq->cell_cen == NULL)
-    BFT_MALLOC(mq->cell_cen, n_cells_with_ghosts*3, cs_real_t);
-
-  if (mq->cell_vol == NULL)
-    BFT_MALLOC(mq->cell_vol, n_cells_with_ghosts, cs_real_t);
+    CS_MALLOC_HD(mq->b_face_cog, n_b_faces*3, cs_real_t, cs_alloc_mode);
 
   if (mq->i_face_surf == NULL)
     BFT_MALLOC(mq->i_face_surf, n_i_faces, cs_real_t);
 
   if (mq->b_face_surf == NULL)
-    BFT_MALLOC(mq->b_face_surf, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(mq->b_face_surf, n_b_faces, cs_real_t, cs_alloc_mode);
 
   /* Compute face centers of gravity, normals, and surfaces */
 
@@ -2592,16 +2592,16 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
     BFT_MALLOC(mq->i_dist, n_i_faces, cs_real_t);
 
   if (mq->b_dist == NULL)
-    BFT_MALLOC(mq->b_dist, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(mq->b_dist, n_b_faces, cs_real_t, cs_alloc_mode);
 
   if (mq->weight == NULL)
-    BFT_MALLOC(mq->weight, n_i_faces, cs_real_t);
+    CS_MALLOC_HD(mq->weight, n_i_faces, cs_real_t, cs_alloc_mode);
 
   if (mq->dijpf == NULL)
     BFT_MALLOC(mq->dijpf, n_i_faces*dim, cs_real_t);
 
   if (mq->diipb == NULL)
-    BFT_MALLOC(mq->diipb, n_b_faces*dim, cs_real_t);
+    CS_MALLOC_HD(mq->diipb, n_b_faces*dim, cs_real_t, cs_alloc_mode);
 
   if (mq->dofij == NULL)
     BFT_MALLOC(mq->dofij, n_i_faces*dim, cs_real_t);

@@ -131,6 +131,9 @@ if test "x$FC" = "x" ; then
   AC_MSG_FAILURE([cannot find Fortran compiler])
 fi
 
+# Check for CUDA compiler
+CS_AC_TEST_CUDA
+
 # Needed to use Microsoft archiver lib.exe
 # It copies the ar-lib script, similar to the compile script
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
@@ -177,7 +180,7 @@ AC_ARG_ENABLE(auto-flags,
   [ auto_flags=yes ]
 )
 
-# Optionnaly install the code with relocatable features
+# Optionally install the code with relocatable features
 
 AC_ARG_ENABLE(relocatable,
   [AS_HELP_STRING([--enable-relocatable], [enable relocatable installation])],
@@ -529,12 +532,13 @@ fi
 
 cs_have_accel=no
 
-CS_AC_TEST_CUDA
-
 if test "x$auto_flags" = "xyes" ; then
   if test "$cs_have_cuda" = "yes"; then
     cs_have_accel=yes
     NVCCFLAGS="$NVCCFLAGS $nvccflags_default"
+    if test "x$enable_shared" = "xyes" ; then
+      NVCCFLAGS="${NVCCFLAGS} --compiler-options -fPIC"
+    fi
     if test "x$debug" = xyes; then
       NVCCFLAGS_DBG="$nvccflags_default_dbg"
     else
