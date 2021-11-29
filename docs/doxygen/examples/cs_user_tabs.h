@@ -42,6 +42,7 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage cs_user_fluid_structure_interaction
    - \subpage richards
    - \subpage cs_gwf_cdo
+   - \subpage cs_solidification_cdo
    - \subpage cs_user_radiative_transfer
    - \subpage cs_user_electric_scaling
    - \subpage cs_user_atmospheric_model

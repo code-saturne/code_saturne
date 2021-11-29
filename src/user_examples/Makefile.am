@@ -119,11 +119,12 @@ cs_user_mesh-quality.c \
 cs_user_paramedmem_coupling-base.c \
 cs_user_parameters-base.c \
 cs_user_parameters-cdo-condif.c \
+cs_user_parameters-cdo-gwf.c \
+cs_user_parameters-cdo-gwf_user_soil.c \
+cs_user_parameters-cdo-solidification.c \
 cs_user_parameters-ctwr.c \
 cs_user_parameters-coupling.c \
 cs_user_parameters-fans.c \
-cs_user_parameters-cdo-gwf.c \
-cs_user_parameters-cdo-gwf_user_soil.c \
 cs_user_parameters-linear_solvers.c \
 cs_user_parameters-rotation.c \
 cs_user_parameters-volume_mass_injection.c \

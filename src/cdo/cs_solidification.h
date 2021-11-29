@@ -205,6 +205,21 @@ typedef enum {
 
 /*! \enum cs_solidification_state_t
  *  \brief Kind of state in which a cell or an entity is
+ *
+ * \var CS_SOLIDIFICATION_STATE_SOLID
+ *      Solid state (the liquid fraction is equal to 0)
+ *
+ * \var CS_SOLIDIFICATION_STATE_MUSHY
+ *      Mushy state meaning that the liquid fraction is strictly below 1 and
+ *      strictly above 0.
+ *
+ * \var CS_SOLIDIFICATION_STATE_LIQUID
+ *      Liquid state (the liquid fraction is equal to 1)
+ *
+ * \var CS_SOLIDIFICATION_STATE_EUTECTIC
+ *      Eutectic state. Only possible with a \ref
+ *      CS_SOLIDIFICATION_MODEL_BINARY_ALLOY model. A rough transition between
+ *      the mushy and solid state occurs when an eutectic transition happens.
  */
 
 typedef enum {
