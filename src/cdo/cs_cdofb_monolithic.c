@@ -2778,13 +2778,13 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   msles->u_f = mom_eqc->face_values; /* velocity DoFs at faces */
   msles->p_c = sc->pressure->val;    /* pressure DoFs at cells */
 
+  cs_iter_algo_reset(nl_algo);
+
   /* Solve the new system:
    * Update the value of mom_eqc->face_values and sc->pressure->val */
 
-  cs_iter_algo_reset(nl_algo);
-
-  if (nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
-    cs_iter_algo_aa_allocate_arrays(nl_algo->context);
+  nl_algo->n_inner_iter =
+    (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
