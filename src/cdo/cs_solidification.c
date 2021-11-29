@@ -3342,14 +3342,17 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
       /* Non-linear algorithm */
 
+      cs_iter_algo_param_t  nl_param = {
+        .verbosity = 0,         /* level of display to output */
+        .n_max_algo_iter = 15,  /* n_max iter. */
+        .atol = 1e-6,           /* absolute tolerance */
+        .rtol = 1e-2,           /* relative tolerance */
+        .dtol = 1e3 };          /* divergence tolerance */
+
       if (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_NL) {
 
         v_model->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
-        v_model->nl_algo = cs_iter_algo_create(0,     /* verbosity */
-                                               15,    /* n_max_iter */
-                                               1e-6,  /* abs. tolerance */
-                                               1e-2,  /* rel. tolerance */
-                                               1e3);  /* div. tolerance */
+        v_model->nl_algo = cs_iter_algo_create(nl_param);
 
       }
       else {

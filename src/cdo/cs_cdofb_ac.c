@@ -226,8 +226,8 @@ typedef struct {
 
   /*!
    * \var add_gravity_term
-   * \ref Compute and add the source term related to the gravity vector
-   *      This can be the Boussinesq term or the hydrostatic term (rho*g)
+   * Compute and add the source term related to the gravity vector
+   * This can be the Boussinesq term or the hydrostatic term (rho*g)
    */
 
   cs_cdofb_navsto_source_t      *add_gravity_term;
@@ -239,7 +239,12 @@ typedef struct {
    * @{
    */
 
-  cs_iter_algo_t                *algo_info;
+  /*!
+   * \var nl_algo
+   * Structure driving the convergence of the non-linear algorithm
+   */
+
+  cs_iter_algo_t                *nl_algo;
 
   /*!
    * @}
@@ -1023,15 +1028,11 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  sc->algo_info = cs_iter_algo_create(nslesp->nl_algo_verbosity,
-                                      nslesp->n_max_nl_algo_iter,
-                                      nslesp->nl_algo_atol,
-                                      nslesp->nl_algo_rtol,
-                                      nslesp->nl_algo_dtol);
+  sc->nl_algo = cs_iter_algo_create(nslesp->nl_algo_param);
 
-  if (nslesp->nl_algo == CS_PARAM_NL_ALGO_ANDERSON)
-    sc->algo_info->context = cs_iter_algo_aa_create(nslesp->anderson_param,
-                                                    cs_shared_quant->n_faces);
+  if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
+    sc->nl_algo->context = cs_iter_algo_aa_create(nslesp->anderson_param,
+                                                  cs_shared_quant->n_faces);
 
   /* Monitoring */
 
@@ -1065,10 +1066,9 @@ cs_cdofb_ac_free_scheme_context(void   *scheme_context)
   /* If the context is not NULL, this means that an Anderson algorithm has been
      activated otherwise nothing to do */
 
-  cs_iter_algo_aa_free(sc->algo_info);
+  cs_iter_algo_aa_free(sc->nl_algo);
 
-
-  BFT_FREE(sc->algo_info);
+  BFT_FREE(sc->nl_algo);
 
   /* Other pointers are only shared (i.e. not owner) */
 
@@ -1324,7 +1324,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
-  cs_iter_algo_t  *nl_info = sc->algo_info;
+  cs_iter_algo_t  *nl_info = sc->nl_algo;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START
@@ -1458,7 +1458,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   /* Check the convergence status and update the nl_info structure related
    * to the convergence monitoring */
 
-  while (cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo,
+  while (cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo_type,
                                      sc->mass_flux_array_pre,
                                      sc->mass_flux_array,
                                      div_l2_norm,
@@ -1535,12 +1535,12 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  if (nsp->sles_param->nl_algo == CS_PARAM_NL_ALGO_PICARD)
+  if (nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
     cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_info);
 
   else {
 
-    assert(nsp->sles_param->nl_algo == CS_PARAM_NL_ALGO_ANDERSON);
+    assert(nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON);
 
     cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_info);
 

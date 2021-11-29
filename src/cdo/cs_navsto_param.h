@@ -479,28 +479,14 @@ typedef struct {
    * @{
    */
 
-  /*! \var il_algo_rtol
-   *  Relative tolerance factor of the linear and inner system used to solve
-   *  either the Oseen or the Stokes system. This algorithm is for instance an
-   *  Uzawa or GKB algorithm. This is incorporated in a non-linear process in
-   *  case of Navier--Stokes equations.
+  /*! \var il_algo_param
+   *  Structure storing several tolerances and metadata to drive the inner
+   *  (linear) iterative algorithm used to solve either the Oseen or the Stokes
+   *  system. This algorithm is for instance an Uzawa or GKB algorithm. This is
+   *  incorporated in a non-linear process in case of Navier--Stokes equations.
    */
 
-  cs_real_t                     il_algo_rtol;
-
-  /*! \var il_algo_atol
-   *  Similar to \ref il_algo_rtol but in the case of an absolute tolerance
-   *  factor.
-   */
-
-  cs_real_t                     il_algo_atol;
-
-  /*! \var il_algo_dtol
-   *  Similar to \ref il_algo_rtol but in the case of a divergence tolerance
-   *  factor. (default 1e3)
-   */
-
-  cs_real_t                     il_algo_dtol;
+  cs_iter_algo_param_t          il_algo_param;
 
   /*! \var il_algo_restart
    *  Number of iterations before restarting the iterative solver associated to
@@ -508,18 +494,6 @@ typedef struct {
    */
 
   int                           il_algo_restart;
-
-  /*! \var n_max_il_algo_iter
-   *  Maximal number of iterations to solve the inner linear system
-   */
-
-  int                           n_max_il_algo_iter;
-
-  /*! \var il_algo_verbosity
-   *  Level of verbosity related to the inner linear system
-   */
-
-  int                           il_algo_verbosity;
 
   /*!
    * @}
@@ -534,44 +508,19 @@ typedef struct {
    *  advection term
    */
 
-  cs_param_nl_algo_t            nl_algo;
+  cs_param_nl_algo_t            nl_algo_type;
 
-  /*! \var nl_algo_rtol
-   *  Relative tolerance factor used in the algorithm used for tackling the
-   *  non-linearity.
+  /*! \var nl_algo_param
+   *  Structure storing several tolerances and metadata to drive the non-linear
+   *  iterative algorithm used to solve te Navier-Stokes when the advection
+   *  term is implicit and non linearized.
    */
 
-  cs_real_t                     nl_algo_rtol;
-
-  /*! \var nl_algo_atol
-   *  Absolute tolerance factor used in the algorithm used for tackling the
-   *  non-linearity.
-   */
-
-  cs_real_t                     nl_algo_atol;
-
-  /*! \var nl_algo_dtol
-   *  Divergence tolerance factor used in the algorithm used for tackling the
-   *  non-linearity.
-   */
-
-  cs_real_t                     nl_algo_dtol;
-
-  /*! \var n_max_nl_algo_iter
-   *  Maximal number of iterations for the Picard algorithm used to handle
-   *  the non-linearity arising from the advection term.
-   */
-
-  int                           n_max_nl_algo_iter;
-
-  /*! \var il_algo_verbosity
-   *  Level of verbosity related to the non-linear algorithm
-   */
-
-  int                           nl_algo_verbosity;
+  cs_iter_algo_param_t          nl_algo_param;
 
   /*! \var anderson_param
-   * Set of parameters to drive the Anderson acceleration
+   * Set of parameters to drive the Anderson acceleration (useful if the type
+   * of non-linear algorithm is set to Anderson acceleration).
    */
 
   cs_iter_algo_param_aa_t       anderson_param;
@@ -586,7 +535,7 @@ typedef struct {
    * @{
    */
 
-  cs_param_sles_t             *schur_sles_param;
+  cs_param_sles_t              *schur_sles_param;
 
   /*! @} */
 

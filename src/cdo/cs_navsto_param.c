@@ -307,12 +307,12 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
   /* Set the non-linear algorithm (only useful if advection is implicit and
    * Navier-Stokes is set) */
 
-  nslesp->nl_algo = CS_PARAM_NL_ALGO_PICARD;
-  nslesp->n_max_nl_algo_iter = 25;
-  nslesp->nl_algo_rtol = 1e-5;
-  nslesp->nl_algo_atol = 1e-5;
-  nslesp->nl_algo_dtol = 1e3;
-  nslesp->nl_algo_verbosity = 1;
+  nslesp->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
+  nslesp->nl_algo_param.n_max_algo_iter = 25;
+  nslesp->nl_algo_param.rtol = 1e-5;
+  nslesp->nl_algo_param.atol = 1e-5;
+  nslesp->nl_algo_param.dtol = 1e3;
+  nslesp->nl_algo_param.verbosity = 1;
 
   nslesp->anderson_param.n_max_dir = 6;
   nslesp->anderson_param.starting_iter = 3;
@@ -322,11 +322,12 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
 
   /* Set the default solver options for the main linear algorithm */
 
-  nslesp->n_max_il_algo_iter = 100;
-  nslesp->il_algo_rtol = 1e-08;
-  nslesp->il_algo_atol = 1e-08;
-  nslesp->il_algo_dtol = 1e3;
-  nslesp->il_algo_verbosity = 0;
+  nslesp->il_algo_param.n_max_algo_iter = 100;
+  nslesp->il_algo_param.rtol = 1e-08;
+  nslesp->il_algo_param.atol = 1e-08;
+  nslesp->il_algo_param.dtol = 1e3;
+  nslesp->il_algo_param.verbosity = 0;
+
   nslesp->il_algo_restart = 10;
 
   switch (algo_coupling) {
@@ -545,10 +546,10 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
 
   cs_log_printf(CS_LOG_SETUP, "%s Tolerances of inner linear algo:"
                 " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; verbosity: %d\n",
-                navsto, nslesp->il_algo_rtol, nslesp->il_algo_atol,
-                nslesp->il_algo_dtol, nslesp->il_algo_verbosity);
+                navsto, nslesp->il_algo_param.rtol, nslesp->il_algo_param.atol,
+                nslesp->il_algo_param.dtol, nslesp->il_algo_param.verbosity);
   cs_log_printf(CS_LOG_SETUP, "%s Max of inner-linear iterations: %d\n",
-                navsto, nslesp->n_max_il_algo_iter);
+                navsto, nslesp->il_algo_param.n_max_algo_iter);
 
   /* Additional settings for the Schur complement solver */
   if (nslesp->strategy == CS_NAVSTO_SLES_UZAWA_CG          ||
@@ -953,8 +954,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Invalid val %s related to key"
                   " CS_NSKEY_ADVECTION_SCHEME\n"
-                  " Choice between upwind, samarskii, sg, centered, cip, cip_cw,"
-                  " hybrid_centered_upwind, mix_centered_upwind"),
+                  " Choices between upwind, samarskii, sg, centered, cip,"
+                  " cip_cw, hybrid_centered_upwind, mix_centered_upwind"),
                 __func__, _val);
     }
     break;
@@ -1010,22 +1011,22 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_IL_ALGO_ATOL:
-    nsp->sles_param->il_algo_atol = atof(val);
-    if (nsp->sles_param->il_algo_rtol < 0)
+    nsp->sles_param->il_algo_param.atol = atof(val);
+    if (nsp->sles_param->il_algo_param.rtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the absolute tolerance\n", __func__);
     break;
 
   case CS_NSKEY_IL_ALGO_DTOL:
-    nsp->sles_param->il_algo_dtol = atof(val);
-    if (nsp->sles_param->il_algo_dtol < 0)
+    nsp->sles_param->il_algo_param.dtol = atof(val);
+    if (nsp->sles_param->il_algo_param.dtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the divergence tolerance\n", __func__);
     break;
 
   case CS_NSKEY_IL_ALGO_RTOL:
-    nsp->sles_param->il_algo_rtol = atof(val);
-    if (nsp->sles_param->il_algo_rtol < 0)
+    nsp->sles_param->il_algo_param.rtol = atof(val);
+    if (nsp->sles_param->il_algo_param.rtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the residual tolerance\n", __func__);
     break;
@@ -1035,15 +1036,15 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_IL_ALGO_VERBOSITY:
-    nsp->sles_param->il_algo_verbosity = atoi(val);
+    nsp->sles_param->il_algo_param.verbosity = atoi(val);
     break;
 
   case CS_NSKEY_MAX_IL_ALGO_ITER:
-    nsp->sles_param->n_max_il_algo_iter = atoi(val);
+    nsp->sles_param->il_algo_param.n_max_algo_iter = atoi(val);
     break;
 
   case CS_NSKEY_MAX_NL_ALGO_ITER:
-    nsp->sles_param->n_max_nl_algo_iter = atoi(val);
+    nsp->sles_param->nl_algo_param.n_max_algo_iter = atoi(val);
     break;
 
   case CS_NSKEY_MAX_OUTER_ITER:
@@ -1053,9 +1054,9 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
   case CS_NSKEY_NL_ALGO:
     {
       if (strcmp(val, "picard") == 0 || strcmp(val, "fixed-point") == 0)
-        nsp->sles_param->nl_algo = CS_PARAM_NL_ALGO_PICARD;
+        nsp->sles_param->nl_algo_type = CS_PARAM_NL_ALGO_PICARD;
       else if (strcmp(val, "anderson") == 0)
-        nsp->sles_param->nl_algo = CS_PARAM_NL_ALGO_ANDERSON;
+        nsp->sles_param->nl_algo_type = CS_PARAM_NL_ALGO_ANDERSON;
       else {
         const char *_val = val;
         bft_error(__FILE__, __LINE__, 0,
@@ -1067,8 +1068,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break; /* Non-linear algorithm */
 
   case CS_NSKEY_NL_ALGO_ATOL:
-    nsp->sles_param->nl_algo_atol = atof(val);
-    if (nsp->sles_param->il_algo_atol < 0)
+    nsp->sles_param->nl_algo_param.atol = atof(val);
+    if (nsp->sles_param->il_algo_param.atol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the absolute tolerance of the"
                 " non-linear algorithm\n",
@@ -1076,8 +1077,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_NL_ALGO_DTOL:
-    nsp->sles_param->nl_algo_dtol = atof(val);
-    if (nsp->sles_param->nl_algo_dtol < 0)
+    nsp->sles_param->nl_algo_param.dtol = atof(val);
+    if (nsp->sles_param->nl_algo_param.dtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the divergence tolerance of the"
                 " non-linear algorithm\n",
@@ -1085,8 +1086,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_NL_ALGO_RTOL:
-    nsp->sles_param->nl_algo_rtol = atof(val);
-    if (nsp->sles_param->nl_algo_rtol < 0)
+    nsp->sles_param->nl_algo_param.rtol = atof(val);
+    if (nsp->sles_param->nl_algo_param.rtol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the relative tolerance of the"
                 " non-linear algorithm\n",
@@ -1094,7 +1095,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_NL_ALGO_VERBOSITY:
-    nsp->sles_param->nl_algo_verbosity = atoi(val);
+    nsp->sles_param->nl_algo_param.verbosity = atoi(val);
     break;
 
   case CS_NSKEY_QUADRATURE:
@@ -1480,15 +1481,15 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
       const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
       cs_log_printf(CS_LOG_SETUP, "%s Non-linear algo: %s\n",
-                    navsto, cs_param_get_nl_algo_name(nslesp->nl_algo));
+                    navsto, cs_param_get_nl_algo_name(nslesp->nl_algo_type));
       cs_log_printf(CS_LOG_SETUP, "%s Tolerances of non-linear algo:"
                     " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
-                    navsto, nslesp->nl_algo_rtol, nslesp->nl_algo_atol,
-                    nslesp->nl_algo_dtol);
+                    navsto, nslesp->nl_algo_param.rtol,
+                    nslesp->nl_algo_param.atol, nslesp->nl_algo_param.dtol);
       cs_log_printf(CS_LOG_SETUP, "%s Max of non-linear iterations: %d\n",
-                    navsto, nslesp->n_max_nl_algo_iter);
+                    navsto, nslesp->nl_algo_param.n_max_algo_iter);
 
-      if (nslesp->nl_algo == CS_PARAM_NL_ALGO_ANDERSON) {
+      if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
         const cs_iter_algo_param_aa_t  aap = nslesp->anderson_param;
 

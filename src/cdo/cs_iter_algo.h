@@ -246,22 +246,14 @@ cs_iter_algo_reset(cs_iter_algo_t    *info)
 /*!
  * \brief  Create and initialize a new cs_iter_algo_t structure
  *
- * \param[in] verbosity    set the level of information printed
- * \param[in] n_max_iter   maximal number of iteration
- * \param[in] atol         absolute tolerance
- * \param[in] rtol         relative tolerance
- * \param[in] dtol         divergence tolerance
+ * \param[in] param     main set of parameters driving the iterative algorithm
  *
  * \return a pointer to the new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_iter_algo_t *
-cs_iter_algo_create(int          verbosity,
-                    int          n_max_iter,
-                    double       atol,
-                    double       rtol,
-                    double       dtol);
+cs_iter_algo_create(cs_iter_algo_param_t    param);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -337,11 +337,11 @@ struct _cdofb_monolithic_t {
   cs_cdofb_monolithic_sles_t       *msles;
 
   /*!
-   * \var algo_info
+   * \var nl_algo
    * Structure used to drive the convergence of high-level iterative algorithms
    */
 
-  cs_iter_algo_t                   *algo_info;
+  cs_iter_algo_t                   *nl_algo;
 
   /*!
    * @}
