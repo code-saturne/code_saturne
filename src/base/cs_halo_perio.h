@@ -108,36 +108,6 @@ cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
                                 cs_real_t         var[]);
 
 /*----------------------------------------------------------------------------
- * Synchronize values for a real diagonal tensor between periodic cells.
- *
- * We only know the diagonal of the tensor.
- *
- * parameters:
- *   halo      <-> halo associated with variable to synchronize
- *   sync_mode --> kind of halo treatment (standard or extended)
- *   var11     <-> component of the tensor to update
- *   var22     <-> component of the tensor to update
- *   var33     <-> component of the tensor to update
- *----------------------------------------------------------------------------*/
-
-void
-cs_halo_perio_sync_var_diag_ni(const cs_halo_t *halo,
-                               cs_halo_type_t   sync_mode,
-                               cs_real_t        var11[],
-                               cs_real_t        var22[],
-                               cs_real_t        var33[]);
-
-/*----------------------------------------------------------------------------
- * Apply rotation on the gradient of Reynolds stress tensor
- *
- * parameters:
- *   drdxyz     <-> gradient on the variable (size: 3*6*n_ghost_cells)
- *----------------------------------------------------------------------------*/
-
-void
-cs_halo_perio_rotate_rij(cs_real_t  *drdxyz);
-
-/*----------------------------------------------------------------------------
  * Synchronize values for a real gradient of a tensor (symmetric interleaved)
  * between periodic cells.
  *

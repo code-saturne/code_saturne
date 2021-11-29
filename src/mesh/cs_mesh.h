@@ -528,20 +528,6 @@ void
 cs_mesh_sync_var_vect_ext(cs_real_t  *var);
 
 /*----------------------------------------------------------------------------
- * Update a diagonal tensor array in case of parallelism and/or periodicity.
- *
- * parameters:
- *   var11  <->  diagonal tensor component 11 array
- *   var22  <->  diagonal tensor component 22 array
- *   var33  <->  diagonal tensor component 33 array
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_sync_var_diag_ni(cs_real_t  *var11,
-                         cs_real_t  *var22,
-                         cs_real_t  *var33);
-
-/*----------------------------------------------------------------------------
  * Update a tensor array in case of parallelism and/or periodicity.
  *
  * parameters:
