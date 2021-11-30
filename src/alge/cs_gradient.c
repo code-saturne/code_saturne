@@ -721,7 +721,7 @@ _sync_scalar_gradient_halo(const cs_mesh_t  *m,
   if (m->halo != NULL) {
     cs_halo_sync_var_strided
       (m->halo, halo_type, (cs_real_t *)grad, 3);
-    if (m->n_init_perio > 0)
+    if (m->have_rotation_perio)
       cs_halo_perio_sync_var_vect
         (m->halo, halo_type, (cs_real_t *)grad, 3);
   }
@@ -4741,7 +4741,7 @@ _vector_gradient_clipping(const cs_mesh_t              *m,
 
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradv, 9);
-    if (cs_glob_mesh->n_init_perio > 0)
+    if (cs_glob_mesh->have_rotation_perio)
       cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradv);
   }
 
@@ -4927,7 +4927,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 9);
-    if (cs_glob_mesh->n_init_perio > 0)
+    if (cs_glob_mesh->have_rotation_perio)
       cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
   }
 }
@@ -5155,7 +5155,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
 
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 9);
-    if (cs_glob_mesh->n_init_perio > 0)
+    if (cs_glob_mesh->have_rotation_perio)
       cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
   }
 }
@@ -5411,7 +5411,7 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
 
       if (m->halo != NULL) {
         cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 9);
-        if (cs_glob_mesh->n_init_perio > 0)
+        if (cs_glob_mesh->have_rotation_perio)
           cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)grad);
       }
 
@@ -5677,7 +5677,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
 
       if (m->halo != NULL) {
         cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 18);
-        if (cs_glob_mesh->n_init_perio > 0)
+        if (cs_glob_mesh->have_rotation_perio)
           cs_halo_perio_sync_var_sym_tens_grad(m->halo,
                                                halo_type,
                                                (cs_real_t *)grad);
@@ -6402,7 +6402,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradv, 9);
-    if (cs_glob_mesh->n_init_perio > 0)
+    if (cs_glob_mesh->have_rotation_perio)
       cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradv);
   }
 
@@ -6753,7 +6753,7 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
 
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD, (cs_real_t *)grad, 9);
-    if (cs_glob_mesh->n_init_perio > 0)
+    if (cs_glob_mesh->have_rotation_perio)
       cs_halo_perio_sync_var_tens(m->halo,
                                   CS_HALO_STANDARD,
                                   (cs_real_t *)grad);
@@ -7045,7 +7045,7 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
 
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradt, 18);
-    if (cs_glob_mesh->n_init_perio > 0)
+    if (cs_glob_mesh->have_rotation_perio)
       cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradt);
   }
 
@@ -7214,7 +7214,7 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
 
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)grad, 18);
-    if (cs_glob_mesh->n_init_perio > 0)
+    if (cs_glob_mesh->have_rotation_perio)
       cs_halo_perio_sync_var_sym_tens_grad(m->halo,
                                            halo_type,
                                            (cs_real_t *)grad);
@@ -8140,7 +8140,7 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
 
   if (m->halo != NULL) {
     cs_halo_sync_var_strided(m->halo, halo_type, (cs_real_t *)gradt, 9);
-    if (cs_glob_mesh->n_init_perio > 0)
+    if (cs_glob_mesh->have_rotation_perio)
       cs_halo_perio_sync_var_tens(m->halo, halo_type, (cs_real_t *)gradt);
   }
 
@@ -8867,7 +8867,7 @@ cs_gradient_vector(const char                    *var_name,
   if (mesh->halo != NULL) {
 
     cs_halo_sync_var_strided(mesh->halo, halo_type, (cs_real_t *)var, 3);
-    if (cs_glob_mesh->n_init_perio > 0)
+    if (cs_glob_mesh->have_rotation_perio)
       cs_halo_perio_sync_var_vect(mesh->halo, halo_type, (cs_real_t *)var, 3);
 
     if (c_weight != NULL)
@@ -8966,7 +8966,7 @@ cs_gradient_tensor(const char                *var_name,
 
   if (mesh->halo != NULL) {
     cs_halo_sync_var_strided(mesh->halo, halo_type, (cs_real_t *)var, 6);
-    if (mesh->n_init_perio > 0)
+    if (mesh->have_rotation_perio)
       cs_halo_perio_sync_var_sym_tens(mesh->halo, halo_type, (cs_real_t *)var);
   }
 
@@ -9063,7 +9063,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
     if (cs_glob_mesh->halo != NULL) {
       cs_halo_sync_var_strided(cs_glob_mesh->halo, halo_type,
                                (cs_real_t *)f_ext, 3);
-      if (cs_glob_mesh->n_init_perio > 0)
+      if (cs_glob_mesh->have_rotation_perio)
         cs_halo_perio_sync_var_vect(cs_glob_mesh->halo, halo_type,
                                     (cs_real_t *)f_ext, 3);
     }
