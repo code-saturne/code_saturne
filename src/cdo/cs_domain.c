@@ -169,6 +169,7 @@ cs_domain_create(void)
   cs_domain_t  *domain = NULL;
 
   /* Initialization of several modules */
+
   cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
   cs_quadrature_setup();         /* Compute constant used in quadrature rules */
 
@@ -180,6 +181,7 @@ cs_domain_create(void)
   domain->cdo_quantities = NULL;
 
   /* By default a wall is defined for the whole boundary of the domain */
+
   cs_glob_boundaries = cs_boundary_create(CS_BOUNDARY_CATEGORY_FLOW,
                                           CS_BOUNDARY_WALL);
   domain->boundaries = cs_glob_boundaries;
@@ -187,10 +189,13 @@ cs_domain_create(void)
                                               CS_BOUNDARY_ALE_FIXED);
 
   /* Default initialization of the time step */
+
   domain->only_steady = true;
   domain->is_last_iter = false;
+  domain->stage = CS_DOMAIN_STAGE_BEFORE_STEADY_COMPUTATION;
 
   /* Global structure for time step management */
+
   domain->time_step = cs_get_glob_time_step();
 
   domain->time_options.iptlro = 0;
@@ -204,15 +209,18 @@ cs_domain_create(void)
   domain->time_options.relxst = 0.7; /* Not used in CDO schemes */
 
   /* Other options */
+
   domain->restart_nt = 0;
   domain->output_nt = -1;
   domain->verbosity = 1;
 
   /* By default: CDO-HHO schemes are not activated */
+
   domain->cdo_context = NULL;
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
 
   /* Monitoring */
+
   CS_TIMER_COUNTER_INIT(domain->tcp); /* domain post */
   CS_TIMER_COUNTER_INIT(domain->tcs); /* domain setup */
 
@@ -298,6 +306,46 @@ cs_domain_get_cdo_mode(const cs_domain_t   *domain)
     return CS_DOMAIN_CDO_MODE_OFF;
 
   return domain->cdo_context->mode;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the computation stage in the domain structure
+ *
+ * \param[in, out] domain    pointer to a cs_domain_t structure
+ * \param[in]      stage     stage in the computation run
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_set_stage(cs_domain_t         *domain,
+                    cs_domain_stage_t    stage)
+{
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: domain is not allocated.",
+              __func__);
+
+  domain->stage = stage;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the computation stage from the domain structure
+ *
+ * \param[in] domain    pointer to a cs_domain_t structure
+ *
+ * \return the current stage in the computation run
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_domain_stage_t
+cs_domain_get_stage(const cs_domain_t    *domain)
+{
+  if (domain == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: domain is not allocated.",
+              __func__);
+
+  return domain->stage;
 }
 
 /*----------------------------------------------------------------------------*/
