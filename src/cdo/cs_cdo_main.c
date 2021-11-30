@@ -298,6 +298,7 @@ static void
 _solve_steady_state_domain(cs_domain_t  *domain)
 {
   if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY) {
+
     /* Otherwise log is called from the FORTRAN part */
 
     if (!cs_equation_needs_steady_state_solve()) {
@@ -307,6 +308,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
       cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", cs_sep_h1);
 
       /* Extra operations and post-processing of the computed solutions */
+
       cs_post_time_step_begin(domain->time_step);
 
       cs_domain_post(domain);
@@ -320,6 +322,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   bool  do_output = cs_domain_needs_log(domain, false);
 
   /* Output information */
+
   if (domain->only_steady) {
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
     cs_log_printf(CS_LOG_DEFAULT, "#      Solve steady-state problem(s)\n");
@@ -332,7 +335,12 @@ _solve_steady_state_domain(cs_domain_t  *domain)
     cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", cs_sep_h1);
   }
 
+  /* User-defined update/settings of physical properties */
+
+  cs_user_physical_properties(domain);
+
   /* Predefined equation for the computation of the wall distance */
+
   if (cs_walldistance_is_activated())
     cs_walldistance_compute(domain->mesh,
                             domain->time_step,
@@ -343,6 +351,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
      solved */
 
   /* 1. Thermal module */
+
   if (_needs_solving_steady_state_thermal())
     cs_thermal_system_compute_steady_state(domain->mesh,
                                            domain->connect,
@@ -350,6 +359,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
                                            domain->time_step);
 
   /* 2. Groundwater flow module */
+
   if (cs_gwf_is_activated())
     cs_gwf_compute_steady_state(domain->mesh,
                                 domain->time_step,
@@ -357,6 +367,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
                                 domain->cdo_quantities);
 
   /* 3. Maxwell module */
+
   if (cs_maxwell_is_activated())
     cs_maxwell_compute_steady_state(domain->mesh,
                                     domain->time_step,
@@ -364,6 +375,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
                                     domain->cdo_quantities);
 
   /* 4. Navier-Stokes module */
+
   if (cs_navsto_system_is_activated())
     cs_navsto_system_compute_steady_state(domain->mesh,
                                           domain->connect,
@@ -371,15 +383,20 @@ _solve_steady_state_domain(cs_domain_t  *domain)
                                           domain->time_step);
 
   /* User-defined equations */
+
   _compute_steady_user_equations(domain);
 
   /* Extra operations and post-processing of the computed solutions */
+
   cs_post_time_step_begin(domain->time_step);
 
   if (domain->only_steady) { /* Force writer activation and mesh output */
+
     cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
     cs_post_write_meshes(domain->time_step);
+
   }
+
   cs_domain_post(domain);
 
   cs_post_time_step_end();
@@ -442,6 +459,7 @@ _solve_domain(cs_domain_t  *domain)
   bool  do_output = cs_domain_needs_log(domain, true);
 
   /* Output information */
+
   if (do_output) {
 
     const double  t_cur = ts->t_cur;
@@ -455,6 +473,14 @@ _solve_domain(cs_domain_t  *domain)
 
   }
 
+  cs_domain_set_stage(domain, CS_DOMAIN_STAGE_TIME_STEP_BEGIN);
+
+  /* User-defined update/settings of physical properties */
+
+  cs_user_physical_properties(domain);
+
+  /* Solve predefined systems */
+
   if (cs_solidification_is_activated()) {
 
     cs_solidification_compute(domain->mesh,
@@ -466,6 +492,7 @@ _solve_domain(cs_domain_t  *domain)
   else {
 
     /* 1. Thermal module */
+
     if (_needs_solving_thermal())
       cs_thermal_system_compute(true, /* current to previous */
                                 domain->mesh,
@@ -474,6 +501,7 @@ _solve_domain(cs_domain_t  *domain)
                                 domain->time_step);
 
     /* 2. Groundwater flow module */
+
     if (cs_gwf_is_activated())
       cs_gwf_compute(domain->mesh,
                      domain->time_step,
@@ -481,6 +509,7 @@ _solve_domain(cs_domain_t  *domain)
                      domain->cdo_quantities);
 
     /* 3. Maxwell module */
+
     if (cs_maxwell_is_activated())
       cs_maxwell_compute(domain->mesh,
                          domain->time_step,
@@ -488,6 +517,7 @@ _solve_domain(cs_domain_t  *domain)
                          domain->cdo_quantities);
 
     /* 4. Navier-Stokes module */
+
     if (cs_navsto_system_is_activated())
       cs_navsto_system_compute(domain->mesh,
                                domain->connect,
@@ -496,7 +526,14 @@ _solve_domain(cs_domain_t  *domain)
 
   }
 
+  cs_domain_set_stage(domain, CS_DOMAIN_STAGE_TIME_STEP_END);
+
+  /* User-defined update/settings of physical properties */
+
+  cs_user_physical_properties(domain);
+
   /* User-defined equations */
+
   _compute_unsteady_user_equations(domain, nt_cur);
 }
 
@@ -516,34 +553,43 @@ _log_setup(const cs_domain_t   *domain)
     return;
 
   /* Output domain settings */
+
   cs_domain_setup_log(domain);
 
   if (domain->verbosity > -1) {
 
     /* Advection fields */
+
     cs_advection_field_log_setup();
 
     /* Properties */
+
     cs_property_log_setup();
 
     /* Summary of the thermal module */
+
     cs_thermal_system_log_setup();
 
     /* Summary of the groundwater module */
+
     cs_gwf_log_setup();
 
     /* Summary of the Maxwell module */
+
     cs_maxwell_log_setup();
 
     /* Summary of the Navier-Stokes system */
+
     cs_navsto_system_log_setup();
 
     /* Summary of the solidification module */
+
     cs_solidification_log_setup();
 
   } /* domain->verbosity > 0 */
 
   /* Summary for each equation */
+
   cs_equation_log_setup();
 
 }
@@ -599,14 +645,17 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
     return;
 
   /* Timer statistics */
+
   _cdo_ts_id = cs_timer_stats_id_by_name("cdo");
   if (_cdo_ts_id < 0)
     _cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
 
   /* Store the fact that the CDO/HHO module is activated */
+
   cs_domain_cdo_log(domain);
 
   /* Add predefined properties */
+
   cs_property_t  *pty = cs_property_by_name("unity");
   if (pty == NULL) {
     pty = cs_property_add("unity", CS_PROPERTY_ISO);
@@ -616,6 +665,7 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
   /* Add a property related to the time step. A property can be called easily
    * from everywhere: cs_property_by_name("time_step")
    * This is useful when building linear system. */
+
   pty = cs_property_by_name("time_step");
   if (pty == NULL) {
 
@@ -629,6 +679,7 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
   cs_timer_stats_start(_cdo_ts_id);
 
   /* Add an automatic boundary zone gathering all "wall" boundaries */
+
   cs_boundary_def_wall_zones(domain->boundaries);
 
   cs_timer_t t0 = cs_timer_time();
@@ -639,11 +690,13 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
    * - Create fields
    * - Define cs_sles_t structures for variable fields
    */
+
   cs_domain_initialize_setup(domain);
 
   _initialized_setup = true;
 
   /* Monitoring */
+
   cs_timer_stats_stop(_cdo_ts_id);
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
@@ -680,11 +733,13 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   cs_timer_t  t0 = cs_timer_time();
 
   /* Timer statistics */
+
   cs_timer_stats_start(_cdo_ts_id);
 
   cs_domain_init_cdo_structures(domain);
 
   /* Last user setup stage */
+
   cs_domain_finalize_user_setup(domain);
 
   /* Assign to a cs_equation_t structure a list of function to manage this
@@ -719,21 +774,26 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   }
 
   /* Last setup stage */
+
   cs_domain_finalize_module_setup(domain);
 
   /* Initialization of the default post-processing for the computational
      domain */
+
   cs_domain_post_init(domain);
 
   /* Summary of the settings */
+
   _log_setup(domain);
 
   /* Flush log files */
+
   cs_log_printf_flush(CS_LOG_DEFAULT);
   cs_log_printf_flush(CS_LOG_SETUP);
   cs_log_printf_flush(CS_LOG_PERFORMANCE);
 
   /* Monitoring */
+
   cs_timer_stats_stop(_cdo_ts_id);
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
@@ -762,21 +822,27 @@ cs_cdo_finalize(cs_domain_t    *domain)
     return;
 
   /* Timer statistics */
+
   cs_timer_stats_start(_cdo_ts_id);
 
   /* Write a restart file if needed */
+
   cs_domain_write_restart(domain);
 
   /* Clean up for restart multiwriters */
+
   cs_restart_clean_multiwriters_history();
 
   /* Print monitoring information */
+
   cs_equation_log_monitoring();
 
   /* Free memory related to equations */
+
   cs_equation_destroy_all();
 
   /* Free common structures relatated to equations */
+
   cs_equation_unset_shared_structures(domain->cdo_context->vb_scheme_flag,
                                       domain->cdo_context->vcb_scheme_flag,
                                       domain->cdo_context->eb_scheme_flag,
@@ -788,27 +854,35 @@ cs_cdo_finalize(cs_domain_t    *domain)
   cs_equation_common_finalize();
 
   /* Free memory related to advection fields */
+
   cs_advection_field_destroy_all();
 
   /* Free memory related to the thermal module */
+
   cs_thermal_system_destroy();
 
   /* Free memory related to the groundwater flow module */
+
   cs_gwf_destroy_all();
 
   /* Free memory related to the Maxwell module */
+
   cs_maxwell_destroy_all();
 
   /* Navier-Stokes system */
+
   cs_navsto_system_destroy();
 
   /* Solidification module */
+
   cs_solidification_destroy_all();
 
   /* ALE */
+
   cs_ale_destroy_all();
 
   /* Set flag to OFF */
+
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
 
   cs_log_printf(CS_LOG_DEFAULT,
@@ -868,26 +942,33 @@ cs_cdo_main(cs_domain_t   *domain)
   cs_timer_t t0 = cs_timer_time();
 
   /* Timer statistics */
+
   cs_timer_stats_start(_cdo_ts_id);
 
   /* Read a restart file if needed */
+
   cs_domain_read_restart(domain);
 
   /* Force the activation of writers for postprocessing */
+
   cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
 
   /*  Build high-level structures and create algebraic systems
       Set the initial values of the fields and properties. */
+
   cs_domain_initialize_systems(domain);
 
-  /* Remark: cs_user_initialization is called at the end of the function */
+  /* Remark: cs_user_initialization is called at the end of the previous
+     function */
 
   /* Initialization for user-defined extra operations. Should be done
      after the domain initialization if one wants to overwrite the field
      initialization for instance */
+
   cs_user_extra_operations_initialize(cs_glob_domain);
 
   /* Output information */
+
   cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
   cs_log_printf(CS_LOG_DEFAULT, "#      Start main loop\n");
   cs_log_printf(CS_LOG_DEFAULT, "%s", cs_sep_h1);
@@ -898,6 +979,13 @@ cs_cdo_main(cs_domain_t   *domain)
 
   _solve_steady_state_domain(domain);
 
+  cs_domain_set_stage(domain, CS_DOMAIN_STAGE_BEFORE_TIME_LOOP);
+
+  /* User-defined update/settings of physical properties after solving the
+     steady-state equations */
+
+  cs_user_physical_properties(domain);
+
   /* ============== */
   /* Main time loop */
   /* ============== */
@@ -905,21 +993,27 @@ cs_cdo_main(cs_domain_t   *domain)
   while (cs_domain_needs_iteration(domain)) {
 
     /* Define the current time step */
+
     _define_current_time_step(domain->time_step, &(domain->time_options));
 
     /* Check if this is the last iteration */
+
     domain->is_last_iter = _is_last_iter(domain->time_step);
 
     /* Build and solve equations related to the computational domain */
+
     _solve_domain(domain);
 
     /* Increment time */
+
     cs_domain_increment_time(domain);
 
     /* Increment time steps */
+
     cs_domain_increment_time_step(domain);
 
     /* Extra operations and post-processing of the computed solutions */
+
     cs_post_time_step_begin(domain->time_step);
 
     cs_domain_post(domain);
@@ -927,17 +1021,27 @@ cs_cdo_main(cs_domain_t   *domain)
     cs_post_time_step_end();
 
     /* Read a control file if present */
+
     cs_control_check_file();
 
     /* Add a checkpoint if needed */
+
     cs_domain_write_restart(domain);
 
     /* Clean up for restart multiwriters */
+
     cs_restart_clean_multiwriters_history();
 
     cs_timer_stats_increment_time_step();
 
   }
+
+  cs_domain_set_stage(domain, CS_DOMAIN_STAGE_AFTER_TIME_LOOP);
+
+  /* User-defined update/settings of physical properties (finalization
+     stage) */
+
+  cs_user_physical_properties(domain);
 
   cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
                 "<CDO/Post> Runtime", domain->tcp.nsec*1e-9);
