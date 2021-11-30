@@ -44,20 +44,12 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * PLE library headers
- *----------------------------------------------------------------------------*/
-
-#include <ple_locator.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
-
-#include "fvm_nodal_extract.h"
 
 #include "cs_atmo_profile_std.h"
 #include "cs_base.h"
@@ -68,7 +60,6 @@
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_halo.h"
-#include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -79,25 +70,21 @@
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
 #include "cs_prototypes.h"
-#include "cs_post.h"
-#include "cs_restart.h"
-#include "cs_selector.h"
 #include "cs_thermal_model.h"
 #include "cs_turbulence_model.h"
 #include "cs_volume_zone.h"
 #include "cs_balance.h"
 #include "cs_blas.h"
 #include "cs_convection_diffusion.h"
-#include "cs_gradient.h"
 #include "cs_parameters.h"
 #include "cs_porous_model.h"
 #include "cs_timer.h"
 #include "cs_matrix_building.h"
-#include "cs_matrix_default.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
 #include "cs_face_viscosity.h"
 #include "cs_divergence.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -217,12 +204,6 @@ static const char *cs_atmo_aerosol_type_name[]
  * Prototypes for functions intended for use only by Fortran wrappers.
  * (descriptions follow, with function bodies).
  *============================================================================*/
-
-void
-cs_atmo_init_meteo_profiles(void);
-
-void
-cs_atmo_compute_meteo_profiles(void);
 
 void
 cs_f_atmo_get_meteo_file_name(int           name_max,
@@ -383,7 +364,7 @@ cs_f_atmo_get_aero_conc_file_name(int           name_max,
 }
 
 /*----------------------------------------------------------------------------
- * Get pointer
+ * Access pointers for Fortran mapping.
  *----------------------------------------------------------------------------*/
 
 void
@@ -542,7 +523,6 @@ _strtolower(char        *dest,
   }
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This auxiliary function solve a Poisson equation for hydrostatic
@@ -594,7 +574,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_var_cal_opt_t vcopt;
   cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
 
-  /*============================================================================
+  /*==========================================================================
    * 0.  Initialization
    *==========================================================================*/
 
@@ -843,19 +823,28 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
 /*----------------------------------------------------------------------------*/
 
 static void
-_convert_fromL93_to_WGS84(void)
+_convert_from_l93_to_wgs84(void)
 {
   //computation from https://georezo.net/forum/viewtopic.php?id=94465
-  cs_real_t  c = 11754255.426096; // projection constant
-  cs_real_t  e = 0.0818191910428158; // ellipsoid excentricity
-  cs_real_t  n = 0.725607765053267; // projection exponent
-  cs_real_t  xs = 700000; // projection's pole x-coordinate
-  cs_real_t  ys = 12655612.049876;  // projection's pole y-coordinate
-  cs_real_t a=(log(c/(sqrt(cs_math_pow2(cs_glob_atmo_option->x_l93-xs)+cs_math_pow2(cs_glob_atmo_option->y_l93-ys))))/n);
-  
-  cs_glob_atmo_option->longitude = ((atan(-(cs_glob_atmo_option->x_l93-xs)/(cs_glob_atmo_option->y_l93-ys)))/n+3*cs_math_pi/180)/cs_math_pi*180;
-  cs_glob_atmo_option->latitude = asin(tanh((log(c/sqrt(cs_math_pow2(cs_glob_atmo_option->x_l93-xs)+cs_math_pow2(cs_glob_atmo_option->y_l93-ys)))/n)+e*atanh(e*(tanh(a+e*atanh(e*(tanh(a+e*atanh(e*(tanh(a+e*atanh(e*(tanh(a+e*atanh(e*(tanh(a+e*atanh(e*(tanh(a+e*atanh(e*sin(1))))))))))))))))))))))/cs_math_pi*180;
+  cs_real_t c = 11754255.426096; // projection constant
+  cs_real_t e = 0.0818191910428158; // ellipsoid excentricity
+  cs_real_t n = 0.725607765053267; // projection exponent
+  cs_real_t xs = 700000; // projection's pole x-coordinate
+  cs_real_t ys = 12655612.049876;  // projection's pole y-coordinate
+  cs_real_t a = (log(c/(sqrt(  cs_math_pow2(cs_glob_atmo_option->x_l93-xs)
+                             + cs_math_pow2(cs_glob_atmo_option->y_l93-ys))))/n);
 
+  double t1 = a + e*atanh(e*(tanh(a+e*atanh(e*sin(1)))));
+  double t2 = e*tanh(a+e*atanh(e*(tanh(t1))));
+  double t3 = a+e*atanh(e*tanh(a+e*atanh(e*tanh(a+e*atanh(t2)))));
+
+  cs_glob_atmo_option->longitude = ((atan(-(cs_glob_atmo_option->x_l93-xs)
+                                          /(cs_glob_atmo_option->y_l93-ys)))/n
+                                    + 3*cs_math_pi/180)/cs_math_pi*180;
+  cs_glob_atmo_option->latitude
+    = asin(tanh((log(c/sqrt(  cs_math_pow2(cs_glob_atmo_option->x_l93-xs)
+                            + cs_math_pow2(cs_glob_atmo_option->y_l93-ys)))/n)
+                +e*atanh(e*tanh(t3))))/cs_math_pi*180;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -865,7 +854,7 @@ _convert_fromL93_to_WGS84(void)
 /*----------------------------------------------------------------------------*/
 
 static void
-_convert_fromWGS84_to_L93(void)
+_convert_from_wgs84_to_l93(void)
 {
   //computation from https://georezo.net/forum/viewtopic.php?id=94465
   cs_real_t  c = 11754255.426096; // projection constant
@@ -873,14 +862,17 @@ _convert_fromWGS84_to_L93(void)
   cs_real_t  n = 0.725607765053267; // projection exponent
   cs_real_t  xs = 700000; // projection's pole x-coordinate
   cs_real_t  ys = 12655612.049876;  // projection's pole y-coordinate
-  
+
   cs_real_t lat_rad= cs_glob_atmo_option->latitude*cs_math_pi/180; //latitude in rad
   cs_real_t lat_iso= atanh(sin(lat_rad))-e*atanh(e*sin(lat_rad)); // isometric latitude
 
-  cs_glob_atmo_option->x_l93= ((c*exp(-n*(lat_iso)))*sin(n*(cs_glob_atmo_option->longitude-3)*cs_math_pi/180)+xs);
-  cs_glob_atmo_option->y_l93= (ys-(c*exp(-n*(lat_iso)))*cos(n*(cs_glob_atmo_option->longitude-3)*cs_math_pi/180));
+  cs_glob_atmo_option->x_l93= ((c*exp(-n*(lat_iso)))
+                               *sin(n*(cs_glob_atmo_option->longitude-3)
+                                    *cs_math_pi/180)+xs);
+  cs_glob_atmo_option->y_l93= (ys-(c*exp(-n*(lat_iso)))
+                               *cos(n*(cs_glob_atmo_option->longitude-3)
+                                    *cs_math_pi/180));
 }
-
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -890,8 +882,7 @@ _convert_fromWGS84_to_L93(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize meteo profiles if no meteo file is given
- *
+ * \brief Initialize meteo profiles if no meteo file is given.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -992,7 +983,7 @@ cs_atmo_init_meteo_profiles(void)
     }
 
     if (it == it_max)
-      bft_printf("Warning: meteo preprocessor did not converged to find inverse\n"
+      bft_printf("Warning: meteo preprocessor did not converge to find inverse\n"
                  " of LMO length, current value is %f.\n"
                  "Please, check reference velocity, reference altitude and ustar\n",
                  dlmo);
@@ -1026,43 +1017,40 @@ cs_atmo_init_meteo_profiles(void)
   /* Center of the domain */
   /* if neither latitude/longitude nor lambert coordinates are given */
   if (((aopt->latitude > 0.5 * cs_math_big_r || aopt->longitude > 0.5 * cs_math_big_r)
-      && (aopt->x_l93 > 0.5 * cs_math_big_r || aopt->y_l93 > 0.5 * cs_math_big_r))){
+      && (aopt->x_l93 > 0.5 * cs_math_big_r || aopt->y_l93 > 0.5 * cs_math_big_r))) {
     bft_printf("Neither latitude nor center in Lambert-93 was given \n");
     bft_printf("It is set to Paris values \n");
     aopt->latitude = 45.44;
     aopt->longitude = 4.39;
-    _convert_fromWGS84_to_L93();
+    _convert_from_wgs84_to_l93();
   }
   /* else if latitude/longitude are given */
-  else if (aopt->x_l93 > 0.5 * cs_math_big_r || aopt->y_l93 > 0.5 * cs_math_big_r){
+  else if (aopt->x_l93 > 0.5 * cs_math_big_r || aopt->y_l93 > 0.5 * cs_math_big_r) {
     bft_printf("Latitude and longitude were given, Lambert center's coordinates"
                "are automatically computed\n");
-    _convert_fromWGS84_to_L93();
+    _convert_from_wgs84_to_l93();
   }
   /* All other cases */
   else{
     bft_printf("Lambert coordinates were given, latitude"
                 "and longitude are automatically computed\n");
-    _convert_fromL93_to_WGS84();
+    _convert_from_l93_to_wgs84();
   }
 
   /* BL height according to Marht 1982 formula */
   /* value of C=0.2, 0.185, 0.06, 0.14, 0.07, 0.04 */
   cs_real_t zi_coef = 0.2;
   cs_real_t corio_f = 4. * cs_math_pi / 86164.
-    * sin(aopt->latitude * cs_math_pi / 180.);
+                         * sin(aopt->latitude * cs_math_pi / 180.);
   aopt->meteo_zi = zi_coef * ustar0 / fabs(corio_f);
-
 
   /* Force the computation of z_ground */
   aopt->compute_z_ground = true;
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute meteo profiles if no meteo file is given
- *
+ * \brief Compute meteo profiles if no meteo file is given.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1195,15 +1183,19 @@ cs_atmo_compute_meteo_profiles(void)
         dlmo_var[cell_id] = dlmo * (z_lim + z0) / (z + z0);
 
         /* Velocity profile */
-        cs_real_t u_norm = u_met_min + ustar0 / kappa * cs_mo_phim(z_lim + z0, dlmo) * log((z+z0) / (z_lim+z0));
+        cs_real_t u_norm =   u_met_min + ustar0 / kappa
+                           * cs_mo_phim(z_lim + z0, dlmo)
+                           * log((z+z0) / (z_lim+z0));
 
         cpro_met_vel[cell_id][0] = - sin(angle * cs_math_pi/180.) * u_norm;
         cpro_met_vel[cell_id][1] = - cos(angle * cs_math_pi/180.) * u_norm;
 
        /* Potential temperature profile
         * Note: same roughness as dynamics */
-        cpro_met_potemp[cell_id] = theta_met_min
-          + tstar * (z_lim+z0) / kappa * cs_mo_phih(z_lim+z0, dlmo) * (-1./(z+z0) + 1./(z_lim+z0)) ;
+        cpro_met_potemp[cell_id] =   theta_met_min
+                                   + tstar * (z_lim+z0) / kappa
+                                     * cs_mo_phih(z_lim+z0, dlmo)
+                                     * (-1./(z+z0) + 1./(z_lim+z0)) ;
        /* TKE profile
           ri_max is necessarily lower than 1, but CS_MIN might be useful if
           that changes in the future */
@@ -1223,7 +1215,7 @@ cs_atmo_compute_meteo_profiles(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function computes the ground elevation
+ * \brief Compute the ground elevation.
  *
  *  This function solves the following transport equation on \f$ \varia \f$:
  *  \f[
@@ -1349,7 +1341,7 @@ cs_atmo_z_ground_compute(void)
   BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
   BFT_MALLOC(dpvar, m->n_cells_with_ghosts, cs_real_t);
 
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++){
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
     rovsdt[cell_id] = 0.;
     dpvar[cell_id] = 0.;
   }
@@ -1420,7 +1412,8 @@ cs_atmo_z_ground_compute(void)
     /* Compute the L_infinity norm */
     inf_norm = 0.;
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-      inf_norm = fmax(inf_norm, fabs(f->val[cell_id]-f->val_pre[cell_id]));//FIXME make it dimensionless
+      //FIXME make this dimensionless
+      inf_norm = fmax(inf_norm, fabs(f->val[cell_id]-f->val_pre[cell_id]));
 
       /* Current to previous */
       f->val_pre[cell_id] = f->val[cell_id];
@@ -1437,7 +1430,7 @@ cs_atmo_z_ground_compute(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function computes hydrostatic profiles of density and pressure
+ * \brief Compute hydrostatic profiles of density and pressure.
  *
  *  This function solves the following transport equation on \f$ \varia \f$:
  *  \f[
@@ -1452,7 +1445,6 @@ cs_atmo_z_ground_compute(void)
  *   \varia = \left(\dfrac{P_{sea}}{p_s}\right)^{R/C_p} \textrm{on the ground}
  *  \f]
  *  and Neumann elsewhere.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1570,7 +1562,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
   cs_real_t *dpvar = NULL;
   BFT_MALLOC(dpvar, m->n_cells_with_ghosts, cs_real_t);
 
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++){
+  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
     dpvar[cell_id] = 0.;
     dam[cell_id] = 0.;
     rhs[cell_id] = 0.;
@@ -1579,8 +1571,8 @@ cs_atmo_hydrostatic_profiles_compute(void)
   cs_real_t inf_norm = 1.;
 
   /* Loop to compute pressure profile */
-  for (int sweep = 0; sweep < vcopt.nswrsm && inf_norm > vcopt.epsrsm; sweep++) {//FIXME 100 or nswrsm
-
+  for (int sweep = 0; sweep < vcopt.nswrsm && inf_norm > vcopt.epsrsm; sweep++) {
+    //FIXME 100 or nswrsm
 
     /* Update previous values of pressure for the convergence test */
     cs_field_current_to_previous(f);
@@ -1617,8 +1609,10 @@ cs_atmo_hydrostatic_profiles_compute(void)
     }
     cs_parall_max(1, CS_REAL_TYPE ,&inf_norm);
 
-    bft_printf("Atmo meteo profiles: iterative process to compute hydrostatic pressure\n"
-               "  sweep %d, L infinity norm (delta p) / ps =%e\n", sweep, inf_norm);
+    if (cs_log_default_is_active())
+      bft_printf
+        (_("Meteo profiles: iterative process to compute hydrostatic pressure\n"
+           "  sweep %d, L infinity norm (delta p) / ps =%e\n"), sweep, inf_norm);
   }
 
   /* Free memory */
@@ -1632,7 +1626,6 @@ cs_atmo_hydrostatic_profiles_compute(void)
   BFT_FREE(dfext);
   BFT_FREE(b_massflux);
   BFT_FREE(i_massflux);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2092,7 +2085,6 @@ cs_atmo_log_setup(void)
   }
 
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!

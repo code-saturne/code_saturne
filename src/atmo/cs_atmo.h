@@ -28,21 +28,10 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * PLE library headers
- *----------------------------------------------------------------------------*/
-
-#include <ple_locator.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm_nodal.h"
-
 #include "cs_base.h"
-#include "cs_halo.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -310,6 +299,74 @@ extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Initialize meteo profiles if no meteo file is given.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_init_meteo_profiles(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute meteo profiles if no meteo file is given.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_compute_meteo_profiles(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function computes the ground elevation
+ *
+ *  This function solves the following transport equation on \f$ \varia \f$:
+ *  \f[
+ *  \dfrac{\partial \varia}{\partial t} + \divs \left( \varia \vect{g} \right)
+ *      - \divs \left( \vect{V} \right) \varia = 0
+ *  \f]
+ *  where \f$ \vect{g} \f$ is the gravity field
+ *
+ *  The boundary conditions on \f$ \varia \f$ read:
+ *  \f[
+ *   \varia = z \textrm{ on walls}
+ *  \f]
+ *  \f[
+ *   \dfrac{\partial \varia}{\partial n} = 0 \textrm{ elsewhere}
+ *  \f]
+ *
+ *  Remarks:
+ *  - a steady state is looked for.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_z_ground_compute(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute hydrostatic profiles of density and pressure.
+ *
+ *  This function solves the following transport equation on \f$ \varia \f$:
+ *  \f[
+ *  \divs \left( \grad \varia \right)
+ *      = \divs \left( \dfrac{\vect{g}}{c_p \theta} \right)
+ *  \f]
+ *  where \f$ \vect{g} \f$ is the gravity field and \f$ \theta \f$
+ *  is the potential temperature.
+ *
+ *  The boundary conditions on \f$ \varia \f$ read:
+ *  \f[
+ *   \varia = \left(\dfrac{P_{sea}}{p_s}\right)^{R/C_p} \textrm{on the ground}
+ *  \f]
+ *  and Neumann elsewhere.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_hydrostatic_profiles_compute(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Universal function phim for neutral, stable and unstable
  *
  * \param[in]  z             altitude
@@ -371,30 +428,6 @@ cs_mo_psih(cs_real_t              z,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function computes hydrostatic profiles of density and pressure
- *
- *  This function solves the following transport equation on \f$ \varia \f$:
- *  \f[
- *  \divs \left( \grad \varia \right)
- *      = \divs \left( \dfrac{\vect{g}}{c_p \theta} \right) \varia 0
- *  \f]
- *  where \f$ \vect{g} \f$ is the gravity field and \f$ \theta \f$
- *  is the potential temperature.
- *
- *  The boundary conditions on \f$ \varia \f$ read:
- *  \f[
- *   \varia = \left(\dfrac{P_{sea}}{p_s}\right)^{R/C_p} \textrm{on the ground}
- *  \f]
- *  and Neumann elsewhere.
- *
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_atmo_hydrostatic_profiles_compute(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This function set the file name of the meteo file.
  *
  * \param[in] file_name  name of the file.
@@ -426,7 +459,6 @@ cs_atmo_set_chem_conc_file_name(const char *file_name);
 void
 cs_atmo_set_aero_conc_file_name(const char *file_name);
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function set the file name of the SPACK file.
@@ -448,33 +480,6 @@ cs_atmo_chemistry_set_spack_file_name(const char *file_name);
 
 void
 cs_atmo_chemistry_set_aerosol_file_name(const char *file_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This function computes the ground elevation
- *
- *  This function solves the following transport equation on \f$ \varia \f$:
- *  \f[
- *  \dfrac{\partial \varia}{\partial t} + \divs \left( \varia \vect{g} \right)
- *      - \divs \left( \vect{V} \right) \varia = 0
- *  \f]
- *  where \f$ \vect{g} \f$ is the gravity field
- *
- *  The boundary conditions on \f$ \varia \f$ read:
- *  \f[
- *   \varia = z \textrm{ on walls}
- *  \f]
- *  \f[
- *   \dfrac{\partial \varia}{\partial n} = 0 \textrm{ elsewhere}
- *  \f]
- *
- *  Remarks:
- *  - a steady state is looked for.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_atmo_z_ground_compute(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
