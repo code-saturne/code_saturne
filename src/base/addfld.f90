@@ -682,6 +682,15 @@ if (imeteo.ge.2) then
   call add_property_field(f_name, f_label, 1, .false., iflid)
   call field_set_key_int(iflid, keylog, 1)
 
+  ! DRSM models, store Rxz/k
+  if (itytur.eq.3) then
+    f_name  = 'meteo_shear_anisotropy'
+    f_label = 'meteo_shear_anisotropy'
+    ! Now create matching property
+    call add_property_field(f_name, f_label, 1, .false., iflid)
+    call field_set_key_int(iflid, keylog, 1)
+  endif
+
 endif
 
 if (compute_porosity_from_scan) then

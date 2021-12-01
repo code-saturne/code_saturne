@@ -64,6 +64,7 @@ implicit none
 
 integer          imode, iel
 integer          k,ii, isc
+integer          fid_axz
 double precision d2s3
 double precision zent,xuent,xvent, xwent, xkent,xeent,tpent,qvent,ncent
 double precision xcent
@@ -82,6 +83,7 @@ double precision, dimension(:,:), pointer :: cpro_met_vel
 double precision, dimension(:), pointer :: cpro_met_potemp
 double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
 double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
+double precision, dimension(:), pointer :: cpro_met_axz
 
 !===============================================================================
 
@@ -90,6 +92,11 @@ call field_get_val_v(ivarfl(iu), vel)
 
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
+
+call field_get_id_try('meteo_shear_anisotropy', fid_axz)
+if (fid_axz.ne.-1) then
+  call field_get_val_s(fid_axz, cpro_met_axz)
+endif
 
 !===============================================================================
 ! 1.  INITIALISATION VARIABLES LOCALES
@@ -338,7 +345,11 @@ if (isuite.eq.0) then
         call vector_normalize(vel_dir, vel_dir)
         shear_dir(1) = 0.d0
         shear_dir(2) = 0.d0
-        shear_dir(3) = 1.d0
+        if (fid_axz.eq.-1) then
+          shear_dir(3) = -sqrt(cmu) ! Rxz/k
+        else
+          shear_dir(3) = cpro_met_axz(iel) ! Rxz/k
+        endif
 
         ! ITYTUR est un indicateur qui vaut ITURB/10
         if    (itytur.eq.2) then
@@ -353,13 +364,13 @@ if (isuite.eq.0) then
           cvar_rij(2,iel) = d2s3*xkent
           cvar_rij(3,iel) = d2s3*xkent
           ! Rxy
-          cvar_rij(4,iel) = r_nt * &
+          cvar_rij(4,iel) = xkent * &
              (vel_dir(1)*shear_dir(2)+vel_dir(2)*shear_dir(1))
           ! Ryz
-          cvar_rij(5,iel) = r_nt * &
+          cvar_rij(5,iel) = xkent * &
              (vel_dir(2)*shear_dir(3)+vel_dir(3)*shear_dir(2))
           ! Rxz
-          cvar_rij(6,iel) = r_nt * &
+          cvar_rij(6,iel) = xkent * &
              (vel_dir(1)*shear_dir(3)+vel_dir(3)*shear_dir(1))
           cvar_ep(iel)  = xeent
 

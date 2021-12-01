@@ -316,7 +316,8 @@ _ke_turb_intensity(double   uref2,
  *   k           <-- k
  *   eps         <-- epsilon
  *   vel_dir     <-- velocity direction
- *   shear_dir   <-- shear direction
+ *   shear_dir   <-- shear direction, it also contains the level of
+ *                   anisotropy (Rnt = a_nt k)
  *   rcodcl      <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
@@ -349,23 +350,22 @@ _inlet_bc(cs_lnum_t   face_id,
     cs_lnum_t s_r_13 = (_turb_bc_id.rij + 5) * n_b_faces;
 
     double d2s3 = 2./3.;
-    double r_nt = - sqrt(cs_turb_cmu) * k;
 
     rcodcl[s_r_11 + face_id] = d2s3 * k;
     rcodcl[s_r_22 + face_id] = d2s3 * k;
     rcodcl[s_r_33 + face_id] = d2s3 * k;
     if (vel_dir != NULL) {
       cs_math_3_normalize(vel_dir, vel_dir);
-      cs_math_3_normalize(shear_dir, shear_dir);
+      /* Note: do not normalize shear_dir because it contains the level of anisotropy */
       /* Rxy */
       rcodcl[s_r_12 + face_id]
-        = r_nt * (vel_dir[0]*shear_dir[1] + vel_dir[1]*shear_dir[0]);
+        = k * (vel_dir[0]*shear_dir[1] + vel_dir[1]*shear_dir[0]);
       /* Ryz */
       rcodcl[s_r_23 + face_id]
-        = r_nt * (vel_dir[1]*shear_dir[2] + vel_dir[2]*shear_dir[1]);
+        = k * (vel_dir[1]*shear_dir[2] + vel_dir[2]*shear_dir[1]);
       /* Rxz */
       rcodcl[s_r_13 + face_id]
-        =  r_nt * (vel_dir[0]*shear_dir[2] + vel_dir[2]*shear_dir[0]);
+        =  k * (vel_dir[0]*shear_dir[2] + vel_dir[2]*shear_dir[0]);
     }
     else {
       rcodcl[s_r_12 + face_id] = 0.;
@@ -432,7 +432,8 @@ _inlet_bc(cs_lnum_t   face_id,
  *   k       <-- k
  *   eps     <-- epsilon
  *   vel_dir     <-- velocity direction
- *   shear_dir   <-- shear direction
+ *   shear_dir   <-- shear direction, it also contains the level of
+ *                   anisotropy (Rnt = a_nt k)
  *   rcodcl  <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
@@ -467,7 +468,6 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
     cs_lnum_t s_r_13 = (_turb_bc_id.rij + 5) * n_b_faces;
 
     double d2s3 = 2./3.;
-    double r_nt = - sqrt(cs_turb_cmu) * k;
     if (rcodcl[s_r_11 + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[s_r_11 + face_id] = d2s3 * k;
     if (rcodcl[s_r_22 + face_id] > 0.5*cs_math_infinite_r)
@@ -476,16 +476,15 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
       rcodcl[s_r_33 + face_id] = d2s3 * k;
     if (vel_dir != NULL) {
       cs_math_3_normalize(vel_dir, vel_dir);
-      cs_math_3_normalize(shear_dir, shear_dir);
       if (rcodcl[s_r_12 + face_id] > 0.5*cs_math_infinite_r)
         rcodcl[s_r_12 + face_id]
-          = r_nt * (vel_dir[0]*shear_dir[1] + vel_dir[1]*shear_dir[0]);
+          = k * (vel_dir[0]*shear_dir[1] + vel_dir[1]*shear_dir[0]);
       if (rcodcl[s_r_23 + face_id] > 0.5*cs_math_infinite_r)
         rcodcl[s_r_23 + face_id]
-          = r_nt * (vel_dir[1]*shear_dir[2] + vel_dir[2]*shear_dir[1]);
+          = k * (vel_dir[1]*shear_dir[2] + vel_dir[2]*shear_dir[1]);
       if (rcodcl[s_r_13 + face_id] > 0.5*cs_math_infinite_r)
         rcodcl[s_r_13 + face_id]
-          = r_nt * (vel_dir[0]*shear_dir[2] + vel_dir[2]*shear_dir[0]);
+          = k * (vel_dir[0]*shear_dir[2] + vel_dir[2]*shear_dir[0]);
     }
     else {
       if (rcodcl[s_r_12 + face_id] > 0.5*cs_math_infinite_r)
@@ -984,7 +983,8 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
  * \param[in]     k          turbulent kinetic energy
  * \param[in]     eps        turbulent dissipation
  * \param[in]     vel_dir    velocity direction
- * \param[in]     shear_dir  shear direction
+ * \param[in]     shear_dir  shear direction, it also contains the level of
+ *                           anisotropy (Rnt = a_nt k)
  * \param[out]    rcodcl     boundary condition values
  */
 /*----------------------------------------------------------------------------*/

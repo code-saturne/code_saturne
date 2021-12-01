@@ -1116,6 +1116,8 @@ cs_atmo_compute_meteo_profiles(void)
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
     dlmo_var[cell_id] = 0.0;
   }
+  /* For DRSM models store Rxz/k */
+  cs_field_t *f_axz = cs_field_by_name_try("meteo_shear_anisotropy");
 
   if (dlmo > 0)
     ri_max = 0.75; // Value chosen to limit buoyancy vs shear production
@@ -1147,6 +1149,8 @@ cs_atmo_compute_meteo_profiles(void)
     /* TKE profile */
     cpro_met_k[cell_id] = cs_math_pow2(ustar0) / sqrt(cmu)
       * sqrt(1. - CS_MIN(ri_f, 1.));
+    if (f_axz != NULL)
+      f_axz->val[cell_id] = -sqrt(cmu / (1. - CS_MIN(ri_f, ri_max)));
 
     /* epsilon profile */
     cpro_met_eps[cell_id] = cs_math_pow3(ustar0) / (kappa * (z+z0))
@@ -1202,6 +1206,9 @@ cs_atmo_compute_meteo_profiles(void)
           that changes in the future */
         cpro_met_k[cell_id] = cs_math_pow2(ustar0) / sqrt(cmu)
           * sqrt(1. - CS_MIN(ri_max, 1.));
+
+        if (f_axz != NULL)
+          f_axz->val[cell_id] = -sqrt(cmu / (1. - CS_MIN(ri_max, 1.)));
 
         /* epsilon profile */
         cpro_met_eps[cell_id] = cs_math_pow3(ustar0) / kappa  * dlmo_var[cell_id]

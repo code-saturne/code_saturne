@@ -103,6 +103,7 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ifac, iel, izone
 integer          ii
 integer          jsp, isc, ivar
+integer          fid_axz
 double precision d2s3, zent, vs, xuent, xvent, xwent
 double precision vel_dir(3), shear_dir(3)
 double precision xkent, xeent, tpent, qvent,ncent
@@ -116,6 +117,7 @@ double precision, dimension(:), pointer :: cpro_met_qv, cpro_met_nc
 double precision, dimension(:), pointer :: cpro_met_k, cpro_met_eps
 double precision, dimension(:), pointer :: cpro_met_p
 double precision, dimension(:), pointer :: cpro_met_rho
+double precision, dimension(:), pointer :: cpro_met_axz
 
 ! arrays for cressman interpolation
 double precision , dimension(:),allocatable :: u_bord
@@ -155,6 +157,11 @@ if (imeteo.ge.2) then
     call field_get_val_s_by_name('meteo_humidity', cpro_met_qv)
     call field_get_val_s_by_name('meteo_drop_nb', cpro_met_nc)
   endif
+
+endif
+call field_get_id_try('meteo_shear_anisotropy', fid_axz)
+if (fid_axz.ne.-1) then
+  call field_get_val_s(fid_axz, cpro_met_axz)
 endif
 
 !===============================================================================
@@ -343,7 +350,11 @@ do ifac = 1, nfabor
     vel_dir(3) = xwent
     shear_dir(1) = 0.d0
     shear_dir(2) = 0.d0
-    shear_dir(3) = 1.d0
+    if (fid_axz.eq.-1) then
+      shear_dir(3) = -sqrt(cmu) ! Rxz/k
+    else
+      shear_dir(3) = cpro_met_axz(iel) ! Rxz/k
+    endif
 
     ! On met a jour le type de face de bord s'il n'a pas ete specifie
     !   par l'utilisateur.
@@ -387,7 +398,7 @@ do ifac = 1, nfabor
           endif
 
           if (rcodcl(ifac,isca(intdrp),1).gt.rinfin*0.5d0)  then
-            if (imbrication_flag .and. cressman_nc)then
+            if (imbrication_flag .and. cressman_nc) then
               ncent = nc_bord(ifac)
             else if (imeteo.eq.1) then
               call intprf &
