@@ -296,7 +296,7 @@ class StandardItemModelNonCondensable(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemIsEnabled
         row = index.row()
-        if index.column() > 3 :
+        if index.column() > 2 :
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         else :
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
