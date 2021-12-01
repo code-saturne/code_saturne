@@ -374,27 +374,44 @@ cs_free_hd(void        *ptr,
 
   _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
 
-  if (me.mode < CS_ALLOC_HOST_DEVICE_PINNED)
+  if (me.mode < CS_ALLOC_HOST_DEVICE_PINNED) {
     bft_mem_free(me.host_ptr, var_name, file_name, line_num);
+    me.host_ptr = NULL;
+  }
+
+  if (me.host_ptr != NULL) {
+
+#if defined(HAVE_CUDA)
+
+    if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+      cs_cuda_mem_free(me.host_ptr, var_name, file_name, line_num);
+      me.device_ptr = NULL;
+    }
+
+    else
+      cs_cuda_mem_free_host(me.host_ptr, var_name, file_name, line_num);
+
+    me.host_ptr = NULL;
+
+#elif defined(HAVE_ONEAPI)
+
+  // TODO add OneApi wrapper for shared allocation
+
+#endif
+
+
+  }
 
   if (me.device_ptr != NULL) {
 
 #if defined(HAVE_CUDA)
 
-    if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED)
-      cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
-
-    else {
-      if (me.host_ptr != NULL)
-        cs_cuda_mem_free_host(me.host_ptr, var_name, file_name, line_num);
-
-      if (me.device_ptr != NULL)
-        cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
-    }
+    cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
+    me.device_ptr = NULL;
 
 #elif defined(HAVE_ONEAPI)
 
-  // TODO add OneApi wrapper for shared allocation
+    // TODO add OneApi wrapper for shared allocation
 
 #endif
 
