@@ -362,7 +362,6 @@ class StandardItemModelScalars(QStandardItemModel):
         row = index.row()
         return self._data[row]
 
-
     def newItem(self, existing_name=None):
         """
         Add an item in the table view
@@ -372,7 +371,6 @@ class StandardItemModelScalars(QStandardItemModel):
         name = self.mdl.addUserScalar(existing_name)
         turbFlux = self.mdl.getTurbulentFluxModel(name)
         scalar = [name, turbFlux]
-
         self.setRowCount(row+1)
         self._data.append(scalar)
 
@@ -613,6 +611,11 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.modelVariance = StandardItemModelVariance(self, self.mdl)
         self.tableVariance.setModel(self.modelVariance)
 
+        saveRejects = self.mdl.solveConflictingVariables()
+        if saveRejects != "":
+            QMessageBox.warning(self, "Warning", "Conflicting variables have been removed from the setup file. Corresponding data has been saved in 'deleted_variables.txt'")
+            with open("deleted_variables.txt", "w") as f:
+                f.write(saveRejects)
         l1 = self.mdl.getScalarNameList()
         for s in self.mdl.getScalarsVarianceList():
             if s in l1: l1.remove(s)
@@ -622,6 +625,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
             self.modelScalars.newItem(name)
         for name in self.mdl.getScalarsVarianceList():
             self.modelVariance.newItem(name)
+        # le code ci-dessous fonctione-t-il ?
         if GasCombustionModel(self.case).getGasCombustionModel() == "d3p":
             for name in self.mdl.getGasCombScalarsNameList():
                 self.modelScalars.newModelItem(name)
