@@ -3418,6 +3418,7 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   double beta2 = 0.0;
 
   /* Compute beta := ||b_tilta||_N^-1 and q := N^-1(b_tilda)/beta */
+
 # pragma omp parallel reduction(+:beta2) if (size > CS_THR_MIN)
   {
     cs_lnum_t s_id, e_id;
@@ -3467,14 +3468,17 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   } /* OpenMP block */
 
   /* Parallel synchronization */
+
   cs_parall_sum(1, CS_DOUBLE, &beta2);
 
   /* Keep the value of beta = ||b||_{N^-1} */
+
   assert(beta2 > -DBL_MIN);
   gkb->beta = sqrt(beta2);
 
   /* Store M^-1.(b_f + gamma. Bt.N^-1.b_c) in b_tilda which is not useful
    * anymore */
+
   memcpy(gkb->b_tilda, gkb->v, gkb->n_u_dofs*sizeof(cs_real_t));
 
   if (fabs(gkb->beta) > FLT_MIN) {
@@ -3489,6 +3493,7 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   }
 
   /* Solve M.w = Dt.q */
+
   _apply_div_op_transpose(div_op, gkb->q, gkb->dt_q);
 
   if (cs_shared_range_set->ifs != NULL)
@@ -3533,7 +3538,6 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
     gkb->d[ip] = gkb->q[ip] * ov_alpha;
     p_c[ip] = -gkb->zeta * gkb->d[ip];
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3606,7 +3610,6 @@ _gkb_cvg_test(cs_gkb_builder_t           *gkb)
                   gkb->algo->n_algo_iter, gkb->algo->res,
                   gkb->algo->last_inner_iter, gkb->algo->n_inner_iter,
                   z2, sqrt(gkb->zeta_square_sum), gkb->algo->cvg);
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1505,6 +1505,7 @@ cs_equation_sync_vol_def_at_faces(const cs_cdo_connect_t    *connect,
   for (int def_id = 0; def_id < n_defs; def_id++) {
 
     /* Get and then set the definition of the initial condition */
+
     const cs_xdef_t  *def = defs[def_id];
     assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
@@ -1530,31 +1531,38 @@ cs_equation_sync_vol_def_at_faces(const cs_cdo_connect_t    *connect,
   } /* Loop on definitions */
 
   if (connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL) {
+
     /* Last definition is used in case of conflict */
+
     cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_FACE_SP0],
                          n_faces,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
                          CS_INT_TYPE,   /* int */
                          f2def_ids);
+
   }
 
   /* 0. Initialization */
+
   cs_lnum_t  *count = NULL;
   BFT_MALLOC(count, n_defs, cs_lnum_t);
   memset(count, 0, n_defs*sizeof(cs_lnum_t));
   memset(def2f_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
 
   /* 1. Count number of faces related to each definition */
+
   for (cs_lnum_t f = 0; f < n_faces; f++)
     if (f2def_ids[f] > -1)
       def2f_idx[f2def_ids[f]+1] += 1;
 
   /* 2. Build index */
+
   for (int def_id = 0; def_id < n_defs; def_id++)
     def2f_idx[def_id+1] += def2f_idx[def_id];
 
   /* 3. Build list */
+
   for (cs_lnum_t f = 0; f < n_faces; f++) {
     const int def_id = f2def_ids[f];
     if (def_id > -1) {
@@ -1564,6 +1572,7 @@ cs_equation_sync_vol_def_at_faces(const cs_cdo_connect_t    *connect,
   }
 
   /* Free memory */
+
   BFT_FREE(f2def_ids);
   BFT_FREE(count);
 }

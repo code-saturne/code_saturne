@@ -136,6 +136,7 @@ _set_scheme_flags(cs_domain_t    *domain)
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
 
   /* Define a scheme flag for the current domain */
+
   const int  n_equations = cs_equation_get_n_equations();
   for (int eq_id = 0; eq_id < n_equations; eq_id++) {
 
@@ -173,6 +174,7 @@ _set_scheme_flags(cs_domain_t    *domain)
 
       /* vardim should equal to 3 but each edge is associated to a scalar-valued
          quantity */
+
       cc->eb_scheme_flag |= CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR;
       break;
 
@@ -232,6 +234,7 @@ _set_scheme_flags(cs_domain_t    *domain)
   } /* Loop on equations */
 
   /* Navier-Stokes system */
+
   if (cs_navsto_system_is_activated()) {
 
     cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
@@ -274,7 +277,9 @@ _set_scheme_flags(cs_domain_t    *domain)
 
   } /* NavSto is activated */
 
-  /* Update the flag storing which geometrical quantities have to be computed */
+  /* Update the flag storing which geometrical quantities have to be
+     computed */
+
   cs_cdo_quantities_set(quant_flag);
 }
 

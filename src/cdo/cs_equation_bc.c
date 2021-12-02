@@ -148,9 +148,11 @@ _init_cell_sys_bc(const cs_cdo_bc_face_t     *face_bc,
     csys->bf_ids[f] = bf_id;
 
     if (bf_id > -1) { /* This is a boundary face */
+
       csys->bf_flag[f] = face_bc->flag[bf_id];
       csys->_f_ids[csys->n_bc_faces] = f;
       csys->n_bc_faces++;
+
     }
 
   } /* Loop on cell faces */
@@ -193,6 +195,7 @@ _sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
   for (int def_id = 0; def_id < n_defs; def_id++) {
 
     /* Get and then set the definition of the initial condition */
+
     const cs_xdef_t  *def = defs[def_id];
     assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
 
@@ -215,6 +218,7 @@ _sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
 
     /* Last definition is used if there is a conflict between several
        definitions */
+
     cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
                          n_edges,
                          1,             /* stride */
@@ -225,21 +229,25 @@ _sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
   }
 
   /* 0. Initialization */
+
   cs_lnum_t  *count = NULL;
   BFT_MALLOC(count, n_defs, cs_lnum_t);
   memset(count, 0, n_defs*sizeof(cs_lnum_t));
   memset(def2e_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
 
   /* 1. Count the number of edges related to each definition */
+
   for (cs_lnum_t e = 0; e < n_edges; e++)
     if (e2def_ids[e] > -1)
       def2e_idx[e2def_ids[e]+1] += 1;
 
   /* 2. Build the index */
+
   for (int def_id = 0; def_id < n_defs; def_id++)
     def2e_idx[def_id+1] += def2e_idx[def_id];
 
   /* 3. Build the list */
+
   for (cs_lnum_t e = 0; e < n_edges; e++) {
     const int def_id = e2def_ids[e];
     if (def_id > -1) {
@@ -249,6 +257,7 @@ _sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
   }
 
   /* Free memory */
+
   BFT_FREE(e2def_ids);
   BFT_FREE(count);
 }
@@ -277,6 +286,7 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                    t_eval,
                                        cs_real_t                   *values)
 {
   /* We assume a homogeneous Neumann boundary condition as a default */
+
   memset(values, 0, sizeof(cs_real_t)*cdoq->n_b_faces);
 
   for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
@@ -370,15 +380,16 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
 {
   CS_UNUSED(cb);
 
-  /* Sanity check */
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
   /* Initialize the common part */
+
   _init_cell_sys_bc(face_bc, cm, csys);
 
   const int  d = eqp->dim;
 
   /* First pass: Set the DoF flag and the Dirichlet values */
+
   for (short int v = 0; v < cm->n_vc; v++) {
 
     const cs_flag_t bc_flag = vtx_bc_flag[cm->v_ids[v]];
@@ -400,6 +411,7 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
 
   /* Second pass: BC related to faces. Neumann or Robin or sliding condition
      (for vector-valued equations). Identify which face is a boundary face */
+
   for (short int f = 0; f < cm->n_fc; f++) {
     if (csys->bf_ids[f] > -1) { /* This a boundary face */
 
@@ -421,6 +433,7 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
         /* The values which define the Robin BC are stored for each boundary
            face. This is different from Neumann and Dirichlet where the values
            are defined at each vertices. Be aware of that when computing */
+
         cs_equation_compute_robin(t_eval,
                                   face_bc->def_ids[csys->bf_ids[f]],
                                   f,
@@ -443,7 +456,6 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
 
     } /* Boundary face */
   } /* Loop on cell faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -471,13 +483,14 @@ cs_equation_eb_set_cell_bc(const cs_cell_mesh_t         *cm,
   CS_UNUSED(cb);
   CS_UNUSED(eqp);
 
-  /* Sanity check */
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_FE));
 
   /* Initialize the common part */
+
   _init_cell_sys_bc(face_bc, cm, csys);
 
   /* From BC related to faces to edges. */
+
   for (short int f = 0; f < cm->n_fc; f++) {
     if (csys->bf_ids[f] > -1) { /* This a boundary face */
 
@@ -511,7 +524,6 @@ cs_equation_eb_set_cell_bc(const cs_cell_mesh_t         *cm,
 
     } /* Boundary face */
   } /* Loop on cell faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -537,11 +549,13 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            cs_cell_builder_t            *cb)
 {
   /* Initialize the common part */
+
   _init_cell_sys_bc(face_bc, cm, csys);
 
   const int  d = eqp->dim;
 
   /* Identify which face is a boundary face */
+
   for (short int f = 0; f < cm->n_fc; f++) {
     if (csys->bf_ids[f] > -1) { /* This a boundary face */
 
@@ -635,10 +649,12 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
   const cs_lnum_t  *bf2v_lst = mesh->b_face_vtx_lst;
 
   /* Initialization */
+
   cs_real_t  *bcvals = cs_equation_get_tmpbuf();
   memset(bcvals, 0, eqp->dim*quant->n_vertices*sizeof(cs_real_t));
 
   /* Number of faces with a Dir. related to a vertex */
+
   int  *counter = NULL;
   BFT_MALLOC(counter, quant->n_vertices, int);
   memset(counter, 0, quant->n_vertices*sizeof(int));
@@ -647,6 +663,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
     cs_equation_set_vertex_bc_flag(connect, face_bc, bcflag);
 
   /* Define array storing the Dirichlet values */
+
   for (cs_lnum_t i = 0; i < face_bc->n_nhmg_dir_faces; i++) {
 
     const cs_lnum_t  bf_id = face_bc->nhmg_dir_ids[i];
@@ -671,6 +688,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
         cs_real_t  *eval = cb->values;
 
         /* Evaluate the boundary condition at each boundary vertex */
+
         cs_xdef_eval_at_vertices_by_array(n_vf,
                                           lst,
                                           true, /* dense output */
@@ -694,6 +712,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
         cs_real_t  *eval = cb->values;
 
         /* Evaluate the boundary condition at each boundary vertex */
+
         cs_xdef_eval_at_vertices_by_analytic(n_vf,
                                              lst,
                                              true, /* dense output */
@@ -726,6 +745,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
   /* Homogeneous Dirichlet are always enforced (even in case of multiple BCs).
      If multi-valued Dirichlet BCs are set, a weighted sum is used to set the
      Dirichlet value at each corresponding vertex */
+
   if (eqp->dim == 1) {
 
 #   pragma omp parallel if (quant->n_vertices > CS_THR_MIN)
@@ -737,6 +757,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
       }
 
       /* BC value overwrites the initial value */
+
 #     pragma omp for
       for (cs_lnum_t v = 0; v < quant->n_vertices; v++)
         if (cs_cdo_bc_is_dirichlet(bcflag[v]))
@@ -755,6 +776,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
       }
 
       /* BC value overwrites the initial value */
+
 #     pragma omp for
       for (cs_lnum_t v = 0; v < quant->n_vertices; v++) {
         if (cs_cdo_bc_is_dirichlet(bcflag[v])) {
@@ -768,6 +790,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
   } /* eqp->dim ? */
 
   /* Free temporary buffers */
+
   BFT_FREE(counter);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
@@ -807,6 +830,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
   CS_UNUSED(cb);
 
   /* Define the array storing the Dirichlet values */
+
   for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
 
     const cs_xdef_t  *def = eqp->bc_defs[def_id];
@@ -937,6 +961,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
   /* Set the values to zero for all faces attached to a homogeneous
      Diriclet BC */
+
 # pragma omp parallel for if (quant->n_b_faces > CS_THR_MIN)
   for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++)
     if (face_bc->flag[bf_id] & CS_CDO_BC_HMG_DIRICHLET)
@@ -976,6 +1001,7 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
   const cs_lnum_t  n_b_faces = connect->n_faces[CS_BND_FACES];
 
   /* Initialization */
+
   memset(vflag, 0, n_vertices*sizeof(cs_flag_t));
 
   for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
@@ -999,14 +1025,13 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
   } /* Loop on border faces */
 #endif
 
-  if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL) {
+  if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
     cs_interface_set_inclusive_or(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                                   n_vertices,
                                   1,             /* stride */
                                   false,         /* interlace */
                                   CS_FLAG_TYPE,  /* unsigned short int */
                                   vflag);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1035,6 +1060,7 @@ cs_equation_set_edge_bc_flag(const cs_cdo_connect_t     *connect,
   const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
 
   /* Initialization */
+
   memset(edge_flag, 0, n_edges*sizeof(cs_flag_t));
 
   for (cs_lnum_t bf_id = 0, f_id = n_i_faces; f_id < n_faces;
@@ -1059,14 +1085,13 @@ cs_equation_set_edge_bc_flag(const cs_cdo_connect_t     *connect,
   } /* Loop on border faces */
 #endif
 
-  if (connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL) {
+  if (connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL)
     cs_interface_set_inclusive_or(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
                                   n_edges,
                                   1,             /* stride */
                                   false,         /* interlace */
                                   CS_FLAG_TYPE,  /* unsigned short int */
                                   edge_flag);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1102,6 +1127,7 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
   assert(def->meta & CS_CDO_BC_NEUMANN); /* Neuman BC */
 
   /* Evaluate the boundary condition at each boundary vertex */
+
   switch(def->type) {
 
   case CS_XDEF_BY_VALUE:
@@ -1139,6 +1165,7 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
         assert(ac->index != NULL);
 
         /* Retrieve the bf2v->idx stored in the cs_cdo_connect_t structure */
+
         cs_lnum_t  shift = ac->index[bf_id];
         for (short int iv = cm->f2v_idx[f]; iv < cm->f2v_idx[f+1]; iv++)
           neu_values[cm->f2v_ids[iv]] = ac->values[shift++];
@@ -1157,7 +1184,6 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
                 " Stop computing the Neumann value.\n"));
 
   } /* switch def_type */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1190,9 +1216,11 @@ cs_equation_compute_neumann_fb(cs_real_t                    t_eval,
 
   /* Flux is a vector in the scalar-valued case and a tensor in the
      vector-valued case */
+
   assert(def->meta & CS_CDO_BC_NEUMANN); /* Neuman BC */
 
   /* Evaluate the boundary condition at each boundary face */
+
   switch(def->type) {
 
   case CS_XDEF_BY_VALUE:
@@ -1246,7 +1274,6 @@ cs_equation_compute_neumann_fb(cs_real_t                    t_eval,
                 " Stop computing the Neumann value.\n"));
 
   } /* switch def_type */
-
 }
 
 /*----------------------------------------------------------------------------*/

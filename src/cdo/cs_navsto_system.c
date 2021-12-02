@@ -1207,16 +1207,16 @@ cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
   memcpy(nsp->solid_cell_ids, solid_cell_ids, n_solid_cells*sizeof(cs_lnum_t));
 
   /* The momentum equation has to enforce a zero-velocity */
+
   cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
   cs_real_t  zero_velocity[3] = {0, 0, 0};
 
   cs_equation_enforce_value_on_cell_selection(mom_eqp,
-                                        n_solid_cells,
-                                        solid_cell_ids,
-                                        zero_velocity,
-                                        NULL);
-
+                                              n_solid_cells,
+                                              solid_cell_ids,
+                                              zero_velocity,
+                                              NULL);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1245,6 +1245,7 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
 
   /* Update quantities relative to turbulence (e.g. turbulence
    * viscosity...) */
+
   cs_turbulence_t  *tbs = ns->turbulence;
   if (tbs->update != NULL)
     tbs->update(mesh,
@@ -1252,7 +1253,6 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
                 quant,
                 time_step,
                 tbs);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1284,6 +1284,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
   cs_turbulence_t  *tbs = ns->turbulence;
 
   /* First resolve the thermal system if needed */
+
   cs_equation_t  *th_eq = cs_thermal_system_get_equation();
 
   if (nsp->model_flag & CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER) {
@@ -1291,12 +1292,15 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
     assert(th_eq != NULL);
 
     /* Update variable, properties according to the computed variables */
+
     cs_navsto_system_update(mesh, connect, quant, time_step);
 
     /* Build and solve the Navier-Stokes system */
+
     ns->compute_steady(mesh, nsp, ns->scheme_context);
 
     /* Build and solve the turbulence variable system */
+
     if (tbs->compute_steady != NULL)
       tbs->compute_steady(mesh,
                           connect,
@@ -1305,6 +1309,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
                           tbs);
 
     /* Solve the thermal equation */
+
     if (cs_equation_param_has_time(cs_equation_get_param(th_eq)) == false)
       cs_thermal_system_compute_steady_state(mesh, connect, quant, time_step);
 
@@ -1326,10 +1331,12 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
     cs_real_t  *th_var = cs_equation_get_cell_values(th_eq, false);
 
     cs_real_t  *th_var_iter_prev = NULL;
+
     BFT_MALLOC(th_var_iter_prev, quant->n_cells, cs_real_t);
     memcpy(th_var_iter_prev, th_var, quant->n_cells*sizeof(cs_real_t));
 
     cs_real_t  inv_tref = cs_thermal_system_get_reference_temperature();
+
     if (fabs(inv_tref) > cs_math_zero_threshold)
       inv_tref = 1./inv_tref;
     else

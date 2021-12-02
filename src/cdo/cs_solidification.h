@@ -569,6 +569,7 @@ typedef struct  {
   cs_thermal_system_t   *thermal_sys;
 
   /* Fields associated to this module */
+
   cs_field_t      *temperature;
 
   /* Enthalpy (by default this a derived field which can be used to update of

@@ -52,6 +52,7 @@ BEGIN_C_DECLS
    structures
    DoF = Degrees of Freedom
 */
+
 #define CS_CDO_CONNECT_VTX_SCAL   0 /* Vb or VCb scalar-valued DoF */
 #define CS_CDO_CONNECT_VTX_VECT   1 /* Vb or VCb vector-valued DoF */
 #define CS_CDO_CONNECT_FACE_SP0   2 /* Fb or HHO-P0 scalar-valued DoF */
@@ -66,6 +67,7 @@ BEGIN_C_DECLS
 #define CS_CDO_CONNECT_N_CASES    8
 
 /* Additional macros */
+
 #define CS_TRIANGLE_CASE          3 /* Number of vertices in a triangle */
 
 /*============================================================================
@@ -73,6 +75,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Connectivity structure */
+
 typedef struct {
 
   cs_lnum_t          n_vertices;
@@ -82,9 +85,11 @@ typedef struct {
   cs_lnum_t          n_cells;
 
   /* Edge-related members */
+
   cs_adjacency_t    *e2v;         /* edge --> vertices connectivity */
 
   /* Face-related members */
+
   cs_adjacency_t    *f2c;         /* face --> cells connectivity */
   cs_adjacency_t    *f2e;         /* face --> edges connectivity */
   cs_adjacency_t    *bf2v;        /* border face --> vertices connectivity
@@ -93,6 +98,7 @@ typedef struct {
                                      (map from cs_mesh_t) */
 
   /* Cell-related members */
+
   fvm_element_t     *cell_type;   /* type of cell */
   cs_flag_t         *cell_flag;   /* Flag (Border/Solid) */
   cs_adjacency_t    *c2f;         /* cell --> faces connectivity */
@@ -102,10 +108,12 @@ typedef struct {
   /* Delta of ids between the min./max. values of entities related to a cell
      Useful to store compactly the link between mesh ids and cell mesh ids
      needed during the cell mesh definition */
+
   cs_lnum_t  e_max_cell_range;
   cs_lnum_t  v_max_cell_range;
 
   /* Max. connectitivy size for cells */
+
   int  n_max_vbyc;   /* max. number of vertices in a cell */
   int  n_max_ebyc;   /* max. number of edges in a cell */
   int  n_max_fbyc;   /* max. number of faces in a cell */
@@ -114,11 +122,13 @@ typedef struct {
   int  n_max_v2ec;   /* max. number of edges connected to a vertex in a cell */
 
   /* Adjacency related to linear systems (allocated only if needed) */
+
   cs_adjacency_t       *v2v;    /* vertex to vertices through cells */
   cs_adjacency_t       *f2f;    /* face to faces through cells */
   cs_adjacency_t       *e2e;    /* edge to edges through cells */
 
   /* Structures to handle parallelism/assembler */
+
   cs_range_set_t       *range_sets[CS_CDO_CONNECT_N_CASES];
   cs_interface_set_t   *interfaces[CS_CDO_CONNECT_N_CASES];
 

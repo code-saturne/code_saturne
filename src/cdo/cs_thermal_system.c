@@ -728,6 +728,7 @@ cs_thermal_system_compute_steady_state(const cs_mesh_t              *mesh,
 
   /* Update fields and properties which are related to the evolution of the
      variable solved in thermal_eq */
+
   cs_thermal_system_update(mesh, connect, quant, time_step,
                            true); /* operate current to previous ? */
 
@@ -762,6 +763,7 @@ cs_thermal_system_compute(bool                          cur2prev,
 
   /* Update fields and properties which are related to the evolution of the
      variable solved in thermal_eq */
+
   cs_thermal_system_update(mesh, connect, quant, time_step, cur2prev);
 }
 
@@ -817,7 +819,6 @@ cs_thermal_system_extra_op(const cs_cdo_connect_t      *connect,
   cs_thermal_system_t  *thm = cs_thermal_system;
 
   if (thm == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_thm));
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -872,7 +873,6 @@ cs_thermal_system_extra_post(void                      *input,
     return;
 
   /* TODO */
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1715,18 +1715,17 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t                *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock33_matrix_mpis(const cs_sdm_t                *m,
-                                          const cs_lnum_t               *dof_ids,
-                                          const cs_range_set_t          *rset,
-                                          cs_equation_assemble_t        *eqa,
-                                          cs_matrix_assembler_values_t  *mav)
+cs_equation_assemble_eblock33_matrix_mpis(const cs_sdm_t               *m,
+                                          const cs_lnum_t              *dof_ids,
+                                          const cs_range_set_t         *rset,
+                                          cs_equation_assemble_t       *eqa,
+                                          cs_matrix_assembler_values_t *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
   cs_equation_assemble_row_t  *row = eqa->row;
 
-  /* Sanity checks */
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
@@ -1734,6 +1733,7 @@ cs_equation_assemble_eblock33_matrix_mpis(const cs_sdm_t                *m,
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
+
   cs_real_t  *_vxyz[3] = {row->expval,
                           row->expval + m->n_rows,
                           row->expval + 2*m->n_rows };
@@ -1741,15 +1741,18 @@ cs_equation_assemble_eblock33_matrix_mpis(const cs_sdm_t                *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
     /* Expand all the blocks for this row */
+
     for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
       /* mIJ matrices are small square matrices of size 3 */
+
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
       const cs_real_t  *const mvals = mIJ->val;
       for (int k = 0; k < 3; k++) {
@@ -1761,6 +1764,7 @@ cs_equation_assemble_eblock33_matrix_mpis(const cs_sdm_t                *m,
     } /* Loop on column-wise blocks */
 
     /* dof_ids is an interlaced array (get access to the next 3 values */
+
     for (int k = 0; k < 3; k++) {
 
       row->i = 3*bi+k;                          /* cellwise numbering */
@@ -1781,7 +1785,6 @@ cs_equation_assemble_eblock33_matrix_mpis(const cs_sdm_t                *m,
     } /* Push each row of the block */
 
   } /* Loop on row-wise blocks */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1810,7 +1813,6 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
 
   cs_equation_assemble_row_t  *row = eqa->row;
 
-  /* Sanity checks */
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
@@ -1818,6 +1820,7 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
+
   cs_real_t  *_vxyz[3] = {row->expval,
                           row->expval + m->n_rows,
                           row->expval + 2*m->n_rows};
@@ -1825,15 +1828,18 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
     /* Expand all the blocks for this row */
+
     for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
       /* mIJ matrices are small square matrices of size 3 */
+
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
       const cs_real_t  *const mvals = mIJ->val;
       for (int k = 0; k < 3; k++) {
@@ -1845,6 +1851,7 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
     } /* Loop on column-wise blocks */
 
     /* dof_ids is an interlaced array (get access to the next 3 values */
+
     for (int k = 0; k < 3; k++) {
 
       row->i = 3*bi+k;                          /* cellwise numbering */
@@ -1870,7 +1877,6 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
     } /* Push each row of the block */
 
   } /* Loop on row-wise blocks */
-
 }
 
 #endif /* defined(HAVE_MPI) */

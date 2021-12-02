@@ -1161,6 +1161,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   cs_timer_t  t_cmpt = cs_timer_time();
 
   /* Retrieve high-level structures */
+
   cs_cdofb_ac_t  *sc = (cs_cdofb_ac_t *)scheme_context;
   cs_navsto_ac_t *cc = sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
@@ -1175,6 +1176,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
 
   /* Retrieve fields */
+
   cs_real_t  *vel_c = sc->velocity->val;
   cs_real_t  *vel_f = mom_eqc->face_values;
   cs_real_t  *div = sc->divergence->val;
@@ -1188,6 +1190,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Build an array storing the Dirichlet values at faces.
      Evaluation should be performed at t_cur + dt_cur */
+
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *enforced_ids = NULL;
 
@@ -1195,6 +1198,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
                         &dir_values, &enforced_ids);
 
   /* Initialize the linear system: matrix and rhs */
+
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
@@ -1207,6 +1211,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 #endif
 
   /* Main function for the building stage */
+
   _implicit_euler_build(nsp,
                         vel_f,  /* previous values for the velocity at faces */
                         vel_c,  /* previous values for the velocity at cells */
@@ -1217,10 +1222,12 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
                         matrix, rhs);
 
   /* Free temporary buffers and structures */
+
   BFT_FREE(dir_values);
   BFT_FREE(enforced_ids);
 
   /* End of the system building */
+
   cs_timer_t  t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_bld, &t_tmp);
 
@@ -1229,9 +1236,11 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
    *--------------------------------------------------------------------------*/
 
   /* Copy current field values to previous values */
+
   cs_timer_t t_upd = cs_timer_time();
 
   /* Current to previous for main variable fields */
+
   _ac_fields_to_previous(sc, cc);
 
   t_tmp = cs_timer_time();
@@ -1239,6 +1248,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
+
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
 
@@ -1253,6 +1263,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
                                                        rhs);
 
   /* Update pressure, velocity at cells and divergence velocity fields */
+
   t_upd = cs_timer_time();
 
   /* Updates after the resolution:
@@ -1261,18 +1272,22 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
    *  2. the mass flux
    *  2. the pressure field: pr -= dt / zeta * div(u_f)
    */
+
   cs_real_t  div_l2_norm = _ac_update_div(vel_f, div);
 
   /* Compute values at cells vel_c from values at faces vel_f
      vel_c = acc^-1*(RHS - Acf*vel_f) */
+
   cs_static_condensation_recover_vector(connect->c2f,
                                         mom_eqc->rc_tilda, mom_eqc->acf_tilda,
                                         vel_f, vel_c);
 
   /* Compute the new mass flux used as the advection field */
+
   cs_cdofb_navsto_mass_flux(nsp, quant, vel_f, sc->mass_flux_array);
 
   /* Update the pressure knowing the new divergence of the velocity */
+
   _ac_update_pr(ts->t_cur, ts->dt[0], cc->zeta, mom_eqp, mom_eqb, div, pr);
 
   if (nsp->verbosity > 1) {
@@ -1288,6 +1303,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 #endif
 
   /* Frees */
+
   BFT_FREE(rhs);
   cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
