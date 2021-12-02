@@ -108,8 +108,8 @@ if (itytur.eq.2) then
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
 elseif (itytur.eq.3) then
-   call field_get_val_v(ivarfl(irij), cvar_rij)
-   call field_get_val_s(ivarfl(iep), cvar_ep)
+  call field_get_val_v(ivarfl(irij), cvar_rij)
+  call field_get_val_s(ivarfl(iep), cvar_ep)
 elseif (iturb.eq.50) then
   call field_get_val_s(ivarfl(ik), cvar_k)
   call field_get_val_s(ivarfl(iep), cvar_ep)
