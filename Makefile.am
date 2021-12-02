@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 if HAVE_GUI
-GUI = gui
+GUI = python 
 endif
 
 if HAVE_FRONTEND
@@ -208,134 +208,6 @@ nodist_bin_SCRIPTS += bin/code_saturne.py
 endif
 
 # Install Python library
-
-dist_pkgpython_PYTHON = \
-bin/__init__.py \
-bin/cs_studymanager.py \
-bin/cs_batch.py \
-bin/cs_bdiff.py \
-bin/cs_bdump.py \
-bin/cs_case.py \
-bin/cs_case_domain.py \
-bin/cs_case_coupling.py \
-bin/cs_compile.py \
-bin/cs_config.py \
-bin/cs_control.py \
-bin/cs_create.py \
-bin/cs_debug_wrapper.py \
-bin/cs_debug_symbol.py \
-bin/cs_exec_environment.py \
-bin/cs_gui.py \
-bin/cs_info.py \
-bin/cs_math_parser.py \
-bin/cs_meg_to_c.py \
-bin/cs_package.py \
-bin/cs_parametric_setup.py \
-bin/cs_parametric_study.py \
-bin/cs_run.py \
-bin/cs_runcase.py \
-bin/cs_run_conf.py \
-bin/cs_script.py \
-bin/cs_studymanager_gui.py \
-bin/cs_submit.py \
-bin/cs_trackcvg.py \
-bin/cs_update.py \
-bin/cs_xml_reader.py
-
-studymanagerdir = $(pkgpythondir)/studymanager
-studymanager_PYTHON = \
-bin/studymanager/cs_studymanager_run.py \
-bin/studymanager/cs_studymanager_drawing.py \
-bin/studymanager/__init__.py \
-bin/studymanager/cs_studymanager_parser.py \
-bin/studymanager/cs_studymanager_study.py \
-bin/studymanager/cs_studymanager_texmaker.py \
-bin/studymanager/cs_studymanager_pathes_model.py \
-bin/studymanager/cs_studymanager_xml_init.py
-
-modeldir = $(pkgpythondir)/model
-model_PYTHON = \
-bin/model/Common.py \
-bin/model/AtmosphericFlowsModel.py \
-bin/model/BalanceModelNeptune.py \
-bin/model/BalanceModel.py \
-bin/model/BatchRunningModel.py \
-bin/model/BodyForcesModel.py \
-bin/model/BoundaryConditionsModelNeptune.py \
-bin/model/BoundaryNeptune.py \
-bin/model/Boundary.py \
-bin/model/CathareCouplingModel.py \
-bin/model/CoalCombustionModel.py \
-bin/model/CompressibleModel.py \
-bin/model/ConjugateHeatTransferModel.py \
-bin/model/CoriolisSourceTermsModel.py \
-bin/model/DefineUserScalarsModel.py \
-bin/model/DropletCondensationEvaporationModel.py \
-bin/model/ElectricalModel.py \
-bin/model/FansModel.py \
-bin/model/FluidCharacteristicsModel.py \
-bin/model/FluidStructureInteractionModel.py \
-bin/model/GasCombustionModel.py \
-bin/model/GlobalNumericalParametersModel.py \
-bin/model/GroundwaterLawModel.py \
-bin/model/GroundwaterModel.py \
-bin/model/HgnModel.py \
-bin/model/HeadLossesModel.py \
-bin/model/IdentityAndPathesModel.py \
-bin/model/ImmersedBoundariesModel.py \
-bin/model/InitializationModel.py \
-bin/model/InternalCouplingModel.py \
-bin/model/__init__.py \
-bin/model/InterfacialAreaModel.py \
-bin/model/InterfacialEnthalpyModel.py \
-bin/model/InterfacialForcesModel.py \
-bin/model/LagrangianBoundariesModel.py \
-bin/model/LagrangianModel.py \
-bin/model/LagrangianOutputModel.py \
-bin/model/LagrangianStatisticsModel.py \
-bin/model/LocalizationModelNeptune.py \
-bin/model/LocalizationModel.py \
-bin/model/MainFieldsInitializationModel.py \
-bin/model/MainFieldsSourceTermsModel.py \
-bin/model/MainFieldsModel.py \
-bin/model/MobileMeshModel.py \
-bin/model/NeptuneWallTransferModel.py \
-bin/model/NonCondensableModel.py \
-bin/model/NotebookModel.py \
-bin/model/NucleateBoilingModel.py \
-bin/model/NumericalParamEquationModelNeptune.py \
-bin/model/NumericalParamEquationModel.py \
-bin/model/NumericalParamGlobalModel.py \
-bin/model/OpenTurnsModel.py \
-bin/model/OutputControlModel.py \
-bin/model/OutputFieldsModel.py \
-bin/model/OutputSurfacicFieldsModel.py \
-bin/model/OutputSurfacicVariablesModel.py \
-bin/model/OutputVolumicVariablesModel.py \
-bin/model/PerformanceTuningModel.py \
-bin/model/PorosityModel.py \
-bin/model/ProfilesModel.py \
-bin/model/ScriptRunningModel.py \
-bin/model/SolidModel.py \
-bin/model/SolutionDomainModel.py \
-bin/model/SourceTermsModel.py \
-bin/model/SpeciesModel.py \
-bin/model/StartRestartModel.py \
-bin/model/ThermalRadiationModel.py \
-bin/model/ThermalScalarModel.py \
-bin/model/ThermodynamicsModel.py \
-bin/model/TimeAveragesModel.py \
-bin/model/TimeStepModelNeptune.py \
-bin/model/TimeStepModel.py \
-bin/model/TurboMachineryModel.py \
-bin/model/TurbulenceModel.py \
-bin/model/TurbulenceNeptuneModel.py \
-bin/model/UsersControlModel.py \
-bin/model/XMLengine.py \
-bin/model/XMLinitializeNeptune.py \
-bin/model/XMLinitialize.py \
-bin/model/XMLmodel.py \
-bin/model/XMLvariables.py
 
 # Install user scripts
 

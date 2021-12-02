@@ -1189,8 +1189,13 @@ AC_CONFIG_FILES([Makefile
 		 src/turb/Makefile src/alge/Makefile src/mesh/Makefile
 		 src/user/Makefile src/user_examples/Makefile
 		 src/meg/Makefile
-		 gui/Makefile gui/Base/Makefile gui/Pages/Makefile
-		 gui/studymanager_gui/Makefile gui/trackcvg/Makefile
+                 python/Makefile python/code_saturne/Makefile python/code_saturne/base/Makefile
+                 python/code_saturne/studymanager/Makefile 
+                 python/code_saturne/model/Makefile
+                 python/code_saturne/gui/Makefile python/code_saturne/gui/base/Makefile
+                 python/code_saturne/gui/case/Makefile 
+                 python/code_saturne/gui/trackcvg/Makefile 
+                 python/code_saturne/gui/studymanager_gui/Makefile
 		 docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
 		 docs/refcard/Makefile docs/theory/Makefile
 		 docs/user/Makefile

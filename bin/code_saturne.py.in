@@ -71,11 +71,11 @@ if __name__ == '__main__':
         import importlib
         importlib.invalidate_caches()
 
-    from code_saturne.cs_exec_environment import clean_os_environ_for_shell
+    from code_saturne.base.cs_exec_environment import clean_os_environ_for_shell
     clean_os_environ_for_shell()
 
     try:
-        from code_saturne.cs_script import master_script
+        from code_saturne.base.cs_script import master_script
     except Exception:
         print(sys.path)
         sys.exit(0)
@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
     config_file = os.path.join(cslibdir, 'code_saturne_build.cfg')
 
-    from code_saturne.cs_package import package
+    from code_saturne.base.cs_package import package
     pkg = package(config_file=config_file)
 
     # Create an instance of the main script

@@ -169,17 +169,17 @@ cs_blas_test_LDADD    += $(FCLIBS)
 endif
 
 cs_check_cdo$(EXEEXT):
-	PYTHONPATH=$(top_srcdir)/bin \
+	PYTHONPATH=$(top_srcdir)/gui\
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_check_cdo $(top_srcdir)/tests/cs_check_cdo.c
 
 cs_check_quadrature$(EXEEXT):
-	PYTHONPATH=$(top_srcdir)/bin \
+	PYTHONPATH=$(top_srcdir)/gui\
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_check_quadrature $(top_srcdir)/tests/cs_check_quadrature.c
 
 cs_check_sdm$(EXEEXT):
-	PYTHONPATH=$(top_srcdir)/bin \
+	PYTHONPATH=$(top_srcdir)/gui\
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_check_sdm $(top_srcdir)/tests/cs_check_sdm.c
 

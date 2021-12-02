@@ -208,7 +208,7 @@ endif
 
 if HAVE_BACKEND
 cs_solver$(EXEEXT): libcs_solver.la
-	PYTHONPATH=$(top_srcdir)/bin \
+	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	CS_TOP_BUILDDIR=$(top_builddir) \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	$(top_srcdir)/src/apps/cs_solver.c
@@ -229,7 +229,7 @@ endif
 all-local: cs_solver$(EXEEXT)
 
 install-exec-hook: libcs_solver.la
-	PYTHONPATH=$(top_srcdir)/bin \
+	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
 	CS_TOP_BUILDDIR=$(top_builddir) \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	 --mode=install --dest "$(DESTDIR)"
