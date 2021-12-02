@@ -58,7 +58,8 @@ class OutputSurfacicVariablesModel(Model):
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.listNodeSurface = (self._getListOfVelocityPressureSurfacicProperties(),
                                 self._getThermalScalarSurfacicProperties(),
-                                self._getThermalRadiativeSurfacicProperties())
+                                self._getThermalRadiativeSurfacicProperties(),
+                                self._getListOfSurfacicUserScalars())
 
         self.dicoLabelName = {}
         self.list_name = []
@@ -110,6 +111,21 @@ class OutputSurfacicVariablesModel(Model):
                 if node['support']:
                     nodeList.append(node)
         return nodeList
+
+    def _getListOfSurfacicUserScalars(self):
+        """
+        Private method: return list of user scalars defined on boundaries.
+        """
+
+        nodeList = []
+        node_addscalar = self.case.xmlGetNode("additional_scalars")
+        if node_addscalar:
+            for node in node_addscalar.xmlGetNodeList('property'):
+                if node and node['support'] == 'boundary':
+                    nodeList.append(node)
+
+        return nodeList
+
 
 
     def _updateDicoLabelName(self):
