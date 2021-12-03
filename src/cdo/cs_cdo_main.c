@@ -59,6 +59,7 @@
 #include "cs_parall.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
+#include "cs_solid_selection.h"
 #include "cs_solidification.h"
 #include "cs_thermal_system.h"
 #include "cs_timer.h"
@@ -876,6 +877,10 @@ cs_cdo_finalize(cs_domain_t    *domain)
   /* Solidification module */
 
   cs_solidification_destroy_all();
+
+  /* Solid cells */
+
+  cs_solid_selection_free();
 
   /* ALE */
 

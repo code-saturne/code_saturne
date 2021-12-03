@@ -83,6 +83,7 @@
 #include "cs_saddle_itsol.h"
 #include "cs_scheme_geometry.h"
 #include "cs_sdm.h"
+#include "cs_solid_selection.h"
 #include "cs_solidification.h"
 #include "cs_source_term.h"
 #include "cs_static_condensation.h"

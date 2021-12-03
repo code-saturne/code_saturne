@@ -123,6 +123,7 @@ cs_reco.h \
 cs_saddle_itsol.h \
 cs_scheme_geometry.h \
 cs_sdm.h \
+cs_solid_selection.h \
 cs_solidification.h \
 cs_source_term.h \
 cs_static_condensation.h \
@@ -189,6 +190,7 @@ cs_reco.c \
 cs_saddle_itsol.c \
 cs_scheme_geometry.c \
 cs_sdm.c \
+cs_solid_selection.c \
 cs_solidification.c \
 cs_source_term.c \
 cs_static_condensation.c \
