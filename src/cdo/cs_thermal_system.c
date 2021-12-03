@@ -487,17 +487,25 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
     cs_equation_add_advection(eqp,
                               cs_advection_field_by_name("mass_flux"));
 
-    if (thm->model & CS_THERMAL_MODEL_USE_TEMPERATURE)
-      cs_equation_add_advection_scaling_property(eqp, thm->cp);
-
-    cs_equation_param_set(eqp, CS_EQKEY_ADV_FORMULATION, "non_conservative");
-    cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
-
-    /* Set a space discretization by default */
+    /* Set the space discretization by default. One should be consistent with
+       the space scheme used for solving the Navier-Stokes system. Either with
+       the legacy FV scheme or the CDO-Fb scheme, one needs a CDO Fb scheme. */
 
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "ocs");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+
+    if (thm->model & CS_THERMAL_MODEL_USE_TEMPERATURE) {
+
+      /* The formulation used for the thermal equation with temperature as main
+         unknown needs a non-conservative formulation of the advective term */
+
+      cs_equation_add_advection_scaling_property(eqp, thm->cp);
+      cs_equation_param_set(eqp, CS_EQKEY_ADV_FORMULATION, "non_conservative");
+
+    }
+
+    cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
 
   }
   else { /* Stand-alone i.e. not associated to the Navier--Stokes system */
