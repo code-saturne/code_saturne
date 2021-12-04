@@ -773,10 +773,6 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   /* Rescaling of the pressure */
   nsp->reference_pressure = 0.;
 
-  /* Enforcement of a solid zone */
-  nsp->n_solid_cells = 0;
-  nsp->solid_cell_ids = NULL;
-
   return nsp;
 }
 
@@ -855,8 +851,6 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
     param->pressure_bc_defs = NULL;
 
   }
-
-  BFT_FREE(param->solid_cell_ids);
 
   _navsto_param_sles_free(&(param->sles_param));
 

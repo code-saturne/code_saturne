@@ -868,21 +868,6 @@ typedef struct {
 
   cs_real_t    reference_pressure;
 
-  /*! \var n_solid_cells
-   *   If n_solid_cells > 0, then one requests that a part of the fluid is
-   *   considered as a solid and an enforcement of this condition has to be done
-   *   on the (Navier-)Stokes system.
-   *   This implies an enforcement on the momentum equation and a specific
-   *   treatment of the pressure gradient.
-   *
-   *  \var solid_cell_ids
-   *  List on local cell ids where an enforcement to a zero velocity/zero mass
-   *  flux has to be performed
-   */
-
-  cs_lnum_t    n_solid_cells;
-  cs_lnum_t   *solid_cell_ids;
-
   /*! @} */
 
 } cs_navsto_param_t;

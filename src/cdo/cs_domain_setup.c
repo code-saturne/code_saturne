@@ -181,11 +181,14 @@ _set_scheme_flags(cs_domain_t    *domain)
     case CS_SPACE_SCHEME_CDOFB:
       quant_flag |= CS_CDO_QUANTITIES_FB_SCHEME;
       cc->fb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
-      if (vardim == 1)
-        cc->fb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
-      else if (vardim == 3)
+
+      /* Always build quantities related to scalar-valued equations (in
+         particular the scalar-valued interface can be useful */
+
+      cc->fb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
+      if (vardim == 3)
         cc->fb_scheme_flag |= CS_FLAG_SCHEME_VECTOR;
-      else
+      else if (vardim > 3)
         bft_error(__FILE__, __LINE__, 0, "Invalid case");
       break;
 
@@ -259,8 +262,6 @@ _set_scheme_flags(cs_domain_t    *domain)
     case CS_SPACE_SCHEME_CDOFB:
       quant_flag |= CS_CDO_QUANTITIES_FB_SCHEME;
       cc->fb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
-      if (nsp->sles_param->strategy == CS_NAVSTO_SLES_BY_BLOCKS)
-        cc->fb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
       break;
 
     case CS_SPACE_SCHEME_HHO_P0:

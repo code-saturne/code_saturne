@@ -1197,14 +1197,8 @@ cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
   cs_navsto_param_t *nsp = ns->param;
   assert(nsp != NULL);
 
-  if (nsp->n_solid_cells < n_solid_cells)
-    BFT_REALLOC(nsp->solid_cell_ids, n_solid_cells, cs_lnum_t);
-
-  nsp->n_solid_cells = n_solid_cells;
   if (n_solid_cells == 0)
     return;
-
-  memcpy(nsp->solid_cell_ids, solid_cell_ids, n_solid_cells*sizeof(cs_lnum_t));
 
   /* The momentum equation has to enforce a zero-velocity */
 

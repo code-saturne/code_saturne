@@ -45,6 +45,7 @@
 #include "cs_navsto_system.h"
 #include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_solid_selection.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -641,32 +642,48 @@ _fb_solute_source_term(const cs_equation_param_t     *eqp,
  * \brief  Build the list of (local) solid cells and enforce a zero-velocity
  *         for this selection
  *
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_enforce_solid_cells(const cs_cdo_quantities_t   *quant)
+_enforce_solid_cells(const cs_cdo_connect_t      *connect,
+                     const cs_cdo_quantities_t   *quant)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
 
+  cs_gnum_t  n_solid_cells = solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID];
+
   /* List of solid cells */
 
-  cs_lnum_t  *solid_cells = NULL;
-  BFT_MALLOC(solid_cells, solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID],
-             cs_lnum_t);
+  cs_solid_selection_t  *scells = cs_solid_selection_get();
 
-  cs_lnum_t  n_solid_cells = 0;
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-    if (solid->cell_state[c_id] == CS_SOLIDIFICATION_STATE_SOLID)
-      solid_cells[n_solid_cells++] = c_id;
+  if (n_solid_cells > (cs_gnum_t)scells->n_cells)
+    BFT_REALLOC(scells->cell_ids, n_solid_cells, cs_lnum_t);
+
+  scells->n_cells = n_solid_cells;
+
+  if (n_solid_cells > 0) {
+
+    n_solid_cells = 0;
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+      if (solid->cell_state[c_id] == CS_SOLIDIFICATION_STATE_SOLID)
+        scells->cell_ids[n_solid_cells++] = c_id;
+    }
+
+    assert(n_solid_cells == solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID]);
+
   }
 
-  assert((cs_gnum_t)n_solid_cells
-         == solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID]);
-  cs_navsto_system_set_solid_cells(n_solid_cells, solid_cells);
+  /* Parallel synchronization of the number of solid cells */
 
-  BFT_FREE(solid_cells);
+  cs_solid_selection_sync(connect);
+
+  /* Enforce a zero velocity inside solid cells (enforcement of the momentum
+     equation) */
+
+  cs_navsto_system_set_solid_cells(scells->n_cells, scells->cell_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1195,15 +1212,13 @@ _update_velocity_forcing(const cs_mesh_t             *mesh,
                          const cs_time_step_t        *ts)
 {
   CS_UNUSED(mesh);
-  CS_UNUSED(connect);
 
   cs_solidification_t  *solid = cs_solidification_structure;
 
   /* At this stage, the number of solid cells is a local count
    * Set the enforcement of the velocity for solid cells */
 
-  if (solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] > 0)
-    _enforce_solid_cells(quant);
+  _enforce_solid_cells(connect, quant);
 
   /* Parallel synchronization of the number of cells in each state
    * This should be done done now to avoid going to the cell enforcement whereas
@@ -2871,8 +2886,7 @@ _voller_prakash_87(const cs_mesh_t              *mesh,
   /* At this stage, the number of solid cells is a local count
    * Set the enforcement of the velocity for solid cells */
 
-  if (solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] > 0)
-    _enforce_solid_cells(quant);
+  _enforce_solid_cells(connect, quant);
 
   /* Parallel synchronization of the number of cells in each state (It should
      be done after _enforce_solid_cells() */
@@ -2994,8 +3008,7 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
   /* At this stage, the number of solid cells is a local count
    * Set the enforcement of the velocity for solid cells */
 
-  if (solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] > 0)
-    _enforce_solid_cells(quant);
+  _enforce_solid_cells(connect, quant);
 
   /* Parallel synchronization of the number of cells in each state (It should
      be done after _enforce_solid_cells() */
