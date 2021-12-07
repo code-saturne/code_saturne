@@ -170,7 +170,15 @@ typedef enum {
  * Compute  w \cdot w and associate a field to this quantity
  *
  * \var CS_NAVSTO_POST_MASS_DENSITY
- * Compute the mass density (active only if a Boussinesq approximation is on)
+ * Compute the mass density in each cell and monitor the evolution of the
+ * integral of the mass in the full computational domain. If a Boussinesq
+ * approximation is set, then the mass density used in the buoyancy term is
+ * considered (not the reference value assumed to be constant).
+ *
+ * \var CS_NAVSTO_POST_CELL_MASS_FLUX_BALANCE
+ * Compute the balance of the mass flux for each cell. When the mass density is
+ * constant, this quantity is only a scaling (by the mass density) of the
+ * quantity computed with the flag CS_NAVSTO_POST_VELOCITY_DIVERGENCE.
  */
 
 typedef enum {
@@ -183,6 +191,7 @@ typedef enum {
   CS_NAVSTO_POST_HELICITY                 = 1<< 5, /* =  32 */
   CS_NAVSTO_POST_ENSTROPHY                = 1<< 6, /* =  64 */
   CS_NAVSTO_POST_MASS_DENSITY             = 1<< 7, /* = 128 */
+  CS_NAVSTO_POST_CELL_MASS_FLUX_BALANCE   = 1<< 8, /* = 256 */
 
 } cs_navsto_param_post_bit_t;
 

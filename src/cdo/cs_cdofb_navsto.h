@@ -47,6 +47,7 @@
 #include "cs_matrix.h"
 #include "cs_mesh.h"
 #include "cs_navsto_param.h"
+#include "cs_time_plot.h"
 #include "cs_time_step.h"
 #include "cs_sdm.h"
 
@@ -273,15 +274,6 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free allocated structures associated to this file
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the mass flux playing the role of the advection field in
  *         the Navier-Stokes equations
  *         One considers the mass flux across primal faces which relies on the
@@ -302,8 +294,9 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the divergence of a cell using the \ref cs_cdo_quantities_t
- *         structure
+ * \brief  Compute the divergence in a cell of a vector-valued array defined at
+ *         faces (values are defined both at interior and border faces).
+ *         Variant based on the usage of \ref cs_cdo_quantities_t structure.
  *
  * \param[in]     c_id         cell id
  * \param[in]     quant        pointer to a \ref cs_cdo_quantities_t
@@ -314,7 +307,7 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+double
 cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
                                 const cs_cdo_quantities_t    *quant,
                                 const cs_adjacency_t         *c2f,
@@ -406,24 +399,29 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Perform extra-operation related to Fb schemes when solving
- *         Navier-Stokes.
- *         - Compute the mass flux accross the boundaries.
- *         - Compute the kinetic energy
- *         - Compute the velocity gradient
- *         - Compute the vorticity
- *         - Compute the helicity
- *         - Compute the enstrophy
- *         - Compute the stream function
+ *         Navier-Stokes. Computation of the following quantities according to
+ *         post-processing flags beeing activated.
+ *         - The mass flux accross the boundaries.
+ *         - The global mass in the computational domain
+ *         - The norm of the velocity divergence
+ *         - the cellwise mass flux balance
+ *         - the kinetic energy
+ *         - the velocity gradient
+ *         - the vorticity
+ *         - the helicity
+ *         - the enstrophy
+ *         - the stream function
  *
- * \param[in]  nsp        pointer to a \ref cs_navsto_param_t struct.
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  quant      pointer to a \ref cs_cdo_quantities_t struct.
- * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]  ts         pointer to a \ref cs_time_step_t struct.
- * \param[in]  adv_field  pointer to a \ref cs_adv_field_t struct.
- * \param[in]  mass_flux  scalar-valued mass flux for each face
- * \param[in]  u_cell     vector-valued velocity in each cell
- * \param[in]  u_face     vector-valued velocity on each face
+ * \param[in]      nsp           pointer to a \ref cs_navsto_param_t struct.
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      quant         pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in]      connect       pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]      ts            pointer to a \ref cs_time_step_t struct.
+ * \param[in,out]  time_plotter  pointer to a \ref cs_time_plot_t struct.
+ * \param[in]      adv_field     pointer to a \ref cs_adv_field_t struct.
+ * \param[in]      mass_flux     scalar-valued mass flux for each face
+ * \param[in]      u_cell        vector-valued velocity in each cell
+ * \param[in]      u_face        vector-valued velocity on each face
  */
 /*----------------------------------------------------------------------------*/
 
@@ -433,6 +431,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
                          const cs_cdo_quantities_t   *quant,
                          const cs_cdo_connect_t      *connect,
                          const cs_time_step_t        *ts,
+                         cs_time_plot_t              *time_plotter,
                          const cs_adv_field_t        *adv_field,
                          const cs_real_t             *mass_flux,
                          const cs_real_t             *u_cell,

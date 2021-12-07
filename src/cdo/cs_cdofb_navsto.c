@@ -62,7 +62,6 @@
 #include "cs_reco.h"
 #include "cs_sdm.h"
 #include "cs_timer.h"
-#include "cs_time_plot.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -104,8 +103,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private variables
  *============================================================================*/
-
-static cs_time_plot_t  *cs_cdofb_time_plot = NULL;
 
 static cs_cdofb_navsto_boussinesq_type_t  cs_cdofb_navsto_boussinesq_type =
   CS_CDOFB_NAVSTO_BOUSSINESQ_FACE_DOF;
@@ -153,53 +150,6 @@ _nl_algo_print_entry(const char                *algo_name,
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize a \ref cs_time_plot_t structure
- *
- * \param[in] nsp       pointer to a cs_navsto_param_t struct.
- *
- * \return a pointer to a new allocated cs_time_plot_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_time_plot_t *
-_init_time_plot(const cs_navsto_param_t    *nsp)
-{
-  int n_cols = 0;
-  if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY)
-    n_cols++;
-  if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY)
-    n_cols++;
-  if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
-    n_cols++;
-
-  const char  **labels;
-  BFT_MALLOC(labels, n_cols, const char *);
-  n_cols = 0;
-  if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY)
-    labels[n_cols++] = "kinetic_energy";
-  if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY)
-    labels[n_cols++] = "enstrophy";
-  if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
-    labels[n_cols++] = "helicity";
-
-  cs_time_plot_t  *tplot = cs_time_plot_init_probe("navsto_monitor",
-                                                   "",
-                                                   CS_TIME_PLOT_DAT,
-                                                   false, /* use iteration */
-                                                   300,   /* flush time */
-                                                   -1,
-                                                   n_cols,
-                                                   NULL,
-                                                   NULL,
-                                                   labels);
-
-  BFT_FREE(labels);
-
-  return tplot;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -364,6 +314,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
   /* Update the value of the mass density for the current cell if needed */
   /* TODO: Case of a uniform but not constant in time */
+
   if (!cs_property_is_uniform(nsp->mass_density))
     nsb->rho_c = cs_property_value_in_cell(cm, nsp->mass_density, t_eval);
 
@@ -481,19 +432,6 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free allocated structures associated to this file
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_finalize(void)
-{
-  if (cs_cdofb_time_plot != NULL)
-    cs_time_plot_finalize(&cs_cdofb_time_plot);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the mass flux playing the role of the advection field in
  *         the Navier-Stokes equations
  *         One considers the mass flux across primal faces which relies on the
@@ -535,8 +473,9 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the divergence of a cell using the \ref cs_cdo_quantities_t
- *         structure
+ * \brief  Compute the divergence in a cell of a vector-valued array defined at
+ *         faces (values are defined both at interior and border faces).
+ *         Variant based on the usage of \ref cs_cdo_quantities_t structure.
  *
  * \param[in]     c_id         cell id
  * \param[in]     quant        pointer to a \ref cs_cdo_quantities_t
@@ -547,7 +486,7 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
+double
 cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
                                 const cs_cdo_quantities_t    *quant,
                                 const cs_adjacency_t         *c2f,
@@ -555,7 +494,7 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
 {
   const cs_lnum_t  thd = 3 * quant->n_i_faces;
 
-  cs_real_t  div = 0.0;
+  double  div = 0.0;
   for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id+1]; f++) {
 
     const cs_lnum_t  shift = 3*c2f->ids[f];
@@ -925,24 +864,29 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Perform extra-operation related to Fb schemes when solving
- *         Navier-Stokes.
- *         - Compute the mass flux accross the boundaries.
- *         - Compute the kinetic energy
- *         - Compute the velocity gradient
- *         - Compute the vorticity
- *         - Compute the helicity
- *         - Compute the enstrophy
- *         - Compute the stream function
+ *         Navier-Stokes. Computation of the following quantities according to
+ *         post-processing flags beeing activated.
+ *         - The mass flux accross the boundaries.
+ *         - The global mass in the computational domain
+ *         - The norm of the velocity divergence
+ *         - the cellwise mass flux balance
+ *         - the kinetic energy
+ *         - the velocity gradient
+ *         - the vorticity
+ *         - the helicity
+ *         - the enstrophy
+ *         - the stream function
  *
- * \param[in]  nsp        pointer to a \ref cs_navsto_param_t struct.
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  quant      pointer to a \ref cs_cdo_quantities_t struct.
- * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]  ts         pointer to a \ref cs_time_step_t struct.
- * \param[in]  adv_field  pointer to a \ref cs_adv_field_t struct.
- * \param[in]  mass_flux  scalar-valued mass flux for each face
- * \param[in]  u_cell     vector-valued velocity in each cell
- * \param[in]  u_face     vector-valued velocity on each face
+ * \param[in]      nsp           pointer to a \ref cs_navsto_param_t struct.
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      quant         pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in]      connect       pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]      ts            pointer to a \ref cs_time_step_t struct.
+ * \param[in,out]  time_plotter  pointer to a \ref cs_time_plot_t struct.
+ * \param[in]      adv_field     pointer to a \ref cs_adv_field_t struct.
+ * \param[in]      mass_flux     scalar-valued mass flux for each face
+ * \param[in]      u_cell        vector-valued velocity in each cell
+ * \param[in]      u_face        vector-valued velocity on each face
  */
 /*----------------------------------------------------------------------------*/
 
@@ -952,6 +896,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
                          const cs_cdo_quantities_t   *quant,
                          const cs_cdo_connect_t      *connect,
                          const cs_time_step_t        *ts,
+                         cs_time_plot_t              *time_plotter,
                          const cs_adv_field_t        *adv_field,
                          const cs_real_t             *mass_flux,
                          const cs_real_t             *u_cell,
@@ -1030,73 +975,51 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   /* Predefined post-processing */
   /* ========================== */
 
-  cs_flag_t  integral_masks[3] = { CS_NAVSTO_POST_KINETIC_ENERGY,
-                                   CS_NAVSTO_POST_HELICITY,
-                                   CS_NAVSTO_POST_ENSTROPHY };
+  /* There are five values if all flags are activated for the monitoring plot */
 
   int  n_cols = 0;
-  /* There are three values if all flags are activated */
-  cs_real_t  col_vals[3] = {0, 0, 0};
+  cs_real_t  col_vals[5] = {0, 0, 0, 0, 0};
 
-  if (cs_flag_at_least(nsp->post_flag, 3, integral_masks))
-    if (cs_cdofb_time_plot == NULL && cs_glob_rank_id < 1)
-      /* Initialization is requested */
-      cs_cdofb_time_plot = _init_time_plot(nsp);
+  if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_DIVERGENCE) {
 
-  if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY) {
+    double  div_norm2 = 0.;
+    cs_field_t  *vel_div = cs_field_by_name("velocity_divergence");
+    assert(vel_div != NULL);
 
-    cs_field_t  *kinetic_energy = cs_field_by_name("kinetic_energy");
-    assert(kinetic_energy != NULL);
+    /* cs_field_current_to_previous(vel_div); is done during the resolution
+       of the Navier--Stokes system */
 
-    cs_field_current_to_previous(kinetic_energy);
+    /* Only the face velocity is used */
 
-    if (cs_property_is_uniform(nsp->mass_density)) {
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN) \
+    reduction(+:div_norm2)
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-      /* This can be any cell but one assumes that there is at least one cell by
-         MPI rank */
-      const cs_real_t  rho = cs_property_get_cell_value(0, /* cell_id */
-                                                        ts->t_cur,
-                                                        nsp->mass_density);
+      double  div_c = cs_cdofb_navsto_cell_divergence(c_id,
+                                                      quant,
+                                                      connect->c2f,
+                                                      u_face);
 
-#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-        kinetic_energy->val[c_id] =
-          0.5*rho*cs_math_3_square_norm(u_cell + 3*c_id);
+      vel_div->val[c_id] = div_c;
+      div_norm2 += quant->cell_vol[c_id] * div_c * div_c;
 
-    }
-    else {
+    } /* Loop on cells */
 
-#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    cs_parall_sum(1, CS_DOUBLE, &div_norm2);
+    col_vals[n_cols++] = sqrt(div_norm2);
 
-        cs_real_t  rho_c = cs_property_get_cell_value(c_id,
-                                                      ts->t_cur,
-                                                      nsp->mass_density);
-        kinetic_energy->val[c_id] =
-          0.5*rho_c*cs_math_3_square_norm(u_cell + 3*c_id);
-
-      }
-
-    }
-
-    /* Compute the integral of the kinetic energy for monitoring */
-    double  k = cs_weighted_sum(quant->n_cells,
-                                quant->cell_vol,
-                                kinetic_energy->val);
-
-    cs_parall_sum(1, CS_DOUBLE, &k); /* Manage parallel computations */
-    col_vals[n_cols++] = k;
-
-  } /* Kinetic energy */
+  } /* Velocity divergence */
 
   if (nsp->post_flag & CS_NAVSTO_POST_MASS_DENSITY) {
 
+    double  mass_integral = 0.;
     cs_field_t  *rho = cs_field_by_name("mass_density");
     assert(rho != NULL);
 
     cs_field_current_to_previous(rho);
 
-#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN) \
+    reduction(+:mass_integral)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       double  boussi_coef = 1;
@@ -1108,11 +1031,91 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
       } /* Loop on Boussinesq terms */
 
-      rho->val[c_id] = nsp->mass_density->ref_value * boussi_coef;
+      double  rho_c = nsp->mass_density->ref_value * boussi_coef;
+      rho->val[c_id] = rho_c;
+      mass_integral += quant->cell_vol[c_id] * rho_c;
 
     } /* Loop on cells */
 
+    cs_parall_sum(1, CS_DOUBLE, &mass_integral);
+    col_vals[n_cols++] = mass_integral;
+
   } /* Mass density */
+
+  if (nsp->post_flag & CS_NAVSTO_POST_CELL_MASS_FLUX_BALANCE) {
+
+    cs_field_t  *mf_balance = cs_field_by_name("mass_flux_balance");
+    assert(mf_balance != NULL);
+
+    cs_field_current_to_previous(mf_balance);
+
+    const cs_adjacency_t  *c2f = connect->c2f;
+
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      double  balance = 0.;
+      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+        balance += c2f->sgn[j]*mass_flux[c2f->ids[j]];
+
+      }
+      mf_balance->val[c_id] = balance;
+
+    } /* Loop on cells */
+
+  } /* Cell mass flux balance */
+
+  if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY) {
+
+    double  k_integral = 0.;
+    cs_field_t  *kinetic_energy = cs_field_by_name("kinetic_energy");
+    assert(kinetic_energy != NULL);
+
+    cs_field_current_to_previous(kinetic_energy);
+
+    if (cs_property_is_uniform(nsp->mass_density)) {
+
+      /* This can be any cell but one assumes that there is at least one cell by
+         MPI rank */
+
+      const cs_real_t  rho = cs_property_get_cell_value(0, /* cell_id */
+                                                        ts->t_cur,
+                                                        nsp->mass_density);
+
+#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)  \
+      reduction(+:k_integral)
+      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+        double kc = 0.5*rho*cs_math_3_square_norm(u_cell + 3*c_id);
+
+        kinetic_energy->val[c_id] = kc;
+        k_integral += quant->cell_vol[c_id]*kc;
+
+      }
+
+    }
+    else { /* Mass density is not uniform in space */
+
+#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN) \
+      reduction(+:k_integral)
+      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+        cs_real_t  rho_c = cs_property_get_cell_value(c_id,
+                                                      ts->t_cur,
+                                                      nsp->mass_density);
+        double  kc = 0.5*rho_c*cs_math_3_square_norm(u_cell + 3*c_id);
+
+        kinetic_energy->val[c_id] = kc;
+        k_integral += quant->cell_vol[c_id] * kc;
+
+      }
+
+    }
+
+    cs_parall_sum(1, CS_DOUBLE, &k_integral); /* Sync. parallel computations */
+    col_vals[n_cols++] = k_integral;
+
+  } /* Kinetic energy */
 
   if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_GRADIENT) {
 
@@ -1136,12 +1139,15 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   if (cs_flag_at_least(nsp->post_flag, 3, mask_velgrd)) {
 
     cs_field_t  *vorticity = cs_field_by_name("vorticity");
+    assert(vorticity != NULL);
     cs_field_current_to_previous(vorticity);
 
+    double  e_integral = 0.;
     cs_field_t  *enstrophy = cs_field_by_name_try("enstrophy");
     if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY)
       cs_field_current_to_previous(enstrophy);
 
+    double  h_integral = 0.;
     cs_field_t  *helicity = cs_field_by_name_try("helicity");
     if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
       cs_field_current_to_previous(helicity);
@@ -1150,7 +1156,8 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     if (velocity_gradient == NULL) {
 
-#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN) \
+      reduction(+:e_integral) reduction(+:h_integral)
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
         cs_real_t  grd_uc[9];
@@ -1165,18 +1172,29 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
         w[1] = grd_uc[2] - grd_uc[6];
         w[2] = grd_uc[3] - grd_uc[1];
 
-        if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY)
-          enstrophy->val[c_id] = cs_math_3_square_norm(w);
+        if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
 
-        if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
-          helicity->val[c_id] = cs_math_3_dot_product(u_cell + 3*c_id, w);
+          double  ec = cs_math_3_square_norm(w);
+          enstrophy->val[c_id] = ec;
+          e_integral += quant->cell_vol[c_id] * ec;
+
+        }
+
+        if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
+
+          double  hc = cs_math_3_dot_product(u_cell + 3*c_id, w);
+          helicity->val[c_id] = hc;
+          h_integral += quant->cell_vol[c_id] * hc;
+
+        }
 
       } /* Loop on cells */
 
     }
     else {
 
-#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)  \
+      reduction(+:e_integral) reduction(+:h_integral)
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
         cs_real_t  *grd_uc = velocity_gradient->val + 9*c_id;
@@ -1187,11 +1205,21 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
         w[1] = grd_uc[2] - grd_uc[6];
         w[2] = grd_uc[3] - grd_uc[1];
 
-        if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY)
-          enstrophy->val[c_id] = cs_math_3_square_norm(w);
+        if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
 
-        if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
-          helicity->val[c_id] = cs_math_3_dot_product(u_cell + 3*c_id, w);
+          double  ec = cs_math_3_square_norm(w);
+          enstrophy->val[c_id] = ec;
+          e_integral += quant->cell_vol[c_id] * ec;
+
+        }
+
+        if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
+
+          double  hc = cs_math_3_dot_product(u_cell + 3*c_id, w);
+          helicity->val[c_id] = hc;
+          h_integral += quant->cell_vol[c_id] * hc;
+
+        }
 
       } /* Loop on cells */
 
@@ -1199,30 +1227,22 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
 
-      double  e = cs_weighted_sum(quant->n_cells,
-                                  quant->cell_vol,
-                                  enstrophy->val);
-
-      cs_parall_sum(1, CS_DOUBLE, &e); /* Manage parallel computations */
-      col_vals[n_cols++] = e;
+      cs_parall_sum(1, CS_DOUBLE, &e_integral);
+      col_vals[n_cols++] = e_integral;
 
     }
 
     if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
 
-      double  h = cs_weighted_sum(quant->n_cells,
-                                  quant->cell_vol,
-                                  helicity->val);
-
-      cs_parall_sum(1, CS_DOUBLE, &h); /* Manage parallel computations */
-      col_vals[n_cols++] = h;
+      cs_parall_sum(1, CS_DOUBLE, &h_integral);
+      col_vals[n_cols++] = h_integral;
 
     }
 
   } /* vorticity, helicity or enstrophy computations */
 
-  if (cs_glob_rank_id < 1 && cs_cdofb_time_plot != NULL)
-    cs_time_plot_vals_write(cs_cdofb_time_plot,
+  if (cs_glob_rank_id < 1 && time_plotter != NULL)
+    cs_time_plot_vals_write(time_plotter,
                             ts->nt_cur,
                             ts->t_cur,
                             n_cols,
@@ -1242,6 +1262,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
       /* Since this is an equation solved with only homogeneous Neumann BCs, one
        * substracts the mean value to get a unique solution */
+
       cs_real_t  mean_value;
       cs_equation_integrate_variable(connect, quant, eq, &mean_value);
       mean_value /= quant->vol_tot;

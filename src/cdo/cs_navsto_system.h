@@ -38,6 +38,7 @@
 #include "cs_maxwell.h"
 #include "cs_mesh.h"
 #include "cs_navsto_param.h"
+#include "cs_time_plot.h"
 #include "cs_time_step.h"
 #include "cs_thermal_system.h"
 #include "cs_xdef.h"
@@ -210,11 +211,20 @@ typedef struct {
 
   /*!
    * @}
-   * @name Post-processing fields
+   * @name Post-processing
    * Set of fields which are induced by the variable fields and which have
-   * meaningful information for understanding the flow
+   * meaningful information for understanding the flow. Structure maning the
+   * post-processing.
    * @{
    */
+
+  /*! \var plot_writer
+   * Writer for monitoring the evolution of predefined global variables (the
+   * integral of the mass in the computational domain or the divergence of the
+   * velocity field for instance)
+   */
+
+  cs_time_plot_t             *plot_writer;
 
   /*! \var velocity_divergence
    *  Divergence of the velocity fied.
@@ -238,6 +248,13 @@ typedef struct {
    */
 
   cs_field_t                 *mass_density;
+
+  /*! \var mass_flux_balance
+   *  Cellwise balance of the mass flux. Useful to check settings
+   *  (injection/suction) or the expected behavior f the numerical algorithm.
+  */
+
+  cs_field_t                 *mass_flux_balance;
 
   /*! \var vorticity
    *  Vorticity of the velocity field defined as curl(velocity)
