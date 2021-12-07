@@ -3,6 +3,8 @@ Release 7.0.3 (not released yet)
 
 Bug fixes:
 
+- Fix crashes using Coriolis source terms (icorio) option.
+
 - Fix GUI crash when double clicking on non-condensable gases molar mass box
   in the dedicated page.
 

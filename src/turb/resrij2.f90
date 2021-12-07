@@ -135,7 +135,7 @@ integer          idftnp, iswdyp
 integer          icvflb
 integer          ivoid(1)
 integer          dimrij, f_id
-integer          key_t_ext_id
+integer          key_t_ext_id, rot_id
 integer          iroext
 
 double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
@@ -577,16 +577,25 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
   enddo
 
   do iel = 1, ncel
-      cvara_r(1,1) = cvara_var(1,iel)
-      cvara_r(2,2) = cvara_var(2,iel)
-      cvara_r(3,3) = cvara_var(3,iel)
-      cvara_r(1,2) = cvara_var(4,iel)
-      cvara_r(2,3) = cvara_var(5,iel)
-      cvara_r(1,3) = cvara_var(6,iel)
-      cvara_r(2,1) = cvara_var(4,iel)
-      cvara_r(3,2) = cvara_var(5,iel)
-      cvara_r(3,1) = cvara_var(6,iel)
-  ! Compute Gij: (i,j) component of the Coriolis production
+
+    rot_id = icorio
+    if (iturbo.eq.1) rot_id = irotce(iel)
+
+    if (rot_id .lt. 1) cycle
+
+    call coriolis_t(rot_id, 1.d0, matrot)
+
+    cvara_r(1,1) = cvara_var(1,iel)
+    cvara_r(2,2) = cvara_var(2,iel)
+    cvara_r(3,3) = cvara_var(3,iel)
+    cvara_r(1,2) = cvara_var(4,iel)
+    cvara_r(2,3) = cvara_var(5,iel)
+    cvara_r(1,3) = cvara_var(6,iel)
+    cvara_r(2,1) = cvara_var(4,iel)
+    cvara_r(3,2) = cvara_var(5,iel)
+    cvara_r(3,1) = cvara_var(6,iel)
+
+    ! Compute Gij: (i,j) component of the Coriolis production
     do isou = 1, 6
       if (isou.eq.1) then
         ii = 1
@@ -608,9 +617,6 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
         jj = 3
       end if
       do kk = 1, 3
-
-        call coriolis_t(irotce(iel), 1.d0, matrot)
-
         w7(isou,iel) = w7(isou,iel) - ccorio*(  matrot(ii,kk)*cvara_r(jj,kk) &
                                     + matrot(jj,kk)*cvara_r(ii,kk) )
       enddo

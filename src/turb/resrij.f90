@@ -497,12 +497,21 @@ if (icorio.eq.1 .or. iturbo.eq.1) then
     call field_get_val_prev_s(ivarfl(ivar_r(ii,kk)), cvara_rik)
     call field_get_val_prev_s(ivarfl(ivar_r(jj,kk)), cvara_rjk)
 
-    do iel = 1, ncel
-      call coriolis_t(irotce(iel), 1.d0, matrot)
+    if (iturbo.eq.1) then
+      do iel = 1, ncel
+        call coriolis_t(irotce(iel), 1.d0, matrot)
 
-      w7(iel) = w7(iel) - ccorio*(  matrot(ii,kk)*cvara_rjk(iel) &
-                                  + matrot(jj,kk)*cvara_rik(iel) )
-    enddo
+        w7(iel) = w7(iel) - ccorio*(  matrot(ii,kk)*cvara_rjk(iel) &
+                                    + matrot(jj,kk)*cvara_rik(iel) )
+      enddo
+    else ! if (icorio.eq.1)
+      do iel = 1, ncel
+        call coriolis_t(1, 1.d0, matrot)
+
+        w7(iel) = w7(iel) - ccorio*(  matrot(ii,kk)*cvara_rjk(iel) &
+                                    + matrot(jj,kk)*cvara_rik(iel) )
+      enddo
+    endif
   enddo
 
   ! Coriolis contribution in the Phi1 term: (1-C2/2)Gij
