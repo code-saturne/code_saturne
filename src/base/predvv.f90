@@ -1314,10 +1314,8 @@ if (iappel.eq.1.and.iphydr.eq.1) then
       enddo
     else if (icorio.eq.1) then
       do iel = 1, ncel
-        if (irotce(iel).gt.0) then
-          rom = -crom(iel) * cell_is_active(iel)
-          call add_coriolis_v(0, rom, vela(:,iel), dfrcxt(:,iel))
-        endif
+        rom = -crom(iel) * cell_is_active(iel)
+        call add_coriolis_v(0, rom, vela(:,iel), dfrcxt(:,iel))
       enddo
     endif
   endif

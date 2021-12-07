@@ -613,18 +613,29 @@ cs_vof_log_mass_budget(const cs_domain_t *domain)
   cs_real_t *i_massflux_abs = NULL, *b_massflux_abs = NULL;
 
   if (icorio == 1 || iturbo > CS_TURBOMACHINERY_NONE) {
+
+    cs_lnum_t cr_step = 0;
+    const int *cell_rotor_num = NULL;
+
+    const int _corio_rotor_num[] = {1};
+
+    if (iturbo > CS_TURBOMACHINERY_NONE) {
+      cr_step = 1;
+      cell_rotor_num = cs_turbomachinery_get_cell_rotor_num();
+    }
+    else
+      cell_rotor_num = _corio_rotor_num;
+
     BFT_MALLOC(i_massflux_abs, n_i_faces, cs_real_t);
     BFT_MALLOC(b_massflux_abs, n_b_faces, cs_real_t);
-
-    const int *cell_rotor_num = cs_turbomachinery_get_cell_rotor_num();
 
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
       i_massflux_abs[f_id] = i_massflux[f_id];
 
       cs_lnum_t  c_id_i = i_face_cells[f_id][0];
       cs_lnum_t  c_id_j = i_face_cells[f_id][1];
-      int rot_ce_i = cell_rotor_num[c_id_i];
-      int rot_ce_j = cell_rotor_num[c_id_j];
+      int rot_ce_i = cell_rotor_num[cr_step*c_id_i];
+      int rot_ce_j = cell_rotor_num[cr_step*c_id_j];
 
       if (rot_ce_i != 0 || rot_ce_j != 0) {
         cs_real_t rhofac = 0.5*(cpro_rom[c_id_i] + cpro_rom[c_id_j]);
@@ -649,7 +660,7 @@ cs_vof_log_mass_budget(const cs_domain_t *domain)
       b_massflux_abs[f_id] = b_massflux[f_id];
 
       cs_lnum_t  c_id = b_face_cells[f_id];
-      int rot_ce_i = cell_rotor_num[c_id];
+      int rot_ce_i = cell_rotor_num[cr_step*c_id];
 
       if (rot_ce_i != 0) {
         cs_real_t vr[3];

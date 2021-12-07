@@ -116,7 +116,7 @@ integer          imvisp
 integer          st_prv_id
 integer          t2v(3,3)
 integer          iv2t(6), jv2t(6)
-integer          key_t_ext_id, f_id
+integer          key_t_ext_id, f_id, rot_id
 integer          iroext
 
 double precision trprod, trrij
@@ -441,11 +441,14 @@ enddo
 ! Coriolis terms in the Phi1 and production
 !===============================================================================
 
-if (icorio.eq.1 .or. iturbo.eq.1) then
+rot_id = icorio
+if (iturbo.eq.1) rot_id = irotce(iel)
+
+if (rot_id .ge. 1) then
 
   do iel = 1, ncel
 
-    call coriolis_t(irotce(iel), 1.d0, matrot)
+    call coriolis_t(rot_id, 1.d0, matrot)
 
     cvara_r(1,1) = cvara_var(1,iel)
     cvara_r(2,2) = cvara_var(2,iel)

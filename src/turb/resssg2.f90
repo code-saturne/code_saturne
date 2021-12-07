@@ -116,7 +116,7 @@ integer          st_prv_id
 integer          iprev , inc, iccocg, ll
 integer          t2v(3,3)
 integer          iv2t(6), jv2t(6)
-integer          key_t_ext_id, f_id
+integer          key_t_ext_id, f_id, rot_id
 integer          iroext
 
 double precision trprod, trrij
@@ -305,9 +305,12 @@ do iel = 1, ncel
 
   ! Rotating frame of reference => "Coriolis production" term
 
-  if (icorio.eq.1 .or. iturbo.eq.1) then
+  rot_id = icorio
+  if (iturbo.eq.1) rot_id = irotce(iel)
 
-    call coriolis_t(irotce(iel), 1.d0, matrot)
+  if (rot_id .ge. 1) then
+
+    call coriolis_t(rot_id, 1.d0, matrot)
     cvara_r(1,1) = cvara_var(1,iel)
     cvara_r(2,2) = cvara_var(2,iel)
     cvara_r(3,3) = cvara_var(3,iel)
@@ -317,17 +320,16 @@ do iel = 1, ncel
     cvara_r(2,1) = cvara_var(4,iel)
     cvara_r(3,2) = cvara_var(5,iel)
     cvara_r(3,1) = cvara_var(6,iel)
-    if (irotce(iel).gt.0) then
-      do ii = 1, 3
-        do jj = ii, 3
-          do kk = 1, 3
-            xprod(ii,jj) = xprod(ii,jj)                             &
-                            - ccorio*( matrot(ii,kk)*cvara_r(jj,kk) &
-                            + matrot(jj,kk)*cvara_r(ii,kk) )
-          enddo
+
+    do ii = 1, 3
+      do jj = ii, 3
+        do kk = 1, 3
+          xprod(ii,jj) = xprod(ii,jj)                             &
+                          - ccorio*( matrot(ii,kk)*cvara_r(jj,kk) &
+                          + matrot(jj,kk)*cvara_r(ii,kk) )
         enddo
       enddo
-    endif
+    enddo
   endif
 
   xprod(2,1) = xprod(1,2)
