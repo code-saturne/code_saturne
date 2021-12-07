@@ -679,7 +679,7 @@ if (itbslb.gt.0.and.iilagr.ne.3) then
                                 iccocg, iphydr,                  &
                                 frcxt, grad)
 
-  ! Put in pripb the value at I' or F (depending on iphydr) of the
+  ! Put in pripb the value at F of the
   ! total pressure, computed from P* shifted from the ro0*g.(X-Xref)
 
   do ifac = 1, nfabor
