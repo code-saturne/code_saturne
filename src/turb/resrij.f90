@@ -351,12 +351,14 @@ endif
 ! Coriolis terms in the Phi1 and production
 !===============================================================================
 
-rot_id = icorio
-if (iturbo.eq.1) rot_id = irotce(iel)
-
-if (rot_id .ge. 1) then
+if (icorio.eq.1 .or. iturbo.eq.1) then
 
   do iel = 1, ncel
+
+    rot_id = icorio
+    if (iturbo.eq.1) rot_id = irotce(iel)
+
+    if (rot_id .lt. 1) cycle
 
     call coriolis_t(rot_id, 1.d0, matrot)
 

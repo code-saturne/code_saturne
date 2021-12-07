@@ -441,12 +441,14 @@ enddo
 ! Coriolis terms in the Phi1 and production
 !===============================================================================
 
-rot_id = icorio
-if (iturbo.eq.1) rot_id = irotce(iel)
-
-if (rot_id .ge. 1) then
+if (icorio.eq.1 .or. iturbo.eq.1) then
 
   do iel = 1, ncel
+
+    rot_id = icorio
+    if (iturbo.eq.1) rot_id = irotce(iel)
+
+    if (rot_id .lt. 1) cycle
 
     call coriolis_t(rot_id, 1.d0, matrot)
 
@@ -467,7 +469,6 @@ if (rot_id .ge. 1) then
 
       w2(isou,iel) = 0.d0
       do kk = 1, 3
-
         w2(isou,iel) = w2(isou,iel) - ccorio*(  matrot(ii,kk)*cvara_r(jj,kk) &
                                     + matrot(jj,kk)*cvara_r(ii,kk) )
       enddo
