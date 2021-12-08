@@ -204,6 +204,14 @@ _base_tokens = {'dt':'const cs_real_t dt = cs_glob_time_step->dt[0];',
                 'gx':'const cs_real_t gx = cs_glob_physical_constants->gravity[0];',
                 'gy':'const cs_real_t gy = cs_glob_physical_constants->gravity[1];',
                 'gz':'const cs_real_t gz = cs_glob_physical_constants->gravity[2];'}
+#---------------------------------------------------------------------------
+
+def _error_and_exit(msg):
+
+    import sys
+
+    print(msg, file=sys.stderr)
+    sys.exit(1)
 
 #---------------------------------------------------------------------------
 
@@ -963,6 +971,7 @@ class meg_to_c_interpreter:
                                           'ibm',
                                           glob_tokens,
                                           loop_tokens)
+
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
             usr_defs += parsed_exp[1]
@@ -2313,7 +2322,14 @@ class meg_to_c_interpreter:
         is_empty    = 0
         empty_exps  = []
         for func_type in self.funcs.keys():
-            state = self.save_function(func_type)
+            try:
+                state = self.save_function(func_type)
+            except Exception as e:
+                msg = "Error while generating \"%s\" formulae.\n" % \
+                        _func_short_to_long[func_type]
+                msg+=str(e)
+                _error_and_exit(msg)
+
             if state != 0:
                 save_status = state
 

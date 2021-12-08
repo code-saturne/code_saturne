@@ -768,6 +768,8 @@ class cs_math_parser:
                     usr_defs.append('cs_real_t %s = -1.;\n' % tk0)
                     known_symbols.append(tk0)
 
+
+        req_to_replace = [elt for elt in req]
         for t_i, t in enumerate(tokens):
             tk = t[0]
             new_v = None
@@ -799,9 +801,18 @@ class cs_math_parser:
                 elif func_type == 'ibm':
                     new_v = '*ipenal'
 
+                if tk in req_to_replace:
+                    req_to_replace.remove(tk)
+
             if new_v != None:
                 tokens[t_i] = (new_v, t[1], t[2])
 
+        if req_to_replace:
+            msg="The following variables were not assigned in a formula:"
+            for r in req_to_replace:
+                msg+="\n"
+                msg+=str(r)
+            raise Exception(msg)
         #-------------------------
 
         tokens = self.rename_math_functions(tokens)
