@@ -83,8 +83,8 @@ class AtmosphericFlowsModel(Model):
         self.__default[self.large_scale_meteo] = AtmosphericFlowsModel.off
         self.__default[self.act_chemistry] = AtmosphericFlowsModel.off
         self.__default['meteo_data'] = "meteo"
-        self.__default['longitude'] = 45.44
-        self.__default['latitude'] = 4.39
+        self.__default['longitude'] = 4.39
+        self.__default['latitude'] = 45.44
         self.__default['domain_orientation'] = 0
         self.__default['wind_direction'] = 0
         self.__default['meteo_z0'] = 0.1

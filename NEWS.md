@@ -1,6 +1,11 @@
 Release 7.0.3 (not released yet)
 --------------------------------
 
+User changes:
+
+- Atmospheric module: merge the possibility to give center of the domain
+  in Lambert 93 coordinates.
+
 Bug fixes:
 
 - Fix crashes using Coriolis source terms (icorio) option.
