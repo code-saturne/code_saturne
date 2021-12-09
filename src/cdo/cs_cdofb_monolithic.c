@@ -195,7 +195,7 @@ _mono_update_divergence(const cs_real_t           *face_vel,
 
   /* Update the divergence of the velocity field */
 
-  cs_real_t  norm2 = 0.;
+  double  norm2 = 0.;
 
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN) reduction(+:norm2)
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -215,7 +215,7 @@ _mono_update_divergence(const cs_real_t           *face_vel,
 
   /* Parallel treatment */
 
-  cs_parall_sum(1, CS_REAL_TYPE, &norm2);
+  cs_parall_sum(1, CS_DOUBLE, &norm2);
 
   if (norm2 > 0)
     norm2 = sqrt(norm2);

@@ -146,12 +146,14 @@ typedef struct {
   /*! \var param
    *  Set of parameters to handle the Navier-Stokes system
    */
+
   cs_navsto_param_t          *param;
 
   /*! \var adv_field
    *  Pointer to the \ref cs_adv_field_t structure storing the advection
    *  field used in the Navier-Stokes equations
    */
+
   cs_adv_field_t             *adv_field;
 
   /*! \var mass_flux_array
@@ -159,6 +161,7 @@ typedef struct {
    *  array is allocated to the number of faces; first interior faces then
    *  boundary faces)
    */
+
   cs_real_t                  *mass_flux_array;
 
   /*! \var mass_flux_array_pre
@@ -166,11 +169,13 @@ typedef struct {
    *  array is allocated to the number of faces; first interior faces then
    *  boundary faces)
    */
+
   cs_real_t                  *mass_flux_array_pre;
 
   /*! \var boundary_type
    * Array storing the type of boundary for each boundary face
    */
+
   cs_boundary_type_t         *bf_type;
 
   /*!
@@ -260,23 +265,27 @@ typedef struct {
    *  Vorticity of the velocity field defined as curl(velocity)
    *  Pointer to a vector-valued \ref cs_field_t
    */
+
   cs_field_t                 *vorticity;
 
   /*! \var helicity
    *  Helicity is defined as \f$ \int_c velocity \cdot \f$ vorticity
    *  Pointer to a scalar-valued \ref cs_field_t
    */
+
   cs_field_t                 *helicity;
 
   /*! \var enstrophy
    *  Enstrophy is defined as \f$ \int_c vorticity \cdot \f$ vorticity
    *  Pointer to a scalar-valued \ref cs_field_t
    */
+
   cs_field_t                 *enstrophy;
 
   /*! \var velocity_gradient
    *  Pointer to a tensor-valued \ref cs_field_t
    */
+
   cs_field_t                 *velocity_gradient;
 
   /*! \var stream_function_eq
@@ -285,6 +294,7 @@ typedef struct {
    *  scalar-valued stream function. This is relevant only for a 2D
    *  computation
    */
+
   cs_equation_t              *stream_function_eq;
 
   /*!
@@ -298,6 +308,7 @@ typedef struct {
    * Additional structure storing information according to the way equations
    * of model for the Navier-Stokes system are coupled and thus solved
    */
+
   void                       *coupling_context;
 
   /*! \var scheme_context
@@ -305,6 +316,7 @@ typedef struct {
    * discretization scheme used for solving the model for the Navier-Stokes
    * system
    */
+
   void                       *scheme_context;
 
   /*!
@@ -318,6 +330,7 @@ typedef struct {
    *  structure related to a given discretization scheme for the resolution
    *  of the Navier-Stokes system
    */
+
   cs_navsto_init_scheme_context_t   *init_scheme_context;
 
   /*! \var free_scheme_context
@@ -325,12 +338,14 @@ typedef struct {
    *  structure related to a given discretization scheme for the resolution
    *  of the Navier-Stokes system
    */
+
   cs_navsto_free_scheme_context_t   *free_scheme_context;
 
   /*! \var init_velocity
    *  Pointer of functions related to the initialization of variable values
    *  Case of the velocity
    */
+
   cs_navsto_init_values_t           *init_velocity;
 
   /*! \var init_pressure
@@ -343,12 +358,14 @@ typedef struct {
    *  Pointer of functions related to resolution of the Navier-Stokes steady
    *  system. Handle the build of the system and its resolution
    */
+
   cs_navsto_compute_t               *compute_steady;
 
   /*! \var compute
    *  Pointer of functions related to resolution of the Navier-Stokes unsteady
    *  system. Handle the build of the system and its resolution
    */
+
   cs_navsto_compute_t               *compute;
 
 } cs_navsto_system_t;

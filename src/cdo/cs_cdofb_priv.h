@@ -49,24 +49,30 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Algebraic system for CDO face-based discretization */
+
 struct  _cs_cdofb_t {
 
   /* Ids related to the variable field and to the boundary flux field */
+
   int          var_field_id;
   int          bflux_field_id;
 
   /* System size (n_faces + n_cells) */
+
   cs_lnum_t    n_faces;
   cs_lnum_t    n_dofs;
 
   /* Solution of the algebraic system DoF unknowns (x) + BCs */
+
   cs_real_t   *face_values;     /* At the last iteration */
   cs_real_t   *face_values_pre; /* At the previous iteration */
 
   /* Assembly process */
+
   cs_equation_assembly_t    *assemble;
 
   /* Members related to the static condensation */
+
   cs_real_t   *rc_tilda;   /* Acc^-1 * RHS_cell */
   cs_real_t   *acf_tilda;  /* Acc^-1 * Acf
                               Cell-faces lower-left block of the full matrix
@@ -75,9 +81,11 @@ struct  _cs_cdofb_t {
 
   /* Array storing the value arising from the contribution of all source
      terms (only allocated to n_cells) */
+
   cs_real_t                 *source_terms;
 
   /* Pointer of function to build the diffusion term */
+
   cs_hodge_t               **diffusion_hodge;
   cs_hodge_compute_t        *get_stiffness_matrix;
   cs_cdo_enforce_bc_t       *enforce_dirichlet;
@@ -88,6 +96,7 @@ struct  _cs_cdofb_t {
    * advection_open is called first, then advection_main which calls
    * advection_scheme and after the build step, advection_close is called last
    */
+
   cs_cdofb_adv_open_hook_t   *advection_open;
   cs_cdofb_adv_build_t       *advection_main;
   cs_cdofb_adv_close_hook_t  *advection_close;
@@ -96,9 +105,11 @@ struct  _cs_cdofb_t {
   void                       *advection_input;
 
   /* If one needs to build a local hodge op. for time and reaction */
+
   cs_hodge_param_t           mass_hodgep;
   cs_hodge_t               **mass_hodge;
   cs_hodge_compute_t        *get_mass_matrix;
+
 };
 
 typedef struct _cs_cdofb_t  cs_cdofb_priv_t;

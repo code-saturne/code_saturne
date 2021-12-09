@@ -451,14 +451,17 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
   const cs_real_t  *const pressure_f = sc->pressure_f;
 
   /* Boundary conditions are always evaluated at t + dt */
+
   const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
   cs_timer_t  t_bld = cs_timer_time();
 
   /* Compute the source term */
+
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     /* Compute the divergence of the predicted velocity */
+
     const cs_real_t  div_c
       = cs_cdofb_navsto_cell_divergence(c_id, quant, connect->c2f, velp_f);
 
@@ -467,6 +470,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
   }
 
   /* Set the boundary conditions on the pressure increment if needed */
+
   for (int id = 0; id < nsp->n_pressure_bc_defs; id++) {
 
     const cs_xdef_t  *pdef = nsp->pressure_bc_defs[id];
@@ -538,6 +542,7 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
   cs_timer_counter_add_diff(&(pre_eqb->tcb), &t_bld, &t_tmp);
 
   /* Solve the equation related to the pressure increment */
+
   cs_cdofb_scaleq_solve_steady_state(true, /* cur2prev */
                                      mesh,
                                      pre_eq->field_id,

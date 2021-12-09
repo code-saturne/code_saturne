@@ -747,7 +747,6 @@ _compute_enthalpy(const cs_cdo_quantities_t    *quant,
       ( cp_c * (temp[c] - temp_ref)       +  latent_heat * g_l[c] );
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*
@@ -780,7 +779,6 @@ _update_gl_voller_legacy(const cs_mesh_t             *mesh,
   cs_solidification_voller_t  *v_model
     = (cs_solidification_voller_t *)solid->model_context;
 
-  /* Sanity checks */
   assert(solid->temperature != NULL);
   assert(v_model != NULL);
 
@@ -789,6 +787,7 @@ _update_gl_voller_legacy(const cs_mesh_t             *mesh,
   assert(temp != NULL);
 
   /* 1./(t_liquidus - t_solidus) = \partial g_l/\partial Temp */
+
   const cs_real_t  dgldT = 1./(v_model->t_liquidus - v_model->t_solidus);
   const cs_real_t  inv_forcing_eps = 1./cs_solidification_forcing_eps;
 
@@ -808,6 +807,7 @@ _update_gl_voller_legacy(const cs_mesh_t             *mesh,
     }
 
     /* Update the liquid fraction */
+
     else if (temp[c_id] < v_model->t_solidus) {
 
       g_l[c_id] = 0;
@@ -815,6 +815,7 @@ _update_gl_voller_legacy(const cs_mesh_t             *mesh,
 
       /* Update the forcing coefficient treated as a property for a reaction
          term in the momentum eq. */
+
       solid->forcing_mom_array[c_id] = forcing_coef*inv_forcing_eps;
 
     }
@@ -825,6 +826,7 @@ _update_gl_voller_legacy(const cs_mesh_t             *mesh,
 
       /* Update the forcing coefficient treated as a property for a reaction
          term in the momentum eq. */
+
       solid->forcing_mom_array[c_id] = 0;
 
     }
@@ -837,6 +839,7 @@ _update_gl_voller_legacy(const cs_mesh_t             *mesh,
 
       /* Update the forcing coefficient treated as a property for a reaction
          term in the momentum eq. */
+
       const cs_real_t  glm1 = 1 - glc;
       solid->forcing_mom_array[c_id] =
         forcing_coef * glm1*glm1/(glc*glc*glc + cs_solidification_forcing_eps);
@@ -844,7 +847,6 @@ _update_gl_voller_legacy(const cs_mesh_t             *mesh,
     }
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -875,8 +877,6 @@ _update_gl_voller_legacy_no_velocity(const cs_mesh_t               *mesh,
   cs_solidification_voller_t  *v_model =
     (cs_solidification_voller_t *)solid->model_context;
 
-  /* Sanity checks */
-
   assert(solid->temperature != NULL);
   assert(v_model != NULL);
 
@@ -921,7 +921,6 @@ _update_gl_voller_legacy_no_velocity(const cs_mesh_t               *mesh,
     }
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -950,7 +949,6 @@ _update_thm_voller_legacy(const cs_mesh_t             *mesh,
   cs_solidification_voller_t  *v_model
     = (cs_solidification_voller_t *)solid->model_context;
 
-  /* Sanity checks */
   assert(v_model != NULL);
   assert(solid->temperature != NULL);
 
@@ -958,6 +956,7 @@ _update_thm_voller_legacy(const cs_mesh_t             *mesh,
   assert(temp != NULL);
 
   /* 1./(t_liquidus - t_solidus) = \partial g_l/\partial Temp */
+
   const cs_real_t  rho0 = solid->mass_density->ref_value;
   const cs_real_t  dgldT = 1./(v_model->t_liquidus - v_model->t_solidus);
   const cs_real_t  dgldT_coef = rho0*solid->latent_heat*dgldT/ts->dt[0];
@@ -979,7 +978,6 @@ _update_thm_voller_legacy(const cs_mesh_t             *mesh,
     }
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3158,6 +3156,7 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
   } /* while iterating */
 
   /* Update the liquid concentration of the solute (c_l) */
+
   alloy->update_clc(mesh, connect, quant, time_step);
 
   /* The cell state is now updated at this stage. This will be useful for
@@ -3166,6 +3165,7 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
   _update_binary_alloy_final_state(connect, quant, time_step);
 
   /* Update the forcing term in the momentum equation */
+
   alloy->update_velocity_forcing(mesh, connect, quant, time_step);
 
   if (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY)
@@ -5086,6 +5086,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
     return;
 
   /* Estimate the number of values to output */
+
   int  n_output_values = CS_SOLIDIFICATION_N_STATES - 1;
   if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
     n_output_values += 1;
@@ -5099,6 +5100,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
     n_output_values += 1;
 
   /* Compute the output values */
+
   cs_real_t  *output_values = NULL;
   BFT_MALLOC(output_values, n_output_values, cs_real_t);
   memset(output_values, 0, n_output_values*sizeof(cs_real_t));
@@ -5122,6 +5124,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
     }
 
     /* Parallel reduction */
+
     cs_parall_sum(1, CS_REAL_TYPE, &integr);
 
     output_values[n_output_values] = integr/quant->vol_tot;
@@ -5150,6 +5153,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
       }
 
       /* Parallel reduction */
+
       cs_parall_sum(1, CS_REAL_TYPE, &si);
 
       output_values[n_output_values] = sqrt(si/quant->vol_tot);
@@ -5162,6 +5166,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
 
       /* Compute the value to be sure that it corresponds to the current
          state */
+
       for (cs_lnum_t i = 0; i < quant->n_cells; i++) {
         if (connect->cell_flag[i] & CS_FLAG_SOLID_CELL)
           alloy->t_liquidus[i] = -999.99; /* no physical meaning */
@@ -5181,6 +5186,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
       const cs_real_t  *t_bulk = solid->temperature->val;
 
       /* Compute Cbulk - Cliq */
+
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
         if (connect->cell_flag[c_id] & CS_FLAG_SOLID_CELL)

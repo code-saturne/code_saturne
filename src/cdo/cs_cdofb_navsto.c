@@ -453,7 +453,6 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
   if (mass_flux == NULL)
     return;
 
-  /* Sanity checks */
   assert(face_vel != NULL);
   assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
   assert(cs_property_is_uniform(nsp->mass_density));
@@ -461,7 +460,8 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
 
   const cs_real_t  rho_val = nsp->mass_density->ref_value;
 
-  /* Define the mass flux. */
+  /* Define the mass flux */
+
 # pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
 
@@ -908,7 +908,9 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   const cs_real_t  *bmass_flux = mass_flux + quant->n_i_faces;
 
   /* 1. Compute for each boundary the integrated mass flux to perform mass
-     balance */
+   *    balance
+   */
+
   bool  *belong_to_default = NULL;
   BFT_MALLOC(belong_to_default, quant->n_b_faces, bool);
 # pragma omp parallel for if  (quant->n_b_faces > CS_THR_MIN)
@@ -932,6 +934,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   } /* Loop on domain boundaries */
 
   /* Update the flux through the default boundary */
+
   cs_lnum_t  default_case_count = 0;
   for (cs_lnum_t i = 0; i < quant->n_b_faces; i++) {
     if (belong_to_default[i]) {
@@ -941,10 +944,12 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   }
 
   /* Parallel synchronization if needed */
+
   cs_parall_sum(boundaries->n_boundaries + 1, CS_REAL_TYPE, boundary_fluxes);
   cs_parall_counter_max(&default_case_count, 1);
 
   /* Output result */
+
   cs_log_printf(CS_LOG_DEFAULT,
                 "\n- Balance of the mass flux across the boundaries:\n");
 
@@ -961,14 +966,18 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   } /* Loop on boundaries */
 
   /* Default boundary (if something to do) */
+
   if (default_case_count > 0) {
+
     cs_boundary_get_type_descr(boundaries, boundaries->default_type, 32, descr);
     cs_log_printf(CS_LOG_DEFAULT, "b %-32s | %-32s |% -8.6e\n",
                   descr, "default boundary",
                   boundary_fluxes[boundaries->n_boundaries]);
+
   }
 
   /* Free temporary buffers */
+
   BFT_FREE(belong_to_default);
   BFT_FREE(boundary_fluxes);
 
@@ -1163,10 +1172,12 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
         cs_real_t  grd_uc[9];
 
         /* Compute the velocity gradient */
+
         cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
                                           u_cell, u_face, grd_uc);
 
         /* Compute the cell vorticity */
+
         cs_real_t  *w = vorticity->val + 3*c_id;
         w[0] = grd_uc[7] - grd_uc[5];
         w[1] = grd_uc[2] - grd_uc[6];
@@ -1200,6 +1211,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
         cs_real_t  *grd_uc = velocity_gradient->val + 9*c_id;
 
         /* Compute the cell vorticity */
+
         cs_real_t  *w = vorticity->val + 3*c_id;
         w[0] = grd_uc[7] - grd_uc[5];
         w[1] = grd_uc[2] - grd_uc[6];
@@ -1274,7 +1286,6 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
     } /* If homogeneous Neumann everywhere */
 
   } /* Computation of the stream function is requested */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1844,7 +1855,7 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
   algo->res = sqrt(algo->res);
 
   if (algo->n_algo_iter < 1) /* Store the first residual to detect a
-                               divergence */
+                                divergence */
     algo->res0 = algo->res;
 
   /* Update the convergence members */

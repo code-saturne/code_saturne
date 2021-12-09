@@ -610,11 +610,13 @@ typedef struct {
   /*! \var model
    * Modelling related to the Navier-Stokes system of equations
    */
+
   cs_navsto_param_model_t        model;
 
   /*! \var model_flag
    * Flag storing high-level option related to the Navier-Stokes system
    */
+
   cs_navsto_param_model_flag_t   model_flag;
 
   /*! \var turbulence
@@ -628,10 +630,12 @@ typedef struct {
    * @name Properties and fields related to the Navier-Stokes module
    * @{
    */
+
   /*! \var phys_constants
    * Main physical constants (gravity vector and Coriolis source term). This
    * structure is shared with the legacy part.
    */
+
   cs_physical_constants_t       *phys_constants;
 
   /*! \var mass_density
@@ -665,11 +669,13 @@ typedef struct {
   /*! \var dof_reduction_mode
    *  How are defined the Degrees of freedom
    */
+
   cs_param_dof_reduction_t       dof_reduction_mode;
 
   /*! \var coupling
    * Choice of algorithm for solving the system
    */
+
   cs_navsto_param_coupling_t     coupling;
 
   /*! \var gd_scale_coef
@@ -677,6 +683,7 @@ typedef struct {
    *  artificial compressibility algorithm or an Uzawa-Augmented Lagrangian
    *  method is used
    */
+
   cs_real_t                      gd_scale_coef;
 
   /*! \var time_scheme
@@ -686,12 +693,14 @@ typedef struct {
    * Value of the parameter for the time scheme when a theta-scheme is used
    *
    */
+
   cs_param_time_scheme_t         time_scheme;
   cs_real_t                      theta;
 
   /*! \var space_scheme
    * Discretization scheme for space
    */
+
   cs_param_space_scheme_t        space_scheme;
 
   /*! \var adv_form
@@ -706,6 +715,7 @@ typedef struct {
    *  \var adv_extrapol
    *  Extrapolation used to estimate the advection field
    */
+
   cs_param_advection_form_t      adv_form;
   cs_param_advection_scheme_t    adv_scheme;
   cs_param_advection_strategy_t  adv_strategy;
@@ -732,17 +742,20 @@ typedef struct {
    *  A \ref cs_quadrature_type_t indicating the type of quadrature to use in
    *  all functions involving quadratures
    */
+
   cs_quadrature_type_t           qtype;
 
   /*! \var sles_param
    * Set of choices to control the resolution of the Navier--Stokes system
    */
+
   cs_navsto_param_sles_t        *sles_param;
 
   /*! \var delta_thermal_tolerance
    * Value under which one considers that the thermal equation is converged
    * max_{c \in Cells} |T_c - T_{ref}|/|T_{ref}| < eps => stop iteration
    */
+
   cs_real_t                      delta_thermal_tolerance;
 
   /*! \var n_max_outer_iter
@@ -751,6 +764,7 @@ typedef struct {
    * and (according to the case settings) the turbulence system and/or
    * the thermal system.
    */
+
   int                            n_max_outer_iter;
 
   /*!
@@ -761,11 +775,13 @@ typedef struct {
    * \var verbosity
    * Level of display of the information related to the Navier-Stokes system
    */
+
   int                            verbosity;
 
   /*! \var post_flag
    * Flag storing which predefined post-processing has to be done
    */
+
   cs_navsto_param_post_flag_t    post_flag;
 
   /*!
