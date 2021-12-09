@@ -103,7 +103,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         if self.checkEOSRequirements(field_id):
             default["material"] = "Water"
-            default["method"] = "Cathare"
+            default["method"] = "Cathare2"
 
         return default
 
@@ -274,13 +274,16 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.check_field_id(fieldId)
         material = self.getMaterials(fieldId)
         if oldMaterial != material :
+            _default_method = self.defaultValues(fieldId)['method']
             if material == self.defaultValues(fieldId)['material'] :
-               self.setMethod(fieldId, self.defaultValues(fieldId)['method'])
+               self.setMethod(fieldId, _default_method)
             elif EOS == 1 and material != "user_material":
                 self.ava = eosAva.EosAvailable()
                 self.ava.setMethods(material)
                 fls = self.ava.whichMethods()
-                if "Cathare" in fls:
+                if _default_method in fls:
+                    self.setMethod(fieldId, _default_method)
+                elif "Cathare" in fls:
                     self.setMethod(fieldId, "Cathare")
                 else:
                     for fli in fls:
