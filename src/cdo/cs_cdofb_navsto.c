@@ -120,7 +120,7 @@ _nl_algo_print_header(const char   *algo_name)
 {
   assert(algo_name != NULL);
   cs_log_printf(CS_LOG_DEFAULT,
-                "%12s.It    Algo.Res   Inner  Cumul  ||div(u)||  Tolerance\n",
+                "%12s.It    Algo.Res   Inner  Cumul  Tolerance\n",
                 algo_name);
 }
 
@@ -130,20 +130,18 @@ _nl_algo_print_header(const char   *algo_name)
  *
  * \param[in]  algo_name     name of the algorithm
  * \param[in]  algo          pointer to cs_iter_algo_t structure
- * \param[in]  div_l2        l2 norm of the divergence
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
 _nl_algo_print_entry(const char                *algo_name,
-                     const cs_iter_algo_t      *algo,
-                     double                     div_l2)
+                     const cs_iter_algo_t      *algo)
 {
   assert(algo_name != NULL);
   cs_log_printf(CS_LOG_DEFAULT,
-                "%12s.It%02d   %5.3e  %5d  %5d  %6.4e  %6.4e\n",
+                "%12s.It%02d   %5.3e  %5d  %5d  %6.4e\n",
                 algo_name, algo->n_algo_iter, algo->res, algo->last_inner_iter,
-                algo->n_inner_iter, div_l2, algo->tol);
+                algo->n_inner_iter, algo->tol);
   cs_log_printf_flush(CS_LOG_DEFAULT);
 }
 
@@ -995,8 +993,8 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
     cs_field_t  *vel_div = cs_field_by_name("velocity_divergence");
     assert(vel_div != NULL);
 
-    /* cs_field_current_to_previous(vel_div); is done during the resolution
-       of the Navier--Stokes system */
+    if (nsp->coupling != CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY)
+      cs_field_current_to_previous(vel_div);
 
     /* Only the face velocity is used */
 
@@ -1796,12 +1794,11 @@ cs_cdofb_fixed_wall(short int                       fb,
 /*!
  * \brief  Test if one has to do one more non-linear iteration.
  *         Test if performed on the relative norm on the increment between
- *         two iterations but also on the divergence.
+ *         two iterations
  *
  * \param[in]      nl_algo_type   type of non-linear algorithm
  * \param[in]      pre_iterate    previous state of the mass flux iterate
  * \param[in]      cur_iterate    current state of the mass flux iterate
- * \param[in]      div_l2_norm    L2 norm of the velocity divergence
  * \param[in, out] algo           pointer to a cs_iter_algo_t structure
  *
  * \return the convergence state
@@ -1812,7 +1809,6 @@ cs_sles_convergence_state_t
 cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
                             const cs_real_t          *pre_iterate,
                             cs_real_t                *cur_iterate,
-                            cs_real_t                 div_l2_norm,
                             cs_iter_algo_t           *algo)
 {
   assert(algo != NULL);
@@ -1869,19 +1865,19 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
     case CS_PARAM_NL_ALGO_ANDERSON:
       if (algo->n_algo_iter == 1)
         _nl_algo_print_header("## Anderson");
-      _nl_algo_print_entry("## Anderson", algo, div_l2_norm);
+      _nl_algo_print_entry("## Anderson", algo);
       break;
 
     case  CS_PARAM_NL_ALGO_PICARD:
       if (algo->n_algo_iter == 1)
         _nl_algo_print_header("## Picard");
-      _nl_algo_print_entry("## Picard", algo, div_l2_norm);
+      _nl_algo_print_entry("## Picard", algo);
       break;
 
     default:
       if (algo->n_algo_iter == 1)
         _nl_algo_print_header("##       ");
-      _nl_algo_print_entry("##       ", algo, div_l2_norm);
+      _nl_algo_print_entry("##       ", algo);
       break;
 
     }

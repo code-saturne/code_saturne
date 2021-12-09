@@ -321,47 +321,31 @@ _ac_fields_to_previous(cs_cdofb_ac_t        *sc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Performs the update of the divergence of the velocity in each cell
- *         after the resolution of the momentum equation and compute its
- *         weighted L^2 norm
+ * \brief  Compute the divergence of the velocity in each cell
  *
  * \param[in]      vel_f     velocity DoFs on faces
  * \param[in, out] div       divergence of the given velocity in each cell
- *
- * \return the L2-norm of the divergence
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_real_t
-_ac_update_div(const cs_real_t               vel_f[],
-               cs_real_t                     div[])
+static void
+_ac_compute_div(const cs_real_t               vel_f[],
+                cs_real_t                     div[])
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
   /* Update the divergence of the velocity field */
-  cs_real_t  norm2 = 0.;
 
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN) reduction(+:norm2)
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
     div[c_id] = cs_cdofb_navsto_cell_divergence(c_id,
                                                 quant,
                                                 cs_shared_connect->c2f,
                                                 vel_f);
-    norm2 += quant->cell_vol[c_id] * div[c_id] * div[c_id];
-  }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 2
   cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
 #endif
-
-  /* Parallel treatment */
-  cs_parall_sum(1, CS_REAL_TYPE, &norm2);
-
-  if (norm2 > 0)
-    norm2 = sqrt(norm2);
-
-  return norm2;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1273,7 +1257,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
    *  2. the pressure field: pr -= dt / zeta * div(u_f)
    */
 
-  cs_real_t  div_l2_norm = _ac_update_div(vel_f, div);
+  _ac_compute_div(vel_f, div);
 
   /* Compute values at cells vel_c from values at faces vel_f
      vel_c = acc^-1*(RHS - Acf*vel_f) */
@@ -1291,10 +1275,11 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   _ac_update_pr(ts->t_cur, ts->dt[0], cc->zeta, mom_eqp, mom_eqb, div, pr);
 
   if (nsp->verbosity > 1) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  " -cvg- n_solver_iterations: %d ||div(u)|| = %6.4e\n",
-                  n_solver_iter, div_l2_norm);
+
+    cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
+                  n_solver_iter);
     cs_log_printf_flush(CS_LOG_DEFAULT);
+
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 2
@@ -1340,7 +1325,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
-  cs_iter_algo_t  *nl_info = sc->nl_algo;
+  cs_iter_algo_t  *nl_algo = sc->nl_algo;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START
@@ -1418,7 +1403,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   cs_timer_t  t_solve_start = cs_timer_time();
 
-  cs_iter_algo_reset(nl_info);
+  cs_iter_algo_reset(nl_algo);
 
   /* Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
@@ -1426,7 +1411,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
 
-  nl_info->n_inner_iter = (nl_info->last_inner_iter =
+  nl_algo->n_inner_iter = (nl_algo->last_inner_iter =
                            cs_equation_solve_scalar_system(3*n_faces,
                                                            mom_eqp->sles_param,
                                                            matrix,
@@ -1447,7 +1432,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
    *  2. the mass flux
    */
 
-  cs_real_t  div_l2_norm = _ac_update_div(vel_f, div);
+  _ac_compute_div(vel_f, div);
 
   /* Compute the new mass flux used as the advection field */
 
@@ -1468,17 +1453,16 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  nl_info->normalization =
+  nl_algo->normalization =
     sqrt(cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array));
 
-  /* Check the convergence status and update the nl_info structure related
+  /* Check the convergence status and update the nl_algo structure related
    * to the convergence monitoring */
 
   while (cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo_type,
                                      sc->mass_flux_array_pre,
                                      sc->mass_flux_array,
-                                     div_l2_norm,
-                                     nl_info) == CS_SLES_ITERATING) {
+                                     nl_algo) == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
 
@@ -1520,7 +1504,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
     cs_sles_setup(sles, matrix);
 
-    nl_info->n_inner_iter += (nl_info->last_inner_iter =
+    nl_algo->n_inner_iter += (nl_algo->last_inner_iter =
                          cs_equation_solve_scalar_system(3*n_faces,
                                                          mom_eqp->sles_param,
                                                          matrix,
@@ -1536,7 +1520,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
     /* Compute the velocity divergence and retrieve its L2-norm */
 
-    div_l2_norm = _ac_update_div(vel_f, div);
+    _ac_compute_div(vel_f, div);
 
     /* Compute the new mass flux used as the advection field */
 
@@ -1551,16 +1535,24 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
+  if (nsp->verbosity > 1) {
+
+    cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
+                  nl_algo->n_inner_iter);
+    cs_log_printf_flush(CS_LOG_DEFAULT);
+
+  }
+
   if (nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_info);
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_algo);
 
   else {
 
     assert(nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON);
 
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_info);
+    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_algo);
 
-    cs_iter_algo_aa_free_arrays(nl_info->context);
+    cs_iter_algo_aa_free_arrays(nl_algo->context);
 
   }
 

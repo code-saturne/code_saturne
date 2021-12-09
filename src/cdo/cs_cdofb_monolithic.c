@@ -156,7 +156,6 @@ _mono_fields_to_previous(cs_cdofb_monolithic_t        *sc,
 
   cs_field_current_to_previous(sc->velocity);
   cs_field_current_to_previous(sc->pressure);
-  cs_field_current_to_previous(sc->divergence);
 
   /* Mass flux */
 
@@ -172,55 +171,6 @@ _mono_fields_to_previous(cs_cdofb_monolithic_t        *sc,
     memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
            3 * quant->n_faces * sizeof(cs_real_t));
 
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Performs the update of the divergence of the velocity in each cell
- *         after the resolution of the momentum equation and compute its
- *         weighted L^2 norm
- *
- * \param[in]       face_vel   array of velocity vector at each face
- * \param[in, out]  div        divergence of the given velocity in each cell
- *
- * \return the L2-norm of the divergence
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_real_t
-_mono_update_divergence(const cs_real_t           *face_vel,
-                        cs_real_t                 *div)
-{
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-
-  /* Update the divergence of the velocity field */
-
-  double  norm2 = 0.;
-
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN) reduction(+:norm2)
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-    div[c_id] = cs_cdofb_navsto_cell_divergence(c_id,
-                                                quant,
-                                                cs_shared_connect->c2f,
-                                                face_vel);
-
-    norm2 += quant->cell_vol[c_id] * div[c_id] * div[c_id];
-
-  }
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
-  cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
-#endif
-
-  /* Parallel treatment */
-
-  cs_parall_sum(1, CS_DOUBLE, &norm2);
-
-  if (norm2 > 0)
-    norm2 = sqrt(norm2);
-
-  return norm2;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2477,24 +2427,21 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
 
   _mono_update_related_cell_fields(nsp, sc, mom_eqc);
 
-  /* Compute the new velocity divergence and retrieve its L2-norm */
-
-  cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
-                                                   sc->divergence->val);
-
   /* Compute the new mass flux used as the advection field */
 
   cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
                             sc->mass_flux_array);
 
   if (nsp->verbosity > 1) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  " -cvg- cumulated_inner_iters: %d ||div(u)|| = %6.4e\n",
-                  cumulated_inner_iters, div_l2_norm);
+
+    cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
+                  cumulated_inner_iters);
     cs_log_printf_flush(CS_LOG_DEFAULT);
+
   }
 
   /* Frees */
+
   cs_cdofb_monolithic_sles_clean(msles);
 
   cs_timer_t  t_end = cs_timer_time();
@@ -2597,11 +2544,6 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   _mono_enforce_solid_face_velocity(mom_eqc->face_values);
 
-  /* Compute the new velocity divergence and retrieve its L2-norm */
-
-  cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
-                                                   sc->divergence->val);
-
   /* Compute the new current mass flux used as the advection field */
 
   cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
@@ -2623,7 +2565,6 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   while (cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo_type,
                                      sc->mass_flux_array_pre,
                                      sc->mass_flux_array,
-                                     div_l2_norm,
                                      nl_algo) == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
@@ -2661,11 +2602,6 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
     _mono_enforce_solid_face_velocity(mom_eqc->face_values);
 
-    /* Compute the new velocity divergence and retrieve its L2-norm */
-
-    div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
-                                          sc->divergence->val);
-
     /* Compute the new mass flux used as the advection field */
 
     memcpy(sc->mass_flux_array_pre, sc->mass_flux_array,
@@ -2679,6 +2615,14 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
+
+  if (nsp->verbosity > 1) {
+
+    cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
+                  nl_algo->n_inner_iter);
+    cs_log_printf_flush(CS_LOG_DEFAULT);
+
+  }
 
   if (nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
     cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_algo);
@@ -2805,11 +2749,6 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
 
   _mono_update_related_cell_fields(nsp, sc, mom_eqc);
 
-  /* Compute the new velocity divergence and retrieve its L2-norm */
-
-  cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
-                                                   sc->divergence->val);
-
   /* Compute the new mass flux used as the advection field */
 
   cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
@@ -2817,9 +2756,8 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
 
   if (nsp->verbosity > 1) {
 
-    cs_log_printf(CS_LOG_DEFAULT,
-                  " -cvg- cumulated_inner_iters: %d ||div(u)|| = %6.4e\n",
-                  cumulated_inner_iters, div_l2_norm);
+    cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
+                  cumulated_inner_iters);
     cs_log_printf_flush(CS_LOG_DEFAULT);
 
   }
@@ -2930,11 +2868,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   _mono_enforce_solid_face_velocity(mom_eqc->face_values);
 
-  /* Compute the new velocity divergence and retrieve its L2-norm */
-
-  cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
-                                                   sc->divergence->val);
-
   /* Compute the new mass flux used as the advection field */
 
   cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values,
@@ -2957,7 +2890,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo_type,
                               sc->mass_flux_array_pre,
                               sc->mass_flux_array,
-                              div_l2_norm,
                               nl_algo);
 
   cs_real_t  *mass_flux_array_k = NULL;
@@ -3001,11 +2933,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
     _mono_enforce_solid_face_velocity(mom_eqc->face_values);
 
-    /* Compute the new velocity divergence and retrieve its L2-norm */
-
-    div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
-                                          sc->divergence->val);
-
     /* mass_flux_array_k <-- mass_flux_array_kp1; update mass_flux_array_kp1 */
 
     if (mass_flux_array_k == NULL)
@@ -3021,7 +2948,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo_type,
                                 mass_flux_array_k,
                                 mass_flux_array_kp1,
-                                div_l2_norm,
                                 nl_algo);
 
   } /* Loop on non-linear iterations */
@@ -3029,6 +2955,14 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
+
+  if (nsp->verbosity > 1) {
+
+    cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
+                  nl_algo->n_inner_iter);
+    cs_log_printf_flush(CS_LOG_DEFAULT);
+
+  }
 
   if (nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
     cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_algo);
