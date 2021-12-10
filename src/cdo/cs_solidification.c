@@ -95,7 +95,7 @@ static const char _state_names[CS_SOLIDIFICATION_N_STATES][32] = {
  *============================================================================*/
 
 static cs_solidification_t  *cs_solidification_structure = NULL;
-static cs_real_t  cs_solidification_forcing_eps  = 1e-3;
+static cs_real_t  cs_solidification_forcing_eps  = 1e-10;
 static cs_real_t  cs_solidification_eutectic_threshold  = 1e-4;
 
 static const double  cs_solidification_diffusion_eps = 1e-16;
