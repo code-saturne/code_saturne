@@ -158,7 +158,6 @@ _cdofb_normal_flux_reco(short int                  fb,
                         const cs_real_3_t         *kappa_f,
                         cs_sdm_t                  *ntrgrd)
 {
-  /* Sanity check */
   assert(hodgep->type == CS_HODGE_TYPE_EDFP);
   assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag,
@@ -171,10 +170,12 @@ _cdofb_normal_flux_reco(short int                  fb,
   const double  inv_volc = 1./cm->vol_c;
 
   /* beta * |fb|^2 * nu_{fb}^T.kappa.nu_{fb} / |pvol_fb| */
+
   const double  stab_scaling =
     hodgep->coef * pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv) / cm->pvol_f[fb];
 
   /* Get the 'fb' row */
+
   cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (n_fc + 1);
   double  row_sum = 0.0;
 
@@ -183,10 +184,12 @@ _cdofb_normal_flux_reco(short int                  fb,
     const cs_quant_t  pfq = cm->face[f];
 
     /* consistent part */
+
     const double  consist_scaling = cm->f_sgn[f] * pfq.meas * inv_volc;
     const double  consist_part = consist_scaling * _dp3(kappa_f[fb], pfq.unitv);
 
     /* stabilization part */
+
     double  stab_part = -consist_scaling*debq.meas*_dp3(debq.unitv, pfq.unitv);
     if (f == fb) stab_part += 1;
     stab_part *= stab_scaling;
@@ -199,8 +202,8 @@ _cdofb_normal_flux_reco(short int                  fb,
   } /* Loop on f */
 
   /* Cell column */
-  ntrgrd_fb[n_fc] += row_sum;
 
+  ntrgrd_fb[n_fc] += row_sum;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -218,6 +221,7 @@ _svb_cellwise_grd(const cs_cell_mesh_t   *cm,
                   cs_real_3_t             grd_cell[])
 {
   /* Reset array */
+
   for (short int v = 0; v < cm->n_vc; v++)
     grd_cell[v][0] = grd_cell[v][1] = grd_cell[v][2] = 0;
 
@@ -273,6 +277,7 @@ _nflux_reco_svb_ocs_in_pec(const cs_cell_mesh_t   *cm,
                            cs_real_t               nflux[])
 {
   /* Reset the normal flux for each vertex of the cell */
+
   for (short int v = 0; v < cm->n_vc; v++) nflux[v] = 0;
 
   /* Compute the gradient reconstruction for the potential arrays of the
@@ -290,11 +295,13 @@ _nflux_reco_svb_ocs_in_pec(const cs_cell_mesh_t   *cm,
   const short int  sgn_vk0 = cm->e2v_sgn[ek]; /* sgn_vk1 = - sgn_vk0 */
 
   /* Consistent + Stabilization part */
+
   for (short int v = 0; v < cm->n_vc; v++) {
 
     const cs_real_t  ekgc = _dp3(pekq.unitv, grd_cell[v]);
 
     /* Initialize the reconstruction of the gradient with the consistent part */
+
     cs_real_3_t  le_grd = {grd_cell[v][0], grd_cell[v][1], grd_cell[v][2]};
 
     if (v == _vk[0]) { /* v = vk0 belonging to edge ek */
@@ -322,7 +329,6 @@ _nflux_reco_svb_ocs_in_pec(const cs_cell_mesh_t   *cm,
     nflux[v] = -_dp3(mnu, le_grd); /* Minus because -du/dn */
 
   } /* Loop on cell vertices */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1173,6 +1179,7 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -1184,23 +1191,28 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
+
   cs_real_3_t  *kappa_f = cb->vectors;
   _compute_kappa_f(pdata, cm, kappa_f);
 
   /* Initialize the matrix related to this flux reconstruction operator */
+
   const short int n_dofs = cm->n_fc + 1;
   cs_sdm_t  *bc_op = cb->loc;
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* First pass: build the bc_op matrix */
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
+
       _cdofb_normal_flux_reco(f, cm, hodge->param,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
@@ -1213,6 +1225,7 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
      values. Avoid a truncation error if the arbitrary coefficient of the
      Nitsche algorithm is large
   */
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
@@ -1221,12 +1234,15 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* chi * \meas{f} / h_f  */
+
       const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
 
       /* Diagonal term */
+
       bc_op->val[f*(n_dofs + 1)] += pcoef;
 
       /* rhs */
+
       csys->rhs[f] += pcoef * csys->dir_values[f];
 
     } /* If Dirichlet */
@@ -1234,8 +1250,8 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   } /* Loop on boundary faces */
 
   /* Update the local system matrix */
-  cs_sdm_add(csys->mat, bc_op);
 
+  cs_sdm_add(csys->mat, bc_op);
 }
 
 /*----------------------------------------------------------------------------*/

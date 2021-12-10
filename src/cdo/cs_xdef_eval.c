@@ -112,7 +112,6 @@ cs_xdef_eval_scalar_by_val(cs_lnum_t                    n_elts,
 
   const cs_real_t  *constant_val = (cs_real_t *)context;
 
-  /* Sanity checks */
   assert(eval != NULL && constant_val != NULL);
 
   if (elt_ids != NULL && !dense_output) {

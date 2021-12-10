@@ -263,18 +263,22 @@ static void
 _propagate_qtype(cs_navsto_param_t    *nsp)
 {
   /* Loop on velocity ICs */
+
   for (int i = 0; i < nsp->n_velocity_ic_defs; i++)
     cs_xdef_set_quadrature(nsp->velocity_ic_defs[i], nsp->qtype);
 
   /* Loop on pressure ICs */
+
   for (int i = 0; i < nsp->n_pressure_ic_defs; i++)
     cs_xdef_set_quadrature(nsp->pressure_ic_defs[i], nsp->qtype);
 
   /* Loop on velocity BCs */
+
   for (int i = 0; i < nsp->n_velocity_bc_defs; i++)
     cs_xdef_set_quadrature(nsp->velocity_bc_defs[i], nsp->qtype);
 
   /* Loop on pressure BCs */
+
   for (int i = 0; i < nsp->n_pressure_bc_defs; i++)
     cs_xdef_set_quadrature(nsp->pressure_bc_defs[i], nsp->qtype);
 }
@@ -632,10 +636,12 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   /* ------------------ */
 
   /* Which equations are solved and which terms are needed */
+
   nsp->model = model;
   nsp->model_flag = model_flag;
 
   /* Turbulence modelling (pointer to global structures) */
+
   nsp->turbulence = cs_turbulence_param_create();
 
   /* Main set of properties */
@@ -665,12 +671,14 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   nsp->space_scheme = CS_SPACE_SCHEME_CDOFB;
 
   /* Advection settings */
+
   nsp->adv_form = CS_PARAM_ADVECTION_FORM_NONCONS;
   nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
   nsp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
   nsp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
 
   /* Forcing steady state in order to avoid inconsistencies */
+
   if (model_flag & CS_NAVSTO_MODEL_STEADY)
     nsp->time_scheme = CS_TIME_SCHEME_STEADY;
   else
@@ -683,23 +691,28 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   nsp->boussinesq_param = NULL;
 
   /* Default level of quadrature */
+
   nsp->qtype = CS_QUADRATURE_BARY;
 
   /* Resolution parameters (inner linear system then the non-linear system )*/
+
   nsp->sles_param = _navsto_param_sles_create(model, model_flag, algo_coupling);
 
   /* Management of the outer resolution steps (i.e. the full system including
      the turbulence modelling or the the thermal system) */
+
   nsp->n_max_outer_iter = 5;
   nsp->delta_thermal_tolerance = 1e-2;
 
   /* Output indicators */
+
   nsp->verbosity = 1;
   nsp->post_flag = post_flag;
 
   /* Set no augmentation of the linear system. This could be modified according
      to the type of coupling or the strategy used to solved to the linear
      system. */
+
   nsp->gd_scale_coef = 0.0;
 
   /* Initial conditions
@@ -722,9 +735,10 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
 
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     if (model != CS_NAVSTO_MODEL_STOKES)
-      /* The default strategy is set in _navsto_param_sles_create() which is
-       * CS_NAVSTO_SLES_UZAWA_AL. Thus, one adds an slight augmentation of the
-       * linear system */
+      /* The default strategy when one does not solve the Stokes equations is
+       * set in _navsto_param_sles_create() which is CS_NAVSTO_SLES_UZAWA_AL.
+       * Thus, one adds a slight augmentation of the linear system */
+
       nsp->gd_scale_coef = 1.0;
 
     nsp->velocity_ic_is_owner = false;
@@ -746,10 +760,12 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   }
 
   /* Initial conditions for the pressure field */
+
   nsp->n_pressure_ic_defs = 0;
   nsp->pressure_ic_defs = NULL;
 
   /* Initial conditions for the velocity field */
+
   nsp->n_velocity_ic_defs = 0;
   nsp->velocity_ic_defs = NULL;
 
@@ -757,13 +773,16 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   /* ------------------- */
 
   /* Physical boundaries specific to the problem at stake */
+
   nsp->boundaries = boundaries; /* shared structure */
 
   /* Boundary conditions for the pressure field */
+
   nsp->n_pressure_bc_defs = 0;
   nsp->pressure_bc_defs = NULL;
 
   /* Boundary conditions for the velocity field */
+
   nsp->n_velocity_bc_defs = 0;
   nsp->velocity_bc_defs = NULL;
 
@@ -771,6 +790,7 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   /* ---------------- */
 
   /* Rescaling of the pressure */
+
   nsp->reference_pressure = 0.;
 
   return nsp;
@@ -1764,6 +1784,7 @@ cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
     nsp->velocity_ic_is_owner = true;
 
     /* Add a new cs_xdef_t structure */
+
     int z_id = 0;
     if (z_name != NULL && strlen(z_name) > 0)
       z_id = (cs_volume_zone_by_name(z_name))->id;
@@ -1828,6 +1849,7 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t      *nsp,
     nsp->velocity_ic_is_owner = true;
 
     /* Add a new cs_xdef_t structure */
+
     int z_id = cs_get_vol_zone_id(z_name);
 
     cs_flag_t  meta_flag = 0;
@@ -1885,6 +1907,7 @@ cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t    *nsp,
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
   /* Add a new cs_xdef_t structure */
+
   int z_id = 0;
   if (z_name != NULL && strlen(z_name) > 0)
     z_id = (cs_volume_zone_by_name(z_name))->id;
@@ -1935,6 +1958,7 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
   /* Add a new cs_xdef_t structure */
+
   int z_id = cs_get_vol_zone_id(z_name);
 
   cs_flag_t  meta_flag = 0;
@@ -1956,6 +1980,7 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
   /* Assign the default quadrature type of the Navier-Stokes module to this
    * definition (this can be modified by the user if the same call is
    * performed in cs_user_finalize_setup()) */
+
   cs_xdef_set_quadrature(d, nsp->qtype);
 
   int  new_id = nsp->n_pressure_ic_defs;
@@ -1994,6 +2019,7 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t    *nsp)
 
       /* Homogeneous Dirichlet on the velocity field. Nothing to enforce on the
          pressure field */
+
       cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                               3,    /* dim */
                                               bdy->zone_ids[i],
@@ -2042,6 +2068,7 @@ cs_navsto_set_symmetries(cs_navsto_param_t    *nsp)
       /* Homogeneous Dirichlet on the normal component of the velocity field
          and homogeneous Neumann on the normal stress (balance between the
          pressure gradient and the viscous term) */
+
       cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                               1,    /* dim */
                                               bdy->zone_ids[i],
@@ -2093,6 +2120,7 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
         && ! (bdy->types[i] & exclude_filter)) {
 
       /* Add the homogeneous Neumann on the normal component */
+
       cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                               9,    /* dim */
                                               bdy->zone_ids[i],
@@ -2154,6 +2182,7 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
               " Please check your settings.", __func__, z_name);
 
   /* Set the boundary condition for the pressure field */
+
   cs_xdef_t  *dp = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                            1, /* dim */
                                            z_id,
@@ -2169,6 +2198,7 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
 
   if (!nsp->pressure_bc_is_owner) {
     bft_error(__FILE__, __LINE__, 0, "%s: Not implemented yet", __func__);
+
 #if 0 /* TODO */
     /* Retrieve the equation related to the pressure */
     cs_equation_param_t  *p_eqp = NULL;
@@ -2178,6 +2208,7 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t    *nsp,
 
   /* Add a new cs_xdef_t structure. For the momentum equation, this is a
    * homogeneous Neumann BC for the velocity */
+
   cs_real_33_t  zero = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
   cs_xdef_t  *du = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
@@ -2301,6 +2332,7 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
        " Please check your settings.", __func__, z_name);
 
   /* Add a new cs_xdef_t structure */
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           3,    /* dim */
                                           z_id,
@@ -2364,6 +2396,7 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
        " Please check your settings.", __func__, z_name);
 
   /* Add a new cs_xdef_t structure */
+
   cs_xdef_analytic_context_t  ac = { .z_id = z_id,
                                      .func = ana,
                                      .input = input,
@@ -2379,6 +2412,7 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
   /* Assign the default quadrature type of the Navier-Stokes module to this
    * definition (this can be modified by the user if the same call is
    * performed in cs_user_finalize_setup()) */
+
   cs_xdef_set_quadrature(d, nsp->qtype);
 
   int  new_id = nsp->n_velocity_bc_defs;
@@ -2523,6 +2557,7 @@ cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t    *nsp,
   /* Assign the default quadrature type of the Navier-Stokes module to this
    * definition (this can be modified by the user if the same call is
    * performed in cs_user_finalize_setup()) */
+
   cs_xdef_set_quadrature(d, nsp->qtype);
 
   int  new_id = nsp->n_velocity_bc_defs;
@@ -2566,6 +2601,7 @@ cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
   /* Assign the default quadrature type of the Navier-Stokes module to this
    * definition (this can be modified by the user if the same call is
    * performed in cs_user_finalize_setup()) */
+
   cs_xdef_set_quadrature(d, nsp->qtype);
 
   return d;

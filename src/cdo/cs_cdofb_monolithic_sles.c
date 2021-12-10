@@ -5530,8 +5530,6 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                         const cs_equation_param_t     *eqp,
                                         cs_cdofb_monolithic_sles_t    *msles)
 {
-  /* Sanity checks */
-
   assert(nsp != NULL && nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_AL);
   assert(cs_shared_range_set != NULL);
 

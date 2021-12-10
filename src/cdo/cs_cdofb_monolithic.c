@@ -831,12 +831,14 @@ _velocity_full_assembly(const cs_cell_sys_t            *csys,
   /* ======================================================== */
 
   if (csys->has_internal_enforcement) {
+
     for (int i = 0; i < 3*n_f; i++) {
       if (csys->intern_forced_ids[i] > -1)
         _div[i] = 0.; /* The velocity-block set the value of this DoF */
       else
         _div[i] = div_op[i];
     }
+
   }
   else
     memcpy(_div, div_op, 3*n_f*sizeof(cs_real_t));
@@ -845,8 +847,10 @@ _velocity_full_assembly(const cs_cell_sys_t            *csys,
    * ================== */
 
   if (sc->msles->graddiv_coef > 0.) {
+
     cs_real_t  gamma = sc->msles->graddiv_coef / cm->vol_c;
     cs_cdofb_navsto_add_grad_div(cm->n_fc, gamma, _div, csys->mat);
+
   }
 
   cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm, eqc, eqa, mav, rhs);
@@ -885,7 +889,6 @@ _full_assembly(const cs_cell_sys_t            *csys,
   const cs_sdm_t  *m = csys->mat;
   const cs_sdm_block_t  *bd = m->block_desc;
 
-  /* Sanity checks */
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
@@ -937,6 +940,7 @@ _full_assembly(const cs_cell_sys_t            *csys,
         for (short int jj = 0; jj < 3; jj++) {
 
           /* Add an entry */
+
           r_gids[bufsize] = bi_gid;
           c_gids[bufsize] = bj_gids[jj];
           values[bufsize] = mIJ->val[3*ii + jj];
@@ -1006,7 +1010,6 @@ _full_assembly(const cs_cell_sys_t            *csys,
   if (has_sourceterm)
     for (int k = 0; k < 3; k++)
       eqc_st[3*cm->c_id + k] = csys->source[3*n_f + k];
-
 }
 
 /*----------------------------------------------------------------------------*/

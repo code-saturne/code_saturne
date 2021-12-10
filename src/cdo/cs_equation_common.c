@@ -481,6 +481,7 @@ cs_equation_prepare_system(int                     stride,
        n_sles_scatter_elts */
 
     /* Compact numbering to fit the algebraic decomposition */
+
     cs_range_set_gather(rset,
                         CS_REAL_TYPE, /* type */
                         stride,       /* stride */
@@ -490,6 +491,7 @@ cs_equation_prepare_system(int                     stride,
     /* The right-hand side stems from a cellwise building on this rank.
        Other contributions from distant ranks may contribute to an element
        owned by the local rank */
+
     if (rhs_redux && rset->ifs != NULL)
       cs_interface_set_sum(rset->ifs,
                            n_scatter_elts, stride, false, CS_REAL_TYPE,
@@ -542,6 +544,7 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
                                      cs_real_t               *b)
 {
   /* Retrieve the solving info structure stored in the cs_field_t structure */
+
   cs_solving_info_t  sinfo;
   cs_field_t  *fld = NULL;
   if (slesp->field_id > -1) {
@@ -560,6 +563,7 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
   assert(n_dofs == n_rows);
 
   /* Handle parallelism */
+
   cs_real_t  *_x = x, *_b = b;
   if (n_cols_ext > n_rows) {
 
@@ -574,6 +578,7 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
   }
 
   /* Solve the linear solver */
+
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
                                                     slesp->eps,
@@ -592,6 +597,7 @@ cs_equation_solve_scalar_cell_system(cs_lnum_t                n_dofs,
   }
 
   /* Output information about the convergence of the resolution */
+
   if (slesp->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
                   " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
@@ -637,6 +643,7 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
 
   /* Set xsol */
+
   cs_real_t  *xsol = NULL;
   if (n_cols > n_scatter_dofs) {
     assert(cs_glob_n_ranks > 1);
@@ -647,6 +654,7 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
     xsol = x;
 
   /* Retrieve the solving info structure stored in the cs_field_t structure */
+
   cs_field_t  *fld = cs_field_by_id(slesp->field_id);
   cs_solving_info_t  sinfo;
   cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
@@ -657,10 +665,12 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
 
   /* Prepare solving (handle parallelism)
    * stride = 1 for scalar-valued */
+
   cs_equation_prepare_system(1, n_scatter_dofs, matrix, rset, rhs_redux,
                              xsol, b);
 
   /* Solve the linear solver */
+
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
                                                     slesp->eps,
@@ -673,6 +683,7 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                                                     NULL);  /* aux. buffers */
 
   /* Output information about the convergence of the resolution */
+
   if (slesp->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
                   " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
@@ -756,13 +767,13 @@ cs_equation_init_reaction_properties(const cs_equation_param_t     *eqp,
   assert(cs_equation_param_has_reaction(eqp));
 
   /* Preparatory step for the reaction term(s) */
+
   for (int i = 0; i < CS_CDO_N_MAX_REACTIONS; i++) cb->rpty_vals[i] = 1.0;
 
   for (int r = 0; r < eqp->n_reaction_terms; r++)
     if (eqb->reac_pty_uniform[r])
-      cb->rpty_vals[r] = cs_property_get_cell_value(0,
-                                                    t_eval,
-                                                    eqp->reaction_properties[r]);
+      cb->rpty_vals[r] = cs_property_get_cell_value(0, t_eval,
+                                                   eqp->reaction_properties[r]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -823,6 +834,7 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
 {
   /* Preparatory step for diffusion term
    * One calls this function with the boundary tag to examine all tests */
+
   if (diffusion_hodge != NULL && eqb->diff_pty_uniform)
     cs_hodge_set_property_value(0, /* cell_id */
                                 cb->t_pty_eval,
@@ -830,16 +842,19 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
                                 diffusion_hodge);
 
   /* Preparatory step for the grad-div term */
+
   if (cs_equation_param_has_graddiv(eqp) && eqb->graddiv_pty_uniform)
     cb->gpty_val = cs_property_get_cell_value(0, cb->t_pty_eval,
                                               eqp->graddiv_property);
 
   /* Preparatory step for the unsteady term */
+
   if (cs_equation_param_has_time(eqp) && eqb->time_pty_uniform)
     cb->tpty_val = cs_property_get_cell_value(0, cb->t_pty_eval,
                                               eqp->time_property);
 
   /* Preparatory step for the reaction term(s) */
+
   if (cs_equation_param_has_reaction(eqp)) {
 
     for (int i = 0; i < CS_CDO_N_MAX_REACTIONS; i++) cb->rpty_vals[i] = 1.0;
@@ -853,7 +868,6 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
     } /* Loop on reaction properties */
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -879,6 +893,7 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
     return;
 
   /* Initialize the indirection list (by default, no vertex selected) */
+
   cs_lnum_t  *dof_ids = *p_dof_ids;
 
   if (dof_ids == NULL)
@@ -912,6 +927,7 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
     assert(eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_DOFS);
 
     /* Build the indirection between vertices and enforced vertices */
+
     for (cs_lnum_t i = 0; i < eqp->n_enforced_dofs; i++)
       dof_ids[eqp->enforced_dof_ids[i]] = i;
 
@@ -946,6 +962,7 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
                                    cs_cell_sys_t                   *csys)
 {
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_internal_enforcement == false)
     return;  /* Nothing to do */
 
@@ -955,6 +972,7 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
   memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
 
   /* Build x_vals */
+
   if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE) {
 
     const cs_real_t  ref_val = eqp->enforcement_ref_value[0];
@@ -983,9 +1001,11 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
   }
 
   /* Contribution of the DoFs which are enforced */
+
   cs_sdm_matvec(csys->mat, x_vals, ax);
 
   /* Second pass: Replace the block of enforced DoFs by a diagonal block */
+
   for (int i = 0; i < csys->n_dofs; i++) {
 
     if (csys->intern_forced_ids[i] > -1) {
@@ -1005,7 +1025,6 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
       csys->rhs[i] -= ax[i];  /* Update RHS */
 
   } /* Loop on degrees of freedom */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1033,6 +1052,7 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
                                          cs_cell_sys_t                 *csys)
 {
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_internal_enforcement == false)
     return;  /* Nothing to do */
 
@@ -1044,6 +1064,7 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
   if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE) {
 
     /* Build x_vals */
+
     const cs_real_t  *ref_val = eqp->enforcement_ref_value;
     for (int i = 0; i < csys->n_dofs; i++) {
       if (csys->intern_forced_ids[i] > -1)
@@ -1054,6 +1075,7 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
   else if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_DOFS) {
 
     /* Build x_vals */
+
     for (int i = 0; i < csys->n_dofs; i++) {
       if (csys->intern_forced_ids[i] > -1)
         x_vals[i] = eqp->enforced_dof_values[csys->intern_forced_ids[i]];
@@ -1063,6 +1085,7 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
   else {
 
     /* Build x_vals */
+
     assert(eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_CELLS);
     for (int i = 0; i < csys->n_dofs; i++) {
       if (csys->intern_forced_ids[i] > -1)
@@ -1072,9 +1095,11 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
   }
 
   /* Contribution of the DoFs which are enforced */
+
   cs_sdm_block_matvec(csys->mat, x_vals, ax);
 
   /* Define the new right-hand side (rhs) */
+
   for (int i = 0; i < csys->n_dofs; i++) {
     if (csys->intern_forced_ids[i] > -1)
       csys->rhs[i] = x_vals[i];
@@ -1085,6 +1110,7 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
   const cs_sdm_block_t  *bd = csys->mat->block_desc;
 
   /* Second pass: Replace the block of enforced DoFs by a diagonal block */
+
   int s = 0;
   for (int ii = 0; ii < bd->n_row_blocks; ii++) {
 
@@ -1094,6 +1120,7 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
     if (csys->intern_forced_ids[s] > -1) {
 
       /* Identity for the diagonal block */
+
       memset(db->val, 0, sizeof(cs_real_t)*bsize);
       for (int i = 0; i < db->n_rows; i++) {
         db->val[i*(1+db->n_rows)] = 1;
@@ -1101,6 +1128,7 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
       }
 
       /* Reset column and row block jj < ii */
+
       for (int jj = 0; jj < ii; jj++) {
 
         cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, ii, jj);
@@ -1112,6 +1140,7 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
       }
 
       /* Reset column and row block jj < ii */
+
       for (int jj = ii+1; jj < db->n_rows; jj++) {
 
         cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, ii, jj);
@@ -1127,7 +1156,6 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
     s += db->n_rows;
 
   } /* Loop on degrees of freedom */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1194,6 +1222,7 @@ cs_equation_balance_create(cs_flag_t    location,
   b->boundary_term  = b->balance + 6*size;
 
   /* Set to zero all members */
+
   cs_equation_balance_reset(b);
 
   return b;
@@ -1252,7 +1281,6 @@ cs_equation_balance_sync(const cs_cdo_connect_t    *connect,
                            b->balance);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1311,6 +1339,7 @@ cs_equation_sync_vol_def_at_vertices(const cs_cdo_connect_t  *connect,
   for (int def_id = 0; def_id < n_defs; def_id++) {
 
     /* Get and then set the definition of the initial condition */
+
     const cs_xdef_t  *def = defs[def_id];
     assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
@@ -1336,31 +1365,38 @@ cs_equation_sync_vol_def_at_vertices(const cs_cdo_connect_t  *connect,
   } /* Loop on definitions */
 
   if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL) {
+
     /* Last definition is used in case of conflict */
+
     cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          n_vertices,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
                          CS_INT_TYPE,   /* int */
                          v2def_ids);
+
   }
 
   /* 0. Initialization */
+
   cs_lnum_t  *count = NULL;
   BFT_MALLOC(count, n_defs, cs_lnum_t);
   memset(count, 0, n_defs*sizeof(cs_lnum_t));
   memset(def2v_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
 
   /* 1. Count number of vertices related to each definition */
+
   for (cs_lnum_t v = 0; v < n_vertices; v++)
     if (v2def_ids[v] > -1)
       def2v_idx[v2def_ids[v]+1] += 1;
 
   /* 2. Build index */
+
   for (int def_id = 0; def_id < n_defs; def_id++)
     def2v_idx[def_id+1] += def2v_idx[def_id];
 
   /* 3. Build list */
+
   for (cs_lnum_t v = 0; v < n_vertices; v++) {
     const int def_id = v2def_ids[v];
     if (def_id > -1) {
@@ -1369,7 +1405,6 @@ cs_equation_sync_vol_def_at_vertices(const cs_cdo_connect_t  *connect,
     }
   }
 
-  /* Free memory */
   BFT_FREE(v2def_ids);
   BFT_FREE(count);
 }
@@ -1408,6 +1443,7 @@ cs_equation_sync_vol_def_at_edges(const cs_cdo_connect_t  *connect,
   for (int def_id = 0; def_id < n_defs; def_id++) {
 
     /* Get and then set the definition of the initial condition */
+
     const cs_xdef_t  *def = defs[def_id];
     assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
@@ -1433,31 +1469,38 @@ cs_equation_sync_vol_def_at_edges(const cs_cdo_connect_t  *connect,
   } /* Loop on definitions */
 
   if (connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL) {
+
     /* Last definition is used in case of conflict */
+
     cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
                          n_edges,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
                          CS_INT_TYPE,   /* int */
                          e2def_ids);
+
   }
 
   /* 0. Initialization */
+
   cs_lnum_t  *count = NULL;
   BFT_MALLOC(count, n_defs, cs_lnum_t);
   memset(count, 0, n_defs*sizeof(cs_lnum_t));
   memset(def2e_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
 
   /* 1. Count the number of edges related to each definition */
+
   for (cs_lnum_t e = 0; e < n_edges; e++)
     if (e2def_ids[e] > -1)
       def2e_idx[e2def_ids[e]+1] += 1;
 
   /* 2. Build the index */
+
   for (int def_id = 0; def_id < n_defs; def_id++)
     def2e_idx[def_id+1] += def2e_idx[def_id];
 
   /* 3. Build the list */
+
   for (cs_lnum_t e = 0; e < n_edges; e++) {
     const int def_id = e2def_ids[e];
     if (def_id > -1) {
@@ -1466,7 +1509,6 @@ cs_equation_sync_vol_def_at_edges(const cs_cdo_connect_t  *connect,
     }
   }
 
-  /* Free memory */
   BFT_FREE(e2def_ids);
   BFT_FREE(count);
 }
@@ -1571,8 +1613,6 @@ cs_equation_sync_vol_def_at_faces(const cs_cdo_connect_t    *connect,
     }
   }
 
-  /* Free memory */
-
   BFT_FREE(f2def_ids);
   BFT_FREE(count);
 }
@@ -1634,7 +1674,6 @@ cs_equation_sync_vertex_mean_values(const cs_cdo_connect_t     *connect,
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

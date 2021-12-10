@@ -267,10 +267,10 @@ cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
                                      const cs_real_t             b_face_vals[],
                                      cs_real_t                  *cell_reco)
 {
-  /* Sanity checks */
   assert(c2f != NULL && i_face_vals != NULL && b_face_vals != NULL);
 
   /* Initialization */
+
   memset(cell_reco, 0, 3*cdoq->n_cells*sizeof(cs_real_t));
 
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
@@ -279,6 +279,7 @@ cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
     cs_real_t  *cval = cell_reco + 3*c_id;
 
     /* Loop on cell faces */
+
     for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
 
       const cs_lnum_t  f_id = c2f->ids[j];
@@ -304,7 +305,6 @@ cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
     for (int k =0; k < 3; k++) cval[k] *= invvol;
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -332,13 +332,14 @@ cs_reco_cell_vector_by_face_dofs(cs_lnum_t                    c_id,
                                  bool                         local_input,
                                  cs_real_t                   *cell_reco)
 {
-  /* Sanity checks */
   assert(c2f != NULL && cdoq !=  NULL && face_dofs != NULL);
 
   /* Initialization */
+
   cell_reco[0] = cell_reco[1] = cell_reco[2] = 0;
 
   /* Loop on cell faces */
+
   if (local_input) {
 
     const cs_lnum_t  s = c2f->idx[c_id], e = c2f->idx[c_id+1];
@@ -392,10 +393,10 @@ cs_reco_cell_vectors_by_face_dofs(const cs_adjacency_t       *c2f,
                                   const cs_real_t             face_dofs[],
                                   cs_real_t                  *cell_reco)
 {
-  /* Sanity checks */
   assert(c2f != NULL && cdoq !=  NULL && face_dofs != NULL);
 
   /* Initialization */
+
   memset(cell_reco, 0, 3*cdoq->n_cells*sizeof(cs_real_t));
 
 # pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
@@ -403,7 +404,6 @@ cs_reco_cell_vectors_by_face_dofs(const cs_adjacency_t       *c2f,
 
     cs_real_t  *cval = cell_reco + 3*c_id;
 
-    /* Loop on cell faces */
     for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
 
       const cs_lnum_t  f_id = c2f->ids[j];
@@ -418,7 +418,6 @@ cs_reco_cell_vectors_by_face_dofs(const cs_adjacency_t       *c2f,
     for (int k =0; k < 3; k++) cval[k] *= invvol;
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -448,7 +447,6 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
     return;
   }
 
-  /* Sanity checks */
   assert(c2v != NULL && quant != NULL && c_id > -1);
 
   const double  invvol = 1/quant->cell_vol[c_id];
@@ -587,6 +585,7 @@ cs_reco_dfbyc_at_cell_center(cs_lnum_t                    c_id,
                              cs_real_3_t                  val_xc)
 {
   /* Initialization */
+
   val_xc[0] = val_xc[1] = val_xc[2] = 0.;
 
   if (array == NULL)
@@ -603,7 +602,6 @@ cs_reco_dfbyc_at_cell_center(cs_lnum_t                    c_id,
   const double  invvol = 1/quant->cell_vol[c_id];
   for (int k = 0; k < 3; k++)
     val_xc[k] *= invvol;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -626,12 +624,12 @@ cs_reco_dfbyc_in_cell(const cs_cell_mesh_t        *cm,
                       cs_real_3_t                  val_c)
 {
   /* Initialization */
+
   val_c[0] = val_c[1] = val_c[2] = 0.;
 
   if (array == NULL)
     return;
 
-  /* Sanity check */
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PEQ));
 
   const double  invvol = 1/cm->vol_c;
@@ -673,16 +671,18 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
                      cs_real_3_t                  val_pec)
 {
   /* Initialize values */
+
   val_pec[0] = val_pec[1] = val_pec[2] = 0.;
 
   if (array == NULL)
     return;
 
-  /* Sanity check */
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ));
 
   cs_real_3_t  val_c = {0., 0., 0.};
+
   /* Compute val_c */
+
   for (short int _e = 0; _e < cm->n_ec; _e++) {
 
     const cs_quant_t  _peq = cm->edge[_e];
@@ -693,11 +693,14 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
   } /* Loop on cell edges */
 
   const double  invvol = 1/cm->vol_c;
-  /* Compute the constency part related to this cell */
+
+  /* Compute the consistency part related to this cell */
+
   for (int k = 0; k < 3; k++)
     val_c[k] *= invvol;
 
   /* Compute the reconstruction inside pec */
+
   const cs_quant_t  peq = cm->edge[e];
   const cs_nvec3_t  dfq = cm->dface[e];
   const double ecoef = (array[e] - dfq.meas * _dp3(dfq.unitv, val_c))
@@ -730,6 +733,7 @@ cs_reco_ccen_edge_dof(cs_lnum_t                    c_id,
     return;
 
   /* Initialize value */
+
   reco[0] = reco[1] = reco[2] = 0.0;
 
   const cs_lnum_t  *c2e_idx = c2e->idx + c_id;
@@ -738,13 +742,15 @@ cs_reco_ccen_edge_dof(cs_lnum_t                    c_id,
   for (cs_lnum_t i = 0; i < c2e_idx[1] - c2e_idx[0]; i++) {
 
     /* Dual face quantities */
+
     const double  val = dof[c2e_ids[i]];     /* Edge value */
     for (int k = 0; k < 3; k++)
       reco[k] += val * dface[3*i+k];
 
   } /* End of loop on cell edges */
 
-  /* Divide by cell volume */
+  /* Divide by the cell volume */
+
   const double  invvol = 1/quant->cell_vol[c_id];
   for (int k = 0; k < 3; k++)
     reco[k] *= invvol;
@@ -774,7 +780,8 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
   if (dof == NULL)
     return;
 
-  /* Allocate reconstructed vector field at each cell bary. */
+  /* Allocate reconstructed vector field at each cell barycenter */
+
   if (ccrec == NULL)
     BFT_MALLOC(ccrec, 3*quant->n_cells, double);
 
@@ -787,6 +794,7 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
                           ccrec + 3*c_id);
 
   /* Return pointer */
+
   *p_ccrec = ccrec;
 }
 
@@ -827,6 +835,7 @@ cs_reco_cell_curl_by_edge_dofs(const cs_cdo_connect_t        *connect,
   BFT_FREE(face_curl);
 
   /* Returns pointer */
+
   *p_curl = curl_vectors;
 }
 
@@ -855,6 +864,7 @@ cs_reco_grad_cell_from_fb_dofs(cs_lnum_t                    c_id,
                                cs_real_t                    grd_c[])
 {
   /* Initialize the value to return */
+
   grd_c[0] = grd_c[1] = grd_c[2] = 0.;
 
   if (p_c == NULL || p_f == NULL)
@@ -905,6 +915,7 @@ cs_reco_grad_33_cell_from_fb_dofs(cs_lnum_t                    c_id,
                                   cs_real_t                    grd_c[])
 {
   /* Initialize the value to return */
+
   grd_c[0] = grd_c[1] = grd_c[2] = 0.;
   grd_c[3] = grd_c[4] = grd_c[5] = 0.;
   grd_c[6] = grd_c[7] = grd_c[8] = 0.;
@@ -982,10 +993,10 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
   } /* Loop on cell edges */
 
   /* Divide by cell volume */
+
   const double  invvol = 1/quant->cell_vol[c_id];
   for (int k = 0; k < 3; k++)
     val_xc[k] *= invvol;
-
 }
 
 /*----------------------------------------------------------------------------*/

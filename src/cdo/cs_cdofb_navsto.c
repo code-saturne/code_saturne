@@ -170,7 +170,6 @@ _normal_flux_reco(short int                  fb,
                   const cs_real_3_t         *kappa_f,
                   cs_sdm_t                  *ntrgrd)
 {
-  /* Sanity check */
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
                        CS_FLAG_COMP_PFC));
   assert(cm->f_sgn[fb] == 1);  /* +1 because it's a boundary face */

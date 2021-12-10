@@ -676,7 +676,8 @@ _enforce_solid_cells(const cs_cdo_connect_t      *connect,
 
   }
 
-  /* Parallel synchronization of the number of solid cells */
+  /* Parallel synchronization of the number of solid cells. Update the
+     structure storing the list of solid cells and faces */
 
   cs_solid_selection_sync(connect);
 

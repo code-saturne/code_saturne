@@ -541,6 +541,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
     assert(mass_hodge != NULL);
 
     /* Build the mass matrix and store it in mass_hodge->matrix */
+
     eqc->get_mass_matrix(cm, mass_hodge, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
@@ -556,6 +557,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
                                                  * ============== */
 
     /* Set the diffusion property */
+
     assert(diff_hodge != NULL);
     if (!(eqb->diff_pty_uniform))
       cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
@@ -563,14 +565,17 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
 
     /* Define the local stiffness matrix: local matrix owned by the cellwise
        builder (store in cb->loc) */
+
     eqc->get_stiffness_matrix(cm, diff_hodge, cb);
 
     /* Add the local diffusion operator to the local system */
+
     const cs_real_t  *sval = cb->loc->val;
     for (int bi = 0; bi < cm->n_fc + 1; bi++) {
       for (int bj = 0; bj < cm->n_fc + 1; bj++) {
 
         /* Retrieve the 3x3 matrix */
+
         cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
         assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
@@ -594,13 +599,16 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
 
     /* Open hook: Compute the advection flux for the numerical scheme and store
        the advection fluxes across primal faces */
+
     eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
 
-    /* Define the local advection matrix*/
+    /* Define the local advection matrix */
+
     eqc->advection_main(eqp, cm, csys, eqc->advection_scheme, cb);
 
     /* Close hook: Modify if needed the computed advection matrix and update
        the local system */
+
     eqc->advection_close(eqp, cm, csys, cb, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
@@ -613,6 +621,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
                                                * ============= */
 
     /* Update the value of the reaction property(ies) if needed */
+
     cs_equation_set_reaction_properties_cw(eqp, eqb, cm, cb);
 
     if (eqp->reaction_hodgep.algo == CS_HODGE_ALGO_VORONOI) {
@@ -621,6 +630,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
        *
        * Update the local system with reaction term. Only the block attached to
        * the current cell is involved */
+
       cs_sdm_t  *bcc = cs_sdm_get_block(csys->mat, cm->n_fc, cm->n_fc);
 
       const double  r_val = cb->rpty_val * cm->vol_c;
@@ -1621,9 +1631,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
                              int                          bflux_id,
                              cs_equation_builder_t       *eqb)
 {
-  /* Sanity checks */
   assert(eqp != NULL && eqb != NULL);
-
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOFB || eqp->dim != 3)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid type of equation.\n"
               " Expected: vector-valued CDO face-based equation.", __func__);
@@ -1640,6 +1648,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->bflux_field_id = bflux_id;
 
   /* Dimensions of the algebraic system */
+
   eqc->n_faces = n_faces;
   eqc->n_dofs = 3*(n_faces + n_cells);
 
@@ -1648,6 +1657,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
+
   eqb->bd_msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE |
     CS_FLAG_COMP_FEQ;
 
@@ -1658,6 +1668,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 # pragma omp parallel if (3*n_cells > CS_THR_MIN)
   {
     /* Values at each face (interior and border) i.e. take into account BCs */
+
 #   pragma omp for nowait
     for (cs_lnum_t i = 0; i < 3*n_faces; i++) eqc->face_values[i] = 0;
 
@@ -1668,11 +1679,13 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
        needed to compute the cell values from the face values.
        No need to synchronize all these quantities since they are only cellwise
        quantities. */
+
 #   pragma omp for
     for (cs_lnum_t i = 0; i < 3*n_cells; i++) eqc->rc_tilda[i] = 0;
   }
 
   /* Assume the 3x3 matrix is diagonal */
+
   BFT_MALLOC(eqc->acf_tilda, 3*connect->c2f->idx[n_cells], cs_real_t);
   memset(eqc->acf_tilda, 0, 3*connect->c2f->idx[n_cells]*sizeof(cs_real_t));
 
@@ -1681,6 +1694,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
      eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) ? true : false;
 
   /* Diffusion term */
+
   eqc->get_stiffness_matrix = NULL;
   eqc->diffusion_hodge = NULL;
   eqc->enforce_robin_bc = NULL;
@@ -1717,6 +1731,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
     /* If necessary, enrich the mesh flag to account for a property defined
      * by an analytical expression. In this case, one evaluates the definition
      * as the mean value over the cell */
+
     const cs_xdef_t  *diff_def = eqp->diffusion_property->defs[0];
     if (diff_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
       eqb->msh_flag |= cs_quadrature_get_flag(diff_def->qtype,
@@ -1753,15 +1768,20 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   eqc->enforce_sliding = NULL;
   if (eqb->face_bc->n_sliding_faces > 0) {
+
     /* There is at least one face with a sliding condition to handle */
+
     eqb->bd_msh_flag |= CS_FLAG_COMP_HFQ;
     eqc->enforce_sliding = cs_cdo_diffusion_vfb_wsym_sliding;
+
   }
 
   /* Advection part */
+
   cs_cdofb_set_advection_function(eqp, eqb, (cs_cdofb_priv_t *)eqc);
 
   /* Reaction term */
+
   if (cs_equation_param_has_reaction(eqp)) {
 
     if (eqp->reaction_hodgep.algo != CS_HODGE_ALGO_VORONOI)
@@ -1772,6 +1792,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
     /* If necessary, enrich the mesh flag to account for a property defined
      * by an analytical expression. In this case, one evaluates the definition
      * as the mean value over the cell */
+
     for (short int ir = 0; ir < eqp->n_reaction_terms; ir++) {
       const cs_xdef_t *rea_def = eqp->reaction_properties[ir]->defs[0];
       if (rea_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
@@ -1782,6 +1803,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   }
 
   /* Unsteady term */
+
   if (cs_equation_param_has_time(eqp)) {
 
     if (eqp->time_hodgep.algo == CS_HODGE_ALGO_VORONOI) {
@@ -1799,6 +1821,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   }
 
   /* Source term part */
+
   eqc->source_terms = NULL;
   if (cs_equation_param_has_sourceterm(eqp)) {
 
@@ -1809,6 +1832,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   } /* There is at least one source term */
 
   /* Mass matrix */
+
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.type = CS_HODGE_TYPE_FB;
   eqc->mass_hodgep.algo = CS_HODGE_ALGO_COST;
@@ -1835,8 +1859,8 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-
   /* Assembly process */
+
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
                                            CS_CDO_CONNECT_FACE_VP0);
 

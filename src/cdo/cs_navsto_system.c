@@ -268,12 +268,12 @@ cs_navsto_system_update_model(bool   with_thermal)
 
       /* Thermal system is linked to the Navier-Stokes one but nothing has been
        * set. Add the "minimal" flag. */
+
       nsp->model_flag |= CS_NAVSTO_MODEL_PASSIVE_THERMAL_TRACER;
 
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -297,22 +297,25 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
                           cs_navsto_param_coupling_t     algo_coupling,
                           cs_navsto_param_post_flag_t    post_flag)
 {
-  /* Sanity checks */
   if (model == CS_NAVSTO_N_MODELS)
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid model for Navier-Stokes.\n",
               __func__);
 
   /* Allocate an empty structure */
+
   cs_navsto_system_t  *navsto = _allocate_navsto_system();
 
   /* Initialize the set of parameters */
+
   navsto->param = cs_navsto_param_create(boundaries,
-                                         model, model_flag,
+                                         model,
+                                         model_flag,
                                          algo_coupling,
                                          post_flag);
 
   /* Set the default boundary condition for the equations of the Navier-Stokes
      system according to the default domain boundary */
+
   cs_param_bc_type_t  default_bc = CS_PARAM_N_BC_TYPES;
   switch (boundaries->default_type) {
 
@@ -331,6 +334,7 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   } /* End of switch */
 
   /* Advection field related to the resolved velocity */
+
   cs_advection_field_status_t  adv_status =
     CS_ADVECTION_FIELD_NAVSTO | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
 
@@ -340,6 +344,7 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   navsto->adv_field = cs_advection_field_add("mass_flux", adv_status);
 
   /* Additional initialization fitting the choice of model */
+
   switch (navsto->param->coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
@@ -374,6 +379,7 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     assert(eqp != NULL);
 
     /* Default settings for this equation */
+
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
@@ -383,14 +389,17 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     /* This is for post-processing purpose, so, there is no need to have
      * a restrictive convergence tolerance on the resolution of the linear
      * system */
+
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-6");
 
   }
 
   /* Create the main structure to handle the turbulence modelling */
+
   navsto->turbulence = cs_turbulence_create(navsto->param->turbulence);
 
   /* Set the static variable */
+
   cs_navsto_system = navsto;
 
   return navsto;
