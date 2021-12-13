@@ -108,7 +108,9 @@ cs_solid_selection_get(void)
     _cs_solid->n_cells = 0;
     _cs_solid->n_g_cells = 0;
     _cs_solid->cell_ids = NULL;
-    _cs_solid->face_tag = NULL;
+
+    _cs_solid->cell_is_solid = NULL;
+    _cs_solid->face_is_solid = NULL;
 
   }
 
@@ -136,14 +138,30 @@ cs_solid_selection_sync(const cs_cdo_connect_t   *connect)
 
   if (_cs_solid->n_g_cells > 0) {
 
+    /* Tag cells */
+
+    if (_cs_solid->cell_is_solid == NULL)
+      BFT_MALLOC(_cs_solid->cell_is_solid, connect->n_cells, bool);
+
+    /* Set to false all cells */
+
+    for (cs_lnum_t i = 0; i < connect->n_cells; i++)
+      _cs_solid->cell_is_solid[i] = false;
+
+    /* Tag cells associated to a solid cell */
+
+    for (cs_lnum_t i = 0; i < _cs_solid->n_cells; i++)
+      _cs_solid->cell_is_solid[_cs_solid->cell_ids[i]] = true;
+
     /* Tag faces */
 
-    if (_cs_solid->face_tag == NULL)
-      BFT_MALLOC(_cs_solid->face_tag, connect->n_faces[0], int);
+    if (_cs_solid->face_is_solid == NULL)
+      BFT_MALLOC(_cs_solid->face_is_solid, connect->n_faces[0], bool);
 
-    /* Reset to O all tags */
+    /* Set to false all faces */
 
-    memset(_cs_solid->face_tag, 0, sizeof(int)*connect->n_faces[0]);
+    for (cs_lnum_t i = 0; i < connect->n_faces[0]; i++)
+      _cs_solid->face_is_solid[i] = false;
 
     /* Tag faces associated to a solid cell */
 
@@ -153,7 +171,7 @@ cs_solid_selection_sync(const cs_cdo_connect_t   *connect)
 
       const cs_lnum_t  c_id = _cs_solid->cell_ids[i];
       for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++)
-        _cs_solid->face_tag[c2f->ids[j]] = 1;
+        _cs_solid->face_is_solid[c2f->ids[j]] = true;
 
     } /* Loop on solid cells */
 
@@ -161,12 +179,13 @@ cs_solid_selection_sync(const cs_cdo_connect_t   *connect)
 
     if (connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL) {
 
+      assert(sizeof(bool) == sizeof(char));
       cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_FACE_SP0],
                            connect->n_faces[0],
                            1,             /* stride */
                            false,         /* interlace (not useful here) */
-                           CS_INT_TYPE,   /* int */
-                           _cs_solid->face_tag);
+                           CS_CHAR,       /* boolean */
+                           _cs_solid->face_is_solid);
 
     }
 
@@ -186,7 +205,8 @@ cs_solid_selection_free(void)
   if (_cs_solid == NULL)
     return;
 
-  BFT_FREE(_cs_solid->face_tag);
+  BFT_FREE(_cs_solid->cell_is_solid);
+  BFT_FREE(_cs_solid->face_is_solid);
   BFT_FREE(_cs_solid->cell_ids);
   BFT_FREE(_cs_solid);
 }

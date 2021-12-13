@@ -50,7 +50,8 @@ typedef struct {
   cs_gnum_t     n_g_cells;      /*!< global number of solid cells  */
   cs_lnum_t    *cell_ids;       /*!< local list of solid cells */
 
-  int          *face_tag;       /*!< Tag faces associated to a solid cell */
+  bool         *cell_is_solid;  /*!< true if this is a solid cell */
+  bool         *face_is_solid;  /*!< true if the face belongs to a solid cell */
 
 } cs_solid_selection_t;
 

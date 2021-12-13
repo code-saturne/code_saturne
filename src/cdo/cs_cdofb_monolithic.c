@@ -197,7 +197,7 @@ _mono_enforce_solid_face_velocity(cs_real_t           *vel_f)
 
     for (cs_lnum_t f = 0; f < cs_shared_connect->n_faces[0]; f++) {
 
-      if (solid->face_tag[f] > 0)
+      if (solid->face_is_solid[f])
         for (int k = 0; k < 3; k++) vel_f[3*f+k] = 0.;
 
     } /* Loop on faces and search for faces with a tag */
@@ -267,13 +267,20 @@ _mono_update_related_cell_fields(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the cs_range_set_t, cs_interface_set_t, cs_matrix_assembler_t
- *         and cs_matrix_structure_t structures
+ * \brief Define shared structures such as the cs_range_set_t,
+ *         cs_interface_set_t, cs_matrix_assembler_t and cs_matrix_structure_t
+ *         structures in case of a full assembly (i.e. the full saddle-point
+ *         matrix is built).
+ *         A variant, activated with add_pressure_diag, is available in order
+ *         to enforce the pressure.
+ *
+ * \param[in]  add_pressure_diag    true = add diagonal entries in the pressure
+ *                                  block
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_shared_structures(void)
+_build_shared_full_structures(bool    add_pressure_diag)
 {
   /* Compute the range set for an array of size 3*n_faces + n_cells
    * velocity is attached to faces (one for each component) and pressure
@@ -311,7 +318,7 @@ _build_shared_structures(void)
   const cs_adjacency_t  *f2f = cs_shared_connect->f2f;
   const cs_adjacency_t  *f2c = cs_shared_connect->f2c;
 
-  /* The second paramter is set to "true" meaning that the diagonal is stored
+  /* The second parameter is set to "true" meaning that the diagonal is stored
    * separately --> MSR storage
    * Create the matrix assembler structure
    */
@@ -353,8 +360,14 @@ _build_shared_structures(void)
 
     const cs_lnum_t  start = f2f->idx[frow_id];
     const cs_lnum_t  end = f2f->idx[frow_id+1];
-    const int  n_entries /* for the velocity and the pressure DoFs*/
-      = (end-start + 1)*9 + 6*(f2c->idx[frow_id+1]-f2c->idx[frow_id]);
+
+    /* A face-face entry corresponds to 3x3 block + the diagonal which is not
+       taken into account in the face --> face connectivity. The B and Bt
+       operators have the same sparsity. 3x1 entries for the c2f
+       connectivity. This is multiply by two since one considers B and Bt. */
+
+    int  n_entries = (end-start + 1)*9
+                   + 6*(f2c->idx[frow_id+1]-f2c->idx[frow_id]);
 
     const cs_gnum_t  grow_ids[3]
       = {_shared_range_set->g_id[frow_id],              /* x-component */
@@ -423,6 +436,15 @@ _build_shared_structures(void)
     assert(shift == n_entries);
 
   } /* Loop on face entities */
+
+  if (add_pressure_diag) {
+
+    cs_gnum_t  *cell_g_ids = _shared_range_set->g_id + 3*n_faces;
+
+    cs_matrix_assembler_add_g_ids(_shared_matrix_assembler,
+                                  m->n_cells, cell_g_ids, cell_g_ids);
+
+  }
 
   /* 3. Build the matrix structure */
 
@@ -1021,7 +1043,97 @@ _full_assembly(const cs_cell_sys_t            *csys,
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb schemes
  *         Shares similarities with cs_equation_assemble_block_matrix()
- *         Specify to the Notay's trabsformation of the saddle-point system.
+ *         This is a _full_assembly() function plus a specific treatment for
+ *         the enforcement of pressure to zero inside the solid region(s).
+ *
+ * \param[in]      csys             pointer to a cs_cell_sys_t structure
+ * \param[in]      cm               pointer to a cs_cell_mesh_t structure
+ * \param[in]      div_op           array with the divergence op. values
+ * \param[in]      has_sourceterm   has the equation a source term ?
+ * \param[in, out] sc               pointer to scheme context structure
+ * \param[in, out] eqc              context structure for a vector-valued Fb
+ * \param[in, out] eqa              pointer to cs_equation_assemble_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_solidification_full_assembly(const cs_cell_sys_t            *csys,
+                              const cs_cell_mesh_t           *cm,
+                              const cs_real_t                *div_op,
+                              const bool                      has_sourceterm,
+                              cs_cdofb_monolithic_t          *sc,
+                              cs_cdofb_vecteq_t              *eqc,
+                              cs_equation_assemble_t         *eqa)
+{
+  /* 1. First part shared with the assembly of the full saddle-point problem
+   * ======================================================================= */
+
+  _full_assembly(csys, cm, div_op, has_sourceterm, sc, eqc, eqa);
+
+  /* 2. Treatment of the solid zone(s)
+   * ================================= */
+
+  cs_solid_selection_t  *solid = cs_solid_selection_get();
+
+  if (solid->cell_is_solid[cm->c_id]) {
+
+    /* Modify the row related to the cell pressure: Add a +1 to the diagonal
+       and reset the divergence operator */
+
+    cs_matrix_assembler_values_t   *mav = sc->mav_structures[0];
+
+    const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
+    const cs_range_set_t  *rset = cs_shared_range_set;
+    const cs_gnum_t  p_gid = rset->g_id[3*n_faces + cm->c_id];
+
+    cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
+    cs_gnum_t  c_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
+    cs_real_t  values[CS_CDO_ASSEMBLE_BUF_SIZE];
+    int  bufsize = 0;
+
+    for (int f = 0; f < cm->n_fc; f++) {
+
+      const cs_lnum_t  f_id = cm->f_ids[f];
+      const cs_gnum_t  uf_gids[3]
+        = { rset->g_id[f_id],              /* x-component */
+            rset->g_id[f_id +   n_faces],  /* y-component */
+            rset->g_id[f_id + 2*n_faces]}; /* z-component */
+
+      for (int k = 0; k < 3; k++) {
+
+        r_gids[bufsize] = uf_gids[k];
+        c_gids[bufsize] = uf_gids[k];
+        values[bufsize] = 1e9;            /* Penalized the face velocity */
+        bufsize += 1;
+
+        r_gids[bufsize] = p_gid;
+        c_gids[bufsize] = uf_gids[k];
+        values[bufsize] = -div_op[3*f+k]; /* Reset the value for the div. op. */
+        bufsize += 1;
+
+      }
+
+    } /* Loop on cell faces */
+
+    r_gids[bufsize] = p_gid;
+    c_gids[bufsize] = p_gid;
+    values[bufsize] = 1;                  /* Set 1 on the diagonal */
+    bufsize += 1;
+
+    assert(bufsize <= CS_CDO_ASSEMBLE_BUF_SIZE);
+
+#   pragma omp critical
+    cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, values);
+
+  } /* This cell is tag as solid */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Perform the assembly stage for a vector-valued system obtained
+ *         with CDO-Fb schemes
+ *         Shares similarities with cs_equation_assemble_block_matrix()
+ *         Specify to the Notay's transformation of the saddle-point system.
  *         Rely on the _full_assembly() function
  *
  * \param[in]      csys             pointer to a cs_cell_sys_t structure
@@ -1912,6 +2024,19 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
     cs_shared_matrix_structure = cs_cdofb_vecteq_matrix_structure();
     break;
 
+  case CS_NAVSTO_SLES_MUMPS:
+    _build_shared_full_structures(true); /* Add entries on the diagonal of
+                                            pressure block */
+
+    cs_shared_interface_set = _shared_interface_set;
+    cs_shared_range_set = _shared_range_set;
+
+    /* Build the fully coupled system */
+
+    cs_shared_matrix_structure = _shared_matrix_structure;
+    cs_shared_matrix_assembler = _shared_matrix_assembler;
+    break;
+
   default:
     /* CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK
      * CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
@@ -1920,12 +2045,11 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
      * CS_NAVSTO_SLES_GKB_PETSC
      * CS_NAVSTO_SLES_GKB_GMRES
      * CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
-     * CS_NAVSTO_SLES_MUMPS
      * CS_NAVSTO_SLES_NOTAY_TRANSFORM
      * CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
      */
 
-    _build_shared_structures();
+    _build_shared_full_structures(false); /* No addition */
 
     cs_shared_interface_set = _shared_interface_set;
     cs_shared_range_set = _shared_range_set;
@@ -2189,7 +2313,10 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
 
     sc->init_system = _init_system_default;
     sc->solve = cs_cdofb_monolithic_solve;
-    sc->assemble = _full_assembly;
+    if (nsp->model_flag & CS_NAVSTO_MODEL_WITH_SOLIDIFICATION)
+      sc->assemble = _solidification_full_assembly;
+    else
+      sc->assemble = _full_assembly;
     sc->elemental_assembly = NULL;
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
