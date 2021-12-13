@@ -223,6 +223,7 @@ _mono_update_related_cell_fields(const cs_navsto_param_t       *nsp,
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_real_t  *vel_f = mom_eqc->face_values;
+  cs_real_t  *vel_c = sc->velocity->val;
 
   /* Update the cell velocity
    * Compute values at cells vel_c from values at faces vel_f
@@ -233,7 +234,7 @@ _mono_update_related_cell_fields(const cs_navsto_param_t       *nsp,
                                         mom_eqc->rc_tilda,
                                         mom_eqc->acf_tilda,
                                         vel_f,              /* face values */
-                                        sc->velocity->val); /* cell values */
+                                        vel_c);             /* cell values */
 
   /* Enforcement of solid cells is always defined as follows for the momentum
    * equation:
@@ -243,7 +244,7 @@ _mono_update_related_cell_fields(const cs_navsto_param_t       *nsp,
   cs_solid_selection_t  *solid = cs_solid_selection_get();
 
   for (cs_lnum_t i = 0; i < solid->n_cells; i++) {
-    cs_real_t  *_vel = sc->velocity->val + 3*solid->cell_ids[i];
+    cs_real_t  *_vel = vel_c + 3*solid->cell_ids[i];
     for (int k = 0; k < 3; k++)
       _vel[k] = 0.;
   }
@@ -256,7 +257,10 @@ _mono_update_related_cell_fields(const cs_navsto_param_t       *nsp,
     cs_cdofb_navsto_rescale_pressure_to_ref(nsp, quant, pr_fld->val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
-  cs_dbg_darray_to_listing("VELOCITY", 3*quant->n_faces, vel_f, 9);
+  cs_dbg_darray_to_listing("CELL_VELOCITY", 3*quant->n_cells, vel_c, 9);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 3
+  cs_dbg_darray_to_listing("FACE_VELOCITY", 3*quant->n_faces, vel_f, 9);
+#endif
   cs_dbg_darray_to_listing("PRESSURE", quant->n_cells, pr_fld->val, 9);
 #endif
 }
@@ -1476,6 +1480,12 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       else
         bft_error(__FILE__, __LINE__, 0,
                   "Only diagonal time treatment available so far.\n");
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump("\n>> Cell system matrix before static condensation",
+                         csys);
+#endif
 
       /* 5- STATIC CONDENSATION
        * ======================
