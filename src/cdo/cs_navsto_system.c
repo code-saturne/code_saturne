@@ -699,6 +699,8 @@ cs_navsto_system_init_setup(void)
 
   if (nsp->post_flag & CS_NAVSTO_POST_MASS_DENSITY) {
 
+    n_plotter_outputs += 1;   /* Integral of the mass density is monitored */
+
     ns->mass_density = cs_field_find_or_create("mass_density",
                                                p_mask,
                                                location_id,
