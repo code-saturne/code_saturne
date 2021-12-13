@@ -430,6 +430,7 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  *         - the cellwise mass flux balance
  *         - the kinetic energy
  *         - the velocity gradient
+ *         - the pressure gradient
  *         - the vorticity
  *         - the helicity
  *         - the enstrophy
@@ -443,6 +444,7 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  * \param[in,out]  time_plotter  pointer to a \ref cs_time_plot_t struct.
  * \param[in]      adv_field     pointer to a \ref cs_adv_field_t struct.
  * \param[in]      mass_flux     scalar-valued mass flux for each face
+ * \param[in]      p_cell        scalar-valued pressure in each cell
  * \param[in]      u_cell        vector-valued velocity in each cell
  * \param[in]      u_face        vector-valued velocity on each face
  */
@@ -457,6 +459,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
                          cs_time_plot_t              *time_plotter,
                          const cs_adv_field_t        *adv_field,
                          const cs_real_t             *mass_flux,
+                         const cs_real_t             *p_cell,
                          const cs_real_t             *u_cell,
                          const cs_real_t             *u_face);
 

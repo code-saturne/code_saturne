@@ -238,6 +238,13 @@ typedef struct {
 
   cs_field_t                 *velocity_divergence;
 
+  /*! \var pressure_gradient
+   *  Pressure gradient
+   *  Pointer to a vector-valued \ref cs_field_t
+   */
+
+  cs_field_t                 *pressure_gradient;
+
   /*! \var kinetic_energy
    *  Kinetic energy defined as \f$ 1/2 velocity \cdot velocity \f$
    *  Pointer to a scalar-valued \ref cs_field_t

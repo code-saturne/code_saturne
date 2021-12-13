@@ -187,6 +187,7 @@ _allocate_navsto_system(void)
 
   navsto->plot_writer = NULL;
   navsto->velocity_divergence = NULL;
+  navsto->pressure_gradient = NULL;
   navsto->mass_density = NULL;
   navsto->mass_flux_balance = NULL;
   navsto->kinetic_energy = NULL;
@@ -726,6 +727,20 @@ cs_navsto_system_init_setup(void)
 
     cs_field_set_key_int(ns->mass_flux_balance, log_key, 1);
     cs_field_set_key_int(ns->mass_flux_balance, post_key, field_post_flag);
+
+  }
+
+  if (nsp->post_flag & CS_NAVSTO_POST_PRESSURE_GRADIENT) {
+
+    ns->pressure_gradient = cs_field_find_or_create("pressure_gradient",
+                                                    p_mask,
+                                                    location_id,
+                                                    3, /* dimension */
+                                                    has_previous);
+
+    /* Set the default value for keys related to post-processing */
+
+    cs_field_set_key_int(ns->pressure_gradient, post_key, field_post_flag);
 
   }
 
@@ -1367,6 +1382,10 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
+  /* Synchronize the cell pressure before doing something */
+
+  cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, ns->pressure->val);
+
   /* Update quantities relative to turbulence (e.g. turbulence
    * viscosity...) */
 
@@ -1710,10 +1729,16 @@ cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
       const cs_equation_t  *eq = cs_navsto_system_get_momentum_eq();
       const cs_real_t  *u_face = cs_equation_get_face_values(eq, need_prev);
       const cs_real_t  *u_cell = navsto->velocity->val;
+      const cs_real_t  *p_cell = navsto->pressure->val;
+
+      /* Synchronize the cell pressure before doing something */
+
+      if (nsp->post_flag & CS_NAVSTO_POST_PRESSURE_GRADIENT)
+        cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, p_cell);
 
       cs_cdofb_navsto_extra_op(nsp, mesh, quant, connect, time_step,
                                navsto->plot_writer,
-                               adv, mass_flux, u_cell, u_face);
+                               adv, mass_flux, p_cell, u_cell, u_face);
     }
     break;
 

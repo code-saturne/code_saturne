@@ -179,6 +179,9 @@ typedef enum {
  * Compute the balance of the mass flux for each cell. When the mass density is
  * constant, this quantity is only a scaling (by the mass density) of the
  * quantity computed with the flag CS_NAVSTO_POST_VELOCITY_DIVERGENCE.
+ *
+ * \var CS_NAVSTO_POST_PRESSURE_GRADIENT
+ * Compute the presure gradient in each cell.
  */
 
 typedef enum {
@@ -192,6 +195,7 @@ typedef enum {
   CS_NAVSTO_POST_ENSTROPHY                = 1<< 6, /* =  64 */
   CS_NAVSTO_POST_MASS_DENSITY             = 1<< 7, /* = 128 */
   CS_NAVSTO_POST_CELL_MASS_FLUX_BALANCE   = 1<< 8, /* = 256 */
+  CS_NAVSTO_POST_PRESSURE_GRADIENT        = 1<< 9, /* = 512 */
 
 } cs_navsto_param_post_bit_t;
 
