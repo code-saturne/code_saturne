@@ -315,6 +315,29 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute an estimation of the pressure at faces
+ *
+ * \param[in]       mesh       pointer to a cs_mesh_t structure
+ * \param[in]       connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]       quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       time_step  pointer to a cs_time_step_t structure
+ * \param[in]       nsp        pointer to a \ref cs_navsto_param_t struct.
+ * \param[in]       p_cell     value of the pressure inside each cell
+ * \param[in, out]  p_face     value of the pressure at each face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_compute_face_pressure(const cs_mesh_t             *mesh,
+                                      const cs_cdo_connect_t      *connect,
+                                      const cs_cdo_quantities_t   *quant,
+                                      const cs_time_step_t        *ts,
+                                      const cs_navsto_param_t     *nsp,
+                                      const cs_real_t             *p_cell,
+                                      cs_real_t                   *p_face);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Add the grad-div part to the local matrix (i.e. for the current
  *         cell)
  *

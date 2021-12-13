@@ -510,6 +510,80 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute an estimation of the pressure at faces
+ *
+ * \param[in]       mesh       pointer to a cs_mesh_t structure
+ * \param[in]       connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]       quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]       time_step  pointer to a cs_time_step_t structure
+ * \param[in]       nsp        pointer to a \ref cs_navsto_param_t struct.
+ * \param[in]       p_cell     value of the pressure inside each cell
+ * \param[in, out]  p_face     value of the pressure at each face
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_compute_face_pressure(const cs_mesh_t             *mesh,
+                                      const cs_cdo_connect_t      *connect,
+                                      const cs_cdo_quantities_t   *quant,
+                                      const cs_time_step_t        *ts,
+                                      const cs_navsto_param_t     *nsp,
+                                      const cs_real_t             *p_cell,
+                                      cs_real_t                   *p_face)
+{
+  /* Interior faces */
+
+  for (cs_lnum_t  i = 0; i < mesh->n_i_faces; i++) {
+
+    cs_lnum_t  iid = mesh->i_face_cells[i][0];
+    cs_lnum_t  jid = mesh->i_face_cells[i][1];
+
+    p_face[i] = 0.5*(p_cell[iid] + p_cell[jid]);
+
+  }
+
+  /* Border faces
+   * Use the knowledge from the BCs if possible, otherwise assume a homogeneous
+   * Neumann (i.e. p_face = p_cell). */
+
+  cs_real_t  *p_bface = p_face + mesh->n_i_faces;
+
+  for (cs_lnum_t  i = 0; i < mesh->n_b_faces; i++)
+    p_bface[i] = p_cell[mesh->b_face_cells[i]];
+
+  for (int def_id = 0; def_id < nsp->n_pressure_bc_defs; def_id++) {
+
+    cs_xdef_t  *pbc_def = nsp->pressure_bc_defs[def_id];
+    const cs_zone_t  *z = cs_boundary_zone_by_id(pbc_def->z_id);
+
+    assert(pbc_def->meta & CS_CDO_BC_DIRICHLET);
+
+    switch(pbc_def->type) {
+
+    case CS_XDEF_BY_VALUE:
+      cs_xdef_eval_scalar_by_val(z->n_elts, z->elt_ids,
+                                 false, /* dense output */
+                                 mesh,
+                                 connect,
+                                 quant,
+                                 ts->t_cur,
+                                 pbc_def->context,
+                                 p_bface);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Type of definition not handle.\n"
+                  " Stop computing the pressure BC value.\n"), __func__);
+      break;
+
+    } /* def->type */
+
+  } /* Loop on pressure BCs */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Add the grad-div part to the local matrix (i.e. for the current
  *         cell)
  *
