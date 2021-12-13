@@ -2185,6 +2185,20 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
                cs_real_t);
     break;
 
+  case CS_NAVSTO_SLES_MUMPS:
+
+    sc->init_system = _init_system_default;
+    sc->solve = cs_cdofb_monolithic_solve;
+    sc->assemble = _full_assembly;
+    sc->elemental_assembly = NULL;
+
+    BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
+
+    msles->graddiv_coef = nsp->gd_scale_coef;
+    msles->n_row_blocks = 1;
+    BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
+    break;
+
   case CS_NAVSTO_SLES_UZAWA_AL:
     sc->init_system = _init_system_default;
     sc->solve = cs_cdofb_monolithic_uzawa_al_incr_solve;
@@ -2243,7 +2257,6 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
      * CS_NAVSTO_SLES_GKB_PETSC
      * CS_NAVSTO_SLES_GKB_GMRES
      * CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
-     * CS_NAVSTO_SLES_MUMPS
      * CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
      */
     sc->init_system = _init_system_default;
