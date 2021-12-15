@@ -22,26 +22,25 @@
 
 [TOC]
 
-STUDYMANAGER
-============
+SMGR
+====
 
-This document presents the STUDYMANAGER command. The aim of this command
+This document presents the STUDYMANAGER (SMGR) command. The aim of this command
 is to drive code_saturne's cases automatically, to compare checkpoint files and
 to display results.
 
-STUDYMANAGER is a small framework to automate the launch of code_saturne
-computations and do some operations on new results.
+SMGR is a small framework to automate the launch of code_saturne computations
+and do some operations on new results.
 
 The script needs a source directory of code_saturne cases, called the
 **repository**, which will be duplicated into a **destination**
 directory, from which computations will be run.
 
-For each duplicated case, STUDYMANAGER can compile the user
-files, run the case, compare the obtained checkpoint file with the
-previous one from the repository, and plot curves in order to
-illustrate the computations.
+For each duplicated case, SMGR can compile the user files, run the case, compare
+the obtained checkpoint file with the previous one from the repository, and plot
+curves in order to illustrate the computations.
 
-For all these steps, STUDYMANAGER generates two reports:
+For all these steps, SMGR generates two reports:
 - A _global_ report which summarizes the status of each case.
 - A _detailed_ report which gives the differences between the new results
   and the previous ones in the repository, and displays
@@ -51,13 +50,12 @@ In the **repository**, previous results of computations are required only
 for checkpoint files comparison purposes. They can be also useful, if the
 user needs to run specific scripts.
 
-Installation and prerequisites
-------------------------------
+Prerequisites
+-------------
 
-STUDYMANAGER is available as a code_saturne command, and
-does not need a specific installation: the related files
-are installed with the other Python scripts of code_saturne. Nevertheless,
-additional prerequisites which may be required are:
+SMGR is available as a code_saturne command, and does not need a specific
+installation: the related files are installed with the other Python scripts of
+code_saturne. Nevertheless, additional prerequisites which may be required are:
 - `numpy`,
 - `matplotlib`
 
@@ -67,59 +65,52 @@ installation, and do not require any re-installation.
 Command line options
 ====================
 
-The command line options can be listed with the following command:
-`code_saturne studymanager -h`
+A complete and up-to-date list of command-line options may be obtained by running:
+
+`code_saturne smgr -h`
+
+Majors command-line options are detailed here:
 
 - `-h, --help`: show the help message and exit
-- `-f FILE, --file=FILE`: give the parameters file for STUDYMANAGER.
+- `-f FILE, --file=FILE`: give the parameters file for SMGR.
    This file is mandatory, and therefore this option must be completed
 - `-q, --quiet`: do not print status messages to `stdout`
-- `-u, --update`: update installation paths in scripts (i.e.
-  `code_saturne`) only in the **repository**, reinitialize XML files of
-  parameters and compile sources
-- `-x, --update-xml`: update only XML files in the repository
+- `-u, --update-smgr`: update the studymanager file smgr.xml in the
+  **repository**
+- `-x, --update-setup`: update all code_saturne setup.xml files in the
+  **repository**
 - `-t, --test-compile`: compile all cases
 - `-r, --run`: run all cases
-- `-n N_ITERATIONS, --n-iterations=N_ITERATIONS`: maximum number of
-  iterations for cases of the study
-- `-c, --compare`: compare checkpoint files between **repository** and
+- `-n N_ITER, --n-iterations=N_ITER`: maximum number of iterations for cases of
+  the study
+- `-c, --compare`: compare results files between **repository** and
   **destination**
-- `-d REFERENCE, --ref-dir=REFERENCE`: absolute reference directory to
-  compare dest with
+- `-d REFERENCE, --ref-dir=REFERENCE`: absolute reference directory to compare
+  dest with
 - `-p, --post`: postprocess results of computations
 - `-m ADDRESS1 ADDRESS2 ..., --mail=ADDRESS1 ADDRESS2 ...`: addresses for
   sending the reports
-- `-l LOG_FILE, --log=LOG_FILE`: name of STUDYMANAGER log file (default
-  value is `studymanager.log`)
-- `-z, --disable-tex`: disable text rendering with \f$ \mbox{\LaTeX} \f$ when plotting
-  with Matplotlib. It then uses Mathtext instead which is less complete
-- `--rm`: remove all existing run directories in destination directory
-- `--fow`: overwrite files in MESH and POST directories in destination
-  directory
-- `-s, --skip-pdflatex`: disable tex reports compilation with pdflatex
-- `--fmt=DEFAULT_FMT`: set the global format for exporting Matplotlib
-  figure (default is pdf)
-- `--repo=REPO_PATH`: force the path to the repository directory
-- `--dest=DEST_PATH`: force the path to the destination directory
+- `--rm`: remove all existing run directories in **destination**
+- `--repo=REPO_PATH`: force the path to the **repository**
+- `--dest=DEST_PATH`: force the path to the **destination**
 - `-g, --debug`: activate debugging mode
-- `--with-tags=WITH_TAGS`: only process runs with all specified tags
-  (separated by commas)
+- `--with-tags=WITH_TAGS`: only process runs with all specified tags (separated
+  by commas)
 - `--without-tags=WITHOUT_TAGS`: exclude any run with one of specified
   tags (separated by commas)
-- `--create-xml`: create xml from study (current directory has to be
-  a study)
+- `--create-xml`: create xml from study (current directory has to be a study)
 
 Examples
 --------
 
 - read `sample.xml`, create **destination** directory and exit;
   ```
-  $ code_saturne studymanager -f sample.xml
+  $ code_saturne smgr -f sample.xml
   ```
 - copy all cases from the **repository** into the **destination**,
   compile all user files and run enabled cases:
   ```
-  $ code_saturne studymanager -f sample.xml -r
+  $ code_saturne smgr -f sample.xml -r
   ```
 - as above, and compare all new checkpoint files with those from the
   **repository** if defined in `sample.xml`
@@ -138,57 +129,24 @@ Examples
    ```
    $ code_saturne smgr -f sample.xml -c -p
    ```
-- run cases tagged "coarse" (standing for coarse mesh for example)
-  _and_ "hr" (standing for high Reynolds for example) only for 2 time
-  iterations in destination directory of path `../RUNS/RIBS`
-  (`RIBS} will be created, `RUNS` already exists). The command is
-  launched from inside the study directory, so the repository
-  containing the original study is simply indicated by `..`
+- run cases tagged "coarse" (standing for coarse mesh for example) _and_ "hr"
+  (standing for high Reynolds for example) only for 2 time iterations in
+  destination directory of path `../RUNS/RIBS` (`RIBS} will be created, `RUNS`
+  already exists). The command is launched from inside the study directory, so
+  the repository containing the original study is simply indicated by `..`
   ```
   $ code_saturne smgr -f smgr_ribs.xml -r -n 2 --with-tags=coarse,hr --dest=../RUNS/RIBS --repo=..
   ```
-
 ### Note
 
 The detailed report is generated only if the options `-c, --compare`
 or `-p, --post` is present in the command line.
 
-Parameters file
-===============
+SMGR parameter file
+===================
 
-The parameters file is an XML (text) file.
-
-Begin and end of the parameters file
----------------------------------------
-
-This example shows the four mandatory first lines of the parameters file.
-
-```{.xml}
-<?xml version="1.0"?>
-<studymanager>
-    <repository>/home/dupond/codesaturne/MyRepository</repository>
-    <destination>/home/dupond/codesaturne/MyDestination</destination>
-```
-
-The third and fourth lines correspond to the definition of the
-**repository** and **destination** directories.
-Inside the markups `<repository>` and `<destination>` the user
-must indicate the related directories. If the **destination** does
-not exist, the directory is created.
-
-The last line of the parameters file must be:
-
-```{.xml}
-</studymanager>
-```
-
-Case creation and compilation of the user files
------------------------------------------------
-
-When STUDYMANAGER is launched, the parameters file is parsed in order to
-known which studies and cases from the **repository** should be copied
-in the **destination**. The selection is done with the markups
-`<study>` and `<case>` as in the following example:
+The SMGR parameter file is an XML (text) file that describes studies and cases
+involved in the SMGR process.
 
 ```{.xml}
 <?xml version="1.0"?>
@@ -206,87 +164,75 @@ in the **destination**. The selection is done with the markups
     </study>
 </studymanager>
 ```
+The four first lines of the SMGR parameter file are mandatory. The third and
+fourth lines correspond to the definition of the **repository** and
+**destination** directories. Note that if the **destination** does not exist,
+the directory is created.
 
-The attributes are:
-- `label`: the name of the file of the script;
-- `status`: must be `on` or `off`,
-  activate or deactivate the markup;
-- `compute`: must be `on` or `off`,
-  activate or deactivate the computation of the case;
-- `post: must be `on` or `off`,
-  activate or deactivate the post-processing of the case;
-- `run_id`: name of the run directory (sub-directory of `RESU`) in
-  which the result is stored. This attribute is optional. If it is
-  not set (or if set to `run_id=""`), an automatic value will be
-  proposed by the code (usually based on current date and time).
-- `tags`: possible tags distinguishing the run from the others in
-  the same XML parameter file (ex.: `tags="coarse,high-reynolds"`).
+When SMGR is launched, the parameters file is parsed in order to known which
+studies and cases from the **repository** should be copied in the
+**destination**. The selection is done with the markups `<study>` and `<case>`.
 
-Only the attributes `label`, `status`, `compute`, and `post` are
-mandatory.
-
-If the directory specified by the attribute `run_id` already exists,
-the computation is not performed again. For the post-processing step,
-the existing results are taken into account only if no error file is
-detected in the directory.
-
-With the `status` attribute, a single case or a complete study can be
-switched off. In the above example, only the case `Grid1` of the study
-`MyStudy1` is going to be created.
-
-After the creation of the directories in the **destination**, for each
-case, all user files are compiled. The STUDYMANAGER stops if a compilation
-error occurs: neither computation nor comparison nor plot will be performed,
-even if they are switched on.
-
-### Notes
-
-- During the duplication (copy), all files are copied, except mesh files,
-  for which a symbolic link is used.
-- During the duplication, if a file already exists in the
-  **destination**, this file is not overwritten by STUDYMANAGER
-  by default.
-
-Run cases {#sec_smgr_run}
----------
-
-The computations are activated if the option `-r, --run` is present in
-the command line.
-
-All cases described in the parameters file with the attribute
-`compute="on"`` are taken into account.
+The last line of the parameters file must be:
 
 ```{.xml}
-<?xml version="1.0"?>
-<studymanager>
-    <repository>/home/dupond/codesaturne/MyRepository</repository>
-    <destination>/home/dupond/codesaturne/MyDestination</destination>
-
-    <study label="MyStudy1" status="on">
-        <case label="Grid1" status="on" compute="on" post="off"/>
-        <case label="Grid2" status="on" compute="off" post="off"/>
-    </study>
-    <study label="MyStudy2" status="on">
-        <case label="k-eps" status="on" compute="on" post="off"/>
-        <case label="Rij-eps" status="on" compute="on" post="off"/>
-    </study>
 </studymanager>
 ```
 
-After the computation, if no error occurs, the attribute `compute} is set
-to `"off"` in the copy of the parameters file in the
-**destination**. This allows restarting STUDYMANAGER without re-running
-successful previous computations.
+Studies and cases attibutes
+-------------------------
+
+```{.xml}
+    <study label="MyStudy1" status="on">
+```
+
+The attributes for the studies are:
+- `label`: the name of the study;
+- `status`: must be `on` or `off` to activate or desactivate the study
+
+```{.xml}
+        <case label="Grid1" run_id="Grid1" status="on" compute="on" post="off" tags="coarse"/>
+```
+
+The attributes for the cases are:
+- `label`: the name of the case;
+- `run_id`: name of the run directory (sub-directory of `RESU`) in which the
+  result is stored. This attribute is optional. If it is not set (or if set to
+  `run_id=""`), an automatic value will be proposed by the code (usually based
+  on current date and time);
+- `status`: must be `on` or `off` to activate or desactivate the case;
+- `compute`: must be `on` or `off` to activate or deactivate the computation of
+  the case;
+- `post: must be `on` or `off` to activate or deactivate the post-processing of
+  the case;
+- `tags`: possible tags distinguishing the run from the others in the same SMGR
+  parameter file (ex.: `tags="fine,high-reynolds"`).
+
+Only the attributes `label`, `status`, `compute`, and `post` are mandatory.
+
+### Notes
+- If the directory specified by the attribute `run_id` already exists, the
+  computation is not performed again. Use option `--rm` SMGR command-line to
+  remove all existing run directories in **destination**.
+- During the duplication (copy), all files are copied, except mesh files, for
+  which a symbolic link is used.
+- During the duplication, all files that already exist in the **destination**
+  are overwritten by SMGR. Use option `--dow` SMGR command-line to disable
+  overwriting files in DATA, SRC, MESH and POST directories.
+- For the post-processing step, the existing results are taken into account only
+  if no error file is detected in the directory.
+- After the creation of the directories in the **destination**, for each case,
+  all user files are compiled. The SMGR stops if a compilation error occurs:
+  neither computation nor comparison nor plot will be performed, even if they
+  are switched on.
+
+Run case options {#sec_smgr_run}
+-------------------------------
 
 Note that it is possible to run several times the same case in a given study.
 The case has to be repeated in the parameters file:
 
 ```{.xml}
-<?xml version="1.0"?>
-<studymanager>
-    <repository>/home/dupond/codesaturne/MyRepository</repository>
-    <destination>/home/dupond/codesaturne/MyDestination</destination>
-
     <study label="MyStudy1" status="on">
         <case label="CASE1" run_id="Grid1" status="on" compute="on" post="on">
             <parametric args="-m grid1.med --iter-dt 0.01"/>
@@ -295,65 +241,99 @@ The case has to be repeated in the parameters file:
             <parametric args="-m grid2.med --iter-dt 0.005"/>
         </case>
     </study>
-</studymanager>
 ```
 
-If nothing is done, the case is repeated without modifications. In order to modify
-the setup between two runs of the same case, an external script has to be used to
-change the related setup (see [preprocessing](@ref sec_smgr_prepro)} and
-[tricks](@ref sec_smgr_tricks) sections).
+If nothing is done, the case is repeated without modifications. In order to
+modify the setup between two runs of the same case, `<notebook>`, `<parametric>`
+and `<kw_args>` nodes can be added as children of the considered case. All of
+them use the attribute `args` to pass additional arguments.
+
+```{.xml}
+<study label='STUDY' status='on'>
+    <case label='CASE1' status='on' compute="on" post="on">
+        <notebook args="u_inlet_1=0.1 u_inlet_2=0.2"/>
+        <parametric args="-m grid2.med --iter-dt 0.005"/>
+        <kw_args args="--my-gradient=lsq --my-restart-100-iter"/>
+    </case>
+</study>
+```
+
+These different nodes all apply a specific filter type during the __stage__
+(__initialize__) step of a case's execution (i.e. when copying data, just before
+the \ref define_domain_parameters (and \ref domain_copy_results_add) function in
+the \ref cs_user_scripts.py user scripts. They do not modify files in a case's
+`DATA` or `SRC` directory, only the copied files in the matching `RESU/<run_id>`.
+
+- `<notebook>` allows passing key-value pairs (with real-values) matching \ref
+  notebook variables already defined in the case, overriding the values in the
+  case's `setup.xml` with the provided values.
+  * They are passed to the underlying `code_saturne run` command using the
+   `--notebook-args` option.
+  * These pairs also appear as a Python dictionnary in the `domain.notebook`
+    member of the `domain` object passed to these functions.
+
+- `<parametric>` allows passing options handled by \ref cs_parametric_setup.py
+  filter to modify the case setup.
+  * They are passed to the underlying `code_saturne run` command using the
+   `--parametric-args` option.
+  * These options also appear as a Python list in the `domain.parametric_args`
+    member of the `domain` object passed to these functions.
+
+- `<kw_args>` allows passing additional user options to
+  \ref define_domain_parameters and \ref domain_copy_results_add in
+  \ref cs_user_scripts.py.
+  * They are passed to the underlying `code_saturne run` command using the
+   `--kw-args` option.
+  * These options appear as a Python list in the `domain.kw_args` member of the
+    `domain` object passed to these functions.
+  * When modifying mesh or restart file selections in these functions, the
+    matching `domain.meshes`, `domain.restart`, and similar members of the
+    `domain` argument should be modified directly, rather than modifying the
+    `setup.xml` file, as the matching values have already been read and assigned
+    to `domain` at this point.
 
 Compare checkpoint files
 ------------------------
 
 The comparison is activated if the option `-c`, or `--compare` is present in
-the command line.
-
-In order to compare two checkpoint files for a given case, a markup
-`<compare>` must be added as child of the considered case.
-In the following example, a checkpoint file comparison is switched on for the
-case _Grid1_ (for all
-variables, with the default threshold), whereas no comparison is planned for
-the case _Grid2_. The comparison is done by the same mechanism
-as the `code_saturne bdiff` command.
+the command line. A markup `<compare>` must also be added in the SMGR parameter
+file as child of the considered case.
 
 ```{.xml}
-<study label='MyStudy1' status='on'>
-    <case label='Grid1' status='on' compute="on" post="off">
-        <compare dest="" repo="" status="on"/>
-    </case>
-    <case label='Grid2' status='on' compute="off" post="off"/>
-</study>
+    <study label='MyStudy1' status='on'>
+        <case label='Grid1' status='on' compute="on" post="off">
+            <compare dest="" repo="" status="on"/>
+        </case>
+        <case label='Grid2' status='on' compute="off" post="off"/>
+    </study>
 ```
 
-The attributes are:
+In the above example, a checkpoint file comparison is switched on for the case
+_Grid1_ (for all variables, with the default threshold), whereas no comparison
+is planned for the case _Grid2_. The comparison is done by the same mechanism
+as the `code_saturne bdiff` command.
 
-- `repo`: id of the results directory in the **repository** for
-  example `repo="20110704-1116"`; if there is a single results directory
-  in the `RESU` directory of the case, the id can be omitted:
-  `repo=""`;
-
+The attributes for the comparison are:
+- `repo`: id of the results directory in the **repository** for example
+  `repo="20110704-1116"`; if there is a single results directory in the `RESU`
+  directory of the case, the id can be omitted: `repo=""`;
 - `dest`: id of the results directory in the **destination**:
-  * If the id is not known already because the case has not yet run,
-    just leave the attribute empty `dest=""`, and the value will be
-    updated after the run step in the **destination** directory
-    (see section about [restart](@ref sec_smgr_restart));
-  * if STUDYMANAGER is restarted without the run step (with the command
-    line `code_saturne studymanager -f sample.xml -c` for example),
-    the id of the results directory in the **destination** must be
-    given (for example `dest="20110706-1523"`), but if there is a
-    single results directory in the `RESU` directory of the case,
-    the id can be omitted: with `dest=""`, the id will be
-    completed automatically;
-
-- `args`: additional options for the `code_saturne bdiff` command
-   or underlying `cs_io_dump` tool:
+  * If the id is not known already because the case has not yet run, just leave
+    the attribute empty `dest=""`, and the value will be updated after the run
+    step in the **destination** directory (see section about [restart](@ref
+    sec_smgr_restart));
+  * if SMGR is restarted without the run step (with the command line
+    `code_saturne smgr -f sample.xml -c` for example), the id of the results
+    directory in the **destination** must be given (for example
+    `dest="20110706-1523"`), but if there is a single results directory in the
+    `RESU` directory of the case, the id can be omitted: with `dest=""`, the id
+    will be completed automatically;
+- `args`: additional options for the `code_saturne bdiff` command or underlying
+  `cs_io_dump` tool:
   *  `--section`: name of a particular variable;
   *  `--threshold`: real value above which a difference is considered
      significant (default: *1e<sup>-30</sup>* for all variables);
-
-- `status`: must be equal to `on` or `off`, used to activate or
-   deactivate the markup.
+- `status`: must be `on` or `off` to activate or desactivate the comparison;
 
 Only the `repo`, `dest` and `status` attributes are mandatory.
 
@@ -368,8 +348,8 @@ Several comparisons with different options are permitted:
 </study>
 ```
 
-Comparison results will be summarized in a table in the file
-`report_detailed.pdf`  (see [output](@ref sec_smgr_restart) section):
+Comparison results will be summarized in a table in the file `report_detailed.pdf`
+(see [output](@ref sec_smgr_restart) section):
 
 <table>
 <tr><th> Variable Name <th> Diff. Max <th> Diff. Mean <th> Threshold
@@ -377,140 +357,51 @@ Comparison results will be summarized in a table in the file
 <tr><td> VelocityY     <td> 0.364351  <td> 0.00764912 <td> 1.0e-3
 </table>
 
-Alternatively, in order to compare all activated cases (status at on)
-listed in a STUDYMANAGER parameter file, a reference directory can be
-provided directly in the command line, as follows:
+Alternatively, in order to compare all activated cases (status at on) listed in
+a SMGR parameter file, a reference directory can be provided directly in the
+command line, as follows:
 
-`code_saturne studymanager -f sample.xml -c -d /scratch/***/reference_destination_directory`
+`code_saturne smgr -f sample.xml -c -d /scratch/***/reference_destination_directory`
 
-Run preprocessing filters with options {#sec_smgr_prepro}
---------------------------------------
+Run external additional postprocessing scripts
+----------------------------------------------
 
-The `<notebook>`, `<parametric>`, and `<kw_args>` nodes can be added as children
-of the considered case.
+The main objective of running external scripts is to create or modify results in
+order to plot them. The launch of external scripts is activated if the option
+`-p, --post` is present in the SMGR command line. All postprocessing scripts must
+be in the `POST` directory from the current study in the **repository**.
 
-```{.xml}
-<study label='STUDY' status='on'>
-    <case label='CASE1' status='on' compute="on" post="on">
-        <notebook args="u_inlet_1=0.1 u_inlet_2=0.2"/>
-        <parametric args="-m grid2.med --iter-dt 0.005"/>
-        <kw_args args="--my-gradient=lsq --my-restart-100-iter"/>
-    </case>
-</study>
-```
-
-In all cases, the associated attributes are:
-- `args`: additional arguments to pass to the associated option.
-
-These different nodes all apply a specific filter type during the __stage__
-(__initialize__) step of a case's execution (i.e. when copying data,
-just before the \ref define_domain_parameters (and \ref domain_copy_results_add)
-function in the \ref cs_user_scripts.py user scripts. They do not modify
-files in a case's `DATA` or `SRC` directory, only the copied files
-in the matching `RESU/<run_id>`.
-
-- `<notebook>` allows passing key-value pairs (with real-values) matching
-  \ref notebook variables already defined in the case, overriding the
-  values in the case's `setup.xml` with the provided values.
-  * They are passed to the underlying `code_saturne run`command using the
-   `--notebook-args` option.
-  * These pairs also appear as a Python dictionnary in the `domain.notebook`
-    member of the `domain` object passed to these functions.
-
-- `<parametric>` allows passing options handled by \ref cs_parametric_setup.py
-  filter to modify the case setup.
-  * They are passed to the underlying `code_saturne run`command using the
-   `--parametric-args` option.
-  * These options also appear as a Python list in the `domain.parametric_args`
-    member of the `domain` object passed to these functions.
-
-- `<kw_args>` allows passing additional user options to
-  \ref define_domain_parameters and \ref domain_copy_results_add in
-  \ref cs_user_scripts.py.
-  * They are passed to the underlying `code_saturne run`command using the
-   `--kw-args` option.
-  * These options appear as a Python list in the `domain.kw_args`
-    member of the `domain` object passed to these functions.
-  * When modifying mesh or restart file selections in these functions,
-    the matching `domain.meshes`, `domain.restart`, and similar
-    members of the `domain` argument should be modified directly, rather
-    than modifying the `setup.xml` file, as the matching values have
-    already been read and assigned to `domain` at this point.
-
-Multiple instances the same filter are permitted:
-```{.xml}
-<study label="STUDY" status="on">
-    <case label="CASE1" status="on" compute="on" post="on">
-        <notebook args="u_inlet_1=0.1 u_inlet_2=0.2"/>
-    </case>
-</study>
-```
-
-and
-
-```{.xml}
-<study label="STUDY" status="on">
-    <case label="CASE1" status="on" compute="on" post="on">
-        <notebook args="u_inlet_1=0.1"/>
-        <notebook args="u_inlet_2=0.2"/>
-    </case>
-</study>
-```
-
-Are equivalent.
-
-Run external additional postprocessing scripts with options for a case
-----------------------------------------------------------------------
-
-The launch of external scripts is activated if the option `-p, --post`
-is present in the command line.
-
-The markup `<script>` has to be added as a child of the considered case.
+### Run postprocessing scripts for a case
+The markup `<script>` has to be added as a child of the considered case in the
+SMGR parameter file.
 
 ```{.xml}
 <study label='STUDY' status='on'>
     <case label='CASE1' status='on' compute="on" post="on">
         <script label="script_post.py" args="-n 1" dest="" repo="20110216-2147" status="on"/>
+        <script label="script_post.py" args="-n 2" dest="" repo="20110216-2147" status="on"/>
+        <script label="another_script.py" status="on"/>
     </case>
 </study>
 ```
 
 The attributes are:
 - `label`: the name of the file of the considered script;
-- `status`: must be `on` or `off`: activate or deactivate the markup;
+- `status`: must be `on` or `off` to activate or deactivate the markup;
 - `args`: the arguments to pass to the script;
-- `repo` and `dest`: id of the results directory in the
-  **repository** or in the **destination**;
-  * If the id is not known already because the case has not yet run,
-    just leave the attribute empty (`dest=""`), and the value will be
-    updated after the run step in the **destination** directory
-    (see [output](@ref sec_smgr_restart) section).
-  * If there is a single results directory in the `RESU` directory
-    (either in the **repository** or in the **destination**)
-    of the case, the id can be omitted: `repo=""` or `dest=""`,
-    the id will be completed automatically.
-  If attributes `repo` and `dest` exist, their associated value
-  will be passed to the script as arguments, with options `"-r"` and
-  `"-d"` respectively.
+- `repo` and `dest`: id of the results directory in the **repository** or in the
+  **destination**;
+  * If the id is not known already because the case has not yet run, just leave
+    the attribute empty (`dest=""`), and the value will be updated after the run
+    step in the **destination** directory (see [output](@ref sec_smgr_restart)
+    section).
+  * If there is a single results directory in the `RESU` directory (either in
+    the **repository** or in the **destination**) of the case, the id can be
+    omitted: `repo=""` or `dest=""`, the id will be completed automatically.
+  If attributes `repo` and `dest` exist, their associated value will be passed
+  to the script as arguments, with options `"-r"` and `"-d"` respectively.
 
 Only the `label` and `status` attributes are mandatory.
-
-Several calls of the same script or to different scripts are permitted:
-```{.xml}
-<study label="STUDY" status="on">
-    <case label="CASE1" status="on" compute="on" post="on">
-        <script label="script_post.py" args="-n 1" status="on"/>
-        <script label="script_post.py" args="-n 2" status="on"/>
-        <script label="script_post.py" args="-n 3" status="on"/>
-        <script label="another_script.py" status="on"/>
-    </case>
-</study>
-```
-
-All postprocessing scripts must be in the `POST` directory from
-the current study in the **repository**.
-The main objective of running external scripts is to create or modify
-results in order to plot them.
 
 Example of a script which searches printed information in the listing,
 (note the function to process the passed command line arguments):
@@ -554,12 +445,7 @@ if __name__ == '__main__':
     main(options)
 ```
 
-Run external additional postprocessing scripts with options for a study
------------------------------------------------------------------------
-
-The launch of external scripts is activated if the option `-p` or `--post`
-is present in the command line.
-
+### Run postprocessing scripts for a study
 The purpose of this functionality is to create new data based on several runs of
 cases, and to plot them (see [2D plots](@ref sec_smgr_curves)) or to insert them
 in the final detailed report (see [post-processing input](@ref sec_smgr_input)).
@@ -581,39 +467,33 @@ The `<postpro>` markup must to be added as a child of the considered study.
 
 The attributes are:
 - `label`: the name of the file of the considered script;
-- `status`: must be `on}` or `off`: activate or deactivate the markup;
+- `status`: must be `on` or `off` to activate or deactivate the markup;
 - `args`: the additional options to pass to the script;
 
 Only the `label` and `status` attributes are mandatory.
 
 The options given to the script in the command line are:
-
 - `-s` or `--study`: label of the current study;
-- `-c` or `--cases`: string which contains the list of the cases
-- `-d` or `--directories`: string which contains the list
-   of the directories of results.
+- `-c` or `--cases`: string which contains the list of the cases;
+- `-d` or `--directories`: string which contains the list of the directories
+  of results.
 
-Additional options can be passed to the script through the `args`
-attributes.
-
-Note that all options must be processed by the script itself.
-
-Several calls of the same script or to different scripts are permitted.
+Note that all options must be processed by the script itself. Several calls of
+the same script or to different scripts are permitted.
 
 Post-processing: 2D plots {#sec_smgr_curves}
 -------------------------
 
-The post-processing is activated if the option `-p` or `--post` is present
-in the command line.
+The post-processing is activated if the option `-p` or `--post` is present in
+the command line.
 
 The following example shows the drawing of four curves (or plots, or 2D lines)
-from two files of data (which have the same name `profile.dat`). There
-are two subsets of curves (i.e. frames with axis and 2D lines), in a single
-figure. The figure will be saved on the disk in a **pdf** (default)
-or **png** format, in the `POST` directory of the related study
-in the **destination**. Each drawing of a single curve is defined as a
-markup child of a file of data inside a case. Subsets and figures are defined
-as markup children of `<study>`.
+from two files of data (which have the same name `profile.dat`). There are two
+subsets of curves (i.e. frames with axis and 2D lines), in a single figure. The
+figure will be saved on the disk in a **pdf** (default) or **png** format, in
+the `POST` directory of the related study in the **destination**. Each drawing
+of a single curve is defined as a markup child of a file of data inside a case.
+Subsets and figures are defined as markup children of `<study>`.
 
 ```{.xml}
 <study label='Study' status='on'>
@@ -639,50 +519,48 @@ Define curves
 -------------
 
 The plots of computational data are built from data files. These data must be
-ordered as column and the files should be in results directory in the
-`RESU` directory (either in the **repository** or in the
-**destination**). Lines starting with character `\#` are treated as
-as comments.
+ordered as column and the files should be in results directory in the `RESU`
+directory (either in the **repository** or in the **destination**). Lines
+starting with character `\#` are treated as as comments.
 
 In the parameters file, curves are defined with two markups:
 `<data>` and `<plot>`:
 
 - `<data>`: child of markup `<case>`, defines a file of data;
   * `file`: name of the file of data
-  * `repo` or `dest`: id of the results directory either in the
-    **repository** or in the **destination**;
-    - If the id is not known already because the case has not yet run,
-      just leave the attribute empty, with `dest=""`, and the value
-      will be updated after the run step in the **destination**
-      directory (see [output](@ref sec_smgr_restart) section).
-    - If there is a single results directory in the `RESU` directory
-      (either in the **repository** or in the **destination**)
-      of the case, the id can be ommitted: `repo=""` or `dest=""`,
-      and it will be completed automatically.
-  The `file` attribute is mandatory, and either `repo` or
-  `dest` must be present (but not the both), even if they are empty.
+  * `repo` or `dest`: id of the results directory either in the **repository**
+    or in the **destination**;
+    - If the id is not known already because the case has not yet run, just
+      leave the attribute empty, with `dest=""`, and the value will be updated
+      after the run step in the **destination** directory (see [output](@ref
+      sec_smgr_restart) section).
+    - If there is a single results directory in the `RESU` directory (either in
+      the **repository** or in the **destination**) of the case, the id can be
+      ommitted: `repo=""` or `dest=""`, and it will be completed automatically.
+
+The `file` attribute is mandatory, and either `repo` or `dest` must be present
+(but not the both), even if they are empty.
 
 - `<plot>`: child of markup `<data>`, defines a single curve;
   the attributes are:
-  * `fig}` id of the subset of curves (i.e. markup `<subplot>`)
-    where the current curve should be plotted;
+  * `fig` id of the subset of curves (i.e. markup `<subplot>`) where the current
+    curve should be plotted;
   * `xcol`: number of the column in the file of data for the abscissa;
   * `ycol`: number of the column in the file of data for the ordinate;
   * `legend`: add a label to a curve;
-  * `fmt`: format of the line, composed from a symbol, a color and a
-    linestyle, for example `fmt="r--"` for a dashed red line;
+  * `fmt`: format of the line, composed from a symbol, a color and a linestyle,
+    for example `fmt="r--"` for a dashed red line;
   * `xplus`: real to add to all values of the column `xcol`;
   * `yplus`: real to add to all values of the column `ycol`;
   * `xfois`: real to multiply to all values of the column `xcol`;
   * `yfois`: real to multiply to all values of the column `ycol`;
-  * `xerr` or `xerrp`: draw horizontal error bar (see section
-    on [error bars](@ref sec_smgr_err));
+  * `xerr` or `xerrp`: draw horizontal error bar (see section on [error bars]
+    (@ref sec_smgr_err));
   * `yerr` or `yerrp`: draw vertical error bar (as above);
-  * some standard options of 2D lines can be added, for example
-    `markevery="2"` or `markersize="3.5"`. These options
-    are summarized in the table @ref smgr_table_curves. Note that
-    the options which are string of characters must be encased in
-    quotes like this: `color="'g'"`.
+  * some standard options of 2D lines can be added, for example `markevery="2"`
+    or `markersize="3.5"`. These options are summarized in the table @ref
+    smgr_table_curves. Note that the options which are string of characters must
+    be encased in quotes like this: `color="'g'"`.
 
 <table>
 <caption id="smgr_table_curves">Options authorized as attributes of the markup `plot`</caption>
@@ -710,25 +588,24 @@ In the parameters file, curves are defined with two markups:
 The attributes `fig` and `ycol` are mandatory.
 
 In case a column should undergo a transformation specified by the attributes
-`xfois`,`yfois`,`xplus`,`yplus`, scale operations
-take precedence over translation operations.
+`xfois`,`yfois`,`xplus`,`yplus`, scale operations take precedence over
+translation operations.
 
-Details on 2D lines properties can be found in the
-[Matplotlib documentation](https://matplotlib.org/contents.html).
-For more advanced options see [Matplotlib raw commands](@ref sec_smgr_raw).
+Details on 2D lines properties can be found in the [Matplotlib documentation]
+(https://matplotlib.org/contents.html). For more advanced options see
+[Matplotlib raw commands](@ref sec_smgr_raw).
 
 ### Define subsets of curves
-
 A subset of curves is a frame with two axis, axis labels, legend, title and
-drawing of curves inside. Such subset is called subplot in
-the Matplotlib vocabulary.
+drawing of curves inside. Such subset is called subplot in the Matplotlib
+vocabulary.
 
-`<subplot>`: child of markup `<study>`, defines a frame with
-several curves; the attributes are:
+`<subplot>`: child of markup `<study>`, defines a frame with several curves;
+the attributes are:
 - `id`: id of the subplot, should be an integer;
 - `legstatus`: if `"on"` display the frame of the legend;
-- `legpos`: sequence of the relative coordinates of the center of
-   the legend, it is possible to draw the legend outside the axis;
+- `legpos`: sequence of the relative coordinates of the center of the legend,
+  it is possible to draw the legend outside the axis;
 - `title`: set title of the subplot;
 - `xlabel`: set label for the x axis;
 - `ylabel`: set label for the y axis;
@@ -738,11 +615,10 @@ several curves; the attributes are:
 For more advanced options see [Matplotlib raw commands](@ref sec_smgr_raw).
 
 ### Define figures
-
 Figure is a compound of subset of curves.
 
-`<figure>`: child of markup `<study>`, defines a pictures
-with a layout of frames; the attributes are:
+`<figure>`: child of markup `<study>`, defines a pictures with a layout of
+frames; the attributes are:
 - `name`: name of the file to be written on the disk;
 - `idlist`: list of the subplot to be displayed in the figure;
 - `title`: add a title on the top of the figure;
@@ -754,21 +630,11 @@ with a layout of frames; the attributes are:
   with pdflatex will not be possible in this case;
 - `figsize`: width x height in inches; defaults to (4,4);
 - `dpi`: resolution; defaults to 200 if format is set to pdf;
-  or to 800 if format is set to png; only customizable for
-  png format.
+  or to 800 if format is set to png; only customizable for png format.
 
 The `name` and `idlist` attributes are mandatory.
 
 ### Experimental or analytical data
-
-A particular markup is provided for curves of experimental or analytical data:
-`<measurement>`; the attributes are:
-- `file`: name of the file to be read on the disk;
-- `path`: path of the directory where the data file is located.
-  The path can be omitted (`path=""`), and in this case, the file
-  will be searched recursively in the directories of the considered study.
-
-The `file` and `path` attributes are mandatory.
 
 In order to draw curves of experimental or analytical data, the `<measurement`
 markup should be used with the markup `<plot>` as illustrated below:
@@ -795,12 +661,16 @@ markup should be used with the markup `<plot>` as illustrated below:
 <figure name="MyFigure" idlist="1 2"  figsize="(4,4)" />
 ```
 
-### Curves with error bars {#sec_smgr_err}
+The two mandatory attributes are:
+- `file`: name of the file to be read on the disk;
+- `path`: path of the directory where the data file is located.
+  The path can be omitted (`path=""`), and in this case, the file will be
+  searched recursively in the directories of the considered study.
 
-In order to draw horizontal and vertical error bars, it is possible to
-specify in the markup `<plot>` the attributes `xerr` and
-`yerr` respectively (or `xerrp` and `yerrp`). The
-value of these attributes could be:
+### Curves with error bars {#sec_smgr_err}
+In order to draw horizontal and vertical error bars, it is possible to specify
+in the markup `<plot>` the attributes `xerr` and `yerr` respectively (or `xerrp`
+and `yerrp`). The value of these attributes could be:
 - the number of the column, in the file of data, that contains the total
   absolute uncertainty spans:
   ```{.xml}
@@ -823,27 +693,6 @@ value of these attributes could be:
   </data>
   ```
 ### Monitoring points or probes
-
-A particular markup is provided for curves of probes data:
-`<probes>`; the attributes are:
-
-- `file`: name of the file to be read on the disk;
-- `fig`: id of the subset of curves (i.e. markup `<subplot>`)
-   where the current curve should be plotted;
-- `dest`: id of the results directory in the **destination**:
-  * If the id is not known already because the case has not yet run, just
-    leave the attribute empty, with `dest=""`, and the value will be updated
-    after the run step in the **destination** directory
-    (see [output](@ref sec_smgr_restart) section).
-  * If STUDYMANAGER is restarted without the run step (with the command
-    line `code_saturne studymanager -f sample.xml -c` for example), the id of
-    the results directory in the **destination** must be given (for example
-    `dest="20110706-1523"`), but if there is a single results directory in
-    the `RESU` directory of the case, the id can be omitted:
-    with `dest=""`, the id will be completed automatically.
-
-The `file`, `fig` and `dest` attributes are mandatory.
-
 In order to draw curves of probe data, the `<probes>` markup
 should be used as a child of a markup `<case>` as illustrated below:
 
@@ -865,23 +714,40 @@ should be used as a child of a markup `<case>` as illustrated below:
 <figure title="Grid1: probes for velocity"  name="MyProbes" idlist="2"/>
 ```
 
+The attributes are:
+- `file`: name of the file to be read on the disk;
+- `fig`: id of the subset of curves (i.e. markup `<subplot>`)
+   where the current curve should be plotted;
+- `dest`: id of the results directory in the **destination**:
+  * If the id is not known already because the case has not yet run, just leave
+    the attribute empty, with `dest=""`, and the value will be updated after the
+    run step in the **destination** directory (see [output](@ref
+    sec_smgr_restart) section).
+  * If SMGR is restarted without the run step (with the command line
+    `code_saturne smgr -f sample.xml -c` for example), the id of the results
+    directory in the **destination** must be given (for example
+    `dest="20110706-1523"`), but if there is a single results directory in the
+    `RESU` directory of the case, the id can be omitted: with `dest=""`, the id
+    will be completed automatically.
+
+The `file`, `fig` and `dest` attributes are mandatory.
+
 ### Matplotlib raw commands {#sec_smgr_raw}
+The parameters file allows executing additional Matplotlib commands (i.e Python
+commands), for curves (2D lines), or subplot, or figures. For every object drawn,
+`smgr` associate a name to this object that can be reused in standard Matplotlib
+commands. Therefore, children markup `<plt_command>` could be added to `<plot>`,
+`<subplot>` or `<figure>`.
 
-The parameters file allows executing additional Matplotlib commands (i.e
-Python commands), for curves (2D lines), or subplot, or figures. For every object
-drawn, `studymanager` associate a name to this object that can be reused in
-standard Matplotlib commands. Therefore, children markup `<plt_command>`
-could be added to `<plot>`, `<subplot>` or `<figure>`.
-
-It is possible to add commands with the **Matlab style** or **Python
-style**. For the Matlab style, commands are called as methods of the
-`plt` module, and for the Python style commands or called as methods of the
-instance of the graphical object.
+It is possible to add commands with the **Matlab style** or **Python style**.
+For the Matlab style, commands are called as methods of the `plt` module, and
+for the Python style commands or called as methods of the instance of the
+graphical object.
 
 Matlab style and Python style commands can be mixed.
 
-- curves or 2D lines: when a curve is drawn, the associated name
-  are `line` and `lines` (with `line = lines[0]`).
+- curves or 2D lines: when a curve is drawn, the associated name are `line` and
+  `lines` (with `line = lines[0]`).
 
   ```{.xml}
   <plot fig="1" xcol="1" ycol="2" fmt='g^' legend="Simulated water level">
@@ -909,14 +775,14 @@ Matlab style and Python style commands can be mixed.
 Post-processing: input files {#sec_smgr_input}
 ----------------------------
 
-The post-processing is activated if the option `-p, --post` is present
-in the command line.
+The post-processing is activated if the option `-p, --post` is present in the
+command line.
 
-STUDYMANAGER can include files into the final detailed report. These
-files must be in the directory of results either in the **destination** or
-in the **repository**. The following example shows the inclusion of three
-files: `performance.log` and `setup.log` from the
-**destination**, and a `performance.log` from the **repository**:
+SMGR can include files into the final detailed report. These files must be in
+the directory of results either in the **destination** or in the **repository**.
+The following example shows the inclusion of three files: `performance.log` and
+`setup.log` from the **destination**, and a `performance.log` from the
+**repository**:
 
 ```{.xml}
 <case label='Grid1' status='on' compute="on" post="on">
@@ -926,47 +792,44 @@ files: `performance.log` and `setup.log` from the
 </case>
 ```
 
-Text files, \f$ \mbox{\LaTeX} \f$ source files, or graphical (PNG, JPEG, or PDF) files
-may be included.
+Text files, \f$ \mbox{\LaTeX} \f$ source files, or graphical (PNG, JPEG, or PDF)
+files may be included.
 
-In the parameters file, input files are defined with markups `<input>`
-as children of a single markup `<case>`.
+In the parameters file, input files are defined with markups `<input>` as
+children of a single markup `<case>`.
 The attributes of `<input>` are:
 - `file`: name of the file to be included
-- `repo` or `dest`: id of the results directory either in the
-  **repository** or in the **destination**;
+- `repo` or `dest`: id of the results directory either in the **repository** or
+  in the **destination**;
   * If the id is not known already because the case has not yet run, just leave
     the attribute empty, with `dest=""`; the value will be updated after the run
-    step in the **destination** directory
-    (see [output](@ref sec_smgr_restart) section).
-  * If there is a single results directory in the `RESU` directory
-    (either in the **repository** or in the **destination**) of the case,
-    the id can be omitted: with `repo=""` or `dest=""`, the id will be
-    completed automatically.
+    step in the **destination** directory (see [output](@ref sec_smgr_restart)
+    section).
+  * If there is a single results directory in the `RESU` directory (either in
+    the **repository** or in the **destination**) of the case, the id can be
+    omitted: with `repo=""` or `dest=""`, the id will be completed automatically.
 
-The `file` attribute is mandatory, and either `repo` or
-`dest` must be present (but not the both) even if it is empty.
+The `file` attribute is mandatory, and either `repo` or `dest` must be present
+(but not the both) even if it is empty.
 
 Output and restart {#sec_smgr_restart}
 ==================
 
-STUDYMANAGER produces several files in the **destination** directory:
+SMGR produces several files in the **destination** directory:
 
 - `report.txt`: standard output of the script;
 - `auto_vnv.log`: log of the code and the `pdflatex` compilation;
-- `report_global.pdf`: summary of the compilation, run, comparison,
-   and plot steps;
-- `report_detailed.pdf`: details the comparison and display the
-   plot;
-- `sample.xml`: udpated parameters file, useful for restart the
-   script if an error occurs.
+- `report_global.pdf`: summary of the compilation, run, comparison, and plot
+  steps;
+- `report_detailed.pdf`: details the comparison and display the plot;
+- `sample.xml`: udpated parameters file, useful for restart the script if an
+  error occurs.
 
-After the computation of a case, if no error occurs, the attribute
-`compute` is set to `"off"` in the copy of the parameters file
-in the **destination**. It is allow a restart of STUDYMANAGER without
-re-run successful previous computations.
-In the same manner, all empty attributes `repo=""` and `dest=""`
-are completed in the updated parameters file.
+After the computation of a case, if no error occurs, the attribute `compute` is
+set to `"off"` in the copy of the parameters file in the **destination**. It is
+allow a restart of SMGR without re-run successful previous computations. In the
+same manner, all empty attributes `repo=""` and `dest=""` are completed in the
+updated parameters file.
 
 Tricks {#sec_smgr_tricks}
 ======
@@ -974,10 +837,8 @@ Tricks {#sec_smgr_tricks}
 ## Syntax and additional markup
 
 ### How to comment markup in the parameters file?
-
-The opening and closing markup for comments in XML are `<!--` and
-`-->`. In the following example, nothing from the study
-`MyStudy2` will be read:
+The opening and closing markup for comments in XML are `&lt;!--` and `--&gt;`.
+In the following example, nothing from the study `MyStudy2` will be read:
 ```{.xml}
 <?xml version="1.0"?>
 <studymanager>
@@ -988,7 +849,7 @@ The opening and closing markup for comments in XML are `<!--` and
         <case label="Grid1" status="on" compute="on" post="on"/>
         <case label="Grid2" status="on" compute="off" post="on"/>
     </study>
-    <!--
+    < !-- 
     <study label="MyStudy2" status="on">
         <case label="k-eps" status="on" compute="on" post="on"/>
         <case label="Rij-eps" status="on" compute="on" post="on"/>
@@ -998,8 +859,8 @@ The opening and closing markup for comments in XML are `<!--` and
 ```
 
 ### How to add text in a figure?
-
 It is possible to use raw commands:
+
 ```{.xml}
 <subplot id='301' ylabel ='Location ($m$)' title='Before jet -0.885' legstatus='off'>
     <plt_command>plt.text(-4.2, 0.113, 'jet')</plt_command>
@@ -1008,7 +869,6 @@ It is possible to use raw commands:
 ```
 
 ### Adjust margins for layout of subplots in a figure.
-
 You have to use the raw command `subplots_adjust`:
 
 ```{.xml}
@@ -1019,10 +879,8 @@ You have to use the raw command `subplots_adjust`:
 ```
 
 ### How to find a syntax error in the XML file?
-
-  When there is a typo in the parameters file,
-  STUDYMANAGER indicates the location of the error
-  with the line and the column of the file:
+When there is a typo in the parameters file, SMGR indicates the location of the
+error with the line and the column of the file:
 ```
 my_case.xml file reading error.
 
@@ -1034,12 +892,12 @@ my_case.xml:86:12: not well-formed (invalid token)
 ```
 
 ### How to render less-than and greater-than signs in legends, titles or axis labels?
-
 The less-than < and greater-than > symbols are among the five predefined
 entities of the XML specification that represent special characters.
 
-In order to have one of the five predefined entities rendered in any legend, title or axis label,
-use the string `&name;`. Refer to the following table for the name of the character to be rendered:
+In order to have one of the five predefined entities rendered in any legend,
+title or axis label, use the string `&name;`. Refer to the following table for
+the name of the character to be rendered:
 
 <table>
 <caption id="smgr_table_xml_spe_sym">Special symbols of the XML specification</caption>
@@ -1055,13 +913,13 @@ For any of these predefined entities, the XML parser will first replace
 the string `&name;` by the character, which will then allow \f$ \mbox{\LaTeX} \f$
 (or Mathtext if \f$ \mbox{\LaTeX} \f$ is disabled) to process it.
 
-For example, in order to write \f$ \lambda<1 \f$ in a legend, the following attribute will be used:
+For example, in order to write \f$ \lambda<1 \f$ in a legend, the following
+attribute will be used:
 ```
   <plot fig="4" fmt="k--" legend="solution for $\lambda &lt; 1$" xcol="1" ycol="2"/>
 ```
 
 ### How to set a logarithmic scale?
-
 The following raw commands can be used:
 
 ```{.xml}
@@ -1072,7 +930,6 @@ The following raw commands can be used:
 ```
 
 ## How to carry out a grid convergence study?
-
 The following example shows how to carry out a grid convergence study by running
 the same case three times and changing the parameters between each run with the
 help of a preprocessing script.
@@ -1106,15 +963,14 @@ The parameters file is as follows:
 </case>
 ```
 
-Recall that the case attribute `run`_id` should be given a different
-value for each run, while the `label` should stay the same.
+Recall that the case attribute `run_id` should be given a different value for
+each run, while the `label` should stay the same.
 
 ## How to convert deprecated `<prepro>` scripts.
-
-To update a setup based on a script called with the deprecated `<prepro>`
-tag, simply copy the contents of that script in the "local functions"
-section of the optional `DATA/cs_user_scripts.py` user scripts,
-renaming `main` to another chosen name, for example `prepro`.
+To update a setup based on a script called with the deprecated `<prepro>` tag,
+simply copy the contents of that script in the "local functions" section of the
+optional `DATA/cs_user_scripts.py` user scripts, renaming `main` to another
+chosen name, for example `prepro`.
 
 Remove the section resembling:
 
@@ -1133,22 +989,20 @@ and add the following section in the `define_domain_parameters` function:
 ```
 
 Remember that when modifying mesh or restart file selections, the matching
-values have already been read and assigned to `domain` at this point,
-so the matching `domain` entries should be modified directly, instead
-of modifying the XML file.
+values have already been read and assigned to `domain` at this point, so the
+matching `domain` entries should be modified directly, instead of modifying the
+XML file.
 
-Also when reading or writing a setup XML file, the path to that file
-should simply be `setup.xml` or `domain.param`, as this function is
-called directly from the execution directory, and should not modify
-the upstream setup.
+Also when reading or writing a setup XML file, the path to that file should
+simply be `setup.xml` or `domain.param`, as this function is called directly
+from the execution directory, and should not modify the upstream setup.
 
-In the STUDYMANAGER XML file, `<prepro>` can then simply be replaced with
-`<kw_args>`. Only the `args` attribute is used, so other attributes
-(`label` and `status`) can be removed. Also, the `-c` or `--case` arguments
-commonly used to indicate the matching case are not necessary anymore.
+In the SMGR XML file, `<prepro>` can then simply be replaced with `<kw_args>`.
+Only the `args` attribute is used, so other attributes (`label` and `status`)
+can be removed. Also, the `-c` or `--case` arguments commonly used to indicate
+the matching case are not necessary anymore.
 
-Note also that using the `<notebook>` and `<parametric>` tags is simpler
-for notebook values or options already handled by the `cs_parametric_setup.py`
-script, as they require no intervention in `cs_user_scripts.py`.
-As usual, the approaches can be mixed, so as to minimize the size of
-the user scripts.
+Note also that using the `<notebook>` and `<parametric>` tags is simpler for
+notebook values or options already handled by the `cs_parametric_setup.py`
+script, as they require no intervention in `cs_user_scripts.py`. As usual, the
+approaches can be mixed, so as to minimize the size of the user scripts.
