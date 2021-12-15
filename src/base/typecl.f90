@@ -77,6 +77,7 @@ subroutine typecl &
 !===============================================================================
 
 use paramx
+use atincl
 use numvar
 use optcal
 use cstnum
@@ -123,10 +124,13 @@ integer          f_id, i_dim, f_type, nfld, f_dim, f_id_yplus, f_id_z_ground
 integer          modntl
 integer          kturt, turb_flux_model, turb_flux_model_type
 
+double precision vs, xuent, xvent, xwent, zent
 double precision pref
 double precision flumbf, flumty(ntypmx)
 double precision d0, d0min
 double precision xyzref(3)
+double precision vel_dir(3)
+double precision proj_dir(3)
 
 character(len=80) :: fname
 
@@ -135,6 +139,8 @@ double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:), pointer :: bmasfl
 
 double precision, pointer, dimension(:,:) :: frcxt
+double precision, dimension(:,:), pointer :: cpro_met_vel
+double precision, allocatable, dimension (:,:), target :: wvel_target
 double precision, dimension(:), pointer :: cvara_pr
 double precision, dimension(:), pointer :: cpro_prtot
 double precision, dimension(1,1), target :: rvoid2
@@ -159,6 +165,10 @@ allocate(pripb(ndimfb))
 ! Initialize variables to avoid compiler warnings
 pripb = 0.d0
 pref = 0.d0
+
+if (imeteo.ge.2) then
+  call field_get_val_v_by_name('meteo_velocity', cpro_met_vel)
+endif
 
 call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
@@ -684,10 +694,53 @@ if (itbslb.gt.0.and.iilagr.ne.3) then
 
   do ifac = 1, nfabor
     ii = ifabor(ifac)
-    pripb(ifac) = cvara_pr(ii)                                   &
-                + (cdgfbo(1,ifac)-xyzcen(1,ii))*grad(1,ii)       &
-                + (cdgfbo(2,ifac)-xyzcen(2,ii))*grad(2,ii)       &
-                + (cdgfbo(3,ifac)-xyzcen(3,ii))*grad(3,ii)
+
+    ! IF: Direction of projection of the pressure gradient
+    proj_dir(1) = (cdgfbo(1,ifac)-xyzcen(1,ii))
+    proj_dir(2) = (cdgfbo(2,ifac)-xyzcen(2,ii))
+    proj_dir(3) = (cdgfbo(3,ifac)-xyzcen(3,ii))
+
+    if (imeteo.ge.1) then
+      if (imeteo.eq.1) then
+        zent = xyzcen(3,ii)
+        call intprf &
+          (nbmetd, nbmetm,                                               &
+          zdmet, tmmet, umet , zent  , ttcabs, xuent )
+        call intprf &
+          (nbmetd, nbmetm,                                               &
+          zdmet, tmmet, vmet , zent  , ttcabs, xvent )
+        xwent = 0.d0 ! 2D Profile
+
+
+        ! Meteo Velocity direction
+        vel_dir(1) = xuent
+        vel_dir(2) = xvent
+        vel_dir(3) = xwent
+      else if (imeteo.ge.2) then
+        ! Meteo Velocity direction
+        vel_dir(1) = cpro_met_vel(1, ii)
+        vel_dir(2) = cpro_met_vel(2, ii)
+        vel_dir(3) = cpro_met_vel(3, ii)
+      endif
+
+      ! Velocity direction normalized
+      call vector_normalize(vel_dir, vel_dir)
+
+      ! (IF.n) n
+      vs = (cdgfbo(1,ifac)-xyzcen(1,ii))*vel_dir(1) &
+         + (cdgfbo(2,ifac)-xyzcen(2,ii))*vel_dir(2) &
+         + (cdgfbo(3,ifac)-xyzcen(3,ii))*vel_dir(3)
+
+      proj_dir(1) = vs*vel_dir(1)
+      proj_dir(2) = vs*vel_dir(2)
+      proj_dir(3) = vs*vel_dir(3)
+
+    endif
+    pripb(ifac) = cvara_pr(ii)                   &
+                + (proj_dir(1))*grad(1,ii)       &
+                + (proj_dir(2))*grad(2,ii)       &
+                + (proj_dir(3))*grad(3,ii)
+
   enddo
 
   ! Free memory
