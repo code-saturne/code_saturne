@@ -200,6 +200,7 @@ typedef struct {
    * @name General settings
    * @{
    */
+
   char *restrict       name;           /*!< name of the equation */
   cs_equation_type_t   type;           /*!< type of equation: predefined... */
   int                  dim;            /*!< Dimension of the unknown */
@@ -221,21 +222,25 @@ typedef struct {
    *  Flag to know if unsteady or diffusion or convection or reaction
    *  or source terms are activated or not
    */
+
   cs_flag_t                  flag;
 
   /*! \var process_flag
    *  Flag to determine if predefined post-treatments such as Peclet,
    *  are requested
    */
+
   cs_flag_t                  process_flag;
 
   /* Numerical settings */
+
   cs_param_space_scheme_t    space_scheme;  /*!< Space discretization scheme */
   cs_param_dof_reduction_t   dof_reduction; /*!< How is defined DoF */
 
   /*! \var space_poly_degree
    * Maximum degree of the polynomial basis
    */
+
   int                        space_poly_degree;
 
   /*!
@@ -2164,10 +2169,10 @@ cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t  *eqp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t    *eqp,
-                                                  const char             *z_name,
-                                                  cs_analytic_func_t     *func,
-                                                  void                   *input);
+cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
+                                                  const char            *z_name,
+                                                  cs_analytic_func_t    *func,
+                                                  void                  *input);
 
 /*----------------------------------------------------------------------------*/
 /*!

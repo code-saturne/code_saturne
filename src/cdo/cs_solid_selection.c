@@ -210,6 +210,7 @@ cs_solid_selection_free(void)
   BFT_FREE(_cs_solid->cell_ids);
   BFT_FREE(_cs_solid);
 }
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -1054,16 +1054,19 @@ cs_equation_param_create(const char            *name,
   BFT_MALLOC(eqp, 1, cs_equation_param_t);
 
   /* Store the name of the equation */
+
   size_t  len = strlen(name);
   BFT_MALLOC(eqp->name, len + 1, char);
   strncpy(eqp->name, name, len);
   eqp->name[len] = '\0';
 
   /* Set additional members */
+
   eqp->type = type;
   eqp->dim = dim;
 
   /* Other default settings */
+
   eqp->verbosity = 2;
   eqp->flag = 0;
   eqp->process_flag = 0;
@@ -1071,6 +1074,7 @@ cs_equation_param_create(const char            *name,
   /* Vertex-based schemes imply specific discrete Hodge operators for
      diffusion, time and reaction terms.
      Default initialization is made in accordance with this choice */
+
   eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
   eqp->dof_reduction = CS_PARAM_REDUCTION_DERHAM;
   eqp->space_poly_degree = 0;
@@ -1110,6 +1114,7 @@ cs_equation_param_create(const char            *name,
 
   /* Boundary conditions structure.
      One assigns a boundary condition by default */
+
   eqp->default_bc = default_bc;
   eqp->n_bc_defs = 0;
   eqp->bc_defs = NULL;
@@ -1118,10 +1123,12 @@ cs_equation_param_create(const char            *name,
   eqp->weak_pena_bc_coeff = _weak_pena_bc_coef_by_default;
 
   /* Initial condition (zero value by default) */
+
   eqp->n_ic_defs = 0;
   eqp->ic_defs = NULL;
 
   /* Description of the time discretization (default values) */
+
   eqp->time_property = NULL;
   eqp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
   eqp->theta = 1.0;
@@ -1134,6 +1141,7 @@ cs_equation_param_create(const char            *name,
   };
 
   /* Description of the discetization of the diffusion term */
+
   eqp->diffusion_property = NULL;
   eqp->diffusion_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
@@ -1143,6 +1151,7 @@ cs_equation_param_create(const char            *name,
   };
 
   /* Description of the discetization of the curl-curl term */
+
   eqp->curlcurl_property = NULL;
   eqp->curlcurl_hodgep = (cs_hodge_param_t) {
     .inv_pty = true,
@@ -1152,6 +1161,7 @@ cs_equation_param_create(const char            *name,
   };
 
   /* Description of the discetization of the grad-div term */
+
   eqp->graddiv_property = NULL;
   eqp->graddiv_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
@@ -1161,6 +1171,7 @@ cs_equation_param_create(const char            *name,
   };
 
   /* Advection term */
+
   eqp->adv_field = NULL;
   eqp->adv_scaling_property = NULL;
   eqp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
@@ -1171,6 +1182,7 @@ cs_equation_param_create(const char            *name,
 
   /* Description of the discretization of the reaction term.
      No reaction term by default */
+
   eqp->n_reaction_terms = 0;
   eqp->reaction_properties = NULL;
   eqp->reaction_hodgep = (cs_hodge_param_t) {
@@ -1181,15 +1193,18 @@ cs_equation_param_create(const char            *name,
 
   /* Source term (always in the right-hand side)
      No source term by default */
+
   eqp->n_source_terms = 0;
   eqp->source_terms = NULL;
 
   /* Mass injection in the volume term (always in the right-hand side)
      No volume mass injection term by default */
+
   eqp->n_volume_mass_injections = 0;
   eqp->volume_mass_injections = NULL;
 
   /* Members of the structure to handle the enforcement of (internal) DoFs */
+
   eqp->enforcement_type = 0;
   BFT_MALLOC(eqp->enforcement_ref_value, eqp->dim, cs_real_t);
   for (int i = 0; i < eqp->dim; i++)
@@ -1204,9 +1219,11 @@ cs_equation_param_create(const char            *name,
   eqp->enforced_dof_values = NULL;
 
   /* Settings for driving the linear algebra */
+
   eqp->sles_param = cs_param_sles_create(-1, name); /* field_id, system_name */
 
   /* Settings for the OpenMP strategy */
+
   eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL;
 
   return eqp;
@@ -1229,6 +1246,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
                             bool                         copy_fid)
 {
   /* Generic members */
+
   dst->type = ref->type;
   dst->dim = ref->dim;
   dst->verbosity = ref->verbosity;
@@ -1239,6 +1257,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   dst->space_poly_degree = ref->space_poly_degree;
 
   /* Members originally located in the cs_var_cal_opt_t structure */
+
   dst->iconv  = ref->iconv;
   dst->istat  = ref->istat;
   dst->idircl = ref->idircl;
@@ -1268,6 +1287,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   dst->relaxv = ref->relaxv;
 
   /* Boundary conditions structure */
+
   dst->default_bc = ref->default_bc;
   dst->default_enforcement = ref->default_enforcement;
   dst->strong_pena_bc_coeff = ref->strong_pena_bc_coeff;
@@ -1277,6 +1297,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
     dst->bc_defs[i] = cs_xdef_copy(ref->bc_defs[i]);
 
   /* Description of the time discretization */
+
   dst->time_scheme = ref->time_scheme;
   dst->theta = ref->theta;
   dst->do_lumping = ref->do_lumping;
@@ -1285,27 +1306,32 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   cs_hodge_copy_parameters(&(ref->time_hodgep), &(dst->time_hodgep));
 
   /* Initial condition (zero value by default) */
+
   dst->n_ic_defs = ref->n_ic_defs;
   BFT_MALLOC(dst->ic_defs, dst->n_ic_defs, cs_xdef_t *);
   for (int i = 0; i < ref->n_ic_defs; i++)
     dst->ic_defs[i] = cs_xdef_copy(ref->ic_defs[i]);
 
   /* Diffusion term */
+
   dst->diffusion_property = ref->diffusion_property;
 
   cs_hodge_copy_parameters(&(ref->diffusion_hodgep), &(dst->diffusion_hodgep));
 
   /* Curl-curl term */
+
   dst->curlcurl_property = ref->curlcurl_property;
 
   cs_hodge_copy_parameters(&(ref->curlcurl_hodgep), &(dst->curlcurl_hodgep));
 
   /* Grad-div term */
+
   dst->graddiv_property = ref->graddiv_property;
 
   cs_hodge_copy_parameters(&(ref->graddiv_hodgep), &(dst->graddiv_hodgep));
 
   /* Advection term */
+
   dst->adv_extrapol = ref->adv_extrapol;
   dst->adv_formulation = ref->adv_formulation;
   dst->adv_scheme = ref->adv_scheme;
@@ -1315,6 +1341,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   dst->adv_scaling_property = ref->adv_scaling_property;
 
   /* Reaction term */
+
   dst->n_reaction_terms = ref->n_reaction_terms;
   BFT_MALLOC(dst->reaction_properties, dst->n_reaction_terms, cs_property_t *);
   for (int i = 0; i < ref->n_reaction_terms; i++)
@@ -1323,12 +1350,14 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   cs_hodge_copy_parameters(&(ref->reaction_hodgep), &(dst->reaction_hodgep));
 
   /* Source term */
+
   dst->n_source_terms = ref->n_source_terms;
   BFT_MALLOC(dst->source_terms, dst->n_source_terms, cs_xdef_t *);
   for (int i = 0; i < dst->n_source_terms; i++)
     dst->source_terms[i] = cs_xdef_copy(ref->source_terms[i]);
 
   /* Mass injection term */
+
   dst->n_volume_mass_injections = ref->n_volume_mass_injections;
   BFT_MALLOC(dst->volume_mass_injections,
              dst->n_volume_mass_injections,
@@ -1338,6 +1367,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
       = cs_xdef_copy(ref->volume_mass_injections[i]);
 
   /* No enforcement of internal DoFs */
+
   dst->enforcement_type = ref->enforcement_type;
   BFT_MALLOC(dst->enforcement_ref_value, dst->dim, cs_real_t);
   memcpy(dst->enforcement_ref_value, ref->enforcement_ref_value,
@@ -1378,6 +1408,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   }
 
   /* Copy the settings driving the linear algebra algorithms */
+
   if (copy_fid)
     cs_param_sles_copy_from(ref->sles_param, dst->sles_param);
 
@@ -1390,6 +1421,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   }
 
   /* Settings related to the performance */
+
   dst->omp_assembly_choice = ref->omp_assembly_choice;
 }
 
@@ -1414,6 +1446,7 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
     return;
 
   /* Information related to the definition of the boundary conditions */
+
   if (eqp->n_bc_defs > 0) {
 
     for (int i = 0; i < eqp->n_bc_defs; i++)
@@ -1423,6 +1456,7 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
   }
 
   /* Information related to the definition of reaction terms */
+
   if (eqp->n_reaction_terms > 0) {
 
     BFT_FREE(eqp->reaction_properties);
@@ -1432,6 +1466,7 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
   }
 
   /* Information related to the definition of source terms */
+
   if (eqp->n_source_terms > 0) {
 
     for (int i = 0; i < eqp->n_source_terms; i++)
@@ -1441,6 +1476,7 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
   }
 
   /* Information related to the definition of mass injection terms */
+
   if (eqp->n_volume_mass_injections > 0) {
 
     for (int i = 0; i < eqp->n_volume_mass_injections; i++)
@@ -1451,6 +1487,7 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
   }
 
   /* Information related to the enforcement of internal DoFs */
+
   BFT_FREE(eqp->enforcement_ref_value);
 
   if (eqp->n_enforced_cells > 0) {
@@ -1466,6 +1503,7 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
   }
 
   /* Information related to the definition of initial conditions */
+
   if (eqp->n_ic_defs > 0) {
 
     for (int i = 0; i < eqp->n_ic_defs; i++)
@@ -1475,6 +1513,7 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
   }
 
   /* Information related to the linear algebra settings */
+
   cs_param_sles_free(&(eqp->sles_param));
 
   BFT_FREE(eqp->name);
@@ -1617,6 +1656,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
   assert(strlen(eqname) < 200); /* Check that prefix is large enough */
 
   /* High-level settings */
+
   cs_log_printf(CS_LOG_SETUP, "\n### %s | High-level settings\n", eqname);
   cs_log_printf(CS_LOG_SETUP, "  * %s | Type: ", eqname);
   switch (eqp->type) {
@@ -1691,6 +1731,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
   }
 
   /* Boundary conditions */
+
   cs_log_printf(CS_LOG_SETUP, "\n### %s | Boundary condition settings\n",
                 eqname);
   cs_log_printf(CS_LOG_SETUP,
@@ -1811,6 +1852,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
                   cs_param_get_advection_scheme_name(eqp->adv_scheme));
 
     /* Piece of information specific to a scheme */
+
     if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND)
       cs_log_printf(CS_LOG_SETUP, "  * %s | Upwind.Portion: %3.2f %%\n",
                     eqname, 100*eqp->upwind_portion);
@@ -3143,7 +3185,6 @@ cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
   if (n_elts < 1)
     return; /* Nothing to do */
 
-  /* Sanity checks */
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
   if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_CELLS)
@@ -3161,14 +3202,19 @@ cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
               __func__, eqp->name);
 
   if (eqp->n_enforced_dofs > 0) { /* Reset the selection of DoFs */
+
     eqp->n_enforced_dofs = 0;
     BFT_FREE(eqp->enforced_dof_ids);
     BFT_FREE(eqp->enforced_dof_values);
+
   }
+
   if (eqp->n_enforced_cells > 0) { /* Reset the selection of cells */
+
     eqp->n_enforced_cells = 0;
     BFT_FREE(eqp->enforced_cell_ids);
     BFT_FREE(eqp->enforced_cell_values);
+
   }
 
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
@@ -3188,6 +3234,7 @@ cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
   else {
 
     /* Copy user-defined data in the structure */
+
     const cs_lnum_t  size = eqp->dim*n_elts;
     BFT_MALLOC(eqp->enforced_dof_values, size, cs_real_t);
     memcpy(eqp->enforced_dof_values, elt_values, size*sizeof(cs_real_t));
@@ -3222,7 +3269,6 @@ cs_equation_enforce_value_on_cell_selection(cs_equation_param_t  *eqp,
   if (n_elts < 1)
     return; /* Nothing to do */
 
-  /* Sanity checks */
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
   if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_DOFS)
@@ -3235,14 +3281,19 @@ cs_equation_enforce_value_on_cell_selection(cs_equation_param_t  *eqp,
               __func__, eqp->name);
 
   if (eqp->n_enforced_dofs > 0) { /* Reset the selection of DoFs */
+
     eqp->n_enforced_dofs = 0;
     BFT_FREE(eqp->enforced_dof_ids);
     BFT_FREE(eqp->enforced_dof_values);
+
   }
+
   if (eqp->n_enforced_cells > 0) { /* Reset the selection of cells */
+
     eqp->n_enforced_cells = 0;
     BFT_FREE(eqp->enforced_cell_ids);
     BFT_FREE(eqp->enforced_cell_values);
+
   }
 
   eqp->n_enforced_cells = n_elts;
@@ -3262,6 +3313,7 @@ cs_equation_enforce_value_on_cell_selection(cs_equation_param_t  *eqp,
   else {
 
     /* Copy user-defined data in the structure */
+
     const cs_lnum_t  size = eqp->dim*n_elts;
     BFT_MALLOC(eqp->enforced_cell_values, size, cs_real_t);
     memcpy(eqp->enforced_cell_values, elt_values, size*sizeof(cs_real_t));

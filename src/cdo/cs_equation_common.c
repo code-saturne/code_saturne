@@ -132,6 +132,7 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
   assert(connect != NULL && quant != NULL); /* Sanity check */
 
   /* Allocate cell-wise and face-wise view of a mesh */
+
   cs_cdo_local_initialize(connect);
 
   const cs_lnum_t  n_cells = connect->n_cells;
@@ -140,9 +141,11 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
   const cs_lnum_t  n_edges = connect->n_edges;
 
   /* Allocate shared buffer and initialize shared structures */
+
   size_t  cwb_size = n_cells; /* initial cell-wise buffer size */
 
   /* Allocate and initialize matrix assembler and matrix structures */
+
   if (vb_flag > 0 || vcb_flag > 0) {
 
     if (vb_flag & CS_FLAG_SCHEME_SCALAR || vcb_flag & CS_FLAG_SCHEME_SCALAR) {
@@ -212,6 +215,7 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
       cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_2ND * n_faces);
 
     /* For vector equations and HHO */
+
     if (cs_flag_test(hho_flag, CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY1) ||
         cs_flag_test(hho_flag, CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2)) {
 
@@ -226,11 +230,13 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
   } /* Face-based schemes (CDO or HHO) */
 
   /* Assign static const pointers: shared pointers with a cs_domain_t */
+
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
 
   /* Common buffer for temporary usage */
+
   cs_equation_common_work_buffer_size = cwb_size;
   BFT_MALLOC(cs_equation_common_work_buffer, cwb_size, double);
 }
@@ -245,9 +251,11 @@ void
 cs_equation_common_finalize(void)
 {
   /* Free cell-wise and face-wise view of a mesh */
+
   cs_cdo_local_finalize();
 
   /* Free common buffer */
+
   BFT_FREE(cs_equation_common_work_buffer);
 }
 
@@ -274,6 +282,7 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
   eqb->init_step = true;
 
   /* Initialize flags used to knows what kind of cell quantities to build */
+
   eqb->msh_flag = 0;
   eqb->bd_msh_flag = 0;
   eqb->st_msh_flag = 0;
@@ -283,6 +292,7 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
     eqb->sys_flag = 0;
 
   /* Handle properties */
+
   eqb->diff_pty_uniform = true;
   if (cs_equation_param_has_diffusion(eqp))
     eqb->diff_pty_uniform = cs_property_is_uniform(eqp->diffusion_property);
@@ -312,10 +322,12 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
       = cs_property_is_uniform(eqp->reaction_properties[i]);
 
   /* Handle source terms */
+
   eqb->source_mask = NULL;
   if (cs_equation_param_has_sourceterm(eqp)) {
 
     /* Default initialization */
+
     eqb->st_msh_flag = cs_source_term_init(eqp->space_scheme,
                                            eqp->n_source_terms,
                        (cs_xdef_t *const *)eqp->source_terms,
@@ -329,6 +341,7 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
      Translate user-defined information about BC into a structure well-suited
      for computation. We make the distinction between homogeneous and
      non-homogeneous BCs.  */
+
   eqb->face_bc = cs_cdo_bc_face_define(eqp->default_bc,
                                        true, /* Steady BC up to now */
                                        eqp->dim,
@@ -337,6 +350,7 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
                                        mesh->n_b_faces);
 
   /* Monitoring */
+
   CS_TIMER_COUNTER_INIT(eqb->tcb); /* build system */
   CS_TIMER_COUNTER_INIT(eqb->tcs); /* solve system */
   CS_TIMER_COUNTER_INIT(eqb->tce); /* extra operations */
@@ -367,6 +381,7 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder)
     BFT_FREE(eqb->source_mask);
 
   /* Free BC structure */
+
   eqb->face_bc = cs_cdo_bc_free(eqb->face_bc);
 
   BFT_FREE(eqb);
@@ -458,8 +473,6 @@ cs_equation_prepare_system(int                     stride,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 0
   const cs_lnum_t  n_gather_elts = cs_matrix_get_n_rows(matrix);
-
-  /* Sanity checks */
   assert(n_gather_elts <= n_scatter_elts);
 
   cs_log_printf(CS_LOG_DEFAULT,
@@ -802,6 +815,7 @@ cs_equation_set_reaction_properties_cw(const cs_equation_param_t     *eqp,
   assert(cs_equation_param_has_reaction(eqp));
 
   /* Set the (linear) reaction property */
+
   cb->rpty_val = 0;
   for (int r = 0; r < eqp->n_reaction_terms; r++)
     if (eqb->reac_pty_uniform[r])
@@ -892,7 +906,7 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
   if (eqp->n_enforced_dofs == 0 && eqp->n_enforced_cells == 0)
     return;
 
-  /* Initialize the indirection list (by default, no vertex selected) */
+  /* Initialize the indirection list (by default, no DoF selected) */
 
   cs_lnum_t  *dof_ids = *p_dof_ids;
 
@@ -916,6 +930,7 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
     }
     else  /* This case can be tricky in parallel and can also impact the const
              specifier of cs_equation_param_t */
+
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Eq: %s\n"
                 "Enforcement by a cell selection without a reference value"
@@ -926,7 +941,7 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
 
     assert(eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_DOFS);
 
-    /* Build the indirection between vertices and enforced vertices */
+    /* Build the indirection between DoFs and enforced DoFs */
 
     for (cs_lnum_t i = 0; i < eqp->n_enforced_dofs; i++)
       dof_ids[eqp->enforced_dof_ids[i]] = i;
@@ -934,6 +949,7 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
   }
 
   /* Returns pointer */
+
   *p_dof_ids = dof_ids;
 }
 
@@ -1011,13 +1027,17 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
     if (csys->intern_forced_ids[i] > -1) {
 
       /* Reset row i */
+
       memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
+
       /* Reset column i */
+
       for (int j = 0; j < csys->n_dofs; j++)
         csys->mat->val[i + csys->n_dofs*j] = 0;
       csys->mat->val[i*(1 + csys->n_dofs)] = 1;
 
       /* Set the RHS */
+
       csys->rhs[i] = x_vals[i];
 
     } /* DoF associated to a Dirichlet BC */

@@ -914,6 +914,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
 
   /* Build an array storing the values of the prescribed circulation at
      boundary */
+
   cs_real_t  *circ_bc_vals = NULL;
 
   BFT_MALLOC(circ_bc_vals, n_edges, cs_real_t);
@@ -934,6 +935,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
                                       &enforced_ids);
 
   /* Initialize the local system: matrix and rhs */
+
   cs_real_t  rhs_norm = 0.0;
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
@@ -942,6 +944,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   memset(rhs, 0, n_edges*sizeof(cs_real_t));
 
   /* Initialize the structure to assemble values */
+
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
@@ -973,13 +976,14 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
 
     /* Initialization of the curl-curl property value if uniform.
      * One calls this function with the boundary tag to examine all tests */
+
     cs_hodge_set_property_value(0, cb->t_pty_eval,
                                 CS_FLAG_BOUNDARY_CELL_BY_FACE,
                                 curlcurl_hodge);
 
-    /* --------------------------------------------- */
-    /* Main loop on cells to build the linear system */
-    /* --------------------------------------------- */
+    /* ---------------------------------------------
+     * Main loop on cells to build the linear system
+     * --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -987,24 +991,30 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
       cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
+
       cs_cell_mesh_build(c_id,
                          cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
+
       _eb_init_cell_system(cm, eqp, eqb, eqc, circ_bc_vals, enforced_ids,
                            csys, cb);
 
       /* Build and add the diffusion term to the local system. A mass matrix is
          also built if needed (stored it curlcurl_hodge->matrix) */
+
       _eb_curlcurl(eqp, eqb, eqc, cm, curlcurl_hodge, csys, cb);
 
       if (cs_equation_param_has_sourceterm(eqp)) { /* SOURCE TERM
                                                     * =========== */
+
         /* Reset the local contribution */
+
         memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system */
+
         cs_source_term_compute_cellwise(eqp->n_source_terms,
                     (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
@@ -1016,6 +1026,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
                                         csys->source);
 
         /* Update the RHS */
+
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += csys->source[i];
 
@@ -1023,10 +1034,12 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
 
       /* Compute a norm of the RHS for the normalization of the residual
          of the linear system to solve */
+
       rhs_norm += _eb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
                                            cm, csys);
 
       /* Boundary conditions */
+
       _eb_enforce_values(eqp, eqc, cm, curlcurl_hodge, csys, cb);
 
 
@@ -1037,6 +1050,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
 
       /* ASSEMBLY PROCESS
        * ================ */
+
       _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
 
     } /* Main loop on cells */
@@ -1046,24 +1060,29 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_matrix_assembler_values_done(mav); /* optional */
 
   /* Free temporary buffers and structures */
+
   BFT_FREE(circ_bc_vals);
   BFT_FREE(enforced_ids);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Last step in the computation of the renormalization coefficient */
+
   cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
                                      eqc->n_dofs,
                                      rhs,
                                      &rhs_norm);
 
   /* End of the system building */
+
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   /* Solve the linear system */
+
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
   /* Update edge arrays */
+
   if (cur2prev && eqc->edge_values_pre != NULL)
     memcpy(eqc->edge_values_pre, eqc->edge_values, sizeof(cs_real_t)*n_edges);
 
@@ -1081,16 +1100,17 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
   /* Update fields associated to cells */
+
   if (cur2prev)
     cs_field_current_to_previous(fld);
 
   /* Update the vector-valued field associated to cells */
+
   cs_reco_ccen_edge_dofs(connect, quant, eqc->edge_values, &(fld->val));
 
   cs_timer_t  t3 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t2, &t3);
 
-  /* Free remaining buffers */
   BFT_FREE(rhs);
   cs_sles_free(sles);
   cs_matrix_destroy(&matrix);

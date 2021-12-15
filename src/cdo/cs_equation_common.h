@@ -217,14 +217,17 @@ struct _equation_builder_t {
  * Structure used to store information generated during the analysis
  * of the balance of each term of an equation
  */
+
 typedef struct {
 
   /* where balance is computed: primal vertices or primal cells */
+
   cs_flag_t       location;
   cs_lnum_t       size;
   cs_real_t      *balance;
 
   /* Balance for each main term */
+
   cs_real_t      *unsteady_term;
   cs_real_t      *reaction_term;
   cs_real_t      *diffusion_term;

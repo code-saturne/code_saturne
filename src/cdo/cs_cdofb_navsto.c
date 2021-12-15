@@ -98,6 +98,7 @@ BEGIN_C_DECLS
 #define CS_CDOFB_NAVSTO_DBG      0
 
 /* Redefined the name of functions from cs_math to get shorter names */
+
 #define _dp3  cs_math_3_dot_product
 
 /*============================================================================
@@ -180,10 +181,12 @@ _normal_flux_reco(short int                  fb,
   const cs_nvec3_t  debq = cm->dedge[fb];
 
   /* |fb|^2 * nu_{fb}^T.kappa.nu_{fb} */
+
   const double  stab_scaling =
     beta * pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv) / cm->pvol_f[fb];
 
   /* Get the 'fb' row */
+
   cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (nfc + 1);
   double  row_sum = 0.0;
 
@@ -192,10 +195,12 @@ _normal_flux_reco(short int                  fb,
     const cs_quant_t  pfq = cm->face[f];
 
     /* consistent part */
+
     const double  consist_scaling = cm->f_sgn[f] * pfq.meas * inv_volc;
     const double  consist_part = consist_scaling * _dp3(kappa_f[fb], pfq.unitv);
 
     /* stabilization part */
+
     double  stab_part = -consist_scaling*debq.meas*_dp3(debq.unitv, pfq.unitv);
     if (f == fb) stab_part += 1;
     stab_part *= stab_scaling;
@@ -208,6 +213,7 @@ _normal_flux_reco(short int                  fb,
   } /* Loop on f */
 
   /* Cell column */
+
   ntrgrd_fb[nfc] += row_sum;
 }
 
@@ -349,22 +355,27 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 #endif
 
   /* Build local arrays related to the boundary conditions */
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering and the boundary face id in
        the mesh numbering */
+
     const short int  f = csys->_f_ids[i];
     const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
 
     /* Set the type of boundary */
+
     nsb->bf_type[i] = bf_type[bf_id];
 
     /* Set the pressure BC if required */
+
     if (nsb->bf_type[i] & CS_BOUNDARY_IMPOSED_P) {
 
       assert(nsb->bf_type[i] & (CS_BOUNDARY_INLET | CS_BOUNDARY_OUTLET));
 
       /* Add a Dirichlet for the pressure field */
+
       const short int  def_id = pr_bc->def_ids[bf_id];
       const cs_xdef_t  *def = nsp->pressure_bc_defs[def_id];
       assert(pr_bc != NULL);
