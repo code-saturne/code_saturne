@@ -391,16 +391,8 @@ static cs_equation_param_t _equation_param_default
    .n_volume_mass_injections = 0,
    .volume_mass_injections = NULL,
 
-   .enforcement_type = 0,
-   .enforcement_ref_value = NULL,
-
-   .n_enforced_cells = 0,
-   .enforced_cell_ids = NULL,
-   .enforced_cell_values = NULL,
-
-   .n_enforced_dofs = 0,
-   .enforced_dof_ids = NULL,
-   .enforced_dof_values = NULL,
+   .n_enforcements = 0,
+   .enforcement_params = NULL,
 
    .sles_param = NULL,
 

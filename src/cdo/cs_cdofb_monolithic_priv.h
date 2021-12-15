@@ -127,7 +127,6 @@ typedef void
  * \param[in]      vel_f_nm1    velocity face DoFs at time step n-1 or NULL
  * \param[in]      vel_c_nm1    velocity cell DoFs at time step n-1 or NULL
  * \param[in]      dir_values   array storing the Dirichlet values
- * \param[in]      forced_ids   indirection in case of internal enforcement
  * \param[in, out] sc           pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/
@@ -139,7 +138,6 @@ typedef void
                               const cs_real_t               vel_f_nm1[],
                               const cs_real_t               vel_c_nm1[],
                               const cs_real_t              *dir_values,
-                              const cs_lnum_t               forced_ids[],
                               cs_cdofb_monolithic_t        *sc);
 
 /*----------------------------------------------------------------------------*/

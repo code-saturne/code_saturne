@@ -613,7 +613,6 @@ _ac_apply_remaining_bc(const cs_cdofb_ac_t           *sc,
  * \param[in]      vel_f_pre   velocity face DoFs of the previous time step
  * \param[in]      vel_c_pre   velocity cell DoFs of the previous time step
  * \param[in]      prs_c_pre   pressure cell DoFs of the previous time step
- * \param[in]      forced_ids  indirection in case of internal enforcement
  * \param[in]      dir_values  array related to the Dirichlet BCs
  * \param[in, out] sc          void cast into to a \ref cs_cdofb_ac_t pointer
  * \param[in, out] matrix      pointer to a \ref cs_matrix_t structure
@@ -626,7 +625,6 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                       const cs_real_t           vel_f_pre[],
                       const cs_real_t           vel_c_pre[],
                       const cs_real_t           prs_c_pre[],
-                      const cs_lnum_t           forced_ids[],
                       const cs_real_t          *dir_values,
                       cs_cdofb_ac_t            *sc,
                       cs_matrix_t              *matrix,
@@ -732,8 +730,8 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
        */
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
-                                       dir_values, forced_ids,
+
+      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb, dir_values,
                                        vel_f_pre, vel_c_pre,
                                        NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
@@ -1204,10 +1202,9 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
      Evaluation should be performed at t_cur + dt_cur */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *enforced_ids = NULL;
 
   cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb,
-                        &dir_values, &enforced_ids);
+                        &dir_values);
 
   /* Initialize the linear system: matrix and rhs */
 
@@ -1228,7 +1225,6 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
                         vel_f,  /* previous values for the velocity at faces */
                         vel_c,  /* previous values for the velocity at cells */
                         pr,     /* previous values for the pressure */
-                        enforced_ids,
                         dir_values,
                         sc,
                         matrix, rhs);
@@ -1236,7 +1232,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   /* Free temporary buffers and structures */
 
   BFT_FREE(dir_values);
-  BFT_FREE(enforced_ids);
+  cs_equation_builder_reset(mom_eqb);
 
   /* End of the system building */
 
@@ -1382,10 +1378,9 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
      Evaluation should be performed at t_cur + dt_cur */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *enforced_ids = NULL;
 
   cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb,
-                        &dir_values, &enforced_ids);
+                        &dir_values);
 
   /* Initialize the linear system: matrix and rhs */
 
@@ -1406,7 +1401,6 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
                         vel_f,  /* previous values for the velocity at faces */
                         vel_c,  /* previous values for the velocity at cells */
                         pr,     /* previous values for the pressure */
-                        enforced_ids,
                         dir_values,
                         sc,
                         matrix, rhs);
@@ -1513,7 +1507,6 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
                           vel_f_pre,  /* velocity at faces: previous values */
                           vel_c_pre,  /* velocity at cells: previous values */
                           pr_c_pre,   /* pressure at cells: previous values */
-                          enforced_ids,
                           dir_values,
                           sc,
                           matrix, rhs);
@@ -1610,6 +1603,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   BFT_FREE(dir_values);
   BFT_FREE(rhs);
+  cs_equation_builder_reset(mom_eqb);
   cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 

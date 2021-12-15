@@ -205,7 +205,6 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
- * \param[in]      forced_ids  indirection in case of internal enforcement
  * \param[in]      val_f_n     face DoFs at time step n
  * \param[in]      val_c_n     cell DoFs at time step n
  * \param[in]      val_f_nm1   face DoFs at time step n-1 or NULL
@@ -220,7 +219,6 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
                                  const cs_equation_param_t    *eqp,
                                  const cs_equation_builder_t  *eqb,
                                  const cs_real_t               dir_values[],
-                                 const cs_lnum_t               forced_ids[],
                                  const cs_real_t               val_f_n[],
                                  const cs_real_t               val_c_n[],
                                  const cs_real_t               val_f_nm1[],
@@ -232,14 +230,13 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
 /*!
  * \brief  Set the boundary conditions known from the settings
  *         Define an indirection array for the enforcement of internal DoFs
- *         only if needed.
+ *         only if needed. This is stored inside eqb
  *
  * \param[in]      t_eval          time at which one evaluates BCs
  * \param[in]      mesh            pointer to a cs_mesh_t structure
  * \param[in]      eqp             pointer to a cs_equation_param_t structure
  * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
  * \param[in, out] p_dir_values    pointer to the Dirichlet values to set
- * \param[in, out] p_enforced_ids  pointer to the list of enforced cells
  */
 /*----------------------------------------------------------------------------*/
 
@@ -248,8 +245,7 @@ cs_cdofb_vecteq_setup(cs_real_t                     t_eval,
                       const cs_mesh_t              *mesh,
                       const cs_equation_param_t    *eqp,
                       cs_equation_builder_t        *eqb,
-                      cs_real_t                    *p_dir_values[],
-                      cs_lnum_t                    *p_enforced_ids[]);
+                      cs_real_t                    *p_dir_values[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

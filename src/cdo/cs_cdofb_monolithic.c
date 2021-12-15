@@ -547,11 +547,12 @@ _mono_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Apply the boundary conditions to the local system when this should
- *          be done after the static condensation
- *          Case of CDO-Fb schemes with a monolithic velocity-pressure coupling
+ * \brief  Apply the boundary conditions to the local system when this should
+ *         be done after the static condensation. Apply the internal enforcement
+ *         Case of CDO-Fb schemes with a monolithic velocity-pressure coupling
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      eqb       pointer to a cs_equation_builder_t structure
  * \param[in]      cm        pointer to a cellwise view of the mesh
  * \param[in]      diff_pty  pointer to a \cs_property_data_t struct. for diff.
  * \param[in, out] sc        pointer to a cs_cdofb_monolithic_t structure
@@ -563,6 +564,7 @@ _mono_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
 
 static void
 _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
+                         const cs_equation_builder_t   *eqb,
                          const cs_cell_mesh_t          *cm,
                          const cs_property_data_t      *diff_pty,
                          cs_cdofb_monolithic_t         *sc,
@@ -655,11 +657,11 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
   } /* This is a boundary cell */
 
-  /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
+  if (cs_equation_param_has_internal_enforcement(eqp)) {
 
-  if (csys->has_internal_enforcement) {
+    /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
 
-    cs_equation_enforced_internal_block_dofs(eqp, cb, csys);
+    cs_equation_enforced_internal_block_dofs(eqb, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -667,7 +669,6 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
                        csys);
 #endif
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -858,7 +859,7 @@ _velocity_full_assembly(const cs_cell_sys_t            *csys,
   if (csys->has_internal_enforcement) {
 
     for (int i = 0; i < 3*n_f; i++) {
-      if (csys->intern_forced_ids[i] > -1)
+      if (csys->dof_is_forced[i])
         _div[i] = 0.; /* The velocity-block set the value of this DoF */
       else
         _div[i] = div_op[i];
@@ -1165,12 +1166,14 @@ _notay_full_assembly(const cs_cell_sys_t            *csys,
   cs_real_t *_div = sc->msles->div_op + 3*cs_shared_connect->c2f->idx[cm->c_id];
 
   if (csys->has_internal_enforcement) {
+
     for (int i = 0; i < 3*cm->n_fc; i++) {
-      if (csys->intern_forced_ids[i] > -1)
+      if (csys->dof_is_forced[i])
         _div[i] = 0.; /* The velocity-block set the value of this DoF */
       else
         _div[i] = div_op[i];
     }
+
   }
   else
     memcpy(_div, div_op, 3*cm->n_fc*sizeof(cs_real_t));
@@ -1187,7 +1190,6 @@ _notay_full_assembly(const cs_cell_sys_t            *csys,
  * \param[in]      vel_f_nm1    NULL (for unsteady computations)
  * \param[in]      vel_c_nm1    NULL (for unsteady computations)
  * \param[in]      dir_values   array storing the Dirichlet values
- * \param[in]      forced_ids   indirection in case of internal enforcement
  * \param[in, out] sc           pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/
@@ -1199,7 +1201,6 @@ _steady_build(const cs_navsto_param_t      *nsp,
               const cs_real_t               vel_f_nm1[],
               const cs_real_t               vel_c_nm1[],
               const cs_real_t              *dir_values,
-              const cs_lnum_t               forced_ids[],
               cs_cdofb_monolithic_t        *sc)
 {
   CS_UNUSED(vel_f_nm1);
@@ -1294,8 +1295,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
-                                       dir_values, forced_ids,
+      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb, dir_values,
                                        vel_f_pre, vel_c_pre,
                                        NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
@@ -1368,7 +1368,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
       /* 6- Remaining part of BOUNDARY CONDITIONS
        * ======================================== */
 
-      _mono_apply_remaining_bc(mom_eqp, cm, diff_hodge->pty_data,
+      _mono_apply_remaining_bc(mom_eqp, mom_eqb, cm, diff_hodge->pty_data,
                                sc, csys, cb, &nsb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
@@ -1405,7 +1405,6 @@ _steady_build(const cs_navsto_param_t      *nsp,
  * \param[in]      vel_f_nm1    NULL (not needed for this time scheme)
  * \param[in]      vel_c_nm1    NULL (not needed for this time scheme)
  * \param[in]      dir_values   array storing the Dirichlet values
- * \param[in]      forced_ids   indirection in case of internal enforcement
  * \param[in, out] sc           pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/
@@ -1417,7 +1416,6 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                       const cs_real_t           vel_f_nm1[],
                       const cs_real_t           vel_c_nm1[],
                       const cs_real_t          *dir_values,
-                      const cs_lnum_t           forced_ids[],
                       cs_cdofb_monolithic_t    *sc)
 {
   CS_UNUSED(vel_f_nm1);
@@ -1515,8 +1513,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
-                                       dir_values, forced_ids,
+      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb, dir_values,
                                        vel_f_n, vel_c_n,
                                        NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
@@ -1618,7 +1615,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* 6- Remaining part of BOUNDARY CONDITIONS
        * ======================================== */
 
-      _mono_apply_remaining_bc(mom_eqp, cm, diff_hodge->pty_data,
+      _mono_apply_remaining_bc(mom_eqp, mom_eqb, cm, diff_hodge->pty_data,
                                sc, csys, cb, &nsb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
@@ -1656,7 +1653,6 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
  * \param[in]      vel_f_nm1    velocity face DoFs at time step n-1 or NULL
  * \param[in]      vel_c_nm1    velocity cell DoFs at time step n-1 or NULL
  * \param[in]      dir_values   array storing the Dirichlet values
- * \param[in]      forced_ids   indirection in case of internal enforcement
  * \param[in, out] sc           pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/
@@ -1668,7 +1664,6 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
                     const cs_real_t           vel_f_nm1[],
                     const cs_real_t           vel_c_nm1[],
                     const cs_real_t          *dir_values,
-                    const cs_lnum_t           forced_ids[],
                     cs_cdofb_monolithic_t    *sc)
 {
   CS_UNUSED(vel_f_nm1);
@@ -1778,8 +1773,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
-                                       dir_values, forced_ids,
+      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb, dir_values,
                                        vel_f_n, vel_c_n,
                                        NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
@@ -1888,7 +1882,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
           csys->rhs[3*cm->n_fc + k] += ptyc * csys->val_n[3*cm->n_fc+k];
           /* Simply add an entry in mat[cell, cell] */
           acc->val[4*k] += ptyc;
-        } /* Loop on k */
+        }
 
       }
       else
@@ -1915,7 +1909,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
       /* 6- Remaining part of BOUNDARY CONDITIONS
        * ======================================== */
 
-      _mono_apply_remaining_bc(mom_eqp, cm, diff_hodge->pty_data,
+      _mono_apply_remaining_bc(mom_eqp, mom_eqb, cm, diff_hodge->pty_data,
                                sc, csys, cb, &nsb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
@@ -2517,14 +2511,11 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
 
-  /* Build an array storing the Dirichlet values at faces and ids of DoFs if
-   * an enforcement of (internal) DoFs is requested */
+  /* Build an array storing the Dirichlet values at faces */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *enforced_ids = NULL;
 
-  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb,
-                        &dir_values, &enforced_ids);
+  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb, &dir_values);
 
   /* Initialize the rhs */
 
@@ -2535,12 +2526,12 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   sc->steady_build(nsp,
                    mom_eqc->face_values, sc->velocity->val,
                    NULL, NULL,  /* no value at time step n-1 */
-                   dir_values, enforced_ids, sc);
+                   dir_values, sc);
 
   /* Free temporary buffers and structures */
 
   BFT_FREE(dir_values);
-  BFT_FREE(enforced_ids);
+  cs_equation_builder_reset(mom_eqb);
 
   /* End of the system building */
 
@@ -2638,14 +2629,11 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
 
-  /* Build an array storing the Dirichlet values at faces and ids of DoFs if
-   * an enforcement of (internal) DoFs is requested */
+  /* Build an array storing the Dirichlet values at faces */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *enforced_ids = NULL;
 
-  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb,
-                        &dir_values, &enforced_ids);
+  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb, &dir_values);
 
   /* Initialize the rhs */
 
@@ -2656,7 +2644,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   sc->steady_build(nsp,
                    mom_eqc->face_values, sc->velocity->val,
                    NULL, NULL,  /* no value at time step n-1 */
-                   dir_values, enforced_ids, sc);
+                   dir_values, sc);
 
   /* End of the system building */
 
@@ -2732,7 +2720,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
                      /* A current to previous op. has been done */
                      mom_eqc->face_values_pre, sc->velocity->val_pre,
                      NULL, NULL,  /* no value at time step n-1 */
-                     dir_values, enforced_ids, sc);
+                     dir_values, sc);
 
     /* End of the system building */
 
@@ -2793,9 +2781,9 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   /* Frees */
 
-  cs_cdofb_monolithic_sles_clean(msles);
   BFT_FREE(dir_values);
-  BFT_FREE(enforced_ids);
+  cs_equation_builder_reset(mom_eqb);
+  cs_cdofb_monolithic_sles_clean(msles);
 
   cs_timer_t  t_end = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);
@@ -2839,14 +2827,11 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   const cs_time_step_t *ts = cs_shared_time_step;
   const cs_real_t  t_eval = ts->t_cur + ts->dt[0];
 
-  /* Build an array storing the Dirichlet values at faces and ids of DoFs if
-   * an enforcement of (internal) DoFs is requested */
+  /* Build an array storing the Dirichlet values at faces */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *enforced_ids = NULL;
 
-  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb,
-                        &dir_values, &enforced_ids);
+  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb, &dir_values);
 
   /* Initialize the rhs */
 
@@ -2857,12 +2842,12 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   sc->build(nsp,
             mom_eqc->face_values, sc->velocity->val,
             mom_eqc->face_values_pre, sc->velocity->val_pre,
-            dir_values, enforced_ids, sc);
+            dir_values, sc);
 
   /* Free temporary buffers and structures */
 
   BFT_FREE(dir_values);
-  BFT_FREE(enforced_ids);
+  cs_equation_builder_reset(mom_eqb);
 
   /* End of the system building */
 
@@ -2963,14 +2948,11 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_eval = ts->t_cur + ts->dt[0];
 
-  /* Build an array storing the Dirichlet values at faces and ids of DoFs if
-   * an enforcement of (internal) DoFs is requested */
+  /* Build an array storing the Dirichlet values at faces */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *enforced_ids = NULL;
 
-  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb,
-                        &dir_values, &enforced_ids);
+  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb, &dir_values);
 
   /* Initialize the rhs */
 
@@ -2981,7 +2963,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   sc->build(nsp,
             mom_eqc->face_values, sc->velocity->val,
             mom_eqc->face_values_pre, sc->velocity->val_pre,
-            dir_values, enforced_ids, sc);
+            dir_values, sc);
 
   /* End of the system building */
 
@@ -3064,7 +3046,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
               /* A current to previous op. has been done */
               mom_eqc->face_values_pre, sc->velocity->val_pre,
               NULL, NULL, /* no n-1 state is given */
-              dir_values, enforced_ids, sc);
+              dir_values, sc);
 
     /* End of the system building */
 
@@ -3134,8 +3116,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   /* Frees */
 
   cs_cdofb_monolithic_sles_clean(msles);
+  cs_equation_builder_reset(mom_eqb);
   BFT_FREE(dir_values);
-  BFT_FREE(enforced_ids);
   if (mass_flux_array_k != NULL)
     BFT_FREE(mass_flux_array_k);
 

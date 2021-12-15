@@ -34,6 +34,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
+#include "cs_enforcement.h"
 #include "cs_equation_param.h"
 #include "cs_flag.h"
 #include "cs_matrix.h"
@@ -152,6 +153,14 @@ struct _equation_builder_t {
    */
 
   cs_source_term_cellwise_t  *compute_source[CS_N_MAX_SOURCE_TERMS];
+
+  /*!
+   * @}
+   * @name Enforcement of degrees of freedom (DoFs)
+   * @{
+   */
+
+  cs_real_t                  *enforced_values;
 
   /*!
    * @}
@@ -324,7 +333,7 @@ cs_equation_common_finalize(void);
 /*----------------------------------------------------------------------------*/
 
 cs_equation_builder_t *
-cs_equation_init_builder(const cs_equation_param_t   *eqp,
+cs_equation_builder_init(const cs_equation_param_t   *eqp,
                          const cs_mesh_t             *mesh);
 
 /*----------------------------------------------------------------------------*/
@@ -337,7 +346,18 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_free_builder(cs_equation_builder_t  **p_builder);
+cs_equation_builder_free(cs_equation_builder_t  **p_builder);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free some members of a cs_equation_builder_t structure
+ *
+ * \param[in, out]  eqb   pointer to the cs_equation_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_builder_reset(cs_equation_builder_t  *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -541,7 +561,8 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account the enforcement of internal DoFs. Apply an
- *          algebraic manipulation
+ *          algebraic manipulation. Update members of the cs_cell_sys_t
+ *          structure related to the internal enforcement.
  *
  *          |      |     |     |      |     |     |  |     |             |
  *          | Aii  | Aie |     | Aii  |  0  |     |bi|     |bi -Aid.x_enf|
@@ -551,21 +572,22 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
  *
  * where x_enf is the value of the enforcement for the selected internal DoFs
  *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       eqb       pointer to a cs_equation_builder_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
+cs_equation_enforced_internal_dofs(const cs_equation_builder_t     *eqb,
                                    cs_cell_builder_t               *cb,
                                    cs_cell_sys_t                   *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account the enforcement of internal DoFs. Case of matrices
- *          defined by blocks. Apply an algebraic manipulation.
+ * \brief Take into account the enforcement of internal DoFs. Case of matrices
+ *        defined by blocks. Apply an algebraic manipulation. Update members
+ *        of the cs_cell_sys_t structure related to the internal enforcement.
  *
  *          |      |     |     |      |     |     |  |     |             |
  *          | Aii  | Aie |     | Aii  |  0  |     |bi|     |bi -Aid.x_enf|
@@ -575,14 +597,14 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
  *
  * where x_enf is the value of the enforcement for the selected internal DoFs
  *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       eqb       pointer to a cs_equation_builder_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
+cs_equation_enforced_internal_block_dofs(const cs_equation_builder_t   *eqb,
                                          cs_cell_builder_t             *cb,
                                          cs_cell_sys_t                 *csys);
 

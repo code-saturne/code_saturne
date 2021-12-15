@@ -1203,20 +1203,10 @@ cs_equation_param_create(const char            *name,
   eqp->n_volume_mass_injections = 0;
   eqp->volume_mass_injections = NULL;
 
-  /* Members of the structure to handle the enforcement of (internal) DoFs */
+  /* Members of the structure handling the enforcement of (internal) DoFs */
 
-  eqp->enforcement_type = 0;
-  BFT_MALLOC(eqp->enforcement_ref_value, eqp->dim, cs_real_t);
-  for (int i = 0; i < eqp->dim; i++)
-    eqp->enforcement_ref_value[i] = 0.;
-
-  eqp->n_enforced_cells = 0;
-  eqp->enforced_cell_ids = NULL;
-  eqp->enforced_cell_values = NULL;
-
-  eqp->n_enforced_dofs = 0;
-  eqp->enforced_dof_ids = NULL;
-  eqp->enforced_dof_values = NULL;
+  eqp->n_enforcements = 0;
+  eqp->enforcement_params = NULL;
 
   /* Settings for driving the linear algebra */
 
@@ -1366,44 +1356,17 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
     dst->volume_mass_injections[i]
       = cs_xdef_copy(ref->volume_mass_injections[i]);
 
-  /* No enforcement of internal DoFs */
+  /* Enforcement of internal DoFs */
 
-  dst->enforcement_type = ref->enforcement_type;
-  BFT_MALLOC(dst->enforcement_ref_value, dst->dim, cs_real_t);
-  memcpy(dst->enforcement_ref_value, ref->enforcement_ref_value,
-         dst->dim*sizeof(cs_real_t));
+  if (ref->n_enforcements > 0) {
 
-  dst->n_enforced_cells = ref->n_enforced_cells;
-  if (ref->n_enforced_cells > 0) {
+    dst->n_enforcements = ref->n_enforcements;
+    BFT_MALLOC(dst->enforcement_params, dst->n_enforcements,
+               cs_enforcement_param_t *);
 
-    BFT_MALLOC(dst->enforced_cell_ids, dst->n_enforced_cells, cs_lnum_t);
-    memcpy(dst->enforced_cell_ids, ref->enforced_cell_ids,
-           dst->n_enforced_cells*sizeof(cs_lnum_t));
-
-    dst->enforced_cell_values= NULL;
-    if (ref->enforced_cell_values != NULL) {
-      cs_lnum_t  size = dst->n_enforced_cells*dst->dim;
-      BFT_MALLOC(dst->enforced_cell_values, size, cs_real_t);
-      memcpy(dst->enforced_dof_values, ref->enforced_dof_values,
-             size*sizeof(cs_real_t));
-    }
-
-  }
-
-  dst->n_enforced_dofs = ref->n_enforced_dofs;
-  if (ref->n_enforced_dofs > 0) {
-
-    BFT_MALLOC(dst->enforced_dof_ids, dst->n_enforced_dofs, cs_lnum_t);
-    memcpy(dst->enforced_dof_ids, ref->enforced_dof_ids,
-           dst->n_enforced_dofs*sizeof(cs_lnum_t));
-
-    dst->enforced_dof_values = NULL;
-    if (ref->enforced_dof_values != NULL) {
-      cs_lnum_t  size = dst->n_enforced_dofs*dst->dim;
-      BFT_MALLOC(dst->enforced_dof_values, size, cs_real_t);
-      memcpy(dst->enforced_dof_values, ref->enforced_dof_values,
-             size*sizeof(cs_real_t));
-    }
+    for (int i = 0; i < ref->n_enforcements; i++)
+      dst->enforcement_params[i] =
+        cs_enforcement_param_copy(ref->enforcement_params[i]);
 
   }
 
@@ -1488,18 +1451,12 @@ cs_equation_param_clear(cs_equation_param_t   *eqp)
 
   /* Information related to the enforcement of internal DoFs */
 
-  BFT_FREE(eqp->enforcement_ref_value);
+  if (eqp->n_enforcements > 0) {
 
-  if (eqp->n_enforced_cells > 0) {
-    eqp->n_enforced_cells = 0;
-    BFT_FREE(eqp->enforced_cell_ids);
-    BFT_FREE(eqp->enforced_cell_values);
-  }
+    for (int i = 0; i < eqp->n_enforcements; i++)
+      cs_enforcement_param_free(&(eqp->enforcement_params[i]));
+    BFT_FREE(eqp->enforcement_params);
 
-  if (eqp->n_enforced_dofs > 0) {
-    eqp->n_enforced_dofs = 0;
-    BFT_FREE(eqp->enforced_dof_ids);
-    BFT_FREE(eqp->enforced_dof_values);
   }
 
   /* Information related to the definition of initial conditions */
@@ -1894,7 +1851,21 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
 
   } /* Source terms */
 
+  /* Interior enforcement(s) */
+
+  cs_log_printf(CS_LOG_SETUP,
+                "\n### %s | Number of interior enforcements: %d\n",
+                eqname, eqp->n_enforcements);
+
+  if (eqp->n_enforcements > 0) {
+
+    for (int i = 0; i < eqp->n_enforcements; i++)
+      cs_enforcement_param_log(eqname, eqp->enforcement_params[i]);
+
+  }
+
   /* Iterative solver information */
+
   cs_param_sles_log(eqp->sles_param);
 
 }
@@ -3159,87 +3130,216 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Add an enforcement of the value of degrees of freedom located at
- *         mesh vertices.
+ *         the mesh vertices.
  *         The spatial discretization scheme for the given equation has to be
- *         CDO-Vertex based or CDO-Vertex+Cell-based schemes.
+ *         CDO vertex-based or CDO vertex+cell-based schemes.
  *
  *         One assumes that values are interlaced if eqp->dim > 1
  *         ref_value or elt_values has to be defined. If both parameters are
  *         defined, one keeps the definition in elt_values
  *
- * \param[in, out] eqp         pointer to a cs_equation_param_t structure
- * \param[in]      n_elts      number of vertices to enforce
- * \param[in]      elt_ids     list of vertices
- * \param[in]      ref_value   ignored if NULL
- * \param[in]      elt_values  list of associated values, ignored if NULL
+ * \param[in, out] eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      n_vertices   number of vertices to enforce
+ * \param[in]      vertex_ids   list of vertices
+ * \param[in]      ref_value    default values or ignored (may be NULL)
+ * \param[in]      vtx_values   list of associated values, ignored if NULL
+ *
+ * \return a pointer to a cs_enforcement_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
-                                cs_lnum_t               n_elts,
-                                const cs_lnum_t         elt_ids[],
-                                const cs_real_t         ref_value[],
-                                const cs_real_t         elt_values[])
+cs_enforcement_param_t *
+cs_equation_add_vertex_dof_enforcement(cs_equation_param_t    *eqp,
+                                       cs_lnum_t               n_vertices,
+                                       const cs_lnum_t         vertex_ids[],
+                                       const cs_real_t         ref_value[],
+                                       const cs_real_t         vtx_values[])
 {
-  if (n_elts < 1)
-    return; /* Nothing to do */
-
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_CELLS)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Eq: %s: Two types of enforcement are requested (by DoFs and"
-              " by cells).\n", __func__, eqp->name);
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOVB &&
       eqp->space_scheme != CS_SPACE_SCHEME_CDOVCB)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Eq: %s: Invalid space scheme.\n"
               "This should be a vertex-based one.", __func__, eqp->name);
-  if (ref_value == NULL && elt_values == NULL)
+  if (ref_value == NULL && vtx_values == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Eq: %s: No enforcement value.\n",
-              __func__, eqp->name);
+              "%s: Eq: %s: No enforcement value.\n", __func__, eqp->name);
 
-  if (eqp->n_enforced_dofs > 0) { /* Reset the selection of DoFs */
+  cs_enforcement_param_t  *efp = NULL;
+  int  enforcement_id = eqp->n_enforcements;
 
-    eqp->n_enforced_dofs = 0;
-    BFT_FREE(eqp->enforced_dof_ids);
-    BFT_FREE(eqp->enforced_dof_values);
+  eqp->n_enforcements++;
+
+  if (vtx_values == NULL) {
+
+    assert(ref_value != NULL);
+    efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_VERTICES,
+                                      CS_ENFORCEMENT_BY_CONSTANT,
+                                      eqp->dim,
+                                      n_vertices,
+                                      vertex_ids,
+                                      ref_value);
 
   }
+  else
+    efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_VERTICES,
+                                      CS_ENFORCEMENT_BY_DOF_VALUES,
+                                      eqp->dim,
+                                      n_vertices,
+                                      vertex_ids,
+                                      vtx_values);
 
-  if (eqp->n_enforced_cells > 0) { /* Reset the selection of cells */
-
-    eqp->n_enforced_cells = 0;
-    BFT_FREE(eqp->enforced_cell_ids);
-    BFT_FREE(eqp->enforced_cell_values);
-
-  }
-
+  BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
+              cs_enforcement_param_t);
+  eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
-  eqp->n_enforced_dofs = n_elts;
-  eqp->enforcement_type = CS_EQUATION_ENFORCE_BY_DOFS;
 
-  BFT_MALLOC(eqp->enforced_dof_ids, n_elts, cs_lnum_t);
-  memcpy(eqp->enforced_dof_ids, elt_ids, n_elts*sizeof(cs_lnum_t));
+  return efp;
+}
 
-  if (elt_values == NULL) { /* Use a reference value for all enforced DoFs */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add an enforcement of the value of degrees of freedom located at
+ *         the mesh edges.
+ *         The spatial discretization scheme for the given equation has to be
+ *         CDO edge-based schemes.
+ *
+ *         One assumes that values are interlaced if eqp->dim > 1
+ *         ref_value or elt_values has to be defined. If both parameters are
+ *         defined, one keeps the definition in elt_values
+ *
+ * \param[in, out] eqp           pointer to a cs_equation_param_t structure
+ * \param[in]      n_edges       number of edges to enforce
+ * \param[in]      edge_ids      list of edges
+ * \param[in]      ref_value     default values or ignored (may be NULL)
+ * \param[in]      edge_values   list of associated values, ignored if NULL
+ *
+ * \return a pointer to a cs_enforcement_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
-    eqp->enforcement_type |= CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE;
-    for (int i = 0; i < eqp->dim; i++)
-      eqp->enforcement_ref_value[i] = ref_value[i];
+cs_enforcement_param_t *
+cs_equation_add_edge_dof_enforcement(cs_equation_param_t    *eqp,
+                                     cs_lnum_t               n_edges,
+                                     const cs_lnum_t         edge_ids[],
+                                     const cs_real_t         ref_value[],
+                                     const cs_real_t         edge_values[])
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOEB)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq: %s: Invalid space scheme.\n"
+              "This should be a edge-based one.", __func__, eqp->name);
+  if (ref_value == NULL && edge_values == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq: %s: No enforcement value.\n", __func__, eqp->name);
+
+  cs_enforcement_param_t  *efp = NULL;
+  int  enforcement_id = eqp->n_enforcements;
+
+  eqp->n_enforcements++;
+
+  /* Edge-based schemes are related to a vector-valued equation but DoF are
+     scalar-valued. They are circulation. */
+
+  if (edge_values == NULL) {
+
+    assert(ref_value != NULL);
+    efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_EDGES,
+                                      CS_ENFORCEMENT_BY_CONSTANT,
+                                      1,
+                                      n_edges,
+                                      edge_ids,
+                                      ref_value);
 
   }
-  else {
+  else
+    efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_EDGES,
+                                      CS_ENFORCEMENT_BY_DOF_VALUES,
+                                      1,
+                                      n_edges,
+                                      edge_ids,
+                                      edge_values);
 
-    /* Copy user-defined data in the structure */
+  BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
+              cs_enforcement_param_t);
+  eqp->enforcement_params[enforcement_id] = efp;
+  eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
-    const cs_lnum_t  size = eqp->dim*n_elts;
-    BFT_MALLOC(eqp->enforced_dof_values, size, cs_real_t);
-    memcpy(eqp->enforced_dof_values, elt_values, size*sizeof(cs_real_t));
+  return efp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add an enforcement of the value of degrees of freedom located at
+ *         the mesh faces.
+ *         The spatial discretization scheme for the given equation has to be
+ *         CDO face-based schemes.
+ *
+ *         One assumes that values are interlaced if eqp->dim > 1
+ *         ref_value or elt_values has to be defined. If both parameters are
+ *         defined, one keeps the definition in elt_values
+ *
+ * \param[in, out] eqp           pointer to a cs_equation_param_t structure
+ * \param[in]      n_faces       number of faces to enforce
+ * \param[in]      face_ids      list of faces
+ * \param[in]      ref_value     default values or ignored (may be NULL)
+ * \param[in]      face_values   list of associated values, ignored if NULL
+ *
+ * \return a pointer to a cs_enforcement_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_enforcement_param_t *
+cs_equation_add_face_dof_enforcement(cs_equation_param_t    *eqp,
+                                     cs_lnum_t               n_faces,
+                                     const cs_lnum_t         face_ids[],
+                                     const cs_real_t         ref_value[],
+                                     const cs_real_t         face_values[])
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOFB &&
+      eqp->space_scheme != CS_SPACE_SCHEME_HHO_P0)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq: %s: Invalid space scheme.\n"
+              "This should be a face-based one.", __func__, eqp->name);
+  if (ref_value == NULL && face_values == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq: %s: No enforcement value.\n", __func__, eqp->name);
+
+  cs_enforcement_param_t  *efp = NULL;
+  int  enforcement_id = eqp->n_enforcements;
+
+  eqp->n_enforcements++;
+
+  if (face_values == NULL) {
+
+    assert(ref_value != NULL);
+    efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_FACES,
+                                      CS_ENFORCEMENT_BY_CONSTANT,
+                                      eqp->dim,
+                                      n_faces,
+                                      face_ids,
+                                      ref_value);
 
   }
+  else
+    efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_FACES,
+                                      CS_ENFORCEMENT_BY_DOF_VALUES,
+                                      eqp->dim,
+                                      n_faces,
+                                      face_ids,
+                                      face_values);
+
+  BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
+              cs_enforcement_param_t);
+  eqp->enforcement_params[enforcement_id] = efp;
+  eqp->flag |= CS_EQUATION_FORCE_VALUES;
+
+  return efp;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3251,70 +3351,59 @@ cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
  *         ref_value or elt_values has to be defined. If both parameters are
  *         defined, one keeps the definition in elt_values
  *
- * \param[in, out] eqp         pointer to a cs_equation_param_t structure
- * \param[in]      n_elts      number of selected cells
- * \param[in]      elt_ids     list of cell ids
- * \param[in]      ref_value   ignored if NULL
- * \param[in]      elt_values  list of associated values, ignored if NULL
+ * \param[in, out] eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      n_cells      number of selected cells
+ * \param[in]      cell_ids     list of cell ids
+ * \param[in]      ref_value    ignored if NULL
+ * \param[in]      cell_values  list of associated values, ignored if NULL
+ *
+ * \return a pointer to a cs_enforcement_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_enforce_value_on_cell_selection(cs_equation_param_t  *eqp,
-                                            cs_lnum_t             n_elts,
-                                            const cs_lnum_t       elt_ids[],
-                                            const cs_real_t       ref_value[],
-                                            const cs_real_t       elt_values[])
+cs_enforcement_param_t *
+cs_equation_add_cell_enforcement(cs_equation_param_t   *eqp,
+                                 cs_lnum_t              n_cells,
+                                 const cs_lnum_t        cell_ids[],
+                                 const cs_real_t        ref_value[],
+                                 const cs_real_t        cell_values[])
 {
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_DOFS)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Eq: %s: Two types of enforcement are requested (by DoFs and"
-              " by cells).\n", __func__, eqp->name);
-  if (ref_value == NULL && elt_values == NULL)
+  if (ref_value == NULL && cell_values == NULL)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Eq: %s: No enforcement value.\n", __func__, eqp->name);
 
-  if (eqp->n_enforced_dofs > 0) { /* Reset the selection of DoFs */
+  cs_enforcement_param_t  *efp = NULL;
+  int  enforcement_id = eqp->n_enforcements;
 
-    eqp->n_enforced_dofs = 0;
-    BFT_FREE(eqp->enforced_dof_ids);
-    BFT_FREE(eqp->enforced_dof_values);
+  eqp->n_enforcements++;
+
+  if (cell_values == NULL) {
+
+    assert(ref_value != NULL);
+    efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_CELLS,
+                                      CS_ENFORCEMENT_BY_CONSTANT,
+                                      eqp->dim,
+                                      n_cells,
+                                      cell_ids,
+                                      ref_value);
 
   }
+  else
+    efp = cs_enforcement_param_create(CS_ENFORCEMENT_SELECTION_CELLS,
+                                      CS_ENFORCEMENT_BY_DOF_VALUES,
+                                      eqp->dim,
+                                      n_cells,
+                                      cell_ids,
+                                      cell_values);
 
-  if (eqp->n_enforced_cells > 0) { /* Reset the selection of cells */
-
-    eqp->n_enforced_cells = 0;
-    BFT_FREE(eqp->enforced_cell_ids);
-    BFT_FREE(eqp->enforced_cell_values);
-
-  }
-
-  eqp->n_enforced_cells = n_elts;
-  eqp->enforcement_type = CS_EQUATION_ENFORCE_BY_CELLS;
+  BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
+              cs_enforcement_param_t);
+  eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
-  BFT_MALLOC(eqp->enforced_cell_ids, n_elts, cs_lnum_t);
-  memcpy(eqp->enforced_cell_ids, elt_ids, n_elts*sizeof(cs_lnum_t));
-
-  if (elt_values == NULL) { /* Use a reference value for all enforced DoFs */
-
-    eqp->enforcement_type |= CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE;
-    for (int i = 0; i < eqp->dim; i++)
-      eqp->enforcement_ref_value[i] = ref_value[i];
-
-  }
-  else {
-
-    /* Copy user-defined data in the structure */
-
-    const cs_lnum_t  size = eqp->dim*n_elts;
-    BFT_MALLOC(eqp->enforced_cell_values, size, cs_real_t);
-    memcpy(eqp->enforced_cell_values, elt_values, size*sizeof(cs_real_t));
-
-  }
+  return efp;
 }
 
 /*----------------------------------------------------------------------------*/

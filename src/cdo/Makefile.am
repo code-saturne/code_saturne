@@ -92,6 +92,7 @@ cs_dbg.h \
 cs_domain.h \
 cs_domain_op.h \
 cs_domain_setup.h \
+cs_enforcement.h \
 cs_equation.h \
 cs_equation_assemble.h \
 cs_equation_bc.h \
@@ -163,6 +164,7 @@ cs_dbg.c \
 cs_domain.c \
 cs_domain_op.c \
 cs_domain_setup.c \
+cs_enforcement.c \
 cs_equation.c \
 cs_equation_assemble.c \
 cs_equation_bc.c \

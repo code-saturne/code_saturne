@@ -143,8 +143,7 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   BFT_MALLOC(cb->vectors, size, cs_real_3_t);
   memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
-  /* Local square dense matrices used during the construction of
-     operators */
+  /* Local square dense matrices used during the construction of operators */
 
   cb->loc = cs_sdm_square_create(n_fc + 1);
   cb->aux = cs_sdm_square_create(n_fc + 1);
@@ -162,7 +161,6 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
  * \param[in]      eqp           pointer to a cs_equation_param_t structure
  * \param[in, out] eqb           pointer to a cs_equation_builder_t structure
  * \param[in, out] p_dir_values  pointer to the Dirichlet values to set
- * \param[in, out] p_forced_ids  pointer to the indirection list of forced ids
  */
 /*----------------------------------------------------------------------------*/
 
@@ -171,8 +169,7 @@ _setup(cs_real_t                     t_eval,
        const cs_mesh_t              *mesh,
        const cs_equation_param_t    *eqp,
        cs_equation_builder_t        *eqb,
-       cs_real_t                    *p_dir_values[],
-       cs_lnum_t                    *p_forced_ids[])
+       cs_real_t                    *p_dir_values[])
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -194,18 +191,11 @@ _setup(cs_real_t                     t_eval,
 
   /* Internal enforcement of DoFs  */
 
-  if (cs_equation_param_has_internal_enforcement(eqp)) {
-
-    cs_interface_set_t  *ifs = connect->interfaces[CS_CDO_CONNECT_FACE_SP0];
-    cs_equation_build_dof_enforcement(quant->n_faces,
-                                      connect->c2f,
-                                      ifs,
-                                      eqp,
-                                      p_forced_ids);
-
-  }
-  else
-    *p_forced_ids = NULL;
+  if (cs_equation_param_has_internal_enforcement(eqp))
+    eqb->enforced_values =
+      cs_enforcement_define_at_faces(connect,
+                                     eqp->n_enforcements,
+                                     eqp->enforcement_params);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -216,7 +206,6 @@ _setup(cs_real_t                     t_eval,
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
- * \param[in]      forced_ids  indirection in case of internal enforcement
  * \param[in]      val_f_pre   face values used as the previous one
  * \param[in]      val_c_pre   cell values used as the previous one
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -229,7 +218,6 @@ _sfb_init_cell_system(const cs_cell_mesh_t         *cm,
                       const cs_equation_param_t    *eqp,
                       const cs_equation_builder_t  *eqb,
                       const cs_real_t               dir_values[],
-                      const cs_lnum_t               forced_ids[],
                       const cs_real_t               val_f_pre[],
                       const cs_real_t               val_c_pre[],
                       cs_cell_sys_t                *csys,
@@ -270,36 +258,6 @@ _sfb_init_cell_system(const cs_cell_mesh_t         *cm,
     cs_dbg_check_hmg_dirichlet_cw(__func__, csys);
 #endif
   } /* Border cell */
-
-  /* Internal enforcement of DoFs  */
-
-  if (cs_equation_param_has_internal_enforcement(eqp)) {
-
-    assert(forced_ids != NULL);
-    for (short int f = 0; f < cm->n_fc; f++) {
-
-      const cs_lnum_t  id = forced_ids[cm->f_ids[f]];
-
-      if (id < 0) /* No enforcement for this face */
-        csys->intern_forced_ids[f] = -1;
-
-      else {
-
-        /* In case of a Dirichlet BC, this BC is applied and the enforcement
-           is ignored */
-
-        if (cs_cdo_bc_is_dirichlet(csys->dof_flag[f]))
-          csys->intern_forced_ids[f] = -1;
-        else {
-          csys->intern_forced_ids[f] = id;
-          csys->has_internal_enforcement = true;
-        }
-
-      }
-
-    } /* Loop on cell faces */
-
-  } /* Enforcement ? */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
@@ -525,6 +483,7 @@ _sfb_apply_bc_partly(const cs_equation_param_t     *eqp,
  *          Case of scalar-valued CDO-Fb schemes
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in, out] fm          pointer to a facewise view of the mesh
@@ -536,6 +495,7 @@ _sfb_apply_bc_partly(const cs_equation_param_t     *eqp,
 
 static void
 _sfb_apply_remaining_bc(const cs_equation_param_t     *eqp,
+                        const cs_equation_builder_t   *eqb,
                         const cs_cdofb_scaleq_t       *eqc,
                         const cs_cell_mesh_t          *cm,
                         cs_face_mesh_t                *fm,
@@ -563,9 +523,9 @@ _sfb_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
   /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
 
-  if (csys->has_internal_enforcement) {
+  if (cs_equation_param_has_internal_enforcement(eqp)) {
 
-    cs_equation_enforced_internal_dofs(eqp, cb, csys);
+    cs_equation_enforced_internal_dofs(eqb, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -597,32 +557,31 @@ _sfb_cw_rhs_normalization(cs_param_resnorm_type_t     type,
 {
   double  _rhs_norm = 0;
 
-  if (type == CS_PARAM_RESNORM_WEIGHTED_RHS) {
+  switch (type) {
 
+  case CS_PARAM_RESNORM_WEIGHTED_RHS:
     for (short int i = 0; i < cm->n_fc; i++)
       _rhs_norm += cm->pvol_f[i] * csys->rhs[i]*csys->rhs[i];
+    break;
 
-  }
-  else if (type == CS_PARAM_RESNORM_FILTERED_RHS) {
-
-    if (csys->has_dirichlet || csys->has_internal_enforcement) {
-
-      for (short int i = 0; i < cm->n_fc; i++) {
-        if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
-          continue;
-        else if (csys->intern_forced_ids[i] > -1)
-          continue;
-        else
-          _rhs_norm += csys->rhs[i]*csys->rhs[i];
-      }
-
-    }
-    else { /* No need to apply a filter */
-
-      for (short int i = 0; i < cm->n_fc; i++)
+  case CS_PARAM_RESNORM_FILTERED_RHS:
+    for (short int i = 0; i < cm->n_fc; i++) {
+      if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
+        continue;
+      else if (csys->dof_is_forced[i])
+        continue;
+      else
         _rhs_norm += csys->rhs[i]*csys->rhs[i];
-
     }
+    break;
+
+  case CS_PARAM_RESNORM_NORM2_RHS:
+    for (short int i = 0; i < cm->n_fc; i++)
+      _rhs_norm += csys->rhs[i]*csys->rhs[i];
+    break;
+
+  default:
+    break; /* Nothing to do */
 
   } /* Type of residual normalization */
 
@@ -1323,13 +1282,12 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
   /* Build an array storing the Dirichlet values at faces */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *forced_ids = NULL;
 
   /* First argument is set to t_cur even if this is a steady computation since
    * one can call this function to compute a steady-state solution at each time
    * step of an unsteady computation. */
 
-  _setup(time_eval, mesh, eqp, eqb, &dir_values, &forced_ids);
+  _setup(time_eval, mesh, eqp, eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
 
@@ -1400,7 +1358,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _sfb_init_cell_system(cm, eqp, eqb, dir_values, forced_ids,
+      _sfb_init_cell_system(cm, eqp, eqb, dir_values,
                             val_f_pre, val_c_pre,
                             csys, cb);
 
@@ -1470,20 +1428,20 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
                          csys);
 #endif
 
-      /* Compute a cellwise norm of the RHS for the normalization of the
-         residual during the resolution of the linear system */
-
-      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
-                                            cm, csys);
-
       /* Remaining part of boundary conditions */
 
-      _sfb_apply_remaining_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+      _sfb_apply_remaining_bc(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
+
+      /* Compute a cellwise norm of the RHS for the normalization of the
+         residual during the resolution of the linear system */
+
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
+                                            cm, csys);
 
       /* ASSEMBLY PROCESS
        * ================ */
@@ -1575,13 +1533,12 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
   /* Build an array storing the Dirichlet values at faces */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *forced_ids = NULL;
 
   /* First argument is set to t_cur even if this is a steady computation since
    * one can call this function to compute a steady-state solution at each time
    * step of an unsteady computation. */
 
-  _setup(time_eval, mesh, eqp, eqb, &dir_values, &forced_ids);
+  _setup(time_eval, mesh, eqp, eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
 
@@ -1653,7 +1610,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _sfb_init_cell_system(cm, eqp, eqb, dir_values, forced_ids,
+      _sfb_init_cell_system(cm, eqp, eqb, dir_values,
                             val_f_pre, val_c_pre,
                             csys, cb);
 
@@ -1710,23 +1667,24 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
                          csys);
 #endif
 
-      /* Compute a cellwise norm of the RHS for the normalization of the
-         residual during the resolution of the linear system */
-
-      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
-                                            cm, csys);
-
       /* Remaining part of boundary conditions */
 
-      _sfb_apply_remaining_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+      _sfb_apply_remaining_bc(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
+      /* Compute a cellwise norm of the RHS for the normalization of the
+         residual during the resolution of the linear system */
+
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
+                                            cm, csys);
+
       /* ASSEMBLY PROCESS
        * ================ */
+
       _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
 
     } /* Main loop on cells */
@@ -1824,9 +1782,8 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
    * Always evaluated at t_cur + dt */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *forced_ids = NULL;
 
-  _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb, &dir_values, &forced_ids);
+  _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
 
@@ -1905,7 +1862,8 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _sfb_init_cell_system(cm, eqp, eqb, dir_values, forced_ids,
+
+      _sfb_init_cell_system(cm, eqp, eqb, dir_values,
                             val_f_pre, val_c_pre,
                             csys, cb);
 
@@ -2009,20 +1967,21 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
                          csys);
 #endif
 
-      /* Compute a cellwise norm of the RHS for the normalization of the
-         residual during the resolution of the linear system */
-      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
-                                            cm, csys);
-
       /* Remaining part of BOUNDARY CONDITIONS
        * =================================== */
 
-      _sfb_apply_remaining_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+      _sfb_apply_remaining_bc(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
+
+      /* Compute a cellwise norm of the RHS for the normalization of the
+         residual during the resolution of the linear system */
+
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
+                                            cm, csys);
 
       /* ASSEMBLY PROCESS
        * ================ */
@@ -2036,7 +1995,9 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   cs_matrix_assembler_values_done(mav); /* optional */
 
   /* Free temporary buffers and structures */
+
   BFT_FREE(dir_values);
+  cs_equation_builder_reset(eqb);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
@@ -2050,7 +2011,8 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   /* Solve the linear system */
   /* ======================= */
 
-    /* Last step in the computation of the renormalization coefficient */
+  /* Last step in the computation of the renormalization coefficient */
+
   cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
                                      n_faces,
                                      rhs,
@@ -2133,13 +2095,14 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   /* Build an array storing the Dirichlet values at faces */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *forced_ids = NULL;
 
   /* Should not be t_eval since one sets the Dirichlet values
    * Dirichlet boundary conditions are always evaluated at t_cur + dt */
-  _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb, &dir_values, &forced_ids);
+
+  _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
+
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
   double  rhs_norm = 0.;
@@ -2218,7 +2181,8 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _sfb_init_cell_system(cm, eqp, eqb, dir_values, forced_ids,
+
+      _sfb_init_cell_system(cm, eqp, eqb, dir_values,
                             val_f_pre, val_c_pre,
                             csys, cb);
 
@@ -2365,22 +2329,25 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
                          csys);
 #endif
 
-      /* Compute a cellwise norm of the RHS for the normalization of the
-         residual during the resolution of the linear system */
-      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
-                                            cm, csys);
-
       /* Remaining part of BOUNDARY CONDITIONS
        * ===================================== */
-      _sfb_apply_remaining_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+
+      _sfb_apply_remaining_bc(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
 
+      /* Compute a cellwise norm of the RHS for the normalization of the
+         residual during the resolution of the linear system */
+
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
+                                            cm, csys);
+
       /* ASSEMBLY PROCESS
        * ================ */
+
       _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
 
     } /* Main loop on cells */
@@ -2390,7 +2357,9 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   cs_matrix_assembler_values_done(mav); /* optional */
 
   /* Free temporary buffers and structures */
+
   BFT_FREE(dir_values);
+  cs_equation_builder_reset(eqb);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */

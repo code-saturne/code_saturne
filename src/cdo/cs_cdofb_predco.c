@@ -1078,15 +1078,13 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   cs_timer_t  t_bld = cs_timer_time();
 
-  /* Build an array storing the Dirichlet values at faces and ids of DoFs if
-   * an enforcement of (internal) DoFs is requested
+  /* Build an array storing the Dirichlet values at faces.
    * Evaluation should be performed at t_cur + dt_cur */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *enforced_ids = NULL;
 
   cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb,
-                        &dir_values, &enforced_ids);
+                        &dir_values);
 
   /* Initialize the local system: matrix and rhs */
 
@@ -1104,7 +1102,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, ts, mom_eqp, mom_eqb, mom_eqc, sc, rhs,        \
-         matrix, mav, mom_rs, dir_values, enforced_ids, vel_c, pr_c)
+         matrix, mav, mom_rs, dir_values, vel_c, pr_c)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1174,8 +1172,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
-                                       dir_values, enforced_ids,
+      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb, dir_values,
                                        mom_eqc->face_values, vel_c,
                                        NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
@@ -1299,7 +1296,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   /* Free temporary buffers and structures */
 
   BFT_FREE(dir_values);
-  BFT_FREE(enforced_ids);
+  cs_equation_builder_reset(mom_eqb);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */

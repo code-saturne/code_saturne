@@ -656,34 +656,32 @@ _svcb_cw_rhs_normalization(cs_param_resnorm_type_t     type,
 {
   double  _rhs_norm = 0;
 
-  if (type == CS_PARAM_RESNORM_WEIGHTED_RHS) {
+  switch (type) {
 
+  case CS_PARAM_RESNORM_WEIGHTED_RHS:
     for (short int i = 0; i < cm->n_vc; i++)
       _rhs_norm += cm->wvc[i] * csys->rhs[i]*csys->rhs[i];
-
     _rhs_norm = _rhs_norm * cm->vol_c;
+    break;
 
-  }
-  else if (type == CS_PARAM_RESNORM_FILTERED_RHS) {
-
-    if (csys->has_dirichlet || csys->has_internal_enforcement) {
-
-      for (short int i = 0; i < cm->n_vc; i++) {
-        if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
-          continue;
-        else if (csys->intern_forced_ids[i] > -1)
-          continue;
-        else
-          _rhs_norm += csys->rhs[i]*csys->rhs[i];
-      }
-
-    }
-    else { /* No need to apply a filter */
-
-      for (short int i = 0; i < cm->n_vc; i++)
+  case CS_PARAM_RESNORM_FILTERED_RHS:
+    for (short int i = 0; i < cm->n_vc; i++) {
+      if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
+        continue;
+      else if (csys->dof_is_forced[i])
+        continue;
+      else
         _rhs_norm += csys->rhs[i]*csys->rhs[i];
-
     }
+    break;
+
+  case CS_PARAM_RESNORM_NORM2_RHS:
+    for (short int i = 0; i < cm->n_vc; i++)
+      _rhs_norm += csys->rhs[i]*csys->rhs[i];
+    break;
+
+  default:
+    break; /* Nothing to do */
 
   } /* Type of residual normalization */
 

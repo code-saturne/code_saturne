@@ -55,6 +55,7 @@
 #include "cs_domain.h"
 #include "cs_domain_op.h"
 #include "cs_domain_setup.h"
+#include "cs_enforcement.h"
 #include "cs_equation.h"
 #include "cs_equation_assemble.h"
 #include "cs_equation_bc.h"

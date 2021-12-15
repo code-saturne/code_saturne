@@ -173,13 +173,13 @@ typedef struct {
   bool        has_nhmg_neumann; /*!< Non-homogeneous Neumann BCs ? */
   double     *neu_values;       /*!< Neumann BCs values; size = n_dofs */
 
-  bool        has_robin;     /*!< Robin BCs ? */
-  double     *rob_values;    /*!< Robin BCs values; size = 3*n_dofs */
+  bool        has_robin;      /*!< Robin BCs ? */
+  double     *rob_values;     /*!< Robin BCs values; size = 3*n_dofs */
 
-  bool        has_sliding;   /*!< Sliding BCs ? */
+  bool        has_sliding;    /*!< Sliding BCs ? */
 
-  bool        has_internal_enforcement;  /*!< Internal enforcement ? */
-  cs_lnum_t  *intern_forced_ids;         /*!< Id in the enforcement array */
+  bool        has_internal_enforcement; /*<! At least one DoF enforced */
+  bool       *dof_is_forced;  /*!< Is enforced (array of size n_dofs) */
 
   /*!
    * @}

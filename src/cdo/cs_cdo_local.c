@@ -261,10 +261,10 @@ cs_cell_sys_create(int      n_max_dofbyc,
   /* Internal enforcement */
 
   csys->has_internal_enforcement = false;
-  csys->intern_forced_ids = NULL;
+  csys->dof_is_forced = NULL;
 
   if (n_max_dofbyc > 0)
-    BFT_MALLOC(csys->intern_forced_ids, n_max_dofbyc, cs_lnum_t);
+    BFT_MALLOC(csys->dof_is_forced, n_max_dofbyc, bool);
 
   /* Boundary conditions */
 
@@ -375,7 +375,7 @@ cs_cell_sys_reset(int              n_fbyc,
 
   csys->has_internal_enforcement = false;
   for (int i = 0; i < csys->n_dofs; i++)
-    csys->intern_forced_ids[i] = -1; /* Not selected */
+    csys->dof_is_forced[i] = false; /* Not selected */
 
   memset(csys->dof_flag, 0, sizeof(cs_flag_t)*csys->n_dofs);
 
@@ -426,7 +426,7 @@ cs_cell_sys_free(cs_cell_sys_t     **p_csys)
   BFT_FREE(csys->neu_values);
   BFT_FREE(csys->rob_values);
 
-  BFT_FREE(csys->intern_forced_ids);
+  BFT_FREE(csys->dof_is_forced);
 
   BFT_FREE(csys);
   *p_csys= NULL;
@@ -480,10 +480,10 @@ cs_cell_sys_dump(const char             msg[],
                "VAL_N-1");
     for (int i = 0; i < csys->n_dofs; i++)
       bft_printf(">> %8ld | %6d | % -.3e | % -.3e | % -.3e |"
-                 " %8ld | % -.3e | % -.3e\n",
+                 " %-8s | % -.3e | % -.3e\n",
                  (long)csys->dof_ids[i], csys->dof_flag[i], csys->rhs[i],
                  csys->source[i], csys->dir_values[i],
-                 (long)csys->intern_forced_ids[i],
+                 cs_base_strtf(csys->dof_is_forced[i]),
                  csys->val_n[i], csys->val_nm1[i]);
   }
 }

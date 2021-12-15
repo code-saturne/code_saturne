@@ -1412,7 +1412,7 @@ cs_equation_destroy_all(void)
     /* Since eq->rset is only shared, no free is done at this stage */
 
     /* Free the associated builder structure */
-    cs_equation_free_builder(&(eq->builder));
+    cs_equation_builder_free(&(eq->builder));
     eq->scheme_context = eq->free_context(eq->scheme_context);
 
     if (eq->main_ts_id > -1)
@@ -2526,7 +2526,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     /* Allocate and initialize a system builder */
     /* Not initialized here if it is a restart */
     if (eq->builder == NULL)
-      eq->builder = cs_equation_init_builder(eqp, mesh);
+      eq->builder = cs_equation_builder_init(eqp, mesh);
 
     if (eq->scheme_context == NULL)
       eq->scheme_context = eq->init_context(eqp,

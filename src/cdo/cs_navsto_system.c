@@ -1352,11 +1352,11 @@ cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
   cs_real_t  zero_velocity[3] = {0, 0, 0};
 
-  cs_equation_enforce_value_on_cell_selection(mom_eqp,
-                                              n_solid_cells,
-                                              solid_cell_ids,
-                                              zero_velocity,
-                                              NULL);
+  cs_equation_add_cell_enforcement(mom_eqp,
+                                   n_solid_cells,
+                                   solid_cell_ids,
+                                   zero_velocity,
+                                   NULL);
 }
 
 /*----------------------------------------------------------------------------*/

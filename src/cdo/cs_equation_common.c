@@ -82,10 +82,12 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Temporary buffers useful during the building of all algebraic systems */
+
 static size_t  cs_equation_common_work_buffer_size = 0;
 static cs_real_t  *cs_equation_common_work_buffer = NULL;
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
+
 static const cs_cdo_quantities_t  *cs_shared_quant;
 static const cs_cdo_connect_t  *cs_shared_connect;
 static const cs_time_step_t  *cs_shared_time_step;
@@ -272,7 +274,7 @@ cs_equation_common_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 cs_equation_builder_t *
-cs_equation_init_builder(const cs_equation_param_t   *eqp,
+cs_equation_builder_init(const cs_equation_param_t   *eqp,
                          const cs_mesh_t             *mesh)
 {
   cs_equation_builder_t  *eqb = NULL;
@@ -321,6 +323,10 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
     eqb->reac_pty_uniform[i]
       = cs_property_is_uniform(eqp->reaction_properties[i]);
 
+  /* Enforcement of DoFs */
+
+  eqb->enforced_values = NULL;
+
   /* Handle source terms */
 
   eqb->source_mask = NULL;
@@ -368,7 +374,7 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_free_builder(cs_equation_builder_t  **p_builder)
+cs_equation_builder_free(cs_equation_builder_t  **p_builder)
 {
   if (p_builder == NULL)
     return;
@@ -376,6 +382,8 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder)
     return;
 
   cs_equation_builder_t  *eqb = *p_builder;
+
+  cs_equation_builder_reset(eqb);
 
   if (eqb->source_mask != NULL)
     BFT_FREE(eqb->source_mask);
@@ -387,6 +395,23 @@ cs_equation_free_builder(cs_equation_builder_t  **p_builder)
   BFT_FREE(eqb);
 
   *p_builder = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free some members of a cs_equation_builder_t structure
+ *
+ * \param[in, out]  eqb   pointer to the cs_equation_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_builder_reset(cs_equation_builder_t  *eqb)
+{
+  if (eqb == NULL)
+    return;
+
+  BFT_FREE(eqb->enforced_values);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -886,95 +911,9 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the list of degrees of freedom (DoFs) related to an internal
- *         enforcement. If set to NULL, the array dof_ids (storing the
- *         indirection) is allocated to n_x.
- *
- * \param[in]      n_x        number of entities where DoFs are defined
- * \param[in]      c2x        cell --> x connectivity
- * \param[in]      ifs        pointer to a fvm_interface_set_t structure
- * \param[in]      eqp        set of parameters related to an equation
- * \param[in, out] p_dof_ids  double pointer on DoF ids subject to enforcement
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
-                                  const cs_adjacency_t         *c2x,
-                                  const cs_interface_set_t     *ifs,
-                                  const cs_equation_param_t    *eqp,
-                                  cs_lnum_t                    *p_dof_ids[])
-{
-  /* if (eqp->n_enforced_dofs == 0 && eqp->n_enforced_cells == 0) */
-  /*   return; */
-
-  /* Initialize the indirection list (by default, no DoF selected) */
-
-  cs_lnum_t  *dof_ids = *p_dof_ids;
-
-  if (dof_ids == NULL)
-    BFT_MALLOC(dof_ids, n_x, cs_lnum_t);
-
-# pragma omp parallel for if (n_x > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_x; i++)
-    dof_ids[i] = -1;     /* Not selected by default */
-
-  if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_CELLS) {
-
-    if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE) {
-
-      for (cs_lnum_t i = 0; i < eqp->n_enforced_cells; i++) {
-        const cs_lnum_t  c_id = eqp->enforced_cell_ids[i];
-        for (cs_lnum_t j = c2x->idx[c_id]; j < c2x->idx[c_id+1]; j++)
-          dof_ids[c2x->ids[j]] = i;
-      }
-
-      /* Since DoFs can be shared between cells, one needs to synchronize
-         dof_ids. dof_ids is activated only if > -1. The value does not
-         matter with an enforcement by a reference value. */
-
-      if (ifs != NULL)
-        cs_interface_set_max(ifs,
-                             n_x,    /* array size */
-                             1,      /* array stride */
-                             false,  /* interlace */
-                             CS_LNUM_TYPE,
-                             dof_ids);
-
-    }
-    else  /* This case can be tricky in parallel and can also impact the const
-             specifier of cs_equation_param_t */
-
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Eq: %s\n"
-                "Enforcement by a cell selection without a reference value"
-                " is not implemented yet.", __func__, eqp->name);
-
-  }
-  else {
-
-    assert(eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_DOFS);
-
-    /* Build the indirection between DoFs and enforced DoFs */
-
-    for (cs_lnum_t i = 0; i < eqp->n_enforced_dofs; i++)
-      dof_ids[eqp->enforced_dof_ids[i]] = i;
-
-    /* Synchronization in this case has to be performed before this function.
-     * The value in dof_ids matter because it is used to retrieve the value of
-     * the enforcement. */
-
-  }
-
-  /* Returns pointer */
-
-  *p_dof_ids = dof_ids;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Take into account the enforcement of internal DoFs. Apply an
- *          algebraic manipulation
+ *          algebraic manipulation. Update members of the cs_cell_sys_t
+ *          structure related to the internal enforcement.
  *
  *          |      |     |     |      |     |     |  |     |             |
  *          | Aii  | Aie |     | Aii  |  0  |     |bi|     |bi -Aid.x_enf|
@@ -984,55 +923,32 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
  *
  * where x_enf is the value of the enforcement for the selected internal DoFs
  *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       eqb       pointer to a cs_equation_builder_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
+cs_equation_enforced_internal_dofs(const cs_equation_builder_t     *eqb,
                                    cs_cell_builder_t               *cb,
                                    cs_cell_sys_t                   *csys)
 {
-  /* Enforcement of the Dirichlet BCs */
+  /* Enforcement of internal DoFs */
 
-  if (csys->has_internal_enforcement == false)
-    return;  /* Nothing to do */
-
-  double  *x_vals = cb->values;
+  double  *x_vals = cb->values; /* define with cs_enforcement_dofs_cw() */
   double  *ax = cb->values + csys->n_dofs;
 
   memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
 
-  /* Build x_vals */
+  bool do_enforcement = cs_enforcement_dofs_cw(eqb->enforced_values,
+                                               csys,
+                                               cb->values);
 
-  if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE) {
+  csys->has_internal_enforcement = do_enforcement;
 
-    const cs_real_t  ref_val = eqp->enforcement_ref_value[0];
-    for (int i = 0; i < csys->n_dofs; i++) {
-      if (csys->intern_forced_ids[i] > -1)
-        x_vals[i] = ref_val;
-    }
-
-  }
-  else if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_DOFS) {
-
-    for (int i = 0; i < csys->n_dofs; i++) {
-      if (csys->intern_forced_ids[i] > -1)
-        x_vals[i] = eqp->enforced_dof_values[csys->intern_forced_ids[i]];
-    }
-
-  }
-  else {
-
-    assert(eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_CELLS);
-    for (int i = 0; i < csys->n_dofs; i++) {
-      if (csys->intern_forced_ids[i] > -1)
-        x_vals[i] = eqp->enforced_cell_values[csys->intern_forced_ids[i]];
-    }
-
-  }
+  if (!do_enforcement)
+    return;
 
   /* Contribution of the DoFs which are enforced */
 
@@ -1042,7 +958,7 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
 
   for (int i = 0; i < csys->n_dofs; i++) {
 
-    if (csys->intern_forced_ids[i] > -1) {
+    if (csys->dof_is_forced[i]) {
 
       /* Reset row i */
 
@@ -1067,8 +983,9 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account the enforcement of internal DoFs. Case of matrices
- *          defined by blocks. Apply an algebraic manipulation.
+ * \brief Take into account the enforcement of internal DoFs. Case of matrices
+ *        defined by blocks. Apply an algebraic manipulation. Update members
+ *        of the cs_cell_sys_t structure related to the internal enforcement.
  *
  *          |      |     |     |      |     |     |  |     |             |
  *          | Aii  | Aie |     | Aii  |  0  |     |bi|     |bi -Aid.x_enf|
@@ -1078,59 +995,32 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
  *
  * where x_enf is the value of the enforcement for the selected internal DoFs
  *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       eqb       pointer to a cs_equation_builder_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
+cs_equation_enforced_internal_block_dofs(const cs_equation_builder_t   *eqb,
                                          cs_cell_builder_t             *cb,
                                          cs_cell_sys_t                 *csys)
 {
-  /* Enforcement of the Dirichlet BCs */
+  /* Enforcement of internal DoFs */
 
-  if (csys->has_internal_enforcement == false)
-    return;  /* Nothing to do */
-
-  double  *x_vals = cb->values;
+  double  *x_vals = cb->values; /* define with cs_enforcement_dofs_cw() */
   double  *ax = cb->values + csys->n_dofs;
 
   memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
 
-  if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE) {
+  bool do_enforcement = cs_enforcement_dofs_cw(eqb->enforced_values,
+                                               csys,
+                                               cb->values);
 
-    /* Build x_vals */
+  csys->has_internal_enforcement = do_enforcement;
 
-    const cs_real_t  *ref_val = eqp->enforcement_ref_value;
-    for (int i = 0; i < csys->n_dofs; i++) {
-      if (csys->intern_forced_ids[i] > -1)
-        x_vals[i] = ref_val[i%3];
-    }
-
-  }
-  else if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_DOFS) {
-
-    /* Build x_vals */
-
-    for (int i = 0; i < csys->n_dofs; i++) {
-      if (csys->intern_forced_ids[i] > -1)
-        x_vals[i] = eqp->enforced_dof_values[csys->intern_forced_ids[i]];
-    }
-
-  }
-  else {
-
-    /* Build x_vals */
-
-    assert(eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_CELLS);
-    for (int i = 0; i < csys->n_dofs; i++) {
-      if (csys->intern_forced_ids[i] > -1)
-        x_vals[i] = eqp->enforced_cell_values[csys->intern_forced_ids[i]];
-    }
-
-  }
+  if (!do_enforcement)
+    return;
 
   /* Contribution of the DoFs which are enforced */
 
@@ -1139,7 +1029,7 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
   /* Define the new right-hand side (rhs) */
 
   for (int i = 0; i < csys->n_dofs; i++) {
-    if (csys->intern_forced_ids[i] > -1)
+    if (csys->dof_is_forced[i])
       csys->rhs[i] = x_vals[i];
     else
       csys->rhs[i] -= ax[i];  /* Update RHS */
@@ -1155,14 +1045,14 @@ cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
     cs_sdm_t  *db = cs_sdm_get_block(csys->mat, ii, ii);
     const int  bsize = db->n_rows*db->n_cols;
 
-    if (csys->intern_forced_ids[s] > -1) {
+    if (csys->dof_is_forced[s]) {
 
       /* Identity for the diagonal block */
 
       memset(db->val, 0, sizeof(cs_real_t)*bsize);
       for (int i = 0; i < db->n_rows; i++) {
         db->val[i*(1+db->n_rows)] = 1;
-        assert(csys->intern_forced_ids[s+i] > -1);
+        assert(csys->dof_is_forced[s+i]);
       }
 
       /* Reset column and row block jj < ii */

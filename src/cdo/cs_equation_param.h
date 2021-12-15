@@ -31,9 +31,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_advection_field.h"
+#include "cs_enforcement.h"
+#include "cs_hodge.h"
 #include "cs_param_cdo.h"
 #include "cs_param_sles.h"
-#include "cs_hodge.h"
 #include "cs_property.h"
 #include "cs_xdef.h"
 
@@ -117,27 +118,6 @@ BEGIN_C_DECLS
 #define CS_EQUATION_POST_PECLET      (1 << 1) /* 2 */
 #define CS_EQUATION_POST_UPWIND_COEF (1 << 2) /* 4 */
 #define CS_EQUATION_POST_NORMAL_FLUX (1 << 3) /* 8 */
-
-/*!
- * @}
- * @name Flags to handle the enforcement of degrees of freedom (DoFs)
- * @{
- *
- * \def CS_EQUATION_ENFORCE_BY_CELLS
- * \brief Definition of a selection of DoFs to enforce using a cell selection
- *
- * \def CS_EQUATION_ENFORCE_BY_DOFS
- * \brief Definition of a selection of DoFs
- *
- * \def CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE
- * \brief Assign to all the selected DoFs the same value. This value is stored
- *        in enforcement_ref_value
- *
- */
-
-#define CS_EQUATION_ENFORCE_BY_CELLS            (1 << 0) /* 1 */
-#define CS_EQUATION_ENFORCE_BY_DOFS             (1 << 1) /* 2 */
-#define CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE  (1 << 2) /* 4 */
 
 /*! @} */
 
@@ -733,51 +713,21 @@ typedef struct {
    * @name Enforcement of values inside the computational domain
    *
    * This is different from the enforcement of boundary conditions but rely on
-   * the same algebraic manipulation.
-   * Two mechanisms are possible.
-   *
-   * 1) CELL SELECTION: defined a selection of cells and then
-   * automatically built the related selection of degrees of freedom and
-   * assigned a value to each selected degrees of freedom
-   *
-   * 2) DOF SELECTION: defined a selection of degrees of freedom (DoFs) and
-   *    assign a values to a selection of degrees of freedom inside the domain
+   * the same algebraic manipulation. Only an algebraic manipulation is used to
+   * enforce interior/border DoFs.
    *
    * @{
    *
-   * \var enforcement_type
-   * Flag specifying which kind of enforcement to perform
+   * \var n_enforcements
+   * Number of enforcements which have been specified
    *
-   * \var enforcement_ref_value
-   * Reference value to use. Avod to allocate an array with the same value
-   * for all selected entities
-   *
-   * \var n_enforced_cells
-   * Number of selected cells related to an enforcement
-   *
-   * \var enforced_cell_ids
-   * List of selected cell ids related to an enforcement
-   *
-   * \var n_enforced_dofs
-   * Number of degrees of freedom (DoFs) to enforce
-   *
-   * \var enforced_dof_ids
-   * List of related DoF ids
-   *
-   * \var enforced_dof_values
-   * List of related values to enforce
+   * \var enforcement_params
+   * Array of \ref cs_enforcement_param_t structures storing the settings of
+   * each enforcement
    */
 
-  cs_flag_t                   enforcement_type;
-  cs_real_t                  *enforcement_ref_value;
-
-  cs_lnum_t                   n_enforced_cells;
-  cs_lnum_t                  *enforced_cell_ids;
-  cs_real_t                  *enforced_cell_values;
-
-  cs_lnum_t                   n_enforced_dofs;
-  cs_lnum_t                  *enforced_dof_ids;
-  cs_real_t                  *enforced_dof_values;
+  int                         n_enforcements;
+  cs_enforcement_param_t    **enforcement_params;
 
   /*!
    * @}
@@ -2177,28 +2127,86 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Add an enforcement of the value of degrees of freedom located at
- *         mesh vertices.
+ *         the mesh vertices.
  *         The spatial discretization scheme for the given equation has to be
- *         CDO-Vertex based or CDO-Vertex+Cell-based schemes.
+ *         CDO vertex-based or CDO vertex+cell-based schemes.
  *
  *         One assumes that values are interlaced if eqp->dim > 1
  *         ref_value or elt_values has to be defined. If both parameters are
  *         defined, one keeps the definition in elt_values
  *
- * \param[in, out] eqp         pointer to a cs_equation_param_t structure
- * \param[in]      n_elts      number of vertices to enforce
- * \param[in]      elt_ids     list of vertices
- * \param[in]      ref_value   ignored if NULL
- * \param[in]      elt_values  list of associated values, ignored if NULL
+ * \param[in, out] eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      n_vertices   number of vertices to enforce
+ * \param[in]      vertex_ids   list of vertices
+ * \param[in]      ref_value    default values or ignored (may be NULL)
+ * \param[in]      vtx_values   list of associated values, ignored if NULL
+ *
+ * \return a pointer to a cs_enforcement_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
-                                cs_lnum_t               n_elts,
-                                const cs_lnum_t         elt_ids[],
-                                const cs_real_t         ref_value[],
-                                const cs_real_t         elt_values[]);
+cs_enforcement_param_t *
+cs_equation_add_vertex_dof_enforcement(cs_equation_param_t    *eqp,
+                                       cs_lnum_t               n_vertices,
+                                       const cs_lnum_t         vertex_ids[],
+                                       const cs_real_t         ref_value[],
+                                       const cs_real_t         vtx_values[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add an enforcement of the value of degrees of freedom located at
+ *         the mesh edges.
+ *         The spatial discretization scheme for the given equation has to be
+ *         CDO edge-based schemes.
+ *
+ *         One assumes that values are interlaced if eqp->dim > 1
+ *         ref_value or elt_values has to be defined. If both parameters are
+ *         defined, one keeps the definition in elt_values
+ *
+ * \param[in, out] eqp           pointer to a cs_equation_param_t structure
+ * \param[in]      n_edges       number of edges to enforce
+ * \param[in]      edge_ids      list of edges
+ * \param[in]      ref_value     default values or ignored (may be NULL)
+ * \param[in]      edge_values   list of associated values, ignored if NULL
+ *
+ * \return a pointer to a cs_enforcement_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_enforcement_param_t *
+cs_equation_add_edge_dof_enforcement(cs_equation_param_t    *eqp,
+                                     cs_lnum_t               n_edges,
+                                     const cs_lnum_t         edge_ids[],
+                                     const cs_real_t         ref_value[],
+                                     const cs_real_t         edge_values[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add an enforcement of the value of degrees of freedom located at
+ *         the mesh faces.
+ *         The spatial discretization scheme for the given equation has to be
+ *         CDO face-based schemes.
+ *
+ *         One assumes that values are interlaced if eqp->dim > 1
+ *         ref_value or elt_values has to be defined. If both parameters are
+ *         defined, one keeps the definition in elt_values
+ *
+ * \param[in, out] eqp           pointer to a cs_equation_param_t structure
+ * \param[in]      n_faces       number of faces to enforce
+ * \param[in]      face_ids      list of faces
+ * \param[in]      ref_value     default values or ignored (may be NULL)
+ * \param[in]      face_values   list of associated values, ignored if NULL
+ *
+ * \return a pointer to a cs_enforcement_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_enforcement_param_t *
+cs_equation_add_face_dof_enforcement(cs_equation_param_t    *eqp,
+                                     cs_lnum_t               n_faces,
+                                     const cs_lnum_t         face_ids[],
+                                     const cs_real_t         ref_value[],
+                                     const cs_real_t         face_values[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2209,20 +2217,22 @@ cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
  *         ref_value or elt_values has to be defined. If both parameters are
  *         defined, one keeps the definition in elt_values
  *
- * \param[in, out] eqp         pointer to a cs_equation_param_t structure
- * \param[in]      n_elts      number of selected cells
- * \param[in]      elt_ids     list of cell ids
- * \param[in]      ref_value   ignored if NULL
- * \param[in]      elt_values  list of associated values, ignored if NULL
+ * \param[in, out] eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      n_cells      number of selected cells
+ * \param[in]      cell_ids     list of cell ids
+ * \param[in]      ref_value    ignored if NULL
+ * \param[in]      cell_values  list of associated values, ignored if NULL
+ *
+ * \return a pointer to a cs_enforcement_param_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_equation_enforce_value_on_cell_selection(cs_equation_param_t  *eqp,
-                                            cs_lnum_t             n_elts,
-                                            const cs_lnum_t       elt_ids[],
-                                            const cs_real_t       ref_value[],
-                                            const cs_real_t       elt_values[]);
+cs_enforcement_param_t *
+cs_equation_add_cell_enforcement(cs_equation_param_t   *eqp,
+                                 cs_lnum_t              n_cells,
+                                 const cs_lnum_t        elt_ids[],
+                                 const cs_real_t        ref_value[],
+                                 const cs_real_t        cell_values[]);
 
 /*----------------------------------------------------------------------------*/
 

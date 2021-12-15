@@ -177,10 +177,9 @@ _vvb_create_cell_builder(const cs_cdo_connect_t   *connect)
  * \param[in]      t_eval          time at which one evaluates BCs
  * \param[in]      mesh            pointer to a cs_mesh_t structure
  * \param[in]      eqp             pointer to a cs_equation_param_t structure
- * \param[in]      eqb             pointer to a cs_equation_builder_t structure
+ * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
  * \param[in, out] vtx_bc_flag      pointer to an array of BC flag for each vtx
  * \param[in, out] p_dir_values    pointer to the Dirichlet values to set
- * \param[in, out] p_enforced_ids  pointer to the list of enforced vertices
  */
 /*----------------------------------------------------------------------------*/
 
@@ -188,10 +187,9 @@ static void
 _vvb_setup(cs_real_t                      t_eval,
            const cs_mesh_t               *mesh,
            const cs_equation_param_t     *eqp,
-           const cs_equation_builder_t   *eqb,
+           cs_equation_builder_t         *eqb,
            cs_flag_t                      vtx_bc_flag[],
-           cs_real_t                     *p_dir_values[],
-           cs_lnum_t                     *p_enforced_ids[])
+           cs_real_t                     *p_dir_values[])
 {
   assert(vtx_bc_flag != NULL);  /* Sanity check */
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -219,18 +217,11 @@ _vvb_setup(cs_real_t                      t_eval,
 
   /* Internal enforcement of DoFs  */
 
-  if (cs_equation_param_has_internal_enforcement(eqp)) {
-
-    cs_interface_set_t  *ifs = connect->interfaces[CS_CDO_CONNECT_VTX_SCAL];
-    cs_equation_build_dof_enforcement(quant->n_vertices,
-                                      connect->c2v,
-                                      ifs,
-                                      eqp,
-                                      p_enforced_ids);
-
-  }
-  else
-    *p_enforced_ids = NULL;
+  if (cs_equation_param_has_internal_enforcement(eqp))
+    eqb->enforced_values =
+      cs_enforcement_define_at_vertices(connect,
+                                        eqp->n_enforcements,
+                                        eqp->enforcement_params);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -243,7 +234,6 @@ _vvb_setup(cs_real_t                      t_eval,
  * \param[in]      eqb          pointer to a cs_equation_builder_t structure
  * \param[in]      dir_values   Dirichlet values associated to each vertex
  * \param[in]      vtx_bc_flag  Flag related to BC associated to each vertex
- * \param[in]      forced_ids   indirection in case of internal enforcement
  * \param[in]      field_tn     values of the field at the last computed time
  * \param[in, out] csys         pointer to a cellwise view of the system
  * \param[in, out] cb           pointer to a cellwise builder
@@ -256,7 +246,6 @@ _vvb_init_cell_system(const cs_cell_mesh_t           *cm,
                       const cs_equation_builder_t    *eqb,
                       const cs_real_t                 dir_values[],
                       const cs_flag_t                 vtx_bc_flag[],
-                      const cs_lnum_t                 forced_ids[],
                       const cs_real_t                 field_tn[],
                       cs_cell_sys_t                  *csys,
                       cs_cell_builder_t              *cb)
@@ -322,40 +311,6 @@ _vvb_init_cell_system(const cs_cell_mesh_t           *cm,
     }
 
   }
-
-  /* Internal enforcement of DoFs  */
-
-  if (cs_equation_param_has_internal_enforcement(eqp)) {
-
-    assert(forced_ids != NULL);
-    for (int v = 0; v < cm->n_vc; v++) {
-
-      const cs_lnum_t  id = forced_ids[cm->v_ids[v]];
-
-      if (id < 0) { /* No enforcement for this vertex */
-        for (int k = 0; k < 3; k++)
-          csys->intern_forced_ids[3*v+k] = -1;
-      }
-      else {
-
-        /* In case of a Dirichlet BC, this BC is applied and the enforcement
-           is ignored */
-
-        for (int k = 0; k < 3; k++) {
-          int  dof_id = 3*v+k;
-          if (cs_cdo_bc_is_dirichlet(csys->dof_flag[dof_id]))
-            csys->intern_forced_ids[dof_id] = -1;
-          else {
-            csys->intern_forced_ids[dof_id] = 3*id+k;
-            csys->has_internal_enforcement = true;
-          }
-        }
-
-      }
-
-    } /* Loop on cell vertices */
-
-  } /* Internal enforcement */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
@@ -577,6 +532,7 @@ _vvb_apply_weak_bc(const cs_equation_param_t     *eqp,
  *          Case of vector-valued CDO-Vb schemes
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in, out] fm          pointer to a facewise view of the mesh
@@ -588,6 +544,7 @@ _vvb_apply_weak_bc(const cs_equation_param_t     *eqp,
 
 static void
 _vvb_enforce_values(const cs_equation_param_t     *eqp,
+                    const cs_equation_builder_t   *eqb,
                     const cs_cdovb_vecteq_t       *eqc,
                     const cs_cell_mesh_t          *cm,
                     cs_face_mesh_t                *fm,
@@ -606,23 +563,20 @@ _vvb_enforce_values(const cs_equation_param_t     *eqp,
 
       eqc->enforce_dirichlet(eqp, cm, fm, diff_hodge, cb, csys);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 2
       if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump("\n>> Cell system after strong BC treatment", csys);
 #endif
     }
   }
 
-  if (cs_equation_param_has_internal_enforcement(eqp) == false)
-    return;
+  if (cs_equation_param_has_internal_enforcement(eqp)) {
 
-  /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
+    /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
 
-  if (csys->has_internal_enforcement) {
+    cs_equation_enforced_internal_block_dofs(eqb, cb, csys);
 
-    cs_equation_enforced_internal_block_dofs(eqp, cb, csys);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
                        csys);
@@ -652,37 +606,35 @@ _vvb_cw_rhs_normalization(cs_param_resnorm_type_t     type,
 {
   double  _rhs_norm = 0;
 
-  if (type == CS_PARAM_RESNORM_WEIGHTED_RHS) {
+  switch (type) {
 
+  case CS_PARAM_RESNORM_WEIGHTED_RHS:
     for (short int i = 0; i < cm->n_vc; i++) {
       const cs_real_t  w = cm->wvc[i];
       const cs_real_t  *_rhs = csys->rhs + 3*i;
       _rhs_norm += w * (_rhs[0]*_rhs[0] + _rhs[1]*_rhs[1] + _rhs[2]*_rhs[2]);
     }
-
     _rhs_norm = cm->vol_c * _rhs_norm;
+    break;
 
-  }
-  else if (type == CS_PARAM_RESNORM_FILTERED_RHS) {
-
-    if (csys->has_dirichlet || csys->has_internal_enforcement) {
-
-      for (short int i = 0; i < csys->n_dofs; i++) {
-        if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
-          continue;
-        else if (csys->intern_forced_ids[i] > -1)
-          continue;
-        else
-          _rhs_norm += csys->rhs[i]*csys->rhs[i];
-      }
-
-    }
-    else { /* No need to apply a filter */
-
-      for (short int i = 0; i < csys->n_dofs; i++)
+  case CS_PARAM_RESNORM_FILTERED_RHS:
+    for (short int i = 0; i < csys->n_dofs; i++) {
+      if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
+        continue;
+      else if (csys->dof_is_forced[i])
+        continue;
+      else
         _rhs_norm += csys->rhs[i]*csys->rhs[i];
-
     }
+    break;
+
+  case CS_PARAM_RESNORM_NORM2_RHS:
+    for (short int i = 0; i < csys->n_dofs; i++)
+      _rhs_norm += csys->rhs[i]*csys->rhs[i];
+    break;
+
+  default:
+    break; /* Nothing to do */
 
   } /* Type of residual normalization */
 
@@ -1333,18 +1285,15 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
 
-  /* Build an array storing the Dirichlet values at vertices and another one
-     to detect vertices with an enforcement */
+  /* Build an array storing the Dirichlet values at vertices */
 
   cs_real_t  *dir_values = NULL;
-  cs_lnum_t  *forced_ids = NULL;
 
   /* First argument is set to t_cur + dt_cur even if this is a steady
    * computation since one can call this function to compute a steady-state
    * solution at each time step of an unsteady computation. */
 
-  _vvb_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag,
-             &dir_values, &forced_ids);
+  _vvb_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
 
   /* Initialize the local system: matrix and rhs */
 
@@ -1370,7 +1319,6 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
-
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1421,7 +1369,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
       /* Set the local (i.e. cellwise) structures for the current cell */
 
       _vvb_init_cell_system(cm, eqp, eqb, dir_values, eqc->vtx_bc_flag,
-                            forced_ids, fld->val,
+                            fld->val,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1455,24 +1403,24 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
       } /* End of source term */
 
-      /* Compute a norm of the RHS for the normalization of the residual
-         of the linear system to solve */
-
-      rhs_norm += _vvb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
-                                            cm, csys);
-
       /* Apply boundary conditions (those which are weakly enforced) */
 
       _vvb_apply_weak_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
 
       /* Enforce values if needed (internal or Dirichlet) */
 
-      _vvb_enforce_values(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+      _vvb_enforce_values(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
+
+      /* Compute a norm of the RHS for the normalization of the residual
+         of the linear system to solve */
+
+      rhs_norm += _vvb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
+                                            cm, csys);
 
       /* ASSEMBLY PROCESS
        * ================ */
@@ -1496,8 +1444,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   /* Free temporary buffers and structures */
 
   BFT_FREE(dir_values);
-  BFT_FREE(forced_ids);
-
+  cs_equation_builder_reset(eqb);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Last step in the computation of the renormalization coefficient */

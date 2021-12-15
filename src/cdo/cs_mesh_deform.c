@@ -279,6 +279,7 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
     }
 
     if (_fixed_vertices) {
+
       cs_real_t  *fixed_vtx_values;
       BFT_MALLOC(fixed_vtx_values, _n_fixed_vertices, cs_real_t);
       if (_fixed_vtx_values != NULL) {
@@ -292,18 +293,19 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
           fixed_vtx_values[j] = 0;
       }
 
-      cs_equation_enforce_vertex_dofs(eqp,
-                                      _n_fixed_vertices,
-                                      _fixed_vtx_ids,
-                                      NULL, /* reference value */
-                                      fixed_vtx_values);
+      cs_equation_add_vertex_dof_enforcement(eqp,
+                                             _n_fixed_vertices,
+                                             _fixed_vtx_ids,
+                                             NULL, /* reference value */
+                                             fixed_vtx_values);
 
       BFT_FREE(fixed_vtx_values);
+
     }
 
     cs_equation_add_diffusion(eqp, conductivity);
 
-  }
+  } /* Loop on Cartesian coordinates */
 }
 
 /*----------------------------------------------------------------------------*/
