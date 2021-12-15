@@ -525,6 +525,7 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
  *
  * \param[in]      n_x        number of entities where DoFs are defined
  * \param[in]      c2x        cell --> x connectivity
+ * \param[in]      ifs        pointer to a fvm_interface_set_t structure
  * \param[in]      eqp        set of parameters related to an equation
  * \param[in, out] p_dof_ids  double pointer on DoF ids subject to enforcement
  */
@@ -533,6 +534,7 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
 void
 cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
                                   const cs_adjacency_t         *c2x,
+                                  const cs_interface_set_t     *ifs,
                                   const cs_equation_param_t    *eqp,
                                   cs_lnum_t                    *p_dof_ids[]);
 

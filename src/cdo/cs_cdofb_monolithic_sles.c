@@ -52,6 +52,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
+#include <bft_printf.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -5542,6 +5543,11 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   cs_real_t  *b_f = msles->b_f;
   cs_real_t  *b_c = msles->b_c;
 
+  bft_printf("||b_f||^2 = %6.4e\n",
+             cs_cdo_blas_square_norm_pfvp(b_f));
+  bft_printf("||b_c||^2 = %6.4e\n",
+             cs_cdo_blas_square_norm_pcsp(b_c));
+
   /* Allocate and initialize the ALU builder structure */
 
   cs_uza_builder_t  *uza = _init_uzawa_builder(nsp,
@@ -5558,6 +5564,66 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
     btilda_c[ip] = uza->inv_mp[ip]*b_c[ip];
 
   _apply_div_op_transpose(div_op, btilda_c, uza->b_tilda);
+
+#if 0
+  cs_real_t  *test = NULL;
+  BFT_MALLOC(test, msles->n_cells, cs_real_t);
+  for (cs_lnum_t i = 0; i < msles->n_cells; i++)
+    test[i] = 1;
+  _apply_div_op_transpose(div_op, test, uza->rhs);
+  bft_printf("||Bt(test)||^2 = %6.4e\n",
+             cs_cdo_blas_square_norm_pfvp(uza->rhs));
+  BFT_FREE(test);
+
+  BFT_MALLOC(test, uza->n_u_dofs, cs_real_t);
+  for (cs_lnum_t i = 0; i < uza->n_u_dofs; i++)
+    test[i] = 1;
+  _apply_div_op(div_op, test, uza->rhs);
+  bft_printf("||B(test)||^2 = %6.4e\n",
+             cs_cdo_blas_square_norm_pcsp(uza->rhs));
+  BFT_FREE(test);
+
+  const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
+
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+      const cs_real_t  *_div_f = div_op + 3*j;
+      const cs_lnum_t  f_id = c2f->ids[j];
+
+      if (f_id < quant->n_i_faces) {
+
+        if (fabs(_div_f[0]) < 1e-20 && fabs(quant->i_face_normal[3*f_id]) > 0)
+          bft_printf("_div_f[0] = % -6.4e -- f_id: %5d (% -6.4e % -6.4e % -6.4e) c_id: %5d (% -6.4e % -6.4e % -6.4e)\n",
+                     _div_f[0],
+                     f_id,
+                     quant->i_face_center[3*f_id],
+                     quant->i_face_center[3*f_id+1],
+                     quant->i_face_center[3*f_id+2],
+                     c_id,
+                     quant->cell_centers[3*c_id],
+                     quant->cell_centers[3*c_id+1],
+                     quant->cell_centers[3*c_id+2]);
+
+        if (fabs(_div_f[1]) < 1e-20 && fabs(quant->i_face_normal[3*f_id+1]) > 0)
+          bft_printf("_div_f[1] = % -6.4e -- f_id: %5d (% -6.4e % -6.4e % -6.4e) c_id: %5d (% -6.4e % -6.4e % -6.4e)\n",
+                     _div_f[1],
+                     f_id,
+                     quant->i_face_center[3*f_id],
+                     quant->i_face_center[3*f_id+1],
+                     quant->i_face_center[3*f_id+2],
+                     c_id,
+                     quant->cell_centers[3*c_id],
+                     quant->cell_centers[3*c_id+1],
+                     quant->cell_centers[3*c_id+2]);
+
+      }
+
+    } /* Loop on cell faces */
+
+  } /* Loop on cells */
+#endif
 
   if (cs_shared_range_set->ifs != NULL) {
 
@@ -5587,6 +5653,11 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   /* Compute the RHS for the Uzawa system: rhs = b_tilda - Dt.p_c */
 
   _apply_div_op_transpose(div_op, p_c, uza->rhs);
+
+  bft_printf("||uza->rhs0||^2 = %6.4e\n",
+             cs_cdo_blas_square_norm_pfvp(uza->rhs));
+  bft_printf("||p_c||^2 = %6.4e\n",
+             cs_cdo_blas_square_norm_pcsp(p_c));
 
   if (cs_shared_range_set->ifs != NULL)
     cs_interface_set_sum(cs_shared_range_set->ifs,

@@ -928,11 +928,16 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
                                      circ_bc_vals);
 
   cs_lnum_t  *enforced_ids = NULL;
-  if (cs_equation_param_has_internal_enforcement(eqp))
+  if (cs_equation_param_has_internal_enforcement(eqp)) {
+
+    cs_interface_set_t  *ifs = connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL];
     cs_equation_build_dof_enforcement(n_edges,
                                       connect->c2e,
+                                      ifs,
                                       eqp,
                                       &enforced_ids);
+
+  }
 
   /* Initialize the local system: matrix and rhs */
 

@@ -220,14 +220,19 @@ _svb_setup(cs_real_t                      t_eval,
   *p_dir_values = dir_values;
 
   /* Internal enforcement of DoFs  */
-  if (cs_equation_param_has_internal_enforcement(eqp))
+
+  if (cs_equation_param_has_internal_enforcement(eqp)) {
+
+    cs_interface_set_t  *ifs = connect->interfaces[CS_CDO_CONNECT_VTX_SCAL];
     cs_equation_build_dof_enforcement(quant->n_vertices,
                                       connect->c2v,
+                                      ifs,
                                       eqp,
                                       p_enforced_ids);
+
+  }
   else
     *p_enforced_ids = NULL;
-
 }
 
 /*----------------------------------------------------------------------------*/

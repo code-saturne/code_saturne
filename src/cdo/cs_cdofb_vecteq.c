@@ -313,11 +313,16 @@ cs_cdofb_vecteq_setup(cs_real_t                     t_eval,
 
   /* Internal enforcement of DoFs  */
 
-  if (cs_equation_param_has_internal_enforcement(eqp))
+  if (cs_equation_param_has_internal_enforcement(eqp)) {
+
+    cs_interface_set_t  *ifs = connect->interfaces[CS_CDO_CONNECT_FACE_SP0];
     cs_equation_build_dof_enforcement(quant->n_faces,
                                       connect->c2f,
+                                      ifs,
                                       eqp,
                                       p_enforced_ids);
+
+  }
   else
     *p_enforced_ids = NULL;
 }

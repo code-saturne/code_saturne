@@ -1342,8 +1342,9 @@ cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
   cs_navsto_param_t *nsp = ns->param;
   assert(nsp != NULL);
 
-  if (n_solid_cells == 0)
-    return;
+  /* Do not exit the function if n_elts = 0 since there is a parallel
+     synchronization to count the global number of cells to enforce in the next
+     call */
 
   /* The momentum equation has to enforce a zero-velocity */
 

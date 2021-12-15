@@ -3266,9 +3266,6 @@ cs_equation_enforce_value_on_cell_selection(cs_equation_param_t  *eqp,
                                             const cs_real_t       ref_value[],
                                             const cs_real_t       elt_values[])
 {
-  if (n_elts < 1)
-    return; /* Nothing to do */
-
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
   if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_DOFS)
@@ -3277,8 +3274,7 @@ cs_equation_enforce_value_on_cell_selection(cs_equation_param_t  *eqp,
               " by cells).\n", __func__, eqp->name);
   if (ref_value == NULL && elt_values == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Eq: %s: No enforcement value.\n",
-              __func__, eqp->name);
+              "%s: Eq: %s: No enforcement value.\n", __func__, eqp->name);
 
   if (eqp->n_enforced_dofs > 0) { /* Reset the selection of DoFs */
 

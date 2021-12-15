@@ -892,6 +892,7 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
  *
  * \param[in]      n_x        number of entities where DoFs are defined
  * \param[in]      c2x        cell --> x connectivity
+ * \param[in]      ifs        pointer to a fvm_interface_set_t structure
  * \param[in]      eqp        set of parameters related to an equation
  * \param[in, out] p_dof_ids  double pointer on DoF ids subject to enforcement
  */
@@ -900,11 +901,12 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
 void
 cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
                                   const cs_adjacency_t         *c2x,
+                                  const cs_interface_set_t     *ifs,
                                   const cs_equation_param_t    *eqp,
                                   cs_lnum_t                    *p_dof_ids[])
 {
-  if (eqp->n_enforced_dofs == 0 && eqp->n_enforced_cells == 0)
-    return;
+  /* if (eqp->n_enforced_dofs == 0 && eqp->n_enforced_cells == 0) */
+  /*   return; */
 
   /* Initialize the indirection list (by default, no DoF selected) */
 
@@ -915,7 +917,7 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
 
 # pragma omp parallel for if (n_x > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_x; i++)
-    dof_ids[i] = -1;     /* Not selected */
+    dof_ids[i] = -1;     /* Not selected by default */
 
   if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_CELLS) {
 
@@ -926,6 +928,18 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
         for (cs_lnum_t j = c2x->idx[c_id]; j < c2x->idx[c_id+1]; j++)
           dof_ids[c2x->ids[j]] = i;
       }
+
+      /* Since DoFs can be shared between cells, one needs to synchronize
+         dof_ids. dof_ids is activated only if > -1. The value does not
+         matter with an enforcement by a reference value. */
+
+      if (ifs != NULL)
+        cs_interface_set_max(ifs,
+                             n_x,    /* array size */
+                             1,      /* array stride */
+                             false,  /* interlace */
+                             CS_LNUM_TYPE,
+                             dof_ids);
 
     }
     else  /* This case can be tricky in parallel and can also impact the const
@@ -945,6 +959,10 @@ cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
 
     for (cs_lnum_t i = 0; i < eqp->n_enforced_dofs; i++)
       dof_ids[eqp->enforced_dof_ids[i]] = i;
+
+    /* Synchronization in this case has to be performed before this function.
+     * The value in dof_ids matter because it is used to retrieve the value of
+     * the enforcement. */
 
   }
 
