@@ -57,7 +57,7 @@ if test "x$cs_have_cuda" != "xno" ; then
   CUDA_LIBS=" -L${NVCC/'bin/nvcc'/lib}"
   AS_IF([echo $build_cpu | grep -q "_64"],
         [CUDA_LIBS+="64"])
-  CUDA_LIBS+=" -lcudart"
+  CUDA_LIBS+=" -lcublas -lcudart"
 
   # Try to detect available architectures.
   # As of late 2021, we do not care to support CUDA versions older than 9

@@ -86,6 +86,7 @@ extern int  cs_glob_cuda_device_id;
 extern int  cs_glob_cuda_max_threads_per_block;
 extern int  cs_glob_cuda_max_block_size;
 extern int  cs_glob_cuda_max_blocks;
+extern int  cs_glob_cuda_n_mp;  /* Number of multiprocessors */
 
 /*============================================================================
  * Semi-private function prototypes

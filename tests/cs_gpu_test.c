@@ -45,6 +45,56 @@
 
 #include "cs_base_accel.h"
 
+void
+main_cuda(void);
+
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------
+ * False print of a message to standard output for discarded logs
+ *----------------------------------------------------------------------------*/
+
+static int
+_bft_printf_null(const char  *format,
+                 va_list      arg_ptr)
+{
+  CS_UNUSED(format);
+  CS_UNUSED(arg_ptr);
+
+  return 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Analysis of environment variables to determine
+ * if we require MPI, and initialization if necessary.
+ *----------------------------------------------------------------------------*/
+
+static void
+_mpi_init(void)
+{
+  int flag = 0;
+
+  MPI_Initialized(&flag);
+
+  if (!flag) {
+#if defined(MPI_VERSION) && (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
+    int mpi_threads;
+    MPI_Init_thread(NULL, NULL, MPI_THREAD_FUNNELED, &mpi_threads);
+#else
+    MPI_Init(NULL, NULL);
+#endif
+  }
+
+  cs_glob_mpi_comm = MPI_COMM_WORLD;
+  MPI_Comm_size(cs_glob_mpi_comm, &cs_glob_n_ranks);
+  MPI_Comm_rank(cs_glob_mpi_comm, &cs_glob_rank_id);
+
+  if (cs_glob_rank_id > 0)
+    bft_printf_proxy_set(_bft_printf_null);
+}
+
+#endif /* HAVE_MPI */
+
 /*----------------------------------------------------------------------------
  * OpenMP offload test.
  *----------------------------------------------------------------------------*/
@@ -92,6 +142,10 @@ main (int argc, char *argv[])
 
   /* Initialization and environment */
 
+#if defined(HAVE_MPI)
+  _mpi_init();
+#endif
+
   if (getenv("CS_MEM_LOG") != NULL) {
     char mem_log_file_name[128];
     int r_id = CS_MAX(cs_glob_rank_id, 0);
@@ -132,9 +186,26 @@ main (int argc, char *argv[])
 
   _omp_target_test();
 
+  /* CUDA tests */
+
+#if defined(HAVE_CUDA)
+  main_cuda();
+#endif
+
   /* Finalize */
 
   bft_mem_end();
+
+  /* Finalize */
+
+#if defined(HAVE_MPI)
+  {
+    int mpi_flag;
+    MPI_Initialized(&mpi_flag);
+    if (mpi_flag != 0)
+      MPI_Finalize();
+  }
+#endif /* HAVE_MPI */
 
   exit (EXIT_SUCCESS);
 }

@@ -76,6 +76,7 @@ int  cs_glob_cuda_device_id = -1;
 int  cs_glob_cuda_max_threads_per_block = -1;
 int  cs_glob_cuda_max_block_size = -1;
 int  cs_glob_cuda_max_blocks = -1;
+int  cs_glob_cuda_n_mp = -1;
 
 /*============================================================================
  * Private function definitions
@@ -524,7 +525,7 @@ void
 cs_base_cuda_compiler_info(cs_log_t  log_id)
 {
   cs_log_printf(log_id,
-                "    %s%d\n", _("CUDA compiler:     "),
+                "    %s%d.%d.%d\n", _("CUDA compiler:     "),
                 __CUDACC_VER_MAJOR__,
                 __CUDACC_VER_MINOR__,
                 __CUDACC_VER_BUILD__);
@@ -588,6 +589,7 @@ cs_base_cuda_select_default_device(void)
   cs_glob_cuda_max_blocks
     =   prop.multiProcessorCount
       * (prop.maxThreadsPerMultiProcessor / prop.maxThreadsPerBlock);
+  cs_glob_cuda_n_mp = prop.multiProcessorCount;
 
   return device_id;
 }
