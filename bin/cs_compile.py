@@ -337,6 +337,7 @@ class cs_compile(object):
 
     def compile_src(self, base_name=None, src_list=None,
                     opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
+                    opt_nvccflags=None,
                     keep_going=False,
                     stdout=sys.stdout, stderr=sys.stderr):
         """
@@ -427,7 +428,7 @@ class cs_compile(object):
             for d in c_include_dirs:
                 cmd += ["-I", d]
             cmd.append('-DHAVE_CONFIG_H')
-            cmd += self.get_flags('nvccflags', base_name=base_name)
+            cmd += self.get_flags('cppflags', base_name=base_name)
             cmd += separate_args(pkg.config.flags['nvccflags'])
             cmd += ["-c", f]
             if run_command(cmd, pkg=pkg, echo=True,

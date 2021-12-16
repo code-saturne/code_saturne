@@ -1285,7 +1285,7 @@ if test "x$NVCC" != "x" ; then
 
   echo "compiler '${NVCC}' version ${cs_nvcc_version}"
 
-  cs_ac_nvcc_version="`$NVCC -version 2>&1 |grep 'release' | head -1`"
+  cs_ac_nvcc_version="`$NVCC --version 2>&1 |grep 'release' | head -1`"
 
   # Default compiler flags
   nvccflags_default=""

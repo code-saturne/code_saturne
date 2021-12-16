@@ -59,21 +59,27 @@ if test "x$cs_have_cuda" != "xno" ; then
         [CUDA_LIBS+="64"])
   CUDA_LIBS+=" -lcudart"
 
-  # Try to detect available architectures
+  # Try to detect available architectures.
+  # As of late 2021, we do not care to support CUDA versions older than 9
+  # (and even then,target machines should be at least Volta,
+  # though developping/debugging on local machines using CUDA 9 remains useful).
 
   if test "$CUDA_ARCH_NUM" = ""; then
-    CUDA_ARCH_NUM="35 37 60 70"
+    # CUDA_ARCH_NUM="60 61 62 70 72 75 80 86"
+    CUDA_ARCH_NUM="60 70 80"
   fi
 
   NVCCFLAGS="-ccbin $CXX -DHAVE_CONFIG_H"  # wrap C++ compiler arount nvcc
-  touch conftest.cu
-  for cu_arch in "$CUDA_ARCH_NUM"; do
-    $NVCC --dryrun -c conftest.cu -o conftest.o -gencode arch=compute_${cu_arch},code=sm_${cu_arch} >/dev/null 2>&1
-    if test $? -eq 0; then
-      NVCCFLAGS="${NVCCFLAGS} -gencode arch=compute_${cu_arch},code=sm_${cu_arch}"
-    fi
-  done
-  rm -f conftest.cu conftest.o
+  if test "$CUDA_ARCH_NUM" != ""; then
+    touch conftest.cu
+    for cu_arch in $CUDA_ARCH_NUM; do
+      $NVCC --dryrun -c conftest.cu -o conftest.o -gencode arch=compute_${cu_arch},code=sm_${cu_arch} >/dev/null 2>&1
+      if test $? -eq 0; then
+        NVCCFLAGS="${NVCCFLAGS} -gencode arch=compute_${cu_arch},code=sm_${cu_arch}"
+      fi
+    done
+    rm -f conftest.cu conftest.o
+  fi
 
   NVCCFLAGS="${NVCCFLAGS} --maxrregcount=64 -Xptxas -v"
 

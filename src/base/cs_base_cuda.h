@@ -61,6 +61,12 @@
     } \
   }
 
+/* For all current compute capabilities, the warp size is 32; If it ever
+   changes, it can be obtained through cudaDeviceProp, so we could then
+   replace this macro with a global variable */
+
+#define CS_CUDA_WARP_SIZE 32
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -72,6 +78,14 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Global variable definitions
  *============================================================================*/
+
+extern int  cs_glob_cuda_device_id;
+
+/* Other device parameters */
+
+extern int  cs_glob_cuda_max_threads_per_block;
+extern int  cs_glob_cuda_max_block_size;
+extern int  cs_glob_cuda_max_blocks;
 
 /*============================================================================
  * Semi-private function prototypes
@@ -384,6 +398,17 @@ cs_base_cuda_device_info(cs_log_t  log_id);
 
 void
 cs_base_cuda_version_info(cs_log_t  log_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Log information on CUDA compiler.
+ *
+ * \param[in]  log_id  id of log file in which to print information
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_cuda_compiler_info(cs_log_t  log_id);
 
 /*----------------------------------------------------------------------------*/
 /*!

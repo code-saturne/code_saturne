@@ -197,7 +197,7 @@ cs_gpu_test$(EXEEXT): $(top_srcdir)/tests/cs_gpu_test.c $(top_srcdir)/tests/cs_g
 	PYTHONPATH=$(top_srcdir)/bin \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
 	-o cs_gpu_test \
-	$(top_srcdir)/tests/cs_gpu_test.c
+	$(top_srcdir)/tests/cs_gpu_test.c \
 	$(top_srcdir)/tests/cs_gpu_cuda_test.cu
 
 endif

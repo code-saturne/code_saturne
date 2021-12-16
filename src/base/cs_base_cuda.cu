@@ -71,6 +71,12 @@ BEGIN_C_DECLS
 
 int  cs_glob_cuda_device_id = -1;
 
+/* Other device parameters */
+
+int  cs_glob_cuda_max_threads_per_block = -1;
+int  cs_glob_cuda_max_block_size = -1;
+int  cs_glob_cuda_max_blocks = -1;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -470,11 +476,13 @@ cs_base_cuda_device_info(cs_log_t  log_id)
         (log_id,
          _("                       Compute capability: %d.%d\n"
            "                       Memory: %llu %s\n"
+           "                       Multiprocessors: %d\n"
            "                       Integrated: %d\n"
            "                       Can map host memory: %d\n"
            "                       Compute mode: %s\n"),
          prop.major, prop.minor,
          mem, _("MB"),
+         prop.multiProcessorCount,
          prop.integrated,
          prop.canMapHostMemory, mode_name);
 
@@ -502,6 +510,24 @@ cs_base_cuda_version_info(cs_log_t  log_id)
   if (cudaRuntimeGetVersion(&runtime_version) == cudaSuccess)
     cs_log_printf(log_id,
                   "  %s%d\n", _("CUDA runtime:        "), runtime_version);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Log information on CUDA compiler.
+ *
+ * \param[in]  log_id  id of log file in which to print information
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_base_cuda_compiler_info(cs_log_t  log_id)
+{
+  cs_log_printf(log_id,
+                "    %s%d\n", _("CUDA compiler:     "),
+                __CUDACC_VER_MAJOR__,
+                __CUDACC_VER_MINOR__,
+                __CUDACC_VER_BUILD__);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -552,6 +578,16 @@ cs_base_cuda_select_default_device(void)
   }
 
   cs_glob_cuda_device_id = device_id;
+
+  /* Also query some device properties */
+
+  struct cudaDeviceProp prop;
+  CS_CUDA_CHECK(cudaGetDeviceProperties(&prop, device_id));
+  cs_glob_cuda_max_threads_per_block = prop.maxThreadsPerBlock;
+  cs_glob_cuda_max_block_size = prop.maxThreadsPerMultiProcessor;
+  cs_glob_cuda_max_blocks
+    =   prop.multiProcessorCount
+      * (prop.maxThreadsPerMultiProcessor / prop.maxThreadsPerBlock);
 
   return device_id;
 }

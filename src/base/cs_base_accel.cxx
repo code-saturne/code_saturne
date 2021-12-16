@@ -255,7 +255,10 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
 
   /* Return pointer to allocated memory */
 
-  return me.host_ptr;
+  if (me.host_ptr != NULL)
+    return me.host_ptr;
+  else
+    return me.device_ptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -331,6 +334,8 @@ cs_realloc_hd(void            *ptr,
     me.size = new_size;
     _hd_alloc_map.erase(ptr);
     _hd_alloc_map[me.host_ptr] = me;
+
+    ret_ptr = me.host_ptr;
   }
   else {
     ret_ptr = cs_malloc_hd(mode, 1, me.size,
@@ -808,6 +813,9 @@ cs_sync_h2d(const void  *ptr)
     return;
 
   _cs_base_accel_mem_map  me = _hd_alloc_map[ptr];
+
+  if (me.device_ptr == NULL)
+    me.device_ptr = const_cast<void *>(cs_get_device_ptr_const(ptr));
 
 #if defined(HAVE_CUDA)
 
