@@ -4381,12 +4381,12 @@ cs_solidification_init_setup(void)
       labels[i] = _state_names[i];
 
     n_output_values = n_output_states;
+    if (solid->post_flag & CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE)
+      labels[n_output_values++] = "SolidRate";
+
     if (solid->model == CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
       if (solid->post_flag & CS_SOLIDIFICATION_POST_SEGREGATION_INDEX)
         labels[n_output_values++] = "SegrIndex";
-
-    if (solid->post_flag & CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE)
-      labels[n_output_values++] = "SolidRate";
 
     /* Use the physical time rather than the number of iterations */
 
