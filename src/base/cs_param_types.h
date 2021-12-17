@@ -52,18 +52,23 @@ BEGIN_C_DECLS
  */
 
 /*! isotropic diffusion */
+
 #define CS_ISOTROPIC_DIFFUSION (1 << 0)
 
 /*! orthotropic diffusion */
+
 #define CS_ORTHOTROPIC_DIFFUSION (1 << 1)
 
 /*! diffusion by a left-multiplied symmetric 3x3 tensor */
+
 #define CS_ANISOTROPIC_LEFT_DIFFUSION (1 << 2)
 
 /*! diffusion by a right-multiplied symmetric 3x3 tensor */
+
 #define CS_ANISOTROPIC_RIGHT_DIFFUSION (1 << 3)
 
 /*! diffusion by a symmetric 3x3 tensor */
+
 #define CS_ANISOTROPIC_DIFFUSION ((1 << 2) + (1 << 3))
 
 /*! @} */
@@ -727,7 +732,6 @@ typedef enum {
  * when solving Stokes or Navier-Stokes in a fully couple manner).
  * Variant with CG as inner solver.
  *
- *
  * \var CS_PARAM_PRECOND_GKB_GMRES
  * Golub-Kahan Bidiagonalization solver used as a preconditioner. Only
  * useful if one has to solve a saddle-point system (such systems arise
@@ -857,7 +861,6 @@ typedef enum {
  * \var CS_PARAM_ITSOL_USER_DEFINED
  * User-defined iterative solver. It relies on the implementation of the
  * the function cs_user_sles_it_solver()
- *
  */
 
 typedef enum {
@@ -870,18 +873,18 @@ typedef enum {
   CS_PARAM_ITSOL_CG,
   CS_PARAM_ITSOL_CR3,
   CS_PARAM_ITSOL_FCG,
-  CS_PARAM_ITSOL_FGMRES,           /*!< Only with PETsc */
+  CS_PARAM_ITSOL_FGMRES,           /*!< Only with PETSc */
   CS_PARAM_ITSOL_GAUSS_SEIDEL,
   CS_PARAM_ITSOL_GCR,
   CS_PARAM_ITSOL_GKB_CG,
   CS_PARAM_ITSOL_GKB_GMRES,
-  CS_PARAM_ITSOL_GMRES,            /*!< Only with PETsc */
+  CS_PARAM_ITSOL_GMRES,            /*!< Only with PETSc */
   CS_PARAM_ITSOL_JACOBI,
-  CS_PARAM_ITSOL_MINRES,           /*!< Only with PETsc */
-  CS_PARAM_ITSOL_MUMPS,            /*!< Only with PETsc/MUMPS */
+  CS_PARAM_ITSOL_MINRES,           /*!< Only with PETSc */
+  CS_PARAM_ITSOL_MUMPS,            /*!< Only with PETSc or MUMPS */
   CS_PARAM_ITSOL_MUMPS_FLOAT,      /*!< Only with MUMPS */
   CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT, /*!< Only with MUMPS */
-  CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< Only with PETsc/MUMPS */
+  CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< Only with PETSc or MUMPS */
   CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL,
   CS_PARAM_ITSOL_USER_DEFINED,
 
@@ -928,6 +931,7 @@ typedef enum {
  *============================================================================*/
 
 /* Separation lines: header1, header2 (compatible with markdown), other */
+
 extern const char cs_sep_h1[80];
 extern const char cs_sep_h2[80];
 extern const char cs_sepline[80];

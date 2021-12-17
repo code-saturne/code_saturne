@@ -559,14 +559,18 @@ _ac_apply_remaining_bc(const cs_cdofb_ac_t           *sc,
      * mass equation.
      * Enforcement of Dirichlet BC in a stronger way if this is the choice
      */
+
     for (short int i = 0; i < csys->n_bc_faces; i++) {
 
       /* Get the boundary face in the cell numbering */
+
       const short int  f = csys->_f_ids[i];
 
       if (bf_type[i] & CS_BOUNDARY_IMPOSED_VEL) {
+
         /* Enforcement of the velocity for the velocity-block
          * Dirichlet on the three components of the velocity field */
+
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
           sc->apply_velocity_inlet(f, eqp, cm, diff_pty, cb, csys);
@@ -574,8 +578,10 @@ _ac_apply_remaining_bc(const cs_cdofb_ac_t           *sc,
       }
 
       else if (bf_type[i] & CS_BOUNDARY_WALL) {
+
         /* Enforcement of the velocity for the velocity-block
          * Dirichlet on the three components of the velocity field */
+
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
           if (bf_type[i] & CS_BOUNDARY_SLIDING_WALL)
@@ -627,6 +633,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                       cs_real_t                *rhs)
 {
   /* Retrieve high-level structures */
+
   cs_navsto_ac_t *cc = sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
@@ -634,12 +641,12 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
   cs_equation_builder_t *mom_eqb = mom_eq->builder;
 
   /* Retrieve shared structures */
+
   const cs_time_step_t *ts = cs_shared_time_step;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
 
-  /* Sanity checks */
   assert(cs_equation_param_has_time(mom_eqp) == true);
   assert(mom_eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
   assert(matrix != NULL && rhs != NULL);
@@ -650,6 +657,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 #endif
 
   /* Initialize the structure to assemble values */
+
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
@@ -663,6 +671,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
                                                                     connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
@@ -678,6 +687,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
     cs_cdofb_vecteq_get(&csys, &cb);
 
     /* Set times at which one evaluates quantities when needed */
+
     const cs_real_t  t_cur = ts->t_cur;
     const cs_real_t  dt_cur = ts->dt[0];
     const cs_real_t  inv_dtcur = 1./dt_cur;
@@ -687,22 +697,25 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
     cb->t_st_eval = t_cur + dt_cur;
 
     /* Initialization of the values of properties */
+
     cs_equation_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
 
     cs_real_t  o_zeta_c = 1./cs_property_get_cell_value(0, cb->t_pty_eval,
                                                         cc->zeta);
 
-    /* --------------------------------------------- */
-    /* Main loop on cells to build the linear system */
-    /* --------------------------------------------- */
+    /* ---------------------------------------------
+     * Main loop on cells to build the linear system
+     * --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the current cell flag */
+
       cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
+
       cs_cell_mesh_build(c_id,
                          cs_equation_cell_mesh_flag(cb->cell_flag, mom_eqb),
                          connect, quant, cm);
@@ -732,19 +745,23 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
        * - Define the divergence operator used in the linear system (div_op is
        *   equal to minus the divergence)
        */
+
       cs_cdofb_navsto_define_builder(cb->t_bc_eval, nsp, cm, csys,
                                      sc->pressure_bc, sc->bf_type, &nsb);
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
+
       cs_cdofb_vecteq_conv_diff_reac(mom_eqp, mom_eqb, mom_eqc, cm,
                                      mass_hodge, diff_hodge, csys, cb);
 
       /* Update the property related to grad-div */
+
       if ( !(sc->is_zeta_uniform) )
         o_zeta_c = 1./cs_property_value_in_cell(cm, cc->zeta, cb->t_pty_eval);
 
       /* Update the property related to the unsteady term */
+
       if (!(mom_eqb->time_pty_uniform))
         cb->tpty_val = cs_property_value_in_cell(cm, mom_eqp->time_property,
                                                  cb->t_pty_eval);
@@ -763,6 +780,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
       /* ====================================================== */
+
       const bool has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
       if (has_sourceterm)
         cs_cdofb_vecteq_sourceterm(cm, mom_eqp, cb->t_st_eval,
@@ -774,35 +792,41 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
        * ===========================
        * Apply the operator gradient to the pressure field and add it to the
        * rhs */
+
       cs_sdm_add_scalvect(3*n_fc, -prs_c_pre[c_id], nsb.div_op, csys->rhs);
 
       /* Gravity effects and/or Boussinesq approximation rely on another
          strategy than classical source term. The treatment is more compatible
          with the pressure gradient by doing so. */
+
       if (sc->add_gravity_term != NULL)
         sc->add_gravity_term(nsp, cm, &nsb, csys);
 
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
+
       _ac_apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type,
                           diff_hodge->pty_data, csys, cb);
 
       /* 4- TIME CONTRIBUTION */
       /* ==================== */
+
       if (mom_eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
 
         /* Mass lumping or Hodge-Voronoi */
+
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* Get cell-cell block */
+
         cs_sdm_t *acc = cs_sdm_get_block(csys->mat, n_fc, n_fc);
 
         for (short int k = 0; k < 3; k++) {
           csys->rhs[3*n_fc + k] += ptyc * csys->val_n[3*n_fc+k];
           /* Simply add an entry in mat[cell, cell] */
           acc->val[4*k] += ptyc;
-        } /* Loop on k */
+        }
 
       }
       else
@@ -820,6 +844,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
        * a matrix of size n_fc.
        * Store data in rc_tilda and acf_tilda to compute the values at cell
        * centers after solving the system */
+
       cs_static_condensation_vector_eq(connect->c2f,
                                        mom_eqc->rc_tilda, mom_eqc->acf_tilda,
                                        cb, csys);
@@ -832,6 +857,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
       /* 6- Remaining part of BOUNDARY CONDITIONS
        * ======================================== */
+
       _ac_apply_remaining_bc(sc, mom_eqp, cm, nsb.bf_type,
                              diff_hodge->pty_data, csys, cb);
 
@@ -842,12 +868,14 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
       /* ASSEMBLY PROCESS */
       /* ================ */
+
       cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
                                mom_eqc, eqa, mav, rhs);
 
     } /* Main loop on cells */
 
     /* Free temporary buffer */
+
     cs_cdofb_navsto_free_builder(&nsb);
 
   } /* End of the OpenMP Block */
@@ -878,13 +906,13 @@ cs_cdofb_ac_init_common(const cs_cdo_quantities_t     *quant,
                         const cs_time_step_t          *time_step)
 {
   /* Assign static const pointers */
+
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
 
-  /*
-    Matrix structure related to the algebraic system for vector-valued equation
-  */
+  /* Matrix structure related to the algebraic system for vector-valued eq. */
+
   cs_shared_ms = cs_cdofb_vecteq_matrix_structure();
 }
 
@@ -1560,9 +1588,8 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   t_upd = cs_timer_time();
 
-  /* Updates after the resolution:
-   *  the pressure field: pr -= dt / zeta * div(u_f)
-   */
+  /* Updates after the resolution the pressure field:
+   * pr -= dt / zeta * div(u_f) */
 
   _ac_update_pr(ts->t_cur, ts->dt[0], cc->zeta, mom_eqp, mom_eqb, div, pr);
 
@@ -1580,8 +1607,6 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_dbg_darray_to_listing("PRESSURE", n_cells, pr, 9);
   cs_dbg_darray_to_listing("VELOCITY_DIV", n_cells, div, 9);
 #endif
-
-  /* Frees */
 
   BFT_FREE(dir_values);
   BFT_FREE(rhs);

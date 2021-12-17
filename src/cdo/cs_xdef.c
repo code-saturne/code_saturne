@@ -958,7 +958,7 @@ cs_xdef_log(const char          *prefix,
         bft_error(__FILE__, __LINE__, 0,
                   " Field pointer is set to NULL in a definition by field");
 
-      cs_log_printf(CS_LOG_SETUP, "%s | Definition by the field %s\n",
+      cs_log_printf(CS_LOG_SETUP, "%s | Definition by the field \"%s\"\n",
                     _p, f->name);
     }
     break;

@@ -1872,6 +1872,7 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t      *nsp,
   /* Assign the default quadrature type of the Navier-Stokes module to this
    * definition (this can be modified by the user if the same call is performed
    * in cs_user_finalize_setup()) */
+
   cs_xdef_set_quadrature(d, nsp->qtype);
 
   int  new_id = nsp->n_velocity_ic_defs;

@@ -551,10 +551,12 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
     cs_solidification_init_setup();
 
   /* Add variables related to user-defined and predefined equations */
+
   cs_equation_create_fields();
   cs_advection_field_create_fields();
 
   /* Set the scheme flag for the computational domain */
+
   _set_scheme_flags(domain);
 
   /* Last step: Proceed to the settings of a cs_equation_t structure.
@@ -707,6 +709,7 @@ cs_domain_finalize_user_setup(cs_domain_t         *domain)
   }
 
   /* Allocate all fields created during the setup stage */
+
   cs_field_allocate_or_map_all();
 
   /* Set the definition of user-defined properties and/or advection

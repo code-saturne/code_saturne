@@ -1817,18 +1817,19 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
 
-  /* Sanity checks */
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
 
   /* Build an array storing the Dirichlet values at faces
    * Always evaluated at t_cur + dt */
+
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *forced_ids = NULL;
 
   _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb, &dir_values, &forced_ids);
 
   /* Initialize the local system: matrix and rhs */
+
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
   double  rhs_norm = 0.;
@@ -1838,6 +1839,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   for (cs_lnum_t i = 0; i < n_faces; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
+
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
@@ -1851,6 +1853,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
@@ -1867,14 +1870,17 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
     const cs_real_t  inv_dtcur = 1./dt_cur;
 
     /* Set times at which one evaluates quantities when needed */
+
     cb->t_pty_eval = time_eval;
     cb->t_bc_eval = time_eval;
     cb->t_st_eval = time_eval;
 
     /* Initialization of the values of properties */
+
     cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* Set values used as the previous one */
+
     cs_real_t  *val_f_pre = NULL, *val_c_pre = NULL;
     if (cur2prev)
       val_f_pre = eqc->face_values, val_c_pre = fld->val;
@@ -1889,9 +1895,11 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the current cell flag */
+
       cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
+
       cs_cell_mesh_build(c_id,
                          cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
@@ -1903,17 +1911,20 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
 
       /* Build and add the diffusion/advection/reaction terms to the local
          system. Mass matrix is computed inside if needed during the building */
+
       _sfb_conv_diff_reac(eqp, eqb, eqc, cm, mass_hodge, diff_hodge, csys, cb);
 
       if (cs_equation_param_has_sourceterm(eqp)) { /* SOURCE TERM
                                                     * =========== */
 
         /* Reset the local contribution */
+
         memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
+
         cs_source_term_compute_cellwise(eqp->n_source_terms,
                     (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
@@ -1931,6 +1942,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
+
       _sfb_apply_bc_partly(eqp, eqc, cm, fm, diff_hodge, csys, cb);
 
       /* UNSTEADY TERM + TIME SCHEME
@@ -1947,6 +1959,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* Simply add an entry in mat[cell, cell] */
+
         csys->rhs[cm->n_fc] += ptyc * csys->val_n[cm->n_fc];
         csys->mat->val[cm->n_fc*csys->n_dofs + cm->n_fc] += ptyc;
 
@@ -1960,12 +1973,14 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
          *       >> Update the cellwise system with the time matrix */
 
         /* Update rhs with csys->mat*p^n */
+
         double  *time_pn = cb->values;
         cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += tpty_coef*time_pn[i];
 
         /* Update the cellwise system with the time matrix */
+
         cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
 
       }
@@ -1982,6 +1997,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
        * a matrix of size n_fc.
        * Store data in rc_tilda and acf_tilda to compute the values at cell
        * centers after solving the system */
+
       cs_static_condensation_scalar_eq(connect->c2f,
                                        eqc->rc_tilda,
                                        eqc->acf_tilda,
@@ -2024,6 +2040,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
+
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
@@ -2055,9 +2072,9 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
   /* Update field associated to cells */
+
   _update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
-  /* Free remaining buffers */
   BFT_FREE(rhs);
   cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
@@ -2098,21 +2115,23 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
 
-  /* Sanity checks */
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
          eqp->time_scheme == CS_TIME_SCHEME_THETA);
 
   /* Store the current face values as previous */
+
   memcpy(eqc->face_values_pre, eqc->face_values,
          quant->n_faces*sizeof(cs_real_t));
 
   /* Detect the first call (in this case, we compute the initial source term)*/
+
   bool  compute_initial_source = false;
   if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
     compute_initial_source = true;
 
   /* Build an array storing the Dirichlet values at faces */
+
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *forced_ids = NULL;
 
@@ -2130,6 +2149,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   for (cs_lnum_t i = 0; i < n_faces; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
+
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
@@ -2143,6 +2163,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+
     cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
@@ -2162,14 +2183,17 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
      * t_pty_eval = (1-theta).t^n + theta.t^(n+1) = t^n + theta.dt
      * since t^(n+1) = t^n + dt
      */
+
     cb->t_pty_eval = t_cur + eqp->theta*dt_cur;
     cb->t_bc_eval = t_cur + dt_cur;
     cb->t_st_eval = t_cur + dt_cur;
 
     /* Initialization of the values of properties */
+
     cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* Set values used as the previous one */
+
     cs_real_t  *val_f_pre = NULL, *val_c_pre = NULL;
     if (cur2prev)
       val_f_pre = eqc->face_values, val_c_pre = fld->val;
@@ -2184,9 +2208,11 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the current cell flag */
+
       cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
+
       cs_cell_mesh_build(c_id,
                          cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
@@ -2198,6 +2224,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
       /* Build and add the diffusion/advection/reaction terms to the local
          system. Mass matrix is computed inside if needed during the building */
+
       _sfb_conv_diff_reac(eqp, eqb, eqc, cm, mass_hodge, diff_hodge, csys, cb);
 
       if (cs_equation_param_has_sourceterm(eqp)) { /* SOURCE TERM
@@ -2205,6 +2232,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
         if (compute_initial_source) { /* First time step */
 
           /* Reset the local contribution */
+
           memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
 
           cs_source_term_compute_cellwise(eqp->n_source_terms,
@@ -2227,11 +2255,13 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
         }
 
         /* Reset the local contribution */
+
         memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
+
         cs_source_term_compute_cellwise(eqp->n_source_terms,
                     (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
@@ -2250,6 +2280,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
         *               ===================
         * Apply a part of BC before time (csys->mat is going to be multiplied
         * by theta when applying the time scheme) */
+
       _sfb_apply_bc_partly(eqp, eqc, cm, fm, diff_hodge, csys, cb);
 
       /* UNSTEADY TERM + TIME SCHEME
@@ -2257,12 +2288,14 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
       /* STEP.1 >> Compute the contribution of the "adr" to the RHS:
        *           tcoef*adr_pn where adr_pn = csys->mat * p_n */
+
       double  *adr_pn = cb->values;
       cs_sdm_square_matvec(csys->mat, csys->val_n, adr_pn);
       for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
         csys->rhs[i] -= tcoef * adr_pn[i];
 
       /* STEP.2 >> Multiply csys->mat by theta */
+
       for (int i = 0; i < csys->n_dofs*csys->n_dofs; i++)
         csys->mat->val[i] *= eqp->theta;
 
@@ -2281,9 +2314,11 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* Only the cell row is involved in the time evolution */
+
         csys->rhs[cm->n_fc] += ptyc*csys->val_n[cm->n_fc];
 
         /* Simply add an entry in mat[cell, cell] */
+
         csys->mat->val[cm->n_fc*(csys->n_dofs + 1)] += ptyc;
 
       }
@@ -2296,12 +2331,14 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
            >> Update the cellwise system with the time matrix */
 
         /* Update rhs with mass_mat*p^n */
+
         double  *time_pn = cb->values;
         cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += tpty_coef*time_pn[i];
 
         /* Update the cellwise system with the time matrix */
+
         cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
 
       }
@@ -2317,6 +2354,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
        * a matrix of size n_fc.
        * Store data in rc_tilda and acf_tilda to compute the values at cell
        * centers after solving the system */
+
       cs_static_condensation_scalar_eq(connect->c2f,
                                        eqc->rc_tilda, eqc->acf_tilda,
                                        cb, csys);
@@ -2356,6 +2394,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
+
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
@@ -2366,6 +2405,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   /* ======================= */
 
   /* Last step in the computation of the renormalization coefficient */
+
   cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
                                      n_faces,
                                      rhs,
@@ -2387,9 +2427,9 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
   /* Update field associated to cells */
+
   _update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
-  /* Free remaining buffers */
   BFT_FREE(rhs);
   cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
@@ -2425,6 +2465,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
 
   /* Allocate and initialize the structure storing the balance evaluation */
+
   cs_equation_balance_t  *eb = cs_equation_balance_create(cs_flag_primal_cell,
                                                           quant->n_cells);
 
@@ -2440,6 +2481,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_hodge_t  *diff_hodge =
@@ -2452,6 +2494,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
     const cs_real_t  inv_dtcur = 1./dt_cur;
 
     /* Set times at which one evaluates quantities if needed */
+
     switch (eqp->time_scheme) {
 
     case CS_TIME_SCHEME_EULER_EXPLICIT:
@@ -2470,7 +2513,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       cb->t_st_eval = t_cur + dt_cur;
       break;
 
-    default:                    /* Implicit (Forward Euler or BDF2) */
+    default: /* Implicit (Forward Euler or BDF2) */
       cb->t_pty_eval = t_cur + dt_cur;
       cb->t_bc_eval = t_cur + dt_cur;
       cb->t_st_eval = t_cur + dt_cur;
@@ -2479,9 +2522,11 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       } /* Switch on time scheme */
 
     /* Initialization of the values of properties */
+
     cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* Set inside the OMP section so that each thread has its own value */
+
     cs_real_t  _p_cur[10], _p_prev[10], _p_theta[10];
     cs_real_t  *p_cur = NULL, *p_prev = NULL, *p_theta = NULL;
 
@@ -2506,11 +2551,13 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
+
       cs_cell_mesh_build(c_id,
                          cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the value of the current potential */
+
       for (short int f = 0; f < cm->n_fc; f++)
         p_cur[f] = eqc->face_values[cm->f_ids[f]];
       p_cur[cm->n_fc] = pot->val[cm->c_id];
@@ -2520,11 +2567,13 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
         assert(mass_hodge != NULL);
 
         /* Build the mass matrix and store it in mass_hodge->matrix */
+
         eqc->get_mass_matrix(cm, mass_hodge, cb);
 
       }
 
       /* Unsteady term + time scheme */
+
       if (cs_equation_param_has_time(eqp)) {
 
         if (!(eqb->time_pty_uniform))
@@ -2533,14 +2582,17 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
                                                    cb->t_pty_eval);
 
         /* Set the value of the current potential */
+
         for (short int f = 0; f < cm->n_fc; f++)
           p_prev[f] = eqc->face_values_pre[cm->f_ids[f]];
         p_prev[cm->n_fc] = pot->val_pre[cm->c_id];
 
         /* Get the value of the time property */
+
         const double  tptyc = inv_dtcur * cb->tpty_val;
 
         /* Assign local matrix to a mass matrix to define */
+
         CS_CDO_OMP_ASSERT(cb->loc->n_rows == cb->loc->n_cols);
         CS_CDO_OMP_ASSERT(cb->loc->n_rows == cm->n_fc + 1);
 
@@ -2554,6 +2606,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       } /* End of time contribution */
 
       /* Set p_theta */
+
       switch (eqp->time_scheme) {
 
       case CS_TIME_SCHEME_EULER_EXPLICIT:
@@ -2576,30 +2629,36 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
       } /* Switch on time scheme */
 
-       /* Reaction term */
+      /* Reaction term */
+
       if (cs_equation_param_has_reaction(eqp)) {
 
         /* Update the value of the reaction property(ies) if needed */
+
         cs_equation_set_reaction_properties_cw(eqp, eqb, cm, cb);
 
         /* Define the local reaction property */
+
         const double  rpty_val = cb->rpty_val * cm->vol_c;
         eb->reaction_term[c_id] += rpty_val * p_theta[cm->n_fc];
 
       } /* Reaction */
 
       /* Diffusion term */
+
       if (cs_equation_param_has_diffusion(eqp)) {
 
         assert(diff_hodge != NULL);
 
         /* Set the diffusion property */
+
         if (!(eqb->diff_pty_uniform))
           cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
                                          diff_hodge);
 
         /* Define the local stiffness matrix: local matrix owned by the cellwise
            builder (store in cb->loc) */
+
         eqc->get_stiffness_matrix(cm, diff_hodge, cb);
 
         cs_real_t  *res = cb->values;
@@ -2611,6 +2670,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       } /* End of diffusion */
 
       /* Advection term */
+
       if (cs_equation_param_has_convection(eqp)) {
 
         /* Define the local advection matrix and store the advection fluxes
@@ -2618,6 +2678,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
            since there are always weakly enforced) */
 
         /* TODO: Boundary condition and csys --> set to NULL up to now */
+
         eqc->advection_main(eqp, cm, NULL, eqc->advection_scheme, cb);
 
         cs_real_t  *res = cb->values;
@@ -2629,15 +2690,18 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
       } /* End of advection */
 
       /* Source term */
+
       if (cs_equation_param_has_sourceterm(eqp)) {
 
         /* Reset the local contribution */
+
         cs_real_t  *src = cb->values;
         memset(src, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
            and is added to the right-hand side during its initialization. */
+
         cs_source_term_compute_cellwise(eqp->n_source_terms,
                     (cs_xdef_t *const *)eqp->source_terms,
                                         cm,
@@ -2651,7 +2715,6 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
         eb->source_term[cm->c_id] += src[cm->n_fc];
 
       } /* End of term source contribution */
-
 
     } /* Main loop on cells */
 
@@ -2739,6 +2802,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
+
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_hodge_t  *diff_hodge =
@@ -2747,6 +2811,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     assert(diff_hodge != NULL);
 
     /* Set times at which one evaluates quantities if needed */
+
     cb->t_pty_eval = cb->t_bc_eval = cb->t_st_eval = t_eval;
 
     cs_eflag_t  msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ;
@@ -2772,6 +2837,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           cs_real_t  *neu_values = cb->values;
 
           /* Set the local mesh structure for the current cell */
+
           cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
           const short int  f = cs_cell_mesh_get_f(f_id, cm);
@@ -2791,6 +2857,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
         { /* Reconstruct a normal flux at the boundary face */
 
           /* Set the local mesh structure for the current cell */
+
           cs_cell_mesh_build(c_id, msh_flag | add_flag, connect, quant, cm);
 
           const short int  f = cs_cell_mesh_get_f(f_id, cm);
@@ -2799,16 +2866,19 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
           if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
 #endif
           /* Set the diffusion property */
+
           if (!(eqb->diff_pty_uniform))
             cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, 0, diff_hodge);
 
           /* Define a local buffer keeping the value of the discrete potential
              for the current cell */
+
           for (short int ff = 0; ff < cm->n_fc; ff++)
             pot[ff] = pot_f[cm->f_ids[ff]];
           pot[cm->n_fc] = pot_c[c_id];
 
           /* Compute the boundary flux and store it */
+
           cs_cdo_diffusion_sfb_cost_flux(f, cm, pot, diff_hodge,
                                          cb, bflux + bf_id);
         }
@@ -2849,11 +2919,13 @@ cs_cdofb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
   cs_field_t  *fld = cs_field_by_id(eqc->var_field_id);
 
   /* Face values */
+
   if (eqc->face_values_pre != NULL)
     memcpy(eqc->face_values_pre, eqc->face_values,
            sizeof(cs_real_t)*eqc->n_faces);
 
   /* Cell values */
+
   cs_field_current_to_previous(fld);
 }
 
@@ -2994,6 +3066,7 @@ cs_cdofb_scaleq_read_restart(cs_restart_t    *restart,
 {
   /* Only the face values are handled. Cell values are stored in a cs_field_t
      structure and thus are handled automatically. */
+
   if (restart == NULL)
     return;
   if (eqname == NULL)
@@ -3012,9 +3085,11 @@ cs_cdofb_scaleq_read_restart(cs_restart_t    *restart,
   const int  i_ml_id = cs_mesh_location_get_id_by_name(N_("interior_faces"));
 
   /* Define the section name */
+
   snprintf(sec_name, 127, "%s::i_face_vals", eqname);
 
   /* Check section */
+
   retcode = cs_restart_check_section(restart,
                                      sec_name,
                                      i_ml_id,
@@ -3022,6 +3097,7 @@ cs_cdofb_scaleq_read_restart(cs_restart_t    *restart,
                                      CS_TYPE_cs_real_t);
 
   /* Read section */
+
   if (retcode == CS_RESTART_SUCCESS)
     retcode = cs_restart_read_section(restart,
                                       sec_name,
@@ -3037,9 +3113,11 @@ cs_cdofb_scaleq_read_restart(cs_restart_t    *restart,
   cs_real_t  *b_values = eqc->face_values + cs_shared_quant->n_i_faces;
 
   /* Define the section name */
+
   snprintf(sec_name, 127, "%s::b_face_vals", eqname);
 
   /* Check section */
+
   retcode = cs_restart_check_section(restart,
                                      sec_name,
                                      b_ml_id,
@@ -3047,6 +3125,7 @@ cs_cdofb_scaleq_read_restart(cs_restart_t    *restart,
                                      CS_TYPE_cs_real_t);
 
   /* Read section */
+
   if (retcode == CS_RESTART_SUCCESS)
     retcode = cs_restart_read_section(restart,
                                       sec_name,
@@ -3054,7 +3133,6 @@ cs_cdofb_scaleq_read_restart(cs_restart_t    *restart,
                                       1, /* scalar-valued */
                                       CS_TYPE_cs_real_t,
                                       b_values);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3075,6 +3153,7 @@ cs_cdofb_scaleq_write_restart(cs_restart_t    *restart,
 {
   /* Only the face values are handled. Cell values are stored in a cs_field_t
      structure and thus are handled automatically. */
+
   if (restart == NULL)
     return;
   if (eqname == NULL)
@@ -3090,9 +3169,11 @@ cs_cdofb_scaleq_write_restart(cs_restart_t    *restart,
   const int  i_ml_id = cs_mesh_location_get_id_by_name(N_("interior_faces"));
 
   /* Define the section name */
+
   snprintf(sec_name, 127, "%s::i_face_vals", eqname);
 
   /* Write interior face section */
+
   cs_restart_write_section(restart,
                            sec_name,
                            i_ml_id,
@@ -3107,9 +3188,11 @@ cs_cdofb_scaleq_write_restart(cs_restart_t    *restart,
   const cs_real_t  *b_values = eqc->face_values + cs_shared_quant->n_i_faces;
 
   /* Define the section name */
+
   snprintf(sec_name, 127, "%s::b_face_vals", eqname);
 
   /* Write boundary face section */
+
   cs_restart_write_section(restart,
                            sec_name,
                            b_ml_id,

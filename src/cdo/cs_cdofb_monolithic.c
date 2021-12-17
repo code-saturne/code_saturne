@@ -640,11 +640,10 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
       }
       else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
 
-        /* No need to update the mass RHS since there is no mass flux */
-
-        /* Weak-enforcement for the velocity-block (cf. _mono_apply_bc_partly) */
-
-        /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
+        /* No need to update the mass RHS since there is no mass flux.
+         * Weak-enforcement for the velocity-block (cf. _mono_apply_bc_partly)
+         * Strong enforcement of u.n (--> dp/dn = 0) on the divergence
+         */
 
         for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
 

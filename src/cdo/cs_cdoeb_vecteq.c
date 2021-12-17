@@ -76,10 +76,12 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Size = 1 if openMP is not used */
+
 static cs_cell_sys_t      **cs_cdoeb_cell_system = NULL;
 static cs_cell_builder_t  **cs_cdoeb_cell_builder = NULL;
 
 /* Pointer to shared structures */
+
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
@@ -121,8 +123,8 @@ _ebs_create_cell_builder(const cs_cdo_connect_t   *connect)
   BFT_MALLOC(cb->vectors, size, cs_real_3_t);
   memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
 
-  /* Local square dense matrices used during the construction of
-     operators */
+  /* Local square dense matrices used during the construction of operators */
+
   cb->aux = cs_sdm_square_create(n_max);
   cb->loc = cs_sdm_square_create(n_ec);
 
@@ -155,10 +157,12 @@ _eb_init_cell_system(const cs_cell_mesh_t                *cm,
                      cs_cell_builder_t                   *cb)
 {
   /* Cell-wise view of the linear system to build */
+
   csys->c_id = cm->c_id;
   csys->n_dofs = cm->n_ec;
 
   /* Initialize the local system */
+
   cs_cell_sys_reset(cm->n_fc, csys); /* Generic part */
 
   cs_sdm_square_init(csys->n_dofs, csys->mat);
@@ -171,9 +175,11 @@ _eb_init_cell_system(const cs_cell_mesh_t                *cm,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
+
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     /* Set the bc (specific part) */
+
     cs_equation_eb_set_cell_bc(cm,
                                eqp,
                                eqb->face_bc,
@@ -187,6 +193,7 @@ _eb_init_cell_system(const cs_cell_mesh_t                *cm,
    * This situation may happen with a tetrahedron with an edge
    * lying on the boundary (but no face)
    */
+
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_EDGE) {
 
     for (short int e = 0; e < cm->n_ec; e++) {
@@ -254,17 +261,21 @@ _eb_curlcurl(const cs_equation_param_t     *eqp,
     return;
 
   /* Add the Curl-Curl term */
+
   assert(cm->flag & CS_FLAG_COMP_FES);
 
   /* Set the properties for this cell if not uniform */
+
   if (!eqb->curlcurl_pty_uniform)
     cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag, hodge);
 
   /* The first step is to build the hodge matrix associated to the curl-curl
      operator (stored in hodge->matrix) */
+
   eqc->get_curlcurl(cm, hodge, cb);
 
   /* Build the curl-curl operator in cb->loc */
+
   cs_sdm_square_init(cm->n_ec, cb->loc);
 
   for (int fk = 0; fk < cm->n_fc; fk++) {
@@ -292,6 +303,7 @@ _eb_curlcurl(const cs_equation_param_t     *eqp,
   } /* Loop on cell faces (k)  */
 
   /* Add the local curl-curl operator to the local system */
+
   cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
@@ -327,10 +339,12 @@ _eb_enforce_values(const cs_equation_param_t     *eqp,
   if (cb->cell_flag > 0 && csys->has_dirichlet) {
 
     /* Boundary element (through either edges or faces) */
+
     if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
         eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
 
       /* csys is updated inside (matrix and rhs) */
+
       eqc->enforce_essential_bc(eqp, cm, NULL, hodge, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
@@ -350,8 +364,7 @@ _eb_enforce_values(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
-                       csys);
+      cs_cell_sys_dump("\n>> Cell system after the internal enforcement", csys);
 #endif
   }
 }
@@ -434,9 +447,11 @@ _assemble(const cs_cdoeb_vecteq_t           *eqc,
           cs_real_t                         *rhs)
 {
   /* Matrix assembly */
+
   eqc->assemble(csys->mat, csys->dof_ids, rs, eqa, mav);
 
   /* RHS assembly */
+
 #if CS_CDO_OMP_SYNC_SECTIONS > 0
 # pragma omp critical
   {
@@ -510,12 +525,14 @@ cs_cdoeb_vecteq_init_common(const cs_cdo_quantities_t    *quant,
                             const cs_matrix_structure_t  *ms)
 {
   /* Assign static const pointers */
+
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
   cs_shared_ms = ms;
 
   /* Structure used to build the final system by a cell-wise process */
+
   assert(cs_glob_n_threads > 0);  /* Sanity check */
 
   BFT_MALLOC(cs_cdoeb_cell_system, cs_glob_n_threads, cs_cell_sys_t *);
@@ -625,11 +642,11 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
                              int                          bflux_id,
                              cs_equation_builder_t       *eqb)
 {
-  /* Sanity checks */
   assert(eqp != NULL && eqb != NULL);
 
   /* This is a vector-valued equation but the DoF is scalar-valued since
    * it is a circulation associated to each edge */
+
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOEB || eqp->dim != 3)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid type of equation.\n"
@@ -646,6 +663,7 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->bflux_field_id = bflux_id;
 
   /* Dimensions of the algebraic system */
+
   eqc->n_dofs = n_edges;
 
   eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
@@ -653,9 +671,11 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
+
   eqb->bd_msh_flag = CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
 
   /* Values at each edge (interior and border) i.e. BCs are included */
+
   BFT_MALLOC(eqc->edge_values, n_edges, cs_real_t);
 # pragma omp parallel for if (n_edges > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_edges; i++) eqc->edge_values[i] = 0;
@@ -690,6 +710,7 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   /* Essential boundary condition enforcement. The circulation along boundary
    * edges has the same behavior as enforcing a Dirichlet BC */
+
   BFT_MALLOC(eqc->edge_bc_flag, n_edges, cs_flag_t);
   cs_equation_set_edge_bc_flag(connect, eqb->face_bc, eqc->edge_bc_flag);
 
@@ -708,6 +729,7 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
   }
 
   /* Source term */
+
   eqc->source_terms = NULL;
   if (cs_equation_param_has_sourceterm(eqp)) {
 
@@ -718,12 +740,14 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   /* Pre-defined structures for the discrete Hodge operator playing the role of
      the mass matrix */
+
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.algo = CS_HODGE_ALGO_COST;
   eqc->mass_hodgep.type = CS_HODGE_TYPE_EPFD;
   eqc->mass_hodgep.coef = cs_math_1ov3;
 
   /* Specify the algorithm */
+
   if (eqp->do_lumping ||
       eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG ||
       eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG)
@@ -743,6 +767,7 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
   } /* Add a mass matrix */
 
   /* Assembly process */
+
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOEB,
                                            CS_CDO_CONNECT_EDGE_SCAL);
 
@@ -817,11 +842,13 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
   cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
 
   /* By default, 0 is set as initial condition for the computational domain */
+
   memset(eqc->edge_values, 0, quant->n_edges*sizeof(cs_real_t));
 
   if (eqp->n_ic_defs > 0) {
 
     /* Initialize values at mesh vertices */
+
     cs_lnum_t  *def2e_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
     cs_lnum_t  *def2e_idx = NULL;
     BFT_MALLOC(def2e_idx, eqp->n_ic_defs + 1, cs_lnum_t);
@@ -835,6 +862,7 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
     for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 
       /* Get and then set the definition of the initial condition */
+
       const cs_xdef_t  *def = eqp->ic_defs[def_id];
       const cs_lnum_t  n_e_selected = def2e_idx[def_id+1] - def2e_idx[def_id];
       const cs_lnum_t  *selected_lst = def2e_ids + def2e_idx[def_id];
@@ -869,6 +897,7 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
 
   /* Set the boundary values as initial values: Compute the values of the
      circulation where it is known thanks to the BCs */
+
   cs_equation_compute_circulation_eb(t_eval,
                                      mesh,
                                      quant,
@@ -1144,11 +1173,13 @@ cs_cdoeb_vecteq_current_to_previous(const cs_equation_param_t  *eqp,
   cs_field_t  *fld = cs_field_by_id(eqc->var_field_id);
 
   /* Edge values */
+
   if (eqc->edge_values_pre != NULL)
     memcpy(eqc->edge_values_pre, eqc->edge_values,
            sizeof(cs_real_t)*eqc->n_dofs);
 
   /* Cell values */
+
   cs_field_current_to_previous(fld);
 }
 

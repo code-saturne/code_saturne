@@ -1225,6 +1225,7 @@ cs_equation_add(const char            *eqname,
   eq->id = eq_id;
 
   /* Store varname */
+
   size_t  len = strlen(varname);
   BFT_MALLOC(eq->varname, len + 1, char);
   strncpy(eq->varname, varname, len);
@@ -1236,48 +1237,58 @@ cs_equation_add(const char            *eqname,
   eq->boundary_flux_id = -1;   /* Not always defined (done in a second step) */
 
   /* Algebraic system: allocated later */
+
   eq->rset = NULL;
   eq->n_sles_gather_elts = eq->n_sles_scatter_elts = 0;
 
   /* Builder structure for this equation */
+
   eq->builder = NULL;
   eq->scheme_context = NULL;
 
   /* Pointers of function */
+
   eq->init_context = NULL;
   eq->free_context = NULL;
 
   /* Extra-operations */
+
   eq->compute_balance = NULL;
   eq->postprocess = NULL;
   eq->current_to_previous = NULL;
 
   /* Restart */
+
   eq->read_restart = NULL;
   eq->write_restart = NULL;
 
   /* Function pointers to retrieve values at mesh locations */
+
   eq->get_vertex_values = NULL;
   eq->get_edge_values = NULL;
   eq->get_face_values = NULL;
   eq->get_cell_values = NULL;
 
   /* New functions */
+
   eq->init_field_values = NULL;
   eq->solve = NULL;
   eq->solve_steady_state = NULL;
 
   /* Deprecated functions */
+
   eq->initialize_system = NULL;
   eq->set_dir_bc = NULL;
   eq->build_system = NULL;
   eq->update_field = NULL;
 
   /* Deprecated members related to deprecated functions */
+
   eq->matrix = NULL;
   eq->rhs = NULL;
 
   /* Set timer statistic structure to a default value */
+
   eq->main_ts_id = cs_timer_stats_id_by_name(eqname);
   if (eq->main_ts_id < 0)
     eq->main_ts_id = cs_timer_stats_create(NULL, /* new root */

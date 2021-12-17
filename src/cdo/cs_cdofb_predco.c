@@ -248,6 +248,7 @@ typedef struct {
  *============================================================================*/
 
 /* Pointer to shared structures */
+
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
@@ -303,6 +304,7 @@ _predco_apply_bc_partly(const cs_cdofb_predco_t       *sc,
     for (short int i = 0; i < csys->n_bc_faces; i++) {
 
       /* Get the boundary face in the cell numbering */
+
       const short int  f = csys->_f_ids[i];
       const cs_quant_t pfq = cm->face[f];
       const cs_real_t f_prs = pfq.meas * pc;
@@ -332,8 +334,10 @@ _predco_apply_bc_partly(const cs_cdofb_predco_t       *sc,
       }
 
       else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
+
         /* Always weakly enforce the symmetric constraint on the
            velocity-block */
+
         sc->apply_symmetry(f, eqp, cm, diff_pty, cb, csys);
         f_rhs[0] -= f_prs * pfq.unitv[0];
         f_rhs[1] -= f_prs * pfq.unitv[1];
@@ -383,14 +387,18 @@ _predco_apply_remaining_bc(const cs_cdofb_predco_t       *sc,
      * mass equation.
      * Enforcement of Dirichlet BC in a stronger way if this is the choice
      */
+
     for (short int i = 0; i < csys->n_bc_faces; i++) {
 
       /* Get the boundary face in the cell numbering */
+
       const short int  f = csys->_f_ids[i];
 
       if (bf_type[i] & CS_BOUNDARY_IMPOSED_VEL) {
+
         /* Enforcement of the velocity for the velocity-block
          * Dirichlet on the three components of the velocity field */
+
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
           sc->apply_velocity_inlet(f, eqp, cm, diff_pty, cb, csys);
@@ -398,8 +406,10 @@ _predco_apply_remaining_bc(const cs_cdofb_predco_t       *sc,
       }
 
       else if (bf_type[i] & CS_BOUNDARY_WALL) {
+
         /* Enforcement of the velocity for the velocity-block
          * Dirichlet on the three components of the velocity field */
+
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
             eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
           if (bf_type[i] & CS_BOUNDARY_SLIDING_WALL)
@@ -583,6 +593,7 @@ _update_variables(cs_cdofb_predco_t           *sc)
   const cs_real_t  dt_cur = cs_shared_time_step->dt[0];
 
   /* Variables to update */
+
   cs_real_t  *pr_f = sc->pressure_f;
   cs_real_t  *pr_c = sc->pressure->val; /* cell DoFs for the pressure */
   cs_real_t  *vel_c = sc->velocity->val;
@@ -607,6 +618,7 @@ _update_variables(cs_cdofb_predco_t           *sc)
     cs_cdofb_vecteq_get(&csys, &cb);
 
     /* Reset the velocity at faces */
+
 #   pragma omp for
     for (cs_lnum_t i = 0; i < 3*n_faces; i++) vel_f[i] = 0;
 
@@ -614,14 +626,17 @@ _update_variables(cs_cdofb_predco_t           *sc)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */
+
       cs_cell_mesh_build(c_id,
                          CS_FLAG_COMP_PF |  CS_FLAG_COMP_PFQ,
                          connect, quant, cm);
 
       /* Update the cell pressure */
+
       pr_c[c_id] += dt_cur*dp_c[c_id];
 
       /* Evaluate the cell gradient for the pressure increment */
+
       cs_real_t  grd_dp[3] = {0, 0, 0};
       for (short int f = 0; f < cm->n_fc; f++) {
         const cs_real_t  f_coef = cm->f_sgn[f]*cm->face[f].meas;
@@ -630,6 +645,7 @@ _update_variables(cs_cdofb_predco_t           *sc)
       }
 
       /* Update the cell velocity */
+
       for (int k = 0; k < 3; k++)
         vel_c[3*c_id + k] = velp_c[3*c_id + k] + dt_cur*grd_dp[k];
 
@@ -637,6 +653,7 @@ _update_variables(cs_cdofb_predco_t           *sc)
        * v_f^(n+1) = vp_f^(n+1) + dt*grd(incr_p)
        * Now: 0.5*dt_cur*grd_cell(incr_p) for an interior face
        * or       dt_cur*grd_cell(incr_p)     for a border face  */
+
       for (short int f = 0; f < cm->n_fc; f++) {
 
         const cs_lnum_t  f_id = cm->f_ids[f];
@@ -656,23 +673,26 @@ _update_variables(cs_cdofb_predco_t           *sc)
   } /* OpenMP block */
 
   /* Parallel or periodic sum */
-  if (connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL) {
+
+  if (connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL)
     cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_FACE_SP0],
                          n_faces,
                          3,
                          true,
                          CS_REAL_TYPE,
                          vel_f);
-  }
 
   /* Update face-related unknowns */
+
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
     /* p^(n+1) = p^n + delta_p */
+
     pr_f[f] += dp_f[f]*dt_cur;
 
     /* v_f^(n+1) = vp_f^(n+1) + dt*grd(incr_p) */
+
     for (int k = 0; k < 3; k++)
       vel_f[3*f+k] += velp_f[3*f+k];
 
@@ -685,6 +705,7 @@ _update_variables(cs_cdofb_predco_t           *sc)
 
     /* Reset the divergence of the velocity before computing the updated
        value (vel_f has to be updated first) */
+
     div[c_id] = 0;
     for (cs_lnum_t jf = c2f->idx[c_id]; jf < c2f->idx[c_id+1]; jf++) {
 
@@ -755,6 +776,7 @@ cs_cdofb_predco_init_common(const cs_cdo_quantities_t     *quant,
                             const cs_time_step_t          *time_step)
 {
   /* Assign static const pointers */
+
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
@@ -764,6 +786,7 @@ cs_cdofb_predco_init_common(const cs_cdo_quantities_t     *quant,
    * the momentum equation --> vector-valued equation
    * the pressure equation --> scalar-valued equation
    */
+
   cs_shared_mom_ms = cs_cdofb_vecteq_matrix_structure();
   cs_shared_pre_ms = cs_cdofb_scaleq_matrix_structure();
 }
@@ -791,15 +814,16 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
                                     cs_boundary_type_t        *fb_type,
                                     void                      *nsc_input)
 {
-  /* Sanity checks */
   assert(nsp != NULL && nsc_input != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
 
   /* Cast the coupling context (CC) */
+
   cs_navsto_projection_t  *cc = (cs_navsto_projection_t  *)nsc_input;
 
   /* Navier-Stokes scheme context (SC) */
+
   cs_cdofb_predco_t  *sc = NULL;
 
   if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
@@ -808,12 +832,14 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
   BFT_MALLOC(sc, 1, cs_cdofb_predco_t);
 
   /* Quantities shared with the cs_navsto_system_t structure */
+
   sc->coupling_context = cc;
   sc->adv_field = adv_field;
   sc->mass_flux_array = mflux;
   sc->mass_flux_array_pre = mflux_pre;
 
   /* Quick access to the main fields */
+
   sc->velocity = cs_field_by_name("velocity");
   sc->pressure = cs_field_by_name("pressure");
 
@@ -823,17 +849,21 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
     sc->divergence = NULL;
 
   /* Values of the predicted velocity at faces */
+
   BFT_MALLOC(sc->predicted_velocity_f, 3*quant->n_faces, cs_real_t);
   memset(sc->predicted_velocity_f, 0, 3*quant->n_faces*sizeof(cs_real_t));
 
   /* Values of the pressure at faces */
+
   BFT_MALLOC(sc->pressure_f, quant->n_faces, cs_real_t);
   memset(sc->pressure_f, 0, quant->n_faces*sizeof(cs_real_t));
 
   /* Boundary treatment */
+
   sc->bf_type = fb_type;
 
   /* Processing of the pressure boundary condition */
+
   sc->pressure_bc = cs_cdo_bc_face_define(CS_CDO_BC_HMG_NEUMANN, /* Default */
                                           true, /* Steady BC up to now */
                                           1,    /* Dimension */
@@ -851,6 +881,7 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   /* Set the way to enforce the Dirichlet BC on the velocity
    * "fixed_wall" means a no-slip BC */
+
   sc->apply_symmetry = cs_cdofb_symmetry;
 
   switch (mom_eqp->default_enforcement) {
@@ -887,6 +918,7 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t   *nsp,
   }
 
   /* Monitoring */
+
   CS_TIMER_COUNTER_INIT(sc->timer);
 
   return sc;
@@ -911,12 +943,14 @@ cs_cdofb_predco_free_scheme_context(void   *scheme_context)
     return sc;
 
   /* Free BC structure */
+
   sc->pressure_bc = cs_cdo_bc_free(sc->pressure_bc);
 
   BFT_FREE(sc->predicted_velocity_f);
   BFT_FREE(sc->pressure_f);
 
   /* Other pointers are only shared (i.e. not owner) */
+
   BFT_FREE(sc);
 
   return NULL;
@@ -985,6 +1019,7 @@ cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
   }
 
   /* For the correction step, use the generic way to setup the SLES */
+
   cs_equation_param_t  *corr_eqp = cs_equation_get_param(nsc->correction);
 
   corr_eqp->sles_param->field_id = cs_equation_get_field_id(nsc->correction);
@@ -1020,6 +1055,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   const cs_lnum_t  n_faces = quant->n_faces;
 
   /* Retrieve high-level structures */
+
   cs_cdofb_predco_t  *sc = (cs_cdofb_predco_t *)scheme_context;
   cs_navsto_projection_t *cc = sc->coupling_context;
   cs_equation_t  *mom_eq = cc->prediction;
@@ -1027,11 +1063,11 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
 
-  /* Sanity checks */
   assert(cs_equation_param_has_time(mom_eqp) == true);
   assert(mom_eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
 
   /* Retrieve fields */
+
   cs_real_t  *pr_c = sc->pressure->val; /* cell DoFs for the pressure */
   cs_field_t  *vel_fld = sc->velocity;
   cs_real_t  *vel_c = vel_fld->val;
@@ -1045,6 +1081,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   /* Build an array storing the Dirichlet values at faces and ids of DoFs if
    * an enforcement of (internal) DoFs is requested
    * Evaluation should be performed at t_cur + dt_cur */
+
   cs_real_t  *dir_values = NULL;
   cs_lnum_t  *enforced_ids = NULL;
 
@@ -1052,6 +1089,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
                         &dir_values, &enforced_ids);
 
   /* Initialize the local system: matrix and rhs */
+
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_mom_ms);
   cs_real_t  *rhs = NULL;
 
@@ -1060,6 +1098,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
+
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
@@ -1075,12 +1114,13 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
+
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
                                                                     connect);
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
     cs_hodge_t  *diff_hodge =
-      (mom_eqc->diffusion_hodge == NULL) ? NULL : mom_eqc->diffusion_hodge[t_id];
+      (mom_eqc->diffusion_hodge == NULL) ? NULL:mom_eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
       (mom_eqc->mass_hodge == NULL) ? NULL : mom_eqc->mass_hodge[t_id];
 
@@ -1095,24 +1135,28 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
     const cs_real_t  inv_dtcur = 1./dt_cur;
 
     /* Set times at which one evaluates quantities when needed */
+
     cb->t_pty_eval = t_eval;
     cb->t_bc_eval = t_eval;
     cb->t_st_eval = t_eval;
 
     /* Initialization of the values of properties */
+
     cs_equation_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
 
-    /* --------------------------------------------- */
-    /* Main loop on cells to build the linear system */
-    /* --------------------------------------------- */
+    /* ---------------------------------------------
+     * Main loop on cells to build the linear system
+     * --------------------------------------------- */
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the current cell flag */
+
       cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
+
       cs_cell_mesh_build(c_id,
                          cs_equation_cell_mesh_flag(cb->cell_flag, mom_eqb),
                          connect, quant, cm);
@@ -1129,6 +1173,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
        */
 
       /* Set the local (i.e. cellwise) structures for the current cell */
+
       cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
                                        dir_values, enforced_ids,
                                        mom_eqc->face_values, vel_c,
@@ -1142,11 +1187,13 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
        * - Define the divergence operator used in the linear system (div_op is
        *   equal to minus the divergence)
        */
+
       cs_cdofb_navsto_define_builder(cb->t_bc_eval, nsp, cm, csys,
                                      sc->pressure_bc, sc->bf_type, &nsb);
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
+
       cs_cdofb_vecteq_conv_diff_reac(mom_eqp, mom_eqb, mom_eqc, cm,
                                      mass_hodge, diff_hodge, csys, cb);
 
@@ -1157,6 +1204,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
       /* ====================================================== */
+
       const bool  has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
       if (has_sourceterm)
         cs_cdofb_vecteq_sourceterm(cm, mom_eqp, cb->t_st_eval,
@@ -1168,6 +1216,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
        * =======================
        * Apply the operator gradient to the pressure field and add it to the
        * rhs */
+
       const short int  n_fc = cm->n_fc, nf_dofs = 3*n_fc;
 
       cs_sdm_add_scalvect(nf_dofs, -pr_c[c_id], nsb.div_op, csys->rhs);
@@ -1175,24 +1224,28 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
       /* First part of the BOUNDARY CONDITIONS
        *                   ===================
        * Apply a part of BC before the time scheme */
+
       _predco_apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type,
                               diff_hodge->pty_data, csys, cb);
 
       /* 4- UNSTEADY TERM + TIME SCHEME
        * ============================== */
+
       if (mom_eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
 
         /* Mass lumping or Hodge-Voronoi */
+
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* Get the cell-cell block */
+
         cs_sdm_t *acc = cs_sdm_get_block(csys->mat, n_fc, n_fc);
 
         for (short int k = 0; k < 3; k++) {
           csys->rhs[3*n_fc + k] += ptyc * csys->val_n[3*n_fc+k];
           /* Simply add an entry in mat[cell, cell] */
           acc->val[4*k] += ptyc;
-        } /* Loop on k */
+        }
 
       }
       else
@@ -1205,6 +1258,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
        * a matrix of size n_fc.
        * Store data in rc_tilda and acf_tilda to compute the values at cell
        * centers after solving the system */
+
       cs_static_condensation_vector_eq(connect->c2f,
                                        mom_eqc->rc_tilda, mom_eqc->acf_tilda,
                                        cb, csys);
@@ -1217,6 +1271,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
       /* 6- Remaining part of BOUNDARY CONDITIONS
        * ======================================== */
+
       _predco_apply_remaining_bc(sc, mom_eqp, cm, nsb.bf_type,
                                  diff_hodge->pty_data, csys, cb);
 
@@ -1227,12 +1282,14 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
       /* ASSEMBLY PROCESS */
       /* ================ */
+
       cs_cdofb_vecteq_assembly(csys, mom_rs, cm, has_sourceterm,
                                mom_eqc, eqa, mav, rhs);
 
     } /* Main loop on cells */
 
     /* Free temporary buffers */
+
     cs_cdofb_navsto_free_builder(&nsb);
 
   } /* OPENMP Block */
@@ -1240,11 +1297,13 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   cs_matrix_assembler_values_done(mav); /* optional */
 
   /* Free temporary buffers and structures */
+
   BFT_FREE(dir_values);
   BFT_FREE(enforced_ids);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
+
   cs_timer_t  t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_bld, &t_tmp);
 
@@ -1253,6 +1312,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
    *--------------------------------------------------------------------------*/
 
   /* Copy current field values to previous values */
+
   cs_field_t  *velp_fld = cc->predicted_velocity;
 
   cs_field_current_to_previous(velp_fld);
@@ -1262,6 +1322,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
+
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
 
@@ -1276,15 +1337,16 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
                                   rhs);
 
   /* Update pressure, velocity and divergence fields */
+
   cs_timer_t  t_upd = cs_timer_time();
 
   /* Compute values at cells pc from values at faces pf
      pc = acc^-1*(RHS - Acf*pf) */
+
   cs_static_condensation_recover_vector(connect->c2f,
                                         mom_eqc->rc_tilda, mom_eqc->acf_tilda,
                                         velp_f, velp_c);
 
-  /* Frees */
   BFT_FREE(rhs);
   cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
