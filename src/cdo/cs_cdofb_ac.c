@@ -530,12 +530,14 @@ _ac_apply_bc_partly(const cs_cdofb_ac_t           *sc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Apply the boundary conditions to the local system when this should
- *          be done after the static condensation
- *          Case of CDO-Fb schemes with AC coupling
+ * \brief  Apply the boundary conditions to the local system when this should be
+ *         done after the static condensation. Apply the internal enforcement
+ *         if needed.
+ *         Case of CDO-Fb schemes with AC coupling
  *
  * \param[in]      sc          pointer to a cs_cdofb_ac_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      bf_type     type of boundary for the boundary faces
  * \param[in]      diff_pty    pointer to \ref cs_property_data_t for diffusion
@@ -547,6 +549,7 @@ _ac_apply_bc_partly(const cs_cdofb_ac_t           *sc,
 static void
 _ac_apply_remaining_bc(const cs_cdofb_ac_t           *sc,
                        const cs_equation_param_t     *eqp,
+                       const cs_equation_builder_t   *eqb,
                        const cs_cell_mesh_t          *cm,
                        const cs_boundary_type_t      *bf_type,
                        const cs_property_data_t      *diff_pty,
@@ -602,6 +605,19 @@ _ac_apply_remaining_bc(const cs_cdofb_ac_t           *sc,
     } /* Loop on boundary faces */
 
   } /* Boundary cell */
+
+  if (cs_equation_param_has_internal_enforcement(eqp)) {
+
+    /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
+
+    cs_equation_enforced_internal_block_dofs(eqb, cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
+                       csys);
+#endif
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -856,7 +872,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* 6- Remaining part of BOUNDARY CONDITIONS
        * ======================================== */
 
-      _ac_apply_remaining_bc(sc, mom_eqp, cm, nsb.bf_type,
+      _ac_apply_remaining_bc(sc, mom_eqp, mom_eqb, cm, nsb.bf_type,
                              diff_hodge->pty_data, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 0

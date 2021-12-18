@@ -364,6 +364,7 @@ _predco_apply_bc_partly(const cs_cdofb_predco_t       *sc,
  *
  * \param[in]      sc          pointer to a cs_cdofb_predco_t structure
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      bf_type     type of boundary for the boundary face
  * \param[in]      diff_pty    pointer to \ref cs_property_data_t for diffusion
@@ -375,12 +376,26 @@ _predco_apply_bc_partly(const cs_cdofb_predco_t       *sc,
 static void
 _predco_apply_remaining_bc(const cs_cdofb_predco_t       *sc,
                            const cs_equation_param_t     *eqp,
+                           const cs_equation_builder_t   *eqb,
                            const cs_cell_mesh_t          *cm,
                            const cs_boundary_type_t      *bf_type,
                            const cs_property_data_t      *diff_pty,
                            cs_cell_sys_t                 *csys,
                            cs_cell_builder_t             *cb)
 {
+  /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
+
+  if (cs_equation_param_has_internal_enforcement(eqp)) {
+
+    cs_equation_enforced_internal_dofs(eqb, cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 2
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
+                       csys);
+#endif
+  }
+
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     /* Update the divergence operator and the right-hand side related to the
@@ -1269,7 +1284,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
       /* 6- Remaining part of BOUNDARY CONDITIONS
        * ======================================== */
 
-      _predco_apply_remaining_bc(sc, mom_eqp, cm, nsb.bf_type,
+      _predco_apply_remaining_bc(sc, mom_eqp, mom_eqb, cm, nsb.bf_type,
                                  diff_hodge->pty_data, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 0

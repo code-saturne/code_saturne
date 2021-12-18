@@ -277,7 +277,14 @@ _setup_vcb(cs_real_t                     t_eval,
                                    vtx_bc_flag,
                                    dir_values);
 
+  /* Internal enforcement of DoFs */
+
   *p_dir_values = dir_values;
+  if (cs_equation_param_has_internal_enforcement(eqp))
+    eqb->enforced_values =
+      cs_enforcement_define_at_vertices(connect,
+                                        eqp->n_enforcements,
+                                        eqp->enforcement_params);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -592,6 +599,7 @@ _svcb_apply_weak_bc(const cs_equation_param_t     *eqp,
  *          static condensation.
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in, out] fm          pointer to a facewise view of the mesh
@@ -603,6 +611,7 @@ _svcb_apply_weak_bc(const cs_equation_param_t     *eqp,
 
 static void
 _svcb_enforce_values(const cs_equation_param_t     *eqp,
+                     const cs_equation_builder_t   *eqb,
                      const cs_cdovcb_scaleq_t      *eqc,
                      const cs_cell_mesh_t          *cm,
                      cs_face_mesh_t                *fm,
@@ -610,6 +619,19 @@ _svcb_enforce_values(const cs_equation_param_t     *eqp,
                      cs_cell_sys_t                 *csys,
                      cs_cell_builder_t             *cb)
 {
+  /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
+
+  if (cs_equation_param_has_internal_enforcement(eqp)) {
+
+    cs_equation_enforced_internal_dofs(eqb, cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
+                       csys);
+#endif
+  }
+
   /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
    * Operations that have to be performed AFTER the static condensation */
 
@@ -623,7 +645,7 @@ _svcb_enforce_values(const cs_equation_param_t     *eqp,
 
       eqc->enforce_dirichlet(eqp, cm, fm, diff_hodge, cb, csys);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 2
       if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump("\n>> Cell system after strong BC treatment", csys);
 #endif
@@ -1620,7 +1642,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
       /* Enforce values if needed (internal or Dirichlet) */
 
-      _svcb_enforce_values(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+      _svcb_enforce_values(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1641,6 +1663,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
   /* Free temporary buffers and structures */
 
   BFT_FREE(dir_values);
+  cs_equation_builder_reset(eqb);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
@@ -1862,7 +1885,7 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
 
       /* Enforce values if needed (internal or Dirichlet) */
 
-      _svcb_enforce_values(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+      _svcb_enforce_values(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1883,6 +1906,7 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
   /* Free temporary buffers and structures */
 
   BFT_FREE(dir_values);
+  cs_equation_builder_reset(eqb);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Copy current field values to previous values */
@@ -2179,15 +2203,15 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
         cs_cell_sys_dump(">> Cell system matrix after condensation", csys);
 #endif
 
+      /* Enforce values if needed (internal or Dirichlet) */
+
+      _svcb_enforce_values(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
+
       /* Compute a cellwise norm of the RHS for the normalization of the
          residual during the resolution of the linear system */
 
       rhs_norm += _svcb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
                                              cm, csys);
-
-      /* Enforce values if needed (internal or Dirichlet) */
-
-      _svcb_enforce_values(eqp, eqc, cm, fm, diff_hodge, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
@@ -2201,13 +2225,14 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
 
     } /* Main loop on cells */
 
-  } /* OPENMP Block */
+  } /* OpenMP Block */
 
   cs_matrix_assembler_values_done(mav); /* optional */
 
   /* Free temporary buffers and structures */
 
   BFT_FREE(dir_values);
+  cs_equation_builder_reset(eqb);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Copy current field values to previous values */
@@ -2596,7 +2621,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
 
       /* Enforce values if needed (internal or Dirichlet) */
 
-      _svcb_enforce_values(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+      _svcb_enforce_values(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
@@ -2610,13 +2635,14 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
 
     } /* Main loop on cells */
 
-  } /* OPENMP Block */
+  } /* OpenMP Block */
 
   cs_matrix_assembler_values_done(mav); /* optional */
 
   /* Free temporary buffers and structures */
 
   BFT_FREE(dir_values);
+  cs_equation_builder_reset(eqb);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Copy current field values to previous values */
