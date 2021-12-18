@@ -439,7 +439,7 @@ _build_shared_full_structures(bool    add_pressure_diag)
 
   if (add_pressure_diag) {
 
-    cs_gnum_t  *cell_g_ids = _shared_range_set->g_id + 3*n_faces;
+    const cs_gnum_t  *cell_g_ids = _shared_range_set->g_id + 3*n_faces;
 
     cs_matrix_assembler_add_g_ids(_shared_matrix_assembler,
                                   m->n_cells, cell_g_ids, cell_g_ids);

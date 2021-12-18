@@ -612,10 +612,8 @@ cs_preprocess_mesh_update_device(cs_alloc_mode_t  alloc_mode)
 {
   alloc_mode = CS_ALLOC_HOST_DEVICE_PINNED;
   cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_cells = m->n_b_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;

@@ -1264,6 +1264,8 @@ cs_boundary_conditions_compute(int     nvar,
                                int     icodcl[],
                                double  rcodcl[])
 {
+  CS_UNUSED(itypfb);
+
   /* Initialization */
 
   const cs_time_step_t *ts = cs_glob_time_step;
