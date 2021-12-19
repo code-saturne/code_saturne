@@ -199,7 +199,10 @@ struct _equation_builder_t {
    */
 
   cs_cdo_bc_face_t   *face_bc;  /*!< Information about boundary conditions
-                                   applied to faces */
+                                     applied to faces */
+
+  cs_real_t          *dir_values; /*!< Array storing the Dirichlet values at
+                                     DoFs */
 
   /*!
    * @}

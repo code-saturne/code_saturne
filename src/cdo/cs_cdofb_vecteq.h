@@ -66,6 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Algebraic system for CDO face-based discretization */
+
 typedef struct _cs_cdofb_t cs_cdofb_vecteq_t;
 
 /*============================================================================
@@ -204,7 +205,6 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      dir_values  Dirichlet values associated to each face
  * \param[in]      val_f_n     face DoFs at time step n
  * \param[in]      val_c_n     cell DoFs at time step n
  * \param[in]      val_f_nm1   face DoFs at time step n-1 or NULL
@@ -218,7 +218,6 @@ void
 cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
                                  const cs_equation_param_t    *eqp,
                                  const cs_equation_builder_t  *eqb,
-                                 const cs_real_t               dir_values[],
                                  const cs_real_t               val_f_n[],
                                  const cs_real_t               val_c_n[],
                                  const cs_real_t               val_f_nm1[],
@@ -236,7 +235,6 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
  * \param[in]      mesh            pointer to a cs_mesh_t structure
  * \param[in]      eqp             pointer to a cs_equation_param_t structure
  * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
- * \param[in, out] p_dir_values    pointer to the Dirichlet values to set
  */
 /*----------------------------------------------------------------------------*/
 
@@ -244,8 +242,7 @@ void
 cs_cdofb_vecteq_setup(cs_real_t                     t_eval,
                       const cs_mesh_t              *mesh,
                       const cs_equation_param_t    *eqp,
-                      cs_equation_builder_t        *eqb,
-                      cs_real_t                    *p_dir_values[]);
+                      cs_equation_builder_t        *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -328,6 +325,7 @@ cs_cdofb_vecteq_sourceterm(const cs_cell_mesh_t         *cm,
                            cs_cell_sys_t                *csys)
 {
   /* Reset the local contribution */
+
   memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
 
   cs_source_term_compute_cellwise(eqp->n_source_terms,
@@ -341,6 +339,7 @@ cs_cdofb_vecteq_sourceterm(const cs_cell_mesh_t         *cm,
                                   csys->source);
 
   /* Only cell-DoFs are involved */
+
   const short int _off = 3*cm->n_fc;
   csys->rhs[_off    ] += coef * csys->source[_off    ];
   csys->rhs[_off + 1] += coef * csys->source[_off + 1];

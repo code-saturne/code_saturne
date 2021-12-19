@@ -348,6 +348,7 @@ cs_equation_builder_init(const cs_equation_param_t   *eqp,
      for computation. We make the distinction between homogeneous and
      non-homogeneous BCs.  */
 
+  eqb->dir_values = NULL;
   eqb->face_bc = cs_cdo_bc_face_define(eqp->default_bc,
                                        true, /* Steady BC up to now */
                                        eqp->dim,
@@ -412,6 +413,7 @@ cs_equation_builder_reset(cs_equation_builder_t  *eqb)
     return;
 
   BFT_FREE(eqb->enforced_values);
+  BFT_FREE(eqb->dir_values);
 }
 
 /*----------------------------------------------------------------------------*/

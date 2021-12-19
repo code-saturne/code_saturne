@@ -1189,7 +1189,6 @@ _notay_full_assembly(const cs_cell_sys_t            *csys,
  * \param[in]      vel_c_pre    velocity cell DoFs of the previous time step
  * \param[in]      vel_f_nm1    NULL (for unsteady computations)
  * \param[in]      vel_c_nm1    NULL (for unsteady computations)
- * \param[in]      dir_values   array storing the Dirichlet values
  * \param[in, out] sc           pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/
@@ -1200,7 +1199,6 @@ _steady_build(const cs_navsto_param_t      *nsp,
               const cs_real_t               vel_c_pre[],
               const cs_real_t               vel_f_nm1[],
               const cs_real_t               vel_c_nm1[],
-              const cs_real_t              *dir_values,
               cs_cdofb_monolithic_t        *sc)
 {
   CS_UNUSED(vel_f_nm1);
@@ -1212,11 +1210,6 @@ _steady_build(const cs_navsto_param_t      *nsp,
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t  *ts = cs_shared_time_step;
 
-#if defined(DEBUG) && !defined(NDEBUG)
-  if (quant->n_b_faces > 0)
-    assert(dir_values != NULL);
-#endif
-
   /* Retrieve high-level structures */
 
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
@@ -1224,6 +1217,11 @@ _steady_build(const cs_navsto_param_t      *nsp,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t *mom_eqb = mom_eq->builder;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  if (quant->n_b_faces > 0)
+    assert(mom_eqb->dir_values != NULL);
+#endif
 
   /* Initialize the matrix and all its related structures needed during
    * the assembly step */
@@ -1291,11 +1289,11 @@ _steady_build(const cs_navsto_param_t      *nsp,
        *     |        |         |  schemes for vector-valued variables and
        *     |   B    |    0    |  additional terms as the linearized
        *     |        |         |  convective term
+       *
+       * Set the local (i.e. cellwise) structures for the current cell
        */
 
-      /* Set the local (i.e. cellwise) structures for the current cell */
-
-      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb, dir_values,
+      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
                                        vel_f_pre, vel_c_pre,
                                        NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
@@ -1404,7 +1402,6 @@ _steady_build(const cs_navsto_param_t      *nsp,
  * \param[in]      vel_c_n      velocity cell DoFs at time step n
  * \param[in]      vel_f_nm1    NULL (not needed for this time scheme)
  * \param[in]      vel_c_nm1    NULL (not needed for this time scheme)
- * \param[in]      dir_values   array storing the Dirichlet values
  * \param[in, out] sc           pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/
@@ -1415,7 +1412,6 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                       const cs_real_t           vel_c_n[],
                       const cs_real_t           vel_f_nm1[],
                       const cs_real_t           vel_c_nm1[],
-                      const cs_real_t          *dir_values,
                       cs_cdofb_monolithic_t    *sc)
 {
   CS_UNUSED(vel_f_nm1);
@@ -1437,7 +1433,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG)
   if (quant->n_b_faces > 0)
-    assert(dir_values != NULL);
+    assert(mom_eqb->dir_values != NULL);
 #endif
 
   /* Initialize the matrix and all its related structures needed during
@@ -1513,7 +1509,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb, dir_values,
+      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
                                        vel_f_n, vel_c_n,
                                        NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
@@ -1652,7 +1648,6 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
  * \param[in]      vel_c_n      velocity cell DoFs at time step n
  * \param[in]      vel_f_nm1    velocity face DoFs at time step n-1 or NULL
  * \param[in]      vel_c_nm1    velocity cell DoFs at time step n-1 or NULL
- * \param[in]      dir_values   array storing the Dirichlet values
  * \param[in, out] sc           pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/
@@ -1663,7 +1658,6 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
                     const cs_real_t           vel_c_n[],
                     const cs_real_t           vel_f_nm1[],
                     const cs_real_t           vel_c_nm1[],
-                    const cs_real_t          *dir_values,
                     cs_cdofb_monolithic_t    *sc)
 {
   CS_UNUSED(vel_f_nm1);
@@ -1671,11 +1665,11 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
   /* Retrieve high-level structures */
 
-  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_navsto_monolithic_t  *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
-  cs_equation_param_t *mom_eqp = mom_eq->param;
-  cs_equation_builder_t *mom_eqb = mom_eq->builder;
+  cs_equation_param_t  *mom_eqp = mom_eq->param;
+  cs_equation_builder_t  *mom_eqb = mom_eq->builder;
 
   /* Retrieve shared structures */
 
@@ -1685,7 +1679,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG)
   if (quant->n_b_faces > 0)
-    assert(dir_values != NULL);
+    assert(mom_eqb->dir_values != NULL);
 #endif
 
   /* Initialize the matrix and all its related structures needed during
@@ -1773,7 +1767,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb, dir_values,
+      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
                                        vel_f_n, vel_c_n,
                                        NULL, NULL, /* no n-1 state is given */
                                        csys, cb);
@@ -2513,9 +2507,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
 
   /* Build an array storing the Dirichlet values at faces */
 
-  cs_real_t  *dir_values = NULL;
-
-  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb);
 
   /* Initialize the rhs */
 
@@ -2526,11 +2518,10 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   sc->steady_build(nsp,
                    mom_eqc->face_values, sc->velocity->val,
                    NULL, NULL,  /* no value at time step n-1 */
-                   dir_values, sc);
+                   sc);
 
   /* Free temporary buffers and structures */
 
-  BFT_FREE(dir_values);
   cs_equation_builder_reset(mom_eqb);
 
   /* End of the system building */
@@ -2631,9 +2622,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   /* Build an array storing the Dirichlet values at faces */
 
-  cs_real_t  *dir_values = NULL;
-
-  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb);
 
   /* Initialize the rhs */
 
@@ -2644,7 +2633,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   sc->steady_build(nsp,
                    mom_eqc->face_values, sc->velocity->val,
                    NULL, NULL,  /* no value at time step n-1 */
-                   dir_values, sc);
+                   sc);
 
   /* End of the system building */
 
@@ -2720,7 +2709,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
                      /* A current to previous op. has been done */
                      mom_eqc->face_values_pre, sc->velocity->val_pre,
                      NULL, NULL,  /* no value at time step n-1 */
-                     dir_values, sc);
+                     sc);
 
     /* End of the system building */
 
@@ -2781,7 +2770,6 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   /* Frees */
 
-  BFT_FREE(dir_values);
   cs_equation_builder_reset(mom_eqb);
   cs_cdofb_monolithic_sles_clean(msles);
 
@@ -2829,9 +2817,7 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
 
   /* Build an array storing the Dirichlet values at faces */
 
-  cs_real_t  *dir_values = NULL;
-
-  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb);
 
   /* Initialize the rhs */
 
@@ -2842,11 +2828,10 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   sc->build(nsp,
             mom_eqc->face_values, sc->velocity->val,
             mom_eqc->face_values_pre, sc->velocity->val_pre,
-            dir_values, sc);
+            sc);
 
   /* Free temporary buffers and structures */
 
-  BFT_FREE(dir_values);
   cs_equation_builder_reset(mom_eqb);
 
   /* End of the system building */
@@ -2950,9 +2935,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Build an array storing the Dirichlet values at faces */
 
-  cs_real_t  *dir_values = NULL;
-
-  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb);
 
   /* Initialize the rhs */
 
@@ -2963,7 +2946,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   sc->build(nsp,
             mom_eqc->face_values, sc->velocity->val,
             mom_eqc->face_values_pre, sc->velocity->val_pre,
-            dir_values, sc);
+            sc);
 
   /* End of the system building */
 
@@ -3046,7 +3029,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
               /* A current to previous op. has been done */
               mom_eqc->face_values_pre, sc->velocity->val_pre,
               NULL, NULL, /* no n-1 state is given */
-              dir_values, sc);
+              sc);
 
     /* End of the system building */
 
@@ -3117,7 +3100,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   cs_cdofb_monolithic_sles_clean(msles);
   cs_equation_builder_reset(mom_eqb);
-  BFT_FREE(dir_values);
   if (mass_flux_array_k != NULL)
     BFT_FREE(mass_flux_array_k);
 

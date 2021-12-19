@@ -174,12 +174,11 @@ _vvb_create_cell_builder(const cs_cdo_connect_t   *connect)
  *         Define an indirection array for the enforcement of internal DoFs
  *         only if needed
  *
- * \param[in]      t_eval          time at which one evaluates BCs
- * \param[in]      mesh            pointer to a cs_mesh_t structure
- * \param[in]      eqp             pointer to a cs_equation_param_t structure
- * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
- * \param[in, out] vtx_bc_flag      pointer to an array of BC flag for each vtx
- * \param[in, out] p_dir_values    pointer to the Dirichlet values to set
+ * \param[in]      t_eval        time at which one evaluates BCs
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      eqp           pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb           pointer to a cs_equation_builder_t structure
+ * \param[in, out] vtx_bc_flag   pointer to an array of BC flag for each vertex
  */
 /*----------------------------------------------------------------------------*/
 
@@ -188,20 +187,15 @@ _vvb_setup(cs_real_t                      t_eval,
            const cs_mesh_t               *mesh,
            const cs_equation_param_t     *eqp,
            cs_equation_builder_t         *eqb,
-           cs_flag_t                      vtx_bc_flag[],
-           cs_real_t                     *p_dir_values[])
+           cs_flag_t                      vtx_bc_flag[])
 {
   assert(vtx_bc_flag != NULL);  /* Sanity check */
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
-  cs_real_t  *dir_values = NULL;
-
   /* Compute the values of the Dirichlet BC */
 
-  BFT_MALLOC(dir_values, 3*quant->n_vertices, cs_real_t);
-
-  /* Compute the values of the Dirichlet BC */
+  BFT_MALLOC(eqb->dir_values, 3*quant->n_vertices, cs_real_t);
 
   cs_equation_compute_dirichlet_vb(t_eval,
                                    mesh,
@@ -211,11 +205,9 @@ _vvb_setup(cs_real_t                      t_eval,
                                    eqb->face_bc,
                                    _vvb_cell_builder[0], /* static variable */
                                    vtx_bc_flag,
-                                   dir_values);
+                                   eqb->dir_values);
 
-  *p_dir_values = dir_values;
-
-  /* Internal enforcement of DoFs  */
+  /* Internal enforcement of DoFs */
 
   if (cs_equation_param_has_internal_enforcement(eqp))
     eqb->enforced_values =
@@ -232,7 +224,6 @@ _vvb_setup(cs_real_t                      t_eval,
  * \param[in]      cm           pointer to a cellwise view of the mesh
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
  * \param[in]      eqb          pointer to a cs_equation_builder_t structure
- * \param[in]      dir_values   Dirichlet values associated to each vertex
  * \param[in]      vtx_bc_flag  Flag related to BC associated to each vertex
  * \param[in]      field_tn     values of the field at the last computed time
  * \param[in, out] csys         pointer to a cellwise view of the system
@@ -244,7 +235,6 @@ static void
 _vvb_init_cell_system(const cs_cell_mesh_t           *cm,
                       const cs_equation_param_t      *eqp,
                       const cs_equation_builder_t    *eqb,
-                      const cs_real_t                 dir_values[],
                       const cs_flag_t                 vtx_bc_flag[],
                       const cs_real_t                 field_tn[],
                       cs_cell_sys_t                  *csys,
@@ -280,7 +270,7 @@ _vvb_init_cell_system(const cs_cell_mesh_t           *cm,
                                eqp,
                                eqb->face_bc,
                                vtx_bc_flag,
-                               dir_values,
+                               eqb->dir_values,
                                cb->t_bc_eval,
                                csys,
                                cb);
@@ -300,14 +290,16 @@ _vvb_init_cell_system(const cs_cell_mesh_t           *cm,
     assert(vtx_bc_flag != NULL);
 
     for (int v = 0; v < cm->n_vc; v++) {
+
       for (int k = 0; k < 3; k++)
         csys->dof_flag[3*v+k] = vtx_bc_flag[cm->v_ids[v]];
       if (cs_cdo_bc_is_dirichlet(vtx_bc_flag[cm->v_ids[v]])) {
         csys->has_dirichlet = true;
-        const cs_real_t  *bc_val = dir_values + 3*cm->v_ids[v];
+        const cs_real_t  *bc_val = eqb->dir_values + 3*cm->v_ids[v];
         for (int k = 0; k < 3; k++)
           csys->dir_values[3*v+k] = bc_val[k];
       }
+
     }
 
   }
@@ -1285,15 +1277,13 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
 
-  /* Build an array storing the Dirichlet values at vertices */
-
-  cs_real_t  *dir_values = NULL;
-
-  /* First argument is set to t_cur + dt_cur even if this is a steady
+  /* Build an array storing the Dirichlet values at vertices
+   * First argument is set to t_cur + dt_cur even if this is a steady
    * computation since one can call this function to compute a steady-state
-   * solution at each time step of an unsteady computation. */
+   * solution at each time step of an unsteady computation.
+   */
 
-  _vvb_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
+  _vvb_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag);
 
   /* Initialize the local system: matrix and rhs */
 
@@ -1368,8 +1358,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _vvb_init_cell_system(cm, eqp, eqb, dir_values, eqc->vtx_bc_flag,
-                            fld->val,
+      _vvb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, fld->val,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1443,7 +1432,6 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
   /* Free temporary buffers and structures */
 
-  BFT_FREE(dir_values);
   cs_equation_builder_reset(eqb);
   cs_matrix_assembler_values_finalize(&mav);
 

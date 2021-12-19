@@ -156,11 +156,10 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
  * \brief  Set the boundary conditions known from the settings and build the
  *         list of DoFs associated to an (internal) enforcement
  *
- * \param[in]      t_eval        time at which one evaluates BCs
- * \param[in]      mesh          pointer to a cs_mesh_t structure
- * \param[in]      eqp           pointer to a cs_equation_param_t structure
- * \param[in, out] eqb           pointer to a cs_equation_builder_t structure
- * \param[in, out] p_dir_values  pointer to the Dirichlet values to set
+ * \param[in]      t_eval    time at which one evaluates BCs
+ * \param[in]      mesh      pointer to a cs_mesh_t structure
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -168,26 +167,20 @@ static void
 _setup(cs_real_t                     t_eval,
        const cs_mesh_t              *mesh,
        const cs_equation_param_t    *eqp,
-       cs_equation_builder_t        *eqb,
-       cs_real_t                    *p_dir_values[])
+       cs_equation_builder_t        *eqb)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
-  cs_real_t  *dir_values = NULL;
-
   /* Compute the values of the Dirichlet BC */
 
-  BFT_MALLOC(dir_values, quant->n_b_faces, cs_real_t);
-  memset(dir_values, 0, quant->n_b_faces*sizeof(cs_real_t));
-
-  /* Compute the values of the Dirichlet BC */
+  BFT_MALLOC(eqb->dir_values, quant->n_b_faces, cs_real_t);
+  memset(eqb->dir_values, 0, quant->n_b_faces*sizeof(cs_real_t));
 
   cs_equation_compute_dirichlet_fb(mesh, quant, connect, eqp, eqb->face_bc,
                                    t_eval,
                                    cs_cdofb_cell_bld[0], /* static variable */
-                                   dir_values);
-  *p_dir_values = dir_values;
+                                   eqb->dir_values);
 
   /* Internal enforcement of DoFs  */
 
@@ -205,7 +198,6 @@ _setup(cs_real_t                     t_eval,
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      dir_values  Dirichlet values associated to each face
  * \param[in]      val_f_pre   face values used as the previous one
  * \param[in]      val_c_pre   cell values used as the previous one
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -217,7 +209,6 @@ static void
 _sfb_init_cell_system(const cs_cell_mesh_t         *cm,
                       const cs_equation_param_t    *eqp,
                       const cs_equation_builder_t  *eqb,
-                      const cs_real_t               dir_values[],
                       const cs_real_t               val_f_pre[],
                       const cs_real_t               val_c_pre[],
                       cs_cell_sys_t                *csys,
@@ -247,10 +238,11 @@ _sfb_init_cell_system(const cs_cell_mesh_t         *cm,
      has at least one border face */
 
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+
     cs_equation_fb_set_cell_bc(cm,
                                eqp,
                                eqb->face_bc,
-                               dir_values,
+                               eqb->dir_values,
                                csys,
                                cb);
 
@@ -1279,15 +1271,12 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  /* Build an array storing the Dirichlet values at faces */
-
-  cs_real_t  *dir_values = NULL;
-
-  /* First argument is set to t_cur even if this is a steady computation since
+  /* Build an array storing the Dirichlet values at faces.
+   * First argument is set to t_cur even if this is a steady computation since
    * one can call this function to compute a steady-state solution at each time
    * step of an unsteady computation. */
 
-  _setup(time_eval, mesh, eqp, eqb, &dir_values);
+  _setup(time_eval, mesh, eqp, eqb);
 
   /* Initialize the local system: matrix and rhs */
 
@@ -1358,8 +1347,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _sfb_init_cell_system(cm, eqp, eqb, dir_values,
-                            val_f_pre, val_c_pre,
+      _sfb_init_cell_system(cm, eqp, eqb, val_f_pre, val_c_pre,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1456,7 +1444,6 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   /* Free temporary buffers and structures */
 
-  BFT_FREE(dir_values);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
@@ -1530,15 +1517,12 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
 
-  /* Build an array storing the Dirichlet values at faces */
-
-  cs_real_t  *dir_values = NULL;
-
-  /* First argument is set to t_cur even if this is a steady computation since
+  /* Build an array storing the Dirichlet values at faces
+   * First argument is set to t_cur even if this is a steady computation since
    * one can call this function to compute a steady-state solution at each time
    * step of an unsteady computation. */
 
-  _setup(time_eval, mesh, eqp, eqb, &dir_values);
+  _setup(time_eval, mesh, eqp, eqb);
 
   /* Initialize the local system: matrix and rhs */
 
@@ -1610,8 +1594,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _sfb_init_cell_system(cm, eqp, eqb, dir_values,
-                            val_f_pre, val_c_pre,
+      _sfb_init_cell_system(cm, eqp, eqb, val_f_pre, val_c_pre,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction terms to the local
@@ -1695,7 +1678,6 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
 
   /* Free temporary buffers and structures */
 
-  BFT_FREE(dir_values);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
@@ -1781,9 +1763,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   /* Build an array storing the Dirichlet values at faces
    * Always evaluated at t_cur + dt */
 
-  cs_real_t  *dir_values = NULL;
-
-  _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb, &dir_values);
+  _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb);
 
   /* Initialize the local system: matrix and rhs */
 
@@ -1863,8 +1843,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _sfb_init_cell_system(cm, eqp, eqb, dir_values,
-                            val_f_pre, val_c_pre,
+      _sfb_init_cell_system(cm, eqp, eqb, val_f_pre, val_c_pre,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction terms to the local
@@ -1996,7 +1975,6 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
 
   /* Free temporary buffers and structures */
 
-  BFT_FREE(dir_values);
   cs_equation_builder_reset(eqb);
   cs_matrix_assembler_values_finalize(&mav);
 
@@ -2092,14 +2070,12 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
     compute_initial_source = true;
 
-  /* Build an array storing the Dirichlet values at faces */
+  /* Build an array storing the Dirichlet values at faces
+   * Should not be t_eval since one sets the Dirichlet values
+   * Dirichlet boundary conditions are always evaluated at t_cur + dt
+   */
 
-  cs_real_t  *dir_values = NULL;
-
-  /* Should not be t_eval since one sets the Dirichlet values
-   * Dirichlet boundary conditions are always evaluated at t_cur + dt */
-
-  _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb, &dir_values);
+  _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb);
 
   /* Initialize the local system: matrix and rhs */
 
@@ -2182,8 +2158,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _sfb_init_cell_system(cm, eqp, eqb, dir_values,
-                            val_f_pre, val_c_pre,
+      _sfb_init_cell_system(cm, eqp, eqb, val_f_pre, val_c_pre,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction terms to the local
@@ -2358,7 +2333,6 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
   /* Free temporary buffers and structures */
 
-  BFT_FREE(dir_values);
   cs_equation_builder_reset(eqb);
   cs_matrix_assembler_values_finalize(&mav);
 
