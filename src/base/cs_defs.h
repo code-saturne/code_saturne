@@ -111,7 +111,7 @@ extern "C" {
 
 #if defined(HAVE_CUDA)
 #define HAVE_ACCEL 1
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 #define HAVE_ACCEL 1
 #endif
 

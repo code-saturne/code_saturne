@@ -831,6 +831,24 @@ cs_get_allocation_hd_size(void  *host_ptr)
 
 #endif
 
+#if defined(HAVE_OPENMP_TARGET)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set OpenMP Offload device based on MPI rank and number of devices.
+ *
+ * \param[in]  comm            associated MPI communicator
+ * \param[in]  ranks_per_node  number of ranks per node (min and max)
+ *
+ * \return  selected device id, or -1 if no usable device is available
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_omp_target_select_default_device(void);
+
+#endif /* defined(HAVE_OPENMP_TARGET) */
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

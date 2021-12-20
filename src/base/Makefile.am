@@ -245,8 +245,6 @@ cs_base_cuda.cu \
 cs_halo_cuda.cu
 endif
 
-###
-
 libcsbase_la_SOURCES = \
 addfld.f90 \
 altycl.f90 \

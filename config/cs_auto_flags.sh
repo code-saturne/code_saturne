@@ -26,14 +26,15 @@
 # environment variables corresponding to the recommended settings for a
 # given OS/CPU/compiler combination:
 #
-# cppflags_default       # Base CPPFLAGS                     (default: "")
+# cppflags_default       # Base CPPFLAGS                       (default: "")
 
-# cflags_default         # Base CFLAGS                       (default: "")
-# cflags_default_dbg     # Added to $CFLAGS for debugging    (default: "-g")
-# cflags_default_opt     # Added to $CFLAGS for optimization (default: "-O")
-# cflags_default_hot     # Optimization for specific files   (default: "-O")
-# cflags_default_prf     # Added to $CFLAGS for profiling    (default: "-g")
-# cflags_default_omp     # Added to $CFLAGS for OpenMP       (default: "")
+# cflags_default         # Base CFLAGS                         (default: "")
+# cflags_default_dbg     # Added to $CFLAGS for debugging      (default: "-g")
+# cflags_default_opt     # Added to $CFLAGS for optimization   (default: "-O")
+# cflags_default_hot     # Optimization for specific files     (default: "-O")
+# cflags_default_prf     # Added to $CFLAGS for profiling      (default: "-g")
+# cflags_default_omp     # Added to $CFLAGS for OpenMP         (default: "")
+# cflags_default_omp_ad  # Added to $CFLAGS for OpenMP offload (default: "")
 
 # cxxflags_default       # Base CXXFLAGS                       (default: "")
 # cxxflags_default_dbg   # Added to $CXXFLAGS for debugging    (default: "-g")
@@ -41,6 +42,7 @@
 # cxxflags_default_hot   # Optimization for specific files     (default: "-O")
 # cxxflags_default_prf   # Added to $CXXFLAGS for profiling    (default: "-g")
 # cxxflags_default_omp   # Added to $CXXFLAGS for OpenMP       (default: "")
+# cxxflags_default_omp_ad  # Added to $CXXFLAGS for OpenMP offload (default: "")
 # cxxflags_default_std   # C++ standard variant                (default: "")
 
 # fcflags_default        # Base FCFLAGS                       (default: "")
@@ -153,7 +155,7 @@ if test "x$GCC" = "xyes"; then
   elif test -n "`echo $cs_ac_cc_version | grep ICX`" ; then
     cs_gcc=icx
   elif test -n "`echo $cs_ac_cc_version | grep -e DPC++ -e oneAPI`" ; then
-    cs_gcc=oneapi
+    cs_gcc=oneAPI
   elif test -n "`echo $cs_ac_cc_version | grep clang`" ; then
     cs_gcc=clang
   elif test -n "`echo $cs_ac_cc_version | grep Cray`" ; then
@@ -289,7 +291,7 @@ elif test "x$cs_gcc" = "xicc" ; then
       ;;
   esac
 
-# Otherwise, are we using ICC NextGen ?
+# Otherwise, are we using ICC NextGen ?  This is a deprecated beta version.
 #--------------------------------------
 
 elif test "x$cs_gcc" = "xicx" ; then
@@ -316,32 +318,33 @@ elif test "x$cs_gcc" = "xicx" ; then
   cflags_default_hot="-O3"
   cflags_default_omp="-qopenmp"
 
-# Otherwise, are we using DPC (OneAPI) ?
-#----------------------------------------
+# Otherwise, are we using Intel LLVM DPC++/C++ Compiler ?
+#--------------------------------------------------------
 
-elif test "x$cs_gcc" = "xoneapi" ; then
+elif test "x$cs_gcc" = "xoneAPI" ; then
 
-  cs_cc_version=`echo $cs_ac_cc_version | grep ICX |sed 's/[a-zA-Z()]//g'`
-  echo "compiler '$CC' is Intel oneAPI DPC++"
+  cs_cc_version=`echo $cs_ac_cc_version | grep -e DPC++ -e oneAPI |sed 's/[a-zA-Z()+/]//g'`
+  echo "compiler '$CC' is oneAPI DPC++/C++ Compiler"
 
   # Version strings for logging purposes and known compiler flag
   $CC $user_CFLAGS -V conftest.c > $outfile 2>&1
   cs_cc_compiler_known=yes
 
   # Some version numbers
-  cs_cc_vers_major=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f1 -d.`
-  cs_cc_vers_minor=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f2 -d.`
-  cs_cc_vers_patch=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f3 -d.`
+  cs_cc_vers_major=`echo $cs_ac_cc_version | cut -f 5 -d" " | cut -f1 -d.`
+  cs_cc_vers_minor=`echo $cs_ac_cc_version | cut -f 5 -d" " | cut -f2 -d.`
+  cs_cc_vers_patch=`echo $cs_ac_cc_version | cut -f 5 -d" " | cut -f3 -d.`
   test -n "$cs_cc_vers_major" || cs_cc_vers_major=0
   test -n "$cs_cc_vers_minor" || cs_cc_vers_minor=0
   test -n "$cs_cc_vers_patch" || cs_cc_vers_patch=0
 
   # Default compiler flags
-  cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -Wno-unused-command-line-argument"
   cflags_default_dbg="-g -O0"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
   cflags_default_omp="-fiopenmp"
+  cflags_default_omp_ad="-fopenmp-targets=spir64"
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -580,7 +583,7 @@ if test "x$GXX" = "xyes"; then
   elif test -n "`echo $cs_ac_cxx_version | grep ICX`" ; then
     cs_gxx=icpx
   elif test -n "`echo $cs_ac_cxx_version | grep -e DPC++ -e oneAPI`" ; then
-    cs_gxx=oneapi
+    cs_gxx=oneAPI
   elif test -n "`echo $cs_ac_cxx_version | grep clang`" ; then
     cs_gxx=clang
   elif test -n "`echo $cs_ac_cxx_version | grep Cray`" ; then
@@ -684,13 +687,13 @@ if test "x$cs_gxx" = "xg++"; then
       ;;
   esac
 
-# Otherwise, are we using ICC Classic ?
-#--------------------------------------
+# Otherwise, are we using ICPC Classic ?
+#---------------------------------------
 
 elif test "x$cs_gxx" = "xicpc"; then
 
   cs_cxx_version=`echo $cs_ac_cxx_version | grep ICC |sed 's/[a-zA-Z()]//g'`
-  echo "compiler '$CXX' is Intel ICC Classic"
+  echo "compiler '$CXX' is Intel ICPC Classic"
 
   # Version strings for logging purposes and known compiler flag
   $CXX $user_CXXFLAGS -V conftest.c > $outfile 2>&1
@@ -717,7 +720,7 @@ elif test "x$cs_gxx" = "xicpc"; then
       ;;
   esac
 
-# Otherwise, are we using ICC NextGen ?
+# Otherwise, are we using ICC NextGen ?  This is a deprecated beta version.
 #--------------------------------------
 
 elif test "x$cs_gxx" = "xicpx"; then
@@ -744,33 +747,33 @@ elif test "x$cs_gxx" = "xicpx"; then
   cxxflags_default_omp="-qopenmp"
   cxxflags_default_std="-funsigned-char"
 
-# Otherwise, are we using DPCXX (OneAPI) ?
-#--------------------------------------
+# Otherwise, are we using Intel LLVM DPC++/C++ Compiler ?
+#--------------------------------------------------------
 
-elif test "x$cs_gxx" = "xoneapi"; then
+elif test "x$cs_gxx" = "xoneAPI"; then
 
-  cs_cxx_version=`echo $cs_ac_cxx_version | grep ICX |sed 's/[a-zA-Z()]//g'`
-  echo "compiler '$CXX' is Intel oneAPI DPC++"
+  cs_cxx_version=`echo $cs_ac_cxx_version | grep -e DPC++ -e oneAPI |sed 's/[a-zA-Z()+/]//g'`
+  echo "compiler '$CXX' is oneAPI DPC++/C++ Compiler"
 
   # Version strings for logging purposes and known compiler flag
   $CXX $user_CXXFLAGS -V conftest.c > $outfile 2>&1
   cs_cxx_compiler_known=yes
 
-  cs_cxx_vers_major=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f1 -d.`
-  cs_cxx_vers_minor=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f2 -d.`
-  cs_cxx_vers_patch=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f3 -d.`
+  cs_cxx_vers_major=`echo $cs_ac_cxx_version | cut -f 5 -d" " | cut -f1 -d.`
+  cs_cxx_vers_minor=`echo $cs_ac_cxx_version | cut -f 5 -d" " | cut -f2 -d.`
+  cs_cxx_vers_patch=`echo $cs_ac_cxx_version | cut -f 5 -d" " | cut -f3 -d.`
   test -n "$cs_cxx_vers_major" || cs_cxx_vers_major=0
   test -n "$cs_cxx_vers_minor" || cs_cxx_vers_minor=0
   test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
 
   # Default compiler flags
-  cxxflags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default="-Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -Wno-unused-command-line-argument"
   cxxflags_default_dbg="-g -O0"
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-fiopenmp"
+  cxxflags_default_omp_ad="-fopenmp-targets=spir64"
   cxxflags_default_std="-funsigned-char"
-
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -1084,15 +1087,15 @@ fi
 
 if test "x$cs_fc_compiler_known" != "xyes" ; then
 
-  # Are we using IFORT NextGen ?
-  #-----------------------------
+  # Are we using Intel LLVM FORTRAN Compiler ?
+  #-------------------------------------------
 
   echo $cs_ac_fc_version | grep 'ifx' > /dev/null
   if test "$?" = "0" ; then
 
-    cs_fc_version=`echo $cs_ac_fc_version | sed 's/[a-zA-Z()]//g'`
+    cs_fc_version=`echo $cs_ac_fc_version | sed 's/[a-zA-Z()+/]//g'`
 
-    echo "compiler '$FC' is Intel Fortran NextGen"
+    echo "compiler '$FC' is Intel oneAPI Fortran"
 
     # Version strings for logging purposes and known compiler flag
     $FC $user_FCLAGS -V > $outfile 2>&1
@@ -1101,6 +1104,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     cs_fc_vers_major=`echo $cs_ac_fc_version | cut -f 3 -d" " | cut -f1 -d.`
     cs_fc_vers_minor=`echo $cs_ac_fc_version | cut -f 3 -d" " | cut -f2 -d.`
     cs_fc_vers_patch=`echo $cs_ac_fc_version | cut -f 3 -d" " | cut -f3 -d.`
+
     test -n "$cs_fc_vers_major" || cs_fc_vers_major=0
     test -n "$cs_fc_vers_minor" || cs_fc_vers_minor=0
     test -n "$cs_fc_vers_patch" || cs_fc_vers_patch=0
@@ -1111,7 +1115,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_dbg="-g -O0 -traceback -check all -check nopointer -fpe0 -ftrapuv"
     fcflags_default_opt="-O2"
     fcflags_default_hot="-O3"
-    fcflags_default_omp="-qopenmp"
+    fcflags_default_omp="-fiopenmp"
 
   fi
 fi

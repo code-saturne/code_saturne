@@ -89,6 +89,11 @@ static bool _initialized = false;
 
 cs_alloc_mode_t  cs_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
 
+/* Keep track of active device id using OpenMP; usually queried dynamically,
+   but saving the value in this variable can be useful when debugging */
+
+int  cs_glob_omp_target_device_id = -1;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -144,6 +149,134 @@ _initialize(void)
     cs_alloc_mode = CS_ALLOC_HOST;
 }
 
+#if defined(HAVE_OPENMP_TARGET)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate n bytes of OpenMP device memory.
+ *
+ * A safety check is added.
+ *
+ * \param [in]  n          element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void *
+_omp_target_mem_malloc_device(size_t        n,
+                              const char   *var_name,
+                              const char   *file_name,
+                              int           line_num)
+{
+  void *ptr = omp_target_alloc_device(n, cs_glob_omp_target_device_id);
+
+  if (ptr == NULL)
+    bft_error(file_name, line_num, 0,
+              "[OpenMP offload error]: unable to allocate %llu bytes on device\n"
+              "  running: %s",
+              (unsigned long long)n, __func__);
+
+  return ptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate n bytes of host memory using OpenMP Offload.
+ *
+ * No OpenMP standard way to mimick cudaMallocHost today aka Host pinned memory
+ * allocation + GPU driver acceleration (DMA/zero copy).
+ *
+ * Closest is Intel proprietary omp_target_alloc_host (accepted in OMP 6.0) or
+ * new omp allocator (pinned) + explicit data transfer
+ * Note: omp_target_alloc_host supports implicit data transfert.
+ *
+ * A safety check is added.
+ *
+ * \param [in]  n          element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void *
+_omp_target_mem_malloc_host(size_t        n,
+                            const char   *var_name,
+                            const char   *file_name,
+                            int           line_num)
+{
+  void *ptr = NULL;
+
+#if defined(__INTEL_LLVM_COMPILER)
+  ptr = omp_target_alloc_host(n, cs_glob_omp_target_device_id);
+#else
+  assert(0 && "Not implemented yet");
+#endif
+
+  if (ptr == NULL)
+    bft_error(file_name, line_num, 0,
+              "[OpenMP offload error]: unable to allocate %llu bytes on host\n"
+              "  running: %s",
+              (unsigned long long)n, __func__);
+
+  return ptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate n bytes of OpenMP Offload managed memory.
+ *
+ * Standards define pragma unified_shared_memory to drive
+ * omp_target_alloc to allocate USM
+ *
+ * Intel proprietary omp_target_alloc_shared (accepted in OMP 6.0) is
+ * another convenient way to do so.
+ *
+ * A safety check is added.
+ *
+ * \param [in]  n          element size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void *
+_omp_target_mem_malloc_managed(size_t        n,
+                               const char   *var_name,
+                               const char   *file_name,
+                               int           line_num)
+{
+#if defined(__INTEL_LLVM_COMPILER)
+
+  void *ptr = omp_target_alloc_shared(n, cs_glob_omp_target_device_id);
+
+#else
+
+#pragma omp requires unified_shared_memory
+  void *ptr = omp_target_alloc(n, cs_glob_omp_target_device_id);
+
+#endif
+
+  if (ptr == NULL)
+    bft_error(file_name, line_num, 0,
+              "[OpenMP offload error]: unable to allocate %llu bytes\n"
+              "  running: %s",
+              (unsigned long long)n, __func__);
+
+  return ptr;
+}
+
+#endif /* defined(HAVE_OPENMP_TARGET) */
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 BEGIN_C_DECLS
@@ -168,6 +301,10 @@ cs_get_device_id(void)
 #if defined(HAVE_CUDA)
 
   retval = cs_base_cuda_get_device();
+
+#elif defined (HAVE_OPENMP_TARGET)
+
+  retval = omp_get_default_device();
 
 #endif
 
@@ -220,6 +357,10 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
   if (mode < CS_ALLOC_HOST_DEVICE_PINNED)
     me.host_ptr = bft_mem_malloc(ni, size, var_name, file_name, line_num);
 
+  // Device allocation will be postponed later thru call to
+  // cs_get_device_ptr. This applies for CS_ALLOC_HOST_DEVICE
+  // and CS_ALLOC_HOST_DEVICE_PINNED modes
+
 #if defined(HAVE_CUDA)
 
   else if (mode == CS_ALLOC_HOST_DEVICE_PINNED)
@@ -242,9 +383,27 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
                                               file_name,
                                               line_num);
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for managed allocation
+  else if (mode == CS_ALLOC_HOST_DEVICE_PINNED)
+    me.host_ptr = _omp_target_mem_malloc_host(me.size,
+                                              var_name,
+                                              file_name,
+                                              line_num);
+
+  else if (mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+    me.host_ptr = _omp_target_mem_malloc_managed(me.size,
+                                                 var_name,
+                                                 file_name,
+                                                 line_num);
+    me.device_ptr = me.host_ptr;
+  }
+
+  else if (mode == CS_ALLOC_DEVICE)
+    me.device_ptr = _omp_target_mem_malloc_device(me.size,
+                                                  var_name,
+                                                  file_name,
+                                                  line_num);
 
 #endif
 
@@ -398,12 +557,15 @@ cs_free_hd(void        *ptr,
 
     me.host_ptr = NULL;
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for shared allocation
+    omp_target_free(me.host_ptr, cs_glob_omp_target_device_id);
+    if (me.mode == CS_ALLOC_HOST_DEVICE_SHARED)
+      me.device_ptr = NULL;
+
+    me.host_ptr = NULL;
 
 #endif
-
 
   }
 
@@ -414,9 +576,10 @@ cs_free_hd(void        *ptr,
     cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
     me.device_ptr = NULL;
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-    // TODO add OneApi wrapper for shared allocation
+    omp_target_free(me.device_ptr, cs_glob_omp_target_device_id);
+    me.device_ptr = NULL;
 
 #endif
 
@@ -497,13 +660,24 @@ cs_get_device_ptr(void  *ptr)
                                                 "me.device_ptr",
                                                 __FILE__,
                                                 __LINE__);
-      _hd_alloc_map[ptr] = me;
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for shared allocation
+      me.device_ptr = _omp_target_mem_malloc_device(me.size,
+                                                    "me.device_ptr",
+                                                    __FILE__,
+                                                    __LINE__);
+
+      if (omp_target_associate_ptr(me.host_ptr, me.device_ptr, me.size, 0,
+                                   cs_glob_omp_target_device_id))
+        bft_error(__FILE__, __LINE__, 0,
+                  _("%s: Can't associate host pointer %p to device pointer %p."),
+                  "omp_target_associate_ptr", me.host_ptr, me.device_ptr);
 
 #endif
+
+      _hd_alloc_map[ptr] = me;
+
     }
   }
 
@@ -551,16 +725,20 @@ cs_get_device_ptr_const(const void  *ptr)
                                                 "me.device_ptr",
                                                 __FILE__,
                                                 __LINE__);
-      _hd_alloc_map[ptr] = me;
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for shared allocation
+      me.device_ptr = _omp_target_mem_malloc_device(me.size,
+                                                    "me.device_ptr",
+                                                    __FILE__,
+                                                    __LINE__);
 
 #endif
-    }
 
-    cs_sync_h2d(ptr);
+      _hd_alloc_map[ptr] = me;
+      cs_sync_h2d(ptr);
+
+    }
   }
 
   return me.device_ptr;
@@ -608,16 +786,20 @@ cs_get_device_ptr_const_pf(const void  *ptr)
                                                 "me.device_ptr",
                                                 __FILE__,
                                                 __LINE__);
-      _hd_alloc_map[ptr] = me;
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for shared allocation
+      me.device_ptr = _omp_target_mem_malloc_device(me.size,
+                                                    "me.device_ptr",
+                                                    __FILE__,
+                                                    __LINE__);
 
 #endif
-    }
 
-    cs_sync_h2d(ptr);
+      _hd_alloc_map[ptr] = me;
+      cs_sync_h2d(ptr);
+
+    }
   }
 
   /* Prefetch if shared */
@@ -711,9 +893,10 @@ cs_dissassociate_device_ptr(void  *host_ptr)
     if (me.mode == CS_ALLOC_HOST_DEVICE)
       cs_cuda_mem_free(me.device_ptr, "me.device_ptr", __FILE__, __LINE__);
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for shared allocation
+    if (me.mode == CS_ALLOC_HOST_DEVICE)
+      omp_target_free(me.device_ptr, cs_glob_omp_target_device_id);
 
 #endif
 
@@ -841,9 +1024,39 @@ cs_sync_h2d(const void  *ptr)
     break;
   }
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for shared allocation
+  switch (me.mode) {
+
+  case CS_ALLOC_HOST:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: %p allocated on host only."),
+              __func__, ptr);
+    break;
+  case CS_ALLOC_HOST_DEVICE:
+    omp_target_memcpy(me.device_ptr, me.host_ptr, me.size, 0, 0,
+                      cs_glob_omp_target_device_id, omp_get_initial_device());
+    break;
+  case CS_ALLOC_HOST_DEVICE_PINNED:
+    {
+    char *host_ptr = (char *)me.device_ptr;
+    #pragma omp target enter data map(to:host_ptr[:me.size]) \
+      nowait device(cs_glob_omp_target_device_id)
+    }
+    break;
+  case CS_ALLOC_HOST_DEVICE_SHARED:
+    {
+      char *host_ptr = (char *)me.host_ptr;
+      #pragma omp target enter data map(to:host_ptr[:me.size]) \
+        nowait device(cs_glob_omp_target_device_id)
+    }
+    break;
+  case CS_ALLOC_DEVICE:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: %p allocated on device only."),
+              __func__, ptr);
+    break;
+  }
 
 #endif
 }
@@ -893,9 +1106,23 @@ cs_sync_h2d_future(const void  *ptr)
     break;
   }
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for shared allocation
+  switch (me.mode) {
+  case CS_ALLOC_HOST_DEVICE:
+    omp_target_memcpy(me.device_ptr, me.host_ptr, me.size, 0, 0,
+                      cs_glob_omp_target_device_id, omp_get_initial_device());
+    break;
+  case CS_ALLOC_HOST_DEVICE_PINNED:
+    {
+      char *host_ptr = (char *)me.device_ptr;
+      #pragma omp target enter data map(to:host_ptr[:me.size]) \
+        nowait device(cs_glob_omp_target_device_id)
+    }
+    break;
+  default:
+    break;
+  }
 
 #endif
 }
@@ -951,9 +1178,39 @@ cs_sync_d2h(void  *ptr)
     break;
   }
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for shared allocation
+  switch (me.mode) {
+  case CS_ALLOC_HOST:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: %p allocated on host only."),
+              __func__, ptr);
+    break;
+  case CS_ALLOC_HOST_DEVICE:
+    omp_target_memcpy(me.host_ptr, me.device_ptr, me.size, 0, 0,
+                      omp_get_initial_device(), cs_glob_omp_target_device_id);
+
+    break;
+  case CS_ALLOC_HOST_DEVICE_PINNED:
+    {
+      char *host_ptr = (char *)me.host_ptr;
+      #pragma omp target exit data map(from:host_ptr[:me.size]) \
+        nowait device(cs_glob_omp_target_device_id)
+    }
+    break;
+  case CS_ALLOC_HOST_DEVICE_SHARED:
+    {
+      char *host_ptr = (char *)me.host_ptr;
+      #pragma omp target exit data map(from:host_ptr[:me.size]) \
+        nowait device(cs_glob_omp_target_device_id)
+    }
+    break;
+  case CS_ALLOC_DEVICE:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: %p allocated on device only."),
+              __func__, ptr);
+    break;
+  }
 
 #endif
 }
@@ -979,9 +1236,11 @@ cs_prefetch_h2d(void    *ptr,
 
   cs_cuda_prefetch_h2d(ptr, size);
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for shared allocation
+  char *host_ptr = (char *)ptr;
+  #pragma omp target enter data map(to:host_ptr[:size]) \
+    nowait device(cs_glob_omp_target_device_id)
 
 #endif
 }
@@ -1007,9 +1266,11 @@ cs_prefetch_d2h(void    *ptr,
 
   cs_cuda_prefetch_d2h(ptr, size);
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for shared allocation
+  char *host_ptr = (char *)ptr;
+  #pragma omp target exit data map(from:host_ptr[:size]) \
+    nowait device(cs_glob_omp_target_device_id)
 
 #endif
 }
@@ -1036,9 +1297,10 @@ cs_copy_h2d(void        *dest,
 
   cs_cuda_copy_h2d(dest, src, size);
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for copy
+  omp_target_memcpy(dest, src, size, 0, 0,
+                    cs_glob_omp_target_device_id, omp_get_initial_device());
 
 #endif
 }
@@ -1065,9 +1327,10 @@ cs_copy_d2h(void        *dest,
 
   cs_cuda_copy_d2h(dest, src, size);
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for copy
+  omp_target_memcpy(dest, src, size, 0, 0,
+                    omp_get_initial_device(), cs_glob_omp_target_device_id);
 
 #endif
 }
@@ -1094,9 +1357,10 @@ cs_copy_d2d(void        *dest,
 
   cs_cuda_copy_d2d(dest, src, size);
 
-#elif defined(HAVE_ONEAPI)
+#elif defined(HAVE_OPENMP_TARGET)
 
-  // TODO add OneApi wrapper for copy
+  omp_target_memcpy(dest, src, size, 0, 0,
+                    cs_glob_omp_target_device_id, cs_glob_omp_target_device_id);
 
 #endif
 }
@@ -1134,6 +1398,43 @@ cs_get_allocation_hd_size(void  *host_ptr)
   _cs_base_accel_mem_map  me = _hd_alloc_map[host_ptr];
   return me.size;
 }
+
+#if defined(HAVE_OPENMP_TARGET)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set OpenMP Offload device based on MPI rank and number of devices.
+ *
+ * \param[in]  comm            associated MPI communicator
+ * \param[in]  ranks_per_node  number of ranks per node (min and max)
+ *
+ * \return  selected device id, or -1 if no usable device is available
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_omp_target_select_default_device(void)
+{
+  int device_id = omp_get_initial_device();
+
+  int n_devices = omp_get_num_devices();
+
+  if (cs_glob_rank_id > -1 && n_devices > 1) {
+
+    device_id = cs_glob_node_rank_id*n_devices / cs_glob_node_n_ranks;
+
+    assert(device_id > -1 && device_id < n_devices);
+
+  }
+
+  omp_set_default_device(device_id);
+
+  cs_glob_omp_target_device_id = device_id;
+
+  return device_id;
+}
+
+#endif /* defined(HAVE_OPENMP_TARGET) */
 
 /*----------------------------------------------------------------------------*/
 

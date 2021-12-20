@@ -459,6 +459,7 @@ AC_FC_LIBRARY_LDFLAGS
 # compiler install paths, such as may happen with gcc's libgomp.
 
 cs_have_openmp=no
+cs_have_openmp_target=no
 cs_have_openmp_f=no
 
 AC_ARG_ENABLE(openmp,
@@ -472,6 +473,23 @@ AC_ARG_ENABLE(openmp,
   ],
   [ cs_have_openmp=yes ]
 )
+
+AC_ARG_ENABLE(openmp_target,
+  [AS_HELP_STRING([--enable-openmp-target], [enable OpenMP accelerator support])],
+  [
+    case "${enableval}" in
+      yes) cs_have_openmp_target=yes
+           cs_have_openmp=yes ;;
+      no)  cs_have_openmp_target=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-openmp-target]) ;;
+    esac
+  ],
+  [ cs_have_openmp=yes ]
+)
+
+if test "x$cs_have_openmp_target" = "xyes" ; then
+  cs_have_openmp=yes
+fi
 
 if test "x$cs_have_openmp" = "xyes" ; then
 
@@ -509,6 +527,9 @@ if test "x$cs_have_openmp" = "xyes" ; then
     if test "x$cs_have_openmp_f" = "xno" ; then
       FCFLAGS="$saved_FCFLAGS"
     fi
+    if test "x$cs_have_openmp_target" = "xyes" ; then
+      AC_DEFINE([HAVE_OPENMP_TARGET], 1, [openmp accelerator support])
+    fi
   else
     cs_have_openmp=no
     CFLAGS="$saved_CFLAGS"
@@ -517,7 +538,9 @@ if test "x$cs_have_openmp" = "xyes" ; then
     LDFLAGS="$saved_LDFLAGS"
   fi
 fi
+
 AC_SUBST(cs_have_openmp)
+AC_SUBST(cs_have_openmp_target)
 
 # Now that compiler options are determined (relative notably to OpenMP),
 # update Fortran libraries necessary to link.
@@ -551,9 +574,18 @@ if test "x$auto_flags" = "xyes" ; then
     AC_SUBST(NVCCFLAGS_OPT)
     AC_SUBST(NVCCCFLAGS_HOT)
   fi
+
+  if test "$cs_have_openmp_target" = "yes"; then
+    cs_have_accel=yes
+    CFLAGS="${CFLAGS} ${cflags_default_omp_ad}"
+    CXXFLAGS="${CXXFLAGS} ${cxxflags_default_omp_ad}"
+    FCFLAGS="${FCFLAGS} ${fcflags_default_omp_ad}"
+    LDFLAGS="${LDFLAGS} ${cflags_default_omp_ad}"
+  fi
 fi
 
 AM_CONDITIONAL([HAVE_ACCEL], [test "$cs_have_accel" = "yes"])
+AM_CONDITIONAL([HAVE_OPENMP_TARGET], [test "$cs_have_openmp_target" = "yes"])
 
 #------------------------------------------------------------------------------
 # Checks for Python support.
@@ -1224,6 +1256,7 @@ if (test x$cs_have_mpi = xyes) ; then
 fi
 echo " OpenMP support: "$cs_have_openmp""
 if test x$cs_have_openmp = xyes ; then
+  echo " OpenMP accelerator support: "$cs_have_openmp_target""
   echo " OpenMP Fortran support: "$cs_have_openmp_f""
 fi
 echo " CUDA support: "$cs_have_cuda""
