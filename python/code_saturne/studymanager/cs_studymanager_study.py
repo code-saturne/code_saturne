@@ -202,9 +202,7 @@ class Case(object):
         self.resu = 'RESU'
 
         # Title of the case is based on study, label and run_id
-        self.title = study + "/" + self.label
-        if self.run_id:
-            self.title += "/RESU/" + self.run_id
+        self.title = study + "/" + self.label + "/RESU/" + self.run_id
 
         # Check for coupling
         # TODO: use run.cfg info, so as to allow another coupling parameters
@@ -237,52 +235,83 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def create(self):
+    def prepare_run_folder(self):
         """
-        Create a case
+        Prepare a run folder in destination directory (STUDY/CASE_NAME/RESU/RUN)
         """
         log_lines = []
         e = os.path.join(self.pkg.get_dir('bindir'), self.exe)
+        home = os.getcwd()
+        os.chdir(self.__dest)
         if self.subdomains:
-            os.mkdir(self.label)
+            if not os.path.isdir(self.label):
+                os.mkdir(self.label)
             os.chdir(self.label)
             refdir = os.path.join(self.__repo, self.label)
             retval = 1
             resu_coupling = None
             for node in os.listdir(refdir):
                 ref = os.path.join(self.__repo, self.label, node)
+
+                # only loop on code_saturne subdomains
                 if node in self.subdomains:
-                    cmd = e + " create --case " + node \
-                          + " --quiet --noref --copy-from " \
-                          + ref
+
+                    # generate folder in dest/STUDY/CASE/RESU_COUPLING/
+                    cmd = e + " run --stage --case " + refdir \
+                            + " --dest " + self.__dest \
+                            + " --id " + self.run_id
+
+                    if self.notebook:
+                        cmd += " --notebook-args " + self.notebook
+
+                    if self.parametric:
+                        cmd += " --parametric-args " + '"' + self.parametric + '"'
+
+                    if self.kw_args:
+                        if self.kw_args.find(" ") < 0:
+                            self.kw_args += " "  # workaround for arg-parser issue
+                        cmd += " --kw-args " + '"' + self.kw_args + '"'
+
                     node_retval, t = run_studymanager_command(cmd, self.__log)
                     # negative retcode is kept
                     retval = min(node_retval,retval)
-                elif os.path.isdir(ref):
-                    shutil.copytree(ref, node, symlinks=True)
-                else:
-                    shutil.copy2(ref, node)
-                    if node == 'run.cfg':
-                        temp_run_conf = cs_run_conf.run_conf('run.cfg', package=self.pkg)
-                        if temp_run_conf.get('setup', 'coupled_domains'):
-                            resu_coupling = 'RESU_COUPLING'
 
-            if resu_coupling and not os.path.isdir(resu_coupling):
-                os.mkdir(resu_coupling)
+                elif not os.path.isdir(ref):
+                    shutil.copy2(ref, node)
 
             create_local_launcher(self.pkg, self.__dest)
             os.chdir(self.__dest)
         else:
-            cmd = e + " create --case " + self.label  \
-                  + " --quiet --noref --copy-from "    \
-                  + os.path.join(self.__repo, self.label)
+            refdir = os.path.join(self.__repo, self.label)
+
+            cmd = e + " run --stage --case " + refdir \
+                    + " --dest " + self.__dest \
+                    + " --id " + self.run_id
+
+            if self.notebook:
+                cmd += " --notebook-args " + self.notebook
+ 
+            if self.parametric:
+                cmd += " --parametric-args " + '"' + self.parametric + '"'
+ 
+            if self.kw_args:
+                if self.kw_args.find(" ") < 0:
+                    self.kw_args += " "  # workaround for arg-parser issue
+                cmd += " --kw-args " + '"' + self.kw_args + '"'
+
             retval, t = run_studymanager_command(cmd, self.__log)
+
         if retval == 0:
-            log_lines += ['      * create case: ' + self.label]
+            log_lines += ['      * prepare run folder: ' + self.title]
 
         else:
-            log_lines += ['      * create case: %s --> FAILED' % self.label]
+            log_lines += ['      * prepare run folder: %s --> FAILED'
+                          % self.title]
+            self.compute = "off"
+            self.post = "off"
+            self.compare = "off" 
 
+        os.chdir(home)
         return log_lines
 
     #---------------------------------------------------------------------------
@@ -393,42 +422,6 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def __suggest_run_id(self):
-
-        cmd = enquote_arg(self.exe) + " run --suggest-id"
-        p = subprocess.Popen(cmd,
-                             shell=True,
-                             executable=get_shell_type(),
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE,
-                             universal_newlines=True)
-        i = p.communicate()[0]
-        run_id = " ".join(i.split())
-
-        return run_id, os.path.join(self.__dest, self.label, self.resu, run_id)
-
-    #---------------------------------------------------------------------------
-
-    def overwriteDirectories(self, dirs_to_overwrite):
-        """
-        Overwrite given directories in the Study tree.
-        Label of case is an empty string by default.
-        """
-
-        for _dir in dirs_to_overwrite:
-            ref = os.path.join(self.__repo, self.label, _dir)
-            if os.path.isdir(ref):
-                dest = os.path.join(self.__dest, self.label, _dir)
-                if os.path.isdir(ref):
-                    shutil.rmtree(dest)
-
-                try:
-                    shutil.copytree(ref, dest)
-                except:
-                    print("      Error when overwriting folder %s" %dest)
-
-    #---------------------------------------------------------------------------
-
     def run(self, resource_name=None):
         """
         Check if a run with same result subdirectory name exists
@@ -437,49 +430,30 @@ class Case(object):
         home = os.getcwd()
         os.chdir(os.path.join(self.__dest, self.label))
 
-        if self.run_id:
-            run_id = self.run_id
-            run_dir = os.path.join(self.__dest, self.label, self.resu, run_id)
+        e = os.path.join(self.pkg.get_dir('bindir'), self.exe)
 
-            if os.path.isdir(run_dir):
-                if os.path.isfile(os.path.join(run_dir, "error")):
-                    self.is_run = "KO"
-                    error = 1
-                else:
-                    self.is_run = "OK"
-                    error = 0
-                os.chdir(home)
+        self.run_dir = os.path.join(self.__dest, self.label, self.resu,
+                                    self.run_id)
+        refdir = os.path.join(self.__repo, self.label)
 
-                return error
-
-        else:
-            run_id, run_dir = self.__suggest_run_id()
-
-            while os.path.isdir(run_dir):
-                run_id, run_dir = self.__suggest_run_id()
-
-        self.run_id  = run_id
-        self.run_dir = run_dir
-
-        run_cmd = enquote_arg(self.exe) + " run --id=" + enquote_arg(self.run_id)
-
-        if self.notebook:
-            run_cmd += ' --notebook-args ' + self.notebook
-
-        if self.parametric:
-            run_cmd += ' --parametric-args ' + '"' + self.parametric + '"'
+        # After the stage within run_id folder in destination
+        # do initialize, execute and finalize steps
+        run_cmd = e + " run --no-stage" \
+                + " --case " + refdir \
+                + " --dest " + self.__dest \
+                + " --id " + self.run_id
 
         if self.kw_args:
             if self.kw_args.find(" ") < 0:
                 self.kw_args += " "  # workaround for arg-parser issue
-            run_cmd += ' --kw-args ' + '"' + self.kw_args + '"'
+            run_cmd += " --kw-args " + '"' + self.kw_args + '"'
 
         n_procs = self.__data['n_procs']
         if n_procs:
             run_cmd += " -n " + n_procs
 
         if resource_name:
-            run_cmd += " --with-resource=" + resource_name
+            run_cmd += " --with-resource " + resource_name
 
         error, self.is_time = run_studymanager_command(run_cmd, self.__log)
 
@@ -643,7 +617,7 @@ class Case(object):
             # if no run_id is specified in the xml file
             # only one result directory allowed in RESU
             if len(list(filter(nodot, os.listdir(result)))) > 1 \
-               and self.run_id == "":
+               and self.run_id == "run1":
                 msg += "there are several result directories in %s " \
                        "and no run id specified." % (result)
                 return None, msg
@@ -651,7 +625,7 @@ class Case(object):
             rep = self.run_id
             # if no run_id is specified in the xml file
             # the only result directory present in RESU is taken
-            if rep == "":
+            if rep == "run1":
                 rep = list(filter(nodot, os.listdir(result)))[0]
 
             rep_f = os.path.join(result, rep)
@@ -885,10 +859,34 @@ class Studies(object):
             studyp = cwd
 
         smgr = None
-        self.__pkg = pkg
-        self.__create_xml = options.create_xml
-        self.__update_smgr = options.update_smgr
-        self.__update_setup = options.update_setup
+        self.__log = None
+        self.__log_compile = None
+
+        # Store options
+
+        self.__pkg            = pkg
+        self.__create_xml     = options.create_xml
+        self.__update_smgr    = options.update_smgr
+        self.__update_setup   = options.update_setup
+        self.__force_rm       = options.remove_existing
+        self.__disable_ow     = options.disable_overwrite
+        self.__debug          = options.debug
+        self.__n_procs        = options.n_procs
+        self.__filter_level   = options.filter_level
+        self.__filter_n_procs = options.filter_n_procs
+        # Use the provided resource name if forced
+        self.__resource_name  = options.resource_name
+        self.__quiet          = options.quiet
+        self.__running        = options.runcase
+        self.__n_iter         = options.n_iterations
+        self.__compare        = options.compare
+        self.__ref            = options.reference
+        self.__postpro        = options.post
+        self.__default_fmt    = options.default_fmt
+        # do not use tex in matplotlib (built-in mathtext is used instead)
+        self.__dis_tex        = options.disable_tex
+        # tex reports compilation with pdflatex
+        self.__pdflatex       = not options.disable_pdflatex
 
         # Create file of parameters
 
@@ -902,7 +900,10 @@ class Studies(object):
             smgr = create_base_xml_file(filepath, self.__pkg)
 
             init_xml_file_with_study(smgr, studyp)
-            print(" New smgr.xml file was created")
+            print(" ")
+            print(" New smgr.xml file was created succesfully")
+            print(" ")
+            return
 
         elif self.__create_xml and not is_study:
             msg =   "Can not create XML file of parameter:\n" \
@@ -935,7 +936,10 @@ class Studies(object):
             smgr_xml_init(smgr).initialize(reinit_indices = False)
             if self.__update_smgr:
                 smgr.xmlSaveDocument(prettyString=False)
-                print(" Smgr file was updated")
+                print(" ")
+                print(" SMGR parameter file was updated succesfully")
+                print(" Note that update is not necessary before the run step")
+                print(" ")
 
         # set repository
         if len(options.repo_path) > 0:
@@ -960,56 +964,66 @@ class Studies(object):
                 sys.exit(msg)
 
         # set destination
-        if self.__update_smgr or self.__update_setup or self.__create_xml:
-            self.__dest = self.__repo
-        else:
-            if len(options.dest_path) > 0:
-                self.__parser.setDestination(options.dest_path)
-            self.__dest = self.__parser.getDestination()
-            if not self.__dest: # default value
-                # if current directory is a study
-                # set destination as a directory "../RUN_(study_name)
-                if is_study and studyd != None:
-                    self.__parser.setDestination(os.path.join(studyp,
-                                                              "../RUN_"+studyd))
-                    self.__dest = self.__parser.getDestination()
-                else:
-                  msg =   "Can not set a default destination directory:\n" \
-                        + "current directory is apparently not a study (no MESH directory).\n" \
-                        + "Add a destination path to the parameter file or use the command " \
-                        + "line option (--dest=..).\n"
-                  sys.exit(msg)
+        self.__dest = None
+        if len(options.dest_path) > 0:
+            self.__parser.setDestination(options.dest_path)
+        self.__dest = self.__parser.getDestination()
+        if not self.__dest: # default value
+            # if current directory is a study
+            # set destination as a directory "../RUN_(study_name)
+            if is_study and studyd != None:
+                self.__parser.setDestination(os.path.join(studyp,
+                                                          "../RUN_"+studyd))
+                self.__dest = self.__parser.getDestination()
+            else:
+                msg = "Can not set a default destination directory:\n" \
+                    + "current directory is apparently not a study (no MESH directory).\n" \
+                    + "Add a destination path to the parameter file or use the command " \
+                    + "line option (--dest=..).\n"
+                sys.exit(msg)
 
-        if self.__dest != self.__repo:
+        if options.runcase or options.compare or options.post:
 
-          # create if necessary the destination directory
+            # create if necessary the destination directory
+  
+            if not os.path.isdir(self.__dest):
+                os.makedirs(self.__dest)
+  
+            # copy the smgr file in destination for update and restart
+  
+            file = os.path.join(self.__dest, os.path.basename(filename))
+            try:
+                shutil.copyfile(filename, file)
+            except:
+                pass
 
-          if not os.path.isdir(self.__dest):
-              os.makedirs(self.__dest)
+            # create definitive parser for smgr file in destination
+  
+            self.__parser  = Parser(file)
+            self.__parser.setDestination(self.__dest)
+            self.__parser.setRepository(self.__repo)
+            if options.debug:
+                print(" Studies >> Repository  >> ", self.__repo)
+                print(" Studies >> Destination >> ", self.__dest)
 
-          # copy the smgr file for update and restart
+            # create log file in destination
 
-          file = os.path.join(self.__dest, os.path.basename(filename))
-          try:
-              shutil.copyfile(filename, file)
-          except:
-              pass
+            doc = os.path.join(self.__dest, options.log_file)
+            self.__log = open(doc, "w")
 
-          # create definitive parser for smgr file in destination
+            # create report file
 
-          self.__parser  = Parser(file)
-          self.__parser.setDestination(self.__dest)
-          self.__parser.setRepository(self.__repo)
-          if options.debug:
-              print(" Studies >> Repository  >> ", self.__repo)
-              print(" Studies >> Destination >> ", self.__dest)
+            self.report = os.path.join(self.__dest, "report.txt")
+            self.reportFile = open(self.report, mode='w')
+            self.reportFile.write('\n')
 
-        # create plotter
+            # create plotter
 
-        try:
-            self.__plotter = Plotter(self.__parser)
-        except Exception:
-            self.__plotter = None
+            if options.post: 
+                try:
+                    self.__plotter = Plotter(self.__parser)
+                except Exception:
+                    self.__plotter = None
 
         # create list of restricting and excluding tags
 
@@ -1022,22 +1036,9 @@ class Studies(object):
             without_tags = re.split(',', options.without_tags)
             self.__without_tags = [tag.strip() for tag in without_tags]
 
-        # store options
-        self.__force_rm       = options.remove_existing
-        self.__disable_ow     = options.disable_overwrite
-        self.__debug          = options.debug
-        self.__n_procs        = options.n_procs
-        self.__filter_level   = options.filter_level
-        self.__filter_n_procs = options.filter_n_procs
-
-        # Use the provided resource name if forced
-
-        self.__resource_name = options.resource_name
-
+        
         # build the list of the studies
 
-        doc = os.path.join(self.__dest, options.log_file)
-        self.__log = open(doc, "w")
         self.labels  = self.__parser.getStudiesLabel()
         self.studies = []
         for l in self.labels:
@@ -1049,28 +1050,6 @@ class Studies(object):
             if options.debug:
                 print(" >> Append study ", l)
 
-        # attributes
-
-        self.__debug       = options.debug
-        self.__quiet       = options.quiet
-        self.__running     = options.runcase
-        self.__n_iter      = options.n_iterations
-        self.__compare     = options.compare
-        self.__ref         = options.reference
-        self.__postpro     = options.post
-        self.__default_fmt = options.default_fmt
-        # do not use tex in matplotlib (built-in mathtext is used instead)
-        self.__dis_tex     = options.disable_tex
-        # tex reports compilation with pdflatex
-        self.__pdflatex    = not options.disable_pdflatex
-
-        # start the report
-
-        if options.runcase or options.compare or options.post:
-            self.report = os.path.join(self.__dest, "report.txt")
-            self.reportFile = open(self.report, mode='w')
-            self.reportFile.write('\n')
-
         # in case of restart
 
         iok = 0
@@ -1080,9 +1059,6 @@ class Studies(object):
                    iok+=1
         if not iok:
             self.__running = False
-
-        if self.__update_smgr or self.__update_setup or self.__create_xml:
-            os.remove(doc)
 
         # Handle relative paths:
         if self.__ref:
@@ -1167,12 +1143,19 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def create_studies(self):
+    def create_studies(self, run_step):
         """
         Create all studies and all cases.
         """
 
-        self.reporting("  o Create all studies and cases")
+        self.reporting("  o Create all studies and run folders")
+        if self.__force_rm:
+            self.reporting("    /!\ All earlier run folders are erased (option"
+                           " --rm activated)")
+        else:
+            self.reporting("    /!\ All earlier run folders will not be erased."
+                           " Use --rm option to do so.")
+
         study_list = []
         case_list = []
 
@@ -1184,11 +1167,26 @@ class Studies(object):
                 self.create_study(study)
                 study_list.append(study)
 
-            # second step: create case if necessary
-            case_name = case.study + "/" + case.label
-            if case_name not in case_list:
-                log_lines = self.create_case(case)
-                case_list.append(case_name)
+            # only run step requires to create cases
+            if run_step:
+                # second step: clean RESU folder if necessary
+                case_name = case.study + "/" + case.label
+                if case_name not in case_list and self.__force_rm:
+                    case_list.append(case_name)
+                    # Build short path to RESU dir. such as 'CASE1/RESU'
+                    _dest_resu_dir = os.path.join(self.__dest, case.study,
+                                                  case.label, 'RESU')
+                    if os.path.isdir(_dest_resu_dir):
+                        if os.listdir(_dest_resu_dir):
+                            shutil.rmtree(_dest_resu_dir)
+                            os.makedirs(_dest_resu_dir)
+                            self.reporting("  All earlier results in case %s/RESU "
+                                           "are removed (option --rm activated)"
+                                           %case.label)
+
+                # thrid step: prepare run folder
+                log_lines = case.prepare_run_folder()
+
                 for line in log_lines:
                     self.reporting(line)
 
@@ -1202,6 +1200,7 @@ class Studies(object):
         repo_study = os.path.join(self.__repo, study)
 
         new_study = False
+        home = os.getcwd()
         os.chdir(self.__dest)
         # Create study if necessary
         if not os.path.isdir(dest_study):
@@ -1225,42 +1224,8 @@ class Studies(object):
         if new_study or not self.__disable_ow:
 
             if not new_study:
-                self.reporting("  Warning: MESH, POST, DATA and SRC folder are"
-                               " overwritten in %s use option --dow to disable"
-                               " overwrite" %study)
-
-            # Link meshes and copy other files
-            ref = os.path.join(repo_study, "MESH")
-            if os.path.isdir(ref):
-                l = os.listdir(ref)
-                meshes = []
-                for cpr in ["", ".gz"]:
-                    for fmt in ["unv",
-                                "med",
-                                "ccm",
-                                "cgns",
-                                "neu",
-                                "msh",
-                                "des"]:
-                        meshes += fnmatch.filter(l, "*." + fmt + cpr)
-                des = os.path.join(dest_study, "MESH")
-
-                if os.path.isdir(des):
-                    shutil.rmtree(des)
-                os.mkdir(des)
-
-                for m in l:
-                    if m in meshes:
-                        if sys.platform.startswith('win'):
-                            shutil.copy2(os.path.join(ref, m), os.path.join(des, m))
-                        else:
-                            os.symlink(os.path.join(ref, m), os.path.join(des, m))
-                    elif m != ".svn":
-                        t = os.path.join(ref, m)
-                        if os.path.isdir(t):
-                            shutil.copytree(t, os.path.join(des, m))
-                        elif os.path.isfile(t):
-                            shutil.copy2(t, des)
+                self.reporting("  Warning: POST folder is overwritten in %s"
+                               " use option --dow to disable overwrite" %study)
 
             # Copy external scripts for post-processing
             ref = os.path.join(repo_study, "POST")
@@ -1268,53 +1233,7 @@ class Studies(object):
                 des = os.path.join(dest_study, "POST")
                 shutil.rmtree(des)
                 shutil.copytree(ref, des, symlinks=True)
-
-    #---------------------------------------------------------------------------
-
-    def create_case(self, case):
-
-        # Change directory to destination directory
-        dest_study = os.path.join(self.__dest, case.study)
-        os.chdir(dest_study)
-
-        log_lines = []
-        if not os.path.isdir(case.label):
-            log_lines = case.create()
-        else:
-            if self.__force_rm:
-                # Build short path to RESU dir. such as 'CASE1/RESU'
-                _dest_resu_dir = os.path.join(case.label, 'RESU')
-                if os.path.isdir(_dest_resu_dir):
-                    if os.listdir(_dest_resu_dir):
-                        shutil.rmtree(_dest_resu_dir)
-                        os.makedirs(_dest_resu_dir)
-                        self.reporting("  All earlier results in case %s/RESU "
-                                       "are removed (option --rm activated)"
-                                       %case.label)
-            else:
-               if case.run_id:
-                   _dest_resu_dir = os.path.join(case.label, 'RESU', case.run_id)
-                   if os.path.isdir(_dest_resu_dir):
-                       self.reporting("  Warning: earlier runs in %s won't be "
-                                      "overwritten. Use option --rm to overwrite"
-                                      " them." %(case.study + "/" + case.label +
-                                      "/RESU"))
-
-            # overwrite content of DATA and SRC if not disabled
-            if not self.__disable_ow:
-                dirs_to_overwrite = ["DATA", "SRC"]
-                case.overwriteDirectories(dirs_to_overwrite)
-                # update path in gui/run script
-                data_subdir = os.path.join(case.label, "DATA")
-
-            _script_dir = os.path.join(self.__repo, case.study, case.label,
-                                       'SCRIPTS')
-            if os.path.isdir(_script_dir):
-                self.reporting("  Warning: SCRIPTS folder exist in %s. "
-                               "Please update the case with code_saturne update."
-                               %(case.study + "/" + case.label))
-
-        return log_lines
+        os.chdir(home)
 
     #---------------------------------------------------------------------------
 
@@ -1371,27 +1290,42 @@ class Studies(object):
         """
         Compile sources of all runs with compute attribute at on.
         """
+
+        # create compilation log file in repository
+        log_comp_name = os.path.join(self.__repo, "smgr_compilation.log")
+        log_comp_file = open(log_comp_name, "w")
+
         iko = 0
-        for case in self.graph.graph_dict:
-            # build case dir. (in repo.)
-            study_path = os.path.join(self.__repo, case.study)
+        for l, s in self.studies:
+            self.reporting('  o Compile study: ' + l + ' (in repository)',
+                           report=False)
+            for case in s.cases:
 
-            if case.compute == 'on':
+                # build case dir. (in repo.)
+                study_path = os.path.join(self.__repo, case.study)
 
-                # test compilation (logs are redirected to smgr log file)
-                is_compiled = case.test_compilation(study_path, self.__log)
+                if case.compute == 'on':
 
-                # report
-                if is_compiled == "OK":
-                    self.reporting('    - compile %s --> OK' % case.title)
-                elif is_compiled == "KO":
-                    self.reporting('    - compile %s --> FAILED' % case.title)
-                    iko+=1
+                    # test compilation
+                    is_compiled = case.test_compilation(study_path,
+                                                        log_comp_file)
 
-        self.reporting('')
+                    # report
+                    if is_compiled == "OK":
+                        self.reporting('    - compile %s --> OK' %case.title,
+                                       report=False)
+                    elif is_compiled == "KO":
+                        self.reporting('    - compile %s --> FAILED' %case.title,
+                                       report=False)
+                        iko+=1
+
+        self.reporting('',report=False)
+
+        log_comp_file.close()
 
         if iko:
-            self.reporting('Error: compilation failed for %s case(s).\n' % iko)
+            self.reporting('Error: compilation failed for %s case(s).\n' % iko,
+                           report=False)
             sys.exit(1)
 
     #---------------------------------------------------------------------------
@@ -1476,6 +1410,8 @@ class Studies(object):
         the run of the case is also repeated.
         """
 
+        home = os.getcwd()
+
         self.reporting("  o Run all cases")
 
         for case in self.graph.graph_dict:
@@ -1485,12 +1421,16 @@ class Studies(object):
 
                     if self.__n_iter is not None:
                         if case.subdomains:
-                            case_dir = os.path.join(self.__dest, case.study, case.label,
-                                                        case.subdomains[0], "DATA")
+                            run_dir = os.path.join(self.__dest, case.study,
+                                                   case.label, "RESU_COUPLING",
+                                                   case.run_id,
+                                                   case.subdomains[0])
                         else:
-                            case_dir = os.path.join(self.__dest, case.study, case.label, "DATA")
-                        os.chdir(case_dir)
-                        # Create a control_file in each case DATA
+                            run_dir = os.path.join(self.__dest, case.study,
+                                                   case.label, "RESU",
+                                                   case.run_id)
+                        os.chdir(run_dir)
+                        # Create a control_file in run folder
                         if not os.path.exists('control_file'):
                             control_file = open('control_file','w')
                             control_file.write("time_step_limit " + str(self.__n_iter) + "\n")
@@ -1509,10 +1449,6 @@ class Studies(object):
                         is_time = "existed already"
 
                     if not error:
-                        if not case.run_id:
-                            self.reporting("    - run %s --> Warning suffix"
-                                           " is not read" % case.title)
-
                         self.reporting('    - run %s --> OK (%s)' \
                                        % (case.title, is_time))
                         self.__parser.setAttribute(case.node,
@@ -1534,6 +1470,8 @@ class Studies(object):
                                        % (case.title, is_time))
 
                     self.__log.flush()
+
+        os.chdir(home)
 
         self.reporting('')
 
@@ -1620,39 +1558,42 @@ class Studies(object):
 
     def compare(self):
         """
-        Compare the results of the new computations with those from the Repository.
+        Compare the results of the new computations with those from the
+        Repository.
         """
         if self.__compare:
             for case in self.graph.graph_dict:
-                self.reporting('  o Compare case: ' + case.title)
-                # reference directory passed in studymanager command line overwrites
-                # destination in all cases (even if compare is defined by a
-                # compare markup with a non empty destination)
-                ref = None
-                if self.__ref:
-                    ref = os.path.join(self.__ref, case.study)
-                if case.compare == 'on' and case.is_run != "KO":
-                    is_compare, nodes, repo, dest, t, args = self.__parser.getCompare(case.node)
-                    if is_compare:
-                        for i in range(len(nodes)):
-                            if is_compare[i]:
-                                self.compare_case_and_report(case,
-                                                             repo[i],
-                                                             dest[i],
-                                                             t[i],
-                                                             args[i],
-                                                             reference=ref)
-                    if not is_compare or case.is_compare != "done":
-                        repo = ""
-                        dest = ""
-                        t    = None
-                        args = None
-                        self.compare_case_and_report(case,
-                                                     repo,
-                                                     dest,
-                                                     t,
-                                                     args,
-                                                     reference=ref)
+                if not case.disabled:
+                    self.reporting('  o Compare case: ' + case.title)
+                    # reference directory passed in studymanager command line
+                    # overwrites destination in all cases (even if compare is
+                    # defined by a compare markup with a non empty destination)
+                    ref = None
+                    if self.__ref:
+                        ref = os.path.join(self.__ref, case.study)
+                    if case.compare == 'on' and case.is_run != "KO":
+                        is_compare, nodes, repo, dest, t, args = \
+                                             self.__parser.getCompare(case.node)
+                        if is_compare:
+                            for i in range(len(nodes)):
+                                if is_compare[i]:
+                                    self.compare_case_and_report(case,
+                                                                 repo[i],
+                                                                 dest[i],
+                                                                 t[i],
+                                                                 args[i],
+                                                                 reference=ref)
+                        if not is_compare or case.is_compare != "done":
+                            repo = ""
+                            dest = ""
+                            t    = None
+                            args = None
+                            self.compare_case_and_report(case,
+                                                         repo,
+                                                         dest,
+                                                         t,
+                                                         args,
+                                                         reference=ref)
 
         self.reporting('')
 
@@ -1754,15 +1695,8 @@ class Studies(object):
             # that were not run by the current studymanager command
             for case in s.cases:
                 if case.is_run != "KO":
-                    if case.run_dir == "":
-                        resu = os.path.join(self.__dest, l, case.label, case.resu)
-                        rep, msg = case.check_dir(None, resu, "", "dest")
-                        if msg:
-                            self.reporting(msg)
-                            case.disable()
-                        else:
-                            case.run_id = rep
-                            case.run_dir = os.path.join(resu, rep)
+                    case.run_dir = os.path.join(self.__dest, l, case.label,
+                                                "RESU", case.run_id)
 
             script, label, nodes, args = self.__parser.getPostPro(l)
             if not label:
@@ -1998,12 +1932,9 @@ class Studies(object):
 
                 for case in s.cases:
                     if case.is_compare == "done":
-                        run_id = None
-                        if case.run_id != "":
-                            run_id = case.run_id
                         doc2.appendLine("\\subsection{Comparison for case "
                                         "%s (run_id: %s)}"
-                                        % (case.label, run_id))
+                                        % (case.label, case.run_id))
                         if not case.m_size_eq:
                             doc2.appendLine("Repository and destination "
                                             "have apparently not been run "

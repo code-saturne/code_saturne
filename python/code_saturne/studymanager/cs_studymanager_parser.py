@@ -322,26 +322,37 @@ class Parser(object):
         @return: keywords and value.
         """
         data = []
+        list_case = {}
 
         setup_filter_keys = ("notebook", "parametric", "kw_args")
 
         for node in self.getStudyNode(l).getElementsByTagName("case"):
             if str(node.attributes["status"].value) == 'on':
+ 
                 d = {}
                 d['node']    = node
                 d['label']   = str(node.attributes["label"].value)
                 d['compute'] = str(node.attributes["compute"].value)
                 d['post']    = str(node.attributes["post"].value)
 
+                # dictionary used to set missing run_id
+                if d['label'] in list(list_case.keys()):
+                    list_case[d['label']] += 1
+                else:
+                    list_case[d['label']] = 1
+
+                try:
+                    if node.attributes["run_id"].value:
+                        d['run_id'] = str(node.attributes["run_id"].value)
+                    else:
+                        d['run_id'] = "run" + str(list_case[d['label']])
+                except:
+                    d['run_id'] = "run" + str(list_case[d['label']])
+
                 try:
                     d['compare'] = str(node.attributes["compare"].value)
                 except:
                     d['compare'] = "on"
-
-                try:
-                    d['run_id'] = str(node.attributes["run_id"].value)
-                except:
-                    d['run_id'] = ""
 
                 try:
                     d['n_procs'] = str(node.attributes["n_procs"].value)

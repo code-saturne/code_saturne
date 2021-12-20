@@ -298,12 +298,10 @@ def run_studymanager(pkg, options):
     # Read the file of parameters
 
     studies = Studies(pkg, options, exe, dif)
+    if options.create_xml:
+        return 0
     if options.debug:
         print(" run_studymanager() >> Studies are initialized")
-    if options.update_smgr or options.update_setup:
-        os.chdir(studies.getRepository())
-    else:
-        os.chdir(studies.getDestination())
 
     # Print header
     report_in_file = False
@@ -334,21 +332,26 @@ def run_studymanager(pkg, options):
     studies.reporting(" Ext. subprocesses logs: " + doc, report=report_in_file)
     studies.reporting("\n", report=report_in_file)
 
+    # Update and test-compilation steps are done in repository
+    os.chdir(studies.getRepository())
 
     # Update setup files in all cases in repository directory
 
     if options.update_setup:
         studies.updateSetup()
 
-    # Create dependency graph based on all studies and cases
-
-    if options.compare or options.post or options.runcase:
-        studies.dump_graph()
-
-    # Test sources compilation for all cases
+    # Test sources compilation for all cases in repository directory
 
     if options.test_compilation:
         studies.test_compilation()
+
+    if options.compare or options.post or options.runcase:
+
+        # Create dependency graph based on all studies and cases
+        studies.dump_graph()
+
+        # Move to destination destination
+        os.chdir(studies.getDestination())
 
     # Check if xml for result directories in the repository are OK
 
@@ -361,8 +364,8 @@ def run_studymanager(pkg, options):
 
     # Create all studies and all cases
 
-    if options.compare or options.post or options.runcase:
-        studies.create_studies()
+    if options.runcase or options.post:
+        studies.create_studies(options.runcase)
 
     # Preprocessing and run all cases
     if options.debug:

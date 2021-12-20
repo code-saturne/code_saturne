@@ -36,6 +36,11 @@ The script needs a source directory of code_saturne cases, called the
 **repository**, which will be duplicated into a **destination**
 directory, from which computations will be run.
 
+The **destination** directory structure only contains the required files for
+SMGR functionalities. Thus, only `POST` and `<CASE>` directories will be found in
+duplicated studies. In the same way, only `RESU/<run_id>` directories will be
+found in `<CASE>`.
+
 For each duplicated case, SMGR can compile the user files, run the case, compare
 the obtained checkpoint file with the previous one from the repository, and plot
 curves in order to illustrate the computations.
@@ -198,8 +203,7 @@ The attributes for the cases are:
 - `label`: the name of the case;
 - `run_id`: name of the run directory (sub-directory of `RESU`) in which the
   result is stored. This attribute is optional. If it is not set (or if set to
-  `run_id=""`), an automatic value will be proposed by the code (usually based
-  on current date and time);
+  `run_id=""`), an automatic value will be proposed (`run1`);
 - `status`: must be `on` or `off` to activate or desactivate the case;
 - `compute`: must be `on` or `off` to activate or deactivate the computation of
   the case;
@@ -218,7 +222,7 @@ Only the attributes `label`, `status`, `compute`, and `post` are mandatory.
   which a symbolic link is used.
 - During the duplication, all files that already exist in the **destination**
   are overwritten by SMGR. Use option `--dow` SMGR command-line to disable
-  overwriting files in DATA, SRC, MESH and POST directories.
+  overwriting files in `POST` and `RESU/<run_id>` directories.
 - For the post-processing step, the existing results are taken into account only
   if no error file is detected in the directory.
 - After the creation of the directories in the **destination**, for each case,
@@ -259,10 +263,10 @@ them use the attribute `args` to pass additional arguments.
 ```
 
 These different nodes all apply a specific filter type during the __stage__
-(__initialize__) step of a case's execution (i.e. when copying data, just before
+(__initialize__) step of a case's execution (i.e. when copying data), just before
 the \ref define_domain_parameters (and \ref domain_copy_results_add) function in
-the \ref cs_user_scripts.py user scripts. They do not modify files in a case's
-`DATA` or `SRC` directory, only the copied files in the matching `RESU/<run_id>`.
+the \ref cs_user_scripts.py user scripts. They only modify the copied files in
+the __destination__ `RESU/<run_id>` directory.
 
 - `<notebook>` allows passing key-value pairs (with real-values) matching \ref
   notebook variables already defined in the case, overriding the values in the
@@ -536,7 +540,7 @@ In the parameters file, curves are defined with two markups:
       sec_smgr_restart) section).
     - If there is a single results directory in the `RESU` directory (either in
       the **repository** or in the **destination**) of the case, the id can be
-      ommitted: `repo=""` or `dest=""`, and it will be completed automatically.
+      omitted: `repo=""` or `dest=""`, and it will be completed automatically.
 
 The `file` attribute is mandatory, and either `repo` or `dest` must be present
 (but not the both), even if they are empty.
@@ -818,16 +822,16 @@ Output and restart {#sec_smgr_restart}
 SMGR produces several files in the **destination** directory:
 
 - `report.txt`: standard output of the script;
-- `auto_vnv.log`: log of the code and the `pdflatex` compilation;
+- `studymanager.log`: log of the code and the `pdflatex` compilation;
 - `report_global.pdf`: summary of the compilation, run, comparison, and plot
   steps;
 - `report_detailed.pdf`: details the comparison and display the plot;
-- `sample.xml`: udpated parameters file, useful for restart the script if an
-  error occurs.
+- `smgr_<name>.xml`: udpated SMGR parameters file, useful for restart the script
+  if an error occurs.
 
 After the computation of a case, if no error occurs, the attribute `compute` is
-set to `"off"` in the copy of the parameters file in the **destination**. It is
-allow a restart of SMGR without re-run successful previous computations. In the
+set to `"off"` in the copy of the parameters file in the **destination**. It
+allows a restart of SMGR without re-run successful previous computations. In the
 same manner, all empty attributes `repo=""` and `dest=""` are completed in the
 updated parameters file.
 
@@ -967,10 +971,10 @@ Recall that the case attribute `run_id` should be given a different value for
 each run, while the `label` should stay the same.
 
 ## How to convert deprecated `<prepro>` scripts.
-To update a setup based on a script called with the deprecated `<prepro>` tag,
-simply copy the contents of that script in the "local functions" section of the
-optional `DATA/cs_user_scripts.py` user scripts, renaming `main` to another
-chosen name, for example `prepro`.
+To update in __repository__ a setup based on a script called with the deprecated
+`<prepro>` tag, simply copy the contents of that script in the "local functions"
+section of the optional `DATA/cs_user_scripts.py` user scripts, renaming `main`
+to another chosen name, for example `prepro`.
 
 Remove the section resembling:
 
