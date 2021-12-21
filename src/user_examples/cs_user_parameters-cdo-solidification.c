@@ -185,7 +185,7 @@ cs_user_model(void)
 
 
     /* If the flag options CS_SOLIDIFICATION_NO_VELOCITY_FIELD has been set,
-       then one can used a simplified version of the function */
+       then one can use a simplified version of the function */
 
     cs_solidification_set_voller_model_no_velocity(/* Phase diagram */
                                                    t_solidus,
@@ -209,7 +209,8 @@ cs_user_model(void)
 
     /* Set the parameters for the binary alloy model */
 
-    cs_solidification_set_binary_alloy_model("C_solute", "C_bulk",
+    cs_solidification_set_binary_alloy_model("C_solute",
+                                             "C_bulk",
                                              /* Boussinesq approximation */
                                              beta_t,
                                              T0,
@@ -358,6 +359,22 @@ cs_user_finalize_setup(cs_domain_t   *domain)
     cs_equation_add_bc_by_value(th_eqp, CS_PARAM_BC_DIRICHLET, "right", &Th);
   }
   /*! [param_cdo_solidification_thermal_eq] */
+
+  /*! [param_cdo_solidification_solute_eq] */
+  {
+    cs_real_t  c_ref = 0.5;
+
+    /* One assumes that an equation called "C_solute" has been added */
+
+    cs_equation_param_t  *c_eqp = cs_equation_param_by_name("C_solute");
+
+    /* Set the initial value for the solute concentration to the reference
+       value */
+
+    cs_equation_add_ic_by_value(c_eqp, NULL, &c_ref);
+
+  }
+  /*! [param_cdo_solidification_solute_eq] */
 
 }
 /*----------------------------------------------------------------------------*/

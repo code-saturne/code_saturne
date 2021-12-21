@@ -87,19 +87,19 @@
   the liquidus temperature) ;
 
   - \ref CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87 : a model involving
-    momemtum, mass and energy conservation equations. A Boussinesq
+    momentum, mass and energy conservation equations. A Boussinesq
     approximation is used for the Navier--Stokes model. The thermal source term
     is linearized. A pure component is considered. The solidification process
     hinges on a head loss described as a Darcy-like source term in the momentum
-    equation (see the Voller and Prakash article for more details).
+    equation (see the <a href="https://www.sciencedirect.com/science/article/abs/pii/0017931087903176">Voller and Prakash article</a> for more details).
 
   - \ref CS_SOLIDIFICATION_MODEL_VOLLER_NL : This is the \ref
     CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87 model with a non-linear thermal
     source term (a Picard algorithm is used to update the source term).
 
   - \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY : This model hinges on the Voller
-    and Prakash model but adds an additional equation for the transport of the
-    solutal. The concentration of solutal has an effect on the Boussinesq
+    and Prakash model but adds an additional equation for the solute
+    transport. The solute concentration has an effect on the Boussinesq
     term. The phase diagram is more complex since a binary alloy is
     considered. One also handles the eutectic transformation according to the
     solidification path.
@@ -118,7 +118,7 @@
   - \ref CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM (only make sense when the
     model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY is activated). The bulk
     concentration is treated with a source term related to an explicit
-    advection of the quantity (C - Cl).
+    advection of the quantity \f$ (C_m - C_l) \f$.
 
 
   \subsection cs_solidification_cdo_post  Automatic post-processing
@@ -168,7 +168,9 @@
 
   \subsection cs_solidification_cdo_set_stefan Stefan model
 
-  TODO
+  The Stefan model handles the solidification process with the approximation
+  that the liquidus and solidus temperature are the same. Thus, the transition
+  from the solid to liquid or from the liquid to solid is rough.
 
   \subsection cs_solidification_cdo_set_voller Voller and Prakash model
 
@@ -179,13 +181,13 @@
 
   - Parameters 1 and 2 correspond to the settings of the Boussinesq term (two
     coefficients related to a reference temperature and a thermal dilation
-    coefficient in $K^-1$).
+    coefficient in \f$ K^-1\ \f$).
 
   - Parameters 3 and 4 are the solidus and liquidus temperature describing the
     behavior of the liquid fraction with respect to the temperature.
 
-  - Parameters 5 and 6 correspond to the latent heat of the alloy (assumed
-    to be constant) and the secondary dendrite arm spacing (a model parameter
+  - Parameters 5 and 6 correspond to the latent heat of the alloy (assumed to
+    be constant) and the secondary dendrite arm spacing (a model parameter
     taking into account micro-segregation phenomena).
 
   \snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_set_voller
@@ -201,7 +203,7 @@
   cs_solidification_set_voller_model or \ref
   cs_solidification_set_voller_model_no_velocity in a more specific situation).
 
-  \subsubsection cs_solidification_cdo_set_binary_x Advanced usage
+  \subsubsection cs_solidification_cdo_set_voller_nl_x Advanced usage
 
   To access more settings, it is possible to retrieve the structure managing
   the voller model and to specify advanced parameter settings in order to set
@@ -223,16 +225,18 @@
 
   - Parameters 3 to 6 correspond to the settings of the Boussinesq term (two
     contributions: the classical thermal one given by a reference temperature
-    and a thermal dilation coefficient in $K^-1$; the solutal contribution to
-    the Boussinesq term given by a reference concentration and a solutal
-    dilation coefficient)
+    and a thermal dilation coefficient in \f$ K^-1 \f$; the solutal
+    contribution to the Boussinesq term given by a reference concentration and
+    a solutal dilation coefficient)
 
   - Parameters 7 to 10 correspond to the main parameters describing the phase
-    diagram (the distribution coefficient, the liquidus slope, the eutectic
-    temperature and the melting temperature for a pure material, the one
-    obtained when one of the component of the binary alloy is not present).
+    diagram (the partition coefficient between solid and liquid phase, the
+    liquidus slope, the eutectic temperature and the melting temperature for a
+    pure material which corresponds to the one obtained when one of the
+    component of the binary alloy is not present).
 
-  - Parameter 11 is the value of the diffusivity for the solutal transport
+  - Parameter 11 is the value of the diffusivity for the solute transport
+    equation
 
   - Parameters 12 and 13 correspond to the latent heat of the alloy (assumed
     to be constant) and the secondary dendrite arm spacing (a model parameter
@@ -288,6 +292,14 @@
   homogeneous Neumann boundary condition).
 
   \snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_thermal_eq
+
+  When a solute transport equation is added (this done automatically when
+  calling the function \ref cs_solidification_set_binary_alloy_model), the
+  default boundary condition for this equation is a no flux condition as well.
+
+  Here is an example how to set the initial solute concentration in the domain.
+
+  \snippet cs_user_parameters-cdo-solidification.c param_cdo_solidification_solute_eq
 
   For the Navier-Stokes equation, the default boundary condition is defined when
   the domain boundaries are defined in the function \ref cs_user_model using the
