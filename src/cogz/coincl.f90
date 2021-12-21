@@ -31,6 +31,7 @@ module coincl
 
   use ppppar
   use ppincl
+  use radiat, only : nwsgg
 
   implicit none
 
@@ -54,7 +55,7 @@ module coincl
   ! from global species to elementary species
   double precision, pointer, save :: compog(:,:)
 
-  !--> MODELE FLAMME DE DIFFUSION (CHIMIE 3 POINTS)
+  !--> MODELE FLAMME DE DIFFUSION: CHIMIE 3 POINTS
 
   ! ---- Grandeurs fournies par l'utilisateur dans usd3pc.f90
 
@@ -83,6 +84,52 @@ module coincl
 
   double precision, save :: tinoxy, tinfue, hinfue, hinoxy, hstoea
   double precision, save :: hh(nmaxhm), ff(nmaxfm), tfh(nmaxfm,nmaxhm)
+
+  !--> MODELE FLAMME DE DIFFUSION: Steady laminar flamelet
+  !=============================================================================
+  ! Grandeurs flamelets
+  ! ngazfl : nombre d'espèces dans la librarie de flammelette
+  !          YFUE YOXY YCO2 YH2O YCO YH2
+  ! nki    : nombre de flamelets (strain rate)
+  ! nxr    : discrétisation de l'enthalpie defect
+  ! nzm    : discretisation de la fraction de mélange
+  ! nzvar  : Discretisation de la variance
+  ! nlibvar: Nombre des variables stockés dans la librairie
+  ! ikimid : Indice pour la flammelette sur la branche middle
+
+  integer, save :: ngazfl  ! ngazfl <= ngazgm - 1
+  integer, save :: nki, nxr, nzm, nzvar, nlibvar
+  integer, save :: ikimid = 1
+
+  ! Manière de calculer la variance de fraction de mélange
+  ! mode_fp2m 0: Variance transport equation(VTE)
+  ! mode_fp2m 1: 2nd moment of mixutre fraction transport equation (STE)
+  integer, save :: mode_fp2m = 1
+
+  ! Coef. of SGS kinetic energy used for the variance dissipation calculation
+  double precision, save :: coef_k = 7.d-2
+
+  ! Column index for each variable in the look-up table
+  integer, save :: FLAMELET_ZM,    FLAMELET_ZVAR,  FLAMELET_KI,  FLAMELET_XR
+  integer, save :: FLAMELET_TEMP,  FLAMELET_RHO,   FLAMELET_VIS, FLAMELET_DT
+  integer, save :: FLAMELET_TEMP2, FLAMELET_HRR
+  integer, save :: FLAMELET_SPECIES(ngazgm)
+  integer, save :: FLAMELET_C,     FLAMELET_OMG_C
+
+  character(len=12) :: FLAMELET_SPECIES_NAME(ngazgm)
+
+  !========================================================================
+
+  !> Library for thermochemical properties in SLFM
+  double precision, allocatable, dimension(:,:,:,:,:) :: flamelet_library
+
+  !========================================================================
+  ! Rayonnement
+
+  !> Library for radiative properties in SLFM
+  double precision, allocatable, dimension(:,:,:,:,:,:) :: radiation_library
+
+  !========================================================================
 
   !--> MODELE FLAMME DE PREMELANGE (MODELE EBU)
 
@@ -199,5 +246,38 @@ contains
   end subroutine co_models_init
 
   !=============================================================================
+  subroutine init_steady_laminar_flamelet_library
+
+    use radiat
+    implicit none
+
+    if(.not.allocated(flamelet_library)) then
+      allocate(flamelet_library(nlibvar, nxr, nki, nzvar, nzm))
+      flamelet_library = 0.d0
+    endif
+
+    if (iirayo.eq.1) then
+      if(.not.allocated(radiation_library)) then
+        allocate(radiation_library(2, nwsgg, nxr, nki, nzvar, nzm))
+        radiation_library = 0.d0
+      endif
+    endif
+
+    return
+
+  end subroutine init_steady_laminar_flamelet_library
+
+  !=============================================================================
+  ! Free related arrays
+  subroutine finalize_steady_laminar_flamelet_library
+
+    implicit none
+
+    if(allocated(flamelet_library)) deallocate(flamelet_library)
+    if(allocated(radiation_library)) deallocate(radiation_library)
+
+    return
+
+  end subroutine finalize_steady_laminar_flamelet_library
 
 end module coincl

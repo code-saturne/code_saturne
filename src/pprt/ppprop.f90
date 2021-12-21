@@ -97,8 +97,8 @@ end interface
 
 ! ---> Physique particuliere : Combustion Gaz
 
-if (ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
-                        .or. ippmod(icolwc).ge.0) then
+if (ippmod(icod3p).ge.0 .or. ippmod(islfm ).ge.0 .or.            &
+    ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
   call coprop
 endif
 

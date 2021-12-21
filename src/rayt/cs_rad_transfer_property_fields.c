@@ -62,7 +62,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_rad_transfer_property_fields.h"
-
+#include "cs_physical_model.h"
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -251,7 +251,6 @@ cs_rad_transfer_prp(void)
         != CS_RAD_ATMO_3D_NONE)
       rt_params->nwsgg = 0;
 
-
     /* Fields for atmospheric Direct Solar (DR) model */
     if (rt_params->atmo_model
         & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
@@ -273,6 +272,46 @@ cs_rad_transfer_prp(void)
       rt_params->nwsgg++;
     }
 
+  }
+
+  /* SLFM Gas combustion radiation: add cells fields */
+  if (  cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] == 1
+      ||cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] == 3 ) {
+
+    for (int gg_id = 0; gg_id < rt_params->nwsgg; gg_id ++) {
+
+      char f_name[64], f_label[64];
+
+      snprintf(f_name, 63, "spectral_absorption_%.2d", gg_id + 1);
+      snprintf(f_label, 63, "Spectral Absorption %.2d", gg_id + 1);
+
+      f_name[63] = '\0'; f_label[63] = '\0';
+
+      f = cs_field_create(f_name,
+          field_type,
+          location_id,
+          1,
+          false);
+      cs_field_set_key_str(f, keylbl, f_label);
+
+      cs_field_set_key_int(f, keyvis, 0);
+      cs_field_set_key_int(f, keylog, 0);
+
+      snprintf(f_name, 63, "spectral_emission_%.2d", gg_id + 1);
+      snprintf(f_label, 63, "Spectral Emission %.2d", gg_id + 1);
+
+      f_name[63] = '\0'; f_label[63] = '\0';
+
+      f = cs_field_create(f_name,
+          field_type,
+          location_id,
+          1,
+          false);
+      cs_field_set_key_str(f, keylbl, f_label);
+
+      cs_field_set_key_int(f, keyvis, 0);
+      cs_field_set_key_int(f, keylog, 0);
+    }
   }
 
   int vis_gg = (rt_params->nwsgg == 1) ? 1 : 0;
@@ -366,7 +405,7 @@ cs_rad_transfer_prp(void)
     cs_field_pointer_map(CS_ENUMF_(qinci), f);
   }
 
-  if (rt_params->imoadf >= 1 || rt_params->imfsck == 1) {
+  if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
     f = cs_field_create("spectral_rad_incident_flux",
                         field_type,
                         location_id,
@@ -374,6 +413,9 @@ cs_rad_transfer_prp(void)
                         false);
     cs_field_set_key_str(f, keylbl, "Spectral_incident_flux");
     cs_field_pointer_map(CS_ENUMF_(qinsp), f);
+
+    cs_field_set_key_int(f, keyvis, vis_gg);
+    cs_field_set_key_int(f, keylog, (rt_params->nwsgg <= 9) ? 1 : 0);
   }
 
   /* For atmospheric 3D radiation,

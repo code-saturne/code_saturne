@@ -75,7 +75,6 @@ implicit none
 integer          ii , jj, iok
 integer          isc
 double precision wmolme, turb_schmidt
-
 !===============================================================================
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
@@ -96,6 +95,25 @@ if (ippmod(icod3p).ge.0) then
   !        scamax(ifp2m) = 0.25D0
 
 endif
+
+! --> Flamme de diffusion : Steady laminar flamelet
+
+if (ippmod(islfm).ge.0) then
+
+  ! Manière de calculer la variance de fraction de mélange
+  ! mode_fp2m 0: Variance transport equation(VTE)
+  ! mode_fp2m 1: 2nd moment of mixutre fraction transport equation (STE)
+
+  ! ---- Variance du taux de melange
+  !        Type de clipping superieur pour la variance
+  !        0 pas de clipping, 1 clipping var max de fm, 2 clipping a SCAMAX
+  if (mode_fp2m .eq. 0) then
+    iclvfl(ifp2m) = 1
+    !        scamin(ifp2m) = 0.d0
+    !        scamax(ifp2m) = 0.25D0
+  endif
+endif
+
 
 ! --> Flamme de premelange : modele LWC
 
@@ -137,13 +155,16 @@ enddo
 
 ! --> Calcul de RO0 a partir de T0 et P0
 
- if (ippmod(icod3p).ne.-1 .or.                                   &
-     ippmod(icoebu).ne.-1 .or.                                   &
-     ippmod(icolwc).ne.-1) then
-   wmolme = wmolg(2)
-   ro0 = pther*wmolme / (cs_physical_constants_r*t0)
-   roref = ro0
- endif
+if (ippmod(icod3p).ne.-1 .or.                                   &
+    ippmod(icoebu).ne.-1 .or.                                   &
+    ippmod(icolwc).ne.-1) then
+  wmolme = wmolg(2)
+  ro0 = pther*wmolme / (cs_physical_constants_r*t0)
+  roref = ro0
+else if (ippmod(islfm).ne.-1) then
+  ro0 = flamelet_library(FLAMELET_RHO, 1, 1, 1, 1)
+  roref = ro0
+endif
 
 ! On met les constantes a -GRAND pour obliger l'utilisateur a les definir
 !  (ou les laisser) dans cs_user_combustion.
@@ -212,6 +233,15 @@ if (ippmod(icoebu).ge.0) then
 
 else if (ippmod(icod3p).ge.0) then
   call d3pver(iok)
+  if (iok.gt.0) then
+    write(nfecra,9991)iok
+    call csexit(1)
+  else
+    write(nfecra,9990)
+  endif
+
+else if (ippmod(islfm).ge.0) then
+  call cs_steady_laminar_flamelet_verify(iok)
   if (iok.gt.0) then
     write(nfecra,9991)iok
     call csexit(1)

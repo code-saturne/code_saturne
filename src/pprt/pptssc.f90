@@ -105,6 +105,12 @@ double precision tslagr(ncelet,*)
 
 !===============================================================================
 
+! Modele de la flamme de diffusion: steady laminar flamelet
+
+if (ippmod(islfm).ge.0) then
+  call cs_steady_laminar_flamelet_source_terms(iscal, smbrs, rovsdt)
+endif
+
 ! Soot model
 
 if (isoot.eq.1) then

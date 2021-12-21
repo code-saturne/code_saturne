@@ -71,11 +71,11 @@ module entsor
   !> name of the thermochemical data file for combustion.
   !>
   !> Useful in case of gas or pulverized coal combustion.
-  character(len=32), save :: ficfpp
+  character(len=64), save :: ficfpp, ficrad
 
   !> logical unit of the thermochemical data file.
   !> Useful in case of gas or pulverized coal combustion or electric arcs;
-  integer, save :: impfpp
+  integer, save :: impfpp, imprad
 
   !> use Janaf (=1) or not (=0)
   integer, save :: indjon

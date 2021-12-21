@@ -106,7 +106,7 @@ integer          ivar
 ! ---> Combustion gaz USEBUC
 !      Flamme de diffusion : chimie 3 points
 
-if ( ippmod(icod3p).ge.0 ) then
+if ( ippmod(icod3p).ge.0 .or. ippmod(islfm).ge.0) then
 
   do izone = 1, nozppm
     qimp(izone)   = zero

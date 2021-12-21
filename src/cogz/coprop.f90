@@ -66,13 +66,13 @@ implicit none
 
 ! Local variables
 
-integer       idirac
+integer       idirac, ifmk, gg_id
 
 character(len=80) :: f_name, f_label
 
 !===============================================================================
 
-! Flamme de diffusion chimie 3 points
+! Diffusion flame - 3 points chemistry
 !====================================
 
 if (ippmod(icod3p).ge.0) then
@@ -82,6 +82,49 @@ if (ippmod(icod3p).ge.0) then
   call add_property_field_1d('ym_fuel', 'Ym_Fuel', iym(1))
   call add_property_field_1d('ym_oxyd', 'Ym_Oxyd', iym(2))
   call add_property_field_1d('ym_prod', 'Ym_Prod', iym(3))
+
+endif
+
+! Diffusion flame - Steady laminar flamelet approach
+!===================================================
+
+if (ippmod(islfm).ge.0) then
+
+  call add_property_field_1d('temperature', 'Temperature', itemp)
+  call add_property_field_1d('temperature_2', 'Temperature_2', it2m)
+
+  ! In case of the classic steady laminar flamelet model
+  ! A progress variable is defined as propriety, measuring approximately
+  ! the products (the progress as well)
+  ! Otherwise, it should be transported
+
+  if (ippmod(islfm).eq.1 .or. ippmod(islfm).eq.3) then
+    call add_property_field_1d('heat_loss', 'Heat Loss', ixr)
+  endif
+
+  call add_property_field_1d('heat_release_rate', 'Heat Release Rate', ihrr)
+
+  if (ippmod(islfm).ge.2) then
+    call add_property_field_1d('omega_c', 'Omega C', iomgc)
+  endif
+
+  if (ippmod(islfm).lt.2) then
+    call add_property_field_1d('total_dissipation', 'Total Dissip. Rate', itotki)
+  endif
+
+  if (mode_fp2m.eq.1) then
+    call add_property_field_1d('reconstructed_fp2m', 'rec_fp2m', irecvr)
+  endif
+
+  if (ngazfl.ge.1) then
+    do ifmk = 1, min(ngazfl, ngazgm - 1)
+      f_name  = 'fraction_' // trim(FLAMELET_SPECIES_NAME(ifmk))
+      f_label = 'Fraction_' // trim(FLAMELET_SPECIES_NAME(ifmk))
+      call add_property_field_1d(f_name, f_label, iym(ifmk))
+    enddo
+  endif
+
+  call add_property_field_1d('ym_progress', 'Ym_Progress', iym(ngazgm))
 
 endif
 

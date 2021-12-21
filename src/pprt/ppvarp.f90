@@ -119,6 +119,7 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 !------------------
 
 if (     ippmod(icod3p).ge.0   &
+    .or. ippmod(islfm ).ge.0   &
     .or. ippmod(icoebu).ge.0   &
     .or. ippmod(icolwc).ge.0) then
   call covarp

@@ -95,11 +95,12 @@ endif
 !===============================================================================
 
 ! ---> Combustion gaz : Flamme de diffusion  (Chimie 3 points)
+!                       Flamme de diffusion  (Steady laminar flamelet)
 !                       Flamme de premelange (Modele EBU)
 !                       Flamme de premelange (Modele LWC)
 
-if ( ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                 &
-                         .or. ippmod(icolwc).ge.0 ) then
+if ( ippmod(icod3p).ge.0 .or. ippmod(islfm ).ge.0 .or.            &
+     ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0 ) then
   call coini1
 endif
 

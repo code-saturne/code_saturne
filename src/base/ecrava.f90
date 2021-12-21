@@ -666,6 +666,61 @@ if (iecaux.eq.1) then
 
   endif
 
+!     Modele SLFM :
+!     ============
+
+  if ( ippmod(islfm).ge.0 ) then
+
+    rubriq = 'hinfue_slfm'
+    itysup = 0
+    nbval  = 1
+    rval(1) = hinfue
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
+
+    rubriq = 'hinoxy_slfm'
+    itysup = 0
+    nbval  = 1
+    rval(1) = hinoxy
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
+
+    rubriq = 'tinfue_slfm'
+    itysup = 0
+    nbval  = 1
+    rval(1) = tinfue
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
+
+    rubriq = 'tinoxy_slfm'
+    itysup = 0
+    nbval  = 1
+    rval(1) = tinoxy
+    call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
+
+!       Numero des zones
+    itysup = 3
+    nbval  = 1
+    rubriq = 'num_zone_fb_slfm'
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,izfppp)
+
+!       Entree Fuel (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    rubriq = 'ientfu_zone_bord_slfm'
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientfu)
+
+!       Entree oxydant (si ce n'est pas NOZPPM, erreur)
+    itysup = 0
+    nbval  = nozppm
+    rubriq = 'ientox_zone_bord_slfm'
+    call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientox)
+
+!       Traceur de progress variable
+    call restart_write_field_vals(rp, iym(ngazgm), 0)
+
+    car54=' End writing combustion information (SLFM)         '
+    write(nfecra,1110)car54
+
+  endif
+
 !      Modele EBU :
 !      ==========
 

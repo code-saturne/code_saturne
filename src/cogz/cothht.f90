@@ -245,14 +245,14 @@ double precision, dimension(nfabor), intent(out), target :: t_b
 
 ! Local variables
 
-integer          iel , ifac
+integer          iel , ifac, izone
 integer          igg
 integer          mode
 
 double precision coefg(ngazgm)
 double precision hbl
 
-double precision, dimension(:), pointer :: bym1, bym2, bym3
+double precision, dimension(:), pointer :: bym1, bym2, bym3, cpro_temp
 
 !===============================================================================
 
@@ -278,6 +278,23 @@ if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
     coefg(3) = bym3(ifac)
     call cothht(mode, ngazg, ngazgm, coefg, npo, npot, th, ehgazg,   &
                 hbl, t_b(ifac))
+  enddo
+
+elseif (ippmod(islfm).ge.0) then
+
+  call field_get_val_s(itemp, cpro_temp)
+
+  do ifac = 1, nfabor
+    izone = izfppp(ifac)
+
+    if (ientfu(izone).eq.1) then
+      t_b(ifac) = tinfue
+    elseif (ientox(izone).eq.1) then
+      t_b(ifac) = tinoxy
+    else
+      iel = ifabor(ifac)
+      t_b(ifac) = cpro_temp(iel)
+    endif
   enddo
 
 endif
@@ -341,40 +358,66 @@ double precision, dimension(nfabor), intent(out), target :: h_b
 
 ! Local variables
 
-integer          iel , ilst, ifac, igg, mode
+integer          iel , ilst, ifac, igg, mode, izone
 
 double precision coefg(ngazgm)
 double precision tbl
 
-double precision, dimension(:), pointer :: bym1, bym2, bym3
+double precision, dimension(:), pointer :: bym1, bym2, bym3, cvar_h
 
 !===============================================================================
 
 mode = -1
 
-! Mappings for gas combustion
-call field_get_val_s(ibym(1), bym1)
-call field_get_val_s(ibym(2), bym2)
-call field_get_val_s(ibym(3), bym3)
+if (ippmod(icoebu).ge.0 .or. ippmod(icod3p).ge.0) then
 
-! Now loop on faces
+  ! Mappings for gas combustion
+  call field_get_val_s(ibym(1), bym1)
+  call field_get_val_s(ibym(2), bym2)
+  call field_get_val_s(ibym(3), bym3)
 
-do ilst = 1, n_faces
+  ! Now loop on faces
 
-  ifac = face_ids(ilst) + 1
-  iel = ifabor(ifac)
+  do ilst = 1, n_faces
 
-  tbl = t_b(ifac)
+    ifac = face_ids(ilst) + 1
+    iel = ifabor(ifac)
 
-  do igg = 1, ngazgm
-    coefg(igg) = zero
+    tbl = t_b(ifac)
+
+    do igg = 1, ngazgm
+      coefg(igg) = zero
+    enddo
+    coefg(1) = bym1(ifac)
+    coefg(2) = bym2(ifac)
+    coefg(3) = bym3(ifac)
+    call cothht(mode, ngazg, ngazgm, coefg, npo, npot, th, ehgazg, h_b(ifac), tbl)
+
   enddo
-  coefg(1) = bym1(ifac)
-  coefg(2) = bym2(ifac)
-  coefg(3) = bym3(ifac)
-  call cothht(mode, ngazg, ngazgm, coefg, npo, npot, th, ehgazg, h_b(ifac), tbl)
 
-enddo
+elseif (ippmod(islfm).ge.0) then
+
+  ! Mappings for gas combustion
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_h)
+
+  ! Now loop on faces
+
+  do ilst = 1, n_faces
+
+    ifac = face_ids(ilst) + 1
+    izone = izfppp(ifac)
+
+    if (ientfu(izone).eq.1) then
+      h_b(ifac) = hinfue
+    elseif (ientox(izone).eq.1) then
+      h_b(ifac) = hinoxy
+    else
+      iel = ifabor(ifac)
+      h_b(ifac) = cvar_h(iel)
+    endif
+  enddo
+
+endif
 
 return
 end subroutine cot2hb

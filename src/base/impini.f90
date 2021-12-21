@@ -139,6 +139,9 @@ if (ippmod(icod3p).ne.-1) then
   do ige = 1, ngaze
     write(nfecra,'(a15,10(1x,f14.5))') trim(nomcoe(ige)), (compog(ige,igg), igg=1, ngazg)
   enddo
+else if (ippmod(islfm).ne.-1) then
+  write(nfecra,1010)
+  write(nfecra,1040) ippmod(islfm)
 else if (ippmod(icoebu).ne.-1) then
   write(nfecra,1010)
   write(nfecra,1030) ippmod(icoebu), cebu
@@ -173,6 +176,9 @@ endif
 ' --- Premixed Flame: EBU Model',                               /,&
 '       OPTION = ',4x,i10,                                      /,&
 '       CEBU   = ',e14.5                                        /)
+ 1040 format(                                                     &
+' --- Diffusion Flame: Steady laminar flamelet model',          /,&
+'       OPTION = ',4x,i10,                                      /)
  1050 format(                                                     &
 ' --- Fuel:            Local Mean Combustible Model',           /,&
 '       OPTION = ',4x,i10                                       /)

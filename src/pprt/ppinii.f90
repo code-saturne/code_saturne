@@ -93,6 +93,8 @@ icondv = -1
 !       Variables transportees
 ifm    = 0
 ifp2m  = 0
+ifsqm  = 0
+ipvm   = 0
 iygfm  = 0
 icm    = 0
 icp2m  = 0
@@ -102,11 +104,17 @@ iyfp2m = 0
 icoyfp = 0
 !       Variables algebriques ou d'etat
 itemp  = 0
+irecvr = 0
+itotki = 0
+ihrr   = 0
+ixr    = 0
+iomgc  = 0
 do igg = 1, ngazgm
   iym(igg) = 0
   ibym(igg) = -1
 enddo
 ickabs = 0
+it2m   = 0
 it4m   = 0
 it3m   = 0
 do idirac = 1, ndracm
@@ -312,11 +320,11 @@ do izone = 1, nozppm
   ientox(izone) = 0
   ientfu(izone) = 0
 enddo
-hinfue = zero
-hinoxy = zero
-hstoea = zero
+hinfue = -grand
+hinoxy = -grand
+hstoea = -grand
 do ih = 1, nmaxhm
-  hh(ih) = zero
+  hh(ih) = -grand
 enddo
 do if = 1, nmaxfm
   ff(if)= zero
@@ -324,6 +332,33 @@ do if = 1, nmaxfm
     tfh(if,ih) = zero
   enddo
 enddo
+
+! ---> Modele de la flamme de diffusion Steady laminar flamelet
+
+nki     = -1
+nxr     = -1
+nzm     = -1
+nzvar   = -1
+nlibvar = -1
+ngazfl  = -1
+
+FLAMELET_ZM    = -1
+FLAMELET_ZVAR  = -1
+FLAMELET_KI    = -1
+FLAMELET_XR    = -1
+FLAMELET_TEMP  = -1
+FLAMELET_RHO   = -1
+FLAMELET_VIS   = -1
+FLAMELET_DT    = -1
+FLAMELET_TEMP2 = -1
+FLAMELET_HRR   = -1
+
+FLAMELET_SPECIES(:)  = -1
+FLAMELET_SPECIES_NAME(:)  = ' '
+
+
+FLAMELET_C     = -1
+FLAMELET_OMG_C = -1
 
 ! ---> Modele de flamme de premelange (modele EBU et LWC)
 !      On prend 300K pour temperature des gaz frais.

@@ -272,6 +272,8 @@ cs_rad_transfer_params_t *cs_glob_rad_transfer_params = &_rt_params;
 
 void
 cs_rad_transfer_get_pointers(int  **p_iirayo,
+                             int  **p_nwsgg,
+                             int  **p_nt_rad_prp,
                              int  **p_rad_atmo_model);
 
 /*============================================================================
@@ -280,9 +282,13 @@ cs_rad_transfer_get_pointers(int  **p_iirayo,
 
 void
 cs_rad_transfer_get_pointers(int  **p_iirayo,
+                             int  **p_nwsgg,
+                             int  **p_nt_rad_prp,
                              int  **p_rad_atmo_model)
 {
   *p_iirayo = &_rt_params.type;
+  *p_nwsgg  = &_rt_params.nwsgg;
+  *p_nt_rad_prp = &_rt_params.time_control.interval_nt;
   *p_rad_atmo_model = &_rt_params.atmo_model;
 }
 

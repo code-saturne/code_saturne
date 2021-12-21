@@ -77,15 +77,20 @@ double precision dt(ncelet)
 
 ! Local variables
 
-integer          iscal, ivar, iel, isou
-integer          ii, iisc, itspdv, icalc, iappel
+integer          iscal, ivar, iel, isou, ifac
+integer          ii, iisc, itspdv, icalc, iappel, ifcvsl
 integer          ispecf, scal_id, f_id, f_dim
 
+double precision fmb, hint, pimp, hext, cmax, cmid, cmin
 double precision, allocatable, dimension(:) :: dtr
 double precision, allocatable, dimension(:) :: viscf, viscb
 
 double precision, dimension(:), pointer :: cvar_var, cvara_var
+double precision, dimension(:), pointer :: cvar_fm, cpro_viscls
 double precision, dimension(:,:), pointer :: cvar_vav, cvara_vav
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
+double precision, dimension(:), pointer :: coefa_fm, coefb_fm
+
 integer :: keyvar
 
 ! NOMBRE DE PASSAGES DANS LA ROUTINE
@@ -279,6 +284,56 @@ if (nscapp.gt.0) then
         call csexit (1)
       endif
 
+      ! ---> Specific treatment BC for gaz combustion: steady laminar flamelet
+      if (ippmod(islfm).ge.0) then
+        call field_get_coefa_s(ivarfl(isca(ifm)), coefa_fm)
+        call field_get_coefb_s(ivarfl(isca(ifm)), coefb_fm)
+        call field_get_val_s(ivarfl(isca(ifm)), cvar_fm)
+        call field_get_coefa_s(ivarfl(ivar), coefap)
+        call field_get_coefb_s(ivarfl(ivar), coefbp)
+        call field_get_coefaf_s(ivarfl(ivar), cofafp)
+        call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+
+        call field_get_key_int (ivarfl(ivar), kivisl, ifcvsl)
+        if (ifcvsl.ge.0) then
+          call field_get_val_s(ifcvsl, cpro_viscls)
+        endif
+        ! Make sure that mixture fraction is solved
+        if (mode_fp2m.eq.1) then
+          if (ivar.eq.isca(ifsqm)) then
+            do ifac = 1, nfabor
+              iel = ifabor(ifac)
+              fmb = coefa_fm(ifac) + coefb_fm(ifac)*cvar_fm(iel)
+              hint = (cpro_viscls(iel))/distb(ifac)
+              pimp = fmb**2.d0
+              hext = rinfin
+              call set_dirichlet_scalar                               &
+                ( coefap(ifac), cofafp(ifac),                         &
+                  coefbp(ifac), cofbfp(ifac),                         &
+                  pimp        , hint        , hext )
+            enddo
+          endif
+        endif
+
+        if (ippmod(islfm).ge.2) then
+          if (ivar.eq.isca(ipvm)) then
+            do ifac = 1, nfabor
+              iel = ifabor(ifac)
+              fmb = coefa_fm(ifac) + coefb_fm(ifac)*cvar_fm(iel)
+              hint = (cpro_viscls(iel))/distb(ifac)
+
+              call max_mid_min_progvar(fmb,cmax,cmid,cmin)
+              pimp = cmid
+              hext = rinfin
+              call set_dirichlet_scalar                               &
+                ( coefap(ifac), cofafp(ifac),                         &
+                  coefbp(ifac), cofbfp(ifac),                         &
+                  pimp        , hint        , hext )
+            enddo
+          endif
+        endif
+      endif
+
       call field_get_dim(ivarfl(isca(iscal)), f_dim)
 
       if (f_dim.eq.1) then
@@ -312,6 +367,7 @@ if (nscapp.gt.0) then
      viscf  , viscb  )
 
       endif
+
 
 ! ---> Versions Electriques
 !             Effet Joule

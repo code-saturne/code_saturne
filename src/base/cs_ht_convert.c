@@ -145,7 +145,8 @@ cs_ht_convert_h_to_t_cells(const cs_real_t  h[],
 
   /* Gas combustion: premixed or diffusion flame */
   if (   pm_flag[CS_COMBUSTION_EBU] >= 0
-      || pm_flag[CS_COMBUSTION_3PT] >= 0)
+      || pm_flag[CS_COMBUSTION_3PT] >= 0
+      || pm_flag[CS_COMBUSTION_SLFM]>= 0)
     cpro_t = CS_F_(t)->val;
 
   /* Pulverized coal or fuel combustion */
@@ -313,7 +314,8 @@ cs_ht_convert_h_to_t_faces(const cs_real_t  h[],
 
   /* Gas combustion: premixed or diffusion flame */
   if (   pm_flag[CS_COMBUSTION_EBU] >= 0
-      || pm_flag[CS_COMBUSTION_3PT] >= 0)
+      || pm_flag[CS_COMBUSTION_3PT] >= 0
+      || pm_flag[CS_COMBUSTION_SLFM]>= 0)
     CS_PROCF(coh2tb, COH2TB)(h, t);
 
   /* Pulverized coal combustion */
@@ -426,7 +428,8 @@ cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
 
   /* Gas combustion: premixed or diffusion flame */
   if (   pm_flag[CS_COMBUSTION_EBU] >= 0
-      || pm_flag[CS_COMBUSTION_3PT] >= 0)
+      || pm_flag[CS_COMBUSTION_3PT] >= 0
+      || pm_flag[CS_COMBUSTION_SLFM] >= 0)
     CS_PROCF(cot2hb, COT2HB)(&n_faces, face_ids, t, h);
 
   /* Pulverized coal combustion */

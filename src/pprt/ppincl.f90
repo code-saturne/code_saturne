@@ -53,7 +53,7 @@ module ppincl
 
   !> number of specific physics
   integer   nmodmx
-  parameter(nmodmx = 14)
+  parameter(nmodmx = 15)
 
   !> global indicator for speciphic physics
   !> By default, all the indicators ippmod(i.....) are initialized to -1,
@@ -63,6 +63,19 @@ module ppincl
   !>      - ippmod(icod3p) = 0 adiabatic conditions
   !>      - ippmod(icod3p) = 1 permeatic conditions (enthalpy transport)
   !>      - ippmod(icod3p) =-1 module not activated
+  !>
+  !>   - Diffusion flames in the framework of steady laminar flamelet approach
+  !>  indicator ippmod(islfm)
+  !>      - ippmod(islfm) = 0 classic steady laminar flamelet model:
+  !>                          adiabatic conditions
+  !>      - ippmod(islfm) = 1 classic steady laminar flamelet model:
+  !>                          non-adiabatic conditions (enthalpy transport with heat loss)
+  !>      - ippmod(islfm) = 2 flamelet/progress variable model:
+  !>                          adiabatic conditions
+  !>      - ippmod(islfm) = 3 flamelet/progress variable model:
+  !>                          non-adiabatic conditions (enthalpy transport with heat loss)
+  !>      - ippmod(islfm) =-1 module not activated
+
   !>   - Eddy Break Up pre-mixed flame: indicator ippmod(icoebu)
   !>      - ippmod(icoebu) = 0 adiabatic conditions at constant richness
   !>      - ippmod(icoebu) = 1 permeatic conditions at constant richness
@@ -133,6 +146,18 @@ module ppincl
   !> - ippmod(icod3p) = 1 permeatic conditions (enthalpy transport)
   !> - ippmod(icod3p) =-1 module not activated
   integer ::  icod3p
+
+  !> pointer to specify steady laminar flamelet approach
+  !> - ippmod(islfm) = 0 classic steady laminar flamelet model:
+  !>                     adiabatic conditions
+  !> - ippmod(islfm) = 1 classic steady laminar flamelet model:
+  !>                     non-adiabatic conditions (enthalpy transport with heat loss)
+  !> - ippmod(islfm) = 2 flamelet/progress variable model:
+  !>                     adiabatic conditions
+  !> - ippmod(islfm) = 3 flamelet/progress variable model:
+  !>                     non-adiabatic conditions (enthalpy transport with heat loss)
+  !> - ippmod(islfm) =-1 module not activated
+  integer :: islfm
 
   !> pointer to specify Eddy Break Up pre-mixed flame with indicator ippmod(icoebu)
   !> - ippmod(icoebu) = 0 adiabatic conditions at constant richness
@@ -238,12 +263,12 @@ module ppincl
   !> - ippmod(iricha) = 1 module activated
   integer ::  idarcy
 
-  parameter       (iphpar = 1 , icod3p = 2 ,                        &
-                   icoebu = 3 , icolwc = 4 ,                        &
-                   icpl3c = 5 , iccoal = 6 , icfuel = 7 ,           &
-                   ieljou = 8 , ielarc = 9 , icompf = 10,           &
-                   iatmos = 11, iaeros = 12,                        &
-                   igmix  = 13, idarcy = 14)
+  parameter       (iphpar = 1 , icod3p = 2 , islfm = 3,             &
+                   icoebu = 4 , icolwc = 5 ,                        &
+                   icpl3c = 6 , iccoal = 7 , icfuel = 8 ,           &
+                   ieljou = 9 , ielarc = 10, icompf = 11,           &
+                   iatmos = 12, iaeros = 13,                        &
+                   igmix  = 14, idarcy = 15)
 
   !> \}
 
@@ -282,6 +307,12 @@ module ppincl
 
   !> pointer to specify the variance of the mixing rate in isca(ifp2m)
   integer, save :: ifp2m
+
+  !> pointer to specify the second moment of the mixing rate in isca(ifsqm):
+  integer, save :: ifsqm
+
+  !> pointer to specify the transported progress variable ippmod(islfm) >= 2:
+  integer, save :: ipvm
 
   !> pointer to specify the fresh gas mass fraction in isca(iygfm)
   integer, save :: iygfm
@@ -328,9 +359,26 @@ module ppincl
   !> state variable
   integer, save :: ifmax
 
+  !> state variable: Pointer to the reconstructed variance in case of mode_fp2m = 1
+  integer, save :: irecvr
+
+  !> state variable: Pointer to the total scalar dissipation rate
+  integer, save :: itotki
+
+  !> state variable: Pointer to volumetric heat release rate
+  integer, save :: ihrr
+
+  !> state variable: Pointer to enthalpy defect
+  integer, save :: ixr
+
+  !> state variable: Pointer to enthalpy defect
+  integer, save :: iomgc
+
   !> state variable: absorption coefficient, when the radiation modelling is activated
   integer, save :: ickabs
 
+  !> state variable:  \f$T^2\f$ term
+  integer, save :: it2m
   !> state variable:  \f$T^3\f$ term, when the radiation modelling is activated
   integer, save :: it3m
   !> state variable:  \f$T^4\f$ term, when the radiation modelling is activated

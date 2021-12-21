@@ -214,6 +214,11 @@ if (init .eqv. .true.) return
 if (ippmod(icod3p).ge.0) then
   call d3ptcl(itypfb, izfppp, icodcl, rcodcl)
 
+! ---> Steady laminar flamelet
+
+elseif (ippmod(islfm).ge.0) then
+  call cs_steady_laminar_flamelet_bcond(itypfb, izfppp, icodcl, rcodcl)
+
 ! ---> Combustion gaz USEBUC
 !      Flamme de premelange modele EBU
 

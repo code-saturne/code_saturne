@@ -966,6 +966,107 @@ if ( ippmod(icod3p).ge.0 ) then
 
 endif
 
+!     Modele SLFM :
+!     ===========
+
+if ( ippmod(islfm).ge.0 ) then
+
+  rubriq = 'hinfue_slfm'
+  itysup = 0
+  nbval  = 1
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  hinfue = rval(1)
+  nberro=nberro+ierror
+  ilu = ilu + 1
+  if (ierror.ne.0) then
+    write(nfecra,9400)
+  endif
+
+  rubriq = 'hinoxy_slfm'
+  itysup = 0
+  nbval  = 1
+  ilu    = ilu + 1
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  hinoxy = rval(1)
+  nberro=nberro+ierror
+  ilu = ilu + 1
+  if (ierror.ne.0) then
+    write(nfecra,9400)
+  endif
+
+  rubriq = 'tinfue_slfm'
+  itysup = 0
+  nbval  = 1
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  tinfue = rval(1)
+  nberro=nberro+ierror
+  ilu = ilu + 1
+  if (ierror.ne.0) then
+    write(nfecra,9400)
+  endif
+
+  rubriq = 'tinoxy_slfm'
+  itysup = 0
+  nbval  = 1
+  ilu    = ilu + 1
+  call restart_read_section_real_t(rp,rubriq,itysup,nbval,rval,ierror)
+  tinoxy = rval(1)
+  nberro=nberro+ierror
+  ilu = ilu + 1
+  if (ierror.ne.0) then
+    write(nfecra,9400)
+  endif
+
+!       Il faut le meme nbr de faces de bord, sinon on ne lit pas
+  if (nfabok.eqv..true.) then
+
+    ilu = ilu + 1
+
+    ierrch = 0
+
+!       Numero des zones
+    itysup = 3
+    nbval  = 1
+    rubriq = 'num_zone_fb_slfm'
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,izfppp,ierror)
+    nberro=nberro+ierror
+
+!       Type entree Fuel
+    itysup = 0
+    nbval  = nozppm
+    rubriq = 'ientfu_zone_bord_slfm'
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientfu,ierror)
+    ierrch=ierrch+ierror
+    nberro=nberro+ierror
+
+!       Type entree Oxydant
+    itysup = 0
+    nbval  = nozppm
+    rubriq = 'ientox_zone_bord_slfm'
+    call restart_read_section_int_t(rp,rubriq,itysup,nbval,ientox,ierror)
+    ierrch=ierrch+ierror
+    nberro=nberro+ierror
+
+!     Par securite, si on ne parvient pas a lire la
+!       IENTCPFU ou IENTOX, on remet a zero le numero des zones IZFPPP
+!       car il a peut etre ete lu.
+!       Ceci permettra d'eviter de se servir des valeurs par defaut
+
+    if (ierrch.ne.0) then
+      do ifac = 1, nfabor
+        izfppp(ifac) = 0
+      enddo
+    endif
+
+  endif
+
+!      Lire le traceur de progress variable
+  call restart_read_field_vals(rp, iym(ngazgm), 0, ierror)
+  nberro=nberro+ierror
+  ilu = ilu + 1
+
+endif
+
 !     Modele EBU :
 !     ==========
 

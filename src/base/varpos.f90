@@ -196,12 +196,13 @@ endif
 
 !   Collocated time scheme for gaz combustion
 if (itpcol.eq.-1) then
-  if (ischtp.eq.2.and.ippmod(icod3p).ge.0) then
+  if (ischtp.eq.2.and.ippmod(islfm).ge.0) then
     itpcol = 1
   else
     itpcol = 0
   endif
 endif
+
 !     Termes sources NS,
 if (isno2t.eq.-999) then
   if (ischtp.eq.1) then

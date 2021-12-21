@@ -327,7 +327,7 @@ do ii = 1, nvar
     f_name  = trim(s_name) // '_turb_diffusivity'
     f_label = trim(s_label) // ' Turb Diff'
 
-    if (ippmod(icod3p).ge.0) then
+    if (ippmod(islfm).ge.0) then
       call field_get_key_int(ivarfl(isca(ifm)), key_turb_diff, ifcvsl)
       if (ii .ne. isca(ifm)) then
         call field_set_key_int(f_id,  key_turb_diff, ifcvsl)
@@ -370,7 +370,7 @@ if (iturb.eq.41) then
       f_name  = trim(s_name) // '_sgs_flux_coef'
       f_label = trim(s_label) // ' SGS Flux Coef'
 
-      if (ippmod(icod3p).ge.0) then
+      if (ippmod(islfm).ge.0) then
         call field_get_key_int(ivarfl(isca(ifm)), key_sgs_sca_coef, ifcvsl)
         if (ii .ne. isca(ifm)) then
           call field_set_key_int(f_id,  key_sgs_sca_coef, ifcvsl)

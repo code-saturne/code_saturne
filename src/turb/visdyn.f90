@@ -497,7 +497,7 @@ do jj = 1, nscal
 
   ! For any scalar other than the mixture fraction in diffusion flames,
   ! Dt is not computed either. TODO Soot may be an exception
-  if (ippmod(icod3p).ge.0) then
+  if (ippmod(islfm).ge.0) then
     if (jj.ne.ifm)  cycle
   endif
 
@@ -625,7 +625,6 @@ do jj = 1, nscal
   endif
 
 enddo
-
 
 ! Free memory
 deallocate(s_n, sf_n)

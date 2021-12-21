@@ -60,6 +60,7 @@ typedef enum {
   CS_PHYSICAL_MODEL_FLAG,          /*!< global specific physics flag */
 
   CS_COMBUSTION_3PT,               /*!< 3-point combustion model */
+  CS_COMBUSTION_SLFM,              /*!< Steady laminar flamelet model */
   CS_COMBUSTION_EBU,               /*!< EBU combustion model */
   CS_COMBUSTION_LW,                /*!< Libby-Williams combustion model */
   CS_COMBUSTION_PCLC,              /*!< pulverized coal combustion with

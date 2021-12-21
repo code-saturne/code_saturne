@@ -67,6 +67,9 @@ if (ippmod(icod3p).ge.0) then
   call d3pini
 endif
 
+if (ippmod(islfm).ge.0) then
+  call cs_steady_laminar_flamelet_init
+endif
 ! ---> Combustion gaz
 !      Flamme de premelange : modele EBU
 

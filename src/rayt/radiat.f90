@@ -44,6 +44,13 @@ module radiat
   !>  - 2: P1
   integer(c_int), pointer, save :: iirayo
 
+  !>Spectral radiation models
+  !>Number of ETRs to solve.
+  integer(c_int), pointer, save :: nwsgg
+
+  !> Time step interval for radiative properties updating from the library
+  integer(c_int), pointer, save :: nt_rad_prp
+
   !> Atmospheric radiation model:
   !> - Direct Solar the first bit
   !> - diFfuse Solar for the second bit
@@ -68,12 +75,14 @@ module radiat
     !---------------------------------------------------------------------------
 
     ! Interface to C function to retrieve pointers
-    subroutine cs_rad_transfer_get_pointers(p_iirayo, p_rad_atmo_model)  &
+    subroutine cs_rad_transfer_get_pointers(p_iirayo,     p_nwsgg,             &
+                                            p_nt_rad_prp, p_rad_atmo_model)    &
       bind(C, name='cs_rad_transfer_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
 
-      type(c_ptr), intent(out) :: p_iirayo, p_rad_atmo_model
+      type(c_ptr), intent(out) :: p_iirayo, p_nwsgg
+      type(c_ptr), intent(out) :: p_nt_rad_prp, p_rad_atmo_model
 
     end subroutine cs_rad_transfer_get_pointers
 
@@ -163,11 +172,14 @@ contains
     use ppcpfu
     use numvar
 
-    type(c_ptr) :: p_iirayo, p_rad_atmo_model
+    type(c_ptr) :: p_iirayo, p_nwsgg, p_nt_rad_prp, p_rad_atmo_model
 
-    call cs_rad_transfer_get_pointers(p_iirayo, p_rad_atmo_model)
+    call cs_rad_transfer_get_pointers(p_iirayo,     p_nwsgg,                   &
+                                      p_nt_rad_prp, p_rad_atmo_model)
 
     call c_f_pointer(p_iirayo, iirayo)
+    call c_f_pointer(p_nwsgg, nwsgg)
+    call c_f_pointer(p_nt_rad_prp, nt_rad_prp)
     call c_f_pointer(p_rad_atmo_model, rad_atmo_model)
 
   end subroutine radiat_init

@@ -106,7 +106,7 @@ BEGIN_C_DECLS
 /*! Status of specific physical models */
 
 int cs_glob_physical_model_flag[CS_N_PHYSICAL_MODEL_TYPES]
-  = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+  = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

@@ -72,7 +72,7 @@ implicit none
 
 integer        f_id, isc, ii, jj
 integer        kscmin, kscmax, kscavr
-
+integer        key_is_buoyant, key_turb_diff, key_sgs_sca_coef
 type(var_cal_opt) :: vcopt
 
 !===============================================================================
@@ -149,7 +149,108 @@ if (ippmod(icod3p).ge.0) then
 
 endif
 
-! 1.2 Flamme de premelange : modele EBU
+! 1.2 Flamme de diffusion : Steady laminar flamelet approach
+! ==========================================================
+
+if (ippmod(islfm).ge.0) then
+
+  ! Mixture fraction and its variance
+
+  call field_get_key_id("is_buoyant", key_is_buoyant)
+  call field_get_key_id("turbulent_diffusivity_id", key_turb_diff)
+  call field_get_key_id("sgs_scalar_flux_coef_id", key_sgs_sca_coef)
+
+  call add_model_scalar_field('mixture_fraction', 'Fra_MEL', ifm)
+
+  f_id = ivarfl(isca(ifm))
+  call field_set_key_double(f_id, kscmin, 0.d0)
+  call field_set_key_double(f_id, kscmax, 1.d0)
+  call field_set_key_int(f_id, key_is_buoyant, 1)
+  call field_set_key_int(f_id, kivisl, 0)
+
+  if (iturb.eq.41) then
+    call field_set_key_int(f_id, key_turb_diff, 0)
+    call field_set_key_int(f_id, key_sgs_sca_coef, 0)
+  endif
+
+  if (mode_fp2m .eq. 0) then
+    call add_model_scalar_field('mixture_fraction_variance', 'Var_FrMe', ifp2m)
+
+    f_id = ivarfl(isca(ifp2m))
+    call field_set_key_int(f_id, kscavr, ivarfl(isca(ifm)))
+    call field_set_key_int(f_id, key_is_buoyant, 1)
+
+  else if(mode_fp2m .eq. 1) then
+    call add_model_scalar_field('mixture_fraction_2nd_moment', &
+                                '2nd_Moment_FrMe', ifsqm)
+    f_id = ivarfl(isca(ifsqm))
+    call field_set_key_double(f_id, kscmin, 0.d0)
+    call field_set_key_double(f_id, kscmax, 1.d0)
+    call field_set_key_int(f_id, key_is_buoyant, 1)
+    call field_set_key_int(f_id, kivisl, 0)
+
+    if (iturb.eq.41) then
+      call field_set_key_int(f_id, key_turb_diff, 0)
+      call field_set_key_int(f_id, key_sgs_sca_coef, 0)
+    endif
+
+  endif
+
+  ! Enthalpy
+  if (ippmod(islfm).eq.1 .or. ippmod(islfm).eq.3) then
+    itherm = 2
+    call add_model_scalar_field('enthalpy', 'Enthalpy', ihm)
+    iscalt = ihm
+    ! Set min and max clipping
+    f_id = ivarfl(isca(iscalt))
+
+    call field_set_key_double(f_id, kscmin, -grand)
+    call field_set_key_double(f_id, kscmax, grand)
+    call field_set_key_int(f_id, key_is_buoyant, 1)
+    call field_set_key_int(f_id, kivisl, 0)
+
+    if (iturb.eq.41) then
+      call field_set_key_int(f_id, key_turb_diff, 0)
+      call field_set_key_int(f_id, key_sgs_sca_coef, 0)
+    endif
+
+  endif
+
+  ! Flamelet/Progress variable model
+  if (ippmod(islfm).ge.2) then
+    call add_model_scalar_field('progress_variable', 'Prog_Var', ipvm)
+
+    f_id = ivarfl(isca(ipvm))
+    call field_set_key_double(f_id, kscmin, 0.d0)
+    call field_set_key_double(f_id, kscmax, grand)
+    call field_set_key_int(f_id, key_is_buoyant, 1)
+    call field_set_key_int(f_id, kivisl, 0)
+
+    if (iturb.eq.41) then
+      call field_set_key_int(f_id, key_turb_diff, 0)
+      call field_set_key_int(f_id, key_sgs_sca_coef, 0)
+    endif
+
+  endif
+
+  ! Soot mass fraction and precursor number
+  if (isoot.ge.1) then
+
+    call add_model_scalar_field('soot_mass_fraction', 'Fra_Soot', ifsm)
+    f_id = ivarfl(isca(ifsm))
+    call field_set_key_double(f_id, kscmin, 0.d0)
+    call field_set_key_double(f_id, kscmax, 1.d0)
+
+    call add_model_scalar_field('soot_precursor_number', 'NPr_Soot', inpm)
+    f_id = ivarfl(isca(inpm))
+    call field_set_key_double(f_id, kscmin, 0.d0)
+    call field_set_key_double(f_id, kscmax, 1.d0)
+
+  endif
+
+endif
+
+! 1.3 Flamme de premelange : modele EBU
 ! =====================================
 
 if (ippmod(icoebu).ge.0) then
@@ -178,10 +279,10 @@ if (ippmod(icoebu).ge.0) then
   endif
 endif
 
-! 1.3 Flamme de premelange : modele BML A DEVELOPER
+! 1.4 Flamme de premelange : modele BML A DEVELOPER
 ! =================================================
 
-! 1.4 Flamme de premelange : modele LWC
+! 1.5 Flamme de premelange : modele LWC
 ! =====================================
 
 if (ippmod(icolwc).ge.0 ) then

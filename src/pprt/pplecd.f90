@@ -73,6 +73,12 @@ if (ippmod(icod3p).ge.0 .or. ippmod(icoebu).ge.0                      &
   call colecd
 endif
 
+! ---> Diffusion flame - Steady laminar flamelet approach
+
+if (ippmod(islfm).ge.0) then
+  call cs_steady_laminar_flamelet_read_base
+endif
+
 ! ---> Pulverized coal combustion
 
 if (ippmod(iccoal).ge.0 .or. ippmod(icpl3c).ge.0) then

@@ -1224,6 +1224,10 @@ if (ippmod(icompf).ge.0) then
   call finalize_compf
 endif
 
+if (ippmod(islfm).ge.0) then
+  call finalize_steady_laminar_flamelet_library
+endif
+
 if (ippmod(igmix).ge.0) then
   call finalize_gas_mix
 endif
