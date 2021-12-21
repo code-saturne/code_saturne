@@ -224,6 +224,9 @@ cs_selector_get_cells_boundary(const char  *criteria,
 /*!
  * \brief Fill a list of cells attached to a given boundary selection criteria.
  *
+ * Only cells sharing a face (not just a vertex) with the boundary are
+ * selected.
+ *
  * \param[in]   criteria     selection criteria string
  * \param[out]  n_b_cells    number of selected cells
  * \param[out]  b_cell_list  list of selected cells
@@ -232,9 +235,9 @@ cs_selector_get_cells_boundary(const char  *criteria,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_selector_get_b_face_cells_list(const char *criteria,
-                                  cs_lnum_t  *n_b_cells,
-                                  cs_lnum_t   b_cell_list[]);
+cs_selector_get_b_face_cells_list(const char  *criteria,
+                                  cs_lnum_t   *n_b_cells,
+                                  cs_lnum_t    b_cell_list[]);
 
 /*----------------------------------------------------------------------------
  * Fill a list of interior faces belonging to a given periodicity.
