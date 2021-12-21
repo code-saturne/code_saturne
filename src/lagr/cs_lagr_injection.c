@@ -970,7 +970,8 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_STAT_CLASS,
                                   zis->cluster);
 
-      if (cs_glob_lagr_model->agglomeration == 1) {
+      if (   cs_glob_lagr_model->agglomeration == 1
+          || cs_glob_lagr_model->fragmentation == 1) {
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_AGGLO_CLASS_ID,
                                   zis->aggregat_class_id);
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_AGGLO_FRACTAL_DIM,

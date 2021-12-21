@@ -428,8 +428,10 @@ cs_lagr_fragmentation(cs_real_t  dt,
 {
   /* Initialization */
   cs_lnum_t ret_val = 0;
-  cs_real_t agglo_min_weight = cs_glob_lagr_agglomeration_model->min_stat_weight; // Minimum parcel size
-  cs_real_t agglo_max_weight = cs_glob_lagr_agglomeration_model->max_stat_weight; // Maximum parcel size
+  cs_real_t agglo_min_weight
+    = cs_glob_lagr_agglomeration_model->min_stat_weight; // Minimum parcel size
+  cs_real_t agglo_max_weight
+    = cs_glob_lagr_agglomeration_model->max_stat_weight; // Maximum parcel size
 
   cs_lnum_t newpart = 0;
 
