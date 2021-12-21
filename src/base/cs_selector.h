@@ -220,6 +220,22 @@ cs_selector_get_cells_boundary(const char  *criteria,
                                cs_lnum_t    i_face_id[],
                                cs_lnum_t    b_face_id[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Fill a list of cells attached to a given boundary selection criteria.
+ *
+ * \param[in]   criteria     selection criteria string
+ * \param[out]  n_b_cells    number of selected cells
+ * \param[out]  b_cell_list  list of selected cells
+ *                           (0 to n-1, preallocated to cs_glob_mesh->n_b_faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_b_face_cells_list(const char *criteria,
+                                  cs_lnum_t  *n_b_cells,
+                                  cs_lnum_t   b_cell_list[]);
+
 /*----------------------------------------------------------------------------
  * Fill a list of interior faces belonging to a given periodicity.
  *

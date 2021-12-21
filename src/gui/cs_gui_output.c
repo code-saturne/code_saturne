@@ -616,6 +616,29 @@ _define_profiles(void)
   BFT_FREE(w_r_vals);
 }
 
+/*----------------------------------------------------------------------------
+ * Boundary zone cells selection wrapper function
+ *----------------------------------------------------------------------------*/
+
+void
+_selection_func_boundary_cells(void        *input,
+                               cs_lnum_t   *n_elts,
+                               cs_lnum_t  **elt_list)
+{
+
+  const char *criteria = (const char *)input;
+
+  /* Pointer is not allocated when given to this function.
+   * It will be deallocated afterwards by the calling function.
+   */
+  cs_lnum_t *_cell_list = NULL;
+  BFT_MALLOC(_cell_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
+
+  cs_selector_get_b_face_cells_list(criteria, n_elts, _cell_list);
+
+  *elt_list = _cell_list;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -802,6 +825,14 @@ cs_gui_postprocess_meshes(void)
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
     }
+    else if(cs_gui_strcmp(type, "boundary_cells")) {
+      cs_post_define_volume_mesh_by_func(id, label,
+                                         _selection_func_boundary_cells, /* function */
+                                         location,                       /* input */
+                                         true,
+                                         add_groups, auto_vars,
+                                         n_writers, writer_ids);
+    }
     else if(cs_gui_strcmp(type, "VolumicZone")) {
       const cs_zone_t *z = cs_volume_zone_by_name(location);
       const char *criteria =
@@ -816,6 +847,20 @@ cs_gui_postprocess_meshes(void)
       cs_post_define_surface_mesh(id, label, NULL, criteria,
                                   add_groups, auto_vars,
                                   n_writers, writer_ids);
+    }
+    else if (cs_gui_strcmp(type, "BoundaryZone_cells")) {
+      const cs_zone_t *z = cs_boundary_zone_by_name(location);
+      char *criteria = NULL;
+      if (z->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
+        criteria = cs_mesh_location_get_selection_string(z->location_id);
+      else
+        criteria = "all[]";
+      cs_post_define_volume_mesh_by_func(id, label,
+                                         _selection_func_boundary_cells, /* function */
+                                         criteria,                       /* input */
+                                         true,
+                                         add_groups, auto_vars,
+                                         n_writers, writer_ids);
     }
     else if(   cs_gui_strcmp(type, "particles")
             || cs_gui_strcmp(type, "trajectories")) {

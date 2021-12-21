@@ -265,8 +265,10 @@ class TypeMeshDelegate(QItemDelegate):
             editor.addItem("cells")
             editor.addItem("interior faces")
             editor.addItem("boundary faces")
+            editor.addItem("boundary cells")
             editor.addItem("volume zone")
             editor.addItem("boundary zone")
+            editor.addItem("boundary zone cells")
 
             vlm = LocalizationModel('VolumicZone', self.mdl.case)
             if len(vlm.getZones()) == 0:
@@ -274,8 +276,9 @@ class TypeMeshDelegate(QItemDelegate):
                 editor.model().item(idx).setEnabled(False)
             blm = LocalizationModel('BoundaryZone', self.mdl.case)
             if len(blm.getZones()) == 0:
-                idx = editor.findText('boundary zone')
-                editor.model().item(idx).setEnabled(False)
+                for elt in ['boundary zone', 'boundary zone cells']:
+                    idx = editor.findText(elt)
+                    editor.model().item(idx).setEnabled(False)
 
         else:
             editor.addItem("particles")
@@ -287,7 +290,9 @@ class TypeMeshDelegate(QItemDelegate):
     def setEditorData(self, comboBox, index):
         if self.lag == 0:
             dico = {"cells": 0, "interior_faces": 1, "boundary_faces": 2,
-                    "VolumicZone": 3, "BoundaryZone": 4}
+                    "boundary_cells" : 3,
+                    "VolumicZone": 4, "BoundaryZone": 5,
+                    "BoundaryZone_cells": 6}
         else:
             dico = {"particles": 0, "trajectories": 1}
         row = index.row()
@@ -348,9 +353,10 @@ class LocationSelectorDelegate(QItemDelegate):
         mesh_id = self.mdl.getMeshIdList()[row]
         mesh_type = self.mdl.getMeshType(mesh_id)
 
-        if mesh_type in ['BoundaryZone', 'VolumicZone']:
+        if mesh_type in ['BoundaryZone', 'BoundaryZone_cells', 'VolumicZone']:
             editor = QComboBox(parent)
-            lm = LocalizationModel(mesh_type, self.mdl.case)
+            _mtype = mesh_type.split('_')[0]
+            lm = LocalizationModel(_mtype, self.mdl.case)
             for zone in lm.getZones():
                 editor.addItem(zone.getLabel())
 
@@ -500,15 +506,20 @@ class StandardItemModelMesh(QStandardItemModel):
         self.dicoV2M= {"cells": 'cells',
                        "interior faces" : 'interior_faces',
                        "boundary faces": 'boundary_faces',
-                       "volume zone" : 'VolumicZone',
-                       "boundary zone" : 'BoundaryZone'}
+                       "boundary cells": 'boundary_cells',
+                       "volume zone": 'VolumicZone',
+                       "boundary zone": 'BoundaryZone',
+                       "boundary zone cells" : 'BoundaryZone_cells'}
         self.dicoM2V= {"cells" : 'cells',
                        "interior_faces" : 'interior faces',
                        "boundary_faces": 'boundary faces',
+                       "boundary_cells": 'boundary cells',
                        "VolumicZone": 'volume zone',
-                       "BoundaryZone": 'boundary zone'}
+                       "BoundaryZone": 'boundary zone',
+                       "BoundaryZone_cells": 'boundary zone cells'}
         type_list = ["cells", "interior_faces", "boundary_faces",
-                     "VolumicZone", "BoundaryZone"]
+                     "boundary_cells", "VolumicZone",
+                     "BoundaryZone", "BoundaryZone_cells"]
         for id in self.mdl.getMeshIdList():
             dico  = {}
             dico['name'] = self.mdl.getMeshLabel(id)
@@ -588,8 +599,9 @@ class StandardItemModelMesh(QStandardItemModel):
         col = index.column()
 
         # Lists to better handle the difference between elements and zones
-        elts_list = ['cells', 'interior_faces', 'boundary_faces']
-        zone_list = ['VolumicZone', 'BoundaryZone']
+        elts_list = ['cells', 'interior_faces',
+                     'boundary_faces', 'boundary_cells']
+        zone_list = ['VolumicZone', 'BoundaryZone', 'BoundaryZone_cells']
 
         # Label
         if col == 0:

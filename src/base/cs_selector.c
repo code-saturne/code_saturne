@@ -718,6 +718,65 @@ cs_selector_get_cells_boundary(const char  *criteria,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Fill a list of cells attached to a given boundary selection criteria.
+ *
+ * \param[in]   criteria     selection criteria string
+ * \param[out]  n_b_cells    number of selected cells
+ * \param[out]  b_cell_list  list of selected cells
+ *                           (0 to n-1, preallocated to cs_glob_mesh->n_b_faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_selector_get_b_face_cells_list(const char *criteria,
+                                  cs_lnum_t  *n_b_cells,
+                                  cs_lnum_t   b_cell_list[])
+{
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+
+  /* Get list of faces */
+  cs_lnum_t  n_b_faces = 0;
+  cs_lnum_t *b_face_list = NULL;
+
+  BFT_MALLOC(b_face_list, mesh->n_b_faces, cs_lnum_t);
+
+  cs_selector_get_b_face_list(criteria, &n_b_faces, b_face_list);
+
+  /* Flag array initialization */
+  int *cell_flag = NULL;
+
+  BFT_MALLOC(cell_flag, mesh->n_cells, int);
+
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+    cell_flag[i] = 0;
+
+  /* Loop on all found boundary faces.
+   *  -> Check if cell was allready flagged (if attached to 2 or more faces)
+   *  -> If not flagged, add cell id to list array, flag the cell and
+   *     increment cell count.
+   */
+  *n_b_cells = 0;
+
+  for (cs_lnum_t e_id = 0; e_id < n_b_faces; e_id++) {
+    cs_lnum_t f_id = b_face_list[e_id];
+
+    cs_lnum_t c_id = mesh->b_face_cells[f_id];
+
+    if (cell_flag[c_id] == 0) {
+      b_cell_list[*n_b_cells] = c_id;
+      cell_flag[c_id] = 1;
+      *n_b_cells += 1;
+    }
+  }
+
+  BFT_FREE(b_face_list);
+  BFT_FREE(cell_flag);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Fill a list of interior faces belonging to a given periodicity.
  *
  * \param[in]   perio_num  periodicity number

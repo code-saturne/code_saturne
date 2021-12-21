@@ -799,8 +799,10 @@ class OutputControlModel(Model):
         Set the type of a mesh
         """
         self.isInList(mesh_id, self.getMeshIdList())
-        types_list = ('cells', 'interior_faces', 'boundary_faces',
-                      'VolumicZone', 'BoundaryZone')
+        types_list = ('cells', 'interior_faces',
+                      'boundary_faces', 'boundary_cells',
+                      'VolumicZone', 'BoundaryZone',
+                      'BoundaryZone_cells')
         self.isInList(mesh_type, types_list)
         node = self.node_out.xmlGetNode('mesh', id = mesh_id)
         node['type'] = mesh_type
