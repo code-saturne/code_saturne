@@ -90,6 +90,8 @@ if test "x$GCC" = "xyes"; then
 
   if test -n "`echo $ple_ac_cc_version | grep ICC`" ; then
     ple_gcc=icc
+  elif test -n "`echo $ple_ac_cc_version | grep ICX`" ; then
+    ple_gcc=icx
   elif test -n "`echo $ple_ac_cc_version | grep -e DPC++ -e oneAPI`" ; then
     ple_gcc=oneAPI
   elif test -n "`echo $ple_ac_cc_version | grep clang`" ; then
@@ -250,8 +252,8 @@ elif test "x$ple_gcc" = "xicx" ; then
   cflags_default_opt="-O2"
   cflags_default_omp="-qopenmp"
 
-# Otherwise, are we using Intel LLVM DPC++/C++ Compiler ?
-#--------------------------------------------------------
+# Otherwise, are we using Intel LLVM DPC++/C++ Compiler (OneAPI) ?
+#-----------------------------------------------------------------
 
 elif test "x$ple_gcc" = "xoneAPI" ; then
 
