@@ -49,15 +49,15 @@ m4_define([ple_licence_c_comment],
 
 m4_define([ple_major_version], [2])
 m4_define([ple_minor_version], [0])
-m4_define([ple_release_version], [3])
-m4_define([ple_version_extra], [])
+m4_define([ple_release_version], [4])
+m4_define([ple_version_extra], [-alpha])
 m4_define([ple_version_string],
           [ple_major_version.ple_minor_version.ple_release_version@&t@ple_version_extra])
 
 AC_INIT([ple],[ple_version_string],[saturne-support@edf.fr])
 AC_CONFIG_SRCDIR([src/ple_defs.h])
 
-# Use the config directory for libtool stuff ...
+# Use the config directory for autotools stuff ...
 AC_CONFIG_AUX_DIR(build-aux)
 AC_CONFIG_MACRO_DIR(m4)
 
@@ -104,6 +104,14 @@ PLE_AC_CONFIG_PUBL_DEFINE(PLE_MINOR_VERSION, ple_minor_version,
                           [Minor version number])
 PLE_AC_CONFIG_PUBL_DEFINE(PLE_RELEASE_VERSION, ple_release_version,
                           [Release version number])
+
+# Version information for shared library
+
+PLE_LIB_VERSION_STRING_FULL=ple_major_version.ple_minor_version.ple_release_version
+PLE_LIB_VERSION_STRING_MAJOR=ple_major_version
+
+AC_SUBST(PLE_LIB_VERSION_STRING_FULL)
+AC_SUBST(PLE_LIB_VERSION_STRING_MAJOR)
 
 #------------------------------------------------------------------------------
 # Checks for programs.
@@ -185,6 +193,22 @@ if test "${relocatable}" = yes ; then
   AC_DEFINE([HAVE_RELOCATABLE], 1, [Relocatable installation])
 fi
 
+# Shared or static build ?
+
+AC_ARG_ENABLE(shared,
+  [AS_HELP_STRING([--enable-shared], [enable shared installation])],
+  [
+    case "${enableval}" in
+      yes) enable_shared=yes ;;
+      no)  enable_shared=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-shared]) ;;
+    esac
+  ],
+  [ enable_shared=yes ]
+)
+
+AC_SUBST(enable_shared)
+
 # Optionally install the code with python wrappers
 
 AC_ARG_ENABLE(python,
@@ -236,11 +260,32 @@ if test "x$auto_flags" = "xyes" ; then
   fi
 
   # Default flags
-  CPPFLAGS="$cppflags_default $user_CPPFLAGS"
-  CFLAGS="$cflags_default $user_CFLAGS"
-  LDFLAGS="$ldflags_default $user_LDFLAGS"
-  LIBS="$libs_default $user_LIBS"
+  CPPFLAGS="$cppflags_default"
+  CFLAGS="$cflags_default"
+  LDFLAGS="$ldflags_default"
+  LIBS="$libs_default"
   LDRPATH="$ldflags_rpath"
+
+  # Shared library flags
+  if test "x$enable_shared" = xyes; then
+    CFLAGS="$CFLAGS $cflags_default_shared"
+    LDFLAGS_SHARED="$ldflags_default_shared"
+    LDFLAGS_SONAME="$ldflags_default_soname"
+  fi
+
+  # User flags
+  if test "x$user_CPPFLAGS" != "x"; then
+    CPPFLAGS="$CPPFLAGS $user_CPPFLAGS"
+  fi
+  if test "x$user_CFLAGS" != "x"; then
+    CFLAGS="$CFLAGS $user_CFLAGS"
+  fi
+  if test "x$user_LDFLAGS" != "x"; then
+    LDFLAGS="$LDFLAGS $user_LDFLAGS"
+  fi
+  if test "x$user_LIBS" != "x"; then
+    LIBS="$LIBS $user_LIBS"
+  fi
 
   if test "x$debug" = xyes; then
     # Debug flags
@@ -261,9 +306,17 @@ if test "x$auto_flags" = "xyes" ; then
   AC_SUBST(CFLAGS_DBG)
   AC_SUBST(CFLAGS_OPT)
 
+  AC_SUBST(LDFLAGS_SHARED)
+  AC_SUBST(LDFLAGS_SONAME)
+
   AC_SUBST(LDRPATH)
 
 fi
+
+if test x$PLE_LD = "x" ; then
+  PLE_LD=$CC
+fi
+AC_SUBST(PLE_LD)
 
 LIBS="${LIBS} -lm"
 
@@ -277,23 +330,30 @@ fi
 
 #------------------------------------------------------------------------------
 
-# We may only turn on processing for libtool now that the basic compiler
-# and linker flags are set (to avoid issues with linkers with different
-# modes such as 32 and 64 bit which may be modified by compiler or
-# linker flags).
+# Library extension based on system type
+#---------------------------------------
 
-# AC_DISABLE_SHARED may not be used inside a test, as it seems to
-# take effect whether the result is true or not (maybe due to a bug),
-# so we directly use autoconf's enable_shared variable.
+case "$host_os" in
+  darwin*)
+    SHARED_LIB_EXT=dylib
+    ;;
+  linux*)
+    SHARED_LIB_EXT=so
+    ;;
+  *)
+    AC_MSG_WARN([Not sure how to build shared lib for $target_os; assuming Linux-like])
+    SHARED_LIB_EXT=so
+    ;;
+esac
 
-if test "$host_os" = mingw64 ; then
-   enable_shared=no
+if test $enable_shared = yes; then
+  LIB_EXT=$SHARED_LIB_EXT
+else
+  LIB_EXT=a
 fi
-AC_SUBST(enable_shared)
 
-# Initialize libtool.
-
-LT_INIT([disable-static, win32-dll])
+AC_SUBST(SHARED_LIB_EXT)
+AC_SUBST(LIB_EXT)
 
 # Add some preprocessor flags on some systems to work around autotools issues
 #----------------------------------------------------------------------------
@@ -541,23 +601,6 @@ AC_CONFIG_FILES([Makefile src/Makefile pyple/Makefile tests/Makefile
 PLE_AC_CONFIG_PUBL_FINALIZE
 
 AC_OUTPUT
-
-#------------------------------------------------------------------------------
-
-# Libtool configuration bug workaround (problem encountered with compilers
-# which do not recognize "-soname", so that "-Wl,-soname" is needed to pass
-# flags to the linker; Manually setting $wl to "-Wl" in libtool corrects
-# the problem, and so does this workaround borrowed from
-# the HDF5 configure.in, which does it automatically).
-
-if test "x$GCC" != "xyes"; then
-  echo 'fixing $wl in libtool'
-ed - libtool <<EOF 2> /dev/null
-/^wl=""/s//wl="-Wl,"/
-w
-q
-EOF
-fi
 
 #------------------------------------------------------------------------------
 

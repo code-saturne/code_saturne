@@ -25,7 +25,7 @@ See the COPYING file for details.
 Installation
 ------------
 
-The installation system is based on the GNU autotools.
+The installation system is based on the GNU autotools (without libtool)
 
 If the code was obtained through a Git repository, a first step is required:
 ```
@@ -49,3 +49,8 @@ make install
 The "configure" script takes several options, so running:
 `<path_to_ple_sources>/configure --help`
 first is recommended to list the available options.
+
+To port PLE to a system on which it was not previously supported,
+most of the adaptation should be possible by adapting the
+`config/ple_auto_flags.sh` file, which does not require running
+`./sbin/bootstrap` again.

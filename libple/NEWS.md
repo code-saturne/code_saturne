@@ -1,3 +1,19 @@
+Release 2.0.4 (unreleased)
+==========================
+
+Changes:
+--------
+
+- Remove libtool from build system.
+  This requires slightly more commplex rules in the Makefile.am's, but
+  should avoid issues on some systems where lbitool's absolute refusal
+  to ignore `.la` files even when they contain incorrect values
+  could cause more problems than it solves.
+
+- Add key/value-based settings functions:
+  * `ple_locator_set_default_option`
+  * `ple_locator_set_options`
+
 Release 2.0.3 (November 8, 2021)
 ================================
 
@@ -15,7 +31,7 @@ Bug fixes:
 
 - Really fix PLE locator for local cases when points fall outside domain.
 
-- Avoid crash in ple_locator_shift_location() for empty locator.
+- Avoid crash in `ple_locator_shift_location` for empty locator.
 
 Release 2.0.2 (March 16, 2018)
 ==============================
@@ -23,7 +39,7 @@ Release 2.0.2 (March 16, 2018)
 Bug fixes:
 ----------
 
-- Fix in ple_locator_extend_search() for non-local cases.
+- Fix in `ple_locator_extend_search` for non-local cases.
 
 Changes:
 --------
@@ -33,7 +49,7 @@ Changes:
 
 - Implement handling of point tags so as to ignore location
   on elements sharing tag (also requires matching features
-  in ple_mesh_elements_locate_t function used.
+  in `ple_mesh_elements_locate_t` function used.
 
 Architectural changes
 ---------------------
@@ -46,7 +62,7 @@ Release 2.0.1 (May 21, 2015)
 Bug fixes:
 ----------
 
-- Fix in PLE locator indexing for ple_locator_extend_search().
+- Fix in PLE locator indexing for `ple_locator_extend_search`.
 
 Changes:
 --------
@@ -70,7 +86,7 @@ Release 1.0.4 (August 18, 2014)
 Bug fixes:
 ----------
 
-- Fix asynchronous exchange for ple_locator_exchange_point_var().
+- Fix asynchronous exchange for `ple_locator_exchange_point_var`.
 
 Changes:
 --------
@@ -93,7 +109,7 @@ Release 1.0.2 (October 29, 2012)
 Bug fixes:
 ----------
 
-- Fix extra count (should be 3, not 4) in PLE flags exchange in ple_locator.c.
+- Fix extra count (should be 3, not 4) in PLE flags exchange in `ple_locator.c`.
 
 - Fixes for mixed "locate on closest / do not locate on closest" cases.
 

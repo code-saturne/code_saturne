@@ -10,13 +10,14 @@
 # environment variables corresponding to the recommended settings for a
 # given OS/CPU/compiler combination:
 #
-# cppflags_default       # Base CPPFLAGS                     (default: "")
+# cppflags_default       # Base CPPFLAGS                      (default: "")
 
-# cflags_default         # Base CFLAGS                       (default: "")
-# cflags_default_dbg     # Added to $CFLAGS for debugging    (default: "-g")
-# cflags_default_opt     # Added to $CFLAGS for optimization (default: "-O")
-# cflags_default_prf     # Added to $CFLAGS for profiling    (default: "-g")
-# cflags_default_omp     # Added to $CFLAGS for OpenMP       (default: "")
+# cflags_default         # Base CFLAGS                        (default: "")
+# cflags_default_dbg     # Added to $CFLAGS for debugging     (default: "-g")
+# cflags_default_opt     # Added to $CFLAGS for optimization  (default: "-O")
+# cflags_default_prf     # Added to $CFLAGS for profiling     (default: "-g")
+# cflags_default_omp     # Added to $CFLAGS for OpenMP        (default: "")
+# cflags_default_shared  # Added to $CFLAGS for shared libs   (default: "-fPIC -DPIC")
 #
 # ldflags_default        # Base LDFLAGS                       (default: "")
 # ldflags_default_dbg    # Added to $LDFLAGS for debugging    (default: "-g")
@@ -72,6 +73,24 @@ esac
 
 cflags_default_prf="-g"
 ldflags_default_prf="-g"
+
+# Options to generate position-independent code for shared libraries.
+# can be modified later if necessary, but usually common to most compilers.
+
+case "$host_os" in
+  darwin*)
+    cflags_default_shared="-fPIC -DPIC"
+    ldflags_default_shared="-dynamiclib -undefined dynamic_lookup -undefined error"
+    ldflags_default_soname="-install_name @rpath/"
+    ;;
+  *)
+    cflags_default_shared="-fPIC -DPIC"
+    ldflags_default_shared="-shared"
+    ldflags_default_soname="-Wl,-soname -Wl,"
+    ;;
+esac
+
+# Compiler info (will be determined in following tests)
 
 ple_ac_cc_version=unknown
 ple_cc_compiler_known=no
@@ -220,6 +239,7 @@ elif test "x$ple_gcc" = "xicc" ; then
   cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_omp="-qopenmp"
+
   case "$ple_cc_vers_major" in
     1[0123456])
       cflags_default_omp="-openmp"

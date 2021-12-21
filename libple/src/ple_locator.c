@@ -123,6 +123,7 @@ struct _ple_locator_t {
 
   int       locate_algorithm;    /* Location algorithm id */
   int       exchange_algorithm;  /* Exchange algorithm id */
+  int       async_threshold;     /* Threshold for asynchronous exchange */
 
 #if defined(PLE_HAVE_MPI)
   MPI_Comm  comm;                /* Associated MPI communicator */
@@ -264,6 +265,10 @@ typedef int
 
 #if defined(PLE_HAVE_MPI)
 
+/* Default location algorithm */
+
+static int _ple_locator_location_algorithm = _LOCATE_BB_SENDRECV_ORDERED;
+
 /* maximum number of exchanging ranks for which we use asynchronous
    MPI sends and receives instead of MPI_SendRecv */
 
@@ -285,6 +290,39 @@ static int  _ple_locator_log_end_g_comm = 0;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set options for a given locator.
+ *
+ * \param[in]  this_locator  pointer to locator structure
+ * \param[in]  key           option name
+ * \param[in]  value         associated value
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_parse_locator_option(const char   *key,
+                      const char   *value,
+                      int          *location_algorithm,
+                      int          *async_threshold)
+{
+  if (key == NULL || value == NULL)
+    return;
+
+  if (strncmp(key, "location_algorithm", 64) == 0) {
+    if (strncmp(value, "bounding_box_sendreceive", 64) == 0)
+      *location_algorithm = _LOCATE_BB_SENDRECV;
+    else if (strncmp(value, "bounding_box_sendreceive_ordered", 64) == 0)
+      *location_algorithm = _LOCATE_BB_SENDRECV_ORDERED;
+  }
+
+  else if (strncmp(key, "exchange_async_threshold", 64) == 0) {
+    int i_value = 0;
+    if (sscanf(value, "%d", &i_value) == 1)
+      *async_threshold = i_value;
+  }
+}
 
 #if defined(PLE_HAVE_MPI)
 
@@ -789,7 +827,7 @@ _location_ranks(ple_locator_t  *this_locator,
   _locator_trace_start_comm(_ple_locator_log_start_g_comm, comm_timing);
 
   loc_vals[0] = this_locator->n_intersects;
-  loc_vals[1] = _ple_locator_async_threshold;
+  loc_vals[1] = this_locator->async_threshold;
 
   MPI_Allreduce(loc_vals, max_vals, 2, MPI_INT, MPI_MAX,
                 this_locator->comm);
@@ -2795,8 +2833,9 @@ ple_locator_create(void)
   this_locator->start_rank = 0;
 #endif
 
-  this_locator->locate_algorithm = _LOCATE_BB_SENDRECV;
+  this_locator->locate_algorithm = _ple_locator_location_algorithm;
   this_locator->exchange_algorithm = _EXCHANGE_SENDRECV;
+  this_locator->async_threshold = _ple_locator_async_threshold;
 
   this_locator->point_id_base = 0;
 
@@ -3053,7 +3092,7 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
                       -1,
                       1, /* equivalent to _LOCATE_BB_SENDRECV */
                       -_LOCATE_BB_SENDRECV_ORDERED,
-                      _LOCATE_BB_SENDRECV_ORDERED,
+                      this_locator->locate_algorithm,
                       0};
     ple_lnum_t  *location_rank_id;
 
@@ -3809,6 +3848,53 @@ ple_locator_set_async_threshold(int threshold)
 {
   _ple_locator_async_threshold = threshold;
 }
+
+#endif /* defined(PLE_HAVE_MPI) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set default locator options.
+ *
+ * \param[in]  key    option name
+ * \param[in]  value  associated value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+ple_locator_set_default_option(const char  *key,
+                               const char  *value)
+{
+  _parse_locator_option(key,
+                        value,
+                        &_ple_locator_location_algorithm,
+                        &_ple_locator_async_threshold);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set options for a given locator.
+ *
+ * \param[in, out]  this_locator  pointer to locator structure
+ * \param[in]       key           option name
+ * \param[in]       value         associated value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+ple_locator_set_options(ple_locator_t  *this_locator,
+                        const char     *key,
+                        const char     *value)
+{
+  if (key == NULL || value == NULL)
+    return;
+
+  _parse_locator_option(key,
+                        value,
+                        &(this_locator->locate_algorithm),
+                        &(this_locator->async_threshold));
+}
+
+#if defined(PLE_HAVE_MPI)
 
 /*----------------------------------------------------------------------------*/
 /*!

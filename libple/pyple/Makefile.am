@@ -35,20 +35,73 @@ pyple_coupler.py: Makefile
 	$(edit_python) $${srcdir}$@.in >$@.tmp;
 	mv $@.tmp $@
 
-AM_CPPFLAGS = $(MPI_CPPFLAGS)
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-AM_LDFLAGS = $(MPI_LDFLAGS)
+AM_CPPFLAGS = -DHAVE_CONFIG_H -I$(top_builddir) $(MPI_CPPFLAGS)
+AM_CFLAGS = $(CFLAGS) $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_LDFLAGS = $(LDFLAGS) $(MPI_LDFLAGS)
+AM_LIBS = $(MPI_LIBS) $(LIBS) $(top_builddir)/src/libple.${LIB_EXT}
+
+# Build rules
+
+ple_coupling_wrapper.o: ple_coupling_wrapper.c $(top_builddir)/src/libple.${LIB_EXT}
+	$(CC) $(PYTHON_CPPFLAGS) $(AM_CPPFLAGS) $(MPI4PY_CFLAGS) $(AM_CFLAGS) -I$(srcdir)/../src -c $(srcdir)/ple_coupling_wrapper.c
+
+# Base Library
+
+libpyplecoupling.a: ple_coupling_wrapper.o
+	@echo "Building libple.a ..."
+	rm -f $@
+	${AR} $@ ple_coupling_wrapper.o
+	${RANLIB} $@
+
+libpyplecoupling_soname = libpyplecoupling.${SHARED_LIB_EXT}.$(PLE_LIB_VERSION_STRING_MAJOR)
+
+libpyplecoupling.${SHARED_LIB_EXT}: ple_coupling_wrapper.o
+	@echo "Building libpyplecoupling ..."
+	@link_cmd="${PLE_LD} -o $@ ${LDFLAGS_SHARED} $(AM_LDFLAGS) ple_coupling_wrapper.o $(top_builddir)/src/libple.${LIB_EXT} $(AM_LIBS) $(PYTHON_LIBS) $(PYTHON_EXTRA_LIBS)" ; \
+	echo "here ab" ; \
+	if test -n "$(LDRPATH)"; then \
+	  echo "$${link_cmd} $(LDRPATH)'$(abs_top_builddir)/src'" ; \
+	  $${link_cmd} $(LDRPATH)'$(abs_top_builddir)/src' ; \
+	else \
+	  echo "$${link_cmd}" ; \
+	  $${link_cmd} ; \
+	fi;
 
 pkgpython_PYTHON = __init__.py Coupling.py Init.py
 nodist_pkgpython_PYTHON = pyple_coupler.py
 
-pkgpyexec_LTLIBRARIES = libpyplecoupling.la
-libpyplecoupling_la_SOURCES = ple_coupling_wrapper.c
-libpyplecoupling_la_CFLAGS = $(MPI4PY_CFLAGS) $(PYTHON_CPPFLAGS) -I$(srcdir)/../src $(MPI_CPPFLAGS)
-libpyplecoupling_la_CPPFLAGS = $(MPI4PY_CFLAGS) $(PYTHON_CPPFLAGS) -I$(srcdir)/../src $(MPI_CPPFLAGS)
-libpyplecoupling_la_LDFLAGS = $(PYTHON_LIBS) $(PYTHON_EXTRA_LIBS)
-libpyplecoupling_la_LIBADD = $(top_builddir)/src/libple.la
-
 DISTCLEANFILES = pyple_coupler.py
 
+# Local targets
+
+all-local: libpyplecoupling.${LIB_EXT} pyple_coupler.py
+
+clean-local:
+	-rm -f pyple_coupler.py
+	-rm -f libpyplecoupling.${LIB_EXT}
+	-rm -f *.o
+
+install-exec-local: libpyplecoupling.${LIB_EXT} pyple_coupler.py
+	@test -z -n "$(libdir)" || { \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(pkgpythondir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(pkgpythondir)" || exit 1; \
+	  if test "${enable_shared}" = "yes" -a test -n "$(LDRPATH)"; then \
+	    echo "Installing (relinking) libpyplecoupling ..."; \
+	    link_cmd="${PLE_LD} '$(DESTDIR)$(pkgpythondir)/libpyplecoupling.${LIB_EXT}' ${LDFLAGS_SHARED} $(AM_LDFLAGS) ple_coupling_wrapper.o $(top_builddir)/src/libple.${LIB_EXT} $(AM_LIBS) $(PYTHON_LIBS) $(PYTHON_EXTRA_LIBS) $(LDRPATH)'$(DESTDIR)$(libdir)'" ; \
+	    echo "$${link_cmd}" ; \
+	    $${link_cmd} ; \
+	  else \
+	    echo "cp -fpP libpyplecoupling.${LIB_EXT} '$(DESTDIR)$(pkgpythondir)'"; \
+	    cp -fpP libpyplecoupling.${LIB_EXT} '$(DESTDIR)$(pkgpythondir)'; \
+	  fi ; \
+	}
+
+uninstall-local:
+	echo "lib a"
+	-rm -rf "$(DESTDIR)$(pkgpythondir)/__pycache__";
+	-rm -f "$(DESTDIR)$(pkgpythondir)/libpyplecoupling.${LIB_EXT}";
+	echo "lib b"
+	rmdir -p "$(DESTDIR)$(pkgpythondir)" || exit 0
+
 endif
+
