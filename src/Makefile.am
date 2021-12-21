@@ -21,9 +21,10 @@
 
 # Main part
 
-AM_CPPFLAGS = $(MPI_CPPFLAGS)
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-AM_LDFLAGS = $(MPI_LDFLAGS)
+AM_CPPFLAGS = -DHAVE_CONFIG_H -I$(top_builddir) $(MPI_CPPFLAGS)
+AM_CFLAGS = $(CFLAGS) $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_LDFLAGS = $(LDFLAGS) $(MPI_LDFLAGS)
+AM_LIBS = $(MPI_LIBS) $(LIBS)
 
 # Public header files (to be installed)
 
@@ -36,15 +37,93 @@ ple_locator.h
 noinst_HEADERS = \
 ple_config_defs.h
 
+# Dependency rules
+#
+# - Not handled by AutoMake, since we do not define an execcutable or library
+#   in the AutoMake way).
+#
+# - We could use a finer-grained logic, as only ple_coupling.c and ple_locator.c
+#   depend on their respective headers, but since this is a small library
+#   that optimization would only save a few seconds of compilation time.
+#
+# - So we simply use the common suffix rule below.
+
+.c.o: $(pleinclude_HEADERS) $(noinst_HEADERS) ../$(top_builddir)/ple_config.h
+	$(CC) $(AM_CPPFLAGS) $(AM_CFLAGS) -c $<
+
 # Library source files
 
-lib_LTLIBRARIES = libple.la
-noinst_LTLIBRARIES =
-libple_la_LIBADD = $(MPI_LIBS) -lm
-libple_la_SOURCES = ple_defs.c ple_locator.c
+libple_sources = ple_defs.c ple_locator.c
+libple_objs = \
+ple_defs.o \
+ple_locator.o
 
 if HAVE_MPI
-libple_la_SOURCES += ple_coupling.c
+libple_sources += ple_coupling.c
+libple_objs += \
+ple_coupling.o
 endif
 
-libple_la_LDFLAGS = $(MPI_LDFLAGS) -no-undefined -version-info 2:0:0
+# Library
+
+libple.a: ${libple_objs}
+	@echo "Building libple.a ..."
+	rm -f $@
+	${AR} $@ ${libple_objs}
+	${RANLIB} $@
+
+libple_soname = libple.${SHARED_LIB_EXT}.$(PLE_LIB_VERSION_STRING_MAJOR)
+libple_soname_full = libple.${SHARED_LIB_EXT}.$(PLE_LIB_VERSION_STRING_FULL)
+libple_soname_major = libple.${SHARED_LIB_EXT}.$(PLE_LIB_VERSION_STRING_MAJOR)
+
+libple.${SHARED_LIB_EXT}: ${libple_objs}
+	@echo "Building libple ..."
+	rm -f $@
+	rm -rf ${libple_soname_major}
+	${PLE_LD} -o ${libple_soname_full} ${LDFLAGS_SONAME}.${libple_soname} ${LDFLAGS_SHARED} ${LDFLAGS} ${libple_objs} $(AM_LDFLAGS) $(AM_LIBS)
+	ln -s ${libple_soname_full} $@
+	ln -s ${libple_soname_full} ${libple_soname_major}
+
+# Local targets
+
+all-local: libple.${LIB_EXT}
+
+clean-local:
+	@if test "${enable_shared}" = "yes" ; then \
+	  rm -f "$(libple_soname_full) $(libple_soname_major)"; \
+	fi;
+	-rm -f libple.${LIB_EXT}
+	-rm -f *.o
+
+install-exec-local: libple.${LIB_EXT}
+	@libraries=libple.${LIB_EXT}; \
+	if test "${enable_shared}" = "yes" ; then \
+	  libraries="$$libraries $(libple_soname_full) $(libple_soname_major)"; \
+	fi; \
+	list=; for p in $$libraries; do \
+	  if test -f $$p; then \
+	    list="$$list $$p"; \
+	  else :; fi; \
+	done; \
+	test -z "$$list" -a -n "$(libdir)" || { \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(libdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(libdir)" || exit 1; \
+	  echo " cp -fp $$list '$(DESTDIR)$(libdir)'"; \
+	  cp -fpP $$list "$(DESTDIR)$(libdir)"; \
+	}
+
+uninstall-local:
+	@libraries=libple.${LIB_EXT}; \
+	if test "${enable_shared}" = "yes" ; then \
+	  libraries="$$libraries $(libple_soname_full) $(libple_soname_major)"; \
+	fi; \
+	list=; for p in $$libraries; do \
+	  if test -f $$p; then \
+	    list="$$list $$p"; \
+	  else :; fi; \
+	done; \
+	for p in $$list; do \
+	  echo " rm -f '$(DESTDIR)$(libdir)/$$p'"; \
+	  rm -f "$(DESTDIR)$(libdir)/$$p"; \
+	done; \
+	rmdir "$(DESTDIR)$(libdir)" || exit 0

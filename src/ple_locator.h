@@ -543,6 +543,34 @@ ple_locator_set_async_threshold(int threshold);
 
 #endif /* defined(PLE_HAVE_MPI) */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set default locator options.
+ *
+ * \param[in]  key    option name
+ * \param[in]  value  associated value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+ple_locator_set_default_option(const char  *key,
+                               const char  *value);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set options for a given locator.
+ *
+ * \param[in, out]  this_locator  pointer to locator structure
+ * \param[in]       key           option name
+ * \param[in]       value         associated value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+ple_locator_set_options(ple_locator_t  *this_locator,
+                        const char     *key,
+                        const char     *value);
+
 /*----------------------------------------------------------------------------
  * Register communication logging functions for locator instrumentation.
  *

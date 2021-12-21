@@ -10,13 +10,14 @@
 # environment variables corresponding to the recommended settings for a
 # given OS/CPU/compiler combination:
 #
-# cppflags_default       # Base CPPFLAGS                     (default: "")
+# cppflags_default       # Base CPPFLAGS                      (default: "")
 
-# cflags_default         # Base CFLAGS                       (default: "")
-# cflags_default_dbg     # Added to $CFLAGS for debugging    (default: "-g")
-# cflags_default_opt     # Added to $CFLAGS for optimization (default: "-O")
-# cflags_default_prf     # Added to $CFLAGS for profiling    (default: "-g")
-# cflags_default_omp     # Added to $CFLAGS for OpenMP       (default: "")
+# cflags_default         # Base CFLAGS                        (default: "")
+# cflags_default_dbg     # Added to $CFLAGS for debugging     (default: "-g")
+# cflags_default_opt     # Added to $CFLAGS for optimization  (default: "-O")
+# cflags_default_prf     # Added to $CFLAGS for profiling     (default: "-g")
+# cflags_default_omp     # Added to $CFLAGS for OpenMP        (default: "")
+# cflags_default_shared  # Added to $CFLAGS for shared libs   (default: "-fPIC -DPIC")
 #
 # ldflags_default        # Base LDFLAGS                       (default: "")
 # ldflags_default_dbg    # Added to $LDFLAGS for debugging    (default: "-g")
@@ -73,6 +74,24 @@ esac
 cflags_default_prf="-g"
 ldflags_default_prf="-g"
 
+# Options to generate position-independent code for shared libraries.
+# can be modified later if necessary, but usually common to most compilers.
+
+case "$host_os" in
+  darwin*)
+    cflags_default_shared="-fPIC -DPIC"
+    ldflags_default_shared="-dynamiclib -undefined dynamic_lookup -undefined error"
+    ldflags_default_soname="-install_name @rpath/"
+    ;;
+  *)
+    cflags_default_shared="-fPIC -DPIC"
+    ldflags_default_shared="-shared"
+    ldflags_default_soname="-Wl,-soname -Wl,"
+    ;;
+esac
+
+# Compiler info (will be determined in following tests)
+
 ple_ac_cc_version=unknown
 ple_cc_compiler_known=no
 
@@ -93,7 +112,7 @@ if test "x$GCC" = "xyes"; then
   elif test -n "`echo $ple_ac_cc_version | grep ICX`" ; then
     ple_gcc=icx
   elif test -n "`echo $ple_ac_cc_version | grep -e DPC++ -e oneAPI`" ; then
-    ple_gcc=oneapi
+    ple_gcc=oneAPI
   elif test -n "`echo $ple_ac_cc_version | grep clang`" ; then
     ple_gcc=clang
   elif test -n "`echo $ple_ac_cc_version | grep Cray`" ; then
@@ -220,13 +239,14 @@ elif test "x$ple_gcc" = "xicc" ; then
   cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_omp="-qopenmp"
+
   case "$ple_cc_vers_major" in
     1[0123456])
       cflags_default_omp="-openmp"
       ;;
   esac
 
-# Otherwise, are we using ICC NextGen ?
+# Otherwise, are we using ICC NextGen ?  This is a deprecated beta version.
 #--------------------------------------
 
 elif test "x$ple_gcc" = "xicx" ; then
@@ -247,34 +267,33 @@ elif test "x$ple_gcc" = "xicx" ; then
   test -n "$ple_cc_vers_patch" || ple_cc_vers_patch=0
 
   # Default compiler flags
-  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
-  cflags_default="-funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
+  cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cflags_default_dbg="-g -O0 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_omp="-qopenmp"
 
-# Otherwise, are we using DPC (OneAPI) ?
-#----------------------------------------
+# Otherwise, are we using Intel LLVM DPC++/C++ Compiler (OneAPI) ?
+#-----------------------------------------------------------------
 
-elif test "x$ple_gcc" = "xoneapi" ; then
+elif test "x$ple_gcc" = "xoneAPI" ; then
 
-  ple_cc_version=`echo $ple_ac_cc_version | grep ICX |sed 's/[a-zA-Z()]//g'`
-  echo "compiler '$CC' is Intel ICC NextGen"
+  ple_cc_version=`echo $ple_ac_cc_version | grep -e DPC++ -e oneAPI |sed 's/[a-zA-Z()+/]//g'`
+  echo "compiler '$CC' is oneAPI DPC++/C++ Compiler"
 
   # Version strings for logging purposes and known compiler flag
   $CC $user_CFLAGS -V conftest.c > $outfile 2>&1
   ple_cc_compiler_known=yes
 
   # Some version numbers
-  ple_cc_vers_major=`echo $ple_ac_cc_version | cut -f 3 -d" " | cut -f1 -d.`
-  ple_cc_vers_minor=`echo $ple_ac_cc_version | cut -f 3 -d" " | cut -f2 -d.`
-  ple_cc_vers_patch=`echo $ple_ac_cc_version | cut -f 3 -d" " | cut -f3 -d.`
+  ple_cc_vers_major=`echo $ple_ac_cc_version | cut -f 5 -d" " | cut -f1 -d.`
+  ple_cc_vers_minor=`echo $ple_ac_cc_version | cut -f 5 -d" " | cut -f2 -d.`
+  ple_cc_vers_patch=`echo $ple_ac_cc_version | cut -f 5 -d" " | cut -f3 -d.`
   test -n "$ple_cc_vers_major" || ple_cc_vers_major=0
   test -n "$ple_cc_vers_minor" || ple_cc_vers_minor=0
   test -n "$ple_cc_vers_patch" || ple_cc_vers_patch=0
 
   # Default compiler flags
-  cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -Wno-unused-command-line-argument"
   cflags_default_dbg="-g -O0"
   cflags_default_opt="-O2"
   cflags_default_omp="-fiopenmp"
