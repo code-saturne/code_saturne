@@ -237,6 +237,8 @@ do iscal = 1, nscal
       ! mais de toute facon qui dit ordre 2 dit LES et donc
       ! generalement pas de TS scalaire a interpoler.
       isso2t(iscal) = 1
+      if (iscal.eq.iscalt .and. iirayo.gt.0) &
+        isso2t(iscal) = 0
     endif
   endif
 

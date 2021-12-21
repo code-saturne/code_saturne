@@ -417,7 +417,7 @@ if (iirayo.gt.0) then
   if (iscalt.gt.0) then
     if (thetss(iscalt).gt.0.d0 .or. isso2t(iscalt).gt.0) then
       write(nfecra,2148)                                           &
-        'rayonnement',iscal,thetss(iscal),isso2t(iscal),'usray1'
+        'rayonnement',iscal,thetss(iscalt),isso2t(iscalt),'usray1'
       iok = iok + 1
     endif
   endif
