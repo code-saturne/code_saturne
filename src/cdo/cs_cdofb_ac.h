@@ -102,7 +102,7 @@ cs_cdofb_ac_init_common(const cs_cdo_quantities_t     *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a \ref cs_cdofb_ac_t structure
+ * \brief  Initialize a cs_cdofb_ac_t structure
  *
  * \param[in] nsp         pointer to a \ref cs_navsto_param_t structure
  * \param[in] adv_field   pointer to \ref cs_adv_field_t structure
@@ -125,7 +125,7 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t   *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a \ref cs_cdofb_ac_t structure
+ * \brief  Destroy a cs_cdofb_ac_t structure
  *
  * \param[in] scheme_context   pointer to a scheme context structure to free
  *

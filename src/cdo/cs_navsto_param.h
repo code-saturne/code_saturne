@@ -142,7 +142,8 @@ typedef enum {
 /*! \enum cs_navsto_param_post_bit_t
  *  \brief Bit values for additional generic postprocessing related to the
  *  Navier-Stokes module. In what follows, w denotes the vorticity vector, u
- *  the velocity vector and k the kinetic energy defined by 1/2 * u \cdot u
+ *  the velocity vector and k the kinetic energy defined by
+ *  \f$ \frac{\rho u}{2} \cdot u \f$
  *
  * \var CS_NAVSTO_POST_VELOCITY_DIVERGENCE
  * Compute div(u) and associate a field to this quantity
@@ -480,7 +481,7 @@ typedef struct {
 
   cs_navsto_sles_t              strategy;
 
-  /*! \var schur_strategy
+  /*! \var schur_approximation
    *  Choice of the way of preconditioning the schur approximation
    */
 
@@ -516,7 +517,7 @@ typedef struct {
    * @{
    */
 
-  /*! \var nl_algo
+  /*! \var nl_algo_type
    *  Type of algorithm used to tackle the non-linearity arising from the
    *  advection term
    */
@@ -657,7 +658,7 @@ typedef struct {
 
   cs_property_t                *tot_viscosity;
 
-  /*! \var lami_viscosity
+  /*! \var lam_viscosity
    *  Laminar viscosity
    */
 
