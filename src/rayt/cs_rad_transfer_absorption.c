@@ -136,7 +136,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
   if (   rt_params->imodak == 1
       || rt_params->imoadf >= 1
-      || rt_params->imfsck == 1) {
+      || rt_params->imfsck >= 1) {
     BFT_MALLOC(w1, n_cells_ext, cs_real_t);
     BFT_MALLOC(w2, n_cells_ext, cs_real_t);
     BFT_MALLOC(w3, n_cells_ext, cs_real_t);
@@ -152,6 +152,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
      - premis flame (EBU model) */
 
   if (   pm_flag[CS_COMBUSTION_3PT] >= 0
+      || pm_flag[CS_COMBUSTION_SLFM] >= 0
       || pm_flag[CS_COMBUSTION_EBU] >= 0) {
 
     if (rt_params->imodak == 1) {
@@ -202,6 +203,18 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
 
     }
+    else if (rt_params->imfsck == 2) {
+
+      for (int gg_id = 0; gg_id < rt_params->nwsgg; gg_id++) {
+        char f_name[64];
+        snprintf(f_name, 63, "spectral_absorption_%.2d", gg_id + 1);
+        cs_field_t *f_kgabs = cs_field_by_name_try(f_name);
+
+        if (f_kgabs != NULL)
+          for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+            kgas[n_cells*gg_id + cell_id] = f_kgabs->val[cell_id];
+      }
+    }
     else { /* if (rt_params->imodak != 1) */
 
       const cs_real_t *cpro_ckabs = cs_field_by_name("kabs")->val;
@@ -229,7 +242,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
     if (   rt_params->imodak == 1
         || rt_params->imoadf >= 1
-        || rt_params->imfsck == 1) {
+        || rt_params->imfsck >= 1) {
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         /* CO2 volume concentration */
@@ -249,7 +262,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       else if (rt_params->imoadf == 2)
         cs_rad_transfer_adf50(w1, w2,tempk, kgas, agas, agasb);
 
-      else if (rt_params->imfsck == 1)
+      else if (rt_params->imfsck >= 1)
         cs_rad_transfer_fsck(w1, w2, tempk, kgas, agas, agasb);
     }
 

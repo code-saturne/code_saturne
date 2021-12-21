@@ -210,6 +210,14 @@ cs_rad_transfer_options(void)
   if (rt_params->imfsck == 1)
     rt_params->nwsgg = 7;
 
+  /* In case of imfsck == 2, spectral radiative properties depend on
+   * user provided radiation library coupled with flamelet library.
+   *
+   * Spectral number must be prescribed in usppmod
+   * if (rt_params->imfsck == 2)
+       rt_params->nwsgg = user prescribed in usppmod;
+  */
+
   /* Coherency check with thermal model */
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
@@ -262,7 +270,7 @@ cs_rad_transfer_options(void)
          _("The quadrature type number"
            " (cs_glob_rad_transfer_params->i_quadrature)"),
          rt_params->i_quadrature,
-         1, 7);
+         1, 10);
     }
 
     /* --> NDIREC */

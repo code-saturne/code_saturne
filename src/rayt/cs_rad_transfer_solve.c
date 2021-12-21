@@ -495,8 +495,9 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   /* Pointer to the spectral flux density field */
   cs_field_t *f_qinspe = NULL;
-  if (rt_params->imoadf >= 1 ||
-      rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
+  if (   rt_params->imoadf >= 1
+      || rt_params->imfsck >= 1
+      || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
   cs_var_cal_opt_t vcopt = cs_parameters_var_cal_opt_default();
@@ -831,28 +832,29 @@ _cs_rad_transfer_sol(int                        gg_id,
       int_abso[cell_id] = ckg[cell_id] * int_rad_domega[cell_id];
 
     /* Emission and implicit ST */
-    if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == -1
-        && cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == -1) {
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
-                            * cs_math_pow4(tempk[cell_id]);
+    if (   cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] == -1) {
+      if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == -1
+          && cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == -1) {
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+          int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
+            * cs_math_pow4(tempk[cell_id]);
 
-        int_rad_ist[cell_id] -=   16.0 * dcp[cell_id] * ckg[cell_id]
-                                * c_stefan * cs_math_pow3(tempk[cell_id]);
-      }
-    } else {
-      cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
-      cs_real_t *cpro_t3m = cs_field_by_name("temperature_3")->val;
+          int_rad_ist[cell_id] -=   16.0 * dcp[cell_id] * ckg[cell_id]
+            * c_stefan * cs_math_pow3(tempk[cell_id]);
+        }
+      } else {
+        cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
+        cs_real_t *cpro_t3m = cs_field_by_name("temperature_3")->val;
 
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
-                            * cpro_t4m[cell_id];
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+          int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
+            * cpro_t4m[cell_id];
 
-        int_rad_ist[cell_id] -=   16.0 * dcp[cell_id] * ckg[cell_id]
-                                * c_stefan * cpro_t3m[cell_id];
+          int_rad_ist[cell_id] -=   16.0 * dcp[cell_id] * ckg[cell_id]
+            * c_stefan * cpro_t3m[cell_id];
+        }
       }
     }
-
   }
 
   BFT_FREE(dcp);
@@ -1135,7 +1137,7 @@ cs_rad_transfer_solve(int               bc_type[],
   /* Irradiating spectral flux density */
   cs_field_t *f_qinsp = NULL;
   if (   rt_params->imoadf >= 1
-      || rt_params->imfsck == 1)
+      || rt_params->imfsck >= 1)
     f_qinsp = cs_field_by_name("spectral_rad_incident_flux");
 
   /* Radiation coefficient kgi and corresponding weight agi
@@ -1296,6 +1298,11 @@ cs_rad_transfer_solve(int               bc_type[],
     }
   }
 
+  if (rt_params->imfsck == 2)
+    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
+      for (int i = 0; i < nwsgg; i++)
+        w_gg[ifac + i * n_b_faces] = 0.0;
+
   /* Absorbed and emmitted radiation of a single coal or fuel class
    * (needed to compute the source terms of the particle enthalpy equation) */
   for (int class_id = 0; class_id < n_classes; class_id++) {
@@ -1378,6 +1385,7 @@ cs_rad_transfer_solve(int               bc_type[],
      have been a bug. */
 
   if (   pm_flag[CS_COMBUSTION_3PT] >= 0
+      || pm_flag[CS_COMBUSTION_SLFM] >= 0
       || pm_flag[CS_COMBUSTION_EBU] >= 0
       || pm_flag[CS_COMBUSTION_LW] >= 0
       || pm_flag[CS_COMBUSTION_PCLC] >= 0
@@ -1482,9 +1490,9 @@ cs_rad_transfer_solve(int               bc_type[],
 
   for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 
-    if (rt_params->imoadf >= 1 || rt_params->imfsck == 1) {
+    if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
 
-      assert(gg_id == 0); /* TODO: merge ckg and kgi ? */
+      /* assert(gg_id == 0);  TODO: merge ckg and kgi ? */
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         ckg[cell_id] = kgi[n_cells*gg_id + cell_id];
 
@@ -1542,6 +1550,10 @@ cs_rad_transfer_solve(int               bc_type[],
         idiver = -1;
 
     }
+
+    char f_name[64];
+    snprintf(f_name, 63, "spectral_emission_%.2d", gg_id + 1);
+    cs_field_t *f_emi  = cs_field_by_name_try(f_name);
 
     /* P-1 radiation model
        ------------------- */
@@ -1684,9 +1696,12 @@ cs_rad_transfer_solve(int               bc_type[],
     else if (rt_params->type == CS_RAD_TRANSFER_DOM) {
 
       /* -> Gas phase: Explicit source term of the ETR */
+      if (pm_flag[CS_COMBUSTION_SLFM] >= 0 && f_emi != NULL) {
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          rhs[cell_id] = f_emi->val[cell_id] * cell_vol[cell_id];
 
-      if (   pm_flag[CS_COMBUSTION_3PT] == -1
-          && pm_flag[CS_COMBUSTION_EBU] == -1) {
+      } else if (   pm_flag[CS_COMBUSTION_3PT] == -1
+                 && pm_flag[CS_COMBUSTION_EBU] == -1) {
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] =  c_stefan * ckg[cell_id]
                                      * cs_math_pow4(tempk[cell_id])
@@ -1802,15 +1817,23 @@ cs_rad_transfer_solve(int               bc_type[],
      * -------- */
 
     /* (gas phase, precomputed)  */
+    if (pm_flag[CS_COMBUSTION_SLFM] == -1) {
 
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      emim[cell_id] +=   int_emi[cell_id]
-                       * agi[n_cells*gg_id + cell_id]
-                       * wq[gg_id];
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        emim[cell_id] +=   int_emi[cell_id]
+                         * agi[n_cells*gg_id + cell_id]
+                         * wq[gg_id];
 
-      rad_istm[cell_id] +=   int_rad_ist[cell_id]
-                           * agi[n_cells*gg_id + cell_id]
-                           * wq[gg_id];
+        rad_istm[cell_id] +=   int_rad_ist[cell_id]
+                             * agi[n_cells*gg_id + cell_id]
+                             * wq[gg_id];
+      }
+
+    }
+    else {
+      if (f_emi != NULL)
+        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+          emim[cell_id] += - 4.0*cs_math_pi*f_emi->val[cell_id] * wq[gg_id];
     }
 
     /* Coal solid phase or fuel droplets */
@@ -1880,7 +1903,7 @@ cs_rad_transfer_solve(int               bc_type[],
     /* If the ADF model is activated we have to sum
        the spectral flux densities */
 
-    if (rt_params->imoadf >= 1) {
+    if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
       for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
         iqpato[ifac] += f_qinsp->val[gg_id + ifac * nwsgg] * wq[gg_id];
     }
@@ -1893,7 +1916,7 @@ cs_rad_transfer_solve(int               bc_type[],
   /* The total radiative flux is copied in bqinci
    * a) for post-processing reasons and
    * b) in order to calculate bfnet */
-  if (rt_params->imoadf >= 1) {
+  if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
       f_qinci->val[ifac] = iqpato[ifac];
   }
