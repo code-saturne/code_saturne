@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 7.1.0 (December 21 2021)
+--------------------------------
+
 User changes:
 
 - UI: Add optional `--notebook-args [key1=val1] [key2=val]> ...`,
