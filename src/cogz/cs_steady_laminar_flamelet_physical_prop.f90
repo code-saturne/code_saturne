@@ -245,9 +245,9 @@ if (is_vploop .eqv. .false.) then ! Outside the rho(Y)-v-p coupling
       enddo
     endif
 
-    cpro_progvar(iel) = phim(FLAMELET_C)
-    cpro_hrr(iel) = phim(FLAMELET_HRR)
-    cpro_tem2(iel) = phim(FLAMELET_TEMP2)
+    if (FLAMELET_C.ne.-1) cpro_progvar(iel) = phim(FLAMELET_C)
+    if (FLAMELET_HRR.ne.-1) cpro_hrr(iel) = phim(FLAMELET_HRR)
+    if (FLAMELET_TEMP2.ne.-1) cpro_tem2(iel) = phim(FLAMELET_TEMP2)
 
     if (ippmod(islfm).ge.2) then
       cpro_omegac(iel) = phim(FLAMELET_OMG_C)
