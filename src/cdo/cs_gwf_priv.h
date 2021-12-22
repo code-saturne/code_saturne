@@ -272,7 +272,7 @@ typedef struct {
  *
  * The two primitive variables are the liquid and gas pressures with a specific
  * treatment in the saturated case to handle the gaz pressure (cf. the cited
- * article or Angelini's PhD thesis
+ * article or Angelini's PhD thesis)
  *
  * Notations are the following :
  * - Two phases: Liquid phase denoted by "l" and gaseous phase denoted by g
@@ -291,7 +291,7 @@ typedef struct {
    *
    * \var w_eq
    * Equation of conservation for the water component. Only the liquid phase is
-   * considered. One assumes to wapter vapour in the gas phase.
+   * considered. One assumes no water vapour in the gas phase.
    *
    */
 
@@ -451,7 +451,7 @@ typedef struct {
    * Reference temperature used in the "perfect gas" law (this is used when no
    * thermal equation is solved). One expects a temperature in Kelvin.
    *
-   * \henry_constant
+   * \var henry_constant
    * Value of the Henry constant used in the Henry's law. Setting a very low
    * value for this constant enables the model to degenerate into an immiscible
    * model.

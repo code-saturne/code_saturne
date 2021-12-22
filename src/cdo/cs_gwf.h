@@ -239,7 +239,7 @@ cs_gwf_destroy_all(void);
  *                             liquid phase
  * \param[in] w_molar_mass     molar mass of the main liquid component
  * \param[in] h_molar_mass     molar mass of the main gas component
- * \param[in] ref_temperature  reference temperature
+ * \param[in] ref_temperature  reference temperature in Kelvin
  * \param[in] henry_constant   constant in the Henry law
  */
 /*----------------------------------------------------------------------------*/
@@ -390,9 +390,9 @@ cs_gwf_add_tracer_terms(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined settings for the Richards equation and the related
- *         equations defining the groundwater flow module.
- *         At this stage, all soils have been defined and equatino parameters
+ * \brief  Predefined settings for the groundwater flow model and its related
+ *         equations.
+ *         At this stage, all soils have been defined and equation parameters
  *         are set. Create new cs_field_t structures according to the setting.
  */
 /*----------------------------------------------------------------------------*/
