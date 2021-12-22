@@ -615,8 +615,9 @@ class StandardItemModelMesh(QStandardItemModel):
             new_type = self.dicoV2M[str(from_qvariant(value, to_text_string))]
 
             if new_type in zone_list and old_type != new_type:
+                _ntype = new_type.split("_")[0]
                 self.dataMesh[row]['location'] = \
-                    LocalizationModel(new_type, self.mdl.case).getZones()[0].getLabel()
+                    LocalizationModel(_ntype, self.mdl.case).getZones()[0].getLabel()
 
             elif new_type in elts_list and old_type in zone_list:
                 self.dataMesh[row]['location'] = 'all[]'
