@@ -2454,7 +2454,7 @@ cs_equation_create_fields(void)
     /* SLES is associated to a field_id */
     eqp->sles_param->field_id = eq->field_id;
 
-    if (eqp->process_flag & CS_EQUATION_POST_NORMAL_FLUX) {
+    if (eqp->post_flag & CS_EQUATION_POST_NORMAL_FLUX) {
 
       /* Add a field for the normal boundary flux */
       location_id = cs_mesh_location_get_id_by_name("boundary_faces");
@@ -3427,7 +3427,7 @@ cs_equation_compute_peclet(const cs_equation_t        *eq,
   const cs_equation_param_t  *eqp = eq->param;
 
   /* Check if the computation of the Peclet number is requested */
-  if (!(eqp->process_flag & CS_EQUATION_POST_PECLET))
+  if (!(eqp->post_flag & CS_EQUATION_POST_PECLET))
     return;
 
   if (eqp->diffusion_property == NULL)
@@ -3527,7 +3527,7 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
     const cs_equation_param_t  *eqp = eq->param;
 
     /* Check if the computation of the balance is requested */
-    if (!(eqp->process_flag & CS_EQUATION_POST_BALANCE))
+    if (!(eqp->post_flag & CS_EQUATION_POST_BALANCE))
       continue;
 
     if (eq->compute_balance != NULL)

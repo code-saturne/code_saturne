@@ -320,7 +320,7 @@ static cs_equation_param_t _equation_param_default
    .verbosity = 0,
 
    .flag = 0,
-   .process_flag = 0,
+   .post_flag = 0,
    .space_scheme = CS_SPACE_SCHEME_LEGACY,
    .dof_reduction = CS_PARAM_REDUCTION_AVERAGE,
    .space_poly_degree = 0,

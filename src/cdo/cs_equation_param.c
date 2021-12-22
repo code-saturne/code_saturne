@@ -417,13 +417,13 @@ _set_key(cs_equation_param_t   *eqp,
 
   case CS_EQKEY_EXTRA_OP:
     if (strcmp(keyval, "balance") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_BALANCE;
+      eqp->post_flag |= CS_EQUATION_POST_BALANCE;
     else if (strcmp(keyval, "peclet") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_PECLET;
+      eqp->post_flag |= CS_EQUATION_POST_PECLET;
     else if (strcmp(keyval, "upwind_coef") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_UPWIND_COEF;
+      eqp->post_flag |= CS_EQUATION_POST_UPWIND_COEF;
     else if (strcmp(keyval, "normal_flux") == 0)
-      eqp->process_flag |= CS_EQUATION_POST_NORMAL_FLUX;
+      eqp->post_flag |= CS_EQUATION_POST_NORMAL_FLUX;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1069,7 +1069,7 @@ cs_equation_param_create(const char            *name,
 
   eqp->verbosity = 2;
   eqp->flag = 0;
-  eqp->process_flag = 0;
+  eqp->post_flag = 0;
 
   /* Vertex-based schemes imply specific discrete Hodge operators for
      diffusion, time and reaction terms.
@@ -1240,7 +1240,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   dst->type = ref->type;
   dst->dim = ref->dim;
   dst->verbosity = ref->verbosity;
-  dst->process_flag = ref->process_flag;
+  dst->post_flag = ref->post_flag;
   dst->flag = ref->flag;
   dst->space_scheme = ref->space_scheme;
   dst->dof_reduction = ref->dof_reduction;

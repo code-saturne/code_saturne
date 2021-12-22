@@ -3494,7 +3494,7 @@ cs_cdovb_scaleq_extra_post(const cs_equation_param_t  *eqp,
   const cs_timer_t  t0 = cs_timer_time();
 
   if (cs_equation_param_has_convection(eqp)) {
-    if (eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF) {
+    if (eqp->post_flag & CS_EQUATION_POST_UPWIND_COEF) {
 
       int  len = strlen(eqp->name) + 8 + 1;
       char *postlabel = NULL;

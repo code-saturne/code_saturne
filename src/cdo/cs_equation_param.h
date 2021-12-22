@@ -205,12 +205,12 @@ typedef struct {
 
   cs_flag_t                  flag;
 
-  /*! \var process_flag
+  /*! \var post_flag
    *  Flag to determine if predefined post-treatments such as Peclet,
    *  are requested
    */
 
-  cs_flag_t                  process_flag;
+  cs_flag_t                  post_flag;
 
   /* Numerical settings */
 

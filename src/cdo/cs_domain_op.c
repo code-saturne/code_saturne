@@ -115,7 +115,7 @@ _needs_adimensional_numbers(void)
   for (int i = 0; i < n_equations; i++) {
     cs_equation_t  *eq = cs_equation_by_id(i);
     cs_equation_param_t  *eqp = cs_equation_get_param(eq);
-    if (eqp->process_flag & CS_EQUATION_POST_PECLET)
+    if (eqp->post_flag & CS_EQUATION_POST_PECLET)
       return true;
   }
 
@@ -240,7 +240,7 @@ _post_peclet_number(const cs_equation_t        *eq,
   const cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
   assert(eqp != NULL);
-  if (!(eqp->process_flag & CS_EQUATION_POST_PECLET))
+  if (!(eqp->post_flag & CS_EQUATION_POST_PECLET))
     return;
 
   int  len = strlen(eqp->name) + 8 + 1;
