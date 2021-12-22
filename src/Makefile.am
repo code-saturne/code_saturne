@@ -80,7 +80,7 @@ libple.${SHARED_LIB_EXT}: ${libple_objs}
 	@echo "Building libple ..."
 	rm -f $@
 	rm -rf ${libple_soname_major}
-	${PLE_LD} -o ${libple_soname_full} ${LDFLAGS_SONAME}.${libple_soname} ${LDFLAGS_SHARED} ${LDFLAGS} ${libple_objs} $(AM_LDFLAGS) $(AM_LIBS)
+	${PLE_LD} -o ${libple_soname_full} ${LDFLAGS_SONAME}${libple_soname} ${LDFLAGS_SHARED} ${LDFLAGS} ${libple_objs} $(AM_LDFLAGS) $(AM_LIBS)
 	ln -s ${libple_soname_full} $@
 	ln -s ${libple_soname_full} ${libple_soname_major}
 
