@@ -316,57 +316,160 @@ typedef void
 
 /*! \struct cs_equation_t
  *  \brief Main structure to handle the discretization and the resolution of
- *  an equation.
- *
+ *         an equation.
  */
 
 struct _cs_equation_t {
 
-  int                    id;
+  /*!
+   * @name Metadata
+   * @{
+   *
+   * \var varname
+   * Name of the field of type variable associated to this equation
+   *
+   * \var field_id
+   * Id of the variable field related to this equation (cf. \ref cs_field_t)
+   *
+   * \var boundary_flux_id
+   * Id to the field storing the boundary flux asociated to variable field
+   */
 
-  cs_equation_param_t   *param;   /* Set of parameters related to an equation */
-
-  /* Variable attached to this equation is defined as a cs_field_t structure */
+  int                    id;    /*!< Id of the current equation  */
   char *restrict         varname;
   int                    field_id;
   int                    boundary_flux_id;
 
-  /* Algebraic system */
-  /* ---------------- */
+  /* Timer statistic for a coarse profiling */
 
-  /* There can be two different sizes for the linear system to handle
-     - One for "scatter"-type operations based on the number of geometrical
-       entities owned by the local instance of the mesh
-     - One for "gather"-type operations based on a balance of the number of
-     DoFs from a algebraic point of view. In parallel runs, these two sizes
-     can be different.
-     n_sles_gather_elts <= n_sles_scatter_elts
-  */
+  int     main_ts_id;   /*!< Id of the main timer stats for this equation */
+
+  /*! \var param
+   *  Set of parameters related to an equation
+   */
+
+  cs_equation_param_t   *param;
+
+  /*!
+   * @}
+   * @name Algebraic system
+   * @{
+   *
+   *  There can be two different sizes for the linear system to handle
+   *  - One for "scatter"-type operations based on the number of geometrical
+   *    entities owned by the local rank of the mesh
+   *  - One for "gather"-type operations based on a balance of the number of
+   *
+   * DoFs from a algebraic point of view. In parallel runs, these two sizes can
+   * be different. In the "gather" viewpoint, some entities which are shared
+   * across ranks may be discard on the local if the algorithm to balance
+   * entities has decided that the local is not the "owner" of this
+   * entity. Thus, n_sles_gather_elts <= n_sles_scatter_elts
+   *
+   * \var n_sles_scatter_elts
+   *  number of local elements in the scatter viewpoint
+   *
+   * \var n_sles_gather_elts
+   *  number of local elements in the gather viewpoint
+   *
+   */
 
   cs_lnum_t                n_sles_scatter_elts;
   cs_lnum_t                n_sles_gather_elts;
 
-  /* Right-hand side defined by a local cellwise building. This may be
-     different from the rhs given to cs_sles_solve() in parallel mode. */
+  /*! \var rhs
+   * Right-hand side defined by a local cellwise building. This may be
+   * different from the rhs given to cs_sles_solve() in parallel mode.
+   */
+
   cs_real_t               *rhs;
 
-  /* Matrix to inverse with cs_sles_solve() The matrix size can be different
-     from the rhs size in parallel mode since the decomposition is different */
+  /*! \var matrix
+   * Matrix to inverse with cs_sles_solve() The matrix size can be different
+   * from the rhs size in parallel mode since the decomposition is different
+   */
+
   cs_matrix_t             *matrix;
 
-  /* Range set to handle parallelism. Shared with cs_cdo_connect_t struct.*/
+  /*! \var rset
+   * Range set to handle parallelism. Shared with cs_cdo_connect_t structure
+   */
+
   const cs_range_set_t    *rset;
 
-  /* \var builder
+  /*!
+   * @}
+   * @name Generic pointers to manage a cs_equation_t structure
+   * @{
+   *
+   * Since each space discretization has its specificities, an operation is
+   * associated to a function pointer which is set during the setup phase
+   * according to the space discretization and then one calls this operation
+   * without the need to test in which case we are.
+   *
+   * \var builder
    * Common members for building the algebraic system between the numerical
    * schemes
    */
+
   cs_equation_builder_t   *builder;
 
-  /* Data depending on the numerical scheme (cast on-the-fly) */
+  /*! \var scheme_context
+   * Data depending on the numerical scheme (cast on-the-fly)
+   */
+
   void                    *scheme_context;
 
-  /* Pointer to functions (see prototypes just above) */
+  /*!
+   * \var init_context
+   * Pointer of function given by the prototype cs_equation_init_context_t
+   *
+   * \var free_context
+   * Pointer of function given by the prototype cs_equation_free_context_t
+   *
+   * \var init_field_values
+   * Pointer of function given by the prototype cs_equation_init_values_t
+   *
+   * \var solve_steady_state
+   * Case of steady-state solution. Pointer of function given by the prototype
+   * cs_equation_solve_t
+   *
+   * \var solve
+   * Pointer of function given by the prototype cs_equation_init_values_t
+   *
+   * \var compute_balance
+   * Pointer of function given by the prototype cs_equation_get_balance_t
+   *
+   * \var postprocess
+   * Additional predefined post-processing. Pointer of function given by the
+   * prototype cs_equation_extra_op_t
+   *
+   * \var current_to_previous
+   * Pointer of function given by the prototype cs_equation_extra_op_t
+   *
+   * \var read_restart
+   * Pointer of function given by the prototype cs_equation_restart_t
+   *
+   * \var write_restart
+   * Pointer of function given by the prototype cs_equation_restart_t
+   *
+   * \var get_cell_values
+   * Pointer of function given by the prototype cs_equation_get_values_t
+   *
+   * \var get_face_values
+   * Pointer of function given by the prototype cs_equation_get_values_t
+   *
+   * \var get_edge_values
+   * Pointer of function given by the prototype cs_equation_get_values_t
+   *
+   * \var get_vertex_values
+   * Pointer of function given by the prototype cs_equation_get_values_t
+   *
+   * \var get_cw_build_structures
+   * Retrieve local structures used to build the algebraic system. Pointer of
+   * function given by the prototype cs_equation_get_builders_t
+   */
+
   cs_equation_init_context_t       *init_context;
   cs_equation_free_context_t       *free_context;
 
@@ -390,14 +493,16 @@ struct _cs_equation_t {
 
   /* Deprecated functions --> use rather solve() and solve_steady_state() */
   /* -------------------- */
+
   cs_equation_initialize_system_t  *initialize_system;
   cs_equation_set_dir_bc_t         *set_dir_bc;
   cs_equation_build_system_t       *build_system;
   cs_equation_prepare_solve_t      *prepare_solving;
   cs_equation_update_field_t       *update_field;
 
-  /* Timer statistic for a coarse profiling */
-  int     main_ts_id;   /* Id of the main timer stats for this equation */
+  /*!
+   * @}
+   */
 
 };
 
