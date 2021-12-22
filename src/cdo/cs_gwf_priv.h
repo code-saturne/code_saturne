@@ -30,6 +30,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_advection_field.h"
+#include "cs_equation_system.h"
 #include "cs_gwf.h"
 
 /*----------------------------------------------------------------------------*/
@@ -286,23 +287,43 @@ typedef struct {
   /* Set of equations associated to this modelling */
 
   /*!
-   * @name Equations
+   * @name Equations and system of equations
    * @{
    *
    * \var w_eq
    * Equation of conservation for the water component. Only the liquid phase is
-   * considered. One assumes no water vapour in the gas phase.
-   *
+   * considered. One assumes no water vapour in the gas phase. This corresponds
+   * to the block (0,0) in the system of equations.
    */
 
   cs_equation_t                *w_eq;
 
   /*! \var h_eq
    * Equation of conservation for the (di)hydrogen. Hydrogen can be present in
-   * the liquid or in the gas phase.
+   * the liquid or in the gas phase. This corresponds to the block (1,1) in the
+   * system of equations.
    */
 
   cs_equation_t                *h_eq;
+
+  /*! \var wh_eqp
+   * Parameters associated to the block (w,h) = (0,1) in the system of equations
+   */
+
+  cs_equation_param_t          *wh_eqp;
+
+  /*! \var hw_eqp
+   * Parameters associated to the block (h,w) = (1,0) in the system of equations
+   */
+
+  cs_equation_param_t          *hw_eqp;
+
+  /*! \var system
+   * System of equations (w_eq, h_eq and the cross-term defined in the related
+   * cs_equation_param_t structures)
+   */
+
+  cs_equation_system_t         *system;
 
   /*!
    * @}

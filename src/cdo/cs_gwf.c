@@ -1224,6 +1224,36 @@ _mtpf_init_context(cs_property_type_t           pty_type)
                              1,
                              CS_PARAM_BC_HMG_NEUMANN);
 
+  /* Add a 2x2 system of coupled equations and define each block */
+
+  mc->system = cs_equation_system_create("TwoPhaseFlow system", 2);
+
+  /* Set the (0,0)-block */
+
+  cs_equation_system_set_equation(0, mc->w_eq, mc->system);
+
+  /* Set the (1,1)-block */
+
+  cs_equation_system_set_equation(1, mc->h_eq, mc->system);
+
+  /* Create and set the (0,1)-block */
+
+  mc->wh_eqp = cs_equation_param_create("wh_cross_term",
+                                        CS_EQUATION_TYPE_GROUNDWATER,
+                                        1,
+                                        CS_PARAM_BC_HMG_NEUMANN);
+
+  cs_equation_system_set_param(0, 1, mc->wh_eqp, mc->system);
+
+  /* Create and set the (1,0)-block */
+
+  mc->hw_eqp = cs_equation_param_create("hw_cross_term",
+                                        CS_EQUATION_TYPE_GROUNDWATER,
+                                        1,
+                                        CS_PARAM_BC_HMG_NEUMANN);
+
+  cs_equation_system_set_param(1, 0, mc->hw_eqp, mc->system);
+
   /* Add properties:
    * - unsteady term for w_eq
    * - diffusion term for w_eq
@@ -1273,6 +1303,10 @@ _mtpf_free_context(cs_gwf_miscible_two_phase_t  **p_mc)
 
   cs_gwf_miscible_two_phase_t  *mc = *p_mc;
 
+  /* wh_eqp and hw_eqp are freed inside the next function */
+
+  cs_equation_system_free(&(mc->system));
+
   cs_gwf_darcy_flux_free(&(mc->l_darcy));
   cs_gwf_darcy_flux_free(&(mc->g_darcy));
 
@@ -1320,6 +1354,9 @@ _mtpf_log_context(cs_gwf_miscible_two_phase_t   *mc)
                 "  * GWF | Henry constant: %5.3e\n",
                 mc->henry_constant);
 
+  /* Log the system of equations */
+
+  cs_equation_system_log(mc->system);
 }
 
 /*----------------------------------------------------------------------------*/
