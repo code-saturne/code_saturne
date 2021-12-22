@@ -142,7 +142,7 @@ atmo/atimbr.lo: base/cstphy.lo base/entsor.lo atmo/atincl.lo ctwr/ctincl.lo
 atmo/sshaerosol.lo: pprt/ppppar.lo base/cs_c_bindings.lo atmo/atchem.lo \
  base/mesh.lo
 atmo/spefun.lo: base/entsor.lo
-cogz/coincl.lo: base/paramx.lo pprt/ppppar.lo pprt/ppincl.lo
+cogz/coincl.lo: base/paramx.lo pprt/ppppar.lo pprt/ppincl.lo rayt/radiat.lo
 comb/cpincl.lo: pprt/ppppar.lo pprt/ppthch.lo
 comb/cs_coal_incl.lo: pprt/ppppar.lo pprt/ppthch.lo
 comb/cs_fuel_incl.lo: pprt/ppppar.lo pprt/ppthch.lo

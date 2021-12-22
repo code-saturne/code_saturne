@@ -275,8 +275,8 @@ cs_rad_transfer_prp(void)
   }
 
   /* SLFM Gas combustion radiation: add cells fields */
-  if (  cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] == 1
-      ||cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] == 3 ) {
+  if (   cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] == 1
+      || cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] == 3) {
 
     for (int gg_id = 0; gg_id < rt_params->nwsgg; gg_id ++) {
 
@@ -288,10 +288,10 @@ cs_rad_transfer_prp(void)
       f_name[63] = '\0'; f_label[63] = '\0';
 
       f = cs_field_create(f_name,
-          field_type,
-          location_id,
-          1,
-          false);
+                          field_type,
+                          location_id,
+                          1,
+                          false);
       cs_field_set_key_str(f, keylbl, f_label);
 
       cs_field_set_key_int(f, keyvis, 0);
@@ -303,10 +303,10 @@ cs_rad_transfer_prp(void)
       f_name[63] = '\0'; f_label[63] = '\0';
 
       f = cs_field_create(f_name,
-          field_type,
-          location_id,
-          1,
-          false);
+                          field_type,
+                          location_id,
+                          1,
+                          false);
       cs_field_set_key_str(f, keylbl, f_label);
 
       cs_field_set_key_int(f, keyvis, 0);
