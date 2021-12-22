@@ -89,6 +89,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Redefined names of function from cs_math to get shorter names */
+
 #define _dp3 cs_math_3_dot_product
 
 #define CS_GWF_DBG 0
@@ -153,6 +154,7 @@ _get_time_eval(const cs_time_step_t        *ts,
   case CS_TIME_N_SCHEMES:
 
     /* Look for tracer equations */
+
     for (int ieq = 0; ieq < gw->n_tracers; ieq++) {
 
       cs_equation_t  *_eq = gw->tracers[ieq]->eq;
@@ -303,12 +305,12 @@ _spf_update_head(const cs_cdo_quantities_t   *cdoq,
 
     cs_physical_constants_t  *phys = cs_get_glob_physical_constants();
 
-    /* Sanity checks */
     if (pressure_head == NULL)
       bft_error(__FILE__, __LINE__, 0,
                 " The field related to the pressure head is not allocated.");
 
     /* Copy current field values to previous values */
+
     if (cur2prev)
       cs_field_current_to_previous(pressure_head);
 
@@ -323,6 +325,7 @@ _spf_update_head(const cs_cdo_quantities_t   *cdoq,
       }
 
       /* Update head_in_law */
+
       if (head_in_law != NULL)
         cs_reco_pv_at_cell_centers(connect->c2v, cdoq, pressure_head->val,
                                    head_in_law);
@@ -340,6 +343,7 @@ _spf_update_head(const cs_cdo_quantities_t   *cdoq,
         }
 
         /* Update head_in_law */
+
         if (head_in_law != NULL) {
 
           const cs_real_t  *hydraulic_head_cells =
@@ -381,6 +385,7 @@ _spf_update_head(const cs_cdo_quantities_t   *cdoq,
       return;
 
     /* Update head_in_law */
+
     switch(r_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
@@ -406,7 +411,6 @@ _spf_update_head(const cs_cdo_quantities_t   *cdoq,
     }  /* Switch on the space scheme related to the Richards equation */
 
   } /* Gravity is activated or not */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -433,8 +437,6 @@ _spf_compute_steady_state(const cs_mesh_t                  *mesh,
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw != NULL && richards != NULL);
 
-  /* Sanity check */
-
   assert(gw->model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE);
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
 
@@ -452,7 +454,6 @@ _spf_compute_steady_state(const cs_mesh_t                  *mesh,
     cs_gwf_update(mesh, connect, cdoq, time_step, true);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -479,8 +480,6 @@ _spf_compute(const cs_mesh_t                    *mesh,
 
   assert(gw != NULL && richards != NULL);
 
-  /* Sanity checks */
-
   assert(gw->model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE ||
          gw->model == CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE);
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
@@ -501,7 +500,6 @@ _spf_compute(const cs_mesh_t                    *mesh,
     cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
 
   }
-
 }
 
 /* ==========================================================================
@@ -548,8 +546,9 @@ _sspf_init_context(void)
   mc->darcy->adv_field = cs_advection_field_add("darcy_field",
                                                 adv_status);
 
-  /* Add a property related to the moisture content (should be a constant
+  /* Add a property related to the moisture content (It should be a constant
      in each soil) */
+
   mc->moisture_content = cs_property_add("moisture_content", CS_PROPERTY_ISO);
 
   /* Add the diffusion term to the Richards equation by associating the
@@ -638,6 +637,7 @@ _sspf_init_setup(cs_gwf_saturated_single_phase_t   *mc)
     cs_equation_get_space_scheme(mc->richards);
 
   /* Handle gravity effects */
+
   if (gw->flag & CS_GWF_GRAVITATION) {
 
     switch (space_scheme) {
@@ -669,6 +669,7 @@ _sspf_init_setup(cs_gwf_saturated_single_phase_t   *mc)
   } /* Gravitation effect is activated */
 
   /* Add default post-processing related to groundwater flow module */
+
   cs_post_add_time_mesh_dep_output(cs_gwf_extra_post_sspf, gw);
 }
 
@@ -925,6 +926,7 @@ _uspf_init_setup(cs_gwf_unsaturated_single_phase_t   *mc)
     cs_equation_get_space_scheme(mc->richards);
 
   /* Handle gravity effects */
+
   if (gw->flag & CS_GWF_GRAVITATION) {
 
     switch (space_scheme) {
@@ -992,6 +994,7 @@ _uspf_init_setup(cs_gwf_unsaturated_single_phase_t   *mc)
     cs_field_set_key_int(mc->capacity_field, post_key, 1);
 
   /* Add default post-processing related to groundwater flow module */
+
   cs_post_add_time_mesh_dep_output(cs_gwf_extra_post_uspf, gw);
 }
 
@@ -1071,7 +1074,6 @@ _uspf_finalize_setup(const cs_cdo_connect_t              *connect,
                               mc->permeability_field->val,
                               mc->moisture_field->val,
                               mc->capacity_field->val);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1418,7 +1420,7 @@ _mtpf_finalize_setup(const cs_cdo_connect_t          *connect,
   /* Allocate and initialize the relative permeability in the liquid phase */
 
   BFT_MALLOC(mc->l_rel_permeability, n_cells, cs_real_t);
-#pragma omp parallel for if (n_cells > CS_THR_MIN)
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_cells; i++)
     mc->l_rel_permeability[i] = 1; /* saturated by default */
 
@@ -1667,8 +1669,6 @@ _mtpf_compute(const cs_mesh_t                   *mesh,
 
   cs_equation_t  *w_eq = mc->w_eq;
   cs_equation_t  *h_eq = mc->h_eq;
-
-  /* Sanity checks */
 
   assert(w_eq != NULL && h_eq != NULL);
   assert(cs_equation_get_type(w_eq) == CS_EQUATION_TYPE_GROUNDWATER);
@@ -2021,7 +2021,6 @@ cs_gwf_set_two_phase_model(cs_real_t       l_mass_density,
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
-  /* Sanity checks */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
   if (gw->model != CS_GWF_MODEL_TWO_PHASE)
     bft_error(__FILE__, __LINE__, 0,
@@ -2029,8 +2028,6 @@ cs_gwf_set_two_phase_model(cs_real_t       l_mass_density,
               __func__);
 
   cs_gwf_miscible_two_phase_t  *mc = gw->model_context;
-
-  /* Sanity checks */
 
   assert(mc != NULL);
   assert(l_mass_density > 0);
@@ -2168,7 +2165,6 @@ cs_gwf_add_soil(const char                      *z_name,
 
   const cs_zone_t  *zone = cs_volume_zone_by_name_try(z_name);
 
-  /* Sanity checks */
   if (zone == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " Zone %s related to the same soil is not defined.\n"
@@ -2282,6 +2278,7 @@ cs_gwf_add_user_tracer(const char                  *eq_name,
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
   /* Set the advection field structure */
+
   cs_adv_field_t  *adv = _get_l_adv_field(gw);
   int  tr_id = gw->n_tracers;
   cs_gwf_tracer_t  *tracer = cs_gwf_tracer_init(tr_id,
@@ -2347,10 +2344,10 @@ cs_gwf_add_tracer_terms(void)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
-  /* Sanity checks */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
   /* Loop on tracer equations */
+
   for (int i = 0; i < gw->n_tracers; i++)
     gw->add_tracer_terms[i](gw->tracers[i]);
 }
@@ -2369,7 +2366,6 @@ cs_gwf_init_setup(void)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
-  /* Sanity checks */
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
   cs_gwf_soil_check();
 
@@ -2480,8 +2476,6 @@ cs_gwf_update(const cs_mesh_t             *mesh,
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
-  /* Sanity checks */
-
   if (gw == NULL)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Groundwater module is not allocated.", __func__);
@@ -2511,6 +2505,7 @@ cs_gwf_update(const cs_mesh_t             *mesh,
 
   /* Update the diffusivity tensor associated to each tracer equation since the
      Darcy velocity may have changed */
+
   for (int i = 0; i < gw->n_tracers; i++) {
 
     cs_gwf_tracer_t  *tracer = gw->tracers[i];
@@ -2518,7 +2513,6 @@ cs_gwf_update(const cs_mesh_t             *mesh,
       tracer->update_diff_tensor(tracer, time_eval, mesh, connect, quant);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2578,7 +2572,6 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
     } /* Solve this equation which is steady */
 
   } /* Loop on tracer equations */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2630,6 +2623,7 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
 
   /* Compute tracers */
   /* --------------- */
+
   bool cur2prev = true;
 
   for (int i = 0; i < gw->n_tracers; i++) {
@@ -2640,6 +2634,7 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
 
       /* Solve the algebraic system. By default, a current to previous operation
          is performed */
+
       cs_equation_solve(cur2prev, mesh, tracer->eq);
 
       if (tracer->update_precipitation != NULL)
@@ -2650,7 +2645,6 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
     } /* Solve this equation which is unsteady */
 
   } /* Loop on tracer equations */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2676,8 +2670,6 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
                         const char                 *z_name)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
-
-  /* Sanity checks */
 
   if (gw == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -2730,7 +2722,6 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
               " %s: Invalid model type for the GroundWater Flow module.\n",
               __func__);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2869,7 +2860,6 @@ cs_gwf_extra_post_sspf(void                   *input,
     } /* Post-processing of the permeability field */
 
   } /* volume mesh id */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2931,6 +2921,7 @@ cs_gwf_extra_post_uspf(void                   *input,
       cs_adv_field_t *adv = _get_l_adv_field(gw);
 
       /* Only case avalaible up to now */
+
       if (cs_advection_field_get_deftype(adv) == CS_XDEF_BY_ARRAY) {
 
         cs_real_t  *divergence =
@@ -2952,7 +2943,6 @@ cs_gwf_extra_post_uspf(void                   *input,
 
     } /* Post-processing of the divergence is requested */
   } /* volume mesh id */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3017,6 +3007,7 @@ cs_gwf_extra_post_mtpf(void                      *input,
       cs_adv_field_t *adv = _get_l_adv_field(gw);
 
       /* Only case avalaible up to now */
+
       if (cs_advection_field_get_deftype(adv) == CS_XDEF_BY_ARRAY) {
 
         cs_real_t  *divergence =
@@ -3072,7 +3063,6 @@ cs_gwf_extra_post_mtpf(void                      *input,
     } /* Post-processing of the permeability field */
 
   } /* volume mesh id */
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1407,11 +1407,11 @@ cs_equation_destroy_all(void)
 
     eq->param = cs_equation_free_param(eq->param);
 
-    /* Sanity check */
     assert(eq->matrix == NULL && eq->rhs == NULL);
     /* Since eq->rset is only shared, no free is done at this stage */
 
     /* Free the associated builder structure */
+
     cs_equation_builder_free(&(eq->builder));
     eq->scheme_context = eq->free_context(eq->scheme_context);
 
@@ -1473,6 +1473,7 @@ cs_equation_log_monitoring(void)
 
     /* Display high-level timer counter related to the current equation
        before deleting the structure */
+
     cs_equation_write_monitoring(eq->param->name, eq->builder);
 
   } /* Loop on equations */
@@ -2525,6 +2526,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
     /* Allocate and initialize a system builder */
     /* Not initialized here if it is a restart */
+
     if (eq->builder == NULL)
       eq->builder = cs_equation_builder_init(eqp, mesh);
 
@@ -2535,6 +2537,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
                                             eq->builder);
 
     /* Define a face interface if not already allocated in this specific case */
+
     if (eqp->n_ic_defs > 0) {
       if (cs_param_space_scheme_is_face_based(eqp->space_scheme)) {
         if (connect->interfaces[CS_CDO_CONNECT_FACE_SP0] == NULL)
@@ -2544,6 +2547,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     }
 
     /* Assign an initial value for the variable fields */
+
     if (ts->nt_cur < 1)
       eq->init_field_values(ts->t_cur, eq->field_id,
                             mesh, eqp, eq->builder, eq->scheme_context);
@@ -2552,7 +2556,6 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
       cs_timer_stats_stop(eq->main_ts_id);
 
   }  /* Loop on equations */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2575,10 +2578,10 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
 
-  /* Sanity checks */
   assert(eq->matrix == NULL && eq->rhs == NULL);
 
   /* Initialize the algebraic system to build */
+
   eq->initialize_system(eq->param,
                         eq->builder,
                         eq->scheme_context,
@@ -2586,6 +2589,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
                         &(eq->rhs));
 
   /* Build the algebraic system to solve */
+
   eq->build_system(mesh, fld->val,
                    eq->param,
                    eq->builder,
@@ -2621,7 +2625,8 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
   const cs_param_sles_t  *sles_param = eqp->sles_param;
 
-  /* Sanity checks (up to now, only scalar field are handled) */
+  /* Up to now, only scalar field are handled */
+
   assert(eq->n_sles_gather_elts <= eq->n_sles_scatter_elts);
   assert(eq->n_sles_gather_elts == cs_matrix_get_n_rows(eq->matrix));
 
@@ -2637,6 +2642,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
 #endif
 
   /* Handle parallelism */
+
   eq->prepare_solving(eq, &x, &b);
 
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
@@ -2687,9 +2693,11 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
   }
 
   /* Copy current field values to previous values */
+
   cs_field_current_to_previous(fld);
 
   /* Define the new field value for the current time */
+
   eq->update_field(x, eq->rhs, eq->param,
                    eq->builder, eq->scheme_context, fld->val);
 
@@ -2697,6 +2705,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
     cs_timer_stats_stop(eq->main_ts_id);
 
   /* Free memory */
+
   BFT_FREE(x);
   if (b != eq->rhs)
     BFT_FREE(b);
@@ -3031,6 +3040,7 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
                                cs_real_t                  *result)
 {
   /* Initialize the value to return */
+
   *result = 0.;
 
   if (eq == NULL)
@@ -3043,6 +3053,7 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
               __func__, eqp->name);
 
   /* Scalar-valued equation */
+
   switch (eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
@@ -3075,6 +3086,7 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
            - the cell unknown stands for 1/4 of the cell volume
            - the vertex unknown stands for 3/4 of the dual cell volume
          */
+
         cs_real_t  int_cell = 0.25*cdoq->cell_vol[c_id]*p_c[c_id];
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
           int_cell += 0.75*cdoq->dcell_vol[j] * p_v[c2v->ids[j]];
@@ -3100,6 +3112,7 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
            - the cell unknown stands for 1/4 of the cell volume
            - the face unknown stands for 3/4 of the dual cell volume
          */
+
         cs_real_t  int_cell = 0.25*cdoq->cell_vol[c_id]*p_c[c_id];
         for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++)
           int_cell += 0.75*cdoq->pvol_fc[j] * p_f[c2f->ids[j]];
@@ -3118,6 +3131,7 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
   } /* End of switch */
 
   /* Parallel synchronization */
+
   cs_parall_sum(1, CS_REAL_TYPE, result);
 }
 
@@ -3153,6 +3167,7 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
               __func__, eqp->name);
 
   /* Scalar-valued equation */
+
   switch (eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
@@ -3203,7 +3218,6 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
               "%s: (Eq. %s). Not implemented.", __func__, eqp->name);
 
   } /* End of switch */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3230,6 +3244,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
     bft_error(__FILE__, __LINE__, 0, _err_empty_eq, __func__);
 
   /* Get the mesh location id from its name */
+
   const int  ml_id = cs_mesh_location_get_id_by_name(ml_name);
   if (ml_id == -1)
     bft_error(__FILE__, __LINE__, 0,
@@ -3241,6 +3256,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
     " across a plane\n is not available for equation %s\n";
 
   /* Retrieve the field from its id */
+
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
   cs_equation_param_t  *eqp = eq->param;
@@ -3251,6 +3267,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 
 
   /* Scalar-valued equation */
+
   switch (eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
@@ -3277,7 +3294,6 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
     bft_error(__FILE__, __LINE__, 0, emsg, __func__, eqp->name);
 
   } /* End of switch */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3307,6 +3323,7 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
   assert(eqp != NULL);
 
   /* Retrieve the field from its id */
+
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
   const char  fmsg[] = " %s: (Eq. %s) Stop computing the diffusive flux.\n"
@@ -3361,7 +3378,6 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
     bft_error(__FILE__, __LINE__, 0, fmsg, __func__, eqp->name);
 
   } /* End of switch on the space scheme */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3384,6 +3400,7 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
   const cs_equation_param_t  *eqp = eq->param;
 
   /* Retrieve the field from its id */
+
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
 
   switch (eqp->space_scheme) {
@@ -3401,7 +3418,6 @@ cs_equation_compute_vtx_field_gradient(const cs_equation_t   *eq,
     break;
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3427,6 +3443,7 @@ cs_equation_compute_peclet(const cs_equation_t        *eq,
   const cs_equation_param_t  *eqp = eq->param;
 
   /* Check if the computation of the Peclet number is requested */
+
   if (!(eqp->post_flag & CS_EQUATION_POST_PECLET))
     return;
 
@@ -3445,6 +3462,7 @@ cs_equation_compute_peclet(const cs_equation_t        *eq,
     cs_timer_stats_start(eq->main_ts_id);
 
   /* Compute the Peclet number in each cell */
+
   cs_advection_get_peclet(eqp->adv_field,
                           eqp->diffusion_property,
                           ts->t_cur,
@@ -3527,6 +3545,7 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
     const cs_equation_param_t  *eqp = eq->param;
 
     /* Check if the computation of the balance is requested */
+
     if (!(eqp->post_flag & CS_EQUATION_POST_BALANCE))
       continue;
 
@@ -3622,7 +3641,6 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
       cs_timer_stats_stop(eq->main_ts_id);
 
   } /* Loop on equations */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3646,6 +3664,7 @@ cs_equation_extra_post(void)
     assert(eq->postprocess != NULL);
 
     /* Perform post-processing specific to a numerical scheme */
+
     eq->postprocess(eqp,
                     eq->builder,
                     eq->scheme_context);
