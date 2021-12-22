@@ -26,12 +26,12 @@
 
 if HAVE_INTERNAL_PLE
   CPPFLAGS_PLE = -I"$(top_srcdir)/libple/src" -I"$(top_builddir)/libple"
-  LIBPLE_LA = $(top_builddir)/libple/src/libple.la
+  LDFLAGS_PLE = -L"$(top_builddir)/libple/src"
 else
   CPPFLAGS_PLE = $(PLE_CPPFLAGS)
   LDFLAGS_PLE = $(PLE_LDFLAGS)
-  LIBS_PLE = $(PLE_LIBS)
 endif
+LIBS_PLE = $(PLE_LIBS)
 
 # Relocatable installation
 
@@ -156,7 +156,6 @@ $(top_builddir)/src/user/libcsuser.la \
 $(top_builddir)/src/meg/libcsmeg.la \
 $(top_builddir)/src/libcsmodules.la \
 $(top_builddir)/src/bft/libbft.la \
-$(LIBPLE_LA) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
 $(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
@@ -177,7 +176,6 @@ libsaturne_la_LDFLAGS = -no-undefined -release 7.2
 
 libcs_solver_la_SOURCES = cs_solver.c
 libcs_solver_la_LIBADD = libsaturne.la \
-$(LIBPLE_LA) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
 $(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \

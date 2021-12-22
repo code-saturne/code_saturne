@@ -26,12 +26,12 @@
 
 if HAVE_INTERNAL_PLE
   CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
-  LIBPLE_LA = $(top_builddir)/libple/src/libple.la
+  LDFLAGS_PLE = -L"$(top_builddir)/libple/src"
 else
   CPPFLAGS_PLE = $(PLE_CPPFLAGS)
   LDFLAGS_PLE = $(PLE_LDFLAGS)
-  LIBS_PLE = $(PLE_LIBS)
 endif
+LIBS_PLE = $(PLE_LIBS)
 
 # Main part
 
@@ -142,12 +142,12 @@ check_PROGRAMS += cs_gpu_test
 endif
 
 LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
-	$(PLE_LDFLAGS) $(MPI_LDFLAGS) $(CUDA_LDFLAGS)
+	$(LDFLAGS_PLE) $(MPI_LDFLAGS) $(CUDA_LDFLAGS)
 
 LDADD_CS_TESTS = \
 	$(top_builddir)/src/base/libcscore.la \
 	$(top_builddir)/src/bft/libbft.la \
-	$(LIBPLE_LA) $(PLE_LIBS) $(MPI_LIBS) $(CUDA_LIBS) -lm
+	$(PLE_LIBS) $(MPI_LIBS) $(CUDA_LIBS) -lm
 
 cs_all_to_all_test_SOURCES  = cs_all_to_all_test.c
 cs_all_to_all_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)

@@ -176,8 +176,7 @@ class compile_build(cs_compile):
                 if os.path.isdir(p):
                     flags.append('-L' + p)
             if self.pkg.config.libs['ple'].variant == 'internal':
-                flags.append('-L' + os.path.join(top_builddir, 'libple',
-                                                 'src', '.libs'))
+                flags.append('-L' + os.path.join(top_builddir, 'libple', 'src'))
             l_cwd = '-L' + os.path.join(os.getcwd(), '.libs')
             if not l_cwd in flags:
                 flags.append(l_cwd)
