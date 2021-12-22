@@ -61,6 +61,7 @@
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
 #include "cs_equation_param.h"
+#include "cs_equation_system.h"
 #include "cs_evaluate.h"
 #include "cs_flag.h"
 #include "cs_gwf.h"
