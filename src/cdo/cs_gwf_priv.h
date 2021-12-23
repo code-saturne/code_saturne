@@ -430,8 +430,14 @@ typedef struct {
    * \var l_rel_permeability
    * Values in each cell of the relative permeability in the liquid phase.
    * This quantity is used either in the water conservation or in the hydrogen
-   * conservation. This enables also to recover the (full) permeability since
-   * permeability = abs_permeability * rel_l_permeability
+   * conservation. This enables also to recover the (full) permeability in the
+   * liquid phase since permeability = abs_permeability * rel_l_permeability
+   *
+   * \var g_rel_permeability
+   * Values in each cell of the relative permeability in the gas phase.  This
+   * quantity is used either in the water conservation or in the hydrogen
+   * conservation. This enables also to recover the (full) permeability in the
+   * gas phase since permeability = abs_permeability * rel_l_permeability
    */
 
   cs_real_t                    *time_w_eq_array;
@@ -439,7 +445,9 @@ typedef struct {
   cs_real_t                    *time_h_eq_array;
   cs_real_t                    *diff_hl_eq_array;
   cs_real_t                    *diff_hg_eq_array;
+
   cs_real_t                    *l_rel_permeability;
+  cs_real_t                    *g_rel_permeability;
 
   /*!
    * @}

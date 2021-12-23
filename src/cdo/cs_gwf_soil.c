@@ -1000,7 +1000,49 @@ cs_gwf_soil_uspf_set_arrays(cs_real_t        head[],
 
     default:
       break; /* Do nothing. For user-defined soils, one has to do similar
-                things in cs_user_gwf.c */
+                things in cs_user_parameters.c */
+
+    }
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the different arrays used in soil context for a GWF model set
+ *         to miscible two-phase flows in a porous media.
+ *
+ * \param[in]  capillarity_p  current values of the capillarity pressure
+ * \param[in]  l_saturation   current values of the liquid saturation
+ * \param[in]  l_kr           current values of the relative liquid permeability
+ * \param[in]  g_kr           current values of the relative gas permeability
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_mtpf_set_arrays(cs_real_t      capillarity_p[],
+                            cs_real_t      l_saturation[],
+                            cs_real_t      l_kr[],
+                            cs_real_t      g_kr[])
+
+{
+  CS_UNUSED(capillarity_p);
+  CS_UNUSED(l_saturation);
+  CS_UNUSED(l_kr);
+  CS_UNUSED(g_kr);
+
+  for (int i = 0; i < _n_soils; i++) {
+
+    cs_gwf_soil_t  *soil = _soils[i];
+
+    switch (soil->model) {
+
+      /* TODO: Add soil models */
+      break;
+
+    default:
+      break; /* Do nothing. For user-defined soils, one has to do similar
+                things in cs_user_parameters.c */
 
     }
 

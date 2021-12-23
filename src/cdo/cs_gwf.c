@@ -1190,7 +1190,9 @@ _mtpf_init_context(cs_property_type_t           pty_type)
   mc->time_h_eq_array = NULL;
   mc->diff_hl_eq_array = NULL;
   mc->diff_hg_eq_array = NULL;
+
   mc->l_rel_permeability = NULL;
+  mc->g_rel_permeability = NULL;
 
   /* Darcy flux (not used up to now) */
 
@@ -1205,13 +1207,13 @@ _mtpf_init_context(cs_property_type_t           pty_type)
   mc->l_diffusivity_h = 1e-10;
   mc->w_molar_mass = 18e-3;
   mc->h_molar_mass = 3e-3;
-  mc->ref_temperature = 280;
+  mc->ref_temperature = 280;    /* in Kelvin */
   mc->henry_constant = 1e-20;   /* immiscible case */
 
   /* Create a new equation for the water conservation */
 
-  mc->w_eq = cs_equation_add("w_conservation",       /* equation name */
-                             "capillarity_pressure", /* variable name */
+  mc->w_eq = cs_equation_add("w_conservation",   /* equation name */
+                             "liquid_pressure",  /* variable name */
                              CS_EQUATION_TYPE_GROUNDWATER,
                              1,
                              CS_PARAM_BC_HMG_NEUMANN);
@@ -1315,7 +1317,9 @@ _mtpf_free_context(cs_gwf_miscible_two_phase_t  **p_mc)
   BFT_FREE(mc->time_h_eq_array);
   BFT_FREE(mc->diff_hl_eq_array);
   BFT_FREE(mc->diff_hg_eq_array);
+
   BFT_FREE(mc->l_rel_permeability);
+  BFT_FREE(mc->g_rel_permeability);
 
   BFT_FREE(mc);
   *p_mc = NULL;
@@ -1382,6 +1386,11 @@ _mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc)
   assert(cs_equation_is_steady(mc->w_eq) == false);
   assert(cs_equation_is_steady(mc->h_eq) == false);
 
+  /* Set fields related to variables */
+
+  mc->l_pressure = cs_equation_get_field(mc->w_eq);
+  mc->g_pressure = cs_equation_get_field(mc->h_eq);
+
   const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_CDO;
   const int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
   const int  v_loc_id = cs_mesh_location_get_id_by_name("vertices");
@@ -1392,21 +1401,21 @@ _mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc)
   assert(space_scheme == cs_equation_get_space_scheme(mc->h_eq));
 
   /* One has to be consistent with the location of DoFs for the w_eq and h_eq
-   * which are respectively related to the c_pressure and g_pressure */
+   * which are respectively related to the l_pressure and g_pressure */
 
   int loc_id = c_loc_id;
   if (space_scheme == CS_SPACE_SCHEME_CDOVB ||
       space_scheme == CS_SPACE_SCHEME_CDOVCB)
     loc_id = v_loc_id;
 
-  mc->l_pressure = cs_field_create("liquid_pressure",
+  mc->c_pressure = cs_field_create("capillarity_pressure",
                                    field_mask,
                                    loc_id,
                                    1,
                                    true); /* has_previous */
 
-  cs_field_set_key_int(mc->l_pressure, log_key, 1);
-  cs_field_set_key_int(mc->l_pressure, post_key, 1);
+  cs_field_set_key_int(mc->c_pressure, log_key, 1);
+  cs_field_set_key_int(mc->c_pressure, post_key, 1);
 
   /* Create a liquid saturation field attached to cells: S_l */
 
@@ -1451,15 +1460,22 @@ _mtpf_finalize_setup(const cs_cdo_connect_t          *connect,
   const cs_lnum_t  n_cells = connect->n_cells;
   const size_t  csize = n_cells*sizeof(cs_real_t);
 
-  /* Set the Darcian flux (in the volume and at the boundary) -- Not done up to
-     now */
+  /* Set the Darcian flux (in the volume and at the boundary)
+   * Not done up to now
+   */
 
-  /* Allocate and initialize the relative permeability in the liquid phase */
+  /* Allocate and initialize the relative permeability in the liquid and gas
+     phase */
 
   BFT_MALLOC(mc->l_rel_permeability, n_cells, cs_real_t);
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_cells; i++)
     mc->l_rel_permeability[i] = 1; /* saturated by default */
+
+  BFT_MALLOC(mc->g_rel_permeability, n_cells, cs_real_t);
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    mc->g_rel_permeability[i] = 1; /* saturated by default */
 
   /* Define the array storing the time property for the water eq. */
 
@@ -1520,7 +1536,10 @@ _mtpf_finalize_setup(const cs_cdo_connect_t          *connect,
 
   /* Set soil context with array */
 
-  /* TODO */
+  cs_gwf_soil_mtpf_set_arrays(mc->c_pressure->val,
+                              mc->l_saturation->val,
+                              mc->l_rel_permeability,
+                              mc->g_rel_permeability);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1594,12 +1613,12 @@ _mtpf_finalize_setup(const cs_cdo_connect_t          *connect,
 /*----------------------------------------------------------------------------*/
 
 static cs_real_t
-_mtpf_updates(const cs_mesh_t             *mesh,
-              const cs_cdo_connect_t      *connect,
-              const cs_cdo_quantities_t   *quant,
-              const cs_time_step_t        *ts,
-              bool                         cur2prev,
-              cs_gwf_miscible_two_phase_t          *mc)
+_mtpf_updates(const cs_mesh_t                 *mesh,
+              const cs_cdo_connect_t          *connect,
+              const cs_cdo_quantities_t       *quant,
+              const cs_time_step_t            *ts,
+              bool                             cur2prev,
+              cs_gwf_miscible_two_phase_t     *mc)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
@@ -1612,8 +1631,28 @@ _mtpf_updates(const cs_mesh_t             *mesh,
   if (cur2prev)
     time_eval = _get_time_eval(ts, mc->w_eq);
 
-/*   /\* Update head *\/ */
-/*   _tpf_water_pressure(mc, quant, connect, cur2prev); */
+  cs_param_space_scheme_t space_scheme = cs_equation_get_space_scheme(mc->w_eq);
+
+  const cs_real_t  *l_pr = mc->l_pressure->val;
+  const cs_real_t  *g_pr = mc->g_pressure->val;
+  cs_real_t  *c_pr = mc->c_pressure->val;
+
+  /* Update the capillary pressure: P_c = P_g - P_l */
+
+  if (cur2prev)
+    cs_field_current_to_previous(mc->c_pressure);
+
+  switch (space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
+      c_pr[i] = g_pr[i] - l_pr[i];
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid space scheme", __func__);
+
+  }
 
 /*   /\* Update properties related to soils (water_saturation, water/gaz permeabilities, */
 /*      compressibility coefficients *\/ */
@@ -2517,7 +2556,8 @@ cs_gwf_update(const cs_mesh_t             *mesh,
     bft_error(__FILE__, __LINE__, 0,
               "%s: Groundwater module is not allocated.", __func__);
 
-  cs_real_t  time_eval = 0.;
+  cs_real_t  time_eval = ts->t_cur; /* default value */
+
   switch (gw->model) {
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:

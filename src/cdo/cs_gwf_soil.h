@@ -551,6 +551,24 @@ cs_gwf_soil_uspf_set_arrays(cs_real_t        head[],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the different arrays used in soil context for a GWF model set
+ *         to miscible two-phase flows in a porous media.
+ *
+ * \param[in]  capillarity_p  current values of the capillarity pressure
+ * \param[in]  l_saturation   current values of the liquid saturation
+ * \param[in]  l_kr           current values of the relative liquid permeability
+ * \param[in]  g_kr           current values of the relative gas permeability
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_mtpf_set_arrays(cs_real_t      capillarity_p[],
+                            cs_real_t      l_saturation[],
+                            cs_real_t      l_kr[],
+                            cs_real_t      g_kr[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update the soil properties
  *
  * \param[in]  time_eval         time at which one evaluates properties
