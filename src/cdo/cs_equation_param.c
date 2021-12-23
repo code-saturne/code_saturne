@@ -520,7 +520,7 @@ _set_key(cs_equation_param_t   *eqp,
       if (ret_class != CS_PARAM_SLES_CLASS_PETSC) {
 
         cs_base_warn(__FILE__, __LINE__);
-        bft_printf(" Switch to the GCR implemantation of code_saturne\n");
+        bft_printf(" Switch to the GCR implementation of code_saturne\n");
         eqp->sles_param->solver = CS_PARAM_ITSOL_GCR;
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
 

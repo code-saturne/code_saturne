@@ -71,7 +71,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*! [param_cdo_gwf_tracy_struct] */
-/* Parameters defining the unsaturated hydraulic Tracy model */
+/* Parameters defining the unsaturated soil model devised by Tracy */
 
 typedef struct {
 
@@ -142,7 +142,7 @@ tracy_update(const cs_real_t              t_eval,
     const cs_real_t  h = head_values[c_id];
     const cs_real_t  k_r = (h - sc->h_r)/(sc->h_s - sc->h_r);
 
-    /* Set the permeability value to the saturated values */
+    /* Set the permeability value */
 
     sc->permeability_values[c_id] = sc->k_s * k_r;
 
@@ -166,7 +166,7 @@ tracy_update(const cs_real_t              t_eval,
  *         The purpose of this function is to free the context structure
  *         associated to the user-defined model.
  *
- * \param[in, out] p_soil_context  doublepointer to a structure cast on-the-fly
+ * \param[in,out] p_soil_context  double pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
@@ -326,15 +326,15 @@ cs_user_model(void)
 
   /*! [param_cdo_gwf_add_user_soil] */
 
-  cs_real_t  bulk_density = 1.0; /* useless here since there is no tracer */
-  cs_real_t  theta_s = 0.45;
+  cs_real_t  bulk_density = 1.0; /* useless here since there is no tracer eq. */
+  cs_real_t  theta_s = 0.45;     /* saturated moisture=max. liquid saturation */
 
   cs_gwf_soil_t  *s = cs_gwf_add_soil("cells",
                                       bulk_density,
                                       theta_s,
                                       CS_GWF_SOIL_USER);
 
-  /* 2.a Create and define a structure to mamange the soil */
+  /* 2.a Create and define a structure of parameters to manage the soil */
 
   cs_tracy_param_t  *tp = NULL;
 
