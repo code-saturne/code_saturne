@@ -134,10 +134,12 @@ cs_variable_cdo_field_create(const char  *name,
 
   /* If cmp_id > -1 then this is an existing field. This situation may happen
      with CDO field if a previous creation was made in the Fortran part */
+
   int cmp_id = cs_field_id_by_name(name);
 
   /* Conversion from int to bool (done in C to avoid spurious behavior with
      a boolean variable defined in the FORTRAN part */
+
   bool  previous = (has_previous < 1) ? false : true;
   cs_field_t *f = cs_field_find_or_create(name,
                                           field_type,

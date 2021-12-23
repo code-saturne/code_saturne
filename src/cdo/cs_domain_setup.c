@@ -408,9 +408,11 @@ cs_domain_def_time_step_by_function(cs_domain_t        *domain,
   domain->time_step->is_variable = 1; /* not constant time step */
 
   /* Uniform in space but can change from one time step to the other */
+
   domain->time_options.idtvar = CS_TIME_STEP_ADAPTIVE;
 
   /* Set the property related to the time step if used for building a system */
+
   cs_property_t  *dt_pty = cs_property_by_name("time_step");
   if (dt_pty == NULL)
     dt_pty = cs_property_add("time_step", CS_PROPERTY_ISO);
@@ -454,6 +456,7 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
   domain->time_step->is_variable = 0; /* constant time step */
 
   /* Constant time step by default */
+
   domain->time_options.idtvar = CS_TIME_STEP_CONSTANT;
 
   domain->time_step->dt[0] = dt;    /* time step n */
@@ -465,6 +468,7 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
   domain->time_options.dtmax = dt;
 
   /* Set the property related to the time step if used for building a system */
+
   cs_property_t  *dt_pty = cs_property_by_name("time_step");
 
   if (dt_pty == NULL)
@@ -494,35 +498,43 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
    */
 
   /* Wall distance */
+
   if (cs_walldistance_is_activated())
     cs_walldistance_setup();
 
   /* Mesh deformation */
+
   if (cs_mesh_deform_is_activated())
     cs_mesh_deform_setup(domain);
 
   /* Thermal module */
+
   if (cs_thermal_system_is_activated())
     cs_thermal_system_init_setup();
 
   /* Groundwater flow module */
+
   if (cs_gwf_is_activated())
     cs_gwf_init_setup();
 
   /* ALE mesh velocity */
+
   if (cs_ale_is_activated())
     cs_ale_init_setup(domain);
 
   /* Maxwell module */
+
   if (cs_maxwell_is_activated())
     cs_maxwell_init_setup();
 
   /* Navier-Stokes system */
+
   if (cs_navsto_system_is_activated()) {
 
     /* To make more easy the settings for the end-user, one may have to
      * ensure that the Navier-Stokes system has the sufficient knowledge of
      * what is requested */
+
     if (cs_thermal_system_needs_navsto())
       cs_navsto_system_update_model(true);
 
@@ -534,6 +546,7 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
     cs_domain_cdo_context_t  *cdo = domain->cdo_context;
 
     /* Switch off turbulence modelling if in CDO mode only */
+
     if (cdo->mode == CS_DOMAIN_CDO_MODE_ONLY) {
 
       cs_turb_model_t  *turb = cs_get_glob_turb_model();
@@ -565,10 +578,12 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
    */
 
   /* Navier-Stokes system */
+
   if (cs_navsto_system_is_activated())
     cs_navsto_system_set_sles();
 
   /* Set the remaining equations */
+
   cs_equation_set_sles();
 }
 
@@ -776,9 +791,11 @@ cs_domain_finalize_module_setup(cs_domain_t         *domain)
                                      domain->cdo_quantities);
 
   /* Last stage to define properties (when complex definition is requested) */
+
   cs_property_finalize_setup();
 
   /* Last stage to define properties (when complex definition is requested) */
+
   cs_advection_field_finalize_setup();
 }
 
@@ -802,16 +819,19 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
    *
    * connect can be updated during this initialization step
    */
+
   cs_equation_initialize(domain->mesh,
                          domain->time_step,
                          domain->cdo_quantities,
                          domain->connect);
 
   /* Set the initial condition for all advection fields */
+
   cs_advection_field_update(domain->time_step->t_cur,
                             false); /* operate current to previous ? */
 
   /* Set the initial state for the thermal module */
+
   if (cs_thermal_system_is_activated())
     cs_thermal_system_update(domain->mesh,
                              domain->connect,
@@ -820,6 +840,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                              false); /* operate current to previous ? */
 
   /* Set the initial state for the Navier-Stokes system */
+
   if (cs_navsto_system_is_activated())
     cs_navsto_system_initialize(domain->mesh,
                                 domain->connect,
@@ -827,6 +848,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                                 domain->time_step);
 
   /* Set the initial state for the Maxwell module */
+
   if (cs_maxwell_is_activated())
     cs_maxwell_update(domain->mesh,
                       domain->connect,
@@ -836,6 +858,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 
   /* Additional initializations (Navier-Stokes system has already been
      initialized) */
+
   if (cs_solidification_is_activated())
     cs_solidification_initialize(domain->mesh,
                                  domain->connect,
@@ -843,6 +866,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                                  domain->time_step);
 
   /* Set the initial state for the groundwater flow module */
+
   if (cs_gwf_is_activated())
     cs_gwf_update(domain->mesh,
                   domain->connect,
@@ -851,6 +875,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                   false); /* operate current to previous ? */
 
   /* Last word for the user function */
+
   int  cdo_mode = cs_domain_get_cdo_mode(domain);
   if (cdo_mode == CS_DOMAIN_CDO_MODE_ONLY)
     cs_user_initialization(domain);
@@ -888,6 +913,7 @@ cs_domain_setup_log(const cs_domain_t   *domain)
   }
 
   /* CDO main structure count */
+
   cs_log_printf(CS_LOG_SETUP, "\n## CDO main structures\n");
 
   int  n_equations, n_predef_equations, n_user_equations;
@@ -914,6 +940,7 @@ cs_domain_setup_log(const cs_domain_t   *domain)
   cs_cdo_quantities_summary(domain->cdo_quantities);
 
   /* Time step summary */
+
   cs_log_printf(CS_LOG_SETUP, "\n## Time step information\n");
   if (domain->only_steady)
     cs_log_printf(CS_LOG_SETUP, " * Steady-state computation\n");
@@ -940,7 +967,6 @@ cs_domain_setup_log(const cs_domain_t   *domain)
     }
 
   }
-
 }
 
 
