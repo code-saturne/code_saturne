@@ -497,6 +497,10 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
    * numerical parameters are set.
    */
 
+  /* Add variable field related to user-defined and predefined equations */
+
+  cs_equation_create_fields();
+
   /* Wall distance */
 
   if (cs_walldistance_is_activated())
@@ -563,9 +567,8 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   if (cs_solidification_is_activated())
     cs_solidification_init_setup();
 
-  /* Add variables related to user-defined and predefined equations */
+  /* Add fields associated to advection fields */
 
-  cs_equation_create_fields();
   cs_advection_field_create_fields();
 
   /* Set the scheme flag for the computational domain */
