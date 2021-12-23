@@ -50,7 +50,7 @@ ple_coupling_wrapper.o: ple_coupling_wrapper.c $(top_builddir)/src/libple.${LIB_
 libpyplecoupling.a: ple_coupling_wrapper.o
 	@echo "Building libple.a ..."
 	rm -f $@
-	${AR} $@ ple_coupling_wrapper.o
+	${AR} $(ARFLAGS) $@ ple_coupling_wrapper.o
 	${RANLIB} $@
 
 libpyplecoupling_soname = libpyplecoupling.${SHARED_LIB_EXT}.$(PLE_LIB_VERSION_STRING_MAJOR)
@@ -58,7 +58,6 @@ libpyplecoupling_soname = libpyplecoupling.${SHARED_LIB_EXT}.$(PLE_LIB_VERSION_S
 libpyplecoupling.${SHARED_LIB_EXT}: ple_coupling_wrapper.o
 	@echo "Building libpyplecoupling ..."
 	@link_cmd="${PLE_LD} -o $@ ${LDFLAGS_SHARED} $(AM_LDFLAGS) ple_coupling_wrapper.o $(top_builddir)/src/libple.${LIB_EXT} $(AM_LIBS) $(PYTHON_LIBS) $(PYTHON_EXTRA_LIBS)" ; \
-	echo "here ab" ; \
 	if test -n "$(LDRPATH)"; then \
 	  echo "$${link_cmd} $(LDRPATH)'$(abs_top_builddir)/src'" ; \
 	  $${link_cmd} $(LDRPATH)'$(abs_top_builddir)/src' ; \

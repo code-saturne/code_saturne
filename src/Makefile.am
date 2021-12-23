@@ -69,7 +69,7 @@ endif
 libple.a: ${libple_objs}
 	@echo "Building libple.a ..."
 	rm -f $@
-	${AR} $@ ${libple_objs}
+	${AR} $(ARFLAGS) $@ ${libple_objs}
 	${RANLIB} $@
 
 libple_soname = libple.${SHARED_LIB_EXT}.$(PLE_LIB_VERSION_STRING_MAJOR)

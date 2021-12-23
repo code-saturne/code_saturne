@@ -370,6 +370,12 @@ if test "x$enable_shared" = "xyes" ; then
   fi
 fi
 
+# Tools for static builds
+
+if test "x$enable_shared" = xno; then
+  AC_PROG_RANLIB
+fi
+
 #------------------------------------------------------------------------------
 # Checks for libraries.
 #------------------------------------------------------------------------------
