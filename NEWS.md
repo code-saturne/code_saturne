@@ -1,3 +1,11 @@
+Release 7.1.1 (not released yet)
+--------------------------------
+
+Bug fixes:
+
+- Fix logging of compilation messages, which appeared in the
+  calling terminal instead of `compile.log`.
+
 Release 7.1.0 (December 21 2021)
 --------------------------------
 
