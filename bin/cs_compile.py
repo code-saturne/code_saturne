@@ -586,7 +586,8 @@ class cs_compile(object):
 
     def compile_and_link(self, base_name, srcdir, destdir=None, src_list=None,
                          opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
-                         opt_libs=None, force_link=False, keep_going=False,
+                         opt_nvccflags=None, opt_libs=None, force_link=False,
+                         keep_going=False,
                          stdout=sys.stdout, stderr=sys.stderr):
         """
         Compilation and link function.
@@ -621,7 +622,8 @@ class cs_compile(object):
             src_list.append(os.path.join(srcdir, f))
 
         retval, obj_list = self.compile_src(base_name, src_list,
-                                            opt_cflags, opt_cxxflags, opt_fcflags,
+                                            opt_cflags, opt_cxxflags,
+                                            opt_fcflags, opt_nvccflags,
                                             keep_going, stdout, stderr)
 
         if retval == 0 and (force_link or len(obj_list)) > 0:
@@ -645,6 +647,7 @@ class cs_compile(object):
 
 def compile_and_link(pkg, base_name, srcdir, destdir=None,
                      opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
+                     opt_nvccflags=None,
                      opt_libs=None, force_link=False, keep_going=False,
                      stdout=sys.stdout, stderr=sys.stderr):
     """
@@ -658,6 +661,7 @@ def compile_and_link(pkg, base_name, srcdir, destdir=None,
                                  opt_cflags=opt_cflags,
                                  opt_cxxflags=opt_cxxflags,
                                  opt_fcflags=opt_fcflags,
+                                 opt_nvccflags=opt_nvccflags,
                                  opt_libs=opt_libs,
                                  force_link=force_link,
                                  keep_going=keep_going,
@@ -699,6 +703,7 @@ def main(argv, pkg):
                                opt_cflags=cflags,
                                opt_cxxflags=cxxflags,
                                opt_fcflags=fcflags,
+                               opt_nvccflags=opt_nvccflags,
                                opt_libs=libs,
                                force_link=force_link,
                                keep_going=keep_going)
