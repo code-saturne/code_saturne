@@ -50,7 +50,7 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_real_t     gravity[3];        /* gravity vector */
+  cs_real_t     gravity[3];        /* gravity vector in m.s^-2 */
   int           icorio;            /* Coriolis source terms indicator */
 
 } cs_physical_constants_t;
@@ -82,12 +82,12 @@ typedef struct {
   double        cv0;          /* reference specific heat at constant volume */
   double        lambda0;      /* reference heat conductivity */
 
-  double        r_pg_cnst;    /* Perfect Gas R constant */
-  double        rvsra;        /* ratio gaz constant h2o/ dry air */
-  double        clatev;       /* latent heat of evaporation: */
+  double        r_pg_cnst;    /* perfect gas specific constant in J/kg/K */
+  double        rvsra;        /* ratio gaz constant h2o / dry air */
+  double        clatev;       /* latent heat of evaporation */
   double        xmasmr;       /* molar mass of the perfect gas in kg/mol
                                  (if ieos=1) */
-  int           ipthrm;       /* Uniform variable thermodynamic pressure for the
+  int           ipthrm;       /* uniform variable thermodynamic pressure for the
                                  low-Mach algorithm */
   double        pther;        /* uniform thermodynamic pressure for the low-Mach
                                  algorithm */
@@ -95,8 +95,8 @@ typedef struct {
                                  step */
   double        pthermax;     /* thermodynamic maximum pressure for user
                                  clipping, used to model a venting effect */
-  double        sleak;        /* Leak surface */
-  double        kleak;        /* Leak head loss (2.9 by default, from Idelcick) */
+  double        sleak;        /* leak surface */
+  double        kleak;        /* leak head loss (2.9 by default, from Idelcick) */
   double        roref;        /* Initial reference density */
 
 } cs_fluid_properties_t;

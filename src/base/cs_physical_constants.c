@@ -78,12 +78,9 @@ BEGIN_C_DECLS
   Members of this structure are publicly accessible, to allow for
   concise syntax, as they are expected to be used in many places.
 
-  \var  cs_physical_constants_t::gx
-        x component of the gravity vector
-  \var  cs_physical_constants_t::gy
-        y component of the gravity vector
-  \var  cs_physical_constants_t::gz
-        z component of the gravity vector
+  \var  cs_physical_constants_t::gravity
+        the gravity vector in the Cartesian coordinate system in \f$ m/s^2 \f$
+
   \var  cs_physical_constants_t::icorio
         Coriolis source terms
 */
@@ -138,6 +135,7 @@ BEGIN_C_DECLS
         See \ref physical_properties for more informations.
            - 0: false, its value is the reference molecular
         dynamic viscosity \ref viscl0
+
   \var  cs_fluid_properties_t::ivsuth
         Sutherland law for laminar viscosity and thermal conductivity
         Only useful in gas mix (igmix) specific physics
@@ -156,7 +154,7 @@ BEGIN_C_DECLS
 
         Always useful otherwise, even if a law defining the density is given by
         the user subroutines \ref cs_user_physical_properties.
-        Indeed, except with the compressible module, CS  does not use the total
+        Indeed, except with the compressible module, CS does not use the total
         pressure \f$P\f$ when solving the Navier-Stokes equation, but a reduced
         pressure \f$ P^*=P-\rho_0\vect{g}.(\vect{x}-\vect{x}_0)+ P^*_0-P_0 \f$,
         where \f$\vect{x_0}\f$ is a reference point (see \ref xyzp0) and \f$
@@ -250,13 +248,15 @@ BEGIN_C_DECLS
   \var  cs_fluid_properties_t::cp0
         reference specific heat
 
-        Useful if \ref cs_thermal_model_t::itherm "cs_glob_thermal_model->itherm"
-        != CS_THERMAL_MODEL_NONE, unless the
-        user specifies the specific heat in the user subroutine \ref cs_user_physical_properties
-        (\ref cstphy::icp "icp" > 0) with the compressible module or coal combustion,
-        \ref cp0 is also needed even when there is no user scalar. \note
-        None of the scalars from the specific physics is a temperature. \note
-        When using the Graphical Interface, \ref cp0 is also used to
+        Useful if \ref cs_thermal_model_t::itherm
+        "cs_glob_thermal_model->itherm" != CS_THERMAL_MODEL_NONE,
+        unless the user specifies the specific heat in the user subroutine
+        \ref cs_user_physical_properties (\ref cstphy::icp "icp" > 0) with the
+        compressible module or coal combustion, \ref cp0 is also needed even
+        when there is no user scalar.
+        \note None of the scalars from the specific physics is a
+        temperature.
+        \note When using the Graphical Interface, \ref cp0 is also used to
         calculate the diffusivity of the thermal scalars, based on their
         conductivity; it is therefore needed, unless the diffusivity is also
         specified in \ref cs_user_physical_properties.
@@ -271,6 +271,18 @@ BEGIN_C_DECLS
 
         Always useful. This was previously only available through the GUI,
         so in most cases, is set to 1.
+
+  \var  cs_fluid_properties_t::r_pg_cnst
+        Perfect Gas specific constant in J/kg/K
+
+        This value depends on the gas since it is equal to R/M where R is the
+        universal gas constant and M is the molar mass
+
+  \var  cs_fluid_properties_t::rvsra
+        ratio gaz constant h2o / dry air
+
+  \var  cs_fluid_properties_t::clatev
+        latent heat of evaporation
 
   \var  cs_fluid_properties_t::xmasmr
         molar mass of the perfect gas in \f$ kg/mol \f$
@@ -323,7 +335,8 @@ static cs_physical_constants_t _physical_constants = {
   .gravity[0] = 0.,
   .gravity[1] = 0.,
   .gravity[2] = 0.,
-  .icorio = 0};
+  .icorio = 0
+};
 
 /* main fluid properties structure and associated pointer */
 
@@ -344,7 +357,7 @@ static cs_fluid_properties_t  _fluid_properties = {
   .cp0      = 1017.24,
   .cv0      = 0.,
   .lambda0  = 1.,
-  .r_pg_cnst = 287.058, /* dry air pperfect gas constant J/mol/K */
+  .r_pg_cnst = 287.058, /* dry air perfect gas constant J/kg/K */
   .rvsra    = 1.607768, /* Note: Rv = 461.52272377 J/mol/K */
   .clatev   = 2.501e6,
   .xmasmr   = 0.028966, /* air molar mass */
@@ -354,7 +367,8 @@ static cs_fluid_properties_t  _fluid_properties = {
   .pthermax = -1.,
   .sleak    = 0.,
   .kleak    = 2.9,
-  .roref    = 1.17862};
+  .roref    = 1.17862
+};
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -374,8 +388,8 @@ const double cs_physical_constants_kb = 1.380649e-23;
 
 const double cs_physical_constants_celsius_to_kelvin = 273.15;
 
-/* !Stephan constant for the radiative module \f$\sigma\f$
-   in \f$W.m^{-2}.K^{-4}\f$ */
+/*! Stephan constant for the radiative module \f$\sigma\f$ in
+   \f$W.m^{-2}.K^{-4}\f$ */
 
 const double cs_physical_constants_stephan = 5.6703e-8;
 
