@@ -50,7 +50,7 @@ def update_run_steps(s_c, run_conf, final=False):
 
     filter_stages = False
     for k in s_c:
-        if s_c[k] != None:
+        if s_c[k]:
             filter_stages = True
 
     if run_conf and not filter_stages:
@@ -60,7 +60,7 @@ def update_run_steps(s_c, run_conf, final=False):
 
     filter_stages = False
     for k in s_c:
-        if s_c[k] != None:
+        if s_c[k]:
             filter_stages = True
 
     # Default if nothing provided, ensure range is filled otherwise
@@ -94,7 +94,8 @@ def update_run_steps(s_c, run_conf, final=False):
 
     elif final:
         for i, k in enumerate(s_c):
-            s_c[k] = True
+            if s_c[k] != False:
+                s_c[k] = True
 
 #-------------------------------------------------------------------------------
 # Clean append for command-line arguments parser
@@ -193,17 +194,21 @@ def arg_parser(argv):
                         action="store_true",
                         help="stage data prior to preparation and execution")
 
-    parser.add_argument("--initialize", "--preprocess", dest="initialize",
+    parser.add_argument("--no-stage", dest="stage",
+                        action="store_false",
+                        help="do not stage data prior to preparation and execution")
+
+    parser.add_argument("--initialize", dest="initialize",
                         action="store_true",
-                        help="run the data preparation stage")
+                        help="run the data preparation step")
 
     parser.add_argument("--compute", "--execute", dest="compute",
                         action="store_true",
-                        help="run the compute stage")
+                        help="run the compute step")
 
     parser.add_argument("--finalize", dest="finalize",
                         action="store_true",
-                        help="run the results copy/cleanup stage")
+                        help="run the results copy/cleanup step")
 
     parser.add_argument("--with-resource", dest="resource_name", type=str,
                         metavar="<resource>",
@@ -283,6 +288,9 @@ def process_options(options, pkg):
                 if s_c['stage'] == False:
                     if 'id' in run_conf.sections['run']:
                         run_id = run_conf.sections['run']['id']
+
+    if options.stage == False:    # Handle --no-stage option
+        s_c['stage'] = False
 
     if s_c['stage'] == False and not run_id:
         err_str = os.linesep + os.linesep + 'Error:' + os.linesep
