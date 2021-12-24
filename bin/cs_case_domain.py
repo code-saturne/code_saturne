@@ -846,15 +846,13 @@ class domain(base_domain):
 
         if len(src_files) > 0 or self.mci != None:
 
-            exec_src = os.path.join(self.exec_dir, 'src')
-
             # Create the src folder if not done yet
             if not os.path.isdir(exec_src):
                 os.mkdir(exec_src)
 
             if len(src_files) > 0:
                 # Add header files to list so as not to forget to copy them
-                dir_files = os.listdir(self.src_dir)
+                dir_files = os.listdir(exec_src)
                 src_files = src_files + (  fnmatch.filter(dir_files, '*.h')
                                          + fnmatch.filter(dir_files, '*.hxx')
                                          + fnmatch.filter(dir_files, '*.hpp'))
