@@ -53,6 +53,8 @@ def process_cmd_line(argv, pkg):
     else:
         usage = "usage: %prog compile [options]"
 
+    have_cuda = False
+
     parser = OptionParser(usage=usage)
 
     parser.add_option("-t", "--test", dest="test_mode",
@@ -93,6 +95,7 @@ def process_cmd_line(argv, pkg):
 
     if pkg:
         if pkg.config.features['cuda'] == 'yes':
+            have_cuda = True
             parser.add_option("--nvccflags", dest="nvccflags", type="string",
                               metavar="<nvccflags>",
                               help="additional CUDA compiler flags")
@@ -134,9 +137,13 @@ def process_cmd_line(argv, pkg):
         sys.stderr.write('Error: ' + dest_dir + ' is not a directory')
         sys.exit(1)
 
+    nvccflags = None
+    if have_cuda:
+        nvccflags = options.nvccflags
+
     return options.test_mode, options.force_link, options.keep_going, \
            src_dir, dest_dir, options.version, options.cflags, \
-           options.cxxflags, options.fcflags, options.libs
+           options.cxxflags, options.fcflags, nvccflags, options.libs
 
 #-------------------------------------------------------------------------------
 
@@ -684,8 +691,8 @@ def main(argv, pkg):
     except Exception:
         from cs_exec_environment import set_modules, source_rcfile
 
-    test_mode, force_link, keep_going, src_dir, dest_dir, \
-        version, cflags, cxxflags, fcflags, libs = process_cmd_line(argv, pkg)
+    test_mode, force_link, keep_going, src_dir, dest_dir, version, \
+        cflags, cxxflags, fcflags, nvccflags, libs = process_cmd_line(argv, pkg)
 
     if (version):
         pkg = pkg.get_alternate_version(version)
@@ -703,7 +710,7 @@ def main(argv, pkg):
                                opt_cflags=cflags,
                                opt_cxxflags=cxxflags,
                                opt_fcflags=fcflags,
-                               opt_nvccflags=opt_nvccflags,
+                               opt_nvccflags=nvccflags,
                                opt_libs=libs,
                                force_link=force_link,
                                keep_going=keep_going)
