@@ -1092,12 +1092,6 @@ cs_rad_transfer_bcs(int         nvar,
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY) {
-        rcodcl[0*n_b_faces*nvar + ivart*n_b_faces + face_id]
-          = hwall[face_id];
-        rcodcl[1*n_b_faces*nvar + ivart*n_b_faces + face_id]
-          = cs_math_infinite_r;
-        rcodcl[2*n_b_faces*nvar + ivart*n_b_faces + face_id]
-          = 0.0;
         if (ivahg >= 0) {
           rcodcl[0*n_b_faces*nvar + (ivahg - 1)*n_b_faces + face_id]
             = hwall[face_id];
