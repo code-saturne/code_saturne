@@ -33,6 +33,7 @@
 
 #include "cs_base.h"
 #include "cs_boundary.h"
+#include "cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -41,6 +42,16 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/*! Arguments passed by context pointer to cs_meg_* functions */
+
+typedef struct {
+
+  const  cs_zone_t    *zone;        /*<! Pointer to zone */
+  const  char         *field_name;  /*<! Pointer to field name */
+  const  char         *condition;   /*<! Pointer to condition name type */
+
+} cs_gui_boundary_meg_context_t;
 
 /*============================================================================
  * Static global variables

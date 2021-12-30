@@ -130,6 +130,11 @@ BEGIN_C_DECLS
  * Private global variables
  *============================================================================*/
 
+/* MEG contexts */
+
+static int                            _n_v_meg_contexts = 0;
+static cs_gui_volume_meg_context_t  **_v_meg_contexts = NULL;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -3806,6 +3811,13 @@ void
 cs_gui_finalize(void)
 {
   cs_gui_boundary_conditions_free_memory();
+
+  /* Clean MEG contexts */
+
+  for (int i = 0; i < _n_v_meg_contexts; i++)
+    BFT_FREE(_v_meg_contexts[i]);
+
+  BFT_FREE(_v_meg_contexts);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5108,6 +5120,59 @@ cs_gui_internal_coupling(void)
       }
     }
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add new MEG context info.
+ *
+ * \param[in]  zone      pointer to associated zone
+ * \param[in]  fields    array of field pointers
+ * \param[in]  n_fields  number gof field pointers
+ *
+ * \return: pointer to MEG context info
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_gui_volume_meg_context_t *
+cs_gui_add_volume_meg_context(const  cs_zone_t   *zone,
+                              const  cs_field_t  *fields[],
+                              const  int          n_fields)
+{
+  BFT_REALLOC(_v_meg_contexts,
+              _n_v_meg_contexts+1,
+              cs_gui_volume_meg_context_t *);
+
+  /* Allocate field pointers at end of structure (be careful of alignment) */
+
+  size_t f_size = (n_fields+1)*sizeof(cs_field_t *);
+  size_t b_size = sizeof(cs_gui_volume_meg_context_t);
+
+  int n_contexts = 1 + f_size/b_size;
+  if (f_size % b_size)
+    n_contexts += 1;
+
+  cs_gui_volume_meg_context_t  *meg_context = NULL;
+  BFT_MALLOC(meg_context, n_contexts, cs_gui_volume_meg_context_t);
+
+  meg_context->zone = zone;
+
+  /* Now set field pointers */
+
+  void *f_p = meg_context + 1;
+  meg_context->fields = (const cs_field_t **)f_p;
+
+  for (int i = 0; i < n_fields; i++)
+    meg_context->fields[i] = fields[i];
+
+  meg_context->fields[n_fields] = NULL;
+
+  /* Now set in structure */
+
+  _v_meg_contexts[_n_v_meg_contexts] = meg_context;
+  _n_v_meg_contexts += 1;
+
+  return meg_context;
 }
 
 /*----------------------------------------------------------------------------*/

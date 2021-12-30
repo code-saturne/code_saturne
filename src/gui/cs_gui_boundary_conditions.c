@@ -180,9 +180,48 @@ typedef struct {
 
 static cs_gui_boundary_t *boundaries = NULL;
 
+static int                               _n_b_meg_contexts = 0;
+static cs_gui_boundary_meg_context_t  **_b_meg_contexts = NULL;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add new MEG context info.
+ *
+ * \param[in]  zone      pointer to associated zone
+ * \param[in]  fields    array of field pointers
+ * \param[in]  n_fields  number gof field pointers
+ *
+ * \return: pointer to MEG context info
+ */
+/*----------------------------------------------------------------------------*/
+
+static const cs_gui_boundary_meg_context_t *
+_add_boundary_meg_context(const  cs_zone_t   *zone,
+                          const  char        *field_name,
+                          const  char        *condition)
+{
+  BFT_REALLOC(_b_meg_contexts,
+              _n_b_meg_contexts+1,
+              cs_gui_boundary_meg_context_t *);
+
+  cs_gui_boundary_meg_context_t  *meg_context = NULL;
+  BFT_MALLOC(meg_context, 1, cs_gui_boundary_meg_context_t);
+
+  meg_context->zone = zone;
+  meg_context->field_name = field_name;
+  meg_context->condition = condition;
+
+  /* Now set in structure */
+
+  _b_meg_contexts[_n_b_meg_contexts] = meg_context;
+  _n_b_meg_contexts += 1;
+
+  return meg_context;
+}
 
 /*----------------------------------------------------------------------------
  * Return a pointer to equation parameters based on a field or equation name.
@@ -2092,6 +2131,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
             for (int i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + face_id] = x[i] * norm;
           }
+
+          BFT_FREE(norm_vals);
         }
 
         BFT_FREE(xvals);
@@ -2884,6 +2925,13 @@ cs_gui_boundary_conditions_free_memory(void)
 
     BFT_FREE(boundaries);
   }
+
+  /* Clean MEG contexts */
+
+  for (int i = 0; i < _n_b_meg_contexts; i++)
+    BFT_FREE(_b_meg_contexts[i]);
+
+  BFT_FREE(_b_meg_contexts);
 }
 
 /*----------------------------------------------------------------------------*/

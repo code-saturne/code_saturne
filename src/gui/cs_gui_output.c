@@ -620,7 +620,7 @@ _define_profiles(void)
  * Boundary zone cells selection wrapper function
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _selection_func_boundary_cells(void        *input,
                                cs_lnum_t   *n_elts,
                                cs_lnum_t  **elt_list)
@@ -827,8 +827,8 @@ cs_gui_postprocess_meshes(void)
     }
     else if(cs_gui_strcmp(type, "boundary_cells")) {
       cs_post_define_volume_mesh_by_func(id, label,
-                                         _selection_func_boundary_cells, /* function */
-                                         location,                       /* input */
+                                         _selection_func_boundary_cells,
+                                         (void *)location,   /* input */
                                          true,
                                          add_groups, auto_vars,
                                          n_writers, writer_ids);
@@ -856,8 +856,8 @@ cs_gui_postprocess_meshes(void)
       else
         criteria = "all[]";
       cs_post_define_volume_mesh_by_func(id, label,
-                                         _selection_func_boundary_cells, /* function */
-                                         criteria,                       /* input */
+                                         _selection_func_boundary_cells,
+                                         criteria,  /* input */
                                          true,
                                          add_groups, auto_vars,
                                          n_writers, writer_ids);

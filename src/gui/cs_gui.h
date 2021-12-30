@@ -32,7 +32,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_volume_zone.h"
+#include "cs_field.h"
+#include "cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -41,6 +42,15 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/*! Arguments passed by context pointer to cs_meg_* functions */
+
+typedef struct {
+
+  const cs_zone_t    *zone;    /*<! Pointer to zone */
+  const cs_field_t  **fields;  /*<! Array of field pointers (NULL-terminated) */
+
+} cs_gui_volume_meg_context_t;
 
 /*============================================================================
  * Public function prototypes for Fortran API
@@ -597,6 +607,23 @@ cs_gui_zones(void);
 
 void
 cs_gui_internal_coupling(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add new volume MEG function context info.
+ *
+ * \param[in]  zone      pointer to associated zone
+ * \param[in]  fields    array of field pointers
+ * \param[in]  n_fields  number gof field pointers
+ *
+ * \return: pointer to MEG context info
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_gui_volume_meg_context_t *
+cs_gui_add_volume_meg_context(const  cs_zone_t   *zone,
+                              const  cs_field_t  *fields[],
+                              const  int          n_fields);
 
 /*----------------------------------------------------------------------------*/
 
