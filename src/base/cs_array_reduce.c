@@ -2445,7 +2445,7 @@ _cs_real_scatter_norms_3d_filtered(cs_lnum_t           n_src_elts,
  * Compute simple local stats (minima, maxima, sum) of an
  * n-dimensional field array's components.
  *
- * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
+ * The maximum allowed dimension is 10.
  * The array is interleaved.
  *
  * The algorithm here is similar to that used for blas, but computes several
@@ -2453,7 +2453,7 @@ _cs_real_scatter_norms_3d_filtered(cs_lnum_t           n_src_elts,
  *
  * parameters:
  *   n        <-- local number of elements
- *   dim      <-- local array dimension (max: 9)
+ *   dim      <-- local array dimension (max: 10)
  *   vl       <-- pointer to optional element list, or NULL
  *   v        <-- pointer to field values (size: n*dim)
  *   vmin     --> resulting min array (size: dim)
@@ -2470,7 +2470,7 @@ _cs_real_sstats_nd(cs_lnum_t         n,
                    double            vmax[],
                    double            vsum[])
 {
-  assert(dim <= 9);
+  assert(dim <= 10);
 
   for (cs_lnum_t j = 0; j < dim; j++) {
     vmin[j] = HUGE_VAL;
@@ -2490,8 +2490,8 @@ _cs_real_sstats_nd(cs_lnum_t         n,
 
     _sbloc_sizes(_n, block_size, &n_sblocks, &blocks_in_sblocks);
 
-    cs_real_t lmin[9], lmax[9];
-    double lsum[9];
+    cs_real_t lmin[10], lmax[10];
+    double lsum[10];
 
     for (cs_lnum_t j = 0; j < dim; j++) {
       lmin[j] = HUGE_VAL;
@@ -2501,7 +2501,7 @@ _cs_real_sstats_nd(cs_lnum_t         n,
 
     for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-      double s[9];
+      double s[10];
       for (cs_lnum_t j = 0; j < dim; j++)
         s[j] = 0.;
 
@@ -2514,7 +2514,7 @@ _cs_real_sstats_nd(cs_lnum_t         n,
           cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
           if (end_id > _n)
             end_id = _n;
-          double c[9];
+          double c[10];
           for (cs_lnum_t j = 0; j < dim; j++)
             c[j] = 0.;
           for (cs_lnum_t i = start_id; i < end_id; i++) {
@@ -2540,7 +2540,7 @@ _cs_real_sstats_nd(cs_lnum_t         n,
           cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
           if (end_id > _n)
             end_id = _n;
-          double c[9];
+          double c[10];
           for (cs_lnum_t j = 0; j < dim; j++)
             c[j] = 0.;
           for (cs_lnum_t li = start_id; li < end_id; li++) {
@@ -2582,7 +2582,7 @@ _cs_real_sstats_nd(cs_lnum_t         n,
  * Compute simple local stats (minima, maxima, sum, weighted sum) of an
  * n-dimensional field array's components.
  *
- * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
+ * The maximum allowed dimension is 10.
  * The array is interleaved.
  *
  * The algorithm here is similar to that used for blas, but computes several
@@ -2590,7 +2590,7 @@ _cs_real_sstats_nd(cs_lnum_t         n,
  *
  * parameters:
  *   n        <-- local number of elements
- *   dim      <-- local array dimension (max: 9)
+ *   dim      <-- local array dimension (max: 10)
  *   vl       <-- pointer to optional element list, or NULL
  *   wl       <-- pointer to optional element list, or NULL
  *                (ignored if vl != NULL)
@@ -2614,7 +2614,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
                      double            vsum[],
                      double            wsum[])
 {
-  assert(dim <= 9);
+  assert(dim <= 10);
 
   for (cs_lnum_t j = 0; j < dim; j++) {
     vmin[j] = HUGE_VAL;
@@ -2637,8 +2637,8 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
 
     const int dim2 = dim*2;
 
-    cs_real_t lmin[9], lmax[9];
-    double lsum[18];
+    cs_real_t lmin[10], lmax[10];
+    double lsum[20];
 
     for (cs_lnum_t j = 0; j < dim; j++) {
       lmin[j] = HUGE_VAL;
@@ -2649,7 +2649,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
 
     for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-      double s[18];
+      double s[20];
       for (cs_lnum_t j = 0; j < dim2; j++)
         s[j] = 0.;
 
@@ -2663,7 +2663,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
           cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
           if (end_id > _n)
             end_id = _n;
-          double c[18];
+          double c[20];
           for (cs_lnum_t j = 0; j < dim2; j++)
             c[j] = 0.;
           for (cs_lnum_t i = start_id; i < end_id; i++) {
@@ -2691,7 +2691,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
           cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
           if (end_id > _n)
             end_id = _n;
-          double c[18];
+          double c[20];
           for (cs_lnum_t j = 0; j < dim2; j++)
             c[j] = 0.;
           for (cs_lnum_t i = start_id; i < end_id; i++) {
@@ -2719,7 +2719,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
           cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
           if (end_id > _n)
             end_id = _n;
-          double c[18];
+          double c[20];
           for (cs_lnum_t j = 0; j < dim2; j++)
             c[j] = 0.;
           for (cs_lnum_t li = start_id; li < end_id; li++) {
@@ -2886,7 +2886,7 @@ cs_array_reduce_minmax_l(cs_lnum_t         n_elts,
  * \brief  Compute simple local stats (minima, maxima, sum) of an
  * n-dimensional cs_real_t array's components.
  *
- * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
+ * The maximum allowed dimension is 10.
  * The array is interleaved.
  *
  * For arrays of dimension 3, the statistics relative to the norm
@@ -2897,7 +2897,7 @@ cs_array_reduce_minmax_l(cs_lnum_t         n_elts,
  * quantities simultaneously for better cache behavior
  *
  * \param[in]   n_elts      number of local elements
- * \param[in]   dim         local array dimension (max: 9)
+ * \param[in]   dim         local array dimension (max: 10)
  * \param[in]   v_elt_list  optional list of parent elements on which values
  *                          are defined, or NULL
  * \param[in]   v           pointer to array values
@@ -2947,7 +2947,7 @@ cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
  * \brief  Compute simple local stats (minima, maxima, sum, weighted sum) of
  * an n-dimensional cs_real_t array's components for a given mesh location.
  *
- * The maximum allowed dimension is 9 (allowing for a rank-2 tensor).
+ * The maximum allowed dimension is 10.
  * The array is interleaved.
  *
  * For arrays of dimension 3, the statistics relative to the norm
@@ -2958,7 +2958,7 @@ cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
  * quantities simultaneously for better cache behavior
  *
  * \param[in]   n_elts      number of local elements
- * \param[in]   dim         local array dimension (max: 9)
+ * \param[in]   dim         local array dimension (max: 10)
  * \param[in]   v_elt_list  optional list of parent elements on which values
  *                          are defined, or NULL
  * \param[in]   w_elt_list  optional list of parent elements on which weights
