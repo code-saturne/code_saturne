@@ -283,21 +283,38 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
     break;
 
   case CS_XDEF_BY_ARRAY:
-    cs_xdef_eval_scalar_at_cells_by_array(z->n_elts,
-                                          z->elt_ids,
-                                          dense,
-                                          m,
-                                          connect,
-                                          quant,
-                                          t_eval,
-                                          def->context,
-                                          st_loc);
+    if (dim == 1)
+      cs_xdef_eval_scalar_at_cells_by_array(z->n_elts,
+                                            z->elt_ids,
+                                            dense,
+                                            m,
+                                            connect,
+                                            quant,
+                                            t_eval,
+                                            def->context,
+                                            st_loc);
+    else
+      cs_xdef_eval_nd_at_cells_by_array(z->n_elts,
+                                        z->elt_ids,
+                                        dense,
+                                        m,
+                                        connect,
+                                        quant,
+                                        t_eval,
+                                        def->context,
+                                        st_loc);
     break;
 
   case CS_XDEF_BY_DOF_FUNCTION:
-    bft_error(__FILE__, __LINE__, 0,
-              _("In %s, evaluation by DOF function not supported"),
-              __func__);
+    cs_xdef_eval_at_cells_by_dof_func(z->n_elts,
+                                      z->elt_ids,
+                                      dense,
+                                      m,
+                                      connect,
+                                      quant,
+                                      t_eval,
+                                      def->context,
+                                      st_loc);
     break;
 
   case  CS_XDEF_BY_FIELD:

@@ -248,6 +248,33 @@ cs_xdef_eval_at_zone(const cs_xdef_t   *def,
     }
     break;
 
+  case CS_XDEF_BY_DOF_FUNCTION: /* DOF function */
+    {
+      cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
+
+      cs_flag_t test_flag = 0;
+      switch(def->support) {
+      case CS_XDEF_SUPPORT_BOUNDARY:
+        test_flag = cs_flag_primal_face;
+        break;
+      case CS_XDEF_SUPPORT_VOLUME:
+        test_flag = cs_flag_primal_cell;
+        break;
+      default:
+        break;
+      }
+
+      if (cs_flag_test(cx->loc, test_flag) == false)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid location for definition by DoFs.\n",
+                  __func__);
+
+      cx->func(n_elts, elt_ids, dense,
+               cx->input,
+               values);
+    }
+    break;
+
   case CS_XDEF_BY_FIELD: /* array defined by associated field */
     {
       cs_field_t  *df = (cs_field_t *)def->context;
@@ -436,7 +463,8 @@ cs_xdef_eval_at_zone(const cs_xdef_t   *def,
                 _(" %s: %s\n"
                   " zone %s, type %s;\n"
                   " evaluation by time function not handled for dimension %d."),
-                  __func__, description, z->name, cs_xdef_type_get_name(def->type),
+                  __func__, description, z->name,
+                cs_xdef_type_get_name(def->type),
                 def_dim);
 
     break;
