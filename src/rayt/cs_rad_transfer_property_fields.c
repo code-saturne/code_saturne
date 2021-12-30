@@ -415,7 +415,6 @@ cs_rad_transfer_prp(void)
     cs_field_pointer_map(CS_ENUMF_(qinsp), f);
 
     cs_field_set_key_int(f, keyvis, vis_gg);
-    cs_field_set_key_int(f, keylog, (rt_params->nwsgg <= 9) ? 1 : 0);
   }
 
   /* For atmospheric 3D radiation,
