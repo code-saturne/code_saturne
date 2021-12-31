@@ -54,6 +54,7 @@
 #include "cs_boundary.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
+#include "cs_cf_thermo.h"
 #include "cs_combustion_model.h"
 #include "cs_equation_param.h"
 #include "cs_parameters.h"
@@ -162,7 +163,6 @@ typedef struct {
   cs_real_3_t   *dir;      /* directions inlet velocity */
   bool          *t_to_h;   /* convert Enthalpy to temperature */
   bool          *velocity_e;  /* formula for norm or mass flow rate of velocity */
-  bool          *direction_e; /* formula for direction of velocity */
   bool        **scalar_e;     /* formula for scalar (neumann, dirichlet or
                                  exchange coefficient) */
   bool         *head_loss_e;  /* formula for head loss (free inlet/outlet) */
@@ -172,6 +172,46 @@ typedef struct {
 
 } cs_gui_boundary_t;
 
+/* MEG contexts associated to various cases
+   ---------------------------------------- */
+
+/*! Arguments passed by context pointer to cs_meg_* functions */
+
+typedef struct {
+
+  const  cs_zone_t    *zone;        /*<! Pointer to zone */
+
+  const  char         *field_name;  /*<! Pointer to field name */
+  const  char         *condition;   /*<! Pointer to condition name type */
+
+} cs_gui_boundary_meg_context_t;
+
+/*! Arguments passed by context pointer for velocity inlet */
+
+typedef struct {
+
+  const  cs_zone_t    *zone;        /*<! Pointer to zone */
+
+  int                  norm_type;   /*<!  0: direct value,
+                                          1: direct mass flow rate,
+                                          2: direct volumic flow rate,
+                                         10: MEG for value,
+                                         11: MEG for mass flow rate,
+                                         12: MEG for volumic flow rate */
+  int                  dir_type;    /*<! 0: surface normal,
+                                         1: prescribed direction,
+                                         2: MEG function */
+
+  cs_real_t            v;           /*<! value when constant */
+  cs_real_t            dir_v[3];    /*<! direction value when constant and
+                                      prescribed */
+
+  cs_real_t            c_pr;        /*<! imposed pressure (compressible) */
+  cs_real_t            c_tk;        /*<! imposed temperature  (compressible) */
+
+
+} cs_gui_boundary_vel_context_t;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -180,8 +220,8 @@ typedef struct {
 
 static cs_gui_boundary_t *boundaries = NULL;
 
-static int                               _n_b_meg_contexts = 0;
-static cs_gui_boundary_meg_context_t  **_b_meg_contexts = NULL;
+static int     _n_b_contexts = 0;
+static void  **_b_contexts = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -199,28 +239,28 @@ static cs_gui_boundary_meg_context_t  **_b_meg_contexts = NULL;
  */
 /*----------------------------------------------------------------------------*/
 
-static const cs_gui_boundary_meg_context_t *
+static cs_gui_boundary_meg_context_t *
 _add_boundary_meg_context(const  cs_zone_t   *zone,
                           const  char        *field_name,
                           const  char        *condition)
 {
-  BFT_REALLOC(_b_meg_contexts,
-              _n_b_meg_contexts+1,
-              cs_gui_boundary_meg_context_t *);
+  BFT_REALLOC(_b_contexts,
+              _n_b_contexts+1,
+              void *);
 
-  cs_gui_boundary_meg_context_t  *meg_context = NULL;
-  BFT_MALLOC(meg_context, 1, cs_gui_boundary_meg_context_t);
+  cs_gui_boundary_meg_context_t  *c = NULL;
+  BFT_MALLOC(c, 1, cs_gui_boundary_meg_context_t);
 
-  meg_context->zone = zone;
-  meg_context->field_name = field_name;
-  meg_context->condition = condition;
+  c->zone = zone;
+  c->field_name = field_name;
+  c->condition = condition;
 
   /* Now set in structure */
 
-  _b_meg_contexts[_n_b_meg_contexts] = meg_context;
-  _n_b_meg_contexts += 1;
+  _b_contexts[_n_b_contexts] = c;
+  _n_b_contexts += 1;
 
-  return meg_context;
+  return c;
 }
 
 /*----------------------------------------------------------------------------
@@ -369,6 +409,494 @@ _check_and_add_mapped_inlet(const char       *label,
                                    CS_MESH_LOCATION_CELLS,
                                    coord_shift,
                                    0.1);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert mass flow to velocity.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ *
+ * Note: this function is designed to be called on a "per zone" basis, and
+ *       requires MPI collegtives for reduction. In case of many zones,
+ *       groupping reductions should be more efficient, but would add
+ *       constraints for call grouping. As we generally have many more
+ *       MPI_Allreduce calls per time step, this is not expected to have a
+ *       significant impact on performance. In the rare cases where tens or
+ *       hundreds of zones are considered, using an optimized user-defined
+ *       function would be preferable.
+ *
+ * \param[in]      z             pointer to zone
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      mass_flow     prescribed mass flow
+ * \param[in]      bc_pr         prescribed pressure for this zone, or huge
+ * \param[in]      bc_tk         prescribed temperature for this zone, or huge
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_b_mass_flow_to_vel(const cs_zone_t  *z,
+                    bool              dense_output,
+                    cs_real_t         mass_flow,
+                    cs_real_t         bc_pr,
+                    cs_real_t         bc_tk,
+                    cs_real_t        *retval)
+{
+  if (fabs(mass_flow) <= 0)    /* Nothing to do if mass flow is zero */
+    return;
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *f_f_n = (const cs_real_3_t *)mq->b_f_face_normal;
+  const cs_real_t *f_f_s = mq->b_f_face_surf;
+
+  cs_real_t s[2] = {0., 0.};
+
+  const cs_field_t *rho_b_f = CS_F_(rho_b);
+
+  const cs_lnum_t n_elts = z->n_elts;
+  const cs_lnum_t *elt_ids = z->elt_ids;
+
+  /* Compressible prescribed inlet with given pressure and temperature */
+
+  if (bc_pr < cs_math_infinite_r && bc_tk < cs_math_infinite_r) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t elt_id = elt_ids[i];
+      cs_lnum_t j = dense_output ? i : elt_id;
+
+      cs_real_t rho_b = cs_cf_thermo_b_rho_from_pt(elt_id, bc_pr, bc_tk);
+
+      s[0] += f_f_s[elt_id];
+      s[1] -= rho_b * cs_math_3_dot_product(retval + 3*j, f_f_n[elt_id]);
+    }
+  }
+
+  /* Regular case */
+
+  else if (rho_b_f != NULL) {
+    const cs_real_t *rho_b = rho_b_f->val;
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t elt_id = elt_ids[i];
+      cs_lnum_t j = dense_output ? i : elt_id;
+
+      s[0] += f_f_s[elt_id];
+      if (rho_b[elt_id] > 0)
+        s[1] -= rho_b[elt_id] * cs_math_3_dot_product(retval + 3*j,
+                                                      f_f_n[elt_id]);
+      else
+        s[1] -= cs_math_3_dot_product(retval + 3*j, f_f_n[elt_id]);
+    }
+  }
+
+  else
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("%s: no way to obtain boundary density for mass flow scaling\n"
+         " for zone \"%s\"."),
+       __func__, z->name);
+
+  cs_parall_sum(2, CS_REAL_TYPE, s);
+
+  /* Return to avoid division by zero if zone is empty */
+
+  if (s[0] <= 0.) {
+    bft_error
+        (__FILE__, __LINE__, 0,
+         _("%s: cannot normalize requested mass flow (%g) for zone \"%s\"\n"
+           "  with zero surface)."),
+         __func__, fabs(s[2]), z->name);
+
+    return;
+  }
+
+  /* Now apply normalization */
+
+  if (fabs(mass_flow) > 1e-30) {
+
+    if (fabs(s[1]) < 1e-30)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("%s: cannot normalize for zone \"%s\"\n"
+           "  with zero or quasi-zero initial flow)."),
+         __func__, z->name);
+
+    cs_real_t sf = mass_flow / s[1];
+
+    if (dense_output) {
+      cs_lnum_t _n_elts = n_elts*3;
+      for (cs_lnum_t i = 0; i < _n_elts; i++)
+        retval[i] *= sf;
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t j = elt_ids[i];
+        for (cs_lnum_t k = 0; k < 3; k++)
+          retval[j*3 + k] *= sf;
+      }
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute the velocity at boundary faces
+ *        using a MEG generated norm and direction.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_meg_vel_profile(cs_lnum_t         n_elts,
+                     const cs_lnum_t  *elt_ids,
+                     bool              dense_output,
+                     void             *input,
+                     cs_real_t        *retval)
+{
+  static const char *_vel_norm_meg_condition[] = {"norm_formula",
+                                                  "flow1_formula",
+                                                  "flow2_formula"};
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *f_n = (const cs_real_3_t *)mq->b_f_face_normal;
+  const cs_real_t *f_s = mq->b_face_surf;
+
+  cs_gui_boundary_vel_context_t  *c
+    = (cs_gui_boundary_vel_context_t *)input;
+
+  int  normalization = c->norm_type % 10;
+
+  assert(normalization < 3);
+
+  /* Prescribed mass flow, depending on options */
+  cs_real_t mass_flow = 0;
+
+  cs_real_t *v_dir = NULL;
+
+  if (c->dir_type == 2)
+    v_dir = cs_meg_boundary_function(c->zone, "direction", "formula");
+
+  /* Local velocity norm */
+
+  if (c->norm_type == 10) {
+
+    cs_real_t *v_loc
+      = cs_meg_boundary_function(c->zone,
+                                 "velocity",
+                                 _vel_norm_meg_condition[normalization]);
+
+    switch(c->dir_type) {
+    case 0:
+      {
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+          cs_lnum_t j = dense_output ? i : elt_id;
+
+          for (cs_lnum_t k = 0; k < 3; k++)
+            retval[j*3 + k] = -f_n[elt_id][k]/f_s[elt_id] * v_loc[i];
+        }
+      }
+      break;
+    case 1:
+      {
+        cs_real_t dir_v[3];
+        cs_math_3_normalize(c->dir_v, dir_v);
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+          cs_lnum_t j = dense_output ? i : elt_id;
+
+          for (cs_lnum_t k = 0; k < 3; k++)
+            retval[j*3 + k] = dir_v[k] * v_loc[i];
+        }
+      }
+      break;
+    case 2:
+      {
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+          cs_lnum_t j = dense_output ? i : elt_id;
+
+          /* Note: cs_meg_boundary_function output is not interleaved */
+          for (cs_lnum_t k = 0; k < 3; k++)
+            retval[j*3 + k] = v_dir[k*n_elts + i] * v_loc[i];
+        }
+      }
+      break;
+    }
+
+    BFT_FREE(v_loc);
+
+  }
+
+  /* Global velocity norm */
+
+  else {
+
+    cs_real_t v = c->v;
+
+    if (c->norm_type > 10) {
+      cs_real_t *flow
+        = cs_meg_boundary_function(c->zone,
+                                   "velocity",
+                                   _vel_norm_meg_condition[normalization]);
+      v = flow[0];
+      BFT_FREE(flow);
+    }
+
+    switch(c->dir_type) {
+    case 0:
+      {
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+          cs_lnum_t j = dense_output ? i : elt_id;
+
+          for (cs_lnum_t k = 0; k < 3; k++)
+            retval[j*3 + k] = -f_n[elt_id][k]/f_s[elt_id] * v;
+        }
+      }
+      break;
+    case 1:
+      {
+        cs_real_t dir_v[3];
+        cs_math_3_normalize(c->dir_v, dir_v);
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+          cs_lnum_t j = dense_output ? i : elt_id;
+
+          for (cs_lnum_t k = 0; k < 3; k++)
+            retval[j*3 + k] = dir_v[k] * v;
+        }
+      }
+      break;
+    case 2:
+      {
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+          cs_lnum_t j = dense_output ? i : elt_id;
+
+          /* Note: cs_meg_boundary_function output is not interleaved */
+          for (cs_lnum_t k = 0; k < 3; k++)
+            retval[j*3 + k] = v_dir[k*n_elts + i] * v;
+        }
+      }
+      break;
+    }
+
+    if (normalization == 1)
+      mass_flow = v;
+
+  }
+
+  BFT_FREE(v_dir);
+
+  /* Normalization */
+
+  if (normalization == 2) {
+    cs_real_t sf = 1. / c->zone->f_measure;
+    if (dense_output || elt_ids == NULL) {
+      cs_lnum_t _n_elts = n_elts*3;
+      for (cs_lnum_t i = 0; i < _n_elts; i++)
+        retval[i] *= sf;
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t j = elt_ids[i];
+        for (cs_lnum_t k = 0; k < 3; k++)
+          retval[j*3 + k] *= sf;
+      }
+    }
+  }
+
+  else if (normalization == 1) {
+
+    /* For general models, apply scaling to convert from mass flow
+       to velocity; For specific models, scaling is done later. */
+
+    if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] == 0
+        || cs_glob_physical_model_flag[CS_GAS_MIX] >= 0
+        || cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
+
+      assert(   n_elts == c->zone->n_elts
+             && elt_ids == c->zone->elt_ids);
+
+      _b_mass_flow_to_vel(c->zone,
+                          dense_output,
+                          mass_flow,
+                          c->c_pr,
+                          c->c_tk,
+                          retval);
+
+    }
+
+    /* In all cases, update total mass flow if given by a MEG function
+       (not be needed by all models, but provided in a consistent manner) */
+
+    if (c->norm_type == 11)
+      boundaries->qimp[c->zone->id - 1] = mass_flow;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign cs_dof_func_t function for Dirichlet velocity condition.
+ *
+ * Builds and adds matching context to list.
+ *
+ * \param[in]  tn_vp   tree node associated with BC velocity/pressure
+ * \param[in]  z       pointer to associated zone
+ *
+ * \return associated iqimp(izone) value
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_vel_profile(cs_tree_node_t    *tn_vp,
+                 const  cs_zone_t  *z)
+{
+  /* Add new context in list */
+
+  BFT_REALLOC(_b_contexts,
+              _n_b_contexts+1,
+              void *);
+
+  cs_gui_boundary_vel_context_t  *c = NULL;
+  BFT_MALLOC(c, 1, cs_gui_boundary_vel_context_t);
+
+  _b_contexts[_n_b_contexts] = c;
+  _n_b_contexts += 1;
+
+  /* Initialize context values */
+
+  c->zone = z;
+  c->norm_type = 0;
+  c->dir_type = 0;
+  c->v = 0;
+
+  for (int i = 0; i < 3; i++)
+    c->dir_v[i] = 0;
+
+  c->c_pr = cs_math_infinite_r;
+  c->c_tk = cs_math_infinite_r;
+
+  const char *choice_v = cs_gui_node_get_tag(tn_vp, "choice");
+  const char *choice_d = cs_gui_node_get_tag(tn_vp, "direction");
+
+  /* Set norm from tree values */
+
+  if (cs_gui_strcmp(choice_v, "norm")) {
+    c->norm_type = 0;
+    cs_gui_node_get_child_real(tn_vp, choice_v, &(c->v));
+  }
+  else if (cs_gui_strcmp(choice_v, "flow1")) {
+    c->norm_type = 1;
+    cs_gui_node_get_child_real(tn_vp, choice_v, &(c->v));
+  }
+  else if (cs_gui_strcmp(choice_v, "flow2")) {
+    c->norm_type = 2;
+    cs_gui_node_get_child_real(tn_vp, choice_v, &(c->v));
+  }
+  else if (cs_gui_strcmp(choice_v, "norm_formula")) {
+    if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
+      c->norm_type = 10;
+  }
+  else if (cs_gui_strcmp(choice_v, "flow1_formula")) {
+    if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
+      c->norm_type = 11;
+  }
+  else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
+    if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
+      c->norm_type = 12;
+  }
+  else if (choice_v != NULL)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("%s: unexpected \"choice\" type \"%s\" for zone \"%s\"."),
+       __func__, choice_v, z->name);
+
+  /* Special cases for compressible model, where values may require
+     special scalings */
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
+    cs_tree_node_t *tn = cs_tree_get_node(tn_vp, "compressible_type");
+    const char *choice_c = cs_gui_node_get_tag(tn, "choice");
+
+  /* For "imposed_inlet" type BC with mass flow, and prescribed pressure
+     and temperature, save values to allow computing density.
+     The same values are also read for the relevant boundary conditions,
+     but duplicated here to avoid inducing dependencies */
+
+    if (cs_gui_strcmp(choice_c, "imposed_inlet")) {
+      bool status_p = false, status_t = false;
+
+      cs_tree_node_t *tn_p = cs_tree_node_get_child(tn_vp, "pressure");
+      cs_tree_node_t *tn_k = cs_tree_node_get_child(tn_vp, "temperature");
+      cs_gui_node_get_status_bool(tn_p, &status_p);
+      cs_gui_node_get_status_bool(tn_k, &status_t);
+
+      if (status_p && status_t) {
+        cs_gui_node_get_real(tn_p, &(c->c_pr));
+        cs_gui_node_get_real(tn_k, &(c->c_tk));
+      }
+    }
+
+    /* For compressible "subsonic_inlet_PH" type BC, flow is recomputed,
+       so only direction counts */
+
+    else if (cs_gui_strcmp(choice_c, "subsonic_inlet_PH")) {
+      c->norm_type = 0;
+      c->v = 1.;
+    }
+  }
+
+  /* Set direction from tree values */
+
+  else if (cs_gui_strcmp(choice_d, "normal"))
+    c->dir_type = 0;
+  else if (cs_gui_strcmp(choice_d, "coordinates")) {
+    c->dir_type = 1;
+    cs_gui_node_get_child_real(tn_vp, "direction_x", c->dir_v);
+    cs_gui_node_get_child_real(tn_vp, "direction_y", c->dir_v+1);
+    cs_gui_node_get_child_real(tn_vp, "direction_z", c->dir_v+2);
+  }
+  else if (cs_gui_strcmp(choice_d, "formula")) {
+    if (cs_tree_node_get_child_value_str(tn_vp, "direction_formula") != NULL)
+      c->dir_type = 2;
+  }
+  else if (choice_d != NULL)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("%s: unexpected \"direction\" type \"%s\" for zone \"%s\"."),
+       __func__, choice_d, z->name);
+
+  /* Now associate cs_dof_funct_t function for velocity */
+
+  cs_equation_add_bc_by_dof_func(_get_equation_param("velocity"),
+                                 CS_PARAM_BC_DIRICHLET,
+                                 z->name,
+                                 cs_flag_boundary_face,  // location flag
+                                 _dof_meg_vel_profile,
+                                 c);
+
+  /* Also update legacy boundary condition structures */
+
+  if (c->norm_type%10 == 1) {
+    int izone = z->id - 1;
+    boundaries->iqimp[izone] = 1;
+    boundaries->qimp[izone] = c->v;
   }
 }
 
@@ -1034,7 +1562,6 @@ _init_boundaries(void)
 
   BFT_MALLOC(boundaries->t_to_h,      n_zones,  bool);
   BFT_MALLOC(boundaries->velocity_e,  n_zones,  bool);
-  BFT_MALLOC(boundaries->direction_e, n_zones,  bool);
   BFT_MALLOC(boundaries->scalar_e,    n_fields,   bool *);
   BFT_MALLOC(boundaries->head_loss_e, n_zones,  bool);
 
@@ -1108,7 +1635,6 @@ _init_boundaries(void)
     boundaries->rough[izone]     = -999;
     boundaries->t_to_h[izone] = false;
     boundaries->velocity_e[izone]  = false;
-    boundaries->direction_e[izone] = false;
     boundaries->head_loss_e[izone] = false;
 
     if (solid_fuels) {
@@ -1251,57 +1777,29 @@ _init_boundaries(void)
       cs_tree_node_t *tn_vp
         = cs_tree_node_get_child(tn, "velocity_pressure");
 
-      if (cs_glob_physical_model_flag[CS_GROUNDWATER] < 0) {
+      bool read_inlet_data = false;
 
-        const char *choice_v = cs_gui_node_get_tag(tn_vp, "choice");
-        const char *choice_d = cs_gui_node_get_tag(tn_vp, "direction");
-
-        /* Inlet: velocity */
-
-        if (cs_gui_strcmp(choice_v, "norm")) {
-          cs_gui_node_get_child_real
-            (tn_vp, "norm", &boundaries->norm[izone]);
-        }
-        else if (cs_gui_strcmp(choice_v, "flow1")) {
-          cs_gui_node_get_child_real
-            (tn_vp, "flow1", &boundaries->qimp[izone]);
-          boundaries->iqimp[izone] = 1;
-        }
-        else if (cs_gui_strcmp(choice_v, "flow2")) {
-          cs_gui_node_get_child_real
-            (tn_vp, "flow2", &boundaries->qimp[izone]);
-          boundaries->iqimp[izone] = 2;
-        }
-        else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-          if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
-            boundaries->velocity_e[izone] = true;
-        }
-        else if (cs_gui_strcmp(choice_v, "flow1_formula")) {
-          if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
-            boundaries->velocity_e[izone] = true;
-          boundaries->iqimp[izone] = 1;
-        }
-        else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
-          if (cs_tree_node_get_child_value_str(tn_vp, choice_v) != NULL)
-            boundaries->velocity_e[izone] = true;
-          boundaries->iqimp[izone] = 2;
-        }
-
-        if (   cs_gui_strcmp(choice_d, "coordinates")
-            || cs_gui_strcmp(choice_d, "translation")) {
-          cs_real_t *dir = boundaries->dir[izone];
-          cs_gui_node_get_child_real(tn_vp, "direction_x", dir);
-          cs_gui_node_get_child_real(tn_vp, "direction_y", dir+1);
-          cs_gui_node_get_child_real(tn_vp, "direction_z", dir+2);
-        }
-        else if (cs_gui_strcmp(choice_d, "formula")) {
-          if (   cs_tree_node_get_child_value_str(tn_vp, "direction_formula")
-              != NULL)
-            boundaries->direction_e[izone] = true;
+      /* Inlet: options for atmospheric flows */
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
+        if (cs_glob_atmo_option->meteo_profile > 0) {
+          cs_gui_node_get_child_status_int
+            (tn_vp, "meteo_data", &boundaries->meteo[izone].read_data);
+          cs_gui_node_get_child_status_int
+            (tn_vp, "meteo_automatic", &boundaries->meteo[izone].automatic);
+          if (boundaries->meteo[izone].read_data == 1)
+            read_inlet_data = true;
         }
       }
 
-      /* Inlet: data for COAL COMBUSTION */
+      /* Inlet: velocity */
+      if (cs_glob_physical_model_flag[CS_GROUNDWATER] < 0) {
+        if (read_inlet_data == false)
+          _set_vel_profile(tn_vp, z);
+      }
+      else
+        _boundary_darcy(tn, izone);
+
+      /* Inlet: data for coal combustion */
       if (solid_fuels) {
         cs_gui_node_get_child_real
           (tn_vp, "temperature", &boundaries->timpat[izone]);
@@ -1310,27 +1808,13 @@ _init_boundaries(void)
         _inlet_coal(tn_vp, izone);
       }
 
-      /* Inlet: data for GAS COMBUSTION */
+      /* Inlet: data for gas combustion */
       if (gas_combustion)
         _inlet_gas(tn_vp, izone);
 
-      /* Inlet: data for COMPRESSIBLE MODEL */
+      /* Inlet: complete data for compressible model */
       if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1)
         _inlet_compressible(tn_vp, izone);
-
-      /* Inlet: data for ATMOSPHERIC FLOWS */
-      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
-        if (cs_glob_atmo_option->meteo_profile > 0) {
-          cs_gui_node_get_child_status_int
-            (tn_vp, "meteo_data", &boundaries->meteo[izone].read_data);
-          cs_gui_node_get_child_status_int
-            (tn_vp, "meteo_automatic", &boundaries->meteo[izone].automatic);
-        }
-      }
-
-      /* Inlet: data for Darcy */
-      if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1)
-        _boundary_darcy(tn, izone);
 
       /* Inlet: turbulence */
       _inlet_turbulence(tn, izone);
@@ -1512,7 +1996,7 @@ _init_zones(const cs_lnum_t   n_b_faces,
  *
  * integer          nozppm   <-- max number of boundary conditions zone
  * integer          nclpch   <-- number of simulated class per coals
- * integer          iqimp    <-- 1 if flow rate is applied
+ * integer          iqimp    <-- 1 if mass flow rate is applied
  * integer          icalke   <-- 1 for automatic turbulent boundary conditions
  * integer          ientat   <-- 1 for air temperature boundary conditions (coal)
  * integer          ientcp   <-- 1 for coal temperature boundary conditions (coal)
@@ -1569,14 +2053,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                int        *nvar,
                                double     *rcodcl)
 {
-  double norm = 0.;
-
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
 
-  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_real_t   *b_face_surf = mq->b_face_surf;
-  const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
   const int n_fields = cs_field_n_fields();
 
   const int ncharm = CS_COMBUSTION_MAX_COALS;
@@ -1802,10 +2281,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
       tn_bc = _get_zone_bc_node(tn_bc, izone);
 
-      cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn_bc, "velocity_pressure");
-      const char *choice_v = cs_gui_node_get_tag(tn_vp, "choice");
-      const char *choice_d = cs_gui_node_get_tag(tn_vp, "direction");
-
       /* Update the zone's arrays (iqimp, dh, xintur, icalke, qimp,...)
          because they are re-initialized at each time step
          in PRECLI and PPPRCL routines */
@@ -1822,7 +2297,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         ientat[zone_nbr-1] = boundaries->ientat[izone];
         inmoxy[zone_nbr-1] = boundaries->inmoxy[izone];
         ientcp[zone_nbr-1] = boundaries->ientcp[izone];
-        qimpat[zone_nbr-1] = boundaries->qimp[izone];
         timpat[zone_nbr-1] = boundaries->timpat[izone];
 
         for (int icharb = 0; icharb < cm->coal.n_coals; icharb++) {
@@ -1845,23 +2319,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         ientgf[zone_nbr-1] = boundaries->ientgf[izone];
         tkent[zone_nbr-1]  = boundaries->tkent[izone];
         fment[zone_nbr-1]  = boundaries->fment[izone];
-
-        if (   cs_gui_strcmp(choice_v, "flow1_formula")
-            || cs_gui_strcmp(choice_v, "flow2_formula")) {
-
-          if (cs_gui_strcmp(choice_v, "flow1_formula")) {
-            qimp[zone_nbr-1] = *cs_meg_boundary_function(bz,
-                                                         "velocity",
-                                                         "flow1_formula");
-          } else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
-            qimp[zone_nbr-1] = *cs_meg_boundary_function(bz,
-                                                         "velocity",
-                                                         "flow2_formula");
-          }
-        }
-        else {
-          qimp[zone_nbr-1] = boundaries->qimp[izone];
-        }
       }
       else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
         const int var_key_id = cs_field_key_id("variable_id");
@@ -1875,7 +2332,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
             cs_lnum_t face_id = bz->elt_ids[elt_id];
             rcodcl[ivarp * n_b_faces + face_id] = boundaries->prein[izone];
           }
-          qimp[zone_nbr-1] = boundaries->qimp[izone];
         }
 
         if (boundaries->itype[izone] == CS_ESICF) {
@@ -1888,23 +2344,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
             rcodcl[ivart * n_b_faces + face_id] = boundaries->tempin[izone];
             b_rho->val[face_id] = boundaries->rhoin[izone];
           }
-        }
-      }
-      else {
-        if (boundaries->velocity_e[izone]) {
-          if (cs_gui_strcmp(choice_v, "flow1_formula")) {
-            qimp[zone_nbr-1] = *cs_meg_boundary_function(bz,
-                                                         "velocity",
-                                                         "flow1_formula");
-          }
-          else if (cs_gui_strcmp(choice_v, "flow2_formula")) {
-            qimp[zone_nbr-1] = *cs_meg_boundary_function(bz,
-                                                         "velocity",
-                                                         "flow2_formula");
-          }
-        }
-        else {
-          qimp[zone_nbr-1] = boundaries->qimp[izone];
         }
       }
 
@@ -1932,10 +2371,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
         iprofm[zone_nbr-1] = boundaries->meteo[izone].read_data;
-        if (iprofm[zone_nbr-1] == 1) {
-          choice_v = NULL;
-          choice_d = NULL;
-        }
         if (boundaries->meteo[izone].automatic) {
           for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
             cs_lnum_t face_id = bz->elt_ids[elt_id];
@@ -1944,218 +2379,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         }
       }
 
-      /* Dirichlet for velocity */
-
-      const cs_field_t  *fv = cs_field_by_name_try("velocity");
       const int var_key_id = cs_field_key_id("variable_id");
-      int ivarv = cs_field_get_key_int(fv, var_key_id) -1;
-      if (cs_gui_strcmp(choice_d, "coordinates")) {
-        if (cs_gui_strcmp(choice_v, "norm")) {
-          norm =   boundaries->norm[izone]
-                 / cs_math_3_norm(boundaries->dir[izone]);
-
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-            for (cs_lnum_t ic = 0; ic < 3; ic++) {
-              rcodcl[(ivarv + ic) * n_b_faces + face_id]
-                = boundaries->dir[izone][ic] * norm;
-            }
-          }
-        }
-        else if (   cs_gui_strcmp(choice_v, "flow1")
-                 || cs_gui_strcmp(choice_v, "flow2")
-                 || cs_gui_strcmp(choice_v, "flow1_formula")
-                 || cs_gui_strcmp(choice_v, "flow2_formula")) {
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-            for (cs_lnum_t ic = 0; ic < 3; ic++) {
-              rcodcl[(ivarv + ic) * n_b_faces + face_id]
-                = boundaries->dir[izone][ic];
-            }
-          }
-        }
-        else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-          cs_real_t *new_vals = cs_meg_boundary_function(bz,
-                                                         "velocity",
-                                                         "norm_formula");
-
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-
-            cs_real_t x_norm = cs_math_3_norm(boundaries->dir[izone]);
-            if (x_norm <= 0.)
-              bft_error(__FILE__, __LINE__, 0,
-                  _("Error in the boundary conditions: "
-                    " the normal direction is of norm 0."));
-
-            for (cs_lnum_t ic = 0; ic < 3; ic++) {
-              rcodcl[(ivarv + ic) * n_b_faces + face_id]
-                = boundaries->dir[izone][ic] *
-                  new_vals[elt_id] / x_norm;
-            }
-          }
-          BFT_FREE(new_vals);
-        }
-        if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
-          if (boundaries->itype[izone] == CS_EPHCF) {
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
-              for (cs_lnum_t ic = 0; ic < 3; ic++) {
-                rcodcl[(ivarv + ic) * n_b_faces + face_id]
-                  = boundaries->dir[izone][ic];
-              }
-            }
-          }
-        }
-      }
-      else if (   cs_gui_strcmp(choice_d, "normal")
-               || cs_gui_strcmp(choice_d, "translation")) {
-        if (cs_gui_strcmp(choice_v, "norm")) {
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-
-            norm = boundaries->norm[izone] / b_face_surf[face_id];
-
-            for (cs_lnum_t i = 0; i < 3; i++)
-              rcodcl[(ivarv + i) * n_b_faces + face_id]
-                = -b_face_normal[face_id][i] * norm;
-          }
-        }
-        else if (   cs_gui_strcmp(choice_v, "flow1")
-                 || cs_gui_strcmp(choice_v, "flow2")
-                 || cs_gui_strcmp(choice_v, "flow1_formula")
-                 || cs_gui_strcmp(choice_v, "flow2_formula")) {
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-
-            for (cs_lnum_t i = 0; i < 3; i++)
-              rcodcl[(ivarv + i) * n_b_faces + face_id]
-                = -b_face_normal[face_id][i] / b_face_surf[face_id];
-          }
-        }
-        else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-          cs_real_t *new_vals = cs_meg_boundary_function(bz,
-                                                         "velocity",
-                                                         "norm_formula");
-
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-
-            for (cs_lnum_t i = 0; i < 3; i++)
-              rcodcl[(ivarv + i) * n_b_faces + face_id]
-                = -b_face_normal[face_id][i] *
-                  new_vals[elt_id] / b_face_surf[face_id];
-          }
-          BFT_FREE(new_vals);
-        }
-
-        if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
-          if (boundaries->itype[izone] == CS_EPHCF) {
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
-
-              for (cs_lnum_t i = 0; i < 3; i++)
-                rcodcl[(ivarv + i) * n_b_faces + face_id]
-                  = -b_face_normal[face_id][i];
-            }
-          }
-        }
-      }
-      else if (cs_gui_strcmp(choice_d, "formula")) {
-        cs_real_t *xvals = cs_meg_boundary_function(bz,
-                                                    "direction",
-                                                    "formula");
-
-        if (cs_gui_strcmp(choice_v, "norm")) {
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-
-            cs_real_t x[3];
-            for (int ic = 0; ic < 3; ic++)
-              x[ic] = xvals[ic*bz->n_elts + elt_id];
-
-            cs_real_t x_norm = cs_math_3_norm(x);
-
-            if (x_norm <= 0.)
-              bft_error(__FILE__, __LINE__, 0,
-                  _("Error in the boundary conditions: "
-                    "the normal direction is of norm 0.\n "));
-
-            norm = boundaries->norm[izone] / x_norm;
-
-            for (int i = 0; i < 3; i++)
-              rcodcl[(ivarv + i) * n_b_faces + face_id] = x[i] * norm;
-          }
-        }
-        else if (   cs_gui_strcmp(choice_v, "flow1")
-                 || cs_gui_strcmp(choice_v, "flow2")
-                 || cs_gui_strcmp(choice_v, "flow1_formula")
-                 || cs_gui_strcmp(choice_v, "flow2_formula")) {
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-
-            cs_real_t x[3];
-            for (int ic = 0; ic < 3; ic++)
-              x[ic] = xvals[ic*bz->n_elts + elt_id];
-
-            cs_real_t x_norm = cs_math_3_norm(x);
-            if (x_norm <= 0.)
-              bft_error(__FILE__, __LINE__, 0,
-                  _("Error in the boundary conditions: "
-                    "the normal direction is of norm 0.\n "));
-
-            for (int i = 0; i < 3; i++)
-              rcodcl[(ivarv + i) * n_b_faces + face_id] = x[i];
-          }
-        }
-        else if (cs_gui_strcmp(choice_v, "norm_formula")) {
-          cs_real_t *norm_vals = cs_meg_boundary_function(bz,
-                                                          "velocity",
-                                                          "norm_formula");
-
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-
-            cs_real_t x[3];
-            for (int ic = 0; ic < 3; ic++)
-              x[ic] = xvals[ic*bz->n_elts + elt_id];
-
-            cs_real_t x_norm = cs_math_3_norm(x);
-            if (x_norm <= 0.)
-              bft_error(__FILE__, __LINE__, 0,
-                  _("Error in the boundary conditions: "
-                    "the normal direction is of norm 0.\n "));
-
-            norm = norm_vals[elt_id] / x_norm;
-
-            for (int i = 0; i < 3; i++)
-              rcodcl[(ivarv + i) * n_b_faces + face_id] = x[i] * norm;
-          }
-
-          BFT_FREE(norm_vals);
-        }
-
-        BFT_FREE(xvals);
-
-        if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
-          if (boundaries->itype[izone] == CS_EPHCF) {
-            xvals = cs_meg_boundary_function(bz,
-                                             "direction",
-                                             "formula");
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
-
-              cs_real_t x[3];
-              for (int ic = 0; ic < 3; ic++)
-                x[ic] = xvals[ic*bz->n_elts + elt_id];
-
-              for (cs_lnum_t i = 0; i < 3; i++)
-                rcodcl[(ivarv + i) * n_b_faces + face_id] = x[i];
-            }
-            BFT_FREE(xvals);
-          }
-        }
-      }
 
       /* turbulent inlet, with formula */
       if (icalke[zone_nbr-1] == 0) {
@@ -2313,26 +2537,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       }
 
 #if _XML_DEBUG_
-      if (cs_gui_strcmp(choice_v, "norm"))
-        bft_printf("-----velocity: %s => %12.5e \n",
-                   choice_v, boundaries->norm[izone]);
-      if (cs_gui_strcmp(choice_v, "flow1") || cs_gui_strcmp(choice_v, "flow2"))
-        bft_printf("-----velocity: %s => %12.5e \n",
-                   choice_v, boundaries->qimp[izone]);
-      if (   cs_gui_strcmp(choice_v, "norm_formula")
-          || cs_gui_strcmp(choice_v, "flow1_formula")
-          || cs_gui_strcmp(choice_v, "flow2_formula"))
-        bft_printf("-----velocity: %s => %d \n",
-            choice_v, (boundaries->velocity_e[izone] ? 1: 0));
-      if (   cs_gui_strcmp(choice_d, "coordinates")
-          || cs_gui_strcmp(choice_d, "translation"))
-        bft_printf("-----direction: %s => %12.5e %12.5e %12.5e\n",
-                   choice_v, boundaries->dir[izone][0],
-                   boundaries->dir[izone][1], boundaries->dir[izone][2]);
-
       if (solid_fuels) {
-        bft_printf("-----iqimp=%i, qimpat=%12.5e \n",
-            iqimp[zone_nbr-1], qimpat[zone_nbr-1]);
         bft_printf("-----ientat=%i, ientcp=%i, timpat=%12.5e \n",
             ientat[zone_nbr-1], ientcp[zone_nbr-1], timpat[zone_nbr-1]);
 
@@ -2575,6 +2780,16 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                  itypfb,
                                  icodcl,
                                  rcodcl);
+
+  /* Final adjustments */
+
+  for (int izone = 0; izone < boundaries->n_zones; izone++) {
+    qimp[izone] = boundaries->qimp[izone];
+    if (solid_fuels) {
+      /* TODO: merge qimp and qimpat */
+      qimpat[izone] = boundaries->qimp[izone];
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -2601,8 +2816,8 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm)
       if (boundaries->rough[izone] < 0.0)
         inature = CS_SMOOTHWALL;
     }
-    else if (cs_gui_strcmp(boundaries->nature[izone], "outlet")
-        || cs_gui_strcmp(boundaries->nature[izone], "imposed_p_outlet")) {
+    else if (   cs_gui_strcmp(boundaries->nature[izone], "outlet")
+             || cs_gui_strcmp(boundaries->nature[izone], "imposed_p_outlet")) {
       inature = CS_OUTLET;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "symmetry")) {
@@ -2919,7 +3134,6 @@ cs_gui_boundary_conditions_free_memory(void)
     BFT_FREE(boundaries->dir);
     BFT_FREE(boundaries->t_to_h);
     BFT_FREE(boundaries->velocity_e);
-    BFT_FREE(boundaries->direction_e);
     BFT_FREE(boundaries->scalar_e);
     BFT_FREE(boundaries->head_loss_e);
 
@@ -2928,10 +3142,10 @@ cs_gui_boundary_conditions_free_memory(void)
 
   /* Clean MEG contexts */
 
-  for (int i = 0; i < _n_b_meg_contexts; i++)
-    BFT_FREE(_b_meg_contexts[i]);
+  for (int i = 0; i < _n_b_contexts; i++)
+    BFT_FREE(_b_contexts[i]);
 
-  BFT_FREE(_b_meg_contexts);
+  BFT_FREE(_b_contexts);
 }
 
 /*----------------------------------------------------------------------------*/

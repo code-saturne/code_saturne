@@ -387,13 +387,11 @@ call uiclim &
 
 if (ippmod(iphpar).eq.0.or.ippmod(igmix).ge.0.or.ippmod(icompf).ge.0) then
 
-  ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE
+  ! No specific physical model here
 
   call stdtcl &
     ( nbzppm , nozppm ,                                              &
-      iqimp  , icalke , qimp   , dh , xintur,                        &
-      itypfb , izfppp ,                                              &
-      rcodcl )
+      icalke , dh , xintur, itypfb , izfppp , rcodcl )
 
 endif
 
@@ -4984,9 +4982,9 @@ call uiclim &
 
 call cs_f_user_boundary_conditions &
   ( nvar   , nscal  ,                                              &
-  icodcl , itrifb , itypfb , izfppp ,                            &
-  dt     ,                                                       &
-  rcodcl )
+    icodcl , itrifb , itypfb , izfppp ,                            &
+    dt     ,                                                       &
+    rcodcl )
 
 call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
 

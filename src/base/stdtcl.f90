@@ -21,21 +21,14 @@
 !-------------------------------------------------------------------------------
 
 subroutine stdtcl &
-!================
-
  ( nbzfmx , nozfmx ,                                              &
-   iqimp  , icalke , qimp   , dh     , xintur ,                   &
-   itypfb , iznfbr ,                                              &
-   rcodcl )
+   icalke , dh     , xintur , itypfb , iznfbr , rcodcl )
 
 !===============================================================================
 ! FONCTION :
 ! --------
 
-!    CONDITIONS AUX LIMITES AUTOMATIQUES
-
-!          EN STANDARD
-
+!    CONDITIONS AUX LIMITES AUTOMATIQUES  EN STANDARD
 
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -89,11 +82,11 @@ implicit none
 integer          nozfmx
 integer          nbzfmx
 
-integer          iqimp(nozfmx), icalke(nozfmx)
+integer          icalke(nozfmx)
 integer          itypfb(nfabor)
 integer          iznfbr(nfabor)
 
-double precision qimp(nozfmx), dh(nozfmx), xintur(nozfmx)
+double precision dh(nozfmx), xintur(nozfmx)
 double precision rcodcl(nfabor,nvar,3)
 
 ! Local variables
@@ -110,23 +103,6 @@ double precision, allocatable, dimension(:) :: qcalc
 integer          ipass
 data             ipass /0/
 save             ipass
-
-!===============================================================================
-! Interfaces
-!===============================================================================
-
-interface
-
-  function cs_cf_thermo_b_rho_from_pt(face_id, bc_pr, bc_tk) result(b_rho) &
-    bind(C, name='cs_cf_thermo_b_rho_from_pt')
-    use, intrinsic :: iso_c_binding
-    implicit none
-    integer(kind=c_int), intent(in), value :: face_id
-    real(kind=c_double), intent(in), value :: bc_pr, bc_tk
-    real(kind=c_double) :: b_rho
-  end function cs_cf_thermo_b_rho_from_pt
-
- end interface
 
 !===============================================================================
 ! 1.  INITIALISATIONS
@@ -156,8 +132,7 @@ do ifac = 1, nfabor
     else
       write(nfecra,1001) nbzfmx
       write(nfecra,1002)(ilzfbr(ii),ii=1,nbzfmx)
-      call csexit (1)
-      !==========
+      call csexit(1)
     endif
   endif
 enddo
@@ -175,7 +150,7 @@ if(irangp.ge.0) then
 endif
 nozapm = izonem
 
- 1001 format(                                                           &
+ 1001 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/,&
@@ -198,139 +173,6 @@ nozapm = izonem
  1002 format(i10)
 
 !===============================================================================
-! 2.  ECHANGES EN PARALLELE POUR LES DONNEES UTILISATEUR
-!===============================================================================
-
-!  En realite on pourrait eviter cet echange en modifiant usebuc et en
-!    demandant a l'utilisateur de donner les grandeurs dependant de la
-!    zone hors de la boucle sur les faces de bord : les grandeurs
-!    seraient ainsi disponibles sur tous les processeurs. Cependant,
-!    ca rend le sous programme utilisateur un peu plus complique et
-!    surtout, si l'utilisateur le modifie de travers, ca ne marche pas.
-!  On suppose que toutes les gandeurs fournies sont positives, ce qui
-!    permet d'utiliser un max pour que tous les procs les connaissent.
-!    Si ce n'est pas le cas, c'est plus complique mais on peut s'en tirer
-!    avec un max quand meme.
-
-if (irangp.ge.0) then
-  call parrmx(nozapm, qimp)
-  call parimx(nozapm, iqimp)
-endif
-
-!===============================================================================
-! 3.  SI IQIMP = 1 : CORRECTION DES VITESSES (EN NORME) POUR CONTROLER
-!                    LES DEBITS IMPOSES
-!     SI IQIMP = 0 : CALCUL DE QIMP
-
-!       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
-!                     =========================
-!===============================================================================
-
-
-! --- Debit calcule
-
-do izone = 1,nozfmx
-  qcalc(izone) = 0.d0
-enddo
-do ifac = 1,nfabor
-  izone = iznfbr(ifac)
-  if (izone .gt. 0) then
-    if (iqimp(izone).eq.2) then
-      qcalc(izone) = qcalc(izone) -                               &
-         ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +              &
-           rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
-           rcodcl(ifac,iw,1)*surfbo(3,ifac) )
-    else
-      if (brom(ifac) .gt. 0d0) then
-        qcalc(izone) = qcalc(izone) - brom(ifac) *           &
-           ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +              &
-             rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
-             rcodcl(ifac,iw,1)*surfbo(3,ifac) )
-      else if (itypfb(ifac).eq.iesicf) then
-        itk = isca(itempk)
-        if (      rcodcl(ifac,ipr,1).le.rinfin*0.5d0                &
-            .and. rcodcl(ifac,itk,1).le.rinfin*0.5d0) then
-          brom_loc = cs_cf_thermo_b_rho_from_pt(ifac - 1,           &
-                                                rcodcl(ifac,ipr,1), &
-                                                rcodcl(ifac,itk,1))
-          qcalc(izone) = qcalc(izone) - brom_loc *                  &
-                         (rcodcl(ifac,iu,1)*surfbo(1,ifac) +        &
-                          rcodcl(ifac,iv,1)*surfbo(2,ifac) +        &
-                          rcodcl(ifac,iw,1)*surfbo(3,ifac))
-        endif
-      endif
-    endif
-  endif
-enddo
-if(irangp.ge.0) then
-  call parrsm(nozapm,qcalc)
-endif
-do izone = 1, nozapm
-  if ( iqimp(izone).eq.0 ) then
-    qimp(izone) = qcalc(izone)
-  endif
-enddo
-
-! --- Correction des vitesses en norme
-
-iok = 0
-do ii = 1, nzfppp
-  izone = ilzfbr(ii)
-  if (izone .gt. 0) then
-    if ( iqimp(izone).eq.1 .or.  iqimp(izone).eq.2) then
-      if(qcalc(izone).lt.epzero) then
-        write(nfecra,2001)izone,iqimp(izone),qcalc(izone)
-        iok = iok + 1
-      endif
-    endif
-  endif
-enddo
-if(iok.ne.0) then
-  call csexit (1)
-  !==========
-endif
-do ifac = 1, nfabor
-  izone = iznfbr(ifac)
-  if (izone .gt. 0) then
-    if ( iqimp(izone).eq.1 .or.  iqimp(izone).eq.2) then
-      qisqc = qimp(izone)/qcalc(izone)
-      rcodcl(ifac,iu,1) = rcodcl(ifac,iu,1)*qisqc
-      rcodcl(ifac,iv,1) = rcodcl(ifac,iv,1)*qisqc
-      rcodcl(ifac,iw,1) = rcodcl(ifac,iw,1)*qisqc
-    endif
-  endif
-enddo
-
- 2001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: PROBLEM IN THE BOUNDARY CONDITIONS             ',/,&
-'@    ========                                                ',/,&
-'@                ABORT IN THE SUBROUTINE STDTCL              ',/,&
-'@                                                            ',/,&
-'@  The flow is imposed on the zone IZONE = ', I10             ,/,&
-'@    since                  IQIMP(IZONE) = ', I10             ,/,&
-'@  But, on this zone, the integrated product RHO D S is zero:',/,&
-'@    its value is                        = ',E14.5            ,/,&
-'@    (D is the direction along which is imposed the flow).   ',/,&
-'@                                                            ',/,&
-'@  The calculation will not run.                             ',/,&
-'@                                                            ',/,&
-'@  Verify the data in the interface and particularly         ',/,&
-'@    - that the vector RCODCL(IFAC,IU,1),             ',/,&
-'@                      RCODCL(IFAC,IV,1),             ',/,&
-'@                      RCODCL(IFAC,IW,1) which gives  ',/,&
-'@      the velocity direction is non null and not uniformly  ',/,&
-'@      perpendicular to the inlet faces                      ',/,&
-'@    - that the inlet surface is not zero (or that the number',/,&
-'@      of boundary faces within the zone is not zero)        ',/,&
-'@    - that the density is not zero                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-!===============================================================================
 ! 4.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES
 !       ON BOUCLE SUR TOUTES LES FACES D'ENTREE
 !                     =========================
@@ -338,7 +180,6 @@ enddo
 !           ON IMPOSE LES CONDITIONS AUX LIMITES
 !           POUR LA TURBULENCE
 !===============================================================================
-
 
 do ifac = 1, nfabor
 
@@ -400,11 +241,7 @@ deallocate(ilzfbr)
 deallocate(qcalc)
 
 !----
-! FORMATS
-!----
-
-!----
-! FIN
+! End
 !----
 
 return

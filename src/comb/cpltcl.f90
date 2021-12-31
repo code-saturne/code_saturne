@@ -179,17 +179,10 @@ enddo
 do ifac = 1, nfabor
   izone = izfppp(ifac)
   if (izone .gt. 0) then
-    if ( iqimp(izone).eq.2) then
-      qcalc(izone) = qcalc(izone) -                               &
-         ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +              &
-           rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
-           rcodcl(ifac,iw,1)*surfbo(3,ifac) )
-    else
-      qcalc(izone) = qcalc(izone) - brom(ifac) *         &
-         ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +              &
-           rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
-           rcodcl(ifac,iw,1)*surfbo(3,ifac) )
-    endif
+    qcalc(izone) = qcalc(izone) - brom(ifac) *         &
+       ( rcodcl(ifac,iu,1)*surfbo(1,ifac) +              &
+         rcodcl(ifac,iv,1)*surfbo(2,ifac) +              &
+         rcodcl(ifac,iw,1)*surfbo(3,ifac) )
   endif
 enddo
 
@@ -208,7 +201,7 @@ enddo
 iok = 0
 do ii = 1, nzfppp
   izone = ilzppp(ii)
-  if ( iqimp(izone).eq.1  .or.  iqimp(izone).eq.2) then
+  if (iqimp(izone).eq.1) then
     if(abs(qcalc(izone)).lt.epzero) then
       write(nfecra,2001)izone,iqimp(izone),qcalc(izone)
       iok = iok + 1
@@ -222,7 +215,7 @@ endif
 do ifac = 1, nfabor
   izone = izfppp(ifac)
    if (izone .gt. 0) then
-     if ( iqimp(izone).eq.1 .or.  iqimp(izone).eq.2) then
+     if ( iqimp(izone).eq.1) then
        qimpc(izone) = qimpat(izone)
        qisqc = qimpc(izone)/qcalc(izone)
        rcodcl(ifac,iu,1) = rcodcl(ifac,iu,1)*qisqc
