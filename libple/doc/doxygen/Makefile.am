@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne CFD tool.
 #
-#   Copyright (C) 2011-2021 EDF S.A., France
+#   Copyright (C) 2011-2022 EDF S.A., France
 #
 #   The Code_Saturne CFD tool is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
