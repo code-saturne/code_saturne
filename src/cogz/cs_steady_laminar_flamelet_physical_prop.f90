@@ -31,7 +31,18 @@
 !> Calculation of mean thermophysic properties
 !-------------------------------------------------------------------------------
 
-subroutine cs_steady_laminar_flamelet_physical_prop ()
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]     mbrom         indicator of prescribed density at the boundary
+!> \param[in]     izfppp        area number of the edge face
+!>                               for the specific physic module
+!______________________________________________________________________________!
+
+subroutine cs_steady_laminar_flamelet_physical_prop &
+ ( mbrom  , izfppp )
 
 !===============================================================================
 ! Module files
@@ -44,7 +55,6 @@ use cstphy
 use cstnum
 use entsor
 use ppppar
-use pointe
 use ppthch
 use coincl
 use cpincl
@@ -52,7 +62,7 @@ use ppincl
 use radiat
 use mesh
 use field
-use pointe
+use pointe, only:pmapper_double_r1
 use parall
 use period
 use cs_c_bindings
@@ -61,17 +71,22 @@ use cs_c_bindings
 
 implicit none
 
+! Arguments
+
+integer          mbrom
+integer          izfppp(nfabor)
+
 ! Local variables
 
-integer           iel, ii, irangv, ifcvsl, isc, iscal, iesp, ig, iprev
+integer           iel, ii, ifac, izone, ifcvsl, isc, iscal, iesp, ig, iprev
 integer           viscls_counter, viscls_number
 
 double precision  had, cmin, cmid, cmax
 
 double precision, dimension(:), pointer :: cvar_fm, fp2m, cvar_progvar
-double precision, dimension(:), pointer :: cpro_temp, cpro_omegac
+double precision, dimension(:), pointer :: cpro_temp, cpro_progvar, cpro_omegac
 double precision, dimension(:), pointer :: cvar_scalt, cpro_xr, cpro_totki
-double precision, dimension(:), pointer :: cpro_rho, cpro_progvar, cpro_hrr
+double precision, dimension(:), pointer :: cpro_rho, bpro_rho, cpro_hrr
 double precision, dimension(:), pointer :: cpro_viscl
 double precision, dimension(:), pointer :: cpro_tem2
 
@@ -302,6 +317,21 @@ else  ! Inside the rho(Y)-v-p coupling
   endif
 
   deallocate(rom_eos)
+
+  mbrom = 1
+  call field_get_val_s(ibrom, bpro_rho)
+
+  do ifac = 1, nfabor
+    izone = izfppp(ifac)
+    if (ientfu(izone).eq.1) then
+      bpro_rho(ifac) =  flamelet_library(FLAMELET_RHO, 1, 1, 1, nzm)
+    else if (ientox(izone).eq.1) then
+      bpro_rho(ifac) =  flamelet_library(FLAMELET_RHO, 1, 1, 1, 1)
+    else
+      iel = ifabor(ifac)
+      bpro_rho(ifac) = cpro_rho(iel)
+    endif
+  enddo
 
 endif
 

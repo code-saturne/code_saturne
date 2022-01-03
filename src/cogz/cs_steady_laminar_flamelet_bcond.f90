@@ -269,10 +269,10 @@ do ifac = 1, nfabor
           rcodcl(ifac,isca(inpm),1) = 0.d0
         endif
 
-        ! Density
-        brom(ifac) = flamelet_library(FLAMELET_RHO, 1, 1, 1, 1)
-
       endif
+
+      ! Density
+      brom(ifac) = flamelet_library(FLAMELET_RHO, 1, 1, 1, 1)
 
     endif
 
