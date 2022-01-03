@@ -56,6 +56,16 @@ BEGIN_C_DECLS
  * Type definition
  *============================================================================*/
 
+/* Vector component name */
+
+typedef enum {
+
+  X,
+  Y,
+  Z
+
+} cs_math_vector_component_t;
+
 /* Symmetric tensor component name */
 
 typedef enum {
