@@ -159,10 +159,7 @@ typedef struct {
   cs_val_t     **values;   /* fortran array RCODCL mapping */
   double      ***distch;   /* ratio for each coal */
   double        *rough;    /* roughness size */
-  double        *norm;     /* norm of velocity vector */
-  cs_real_3_t   *dir;      /* directions inlet velocity */
   bool          *t_to_h;   /* convert Enthalpy to temperature */
-  bool          *velocity_e;  /* formula for norm or mass flow rate of velocity */
   bool        **scalar_e;     /* formula for scalar (neumann, dirichlet or
                                  exchange coefficient) */
   bool         *head_loss_e;  /* formula for head loss (free inlet/outlet) */
@@ -1560,11 +1557,8 @@ _init_boundaries(void)
   boundaries->distch = NULL;
 
   BFT_MALLOC(boundaries->rough,     n_zones,    double);
-  BFT_MALLOC(boundaries->norm,      n_zones,    double);
-  BFT_MALLOC(boundaries->dir,       n_zones,    cs_real_3_t);
 
   BFT_MALLOC(boundaries->t_to_h,      n_zones,  bool);
-  BFT_MALLOC(boundaries->velocity_e,  n_zones,  bool);
   BFT_MALLOC(boundaries->scalar_e,    n_fields,   bool *);
   BFT_MALLOC(boundaries->head_loss_e, n_zones,  bool);
 
@@ -1631,13 +1625,11 @@ _init_boundaries(void)
   for (int izone = 0; izone < n_zones; izone++) {
     boundaries->iqimp[izone]     = 0;
     boundaries->qimp[izone]      = 0;
-    boundaries->norm[izone]      = 0;
     boundaries->icalke[izone]    = 0;
     boundaries->dh[izone]        = 0;
     boundaries->xintur[izone]    = 0;
     boundaries->rough[izone]     = -999;
     boundaries->t_to_h[izone] = false;
-    boundaries->velocity_e[izone]  = false;
     boundaries->head_loss_e[izone] = false;
 
     if (solid_fuels) {
@@ -3133,10 +3125,7 @@ cs_gui_boundary_conditions_free_memory(void)
     BFT_FREE(boundaries->type_code);
     BFT_FREE(boundaries->values);
     BFT_FREE(boundaries->rough);
-    BFT_FREE(boundaries->norm);
-    BFT_FREE(boundaries->dir);
     BFT_FREE(boundaries->t_to_h);
-    BFT_FREE(boundaries->velocity_e);
     BFT_FREE(boundaries->scalar_e);
     BFT_FREE(boundaries->head_loss_e);
 
