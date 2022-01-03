@@ -55,6 +55,8 @@ from code_saturne.model.ThermalScalarModel            import ThermalScalarModel
 from code_saturne.Pages.QMegEditorView                import QMegEditorView
 from code_saturne.model.Boundary                      import Boundary
 from code_saturne.model.CompressibleModel             import CompressibleModel
+from code_saturne.model.CoalCombustionModel           import CoalCombustionModel
+from code_saturne.model.GasCombustionModel            import GasCombustionModel
 from code_saturne.model.AtmosphericFlowsModel         import AtmosphericFlowsModel
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
@@ -159,6 +161,16 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
         self.model_th = self.therm.getThermalScalarModel()
 
+        if self.nature == 'inlet':
+            if self.model_th == 'total_energy':
+                self.model_th = 'off'
+            elif self.model_th == "enthalpy":
+                if CoalCombustionModel(self.case).getCoalCombustionModel("only") != 'off':
+                    self.model_th = 'off'
+                else:
+                    if GasCombustionModel(self.case).getGasCombustionModel() != "off":
+                        self.model_th = 'off'
+
         self.modelTypeThermal = ComboModel(self.comboBoxTypeThermal, 1, 1)
         self.modelTypeSpecies = ComboModel(self.comboBoxTypeSpecies, 1, 1)
         self.modelTypeMeteo = ComboModel(self.comboBoxTypeMeteo, 1, 1)
@@ -231,7 +243,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         else:
             self.groupBoxSpecies.hide()
 
-        if self.model_th != 'off' and self.comp.getCompressibleModel() == 'off':
+        if self.model_th != 'off':
             self.groupBoxThermal.show()
             self.modelThermal = ComboModel(self.comboBoxThermal,1,1)
             self.thermal = self.therm.getThermalScalarName()
@@ -307,7 +319,7 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.labelSyrthesInstance.hide()
         self.lineEditSyrthesInstance.hide()
 
-        if self.model_th != 'off' and self.comp.getCompressibleModel() == 'off':
+        if self.model_th != 'off':
             self.modelTypeThermal.setItem(str_model=self.thermal_type)
             self.labelValueThermal.setText('Value')
             self.groupBoxThermal.setTitle('Thermal')
