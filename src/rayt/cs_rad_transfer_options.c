@@ -374,7 +374,8 @@ cs_rad_transfer_log_setup(void)
 
   const char *imfsck_value_str[]
     = {N_("0 (no FSCK model)"),
-       N_("1 (FSCK model activated)")};
+       N_("1 (FSCK model activated)"),
+       N_("2 (FSCK model activated with tabulated properties)")};
 
   const char *idiver_value_str[]
     = {N_("0 (semi-analytic radiative S.T. calculation;\n"
