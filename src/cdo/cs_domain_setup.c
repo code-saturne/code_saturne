@@ -722,7 +722,7 @@ cs_domain_finalize_user_setup(cs_domain_t         *domain)
     /* Add if needed new terms (as diffusion or reaction) to tracer equations
        according to the settings */
 
-    cs_gwf_add_tracer_terms();
+    cs_gwf_tracer_add_terms();
 
   }
 

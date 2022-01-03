@@ -80,7 +80,8 @@ BEGIN_C_DECLS
 /*!
   \file cs_gwf.c
 
-  \brief Main functions dedicated to groundwater flows when using CDO schemes
+  \brief Main high-level functions dedicated to groundwater flows when using
+         CDO schemes
 
 */
 
@@ -138,7 +139,6 @@ _get_time_eval(const cs_time_step_t        *ts,
                cs_equation_t               *eq)
 
 {
-  cs_gwf_t  *gw = cs_gwf_main_structure;
   cs_real_t  time_eval = ts->t_cur;
 
   const cs_real_t  dt_cur = ts->dt[0];
@@ -153,15 +153,9 @@ _get_time_eval(const cs_time_step_t        *ts,
   case CS_TIME_SCHEME_STEADY:
   case CS_TIME_N_SCHEMES:
 
-    /* Look for tracer equations */
+    /* Scan tracer equations */
 
-    for (int ieq = 0; ieq < gw->n_tracers; ieq++) {
-
-      cs_equation_t  *_eq = gw->tracers[ieq]->eq;
-
-      theta = fmax(theta, cs_equation_get_theta_time_val(_eq));
-
-    }
+    cs_gwf_tracer_get_time_theta_max();
 
     if (theta > 0)
       time_eval = ts->t_cur + theta*dt_cur;
@@ -1802,13 +1796,6 @@ _gwf_create(void)
 
   gw->model_context = NULL;
 
-  /* Tracer part */
-
-  gw->n_tracers = 0;
-  gw->tracers = NULL;
-  gw->finalize_tracer_setup = NULL;
-  gw->add_tracer_terms = NULL;
-
   return gw;
 }
 
@@ -1947,13 +1934,9 @@ cs_gwf_destroy_all(void)
 
   cs_gwf_soil_free_all();
 
-  /* Manage the tracer-related members */
+  /* Free all tracers */
 
-  for (int i = 0; i < gw->n_tracers; i++)
-    gw->tracers[i] = cs_gwf_tracer_free(gw->tracers[i]);
-  BFT_FREE(gw->tracers);
-  BFT_FREE(gw->finalize_tracer_setup);
-  BFT_FREE(gw->add_tracer_terms);
+  cs_gwf_tracer_free_all();
 
   BFT_FREE(gw);
 
@@ -2061,11 +2044,7 @@ cs_gwf_log_setup(void)
 
   /* Tracers */
 
-  cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Number of tracer equations: %d\n", gw->n_tracers);
-
-  for (int i = 0; i < gw->n_tracers; i++)
-    cs_gwf_tracer_log_setup(gw->tracers[i]);
+  cs_gwf_tracer_log_all();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2270,16 +2249,19 @@ cs_gwf_add_soil(const char                      *z_name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Add a new equation related to the groundwater flow module
+
  *         This equation is a particular type of unsteady advection-diffusion
- *         reaction eq.
- *         Tracer is advected thanks to the darcian velocity and
- *         diffusion/reaction parameters result from a physical modelling.
- *         Terms solved in the equation are activated according to the settings.
- *         The advection field corresponds to that of the liquid phase.
+ *         reaction equation. Tracer is advected thanks to the darcian velocity
+ *         and diffusion/reaction parameters result from a physical modelling.
+ *         Terms solved in this equation are activated according to predefined
+ *         settings. The advection field corresponds to that of the liquid
+ *         phase.
  *
  * \param[in]  tr_model   physical modelling to consider (0 = default settings)
  * \param[in]  eq_name    name of the tracer equation
  * \param[in]  var_name   name of the related variable
+ *
+ * \return a pointer to the new cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2300,28 +2282,25 @@ cs_gwf_add_tracer(cs_gwf_tracer_model_t     tr_model,
   /* Set the advection field structure */
 
   cs_adv_field_t  *adv = _get_l_adv_field(gw);
-  int  tr_id = gw->n_tracers;
-  cs_gwf_tracer_t  *tracer = cs_gwf_tracer_init(tr_id,
-                                                eq_name,
-                                                var_name,
-                                                adv,
-                                                tr_model);
 
-  gw->n_tracers += 1;
-  BFT_REALLOC(gw->tracers, gw->n_tracers, cs_gwf_tracer_t *);
-  BFT_REALLOC(gw->finalize_tracer_setup,
-              gw->n_tracers, cs_gwf_tracer_setup_t *);
-  BFT_REALLOC(gw->add_tracer_terms,
-              gw->n_tracers, cs_gwf_tracer_add_terms_t *);
+  /* Set the function pointers */
 
-  gw->tracers[tr_id] = tracer;
+  cs_gwf_tracer_setup_t  *setup = NULL;
 
   if (gw->model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
-    gw->finalize_tracer_setup[tr_id] = cs_gwf_tracer_saturated_setup;
+    setup = cs_gwf_tracer_saturated_setup;
   else
-    gw->finalize_tracer_setup[tr_id] = cs_gwf_tracer_unsaturated_setup;
+    setup = cs_gwf_tracer_unsaturated_setup;
 
-  gw->add_tracer_terms[tr_id] = cs_gwf_tracer_add_terms;
+  /* Call the main function to add a new tracer */
+
+  cs_gwf_tracer_t  *tracer = cs_gwf_tracer_add(tr_model,
+                                               gw->model,
+                                               eq_name,
+                                               var_name,
+                                               adv,
+                                               setup,
+                                               cs_gwf_tracer_add_default_terms);
 
   return tracer;
 }
@@ -2329,17 +2308,19 @@ cs_gwf_add_tracer(cs_gwf_tracer_model_t     tr_model,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Add a new equation related to the groundwater flow module
+ *
  *         This equation is a particular type of unsteady advection-diffusion
- *         reaction eq.
- *         Tracer is advected thanks to the darcian velocity and
- *         diffusion/reaction parameters result from a physical modelling.
- *         Terms are activated according to the settings.
+ *         reaction equation.  Tracer is advected thanks to the darcian
+ *         velocity and diffusion/reaction parameters result from a physical
+ *         modelling. Terms are activated according to predefined settings.
  *         Modelling of the tracer parameters are left to the user
  *
  * \param[in]   eq_name     name of the tracer equation
  * \param[in]   var_name    name of the related variable
  * \param[in]   setup       function pointer (predefined prototype)
  * \param[in]   add_terms   function pointer (predefined prototype)
+ *
+ * \return a pointer to the new cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2356,76 +2337,18 @@ cs_gwf_add_user_tracer(const char                  *eq_name,
   /* Set the advection field structure */
 
   cs_adv_field_t  *adv = _get_l_adv_field(gw);
-  int  tr_id = gw->n_tracers;
-  cs_gwf_tracer_t  *tracer = cs_gwf_tracer_init(tr_id,
-                                                eq_name,
-                                                var_name,
-                                                adv,
-                                                CS_GWF_TRACER_USER);
 
-  gw->n_tracers += 1;
-  BFT_REALLOC(gw->tracers, gw->n_tracers, cs_gwf_tracer_t *);
-  BFT_REALLOC(gw->finalize_tracer_setup,
-              gw->n_tracers, cs_gwf_tracer_setup_t *);
-  BFT_REALLOC(gw->add_tracer_terms,
-              gw->n_tracers, cs_gwf_tracer_add_terms_t *);
+  /* Call the main function to add a new tracer */
 
-  gw->tracers[tr_id] = tracer;
-  gw->finalize_tracer_setup[tr_id] = setup;
-  gw->add_tracer_terms[tr_id] = add_terms;
+  cs_gwf_tracer_t  *tracer = cs_gwf_tracer_add(CS_GWF_TRACER_USER,
+                                               gw->model,
+                                               eq_name,
+                                               var_name,
+                                               adv,
+                                               setup,
+                                               add_terms);
 
   return tracer;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to the cs_gwf_tracer_t structure associated to
- *         the name given as parameter
- *
- * \param[in]  eq_name    name of the tracer equation
- *
- * \return the pointer to a cs_gwf_tracer_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_gwf_tracer_t *
-cs_gwf_tracer_by_name(const char   *eq_name)
-{
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-
-  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
-
-  if (eq_name == NULL)
-    return NULL;
-
-  for (int i = 0; i < gw->n_tracers; i++) {
-    cs_gwf_tracer_t  *tracer = gw->tracers[i];
-    const char *name_to_cmp = cs_equation_get_name(tracer->eq);
-    if (strcmp(eq_name, name_to_cmp) == 0)
-      return tracer;
-  }
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add new terms if needed (such as diffusion or reaction) to tracer
- *         equations according to the settings
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_add_tracer_terms(void)
-{
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-
-  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
-
-  /* Loop on tracer equations */
-
-  for (int i = 0; i < gw->n_tracers; i++)
-    gw->add_tracer_terms[i](gw->tracers[i]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2508,26 +2431,9 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
   cs_gwf_soil_check();
   cs_gwf_build_cell2soil(quant->n_cells);
 
-  /* Loop on tracer equations. Link the advection field to each tracer
-     equation */
+  /* Finalize the tracer setup */
 
-  cs_adv_field_t  *adv = _get_l_adv_field(gw);
-
-  for (int i = 0; i < gw->n_tracers; i++) {
-
-    if (gw->model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
-      gw->finalize_tracer_setup[i](connect, quant, adv, NULL, gw->tracers[i]);
-
-    else {
-
-      cs_field_t  *f = cs_field_by_name("liquid_saturation");
-      assert(f != NULL);
-
-      gw->finalize_tracer_setup[i](connect, quant, adv, f->val, gw->tracers[i]);
-
-    }
-
-  } /* Loop on tracers */
+  cs_gwf_tracer_setup_all(connect, quant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2583,13 +2489,7 @@ cs_gwf_update(const cs_mesh_t             *mesh,
   /* Update the diffusivity tensor associated to each tracer equation since the
      Darcy velocity may have changed */
 
-  for (int i = 0; i < gw->n_tracers; i++) {
-
-    cs_gwf_tracer_t  *tracer = gw->tracers[i];
-    if (tracer->update_diff_tensor != NULL)
-      tracer->update_diff_tensor(tracer, time_eval, mesh, connect, quant);
-
-  }
+  cs_gwf_tracer_update_diff_tensor(time_eval, mesh, connect, quant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2632,23 +2532,7 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
   /* Compute tracers */
   /* --------------- */
 
-  for (int i = 0; i < gw->n_tracers; i++) {
-
-    cs_gwf_tracer_t  *tracer = gw->tracers[i];
-
-    if (cs_equation_is_steady(tracer->eq)) {
-
-      /* Solve the algebraic system */
-      cs_equation_solve_steady_state(mesh, tracer->eq);
-
-      if (tracer->update_precipitation != NULL)
-        tracer->update_precipitation(tracer,
-                                     time_step->t_cur,
-                                     mesh, connect, cdoq);
-
-    } /* Solve this equation which is steady */
-
-  } /* Loop on tracer equations */
+  cs_gwf_tracer_compute_steady_all(mesh, time_step, connect, cdoq);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2701,65 +2585,7 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
   /* Compute tracers */
   /* --------------- */
 
-  bool cur2prev = true;
-
-  for (int i = 0; i < gw->n_tracers; i++) {
-
-    cs_gwf_tracer_t  *tracer = gw->tracers[i];
-
-    if (!cs_equation_is_steady(tracer->eq)) { /* unsteady ? */
-
-      /* Solve the algebraic system. By default, a current to previous operation
-         is performed */
-
-      cs_equation_solve(cur2prev, mesh, tracer->eq);
-
-      if (tracer->update_precipitation != NULL)
-        tracer->update_precipitation(tracer,
-                                     time_step->t_cur,
-                                     mesh, connect, cdoq);
-
-    } /* Solve this equation which is unsteady */
-
-  } /* Loop on tracer equations */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the integral over a given set of cells of the field related
- *         to a tracer equation. This integral turns out to be exact for linear
- *         functions.
- *
- * \param[in]    connect   pointer to a \ref cs_cdo_connect_t structure
- * \param[in]    cdoq      pointer to a \ref cs_cdo_quantities_t structure
- * \param[in]    tracer    pointer to a \ref cs_gwf_tracer_t structure
- * \param[in]    z_name    name of the volumic zone where the integral is done
- *                         (if NULL or "" all cells are considered)
- *
- * \return the value of the integral
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
-                        const cs_cdo_quantities_t  *cdoq,
-                        const cs_gwf_tracer_t      *tracer,
-                        const char                 *z_name)
-{
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-
-  if (gw == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Groundwater module is not allocated.", __func__);
-
-  const int  z_id = cs_get_vol_zone_id(z_name);
-  const cs_zone_t  *zone = cs_volume_zone_by_id(z_id);
-
-  if (gw->model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
-    return cs_gwf_tracer_integrate_sat(connect, cdoq, tracer, zone);
-  else
-    return cs_gwf_tracer_integrate(connect, cdoq, tracer, zone);
-
+  cs_gwf_tracer_compute_all(mesh, time_step, connect, cdoq);
 }
 
 /*----------------------------------------------------------------------------*/

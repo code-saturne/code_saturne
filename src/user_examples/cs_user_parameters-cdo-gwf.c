@@ -336,7 +336,7 @@ cs_user_model(void)
      * (give NULL as the second argument)
      */
 
-    cs_gwf_set_main_tracer_param(tr,
+    cs_gwf_tracer_set_main_param(tr,
                                  NULL,     /* soil name or NULL for all */
                                  0.,       /* water molecular diffusivity */
                                  1., 0.,   /* alpha (longi. and transvesal) */

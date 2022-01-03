@@ -35,6 +35,7 @@
 #include "cs_base.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
+#include "cs_gwf_param.h"
 #include "cs_mesh.h"
 #include "cs_property.h"
 #include "cs_volume_zone.h"
@@ -88,49 +89,11 @@ typedef void
  * Type definitions
  *============================================================================*/
 
-/*! \enum cs_gwf_soil_hydraulic_model_t
- *
- * \brief Predefined hydraulic model of soils used in the groundwater flow
- *        module
- *
- * \var CS_GWF_SOIL_GENUCHTEN
- * Van Genuchten-Mualem laws defining the evolution of the effective liquid
- * saturne (also called dimensionless moisture content) and the relative
- * permeability
- *
- * The (effective) liquid saturation (also called moisture content) follows the
- * identity:
- * S_l,eff = (S_l - theta_r)/(theta_s - theta_r)
- *         = (1 + |alpha . h|^n)^(-m)
- *
- * The isotropic relative permeability is defined as:
- * k_r = S_l,eff^L * (1 - (1 - S_l,eff^(1/m))^m))^2
- * where m = 1 -  1/n
- *
- * \var CS_GWF_SOIL_SATURATED
- * Hydraulic model of soild where the soil is considered as saturated. In this
- * model, there no evolution taken into account. The liquid saturation and the
- * permeability are considered as constant.
- *
- * \var CS_GWF_SOIL_USER
- * User-defined model of soil
- */
-
-typedef enum {
-
-  CS_GWF_SOIL_GENUCHTEN,
-  CS_GWF_SOIL_SATURATED,
-  CS_GWF_SOIL_USER,
-
-  CS_GWF_SOIL_N_HYDRAULIC_MODELS
-
-} cs_gwf_soil_hydraulic_model_t;
-
 /*! \struct cs_gwf_soil_context_genuchten_t
  *
  * \brief Structure to handle the Van Genuchten-Mualen model of soil
  *
- *        See \ref CS_GWF_SOIL_GENUCHTEN). This structure stores the parameters
+ *        See \ref CS_GWF_SOIL_GENUCHTEN. This structure stores the parameters
  *        defining the evolution laws for the liquid saturation and the
  *        relative permeability.
  */
@@ -148,7 +111,8 @@ typedef struct {
    *      Also called residual liquid saturation
    *
    * \var saturated_permeability
-   *      Permeability value (isotropic or anisotropic) when the soil is saturated
+   *      Permeability value (isotropic or anisotropic) when the soil is
+   *      saturated
    *
    * \var n
    * Shape parameter. Should be 1.25 < n < 6

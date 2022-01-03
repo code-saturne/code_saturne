@@ -81,6 +81,9 @@ static const char _err_empty_tracer[] =
   " Stop execution. The structure related to a tracer is empty.\n"
   " Please check your settings.\n";
 
+static int  _n_tracers = 0;
+static cs_gwf_tracer_t  **_tracers = NULL;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -120,10 +123,7 @@ _get_time_pty4std_sat_tracer(cs_lnum_t                    n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(t_eval);
 
-  const cs_gwf_tracer_context_t  *tc = context;
-
-  /* Sanity check */
-
+  const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
   const short int  *c2s = cs_gwf_get_cell2soil();
@@ -163,15 +163,13 @@ _get_time_pty4std_sat_tracer_cw(const cs_cell_mesh_t    *cm,
 {
   CS_UNUSED(t_eval);
 
-  const cs_gwf_tracer_context_t  *tc = context;
+  const cs_gwf_tracer_default_context_t  *tc = context;
+  assert(tc != NULL);
+
   const short int  *c2s = cs_gwf_get_cell2soil();
   const short int  soil_id = c2s[cm->c_id];
   const cs_real_t  saturated_moisture =
     cs_gwf_soil_get_saturated_moisture(soil_id);
-
-  /* Sanity check */
-
-  assert(tc != NULL);
 
   *result = saturated_moisture + tc->rho_kd[soil_id];
 }
@@ -210,10 +208,7 @@ _get_time_pty4std_tracer(cs_lnum_t                    n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(t_eval);
 
-  const cs_gwf_tracer_context_t  *tc = context;
-
-  /* Sanity check */
-
+  const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
   const cs_real_t  *theta = tc->l_saturation;
@@ -255,11 +250,8 @@ _get_time_pty4std_tracer_cw(const cs_cell_mesh_t    *cm,
 {
   CS_UNUSED(t_eval);
 
-  const cs_gwf_tracer_context_t  *tc = context;
+  const cs_gwf_tracer_default_context_t  *tc = context;
   const short int  *c2s = cs_gwf_get_cell2soil();
-
-  /* Sanity check */
-
   assert(tc != NULL);
 
   *result = tc->l_saturation[cm->c_id] + tc->rho_kd[c2s[cm->c_id]];
@@ -300,10 +292,7 @@ _get_reaction_pty4std_sat_tracer(cs_lnum_t                    n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(t_eval);
 
-  const cs_gwf_tracer_context_t  *tc = context;
-
-  /* Sanity check */
-
+  const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
   const short int  *c2s = cs_gwf_get_cell2soil();
@@ -343,10 +332,7 @@ _get_reaction_pty4std_sat_tracer_cw(const cs_cell_mesh_t     *cm,
 {
   CS_UNUSED(t_eval);
 
-  const cs_gwf_tracer_context_t  *tc = context;
-
-  /* Sanity check */
-
+  const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
   const short int  *c2s = cs_gwf_get_cell2soil();
@@ -390,10 +376,7 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
   CS_UNUSED(quant);
   CS_UNUSED(t_eval);
 
-  const cs_gwf_tracer_context_t  *tc = context;
-
-  /* Sanity check */
-
+  const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
   const cs_real_t  *theta = tc->l_saturation;
@@ -444,10 +427,7 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
 {
   CS_UNUSED(t_eval);
 
-  const cs_gwf_tracer_context_t  *tc = context;
-
-  /* Sanity check */
-
+  const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
   const short int  *c2s = cs_gwf_get_cell2soil();
@@ -489,10 +469,7 @@ _update_sat_diff_pty(cs_gwf_tracer_t             *tracer,
     return;
 
   cs_real_t  *values = tracer->diffusivity->val;
-  cs_gwf_tracer_context_t  *tc = tracer->context;
-
-  /* Sanity check */
-
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
   assert(tc != NULL);
 
   const cs_real_t  *velocity = tc->darcy_velocity_field->val;
@@ -576,10 +553,7 @@ _update_diff_pty(cs_gwf_tracer_t             *tracer,
     return;
 
   cs_real_t  *values = tracer->diffusivity->val;
-  cs_gwf_tracer_context_t  *tc = tracer->context;
-
-  /* Sanity check */
-
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
   assert(tc != NULL);
 
   const cs_real_t  *theta = tc->l_saturation;
@@ -656,16 +630,14 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
   CS_UNUSED(mesh);
   CS_UNUSED(t_eval);
 
-  cs_gwf_tracer_context_t  *tc = tracer->context;
-
-  /* Sanity checks */
-
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
+  assert(tc != NULL);
   assert(tc->conc_satura != NULL && tc->conc_precip != NULL);
 
   /* Retrieve the current values of the concentration of tracer in the liquid
      phase */
 
-  cs_real_t  *c_w = cs_equation_get_vertex_values(tracer->eq, false);
+  cs_real_t  *c_w = cs_equation_get_vertex_values(tracer->equation, false);
   cs_real_t  *c_p = tc->conc_precip;
   cs_real_t  *c_w_save = NULL;
 
@@ -759,7 +731,7 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
 static void
 _free_default_tracer_context(cs_gwf_tracer_t   *tracer)
 {
-  cs_gwf_tracer_context_t  *tc = tracer->context;
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
 
   if (tc == NULL)
     return;
@@ -812,12 +784,12 @@ _add_precipitation(const cs_cdo_connect_t      *connect,
                    const cs_cdo_quantities_t   *quant,
                    cs_gwf_tracer_t             *tracer)
 {
-  cs_gwf_tracer_context_t  *tc = tracer->context;
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
 
   const int  n_soils = cs_gwf_get_n_soils();
   const cs_adjacency_t  *c2v = connect->c2v;
   const cs_param_space_scheme_t  space_scheme =
-    cs_equation_get_space_scheme(tracer->eq);
+    cs_equation_get_space_scheme(tracer->equation);
 
   cs_lnum_t  a_size = 0;
 
@@ -895,54 +867,311 @@ _add_precipitation(const cs_cdo_connect_t      *connect,
 
 }
 
-/*============================================================================
- * Public function prototypes
- *============================================================================*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the integral over a given set of cells of the field related
+ *         to a tracer equation. This integral turns out to be exact for linear
+ *         functions.
+ *         Case of a fully saturated model.
+ *
+ * \param[in] connect   pointer to a \ref cs_cdo_connect_t structure
+ * \param[in] cdoq      pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in] eq        equation related to a tracer
+ * \param[in] tc        default context structure for a tracer
+ * \param[in] z         pointer to a volume zone structure
+ *
+ * \return the value of the integral
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_integrate_saturated_tracer(const cs_cdo_connect_t                  *connect,
+                            const cs_cdo_quantities_t               *cdoq,
+                            const cs_equation_t                     *eq,
+                            const cs_gwf_tracer_default_context_t   *tc,
+                            const cs_zone_t                         *z)
+{
+  const short int  *c2s = cs_gwf_get_cell2soil();
+
+  cs_real_t  int_value = 0.0;
+
+  switch (cs_equation_get_space_scheme(eq)) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    {
+      const cs_real_t  *v_vals = cs_equation_get_vertex_values(eq, false);
+      const cs_adjacency_t  *c2v = connect->c2v;
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
+        const short int  s = c2s[c_id];
+        const cs_real_t  sat_moisture = cs_gwf_soil_get_saturated_moisture(s);
+
+        cs_real_t  _int_value = 0.;
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+          _int_value += cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
+        }
+
+        int_value += (sat_moisture + tc->rho_kd[s]) * _int_value;
+
+      } /* Loop on selected cells */
+
+    }
+    break; /* CS_SPACE_SCHEME_CDOVB */
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    {
+      const cs_real_t  *v_vals = cs_equation_get_vertex_values(eq, false);
+      const cs_real_t  *c_vals = cs_equation_get_cell_values(eq, false);
+      const cs_adjacency_t  *c2v = connect->c2v;
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
+        const short int  s = c2s[c_id];
+        const cs_real_t  sat_moisture = cs_gwf_soil_get_saturated_moisture(s);
+
+        /* Shares between cell and vertex unknowns:
+           - the cell unknown stands for 1/4 of the cell volume
+           - the vertex unknown stands for 3/4 of the dual cell volume
+        */
+
+        cs_real_t  _int_value = 0.25*cdoq->cell_vol[c_id]*c_vals[c_id];
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+          _int_value += 0.75 * cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
+
+        int_value += (sat_moisture + tc->rho_kd[s]) * _int_value;
+
+      } /* Loop on selected cells */
+
+    }
+    break; /* CS_SPACE_SCHEME_CDOVCB */
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme", __func__);
+    break;
+
+  } /* End of switch */
+
+  /* Parallel synchronization */
+
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(1, CS_REAL_TYPE, &int_value);
+
+  return int_value;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a new cs_gwf_tracer_t structure and initialize its members by
- *         default.
- *         Add a new equation related to the groundwater flow module.
- *         This equation is a specific transport equation.
- *         Tracer is advected thanks to the darcian velocity which is given
- *         by the resolution of the Richards equation.
- *         Diffusion/reaction parameters result from a physical modelling.
+ * \brief  Compute the integral over a given set of cells of the field related
+ *         to a tracer equation. This integral turns out to be exact for linear
+ *         functions.
+ *         General case.
  *
- * \param[in]   tracer_id   id number of the soil
+ * \param[in] connect   pointer to a \ref cs_cdo_connect_t structure
+ * \param[in] cdoq      pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in] eq        equation related to a tracer
+ * \param[in] tc        default context structure for a tracer
+ * \param[in] z         pointer to a volume zone structure
+ *
+ * \return the value of the integral
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_integrate_tracer(const cs_cdo_connect_t                  *connect,
+                  const cs_cdo_quantities_t               *cdoq,
+                  const cs_equation_t                     *eq,
+                  const cs_gwf_tracer_default_context_t   *tc,
+                  const cs_zone_t                         *z)
+{
+  const short int  *c2s = cs_gwf_get_cell2soil();
+  const cs_real_t  *moisture_val = tc->l_saturation;
+
+  if (moisture_val == NULL)
+    bft_error(__FILE__, __LINE__, 0, " %s: \"moisture_content\" not defined",
+              __func__);
+
+  cs_real_t  int_value = 0.0;
+
+  switch (cs_equation_get_space_scheme(eq)) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    {
+      const cs_real_t  *v_vals = cs_equation_get_vertex_values(eq, false);
+      const cs_adjacency_t  *c2v = connect->c2v;
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
+
+        cs_real_t  _int_value = 0.;
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+          _int_value += cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
+        }
+
+        int_value +=
+          (moisture_val[c_id] + tc->rho_kd[c2s[c_id]]) * _int_value;
+
+      } /* Loop on selected cells */
+
+    }
+    break; /* CS_SPACE_SCHEME_CDOVB */
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    {
+      const cs_real_t  *v_vals = cs_equation_get_vertex_values(eq, false);
+      const cs_real_t  *c_vals = cs_equation_get_cell_values(eq, false);
+      const cs_adjacency_t  *c2v = connect->c2v;
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+
+        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
+
+        /* Shares between cell and vertex unknowns:
+           - the cell unknown stands for 1/4 of the cell volume
+           - the vertex unknown stands for 3/4 of the dual cell volume
+        */
+
+        cs_real_t  _int_value = 0.25*cdoq->cell_vol[c_id]*c_vals[c_id];
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+          _int_value += 0.75 * cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
+
+        int_value +=
+          (moisture_val[c_id] + tc->rho_kd[c2s[c_id]]) * _int_value;
+
+      } /* Loop on selected cells */
+
+    }
+    break; /* CS_SPACE_SCHEME_CDOVCB */
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme", __func__);
+    break;
+
+  } /* End of switch */
+
+  /* Parallel synchronization */
+
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(1, CS_REAL_TYPE, &int_value);
+
+  return int_value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialization by default for a "standard" tracer
+ *
+ * \param[in, out]  tracer   pointer to a cs_gwf_tracer_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_default_tracer_init(cs_gwf_tracer_t    *tracer)
+{
+  if (tracer == NULL)
+    return;
+
+  if ((tracer->model & CS_GWF_TRACER_USER) != 0) /* user-defined ? */
+    return;
+
+  /* One handles a standard tracer */
+
+  const int  n_soils = cs_gwf_get_n_soils();
+
+  cs_gwf_tracer_default_context_t  *context = NULL;
+
+  BFT_MALLOC(context, 1, cs_gwf_tracer_default_context_t);
+
+  BFT_MALLOC(context->rho_bulk, n_soils, double);
+  BFT_MALLOC(context->kd0, n_soils, double);
+  BFT_MALLOC(context->rho_kd, n_soils, double);
+  BFT_MALLOC(context->alpha_l, n_soils, double);
+  BFT_MALLOC(context->alpha_t, n_soils, double);
+  BFT_MALLOC(context->wmd, n_soils, double);
+  BFT_MALLOC(context->reaction_rate, n_soils, double);
+
+  context->darcy_velocity_field = NULL;
+  context->l_saturation = NULL;
+
+  /* Sorption members */
+
+  context->k0_plus = NULL;
+  context->k0_minus = NULL;
+  context->conc_site2 = NULL;
+
+  if (tracer->model & CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS) {
+
+    BFT_MALLOC(context->k0_minus, n_soils, double);
+    BFT_MALLOC(context->k0_plus, n_soils, double);
+
+  }
+
+  /* Precipitation members */
+
+  context->conc_w_star = NULL;
+  context->conc_precip = NULL;
+  context->conc_satura = NULL;
+  context->precip_field = NULL;
+  tracer->update_precipitation = NULL;
+
+  if (tracer->model & CS_GWF_TRACER_PRECIPITATION) {
+
+    BFT_MALLOC(context->conc_w_star, n_soils, double);
+
+    tracer->update_precipitation = _update_precipitation_vb;
+
+  }
+
+  tracer->context = context;
+
+  /* Common to all default tracers */
+
+  tracer->update_diff_tensor = _update_diff_pty;
+  tracer->free_context = _free_default_tracer_context;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a new cs_gwf_tracer_t structure and initialize its members by
+ *        default
+ *
+ * \param[in]   tr_model    model related to this tracer
+ * \param[in]   gwf_model   main model for the GWF module
  * \param[in]   eq_name     name of the tracer equation
  * \param[in]   var_name    name of the related variable
  * \param[in]   adv_field   pointer to a cs_adv_field_t structure
- * \param[in]   model       model related to this tracer
  *
  * \return a pointer to the new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gwf_tracer_t *
-cs_gwf_tracer_init(int                      tracer_id,
-                   const char              *eq_name,
-                   const char              *var_name,
-                   cs_adv_field_t          *adv_field,
-                   cs_gwf_tracer_model_t    model)
+static cs_gwf_tracer_t *
+_create_tracer(cs_gwf_tracer_model_t    tr_model,
+               cs_gwf_model_type_t      gwf_model,
+               const char              *eq_name,
+               const char              *var_name,
+               cs_adv_field_t          *adv_field)
 {
   cs_gwf_tracer_t  *tracer = NULL;
 
   BFT_MALLOC(tracer, 1, cs_gwf_tracer_t);
 
-  tracer->id = tracer_id;
-  tracer->eq = cs_equation_add(eq_name,
-                               var_name,
-                               CS_EQUATION_TYPE_GROUNDWATER,
-                               1, /* scalar-valued equation */
-                               CS_PARAM_BC_HMG_NEUMANN);
+  tracer->equation = cs_equation_add(eq_name,
+                                     var_name,
+                                     CS_EQUATION_TYPE_GROUNDWATER,
+                                     1, /* scalar-valued equation */
+                                     CS_PARAM_BC_HMG_NEUMANN);
 
-  tracer->model = model;
-  tracer->context = NULL;
+  tracer->model = tr_model;
+  tracer->hydraulic_model = gwf_model;
   tracer->diffusivity = NULL;
   tracer->reaction_id = -1;
 
   /* Add a new property related to the time-depedent term */
+
   char  *pty_name = NULL;
   int  len = strlen(eq_name) + strlen("_time") + 1;
   BFT_MALLOC(pty_name, len, char);
@@ -952,7 +1181,7 @@ cs_gwf_tracer_init(int                      tracer_id,
 
   BFT_FREE(pty_name);
 
-  cs_equation_param_t  *tr_eqp = cs_equation_get_param(tracer->eq);
+  cs_equation_param_t  *tr_eqp = cs_equation_get_param(tracer->equation);
 
   cs_equation_add_time(tr_eqp,  time_pty);
 
@@ -974,89 +1203,185 @@ cs_gwf_tracer_init(int                      tracer_id,
   cs_equation_param_set(tr_eqp, CS_EQKEY_PRECOND, "poly1");
   cs_equation_param_set(tr_eqp, CS_EQKEY_ADV_SCHEME, "sg");
 
-  const int  n_soils = cs_gwf_get_n_soils();
+  /* Other members */
 
-  if ((model & CS_GWF_TRACER_USER) == 0) {
+  tracer->update_diff_tensor = NULL;
+  tracer->update_precipitation = NULL;
 
-    cs_gwf_tracer_context_t  *context = NULL;
+  tracer->context = NULL;
+  tracer->free_context = NULL;
 
-    BFT_MALLOC(context, 1, cs_gwf_tracer_context_t);
+  tracer->setup = NULL;
+  tracer->add_terms = NULL;
 
-    BFT_MALLOC(context->rho_bulk, n_soils, double);
-    BFT_MALLOC(context->kd0, n_soils, double);
-    BFT_MALLOC(context->rho_kd, n_soils, double);
-    BFT_MALLOC(context->alpha_l, n_soils, double);
-    BFT_MALLOC(context->alpha_t, n_soils, double);
-    BFT_MALLOC(context->wmd, n_soils, double);
-    BFT_MALLOC(context->reaction_rate, n_soils, double);
+  return tracer;
+}
 
-    context->darcy_velocity_field = NULL;
-    context->l_saturation = NULL;
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
 
-    /* Sorption members */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the cs_gwf_tracer_t structure associated to
+ *         the name given as parameter
+ *
+ * \param[in]  eq_name    name of the tracer equation
+ *
+ * \return the pointer to a cs_gwf_tracer_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
-    context->k0_plus = NULL;
-    context->k0_minus = NULL;
-    context->conc_site2 = NULL;
+cs_gwf_tracer_t *
+cs_gwf_tracer_by_name(const char   *eq_name)
+{
+  if (_n_tracers == 0)
+    return NULL;
 
-    if (model & CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS) {
+  if (eq_name == NULL)
+    return NULL;
 
-      BFT_MALLOC(context->k0_minus, n_soils, double);
-      BFT_MALLOC(context->k0_plus, n_soils, double);
+  if (_tracers == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_tracer));
 
-    }
+  for (int i = 0; i < _n_tracers; i++) {
 
-    /* Precipitation members */
+    cs_gwf_tracer_t  *tracer = _tracers[i];
 
-    context->conc_w_star = NULL;
-    context->conc_precip = NULL;
-    context->conc_satura = NULL;
-    context->precip_field = NULL;
-    tracer->update_precipitation = NULL;
+    const char *name_to_cmp = cs_equation_get_name(tracer->equation);
+    if (strcmp(eq_name, name_to_cmp) == 0)
+      return tracer;
 
-    if (model & CS_GWF_TRACER_PRECIPITATION) {
+  } /* Loop on tracer equations */
 
-      BFT_MALLOC(context->conc_w_star, n_soils, double);
+  return NULL;
+}
 
-      tracer->update_precipitation = _update_precipitation_vb;
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a new cs_gwf_tracer_t structure and initialize its members by
+ *         default.
+ *         Add a new equation related to the groundwater flow module.
+ *         This equation is a specific transport equation.
+ *         Tracer is advected thanks to the darcian velocity which is given
+ *         by the resolution of the Richards equation.
+ *         Diffusion/reaction parameters result from a physical modelling.
+ *
+ * \param[in]   tr_model    model related to this tracer
+ * \param[in]   gwf_model   main model for the GWF module
+ * \param[in]   eq_name     name of the tracer equation
+ * \param[in]   var_name    name of the related variable
+ * \param[in]   adv_field   pointer to a cs_adv_field_t structure
+ * \param[in]   setup       function pointer (predefined prototype)
+ * \param[in]   add_terms   function pointer (predefined prototype)
+ *
+ * \return a pointer to the new allocated structure
+ */
+/*----------------------------------------------------------------------------*/
 
-    }
+cs_gwf_tracer_t *
+cs_gwf_tracer_add(cs_gwf_tracer_model_t        tr_model,
+                  cs_gwf_model_type_t          gwf_model,
+                  const char                  *eq_name,
+                  const char                  *var_name,
+                  cs_adv_field_t              *adv_field,
+                  cs_gwf_tracer_setup_t       *setup,
+                  cs_gwf_tracer_add_terms_t   *add_terms)
+{
+  int  tr_id = _n_tracers;
 
-    /* Common to all default tracer */
+  cs_gwf_tracer_t  *tracer = _create_tracer(tr_model,
+                                            gwf_model,
+                                            eq_name,
+                                            var_name,
+                                            adv_field);
 
-    tracer->update_diff_tensor = _update_diff_pty;
-    tracer->free_context = _free_default_tracer_context;
-    tracer->context = context;
+  assert(tracer != NULL);
 
-  }
+  tracer->setup = setup;
+  tracer->add_terms = add_terms;
+
+  if ((tracer->model & CS_GWF_TRACER_USER) == 0)
+    _default_tracer_init(tracer);
+
+  /* Update the array storing all tracers */
+
+  _n_tracers += 1;
+  BFT_REALLOC(_tracers, _n_tracers, cs_gwf_tracer_t *);
+  _tracers[tr_id] = tracer;
 
   return tracer;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a cs_gwf_tracer_t structure
- *
- * \param[in, out]  tracer   pointer to a cs_gwf_tracer_t structure
+ * \brief  Free all tracers
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
-cs_gwf_tracer_t *
-cs_gwf_tracer_free(cs_gwf_tracer_t     *tracer)
+void
+cs_gwf_tracer_free_all(void)
 {
-  if (tracer == NULL)
-    return tracer;
+  if (_n_tracers == 0)
+    return;
 
-  if (tracer->free_context != NULL)
-    tracer->free_context(tracer);
+  assert(_tracers != NULL);
 
-  /* Tracer equation is freed with all equations at the same time */
+  for (int i = 0; i < _n_tracers; i++) {
 
-  BFT_FREE(tracer);
+    cs_gwf_tracer_t  *tracer = _tracers[i];
 
-  return NULL;
+    if (tracer == NULL)
+      continue;
+
+    if (tracer->free_context != NULL)
+      tracer->free_context(tracer);
+
+    /* Tracer equation is freed with all equations at the same time */
+
+    BFT_FREE(tracer);
+    _tracers[i] = NULL;
+
+  } /* Loop on tracers */
+
+  _n_tracers = 0;
+  BFT_FREE(_tracers);
+  _tracers = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the max. value of the theta parameter associated to a time
+ *        scheme. Loop on all tracer equations.
+ *
+ * \return the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_gwf_tracer_get_time_theta_max(void)
+{
+  cs_real_t  theta = -1;
+
+  if (_n_tracers == 0)
+    return theta;
+
+  assert(_tracers != NULL);
+
+  for (int i = 0; i < _n_tracers; i++) {
+
+    cs_gwf_tracer_t  *tracer = _tracers[i];
+
+    if (tracer == NULL)
+      continue;
+
+    theta = fmax(theta, cs_equation_get_theta_time_val(tracer->equation));
+
+  } /* Loop on tracers */
+
+  return theta;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1076,7 +1401,7 @@ cs_gwf_tracer_free(cs_gwf_tracer_t     *tracer)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_main_tracer_param(cs_gwf_tracer_t   *tracer,
+cs_gwf_tracer_set_main_param(cs_gwf_tracer_t   *tracer,
                              const char        *soil_name,
                              double             wmd,
                              double             alpha_l,
@@ -1084,10 +1409,9 @@ cs_gwf_set_main_tracer_param(cs_gwf_tracer_t   *tracer,
                              double             distrib_coef,
                              double             reaction_rate)
 {
-  /* Sanity check */
   if (tracer == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_tracer));
 
-  cs_gwf_tracer_context_t  *tc = tracer->context;
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
 
   /* Look for the related soil */
 
@@ -1127,7 +1451,6 @@ cs_gwf_set_main_tracer_param(cs_gwf_tracer_t   *tracer,
     tc->reaction_rate[soil->id] = reaction_rate;
 
   } /* Set a specific couple (tracer, soil) */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1144,11 +1467,10 @@ cs_gwf_set_main_tracer_param(cs_gwf_tracer_t   *tracer,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_precip_tracer_param(cs_gwf_tracer_t   *tracer,
+cs_gwf_tracer_set_precip_param(cs_gwf_tracer_t   *tracer,
                                const char        *soil_name,
                                double             conc_w_star)
 {
-  /* Sanity check */
   if (tracer == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_tracer));
 
   if ((tracer->model & CS_GWF_TRACER_PRECIPITATION) == 0)
@@ -1156,9 +1478,10 @@ cs_gwf_set_precip_tracer_param(cs_gwf_tracer_t   *tracer,
               " %s: Precipitation model has not been activated for this"
               " tracer", __func__);
 
-  cs_gwf_tracer_context_t  *tc = tracer->context;
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
 
   /* Look for the related soil */
+
   if (soil_name == NULL) { /* All soils have to be set for this tracer */
 
     const int n_soils = cs_gwf_get_n_soils();
@@ -1177,7 +1500,271 @@ cs_gwf_set_precip_tracer_param(cs_gwf_tracer_t   *tracer,
     tc->conc_w_star[soil->id] = conc_w_star;
 
   } /* Set a specific couple (tracer, soil) */
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize the tracer setup
+ *
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tracer_setup_all(const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *quant)
+{
+  if (_n_tracers == 0)
+    return;
+
+  assert(_tracers != NULL);
+
+  /* Loop on tracer equations */
+
+  for (int i = 0; i < _n_tracers; i++) {
+
+    cs_gwf_tracer_t  *tracer = _tracers[i];
+
+    if (tracer == NULL)
+      continue;
+
+    cs_equation_param_t  *eqp = cs_equation_get_param(tracer->equation);
+    assert(eqp != NULL);
+
+    cs_real_t  *fval = NULL;
+    if (tracer->hydraulic_model == CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE) {
+
+      cs_field_t  *f = cs_field_by_name("liquid_saturation");
+      assert(f != NULL);
+      fval = f->val;
+
+    }
+
+    if (tracer->setup != NULL)
+      tracer->setup(connect, quant, eqp->adv_field, fval, tracer);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add new terms if needed (such as diffusion or reaction) to tracer
+ *         equations according to the settings
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tracer_add_terms(void)
+{
+  if (_n_tracers == 0)
+    return;
+
+  assert(_tracers != NULL);
+
+  /* Loop on tracer equations */
+
+  for (int i = 0; i < _n_tracers; i++) {
+
+    cs_gwf_tracer_t  *tracer = _tracers[i];
+
+    if (tracer == NULL)
+      continue;
+
+    if (tracer->add_terms != NULL)
+      tracer->add_terms(tracer);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the diffusion tensor related to each tracer equation
+ *
+ * \param[in]      t_eval     time at which one performs the evaluation
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tracer_update_diff_tensor(cs_real_t                    t_eval,
+                                 const cs_mesh_t             *mesh,
+                                 const cs_cdo_connect_t      *connect,
+                                 const cs_cdo_quantities_t   *quant)
+{
+  if (_n_tracers == 0)
+    return;
+
+  assert(_tracers != NULL);
+
+  /* Loop on tracer equations */
+
+  for (int i = 0; i < _n_tracers; i++) {
+
+    cs_gwf_tracer_t  *tracer = _tracers[i];
+
+    if (tracer == NULL)
+      continue;
+
+    if (tracer->update_diff_tensor != NULL)
+      tracer->update_diff_tensor(tracer, t_eval, mesh, connect, quant);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Display the main features related to each tracer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tracer_log_all(void)
+{
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | Number of tracer equations: %d\n", _n_tracers);
+
+  if (_n_tracers == 0)
+    return;
+
+  assert(_tracers != NULL);
+
+  /* Loop on tracer equations */
+
+  for (int i = 0; i < _n_tracers; i++) {
+
+    cs_gwf_tracer_t  *tracer = _tracers[i];
+
+    if (tracer == NULL)
+      continue;
+
+    cs_equation_t  *eq = tracer->equation;
+    cs_field_t  *f = cs_equation_get_field(eq);
+
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * GWF | Tracer: %s (variable: %s)\n",
+                  cs_equation_get_name(eq), f->name);
+
+    if (tracer->model & CS_GWF_TRACER_USER)
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * GWF | Tracer: User-defined model\n");
+
+    else {
+
+      cs_log_printf(CS_LOG_SETUP, "  * GWF | Tracer: Default model\n");
+      if (tracer->model & CS_GWF_TRACER_PRECIPITATION)
+        cs_log_printf(CS_LOG_SETUP, "  * GWF | + Precipitation effects\n");
+      if (tracer->model & CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS)
+        cs_log_printf(CS_LOG_SETUP, "  * GWF | + EK model with 3 parameters\n");
+      else if (tracer->model & CS_GWF_TRACER_SORPTION_EK_5_PARAMETERS)
+        cs_log_printf(CS_LOG_SETUP, "  * GWF | + EK model with 5 parameters\n");
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the steady-state for all tracer equations.
+ *         Nothing is done if all equations are unsteady.
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tracer_compute_steady_all(const cs_mesh_t              *mesh,
+                                 const cs_time_step_t         *time_step,
+                                 const cs_cdo_connect_t       *connect,
+                                 const cs_cdo_quantities_t    *cdoq)
+{
+  if (_n_tracers == 0)
+    return;
+
+  assert(_tracers != NULL);
+
+  /* Loop on tracer equations */
+
+  for (int i = 0; i < _n_tracers; i++) {
+
+    cs_gwf_tracer_t  *tracer = _tracers[i];
+
+    if (tracer == NULL)
+      continue;
+
+    cs_equation_t  *eq = tracer->equation;
+
+    if (cs_equation_is_steady(eq)) {
+
+      /* Solve the algebraic system */
+
+      cs_equation_solve_steady_state(mesh, eq);
+
+      if (tracer->update_precipitation != NULL)
+        tracer->update_precipitation(tracer,
+                                     time_step->t_cur, mesh, connect, cdoq);
+
+    } /* Solve this equation which is steady */
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the new (unsteady) state for all tracer equations.
+ *         Nothing is done if all equations are steady.
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tracer_compute_all(const cs_mesh_t              *mesh,
+                          const cs_time_step_t         *time_step,
+                          const cs_cdo_connect_t       *connect,
+                          const cs_cdo_quantities_t    *cdoq)
+{
+  if (_n_tracers == 0)
+    return;
+
+  assert(_tracers != NULL);
+
+  bool cur2prev = true;
+
+  /* Loop on tracer equations */
+
+  for (int i = 0; i < _n_tracers; i++) {
+
+    cs_gwf_tracer_t  *tracer = _tracers[i];
+
+    if (tracer == NULL)
+      continue;
+
+    cs_equation_t  *eq = tracer->equation;
+
+    if (!cs_equation_is_steady(eq)) {
+
+      /* Solve the algebraic system. By default, a current to previous operation
+         is performed */
+
+      cs_equation_solve(cur2prev, mesh, eq);
+
+      if (tracer->update_precipitation != NULL)
+        tracer->update_precipitation(tracer,
+                                     time_step->t_cur, mesh, connect, cdoq);
+
+    } /* Solve this equation which is unsteady */
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1192,20 +1779,19 @@ cs_gwf_set_precip_tracer_param(cs_gwf_tracer_t   *tracer,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_add_terms(cs_gwf_tracer_t     *tracer)
+cs_gwf_tracer_add_default_terms(cs_gwf_tracer_t     *tracer)
 {
-  /* Sanity check */
   if (tracer == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " At least one tracer equation has not been set.\n"
               " Please check your settings.");
 
-  cs_gwf_tracer_context_t  *tc = tracer->context;
-  cs_equation_param_t  *eqp = cs_equation_get_param(tracer->eq);
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
+  cs_equation_param_t  *eqp = cs_equation_get_param(tracer->equation);
 
   const int n_soils = cs_gwf_get_n_soils();
   const double  thd = 100*DBL_MIN; /* threshold to avoid a wrong activation */
-  const char *eq_name = cs_equation_get_name(tracer->eq);
+  const char *eq_name = cs_equation_get_name(tracer->equation);
 
   bool  do_diffusion = false, do_reaction = false;
 
@@ -1312,17 +1898,15 @@ cs_gwf_tracer_saturated_setup(const cs_cdo_connect_t      *connect,
                               const cs_real_t             *l_saturation,
                               cs_gwf_tracer_t             *tracer)
 {
-  /* Sanity check */
-
   if (tracer == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " At least one tracer equation has not been set.\n"
               " Please check your settings.");
 
   const int  n_soils = cs_gwf_get_n_soils();
-  const cs_flag_t  eq_flag = cs_equation_get_flag(tracer->eq);
+  const cs_flag_t  eq_flag = cs_equation_get_flag(tracer->equation);
 
-  cs_gwf_tracer_context_t  *tc = tracer->context;
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
 
   /* Set additional (pre-defined) fields */
 
@@ -1332,7 +1916,7 @@ cs_gwf_tracer_saturated_setup(const cs_cdo_connect_t      *connect,
 
   /* We assume that the unsteady term is always activated */
 
-  cs_property_t  *pty = cs_equation_get_time_property(tracer->eq);
+  cs_property_t  *pty = cs_equation_get_time_property(tracer->equation);
   assert(pty != NULL);
 
   for (int soil_id = 0; soil_id < n_soils; soil_id++) {
@@ -1355,7 +1939,8 @@ cs_gwf_tracer_saturated_setup(const cs_cdo_connect_t      *connect,
     assert(tracer->diffusivity != NULL &&
            tracer->diffusivity->val != NULL); /* Should be done previously */
 
-    cs_property_t  *diff_pty = cs_equation_get_diffusion_property(tracer->eq);
+    cs_property_t  *diff_pty =
+      cs_equation_get_diffusion_property(tracer->equation);
 
     cs_property_def_by_field(diff_pty, tracer->diffusivity);
 
@@ -1369,7 +1954,8 @@ cs_gwf_tracer_saturated_setup(const cs_cdo_connect_t      *connect,
       const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
       cs_property_t  *r_pty =
-        cs_equation_get_reaction_property(tracer->eq, tracer->reaction_id);
+        cs_equation_get_reaction_property(tracer->equation,
+                                          tracer->reaction_id);
 
       if (r_pty != NULL) /* The default reaction property is defined */
         cs_property_def_by_func(r_pty,
@@ -1386,7 +1972,6 @@ cs_gwf_tracer_saturated_setup(const cs_cdo_connect_t      *connect,
 
   if (tracer->model & CS_GWF_TRACER_PRECIPITATION)
     _add_precipitation(connect, quant, tracer);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1409,17 +1994,15 @@ cs_gwf_tracer_unsaturated_setup(const cs_cdo_connect_t      *connect,
                                 const cs_real_t             *l_saturation,
                                 cs_gwf_tracer_t             *tracer)
 {
-  /* Sanity check */
-
   if (tracer == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " At least one tracer equation has not been set.\n"
               " Please check your settings.");
 
   const int  n_soils = cs_gwf_get_n_soils();
-  const cs_flag_t  eq_flag = cs_equation_get_flag(tracer->eq);
+  const cs_flag_t  eq_flag = cs_equation_get_flag(tracer->equation);
 
-  cs_gwf_tracer_context_t  *tc = tracer->context;
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
 
   /* Set additional (pre-defined) fields */
 
@@ -1429,7 +2012,7 @@ cs_gwf_tracer_unsaturated_setup(const cs_cdo_connect_t      *connect,
 
   /* We assume that the unsteady term is always activated */
 
-  cs_property_t  *pty = cs_equation_get_time_property(tracer->eq);
+  cs_property_t  *pty = cs_equation_get_time_property(tracer->equation);
   assert(pty != NULL);
 
   for (int soil_id = 0; soil_id < n_soils; soil_id++) {
@@ -1450,7 +2033,8 @@ cs_gwf_tracer_unsaturated_setup(const cs_cdo_connect_t      *connect,
     assert(tracer->diffusivity != NULL &&
            tracer->diffusivity->val != NULL); /* Should be done previously */
 
-    cs_property_t  *diff_pty = cs_equation_get_diffusion_property(tracer->eq);
+    cs_property_t  *diff_pty =
+      cs_equation_get_diffusion_property(tracer->equation);
 
     cs_property_def_by_field(diff_pty, tracer->diffusivity);
 
@@ -1464,7 +2048,8 @@ cs_gwf_tracer_unsaturated_setup(const cs_cdo_connect_t      *connect,
       const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
       cs_property_t  *r_pty =
-        cs_equation_get_reaction_property(tracer->eq, tracer->reaction_id);
+        cs_equation_get_reaction_property(tracer->equation,
+                                          tracer->reaction_id);
 
       if (r_pty != NULL) /* The default reaction property is defined */
         cs_property_def_by_func(r_pty,
@@ -1481,44 +2066,6 @@ cs_gwf_tracer_unsaturated_setup(const cs_cdo_connect_t      *connect,
 
   if (tracer->model & CS_GWF_TRACER_PRECIPITATION)
     _add_precipitation(connect, quant, tracer);
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Display the main features related to a tracer
- *
- * \param[in]  tracer   pointer to a cs_gwf_tracer_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_tracer_log_setup(const cs_gwf_tracer_t     *tracer)
-{
-  if (tracer == NULL)
-    return;
-
-  cs_field_t  *f = cs_equation_get_field(tracer->eq);
-
-  cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Tracer: %s (variable: %s)\n",
-                cs_equation_get_name(tracer->eq), f->name);
-  if (tracer->model & CS_GWF_TRACER_USER)
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * GWF | Tracer: User-defined model\n");
-
-  else {
-
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Tracer: Default model\n");
-    if (tracer->model & CS_GWF_TRACER_PRECIPITATION)
-      cs_log_printf(CS_LOG_SETUP, "  * GWF | + Precipitation effects\n");
-    if (tracer->model & CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS)
-      cs_log_printf(CS_LOG_SETUP, "  * GWF | + EK model with 3 parameters\n");
-    else if (tracer->model & CS_GWF_TRACER_SORPTION_EK_5_PARAMETERS)
-      cs_log_printf(CS_LOG_SETUP, "  * GWF | + EK model with 5 parameters\n");
-
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1530,7 +2077,8 @@ cs_gwf_tracer_log_setup(const cs_gwf_tracer_t     *tracer)
  * \param[in]    connect   pointer to a \ref cs_cdo_connect_t structure
  * \param[in]    cdoq      pointer to a \ref cs_cdo_quantities_t structure
  * \param[in]    tracer    pointer to a \ref cs_gwf_tracer_t structure
- * \param[in]    z         pointer to a volume zone structure
+ * \param[in]    z_name    name of the volumic zone where the integral is done
+ *                         (if NULL or "" all cells are considered)
  *
  * \return the value of the integral
  */
@@ -1540,190 +2088,28 @@ cs_real_t
 cs_gwf_tracer_integrate(const cs_cdo_connect_t     *connect,
                         const cs_cdo_quantities_t  *cdoq,
                         const cs_gwf_tracer_t      *tracer,
-                        const cs_zone_t            *z)
+                        const char                 *z_name)
 {
-  assert(tracer != NULL);
+  if (tracer == NULL)
+    return 0;
 
-  cs_gwf_tracer_context_t  *tc = tracer->context;
+  const int  z_id = cs_get_vol_zone_id(z_name);
+  const cs_zone_t  *zone = cs_volume_zone_by_id(z_id);
 
-  const cs_equation_param_t  *tr_eqp = cs_equation_get_param(tracer->eq);
-  const short int  *c2s = cs_gwf_get_cell2soil();
-  const cs_real_t  *moisture_val = tc->l_saturation;
-
-  if (moisture_val == NULL)
-    bft_error(__FILE__, __LINE__, 0, " %s: \"moisture_content\" not defined",
+  if (tracer->model & CS_GWF_TRACER_USER)
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid type of tracer.\n",
               __func__);
 
-  cs_real_t  int_value = 0.0;
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
+  assert(tc != NULL);
 
-  switch (tr_eqp->space_scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-    {
-      const cs_real_t  *v_vals = cs_equation_get_vertex_values(tracer->eq,
-                                                               false);
-      const cs_adjacency_t  *c2v = connect->c2v;
-
-      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-
-        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
-
-        cs_real_t  _int_value = 0.;
-        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
-          _int_value += cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
-        }
-
-        int_value +=
-          (moisture_val[c_id] + tc->rho_kd[c2s[c_id]]) * _int_value;
-
-      } /* Loop on selected cells */
-
-    }
-    break; /* CS_SPACE_SCHEME_CDOVB */
-
-  case CS_SPACE_SCHEME_CDOVCB:
-    {
-      const cs_real_t  *v_vals = cs_equation_get_vertex_values(tracer->eq,
-                                                               false);
-      const cs_real_t  *c_vals = cs_equation_get_cell_values(tracer->eq,
-                                                             false);
-      const cs_adjacency_t  *c2v = connect->c2v;
-
-      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-
-        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
-
-        /* Shares between cell and vertex unknowns:
-           - the cell unknown stands for 1/4 of the cell volume
-           - the vertex unknown stands for 3/4 of the dual cell volume
-        */
-
-        cs_real_t  _int_value = 0.25*cdoq->cell_vol[c_id]*c_vals[c_id];
-        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          _int_value += 0.75 * cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
-
-        int_value +=
-          (moisture_val[c_id] + tc->rho_kd[c2s[c_id]]) * _int_value;
-
-      } /* Loop on selected cells */
-
-    }
-    break; /* CS_SPACE_SCHEME_CDOVCB */
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme", __func__);
-    break;
-
-  } /* End of switch */
-
-  /* Parallel synchronization */
-
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(1, CS_REAL_TYPE, &int_value);
-
-  return int_value;
+  if (tracer->hydraulic_model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
+    return _integrate_saturated_tracer(connect, cdoq, tracer->equation, tc,
+                                       zone);
+  else
+    return _integrate_tracer(connect, cdoq, tracer->equation, tc, zone);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the integral over a given set of cells of the field related
- *         to a tracer equation. This integral turns out to be exact for linear
- *         functions.
- *         Case of a fully saturated model.
- *
- * \param[in]    connect   pointer to a \ref cs_cdo_connect_t structure
- * \param[in]    cdoq      pointer to a \ref cs_cdo_quantities_t structure
- * \param[in]    tracer    pointer to a \ref cs_gwf_tracer_t structure
- * \param[in]    z         pointer to a volume zone structure
- *
- * \return the value of the integral
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_gwf_tracer_integrate_sat(const cs_cdo_connect_t     *connect,
-                            const cs_cdo_quantities_t  *cdoq,
-                            const cs_gwf_tracer_t      *tracer,
-                            const cs_zone_t            *z)
-{
-  assert(tracer != NULL);
-
-  cs_gwf_tracer_context_t  *tc = tracer->context;
-
-  const cs_equation_param_t  *tr_eqp = cs_equation_get_param(tracer->eq);
-  const short int  *c2s = cs_gwf_get_cell2soil();
-
-  cs_real_t  int_value = 0.0;
-
-  switch (tr_eqp->space_scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-    {
-      const cs_real_t  *v_vals = cs_equation_get_vertex_values(tracer->eq,
-                                                               false);
-      const cs_adjacency_t  *c2v = connect->c2v;
-
-      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-
-        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
-        const short int  s = c2s[c_id];
-        const cs_real_t  sat_moisture = cs_gwf_soil_get_saturated_moisture(s);
-
-        cs_real_t  _int_value = 0.;
-        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
-          _int_value += cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
-        }
-
-        int_value += (sat_moisture + tc->rho_kd[s]) * _int_value;
-
-      } /* Loop on selected cells */
-
-    }
-    break; /* CS_SPACE_SCHEME_CDOVB */
-
-  case CS_SPACE_SCHEME_CDOVCB:
-    {
-      const cs_real_t  *v_vals = cs_equation_get_vertex_values(tracer->eq,
-                                                               false);
-      const cs_real_t  *c_vals = cs_equation_get_cell_values(tracer->eq,
-                                                             false);
-      const cs_adjacency_t  *c2v = connect->c2v;
-
-      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-
-        const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
-        const short int  s = c2s[c_id];
-        const cs_real_t  sat_moisture = cs_gwf_soil_get_saturated_moisture(s);
-
-        /* Shares between cell and vertex unknowns:
-           - the cell unknown stands for 1/4 of the cell volume
-           - the vertex unknown stands for 3/4 of the dual cell volume
-        */
-
-        cs_real_t  _int_value = 0.25*cdoq->cell_vol[c_id]*c_vals[c_id];
-        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          _int_value += 0.75 * cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
-
-        int_value += (sat_moisture + tc->rho_kd[s]) * _int_value;
-
-      } /* Loop on selected cells */
-
-    }
-    break; /* CS_SPACE_SCHEME_CDOVCB */
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme", __func__);
-    break;
-
-  } /* End of switch */
-
-  /* Parallel synchronization */
-
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(1, CS_REAL_TYPE, &int_value);
-
-  return int_value;
-}
 
 /*----------------------------------------------------------------------------*/
 

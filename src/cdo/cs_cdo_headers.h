@@ -65,6 +65,7 @@
 #include "cs_evaluate.h"
 #include "cs_flag.h"
 #include "cs_gwf.h"
+#include "cs_gwf_param.h"
 #include "cs_gwf_soil.h"
 #include "cs_gwf_tracer.h"
 #include "cs_hho_builder.h"

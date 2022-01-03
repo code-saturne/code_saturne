@@ -31,7 +31,7 @@
 
 #include "cs_advection_field.h"
 #include "cs_equation_system.h"
-#include "cs_gwf.h"
+#include "cs_gwf_param.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -502,14 +502,14 @@ typedef struct {
 } cs_gwf_miscible_two_phase_t;
 
 
-/*! \struct _gwf_t
+/*! \struct cs_gwf_t
  *
  * \brief Main set of parameters/structures to manage the groundwater flow
  *        (GWF) module. This is an explicit definition of the structure
  *        \ref cs_gwf_t
  */
 
-struct _gwf_t {
+typedef struct {
 
   /*!
    * @name Metadata
@@ -560,39 +560,9 @@ struct _gwf_t {
 
   /*!
    * @}
-   * @name Associated tracers
-   * @{
-   *
-   * \var n_tracers
-   * Number of tracers to consider. Each tracer is related to a scalar-valued
-   * transport equation. There is at least an unsteady term and an advection
-   * term. The advection term is linked to the Darcy flux in the liquid phase.
-   *
-   * \var tracers
-   * Array of pointers to the \ref cs_gwf_tracer_t structure which manages each
-   * tracer equation and its related quantities/metadata.
-   *
-   * \var finalize_tracer_setup
-   * This is a function pointer to finalize the setup of a tracer
-   * equation. There is a default pointer but this can be overloaded by a
-   * user-defined function in the case of a user-defined tracer.
-   *
-   * \var add_tracer_terms
-   * This is a function pointer to add non-standard terms in a tracer
-   * equation. There is a default pointer but this can be overloaded by a
-   * user-defined function in the case of a user-defined tracer.
    */
 
-  int                            n_tracers;
-  cs_gwf_tracer_t              **tracers;
-  cs_gwf_tracer_setup_t        **finalize_tracer_setup;
-  cs_gwf_tracer_add_terms_t    **add_tracer_terms;
-
-  /*!
-   * @}
-   */
-
-};
+} cs_gwf_t;
 
 /*============================================================================
  * Public function prototypes

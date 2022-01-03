@@ -33,6 +33,8 @@
 
 #include "cs_base.h"
 #include "cs_equation.h"
+#include "cs_gwf_param.h"
+#include "cs_gwf_priv.h"
 #include "cs_gwf_soil.h"
 #include "cs_gwf_tracer.h"
 
@@ -44,145 +46,9 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/*!
- * \enum cs_gwf_model_type_t
- * \brief Type of system of equation(s) to consider for the physical modelling
- */
-
-typedef enum {
-
-  /*!
-   * \brief Single phase (liquid phase) modelling in a porous media.
-   *
-   * All soils are assumed to be saturated. This yields several simplifications
-   * in the Richards equation governing the water conservation. The Richards
-   * equation is steady. The saturation is constant and there is no relative
-   * permeability.
-   */
-
-  CS_GWF_MODEL_SATURATED_SINGLE_PHASE,
-
-  /*!
-   * \brief Single phase (liquid phase) modelling in a porous media.
-   *
-   * Some soils are not saturated and are described by a more complex model
-   * such as the Van Genuchten-Mualen model. Simplifications made in the case
-   * of \ref CS_GWF_MODEL_SATURATED_SINGLE_PHASE do not hold anymore. Richards
-   * equation is unsteady and there may be a non-linearity to handle according
-   * to the type of soil model. Soil properties such as permeability, soil
-   * capacity and liquid saturation (also called moisture content) are neither
-   * uniform nor steady.
-   */
-
-  CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
-
-  /*!
-   * \brief Two phase flow modelling (gaz and liquid phases) in porous media.
-   *
-   * A Richards-like equation is considered in each phase to take into account
-   * the mass conservation of water and one other component. The component can
-   * be disolved in the liquid phase. No water vapour is taken into
-   * account. Please refer to \ref cs_gwf_miscible_two_phase_t for more details.
-   */
-
-  CS_GWF_MODEL_TWO_PHASE,
-
-  CS_GWF_N_MODEL_TYPES     /*!< Number of predefined models (not a model) */
-
-} cs_gwf_model_type_t;
-
-typedef cs_flag_t  cs_gwf_option_flag_t;
-
-/*!
- * \enum cs_gwf_model_bit_t
- * \brief Elemental modelling choice either from the physical viewpoint or the
- *        numerical viewpoint
- */
-
-typedef enum {
-
-  /* --------  Main physical modelling */
-
-  /*!
-   * \brief Gravitation effects are taken into account in the Richards equation
-   */
-
-  CS_GWF_GRAVITATION                     = 1<< 0, /* =   1 */
-
-  /* --------- Main numerical options */
-
-  /*!
-   * \brief Even if the Richards equation is steady-state, this equation is
-   *        solved at each iteration.
-   */
-
-  CS_GWF_FORCE_RICHARDS_ITERATIONS       = 1<< 6, /* =   64 */
-
-  /*!
-   * \brief Compute the mean-value of the hydraulic head field and subtract
-   *        this mean-value to get a field with zero mean-value. It's important
-   *        to set this flag if no boundary condition is given.
-   */
-
-  CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE = 1<< 7, /* =  128 */
-
-  /*!
-   * \brief Activate a treatment to enforce a Darcy flux to be divergence-free
-   */
-
-  CS_GWF_ENFORCE_DIVERGENCE_FREE         = 1<< 8  /* =  256 */
-
-  /*!
-   * @}
-   */
-
-} cs_gwf_model_bit_t;
-
-/*!
- * @name Flags specifying the kind of post-processing to perform in
- *       the groundwater flow module
- * @{
- *
- * \def CS_GWF_POST_SOIL_CAPACITY
- * \brief Activate the post-processing of the soil capacity (property in front
- *        of the unsteady term in Richards equation)
- *
- * \def CS_GWF_POST_LIQUID_SATURATION
- * \brief Activate the post-processing of the liquid saturation (also nammed
- *        "moisture content" in case of single phase flow)
- *
- * \def CS_GWF_POST_PERMEABILITY
- * \brief Activate the post-processing of the permeability field
- *
- * \def CS_GWF_POST_DARCY_FLUX_BALANCE
- * \brief Compute the overall balance at the different boundaries of
- *        the Darcy flux
- *
- * \def CS_GWF_POST_DARCY_FLUX_DIVERGENCE
- * \brief Compute in each control volume (vertices or cells w.r.t the space
- *        scheme) the divergence of the Darcy flux
- *
- * \def CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY
- * \brief Define a field at boundary faces for the Darcy flux and activate the
- *        post-processing
- */
-
-#define CS_GWF_POST_SOIL_CAPACITY              (1 << 0)
-#define CS_GWF_POST_LIQUID_SATURATION          (1 << 1)
-#define CS_GWF_POST_PERMEABILITY               (1 << 2)
-#define CS_GWF_POST_DARCY_FLUX_BALANCE         (1 << 3)
-#define CS_GWF_POST_DARCY_FLUX_DIVERGENCE      (1 << 4)
-#define CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY     (1 << 5)
-
-/*!
- * @}
- */
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-typedef struct _gwf_t  cs_gwf_t;
 
 /*============================================================================
  * Public function prototypes
@@ -323,16 +189,19 @@ cs_gwf_add_soil(const char                      *z_name,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Add a new equation related to the groundwater flow module
+
  *         This equation is a particular type of unsteady advection-diffusion
- *         reaction eq.
- *         Tracer is advected thanks to the darcian velocity and
- *         diffusion/reaction parameters result from a physical modelling.
- *         Terms solved in the equation are activated according to the settings.
- *         The advection field corresponds to that of the liquid phase.
+ *         reaction equation. Tracer is advected thanks to the darcian velocity
+ *         and diffusion/reaction parameters result from a physical modelling.
+ *         Terms solved in this equation are activated according to predefined
+ *         settings. The advection field corresponds to that of the liquid
+ *         phase.
  *
  * \param[in]  tr_model   physical modelling to consider (0 = default settings)
  * \param[in]  eq_name    name of the tracer equation
  * \param[in]  var_name   name of the related variable
+ *
+ * \return a pointer to the new cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -344,17 +213,19 @@ cs_gwf_add_tracer(cs_gwf_tracer_model_t     tr_model,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Add a new equation related to the groundwater flow module
+ *
  *         This equation is a particular type of unsteady advection-diffusion
- *         reaction eq.
- *         Tracer is advected thanks to the darcian velocity and
- *         diffusion/reaction parameters result from a physical modelling.
- *         Terms are activated according to the settings.
+ *         reaction equation.  Tracer is advected thanks to the darcian
+ *         velocity and diffusion/reaction parameters result from a physical
+ *         modelling. Terms are activated according to predefined settings.
  *         Modelling of the tracer parameters are left to the user
  *
  * \param[in]   eq_name     name of the tracer equation
  * \param[in]   var_name    name of the related variable
  * \param[in]   setup       function pointer (predefined prototype)
  * \param[in]   add_terms   function pointer (predefined prototype)
+ *
+ * \return a pointer to the new cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -363,30 +234,6 @@ cs_gwf_add_user_tracer(const char                  *eq_name,
                        const char                  *var_name,
                        cs_gwf_tracer_setup_t       *setup,
                        cs_gwf_tracer_add_terms_t   *add_terms);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to the cs_gwf_tracer_t structure associated to
- *         the name given as parameter
- *
- * \param[in]  eq_name    name of the tracer equation
- *
- * \return the pointer to a cs_gwf_tracer_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_gwf_tracer_t *
-cs_gwf_tracer_by_name(const char   *eq_name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add new terms if needed (such as diffusion or reaction) to tracer
- *         equations according to the settings
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_add_tracer_terms(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -468,28 +315,6 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
                const cs_time_step_t         *time_step,
                const cs_cdo_connect_t       *connect,
                const cs_cdo_quantities_t    *cdoq);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the integral over a given set of cells of the field related
- *         to a tracer equation. This integral turns out to be exact for linear
- *         functions.
- *
- * \param[in]    connect   pointer to a \ref cs_cdo_connect_t structure
- * \param[in]    cdoq      pointer to a \ref cs_cdo_quantities_t structure
- * \param[in]    tracer    pointer to a \ref cs_gwf_tracer_t structure
- * \param[in]    z_name    name of the volumic zone where the integral is done
- *                         (if NULL or "" all cells are considered)
- *
- * \return the value of the integral
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
-                        const cs_cdo_quantities_t  *cdoq,
-                        const cs_gwf_tracer_t      *tracer,
-                        const char                 *z_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
