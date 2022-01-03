@@ -656,6 +656,12 @@ _dof_meg_vel_profile(cs_lnum_t         n_elts,
       BFT_FREE(flow);
     }
 
+    if (normalization == 1) { /* For mass flow, rescaling is done later,
+                                 and some models assume an initial norm of 1. */
+      mass_flow = v;
+      v = 1.0;
+    }
+
     switch(c->dir_type) {
     case 0:
       {
@@ -694,9 +700,6 @@ _dof_meg_vel_profile(cs_lnum_t         n_elts,
       }
       break;
     }
-
-    if (normalization == 1)
-      mass_flow = v;
 
   }
 
@@ -2307,7 +2310,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           for (int iclass = 0;
                iclass < cm->coal.n_classes_per_coal[icharb];
                iclass++) {
-            int icl = iclass * (*nozppm) * ncharm + ich;
+            int icl = iclass*(*nozppm) * ncharm + ich;
             distch[icl] = boundaries->distch[izone][icharb][iclass];
           }
         }
