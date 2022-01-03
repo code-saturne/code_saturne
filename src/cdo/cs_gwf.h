@@ -156,25 +156,13 @@ cs_gwf_get_adv_field(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the head used in soil updates when an unsaturated
- *         single-phase flow is considered. These values are located at cells.
- *
- * \return a pointer to the requested array of values or NULL if not defined
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_gwf_get_uspf_head_in_law(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Create and add a new cs_gwf_soil_t structure. An initialization by
  *         default of all members is performed.
  *
  * \param[in]  z_name        name of the volume zone corresponding to the soil
  * \param[in]  bulk_density  value of the mass density
  * \param[in]  sat_moisture  value of the saturated moisture content
- * \param[in]  soil_model    type of modelling for the hydraulic behavior
+ * \param[in]  model    type of modelling for the hydraulic behavior
  *
  * \return a pointer to the new allocated soil structure
  */
@@ -184,7 +172,7 @@ cs_gwf_soil_t *
 cs_gwf_add_soil(const char                      *z_name,
                 double                           bulk_density,
                 double                           sat_moisture,
-                cs_gwf_soil_hydraulic_model_t    soil_model);
+                cs_gwf_soil_model_t    model);
 
 /*----------------------------------------------------------------------------*/
 /*!

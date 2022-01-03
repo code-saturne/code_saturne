@@ -251,9 +251,9 @@ cs_user_model(void)
 
     /* saturated anisotropic permeability */
 
-    const double  aniso_val2[3][3] = {{1e-5, 0,    0},
-                                      {   0, 1,    0},
-                                      {   0, 0, 1e-2}};
+    double  aniso_val2[3][3] = {{1e-5, 0,    0},
+                                {   0, 1,    0},
+                                {   0, 0, 1e-2}};
 
     cs_gwf_soil_set_aniso_saturated(s2, aniso_val2);
   }

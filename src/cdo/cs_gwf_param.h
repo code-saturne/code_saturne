@@ -182,7 +182,7 @@ typedef enum {
  * @name Soil modelling
  * @{
  *
- * \enum cs_gwf_soil_hydraulic_model_t
+ * \enum cs_gwf_soil_model_t
  * \brief Predefined hydraulic model of soils used in the groundwater flow
  *        module
  *
@@ -217,7 +217,7 @@ typedef enum {
 
   CS_GWF_SOIL_N_HYDRAULIC_MODELS
 
-} cs_gwf_soil_hydraulic_model_t;
+} cs_gwf_soil_model_t;
 
 /*!
  * @}

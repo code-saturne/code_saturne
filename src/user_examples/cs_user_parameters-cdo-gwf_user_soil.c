@@ -75,19 +75,12 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  double    L;
-  double    k_s;
-  double    h_s;
-  double    h_r;
-  double    theta_s;
-  double    theta_r;
-
-  /* Array of property values (at cells). These are shared arrays. The
-     lifecycle of these arrays is not managed by this structure. */
-
-  cs_real_t  *permeability_values;
-  cs_real_t  *moisture_values;
-  cs_real_t  *capacity_values;
+  double    L;                  /* column length */
+  double    k_s;                /* isotropic saturated permeability */
+  double    h_s;                /* saturated head reference */
+  double    h_r;                /* residual head reference */
+  double    theta_r;            /* residual moisture */
+  double    theta_s;            /* saturated moisture */
 
 } cs_tracy_param_t;
 /*! [param_cdo_gwf_tracy_struct] */
@@ -100,19 +93,19 @@ typedef struct {
 /*!
  * \brief  The prototype of this function should fit the one of the generic
  *         function pointer \ref cs_gwf_soil_update_t
- *         The purpose of this function is to update soil properties such as
- *         the moisture content (liquid saturation), (full) permeability and
- *         the soil capacity.
  *         The model follows in this function has been defined by Tracy
  *         for verification purposes in the case of unsaturated single phase
  *         flows.
+ *         The purpose of this function is to update soil properties such as
+ *         the moisture content (liquid saturation), (full) permeability and
+ *         the soil capacity.
  *
- * \param[in]      t_eval        time at which one performs the evaluation
- * \param[in]      mesh          pointer to a cs_mesh_t structure
- * \param[in]      connect       pointer to a cs_cdo_connect_t structure
- * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
- * \param[in]      zone          pointer to a cs_zone_t
- * \param[in, out] soil_context  pointer to a structure cast on-the-fly
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in]      mesh        pointer to a cs_mesh_t structure
+ * \param[in]      connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      zone        pointer to a cs_zone_t
+ * \param[in, out] soil        pointer to the soil structure to update
  */
 /*----------------------------------------------------------------------------*/
 
@@ -123,36 +116,49 @@ tracy_update(const cs_real_t              t_eval,
              const cs_cdo_connect_t      *connect,
              const cs_cdo_quantities_t   *quant,
              const cs_zone_t             *zone,
-             void                        *soil_context)
+             cs_gwf_soil_t               *soil)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
   CS_UNUSED(t_eval);
 
-  const cs_tracy_param_t  *sc = (cs_tracy_param_t *)soil_context;
+  /* Retrieve the soil parameters */
 
-  cs_real_t  *head_values = cs_gwf_get_uspf_head_in_law();
+  const cs_tracy_param_t  *sp = (cs_tracy_param_t *)soil->param;
 
-  const double  delta_moisture = sc->theta_s - sc->theta_r;
+  /* Retrieve the hydraulic context */
+
+  cs_gwf_unsaturated_single_phase_t  *hc = soil->hydraulic_context;
+
+  /* Additional parameters */
+
+  const cs_real_t  *head_values = hc->head_in_law;
+  const double  delta_m = soil->saturated_moisture - sp->theta_r;
+
+  /* Retrieve field values associated to properties to update */
+
+  cs_real_t  *permeability = hc->permeability_field->val;
+  cs_real_t  *moisture = hc->moisture_field->val;
+  cs_real_t  *capacity = hc->capacity_field->val;
 
   for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
     const cs_lnum_t  c_id = zone->elt_ids[i];
     const cs_real_t  h = head_values[c_id];
-    const cs_real_t  k_r = (h - sc->h_r)/(sc->h_s - sc->h_r);
+    const cs_real_t  k_r = (h - sp->h_r)/(sp->h_s - sp->h_r);
 
     /* Set the permeability value */
 
-    sc->permeability_values[c_id] = sc->k_s * k_r;
+    permeability[c_id] = sp->k_s * k_r;
 
     /* Set the moisture content (Se = 1 in this case)*/
 
-    sc->moisture_values[c_id] = sc->theta_r + k_r * delta_moisture;
+    moisture[c_id] = sp->theta_r + k_r * delta_m;
 
     /* Set the capacity values */
 
-    sc->capacity_values[c_id] = delta_moisture /(sc->h_s - sc->h_r);
+    capacity[c_id] = delta_m /(sp->h_s - sp->h_r);
 
   } /* Loop on selected cells */
 
@@ -162,22 +168,22 @@ tracy_update(const cs_real_t              t_eval,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  The prototype of this function should fit the one of the generic
- *         function pointer \ref cs_gwf_soil_free_context_t
+ *         function pointer \ref cs_gwf_soil_free_param_t
  *         The purpose of this function is to free the context structure
  *         associated to the user-defined model.
  *
- * \param[in,out] p_soil_context  double pointer to a structure cast on-the-fly
+ * \param[in, out] p_soil_param   double pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 /*! [param_cdo_gwf_set_user_free_soil] */
 static void
-tracy_free_context(void         **p_soil_context)
+tracy_free_param(void         **p_soil_param)
 {
-  cs_tracy_param_t  *sc = (cs_tracy_param_t  *)(*p_soil_context);
+  cs_tracy_param_t  *sp = (cs_tracy_param_t *)(*p_soil_param);
 
-  BFT_FREE(sc);
-  *p_soil_context = NULL;
+  BFT_FREE(sp);
+  *p_soil_param = NULL;
 }
 /*! [param_cdo_gwf_set_user_free_soil] */
 
@@ -215,7 +221,7 @@ get_bc(cs_real_t           time,
 
   const double  overL = 1./tp->L;
   const double  dtheta = tp->theta_s - tp->theta_r;
-  const double  td = -5*tp->L*tp->L*dtheta/(6*tp->h_r*tp->k_s);
+  const double  td = -5 * tp->L * tp->L * dtheta /( 6*tp->h_r*tp->k_s );
   const double  alpha = 6 - 5*time/td;
 
   for (cs_lnum_t p = 0; p < n_pts; p++) {
@@ -344,22 +350,16 @@ cs_user_model(void)
   tp->k_s = 1.15741e-4;
   tp->h_s = 0.;
   tp->h_r = -100;
-  tp->theta_s = theta_s;
   tp->theta_r = 0.15;
+  tp->theta_s = theta_s;
 
-  /* Array are set to null since at this stage mesh has not been loaded */
+  /* 2.b Associate the parameter structure and the user-defined functions
+   *     to manage the soil */
 
-  tp->permeability_values = NULL;
-  tp->moisture_values = NULL;
-  tp->capacity_values = NULL;
-
-  /* 2.b Associate the context structure and the user-defined function
-   *     to the soil */
-
-  cs_gwf_soil_set_user(s,                    /* soil structure */
-                       tp,                   /* soil context structure */
-                       tracy_update,         /* function to update the soil */
-                       tracy_free_context);  /* function to free the context */
+  cs_gwf_soil_set_user(s,                  /* soil structure */
+                       tp,                 /* soil parameter structure */
+                       tracy_update,       /* function to update the soil */
+                       tracy_free_param);  /* function to free the structure */
 
   /*! [param_cdo_gwf_add_user_soil] */
 }
@@ -457,38 +457,17 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 
-  /* Final settings for the user-defined soil (at this stage field values have
-     been allocated) */
-
-  /*! [param_cdo_gwf_set_user_soil] */
-
-  /* 1. Retrieve the soil by its name and then its context */
-
-  cs_gwf_soil_t  *soil = cs_gwf_soil_by_name("cells");
-
-  cs_tracy_param_t  *tp = soil->context;
-
-  /* 2. Retrieve field values associated to properties to update */
-
-  cs_field_t  *f = cs_field_by_name("permeability");
-  assert(f != NULL);
-  tp->permeability_values = f->val;
-
-  /* liquid saturation is also called moisture content */
-
-  f = cs_field_by_name("liquid_saturation");
-  assert(f != NULL);
-  tp->moisture_values = f->val;
-
-  f = cs_field_by_name_try("soil_capacity");
-  assert(f != NULL);
-  tp->capacity_values = f->val;
-
-  /*! [param_cdo_gwf_set_user_soil] */
-
   /* Final settings for the Richards equation */
 
   cs_equation_param_t  *eqp = cs_equation_param_by_name("Richards");
+
+  /*! [param_cdo_gwf_get_user_soil] */
+
+  /* 1. Retrieve the soil by its name and then its parameter structure */
+
+  cs_gwf_soil_t  *soil = cs_gwf_soil_by_name("cells");
+
+  cs_tracy_param_t  *tp = soil->param;
 
   /* Define the boundary conditions  */
 
@@ -510,6 +489,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
                                  get_ic,
                                  tp);
 
+  /*! [param_cdo_gwf_get_user_soil] */
 }
 
 /*----------------------------------------------------------------------------*/

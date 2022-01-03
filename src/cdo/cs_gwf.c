@@ -693,11 +693,10 @@ _sspf_finalize_setup(const cs_cdo_connect_t            *connect,
 
   cs_gwf_darcy_flux_define(connect, quant, richards_scheme, mc->darcy);
 
-  /* Set permeability, moisture content and soil capacity according to the soil
-     settings */
+  /* Set the parameter values thanks to the permeability and the moisture
+     content */
 
-  cs_gwf_soil_saturated_set_properties(gw->abs_permeability,
-                                       mc->moisture_content);
+  cs_gwf_soil_saturated_set_param(gw->abs_permeability, mc->moisture_content);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1061,13 +1060,6 @@ _uspf_finalize_setup(const cs_cdo_connect_t              *connect,
   /* Define the soil capacity property using a field */
 
   cs_property_def_by_field(mc->soil_capacity, mc->capacity_field);
-
-  /* Set soil context with array */
-
-  cs_gwf_soil_uspf_set_arrays(mc->head_in_law,
-                              mc->permeability_field->val,
-                              mc->moisture_field->val,
-                              mc->capacity_field->val);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1527,13 +1519,6 @@ _mtpf_finalize_setup(const cs_cdo_connect_t          *connect,
                            mc->diff_hg_eq_array,
                            false,                /* not owner of the array */
                            NULL);                /* no index */
-
-  /* Set soil context with array */
-
-  cs_gwf_soil_mtpf_set_arrays(mc->c_pressure->val,
-                              mc->l_saturation->val,
-                              mc->l_rel_permeability,
-                              mc->g_rel_permeability);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2168,51 +2153,23 @@ cs_gwf_get_adv_field(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the head used in soil updates when an unsaturated
- *         single-phase flow is considered. These values are located at cells.
- *
- * \return a pointer to the requested array of values or NULL if not defined
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_gwf_get_uspf_head_in_law(void)
-{
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-
-  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
-
-  if (gw->model == CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE) {
-
-    cs_gwf_unsaturated_single_phase_t  *mc = gw->model_context;
-
-    return mc->head_in_law;
-  }
-
-  /* In all other cases */
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Create and add a new cs_gwf_soil_t structure. An initialization by
  *         default of all members is performed.
  *
  * \param[in]  z_name        name of the volume zone corresponding to the soil
  * \param[in]  bulk_density  value of the mass density
  * \param[in]  sat_moisture  value of the saturated moisture content
- * \param[in]  soil_model    type of modelling for the hydraulic behavior
+ * \param[in]  model         type of model for the soil behavior
  *
  * \return a pointer to the new allocated soil structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_soil_t *
-cs_gwf_add_soil(const char                      *z_name,
-                double                           bulk_density,
-                double                           sat_moisture,
-                cs_gwf_soil_hydraulic_model_t    soil_model)
+cs_gwf_add_soil(const char                *z_name,
+                double                     bulk_density,
+                double                     sat_moisture,
+                cs_gwf_soil_model_t        model)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
@@ -2225,23 +2182,18 @@ cs_gwf_add_soil(const char                      *z_name,
               " Zone %s related to the same soil is not defined.\n"
               " Stop adding a new soil.", z_name);
 
-  if (gw->model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
-    if (soil_model != CS_GWF_SOIL_SATURATED)
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Invalid type of soil with the general model used.\n"
-                " In a saturated single-phase model, all soils have to be"
-                " of type CS_GWF_SOIL_SATURATED.\n", __func__);
-
   assert(bulk_density > 0);
   assert(sat_moisture > 0);
 
   cs_property_type_t  perm_type = cs_property_get_type(gw->abs_permeability);
 
   cs_gwf_soil_t  *soil = cs_gwf_soil_create(zone,
-                                            soil_model,
+                                            gw->model, /* hydraulic model */
+                                            model,     /* soil model */
                                             perm_type,
                                             sat_moisture,
-                                            bulk_density);
+                                            bulk_density,
+                                            gw->model_context);
 
   return soil;
 }
