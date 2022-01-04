@@ -8,6 +8,9 @@ User changes:
 
 Bug fixes:
 
+- Fix location failure for mapped inlet in some cases
+  (occurred especially at higher rank counts).
+
 - Avoid conversion of other scalars at boundaries where enthalpy is
   prescribed by a temperature value.
 
