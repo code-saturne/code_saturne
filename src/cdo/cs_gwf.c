@@ -1179,6 +1179,8 @@ _mtpf_init_context(cs_property_type_t           pty_type)
 
   mc->l_rel_permeability = NULL;
   mc->g_rel_permeability = NULL;
+  mc->l_capacity = NULL;
+  mc->cell_capillarity_pressure = NULL;
 
   /* Darcy flux (not used up to now) */
 
@@ -1306,6 +1308,8 @@ _mtpf_free_context(cs_gwf_miscible_two_phase_t  **p_mc)
 
   BFT_FREE(mc->l_rel_permeability);
   BFT_FREE(mc->g_rel_permeability);
+  BFT_FREE(mc->l_capacity);
+  BFT_FREE(mc->cell_capillarity_pressure);
 
   BFT_FREE(mc);
   *p_mc = NULL;
@@ -1463,6 +1467,12 @@ _mtpf_finalize_setup(const cs_cdo_connect_t          *connect,
   for (cs_lnum_t i = 0; i < n_cells; i++)
     mc->g_rel_permeability[i] = 1; /* saturated by default */
 
+  BFT_MALLOC(mc->l_capacity, n_cells, cs_real_t);
+  memset(mc->l_capacity, 0, sizeof(cs_real_t)*n_cells);
+
+  BFT_MALLOC(mc->cell_capillarity_pressure, n_cells, cs_real_t);
+  memset(mc->cell_capillarity_pressure, 0, sizeof(cs_real_t)*n_cells);
+
   /* Define the array storing the time property for the water eq. */
 
   BFT_MALLOC(mc->time_w_eq_array, n_cells, cs_real_t);
@@ -1599,10 +1609,6 @@ _mtpf_updates(const cs_mesh_t                 *mesh,
               bool                             cur2prev,
               cs_gwf_miscible_two_phase_t     *mc)
 {
-  CS_UNUSED(mesh);
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
-
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw != NULL && mc != NULL);
 
@@ -1612,20 +1618,36 @@ _mtpf_updates(const cs_mesh_t                 *mesh,
 
   cs_param_space_scheme_t space_scheme = cs_equation_get_space_scheme(mc->w_eq);
 
+  /* New pressure values for the liquid and the gas have been computed */
+
   const cs_real_t  *l_pr = mc->l_pressure->val;
   const cs_real_t  *g_pr = mc->g_pressure->val;
-  cs_real_t  *c_pr = mc->c_pressure->val;
 
   /* Update the capillary pressure: P_c = P_g - P_l */
 
-  if (cur2prev)
+  if (cur2prev) {
+
     cs_field_current_to_previous(mc->c_pressure);
+    cs_field_current_to_previous(mc->l_saturation);
+
+  }
+
+  cs_real_t  *c_pr = mc->c_pressure->val;
 
   switch (space_scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
+    /* Compute the value at vertices */
+
     for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
       c_pr[i] = g_pr[i] - l_pr[i];
+
+    /* Now interpolate the vertex values to the cell values. the capillarity
+       pressure at cells is the one used to update quantities related to a soil
+       model */
+
+    cs_reco_pv_at_cell_centers(connect->c2v, quant, c_pr,
+                               mc->cell_capillarity_pressure);
     break;
 
   default:
@@ -1633,38 +1655,19 @@ _mtpf_updates(const cs_mesh_t                 *mesh,
 
   }
 
-/*   /\* Update properties related to soils (water_saturation, water/gaz permeabilities, */
-/*      compressibility coefficients *\/ */
+  /* Update properties related to soils:
+   * - l_rel_permeability, g_rel_permeability
+   * - liquid_saturation
+   * - capacity: \frac{\partial S_l}{\partial P_c}
+   */
 
-/*   if (cur2prev) { */
-/*     cs_field_current_to_previous(gw->permea_field); */
-/*     cs_field_current_to_previous(mc->gcomp_permea_field); */
-/*     cs_field_current_to_previous(mc->water_pressure); */
-/*     cs_field_current_to_previous(mc->l_saturation); */
-/*   } */
+  cs_gwf_soil_update(time_eval, mesh, connect, quant);
 
-/*   const cs_equation_t  *w_eq = mc->w_eq; */
-/*   const cs_field_t  *capillary_pressure = cs_equation_get_field(w_eq); */
+  /* TODO: Update the Darcy advection field for the liquid and the gas phase */
 
-/*   const int n_soils = cs_gwf_get_n_soils(); */
-/*   for (int i = 0; i < n_soils; i++) { */
+  /* Update arrays associated to property terms */
 
-/*     cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(i); */
-/*     const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id); */
-
-/*     // Update soil properties in soil struct TO BE EDITED */
-/*     soil->update_properties(time_eval, mesh, connect, quant, */
-/*                             capillary_pressure->val, */
-/*                             zone, */
-/*                             soil->input); */
-
-/*   } /\* Loop on soils *\/ */
-
-/* /\* #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1 *\/ */
-/* /\*   cs_dbg_darray_to_listing("MOISTURE_CONTENT", *\/ */
-/* /\*                            quant->n_cells, *\/ */
-/* /\*                            mc->moisture_field->val, 8); *\/ */
-/* /\* #endif *\/ */
+  cs_gwf_soil_update_mtpf_terms(mesh, connect, quant, mc);
 
   return time_eval;
 }
@@ -2072,7 +2075,7 @@ cs_gwf_set_two_phase_model(cs_real_t       l_mass_density,
   assert(mc != NULL);
   assert(l_mass_density > 0);
   assert(ref_temperature > 0);  /* In Kelvin */
-  assert(w_molar_mass > 0 && h_molar_mass > 0);
+  assert(h_molar_mass > 0);
   assert(l_viscosity > 0 && g_viscosity > 0);
 
   /* Set the parameters */
@@ -2883,6 +2886,22 @@ cs_gwf_extra_post_mtpf(void                      *input,
       }
 
     } /* Post-processing of the divergence is requested */
+
+    if (gw->post_flag & CS_GWF_POST_SOIL_CAPACITY) {
+
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_DEFAULT,
+                        "l_capacity",
+                        1,
+                        true,
+                        false,
+                        CS_POST_TYPE_cs_real_t,
+                        mc->l_capacity,
+                        NULL,
+                        NULL,
+                        time_step);
+
+    }
 
     if (gw->post_flag & CS_GWF_POST_PERMEABILITY) {
 

@@ -1038,5 +1038,35 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update arrays associated to the definition of terms involved in the
+ *         miscible two-phase flow model
+ *
+ * \param[in]      mesh          pointer to the mesh structure
+ * \param[in]      connect       pointer to the cdo connectivity
+ * \param[in]      quant         pointer to the cdo quantities
+ * \param[in, out] mc            pointer to the model context to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_update_mtpf_terms(const cs_mesh_t              *mesh,
+                              const cs_cdo_connect_t       *connect,
+                              const cs_cdo_quantities_t    *quant,
+                              cs_gwf_miscible_two_phase_t  *mc)
+{
+  if (mc == NULL)
+    return;
+
+
+  for (int i = 0; i < _n_soils; i++) {
+
+    cs_gwf_soil_t  *soil = _soils[i];
+    assert(soil != NULL);
+
+  } /* Loop on soils */
+
+}
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

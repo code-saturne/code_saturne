@@ -377,19 +377,21 @@ typedef struct {
    * @{
    *
    * \var l_saturation
-   * Pointer to a \ref cs_field_t structure. Liquid saturation at cells.
+   *      Pointer to a \ref cs_field_t structure. Liquid saturation at cells.
+   *      This quantity is denoted by \f$ S_l \f$ and is defined by the soil
+   *      model
    *
    * \var c_pressure
-   * Pointer to a \ref cs_field_t structure named "capillarity_pressure".
-   * Capillarity pressure P_c = P_g - P_l
+   *      Pointer to a \ref cs_field_t structure named "capillarity_pressure".
+   *      Capillarity pressure \f$ P_c = P_g - P_l \f$
    *
    * \var l_pressure
-   * Pointer to a \ref cs_field_t structure named "liquid_pressure".
-   * Pressure in the liquid phase is denoted by P_l.
+   *      Pointer to a \ref cs_field_t structure named "liquid_pressure".
+   *      Pressure in the liquid phase is denoted by \f$ P_l \f$.
    *
    * \var g_pressure
-   * Pointer to a \ref cs_field_t structure named "gas_pressure".
-   * Pressure in the gas phase is denoted by P_g.
+   *      Pointer to a \ref cs_field_t structure named "gas_pressure".
+   *      Pressure in the gas phase is denoted by \f$ P_g \f$.
    */
 
   cs_field_t                   *l_saturation;
@@ -403,41 +405,55 @@ typedef struct {
    * @{
    *
    * \var time_w_eq_array
-   * Values in each cell of the coefficient appearing in front of the unsteady
-   * term in the water conservation equation. This array is linked to the
-   * \ref time_w_eq_pty (size = n_cells)
+   *      Values in each cell of the coefficient appearing in front of the
+   *      unsteady term in the water conservation equation. This array is
+   *      linked to the \ref time_w_eq_pty (size = n_cells)
    *
    * \var diff_w_eq_array
-   * Values in each cell of the coefficient appearing in the diffusion
-   * term in the water conservation equation. This array is linked to the
-   * \ref diff_w_eq_pty (size = n_cells)
+   *      Values in each cell of the coefficient appearing in the diffusion
+   *      term in the water conservation equation. This array is linked to the
+   *      \ref diff_w_eq_pty (size = n_cells)
    *
    * \var time_h_eq_array
-   * Values in each cell of the coefficient appearing in front of the unsteady
-   * term in the hydrogen conservation equation. This array is linked to the
-   * \ref time_h_eq_pty (size = n_cells)
+   *      Values in each cell of the coefficient appearing in front of the
+   *      unsteady term in the hydrogen conservation equation. This array is
+   *      linked to the \ref time_h_eq_pty (size = n_cells)
    *
    * \var diff_hl_eq_array
-   * Values in each cell of the coefficient appearing in the diffusion
-   * term for the liquid phase in the hydrogen conservation equation.
-   * This array is linked to the \ref diff_hl_eq_pty (size = n_cells)
+   *      Values in each cell of the coefficient appearing in the diffusion
+   *      term for the liquid phase in the hydrogen conservation equation.
+   *      This array is linked to the \ref diff_hl_eq_pty (size = n_cells)
    *
    * \var diff_hg_eq_array
-   * Values in each cell of the coefficient appearing in the diffusion
-   * term for the gas phase in the hydrogen conservation equation.
-   * This array is linked to the \ref diff_hl_eq_pty (size = n_cells)
+   *      Values in each cell of the coefficient appearing in the diffusion
+   *      term for the gas phase in the hydrogen conservation equation.  This
+   *      array is linked to the \ref diff_hl_eq_pty (size = n_cells)
    *
    * \var l_rel_permeability
-   * Values in each cell of the relative permeability in the liquid phase.
-   * This quantity is used either in the water conservation or in the hydrogen
-   * conservation. This enables also to recover the (full) permeability in the
-   * liquid phase since permeability = abs_permeability * rel_l_permeability
+   *      Values in each cell of the relative permeability in the liquid phase.
+   *      This quantity is used either in the water conservation or in the
+   *      hydrogen conservation. This enables also to recover the (full)
+   *      permeability in the liquid phase since
+   *      permeability = abs_permeability * rel_l_permeability
+   *      This quantity is defined by the soil model.
    *
    * \var g_rel_permeability
-   * Values in each cell of the relative permeability in the gas phase.  This
-   * quantity is used either in the water conservation or in the hydrogen
-   * conservation. This enables also to recover the (full) permeability in the
-   * gas phase since permeability = abs_permeability * rel_l_permeability
+   *      Values in each cell of the relative permeability in the gas phase.
+   *      This quantity is used either in the water conservation or in the
+   *      hydrogen conservation. This enables also to recover the (full)
+   *      permeability in the gas phase since
+   *      permeability = abs_permeability * rel_l_permeability
+   *      This quantity is defined by the soil model.
+   *
+   * \var l_capacity
+   *      Values in each cell of the soil capacity defined as
+   *      \f$ \frac{\partial S_l}{\partial P_c} \f$
+   *      This quantity is defined by the soil model.
+   *
+   * \var cell_capillarity_pressure
+   *      Values in each cell of the capillarity pressure. This quantity is the
+   *      one used to update the variable related to a soil model such as the
+   *      liquid and gas relative permeabilities or the liquid saturation.
    */
 
   cs_real_t                    *time_w_eq_array;
@@ -448,6 +464,8 @@ typedef struct {
 
   cs_real_t                    *l_rel_permeability;
   cs_real_t                    *g_rel_permeability;
+  cs_real_t                    *l_capacity;
+  cs_real_t                    *cell_capillarity_pressure;
 
   /*!
    * @}
@@ -455,35 +473,36 @@ typedef struct {
    * @{
    *
    * \var l_mass_density
-   * Mass density in the liquid phase. With the model assumptions, this
-   * corresponds to the mass density of the main component in the liquid phase
-   * (e.g. water) in kg.m^-3
+   *      Mass density in the liquid phase. With the model assumptions, this
+   *      corresponds to the mass density of the main component in the liquid
+   *      phase (e.g. water) in kg.m^-3
    *
    * \var l_viscosity
-   * Viscosity in the liquid phase (assumed to be constant) in Pa.s
+   *      Viscosity in the liquid phase (assumed to be constant) in Pa.s
    *
    * \var g_viscosity
-   * Viscosity in the gas phase (assumed to be constant) in Pa.s
+   *      Viscosity in the gas phase (assumed to be constant) in Pa.s
    *
    * \var w_molar_mass
-   * Molar mass of the main component in the liquid phase (e.g. water) in
-   * kg.mol^-1
+   *      Molar mass of the main component in the liquid phase (e.g. water) in
+   *      kg.mol^-1
    *
    * \var h_molar_mass
-   * Molar mass of the main component in the gas phase (e.g. hydrogen) in
-   * kg.mol^-1
+   *      Molar mass of the main component in the gas phase (e.g. hydrogen) in
+   *      kg.mol^-1
    *
    * \var l_diffusivity_h
-   * Molecular diffusivity of the hydrogen in the liquid phase in m^2.s^-1
+   *      Molecular diffusivity of the hydrogen in the liquid phase in m^2.s^-1
    *
    * \var ref_temperature
-   * Reference temperature used in the "perfect gas" law (this is used when no
-   * thermal equation is solved). One expects a temperature in Kelvin.
+   *      Reference temperature used in the "perfect gas" law (this is used
+   *      when no thermal equation is solved). One expects a temperature in
+   *      Kelvin.
    *
    * \var henry_constant
-   * Value of the Henry constant used in the Henry's law. Setting a very low
-   * value for this constant enables the model to degenerate into an immiscible
-   * model.
+   *      Value of the Henry constant used in the Henry's law. Setting a very
+   *      low value for this constant enables the model to degenerate into an
+   *      immiscible model.
    */
 
   cs_real_t                     l_mass_density;
@@ -516,15 +535,15 @@ typedef struct {
    * @{
    *
    * \var model
-   * Model used to describe the behavior of the flow in the GWF module (system
-   * of equations related to the chosen physical modelling). See \ref
-   * cs_gwf_model_type_t for more details on each model
+   *      Model used to describe the behavior of the flow in the GWF module
+   *      (system of equations related to the chosen physical modelling). See
+   *      \ref cs_gwf_model_type_t for more details on each model
    *
    * \var flag
-   * Flag dedicated to general options to handle the GWF module
+   *      Flag dedicated to general options to handle the GWF module
    *
    * \var post_flag
-   * Flag dedicated to the (automatic) post-processing of the GWF module
+   *      Flag dedicated to the (automatic) post-processing of the GWF module
    */
 
   cs_gwf_model_type_t           model;
@@ -537,11 +556,11 @@ typedef struct {
    * @{
    *
    * \var abs_permeability
-   * Absolute (or intrinsic) permeability which characterizes the behavior of a
-   * soil. According to the model of soil, this absolute permeability can be
-   * weigthed by a relative (scalar-valued) permeability. In the simplest case
-   * (saturated soil) the relative permeability is useless since this is equal
-   * to 1 (no weigth).
+   *      Absolute (or intrinsic) permeability which characterizes the behavior
+   *      of a soil. According to the model of soil, this absolute permeability
+   *      can be weigthed by a relative (scalar-valued) permeability. In the
+   *      simplest case (saturated soil) the relative permeability is useless
+   *      since this is equal to 1 (no weigth).
    */
 
   cs_property_t                *abs_permeability;
@@ -552,8 +571,8 @@ typedef struct {
    * @{
    *
    * \var model_context
-   * Pointer to a structure cast on-the-fly which depends on the choice of
-   * model (for instance single-phase or two-phase flows in porous media)
+   *      Pointer to a structure cast on-the-fly which depends on the choice of
+   *      model (for instance single-phase or two-phase flows in porous media)
    */
 
   void                         *model_context;
