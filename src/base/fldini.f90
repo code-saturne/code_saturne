@@ -202,38 +202,33 @@ if (itytur.eq.4 .and. idries.eq.1) then
   call field_find_or_create('ustar', itycat, ityloc, idim1, f_id)
 endif
 
-! Interior face head loss field
-!-------------------------
+if (staggered.eq.1) then
 
-itycat = FIELD_PROPERTY
-ityloc = 2 ! inner faces
+  ! Head loss on interior faces
 
-! Head loss on interior faces
-f_name = 'inner_face_head_loss'
+  itycat = FIELD_PROPERTY
+  ityloc = 2 ! inner faces
+  f_name = 'inner_face_head_loss'
 
-call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+  call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 
-! Boundary face head loss field
-!-------------------------
+  ! Head loss on boundary faces
 
-itycat = FIELD_PROPERTY
-ityloc = 3 ! boundary faces
+  itycat = FIELD_PROPERTY
+  ityloc = 3 ! boundary faces
+  f_name = 'boundary_face_head_loss'
 
-! Head loss on interior faces
-f_name = 'boundary_face_head_loss'
+  call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 
-call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+  ! Source term on interior faces
 
-! Interior face source term field
-!-------------------------
+  itycat = FIELD_PROPERTY
+  ityloc = 2 ! inner faces
+  f_name = 'inner_face_source_term'
 
-itycat = FIELD_PROPERTY
-ityloc = 2 ! inner faces
+  call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 
-! Source term on interior faces
-f_name = 'inner_face_source_term'
-
-call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+endif
 
 ! Interior mass flux field
 !-------------------------
