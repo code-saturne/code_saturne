@@ -490,14 +490,14 @@ if (itrfin.eq.1 .and. itrfup.eq.1) then
 
 endif
 
+! For internal coupling, set itypfb to wall function by default
+! if not set by the user
+call cs_internal_coupling_bcs(itypfb)
+
 ! Radiative transfer: add contribution to energy BCs.
 if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
   call cs_rad_transfer_bcs(nvar, itypfb, icodcl, dt, rcodcl)
 endif
-
-! For internal coupling, set itypfb to wall function by default
-! if not set by the user
-call cs_internal_coupling_bcs(itypfb)
 
 ! Convert temperature to enthalpy for Dirichlet conditions
 
