@@ -8,6 +8,12 @@ User changes:
 
 Bug fixes:
 
+- Avoid conversion of other scalars at boundaries where enthalpy is
+  prescribed by a temperature value.
+
+- Avoid memory leak using a GUI-defined mathematical expression for
+  inlet velocity direction.
+
 - Fix some convergence test for meteo preprocessor.
 
 - Fix crashes using Coriolis source terms (icorio) option.
