@@ -262,8 +262,10 @@ cs_lagr_resuspension(void)
       cs_real_t press_out = cs_glob_lagr_extra_module->pressure->val[c_id1];
       cs_real_t press_in = cs_glob_lagr_extra_module->pressure->val[c_id2];
 
-      cs_real_t fpres = (press_out - press_in) * cs_math_pi * pow(p_diam, 2) * 0.25
-        * cs_lagr_particle_get_real(part, p_am, CS_LAGR_FOULING_INDEX);
+      cs_real_t fpres =   (press_out - press_in)
+                        * cs_math_pi * cs_math_pow2(p_diam) * 0.25
+                        * cs_lagr_particle_get_real(part, p_am,
+                                                    CS_LAGR_FOULING_INDEX);
 
       /* Resuspension criterion: Fgrav + Fpres < 0 */
       if ((fgrav + fpres) < 0.) {
@@ -288,7 +290,8 @@ cs_lagr_resuspension(void)
 
         /* if the number of great asperities   */
         /* is null it is marked for a possible collision */
-        if (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) == 0)
+        if (cs_lagr_particle_get_lnum(part, p_am,
+                                      CS_LAGR_N_LARGE_ASPERITIES) == 0)
           test_colli = 1;
 
         cs_real_t disp_norm
@@ -307,8 +310,8 @@ cs_lagr_resuspension(void)
               && cs_lagr_particle_get_lnum(part, p_am,
                                            CS_LAGR_N_LARGE_ASPERITIES) > 0) {
 
-          cs_real_t kinetic_energy =  0.5 * p_mass
-                                   * cs_math_3_dot_product(part_vel, part_vel);
+            cs_real_t kinetic_energy
+              =  0.5 * p_mass * cs_math_3_dot_product(part_vel, part_vel);
 
             if (kinetic_energy > adhesion_energ) {
 
@@ -403,7 +406,7 @@ cs_lagr_resuspension(void)
                     * cs_glob_mesh_quantities->b_face_normal[face_id * 3 +id];
                 }
 
-                /* Update of the number and weight of resuspended particles     */
+                /* Update of the number and weight of resuspended particles */
                 p_set->n_part_resusp += 1;
                 p_set->weight_resusp += p_stat_weight;
 
@@ -416,7 +419,8 @@ cs_lagr_resuspension(void)
 
               }
 
-              if (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) == 0)
+              if (cs_lagr_particle_get_lnum(part, p_am,
+                                            CS_LAGR_N_LARGE_ASPERITIES) == 0)
                 test_colli = 1;
 
             }
@@ -429,8 +433,8 @@ cs_lagr_resuspension(void)
 
       }
     } /* Enf of monolayer resuspension */
-       else if (    cs_glob_lagr_model->clogging == 1
-                 && bound_stat[face_id + n_faces * lag_bi->ihdepm] >= diam_mean) {
+    else if (    cs_glob_lagr_model->clogging == 1
+             && bound_stat[face_id + n_faces * lag_bi->ihdepm] >= diam_mean) {
 
       /* Treatment of multilayer resuspension */
 
@@ -454,8 +458,9 @@ cs_lagr_resuspension(void)
           cluster_spacing = sqrt( 2.0 * norm_face /
                                   bound_stat[face_id + n_faces * lag_bi->inclg] );
 
-        cs_real_t disp_norm = cs_lagr_particle_get_real(part, p_am,
-                                                        CS_LAGR_DISPLACEMENT_NORM);
+        cs_real_t disp_norm
+          = cs_lagr_particle_get_real(part, p_am,
+                                      CS_LAGR_DISPLACEMENT_NORM);
 
         cs_lnum_t ndiam = (cs_lnum_t)(disp_norm / cluster_spacing);
 
@@ -493,14 +498,17 @@ cs_lagr_resuspension(void)
             cs_random_poisson(1, ncont_pp, &ncont);
           }
           ncont = CS_MAX(1, ncont);
-          cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES, ncont);
+          cs_lagr_particle_set_lnum(part, p_am, CS_LAGR_N_SMALL_ASPERITIES,
+                                    ncont);
 
           adhes_energ *= ncont;
           adhes_force *= ncont ;
-          cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE, adhes_force);
+          cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_FORCE,
+                                    adhes_force);
 
           adhes_torque = adhes_force * p_diam * 0.5;
-          cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE, adhes_torque);
+          cs_lagr_particle_set_real(part, p_am, CS_LAGR_ADHESION_TORQUE,
+                                    adhes_torque);
 
           if (kinetic_energy > adhesion_energ) {
 
@@ -546,7 +554,6 @@ cs_lagr_resuspension(void)
         }
 
       }
-
 
     } /* End of multilayer resuspension */
 
