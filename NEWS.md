@@ -3,6 +3,9 @@ Release 7.1.1 (not released yet)
 
 Bug fixes:
 
+- Time moments: fix activation of logging and postprocessing output
+  using GUI defaults.
+
 - Avoid conversion of other scalars at boundaries where enthalpy is
   prescribed by a temperature value.
 

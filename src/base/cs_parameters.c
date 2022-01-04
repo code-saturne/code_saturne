@@ -1532,7 +1532,7 @@ cs_parameters_output_complete(void)
           cs_field_set_key_int(f, k_vis, flag);
         }
         if (cs_field_is_key_set(f, k_log) == false)
-          cs_field_set_key_int(f, k_vis, 1);
+          cs_field_set_key_int(f, k_log, 1);
       }
     }
   }
