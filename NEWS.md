@@ -3,6 +3,12 @@ Release 7.1.1 (not released yet)
 
 Bug fixes:
 
+- Avoid conversion of other scalars at boundaries where enthalpy is
+  prescribed by a temperature value.
+
+- Avoid memory leak using a GUI-defined mathematical expression for
+  inlet velocity direction.
+
 - Fix logging of compilation messages, which appeared in the
   calling terminal instead of `compile.log`.
 

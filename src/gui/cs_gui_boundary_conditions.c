@@ -482,7 +482,7 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
           possibly_incomplete = true;
 
         /* T to H conversion not handled using xdef yet. */
-        if (boundaries->t_to_h[izone]) {
+        if (cnv != NULL && boundaries->t_to_h[izone]) {
           boundaries->type_code[f_id][izone] = DIRICHLET_CNV;
           boundaries->values[f_id][izone * dim + i].val1 = v[0];
         }
@@ -2092,6 +2092,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
             for (int i = 0; i < 3; i++)
               rcodcl[(ivarv + i) * n_b_faces + face_id] = x[i] * norm;
           }
+
+          BFT_FREE(norm_vals);
         }
 
         BFT_FREE(xvals);
