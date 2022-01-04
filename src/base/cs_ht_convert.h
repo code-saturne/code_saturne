@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_zone.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -106,6 +107,25 @@ cs_ht_convert_h_to_t_faces(const cs_real_t  h[],
 void
 cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
                              const cs_lnum_t  face_ids[],
+                             const cs_real_t  t[],
+                             cs_real_t        h[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert temperature to enthalpy for a given boundary zone,
+ *        using dense storage for temperature and enthalpy arrays.
+ *
+ * This handles both user and model enthalpy conversions, so can be used
+ * safely whenever conversion is needed.
+ *
+ * \param[in]   z  pointer to selected zone.
+ * \param[in]   t  temperature values
+ * \param[out]  h  enthalpy values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
                              const cs_real_t  t[],
                              cs_real_t        h[]);
 

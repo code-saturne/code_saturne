@@ -61,6 +61,7 @@
 #include "cs_gui_util.h"
 #include "cs_gui.h"
 #include "cs_gui_specific_physics.h"
+#include "cs_ht_convert.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
@@ -103,12 +104,10 @@ BEGIN_C_DECLS
 
 typedef enum {
   BY_XDEF = -1,           /* to mark usage of newer system */
-  DIRICHLET_CNV,
   DIRICHLET_FORMULA,
   DIRICHLET_IMPLICIT,
   EXCHANGE_COEFF,
   EXCHANGE_COEFF_FORMULA,
-  FLOW1,
   HYDRAULIC_DIAMETER,
   NEUMANN_FORMULA,
   NEUMANN_IMPLICIT,
@@ -159,7 +158,6 @@ typedef struct {
   cs_val_t     **values;   /* fortran array RCODCL mapping */
   double      ***distch;   /* ratio for each coal */
   double        *rough;    /* roughness size */
-  bool          *t_to_h;   /* convert Enthalpy to temperature */
   bool        **scalar_e;     /* formula for scalar (neumann, dirichlet or
                                  exchange coefficient) */
   bool         *head_loss_e;  /* formula for head loss (free inlet/outlet) */
@@ -169,8 +167,8 @@ typedef struct {
 
 } cs_gui_boundary_t;
 
-/* MEG contexts associated to various cases
-   ---------------------------------------- */
+/* xdef contexts associated to various cases
+   ----------------------------------------- */
 
 /*! Arguments passed by context pointer to cs_meg_* functions */
 
@@ -182,6 +180,16 @@ typedef struct {
   const  char         *condition;   /*<! Pointer to condition name type */
 
 } cs_gui_boundary_meg_context_t;
+
+/*! Arguments passed by context pointer using "per zone" values */
+
+typedef struct {
+
+  const  cs_zone_t    *zone;        /*<! Pointer to zone */
+
+  cs_real_t            val;         /*<! Associated value */
+
+} cs_gui_boundary_const_context_t;
 
 /*! Arguments passed by context pointer for velocity inlet */
 
@@ -226,13 +234,46 @@ static void  **_b_contexts = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add new MEG context info.
+ * \brief Add new constant value-based cs_dof_func_t context info.
+ *
+ * \param[in]  zone      pointer to associated zone
+ * \param[in]  val       associated value
+ *
+ * \return: pointer to cs_dof_func_t context info
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_gui_boundary_const_context_t *
+_add_boundary_const_context(const  cs_zone_t   *zone,
+                            cs_real_t           val)
+{
+  BFT_REALLOC(_b_contexts,
+              _n_b_contexts+1,
+              void *);
+
+  cs_gui_boundary_const_context_t  *c = NULL;
+  BFT_MALLOC(c, 1, cs_gui_boundary_const_context_t);
+
+  c->zone = zone;
+  c->val = val;
+
+  /* Now set in structure */
+
+  _b_contexts[_n_b_contexts] = c;
+  _n_b_contexts += 1;
+
+  return c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add new MEG-based cs_dof_func_t context info.
  *
  * \param[in]  zone      pointer to associated zone
  * \param[in]  fields    array of field pointers
  * \param[in]  n_fields  number gof field pointers
  *
- * \return: pointer to MEG context info
+ * \return: pointer to cs_dof_func_t context info
  */
 /*----------------------------------------------------------------------------*/
 
@@ -900,6 +941,133 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute the Enthalpy at boundary faces
+ *        using a constant zone temperature.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_const_t2h_profile(cs_lnum_t         n_elts,
+                       const cs_lnum_t  *elt_ids,
+                       bool              dense_output,
+                       void             *input,
+                       cs_real_t        *retval)
+{
+  cs_gui_boundary_const_context_t  *c
+    = (cs_gui_boundary_const_context_t *)input;
+
+  assert(n_elts == c->zone->n_elts && elt_ids == c->zone->elt_ids);
+
+  cs_real_t t_val = c->val;
+
+  if (dense_output) {
+    cs_real_t *t_l;
+    BFT_MALLOC(t_l, n_elts, cs_real_t);
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      t_l[i] = t_val;
+    }
+
+    cs_ht_convert_t_to_h_faces_z(c->zone, t_l, retval);
+
+    BFT_FREE(t_l);
+  }
+
+  else {
+    const cs_mesh_t *m = cs_glob_mesh;
+
+    cs_real_t *t_b;
+    BFT_MALLOC(t_b, m->n_b_faces, cs_real_t);
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+      t_b[elt_id] = t_val;
+    }
+
+    cs_ht_convert_t_to_h_faces_l(n_elts,
+                                 elt_ids,
+                                 t_b,
+                                 retval);
+    BFT_FREE(t_b);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute the Enthalpy at boundary faces
+ *        using a temperature MEG generated profile.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_meg_t2h_profile(cs_lnum_t         n_elts,
+                     const cs_lnum_t  *elt_ids,
+                     bool              dense_output,
+                     void             *input,
+                     cs_real_t        *retval)
+{
+  cs_gui_boundary_meg_context_t  *c
+    = (cs_gui_boundary_meg_context_t *)input;
+
+  assert(strcmp(c->field_name, "enthalpy") == 0);
+
+  assert(n_elts == c->zone->n_elts && elt_ids == c->zone->elt_ids);
+
+  cs_real_t *t_loc = cs_meg_boundary_function(c->zone,
+                                              "temperature",
+                                              c->condition);
+
+  if (dense_output)
+    cs_ht_convert_t_to_h_faces_z(c->zone, t_loc, retval);
+
+  else {
+
+    const cs_mesh_t *m = cs_glob_mesh;
+
+    cs_real_t *t_b;
+    BFT_MALLOC(t_b, m->n_b_faces, cs_real_t);
+
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+      t_b[elt_id] = t_loc[i];
+    }
+
+    cs_ht_convert_t_to_h_faces_l(n_elts,
+                                 elt_ids,
+                                 t_b,
+                                 retval);
+
+    BFT_FREE(t_b);
+
+  }
+
+  BFT_FREE(t_loc);
+}
+
 /*-----------------------------------------------------------------------------
  * Value of velocity for sliding wall.
  *
@@ -1004,9 +1172,7 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
   const char *cnv = cs_tree_node_get_tag(tn_s, "convert");
 
   if (cnv != NULL) {
-    if (f == CS_F_(h) && strcmp(cnv, "temperature") == 0)
-      boundaries->t_to_h[izone] = true;
-    else
+    if (f != CS_F_(h) || strcmp(cnv, "temperature") != 0)
       bft_error
         (__FILE__, __LINE__, 0,
          _("%s: conversion for field %s from variable %s not handled."),
@@ -1047,12 +1213,6 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
         }
         else
           possibly_incomplete = true;
-
-        /* T to H conversion not handled using xdef yet. */
-        if (boundaries->t_to_h[izone]) {
-          boundaries->type_code[f_id][izone] = DIRICHLET_CNV;
-          boundaries->values[f_id][izone * dim + i].val1 = v[0];
-        }
       }
       else if (! strcmp(choice, "neumann")) {
         const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
@@ -1063,7 +1223,29 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
       else if (! strcmp(choice, "dirichlet_formula")) {
 
         const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
-        if (s != NULL) {
+
+        if (s != NULL && i == 0) {
+
+          const cs_zone_t *z = cs_boundary_zone_by_id(izone + 1);
+
+          cs_gui_boundary_meg_context_t  *c
+            = _add_boundary_meg_context(z, f->name, choice);
+
+          if (f == CS_F_(h) && cs_gui_strcmp(cnv, "temperature"))
+            cs_equation_add_bc_by_dof_func(eqp,
+                                           CS_PARAM_BC_DIRICHLET,
+                                           z->name,
+                                           cs_flag_boundary_face,
+                                           _dof_meg_t2h_profile,
+                                           c);
+
+          else {
+            boundaries->type_code[f_id][izone] = DIRICHLET_FORMULA;
+            boundaries->scalar_e[f_id][izone * dim + i] = true;
+          }
+
+        }
+        else if (s != NULL) {
           boundaries->type_code[f_id][izone] = DIRICHLET_FORMULA;
           boundaries->scalar_e[f_id][izone * dim + i] = true;
         }
@@ -1114,7 +1296,7 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
 
   /* Now define appropriate equation parameters */
 
-  if (choice != NULL && cnv == NULL) {
+  if (choice != NULL) {
 
     if (! strcmp(choice, "dirichlet")) {
 
@@ -1122,12 +1304,29 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
          if the value here is the default, it should probably be
          ignored (the XML/tree structure should be improved to
          avoid this type of problem )*/
+
       if (   possibly_incomplete == false
-          || cs_equation_find_bc(eqp, z_name) == NULL)
-        cs_equation_add_bc_by_value(eqp,
-                                    CS_PARAM_BC_DIRICHLET,
-                                    z_name,
-                                    value);
+          || cs_equation_find_bc(eqp, z_name) == NULL) {
+
+        if (f == CS_F_(h) && cs_gui_strcmp(cnv, "temperature")) {
+          const cs_zone_t *z = cs_boundary_zone_by_id(izone + 1);
+          cs_gui_boundary_const_context_t  *c
+            = _add_boundary_const_context(z, value[0]);
+          cs_equation_add_bc_by_dof_func(eqp,
+                                         CS_PARAM_BC_DIRICHLET,
+                                         z->name,
+                                         cs_flag_boundary_face,
+                                         _dof_const_t2h_profile,
+                                         c);
+        }
+
+        else
+          cs_equation_add_bc_by_value(eqp,
+                                      CS_PARAM_BC_DIRICHLET,
+                                      z_name,
+                                      value);
+
+      }
     }
 
     else if (! strcmp(choice, "neumann"))
@@ -1558,7 +1757,6 @@ _init_boundaries(void)
 
   BFT_MALLOC(boundaries->rough,     n_zones,    double);
 
-  BFT_MALLOC(boundaries->t_to_h,      n_zones,  bool);
   BFT_MALLOC(boundaries->scalar_e,    n_fields,   bool *);
   BFT_MALLOC(boundaries->head_loss_e, n_zones,  bool);
 
@@ -1629,7 +1827,6 @@ _init_boundaries(void)
     boundaries->dh[izone]        = 0;
     boundaries->xintur[izone]    = 0;
     boundaries->rough[izone]     = -999;
-    boundaries->t_to_h[izone] = false;
     boundaries->head_loss_e[izone] = false;
 
     if (solid_fuels) {
@@ -2123,28 +2320,9 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
         switch (boundaries->type_code[f->id][izone]) {
 
-          case DIRICHLET_CNV:
-            {
-              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-                cs_lnum_t face_id = bz->elt_ids[elt_id];
-                for (cs_lnum_t i = 0; i < f->dim; i++) {
-                  icodcl[(ivar + i) * n_b_faces + face_id] = -wall_type;
-                  rcodcl[(ivar + i) * n_b_faces + face_id]
-                    = boundaries->values[f->id][izone * f->dim + i].val1;
-                }
-              }
-            }
-            break;
-
           case DIRICHLET_FORMULA:
             {
-              int icodcl_m = 1;
               const char *f_name = f->name;
-
-              if (f == CS_F_(h) && boundaries->t_to_h[izone]) {
-                icodcl_m = -1;
-                f_name = "temperature";
-              }
 
               cs_real_t *new_vals
                 = cs_meg_boundary_function(bz, f_name, "dirichlet_formula");
@@ -2152,8 +2330,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
               for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
                 for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
                   cs_lnum_t face_id = bz->elt_ids[elt_id];
-                  icodcl[(ivar + ii) *n_b_faces + face_id]
-                    = wall_type * icodcl_m;
+                  icodcl[(ivar + ii) *n_b_faces + face_id] = wall_type;
                   rcodcl[(ivar + ii) * n_b_faces + face_id]
                     = new_vals[ii * bz->n_elts + elt_id];
                 }
@@ -3125,7 +3302,6 @@ cs_gui_boundary_conditions_free_memory(void)
     BFT_FREE(boundaries->type_code);
     BFT_FREE(boundaries->values);
     BFT_FREE(boundaries->rough);
-    BFT_FREE(boundaries->t_to_h);
     BFT_FREE(boundaries->scalar_e);
     BFT_FREE(boundaries->head_loss_e);
 

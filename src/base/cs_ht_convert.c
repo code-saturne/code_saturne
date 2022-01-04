@@ -527,5 +527,148 @@ cs_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Convert temperature to enthalpy for a given boundary zone,
+ *        using dense storage for temperature and enthalpy arrays.
+ *
+ * This handles both user and model enthalpy conversions, so can be used
+ * safely whenever conversion is needed.
+ *
+ * \param[in]   z  pointer to selected zone.
+ * \param[in]   t  temperature values
+ * \param[out]  h  enthalpy values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ht_convert_t_to_h_faces_z(const cs_zone_t *z,
+                             const cs_real_t  t[],
+                             cs_real_t        h[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+  const cs_lnum_t has_dc = mq->has_disable_flag;
+
+  const cs_lnum_t  n_faces = z->n_elts;
+  const cs_lnum_t  *face_ids = z->elt_ids;
+
+  const int *pm_flag = cs_glob_physical_model_flag;
+
+  bool need_solid_default = (has_dc) ? true : false;
+
+  cs_real_t *t_b = NULL, *h_b = NULL;
+
+  if (   pm_flag[CS_COMBUSTION_EBU] >= 0
+      || pm_flag[CS_COMBUSTION_3PT] >= 0
+      || pm_flag[CS_COMBUSTION_SLFM] >= 0
+      || pm_flag[CS_COMBUSTION_COAL] >= 0
+      || pm_flag[CS_COMBUSTION_FUEL] >= 0
+      || (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)) {
+
+    BFT_MALLOC(t_b, m->n_b_faces, cs_real_t);
+    BFT_MALLOC(h_b, m->n_b_faces, cs_real_t);
+
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+      cs_lnum_t f_id = face_ids[i];
+      t_b[f_id] = t[i];
+    }
+  }
+
+  /* Gas combustion: premixed or diffusion flame */
+  if (   pm_flag[CS_COMBUSTION_EBU] >= 0
+      || pm_flag[CS_COMBUSTION_3PT] >= 0
+      || pm_flag[CS_COMBUSTION_SLFM] >= 0)
+    CS_PROCF(cot2hb, COT2HB)(&n_faces, face_ids, t_b, h_b);
+
+  /* Pulverized coal combustion */
+  else if (pm_flag[CS_COMBUSTION_COAL] >= 0)
+    cs_coal_bt2h(n_faces, face_ids, t_b, h_b);
+
+  /* Pulverized fuel combustion */
+  else if (pm_flag[CS_COMBUSTION_FUEL] >= 0)
+    cs_fuel_bt2h(n_faces, face_ids, t_b, h_b);
+
+  /* Electric arcs */
+  else if (pm_flag[CS_JOULE_EFFECT] < 1 && pm_flag[CS_ELECTRIC_ARCS] >= 1)
+    cs_elec_convert_t_to_h_faces(n_faces,  face_ids, t_b, h_b);
+
+  /* Default for other cases
+     ----------------------- */
+
+  else {
+
+    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
+    if (f_cp != NULL) {
+      const cs_real_t *cpro_cp = f_cp->val;
+      for (cs_lnum_t i = 0; i < n_faces; i++) {
+        cs_lnum_t f_id = face_ids[i];
+        cs_lnum_t c_id = b_face_cells[f_id];
+        h[i] = t[i] * cpro_cp[c_id];
+      }
+    }
+    else {
+      const double cp0 = cs_glob_fluid_properties->cp0;
+      for (cs_lnum_t i = 0; i < n_faces; i++) {
+        h[i] = t[i] * cp0;
+      }
+    }
+
+    need_solid_default = false;
+
+  }
+
+  /* Gather values if scattered */
+
+  if (h_b != NULL) {
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+      cs_lnum_t f_id = face_ids[i];
+      h[i] = h_b[f_id];
+    }
+
+    BFT_FREE(t_b);
+    BFT_FREE(h_b);
+  }
+
+  /* Default for solid zones
+     ----------------------- */
+
+  if (need_solid_default) {
+
+    assert(has_dc == 1);
+    const int *disable_flag = mq->c_disable_flag;
+
+    const cs_field_t *f_cp = cs_field_by_name_try("specific_heat");
+    if (f_cp != NULL) {
+      const cs_real_t *cpro_cp = f_cp->val;
+      for (cs_lnum_t i = 0; i < n_faces; i++) {
+        cs_lnum_t f_id = face_ids[i];
+        cs_lnum_t c_id = b_face_cells[f_id];
+        if (disable_flag[c_id])
+          h[i] = t[i] * cpro_cp[c_id];
+      }
+    }
+    else {
+      const double cp0 = cs_glob_fluid_properties->cp0;
+      for (cs_lnum_t i = 0; i < n_faces; i++) {
+        cs_lnum_t f_id = face_ids[i];
+        cs_lnum_t c_id = b_face_cells[f_id];
+        if (disable_flag[c_id])
+          h[i] = t[i] * cp0;
+      }
+    }
+
+  }
+
+  /* Allow user functions */
+
+  cs_user_physical_properties_t_to_h(cs_glob_domain,
+                                     z,
+                                     true,  /* z_local */
+                                     t,
+                                     h);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
