@@ -202,9 +202,24 @@
 
   \section cs_user_parameters_h_cs_user_model_cdo Base model for CDO/HHO schemes
 
+  \subsection cs_user_parameters_h_cdo_gwf Available modules with CDO/HHO schemes
+
+  - Groundwater flow module is detailed in \ref cs_gwf_cdo
+  - Solidification module is detailed in \ref cs_solidification_cdo
+  - Thermal module
+  - Maxwell module (for electrostatic or magnetostatic problems). This is an on-going work.
+  - User-defined equations
+
   \subsection cs_user_parameters_h_cdo_activation Activation of CDO/HHO schemes
 
-  Two modes are available \ref CS_DOMAIN_CDO_MODE_ONLY or \ref CS_DOMAIN_CDO_MODE_WITH_FV
+  Two modes are available:
+
+  - \ref CS_DOMAIN_CDO_MODE_ONLY for a usage of CDO or HHO in stand-lone
+    (i.e. without the legacy Finite Volume approach
+
+  - \ref CS_DOMAIN_CDO_MODE_WITH_FV for a usage which can share some
+    equations/models solved with CDO/HHO schemes and some other
+    equations/models solved with the legacy Finite Volume approach
 
   CDO/HHO schemes can be activated within this function as follows:
 
@@ -265,25 +280,6 @@
   If you need to activate options related to advection fields, you can also specify
 
   \snippet cs_user_parameters-cdo-condif.c param_cdo_add_user_adv_field_opt
-
-  \subsection cs_user_parameters_h_cdo_gwf Settings related to the groundwater flow module with CDO/HHO schemes
-
-  Activation of the groundwater flow module. The second argument is either 0 if no option is needed or a list of flags among
-  \ref CS_GWF_GRAVITATION, \ref CS_GWF_RICHARDS_UNSTEADY, \ref CS_GWF_SOIL_PROPERTY_UNSTEADY, \ref CS_GWF_SOIL_ALL_SATURATED
-
-  \snippet cs_user_parameters-cdo-gwf.c param_cdo_activate_gwf
-
-  Add soils (settings of the soil is performed in \ref cs_user_gwf_setup). Soils have to be added before adding tracers.
-
-  \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_soil
-
-  Add tracer equations which correspond to a transport equation using
-  the darcean flux as the advection field. This call implies the
-  creation of a new equation related to a new variable field name
-  given as arguments. Advanced tracer equations can be defined using
-  \ref cs_gwf_add_user_tracer.
-
-  \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_tracer
 
   \section cs_user_parameters_h_cs_user_parameters Define or modify general numerical and physical user parameters
 

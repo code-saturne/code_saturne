@@ -205,6 +205,7 @@ tracy_free_param(void         **p_soil_param)
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [param_cdo_gwf_set_bc_analytic] */
 static void
 get_bc(cs_real_t           time,
        cs_lnum_t           n_pts,
@@ -234,6 +235,7 @@ get_bc(cs_real_t           time,
 
   } /* Loop on selected points */
 }
+/*! [param_cdo_gwf_set_bc_analytic] */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -321,9 +323,13 @@ cs_user_model(void)
 
   /* 1. Activate the groundwater flow module */
 
+  /*! [param_cdo_activate_gwf_uspf] */
+
   cs_gwf_activate(CS_PROPERTY_ISO,
                   CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
                   0);  /* No option to set */
+
+  /*! [param_cdo_activate_gwf_uspf] */
 
   cs_gwf_set_post_options(CS_GWF_POST_PERMEABILITY,
                           false); /* Do not reset existing options */

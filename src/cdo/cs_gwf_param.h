@@ -137,6 +137,7 @@ typedef enum {
 typedef cs_flag_t  cs_gwf_option_flag_t;
 
 /*!
+ * @}
  * \enum cs_gwf_model_bit_t
  * \brief Additional modelling options either from the physical viewpoint or the
  *        numerical viewpoint
@@ -144,17 +145,20 @@ typedef cs_flag_t  cs_gwf_option_flag_t;
 
 typedef enum {
 
-  /* --------  Main physical modelling */
-
   /*!
+   * @name Main physical modelling tags
+   * @{
+   *
    * \brief Gravitation effects are taken into account in the Richards equation
    */
 
   CS_GWF_GRAVITATION                     = 1<< 0, /* =   1 */
 
-  /* --------- Main numerical options */
-
   /*!
+   * @}
+   * @name Main numerical flags
+   * @{
+   *
    * \brief Even if the Richards equation is steady-state, this equation is
    *        solved at each iteration.
    */

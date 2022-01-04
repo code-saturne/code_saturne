@@ -27,12 +27,39 @@
 /*!
   \page cs_gwf_cdo Groundwater flow module using CDO schemes
 
+  \section cs_gwf_cdo_intro Introduction
+
+  --------
+
+  The Hydrogeology module of code_saturne is a numerical model for groundwater
+  flow and solute transport in continuous porous media. The flow part is based
+  on the Richards equation, derived from the Darcy law and the conservation of
+  mass. The transport part is based on the the classical advection-diffusion
+  equation of tracers, slightly modified to account the specificities of
+  groundwater transport.
+
+  This module can be used to simulate transfers of water and solutes in several
+  saturated and/or unsaturated porous media. The flow part can be steady or
+  unsteady, with isotropic or anisotropic permeabilities and allows for any
+  type of soil water retention model thanks to a user-defined model. Two
+  classical models are predefined: the saturated model and the van
+  Genuchten-Mualen model. The transport part considers dispersion, sorption and
+  radioactive decay. The partition between soil and water phases can be modeled
+  by a classical Kd approach model. Additionaly solute
+  precipitation/dissolution phenomena can also be taken into account by an
+  instantaneous model.
+
+  Physical concepts and equations are presented in the <a href="../../theory.pdf"><b>theory guide</b></a>.
+
+
   The groundwater flow module (GWF) relies on CDO vertex-based or CDO
-  vertex+cell-based schemes.
+  vertex+cell-based discretization schemes.
+
 
   To set-up a GWF computation, one has to update the cs_user_parameters.c file
-  and edit the function \ref cs_user_model at least in simple cases. In more complex
-  cases, editing \ref cs_user_finalize_setup should be necessary.
+  and edit the function \ref cs_user_model at least in simple cases. In more
+  complex cases, editing \ref cs_user_finalize_setup should be necessary.
+
 
   \section cs_gwf_cdo_activate Activate the GWF module
 
@@ -41,7 +68,7 @@
   The first step is to activate the CDO module in the function \ref cs_user_model
   (please refer to \ref cs_user_parameters_h_cdo_activation).
 
-  Then, one has to activate the groundwater flow module (GWF) in the function
+  Then, one has to activate the groundwater flow (GWF) module in the function
   \ref cs_user_model.  The function to call is \ref cs_gwf_activate.
 
   There are three parameters:
@@ -49,8 +76,8 @@
   1. The type of permeability to consider. Two choices: \ref CS_PROPERTY_ISO or
   \ref CS_PROPERTY_ANISO
 
-  2. The main model to consider (i.e. which equations to solve). Please refer
-  to \ref cs_gwf_cdo_models
+  2. The main hydraulic model to consider (i.e. which equations have to be solved). Please refer
+  to \ref cs_gwf_model_type_t and Section \ref cs_gwf_cdo_models
 
   3. Optional flags to specify a physical phenomena to take into account or to
   specify a numerical treatment to apply.
@@ -65,7 +92,7 @@
 
   \subsection cs_gwf_cdo_models Main models available in the GWF
 
-  There are currently two models :
+  There are currently two models available :
 
   - \ref CS_GWF_MODEL_SATURATED_SINGLE_PHASE
   - \ref CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE
@@ -82,7 +109,11 @@
 
   \snippet cs_user_parameters-cdo-gwf.c param_cdo_activate_gwf_b
 
+  _Third example: Activate the GWF model with an isotropic
+  permeability and an unsaturated single-phase flow model without any
+  additional option._
 
+  \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_activate_gwf_uspf
 
   \section cs_gwf_cdo_soil Soils
 
@@ -147,8 +178,8 @@
   1. Add a user-defined model and set constant members of the soil structure
   and then call \ref cs_gwf_soil_set_user (inside the function \ref cs_user_model)
 
-  2. Set the remaing model parameters (inside the function \ref
-  cs_user_finalize_setup)
+  2. Retrieve and (if needed) set the remaining members of the model structure
+  (inside the function \ref cs_user_finalize_setup)
 
   Here is a complete example of a soil model devised by Tracy (called a soil context)
 
@@ -163,20 +194,30 @@
   with the two requested functions (defined for instance as a static function
   in the file cs_user_parameters.c). These functions have to fullfill the
   prototype defined in \ref cs_gwf_soil_update_t (for the update of the soil
-  properties) and in \ref cs_gwf_soil_free_context_t (for the free of the soil
-  context).
+  properties) and in \ref cs_gwf_soil_free_param_t (for the free of the soil
+  parameter structure).
 
   First, an example of how to update soil properties (_tracy_update_)
 
   \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_set_user_update_soil
 
-  and an example of how to free the soil context (_tracy_free_context_)
+  and an example of how to free the soil parameter structure (_tracy_free_param_)
 
   \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_set_user_free_soil
 
   _Example of the second step_
 
-  \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_set_user_soil
+  \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_get_user_soil
+
+  where the two functions used to define either the boundary condition (called
+  "get_bc") in the example or the initial condition (called "get_ic") in the
+  example follow a predefined prototype (see \ref cs_analytic_func_t)
+
+  Here are collected two examples of functions:
+
+  \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_gwf_set_bc_analytic
+
+  \snippet cs_user_parameters-cdo-gwf_user_soil.c param_cdo_set_ic_by_analytic
 
 
 
