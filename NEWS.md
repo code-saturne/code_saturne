@@ -3,6 +3,9 @@ Release 7.1.1 (not released yet)
 
 Bug fixes:
 
+- Fix location failure for mapped inlet in some cases
+  (occurred especially at higher rank counts).
+
 - Time moments: fix activation of logging and postprocessing output
   using GUI defaults.
 

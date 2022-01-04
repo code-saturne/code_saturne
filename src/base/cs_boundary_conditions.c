@@ -833,6 +833,14 @@ cs_boundary_conditions_map(cs_mesh_location_type_t    location_type,
                                 + coord_shift[i*coord_stride][j];
     }
   }
+  else {
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        point_coords[i*3 + j] =   b_face_cog[i][j]
+                                + coord_shift[i*coord_stride][j];
+      }
+    }
+  }
 
   ple_locator_set_mesh(locator,
                        nm,
