@@ -49,7 +49,7 @@ from code_saturne.model import XMLengine
 from code_saturne.studymanager.cs_studymanager_pathes_model import PathesModel
 
 from code_saturne.studymanager.cs_studymanager_parser import Parser
-from code_saturne.studymanager.cs_studymanager_texmaker import Report1, Report2
+from code_saturne.studymanager.cs_studymanager_texmaker import Report
 
 try:
     from code_saturne.studymanager.cs_studymanager_drawing import Plotter
@@ -81,10 +81,11 @@ def create_base_xml_file(filepath, pkg):
     """
 
     filename = os.path.basename(filepath)
+    msg = None
     if os.path.isfile(filepath):
-        print("Can not create XML file of parameter:\n" \
-              + filepath + " already exists.")
-        sys.exit(1)
+        msg = "Can not create XML file of parameter:\n" \
+            + filepath + " already exists."
+        return None, msg
 
     # using xml engine from code_saturne GUI
     smgr = XMLengine.Case(package=pkg, studymanager=True)
@@ -95,7 +96,7 @@ def create_base_xml_file(filepath, pkg):
     pm.setRepositoryPath('')
     pm.setDestinationPath('')
 
-    return smgr
+    return smgr, msg
 
 #-------------------------------------------------------------------------------
 
@@ -163,7 +164,7 @@ class Case(object):
         @type data: C{Dictionary}
         @param data: contains all keyword and value read in the parameters file
         """
-        self.__log       = rlog
+        self.__log_file  = rlog
         self.__diff      = diff
         self.__parser    = parser
         self.__data      = data
@@ -196,13 +197,14 @@ class Case(object):
         self.diff_value  = [] # list of differences (in case of comparison)
         self.m_size_eq   = True # mesh sizes equal (in case of comparison)
         self.subdomains  = None
-        self.run_dir     = ""
         self.level       = None # level of the node in the dependency graph
 
-        self.resu = 'RESU'
-
-        # Title of the case is based on study, label and run_id
-        self.title = study + "/" + self.label + "/RESU/" + self.run_id
+        # Run_dir and Title are based on study, label and run_id
+        self.resu = "RESU"
+        self.run_dir = os.path.join(self.__dest, self.label, self.resu,
+                                    self.run_id)
+        self.title = study + "/" + self.label + "/" +  self.resu + "/" \
+                   + self.run_id
 
         # Check for coupling
         # TODO: use run.cfg info, so as to allow another coupling parameters
@@ -217,7 +219,7 @@ class Case(object):
                 coupling = True
 
         if coupling:
-            self.resu = 'RESU_COUPLING'
+            self.resu = "RESU_COUPLING"
 
             # Apply coupling parameters information
 
@@ -230,6 +232,9 @@ class Case(object):
                 if d['solver'].lower() in ('code_saturne', 'neptune_cfd'):
                     self.subdomains.append(d['domain'])
 
+            self.run_dir = os.path.join(self.__dest, self.label, self.resu,
+                                        self.run_id, self.subdomains[0])
+
         self.exe = os.path.join(pkg.get_dir('bindir'),
                                 pkg.name + pkg.config.shext)
 
@@ -237,7 +242,7 @@ class Case(object):
 
     def prepare_run_folder(self):
         """
-        Prepare a run folder in destination directory (STUDY/CASE_NAME/RESU/RUN)
+        Prepare a run folder in destination directory run_dir
         """
         log_lines = []
         e = os.path.join(self.pkg.get_dir('bindir'), self.exe)
@@ -272,7 +277,21 @@ class Case(object):
                             self.kw_args += " "  # workaround for arg-parser issue
                         cmd += " --kw-args " + '"' + self.kw_args + '"'
 
-                    node_retval, t = run_studymanager_command(cmd, self.__log)
+                    # create run_case.log in dest/STUDY (will be moved later)
+                    file_name = os.path.join(self.__dest, "run_case.log")
+                    log_run = open(file_name, mode='w')
+
+                    node_retval, t = run_studymanager_command(cmd, log_run)
+
+                    # move run_case.log in run_dir
+                    if os.path.isdir(self.run_dir):
+                        os.replace(file_name, os.path.join(self.run_dir,
+                                                           "run_case.log"))
+                    else:
+                        err_file = os.path.join(self.__dest, "run_" + self.label
+                                 + "_" + self.run_id + ".log")
+                        os.replace(file_name, err_file)
+
                     # negative retcode is kept
                     retval = min(node_retval,retval)
 
@@ -299,7 +318,20 @@ class Case(object):
                     self.kw_args += " "  # workaround for arg-parser issue
                 cmd += " --kw-args " + '"' + self.kw_args + '"'
 
-            retval, t = run_studymanager_command(cmd, self.__log)
+            # create run_case.log in dest/STUDY/CASE
+            file_name = os.path.join(self.__dest, "run_case.log")
+            log_run = open(file_name, mode='w')
+
+            retval, t = run_studymanager_command(cmd, log_run)
+
+            # move run_case.log in run_dir
+            if os.path.isdir(self.run_dir):
+                os.replace(file_name, os.path.join(self.run_dir,
+                                                   "run_case.log"))
+            else:
+                err_file = os.path.join(self.__dest, "run_" + self.label
+                         + "_" + self.run_id + ".log")
+                os.replace(file_name, err_file)
 
         if retval == 0:
             log_lines += ['      * prepare run folder: ' + self.title]
@@ -307,6 +339,7 @@ class Case(object):
         else:
             log_lines += ['      * prepare run folder: %s --> FAILED'
                           % self.title]
+            log_lines += ['        - see run_CASE_run_id.log in dest/STUDY']
             self.compute = "off"
             self.post = "off"
             self.compare = "off"
@@ -325,6 +358,7 @@ class Case(object):
 
         from code_saturne.model.XMLengine import Case
 
+        msg = None
         for fn in os.listdir(os.path.join(self.__repo, subdir, "DATA")):
             fp = os.path.join(self.__repo, subdir, "DATA", fn)
             if os.path.isfile(fp):
@@ -342,9 +376,9 @@ class Case(object):
                 try:
                     case = Case(package = self.pkg, file_name = fp)
                 except:
-                    print("Parameters file reading error.\n")
-                    print("This file is not in accordance with XML specifications.\n")
-                    sys.exit(1)
+                    msg = "Parameters file reading error.\n" \
+                        + "This file is not in accordance with XML specifications."
+                    return msg
 
                 case['xmlfile'] = fp
                 case.xmlCleanAllBlank(case.xmlRootNode())
@@ -360,10 +394,13 @@ class Case(object):
                         # Avoid completely failing an update of cases with
                         # mixed solver types when neptune_cfd is not available
                         # (will fail if really trying to run those cases)
-                        print("Failed updating a neptune_cfd XML file as neptune_cfd is not available.\n")
+                        msg = "Failed updating a neptune_cfd XML file as " \
+                            + "neptune_cfd is not available." 
                         pass
 
                 case.xmlSaveDocument()
+
+        return msg
 
     #---------------------------------------------------------------------------
 
@@ -381,8 +418,11 @@ class Case(object):
         else:
             cdirs = (self.label,)
 
+        error = None
         for d in cdirs:
-            self.__update_setup(d)
+            error = self.__update_setup(d)
+
+        return error
 
     #---------------------------------------------------------------------------
 
@@ -432,8 +472,6 @@ class Case(object):
 
         e = os.path.join(self.pkg.get_dir('bindir'), self.exe)
 
-        self.run_dir = os.path.join(self.__dest, self.label, self.resu,
-                                    self.run_id)
         refdir = os.path.join(self.__repo, self.label)
 
         # After the stage within run_id folder in destination
@@ -455,7 +493,11 @@ class Case(object):
         if resource_name:
             run_cmd += " --with-resource " + resource_name
 
-        error, self.is_time = run_studymanager_command(run_cmd, self.__log)
+        # append run_case.log in run_dir
+        file_name = os.path.join(self.run_dir, "run_case.log")
+        log_run = open(file_name, mode='a')
+
+        error, self.is_time = run_studymanager_command(run_cmd, log_run)
 
         if not error:
             self.is_run = "OK"
@@ -558,8 +600,8 @@ class Case(object):
         or if it doesn't contain a summary file
         """
         if not os.path.isdir(run_dir):
-            print("Error: the result directory %s does not exist." % run_dir)
-            sys.exit(1)
+            msg = "Error: the result directory %s does not exist." % run_dir
+            return False, msg
 
         msg = ""
         ok = True
@@ -590,8 +632,7 @@ class Case(object):
         msg = "Warning: "
 
         if not os.path.isdir(result):
-            msg += "the directory %s " \
-                   "does not exist." % (result)
+            msg += "the directory %s does not exist." %(result)
             return None, msg
 
         # 1. The result directory is given
@@ -599,8 +640,7 @@ class Case(object):
             # check if it exists
             rep_f = os.path.join(result, rep)
             if not os.path.isdir(rep_f):
-                msg += "the result directory %s " \
-                       "does not exist." % (rep_f)
+                msg += "the result directory %s does not exist." %(rep_f)
                 return None, msg
 
             run_ok = self.run_ok(rep_f)
@@ -611,7 +651,7 @@ class Case(object):
         elif rep == "":
             # check if there is at least one result directory.
             if len(list(filter(nodot, os.listdir(result)))) == 0:
-                msg += "there is no result directory in %s." % (result)
+                msg += "there is no result directory in %s." %(result)
                 return None, msg
 
             # if no run_id is specified in the xml file
@@ -630,8 +670,7 @@ class Case(object):
 
             rep_f = os.path.join(result, rep)
             if not os.path.isdir(rep_f):
-                msg += "the result directory %s " \
-                       "does not exist." % (rep_f)
+                msg += "the result directory %s does not exist." %(rep_f)
                 return None, msg
 
             run_ok = self.run_ok(rep_f)
@@ -711,7 +750,7 @@ class Study(object):
         self.__parser   = parser
         self.__main_exe = exe
         self.__diff     = dif
-        self.__log      = rlog
+        self.__log_file = rlog
 
         # read repository and destination from smgr file
         # based on working directory if information is not available
@@ -746,7 +785,6 @@ class Study(object):
             for data in self.__parser.getStatusOnCasesKeywords(self.label):
 
                 # n_procs given in smgr command line overwrites n_procs by case
-                # TODO: modify with Yvan development
                 if n_procs:
                     data['n_procs'] = str(n_procs)
 
@@ -769,7 +807,7 @@ class Study(object):
                 # do not append case if tags do not match
                 if tagged and not exclude:
                     c = Case(pkg,
-                             self.__log,
+                             self.__log_file,
                              self.__diff,
                              self.__parser,
                              self.label,
@@ -861,6 +899,7 @@ class Studies(object):
         smgr = None
         self.__log = None
         self.__log_compile = None
+        self.__log_file = None
 
         # Store options
 
@@ -897,24 +936,30 @@ class Studies(object):
                 filename = "smgr.xml"
 
             filepath = os.path.join(studyp, filename)
-            smgr = create_base_xml_file(filepath, self.__pkg)
+            smgr, error = create_base_xml_file(filepath, self.__pkg)
 
-            init_xml_file_with_study(smgr, studyp)
-            print(" ")
-            print(" New smgr.xml file was created succesfully")
-            print(" ")
-            return
+            if error:
+                self.reporting(error, report=False, exit=True)
+            else:
+                init_xml_file_with_study(smgr, studyp)
+                self.reporting(" ", report=False)
+                self.reporting(" New smgr.xml file was created succesfully",
+                               report=False)
+                self.reporting(" ", report=False)
+                return
 
         elif self.__create_xml and not is_study:
-            msg =   "Can not create XML file of parameter:\n" \
-                  + "current directory is apparently not a study (no MESH directory).\n"
-            sys.exit(msg)
+            msg = "Error: can not create XML file of parameter:\n" \
+                + "current directory is apparently not a study (no MESH " \
+                + "directory)."
+            self.reporting(msg, report=False, exit=True)
 
         if filename is None:
-            msg =    "A file of parameters must be specified or created " \
-                   + "for studymanager to run.\n" \
-                   + "See help message and use '--file' or '--create-xml' option.\n"
-            sys.exit(msg)
+            msg = "Error: a file of parameters must be specified or created" \
+                + " for studymanager to run.\n" \
+                + "See help message and use '--file' or '--create-xml'" \
+                + " option."
+            self.reporting(msg, report=False, exit=True)
 
         # create a first smgr parser only for
         #   the repository verification and
@@ -923,23 +968,28 @@ class Studies(object):
         if os.path.isfile(filename):
             self.__parser = Parser(filename)
         else:
-            msg = "Specified XML parameter file for studymanager does not exist.\n"
-            sys.exit(msg)
+            msg = "Error: specified XML parameter file for studymanager does" \
+                + " not exist."
+            self.reporting(msg, report=False, exit=True)
 
         # call smgr xml backward compatibility
 
         if not smgr:
-            smgr = XMLengine.Case(package=self.__pkg, file_name=filename, studymanager=True)
+            smgr = XMLengine.Case(package=self.__pkg, file_name=filename,
+                                  studymanager=True)
             smgr['xmlfile'] = filename
 
             # minimal modification of xml for now
             smgr_xml_init(smgr).initialize(reinit_indices = False)
             if self.__update_smgr:
                 smgr.xmlSaveDocument(prettyString=False)
-                print(" ")
-                print(" SMGR parameter file was updated succesfully")
-                print(" Note that update is not necessary before the run step")
-                print(" ")
+
+                self.reporting(" ", report=False)
+                self.reporting(" SMGR parameter file was updated succesfully",
+                               report=False)
+                self.reporting(" Note that update is not necessary before the"\
+                               + " run step", report=False)
+                self.reporting(" ", report=False)
 
         # set repository
         if len(options.repo_path) > 0:
@@ -947,8 +997,8 @@ class Studies(object):
         self.__repo = self.__parser.getRepository()
         if self.__repo:
             if not os.path.isdir(self.__repo):
-                msg="Studies.__init__() >> self.__repo = {0}\n".format(self.__repo)
-                sys.exit(msg+"Error: repository path is not valid.\n")
+                msg = "Error: repository path is not valid: " + self.__repo
+                self.reporting(msg, report=False, exit=True)
         else: # default value
             # if current directory is a study
             # set repository as directory containing the study
@@ -957,11 +1007,12 @@ class Studies(object):
                 self.__parser.setRepository(os.path.join(studyp,".."))
                 self.__repo = self.__parser.getRepository()
             else:
-                msg =   "Can not set a default repository directory:\n" \
-                      + "current directory is apparently not a study (no MESH directory).\n" \
-                      + "Add a repository path to the parameter file or use the command " \
-                      + "line option (--repo=..).\n"
-                sys.exit(msg)
+                msg = "Can not set a default repository directory:\n" \
+                    + "current directory is apparently not a study (no MESH" \
+                    + " directory).\n" \
+                    + "Add a repository path to the parameter file or use" \
+                    + " the command line option (--repo=..)."
+                self.reporting(msg, report=False, exit=True)
 
         # set destination
         self.__dest = None
@@ -977,10 +1028,11 @@ class Studies(object):
                 self.__dest = self.__parser.getDestination()
             else:
                 msg = "Can not set a default destination directory:\n" \
-                    + "current directory is apparently not a study (no MESH directory).\n" \
-                    + "Add a destination path to the parameter file or use the command " \
-                    + "line option (--dest=..).\n"
-                sys.exit(msg)
+                    + "current directory is apparently not a study (no MESH" \
+                    + " directory).\n" \
+                    + "Add a destination path to the parameter file or use" \
+                    + " the command line option (--dest=..).\n"
+                self.reporting(msg, report=False, exit=True)
 
         if options.runcase or options.compare or options.post:
 
@@ -1003,27 +1055,25 @@ class Studies(object):
             self.__parser.setDestination(self.__dest)
             self.__parser.setRepository(self.__repo)
             if options.debug:
-                print(" Studies >> Repository  >> ", self.__repo)
-                print(" Studies >> Destination >> ", self.__dest)
+                msg = " Studies repository: " + self.__repo + "\n" \
+                  + " Studies destination: " + self.__dest 
+                self.reporting(msg, report=False)
 
-            # create log file in destination
+            # create studymanager log file
 
-            doc = os.path.join(self.__dest, options.log_file)
-            self.__log = open(doc, "w")
+            self.__log_name = os.path.join(self.__dest, options.log_file)
+            self.__log_file = open(self.__log_name, "w")
 
-            # create report file
-
-            self.report = os.path.join(self.__dest, "report.txt")
-            self.reportFile = open(self.report, mode='w')
-            self.reportFile.write('\n')
-
-            # create plotter
+            # create plotter and post log file
 
             if options.post:
                 try:
                     self.__plotter = Plotter(self.__parser)
                 except Exception:
                     self.__plotter = None
+                self.__log_post_name = os.path.join(self.__dest,
+                                                    "smgr_post_pro.log")
+                self.__log_post_file = open(self.__log_post_name, "w")
 
         # create list of restricting and excluding tags
 
@@ -1036,19 +1086,18 @@ class Studies(object):
             without_tags = re.split(',', options.without_tags)
             self.__without_tags = [tag.strip() for tag in without_tags]
 
-
         # build the list of the studies
 
         self.labels  = self.__parser.getStudiesLabel()
         self.studies = []
         for l in self.labels:
             self.studies.append( [l, Study(self.__pkg, self.__parser, l, \
-                                           exe, dif, self.__log, \
+                                           exe, dif, self.__log_file, \
                                            options.n_procs, \
                                            self.__with_tags, \
                                            self.__without_tags,)] )
             if options.debug:
-                print(" >> Append study ", l)
+                self.reporting(" Append study:" + l, report=False)
 
         # in case of restart
 
@@ -1073,9 +1122,9 @@ class Studies(object):
         @return: destination directory of all studies.
         """
         if self.__dest is None:
-            msg=" cs_studymanager_study.py >> Studies.getDestination()"
-            msg+=" >> self.__dest is not set"
-            sys.exit(msg)
+            msg = " cs_studymanager_study.py >> Studies.getDestination()" \
+                + " >> self.__dest is not set"
+            self.reporting(msg, exit=True)
         return self.__dest
 
     #---------------------------------------------------------------------------
@@ -1086,14 +1135,15 @@ class Studies(object):
         @return: repository directory of all studies.
         """
         if self.__repo is None:
-            msg=" cs_studymanager_study.py >> Studies.getRepository()"
-            msg+=" >> self.__repo is not set"
-            sys.exit(msg)
+            msg = " cs_studymanager_study.py >> Studies.getRepository()" \
+                + " >> self.__repo is not set"
+            self.reporting(msg, exit=True)
         return self.__repo
 
     #---------------------------------------------------------------------------
 
-    def reporting(self, msg, stdout=True, report=True, status=False):
+    def reporting(self, msg, stdout=True, report=True, status=False,
+                  exit=False):
         """
         Write message on standard output and/or in report.
         @type l: C{String}
@@ -1108,8 +1158,11 @@ class Studies(object):
             sys.stdout.flush()
 
         if report:
-            self.reportFile.write(msg + '\n')
-            self.reportFile.flush()
+            self.__log_file.write(msg + '\n')
+            self.__log_file.flush()
+
+        if exit:
+            sys.exit(msg)
 
     #---------------------------------------------------------------------------
 
@@ -1137,7 +1190,9 @@ class Studies(object):
             for case in s.cases:
                 self.reporting('    - update setup file in %s' % case.label,
                                report=False)
-                case.update()
+                error = case.update()
+                if error:
+                   self.reporting(error, report=False, exit=True)
 
         self.reporting('',report=False)
 
@@ -1209,12 +1264,7 @@ class Studies(object):
             cr_study = cs_create.study(self.__pkg, study)    # quiet
 
             create_msg = "    - Create study " + study
-            dest = True
-            self.report_action_location(create_msg, dest)
-
-            # TODO: copy-from for study. For now, an empty study
-            # is created and cases are created one by one with
-            # copy-from
+            self.report_action_location(create_msg)
 
             # create empty study
             cr_study.create()
@@ -1224,7 +1274,7 @@ class Studies(object):
         if new_study or not self.__disable_ow:
 
             if not new_study:
-                self.reporting("  Warning: POST folder is overwritten in %s"
+                self.reporting("  /!\ POST folder is overwritten in %s"
                                " use option --dow to disable overwrite" %study)
 
             # Copy external scripts for post-processing
@@ -1246,9 +1296,9 @@ class Studies(object):
         filter_level   = self.__filter_level
         filter_n_procs = self.__filter_n_procs
 
-        self.reporting('  o Dump dependency graph with option : ')
-        self.reporting('     - level=' + str(filter_level))
-        self.reporting('     - n_procs=' + str(filter_n_procs))
+        self.reporting("  o Dump dependency graph with option :")
+        self.reporting("     - level=" + str(filter_level))
+        self.reporting("     - n_procs=" + str(filter_n_procs))
 
         # create the global graph with all cases of all studies without filtering
         global_graph = dependency_graph()
@@ -1325,9 +1375,10 @@ class Studies(object):
         log_comp_file.close()
 
         if iko:
-            self.reporting('Error: compilation failed for %s case(s).\n' % iko,
-                           report=False)
-            sys.exit(1)
+            self.reporting('  Error: compilation failed for %s case(s).\n'
+                           %iko, report=False, exit=False)
+        self.reporting('  Compilation logs available in  %s \n'
+                       %log_comp_name, report=False, exit=False)
 
     #---------------------------------------------------------------------------
 
@@ -1337,10 +1388,10 @@ class Studies(object):
         """
         pre, label, nodes, args = self.__parser.getPrepro(case.node)
         if self.__debug:
-            print(" >> prepro ", pre)
-            print(" >> label ", label)
-            print(" >> nodes ", nodes)
-            print(" >> args  ", args)
+            self.reporting(" prepro:" + pre, report=False)
+            self.reporting(" label:" + label, report=False)
+            self.reporting(" nodes:" + nodes, report=False)
+            self.reporting(" args:" + args, report=False)
         for i in range(len(label)):
             if pre[i]:
                 # search if the script is in the MESH directory
@@ -1348,7 +1399,8 @@ class Studies(object):
                 # of the current case
                 cmd = os.path.join(self.__dest, case.study, "MESH", label[i])
                 if self.__debug:
-                    print("Path to prepro script ", cmd)
+                    self.reporting(" Path to prepro script:" + cmd,
+                                   report=False)
                 if not os.path.isfile(cmd):
                     filePath = ""
                     for root, dirs, fs in os.walk(os.path.join(self.__dest,
@@ -1385,8 +1437,11 @@ class Studies(object):
                         cs_pkg_dir = os.path.normpath(cs_pkg_dir)
                         p_dirs = p_dirs + ":" + cs_pkg_dir
 
-                    retcode, t = run_studymanager_command(cmd,
-                                                          self.__log,
+                    # append run_case.log in run_dir
+                    file_name = os.path.join(case.run_dir, "run_case.log")
+                    log_run = open(file_name, mode='a')
+
+                    retcode, t = run_studymanager_command(cmd, log_run,
                                                           pythondir = p_dirs)
                     stat = "FAILED" if retcode != 0 else "OK"
 
@@ -1421,16 +1476,7 @@ class Studies(object):
                 if case.compute == 'on' and case.is_compiled != "KO":
 
                     if self.__n_iter is not None:
-                        if case.subdomains:
-                            run_dir = os.path.join(self.__dest, case.study,
-                                                   case.label, "RESU_COUPLING",
-                                                   case.run_id,
-                                                   case.subdomains[0])
-                        else:
-                            run_dir = os.path.join(self.__dest, case.study,
-                                                   case.label, "RESU",
-                                                   case.run_id)
-                        os.chdir(run_dir)
+                        os.chdir(case.run_dir)
                         # Create a control_file in run folder
                         if not os.path.exists('control_file'):
                             control_file = open('control_file','w')
@@ -1469,8 +1515,10 @@ class Studies(object):
                     else:
                         self.reporting('    - run %s --> FAILED (%s)' \
                                        % (case.title, is_time))
+                        self.reporting('      * see run_case.log in dest/' + \
+                                       case.title)
 
-                    self.__log.flush()
+                    self.__log_file.flush()
 
         os.chdir(home)
 
@@ -1529,7 +1577,8 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def compare_case_and_report(self, case, repo, dest, threshold, args, reference=None):
+    def compare_case_and_report(self, case, repo, dest, threshold, args,
+                                reference=None):
         """
         Compare the results for one computation and report
         """
@@ -1549,13 +1598,17 @@ class Studies(object):
             s_args = 'default mode'
 
         if case.disabled:
-            self.reporting('    - compare %s (%s) --> DISABLED' % (case.title, s_args))
+            self.reporting('    - compare %s (%s) --> DISABLED'
+                           %(case.title, s_args))
         elif not m_size_eq:
-            self.reporting('    - compare %s (%s) --> DIFFERENT MESH SIZES FOUND' % (case.title, s_args))
+            self.reporting('    - compare %s (%s) --> DIFFERENT MESH SIZES FOUND'
+                           %(case.title, s_args))
         elif diff_value:
-            self.reporting('    - compare %s (%s) --> DIFFERENCES FOUND' % (case.title, s_args))
+            self.reporting('    - compare %s (%s) --> DIFFERENCES FOUND'
+                           %(case.title, s_args))
         else:
-            self.reporting('    - compare %s (%s) --> NO DIFFERENCES FOUND' % (case.title, s_args))
+            self.reporting('    - compare %s (%s) --> NO DIFFERENCES FOUND'
+                           %(case.title, s_args))
 
 
     #---------------------------------------------------------------------------
@@ -1655,6 +1708,8 @@ class Studies(object):
         """
         Launch external additional scripts with arguments.
         """
+        # create smgr_post_pro.log in dest/STUDY
+
         for l, s in self.studies:
             self.reporting("  o Run scripts of study: " + l)
             for case in s.cases:
@@ -1669,19 +1724,25 @@ class Studies(object):
 
                             cmd += " " + args[i]
                             if repo[i]:
-                                r = os.path.join(self.__repo,  l, case.label, "RESU", repo[i])
+                                r = os.path.join(self.__repo,  l, case.label,
+                                                 "RESU", repo[i])
                                 cmd += " -r " + r
                             if dest[i]:
-                                d = os.path.join(self.__dest, l, case.label, "RESU", dest[i])
+                                d = os.path.join(self.__dest, l, case.label,
+                                                 "RESU", dest[i])
                                 cmd += " -d " + d
-                            retcode, t = run_studymanager_command(cmd, self.__log)
+
+                            retcode, t = run_studymanager_command(cmd,
+                                                                  self.__log_post_file)
                             stat = "FAILED" if retcode != 0 else "OK"
 
-                            self.reporting('    - script %s --> %s (%s s)' % (stat, sc_name, t),
+                            self.reporting('    - script %s --> %s (%s s)'
+                                           %(stat, sc_name, t),
                                            stdout=True, report=False)
 
-                            self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t),
-                                           stdout=True, report=False)
+                            self.reporting('    - script %s --> %s (%s s)'
+                                           %(stat, cmd, t),
+                                           stdout=False, report=True)
                         else:
                             self.reporting('    - script %s not found' % cmd)
 
@@ -1694,13 +1755,6 @@ class Studies(object):
         Launch external additional scripts with arguments.
         """
         for l, s in self.studies:
-            # fill results directories and ids for the cases of the current study
-            # that were not run by the current studymanager command
-            for case in s.cases:
-                if case.is_run != "KO":
-                    case.run_dir = os.path.join(self.__dest, l, case.label,
-                                                "RESU", case.run_id)
-
             script, label, nodes, args = self.__parser.getPostPro(l)
             if not label:
                 continue
@@ -1721,7 +1775,7 @@ class Studies(object):
                         self.reporting('    - running postpro %s' % sc_name,
                                        stdout=True, report=False, status=True)
 
-                        retcode, t = run_studymanager_command(cmd, self.__log)
+                        retcode, t = run_studymanager_command(cmd, self.__log_post_file)
                         stat = "FAILED" if retcode != 0 else "OK"
 
                         self.reporting('    - postpro %s --> %s (%s s)' \
@@ -1733,6 +1787,17 @@ class Studies(object):
                                        stdout=False, report=True)
                     else:
                         self.reporting('    - postpro %s not found' % cmd)
+
+        # erase empty log file
+        self.__log_post_file.close()
+        log_post_file = open(self.__log_post_name, mode='r')
+        content = log_post_file.read()
+        log_post_file.close()
+        if not content:
+            os.system("rm -f " + self.__log_post_name)
+        else:
+            self.reporting(" /!\ ERROR during post. See %s\n",
+                           self.__log_post_name, stdout=True, report=True)
 
         self.reporting('')
 
@@ -1842,13 +1907,13 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def report_input(self, doc2, i_nodes, s_label, c_label=None):
+    def report_input(self, doc, i_nodes, s_label, c_label=None):
         """
         Add input to report detailed.
         """
         for i_node in i_nodes:
             f, dest, repo, tex = self.__parser.getInput(i_node)
-            doc2.appendLine("\\subsubsection{%s}" % f)
+            doc.appendLine("\\subsubsection{%s}" % f)
 
             if dest:
                 d = dest
@@ -1875,122 +1940,77 @@ class Studies(object):
                 ff = os.path.join(fd, d, f)
 
             if not os.path.isfile(ff):
-                print("\n\nWarning: this file does not exist: %s\n\n" % ff)
+                self.reporting("\n Warning: this file does not exist: %s\n" %ff)
             elif ff[-4:] in ('.png', '.jpg', '.pdf') or ff[-5:] == '.jpeg':
-                doc2.addFigure(ff)
+                doc.addFigure(ff)
             elif tex == 'on':
-                doc2.addTexInput(ff)
+                doc.addTexInput(ff)
             else:
-                doc2.addInput(ff)
+                doc.addInput(ff)
 
     #---------------------------------------------------------------------------
 
-    def build_reports(self, report1, report2):
+    def build_reports(self, report_fig):
         """
-        @type report1: C{String}
-        @param report1: name of the global report.
-        @type report2: C{String}
-        @param report2: name of the detailed report.
+        @type report_fig: C{String}
+        @param report_fig: name of the figures report.
         @rtype: C{List} of C{String}
         @return: list of file to be attached to the report.
         """
         attached_files = []
 
-        if self.__running or self.__compare or self.__postpro:
-            # First global report
-            doc1 = Report1(self.__dest,
-                           report1,
-                           self.__log,
-                           self.report,
-                           self.__parser.write(),
-                           self.__pdflatex)
+        # figures report
+        doc = Report(self.__dest,
+                     report_fig,
+                     self.__pdflatex)
 
-            for l, s in self.studies:
-                for case in s.cases:
-                    if case.diff_value or not case.m_size_eq:
-                        is_nodiff = "KO"
-                    else:
-                        is_nodiff = "OK"
+        for l, s in self.studies:
+            if not s.needs_report_detailed(self.__postpro):
+                continue
 
-                    doc1.add_row(case.study,
-                                 case.label,
-                                 case.is_compiled,
-                                 case.is_run,
-                                 case.is_time,
-                                 case.is_compare,
-                                 is_nodiff)
+            doc.appendLine("\\section{%s}" % l)
 
-            attached_files.append(doc1.close())
+            if s.matplotlib_figures or s.input_figures:
+                doc.appendLine("\\subsection{Graphical results}")
+                for g in s.matplotlib_figures:
+                    doc.addFigure(g)
+                for g in s.input_figures:
+                    doc.addFigure(g)
 
-        # Second detailed report
-        if self.__compare or self.__postpro:
-            doc2 = Report2(self.__dest,
-                           report2,
-                           self.__log,
-                           self.__pdflatex)
+            for case in s.cases:
 
-            for l, s in self.studies:
-                if not s.needs_report_detailed(self.__postpro):
-                    continue
+                # handle the input nodes that are inside case nodes
+                if case.plot == "on" and case.is_run != "KO":
+                    nodes = self.__parser.getChildren(case.node, "input")
+                    if nodes:
+                        doc.appendLine("\\subsection{Results for "
+                                       "case %s}" % case.label)
+                        self.report_input(doc, nodes, l, case.label)
 
-                doc2.appendLine("\\section{%s}" % l)
+            # handle the input nodes that are inside postpro nodes
 
-                if s.matplotlib_figures or s.input_figures:
-                    doc2.appendLine("\\subsection{Graphical results}")
-                    for g in s.matplotlib_figures:
-                        doc2.addFigure(g)
-                    for g in s.input_figures:
-                        doc2.addFigure(g)
+            script, label, nodes, args = self.__parser.getPostPro(l)
 
-                for case in s.cases:
-                    if case.is_compare == "done":
-                        doc2.appendLine("\\subsection{Comparison for case "
-                                        "%s (run_id: %s)}"
-                                        % (case.label, case.run_id))
-                        if not case.m_size_eq:
-                            doc2.appendLine("Repository and destination "
-                                            "have apparently not been run "
-                                            "with the same mesh (sizes do "
-                                            "not match).")
-                        elif case.diff_value:
-                            doc2.add_row(case.diff_value, l, case.label)
-                        elif self.__compare:
-                            doc2.appendLine("No difference between the "
-                                            "repository and the "
-                                            "destination.")
+            needs_pp_input = False
+            for i in range(len(label)):
+                if script[i]:
+                    input_nodes = \
+                        self.__parser.getChildren(nodes[i], "input")
+                    if input_nodes:
+                        needs_pp_input = True
+                        break
 
-                    # handle the input nodes that are inside case nodes
-                    if case.plot == "on" and case.is_run != "KO":
-                        nodes = self.__parser.getChildren(case.node, "input")
-                        if nodes:
-                            doc2.appendLine("\\subsection{Results for "
-                                            "case %s}" % case.label)
-                            self.report_input(doc2, nodes, l, case.label)
+            if needs_pp_input:
+                doc.appendLine("\\subsection{Results for "
+                               "post-processing cases}")
+                for i in range(len(label)):
+                    if script[i]:
+                        input_nodes = \
+                            self.__parser.getChildren(nodes[i], "input")
+                        if input_nodes:
+                            self.report_input(doc, input_nodes, l)
 
-                # handle the input nodes that are inside postpro nodes
-                if self.__postpro:
-                    script, label, nodes, args = self.__parser.getPostPro(l)
-
-                    needs_pp_input = False
-                    for i in range(len(label)):
-                        if script[i]:
-                            input_nodes = \
-                                self.__parser.getChildren(nodes[i], "input")
-                            if input_nodes:
-                                needs_pp_input = True
-                                break
-
-                    if needs_pp_input:
-                        doc2.appendLine("\\subsection{Results for "
-                                        "post-processing cases}")
-                        for i in range(len(label)):
-                            if script[i]:
-                                input_nodes = \
-                                    self.__parser.getChildren(nodes[i], "input")
-                                if input_nodes:
-                                    self.report_input(doc2, input_nodes, l)
-
-            attached_files.append(doc2.close())
+        attached_files.append(doc.close())
 
         return attached_files
 
@@ -1998,28 +2018,6 @@ class Studies(object):
 
     def getlabel(self):
         return self.labels
-
-    #---------------------------------------------------------------------------
-
-    def logs(self):
-        try:
-            self.reportFile.close()
-        except:
-            pass
-        self.reportFile = open(self.report, mode='r')
-        return self.reportFile.read()
-
-    #---------------------------------------------------------------------------
-
-    def __del__(self):
-        try:
-            self.__log.close()
-        except:
-            pass
-        try:
-            self.reportFile.close()
-        except:
-            pass
 
 #-------------------------------------------------------------------------------
 # class dependency_graph

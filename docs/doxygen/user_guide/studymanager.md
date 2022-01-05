@@ -37,23 +37,18 @@ The script needs a source directory of code_saturne cases, called the
 directory, from which computations will be run.
 
 The **destination** directory structure only contains the required files for
-SMGR functionalities. Thus, only `POST` and `<CASE>` directories will be found in
-duplicated studies. In the same way, only `RESU/<run_id>` directories will be
+SMGR functionalities. Thus, only `POST` and `<CASE>` directories will be found
+in duplicated studies. In the same way, only `RESU/<run_id>` directories will be
 found in `<CASE>`.
 
-For each duplicated case, SMGR can compile the user files, run the case, compare
-the obtained checkpoint file with the previous one from the repository, and plot
-curves in order to illustrate the computations.
+For each duplicated case, SMGR can run the case, compare the obtained checkpoint
+file with the previous one from the repository, and plot curves in order to
+illustrate the computations. All generated figures are batched in
+`report_figures.pdf`.
 
-For all these steps, SMGR generates two reports:
-- A _global_ report which summarizes the status of each case.
-- A _detailed_ report which gives the differences between the new results
-  and the previous ones in the repository, and displays
- the defined plots.
-
-In the **repository**, previous results of computations are required only
-for checkpoint files comparison purposes. They can be also useful, if the
-user needs to run specific scripts.
+In the **repository**, previous results of computations are required only for
+checkpoint files comparison purposes. They can be also useful, if the user needs
+to run specific scripts.
 
 Prerequisites
 -------------
@@ -84,8 +79,8 @@ Majors command-line options are detailed here:
   **repository**
 - `-x, --update-setup`: update all code_saturne setup.xml files in the
   **repository**
-- `-t, --test-compile`: compile all cases
-- `-r, --run`: run all cases
+- `-t, --test-compile`: compile all cases in the **repository**
+- `-r, --run`: create and run all cases in **destination**
 - `-n N_ITER, --n-iterations=N_ITER`: maximum number of iterations for cases of
   the study
 - `-c, --compare`: compare results files between **repository** and
@@ -131,21 +126,22 @@ Examples
   $ code_saturne smgr -f sample.xml -r -c -p -m "dt@moulinsart.be dd@moulinsart.be"
   ```
 - compare and plot results in the **destination** already computed
-   ```
-   $ code_saturne smgr -f sample.xml -c -p
-   ```
+  ```
+  $ code_saturne smgr -f sample.xml -c -p
+  ```
 - run cases tagged "coarse" (standing for coarse mesh for example) _and_ "hr"
   (standing for high Reynolds for example) only for 2 time iterations in
   destination directory of path `../RUNS/RIBS` (`RIBS} will be created, `RUNS`
   already exists). The command is launched from inside the study directory, so
   the repository containing the original study is simply indicated by `..`
   ```
-  $ code_saturne smgr -f smgr_ribs.xml -r -n 2 --with-tags=coarse,hr --dest=../RUNS/RIBS --repo=..
+  $ code_saturne smgr -f smgr_ribs.xml -r -n 2 --with-tags=coarse,hr
+  --dest=../RUNS/RIBS --repo=..
   ```
 ### Note
 
-The detailed report is generated only if the options `-c, --compare`
-or `-p, --post` is present in the command line.
+`report_figures.pdf` is generated only if the option `-p, --post` is present in
+the command line.
 
 SMGR parameter file
 ===================
@@ -784,15 +780,13 @@ command line.
 
 SMGR can include files into the final detailed report. These files must be in
 the directory of results either in the **destination** or in the **repository**.
-The following example shows the inclusion of three files: `performance.log` and
-`setup.log` from the **destination**, and a `performance.log` from the
-**repository**:
+The following example shows the inclusion of two figures from the 
+**destination**, and the **repository**:
 
 ```{.xml}
 <case label='Grid1' status='on' compute="on" post="on">
-    <input dest="" file="performance.log"/>
-    <input dest="" file="setup.log"/>
-    <input repo="" file="performance.log"/>
+    <input dest="" file="figure1.png"/>
+    <input repo="" file="figure2.png"/>
 </case>
 ```
 
@@ -821,13 +815,27 @@ Output and restart {#sec_smgr_restart}
 
 SMGR produces several files in the **destination** directory:
 
-- `report.txt`: standard output of the script;
-- `studymanager.log`: log of the code and the `pdflatex` compilation;
-- `report_global.pdf`: summary of the compilation, run, comparison, and plot
-  steps;
-- `report_detailed.pdf`: details the comparison and display the plot;
-- `smgr_<name>.xml`: udpated SMGR parameters file, useful for restart the script
-  if an error occurs.
+- `studymanager.log`: standard output of SMGR;
+- `smgr_<name>.xml`: udpated SMGR parameters file, useful to restart the script
+  if an error occurs;
+
+Only available with option `-r, --run`:
+- `run_case.log`: generated in all `STUDY/CASE/RESU/run_id` folders, summary of
+  the creation and the run of the case;
+
+Only available with option`-p, --post`:
+- `report_figures.pdf`: list of the generated figures;
+- `smgr_post_pro.log` can be found in case of error during post-processing;
+- `make_pdf.log` and `report_figures.tex/.log/.aux` can be found in case of
+  error during generation of `report_figures.pdf`.
+
+SMGR can produce or modify several files in the **repository** directory:
+
+- `smgr_<name>.xml`: update file with `-u, --update-smgr` option;
+- `setup_<name>.xml`: update all xml files in `STUDY/CASE/DATA/` with `-x,
+  --update-setup` option;
+- `smgr_compilation.log`: summary of the compilation with `-t,
+  --test-compilation` option.
 
 After the computation of a case, if no error occurs, the attribute `compute` is
 set to `"off"` in the copy of the parameters file in the **destination**. It

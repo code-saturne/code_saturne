@@ -399,8 +399,8 @@ def run_studymanager(pkg, options):
 
     # Reporting - attached files are either pdf or
     # raw tex files if pdflatex is disabled
-    attached_file = studies.build_reports("report_global",
-                                          "report_detailed")
+    if options.post:
+        attached_file = studies.build_reports("report_figures")
 
     if len(options.addresses.split()) > 0:
         send_report(pkg.code_name, studies.logs(),
