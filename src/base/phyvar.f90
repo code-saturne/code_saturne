@@ -209,7 +209,7 @@ if (ippmod(iphpar).ge.1 .or. ippmod(idarcy).ge.1) then
   call cs_physical_properties2
 endif
 
-!  ROMB SUR LES BORDS : VALEUR PAR DEFAUT (CELLE DE LA CELLULE VOISINE)
+! Boundary density based on adjacent cell value if not explicitely set.
 
 if (mbrom.eq.0) then
   call field_get_val_s(icrom, crom)
@@ -219,7 +219,6 @@ if (mbrom.eq.0) then
   enddo
 endif
 
-!
 ! Parallelism and periodicity
 !
 ! In navstv and visecv, we need rho in the halo
@@ -228,7 +227,6 @@ if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(crom)
 endif
 
-!
 ! Only density may be updated in Navier Stokes loop
 if (iterns.ge.1) return
 
@@ -288,7 +286,7 @@ endif
 ! Compute the eddy viscosity
 !===============================================================================
 
-if     (iturb.eq. 0) then
+if (iturb.eq. 0) then
 
 ! Laminar
 ! =======

@@ -70,6 +70,7 @@
 #include "cs_thermal_model.h"
 #include "cs_timer.h"
 #include "cs_tree.h"
+#include "cs_turbulence_bc.h"
 #include "cs_turbulence_model.h"
 #include "cs_parall.h"
 #include "cs_elec_model.h"
@@ -767,30 +768,29 @@ _dof_meg_vel_profile(cs_lnum_t         n_elts,
 
   else if (normalization == 1) {
 
-    /* For general models, apply scaling to convert from mass flow
-       to velocity; For specific models, scaling is done later. */
+    /* In all cases, update total mass flow if given by a MEG function
+       (not be needed by all models, but provided in a consistent manner) */
 
-    if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] == 0
-        || cs_glob_physical_model_flag[CS_GAS_MIX] >= 0
-        || cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
+    if (c->norm_type == 11)
+      boundaries->qimp[c->zone->id - 1] = mass_flow;
 
-      assert(   n_elts == c->zone->n_elts
-             && elt_ids == c->zone->elt_ids);
+    /* For most models, apply scaling to convert from mass flow
+       to velocity; For combustion models, scaling is done later. */
 
+    bool scale_velocity = true;
+
+    for (int i = CS_COMBUSTION_3PT; i <= CS_COMBUSTION_FUEL; i++) {
+      if (cs_glob_physical_model_flag[i] >= 0)
+        scale_velocity = false;
+    }
+
+    if (scale_velocity)
       _b_mass_flow_to_vel(c->zone,
                           dense_output,
                           mass_flow,
                           c->c_pr,
                           c->c_tk,
                           retval);
-
-    }
-
-    /* In all cases, update total mass flow if given by a MEG function
-       (not be needed by all models, but provided in a consistent manner) */
-
-    if (c->norm_type == 11)
-      boundaries->qimp[c->zone->id - 1] = mass_flow;
 
   }
 }
@@ -2243,6 +2243,110 @@ _init_zones(const cs_lnum_t   n_b_faces,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Define automatic turbulence values.
+ *
+ * parameters:
+ *   rdcodcl <-- boundary condition values
+ *----------------------------------------------------------------------------*/
+
+static void
+_standard_turbulence_bcs(cs_real_t  *rcodcl)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+  const int var_key_id = cs_field_key_id("variable_id");
+
+  const cs_real_t *b_rho = CS_F_(rho_b)->val;
+  const cs_real_t *c_mu = CS_F_(mu)->val;
+
+  cs_lnum_t ivar_u = cs_field_get_key_int(CS_F_(vel), var_key_id) -1;
+
+  const cs_real_t  *_rcodcl_v[3];
+  for (int coo_id = 0; coo_id < 3; coo_id++)
+    _rcodcl_v[coo_id] = rcodcl + (ivar_u + coo_id)*n_b_faces;
+
+  /* Inlet BC's */
+
+  for (int izone = 0; izone < boundaries->n_zones; izone++) {
+
+    if (boundaries->icalke[izone] > 0) {
+
+      int zone_nbr = boundaries->bc_num[izone];
+      const cs_zone_t *z = cs_boundary_zone_by_id(zone_nbr);
+
+      const cs_real_t dh = boundaries->dh[izone];
+
+      if (boundaries->icalke[izone] == 1) {
+
+        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+          cs_lnum_t face_id = z->elt_ids[i];
+          cs_lnum_t cell_id = b_face_cells[face_id];
+
+          cs_real_t vel[3] = {_rcodcl_v[0][face_id],
+                              _rcodcl_v[1][face_id],
+                              _rcodcl_v[2][face_id]};
+          cs_real_t uref2 = fmax(cs_math_3_square_norm(vel),
+                                 cs_math_epzero);
+
+          cs_turbulence_bc_inlet_hyd_diam(face_id, uref2, dh,
+                                          b_rho[face_id], c_mu[cell_id],
+                                          rcodcl);
+        }
+
+      }
+      else if (boundaries->icalke[izone] == 2) {
+
+        const cs_real_t t_intensity = boundaries->xintur[izone];
+
+        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+          cs_lnum_t face_id = z->elt_ids[i];
+
+          cs_real_t vel[3] = {_rcodcl_v[0][face_id],
+                              _rcodcl_v[1][face_id],
+                              _rcodcl_v[2][face_id]};
+          cs_real_t uref2 = fmax(cs_math_3_square_norm(vel),
+                                 cs_math_epzero);
+
+          cs_turbulence_bc_inlet_turb_intensity(face_id, uref2,
+                                                t_intensity, dh,
+                                                rcodcl);
+        }
+
+      }
+
+    } /* End for inlet */
+
+  }
+
+  /* Automatic wall condition for alpha */
+
+  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+
+    cs_lnum_t ivar_alp = cs_field_get_key_int(CS_F_(alp_bl), var_key_id) -1;
+
+    cs_real_t  *_rcodcl_alp = rcodcl + ivar_alp*n_b_faces;
+
+    for (int izone = 0; izone < boundaries->n_zones; izone++) {
+      if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
+
+        int zone_nbr = boundaries->bc_num[izone];
+        const cs_zone_t *z = cs_boundary_zone_by_id(zone_nbr);
+
+        for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+          cs_lnum_t face_id = z->elt_ids[i];
+          _rcodcl_alp[face_id] = 0.;
+        }
+
+      }
+    }
+
+  }
+
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2262,7 +2366,6 @@ _init_zones(const cs_lnum_t   n_b_faces,
  * integer          nozppm   <-- max number of boundary conditions zone
  * integer          nclpch   <-- number of simulated class per coals
  * integer          iqimp    <-- 1 if mass flow rate is applied
- * integer          icalke   <-- 1 for automatic turbulent boundary conditions
  * integer          ientat   <-- 1 for air temperature boundary conditions (coal)
  * integer          ientcp   <-- 1 for coal temperature boundary conditions (coal)
  * INTEGER          INMOXY   <-- coal: number of oxydant for the current inlet
@@ -2279,8 +2382,6 @@ _init_zones(const cs_lnum_t   n_b_faces,
  * double precision qimp     <-- inlet flow rate
  * double precision qimpat   <-- inlet air flow rate (coal)
  * double precision qimpcp   <-- inlet coal flow rate (coal)
- * double precision dh       <-- hydraulic diameter
- * double precision xintur   <-- turbulent intensity
  * double precision timpat   <-- air temperature boundary conditions (coal)
  * double precision timpcp   <-- inlet coal temperature (coal)
  * double precision tkent    <-- inlet temperature (gas combustion)
@@ -2292,7 +2393,6 @@ _init_zones(const cs_lnum_t   n_b_faces,
 
 void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                int        *iqimp,
-                               int        *icalke,
                                int        *ientat,
                                int        *ientcp,
                                int        *inmoxy,
@@ -2308,8 +2408,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                double     *qimp,
                                double     *qimpat,
                                double     *qimpcp,
-                               double     *dh,
-                               double     *xintur,
                                double     *timpat,
                                double     *timpcp,
                                double     *tkent,
@@ -2367,17 +2465,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
     bft_printf("---zone %i nature: %s\n", zone_nbr, boundaries->nature[izone]);
     bft_printf("---zone %i number of faces: %i\n", zone_nbr, bz->n_elts);
 #endif
-
-    int wall_type = 1;
-
-    /* Mapped inlet? */
-
-    if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
-      if (boundaries->rough[izone] >= 0.0)
-        wall_type = 6; //TODO remove and use all roughness wall function
-      else
-        wall_type = 5;
-    }
 
     /* for each field */
     for (int f_id = 0; f_id < n_fields; f_id++) {
@@ -2507,15 +2594,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
       tn_bc = _get_zone_bc_node(tn_bc, izone);
 
-      /* Update the zone's arrays (iqimp, dh, xintur, icalke, qimp,...)
+      /* Update the zone's arrays (iqimp, icalke, qimp,...)
          because they are re-initialized at each time step
          in PRECLI and PPPRCL routines */
 
       /* data by zone */
       iqimp[zone_nbr-1]  = boundaries->iqimp[izone];
-      dh[zone_nbr-1]     = boundaries->dh[izone];
-      xintur[zone_nbr-1] = boundaries->xintur[izone];
-      icalke[zone_nbr-1] = boundaries->icalke[izone];
 
       if (solid_fuels) {
         const cs_combustion_model_t *cm = cs_glob_combustion_model;
@@ -2608,7 +2692,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       const int var_key_id = cs_field_key_id("variable_id");
 
       /* turbulent inlet, with formula */
-      if (icalke[zone_nbr-1] == 0) {
+      if (boundaries->icalke[zone_nbr-1] == 0) {
 
         tn_bc = _get_zone_bc_node(tn_bc, izone);
 
@@ -2802,8 +2886,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         bft_printf("-----iqimp=%i, qimp=%12.5e \n",
                    iqimp[zone_nbr-1], qimp[zone_nbr-1]);
       }
-      bft_printf("-----icalke=%i, dh=%12.5e, xintur=%12.5e \n",
-                 icalke[zone_nbr-1], dh[zone_nbr-1], xintur[zone_nbr-1]);
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
         bft_printf("-----iprofm=%i, automatic=%i \n",
@@ -3009,13 +3091,29 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
   /* Final adjustments */
 
+  /* Automatic turbulence values
+     TODO: spcecify which models do not need this instead of those who do.
+     In most cases, even if a model changes this, doing it in all cases
+     should be safe. */
+
+  bool std_turbulence_bcs = false;
+  if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] == 0
+      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] >= 0
+      || cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0
+      || cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)
+    std_turbulence_bcs = true;
+
+  if (std_turbulence_bcs)
+    _standard_turbulence_bcs(rcodcl);
+
+  /* Mass flow (TODO: merge qimp and qimpat) */
+
   for (int izone = 0; izone < boundaries->n_zones; izone++) {
     qimp[izone] = boundaries->qimp[izone];
-    if (solid_fuels) {
-      /* TODO: merge qimp and qimpat */
+    if (solid_fuels)
       qimpat[izone] = boundaries->qimp[izone];
-    }
   }
+
 }
 
 /*----------------------------------------------------------------------------

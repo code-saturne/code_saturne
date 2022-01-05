@@ -370,30 +370,16 @@ rijipb => null()
 
 call precli(nvar, icodcl, rcodcl)
 
-!     - Interface Code_Saturne
-!       ======================
-
-! N.B. Zones de face de bord : on utilise provisoirement les zones des
-!    physiques particulieres, meme sans physique particuliere
-!    -> sera modifie lors de la restructuration des zones de bord
+! Base definitions from the GUI
+! =============================
 
 call uiclim &
   ( nozppm,                                                        &
-    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
+    iqimp,  ientat, ientcp, inmoxy, ientox,                        &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
     itypfb, izfppp, icodcl,                                        &
-    qimp,   qimpat, qimpcp, dh,     xintur,                        &
+    qimp,   qimpat, qimpcp,                                        &
     timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
-
-if (ippmod(iphpar).eq.0.or.ippmod(igmix).ge.0.or.ippmod(icompf).ge.0) then
-
-  ! No specific physical model here
-
-  call stdtcl &
-    ( nbzppm , nozppm ,                                              &
-      icalke , dh , xintur, itypfb , izfppp , rcodcl )
-
-endif
 
 call cs_boundary_conditions_complete(nvar, itypfb, icodcl, rcodcl)
 
@@ -4971,10 +4957,10 @@ call precli(nvar, icodcl, rcodcl)
 
 call uiclim &
   ( nozppm,                                                        &
-    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
+    iqimp,  ientat, ientcp, inmoxy, ientox,                        &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
     itypfb, izfppp, icodcl,                                        &
-    qimp,   qimpat, qimpcp, dh,     xintur,                        &
+    qimp,   qimpat, qimpcp,                                        &
     timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
 
 !     - Sous-programme utilisateur

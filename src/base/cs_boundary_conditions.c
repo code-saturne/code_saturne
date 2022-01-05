@@ -266,20 +266,20 @@ _inlet_sum(int                          var_id,
     if (enforce_balance == 1) {
       for (cs_lnum_t i = 0; i < n_faces; i++) {
         const cs_lnum_t f_id = (faces != NULL) ? faces[i] : i;
-        inlet_sum[j] +=_rcodcl[f_id]*f_surf[f_id];
+        inlet_sum[j] += _rcodcl[f_id]*f_surf[f_id];
       }
     }
     else if (enforce_balance == 2) {
       for (cs_lnum_t i = 0; i < n_faces; i++) {
         const cs_lnum_t f_id = (faces != NULL) ? faces[i] : i;
-        inlet_sum[j] +=_rcodcl[f_id]*f_surf[f_id]*balance_w[f_id];
+        inlet_sum[j] += _rcodcl[f_id]*f_surf[f_id]*balance_w[f_id];
       }
     }
     else if (enforce_balance == 3) {
       for (cs_lnum_t i = 0; i < n_faces; i++) {
         const cs_lnum_t f_id = (faces != NULL) ? faces[i] : i;
         const cs_lnum_t c_id = m->b_face_cells[f_id];
-        inlet_sum[j] +=_rcodcl[f_id]*f_surf[f_id]*balance_w[c_id];
+        inlet_sum[j] += _rcodcl[f_id]*f_surf[f_id]*balance_w[c_id];
       }
     }
 
@@ -529,7 +529,6 @@ _compute_neumann_bc(const cs_mesh_t            *mesh,
   const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
   const cs_lnum_t *elt_ids = bz->elt_ids;
   const cs_lnum_t  n_elts = bz->n_elts;
-  const cs_lnum_t  def_dim = def->dim;
 
   assert(eqp->dim == def->dim);
 

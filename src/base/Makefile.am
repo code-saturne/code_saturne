@@ -400,7 +400,6 @@ pthrbm.f90 \
 resvoi.f90 \
 scalai.f90 \
 schtmp.f90 \
-stdtcl.f90 \
 strdep.f90 \
 strhis.f90 \
 strini.f90 \

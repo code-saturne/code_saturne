@@ -71,7 +71,6 @@
 !>                                     \grad T \cdot \vect{n} \f$
 !_______________________________________________________________________________
 
-
 subroutine pptycl &
  ( nvar   , init   ,                                              &
    icodcl , itypfb , izfppp ,                                     &
