@@ -104,7 +104,6 @@ BEGIN_C_DECLS
 
 typedef enum {
   BY_XDEF = -1,           /* to mark usage of newer system */
-  DIRICHLET_FORMULA,
   DIRICHLET_IMPLICIT,
   EXCHANGE_COEFF,
   EXCHANGE_COEFF_FORMULA,
@@ -176,8 +175,10 @@ typedef struct {
 
   const  cs_zone_t    *zone;        /*<! Pointer to zone */
 
-  const  char         *field_name;  /*<! Pointer to field name */
+  const  char         *name;        /*<! Pointer to field or array name */
   const  char         *condition;   /*<! Pointer to condition name type */
+
+  int                  dim;         /*<! Values dimension */
 
 } cs_gui_boundary_meg_context_t;
 
@@ -269,9 +270,10 @@ _add_boundary_const_context(const  cs_zone_t   *zone,
 /*!
  * \brief Add new MEG-based cs_dof_func_t context info.
  *
- * \param[in]  zone      pointer to associated zone
- * \param[in]  fields    array of field pointers
- * \param[in]  n_fields  number gof field pointers
+ * \param[in]  zone       pointer to associated zone
+ * \param[in]  name       name of associated field or array
+ * \param[in]  condition  associated condition type
+ * \param[in]  dim        associated dimension
  *
  * \return: pointer to cs_dof_func_t context info
  */
@@ -279,8 +281,9 @@ _add_boundary_const_context(const  cs_zone_t   *zone,
 
 static cs_gui_boundary_meg_context_t *
 _add_boundary_meg_context(const  cs_zone_t   *zone,
-                          const  char        *field_name,
-                          const  char        *condition)
+                          const  char        *name,
+                          const  char        *condition,
+                          int                 dim)
 {
   BFT_REALLOC(_b_contexts,
               _n_b_contexts+1,
@@ -290,8 +293,9 @@ _add_boundary_meg_context(const  cs_zone_t   *zone,
   BFT_MALLOC(c, 1, cs_gui_boundary_meg_context_t);
 
   c->zone = zone;
-  c->field_name = field_name;
+  c->name = name;
   c->condition = condition;
+  c->dim = dim;
 
   /* Now set in structure */
 
@@ -960,11 +964,11 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
 /*----------------------------------------------------------------------------*/
 
 static void
-_dof_const_t2h_profile(cs_lnum_t         n_elts,
-                       const cs_lnum_t  *elt_ids,
-                       bool              dense_output,
-                       void             *input,
-                       cs_real_t        *retval)
+_dof_const_t2h(cs_lnum_t         n_elts,
+               const cs_lnum_t  *elt_ids,
+               bool              dense_output,
+               void             *input,
+               cs_real_t        *retval)
 {
   cs_gui_boundary_const_context_t  *c
     = (cs_gui_boundary_const_context_t *)input;
@@ -1024,16 +1028,16 @@ _dof_const_t2h_profile(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 static void
-_dof_meg_t2h_profile(cs_lnum_t         n_elts,
-                     const cs_lnum_t  *elt_ids,
-                     bool              dense_output,
-                     void             *input,
-                     cs_real_t        *retval)
+_dof_meg_t2h(cs_lnum_t         n_elts,
+             const cs_lnum_t  *elt_ids,
+             bool              dense_output,
+             void             *input,
+             cs_real_t        *retval)
 {
   cs_gui_boundary_meg_context_t  *c
     = (cs_gui_boundary_meg_context_t *)input;
 
-  assert(strcmp(c->field_name, "enthalpy") == 0);
+  assert(strcmp(c->name, "enthalpy") == 0);
 
   assert(n_elts == c->zone->n_elts && elt_ids == c->zone->elt_ids);
 
@@ -1143,6 +1147,76 @@ _inlet_turbulence(cs_tree_node_t  *tn_bc,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute the velocity at boundary faces
+ *        using a MEG generated norm and direction.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_meg_profile(cs_lnum_t         n_elts,
+                 const cs_lnum_t  *elt_ids,
+                 bool              dense_output,
+                 void             *input,
+                 cs_real_t        *retval)
+{
+  cs_gui_boundary_meg_context_t  *c
+    = (cs_gui_boundary_meg_context_t *)input;
+
+  cs_real_t *v_loc = cs_meg_boundary_function(c->zone,
+                                              c->name,
+                                              c->condition);
+
+  const cs_lnum_t dim = c->dim;
+
+  if (dense_output) {  /* common/expected case */
+
+    if (dim == 1) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        retval[i] = v_loc[i];
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        for (cs_lnum_t k = 0; k < 3; k++)
+          retval[i*dim + k] = v_loc[k*n_elts + i];
+      }
+    }
+
+  }
+  else { /* sparse/indirect case */
+
+    if (dim == 1) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        retval[elt_id] = v_loc[i];
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        for (cs_lnum_t k = 0; k < 3; k++)
+          retval[elt_id*dim + k] = v_loc[k*n_elts + i];
+      }
+    }
+
+  }
+
+  BFT_FREE(v_loc);
+}
+
 /*-----------------------------------------------------------------------------
  * get scalar's values
  *
@@ -1163,9 +1237,6 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
   cs_tree_node_t *tn_s = cs_tree_node_get_child(tn_bc, "scalar");
   tn_s = cs_tree_node_get_sibling_with_tag(tn_s, "name", f->name);
 
-  if (dim > 1)
-    tn_s = cs_tree_node_get_child(tn_s, "component");
-
   cs_equation_param_t *eqp = _get_equation_param(f->name);
   const char *z_name = boundaries->label[izone];
   const char *choice = cs_tree_node_get_tag(tn_s, "choice");
@@ -1179,124 +1250,39 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
          __func__, f->name, cnv);
   }
 
-  cs_real_t value[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  assert(dim <= 9);
+  if (choice == NULL)
+    return;
 
-  bool possibly_incomplete = false;
+  if (   strcmp(choice, "dirichlet") == 0
+      || strcmp(choice, "neumann") == 0) {
 
-  /* FIXME: we should not need a loop over components, but
-     directly use vector values; if we do not yet have
-     multidimensional user variables in the GUI, we can handle
-     this more cleanly */
+    /* Read associated values */
 
-  for (int i = 0; i < dim; i++) {
+    cs_real_t value[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+    assert(dim <= 9);
 
-    /* All components should use the same BC type */
-
-    if (i > 0 && choice != NULL) {
-      const char *choice_c = cs_tree_node_get_tag(tn_s, "choice");
-      if (choice_c != NULL)
-        if (strcmp(choice, choice_c))
-          bft_error
-            (__FILE__, __LINE__, 0,
-             _("%s: for field %s on zone %s,\n"
-               "BC types are mismatched (%s on component 0, %s on component %d."),
-             __func__, f->name, z_name, choice, choice_c, i);
-    }
-
-    if (choice != NULL) {
-
-      if (! strcmp(choice, "dirichlet")) {
-        const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
-        if (v != NULL) {
-          value[i] = *v;
-        }
-        else
-          possibly_incomplete = true;
-      }
-      else if (! strcmp(choice, "neumann")) {
-        const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
-        if (v != NULL) {
-          value[i] = *v;
-        }
-      }
-      else if (! strcmp(choice, "dirichlet_formula")) {
-
-        const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
-
-        if (s != NULL && i == 0) {
-
-          const cs_zone_t *z = cs_boundary_zone_by_id(izone + 1);
-
-          cs_gui_boundary_meg_context_t  *c
-            = _add_boundary_meg_context(z, f->name, choice);
-
-          if (f == CS_F_(h) && cs_gui_strcmp(cnv, "temperature"))
-            cs_equation_add_bc_by_dof_func(eqp,
-                                           CS_PARAM_BC_DIRICHLET,
-                                           z->name,
-                                           cs_flag_boundary_face,
-                                           _dof_meg_t2h_profile,
-                                           c);
-
-          else {
-            boundaries->type_code[f_id][izone] = DIRICHLET_FORMULA;
-            boundaries->scalar_e[f_id][izone * dim + i] = true;
-          }
-
-        }
-        else if (s != NULL) {
-          boundaries->type_code[f_id][izone] = DIRICHLET_FORMULA;
-          boundaries->scalar_e[f_id][izone * dim + i] = true;
-        }
-
-      }
-      else if (! strcmp(choice, "neumann_formula")) {
-
-        const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
-        if (s != NULL) {
-          boundaries->type_code[f_id][izone] = NEUMANN_FORMULA;
-          boundaries->scalar_e[f_id][izone * dim + i] = true;
-        }
-      }
-      else if (! strcmp(choice, "exchange_coefficient_formula")) {
-
-        const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
-        if (s != NULL) {
-          boundaries->type_code[f_id][izone] = EXCHANGE_COEFF_FORMULA;
-          boundaries->scalar_e[f_id][izone * dim + i] = true;
-        }
-      }
-      else if (! strcmp(choice, "exchange_coefficient")) {
-
-        const cs_real_t *v;
-
-        v = cs_tree_node_get_child_values_real(tn_s, "dirichlet");
-        if (v != NULL)
-          boundaries->values[f_id][izone * dim + i].val1 = v[0];
-
-        v = cs_tree_node_get_child_values_real(tn_s, "exchange_coefficient");
-        if (v != NULL) {
-          boundaries->type_code[f_id][izone] = EXCHANGE_COEFF;
-          boundaries->values[f_id][izone * dim + i].val2 = v[0];
-        }
-
-      }
-      else if (cs_gui_strcmp(choice, "dirichlet_implicit")) {
-        boundaries->type_code[f_id][izone] = DIRICHLET_IMPLICIT;
-      }
-      else if (cs_gui_strcmp(choice, "neumann_implicit")) {
-        boundaries->type_code[f_id][izone] = NEUMANN_IMPLICIT;
+    if (dim == 1) {
+      const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
+      if (v != NULL) {
+        value[0] = *v;
       }
     }
 
-    if (f->dim > 1)
-      tn_s = cs_tree_node_get_next_of_name(tn_s);
-  }
+    else { /* dim > 1, not produced by the GUI yet */
+      for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_s, choice);
+           tn != NULL;
+           tn = cs_tree_node_get_next_of_name(tn)) {
+        int c_id = -1;
+        cs_gui_node_get_child_int(tn, "component", &c_id);
+        if (c_id > -1 && c_id < f->dim) {
+          const  cs_real_t *v = cs_tree_node_get_values_real(tn);
+          if (v != NULL)
+            value[c_id] = v[0];
+        }
+      }
+    }
 
-  /* Now define appropriate equation parameters */
-
-  if (choice != NULL) {
+    /* Assign definition */
 
     if (! strcmp(choice, "dirichlet")) {
 
@@ -1305,8 +1291,7 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
          ignored (the XML/tree structure should be improved to
          avoid this type of problem )*/
 
-      if (   possibly_incomplete == false
-          || cs_equation_find_bc(eqp, z_name) == NULL) {
+      if (cs_equation_find_bc(eqp, z_name) == NULL) {
 
         if (f == CS_F_(h) && cs_gui_strcmp(cnv, "temperature")) {
           const cs_zone_t *z = cs_boundary_zone_by_id(izone + 1);
@@ -1316,7 +1301,7 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
                                          CS_PARAM_BC_DIRICHLET,
                                          z->name,
                                          cs_flag_boundary_face,
-                                         _dof_const_t2h_profile,
+                                         _dof_const_t2h,
                                          c);
         }
 
@@ -1335,6 +1320,94 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
                                   z_name,
                                   value);
 
+  }
+
+  else if (! strcmp(choice, "dirichlet_formula")) {
+
+    const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
+
+    if (s != NULL) {
+
+      const cs_zone_t *z = cs_boundary_zone_by_id(izone + 1);
+
+      cs_gui_boundary_meg_context_t  *c
+        = _add_boundary_meg_context(z, f->name, choice, dim);
+
+      if (f == CS_F_(h) && cs_gui_strcmp(cnv, "temperature"))
+        cs_equation_add_bc_by_dof_func(eqp,
+                                       CS_PARAM_BC_DIRICHLET,
+                                       z->name,
+                                       cs_flag_boundary_face,
+                                       _dof_meg_t2h,
+                                       c);
+
+      else {
+        cs_equation_add_bc_by_dof_func(eqp,
+                                       CS_PARAM_BC_DIRICHLET,
+                                       z->name,
+                                       cs_flag_boundary_face,
+                                       _dof_meg_profile,
+                                       c);
+      }
+
+    }
+
+  }
+
+  else if (! strcmp(choice, "neumann_formula")) {
+
+    const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
+    if (s != NULL) {
+      boundaries->type_code[f_id][izone] = NEUMANN_FORMULA;
+      boundaries->scalar_e[f_id][izone] = true;
+    }
+  }
+
+  else if (! strcmp(choice, "exchange_coefficient_formula")) {
+
+    const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
+    if (s != NULL) {
+      boundaries->type_code[f_id][izone] = EXCHANGE_COEFF_FORMULA;
+      boundaries->scalar_e[f_id][izone] = true;
+    }
+  }
+
+  else if (! strcmp(choice, "exchange_coefficient")) {
+
+    boundaries->type_code[f_id][izone] = EXCHANGE_COEFF;
+
+    for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_s, "dirichlet");
+         tn != NULL;
+         tn = cs_tree_node_get_next_of_name(tn)) {
+      int c_id = (dim == 1) ? 0 : -1;
+      cs_gui_node_get_child_int(tn, "component", &c_id);
+      if (c_id > -1 && c_id < f->dim) {
+        const  cs_real_t *v = cs_tree_node_get_values_real(tn);
+        if (v != NULL)
+          boundaries->values[f_id][izone*dim + c_id].val1 = v[0];
+      }
+    }
+
+    for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_s, choice);
+         tn != NULL;
+         tn = cs_tree_node_get_next_of_name(tn)) {
+      int c_id = (dim == 1) ? 0 : -1;
+      cs_gui_node_get_child_int(tn, "component", &c_id);
+      if (c_id > -1 && c_id < f->dim) {
+        const  cs_real_t *v = cs_tree_node_get_values_real(tn);
+        if (v != NULL)
+          boundaries->values[f_id][izone*dim + c_id].val2 = v[0];
+      }
+    }
+
+  }
+
+  else if (cs_gui_strcmp(choice, "dirichlet_implicit")) {
+    boundaries->type_code[f_id][izone] = DIRICHLET_IMPLICIT;
+  }
+
+  else if (cs_gui_strcmp(choice, "neumann_implicit")) {
+    boundaries->type_code[f_id][izone] = NEUMANN_IMPLICIT;
   }
 }
 
@@ -1815,7 +1888,7 @@ _init_boundaries(void)
     if (f->type & CS_FIELD_VARIABLE) {
       BFT_MALLOC(boundaries->type_code[f->id], n_zones, int);
       BFT_MALLOC(boundaries->values[f->id], n_zones * f->dim, cs_val_t);
-      BFT_MALLOC(boundaries->scalar_e[f->id], n_zones * f->dim, bool);
+      BFT_MALLOC(boundaries->scalar_e[f->id], n_zones, bool);
     }
   }
 
@@ -1880,10 +1953,10 @@ _init_boundaries(void)
       int i = f->id;
       for (int izone = 0; izone < n_zones; izone++) {
         boundaries->type_code[i][izone] = -1;
+        boundaries->scalar_e[i][izone] = false;
         for (int ii = 0; ii < f->dim; ii++) {
           boundaries->values[i][izone * f->dim + ii].val1 = 1.e30;
           boundaries->values[i][izone * f->dim + ii].val2 = 1.e30;
-          boundaries->scalar_e[i][izone * f->dim + ii] = false;
         }
       }
     }
@@ -2319,25 +2392,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       if (f->type & CS_FIELD_VARIABLE) {
 
         switch (boundaries->type_code[f->id][izone]) {
-
-          case DIRICHLET_FORMULA:
-            {
-              const char *f_name = f->name;
-
-              cs_real_t *new_vals
-                = cs_meg_boundary_function(bz, f_name, "dirichlet_formula");
-
-              for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
-                for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-                  cs_lnum_t face_id = bz->elt_ids[elt_id];
-                  icodcl[(ivar + ii) *n_b_faces + face_id] = wall_type;
-                  rcodcl[(ivar + ii) * n_b_faces + face_id]
-                    = new_vals[ii * bz->n_elts + elt_id];
-                }
-              }
-              BFT_FREE(new_vals);
-              break;
-            }
 
           case EXCHANGE_COEFF:
             for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
