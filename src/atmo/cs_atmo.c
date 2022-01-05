@@ -98,6 +98,7 @@
 #include "cs_sles_default.h"
 #include "cs_face_viscosity.h"
 #include "cs_divergence.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -476,51 +477,39 @@ _strtolower(char        *dest,
  * \brief This auxiliary function solve a Poisson equation for hydrostatic
  *  pressure :
  *  \f$ \divs ( \grad P ) = \divs ( f ) \f$
- * \param[in]      f_ext       external forcing
+ * \param[in]      f_ext       Total (NOT incremental) external forcing
  * \param[in]      dfext       external forcing increment
- * \param[in]      name        field name
- * \param[in]      min_z       Minimum altitude of the domain
- * \param[in]      p_ground    Pressure at the minimum altitude
  * \param[in,out]  i_massflux  Internal mass flux
  * \param[in,out]  b_massflux  Boundary mass flux
+ * \param[in]      f_id        Field id from the field to update
  * \param[in,out]  i_viscm     Internal face viscosity
  * \param[in,out]  i_viscm     Boundary face viscosity
  * \param[in,out]  dam         Working array
  * \param[in,out]  xam         Working array
- * \param[in,out]  dpvar       Pressure increment
+ * \param[in,out]  dpvar       Pressure increment at each sweep
  * \param[in,out]  rhs         Working array
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
-                              cs_real_3_t  dfext[],
-                              cs_real_t    pvar[],
-                              const char  *name,
-                              cs_real_t    min_z,
-                              cs_real_t    p_ground,
-                              cs_real_t    i_massflux[],
-                              cs_real_t    b_massflux[],
-                              cs_real_t    i_viscm[],
-                              cs_real_t    b_viscm[],
-                              cs_real_t    dam[],
-                              cs_real_t    xam[],
-                              cs_real_t    dpvar[],
-                              cs_real_t    rhs[])
-
+void
+cs_hydrostatic_pressure_atmo_compute(cs_real_3_t  *f_ext,
+                                     cs_real_3_t  *dfext,
+                                     int          f_id,
+                                     cs_real_t    *i_massflux,
+                                     cs_real_t    *b_massflux,
+                                     cs_real_t    i_viscm[],
+                                     cs_real_t    b_viscm[],
+                                     cs_real_t    *dam,
+                                     cs_real_t    *xam,
+                                     cs_real_t    *dpvar,
+                                     cs_real_t    *rhs)
 {
   /* Local variables */
   cs_domain_t *domain = cs_glob_domain;
   cs_mesh_t *m = domain->mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  cs_mesh_quantities_t *mq = domain->mesh_quantities;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)mq->b_face_cog;
-  cs_field_t *f = cs_field_by_name(name);
-  int f_id = f->id;
-  int inc, niterf, iccocg;
-
-  cs_var_cal_opt_t vcopt;
-  cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
 
   /*==========================================================================
    * 0.  Initialization
@@ -529,10 +518,17 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   /* solving info */
   cs_solving_info_t sinfo;
   int key_sinfo_id = cs_field_key_id("solving_info");
-  if (f_id > -1) {
-    f = cs_field_by_id(f_id);
-    cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
+  if (f_id == -1) {
+    bft_printf("Field given in hydrostatic pressure computation does not exist. \n");
+    bft_printf("Code will exit, check the arguments given. \n");
+    cs_exit(1);
   }
+  cs_field_t *f = cs_field_by_id(f_id);
+  cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
+  const char *name = f->name;
+  int niterf;
+  cs_real_t epsi_res=1e-6;
+  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);//TODO check if i can take parent id
 
   /* Symmetric matrix, except if advection */
   int isym = 1;
@@ -561,21 +557,32 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   }
 
   /* --> Handle parallelism and periodicity */
-  if (cs_glob_rank_id  >= 0 || cs_glob_mesh->n_init_perio > 0)
-    cs_mesh_sync_var_vect((cs_real_t *)next_fext);
+  cs_mesh_sync_var_vect((cs_real_t *)next_fext);
 
+  /* --- Convergence test */
+
+  /* Writing */
+  if (eqp_p->iwarni >= 2) {
+    bft_printf("L2 norm of F_ext=%f, dF_ext=%f, F_ext_next=%f\n",
+        sqrt(cs_gdot(3*m->n_cells, f_ext, f_ext)),
+        sqrt(cs_gdot(3*m->n_cells, dfext, dfext)),
+        sqrt(cs_gdot(3*m->n_cells, next_fext, next_fext))
+        );
+  }
   /* Boundary conditions
    *====================*/
 
-  vcopt.ndircl = 0;
-
+  eqp_p->ndircl = 0;
+  cs_real_t min_z = cs_glob_fluid_properties->xyzp0[2];
+  if (eqp_p->iwarni > 0)
+    bft_printf("Reference_z used inside hydrostatic pressure computation: %f", min_z);
   /* To solve hydrostatic pressure:
    * p_ground on the lowest face, homogeneous Neumann everywhere else */
   for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
     cs_real_t hint = 1. / mq->b_dist[face_id];
     cs_real_t qimp = 0.;
-    if ((b_face_cog[face_id][2] - min_z) < 0.005) {//FIXME dimensionless value
-      cs_real_t pimp = p_ground;
+    if ((b_face_cog[face_id][2] - min_z) < epsi_res) {//FIXME dimensionless value
+      cs_real_t pimp = cs_glob_atmo_option->meteo_psea;
       cs_boundary_conditions_set_dirichlet_scalar(&(f->bc_coeffs->a[face_id]),
                                                   &(f->bc_coeffs->af[face_id]),
                                                   &(f->bc_coeffs->b[face_id]),
@@ -583,7 +590,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                                                   pimp,
                                                   hint,
                                                   cs_math_big_r);
-      vcopt.ndircl = 1;
+      eqp_p->ndircl = 1;
     }
     else {
       cs_boundary_conditions_set_neumann_scalar(&(f->bc_coeffs->a[face_id]),
@@ -595,7 +602,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     }
   }
 
-  cs_parall_max(1, CS_INT_TYPE, &(vcopt.ndircl));
+  cs_parall_max(1, CS_INT_TYPE, &(eqp_p->ndircl));
   cs_real_t *rovsdt;
   BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
 
@@ -613,11 +620,11 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
 
   cs_face_viscosity(m, mq, imvisf, c_visc, i_viscm, b_viscm);
 
-  cs_matrix_wrapper_scalar(vcopt.iconv,
-                           vcopt.idiff,
-                           vcopt.ndircl,
+  cs_matrix_wrapper_scalar(eqp_p->iconv,
+                           eqp_p->idiff,
+                           eqp_p->ndircl,
                            isym,
-                           vcopt.thetav,
+                           eqp_p->thetav,
                            0,
                            f->bc_coeffs->b,
                            f->bc_coeffs->bf,
@@ -636,7 +643,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_ext_force_flux(m,
                     mq,
                     1, /* init */
-                    vcopt.nswrgr,
+                    eqp_p->nswrgr,
                     next_fext,
                     f->bc_coeffs->bf,
                     i_massflux,
@@ -661,22 +668,22 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_real_t residu = rnorm;
 
   /* Initial Right-Hand-Side */
-  cs_diffusion_potential(-1,//FIXME why not f_id?
+  cs_diffusion_potential(f_id,
                          m,
                          mq,
                          1, /* init */
                          1, /* inc */
-                         vcopt.imrgra,
+                         eqp_p->imrgra,
                          1, /* iccocg */
-                         vcopt.nswrgr,
-                         vcopt.imligr,
+                         eqp_p->nswrgr,
+                         eqp_p->imligr,
                          1, /* iphydp */
-                         vcopt.iwgrec,
-                         vcopt.iwarni,
-                         vcopt.epsrgr,
-                         vcopt.climgr,
+                         eqp_p->iwgrec,
+                         eqp_p->iwarni,
+                         eqp_p->epsrgr,
+                         eqp_p->climgr,
                          next_fext,
-                         pvar,
+                         f->val,
                          f->bc_coeffs->a,
                          f->bc_coeffs->b,
                          f->bc_coeffs->af,
@@ -691,7 +698,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
 
   cs_real_t ressol = 0;
   for (int sweep = 0;
-       sweep < vcopt.nswrsm && residu > (rnorm * vcopt.epsrsm);
+       sweep < eqp_p->nswrsm && residu > (rnorm * eqp_p->epsrsm);
        sweep++) {
 
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
@@ -706,7 +713,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                          dam,
                          xam,
                          0,
-                         vcopt.epsilo,
+                         eqp_p->epsilo,
                          rnorm,
                          &niterf,
                          &ressol,
@@ -715,25 +722,24 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
 
     /* Update variable and right-hand-side */
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
-      pvar[cell_id] += dpvar[cell_id];
+      f->val[cell_id] += dpvar[cell_id];
 
-
-    cs_diffusion_potential(-1,//FIXME why not f_id?
+    cs_diffusion_potential(f_id,
                            m,
                            mq,
                            1, /* init */
                            1, /* inc */
-                           vcopt.imrgra,
+                           eqp_p->imrgra,
                            1, /* iccocg */
-                           vcopt.nswrgr,
-                           vcopt.imligr,
+                           eqp_p->nswrgr,
+                           eqp_p->imligr,
                            1, /* iphydp */
-                           vcopt.iwgrec,
-                           vcopt.iwarni,
-                           vcopt.epsrgr,
-                           vcopt.climgr,
+                           eqp_p->iwgrec,
+                           eqp_p->iwarni,
+                           eqp_p->epsrgr,
+                           eqp_p->climgr,
                            next_fext,
-                           pvar,
+                           f->val,
                            f->bc_coeffs->a,
                            f->bc_coeffs->b,
                            f->bc_coeffs->af,
@@ -750,7 +756,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     residu = sqrt(cs_gdot(m->n_cells, rhs, rhs));
 
     /* Writing */
-    if (vcopt.iwarni >= 2) {
+    if (eqp_p->iwarni >= 2) {
       bft_printf("%s: CV_DIF_TS, IT: %d, Res: %12.5e, Norm: %12.5e\n",
           name, sweep, residu, rnorm);
       bft_printf("%s: Current reconstruction sweep: %d, "
@@ -1224,9 +1230,7 @@ cs_atmo_z_ground_compute(void)
   cs_real_t *restrict b_massflux
     = cs_field_by_id
         (cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id")))->val;
-
-  cs_var_cal_opt_t vcopt;
-  cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
+  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);//TODO check if i can take parent id
 
   cs_real_t normal[3];
   /* Normal direction is given by the gravity */
@@ -1258,7 +1262,7 @@ cs_atmo_z_ground_compute(void)
     if ((bc_type[face_id] == CS_SMOOTHWALL || bc_type[face_id] == CS_ROUGHWALL)
         && b_massflux[face_id] <= 0.) {
 
-      vcopt.ndircl = 1;
+      eqp_p->ndircl = 1;
       cs_real_t hint = 1. / mq->b_dist[face_id];
       cs_real_t pimp = cs_math_3_dot_product(b_face_cog[face_id], normal);
 
@@ -1288,7 +1292,7 @@ cs_atmo_z_ground_compute(void)
     }
   }
 
-  cs_parall_max(1, CS_INT_TYPE, &(vcopt.ndircl));
+  cs_parall_max(1, CS_INT_TYPE, &(eqp_p->ndircl));
 
   /* Matrix
    *=======*/
@@ -1331,7 +1335,7 @@ cs_atmo_z_ground_compute(void)
   cs_real_t inf_norm = 1.;
 
   /* Overall loop in order to ensure convergence */
-  for (int sweep = 0; sweep < vcopt.nswrsm && inf_norm > vcopt.epsrsm; sweep++) {
+  for (int sweep = 0; sweep < eqp_p->nswrsm && inf_norm > eqp_p->epsrsm; sweep++) {
 
     cs_equation_iterative_solve_scalar(0,   /* idtvar: no steady state algo */
                                        -1,  /* no over loops */
@@ -1340,7 +1344,7 @@ cs_atmo_z_ground_compute(void)
                                        0,   /* iescap */
                                        0,   /* imucpp */
                                        norm,
-                                       &vcopt,
+                                       eqp_p,
                                        f->val_pre,
                                        f->val,
                                        f->bc_coeffs->a,
@@ -1428,12 +1432,10 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
   cs_field_t *f = cs_field_by_name("meteo_pressure");
-  cs_var_cal_opt_t vcopt;
-  cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
   cs_field_t *potemp = cs_field_by_name("meteo_pot_temperature");
   cs_field_t *density = cs_field_by_name("meteo_density");
   cs_field_t *temp = cs_field_by_name("meteo_temperature");
-
+  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);//TODO check if i can take parent id
   cs_atmo_option_t *aopt = &_atmo_option;
   cs_real_t g = cs_math_3_norm(phys_cst->gravity);
 
@@ -1443,34 +1445,67 @@ cs_atmo_hydrostatic_profiles_compute(void)
   cs_real_t rair = phys_pro->r_pg_cnst;
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0; /* Around 2/7 */
+  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
+
+  const cs_velocity_pressure_model_t  *vp_model
+    = cs_glob_velocity_pressure_model;
+  const int idilat = vp_model->idilat;
 
   /* Get the lowest altitude (should also be minimum of z_ground)
    *=============================================================*/
+  cs_real_t *xyzp0 = cs_glob_fluid_properties->xyzp0;
 
-  cs_real_t z_min = cs_math_big_r;
+  /* If unmodified by the user */
+  if (   xyzp0[0] > -0.5 * cs_math_infinite_r
+      && xyzp0[1] > -0.5 * cs_math_infinite_r
+      && xyzp0[2] > -0.5 * cs_math_infinite_r) {
 
-  for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id ++) {
-    if (b_face_cog[face_id][2] < z_min)
-      z_min = b_face_cog[face_id][2];
+    xyzp0[0] = HUGE_VAL;
+    xyzp0[1] = HUGE_VAL;
+    xyzp0[2] = HUGE_VAL;
+    cs_lnum_t id_min = -1;
+
+    /* Minimum altitude */
+    for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id ++) {
+      if (b_face_cog[face_id][2] < xyzp0[2]){
+        xyzp0[0] = b_face_cog[face_id][0];
+        xyzp0[1] = b_face_cog[face_id][1];
+        xyzp0[2] = b_face_cog[face_id][2];
+        id_min = face_id;
+      }
+    }
+
+    /* Synchronisation */
+    int rank_id = cs_glob_rank_id;
+    cs_parall_min_id_rank_r(&id_min, &rank_id, xyzp0[2]);
+    cs_parall_bcast(rank_id, 3, CS_DOUBLE, xyzp0);
+    bft_printf(" Atmospheric module: automatically compute the reference pressure point:\n"
+        "   [%f, %f, %f]\n\n", xyzp0[0], xyzp0[1], xyzp0[2]);
   }
-
-  cs_parall_min(1, CS_REAL_TYPE, &z_min);
 
   /* p_ground is pressure at the lowest level */
 
   cs_real_t p_ground = aopt->meteo_psea;
-  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
 
   /* Initialize temperature, pressure and density from neutral conditions
    *=====================================================================*/
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
-    cs_real_t z  = cell_cen[cell_id][2] - z_min;
+    cs_real_t z  = cell_cen[cell_id][2] - xyzp0[2];
     cs_real_t zt = fmin(z, 11000.);
     cs_real_t factor = fmax(1. - g * zt / (cp0 * aopt->meteo_t0), 0.);
     temp->val[cell_id] = aopt->meteo_t0 * factor ;
     f->val[cell_id] = p_ground * pow(factor, rscp)
+                    /* correction factor for z > 11000m */
                     * exp(- g/(rair*temp->val[cell_id]) * (z - zt));
     density->val[cell_id] = f->val[cell_id] / (rair * temp->val[cell_id]);
+  }
+
+  /* Boussinesq hypothesis */
+  if (idilat==0) {
+    bft_printf(
+        "Meteo profiles are computed according to Boussinesq approximation.\n"
+        "Using adiabatic profiles for temperature and pressure."
+        "Density is computed accordingly.\n");
   }
 
   cs_real_t *i_massflux = NULL;
@@ -1508,7 +1543,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
     dfext[cell_id][0] = 0.;
     f_ext[cell_id][1] = density->val[cell_id] * phys_cst->gravity[1];
     dfext[cell_id][1] = 0.;
-    f_ext[cell_id][2] = density->val[cell_id] * phys_cst->gravity[2];
+    f_ext[cell_id][2] = density->val[cell_id] * phys_cst->gravity[2];//FIXME - ro0 g
     dfext[cell_id][2] = 0;
   }
 
@@ -1536,41 +1571,41 @@ cs_atmo_hydrostatic_profiles_compute(void)
   cs_real_t inf_norm = 1.;
 
   /* Loop to compute pressure profile */
-  for (int sweep = 0; sweep < vcopt.nswrsm && inf_norm > vcopt.epsrsm; sweep++) {
+  for (int sweep = 0; sweep < eqp_p->nswrsm && inf_norm > eqp_p->epsrsm; sweep++) {
     //FIXME 100 or nswrsm
 
     /* Update previous values of pressure for the convergence test */
     cs_field_current_to_previous(f);
-
-    _hydrostatic_pressure_compute(f_ext,
-                                  dfext,
-                                  f->val,
-                                  f->name,
-                                  z_min,
-                                  p_ground,
-                                  i_massflux,
-                                  b_massflux,
-                                  i_viscm,
-                                  b_viscm,
-                                  dam,
-                                  xam,
-                                  dpvar,
-                                  rhs);
+    cs_hydrostatic_pressure_atmo_compute(f_ext,
+                                         dfext,
+                                         f->id,
+                                         i_massflux,
+                                         b_massflux,
+                                         i_viscm,
+                                         b_viscm,
+                                         dam,
+                                         xam,
+                                         dpvar,
+                                         rhs);
 
     /* L infinity residual computation and forcing update */
     inf_norm = 0.;
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
       inf_norm = fmax(fabs(f->val[cell_id] - f->val_pre[cell_id])/pref, inf_norm);
 
+      /* Boussinesq hypothesis: do not update adiabatic temperature profile */
+      if (idilat > 0) {
+        temp->val[cell_id] = potemp->val[cell_id]
+                           * pow((f->val[cell_id]/pref), rscp);
+      }
+
       /* f_ext = rho^k * g */
-      temp->val[cell_id] = potemp->val[cell_id]
-                         * pow((f->val[cell_id]/pref), rscp);
       cs_real_t rho_k = f->val[cell_id] / (rair * temp->val[cell_id]);
       density->val[cell_id] = rho_k;
 
       f_ext[cell_id][0] = rho_k * phys_cst->gravity[0];
       f_ext[cell_id][1] = rho_k * phys_cst->gravity[1];
-      f_ext[cell_id][2] = rho_k * phys_cst->gravity[2];
+      f_ext[cell_id][2] = rho_k * phys_cst->gravity[2]; // FIXME df ?
     }
     cs_parall_max(1, CS_REAL_TYPE ,&inf_norm);
     bft_printf

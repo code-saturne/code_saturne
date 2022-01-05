@@ -3,6 +3,9 @@ Release 7.0.3 (not released yet)
 
 User changes:
 
+- Atmospheric module: merge the compatibility of Boussinesq approximation with
+  meteo preprocessor.
+
 - Atmospheric module: merge the possibility to give center of the domain
   in Lambert 93 coordinates.
 

@@ -62,7 +62,7 @@ implicit none
 integer          ivart, iel
 
 double precision xvart, rhum, rscp, pp, zent
-double precision lrhum
+double precision lrhum, theta0
 double precision qsl, deltaq
 double precision yw_liq, qwt, tliq, dum
 
@@ -70,7 +70,7 @@ double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_vart, cvar_totwt
 double precision, dimension(:), pointer :: cpro_tempc, cpro_liqwt
 double precision, dimension(:), pointer :: cpro_beta
-double precision, dimension(:), pointer :: cpro_met_p
+double precision, dimension(:), pointer :: cpro_met_p, cpro_met_rho
 
 logical activate
 
@@ -90,6 +90,7 @@ endif
 
 if (imeteo.ge.2) then
   call field_get_val_s_by_name('meteo_pressure', cpro_met_p)
+  call field_get_val_s_by_name('meteo_density', cpro_met_rho)
 endif
 
 ! This routine computes the density and the thermodynamic temperature.
@@ -133,7 +134,8 @@ endif
 
 rhum = rair
 rscp = rair/cp0
-
+! Adiabatic (constant) potential temperature
+theta0 = t0 * (p0/ps)**rscp
 do iel = 1, ncel
 
   zent = xyzcen(3,iel)
@@ -171,12 +173,23 @@ do iel = 1, ncel
   ! law: rho = P / ( R_mixture * T_mixture(K) )
 
   if (idilat.eq.0) then
-    crom(iel) = ro0
-    ! "delta rho = - beta rho0 delta theta" gives
-    ! "beta = 1 / theta"
-    cpro_beta(iel) = 1.d0 / xvart
-    ! Compute T in Celisus
-    cpro_tempc(iel) = tliq - tkelvi
+    ! Boussinesq with respect to the adiabatic density
+    if (imeteo.ge.2) then
+      crom(iel) = cpro_met_rho(iel)
+      ! "delta rho = - beta rho0 delta theta" gives
+      ! "beta = 1 / theta"
+      cpro_beta(iel) = 1.d0 / theta0
+      ! Compute T in Celisus
+      cpro_tempc(iel) = tliq - tkelvi
+    ! Boussinesq with respect to rho0
+    else
+      crom(iel) = ro0
+      ! "delta rho = - beta rho0 delta theta" gives
+      ! "beta = 1 / theta"
+      cpro_beta(iel) = 1.d0 / xvart
+      ! Compute T in Celisus
+      cpro_tempc(iel) = tliq - tkelvi
+    endif
   else
 
     call cs_rho_humidair(qwt, tliq, pp, yw_liq, cpro_tempc(iel), crom(iel))
