@@ -69,18 +69,18 @@ cs_gwf_is_activated(void);
 /*!
  * \brief  Initialize the module dedicated to groundwater flows
  *
- * \param[in]   pty_type        type of permeability (iso, ortho...)
  * \param[in]   model           type of physical modelling
  * \param[in]   option_flag     optional flag to specify this module
+ * \param[in]   post_flag       optional automatic postprocessing
  *
  * \return a pointer to a new allocated groundwater flow structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_t *
-cs_gwf_activate(cs_property_type_t           pty_type,
-                cs_gwf_model_type_t          model,
-                cs_gwf_option_flag_t         option_flag);
+cs_gwf_activate(cs_gwf_model_type_t      model,
+                cs_flag_t                option_flag,
+                cs_flag_t                post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -158,21 +158,46 @@ cs_gwf_get_adv_field(void);
 /*!
  * \brief  Create and add a new cs_gwf_soil_t structure. An initialization by
  *         default of all members is performed.
+ *         Case of a soil with an isotropic absolute permeability
  *
- * \param[in]  z_name        name of the volume zone corresponding to the soil
- * \param[in]  bulk_density  value of the mass density
- * \param[in]  sat_moisture  value of the saturated moisture content
- * \param[in]  model    type of modelling for the hydraulic behavior
+ * \param[in]  z_name      name of the volume zone corresponding to the soil
+ * \param[in]  density     value of the bulk mass density
+ * \param[in]  k_abs       absolute (or intrisic) permeability (scalar-valued)
+ * \param[in]  porosity    value of the porosity (saturated moisture content)
+ * \param[in]  model       type of model for the soil behavior
  *
  * \return a pointer to the new allocated soil structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_soil_t *
-cs_gwf_add_soil(const char                      *z_name,
-                double                           bulk_density,
-                double                           sat_moisture,
-                cs_gwf_soil_model_t    model);
+cs_gwf_add_iso_soil(const char                *z_name,
+                    double                     density,
+                    double                     k_abs,
+                    double                     porosity,
+                    cs_gwf_soil_model_t        model);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and add a new cs_gwf_soil_t structure. An initialization by
+ *         default of all members is performed.
+ *
+ * \param[in]  z_name      name of the volume zone corresponding to the soil
+ * \param[in]  density     value of the bulk mass density
+ * \param[in]  k_abs       absolute (or intrisic) permeability (tensor-valued)
+ * \param[in]  porosity    value of the porosity (saturated moisture content)
+ * \param[in]  model       type of model for the soil behavior
+ *
+ * \return a pointer to the new allocated soil structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_soil_t *
+cs_gwf_add_aniso_soil(const char                *z_name,
+                      double                     density,
+                      double                     k_abs[3][3],
+                      double                     porosity,
+                      cs_gwf_soil_model_t        model);
 
 /*----------------------------------------------------------------------------*/
 /*!

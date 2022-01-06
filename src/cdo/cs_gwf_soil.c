@@ -142,7 +142,7 @@ _update_soil_genuchten_iso(const cs_real_t              t_eval,
 
   /* Retrieve the soil parameters */
 
-  cs_gwf_soil_param_genuchten_t  *sp = soil->param;
+  cs_gwf_soil_param_genuchten_t  *sp = soil->model_param;
 
   /* Retrieve the hydraulic context */
 
@@ -150,8 +150,8 @@ _update_soil_genuchten_iso(const cs_real_t              t_eval,
 
   /* Only isotropic values are considered in this case */
 
-  const double  iso_satval = sp->saturated_permeability[0][0];
-  const double  delta_m = soil->saturated_moisture - sp->residual_moisture;
+  const double  iso_satval = soil->abs_permeability[0][0];
+  const double  delta_m = soil->porosity - sp->residual_moisture;
   const cs_real_t  *head = hc->head_in_law;
 
   /* Retrieve field values associated to properties to update */
@@ -179,16 +179,16 @@ _update_soil_genuchten_iso(const cs_real_t              t_eval,
       const double  se_pow_overm = pow(se, 1/sp->m);
       const double  coef_base = 1 - pow(1 - se_pow_overm, sp->m);
 
-      /* Set the permeability value */
+      /* Set the permeability value : abs_perm * rel_perm */
 
       permeability[c_id] =
         iso_satval * pow(se, sp->tortuosity) * coef_base*coef_base;
 
-      /* Set the moisture content */
+      /* Set the moisture content (or liquid saturation) */
 
       moisture[c_id] = se*delta_m + sp->residual_moisture;
 
-      /* Set the soil capacity */
+      /* Set the soil capacity = \frac{\partial S_l}{partial h} */
 
       const double  ccoef = -sp->n * sp->m * delta_m;
       const double  se_m1 = se/(1. + coef);
@@ -202,7 +202,7 @@ _update_soil_genuchten_iso(const cs_real_t              t_eval,
 
       permeability[c_id] = iso_satval;
 
-      /* Set the moisture content (Se = 1 in this case)*/
+      /* Set the moisture content (Sle = 1 in this case)*/
 
       moisture[c_id] = delta_m + sp->residual_moisture;
 
@@ -213,7 +213,6 @@ _update_soil_genuchten_iso(const cs_real_t              t_eval,
     }
 
   } /* Loop on selected cells */
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -302,7 +301,40 @@ cs_gwf_soil_get_saturated_moisture(int   soil_id)
   if (soil == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: Empty soil.\n", __func__);
 
-  return soil->saturated_moisture;
+  return soil->porosity;  /* = saturated moisture or max. liquid satiration */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the max dim (aniso=9; iso=1) for the absolute permeability
+ *         associated to each soil
+ *
+ * \return the associated max. dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_gwf_soil_get_permeability_max_dim(void)
+{
+  int dim = 0;
+
+  if (_n_soils < 1)
+    return dim;
+
+  if (_soils == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The soil structure is not allocated whereas %d soils"
+              " have been added.\n", __func__, _n_soils);
+
+  for (int i = 0; i < _n_soils; i++) {
+
+    cs_gwf_soil_t  *soil = _soils[i];
+
+    soil->abs_permeability_dim = CS_MAX(dim, soil->abs_permeability_dim);
+
+  }
+
+  return dim;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -368,7 +400,8 @@ cs_gwf_soil_check(void)
  * \param[in] hydraulic_model     main hydraulic model for the module
  * \param[in] model               type of model for the soil behavior
  * \param[in] perm_type           type of permeability (iso/anisotropic)
- * \param[in] saturated_moisture  moisture content
+ * \param[in] k_abs               absolute (intrisic) permeability
+ * \param[in] porosity            porosity or max. moisture content
  * \param[in] bulk_density        value of the mass density
  * \param[in] hydraulic_context   pointer to the context structure
  *
@@ -381,7 +414,8 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
                    cs_gwf_model_type_t              hydraulic_model,
                    cs_gwf_soil_model_t              model,
                    cs_property_type_t               perm_type,
-                   double                           saturated_moisture,
+                   double                           k_abs[3][3],
+                   double                           porosity,
                    double                           bulk_density,
                    void                            *hydraulic_context)
 {
@@ -401,42 +435,49 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
   soil->hydraulic_model = hydraulic_model;
   soil->hydraulic_context = hydraulic_context;
 
-  /* Members relaated to the soil parameters/model */
+  /* Members related to the soil parameters/model */
 
   soil->model = model;
+  soil->model_param = NULL;
+
   soil->bulk_density = bulk_density;
-  soil->saturated_moisture = saturated_moisture;
+  soil->porosity = porosity;
+
+  for (int ki = 0; ki < 3; ki++)
+    for (int kj = 0; kj < 3; kj++)
+      soil->abs_permeability[ki][kj] = k_abs[ki][kj];
+
+  switch (perm_type) {
+
+  case CS_PROPERTY_ISO:
+    soil->abs_permeability_dim = 1;
+    break;
+
+  case CS_PROPERTY_ANISO:
+    soil->abs_permeability_dim = 9;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of absolute permeability.\n", __func__);
+
+  } /* Switch on the type of absolute permeability */
+
+  /* Initialize function pointers */
 
   soil->update_properties = NULL;
-  soil->free_param = NULL;
-  soil->param = NULL;
+  soil->free_model_param = NULL;
+
+  /* Initialization which are specific to a soil model */
 
   switch (model) {
 
   case CS_GWF_SOIL_SATURATED:
-    {
-      if (hydraulic_model != CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid type of soil with the general hydraulic model.\n"
-                  " In a saturated single-phase model, all soils have to be"
-                  " of type CS_GWF_SOIL_SATURATED.\n", __func__);
-
-      cs_gwf_soil_param_saturated_t  *sp = NULL;
-
-      BFT_MALLOC(sp, 1, cs_gwf_soil_param_saturated_t);
-
-      /* Default initialization */
-
-      for (int ki = 0; ki < 3; ki++)
-        for (int kj = 0; kj < 3; kj++)
-          sp->saturated_permeability[ki][kj] = 0.0;
-
-      sp->saturated_permeability[0][0] = 1.0;
-      sp->saturated_permeability[1][1] = 1.0;
-      sp->saturated_permeability[2][2] = 1.0;
-
-      soil->param = sp;
-    }
+    if (hydraulic_model != CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid type of soil with the general hydraulic model.\n"
+                " In a saturated single-phase model, all soils have to be"
+                " of type CS_GWF_SOIL_SATURATED.\n", __func__);
     break;
 
   case CS_GWF_SOIL_GENUCHTEN:
@@ -447,20 +488,12 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
 
       sp->residual_moisture = 0.;
 
-      for (int ki = 0; ki < 3; ki++)
-        for (int kj = 0; kj < 3; kj++)
-          sp->saturated_permeability[ki][kj] = 0.0;
-
-      sp->saturated_permeability[0][0] = 1.0;
-      sp->saturated_permeability[1][1] = 1.0;
-      sp->saturated_permeability[2][2] = 1.0;
-
       sp->n = 1.25;
       sp->m = 1 - 1./sp->n;
       sp->scale = 1.;
       sp->tortuosity = 1.;
 
-      soil->param = sp;
+      soil->model_param = sp;
 
       if (perm_type & CS_PROPERTY_ISO)
         if (hydraulic_model == CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE)
@@ -572,25 +605,16 @@ cs_gwf_soil_free_all(void)
 
     cs_gwf_soil_t  *soil = _soils[i];
 
-    if (soil->free_param != NULL)
-      soil->free_param(&(soil->param));
+    if (soil->free_model_param != NULL)
+      soil->free_model_param(&(soil->model_param));
 
-    if (soil->param != NULL) {
+    if (soil->model_param != NULL) {
 
       switch (soil->model) {
 
-      case CS_GWF_SOIL_SATURATED:
-        {
-          cs_gwf_soil_param_saturated_t  *sp = soil->param;
-
-          BFT_FREE(sp);
-          sp = NULL;
-        }
-        break;
-
       case CS_GWF_SOIL_GENUCHTEN:
         {
-          cs_gwf_soil_param_genuchten_t  *sp = soil->param;
+          cs_gwf_soil_param_genuchten_t  *sp = soil->model_param;
 
           BFT_FREE(sp);
           sp = NULL;
@@ -627,77 +651,59 @@ cs_gwf_soil_free_all(void)
 void
 cs_gwf_soil_log_setup(void)
 {
-  cs_log_printf(CS_LOG_SETUP, "  * GWF | Number of soils: %d\n", _n_soils);
+  cs_log_printf(CS_LOG_SETUP, "  * GWF | Number of soils: %d\n\n", _n_soils);
 
-  char  meta[64];
+  char  id[64];
   for (int i = 0; i < _n_soils; i++) {
 
     const cs_gwf_soil_t  *soil = _soils[i];
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
 
-    cs_log_printf(CS_LOG_SETUP, "\n        Soil.%d | Zone: %s",
-                  soil->id, z->name);
-    cs_log_printf(CS_LOG_SETUP, "\n        Soil.%d | Bulk.density: %6.3e",
-                  soil->id, soil->bulk_density);
-    cs_log_printf(CS_LOG_SETUP, "\n        Soil.%d | Max.porosity: %6.3e"
-                  " (=saturated_moisture)\n",
-                  soil->id, soil->saturated_moisture);
+    sprintf(id, "        Soil.%d |", soil->id);
 
-    sprintf(meta, "        Soil.%d |", soil->id);
+    cs_log_printf(CS_LOG_SETUP, "%s Zone: %s\n", id, z->name);
+    cs_log_printf(CS_LOG_SETUP, "%s Bulk.density: %.1e\n",
+                  id, soil->bulk_density);
+    cs_log_printf(CS_LOG_SETUP, "%s Max.Porosity: %.3e (=saturated_moisture)\n",
+                  id, soil->porosity);
+    cs_log_printf(CS_LOG_SETUP, "%s Absolute permeability\n", id);
+    cs_log_printf(CS_LOG_SETUP, "%s [%-4.2e %4.2e %4.2e;\n", id,
+                  soil->abs_permeability[0][0],
+                  soil->abs_permeability[0][1],
+                  soil->abs_permeability[0][2]);
+    cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e;\n", id,
+                  soil->abs_permeability[1][0],
+                  soil->abs_permeability[1][1],
+                  soil->abs_permeability[1][2]);
+    cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e]\n", id,
+                  soil->abs_permeability[2][0],
+                  soil->abs_permeability[2][1],
+                  soil->abs_permeability[2][2]);
+
+    /* Display the model parameters */
 
     switch (soil->model) {
 
     case CS_GWF_SOIL_GENUCHTEN:
       {
-        const cs_gwf_soil_param_genuchten_t  *sp = soil->param;
+        const cs_gwf_soil_param_genuchten_t  *sp = soil->model_param;
 
-        cs_log_printf(CS_LOG_SETUP, "%s Model: VanGenuchten-Mualen\n", meta);
-        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", meta);
+        cs_log_printf(CS_LOG_SETUP, "%s Model: VanGenuchten-Mualen\n", id);
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", id);
         cs_log_printf(CS_LOG_SETUP,
                       " residual_moisture %5.3e\n", sp->residual_moisture);
-        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", meta);
+        cs_log_printf(CS_LOG_SETUP, "%s Parameters:", id);
         cs_log_printf(CS_LOG_SETUP, " n= %f, scale= %f, tortuosity= %f\n",
                       sp->n, sp->scale, sp->tortuosity);
-        cs_log_printf(CS_LOG_SETUP, "%s Saturated permeability\n", meta);
-        cs_log_printf(CS_LOG_SETUP, "%s [%-4.2e %4.2e %4.2e;\n", meta,
-                      sp->saturated_permeability[0][0],
-                      sp->saturated_permeability[0][1],
-                      sp->saturated_permeability[0][2]);
-        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e;\n", meta,
-                      sp->saturated_permeability[1][0],
-                      sp->saturated_permeability[1][1],
-                      sp->saturated_permeability[1][2]);
-        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e]\n", meta,
-                      sp->saturated_permeability[2][0],
-                      sp->saturated_permeability[2][1],
-                      sp->saturated_permeability[2][2]);
       }
       break;
 
     case CS_GWF_SOIL_SATURATED:
-      {
-        const cs_gwf_soil_param_saturated_t  *sp = soil->param;
-
-        cs_log_printf(CS_LOG_SETUP, "%s Model: Saturated\n", meta);
-        cs_log_printf(CS_LOG_SETUP, "%s Parameters", meta);
-        cs_log_printf(CS_LOG_SETUP, "%s Saturated permeability\n", meta);
-        cs_log_printf(CS_LOG_SETUP, "%s [%-4.2e %4.2e %4.2e;\n", meta,
-                      sp->saturated_permeability[0][0],
-                      sp->saturated_permeability[0][1],
-                      sp->saturated_permeability[0][2]);
-        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e;\n", meta,
-                      sp->saturated_permeability[1][0],
-                      sp->saturated_permeability[1][1],
-                      sp->saturated_permeability[1][2]);
-        cs_log_printf(CS_LOG_SETUP, "%s  %-4.2e %4.2e %4.2e]\n", meta,
-                      sp->saturated_permeability[2][0],
-                      sp->saturated_permeability[2][1],
-                      sp->saturated_permeability[2][2]);
-      }
+        cs_log_printf(CS_LOG_SETUP, "%s Model: Saturated\n", id);
       break;
 
     case CS_GWF_SOIL_USER:
-      cs_log_printf(CS_LOG_SETUP, "%s Model: User-defined\n", meta);
+      cs_log_printf(CS_LOG_SETUP, "%s Model: User-defined\n", id);
       break;
 
     default:
@@ -714,69 +720,7 @@ cs_gwf_soil_log_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a soil defined by a saturated hydraulic model and attached to
- *         an isotropic permeability (single-phase flow)
- *
- * \param[in, out] soil       pointer to a cs_gwf_soil_t structure
- * \param[in]      k_s        value of the saturated permeability
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_set_iso_saturated(cs_gwf_soil_t              *soil,
-                              double                      k_s)
-{
-  if (soil == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
-
-  cs_gwf_soil_param_saturated_t  *sp = soil->param;
-
-  if (soil->model != CS_GWF_SOIL_SATURATED)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: soil model is not saturated\n", __func__);
-  if (sp == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: soil context not allocated\n", __func__);
-
-  /* Default initialization is the identity matrix */
-
-  for (int i = 0; i < 3; i++)
-    sp->saturated_permeability[i][i] = k_s;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set a soil defined by a saturated hydraulic model and attached to
- *         an anisotropic permeability (single-phase flow)
- *
- * \param[in, out] soil       pointer to a cs_gwf_soil_t structure
- * \param[in]      k_s        value of the anisotropic saturated permeability
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_set_aniso_saturated(cs_gwf_soil_t              *soil,
-                                double                      k_s[3][3])
-{
-  if (soil == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
-
-  cs_gwf_soil_param_saturated_t  *sp = soil->param;
-
-  if (soil->model != CS_GWF_SOIL_SATURATED)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s : soil model is not saturated\n", __func__);
-  if (sp == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: soil context not allocated\n", __func__);
-
-  for (int i = 0; i < 3; i++)
-    for (int j = 0; j < 3; j++)
-      sp->saturated_permeability[i][j] =  k_s[i][j];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set a soil defined by a Van Genuchten-Mualen hydraulic model and
- *         attached to an isotropic saturated permeability (single-phase flow)
+ * \brief  Set a soil defined by a Van Genuchten-Mualen model
  *
  *         The (effective) liquid saturation (also called moisture content)
  *         follows the identity
@@ -788,7 +732,6 @@ cs_gwf_soil_set_aniso_saturated(cs_gwf_soil_t              *soil,
  *         where m = 1 -  1/n
  *
  * \param[in, out] soil       pointer to a cs_gwf_soil_t structure
- * \param[in]      k_s        value of the isotropic saturated permeability
  * \param[in]      theta_r    residual moisture
  * \param[in]      alpha      scale parameter (in m^-1)
  * \param[in]      n          shape parameter
@@ -797,69 +740,7 @@ cs_gwf_soil_set_aniso_saturated(cs_gwf_soil_t              *soil,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_iso_genuchten(cs_gwf_soil_t              *soil,
-                              double                      k_s,
-                              double                      theta_r,
-                              double                      alpha,
-                              double                      n,
-                              double                      L)
-{
-  if (soil == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
-
-  cs_gwf_soil_param_genuchten_t  *sp = soil->param;
-
-  if (soil->model != CS_GWF_SOIL_GENUCHTEN)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: soil model is not Van Genuchten\n", __func__);
-  if (sp == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: soil context not allocated\n", __func__);
-  if (n <= FLT_MIN)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid value for n = %6.4e (the shape parameter).\n"
-              "This value should be > 0.\n", __func__, n);
-
-  sp->residual_moisture = theta_r;
-
-  /* Default initialization is the identity matrix */
-
-  for (int i = 0; i < 3; i++)
-    sp->saturated_permeability[i][i] = k_s;
-
-  /* Additional advanced settings */
-
-  sp->n = n;
-  sp->m = 1 - 1/sp->n;
-  sp->scale = alpha;
-  sp->tortuosity = L;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set a soil defined by a Van Genuchten-Mualen hydraulic model and
- *        attached to an anisotropic saturated permeability (single-phase flow)
- *
- *        The (effective) liquid saturation (also called moisture content)
- *        follows the identity
- *        S_l,eff = (S_l - theta_r)/(theta_s - theta_r)
- *                = (1 + |alpha . h|^n)^(-m)
- *
- *        The isotropic relative permeability is defined as:
- *        k_r = S_l,eff^L * (1 - (1 - S_l,eff^(1/m))^m))^2
- *        where m = 1 -  1/n
- *
- * \param[in, out] soil       pointer to a cs_gwf_soil_t structure
- * \param[in]      k_s        value of the isotropic saturated permeability
- * \param[in]      theta_r    residual moisture/liquid saturation
- * \param[in]      alpha      scale parameter (in m^-1)
- * \param[in]      n          shape parameter
- * \param[in]      L          turtuosity parameter
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_set_aniso_genuchten(cs_gwf_soil_t              *soil,
-                                double                      k_s[3][3],
+cs_gwf_soil_set_genuchten_param(cs_gwf_soil_t              *soil,
                                 double                      theta_r,
                                 double                      alpha,
                                 double                      n,
@@ -867,7 +748,7 @@ cs_gwf_soil_set_aniso_genuchten(cs_gwf_soil_t              *soil,
 {
   if (soil == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_soil));
 
-  cs_gwf_soil_param_genuchten_t  *sp = soil->param;
+  cs_gwf_soil_param_genuchten_t  *sp = soil->model_param;
 
   if (soil->model != CS_GWF_SOIL_GENUCHTEN)
     bft_error(__FILE__, __LINE__, 0,
@@ -881,10 +762,6 @@ cs_gwf_soil_set_aniso_genuchten(cs_gwf_soil_t              *soil,
               "This value should be > 0.\n", __func__, n);
 
   sp->residual_moisture = theta_r;
-
-  for (int i = 0; i < 3; i++)
-    for (int j = 0; j < 3; j++)
-      sp->saturated_permeability[i][j] = k_s[i][j];
 
   /* Additional advanced settings */
 
@@ -919,26 +796,78 @@ cs_gwf_soil_set_user(cs_gwf_soil_t                *soil,
 
   /* Set pointers */
 
-  soil->param = param;
+  soil->model_param = param;
   soil->update_properties = update_func;
-  soil->free_param = free_param_func;
+  soil->free_model_param = free_param_func;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the parameter values when all soils are considered as saturated.
- *         Use predefined properties of the groundwater flow module.
+ * \brief  Set the definition of the soil porosity and absolute porosity (which
+ *         are properties always defined). This relies on the definition of
+ *         each soil.
  *
- * \param[in, out]  permeability      pointer to a cs_property_t structure
+ * \param[in, out]  abs_permeability    pointer to a cs_property_t structure
+ * \param[in, out]  soil_porosity       pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_set_shared_properties(cs_property_t      *abs_permeability,
+                                  cs_property_t      *soil_porosity)
+{
+  assert(abs_permeability != NULL && soil_porosity != NULL);
+
+  for (int i = 0; i < _n_soils; i++) {
+
+    cs_gwf_soil_t  *soil = _soils[i];
+
+    const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+
+    /* Define the absolute permeability */
+
+    if (abs_permeability->type & CS_PROPERTY_ISO) {
+
+      assert(soil->abs_permeability_dim == 1);
+      cs_property_def_iso_by_value(abs_permeability,
+                                   z->name,
+                                   soil->abs_permeability[0][0]);
+
+    }
+    else if (abs_permeability->type & CS_PROPERTY_ANISO) {
+
+      cs_property_def_aniso_by_value(abs_permeability,
+                                     z->name,
+                                     soil->abs_permeability);
+
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid type of property.\n", __func__);
+
+    /* Set the soil porosity */
+
+    cs_property_def_iso_by_value(soil_porosity,
+                                 z->name,
+                                 soil->porosity);
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the definition of the soil porosity and absolute porosity (which
+ *         are properties always defined). This relies on the definition of
+ *         each soil.
+ *
  * \param[in, out]  moisture_content  pointer to a cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_saturated_set_param(cs_property_t      *permeability,
-                                cs_property_t      *moisture_content)
+cs_gwf_soil_saturated_set_property(cs_property_t   *moisture_content)
 {
-  assert(permeability != NULL && moisture_content != NULL);
+  assert(moisture_content != NULL);
 
   for (int i = 0; i < _n_soils; i++) {
 
@@ -949,42 +878,15 @@ cs_gwf_soil_saturated_set_param(cs_property_t      *permeability,
                 " %s: Invalid way of setting soil parameter.\n"
                 " All soils are not considered as saturated.", __func__);
 
+    /* Set the moisture content. In this case, one set the moisture content to
+       the soil porosity since one considers that the soil is fully
+       saturated */
+
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
-
-    cs_gwf_soil_param_saturated_t  *sp = soil->param;
-
-    /* Set the permeability */
-
-    if (permeability->type & CS_PROPERTY_ISO)
-      cs_property_def_iso_by_value(permeability,
-                                   z->name,
-                                   sp->saturated_permeability[0][0]);
-
-    else if (permeability->type & CS_PROPERTY_ORTHO) {
-
-      cs_real_3_t  val = {sp->saturated_permeability[0][0],
-                          sp->saturated_permeability[1][1],
-                          sp->saturated_permeability[2][2]};
-
-      cs_property_def_ortho_by_value(permeability, z->name, val);
-
-    }
-    else if (permeability->type & CS_PROPERTY_ANISO) {
-
-      cs_property_def_aniso_by_value(permeability,
-                                     z->name,
-                      (double (*)[3])sp->saturated_permeability);
-
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid type of property.\n", __func__);
-
-    /* Set the moisture content */
 
     cs_property_def_iso_by_value(moisture_content,
                                  z->name,
-                                 soil->saturated_moisture);
+                                 soil->porosity);
 
   } /* Loop on soils */
 }
@@ -1057,7 +959,6 @@ cs_gwf_soil_update_mtpf_terms(const cs_mesh_t              *mesh,
 {
   if (mc == NULL)
     return;
-
 
   for (int i = 0; i < _n_soils; i++) {
 

@@ -175,18 +175,14 @@ cs_user_model(void)
   /*! [param_cdo_activate_gwf] */
   {
     /* For the groundwater flow module:
-       cs_gwf_activate(permeability_type,
-                       model_type,
-                       option_flag);
+       cs_gwf_activate(model_type, option_flag, post_flag);
 
-       If option_flag = 0, then there is no option to set.
-    */
+       If option_flag or post_flag = 0, then there is nothing to set. */
 
-    cs_flag_t  option_flag = 0;
+    cs_flag_t  option_flag = 0, post_flag = 0;
 
-    cs_gwf_activate(CS_PROPERTY_ISO,
-                    CS_GWF_MODEL_SATURATED_SINGLE_PHASE,
-                    option_flag);
+    cs_gwf_activate(CS_GWF_MODEL_SATURATED_SINGLE_PHASE,
+                    option_flag, post_flag);
   }
   /*! [param_cdo_activate_gwf] */
 
@@ -195,16 +191,15 @@ cs_user_model(void)
     /* Take into account the gravity effect */
 
     cs_flag_t  option_flag = CS_GWF_GRAVITATION;
+    cs_flag_t  post_flag = CS_GWF_POST_PERMEABILITY;
 
     /* In this case, the gravity vector has to be defined (either using the GUI
        or in cs_user_parameters() function */
 
-    cs_gwf_activate(CS_PROPERTY_ANISO,
-                    CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
-                    option_flag);
+    cs_gwf_activate(CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
+                    option_flag, post_flag);
   }
   /*! [param_cdo_activate_gwf_b] */
-
 
   /*! [param_cdo_post_gwf] */
   /* Specify post-processing options */
@@ -220,81 +215,75 @@ cs_user_model(void)
   /* 2. Add and define soils (must be done before adding tracers) */
   /* ----------------------- */
 
-  /*! [param_cdo_gwf_add_define_saturated_soil] */
+  /*! [param_cdo_gwf_add_define_iso_saturated_soil] */
   {
-    /* Example 1: two "saturated" and anisotropic soils */
+    /* Example 1: Simplest case. A "saturated" isotropic soils */
+
+    /* saturated isotropic permeability */
+
+    const double  iso_val = 1e-10;
+    const double  theta_s = 0.85;
+    const cs_real_t  bulk_density = 2500; /* useless if no tracer is
+                                             considered */
+
+    cs_gwf_add_iso_soil("cells", bulk_density, iso_val, theta_s,
+                        CS_GWF_SOIL_SATURATED);
+  }
+  /*! [param_cdo_gwf_add_define_iso_saturated_soil] */
+
+  /*! [param_cdo_gwf_add_define_aniso_saturated_soil] */
+  {
+    /* Example 2: Two "saturated" and anisotropic soils */
 
     /* saturated anisotropic permeability */
 
-    const double  aniso_val1[3][3] = {{1e-3, 0,    0},
-                                      {   0, 1,    0},
-                                      {   0, 0, 1e-1}};
-    const double  theta_s = 1;
-    const cs_real_t  bulk_density = 1.0; /* useless if no tracer is
-                                            considered */
-
-    /* Two (volume) zones have be defined called "soil1" and "soil2". */
-
-    cs_gwf_soil_t  *s1 = cs_gwf_add_soil("soil1",
-                                         bulk_density,
-                                         theta_s,
-                                         CS_GWF_SOIL_SATURATED);
-
-    cs_gwf_soil_set_aniso_saturated(s1, aniso_val1);
-
-    /* For "simple" soil definitions, definition can be made here. */
-
-    cs_gwf_soil_t  *s2 = cs_gwf_add_soil("soil2",
-                                         bulk_density,
-                                         theta_s,
-                                         CS_GWF_SOIL_SATURATED);
-
-    /* saturated anisotropic permeability */
-
+    double  aniso_val1[3][3] = {{1e-3, 0,    0},
+                                {   0, 1,    0},
+                                {   0, 0, 1e-1}};
     double  aniso_val2[3][3] = {{1e-5, 0,    0},
                                 {   0, 1,    0},
                                 {   0, 0, 1e-2}};
+    const double  theta_s = 1;
+    const double  bulk_density = 1.0; /* useless if no tracer is considered */
 
-    cs_gwf_soil_set_aniso_saturated(s2, aniso_val2);
+    /* One assumes that two (volume) zones have be defined called "soil1" and
+       "soil2". */
+
+    cs_gwf_add_aniso_soil("soil1", bulk_density, aniso_val1, theta_s,
+                          CS_GWF_SOIL_SATURATED);
+
+    cs_gwf_add_aniso_soil("soil2", bulk_density, aniso_val2, theta_s,
+                          CS_GWF_SOIL_SATURATED);
   }
-  /*! [param_cdo_gwf_add_define_saturated_soil] */
+  /*! [param_cdo_gwf_add_define_aniso_saturated_soil] */
 
   /*! [param_cdo_gwf_add_define_genuchten_soil] */
   {
-    /* Example 2: Add a new user-defined soil for all the cells */
+    /* Example 3: Add a new user-defined soil for all the cells */
 
-    const cs_real_t  theta_s = 0.9;         /* max. liquid saturation */
-    const cs_real_t  bulk_density = 1800.0; /* useless if no tracer is
-                                               considered */
+    cs_gwf_soil_t  *s = cs_gwf_add_iso_soil("cells", /* volume zone name */
+                                            1800,    /* bulk mass density */
+                                            3e-1,    /* absolute permeability */
+                                            0.9,     /* porosity */
+                                            CS_GWF_SOIL_GENUCHTEN); /* model */
 
-    cs_gwf_soil_t  *s = cs_gwf_add_soil("cells",          /* volume zone name */
-                                        bulk_density,
-                                        theta_s,
-                                        CS_GWF_SOIL_GENUCHTEN); /* soil model */
-
-    cs_gwf_soil_set_iso_genuchten(s,
-                                  3e-1,       /* saturated permeability */
-                                  0.078,      /* residual moisture */
-                                  0.036,      /* scaling parameter */
-                                  1.56,       /* (n) shape parameter */
-                                  0.5);       /* (L) tortuosity */
-
+    cs_gwf_soil_set_genuchten_param(s,
+                                    0.078,      /* residual moisture */
+                                    0.036,      /* scaling parameter */
+                                    1.56,       /* (n) shape parameter */
+                                    0.5);       /* (L) tortuosity */
   }
   /*! [param_cdo_gwf_add_define_genuchten_soil] */
 
   /*! [param_cdo_gwf_add_user_soil] */
   {
-    /* Example 2: Add a new user-defined soil for all the cells */
+    /* Example 4: Add a new user-defined soil for all the cells */
 
-    const cs_real_t  theta_s = 0.9;         /* max. liquid saturation */
-    const cs_real_t  bulk_density = 1800.0; /* useless if no tracer is
-                                               considered */
-
-    cs_gwf_add_soil("cells",
-                    bulk_density,
-                    theta_s,
-                    CS_GWF_SOIL_USER);
-
+    cs_gwf_add_iso_soil("cells", /* zone name associated to the soil */
+                        1800,    /* bulk mass density (useless without tracer */
+                        3e-1,    /* absolute permeability */
+                        0.9,     /* porosity */
+                        CS_GWF_SOIL_USER);
   }
   /*! [param_cdo_gwf_add_user_soil] */
 

@@ -526,7 +526,12 @@ _sspf_init_context(void)
                                  1,
                                  CS_PARAM_BC_HMG_NEUMANN);
 
-  /* Define the Darcy flux structure
+  /* Add a property related to the moisture content (It should be a constant
+     in each soil) */
+
+  mc->moisture_content = cs_property_add("moisture_content", CS_PROPERTY_ISO);
+
+/* Define the Darcy flux structure
      Add an advection field related to the darcian flux stemming from the
      Richards equation. This advection field is steady since the head is
      steady in this model.
@@ -539,19 +544,6 @@ _sspf_init_context(void)
 
   mc->darcy->adv_field = cs_advection_field_add("darcy_field",
                                                 adv_status);
-
-  /* Add a property related to the moisture content (It should be a constant
-     in each soil) */
-
-  mc->moisture_content = cs_property_add("moisture_content", CS_PROPERTY_ISO);
-
-  /* Add the diffusion term to the Richards equation by associating the
-     absolute permeability to the diffusion property of the Richards eq. */
-
-  cs_equation_param_t  *eqp = cs_equation_get_param(mc->richards);
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-
-  cs_equation_add_diffusion(eqp, gw->abs_permeability);
 
   return mc;
 }
@@ -622,19 +614,27 @@ _sspf_init_setup(cs_gwf_saturated_single_phase_t   *mc)
               __func__);
   assert(cs_equation_is_steady(mc->richards) == true);
 
+  cs_equation_param_t  *eqp = cs_equation_get_param(mc->richards);
+  assert(eqp != NULL);
+
+  /* Add the diffusion term to the Richards equation by associating the
+     absolute permeability to the diffusion property of the Richards eq. */
+
+  cs_equation_add_diffusion(eqp, gw->abs_permeability);
+
+  /* Add new fields if needed */
+
   const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_CDO;
   const int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
   const int  v_loc_id = cs_mesh_location_get_id_by_name("vertices");
   const int  log_key = cs_field_key_id("log");
   const int  post_key = cs_field_key_id("post_vis");
-  const cs_param_space_scheme_t  space_scheme =
-    cs_equation_get_space_scheme(mc->richards);
 
   /* Handle gravity effects */
 
   if (gw->flag & CS_GWF_GRAVITATION) {
 
-    switch (space_scheme) {
+    switch (eqp->space_scheme) {
     case CS_SPACE_SCHEME_CDOVB:
     case CS_SPACE_SCHEME_CDOVCB:
       mc->pressure_head = cs_field_create("pressure_head",
@@ -693,10 +693,9 @@ _sspf_finalize_setup(const cs_cdo_connect_t            *connect,
 
   cs_gwf_darcy_flux_define(connect, quant, richards_scheme, mc->darcy);
 
-  /* Set the parameter values thanks to the permeability and the moisture
-     content */
+  /* Set the moisture content from the soil porosity */
 
-  cs_gwf_soil_saturated_set_param(gw->abs_permeability, mc->moisture_content);
+  cs_gwf_soil_saturated_set_property(mc->moisture_content);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -779,14 +778,12 @@ _sspf_extra_op(const cs_cdo_connect_t                *connect,
  * \brief  Allocate and initialize the modelling context for the model of
  *         unsaturated single-phase flows
  *
- * \param[in]   pty_type        type of permeability (iso, ortho...)
- *
  * \return a pointer to a new allocated cs_gwf_unsaturated_single_phase_t struct
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_gwf_unsaturated_single_phase_t *
-_uspf_init_context(cs_property_type_t           pty_type)
+_uspf_init_context(void)
 {
   cs_gwf_unsaturated_single_phase_t  *mc = NULL;
 
@@ -830,15 +827,11 @@ _uspf_init_context(cs_property_type_t           pty_type)
 
   mc->soil_capacity = cs_property_add("soil_capacity", CS_PROPERTY_ISO);
 
-  mc->permeability = cs_property_add("permeability", pty_type);
-
-  /* Add the time + diffusion terms to the Richards equation by associating the
-     full permeability to the diffusion property of the Richards eq. and the
-     soil capacity to the unsteady term */
+  /* Add the time term to the Richards equation by associating the the soil
+     capacity to the unsteady term */
 
   cs_equation_param_t  *eqp = cs_equation_get_param(mc->richards);
 
-  cs_equation_add_diffusion(eqp, mc->permeability);
   cs_equation_add_time(eqp, mc->soil_capacity);
 
   return mc;
@@ -893,12 +886,14 @@ _uspf_log_context(cs_gwf_unsaturated_single_phase_t   *mc)
  *        flows. At this stage, all soils have been defined and equation
  *        parameters are set.
  *
- * \param[in, out] mc   pointer to the model context structure
+ * \param[in, out] mc          pointer to the model context structure
+ * \param[in, out] perm_type   type of permeability to handle
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_uspf_init_setup(cs_gwf_unsaturated_single_phase_t   *mc)
+_uspf_init_setup(cs_gwf_unsaturated_single_phase_t   *mc,
+                 cs_property_type_t                   perm_type)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
@@ -910,19 +905,30 @@ _uspf_init_setup(cs_gwf_unsaturated_single_phase_t   *mc)
               __func__);
   assert(cs_equation_is_steady(mc->richards) == false);
 
+  /* Add the property related to the diffusion term */
+
+  mc->permeability = cs_property_add("permeability", perm_type);
+
+  /* Add the diffusion term to the Richards equation by associating the
+     full permeability to the diffusion property of the Richards eq. */
+
+  cs_equation_param_t  *eqp = cs_equation_get_param(mc->richards);
+
+  cs_equation_add_diffusion(eqp, mc->permeability);
+
+  /* Set additional fields */
+
   const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_CDO;
   const int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
   const int  v_loc_id = cs_mesh_location_get_id_by_name("vertices");
   const int  log_key = cs_field_key_id("log");
   const int  post_key = cs_field_key_id("post_vis");
-  const cs_param_space_scheme_t  space_scheme =
-    cs_equation_get_space_scheme(mc->richards);
 
   /* Handle gravity effects */
 
   if (gw->flag & CS_GWF_GRAVITATION) {
 
-    switch (space_scheme) {
+    switch (eqp->space_scheme) {
     case CS_SPACE_SCHEME_CDOVB:
     case CS_SPACE_SCHEME_CDOVCB:
       mc->pressure_head = cs_field_create("pressure_head",
@@ -1156,14 +1162,12 @@ _uspf_extra_op(const cs_cdo_connect_t                *connect,
  * \brief  Allocate and initialize the modelling context for the model of
  *         (unsaturated) miscible two-phase flows
  *
- * \param[in]   pty_type        type of permeability (iso, ortho...)
- *
  * \return a pointer to a new allocated cs_gwf_miscible_two_phase_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_gwf_miscible_two_phase_t *
-_mtpf_init_context(cs_property_type_t           pty_type)
+_mtpf_init_context(void)
 {
   cs_gwf_miscible_two_phase_t  *mc = NULL;
 
@@ -1246,17 +1250,11 @@ _mtpf_init_context(cs_property_type_t           pty_type)
 
   /* Add properties:
    * - unsteady term for w_eq
-   * - diffusion term for w_eq
    * - unsteady term for h_eq
-   * - diffusion term for h_eq in the gas phase
-   * - diffusion term for h_eq in the liquid phase (cross-term)
    */
 
   mc->time_w_eq_pty = cs_property_add("time_w_eq_pty", CS_PROPERTY_ISO);
-  mc->diff_w_eq_pty = cs_property_add("diff_w_eq_pty", pty_type);
   mc->time_h_eq_pty = cs_property_add("time_h_eq_pty", CS_PROPERTY_ISO);
-  mc->diff_hg_eq_pty = cs_property_add("diff_hg_eq_pty", pty_type);
-  mc->diff_hl_eq_pty = cs_property_add("diff_hl_eq_pty", pty_type);
 
   /* Associate properties with equation to define new terms in these
      equations */
@@ -1264,12 +1262,10 @@ _mtpf_init_context(cs_property_type_t           pty_type)
   cs_equation_param_t  *w_eqp = cs_equation_get_param(mc->w_eq);
 
   cs_equation_add_time(w_eqp, mc->time_w_eq_pty);
-  cs_equation_add_diffusion(w_eqp, mc->diff_w_eq_pty);
 
   cs_equation_param_t  *h_eqp = cs_equation_get_param(mc->h_eq);
 
   cs_equation_add_time(h_eqp, mc->time_h_eq_pty);
-  cs_equation_add_diffusion(h_eqp, mc->diff_hg_eq_pty);
 
   return mc;
 }
@@ -1359,11 +1355,13 @@ _mtpf_log_context(cs_gwf_miscible_two_phase_t   *mc)
  *         flows model in porous media
  *
  * \param[in, out]  mc         pointer to the casted model context
+ * \param[in, out]  perm_type  type of permeability to handle
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc)
+_mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc,
+                 cs_property_type_t              perm_type)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw != NULL && mc != NULL);
@@ -1376,6 +1374,29 @@ _mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc)
   assert(cs_equation_is_steady(mc->w_eq) == false);
   assert(cs_equation_is_steady(mc->h_eq) == false);
 
+  /* Add properties:
+   * - diffusion term for w_eq
+   * - diffusion term for h_eq in the gas phase
+   * - diffusion term for h_eq in the liquid phase (cross-term)
+   */
+
+  mc->diff_w_eq_pty = cs_property_add("diff_w_eq_pty", perm_type);
+  mc->diff_hg_eq_pty = cs_property_add("diff_hg_eq_pty", perm_type);
+  mc->diff_hl_eq_pty = cs_property_add("diff_hl_eq_pty", perm_type);
+
+  /* Associate properties with equation to define new terms in these
+     equations */
+
+  cs_equation_param_t  *w_eqp = cs_equation_get_param(mc->w_eq);
+
+  cs_equation_add_time(w_eqp, mc->time_w_eq_pty);
+  cs_equation_add_diffusion(w_eqp, mc->diff_w_eq_pty);
+
+  cs_equation_param_t  *h_eqp = cs_equation_get_param(mc->h_eq);
+
+  cs_equation_add_time(h_eqp, mc->time_h_eq_pty);
+  cs_equation_add_diffusion(h_eqp, mc->diff_hg_eq_pty);
+
   /* Set fields related to variables */
 
   mc->l_pressure = cs_equation_get_field(mc->w_eq);
@@ -1386,16 +1407,15 @@ _mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc)
   const int  v_loc_id = cs_mesh_location_get_id_by_name("vertices");
   const int  log_key = cs_field_key_id("log");
   const int  post_key = cs_field_key_id("post_vis");
-  const cs_param_space_scheme_t  space_scheme =
-    cs_equation_get_space_scheme(mc->w_eq);
-  assert(space_scheme == cs_equation_get_space_scheme(mc->h_eq));
+
+  assert(w_eqp->space_scheme == h_eqp->space_scheme);
 
   /* One has to be consistent with the location of DoFs for the w_eq and h_eq
    * which are respectively related to the l_pressure and g_pressure */
 
   int loc_id = c_loc_id;
-  if (space_scheme == CS_SPACE_SCHEME_CDOVB ||
-      space_scheme == CS_SPACE_SCHEME_CDOVCB)
+  if (w_eqp->space_scheme == CS_SPACE_SCHEME_CDOVB ||
+      w_eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
     loc_id = v_loc_id;
 
   mc->c_pressure = cs_field_create("capillarity_pressure",
@@ -1814,18 +1834,18 @@ cs_gwf_is_activated(void)
 /*!
  * \brief  Initialize the module dedicated to groundwater flows
  *
- * \param[in]   pty_type        type of permeability (iso, ortho...)
  * \param[in]   model           type of physical modelling
  * \param[in]   option_flag     optional flag to specify this module
+ * \param[in]   post_flag       optional automatic postprocessing
  *
  * \return a pointer to a new allocated groundwater flow structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_t *
-cs_gwf_activate(cs_property_type_t           pty_type,
-                cs_gwf_model_type_t          model,
-                cs_gwf_option_flag_t         option_flag)
+cs_gwf_activate(cs_gwf_model_type_t      model,
+                cs_flag_t                option_flag,
+                cs_flag_t                post_flag)
 {
   cs_gwf_t  *gw = _gwf_create();
 
@@ -1836,13 +1856,9 @@ cs_gwf_activate(cs_property_type_t           pty_type,
   gw->model = model;
   gw->flag = option_flag;
 
-  /* Add the absolute permeability property (used in the definition of the
-   * diffusion term in the conservation equations and in the definition of the
-   * Darcy flux. According to the type of soil model, the full permeability is
-   * weigthed by a relative permeability (e.g. in a Van Genuchten-Mualen
-   * model). */
+  /* Add the porosity property */
 
-  gw->abs_permeability = cs_property_add("absolute_permeability", pty_type);
+  gw->soil_porosity = cs_property_add("soil_porosity", CS_PROPERTY_ISO);
 
   /* Allocate and initialize each model context (mc) */
 
@@ -1853,12 +1869,13 @@ cs_gwf_activate(cs_property_type_t           pty_type,
     break;
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
-    gw->model_context = _uspf_init_context(pty_type);
+    gw->post_flag |= CS_GWF_POST_LIQUID_SATURATION;
+    gw->model_context = _uspf_init_context();
     break;
 
   case CS_GWF_MODEL_TWO_PHASE:
     gw->post_flag |= CS_GWF_POST_LIQUID_SATURATION;
-    gw->model_context = _mtpf_init_context(pty_type);
+    gw->model_context = _mtpf_init_context();
     break;
 
   default:
@@ -1867,6 +1884,11 @@ cs_gwf_activate(cs_property_type_t           pty_type,
               __func__);
 
   }
+
+  /* Now one can set the post_flag (need the initializtion of the model
+     context) */
+
+  cs_gwf_set_post_options(post_flag, false);
 
   return gw;
 }
@@ -2158,21 +2180,24 @@ cs_gwf_get_adv_field(void)
 /*!
  * \brief  Create and add a new cs_gwf_soil_t structure. An initialization by
  *         default of all members is performed.
+ *         Case of a soil with an isotropic absolute permeability
  *
- * \param[in]  z_name        name of the volume zone corresponding to the soil
- * \param[in]  bulk_density  value of the mass density
- * \param[in]  sat_moisture  value of the saturated moisture content
- * \param[in]  model         type of model for the soil behavior
+ * \param[in]  z_name      name of the volume zone corresponding to the soil
+ * \param[in]  density     value of the bulk mass density
+ * \param[in]  k_abs       absolute (or intrisic) permeability (scalar-valued)
+ * \param[in]  porosity    value of the porosity (saturated moisture content)
+ * \param[in]  model       type of model for the soil behavior
  *
  * \return a pointer to the new allocated soil structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_soil_t *
-cs_gwf_add_soil(const char                *z_name,
-                double                     bulk_density,
-                double                     sat_moisture,
-                cs_gwf_soil_model_t        model)
+cs_gwf_add_iso_soil(const char                *z_name,
+                    double                     density,
+                    double                     k_abs,
+                    double                     porosity,
+                    cs_gwf_soil_model_t        model)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
@@ -2185,17 +2210,71 @@ cs_gwf_add_soil(const char                *z_name,
               " Zone %s related to the same soil is not defined.\n"
               " Stop adding a new soil.", z_name);
 
-  assert(bulk_density > 0);
-  assert(sat_moisture > 0);
+  assert(density > 0);
+  assert(k_abs > 0);
+  assert(porosity > 0);
 
-  cs_property_type_t  perm_type = cs_property_get_type(gw->abs_permeability);
+  double  ktens_abs[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+  ktens_abs[0][0] = ktens_abs[1][1] = ktens_abs[2][2] = k_abs;
 
   cs_gwf_soil_t  *soil = cs_gwf_soil_create(zone,
                                             gw->model, /* hydraulic model */
                                             model,     /* soil model */
-                                            perm_type,
-                                            sat_moisture,
-                                            bulk_density,
+                                            CS_PROPERTY_ISO,
+                                            ktens_abs,
+                                            porosity,
+                                            density,
+                                            gw->model_context);
+
+  return soil;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and add a new cs_gwf_soil_t structure. An initialization by
+ *         default of all members is performed.
+ *
+ * \param[in]  z_name      name of the volume zone corresponding to the soil
+ * \param[in]  density     value of the bulk mass density
+ * \param[in]  k_abs       absolute (or intrisic) permeability (tensor-valued)
+ * \param[in]  porosity    value of the porosity (saturated moisture content)
+ * \param[in]  model       type of model for the soil behavior
+ *
+ * \return a pointer to the new allocated soil structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_soil_t *
+cs_gwf_add_aniso_soil(const char                *z_name,
+                      double                     density,
+                      double                     k_abs[3][3],
+                      double                     porosity,
+                      cs_gwf_soil_model_t        model)
+{
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  const cs_zone_t  *zone = cs_volume_zone_by_name_try(z_name);
+
+  if (zone == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " Zone %s related to the same soil is not defined.\n"
+              " Stop adding a new soil.", z_name);
+
+  assert(density > 0);
+  assert(porosity > 0);
+  assert(k_abs[0][0]*k_abs[0][0] +
+         k_abs[1][1]*k_abs[1][1] +
+         k_abs[2][2]*k_abs[2][2] > 0);
+
+  cs_gwf_soil_t  *soil = cs_gwf_soil_create(zone,
+                                            gw->model, /* hydraulic model */
+                                            model,     /* soil model */
+                                            CS_PROPERTY_ANISO,
+                                            k_abs,
+                                            porosity,
+                                            density,
                                             gw->model_context);
 
   return soil;
@@ -2311,7 +2390,8 @@ cs_gwf_add_user_tracer(const char                  *eq_name,
  * \brief  Predefined settings for the groundwater flow model and its related
  *         equations.
  *         At this stage, all soils have been defined and equation parameters
- *         are set. Create new cs_field_t structures according to the setting.
+ *         are set.
+ *         Create new cs_field_t structures according to the setting.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2323,6 +2403,20 @@ cs_gwf_init_setup(void)
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
   cs_gwf_soil_check();
 
+  int dim = cs_gwf_soil_get_permeability_max_dim();
+  cs_property_type_t  perm_type = CS_PROPERTY_ISO;
+  if (dim == 9)
+    perm_type = CS_PROPERTY_ANISO;
+
+  /* Add the absolute (or intrisic) permeability property (used in the
+   * definition of the diffusion term in the conservation equations and in the
+   * definition of the Darcy flux).
+   */
+
+  gw->abs_permeability = cs_property_add("absolute_permeability", perm_type);
+
+  /* Continue the setup of the model and create new fields */
+
   switch (gw->model) {
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
@@ -2330,11 +2424,11 @@ cs_gwf_init_setup(void)
     break;
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
-    _uspf_init_setup(gw->model_context);
+    _uspf_init_setup(gw->model_context, perm_type);
     break;
 
   case CS_GWF_MODEL_TWO_PHASE:
-    _mtpf_init_setup(gw->model_context);
+    _mtpf_init_setup(gw->model_context, perm_type);
     break;
 
   default:
@@ -2360,6 +2454,12 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  /* Set the soil porosity and the absolute permeability from the soil
+     definition */
+
+  cs_gwf_soil_set_shared_properties(gw->abs_permeability,
+                                    gw->soil_porosity);
 
   switch (gw->model) {
 

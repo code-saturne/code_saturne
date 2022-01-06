@@ -76,7 +76,6 @@ BEGIN_C_DECLS
 typedef struct {
 
   double    L;                  /* column length */
-  double    k_s;                /* isotropic saturated permeability */
   double    h_s;                /* saturated head reference */
   double    h_r;                /* residual head reference */
   double    theta_r;            /* residual moisture */
@@ -125,7 +124,7 @@ tracy_update(const cs_real_t              t_eval,
 
   /* Retrieve the soil parameters */
 
-  const cs_tracy_param_t  *sp = (cs_tracy_param_t *)soil->param;
+  const cs_tracy_param_t  *sp = (cs_tracy_param_t *)soil->model_param;
 
   /* Retrieve the hydraulic context */
 
@@ -134,7 +133,8 @@ tracy_update(const cs_real_t              t_eval,
   /* Additional parameters */
 
   const cs_real_t  *head_values = hc->head_in_law;
-  const double  delta_m = soil->saturated_moisture - sp->theta_r;
+  const double  delta_m = soil->porosity - sp->theta_r;
+  const double  k_s = soil->abs_permeability[0][0];
 
   /* Retrieve field values associated to properties to update */
 
@@ -150,7 +150,7 @@ tracy_update(const cs_real_t              t_eval,
 
     /* Set the permeability value */
 
-    permeability[c_id] = sp->k_s * k_r;
+    permeability[c_id] = k_s * k_r;
 
     /* Set the moisture content (Se = 1 in this case)*/
 
@@ -215,14 +215,17 @@ get_bc(cs_real_t           time,
        void               *input,
        cs_real_t          *retval)
 {
-  cs_tracy_param_t  *tp = input;
+  const cs_gwf_soil_t  *soil = input;
+  assert(soil != NULL);
+  const cs_tracy_param_t  *tp = soil->model_param;
   assert(tp != NULL);
 
   /* Physical parameters */
 
   const double  overL = 1./tp->L;
-  const double  dtheta = tp->theta_s - tp->theta_r;
-  const double  td = -5 * tp->L * tp->L * dtheta /( 6*tp->h_r*tp->k_s );
+  const double  dtheta = soil->porosity - tp->theta_r;
+  const double  td =
+    -5 * tp->L * tp->L * dtheta /( 6 * tp->h_r * soil->abs_permeability[0][0] );
   const double  alpha = 6 - 5*time/td;
 
   for (cs_lnum_t p = 0; p < n_pts; p++) {
@@ -325,26 +328,22 @@ cs_user_model(void)
 
   /*! [param_cdo_activate_gwf_uspf] */
 
-  cs_gwf_activate(CS_PROPERTY_ISO,
-                  CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
-                  0);  /* No option to set */
+  cs_gwf_activate(CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
+                  0,                          /* No option to set */
+                  CS_GWF_POST_PERMEABILITY);  /* Post-processing options */
 
   /*! [param_cdo_activate_gwf_uspf] */
-
-  cs_gwf_set_post_options(CS_GWF_POST_PERMEABILITY,
-                          false); /* Do not reset existing options */
 
   /* 2. Add and define soils */
 
   /*! [param_cdo_gwf_add_user_soil] */
 
-  cs_real_t  bulk_density = 1.0; /* useless here since there is no tracer eq. */
-  cs_real_t  theta_s = 0.45;     /* saturated moisture=max. liquid saturation */
-
-  cs_gwf_soil_t  *s = cs_gwf_add_soil("cells",
-                                      bulk_density,
-                                      theta_s,
-                                      CS_GWF_SOIL_USER);
+  cs_gwf_soil_t  *s =
+    cs_gwf_add_iso_soil("cells",
+                        1.0,        /* bulk mass density (useless here) */
+                        1.15741e-4, /* absolute permeability */
+                        0.45,       /* porosity */
+                        CS_GWF_SOIL_USER);
 
   /* 2.a Create and define a structure of parameters to manage the soil */
 
@@ -353,11 +352,9 @@ cs_user_model(void)
   BFT_MALLOC(tp, 1, cs_tracy_param_t);
 
   tp->L = 200;
-  tp->k_s = 1.15741e-4;
   tp->h_s = 0.;
   tp->h_r = -100;
   tp->theta_r = 0.15;
-  tp->theta_s = theta_s;
 
   /* 2.b Associate the parameter structure and the user-defined functions
    *     to manage the soil */
@@ -472,8 +469,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
   /* 1. Retrieve the soil by its name and then its parameter structure */
 
   cs_gwf_soil_t  *soil = cs_gwf_soil_by_name("cells");
-
-  cs_tracy_param_t  *tp = soil->param;
+  cs_tracy_param_t  *tp = soil->model_param;
 
   /* Define the boundary conditions  */
 
@@ -481,7 +477,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
                                  CS_PARAM_BC_DIRICHLET,
                                  "left", // boundary zone name
                                  get_bc,
-                                 tp);
+                                 soil);
 
   cs_equation_add_bc_by_value(eqp,
                               CS_PARAM_BC_DIRICHLET,

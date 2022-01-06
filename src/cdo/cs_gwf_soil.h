@@ -36,6 +36,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_gwf_param.h"
+#include "cs_gwf_priv.h"
 #include "cs_mesh.h"
 #include "cs_property.h"
 #include "cs_volume_zone.h"
@@ -108,10 +109,6 @@ typedef struct {
    * \var residual_moisture
    *      Also called residual liquid saturation
    *
-   * \var saturated_permeability
-   *      Value of the permeability in the soil when all the porous media is
-   *      filled with water
-   *
    * \var n
    *      Shape parameter. Should be 1.25 < n < 6
    *
@@ -127,7 +124,6 @@ typedef struct {
    */
 
   double             residual_moisture;
-  double             saturated_permeability[3][3];
 
   double             n;
   double             m;
@@ -137,25 +133,9 @@ typedef struct {
 } cs_gwf_soil_param_genuchten_t;
 
 
-/*!
- * \struct cs_gwf_soil_param_saturated_t
- * \brief Parameters defining a saturated soil in a given zone
- *
- * \var saturated_permeability
- * Value of the permeability in the soil when all the porous media is filled
- * with water
- */
-
-typedef struct {
-
-  double       saturated_permeability[3][3];
-
-} cs_gwf_soil_param_saturated_t;
-
-
 /*! \struct _gwf_soil_t
  *
- * \brief Main structure to handle a soil in the groundawater flow module.
+ * \brief Main structure to handle a soil in the groundwater flow module.
  *
  *        Store a set of parameters and pointers describing a soil and its
  *        related hydraulic model (shared with the main structure \ref
@@ -165,63 +145,96 @@ typedef struct {
 struct _gwf_soil_t {
 
   /*!
+   * @name Metadata
+   * @{
+
    * \var id
-   * id associated to a soil. Position in the array of soils.
+   *      id associated to a soil. Position in the array of soils.
    *
    * \var zone_id
-   * id related to a volumic cs_zone_t structure (based on cells)
-   *
-   * \var bulk_density
-   * Value of the mass density of the soil
-   *
-   * \var saturated_moisture
-   * Value of the liquid saturation (or moisture content)
+   *      id related to a volumic cs_zone_t structure (based on cells)
    *
    * \var hydraulic_model
-   * Type of model use in the groundwater flow module to describe the hydraulic
-   * (see \ref cs_gwf_model_type_t for more details)
-   *
-   * \var model
-   * Type of model describing the hydraulic behaviour of a soil (cf. \ref
-   * \cs_gwf_soil_model_t for more details)
+   *      Type of model use in the groundwater flow module to describe the
+   *      hydraulic (see \ref cs_gwf_model_type_t for more details)
    *
    * \var hydraulic_context
    * Structure cast on-the-fly. This structure contains parameters, arrays,
    * properties and fields describing the hydraulic state. It depends on the type
    * of hydraulic model which is considered.
    *
-   * \var param
-   * Pointer to a structure cast on-the-fly (it depends on the type of soil
-   * model). This structure contains the set of parameters describing a soil.
+   * @}
+   * @name Soil features (whatever is the soil model)
+   * @{
+   *
+   * \var bulk_density
+   * Value of the mass density of the soil
+   *
+   * \var porosity
+   *      Max. portion of volume in a soil where the liquid (or the gas) can
+   *      be.  In a single-phase saturated model this corresponds to the
+   *      saturated moisture or the max. liquid saturation.
+   *
+   * \var abs_permeability_dim
+   *      =1 if isotropic or =3 if orthotropic or =9 if anisotropic
+   *
+   * \var abs_permeability
+   *      Value of the intrisic permeability in the soil when all the porous
+   *      media is filled with water (= saturated permeability)
+   *
+   * @}
+   * @name Soil modelling
+   * @{
+   *
+   * \var model
+   *      Type of model describing the hydraulic behaviour of a soil (cf. \ref
+   *      \cs_gwf_soil_model_t for more details)
+   *
+   * \var model_param
+   *      Pointer to a structure cast on-the-fly (it depends on the type of
+   *      soil model). This structure contains the set of parameters describing
+   *      a soil. Can be set to NULL in the case of a saturated single-phase
+   *      model.
+   *
+   * @}
+   * @name Function pointers
+   * @{
    *
    * \var update_properties
-   * Pointer to a function which manages the update of the properties describing
-   * the porous media or used in associated equations (diffusion terms for
-   * instance). These functions depend on the model of soil and the type of model
-   * used in the groundwater flow module. May be set to NULL if there is no need
-   * to update soil properties.
+   *      Pointer to a function which manages the update of the properties
+   *      describing the porous media or used in associated equations
+   *      (diffusion terms for instance). These functions depend on the model
+   *      of soil and the type of model used in the groundwater flow
+   *      module. May be set to NULL if there is no need to update soil
+   *      properties.
    *
-   * \var free_param
-   * Pointer to a function which free the param structure if needed. May be set
-   * to NULL if there is nothing to free inside the param structure.
+   * \var free_model_param
+   *      Pointer to a function which free the param structure if needed. May
+   *      be set to NULL if there is nothing to free inside the param
+   *      structure.
+   *
+   * @}
    */
 
   int                             id;
   int                             zone_id;
 
-  double                          bulk_density;
-  double                          saturated_moisture;
-
   cs_gwf_model_type_t             hydraulic_model;
-  cs_gwf_soil_model_t             model;
-
   void                           *hydraulic_context;
-  void                           *param;
+
+
+  double                          bulk_density;
+  double                          porosity;
+  int                             abs_permeability_dim;
+  double                          abs_permeability[3][3];
+
+  cs_gwf_soil_model_t             model;
+  void                           *model_param;
 
   /* Pointers to functions */
 
   cs_gwf_soil_update_t           *update_properties;
-  cs_gwf_soil_free_param_t       *free_param;
+  cs_gwf_soil_free_param_t       *free_model_param;
 
 };
 
@@ -285,6 +298,18 @@ cs_gwf_soil_get_saturated_moisture(int   soil_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the max dim (aniso=9; iso=1) for the absolute permeability
+ *         associated to each soil
+ *
+ * \return the associated max. dimension
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_gwf_soil_get_permeability_max_dim(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Check if all soils have been set as CS_GWF_SOIL_SATURATED
  *
  * \return true or false
@@ -314,7 +339,8 @@ cs_gwf_soil_check(void);
  * \param[in] hydraulic_model     main hydraulic model for the module
  * \param[in] model               type of model for the soil behavior
  * \param[in] perm_type           type of permeability (iso/anisotropic)
- * \param[in] saturated_moisture  moisture content
+ * \param[in] k_abs               absolute (intrisic) permeability
+ * \param[in] porosity            porosity or max. moisture content
  * \param[in] bulk_density        value of the mass density
  * \param[in] hydraulic_context   pointer to the context structure
  *
@@ -327,7 +353,8 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
                    cs_gwf_model_type_t              hydraulic_model,
                    cs_gwf_soil_model_t              model,
                    cs_property_type_t               perm_type,
-                   double                           saturated_moisture,
+                   double                           k_abs[3][3],
+                   double                           porosity,
                    double                           bulk_density,
                    void                            *hydraulic_context);
 
@@ -371,36 +398,7 @@ cs_gwf_soil_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set a soil defined by a saturated hydraulic model and attached to
- *         an isotropic permeability (single-phase flow)
- *
- * \param[in, out] soil       pointer to a cs_gwf_soil_t structure
- * \param[in]      k_s        value of the saturated permeability
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_set_iso_saturated(cs_gwf_soil_t              *soil,
-                              double                      k_s);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set a soil defined by a saturated hydraulic model and attached to
- *         an anisotropic permeability (single-phase flow)
- *
- * \param[in, out] soil       pointer to a cs_gwf_soil_t structure
- * \param[in]      k_s        value of the anisotropic saturated permeability
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_set_aniso_saturated(cs_gwf_soil_t              *soil,
-                                double                      k_s[3][3]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set a soil defined by a Van Genuchten-Mualen hydraulic model and
- *         attached to an isotropic saturated permeability (single-phase flow)
+ * \brief  Set a soil defined by a Van Genuchten-Mualen model
  *
  *         The (effective) liquid saturation (also called moisture content)
  *         follows the identity
@@ -412,7 +410,6 @@ cs_gwf_soil_set_aniso_saturated(cs_gwf_soil_t              *soil,
  *         where m = 1 -  1/n
  *
  * \param[in, out] soil       pointer to a cs_gwf_soil_t structure
- * \param[in]      k_s        value of the isotropic saturated permeability
  * \param[in]      theta_r    residual moisture
  * \param[in]      alpha      scale parameter (in m^-1)
  * \param[in]      n          shape parameter
@@ -421,39 +418,7 @@ cs_gwf_soil_set_aniso_saturated(cs_gwf_soil_t              *soil,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_set_iso_genuchten(cs_gwf_soil_t              *soil,
-                              double                      k_s,
-                              double                      theta_r,
-                              double                      alpha,
-                              double                      n,
-                              double                      L);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set a soil defined by a Van Genuchten-Mualen hydraulic model and
- *        attached to an anisotropic saturated permeability (single-phase flow)
- *
- *        The (effective) liquid saturation (also called moisture content)
- *        follows the identity
- *        S_l,eff = (S_l - theta_r)/(theta_s - theta_r)
- *                = (1 + |alpha . h|^n)^(-m)
- *
- *        The isotropic relative permeability is defined as:
- *        k_r = S_l,eff^L * (1 - (1 - S_l,eff^(1/m))^m))^2
- *        where m = 1 -  1/n
- *
- * \param[in, out] soil       pointer to a cs_gwf_soil_t structure
- * \param[in]      k_s        value of the isotropic saturated permeability
- * \param[in]      theta_r    residual moisture/liquid saturation
- * \param[in]      alpha      scale parameter (in m^-1)
- * \param[in]      n          shape parameter
- * \param[in]      L          turtuosity parameter
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_set_aniso_genuchten(cs_gwf_soil_t              *soil,
-                                double                      k_s[3][3],
+cs_gwf_soil_set_genuchten_param(cs_gwf_soil_t              *soil,
                                 double                      theta_r,
                                 double                      alpha,
                                 double                      n,
@@ -478,53 +443,31 @@ cs_gwf_soil_set_user(cs_gwf_soil_t               *soil,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the parameter values when all soils are considered as saturated.
- *         Use predefined properties of the groundwater flow module.
+ * \brief  Set the definition of the soil porosity and absolute porosity (which
+ *         are properties always defined). This relies on the definition of
+ *         each soil.
  *
- * \param[in, out]  permeability      pointer to a cs_property_t structure
+ * \param[in, out]  abs_permeability    pointer to a cs_property_t structure
+ * \param[in, out]  soil_porosity       pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_set_shared_properties(cs_property_t      *abs_permeability,
+                                  cs_property_t      *soil_porosity);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the definition of the soil porosity and absolute porosity (which
+ *         are properties always defined). This relies on the definition of
+ *         each soil.
+ *
  * \param[in, out]  moisture_content  pointer to a cs_property_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_saturated_set_param(cs_property_t      *permeability,
-                                cs_property_t      *moisture_content);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the different arrays used in soil context for a GWF model set
- *         to unsaturated single-phase flows in a porous media.
- *
- * \param[in]  head              pointer to the current head values in cells
- * \param[in]  permeability      pointer to the current permeability values
- * \param[in]  moisture_content  pointer to the current moisture content values
- * \param[in]  capacity          pointer to the current soil capacity values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_uspf_set_arrays(cs_real_t        head[],
-                            cs_real_t        permeability[],
-                            cs_real_t        moisture_content[],
-                            cs_real_t        capacity[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the different arrays used in soil context for a GWF model set
- *         to miscible two-phase flows in a porous media.
- *
- * \param[in]  capillarity_p  current values of the capillarity pressure
- * \param[in]  l_saturation   current values of the liquid saturation
- * \param[in]  l_kr           current values of the relative liquid permeability
- * \param[in]  g_kr           current values of the relative gas permeability
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_soil_mtpf_set_arrays(cs_real_t      capillarity_p[],
-                            cs_real_t      l_saturation[],
-                            cs_real_t      l_kr[],
-                            cs_real_t      g_kr[]);
+cs_gwf_soil_saturated_set_property(cs_property_t   *moisture_content);
 
 /*----------------------------------------------------------------------------*/
 /*!

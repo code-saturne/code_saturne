@@ -547,13 +547,18 @@ typedef struct {
    */
 
   cs_gwf_model_type_t           model;
-  cs_gwf_option_flag_t          flag;
+  cs_flag_t                     flag;
   cs_flag_t                     post_flag;
 
   /*!
    * @}
    * @name Properties
    * @{
+   *
+   * \var porosity
+   *      Also called the saturated moisture content. This is a
+   *      characterization of the portion of volume in a soil where the liquid
+   *      (or also the gas) can be present. All models relies on this quantity.
    *
    * \var abs_permeability
    *      Absolute (or intrinsic) permeability which characterizes the behavior
@@ -563,6 +568,7 @@ typedef struct {
    *      since this is equal to 1 (no weigth).
    */
 
+  cs_property_t                *soil_porosity;
   cs_property_t                *abs_permeability;
 
   /*!

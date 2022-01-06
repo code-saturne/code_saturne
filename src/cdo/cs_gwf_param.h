@@ -134,8 +134,6 @@ typedef enum {
 } cs_gwf_model_type_t;
 
 
-typedef cs_flag_t  cs_gwf_option_flag_t;
-
 /*!
  * @}
  * \enum cs_gwf_model_bit_t
