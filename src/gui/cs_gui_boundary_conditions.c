@@ -2464,6 +2464,7 @@ _rescale_elec(const int  itypfb[],
 
 void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                int        *iqimp,
+                               int        *icalke,
                                int        *ientat,
                                int        *ientcp,
                                int        *inmoxy,
@@ -2479,6 +2480,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                double     *qimp,
                                double     *qimpat,
                                double     *qimpcp,
+                               double     *dh,
+                               double     *xintur,
                                double     *timpat,
                                double     *timpcp,
                                double     *tkent,
@@ -2617,12 +2620,15 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
       tn_bc = _get_zone_bc_node(tn_bc, izone);
 
-      /* Update the zone's arrays (iqimp, icalke, qimp,...)
+      /* Update the zone's arrays (iqimp, dh, xintur, icalke, qimp,...)
          because they are re-initialized at each time step
          in PRECLI and PPPRCL routines */
 
       /* data by zone */
       iqimp[zone_nbr-1]  = boundaries->iqimp[izone];
+      dh[zone_nbr-1]     = boundaries->dh[izone];
+      xintur[zone_nbr-1] = boundaries->xintur[izone];
+      icalke[zone_nbr-1] = boundaries->icalke[izone];
 
       if (solid_fuels) {
         const cs_combustion_model_t *cm = cs_glob_combustion_model;

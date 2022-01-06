@@ -375,11 +375,11 @@ call precli(nvar, icodcl, rcodcl)
 
 call uiclim &
   ( nozppm,                                                        &
-    iqimp,  ientat, ientcp, inmoxy, ientox,                        &
+    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
     itypfb, izfppp, icodcl,                                        &
-    qimp,   qimpat, qimpcp,                                        &
-    timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
+    qimp,   qimpat, qimpcp, dh,     xintur,                        &
+    timpat, timpcp, tkent , fment,  distch, nvar, rcodcl)
 
 call cs_boundary_conditions_complete(nvar, itypfb, icodcl, rcodcl)
 
@@ -4957,11 +4957,11 @@ call precli(nvar, icodcl, rcodcl)
 
 call uiclim &
   ( nozppm,                                                        &
-    iqimp,  ientat, ientcp, inmoxy, ientox,                        &
+    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
     ientfu, ientgb, ientgf, iprofm, iautom,                        &
     itypfb, izfppp, icodcl,                                        &
-    qimp,   qimpat, qimpcp,                                        &
-    timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
+    qimp,   qimpat, qimpcp, dh,     xintur,                        &
+    timpat, timpcp, tkent , fment,  distch, nvar, rcodcl)
 
 !     - Sous-programme utilisateur
 !       ==========================
