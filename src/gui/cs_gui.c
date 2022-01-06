@@ -448,6 +448,11 @@ _physical_property_th_diffusivity(cs_field_t          *c_prop,
 
   }
 
+  /* If property is predefined by the model, do nothing and return. */
+
+  else if (cs_gui_strcmp(prop_choice, "predefined_law"))
+    return;
+
   /* Finalize special case for conduction to diffusion conversion */
 
   if (CS_F_(cp) == NULL) {
