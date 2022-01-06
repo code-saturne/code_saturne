@@ -3113,7 +3113,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
   }
 
   /* Rescaling for Joule effect (should be improved by using specialized
-     dof_functions including the rescaling */
+     dof_functions including the rescaling) */
 
   if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1
       || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1) {
