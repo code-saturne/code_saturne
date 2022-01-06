@@ -57,6 +57,7 @@ BEGIN_C_DECLS
  */
 
 /*!  1: Perform the computation and post-processing of the Fourier number */
+
 #define CS_PROPERTY_POST_FOURIER  (1 << 0)
 
 /*! @} */
@@ -70,27 +71,32 @@ BEGIN_C_DECLS
 /*! \var CS_PROPERTY_ISO
  *  1: Isotropic behavior (one real number is sufficient to describe the
  *  property) */
+
 #define CS_PROPERTY_ISO           (1 << 0)
 
 /*! \var CS_PROPERTY_ORTHO
  *  2: Orthotropic behavior (three real numbers describe the behavior assuming
  *  that the different behavior is aligned with Cartesian axis) */
+
 #define CS_PROPERTY_ORTHO         (1 << 1)
 
 /*! \var CS_PROPERTY_ANISO
  *  4: Anisotropic behavior (a 3x3 tensor describe the behavior). This tensor
  *  should be symmetric positive definite (i.e 6 real numbers describe the
  *  behavior) but by default a 3x3 tensor is used. */
+
 #define CS_PROPERTY_ANISO         (1 << 2)
 
 /*! \var CS_PROPERTY_ANISO_SYM
  *  8: Anisotropic behavior. This tensor is represented with 6 real numbers
  *  since the tensor is symmetric */
+
 #define CS_PROPERTY_ANISO_SYM     (1 << 3)
 
 /*! \var CS_PROPERTY_BY_PRODUCT
  *  16: The property is defined as the product of two other properties
  */
+
 #define CS_PROPERTY_BY_PRODUCT    (1 << 4)
 
 /*! @} */
@@ -139,9 +145,11 @@ struct _cs_property_t {
    * value can also be used to renormalized quantities related to this property
    * By default, this is set to 1
    */
+
   cs_real_t            ref_value;
 
   /* Property is up to now only defined on the whole domain (volume) */
+
   int                  n_definitions;  /* Current number of definitions used */
   cs_xdef_t          **defs;           /* List of definitions */
 
@@ -155,14 +163,17 @@ struct _cs_property_t {
 
   /* Retrieve the evaluation of the property at the cell center for each
      definition */
+
   cs_xdef_eval_t     **get_eval_at_cell;
 
   /* Same thing as the previous one but now with the usage of cellwise algo.
      relying on a cs_cell_mesh_t structure */
+
   cs_xdef_cw_eval_t  **get_eval_at_cell_cw;
 
   /* For properties relying on other properties for their definition, one
    * stores the pointers to these related properties */
+
   int                     n_related_properties;
   const cs_property_t   **related_properties;
 

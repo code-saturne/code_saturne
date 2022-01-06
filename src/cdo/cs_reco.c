@@ -57,6 +57,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Redefined the name of functions from cs_math to get shorter names */
+
 #define _dp3  cs_math_3_dot_product
 
 /*============================================================================
@@ -95,12 +96,14 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
     return;
 
   /* Allocate reconstruction arrays if necessary */
+
   if (crec == NULL)
     BFT_MALLOC(crec, quant->n_cells, double);
   if (frec == NULL)
     BFT_MALLOC(frec, quant->n_faces, double);
 
   /* Reconstruction at cell centers */
+
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     crec[c_id] = 0;
@@ -111,6 +114,7 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
   }
 
   /* Reconstruction at face centers */
+
   for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
 
     const cs_real_t  *xf = cs_quant_get_face_center(f_id, quant);
@@ -172,7 +176,6 @@ cs_reco_pv_at_cell_centers(const cs_adjacency_t        *c2v,
   if (array == NULL)
     return;
 
-  /* Sanity checks */
   assert(c2v != NULL && quant != NULL);
 
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
@@ -193,7 +196,6 @@ cs_reco_pv_at_cell_centers(const cs_adjacency_t        *c2v,
     val_xc[c_id] = invvol * reco_val;
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -218,7 +220,6 @@ cs_reco_vect_pv_at_cell_centers(const cs_adjacency_t        *c2v,
   if (array == NULL)
     return;
 
-  /* Sanity checks */
   assert(c2v != NULL && quant != NULL);
 
 # pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
@@ -243,7 +244,6 @@ cs_reco_vect_pv_at_cell_centers(const cs_adjacency_t        *c2v,
       val_xc[3*c_id+k] = invvol * reco_val[k];
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1020,17 +1020,19 @@ cs_reco_cw_cell_vect_from_flux(const cs_cell_mesh_t    *cm,
   if (fluxes == NULL)
     return;
 
-  /* Sanity checks */
   assert(cell_reco != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialization */
+
   cell_reco[0] = cell_reco[1] = cell_reco[2] = 0.;
 
   /* Loop on cell faces */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     /* Related dual edge quantity */
+
     const cs_nvec3_t  deq = cm->dedge[f];
     const cs_real_t  coef = fluxes[f] * deq.meas;
 
@@ -1063,17 +1065,19 @@ cs_reco_cw_cell_vect_from_face_dofs(const cs_cell_mesh_t    *cm,
                                     const cs_real_t          b_face_vals[],
                                     cs_real_t               *cell_reco)
 {
-  /* Sanity checks */
   assert(cm != NULL && i_face_vals != NULL && b_face_vals != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialization */
+
   cell_reco[0] = cell_reco[1] = cell_reco[2] = 0.;
 
   /* Loop on cell faces */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     /* Related dual edge quantity */
+
     const cs_lnum_t  f_id = cm->f_ids[f];
     const cs_nvec3_t  deq = cm->dedge[f];
     const cs_real_t  coef = (cm->f_ids[f] < cm->bface_shift) ?
@@ -1106,12 +1110,12 @@ cs_reco_cw_cell_grad_from_scalar_pv(const cs_cell_mesh_t    *cm,
                                     const cs_real_t          pdi[],
                                     cs_real_t               *cell_gradient)
 {
-  /* Sanity checks */
   assert(cm != NULL && pdi != NULL);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PVQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_DFQ));
 
   /* Reconstruct a constant gradient inside the current cell */
+
   cell_gradient[0] = cell_gradient[1] = cell_gradient[2] = 0;
   for (short int e = 0; e < cm->n_ec; e++) {
 
@@ -1149,7 +1153,6 @@ cs_reco_cw_scalar_pv_inside_cell(const cs_cell_mesh_t    *cm,
                                  const cs_real_t          unitv_xcxp[],
                                  cs_real_t                wbuf[])
 {
-  /* Sanity checks */
   assert(cm != NULL && pdi != NULL && wbuf != NULL);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PVQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_DFQ));
@@ -1157,6 +1160,7 @@ cs_reco_cw_scalar_pv_inside_cell(const cs_cell_mesh_t    *cm,
   cs_real_t  *_pv = wbuf;  /* Local value of the potential field */
 
   /* Reconstruct the value at the cell center */
+
   cs_real_t  pc = 0.;
   for (short int v = 0; v < cm->n_vc; v++) {
     _pv[v] = pdi[cm->v_ids[v]];
@@ -1164,6 +1168,7 @@ cs_reco_cw_scalar_pv_inside_cell(const cs_cell_mesh_t    *cm,
   }
 
   /* Reconstruct a constant gradient inside the current cell */
+
   cs_real_3_t  gcell = {0., 0., 0.};
   for (short int e = 0; e < cm->n_ec; e++) {
     const cs_real_t  ge =
@@ -1177,6 +1182,7 @@ cs_reco_cw_scalar_pv_inside_cell(const cs_cell_mesh_t    *cm,
   for (int k = 0; k < 3; k++) gcell[k] *= invcell;
 
   /* Evaluation at the given point */
+
   cs_real_t  p_rec = pc;
   p_rec += length_xcxp * cs_math_3_dot_product(gcell, unitv_xcxp);
 
@@ -1204,7 +1210,6 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
                              cs_cell_builder_t      *cb,
                              cs_real_t              *vgrd)
 {
-  /* Sanity checks */
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ));
@@ -1212,6 +1217,7 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
   cs_real_3_t  grd_c, grd_v1, grd_v2;
 
   /* Temporary buffers */
+
   cs_real_3_t  *u_vc = cb->vectors;
   double  *l_vc = cb->values;
 
@@ -1219,13 +1225,16 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
   const double  p_c = pot[cm->n_vc];
 
   /* Reset local fluxes */
+
   for (int i = 0; i < 3*cm->n_vc; i++) vgrd[i] = 0.;
 
   /* Store segments xv --> xc for this cell */
+
   for (short int v = 0; v < cm->n_vc; v++)
     cs_math_3_length_unitv(cm->xc, cm->xv + 3*v, l_vc + v, u_vc[v]);
 
   /* Loop on cell faces */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     const cs_quant_t  pfq = cm->face[f];
@@ -1235,10 +1244,12 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
        - the weighting of each triangle defined by a base e and an apex f
        - volume of each sub-tetrahedron pef_c
        - the gradient of the Lagrange function related xc in p_{f,c} */
+
     const cs_real_t  ohf = -cm->f_sgn[f]/cm->hfc[f];
     for (int k = 0; k < 3; k++) grd_c[k] = ohf * pfq.unitv[k];
 
     /* Compute the reconstructed value of the potential at p_f */
+
     double  p_f = 0.;
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
@@ -1252,6 +1263,7 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     const double  dp_cf = p_c - p_f;
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
+
     const cs_real_t  hf_coef = cs_math_1ov3 * cm->hfc[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
@@ -1265,6 +1277,7 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
          grd_f = -(grd_c + grd_v1 + grd_v2)
          This formula is a consequence of the Partition of the Unity.
          This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
+
       const cs_real_t  sefv_vol = 0.5 * hf_coef * cm->tef[i]; /* 0.5 pef_vol */
       cs_real_t  _grd;
       for (int k = 0; k < 3; k++) {
@@ -1278,7 +1291,6 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     } /* Loop on face edges */
 
   } /* Loop on cell faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1301,7 +1313,6 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
                              cs_cell_builder_t      *cb,
                              cs_real_t              *cgrd)
 {
-  /* Sanity checks */
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ));
@@ -1309,6 +1320,7 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
   cs_real_3_t  grd_c, grd_v1, grd_v2;
 
   /* Temporary buffers */
+
   cs_real_3_t  *u_vc = cb->vectors;
   double  *l_vc = cb->values;
 
@@ -1318,10 +1330,12 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
   const double  p_c = pot[cm->n_vc];
 
   /* Store segments xv --> xc for this cell */
+
   for (short int v = 0; v < cm->n_vc; v++)
     cs_math_3_length_unitv(cm->xc, cm->xv + 3*v, l_vc + v, u_vc[v]);
 
   /* Loop on cell faces */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     const cs_quant_t  pfq = cm->face[f];
@@ -1331,10 +1345,12 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
        - the weighting of each triangle defined by a base e and an apex f
        - volume of each sub-tetrahedron pef_c
        - the gradient of the Lagrange function related xc in p_{f,c} */
+
     const cs_real_t  ohf = -cm->f_sgn[f]/cm->hfc[f];
     for (int k = 0; k < 3; k++) grd_c[k] = ohf * pfq.unitv[k];
 
     /* Compute the reconstructed value of the potential at p_f */
+
     double  p_f = 0.;
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
@@ -1348,6 +1364,7 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     const double  dp_cf = p_c - p_f;
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
+
     const cs_real_t  hf_coef = cs_math_1ov3 * cm->hfc[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
@@ -1362,6 +1379,7 @@ cs_reco_cw_cgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
          grd_f = -(grd_c + grd_v1 + grd_v2)
          This formula is a consequence of the Partition of the Unity.
          This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
+
       const cs_real_t  pefv_vol = hf_coef * cm->tef[i];
       for (int k = 0; k < 3; k++)
         cgrd[k] += pefv_vol * ( dp_cf          * grd_c[k]  +

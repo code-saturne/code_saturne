@@ -166,6 +166,7 @@ _needs_solving_thermal(void)
   cs_flag_t  thm_model = cs_thermal_system_get_model();
 
   /* Is there an advection term arising from the Navier--Stokes ? */
+
   if (thm_model & CS_THERMAL_MODEL_NAVSTO_ADVECTION)
     return false; /* This is managed inside the function
                      cs_navsto_system_compute_steady_state() */
@@ -284,7 +285,6 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
     } /* Loop on equations */
 
   } /* nt_cur > 0 */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -592,7 +592,6 @@ _log_setup(const cs_domain_t   *domain)
   /* Summary for each equation */
 
   cs_equation_log_setup();
-
 }
 
 /*============================================================================
@@ -748,6 +747,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
    * The set of functions chosen for each equation depends on the parameters
    * specifying the cs_equation_t structure
    */
+
   domain->only_steady = cs_equation_set_functions();
 
   if (domain->only_steady)
@@ -755,7 +755,6 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   else { /* Setup the time step if not already done */
 
-    /* Sanity checks */
     if (cs_dt_pty == NULL)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Please check your settings.\n"
@@ -897,6 +896,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
   _initialized_structures = false;
 
   /* Free CDO structures related to geometric quantities and connectivity */
+
   domain->cdo_quantities = cs_cdo_quantities_free(domain->cdo_quantities);
   domain->connect = cs_cdo_connect_free(domain->connect);
 
