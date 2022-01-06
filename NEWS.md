@@ -3,6 +3,9 @@ Release 7.1.1 (not released yet)
 
 Bug fixes:
 
+- Fix division of model-based thermal diffusivity by Cp for some models
+  solving with enthalpy, including at least the electric arcs module.
+
 - Electric arcs and Joule effect: fix handling of rescaling
   (`ielcor = 1`), which was handled too early for constant
   Dirichlet values.
