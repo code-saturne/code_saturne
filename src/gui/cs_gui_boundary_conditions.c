@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2021 EDF S.A.
+  Copyright (C) 1998-2022 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1455,6 +1455,74 @@ _init_zones(const cs_lnum_t   n_b_faces,
 
 }
 
+/*----------------------------------------------------------------------------
+ * Rescaling for Joule effect en electric arcs.
+ *
+ * parameters:
+ *   itypfb  <-- boundary type
+ *   idcodcl <-> boundary condition type
+ *   rdcodcl <-> boundary condition values
+ *----------------------------------------------------------------------------*/
+
+static void
+_rescale_elec(const int  itypfb[],
+              int        icodcl[],
+              cs_real_t  rcodcl[])
+{
+  assert(cs_glob_elec_option->ielcor == 1);
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const int var_key_id = cs_field_key_id("variable_id");
+
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+
+  /* Rescale potential */
+
+  int potr_id = CS_F_(potr)->id;
+  cs_lnum_t ivar_r = cs_field_get_key_int(CS_F_(potr), var_key_id) -1;
+  cs_lnum_t ivar_i = -1;
+
+  if (ieljou == 2 || ieljou == 4)
+    ivar_i = cs_field_get_key_int(CS_F_(poti), var_key_id) -1;
+
+  const cs_real_t coef_jl = cs_glob_elec_option->coejou;
+  const cs_real_t pot_diff = cs_glob_elec_option->pot_diff;
+
+  /* Loop on zones */
+
+  for (int izone = 0; izone < boundaries->n_zones; izone++) {
+
+    int zone_num = boundaries->bc_num[izone];
+    const cs_zone_t *bz = cs_boundary_zone_by_id(zone_num);
+
+    if (ieljou > -1) {
+      for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+        cs_lnum_t face_id = bz->elt_ids[elt_id];
+        rcodcl[ivar_r * n_b_faces + face_id] *= coef_jl;
+      }
+    }
+    if (   cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1
+        && boundaries->type_code[potr_id][izone] == DIRICHLET_IMPLICIT) {
+      for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+        cs_lnum_t face_id = bz->elt_ids[elt_id];
+        int bc_type = (itypfb[face_id] == 5) ? 5 : 1;
+        icodcl[ivar_r * n_b_faces + face_id] = bc_type;
+        rcodcl[ivar_r * n_b_faces + face_id] = pot_diff;
+      }
+    }
+
+    if (ivar_i > -1) {
+      for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+        cs_lnum_t face_id = bz->elt_ids[elt_id];
+        rcodcl[ivar_i * n_b_faces + face_id] *= coef_jl;
+      }
+    }
+
+  } /*  for (izone=0; izone < boundaries->n_zones; izone++) */
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1464,7 +1532,7 @@ _init_zones(const cs_lnum_t   n_b_faces,
 /*----------------------------------------------------------------------------
  * Boundary conditions treatment
  *
- * Remember: rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i]
+ * Remember: rcodcl[k][j][i] = rcodcl[k*dim1*dim2 + j*dim1 + i]
  *
  * Fortran Interface:
  *
@@ -2536,6 +2604,14 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                  itypfb,
                                  icodcl,
                                  rcodcl);
+
+  /* Rescaling for Joule effect */
+
+  if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1
+      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1) {
+    if (cs_glob_elec_option->ielcor == 1)
+      _rescale_elec(itypfb, icodcl, rcodcl);
+  }
 }
 
 /*----------------------------------------------------------------------------

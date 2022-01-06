@@ -3,6 +3,10 @@ Release 7.1.1 (not released yet)
 
 Bug fixes:
 
+- Electric arcs and Joule effect: fix handling of rescaling
+  (`ielcor = 1`), which was handled too early for constant
+  Dirichlet values.
+
 - Fix location failure for mapped inlet in some cases
   (occurred especially at higher rank counts).
 
