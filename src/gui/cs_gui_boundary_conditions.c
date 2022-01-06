@@ -158,7 +158,6 @@ typedef struct {
   double      ***distch;   /* ratio for each coal */
   double        *rough;    /* roughness size */
   bool         *head_loss_e;  /* formula for head loss (free inlet/outlet) */
-  bool         *groundwat_e;  /* formula for hydraulic head (groundwater) */
 
   cs_meteo_t    *meteo;     /* inlet or outlet info for atmospheric flow */
 
@@ -1225,9 +1224,9 @@ _dof_meg_profile(cs_lnum_t         n_elts,
  * get scalar's values
  *
  * parameters:
- *   tn_bc   <-- tree node associated with boundary condition
- *   izone   <-- associated zone id
- *   f_id    <--  field id
+ *   tn_bc <-- tree node associated with boundary condition
+ *   z     <-- associated zone
+ *   f_id  <--  field id
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1666,15 +1665,13 @@ _outlet_compressible(cs_tree_node_t  *tn_bc,
  *
  * parameters:
  *   tn_bc <-- tree node associated with boundary conditions
- *   izone <-- associated zone id
+ *   z     <-- associated zone
  *----------------------------------------------------------------------------*/
 
 static void
-_boundary_darcy(cs_tree_node_t  *tn_bc,
-                int              izone)
+_boundary_darcy(cs_tree_node_t   *tn_bc,
+                const cs_zone_t  *z)
 {
-  const char *z_name = boundaries->label[izone];
-
   cs_tree_node_t *tn = cs_tree_node_get_child(tn_bc, "hydraulicHead");
   const char *choice = cs_gui_node_get_tag(tn, "choice");
 
@@ -1690,7 +1687,7 @@ _boundary_darcy(cs_tree_node_t  *tn_bc,
     cs_gui_node_get_real(tn, &value);
     cs_equation_add_bc_by_value(eqp,
                                 CS_PARAM_BC_DIRICHLET,
-                                z_name,
+                                z->name,
                                 &value);
   }
   else if (cs_gui_strcmp(choice, "neumann")) {
@@ -1699,7 +1696,7 @@ _boundary_darcy(cs_tree_node_t  *tn_bc,
     cs_gui_node_get_real(tn, value);
     cs_equation_add_bc_by_value(eqp,
                                 CS_PARAM_BC_NEUMANN,
-                                z_name,
+                                z->name,
                                 value);
   }
   else if (cs_gui_strcmp(choice, "dirichlet_formula")) {
@@ -1708,8 +1705,16 @@ _boundary_darcy(cs_tree_node_t  *tn_bc,
       tn = cs_tree_node_get_sibling_with_tag(tn, "name", "hydraulicHead");
     }
     const char *formula = cs_tree_node_get_child_value_str(tn, "formula");
-    if (formula != NULL)
-      boundaries->groundwat_e[izone] = true;
+    if (formula != NULL) {
+      cs_gui_boundary_meg_context_t  *c
+        = _add_boundary_meg_context(z, "hydraulic_head", choice, 1);
+      cs_equation_add_bc_by_dof_func(eqp,
+                                     CS_PARAM_BC_DIRICHLET,
+                                     z->name,
+                                     cs_flag_boundary_face,
+                                     _dof_meg_profile,
+                                     c);
+   }
     else {
       bft_printf("Warning : groundwater flow boundary conditions\n"
                  "          without formula for hydraulic head.\n");
@@ -1841,7 +1846,6 @@ _init_boundaries(void)
 
   BFT_MALLOC(boundaries->head_loss_e, n_zones,  bool);
 
-  boundaries->groundwat_e = NULL;
   boundaries->meteo = NULL;
 
   if (solid_fuels) {
@@ -1880,9 +1884,6 @@ _init_boundaries(void)
     BFT_MALLOC(boundaries->prein,   n_zones, double);
     BFT_MALLOC(boundaries->rhoin,   n_zones, double);
     BFT_MALLOC(boundaries->tempin,  n_zones, double);
-  }
-  else if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1) {
-    BFT_MALLOC(boundaries->groundwat_e, n_zones, bool);
   }
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
@@ -1940,10 +1941,6 @@ _init_boundaries(void)
       boundaries->prein[izone]     = cs_math_infinite_r;
       boundaries->rhoin[izone]     = 0;
       boundaries->tempin[izone]    = cs_math_infinite_r;
-    }
-
-    else if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1) {
-      boundaries->groundwat_e[izone] = false;
     }
 
     else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
@@ -2068,7 +2065,7 @@ _init_boundaries(void)
           _set_vel_profile(tn_vp, z);
       }
       else
-        _boundary_darcy(tn, izone);
+        _boundary_darcy(tn, z);
 
       /* Inlet: data for coal combustion */
       if (solid_fuels) {
@@ -2125,7 +2122,7 @@ _init_boundaries(void)
 
       /* Inlet: data for darcy */
       if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1)
-        _boundary_darcy(tn, izone);
+        _boundary_darcy(tn, z);
     }
 
     else if (cs_gui_strcmp(nature, "free_inlet_outlet")) {
@@ -2142,7 +2139,7 @@ _init_boundaries(void)
       _boundary_imposed_pressure(tn, label);
     }
     else if (cs_gui_strcmp(nature, "groundwater")) {
-      _boundary_darcy(tn, izone);
+      _boundary_darcy(tn, z);
     }
 
     /* for each zone */
@@ -2253,11 +2250,11 @@ _init_zones(const cs_lnum_t   n_b_faces,
  * Define automatic turbulence values.
  *
  * parameters:
- *   rdcodcl <-- boundary condition values
+ *   rdcodcl <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
 static void
-_standard_turbulence_bcs(cs_real_t  *rcodcl)
+_standard_turbulence_bcs(cs_real_t  rcodcl[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_b_faces = m->n_b_faces;
@@ -2353,6 +2350,74 @@ _standard_turbulence_bcs(cs_real_t  *rcodcl)
 
 }
 
+/*----------------------------------------------------------------------------
+ * Rescaling for Joule effect en electric arcs.
+ *
+ * parameters:
+ *   itypfb  <-- boundary type
+ *   idcodcl <-> boundary condition type
+ *   rdcodcl <-> boundary condition values
+ *----------------------------------------------------------------------------*/
+
+static void
+_rescale_elec(const int  itypfb[],
+              int        icodcl[],
+              cs_real_t  rcodcl[])
+{
+  assert(cs_glob_elec_option->ielcor == 1);
+
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const int var_key_id = cs_field_key_id("variable_id");
+
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+
+  /* Rescale potential */
+
+  int potr_id = CS_F_(potr)->id;
+  cs_lnum_t ivar_r = cs_field_get_key_int(CS_F_(potr), var_key_id) -1;
+  cs_lnum_t ivar_i = -1;
+
+  if (ieljou == 2 || ieljou == 4)
+    ivar_i = cs_field_get_key_int(CS_F_(poti), var_key_id) -1;
+
+  const cs_real_t coef_jl = cs_glob_elec_option->coejou;
+  const cs_real_t pot_diff = cs_glob_elec_option->pot_diff;
+
+  /* Loop on zones */
+
+  for (int izone = 0; izone < boundaries->n_zones; izone++) {
+
+    int zone_num = boundaries->bc_num[izone];
+    const cs_zone_t *bz = cs_boundary_zone_by_id(zone_num);
+
+    if (ieljou > -1) {
+      for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+        cs_lnum_t face_id = bz->elt_ids[elt_id];
+        rcodcl[ivar_r * n_b_faces + face_id] *= coef_jl;
+      }
+    }
+    if (   cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1
+        && boundaries->type_code[potr_id][izone] == DIRICHLET_IMPLICIT) {
+      for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+        cs_lnum_t face_id = bz->elt_ids[elt_id];
+        int bc_type = (itypfb[face_id] == 5) ? 5 : 1;
+        icodcl[ivar_r * n_b_faces + face_id] = bc_type;
+        rcodcl[ivar_r * n_b_faces + face_id] = pot_diff;
+      }
+    }
+
+    if (ivar_i > -1) {
+      for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+        cs_lnum_t face_id = bz->elt_ids[elt_id];
+        rcodcl[ivar_i * n_b_faces + face_id] *= coef_jl;
+      }
+    }
+
+  } /*  for (izone=0; izone < boundaries->n_zones; izone++) */
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2362,7 +2427,7 @@ _standard_turbulence_bcs(cs_real_t  *rcodcl)
 /*----------------------------------------------------------------------------
  * Boundary conditions treatment
  *
- * Remember: rdoccl[k][j][i] = rcodcl[ k * dim1 *dim2 + j *dim1 + i]
+ * Remember: rcodcl[k][j][i] = rcodcl[k*dim1*dim2 + j*dim1 + i]
  *
  * Fortran Interface:
  *
@@ -2523,47 +2588,15 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       } /* switch */
     } /* Loop on fields */
 
-    if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1) {
-      if (cs_glob_elec_option->ielcor == 1) {
-        const cs_field_t  *f = CS_F_(potr);
-        const int var_key_id = cs_field_key_id("variable_id");
-        cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
-
-        for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-          cs_lnum_t face_id = bz->elt_ids[elt_id];
-          rcodcl[ivar * n_b_faces + face_id] *= cs_glob_elec_option->coejou;
-        }
-
-        int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
-        if (ieljou == 2 || ieljou == 4) {
-          const cs_field_t  *fi = CS_F_(poti);
-          ivar = cs_field_get_key_int(fi, var_key_id) -1;
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-            rcodcl[ivar * n_b_faces + face_id] *= cs_glob_elec_option->coejou;
-          }
-        }
-      }
-    }
-
     if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1) {
       const cs_field_t  *f = CS_F_(potr);
       const int var_key_id = cs_field_key_id("variable_id");
       cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
 
-      if (   boundaries->type_code[f->id][izone] == DIRICHLET_IMPLICIT
-          && cs_glob_elec_option->ielcor == 1) {
-        for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-          cs_lnum_t face_id = bz->elt_ids[elt_id];
-          icodcl[ivar * n_b_faces + face_id] = 5;
-          rcodcl[ivar * n_b_faces + face_id] = cs_glob_elec_option->pot_diff;
-        }
-      }
-
       const cs_field_t  *fp = cs_field_by_name_try("vec_potential");
       ivar = cs_field_get_key_int(fp, var_key_id) -1;
 
-      if (boundaries->type_code[fp->id][izone] == NEUMANN_IMPLICIT)
+      if (boundaries->type_code[fp->id][izone] == NEUMANN_IMPLICIT) {
         for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
           cs_lnum_t face_id = bz->elt_ids[elt_id];
           cs_lnum_t iel = b_face_cells[face_id];
@@ -2574,6 +2607,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           rcodcl[(ivar+1) * n_b_faces + face_id] = fp->val_pre[3*iel+1];
           rcodcl[(ivar+2) * n_b_faces + face_id] = fp->val_pre[3*iel+2];
         }
+      }
     }
 
     /* Boundary conditions by boundary type
@@ -2992,11 +3026,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         itypfb[face_id] = CS_INDEF;
       }
 
-      int ivar1 = -1;
-      const cs_field_t  *fp1 = cs_field_by_name_try("hydraulic_head");
-      if (fp1 != NULL)
-        ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
-
       /* set velocity to 0 */
       const cs_field_t  *fp2 = cs_field_by_name_try("velocity");
       if (fp2 != NULL) {
@@ -3008,26 +3037,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
             icodcl[(ivar2 + i) * n_b_faces + face_id] = 3;
             rcodcl[(ivar2 + i) * n_b_faces + face_id] = 0.;
           }
-        }
-      }
-
-      if (ivar1 > -1) { /* groundwater model is active */
-
-        tn_bc = _get_zone_bc_node(tn_bc, izone);
-        cs_tree_node_t *tn_hh = cs_tree_node_get_child(tn_bc, "hydraulicHead");
-        const char *choice_d = cs_gui_node_get_tag(tn_hh, "choice");
-
-        if (cs_gui_strcmp(choice_d, "dirichlet_formula")) {
-          cs_real_t *new_vals = cs_meg_boundary_function(bz,
-                                                         "hydraulic_head",
-                                                         "dirichlet_formula");
-
-          for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-            cs_lnum_t face_id = bz->elt_ids[elt_id];
-            icodcl[ivar1 * n_b_faces + face_id] = 1;
-            rcodcl[ivar1 * n_b_faces + face_id] = new_vals[elt_id];
-          }
-          BFT_FREE(new_vals);
         }
       }
 
@@ -3103,6 +3112,14 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       qimpat[izone] = boundaries->qimp[izone];
   }
 
+  /* Rescaling for Joule effect (should be improved by using specialized
+     dof_functions including the rescaling */
+
+  if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1
+      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1) {
+    if (cs_glob_elec_option->ielcor == 1)
+      _rescale_elec(itypfb, icodcl, rcodcl);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3422,9 +3439,6 @@ cs_gui_boundary_conditions_free_memory(void)
       BFT_FREE(boundaries->prein);
       BFT_FREE(boundaries->rhoin);
       BFT_FREE(boundaries->tempin);
-    }
-    if (cs_glob_physical_model_flag[CS_GROUNDWATER] > -1) {
-      BFT_FREE(boundaries->groundwat_e);
     }
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1)
       BFT_FREE(boundaries->meteo);
