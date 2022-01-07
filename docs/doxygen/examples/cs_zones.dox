@@ -25,8 +25,8 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page cs_user_zones_examples  Volume and boundary zone definitions
-  (cs_user_zones.c)
+
+  \page cs_user_zones_examples Volume and boundary zone definitions (cs_user_zones.c)
 
   Volume and boundary zones may be defined using the GUI, or through
   the \ref cs_user_zones (in cs_user_zones.c).
