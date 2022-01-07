@@ -188,16 +188,15 @@ cs_user_model(void)
 
   /*! [param_cdo_activate_gwf_b] */
   {
-    /* Take into account the gravity effect */
-
-    cs_flag_t  option_flag = CS_GWF_GRAVITATION;
-    cs_flag_t  post_flag = CS_GWF_POST_PERMEABILITY;
+    cs_gwf_activate(CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
+                    /* Physical modelling option or numerical option */
+                    CS_GWF_GRAVITATION,/* Take into account the gravity */
+                    /* Automatic postprocessing options */
+                    CS_GWF_POST_PERMEABILITY |
+                    CS_GWF_POST_DARCY_FLUX_BALANCE);
 
     /* In this case, the gravity vector has to be defined (either using the GUI
        or in cs_user_parameters() function */
-
-    cs_gwf_activate(CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
-                    option_flag, post_flag);
   }
   /*! [param_cdo_activate_gwf_b] */
 

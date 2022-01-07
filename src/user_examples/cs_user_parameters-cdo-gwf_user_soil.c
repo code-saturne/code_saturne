@@ -460,11 +460,11 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 {
   CS_UNUSED(domain);
 
+  /*! [param_cdo_gwf_get_user_soil] */
   /* Final settings for the Richards equation */
 
   cs_equation_param_t  *eqp = cs_equation_param_by_name("Richards");
 
-  /*! [param_cdo_gwf_get_user_soil] */
 
   /* 1. Retrieve the soil by its name and then its parameter structure */
 
