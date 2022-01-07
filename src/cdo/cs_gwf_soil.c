@@ -330,7 +330,7 @@ cs_gwf_soil_get_permeability_max_dim(void)
 
     cs_gwf_soil_t  *soil = _soils[i];
 
-    soil->abs_permeability_dim = CS_MAX(dim, soil->abs_permeability_dim);
+    dim = CS_MAX(dim, soil->abs_permeability_dim);
 
   }
 
