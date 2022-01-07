@@ -1305,9 +1305,11 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
   /* Flux is a vector in the scalar-valued case and a tensor in the
      vector-valued case */
+
   assert(def->meta & CS_CDO_BC_ROBIN); /* Robin BC */
 
   /* Evaluate the boundary condition at each boundary face */
+
   switch(def->type) {
 
   case CS_XDEF_BY_VALUE:
@@ -1362,7 +1364,6 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
                 " Stop computing the Robin value.\n"));
 
   } /* switch def_type */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1393,6 +1394,7 @@ cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
   assert(values != NULL);
 
   /* Synchronization of the definition of the circulation if needed */
+
   cs_lnum_t  *def2e_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
   cs_lnum_t  *def2e_idx = NULL;
   BFT_MALLOC(def2e_idx, eqp->n_bc_defs + 1, cs_lnum_t);
@@ -1404,6 +1406,7 @@ cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
                                  def2e_ids);
 
   /* Define the array storing the circulation values */
+
   for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
 
     const cs_xdef_t  *def = eqp->bc_defs[def_id];

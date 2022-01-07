@@ -135,7 +135,7 @@ typedef struct _cs_property_t cs_property_t;
 
 struct _cs_property_t {
 
-  char  *restrict      name;
+  char *restrict       name;
   int                  id;
   cs_flag_t            state_flag;
   cs_flag_t            process_flag;
@@ -155,6 +155,7 @@ struct _cs_property_t {
 
   /* Store the definition id for each cell, NULL if there is only one
      definition set */
+
   short int           *def_ids;
 
   /* Function pointers to handle generic tasks related to a property. There

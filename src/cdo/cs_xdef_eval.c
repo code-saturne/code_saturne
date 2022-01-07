@@ -763,7 +763,6 @@ cs_xdef_eval_at_cells_by_dof_func(cs_lnum_t                    n_elts,
 
   cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)context;
 
-  /* Sanity check */
   assert(cx != NULL);
 
   /* Values of the function are defined at the cells */
@@ -810,11 +809,10 @@ cs_xdef_eval_at_vertices_by_dof_func(cs_lnum_t                    n_elts,
   CS_UNUSED(time_eval);
 
   cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)context;
-
-  /* Sanity check */
   assert(cx != NULL);
 
   /* Values of the function are defined at vertices */
+
   if (cs_flag_test(cx->loc, cs_flag_primal_vtx))
     cx->func(n_elts, elt_ids, dense_output, cx->input,
              eval);
@@ -858,11 +856,10 @@ cs_xdef_eval_at_b_faces_by_dof_func(cs_lnum_t                    n_elts,
   CS_UNUSED(time_eval);
 
   cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)context;
-
-  /* Sanity check */
   assert(cx != NULL);
 
   /* Values of the function are defined at the boundary faces */
+
   if (cs_flag_test(cx->loc, cs_flag_boundary_face))
     cx->func(n_elts, elt_ids, dense_output, cx->input, eval);
   else
@@ -906,8 +903,6 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
     return;
 
   cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)context;
-
-  /* Sanity checks */
   assert(eval != NULL || cx != NULL);
   assert(cx->stride == 1);
 
@@ -967,7 +962,6 @@ cs_xdef_eval_scalar_at_cells_by_array(cs_lnum_t                    n_elts,
   else
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid support for the input array", __func__);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1007,8 +1001,6 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
     return;
 
   cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)context;
-
-  /* Sanity checks */
   assert(eval != NULL || cx != NULL);
 
   const int  stride = cx->stride;
@@ -1044,7 +1036,6 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
   }
   else if (cs_flag_test(cx->loc, cs_flag_dual_face_byc)) {
 
-    /* Sanity checks */
     assert(stride == 3);
     assert(connect!= NULL && quant != NULL);
     assert(cx->index == connect->c2e->idx);
@@ -1078,7 +1069,6 @@ cs_xdef_eval_nd_at_cells_by_array(cs_lnum_t                    n_elts,
   else
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid case for the input array", __func__);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1119,8 +1109,6 @@ cs_xdef_eval_at_vertices_by_array(cs_lnum_t                    n_elts,
     return;
 
   cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)context;
-
-  /* Sanity checks */
   assert(eval != NULL || cx != NULL);
 
   const int  stride = cx->stride;
@@ -1217,8 +1205,6 @@ cs_xdef_eval_cell_by_field(cs_lnum_t                    n_elts,
     return;
 
   cs_field_t  *field = (cs_field_t *)context;
-
-  /* Sanity checks */
   assert(eval != NULL || field != NULL);
 
   cs_real_t  *values = field->val;
@@ -1336,12 +1322,10 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
                                         cs_real_t                   *eval)
 {
   CS_UNUSED(mesh);
+  assert(connect != NULL && quant != NULL);
 
   cs_xdef_analytic_context_t *cx = (cs_xdef_analytic_context_t *)context;
-
-  /* Sanity checks */
   assert(cx != NULL);
-  assert(connect != NULL && quant != NULL);
 
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(dim, qtype);
@@ -1361,6 +1345,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
       double *val_i = eval + dim*bf_id;
 
       /* Resetting */
+
       memset(val_i, 0, dim*sizeof(double));
 
       switch (end - start) {
@@ -1391,6 +1376,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
       } /* Switch on the type of face. Special case for triangles */
 
       /* Compute the average */
+
       const double _os = 1./pfq.meas;
       for (int k = 0; k < dim; k++)
         val_i[k] *= _os;
@@ -1411,6 +1397,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
       double  *val_i = dense_output ? eval + dim*i : eval + dim*bf_id;
 
       /* Resetting */
+
       memset(val_i, 0, dim*sizeof(double));
 
       switch (end - start) {
@@ -1418,6 +1405,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
       case CS_TRIANGLE_CASE:
         {
           /* If triangle, one-shot computation */
+
           cs_lnum_t v1, v2, v3;
           cs_connect_get_next_3_vertices(f2e->ids, e2v->ids, start,
                                          &v1, &v2, &v3);
@@ -1442,6 +1430,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
       } /* Switch on the type of face. Special case for triangles */
 
       /* Compute the average */
+
       const double _os = 1./pfq.meas;
       for (int k = 0; k < dim; k++)
         val_i[k] *= _os;

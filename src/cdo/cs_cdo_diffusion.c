@@ -364,6 +364,7 @@ _vb_ocs_normal_flux_op(const short int           f,
   _svb_cellwise_grd(cm, grd_cell);
 
   /* Loop on border face edges */
+
   for (int fe_idx = cm->f2e_idx[f]; fe_idx < cm->f2e_idx[f+1]; fe_idx++) {
 
     const short int  ek = cm->f2e_ids[fe_idx];
@@ -373,6 +374,7 @@ _vb_ocs_normal_flux_op(const short int           f,
     const short int  *_vk = cm->e2v_ids + 2*ek; /* v1 = _v[0], v2 = _v[1] */
 
     /* Compute the reconstructed normal flux */
+
     _nflux_reco_svb_ocs_in_pec(cm, dbeta, ek, pekq, dfkq,
            (const cs_real_3_t *)grd_cell,
                                 mnu,
@@ -428,15 +430,17 @@ _vb_cost_full_flux_op(const short int           f,
   cs_real_3_t  *grd_cell = cb->vectors;   /* size = cm->n_vc */
 
   /* Initialize the local operators */
+
   cs_sdm_square_init(cm->n_vc, bc_op);
   cs_sdm_square_init(cm->n_vc, ntrgrd_tr);
 
   /* Compute the cellwise-constant gradient for each array of the canonical
-   * basis of the potential DoFs (size = cm->n_vc)
-   */
+   * basis of the potential DoFs (size = cm->n_vc) */
+
   _svb_cellwise_grd(cm, grd_cell);
 
   /* Loop on border face edges */
+
   for (int fe_idx = cm->f2e_idx[f]; fe_idx < cm->f2e_idx[f+1]; fe_idx++) {
 
     const short int  ek = cm->f2e_ids[fe_idx];
@@ -446,6 +450,7 @@ _vb_cost_full_flux_op(const short int           f,
     const short int  *_vk = cm->e2v_ids + 2*ek; /* v1 = _v[0], v2 = _v[1] */
 
     /* Compute the reconstructed normal flux */
+
     _nflux_reco_svb_ocs_in_pec(cm, beta, ek, pekq, dfkq,
           (const cs_real_3_t *)grd_cell,
                                mnu,
@@ -458,9 +463,8 @@ _vb_cost_full_flux_op(const short int           f,
       ntrgrd_tr->val[vi*cm->n_vc + _vk[0]] += contrib_vi;
       ntrgrd_tr->val[vi*cm->n_vc + _vk[1]] += contrib_vi;
 
-      for (short int vj = 0; vj < cm->n_vc; vj++) {
+      for (short int vj = 0; vj < cm->n_vc; vj++)
         bc_op->val[vi*cm->n_vc + vj] += contrib_vi * nflux[vj];
-      } /* Loop on cells vertices (vj) */
 
     } /* Loop on cell vertices (vi) */
 
@@ -508,29 +512,36 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
   cs_real_3_t  grd_f, grd_v1, grd_v2, grd_c;
 
   /* Useful quantities are stored in cb->values and cb->vectors */
+
   cs_real_t  *l_vc = cb->values;
   cs_real_3_t  *mng_ef = cb->vectors;
   cs_real_3_t  *u_vc = cb->vectors + fm->n_vf;
 
   /* Initialize the local operator */
+
   cs_sdm_square_init(cm->n_vc, ntrgrd);
 
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
+
   cs_compute_grdfc_fw(fm, grd_c);
 
   /* f_coef = (pty_tensor*nu_f).grd_c */
+
   const cs_real_t  f_coef = fm->face.meas * _dp3(pty_nuf, grd_c);
 
   /* Compute xc --> xv length and unit vector for all face vertices */
+
   for (short int v = 0; v < fm->n_vf; v++)
     cs_math_3_length_unitv(fm->xc, fm->xv + 3*v, l_vc + v, u_vc[v]);
 
   /* Compute a weight for each vertex of the current face */
+
   double  sum_ef = 0.;
   for (short int e = 0; e < fm->n_ef; e++) {
 
     /* Gradient of the Lagrange function related to v1 and v2 */
+
     cs_compute_grd_ve(fm->e2v_ids[2*e],
                       fm->e2v_ids[2*e+1],
                       fm->dedge,
@@ -538,7 +549,8 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
                       grd_v1, grd_v2);
 
     /* Gradient of the Lagrange function related to a face.
-       This formula is a consequence of the Partition of the Unity */
+       This formula is a consequence of the Partition of the unity */
+
     for (int k = 0; k < 3; k++)
       grd_f[k] = -(grd_c[k] + grd_v1[k] + grd_v2[k]);
 
@@ -557,11 +569,13 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
     double  *ntrgrd_vi = ntrgrd->val + vi*cm->n_vc;
 
     /* Default contribution for this line */
+
     const double  default_coef = f_coef * fm->wvf[vfi];
     for (short int vj = 0; vj < cm->n_vc; vj++)
       ntrgrd_vi[vj] = default_coef * cm->wvc[vj];  /* two contributions */
 
     /* Block Vf x Vf */
+
     for (short int vfj = 0; vfj < fm->n_vf; vfj++) {
 
       short int vj = fm->v_ids[vfj];
@@ -595,6 +609,7 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
   }  /* Loop on face vertices (vi) */
 
   /* The flux is -1 times the reconstruction of the gradient */
+
   for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
 
     const short int  vi = fm->v_ids[vfi];
@@ -637,35 +652,42 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
   cs_real_3_t  grd_f, grd_v1, grd_v2, grd_c;
 
   /* Useful quantities are stored in cb->values and cb->tmp-vect */
+
   cs_real_t  *l_vc = cb->values;
   cs_real_3_t  *mng_ef = cb->vectors;
   cs_real_3_t  *u_vc = cb->vectors + fm->n_vf;
 
   /* Initialize the local operator */
+
   cs_sdm_square_init(cm->n_vc + 1, ntrgrd);
 
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
+
   cs_compute_grdfc_fw(fm, grd_c);
 
   const cs_real_t  mng_cf = _dp3(pty_nuf, grd_c); /* (pty_tensor*nu_f).grd_c */
 
   /* Compute xc --> xv length and unit vector for all face vertices */
+
   for (short int v = 0; v < fm->n_vf; v++)
     cs_math_3_length_unitv(fm->xc, fm->xv + 3*v, l_vc + v, u_vc[v]);
 
   /* Compute a weight for each vertex of the current face */
+
   for (short int e = 0; e < fm->n_ef; e++) {
 
     const short int  v1 = fm->e2v_ids[2*e];
     const short int  v2 = fm->e2v_ids[2*e+1];
 
     /* Gradient of the Lagrange function related to v1 and v2 */
+
     cs_compute_grd_ve(v1, v2, fm->dedge, (const cs_real_t (*)[3])u_vc, l_vc,
                       grd_v1, grd_v2);
 
     /* Gradient of the Lagrange function related to a face.
-       This formula is a consequence of the Partition of the Unity */
+       This formula is a consequence of the Partition of the unity */
+
     for (int k = 0; k < 3; k++)
       grd_f[k] = -(grd_c[k] + grd_v1[k] + grd_v2[k]);
 
@@ -682,9 +704,11 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
     double  *ntrgrd_vi = ntrgrd->val + vi*ntrgrd->n_rows;
 
     /* Contribution to the cell column */
+
     ntrgrd_vi[cm->n_vc] = fm->wvf[vfi] * fm->face.meas * mng_cf;
 
     /* Block Vf x Vf */
+
     for (short int vfj = 0; vfj < fm->n_vf; vfj++) {
 
       double  entry_ij = 0.;
@@ -714,6 +738,7 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
   }  /* Loop on face vertices (vi) */
 
   /* The flux is -1 times the reconstruction of the gradient */
+
   for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
 
     const short int  vi = fm->v_ids[vfi];
@@ -749,14 +774,15 @@ _svb_nitsche(const double              pcoef,
              cs_sdm_t                 *ntrgrd,
              cs_cell_sys_t            *csys)
 {
-  /* Sanity checks */
   assert(pcoef > 0);
   assert(csys->mat->n_rows == ntrgrd->n_rows);
 
   /* Update local RHS and system */
+
   for (short int v = 0; v < fm->n_vf; v++) {
 
     /* Set the penalty diagonal coefficient */
+
     const double  pcoef_v = pcoef * fm->wvf[v];
     const short int  vi = fm->v_ids[v];
 
@@ -764,7 +790,6 @@ _svb_nitsche(const double              pcoef,
     csys->rhs[vi] += pcoef_v * csys->dir_values[vi];
 
   }  /* Dirichlet or homogeneous Dirichlet */
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1606,6 +1631,7 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
   _compute_kappa_f(pty, cm, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
+
   cs_sdm_t *bc_op = cb->loc;
   cs_sdm_square_init(n_dofs, bc_op);
 
@@ -1627,9 +1653,11 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
   } /* Loop boundary faces */
 
   /* Second pass: add the bc_op matrix, add the BC */
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  fi = csys->_f_ids[i];
 
     if (csys->bf_flag[fi] & CS_CDO_BC_SLIDING) {
@@ -1642,13 +1670,17 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
           ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2]};
 
       /* chi * \meas{f} / h_f  */
+
       const cs_real_t  pcoef = chi * sqrt(pfq.meas);
 
       for (short int xj = 0; xj < n_dofs; xj++) {
+
         /* It should be done both for face- and cell-defined DoFs */
 
         if ( xj == fi ) {
+
           /* Retrieve the 3x3 matrix */
+
           cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, fi, fi);
           assert(bii->n_rows == bii->n_cols && bii->n_rows == 3);
 
@@ -1661,6 +1693,7 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
         else { /* xj != fi */
 
           /* Retrieve the 3x3 matrix */
+
           cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, fi, xj);
           assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
           cs_sdm_t  *bji = cs_sdm_get_block(csys->mat, xj, fi);
@@ -1713,17 +1746,19 @@ cs_cdo_diffusion_sfb_cost_robin(const cs_equation_param_t      *eqp,
   CS_UNUSED(hodge);
   CS_UNUSED(cb);
 
-  /* Sanity checks */
   assert(cm != NULL && csys != NULL);
 
   /* Enforcement of the Robin BCs */
+
   if (csys->has_robin == false)
     return;  /* Nothing to do */
 
   /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
@@ -1737,6 +1772,7 @@ cs_cdo_diffusion_sfb_cost_robin(const cs_equation_param_t      *eqp,
       const cs_real_t  f_meas = cm->face[f].meas;
 
       /* Update the RHS and the local system */
+
       csys->rhs[f] += (alpha*u0 + g)*f_meas;
 
       cs_real_t  *row_f_val = csys->mat->val + f*csys->n_dofs;

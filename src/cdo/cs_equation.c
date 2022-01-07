@@ -3319,7 +3319,7 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
               " This mesh location is not already defined.\n",
               __func__, ml_name);
 
-  const char  emsg[] = " %s: Computation of the diffusive and convective flux"
+  const char  emsg[] = "%s: Computation of the diffusive and convective flux"
     " across a plane\n is not available for equation %s\n";
 
   /* Retrieve the field from its id */
@@ -3331,7 +3331,6 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 
   if (eqp->dim > 1)
     bft_error(__FILE__, __LINE__, 0, emsg, __func__, eqp->name);
-
 
   /* Scalar-valued equation */
 

@@ -116,6 +116,7 @@ _get_petsc_or_hypre(const cs_param_sles_t  *slesp,
   assert(slesp != NULL);
 
   /* Either with PETSc or with PETSc/HYPRE using Euclid */
+
   cs_param_sles_class_t  ret_class =
     cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
 
@@ -195,14 +196,22 @@ _set_key(cs_equation_param_t   *eqp,
              strcmp(keyval, "hybrid_centered_upwind") == 0)
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND;
     else if (strcmp(keyval, "cip") == 0) {
+
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
+
       /* Automatically switch to a non-conservative formulation */
+
       eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
+
     }
     else if (strcmp(keyval, "cip_cw") == 0) {
+
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP_CW;
+
       /* Automatically switch to a non-conservative formulation */
+
       eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
+
     }
     else {
       const char *_val = keyval;
@@ -2381,6 +2390,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Set the value for dim */
+
   int dim = eqp->dim;
 
   if (bc_type == CS_PARAM_BC_NEUMANN_FULL ||
@@ -2388,8 +2398,10 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_CIRCULATION) {
+
     /* This is a vector-valued equation but the DoF is scalar-valued since
      * it is a circulation associated to each edge */
+
     if (eqp->dim == 3)
       dim = 1;
     else
@@ -2398,17 +2410,21 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
   }
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
+
     /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+
     if (eqp->dim == 1)
       dim = 3;
     else
       bft_error(__FILE__, __LINE__, 0,
                 "%s: This situation is not handled yet.\n", __func__);
+
   }
 
   int  z_id = cs_get_bdy_zone_id(z_name);
 
   /* Add a new cs_xdef_t structure */
+
   cs_xdef_dof_context_t  cx = { .z_id = z_id,
                                 .loc = loc_flag,
                                 .func = func,
@@ -2459,7 +2475,8 @@ cs_equation_find_bc(cs_equation_param_t   *eqp,
   if (z != NULL)
     z_id = z->id;
 
-  /* Search for given BC. */
+  /* Search for given BC */
+
   for (int i = 0; i < eqp->n_bc_defs; i++) {
     if (eqp->bc_defs[i]->z_id == z_id) {
       return eqp->bc_defs[i];
@@ -2496,7 +2513,8 @@ cs_equation_remove_bc(cs_equation_param_t   *eqp,
   if (z != NULL)
     z_id = z->id;
 
-  /* Search for given BC. */
+  /* Search for given BC */
+
   int j = -1;
   for (int i = 0; i < eqp->n_bc_defs; i++) {
     if (eqp->bc_defs[i]->z_id == z_id) {
@@ -2506,6 +2524,7 @@ cs_equation_remove_bc(cs_equation_param_t   *eqp,
   }
 
   /* Remove it if found */
+
   if (j > -1) {
     eqp->bc_defs[j] = cs_xdef_free(eqp->bc_defs[j]);
     for (int i = j+1; i < eqp->n_bc_defs; i++) {
@@ -2539,12 +2558,14 @@ cs_equation_add_sliding_condition(cs_equation_param_t     *eqp,
 
   /* Add two definitions: one for the normal component and one for the
      tangential component */
+
   BFT_REALLOC(eqp->bc_defs, eqp->n_bc_defs + 1, cs_xdef_t *);
 
   cs_xdef_t  *d = NULL;
   cs_real_t  val = 0;
 
   /* Add the homogeneous Dirichlet on the normal component */
+
   d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                               1,
                               cs_get_bdy_zone_id(z_name),
@@ -2739,12 +2760,14 @@ cs_equation_add_reaction(cs_equation_param_t   *eqp,
 
   /* Only this kind of reaction term is available up to now.
      Add a new reaction term */
+
   int  new_id = eqp->n_reaction_terms;
   eqp->n_reaction_terms += 1;
   BFT_REALLOC(eqp->reaction_properties, eqp->n_reaction_terms, cs_property_t *);
   eqp->reaction_properties[new_id] = property;
 
   /* Flag the equation with "reaction" */
+
   eqp->flag |= CS_EQUATION_REACTION;
 
   return new_id;
@@ -2823,6 +2846,7 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Define a flag according to the kind of space discretization */
+
   cs_flag_t  state_flag = 0, meta_flag = 0;
   cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
 
@@ -2836,6 +2860,7 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
                                      .free_input = NULL };
 
   /* Add a new cs_xdef_t structure */
+
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
                                         eqp->dim,
                                         z_id,
@@ -2844,6 +2869,7 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
                                         &ac);
 
   /* Default setting for quadrature is different in this case */
+
   cs_xdef_set_quadrature(d, CS_QUADRATURE_BARY_SUBDIV);
 
   int  new_id = eqp->n_source_terms;
@@ -2881,9 +2907,11 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
+
   int z_id = cs_get_vol_zone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
+
   cs_flag_t  state_flag = 0, meta_flag = 0;
   cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
 
@@ -2903,6 +2931,7 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
                                         &context);
 
   /* Default setting for quadrature is different in this case */
+
   cs_xdef_set_quadrature(d, CS_QUADRATURE_BARY_SUBDIV);
 
   int  new_id = eqp->n_source_terms;
@@ -2943,9 +2972,11 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
+
   int z_id = cs_get_vol_zone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
+
   cs_flag_t  state_flag = 0, meta_flag = 0;
   cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
 
@@ -3002,6 +3033,7 @@ cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t  *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
+
   int z_id = cs_get_vol_zone_id(z_name);
 
   cs_flag_t state_flag = 0, meta_flag = 0;
@@ -3050,6 +3082,7 @@ cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t  *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
+
   int z_id = cs_get_vol_zone_id(z_name);
 
   cs_flag_t state_flag = 0, meta_flag = 0;
@@ -3099,6 +3132,7 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
+
   int z_id = cs_get_vol_zone_id(z_name);
 
   cs_flag_t  state_flag = 0, meta_flag = 0;
