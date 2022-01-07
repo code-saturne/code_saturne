@@ -767,63 +767,6 @@ _svb_nitsche(const double              pcoef,
 
 }
 
-#if 0  /* Lack of robustness w.r.t the linear algebra */
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Using the local (cellwise) "normal trace gradient" matrix takes
- *          into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique.
- *          Case of WBS algorithm either for CDO-VB or CDO-VCb schemes
- *
- * \param[in]       pcoef     value of the penalization coefficient
- * \param[in]       fm        pointer to a cs_face_mesh_t structure
- * \param[in, out]  ntrgrd    pointer to a local matrix structure
- * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cell-wise system
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_wbs_nitsche(const double              pcoef,
-             const cs_face_mesh_t     *fm,
-             cs_sdm_t                 *ntrgrd,
-             cs_cell_builder_t        *cb,
-             cs_cell_sys_t            *csys)
-{
-  /* Sanity checks */
-  assert(pcoef > 0);
-  assert(csys->mat->n_rows == ntrgrd->n_rows);
-
-  const short int  n_csys = csys->mat->n_rows;
-
-  /* Build the related border Hodge operator */
-  cs_sdm_t  *hloc = cb->aux;
-
-  cs_hodge_compute_wbs_surfacic(fm, hloc);  /* hloc is of size n_vf */
-
-  /* Add the border Hodge op. to the normal trace op.
-     Update RHS whith H*p^{dir} */
-  for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
-
-    const double  *hi = hloc->val + vfi*fm->n_vf;
-    const short int  vi = fm->v_ids[vfi];
-
-    double  *ntrg_vi = ntrgrd->val + vi*n_csys;
-
-    for (short int vfj = 0; vfj < fm->n_vf; vfj++) {
-
-      const double  pcoef_ij = pcoef * hi[vfj];
-      const short int  vj = fm->v_ids[vfj];
-
-      ntrg_vi[vj] += pcoef_ij;
-      csys->rhs[vi] += pcoef_ij * csys->dir_values[vj];
-
-    }  /* Loop on face vertices vj */
-  }  /* Loop on face vertices vi */
-
-}
-#endif
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
