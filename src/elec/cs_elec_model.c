@@ -194,7 +194,7 @@ BEGIN_C_DECLS
   \brief physical properties for electric model descriptor.
 
   \var  cs_data_elec_t::ngaz
-        number of gaz in electrical data file
+        number of gas in electrical data file
   \var  cs_data_elec_t::npoint
         number of point in electrical data file for each gas
   \var  cs_data_elec_t::th

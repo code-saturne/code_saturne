@@ -83,7 +83,7 @@ typedef struct {
   double        lambda0;      /* reference heat conductivity */
 
   double        r_pg_cnst;    /* perfect gas specific constant in J/kg/K */
-  double        rvsra;        /* ratio gaz constant h2o / dry air */
+  double        rvsra;        /* ratio gas constant h2o / dry air */
   double        clatev;       /* latent heat of evaporation */
   double        xmasmr;       /* molar mass of the perfect gas in kg/mol
                                  (if ieos=1) */

@@ -1006,7 +1006,7 @@ cs_wall_functions_disabled(cs_real_t   l_visc,
  *  - For a laminar Prandtl number smaller than 0.1 (such as liquid metals),
  *    the standard model with two sub-layers (Prandtl-Taylor) is used.
  *
- *  - For a laminar Prandtl number larger than 0.1 (such as liquids and gaz),
+ *  - For a laminar Prandtl number larger than 0.1 (such as liquids and gas),
  *    a model with three sub-layers (Arpaci-Larsen) is used.
  *
  *  The final exchange coefficient is:

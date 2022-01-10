@@ -279,7 +279,7 @@ BEGIN_C_DECLS
         universal gas constant and M is the molar mass
 
   \var  cs_fluid_properties_t::rvsra
-        ratio gaz constant h2o / dry air
+        ratio gas constant h2o / dry air
 
   \var  cs_fluid_properties_t::clatev
         latent heat of evaporation
