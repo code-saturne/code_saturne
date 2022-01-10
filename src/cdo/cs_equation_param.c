@@ -2024,7 +2024,7 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
                                void                   *input)
 {
   if (eqp == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_eqp);
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
   int z_id = cs_get_vol_zone_id(z_name);
