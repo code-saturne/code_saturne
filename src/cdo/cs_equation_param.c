@@ -3225,7 +3225,7 @@ cs_equation_add_vertex_dof_enforcement(cs_equation_param_t    *eqp,
                                       vtx_values);
 
   BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
-              cs_enforcement_param_t);
+              cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
@@ -3298,7 +3298,7 @@ cs_equation_add_edge_dof_enforcement(cs_equation_param_t    *eqp,
                                       edge_values);
 
   BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
-              cs_enforcement_param_t);
+              cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
@@ -3369,7 +3369,7 @@ cs_equation_add_face_dof_enforcement(cs_equation_param_t    *eqp,
                                       face_values);
 
   BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
-              cs_enforcement_param_t);
+              cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
@@ -3433,7 +3433,7 @@ cs_equation_add_cell_enforcement(cs_equation_param_t   *eqp,
                                       cell_values);
 
   BFT_REALLOC(eqp->enforcement_params, eqp->n_enforcements,
-              cs_enforcement_param_t);
+              cs_enforcement_param_t *);
   eqp->enforcement_params[enforcement_id] = efp;
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
 
