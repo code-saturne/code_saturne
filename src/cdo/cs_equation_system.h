@@ -31,6 +31,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_equation.h"
+#include "cs_equation_priv.h"
+#include "cs_param_types.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -44,6 +46,27 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve a linear system within the CDO framework
+ *
+ * \param[in]      c2p    true="current to previous" operation is performed
+ * \param[in]      n_eqs  number of equations associated to the system to solve
+ * \param[in]      mesh   pointer to a \ref cs_mesh_t structure
+ * \param[in]      eqps   double pointer to a list of equation parameter struct.
+ * \param[in, out] eqbs   double pointer to a list of builder struct.
+ * \param[in, out] eqcs   double pointer to a list of scheme context struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_system_solve_t)(bool                         c2p,
+                             int                          n_eqs,
+                             const cs_mesh_t             *mesh,
+                             const cs_equation_param_t  **eqps,
+                             cs_equation_builder_t      **eqbs,
+                             void                       **eqcs);
+
 /*! \struct cs_equation_system_t
  *  \brief Main structure to handle a set of coupled equations
  */
@@ -55,23 +78,33 @@ typedef struct {
    * @{
    *
    * \var name
-   * name of the system of equations
+   *      Name of the system of equations
    *
    * \var n_equations
-   * Number of coupled equations (> 1) composing the system
+   *      Number of coupled equations (> 1) composing the system
    *
    * \var equations
-   * Array of pointer to the equations constituting the coupled system. These
-   * equations correspond to the each row and the cs_equation_param_t
-   * associated to an equation corresponds to the setting of the diagonal
-   * block.
+   *      Array of pointer to the equations constituting the coupled
+   *      system. These equations correspond to the each row and the
+   *      cs_equation_param_t associated to an equation corresponds to the
+   *      setting of the diagonal block.
+   *
+   * \var space_scheme
+   *      Associated space discretization. One assumes that all blocks share
+   *      the same space discretization.
+   *
+   * \var block_var_dim
+   *      Dimension of the variable in each block
    */
 
-  char *restrict    name;
-  int               n_equations;
-  cs_equation_t   **equations;
+  char *restrict            name;
+  int                       n_equations;
+  cs_equation_t           **equations;
 
-  int               timer_id;   /*!< Id of the timer statistics */
+  cs_param_space_scheme_t   space_scheme;
+  int                       block_var_dim;
+
+  int                       timer_id;      /*!< Id of the timer statistics */
 
   /*!
    * @}
@@ -87,12 +120,63 @@ typedef struct {
    *
    * By default, there is no cross-term (i.e. params[1] = NULL)
    *
-   * \varam params
-   * Matrix of size n_coupled_equations (stored as an array of size
-   * n_coupled_equations^2)
+   * The same rationale applies to builder structures and scheme context
+   * structures
+   *
+   * \var params
+   *      Matrix of of equation parameter structures of size
+   *      n_coupled_equations (stored as an array of size
+   *      n_coupled_equations^2)
+   *
+   * \var builders
+   *      Matrix of builder structures of size n_coupled_equations (stored as
+   *      an array of size n_coupled_equations^2)
+   *
+   * \var context_structures
+   *      Matrix of context structures of size n_coupled_equations. Each
+   *      structure is casted on the fly according to the space discretization
+   *      and the variable dimension (stored as an array of size
+   *      n_coupled_equations^2).
+   *
    */
 
-  cs_equation_param_t   **params;
+  cs_equation_param_t     **params;
+
+  cs_equation_builder_t   **builders;
+
+  void                    **context_structures;
+
+  /*!
+   * @}
+   * @name Pointer to functions
+   * @{
+   *
+   * \var init_context
+   *      Pointer of function given by the prototype cs_equation_init_context_t
+   *      Shared with the first equation. One assumes that all equations have
+   *      the same pointer since this is the same discretization and variable
+   *      dimension.
+   *
+   * \var free_context
+   *      Pointer of function given by the prototype cs_equation_free_context_t
+   *      Shared with the first equation. One assumes that all equations have
+   *      the same pointer since this is the same discretization and variable
+   *      dimension.
+   *
+   * \var solve_system
+   *      Pointer of function given by the generic prototype
+   *      cs_equation_system_solve_t Case of an unsteady system
+   *
+   * \var solve_steady_state_system
+   *      Pointer of function given by the generic prototype
+   *      cs_equation_system_solve_t Case of a steady-state system.
+   */
+
+  cs_equation_init_context_t       *init_context;
+  cs_equation_free_context_t       *free_context;
+
+  cs_equation_system_solve_t       *solve_system;
+  cs_equation_system_solve_t       *solve_steady_state_system;
 
   /*!
    * @}
@@ -108,27 +192,25 @@ typedef struct {
 /*!
  * \brief  Add a new structure to handle system of coupled equations
  *
- * \param[in] sysname     name of the system of equations
- * \param[in] n_eqs       number of coupled equations composing the system
+ * \param[in] sysname       name of the system of equations
+ * \param[in] n_eqs         number of coupled equations composing the system
  *
  * \return  a pointer to the new allocated cs_equation_system_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_system_t *
-cs_equation_system_create(const char   *sysname,
-                          int           n_eqs);
+cs_equation_system_add(const char                *sysname,
+                       int                        n_eqs);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a structure used to couple equations
- *
- * \param[in, out] p_eqsys    double pointer to the structure to free
+ * \brief  Destroy all cs_equation_system_t structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_free(cs_equation_system_t  **p_eqsys);
+cs_equation_system_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -140,6 +222,28 @@ cs_equation_system_free(cs_equation_system_t  **p_eqsys);
 
 void
 cs_equation_system_log(cs_equation_system_t  *eqsys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a set of pointer functions for managing the
+ *         cs_equation_system_t structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_system_set_functions(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize builder and scheme context structures associated to all
+ *         the systems of equations which have been added
+ *
+ * \param[in]       mesh      pointer to a cs_mesh_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_system_initialize(const cs_mesh_t             *mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -161,7 +265,7 @@ cs_equation_system_solve(bool                     cur2prev,
  * \brief  Set the given equation and associate it to the row block with id
  *         equal to row_id. The equation parameter is also set.
  *
- * \param[in]      row_id  position in the block rows
+ * \param[in]      row_id  position in the block matrix
  * \param[in]      eq      pointer to the equation to add
  * \param[in, out] eqsys   pointer to a cs_equation_system_t to update
  */

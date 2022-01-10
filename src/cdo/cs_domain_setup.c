@@ -828,6 +828,8 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                          domain->cdo_quantities,
                          domain->connect);
 
+  cs_equation_system_initialize(domain->mesh);
+
   /* Set the initial condition for all advection fields */
 
   cs_advection_field_update(domain->time_step->t_cur,

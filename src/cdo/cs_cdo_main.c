@@ -51,6 +51,7 @@
 #include "cs_domain_setup.h"
 #include "cs_equation.h"
 #include "cs_equation_assemble.h"
+#include "cs_equation_system.h"
 #include "cs_gwf.h"
 #include "cs_log.h"
 #include "cs_log_iteration.h"
@@ -750,6 +751,8 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   domain->only_steady = cs_equation_set_functions();
 
+  cs_equation_system_set_functions();
+
   if (domain->only_steady)
     domain->is_last_iter = true;
 
@@ -840,6 +843,10 @@ cs_cdo_finalize(cs_domain_t    *domain)
   /* Free memory related to equations */
 
   cs_equation_destroy_all();
+
+  /* Free memory related to systems of equations */
+
+  cs_equation_system_destroy_all();
 
   /* Free common structures relatated to equations */
 

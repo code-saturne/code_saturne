@@ -1229,7 +1229,7 @@ _mtpf_init_context(void)
 
   /* Add a 2x2 system of coupled equations and define each block */
 
-  mc->system = cs_equation_system_create("TwoPhaseFlow system", 2);
+  mc->system = cs_equation_system_add("TwoPhaseFlow system", 2);
 
   /* Set the (0,0)-block */
 
@@ -1305,9 +1305,8 @@ _mtpf_free_context(cs_gwf_miscible_two_phase_t  **p_mc)
 
   cs_gwf_miscible_two_phase_t  *mc = *p_mc;
 
-  /* wg_eqp and hl_eqp are freed inside the next function */
-
-  cs_equation_system_free(&(mc->system));
+  /* System of equations are freed elsewhere (just after having freed
+     cs_equation_t structures) */
 
   cs_gwf_darcy_flux_free(&(mc->l_darcy));
   cs_gwf_darcy_flux_free(&(mc->g_darcy));
@@ -1770,10 +1769,7 @@ _mtpf_compute(const cs_mesh_t                   *mesh,
     /* Solve the algebraic system. By default, a current to previous operation
        is performed */
 
-    /* (@_@) Not clear how to do this: to check with J. Bonelle for this part */
-
-    cs_equation_solve(cur2prev, mesh, wl_eq);
-    cs_equation_solve(cur2prev, mesh, hg_eq);
+    cs_equation_system_solve(cur2prev, mesh, mc->system);
 
     /* Update the variables related to the groundwater flow system */
 
