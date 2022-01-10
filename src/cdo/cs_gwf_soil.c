@@ -52,6 +52,7 @@
 #include "cs_mesh_location.h"
 #include "cs_parall.h"
 #include "cs_param_types.h"
+#include "cs_physical_constants.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_reco.h"
@@ -942,31 +943,85 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Update arrays associated to the definition of terms involved in the
- *         miscible two-phase flow model
+ *         miscible two-phase flow model.
+ *         Case of an isotropic absolute permeability.
  *
- * \param[in]      mesh          pointer to the mesh structure
- * \param[in]      connect       pointer to the cdo connectivity
- * \param[in]      quant         pointer to the cdo quantities
+ * \param[in]      g_cell_pr     pressure in the gaseous phase at cell centers
  * \param[in, out] mc            pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_update_mtpf_terms(const cs_mesh_t              *mesh,
-                              const cs_cdo_connect_t       *connect,
-                              const cs_cdo_quantities_t    *quant,
-                              cs_gwf_miscible_two_phase_t  *mc)
+cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t              *g_cell_pr,
+                                  cs_gwf_miscible_two_phase_t  *mc)
 {
   if (mc == NULL)
     return;
 
-  for (int i = 0; i < _n_soils; i++) {
+  const double  hmh = mc->h_molar_mass * mc->henry_constant;
+  const double  mh_ov_rt =
+    mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
 
-    cs_gwf_soil_t  *soil = _soils[i];
+  /* In the immiscible case, mc->l_diffusivity_h should be set to 0 */
+
+  const double  h_diff_const = (mc->l_diffusivity_h > 0) ?
+    hmh * mc->l_mass_density * mc->l_diffusivity_h / mc->w_molar_mass : 0.;
+
+  const cs_real_t  *l_sat = mc->l_saturation->val;
+  const cs_real_t  *l_cap = mc->l_capacity;
+
+  for (int soil_id = 0; soil_id < _n_soils; soil_id++) {
+
+    cs_gwf_soil_t  *soil = _soils[soil_id];
     assert(soil != NULL);
+    assert(soil->hydraulic_model == CS_GWF_MODEL_TWO_PHASE);
+    assert(soil->abs_permeability_dim == 1);
+
+    const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
+    assert(zone != NULL);
+
+    const double  w_time_coef = soil->porosity * mc->l_mass_density;
+    const double  h_time_coefa = soil->porosity * mh_ov_rt;
+    const double  h_time_coefb = soil->porosity*hmh - h_time_coefa;
+    const double  wl_diff_coef = soil->abs_permeability[0][0]/mc->l_viscosity;
+    const double  hg_diff_coef = soil->abs_permeability[0][0]/mc->g_viscosity;
+    const double  h_diff_coef = soil->porosity * h_diff_const;
+
+    /* Main loop on cells belonging to this soil */
+
+    for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+      const cs_lnum_t  c_id = zone->elt_ids[i];
+
+      const double  l_diff_coef = wl_diff_coef * mc->l_rel_permeability[c_id];
+
+      /* Water conservation equation. Updates arrays linked to properties which
+         define computed terms */
+
+      mc->time_wg_eq_array[c_id] = w_time_coef * l_cap[c_id];
+
+      mc->time_wl_eq_array[c_id] = -mc->time_wg_eq_array[c_id];
+
+      mc->diff_wl_eq_array[c_id] = mc->l_mass_density * l_diff_coef;
+
+      /* Hydrogen conservation equation. Updates arrays linked to properties
+         which define computed terms */
+
+      mc->time_hg_eq_array[c_id] =
+        h_time_coefa + h_time_coefb*(l_sat[c_id] + l_cap[c_id]*g_cell_pr[c_id]);
+
+      mc->diff_hg_eq_array[c_id] = mh_ov_rt * g_cell_pr[c_id] /* g_rho */
+        * mc->g_rel_permeability[c_id] * hg_diff_coef;
+      if (h_diff_coef > 0) /* If not = immiscible case */
+        mc->diff_hg_eq_array[c_id] += h_diff_coef * l_sat[c_id];
+
+      mc->time_hl_eq_array[c_id] = h_time_coefb * g_cell_pr[c_id] * l_cap[c_id];
+
+      mc->diff_hl_eq_array[c_id] = hmh * l_diff_coef * g_cell_pr[c_id];
+
+    } /* Loop on cells of the zone (= soil) */
 
   } /* Loop on soils */
-
 }
 /*----------------------------------------------------------------------------*/
 

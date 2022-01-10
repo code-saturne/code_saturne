@@ -119,7 +119,8 @@ typedef enum {
   CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
 
   /*!
-   * \brief Two phase flow modelling (gaz and liquid phases) in porous media.
+   * \brief Two phase flow modelling (gaseous and liquid phases) in porous
+   *        media.
    *
    * A Richards-like equation is considered in each phase to take into account
    * the mass conservation of water and one other component. The component can

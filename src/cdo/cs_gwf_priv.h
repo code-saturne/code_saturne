@@ -266,13 +266,13 @@ typedef struct {
  * and Computers in Simulation (2011), 81 (10), pp. 2001--2017
  *
  * Main assumptions are:
- *   - No water in the gas phase
+ *   - No water in the gaseous phase
  *   - Incompressibility of the liquid phase
  *   - Hydrogen pressure is given by the "perfect gas" law in the gas phase and
  *     the Henry's law in the liquid phase
  *
  * The two primitive variables are the liquid and gas pressures with a specific
- * treatment in the saturated case to handle the gaz pressure (cf. the cited
+ * treatment in the saturated case to handle the gas pressure (cf. the cited
  * article or Angelini's PhD thesis)
  *
  * Notations are the following :
@@ -280,6 +280,16 @@ typedef struct {
  * - Two components: water denoted by w and a gaseous component (let's say
  *   hydrogen) denoted by h. The gaseous component is present in the two phases
  *   whereas water is only considered in the liquid phase.
+ *
+ * The resulting linear algebraic system (one applies a linearization) is
+ * defined as follows:
+ *
+ *                         liquid   gas
+ * water conservation    | M_wl  | M_wg ||P_l|   | b_w |
+ *                       |-------|------||---| = |-----|
+ * hydrogen conservation | M_hl  | M_hg ||P_g|   | b_h |
+ *
+ * This is coupled system. Coupling terms are collected inside M_wg and M_hl
  */
 
 typedef struct {
@@ -290,36 +300,40 @@ typedef struct {
    * @name Equations and system of equations
    * @{
    *
-   * \var w_eq
+   * \var wl_eq
    * Equation of conservation for the water component. Only the liquid phase is
-   * considered. One assumes no water vapour in the gas phase. This corresponds
-   * to the block (0,0) in the system of equations.
+   * considered. One assumes no water vapour in the gaseous phase. This
+   * corresponds to the M_wl  block in the system of equations and to the b_w
+   * right-hand side.
    */
 
-  cs_equation_t                *w_eq;
+  cs_equation_t                *wl_eq;
 
-  /*! \var h_eq
+  /*! \var hg_eq
    * Equation of conservation for the (di)hydrogen. Hydrogen can be present in
-   * the liquid or in the gas phase. This corresponds to the block (1,1) in the
-   * system of equations.
+   * the liquid or in the gaseous phase. This corresponds to the block (1,1) in
+   * the system of equations, i.e. the M_hg block and the b_g right-hand side
    */
 
-  cs_equation_t                *h_eq;
+  cs_equation_t                *hg_eq;
 
-  /*! \var wh_eqp
-   * Parameters associated to the block (w,h) = (0,1) in the system of equations
+  /*! \var wg_eqp
+   * Parameters associated to the M_wg block i.e. the (0,1) block in the system
+   * of equations. Water conservation w.r.t. the pressure in the gaseous phase.
    */
 
-  cs_equation_param_t          *wh_eqp;
+  cs_equation_param_t          *wg_eqp;
 
-  /*! \var hw_eqp
-   * Parameters associated to the block (h,w) = (1,0) in the system of equations
+  /*! \var hl_eqp
+   * Parameters associated to the (h,l) block i.e. the (1,0) block in the
+   * system of equations. Conservation of the hydrogen w.r.t. the pressure in
+   * the liquid phase.
    */
 
-  cs_equation_param_t          *hw_eqp;
+  cs_equation_param_t          *hl_eqp;
 
   /*! \var system
-   * System of equations (w_eq, h_eq and the cross-term defined in the related
+   * System of equations (wl_eq, hg_eq and the cross-term defined in the related
    * cs_equation_param_t structures)
    */
 
@@ -347,29 +361,46 @@ typedef struct {
    * @name Properties related to the model
    * @{
    *
-   * \var time_w_eq_pty
+   * \var time_wl_eq_pty
    * Property related to the unsteady term of the water conservation equation
+   * w.r.t. the pressure in the liquid phase
    *
-   * \var diff_w_eq_pty
+   * \var diff_wl_eq_pty
    * Property related to the diffusion term of the water conservation equation
+   * w.r.t. the pressure in the liquid phase
    *
-   * \var time_h_eq_pty
+   * \var time_wg_eq_pty
+   * Property related to the unsteady term of the water conservation equation
+   * w.r.t. the pressure in the gaseous phase
+   *
+   * \var time_hg_eq_pty
    * Property related to the unsteady term of the hydrogen conservation equation
-   *
-   * \var diff_hl_eq_pty
-   * Property related to the diffusion term of the hydrogen conservation
-   * equation (part related to the liquid phase)
+   * w.r.t. the pressure in the gaseous phase.
    *
    * \var diff_hg_eq_pty
    * Property related to the diffusion term of the hydrogen conservation
-   * equation (part related to the gas phase)
+   * equation w.r.t. the pressure in the gaseous phase
+   *
+   * \var time_hl_eq_pty
+   * Property related to the unsteady term of the hydrogen conservation equation
+   * w.r.t. the pressure in the liquid phase.
+   *
+   * \var diff_hl_eq_pty
+   * Property related to the diffusion term of the hydrogen conservation
+   * equation w.r.t. the pressure in the liquid phase
+   *
    */
 
-  cs_property_t                *time_w_eq_pty;
-  cs_property_t                *diff_w_eq_pty;
-  cs_property_t                *time_h_eq_pty;
-  cs_property_t                *diff_hl_eq_pty;
+  cs_property_t                *time_wl_eq_pty;
+  cs_property_t                *diff_wl_eq_pty;
+
+  cs_property_t                *time_wg_eq_pty;
+
+  cs_property_t                *time_hg_eq_pty;
   cs_property_t                *diff_hg_eq_pty;
+
+  cs_property_t                *time_hl_eq_pty;
+  cs_property_t                *diff_hl_eq_pty;
 
   /*!
    * @}
@@ -404,30 +435,46 @@ typedef struct {
    * @name Additional arrays
    * @{
    *
-   * \var time_w_eq_array
+   * \var time_wl_eq_array
    *      Values in each cell of the coefficient appearing in front of the
-   *      unsteady term in the water conservation equation. This array is
-   *      linked to the \ref time_w_eq_pty (size = n_cells)
+   *      unsteady term in the water conservation equation for the liquid
+   *      phase. This array is linked to the \ref time_wl_eq_pty (size =
+   *      n_cells)
    *
-   * \var diff_w_eq_array
+   * \var diff_wl_eq_array
    *      Values in each cell of the coefficient appearing in the diffusion
    *      term in the water conservation equation. This array is linked to the
-   *      \ref diff_w_eq_pty (size = n_cells)
+   *      \ref diff_wl_eq_pty (size = n_cells)
    *
-   * \var time_h_eq_array
+   * \var time_wg_eq_array
    *      Values in each cell of the coefficient appearing in front of the
-   *      unsteady term in the hydrogen conservation equation. This array is
-   *      linked to the \ref time_h_eq_pty (size = n_cells)
+   *      unsteady term in the water conservation equation w.r.t. the pressure
+   *      in the gaseous phase. This array is linked to the \ref time_wg_eq_pty
+   *      (size = n_cells)
    *
-   * \var diff_hl_eq_array
-   *      Values in each cell of the coefficient appearing in the diffusion
-   *      term for the liquid phase in the hydrogen conservation equation.
-   *      This array is linked to the \ref diff_hl_eq_pty (size = n_cells)
+   * \var time_hg_eq_array
+   *      Values in each cell of the coefficient appearing in front of the
+   *      unsteady term in the hydrogen conservation equation w.r.t. the
+   *      pressure in the gaseous phase. This array is linked to the \ref
+   *      time_hg_eq_pty (size = n_cells)
    *
    * \var diff_hg_eq_array
    *      Values in each cell of the coefficient appearing in the diffusion
-   *      term for the gas phase in the hydrogen conservation equation.  This
-   *      array is linked to the \ref diff_hl_eq_pty (size = n_cells)
+   *      term in the hydrogen conservation equation w.r.t. to the pressure in
+   *      the gaseous phase.  This array is linked to the \ref diff_hg_eq_pty
+   *      (size = n_cells)
+   *
+   * \var time_hl_eq_array
+   *      Values in each cell of the coefficient appearing in front of the
+   *      unsteady term in the hydrogen conservation equation w.r.t. the
+   *      pressure in the liquid phase. This array is linked to the \ref
+   *      time_hl_eq_pty (size = n_cells)
+   *
+   * \var diff_hl_eq_array
+   *      Values in each cell of the coefficient appearing in the diffusion
+   *      term in the hydrogen conservation equation w.r.t. the pressure in the
+   *      liquid phase.  This array is linked to the \ref diff_hl_eq_pty (size
+   *      = n_cells)
    *
    * \var l_rel_permeability
    *      Values in each cell of the relative permeability in the liquid phase.
@@ -450,22 +497,27 @@ typedef struct {
    *      \f$ \frac{\partial S_l}{\partial P_c} \f$
    *      This quantity is defined by the soil model.
    *
-   * \var cell_capillarity_pressure
+   * \var capillarity_cell_pressure
    *      Values in each cell of the capillarity pressure. This quantity is the
    *      one used to update the variable related to a soil model such as the
-   *      liquid and gas relative permeabilities or the liquid saturation.
+   *      liquid and gaseous relative permeabilities or the liquid saturation.
    */
 
-  cs_real_t                    *time_w_eq_array;
-  cs_real_t                    *diff_w_eq_array;
-  cs_real_t                    *time_h_eq_array;
-  cs_real_t                    *diff_hl_eq_array;
+  cs_real_t                    *time_wl_eq_array;
+  cs_real_t                    *diff_wl_eq_array;
+
+  cs_real_t                    *time_wg_eq_array;
+
+  cs_real_t                    *time_hg_eq_array;
   cs_real_t                    *diff_hg_eq_array;
+
+  cs_real_t                    *time_hl_eq_array;
+  cs_real_t                    *diff_hl_eq_array;
 
   cs_real_t                    *l_rel_permeability;
   cs_real_t                    *g_rel_permeability;
   cs_real_t                    *l_capacity;
-  cs_real_t                    *cell_capillarity_pressure;
+  cs_real_t                    *capillarity_cell_pressure;
 
   /*!
    * @}

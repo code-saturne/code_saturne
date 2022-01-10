@@ -160,8 +160,8 @@ struct _gwf_soil_t {
    *
    * \var hydraulic_context
    * Structure cast on-the-fly. This structure contains parameters, arrays,
-   * properties and fields describing the hydraulic state. It depends on the type
-   * of hydraulic model which is considered.
+   * properties and fields describing the hydraulic state. It depends on the
+   * type of hydraulic model which is considered.
    *
    * @}
    * @name Soil features (whatever is the soil model)
@@ -489,20 +489,17 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Update arrays associated to the definition of terms involved in the
- *         miscible two-phase flow model
+ *         miscible two-phase flow model.
+ *         Case of an isotropic absolute permeability.
  *
- * \param[in]      mesh          pointer to the mesh structure
- * \param[in]      connect       pointer to the cdo connectivity
- * \param[in]      quant         pointer to the cdo quantities
+ * \param[in]      g_cell_pr     pressure in the gaseous phase at cell centers
  * \param[in, out] mc            pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_update_mtpf_terms(const cs_mesh_t              *mesh,
-                              const cs_cdo_connect_t       *connect,
-                              const cs_cdo_quantities_t    *quant,
-                              cs_gwf_miscible_two_phase_t  *mc);
+cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t              *g_cell_pr,
+                                  cs_gwf_miscible_two_phase_t  *mc);
 
 /*----------------------------------------------------------------------------*/
 
