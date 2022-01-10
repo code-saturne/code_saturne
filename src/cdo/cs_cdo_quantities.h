@@ -106,10 +106,12 @@ typedef enum {
 
 /* Structure storing information about variation of entities across the
    mesh for a given type of entity (cell, face and edge) */
+
 typedef struct {
 
   /* Measure is either a volume for cells, a surface for faces or a length
      for edges */
+
   double   meas_min;  /* Min. value of the entity measure */
   double   meas_max;  /* Max. value of the entity measure */
   double   h_min;     /* Estimation of the min. value of the diameter */
@@ -118,6 +120,7 @@ typedef struct {
 } cs_quant_info_t;
 
 /* For primal vector quantities (edge or face) */
+
 typedef struct {
 
   double  meas;       /* length or area */
@@ -130,9 +133,11 @@ typedef struct { /* Specific mesh quantities */
 
   /* Keep the information about the removal of boundary faces in case of 2D
      computations */
+
   bool             remove_boundary_faces;
 
   /* Global mesh quantities */
+
   double           vol_tot;
 
   /* Cell-based quantities */

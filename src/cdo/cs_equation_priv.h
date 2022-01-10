@@ -382,14 +382,16 @@ struct _cs_equation_t {
    * different from the rhs given to cs_sles_solve() in parallel mode.
    */
 
-  cs_real_t               *rhs;
+  cs_real_t               *rhs;  /* Deprecated.
+                                    Only used in deprecated functions */
 
   /*! \var matrix
    * Matrix to inverse with cs_sles_solve() The matrix size can be different
    * from the rhs size in parallel mode since the decomposition is different
    */
 
-  cs_matrix_t             *matrix;
+  cs_matrix_t             *matrix;  /* Deprecated.
+                                       Only used in deprecated functions */
 
   /*! \var rset
    * Range set to handle parallelism. Shared with cs_cdo_connect_t structure

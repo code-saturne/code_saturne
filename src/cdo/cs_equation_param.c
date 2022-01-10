@@ -238,7 +238,9 @@ _set_key(cs_equation_param_t   *eqp,
 
   case CS_EQKEY_ADV_UPWIND_PORTION:
     eqp->upwind_portion = atof(keyval);
+
     /* Automatic witch to a hybrid upwind/centered scheme for advection */
+
     eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND;
     break;
 
@@ -556,6 +558,7 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
 
       /* Modify the default and check availability of MUMPS solvers */
+
       if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_CS)
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_MUMPS;
 
@@ -571,7 +574,6 @@ _set_key(cs_equation_param_t   *eqp,
       else
         eqp->sles_param->solver_class = ret_class;
 
-      /* Sanity check */
       assert(eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_CS &&
              eqp->sles_param->solver_class != CS_PARAM_SLES_CLASS_HYPRE);
 
@@ -598,6 +600,7 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->solver = CS_PARAM_ITSOL_NONE;
 
     else { /* keyval not found among the available keyvals */
+
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
                 emsg, __func__, eqname, _val, "CS_EQKEY_ITSOL");
@@ -663,11 +666,14 @@ _set_key(cs_equation_param_t   *eqp,
         eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;
 
       /* Either with PETSc or with PETSc/HYPRE using Euclid */
+
       eqp->sles_param->solver_class = _get_petsc_or_hypre(eqp->sles_param,
                                                           "CS_EQKEY_PRECOND");
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_BJACOB_ILU0;
+
       /* Default when using PETSc */
+
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
     }
@@ -689,7 +695,9 @@ _set_key(cs_equation_param_t   *eqp,
 
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
       eqp->sles_param->precond = CS_PARAM_PRECOND_BJACOB_SGS;
+
       /* Default when using PETSc */
+
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
     }
@@ -710,6 +718,7 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
 
       /* Default when using PETSc */
+
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
     }
@@ -718,10 +727,12 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->precond = CS_PARAM_PRECOND_ILU0;
 
       /* Either with PETSc or with PETSc/HYPRE using Euclid */
+
       eqp->sles_param->solver_class = _get_petsc_or_hypre(eqp->sles_param,
                                                           "CS_EQKEY_PRECOND");
 
       /* Default when using PETSc */
+
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
     }
@@ -730,10 +741,12 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->precond = CS_PARAM_PRECOND_ICC0;
 
       /* Either with PETSc or with PETSc/HYPRE using Euclid */
+
       eqp->sles_param->solver_class = _get_petsc_or_hypre(eqp->sles_param,
                                                           "CS_EQKEY_PRECOND");
 
       /* Default when using PETSc */
+
       eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
     }
@@ -745,6 +758,7 @@ _set_key(cs_equation_param_t   *eqp,
         cs_param_sles_check_class(eqp->sles_param->solver_class);
 
       /* Set the default AMG choice according to the class of solver */
+
       switch (ret_class) {
 
       case CS_PARAM_SLES_CLASS_CS:
@@ -752,13 +766,17 @@ _set_key(cs_equation_param_t   *eqp,
         break;
       case CS_PARAM_SLES_CLASS_PETSC:
         eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+
         /* Default when using PETSc */
+
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
         break;
       case CS_PARAM_SLES_CLASS_HYPRE:
         eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+
         /* Up to now HYPRE is available only through the PETSc interface.
            Default when using PETSc */
+
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
         break;
 
@@ -781,6 +799,7 @@ _set_key(cs_equation_param_t   *eqp,
         cs_param_sles_check_class(eqp->sles_param->solver_class);
 
       /* Set the default AMG choice according to the class of solver */
+
       switch (ret_class) {
 
       case CS_PARAM_SLES_CLASS_CS:
@@ -788,13 +807,17 @@ _set_key(cs_equation_param_t   *eqp,
         break;
       case CS_PARAM_SLES_CLASS_PETSC:
         eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+
         /* Default when using PETSc */
+
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
         break;
       case CS_PARAM_SLES_CLASS_HYPRE:
         eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+
         /* Up to now HYPRE is available only through the PETSc interface.
            Default when using PETSc */
+
         eqp->sles_param->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
         break;
 
@@ -959,6 +982,7 @@ _set_key(cs_equation_param_t   *eqp,
     }
 
     /* Only diffusion is implemented for HHO schemes up to now */
+
     else if (strcmp(keyval, "hho_p0") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P0;
       eqp->space_poly_degree = 0;
@@ -1031,7 +1055,6 @@ _set_key(cs_equation_param_t   *eqp,
               __func__, eqname);
 
   } /* Switch on keys */
-
 }
 
 /*============================================================================
@@ -1524,7 +1547,6 @@ cs_equation_param_set(cs_equation_param_t   *eqp,
                       cs_equation_key_t      key,
                       const char            *keyval)
 {
-  /* Sanity checks */
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
   if (keyval == NULL)
@@ -1536,12 +1558,14 @@ cs_equation_param_set(cs_equation_param_t   *eqp,
                 " Please check your settings."), eqp->name, __func__);
 
   /* Conversion of the string to lower case */
+
   char val[CS_BASE_STRING_LEN];
   for (size_t i = 0; i < strlen(keyval); i++)
     val[i] = tolower(keyval[i]);
   val[strlen(keyval)] = '\0';
 
   /* Set the couple (key,keyval) */
+
   _set_key(eqp, key, val);
 }
 
@@ -1560,6 +1584,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
 {
   /* Define a cs_sles_t structure using the field_id related to the variable
    * field associated to this equation */
+
   int  ierr = cs_param_sles_set(true, eqp->sles_param);
 
   if (ierr == -1)
@@ -1599,7 +1624,6 @@ cs_equation_param_last_stage(cs_equation_param_t   *eqp)
       cs_xdef_set_quadrature(eqp->source_terms[i], CS_QUADRATURE_BARY);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1876,7 +1900,6 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
   /* Iterative solver information */
 
   cs_param_sles_log(eqp->sles_param);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1901,6 +1924,7 @@ cs_equation_param_has_robin_bc(const cs_equation_param_t     *eqp)
     if (def->meta & CS_CDO_BC_ROBIN)
       return true;
   }
+
   return false;
 }
 
@@ -1930,6 +1954,7 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
+
   int  z_id = cs_get_vol_zone_id(z_name);
 
   cs_flag_t  meta_flag = 0;
@@ -1978,6 +2003,7 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
+
   int z_id = cs_get_vol_zone_id(z_name);
 
   cs_flag_t  meta_flag = 0;
@@ -2027,6 +2053,7 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
+
   int z_id = cs_get_vol_zone_id(z_name);
 
   cs_flag_t  meta_flag = 0;
@@ -2101,18 +2128,22 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
+
   int  dim = eqp->dim;
   if (bc_type == CS_PARAM_BC_NEUMANN_FULL ||
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
+
     /* FluxNormal + alpha * (u - u_0) = beta => Set (alpha, u_0, beta) */
+
     if (eqp->dim == 1)
       dim = 3;
     else
       bft_error(__FILE__, __LINE__, 0,
                 "%s: This situation is not handled yet.\n", __func__);
+
   }
 
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
@@ -2121,7 +2152,7 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           dim,
                                           cs_get_bdy_zone_id(z_name),
-                                          CS_FLAG_STATE_UNIFORM, /* state flag */
+                                          CS_FLAG_STATE_UNIFORM, /* state */
                                           meta_flag,
                                           (void *)values);
 
@@ -2172,6 +2203,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
   int  z_id = cs_get_bdy_zone_id(z_name);
 
   /* Add a new cs_xdef_t structure */
+
   cs_xdef_array_context_t  input = {.z_id = z_id,
                                     .stride = eqp->dim,
                                     .loc = loc,
@@ -2189,12 +2221,15 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
+
     /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+
     if (eqp->dim == 1)
       dim = 3;
     else
       bft_error(__FILE__, __LINE__, 0,
                 "%s: This situation is not handled yet.\n", __func__);
+
   }
 
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
@@ -2247,17 +2282,18 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
+
     /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+
     if (eqp->dim == 1)
       dim = 3;
     else
       bft_error(__FILE__, __LINE__, 0,
                 "%s: This situation is not handled yet.\n", __func__);
+
   }
 
-  /* Sanity checks */
   assert(field != NULL);
-
   if (dim != field->dim)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid dimension for field %s\n", __func__, field->name);
@@ -2267,6 +2303,7 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
     (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
 
   /* Add a new cs_xdef_t structure */
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_FIELD,
                                           dim,
                                           z_id,
@@ -2310,6 +2347,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Set the value for dim */
+
   int dim = eqp->dim;
 
   if (bc_type == CS_PARAM_BC_NEUMANN_FULL ||
@@ -2317,27 +2355,34 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_CIRCULATION) {
+
     /* This is a vector-valued equation but the DoF is scalar-valued since
      * it is a circulation associated to each edge */
+
     if (eqp->dim == 3)
       dim = 1;
     else
       bft_error(__FILE__, __LINE__, 0,
                 "%s: This situation is not handled.\n", __func__);
+
   }
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
+
     /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
+
     if (eqp->dim == 1)
       dim = 3;
     else
       bft_error(__FILE__, __LINE__, 0,
                 "%s: This situation is not handled yet.\n", __func__);
+
   }
 
   int  z_id = cs_get_bdy_zone_id(z_name);
 
   /* Add a new cs_xdef_t structure */
+
   cs_xdef_analytic_context_t  ac = {.z_id = z_id,
                                     .func = analytic,
                                     .input = input,
@@ -2408,6 +2453,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
     else
       bft_error(__FILE__, __LINE__, 0,
                 "%s: This situation is not handled.\n", __func__);
+
   }
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
@@ -2797,9 +2843,11 @@ cs_equation_add_source_term_by_val(cs_equation_param_t    *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   /* Add a new cs_xdef_t structure */
+
   int z_id = cs_get_vol_zone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
+
   cs_flag_t  state_flag = 0, meta_flag = 0;
   cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
   state_flag |= CS_FLAG_STATE_UNIFORM;

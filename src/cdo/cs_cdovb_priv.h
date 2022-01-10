@@ -63,40 +63,50 @@ BEGIN_C_DECLS
 struct _cs_cdovb_t {
 
   /* Ids related to the variable field and to the boundary flux field */
+
   int          var_field_id;
   int          bflux_field_id;
 
   /* System size */
+
   cs_lnum_t    n_dofs;
 
   /* Array storing the value arising from the contribution of all source
      terms */
+
   cs_real_t   *source_terms;
 
   /* Array for extra-operations */
+
   cs_real_t   *cell_values;     /* NULL if not requested */
 
   /* Assembly process */
+
   cs_equation_assembly_t   *assemble;
 
   /* Boundary conditions */
+
   cs_flag_t                *vtx_bc_flag;
   cs_cdo_enforce_bc_t      *enforce_dirichlet;
   cs_cdo_enforce_bc_t      *enforce_robin_bc;
 
   /* Only for vector-valued variables */
+
   cs_cdo_enforce_bc_t      *enforce_sliding;
 
   /* Pointer of function to build the diffusion term */
+
   cs_hodge_t              **diffusion_hodge;
   cs_hodge_compute_t       *get_stiffness_matrix;
 
   /* Pointer of function to build the advection term */
+
   cs_cdovb_advection_t     *get_advection_matrix;
   cs_cdovb_advection_bc_t  *add_advection_bc;
 
   /* If one needs to build a local Hodge operator for the unsteady and/or the
      reaction term(s) */
+
   cs_hodge_param_t          mass_hodgep;
   cs_hodge_t              **mass_hodge;
   cs_hodge_compute_t       *get_mass_matrix;

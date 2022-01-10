@@ -68,6 +68,7 @@ BEGIN_C_DECLS
 #define  CS_CDO_QUANTITIES_DBG  0  /* Switch off/on debug information */
 
 /* Redefined names of function from cs_math to get shorter names */
+
 #define _n3  cs_math_3_norm
 #define _dp3  cs_math_3_dot_product
 
@@ -118,9 +119,11 @@ typedef struct { /* These quantities are the integral of q on the plane
  *============================================================================*/
 
 /* Store in a flag which quantities have to be computed */
+
 cs_flag_t  cs_cdo_quantities_flag = 0;
 
 /* Algorithm used to compute the cell center */
+
 cs_cdo_quantities_cell_center_algo_t
 cs_cdo_cell_center_algo = CS_CDO_QUANTITIES_BARYC_CENTER;
 
@@ -144,6 +147,7 @@ _create_cdo_quantities(void)
   cs_cdo_quantities_t  *cdoq = NULL;
 
   /* Build cs_cdo_quantities_t structure */
+
   BFT_MALLOC(cdoq, 1, cs_cdo_quantities_t);
 
   cdoq->remove_boundary_faces = false;
@@ -151,6 +155,7 @@ _create_cdo_quantities(void)
   cdoq->vol_tot = 0.;
 
   /* Cell-based quantities */
+
   cdoq->cell_info.h_min = cdoq->cell_info.meas_min =  DBL_MAX;
   cdoq->cell_info.h_max = cdoq->cell_info.meas_max = -DBL_MAX;
 
@@ -160,6 +165,7 @@ _create_cdo_quantities(void)
   cdoq->cell_vol = NULL;
 
   /* Face-based quantities */
+
   cdoq->face_info.h_min = cdoq->face_info.meas_min = DBL_MAX;
   cdoq->face_info.h_max = cdoq->face_info.meas_max = -DBL_MAX;
 
@@ -169,6 +175,7 @@ _create_cdo_quantities(void)
   cdoq->pvol_fc = NULL;
 
   /* Edge-based quantities */
+
   cdoq->edge_info.h_min = cdoq->edge_info.meas_min = DBL_MAX;
   cdoq->edge_info.h_max = cdoq->edge_info.meas_max = -DBL_MAX;
 
@@ -179,6 +186,7 @@ _create_cdo_quantities(void)
   cdoq->dface_normal = NULL;
 
   /* Vertex-based quantities */
+
   cdoq->n_vertices = 0;
   cdoq->n_g_vertices = 0;
   cdoq->dcell_vol = NULL;
@@ -227,6 +235,7 @@ _get_fspec(cs_lnum_t                    f_id,
   if (f_id < m->n_i_faces) { /* Interior face */
 
     /* Choose a vertex belonging to this face */
+
     f = f_id;
     s = m->i_face_vtx_idx[f];
     e = m->i_face_vtx_idx[f+1];
@@ -250,6 +259,7 @@ _get_fspec(cs_lnum_t                    f_id,
   else { /* Border face */
 
     /* Choose a vertex belonging to this face */
+
     f = f_id - m->n_i_faces;
     s = m->b_face_vtx_idx[f];
     e = m->b_face_vtx_idx[f+1];
@@ -272,9 +282,11 @@ _get_fspec(cs_lnum_t                    f_id,
   }
 
   /* Define omega = -<n,P>*/
+
   fspec.omega = - _dp3(P, fspec.q.unitv);
 
   /* Define a direct basis such that n[Z] maximal */
+
   nx = fabs(fspec.q.unitv[X]);
   ny = fabs(fspec.q.unitv[Y]);
   nz = fabs(fspec.q.unitv[Z]);
@@ -324,6 +336,7 @@ _get_proj_quantities(cs_lnum_t                f_id,
   const cs_adjacency_t  *e2v = connect->e2v;
 
   /* Initialize structure */
+
   _cdo_projq_t  projq;
 
   /* These quantities are the integral of q on the plane
@@ -333,6 +346,7 @@ _get_proj_quantities(cs_lnum_t                f_id,
   projq.pab = projq.pa2 = projq.pb2 = 0.0;
 
   /* Scan edges which belong to the current face */
+
   for (cs_lnum_t  i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
 
     short int  e_sgn = f2e->sgn[i];
@@ -345,6 +359,7 @@ _get_proj_quantities(cs_lnum_t                f_id,
       v_id[0] = e2v->ids[s+1], v_id[1] = e2v->ids[s];
 
     /* Vertices in the plane (alpha, beta) */
+
     for (int k = 0; k < 2; k++) {
       a[k] = coords[3*v_id[k] + axis[0]];
       a2[k] = a[k]*a[k];
@@ -353,6 +368,7 @@ _get_proj_quantities(cs_lnum_t                f_id,
     }
 
     /* Related variables */
+
     cs_real_t  a0_3 = a2[0] * a[0];
     cs_real_t  b0_3 = b2[0] * b[0];
     cs_real_t  da  = a[1] - a[0], db  = b[1] - b[0];
@@ -409,6 +425,7 @@ _get_fsub_quantities(cs_lnum_t                 f_id,
   const double  k1 = 1./nc, k2 = k1 * k1, k3 = k2 * k1;
 
   /* Compute projected quantities */
+
   const _cdo_projq_t  projq = _get_proj_quantities(f_id, connect, coord, fspec.XYZ);
 
 #if CS_CDO_QUANTITIES_DBG > 1 && defined(DEBUG) && !defined(NDEBUG)
@@ -421,6 +438,7 @@ _get_fsub_quantities(cs_lnum_t                 f_id,
   _cdo_fsubq_t  fsubq;
 
   /* Compute face sub-quantities */
+
   fsubq.F1 = k1*projq.p1;
   fsubq.Fa = k1 * projq.pa;
   fsubq.Fb = k1 * projq.pb;
@@ -452,6 +470,7 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
                                cs_cdo_quantities_t     *cdoq)
 {
   /* Compute dual edge quantities */
+
   const cs_lnum_t  n_cells = cdoq->n_cells;
   const cs_adjacency_t  *c2f = topo->c2f;
 
@@ -478,9 +497,11 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
   } /* End of loop on cells */
 
   /* Compute the volume of the pyramid */
+
   cs_flag_t  masks[3] = { CS_CDO_QUANTITIES_FB_SCHEME,
                           CS_CDO_QUANTITIES_HHO_SCHEME,
                           CS_CDO_QUANTITIES_VCB_SCHEME };
+
   if (cs_flag_at_least(cs_cdo_quantities_flag, 3, masks))
     cs_cdo_quantities_compute_pvol_fc(cdoq, topo->c2f, &(cdoq->pvol_fc));
 }
@@ -503,7 +524,6 @@ static void
 _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
                                cs_cdo_quantities_t     *quant)
 {
-  /* Sanity check */
   assert(topo->e2v != NULL);
   assert(topo->f2e != NULL && topo->f2c != NULL && topo->c2e != NULL);
 
@@ -513,6 +533,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
   cs_real_t  *edge_center = NULL;
 
   /* Build edge centers and edge vectors */
+
   BFT_MALLOC(edge_center, 3*n_edges, cs_real_t);
   BFT_MALLOC(quant->edge_vector, 3*n_edges, cs_real_t);
 
@@ -520,6 +541,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
   for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
 
     /* Get the two vertex ids related to the current edge */
+
     const cs_lnum_t  *v_ids = topo->e2v->ids + 2*e_id;
     const cs_real_t  *xa = quant->vtx_coord + 3*v_ids[0];
     const cs_real_t  *xb = quant->vtx_coord + 3*v_ids[1];
@@ -555,8 +577,8 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
   /* Allocate and initialize array
    * a) Compute the two vector areas composing each dual face
-   * b) Compute the volume associated to each edge in a cell
-   */
+   * b) Compute the volume associated to each edge in a cell */
+
   BFT_MALLOC(quant->pvol_ec, topo->c2e->idx[n_cells], cs_real_t);
   BFT_MALLOC(quant->dface_normal, 3*topo->c2e->idx[n_cells], cs_real_t);
 
@@ -573,10 +595,12 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
       const short int  n_ec = c2e_idx[1] - c2e_idx[0];
 
       /* Initialize cell_dface */
+
       cs_real_t  *cell_dface = quant->dface_normal + 3*c2e_idx[0];
       memset(cell_dface, 0, 3*n_ec*sizeof(cs_real_t));
 
       /* Get the cell center */
+
       const cs_real_t  *xc = quant->cell_centers + 3*c_id;
 
       for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
@@ -584,6 +608,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
         const cs_lnum_t  f_id = c2f->ids[i];
 
         /* Compute xf -> xc */
+
         const cs_real_t  *xf = (f_id < quant->n_i_faces) ?
           quant->i_face_center + 3* f_id :
           quant->b_face_center + 3*(f_id - quant->n_i_faces);
@@ -597,12 +622,14 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
           const cs_real_t  *xe = edge_center + 3*e_id;
 
           /* Compute the vectorial area for the triangle : xc, xf, xe */
+
           cs_real_3_t  tria_vect, xexc;
           for (int k = 0; k < 3; k++)
             xexc[k] = xc[k] - xe[k];
           cs_math_3_cross_product(xfxc, xexc, tria_vect);
 
           /* Find the corresponding local id for this cell edge */
+
           short int e = n_ec;
           for (short int _e = 0; _e < n_ec; _e++) {
             if (c2e_ids[_e] == e_id) {
@@ -613,6 +640,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
           CS_CDO_OMP_ASSERT(e < n_ec);
 
           /* One should have (tria.unitv, edge.unitv) > 0 */
+
           cs_nvec3_t  edge = cs_quant_set_edge_nvec(e_id, quant);
           cs_nvec3_t  tria;
           cs_nvec3(tria_vect, &tria);
@@ -620,6 +648,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
           CS_CDO_OMP_ASSERT(fabs(orient) > 0);
 
           /* Store this portion of dual face area at the right place */
+
           cs_real_t  *_dface = cell_dface + 3*e;
           if (orient < 0)
             for (int k = 0; k < 3; k++) _dface[k] -= 0.5 * tria_vect[k];
@@ -630,7 +659,8 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
       } /* Loop on cell faces */
 
-        /* Compute pvol_ec */
+      /* Compute pvol_ec */
+
       cs_real_t  *_pvol = quant->pvol_ec + c2e_idx[0];
       for (short int e = 0; e < n_ec; e++) {
         _pvol[e] = cs_math_1ov3 * _dp3(cell_dface + 3*e,
@@ -664,12 +694,12 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
   if (!cs_flag_at_least(cs_cdo_quantities_flag, 2, masks))
     return;
 
-  /* Sanity checks */
   assert(topo->f2e != NULL && topo->f2c != NULL && topo->c2v != NULL);
 
   const cs_adjacency_t  *c2f = topo->c2f, *f2e = topo->f2e;
 
   /* Allocate and initialize arrays */
+
   BFT_MALLOC(quant->dcell_vol, topo->c2v->idx[quant->n_cells], double);
 
 # pragma omp parallel for shared(quant, topo, c2f, f2e) \
@@ -677,12 +707,14 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     /* Compute part of dual volume related to each primal cell */
+
     const cs_lnum_t  *c2v_idx = topo->c2v->idx + c_id;
     const cs_lnum_t  *c2v_ids = topo->c2v->ids + c2v_idx[0];
     const short int  n_vc = c2v_idx[1] - c2v_idx[0];
     const cs_real_t  *xc = quant->cell_centers + 3*c_id;
 
     /* Initialize */
+
     double  *vol_vc = quant->dcell_vol + c2v_idx[0];
     for (short int v = 0; v < n_vc; v++) vol_vc[v] = 0.0;
 
@@ -708,6 +740,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
                                                  xc);
 
         /* Find the corresponding local cell edge */
+
         short int _v1 = n_vc, _v2 = n_vc;
         for (short int _v = 0; _v < n_vc; _v++) {
           if (c2v_ids[_v] == v1_id) _v1 = _v;
@@ -722,9 +755,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
     } /* Loop on cell faces */
 
   } /* Loop on cells */
-
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -742,6 +773,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)
     return;
 
   /* Cell info */
+
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     const double  meas = quant->cell_vol[c_id];
@@ -758,6 +790,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)
   } /* Loop on cells */
 
   /* Face info */
+
   for (cs_lnum_t  f_id = 0; f_id < quant->n_i_faces; f_id++) {
 
     const cs_real_t  meas = quant->i_face_surf[f_id];
@@ -789,6 +822,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)
   } /* Loop on border faces */
 
   /* Edge info */
+
   if (quant->edge_vector != NULL) {
 
     for (cs_lnum_t  e_id = 0; e_id < quant->n_edges; e_id++) {
@@ -850,12 +884,12 @@ _vtx_algorithm(const cs_cdo_connect_t      *connect,
   const cs_adjacency_t  *c2v = connect->c2v;
 
   /* Compute cell centers */
+
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     const cs_lnum_t  vs = c2v->idx[c_id];
     const cs_lnum_t  ve = c2v->idx[c_id+1];
 
-    /* Sanity checks */
     assert(ve - vs > 0);
     assert(ve - vs < SHRT_MAX);
 
@@ -876,7 +910,6 @@ _vtx_algorithm(const cs_cdo_connect_t      *connect,
     for (int k = 0; k < 3; k++) xc[k] *= coef;
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -902,7 +935,6 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
   const cs_lnum_t n_cells = quant->n_cells;
   const cs_lnum_t n_faces = quant->n_faces;
 
-  /* Sanity checks */
   assert(connect->f2c != NULL);
   assert(connect->c2f != NULL);
 
@@ -927,6 +959,7 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
                                                fspec);
 
     /* Update cell quantities */
+
     const cs_adjacency_t  *f2c = connect->f2c;
     for (cs_lnum_t i = f2c->idx[f_id]; i < f2c->idx[f_id+1]; i++) {
 
@@ -942,13 +975,13 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
   } /* End of loop on faces */
 
   /* Compute cell center of gravity and total volume */
+
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     const double  inv_2vol = 0.5 / quant->cell_vol[i];
     for (int k = 0; k < 3; k++)
       quant->cell_centers[3*i+k] *= inv_2vol;
   }
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1147,22 +1180,26 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *cdoq)
     return cdoq;
 
   /* Cell-related quantities */
+
   if (cs_cdo_cell_center_algo != CS_CDO_QUANTITIES_SATURNE_CENTER)
     BFT_FREE(cdoq->cell_centers);
 
   /* Face-related quantities */
+
   BFT_FREE(cdoq->dedge_vector);
   BFT_FREE(cdoq->pvol_fc);
 
   /* Edge-related quantities */
+
   BFT_FREE(cdoq->edge_vector);
   BFT_FREE(cdoq->dface_normal);
   BFT_FREE(cdoq->pvol_ec);
 
-  /* Vertex-related quantities */
+  /* Vertex-related quantities
+   * vtx_coord is free when the structure cs_mesh_t is destroyed */
+
   BFT_FREE(cdoq->dcell_vol);
 
-  /* vtx_coord is free when the structure cs_mesh_t is destroyed */
   BFT_FREE(cdoq);
 
   return NULL;
@@ -1198,6 +1235,7 @@ cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
   } /* Cell center algorithm */
 
   /* Output */
+
   cs_log_printf(CS_LOG_DEFAULT, "\n CDO mesh quantities information:\n");
   cs_log_printf(CS_LOG_DEFAULT,
                 " --cdo-- h_cell  %6.4e %6.4e (min/max)\n"
@@ -1232,6 +1270,7 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
   int  lname = strlen("DumpQuantities.dat") + 1;
 
   /* Define the name of the dump file */
+
   char *fname = NULL;
   if (cs_glob_n_ranks > 1) {
     lname += 6;
@@ -1322,6 +1361,7 @@ cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t    *cdoq,
   cs_real_t  *pvol_fc = *p_pvol_fc;
 
   /* Initialize array */
+
   if (pvol_fc == NULL)
     BFT_MALLOC(pvol_fc, c2f->idx[n_cells], cs_real_t);
 
@@ -1346,6 +1386,7 @@ cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t    *cdoq,
   } /* Loop on cells */
 
   /* Return pointer */
+
   *p_pvol_fc = pvol_fc;
 }
 
@@ -1376,6 +1417,7 @@ cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
   cs_real_t  *pvol_ec = *p_pvol_ec;
 
   /* Initialize array */
+
   if (pvol_ec == NULL)
     BFT_MALLOC(pvol_ec, c2e->idx[n_cells], cs_real_t);
 
@@ -1405,6 +1447,7 @@ cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
   } /* Not already existing */
 
   /* Return pointer */
+
   *p_pvol_ec = pvol_ec;
 }
 
