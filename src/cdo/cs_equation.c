@@ -2562,9 +2562,11 @@ cs_equation_create_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize the builder of the algebraic system.
- *         Set the initialize condition to all variable fields associated to
- *         each cs_equation_t structure.
+ * \brief Allocate and initialize the builder of the algebraic system and the
+ *        scheme context structure depending on the kind of space
+ *        discretization and the dimension of the variable to solve. Set the
+ *        initialize condition to all variable fields associated to each
+ *        cs_equation_t structure.
  *
  * \param[in]       mesh      pointer to a cs_mesh_t structure
  * \param[in]       ts        pointer to a cs_time_step_t structure

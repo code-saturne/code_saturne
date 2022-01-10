@@ -1906,11 +1906,11 @@ cs_equation_param_has_robin_bc(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the unknown related to this equation
- *         This definition can be done on a specified mesh location.
+ * \brief  Define the initial condition for the unknown related to this
+ *         equation. This definition applies to a volume zone.
  *         By default, the unknown is set to zero everywhere.
- *         Here a constant value is set to all the entities belonging to the
- *         given mesh location
+ *         Here a constant value is set to all the unknows belonging to the
+ *         given zone with name z_name
  *
  * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
  * \param[in]       z_name    name of the associated zone (if NULL or
@@ -1953,11 +1953,11 @@ cs_equation_add_ic_by_value(cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the unknown related to this equation
- *         This definition can be done on a specified mesh location.
+ * \brief  Define the initial condition for the unknown related to this
+ *         equation. This definition applies to a volume zone.
  *         By default, the unknown is set to zero everywhere.
- *         Here the value related to all the entities belonging to the
- *         given mesh location is such that the integral over these cells
+ *         Here the value set to each unknown belonging to the given zone with
+ *         name z_name is such that the integral over the cells of the zone
  *         returns the requested quantity
  *
  * \param[in, out]  eqp       pointer to a cs_equation_param_t structure
@@ -2002,9 +2002,10 @@ cs_equation_add_ic_by_qov(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Define the initial condition for the unknown related to this
- *         equation. This definition can be done on a specified mesh location.
+ *         equation. This definition applies to a volume zone.
  *         By default, the unknown is set to zero everywhere.
- *         Here the initial value is set according to an analytical function
+ *         Here the initial value for each unknown associated to the zone with
+ *         name z_name is set according to an analytical function
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      z_name    name of the associated zone (if NULL or "" if
