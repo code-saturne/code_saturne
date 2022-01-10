@@ -1689,6 +1689,31 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the initial condition for the unknown related to this
+ *         equation. This definition applies to a volume zone.
+ *         By default, the unknown is set to zero everywhere.
+ *         Case of a definition by a DoF function.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      loc_flag  where information is computed
+ * \param[in]      func      pointer to a DoF function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_ic_by_dof_func(cs_equation_param_t    *eqp,
+                               const char             *z_name,
+                               cs_flag_t               loc_flag,
+                               cs_dof_func_t          *func,
+                               void                   *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set a boundary condition from an existing \ref cs_xdef_t structure
  *         The lifecycle of the cs_xdef_t structure is now managed by the
  *         current \ref cs_equation_param_t structure.

@@ -2081,6 +2081,63 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the initial condition for the unknown related to this
+ *         equation. This definition applies to a volume zone.
+ *         By default, the unknown is set to zero everywhere.
+ *         Case of a definition by a DoF function.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      loc_flag  where information is computed
+ * \param[in]      func      pointer to a DoF function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_ic_by_dof_func(cs_equation_param_t    *eqp,
+                               const char             *z_name,
+                               cs_flag_t               loc_flag,
+                               cs_dof_func_t          *func,
+                               void                   *input)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Add a new cs_xdef_t structure */
+
+  int z_id = cs_get_vol_zone_id(z_name);
+
+  /* Define a flag according to the kind of space discretization */
+
+  cs_flag_t  meta_flag = 0;
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_dof_context_t  context = { .func = func,
+                                     .input = input,
+                                     .free_input = NULL,
+                                     .loc = loc_flag };
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
+                                        eqp->dim, z_id,
+                                        0, /* state flag */
+                                        meta_flag,
+                                        &context);
+
+  int  new_id = eqp->n_ic_defs;
+  eqp->n_ic_defs += 1;
+  BFT_REALLOC(eqp->ic_defs, eqp->n_ic_defs, cs_xdef_t *);
+  eqp->ic_defs[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set a boundary condition from an existing \ref cs_xdef_t structure
  *         The lifecycle of the cs_xdef_t structure is now managed by the
  *         current \ref cs_equation_param_t structure.
