@@ -113,6 +113,11 @@ struct _cs_cdovb_t {
 
 };
 
+/* Scalar-valued and vector-valued equations rely on the same pattern */
+
+typedef struct _cs_cdovb_t cs_cdovb_scaleq_t;
+typedef struct _cs_cdovb_t cs_cdovb_vecteq_t;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

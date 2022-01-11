@@ -103,10 +103,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Algebraic system for CDO vertex-based discretization */
-
-typedef struct _cs_cdovb_t cs_cdovb_scaleq_t;
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
