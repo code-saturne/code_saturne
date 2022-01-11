@@ -490,6 +490,7 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
 
   /* Create equation builder and context.
    * Initialize field values (connect can be updated) */
+
   cs_equation_initialize(domain->mesh,
                          domain->time_step,
                          domain->cdo_quantities,

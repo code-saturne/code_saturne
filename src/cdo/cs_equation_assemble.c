@@ -77,7 +77,6 @@ BEGIN_C_DECLS
   This function are specific to CDO schemes. Thus one can assume a more specific
   behavior in order to get a more optimzed version of the standard assembly
   process.
-
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -94,6 +93,7 @@ BEGIN_C_DECLS
 
 /* Store the matrix structure and its assembler structures for each family
    of space discretizations */
+
 static cs_matrix_assembler_t  **cs_equation_assemble_ma = NULL;
 static cs_matrix_structure_t  **cs_equation_assemble_ms = NULL;
 static cs_equation_assemble_t  **cs_equation_assemble = NULL;
@@ -111,11 +111,13 @@ static cs_timer_counter_t  cs_equation_ms_time;
 typedef struct {
 
   /* Row numberings */
+
   cs_gnum_t   g_id;             /* Global row numbering */
   cs_lnum_t   l_id;             /* Local range set numbering */
   int         i;                /* Cellwise system numbering */
 
   /* Column-related members */
+
   int                 n_cols;    /* Number of columns (cellwise system) */
   cs_gnum_t          *col_g_id;  /* Global numbering of columns */
   int                *col_idx;   /* Array to build and to give as parameter
@@ -366,9 +368,11 @@ _add_scal_values_single(const cs_equation_assemble_row_t   *row,
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
   /* Update the diagonal value */
+
   mc->_d_val[row->l_id] += row->val[row->i];
 
   /* Update the extra-diagonal values */
+
   cs_real_t  *xvals = mc->_x_val + ms->row_index[row->l_id];
   for (int j = 0; j < row->i; j++) /* Lower part */
     xvals[row->col_idx[j]] += row->val[j];
@@ -409,10 +413,12 @@ _add_scal_values_atomic(const cs_equation_assemble_row_t   *row,
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
   /* Update the diagonal value */
+
 # pragma omp atomic
   mc->_d_val[row->l_id] += row->val[row->i];
 
   /* Update the extra-diagonal values */
+
   cs_real_t  *xvals = mc->_x_val + ms->row_index[row->l_id];
   for (int j = 0; j < row->n_cols; j++) {
     if (j != row->i) {
@@ -455,11 +461,13 @@ _add_scal_values_critical(const cs_equation_assemble_row_t   *row,
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
   /* Update the diagonal value */
+
 # pragma omp critical
   {
     mc->_d_val[row->l_id] += row->val[row->i];
 
     /* Update the extra-diagonal values */
+
     cs_real_t  *xvals = mc->_x_val + ms->row_index[row->l_id];
     for (int j = 0; j < row->n_cols; j++)
       if (j != row->i)
@@ -493,6 +501,7 @@ _assemble_row_scal_l(const cs_matrix_assembler_t     *ma,
 
   /* Loop on columns to fill col_idx for extra-diag entries
    * Diagonal is treated separately */
+
   for (int j = 0; j < row->i; j++) { /* Lower part */
     row->col_idx[j] = _l_binary_search(0,
                                        n_l_cols,
@@ -500,6 +509,7 @@ _assemble_row_scal_l(const cs_matrix_assembler_t     *ma,
                                        col_ids);
     assert(row->col_idx[j] > -1);
   }
+
   for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper part */
     row->col_idx[j] = _l_binary_search(0,
                                        n_l_cols,
@@ -510,7 +520,6 @@ _assemble_row_scal_l(const cs_matrix_assembler_t     *ma,
 }
 
 #if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add values to a matrix assembler values structure using global
@@ -540,6 +549,7 @@ _assemble_row_scal_ld(const cs_matrix_assembler_t      *ma,
   const int n_l_cols = l_end - l_start - n_d_cols;
 
   /* Loop on columns to fill col_idx for extra-diag entries */
+
   for (int j = 0; j < row->i; j++) {
 
     const cs_gnum_t g_c_id = row->col_g_id[j];
@@ -587,7 +597,6 @@ _assemble_row_scal_ld(const cs_matrix_assembler_t      *ma,
     }
 
   } /* Loop on columns of the row */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -624,15 +633,18 @@ _assemble_row_scal_dt(cs_matrix_assembler_values_t         *mav,
   const cs_gnum_t  *coeff_send_g_id = ma->coeff_send_col_g_id + r_start;
 
   /* Diagonal term */
+
   const cs_lnum_t  e_diag_id = r_start + _g_binary_search(n_e_rows,
                                                           row->g_id,
                                                           coeff_send_g_id);
 
   /* Now add values to send coefficients */
+
 # pragma omp atomic
   mav->coeff_send[e_diag_id] += row->val[row->i];
 
   /* Loop on extra-diagonal entries */
+
   for (int j = 0; j < row->i; j++) { /* Lower-part */
 
     const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
@@ -640,6 +652,7 @@ _assemble_row_scal_dt(cs_matrix_assembler_values_t         *mav,
                                                       coeff_send_g_id);
 
     /* Now add values to send coefficients */
+
 #   pragma omp atomic
     mav->coeff_send[e_id] += row->val[j];
 
@@ -652,6 +665,7 @@ _assemble_row_scal_dt(cs_matrix_assembler_values_t         *mav,
                                                       coeff_send_g_id);
 
     /* Now add values to send coefficients */
+
 #   pragma omp atomic
     mav->coeff_send[e_id] += row->val[j];
 
@@ -692,14 +706,17 @@ _assemble_row_scal_ds(cs_matrix_assembler_values_t         *mav,
   const cs_gnum_t  *coeff_send_g_id = ma->coeff_send_col_g_id + r_start;
 
   /* Diagonal term */
+
   const cs_lnum_t  e_diag_id = r_start + _g_binary_search(n_e_rows,
                                                           row->g_id,
                                                           coeff_send_g_id);
 
   /* Now add values to send coefficients */
+
   mav->coeff_send[e_diag_id] += row->val[row->i];
 
   /* Loop on extra-diagonal entries */
+
   for (int j = 0; j < row->i; j++) { /* Lower-part */
 
     const cs_lnum_t e_id = r_start + _g_binary_search(n_e_rows,
@@ -707,6 +724,7 @@ _assemble_row_scal_ds(cs_matrix_assembler_values_t         *mav,
                                                       coeff_send_g_id);
 
     /* Now add values to send coefficients */
+
     mav->coeff_send[e_id] += row->val[j];
 
   }
@@ -718,11 +736,11 @@ _assemble_row_scal_ds(cs_matrix_assembler_values_t         *mav,
                                                       coeff_send_g_id);
 
     /* Now add values to send coefficients */
+
     mav->coeff_send[e_id] += row->val[j];
 
   }
 }
-
 #endif /* defined(HAVE_MPI) */
 
 /*============================================================================
@@ -819,14 +837,17 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
 
   /* The second paramter is set to "true" meaning that the diagonal is stored
      separately --> MSR storage */
+
   cs_matrix_assembler_t  *ma = cs_matrix_assembler_create(rs->l_range, true);
 
   /* First loop to count max size of the buffer */
+
   cs_lnum_t  max_size = 0;
   for (cs_lnum_t id = 0; id < n_elts; id++)
     max_size = CS_MAX(max_size, x2x->idx[id+1] - x2x->idx[id]);
 
   /* We increment max_size to take into account the diagonal entry */
+
   int  buf_size = n_dofbyx * n_dofbyx * (max_size + 1);
   BFT_MALLOC(grows, buf_size, cs_gnum_t);
   BFT_MALLOC(gcols, buf_size, cs_gnum_t);
@@ -840,9 +861,11 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
       const cs_lnum_t  end = x2x->idx[row_id+1];
 
       /* Diagonal term is excluded in this connectivity. Add it "manually" */
+
       grows[0] = grow_id, gcols[0] = grow_id;
 
       /* Extra diagonal couples */
+
       for (cs_lnum_t j = start, i = 1; j < end; j++, i++) {
         grows[i] = grow_id;
         gcols[i] = rs->g_id[x2x->ids[j]];
@@ -865,6 +888,7 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
       int shift = 0;
 
       /* Diagonal term is excluded in this connectivity. Add it "manually" */
+
       for (int dof_i = 0; dof_i < n_dofbyx; dof_i++) {
         const cs_gnum_t  grow_id = grow_ids[dof_i];
         for (int dof_j = 0; dof_j < n_dofbyx; dof_j++) {
@@ -875,6 +899,7 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
       }
 
       /* Extra diagonal couples */
+
       for (cs_lnum_t j = start; j < end; j++) {
 
         const cs_lnum_t  col_id = x2x->ids[j];
@@ -899,9 +924,11 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
   }
 
   /* Now compute structure */
+
   cs_matrix_assembler_compute(ma);
 
   /* Free temporary buffers */
+
   BFT_FREE(grows);
   BFT_FREE(gcols);
 
@@ -989,6 +1016,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
    *  - The one related to matrix based on vertices
    *  - The one related to matrix based on faces
    */
+
   BFT_MALLOC(cs_equation_assemble_ma,
              CS_CDO_CONNECT_N_CASES, cs_matrix_assembler_t *);
   for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
@@ -1008,9 +1036,11 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
      Greatest dimension of the diagonal block: max_ddim
      Greatest dimension of the extra-diagonal block: max_edim
    */
+
   int  n_max_cw_dofs = 0, max_ddim = 1, max_edim = 1;
 
   /* Allocate and initialize matrix assembler and matrix structures */
+
   if (vb_flag > 0 || vcb_flag > 0) {
 
     const cs_adjacency_t  *v2v = connect->v2v;
@@ -1023,6 +1053,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
       t0 = cs_timer_time();
 
       /* Build the matrix structure and the matrix assembler structure */
+
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
 
       cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices, 1, v2v,
@@ -1063,6 +1094,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
   } /* Vertex-based schemes and related ones */
 
   /* Allocate and initialize matrix assembler and matrix structures */
+
   if (eb_flag > 0) {
 
     const cs_adjacency_t  *e2e = connect->e2e;
@@ -1075,6 +1107,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
       t0 = cs_timer_time();
 
       /* Build the matrix structure and the matrix assembler structure */
+
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_EDGE_SCAL];
 
       cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_edges, 1, e2e, rs);
@@ -1165,6 +1198,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
     }
 
     /* For vector equations and HHO */
+
     if (cs_flag_test(hho_flag, CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY1) ||
         cs_flag_test(hho_flag, CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2)) {
 
@@ -1215,6 +1249,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
   } /* Face-based schemes (CDO or HHO) */
 
   /* Common buffers for assemble usage */
+
   const int  n_threads = cs_glob_n_threads;
   BFT_MALLOC(cs_equation_assemble, n_threads, cs_equation_assemble_t *);
   for (int i = 0; i < n_threads; i++)
@@ -1224,6 +1259,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 #pragma omp parallel
   {
     /* Each thread allocate its part. This yields a better memory affinity */
+
     int  t_id = omp_get_thread_num();
     cs_equation_assemble[t_id] = _init_equation_assembler_struct(max_ddim,
                                                                  max_edim,
@@ -1247,10 +1283,12 @@ void
 cs_equation_assemble_finalize(void)
 {
   /* Display profiling/performance information */
+
   cs_log_printf(CS_LOG_PERFORMANCE, " <CDO/Assembly> structure: %5.3e\n",
                 cs_equation_ms_time.nsec*1e-9);
 
   /* Free common assemble buffers */
+
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
 #pragma omp parallel
   {
@@ -1265,11 +1303,13 @@ cs_equation_assemble_finalize(void)
   BFT_FREE(cs_equation_assemble);
 
   /* Free matrix structures */
+
   for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
     cs_matrix_structure_destroy(&(cs_equation_assemble_ms[i]));
   BFT_FREE(cs_equation_assemble_ms);
 
   /* Free matrix assemblers */
+
   for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
     cs_matrix_assembler_destroy(&(cs_equation_assemble_ma[i]));
   BFT_FREE(cs_equation_assemble_ma);
@@ -1333,7 +1373,6 @@ cs_equation_assemble_set(cs_param_space_scheme_t    scheme,
 }
 
 #if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise matrix into the global matrix
@@ -1361,10 +1400,12 @@ cs_equation_assemble_matrix_mpit(const cs_sdm_t                   *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   /* Push each row of the cellwise matrix into the assembler */
+
   for (int i = 0; i < row->n_cols; i++) {
 
     row->i = i;                               /* cellwise numbering */
@@ -1388,7 +1429,6 @@ cs_equation_assemble_matrix_mpit(const cs_sdm_t                   *m,
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1440,9 +1480,7 @@ cs_equation_assemble_matrix_mpis(const cs_sdm_t                   *m,
     }
 
   }
-
 }
-
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
@@ -1472,10 +1510,12 @@ cs_equation_assemble_matrix_seqt(const cs_sdm_t                  *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   /* Push each row of the cellwise matrix into the assembler */
+
   for (int i = 0; i < row->n_cols; i++) {
 
     row->i = i;                               /* cellwise numbering */
@@ -1492,7 +1532,6 @@ cs_equation_assemble_matrix_seqt(const cs_sdm_t                  *m,
 #endif
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1522,10 +1561,12 @@ cs_equation_assemble_matrix_seqs(const cs_sdm_t                  *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   /* Push each row of the cellwise matrix into the assembler */
+
   for (int i = 0; i < row->n_cols; i++) {
 
     row->i = i;                               /* cellwise numbering */
@@ -1537,7 +1578,6 @@ cs_equation_assemble_matrix_seqs(const cs_sdm_t                  *m,
     _add_scal_values_single(row, mav->matrix);
 
   } /* Loop on rows */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1566,7 +1606,6 @@ cs_equation_assemble_eblock33_matrix_seqs(const cs_sdm_t               *m,
 
   cs_equation_assemble_row_t  *row = eqa->row;
 
-  /* Sanity checks */
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
@@ -1574,6 +1613,7 @@ cs_equation_assemble_eblock33_matrix_seqs(const cs_sdm_t               *m,
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
+
   cs_real_t  *_vxyz[3] = {row->expval,
                           row->expval + m->n_rows,
                           row->expval + 2*m->n_rows };
@@ -1582,15 +1622,18 @@ cs_equation_assemble_eblock33_matrix_seqs(const cs_sdm_t               *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
     /* Expand all the blocks for this row */
+
     for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
       /* mIJ matrices are small square matrices of size 3 */
+
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
       const cs_real_t  *const mvals = mIJ->val;
       for (int k = 0; k < 3; k++) {
@@ -1602,6 +1645,7 @@ cs_equation_assemble_eblock33_matrix_seqs(const cs_sdm_t               *m,
     } /* Loop on column-wise blocks */
 
     /* dof_ids is an interlaced array (get access to the next 3 values) */
+
     for (int k = 0; k < 3; k++) {
       row->i = 3*bi+k;                          /* cellwise numbering */
       row->g_id = row->col_g_id[3*bi+k];        /* global numbering */
@@ -1614,7 +1658,6 @@ cs_equation_assemble_eblock33_matrix_seqs(const cs_sdm_t               *m,
     } /* Push each row of the block */
 
   } /* Loop on row-wise blocks */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1632,18 +1675,17 @@ cs_equation_assemble_eblock33_matrix_seqs(const cs_sdm_t               *m,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t                *m,
-                                          const cs_lnum_t               *dof_ids,
-                                          const cs_range_set_t          *rset,
-                                          cs_equation_assemble_t        *eqa,
-                                          cs_matrix_assembler_values_t  *mav)
+cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t               *m,
+                                          const cs_lnum_t              *dof_ids,
+                                          const cs_range_set_t         *rset,
+                                          cs_equation_assemble_t       *eqa,
+                                          cs_matrix_assembler_values_t *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
   cs_equation_assemble_row_t  *row = eqa->row;
 
-  /* Sanity checks */
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
@@ -1651,6 +1693,7 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t                *m,
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
+
   cs_real_t  *_vxyz[3] = {row->expval,
                           row->expval + m->n_rows,
                           row->expval + 2*m->n_rows };
@@ -1659,15 +1702,18 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t                *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
     /* Expand all the blocks for this row */
+
     for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
       /* mIJ matrices are small square matrices of size 3 */
+
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
       const cs_real_t  *const mvals = mIJ->val;
       for (int k = 0; k < 3; k++) {
@@ -1679,6 +1725,7 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t                *m,
     } /* Loop on column-wise blocks */
 
     /* dof_ids is an interlaced array (get access to the next 3 values */
+
     for (int k = 0; k < 3; k++) {
       row->i = 3*bi+k;                          /* cellwise numbering */
       row->g_id = row->col_g_id[3*bi+k];        /* global numbering */
@@ -1699,7 +1746,6 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t                *m,
 }
 
 #if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise matrix into the global matrix
@@ -1880,7 +1926,6 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
 }
 
 #endif /* defined(HAVE_MPI) */
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise matrix into the global matrix
@@ -1907,7 +1952,6 @@ cs_equation_assemble_eblock_matrix_seqs(const cs_sdm_t                *m,
 
   cs_equation_assemble_row_t  *row = eqa->row;
 
-  /* Sanity checks */
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
@@ -1918,6 +1962,7 @@ cs_equation_assemble_eblock_matrix_seqs(const cs_sdm_t                *m,
   const int  dim = eqa->ddim;
 
   /* Expand the values for a bundle of rows */
+
   cs_real_t  *_vpointer[18];
 
   for (int k = 0; k < dim; k++)
@@ -1926,15 +1971,18 @@ cs_equation_assemble_eblock_matrix_seqs(const cs_sdm_t                *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
     /* Expand all the blocks for this row */
+
     for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
       /* mIJ matrices are small square matrices of size "dim" */
+
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
@@ -1947,6 +1995,7 @@ cs_equation_assemble_eblock_matrix_seqs(const cs_sdm_t                *m,
     } /* Loop on column blocks */
 
     /* dof_ids is an interlaced array (get access to the next "dim" values */
+
     for (int ki = 0; ki < dim; ki++) {
       row->i = dim*bi+ki;                       /* cellwise numbering */
       row->g_id = row->col_g_id[dim*bi+ki];     /* global numbering */
@@ -1958,7 +2007,6 @@ cs_equation_assemble_eblock_matrix_seqs(const cs_sdm_t                *m,
     }
 
   } /* Loop on row-wise blocks */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1987,7 +2035,6 @@ cs_equation_assemble_eblock_matrix_seqt(const cs_sdm_t                *m,
 
   cs_equation_assemble_row_t  *row = eqa->row;
 
-  /* Sanity checks */
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
@@ -1998,6 +2045,7 @@ cs_equation_assemble_eblock_matrix_seqt(const cs_sdm_t                *m,
   const int  dim = eqa->ddim;
 
   /* Expand the values for a bundle of rows */
+
   cs_real_t  *_vpointer[18];
 
   for (int k = 0; k < dim; k++)
@@ -2006,15 +2054,18 @@ cs_equation_assemble_eblock_matrix_seqt(const cs_sdm_t                *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
     /* Expand all the blocks for this row */
+
     for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
       /* mIJ matrices are small square matrices of size "dim" */
+
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
@@ -2027,6 +2078,7 @@ cs_equation_assemble_eblock_matrix_seqt(const cs_sdm_t                *m,
     } /* Loop on column blocks */
 
     /* dof_ids is an interlaced array (get access to the next "dim" values */
+
     for (int ki = 0; ki < dim; ki++) {
       row->i = dim*bi+ki;                       /* cellwise numbering */
       row->g_id = row->col_g_id[dim*bi+ki];     /* global numbering */
@@ -2043,11 +2095,9 @@ cs_equation_assemble_eblock_matrix_seqt(const cs_sdm_t                *m,
     } /* Push each row of the block */
 
   } /* Loop on row-wise blocks */
-
 }
 
 #if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise matrix into the global matrix
@@ -2074,7 +2124,6 @@ cs_equation_assemble_eblock_matrix_mpis(const cs_sdm_t                *m,
 
   cs_equation_assemble_row_t  *row = eqa->row;
 
-  /* Sanity checks */
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
@@ -2085,6 +2134,7 @@ cs_equation_assemble_eblock_matrix_mpis(const cs_sdm_t                *m,
   const int  dim = eqa->ddim;
 
   /* Expand the values for a bundle of rows */
+
   cs_real_t  *_vpointer[18];
 
   for (int k = 0; k < dim; k++)
@@ -2093,15 +2143,18 @@ cs_equation_assemble_eblock_matrix_mpis(const cs_sdm_t                *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
     /* Expand all the blocks for this row */
+
     for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
       /* mIJ matrices are small square matrices of size "dim" */
+
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
@@ -2114,6 +2167,7 @@ cs_equation_assemble_eblock_matrix_mpis(const cs_sdm_t                *m,
     } /* Loop on column blocks */
 
     /* dof_ids is an interlaced array (get access to the next "dim" values */
+
     for (int ki = 0; ki < dim; ki++) {
 
       row->i = dim*bi+ki;                       /* cellwise numbering */
@@ -2134,7 +2188,6 @@ cs_equation_assemble_eblock_matrix_mpis(const cs_sdm_t                *m,
     } /* Push each row of the block */
 
   } /* Loop on row-wise blocks */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2163,7 +2216,6 @@ cs_equation_assemble_eblock_matrix_mpit(const cs_sdm_t                *m,
 
   cs_equation_assemble_row_t  *row = eqa->row;
 
-  /* Sanity checks */
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
@@ -2174,6 +2226,7 @@ cs_equation_assemble_eblock_matrix_mpit(const cs_sdm_t                *m,
   const int  dim = eqa->ddim;
 
   /* Expand the values for a bundle of rows */
+
   cs_real_t  *_vpointer[18];
 
   for (int k = 0; k < dim; k++)
@@ -2182,15 +2235,18 @@ cs_equation_assemble_eblock_matrix_mpit(const cs_sdm_t                *m,
   row->n_cols = m->n_rows;
 
   /* Switch to the global numbering */
+
   for (int i = 0; i < row->n_cols; i++)
     row->col_g_id[i] = rset->g_id[dof_ids[i]];
 
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
     /* Expand all the blocks for this row */
+
     for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
       /* mIJ matrices are small square matrices of size "dim" */
+
       const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
@@ -2203,6 +2259,7 @@ cs_equation_assemble_eblock_matrix_mpit(const cs_sdm_t                *m,
     } /* Loop on column blocks */
 
     /* dof_ids is an interlaced array (get access to the next "dim" values */
+
     for (int ki = 0; ki < dim; ki++) {
 
       row->i = dim*bi+ki;                       /* cellwise numbering */
@@ -2228,9 +2285,7 @@ cs_equation_assemble_eblock_matrix_mpit(const cs_sdm_t                *m,
     } /* Push each row of the block */
 
   } /* Loop on row-wise blocks */
-
 }
-
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/

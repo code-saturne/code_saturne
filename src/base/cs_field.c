@@ -1551,10 +1551,10 @@ cs_field_create(const char   *name,
                 int           dim,
                 bool          has_previous)
 {
-  cs_field_t  *f =  _field_create(name,
-                                  type_flag,
-                                  location_id,
-                                  dim);
+  cs_field_t  *f = _field_create(name,
+                                 type_flag,
+                                 location_id,
+                                 dim);
 
   cs_base_check_bool(&has_previous);
 

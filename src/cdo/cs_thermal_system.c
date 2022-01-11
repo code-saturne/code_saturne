@@ -158,6 +158,7 @@ _eval_aniso_kappa(cs_lnum_t                    n_elts,
   assert(thm != NULL); /* Sanity check */
 
   /* rho and cp are assumed to be uniform */
+
   const cs_real_t  rho = cs_property_get_cell_value(0, t_eval, thm->rho);
   const cs_real_t  cp = cs_property_get_cell_value(0, t_eval, thm->cp);
   const cs_real_t  ov_rhocp = 1./(rho*cp);
@@ -215,6 +216,7 @@ _eval_aniso_kappa_cw(const cs_cell_mesh_t    *cm,
   assert(thm != NULL); /* Sanity check */
 
   /* rho and cp are assumed to be uniform */
+
   const cs_real_t  rho = cs_property_get_cell_value(0, t_eval, thm->rho);
   const cs_real_t  cp = cs_property_get_cell_value(0, t_eval, thm->cp);
   const cs_real_t  ov_rhocp = 1./(rho*cp);
@@ -241,14 +243,17 @@ _init_thermal_system(void)
   BFT_MALLOC(thm, 1, cs_thermal_system_t);
 
   /* Flags */
+
   thm->model = 0;
   thm->numeric = 0;
   thm->post = 0;
 
   /* Equation */
+
   thm->thermal_eq = NULL;
 
   /* Properties */
+
   thm->lambda = NULL;
   thm->cp = NULL;
   thm->rho = NULL;
@@ -257,6 +262,7 @@ _init_thermal_system(void)
   thm->kappa_array = NULL;
 
   /* Fields */
+
   thm->temperature = NULL;
   thm->enthalpy = NULL;
   thm->total_energy = NULL;
@@ -392,6 +398,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
                                    reference temperature for instance */
 
   /* Set flags */
+
   thm->model = model;
   thm->numeric = numeric;
   thm->post = post;
@@ -643,6 +650,7 @@ cs_thermal_system_init_setup(void)
   }
 
   /* Prepare parameters for the creation of fields */
+
   const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_CDO;
   const int  log_key = cs_field_key_id("log");
   const int  post_key = cs_field_key_id("post_vis");
@@ -657,6 +665,7 @@ cs_thermal_system_init_setup(void)
     /* Temperature field is always created. Since the variable solved is either
        the "enthalpy" or the "total_energy", one creates a field for the
        temperature */
+
     thm->temperature = cs_field_create("temperature",
                                        field_mask,
                                        location_support,
@@ -680,7 +689,6 @@ cs_thermal_system_init_setup(void)
     cs_field_set_key_int(thm->enthalpy, post_key, 1);
 
   } /* enthalpy */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -739,7 +747,6 @@ cs_thermal_system_compute_steady_state(const cs_mesh_t              *mesh,
 
   cs_thermal_system_update(mesh, connect, quant, time_step,
                            true); /* operate current to previous ? */
-
 }
 
 /*----------------------------------------------------------------------------*/

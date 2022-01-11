@@ -103,6 +103,7 @@ _needs_adimensional_numbers(void)
   bool is_needed = false;
 
   /* Check for the Courant number */
+
   int n_adv_fields = cs_advection_field_get_n_fields();
   for (int adv_id = 0; adv_id < n_adv_fields; adv_id++) {
     const cs_adv_field_t  *adv = cs_advection_field_by_id(adv_id);
@@ -111,6 +112,7 @@ _needs_adimensional_numbers(void)
   }
 
   /* Check for the Peclet number */
+
   int n_equations = cs_equation_get_n_equations();
   for (int i = 0; i < n_equations; i++) {
     cs_equation_t  *eq = cs_equation_by_id(i);
@@ -120,6 +122,7 @@ _needs_adimensional_numbers(void)
   }
 
   /* Check for the Fourier number */
+
   int  n_properties = cs_property_get_n_properties();
   for (int i = 0; i < n_properties; i++) {
     const cs_property_t  *pty = cs_property_by_id(i);
@@ -152,6 +155,7 @@ _analyze_cell_array(const cs_cdo_quantities_t   *cdoq,
                                  &_min, &_max, &_sum);
 
   /* Parallel treatment */
+
   cs_real_t  min, max, sum;
   if (cs_glob_n_ranks > 1) {
 
@@ -202,9 +206,11 @@ _post_courant_number(const cs_adv_field_t       *adv,
   cs_advection_get_courant(adv, time_step->dt[0], courant);
 
   /* Brief output for the log */
+
   _analyze_cell_array(cdoq, label, courant);
 
   /* Postprocessing */
+
   cs_post_write_var(CS_POST_MESH_VOLUME,
                     CS_POST_WRITER_ALL_ASSOCIATED,
                     label,
@@ -252,9 +258,11 @@ _post_peclet_number(const cs_equation_t        *eq,
   cs_equation_compute_peclet(eq, time_step, peclet);
 
   /* Brief output for the log */
+
   _analyze_cell_array(cdoq, label, peclet);
 
   /* Postprocessing */
+
   cs_post_write_var(CS_POST_MESH_VOLUME,
                     CS_POST_WRITER_ALL_ASSOCIATED,
                     label,
@@ -299,9 +307,11 @@ _post_fourier_number(const cs_property_t        *pty,
   sprintf(label, "%s.Fourier", pty->name);
 
   /* Brief output for the log */
+
   _analyze_cell_array(cdoq, label, fourier);
 
   /* Postprocessing */
+
   cs_post_write_var(CS_POST_MESH_VOLUME,
                     CS_POST_WRITER_ALL_ASSOCIATED,
                     label,
@@ -375,6 +385,7 @@ _domain_post(void                      *input,
     return;
 
   /* Additional extra-operation(s) specific to a numerical scheme */
+
   cs_equation_extra_post();
 }
 
@@ -410,6 +421,7 @@ void
 cs_domain_post_init(cs_domain_t   *domain)
 {
   /* Set pointers of function if additional postprocessing is requested */
+
   cs_post_add_time_mesh_dep_output(_domain_post, domain);
 }
 
@@ -432,15 +444,18 @@ cs_domain_post(cs_domain_t  *domain)
   /* ================ */
 
   /* Predefined extra-operations related to advection fields */
+
   cs_advection_field_update(domain->time_step->t_cur, true);
 
   /* Log output */
+
   if (cs_domain_needs_log(domain, false)) {
 
     /* Post-processing */
     /* =============== */
 
     /* Post-processing of adimensional numbers */
+
     if (_needs_adimensional_numbers()) {
 
       cs_log_printf
@@ -450,6 +465,7 @@ cs_domain_post(cs_domain_t  *domain)
                     "Adim. number", "min", "max", "mean");
 
       /* 1. Courant numbers */
+
       int n_adv_fields = cs_advection_field_get_n_fields();
       for (int adv_id = 0; adv_id < n_adv_fields; adv_id++)
         _post_courant_number(cs_advection_field_by_id(adv_id),
@@ -457,6 +473,7 @@ cs_domain_post(cs_domain_t  *domain)
                              domain->time_step);
 
       /* 2. Peclet numbers */
+
       int n_equations = cs_equation_get_n_equations();
       for (int i = 0; i < n_equations; i++)
         _post_peclet_number(cs_equation_by_id(i),
@@ -464,6 +481,7 @@ cs_domain_post(cs_domain_t  *domain)
                             domain->time_step);
 
       /* 3. Fourier numbers */
+
       int  n_properties = cs_property_get_n_properties();
       for (int i = 0; i < n_properties; i++)
         _post_fourier_number(cs_property_by_id(i),
@@ -477,33 +495,39 @@ cs_domain_post(cs_domain_t  *domain)
     } /* Needs to compute adimensional numbers */
 
     /* 4. Equation balance */
+
     cs_equation_post_balance(domain->mesh,
                              domain->connect,
                              domain->cdo_quantities,
                              domain->time_step);
 
     /* 5.a Specific operations for the GWF module */
+
     if (cs_gwf_is_activated())
       cs_gwf_extra_op(domain->connect, domain->cdo_quantities);
 
     /* 5.b Specific operations for the Maxwell module */
+
     if (cs_maxwell_is_activated())
       cs_maxwell_extra_op(domain->connect, domain->cdo_quantities);
 
     /* 5.c Specific operations for the Navier-Stokes module */
+
     if (cs_navsto_system_is_activated())
       cs_navsto_system_extra_op(domain->mesh,
                                 domain->connect,
                                 domain->cdo_quantities,
                                 domain->time_step);
 
-    /* 5.c Specific operations for the Solidification module */
+    /* 5.d Specific operations for the Solidification module */
+
     if (cs_solidification_is_activated())
       cs_solidification_extra_op(domain->connect,
                                  domain->cdo_quantities,
                                  domain->time_step);
 
     /* Basic statistic related to variables */
+
     if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY)
       cs_log_iteration(); /* Otherwise called from the FORTRAN part */
 
@@ -519,9 +543,11 @@ cs_domain_post(cs_domain_t  *domain)
      are also handled during the call of this function thanks to
      cs_post_add_time_mesh_dep_output() function pointer
   */
+
   cs_post_time_step_output(domain->time_step);
 
   /* User-defined extra operations */
+
   cs_user_extra_operations(domain);
 
   cs_timer_t  t1 = cs_timer_time();
@@ -542,9 +568,8 @@ cs_domain_read_restart(cs_domain_t  *domain)
   if (cs_restart_present() == false)
     return;
 
-
   cs_restart_t  *restart = cs_restart_create("main.csc", /* restart file name */
-                                             NULL,   /* directory name */
+                                             NULL,       /* directory name */
                                              CS_RESTART_MODE_READ);
 
   const char err_i_val[] = N_("Restart mismatch for: %s\n"
@@ -554,6 +579,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
   int retval;
 
   /* Read a new section: version */
+
   int  version = 400000;
   retval = cs_restart_read_section(restart,
                           "code_saturne:checkpoint:main:version", // secname
@@ -571,11 +597,13 @@ cs_domain_read_restart(cs_domain_t  *domain)
               "code_saturne:checkpoint:main:version", version, i_val);
 
   /* Read a new section: field information */
+
   cs_map_name_to_id_t  *old_field_map = NULL;
 
   cs_restart_read_field_info(restart, &old_field_map);
 
   /* Read a new section */
+
   int  n_equations = cs_equation_get_n_equations();
   retval = cs_restart_read_section(restart,
                                    "cdo:n_equations",
@@ -592,6 +620,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
               "cdo:n_equations", n_equations, i_val);
 
   /* Read a new section */
+
   int  n_properties = cs_property_get_n_properties();
   retval = cs_restart_read_section(restart,
                                    "cdo:n_properties",
@@ -608,6 +637,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
               "cdo:n_properties", n_properties, i_val);
 
   /* Read a new section */
+
   int  n_adv_fields = cs_advection_field_get_n_fields();
   retval = cs_restart_read_section(restart,
                                    "cdo:n_adv_fields",
@@ -624,6 +654,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
               "cdo:n_adv_fields", n_adv_fields, i_val);
 
   /* Read a new section: activation or not of the groundwater flow module */
+
   int  igwf = 0; /* not activated by default */
   if (cs_gwf_is_activated()) igwf = 1;
   retval = cs_restart_read_section(restart,
@@ -641,6 +672,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
               "groundwater_flow_module", igwf, i_val);
 
   /* Read a new section: activation or not of the Navier-Stokes system */
+
   int  inss = 0; /* not activated by default */
   if (cs_navsto_system_is_activated()) inss = 1;
   retval = cs_restart_read_section(restart,
@@ -658,6 +690,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
               "navier_stokes_system", inss, i_val);
 
   /* Read a new section: computation or not of the wall distance */
+
   int  iwall = 0;
   if (cs_walldistance_is_activated()) iwall = 1;
   retval = cs_restart_read_section(restart,
@@ -675,6 +708,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
               "wall_distance", iwall, i_val);
 
   /* Read a new section: number of computed time steps */
+
   int  nt_cur = 0;
   retval = cs_restart_read_section(restart,
                                    "cur_time_step",
@@ -688,6 +722,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
               __func__, retval);
 
   /* Read a new section: number of computed time steps */
+
   cs_real_t  t_cur = 0;
   retval = cs_restart_read_section(restart,
                                    "cur_time",
@@ -706,12 +741,14 @@ cs_domain_read_restart(cs_domain_t  *domain)
   cs_time_step_define_prev(nt_cur, t_cur);
 
   /* Main variables */
+
   int  t_id_flag = 0; /* Only current values */
   cs_restart_read_variables(restart, old_field_map, t_id_flag, NULL);
 
   cs_map_name_to_id_destroy(&old_field_map);
 
   /* Read fields related to the main restart file */
+
   cs_restart_read_fields(restart, CS_RESTART_MAIN);
 
   /* TODO: read field values for previous time step if needed */
@@ -723,6 +760,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
   }
 
   /* Initialization of the scheme context */
+
   cs_equation_initialize(domain->mesh,
                          domain->time_step,
                          domain->cdo_quantities,
@@ -730,12 +768,15 @@ cs_domain_read_restart(cs_domain_t  *domain)
 
   /* Read additional arrays of values according to the type of
      equation and the discretization scheme */
+
   cs_equation_read_extra_restart(restart);
 
   /* Initialize time step if a restart frequency is set */
+
   cs_restart_checkpoint_set_last_ts(nt_cur);
 
   /* Finalize restart process */
+
   cs_restart_destroy(&restart);
 }
 
@@ -758,6 +799,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                                              CS_RESTART_MODE_WRITE);
 
   /* Write a new section: version */
+
   int  version = 400000;
   cs_restart_write_section(restart,
                            "code_saturne:checkpoint:main:version", // secname
@@ -767,9 +809,11 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            &version);                              // value(s)
 
   /* Write a new section: field information */
+
   cs_restart_write_field_info(restart);
 
   /* Write a new section */
+
   int  n_equations = cs_equation_get_n_equations();
   cs_restart_write_section(restart,
                            "cdo:n_equations",
@@ -779,6 +823,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            &n_equations);
 
   /* Write a new section */
+
   int  n_properties = cs_property_get_n_properties();
   cs_restart_write_section(restart,
                            "cdo:n_properties",
@@ -788,6 +833,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            &n_properties);
 
   /* Write a new section */
+
   int  n_adv_fields = cs_advection_field_get_n_fields();
   cs_restart_write_section(restart,
                            "cdo:n_adv_fields",
@@ -797,6 +843,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            &n_adv_fields);
 
   /* Write a new section: activation or not of the groundwater flow module */
+
   int  igwf = 0; /* not activated by default */
   if (cs_gwf_is_activated()) igwf = 1;
   cs_restart_write_section(restart,
@@ -807,6 +854,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            &igwf);
 
   /* Write a new section: activation or not of the Navier-Stokes system */
+
   int  inss = 0; /* not activated by default */
   if (cs_navsto_system_is_activated()) inss = 1;
   cs_restart_write_section(restart,
@@ -817,6 +865,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            &inss);
 
   /* Write a new section: computation or not of the wall distance */
+
   int  iwall = 0;
   if (cs_walldistance_is_activated()) iwall = 1;
   cs_restart_write_section(restart,
@@ -827,6 +876,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            &iwall);
 
   /* Write a new section: number of computed time steps */
+
   int  ntcabs = domain->time_step->nt_cur;
   cs_restart_write_section(restart,
                            "cur_time_step",
@@ -836,6 +886,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            &ntcabs);
 
   /* Read a new section: number of computed time steps */
+
   cs_real_t  ttcabs = domain->time_step->t_cur;
   cs_restart_write_section(restart,
                            "cur_time",
@@ -845,22 +896,27 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            &ttcabs);
 
   /* Main variables */
+
   int  t_id_flag = 0; /* Only current values */
   cs_restart_write_variables(restart, t_id_flag, NULL);
 
   /* Write fields related to the main restart file */
+
   cs_restart_write_fields(restart, CS_RESTART_MAIN);
 
   /* TODO: write field values for previous time step if needed */
 
   /* Write additional arrays of values according to the type of
      equation and the discretization scheme */
+
   cs_equation_write_extra_restart(restart);
 
   /* Indicate that a chechpoint has been done */
+
   cs_restart_checkpoint_done(domain->time_step);
 
   /* Finalize restart process */
+
   cs_restart_destroy(&restart);
 }
 

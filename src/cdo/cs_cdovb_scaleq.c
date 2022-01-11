@@ -694,8 +694,8 @@ _svb_assemble(const cs_cdovb_scaleq_t           *eqc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief    Check if the generic structures for building a CDO-Vb scheme are
- *           allocated
+ * \brief  Check if the generic structures for building a CDO-Vb scheme are
+ *         allocated
  *
  * \return  true or false
  */
@@ -712,9 +712,8 @@ cs_cdovb_scaleq_is_initialized(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief    Allocate work buffer and general structures related to CDO
- *           vertex-based schemes
- *           Set shared pointers.
+ * \brief  Allocate work buffer and general structures related to CDO
+ *         vertex-based schemes. Set shared pointers.
  *
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
