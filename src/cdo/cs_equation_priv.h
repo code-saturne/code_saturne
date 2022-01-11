@@ -437,7 +437,8 @@ struct _cs_equation_t {
    * cs_equation_solve_t
    *
    * \var solve
-   * Pointer of function given by the prototype cs_equation_init_values_t
+   * Pointer to a function given by the generic prototype cs_equation_solve_t
+   * Case of an unsteady solution
    *
    * \var compute_balance
    * Pointer of function given by the prototype cs_equation_get_balance_t
