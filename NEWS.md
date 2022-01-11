@@ -8,6 +8,8 @@ User changes:
 
 Bug fixes:
 
+- Fix anisotropic gradient reconstruction using Green-Gauss + LSQ face values.
+
 - Fix division of model-based thermal diffusivity by Cp for some models
   solving with enthalpy and using a variable (local) thermal diffusivity,
   including at least the electric arcs module.
@@ -85,7 +87,7 @@ Bug fixes:
   for the segregation model in the solidification module at least.
 
 Release 7.0.1 (September 1 2021)
---------------------------------
+=======
 
 User changes:
 

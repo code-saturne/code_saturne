@@ -7415,7 +7415,7 @@ _gradient_scalar(const char                    *var_name,
                                  bc_coeff_b,
                                  var,
                                  (const cs_real_6_t *)c_weight,
-                                 grad);
+                                 r_grad);
       else
         _lsq_scalar_gradient(mesh,
                              fvq,
