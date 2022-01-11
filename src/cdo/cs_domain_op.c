@@ -501,17 +501,25 @@ cs_domain_post(cs_domain_t  *domain)
                              domain->cdo_quantities,
                              domain->time_step);
 
-    /* 5.a Specific operations for the GWF module */
+    /* Predefined extra-operations related to
+       - groundwater flows
+       - Maxwell module
+       - Navier-Stokes
+       - thermal system
+       - Solidification
+    */
+
+    /* 5.a Specific extra operations for the GWF module */
 
     if (cs_gwf_is_activated())
       cs_gwf_extra_op(domain->connect, domain->cdo_quantities);
 
-    /* 5.b Specific operations for the Maxwell module */
+    /* 5.b Specific extra operations for the Maxwell module */
 
     if (cs_maxwell_is_activated())
       cs_maxwell_extra_op(domain->connect, domain->cdo_quantities);
 
-    /* 5.c Specific operations for the Navier-Stokes module */
+    /* 5.c Specific extra operations for the Navier-Stokes module */
 
     if (cs_navsto_system_is_activated())
       cs_navsto_system_extra_op(domain->mesh,
@@ -519,7 +527,13 @@ cs_domain_post(cs_domain_t  *domain)
                                 domain->cdo_quantities,
                                 domain->time_step);
 
-    /* 5.d Specific operations for the Solidification module */
+    /* 5.d Specific extra operations for the thermal module */
+
+    if (cs_thermal_system_is_activated())
+      cs_thermal_system_extra_op(domain->connect,
+                                 domain->cdo_quantities);
+
+    /* 5.e Specific extra operations for the solidification module */
 
     if (cs_solidification_is_activated())
       cs_solidification_extra_op(domain->connect,
@@ -533,7 +547,7 @@ cs_domain_post(cs_domain_t  *domain)
 
   } /* Needs a new log */
 
-  /* Predefined extra-operations related to
+  /* Predefined extra-postprocessing related to
      - the domain (advection fields and properties),
      - equations
      - groundwater flows
