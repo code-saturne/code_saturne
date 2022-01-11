@@ -1,6 +1,11 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Bug fixes:
+
+- Fix gradient reconstruction for anisotropic cases using
+  Green-Gauss with least-squares gradient face values algorithm.
+
 Release 7.1.0 (December 21 2021)
 --------------------------------
 
