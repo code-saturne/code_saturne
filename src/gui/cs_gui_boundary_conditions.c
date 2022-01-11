@@ -106,17 +106,10 @@ BEGIN_C_DECLS
 typedef enum {
   BY_XDEF = -1,           /* to mark usage of newer system */
   DIRICHLET_IMPLICIT,
-  EXCHANGE_COEFF,
-  EXCHANGE_COEFF_FORMULA,
   HYDRAULIC_DIAMETER,
   NEUMANN_IMPLICIT,
   TURBULENT_INTENSITY,
 } cs_boundary_value_t;
-
-typedef struct {
-  double val1;             /* fortran array RCODCL(.,.,1) mapping             */
-  double val2;             /* fortran array RCODCL(.,.,2) mapping             */
-} cs_val_t;
 
 typedef struct {
   int        read_data;    /* 1 if profile is calculated from data            */
@@ -154,10 +147,9 @@ typedef struct {
   double        *dh;       /* inlet hydraulic diameter */
   double        *xintur;   /* inlet turbulent intensity */
   int          **type_code;  /* type of boundary for each variable */
-  cs_val_t     **values;   /* fortran array RCODCL mapping */
   double      ***distch;   /* ratio for each coal */
   double        *rough;    /* roughness size */
-  bool         *head_loss_e;  /* formula for head loss (free inlet/outlet) */
+  bool          *head_loss_e;  /* formula for head loss (free inlet/outlet) */
 
   cs_meteo_t    *meteo;     /* inlet or outlet info for atmospheric flow */
 
@@ -1193,7 +1185,7 @@ _dof_meg_profile(cs_lnum_t         n_elts,
     }
     else {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
-        for (cs_lnum_t k = 0; k < 3; k++)
+        for (cs_lnum_t k = 0; k < dim; k++)
           retval[i*dim + k] = v_loc[k*n_elts + i];
       }
     }
@@ -1210,8 +1202,109 @@ _dof_meg_profile(cs_lnum_t         n_elts,
     else {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
-        for (cs_lnum_t k = 0; k < 3; k++)
+        for (cs_lnum_t k = 0; k < dim; k++)
           retval[elt_id*dim + k] = v_loc[k*n_elts + i];
+      }
+    }
+
+  }
+
+  BFT_FREE(v_loc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute the velocity at boundary faces
+ *        using a MEG generated norm and direction for exchange coefficients.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces
+ *
+ * The retval values can be decomposed into the alpha, u0, and g values in:
+ *
+ * K du/dn + alpha*(u - u0) = g
+ *
+ * For multidimentsional cases, we assume scalar alpha, variable dimension u0,
+ * and dimension^2 g (g = 0 here but storage required), so we have a stride
+ * of 1 + dim + dim*dim, with values alpha, u0, and g in order.
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_meg_exchange_coefficient_profile(cs_lnum_t         n_elts,
+                                      const cs_lnum_t  *elt_ids,
+                                      bool              dense_output,
+                                      void             *input,
+                                      cs_real_t        *retval)
+{
+  cs_gui_boundary_meg_context_t  *c
+    = (cs_gui_boundary_meg_context_t *)input;
+
+  const cs_lnum_t dim = c->dim;
+  const cs_lnum_t stride = 1 + dim + dim*dim;
+
+  if (dim > 3)
+    bft_error(__FILE__, __LINE__, 0,
+              _("In %s, variable dimension > 3 (%s) not handled yet\n"
+                "for exchange coefficient boundary coefficients."),
+                __func__, c->name);
+
+  cs_real_t *v_loc = cs_meg_boundary_function(c->zone,
+                                              c->name,
+                                              c->condition);
+
+  /* Dirichlet values produced first, exchange coefficient last */
+
+  if (dense_output) {  /* common/expected case */
+
+    if (dim == 1) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        retval[i*3]   = -v_loc[n_elts + i];
+        retval[i*3+1] = v_loc[i];
+        retval[i*3+2] = 0;
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        retval[i*stride] = -v_loc[dim*n_elts + i];
+        for (cs_lnum_t k = 0; k < dim; k++) {
+          retval[i*stride + k + 1] = v_loc[k*n_elts + i];
+        }
+        for (cs_lnum_t k = 1+dim; k < stride; k++) {
+          retval[i*stride + k] = 0.;
+        }
+      }
+    }
+
+  }
+  else { /* sparse/indirect case */
+
+    if (dim == 1) {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        retval[elt_id*3]   = -v_loc[n_elts + i];
+        retval[elt_id*3+1] = v_loc[i];
+        retval[elt_id*3+2] = 0;
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+        retval[elt_id*stride] = -v_loc[dim*n_elts + i];
+        for (cs_lnum_t k = 0; k < dim; k++) {
+          retval[elt_id*stride + k + 1] = v_loc[k*n_elts + i];
+        }
+        for (cs_lnum_t k = 1+dim; k < stride; k++) {
+          retval[elt_id*stride + k] = 0.;
+        }
       }
     }
 
@@ -1376,15 +1469,33 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
 
     const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
     if (s != NULL) {
-      boundaries->type_code[f_id][izone] = EXCHANGE_COEFF_FORMULA;
+      cs_gui_boundary_meg_context_t  *c
+        = _add_boundary_meg_context(z, f->name, choice, dim);
+
+      cs_equation_add_bc_by_dof_func(eqp,
+                                     CS_PARAM_BC_ROBIN,
+                                     z->name,
+                                     cs_flag_boundary_face,
+                                     _dof_meg_exchange_coefficient_profile,
+                                     c);
     }
   }
 
   else if (! strcmp(choice, "exchange_coefficient")) {
 
-    boundaries->type_code[f_id][izone] = EXCHANGE_COEFF;
+    if (dim > 3)
+      bft_error(__FILE__, __LINE__, 0,
+                _("In %s, variable dimension > 3 (%s) not handled yet\n"
+                  "for exchange coefficient boundary coefficients."),
+                __func__, f->name);
 
-    for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_s, "dirichlet");
+    cs_tree_node_t *tn = NULL;
+    cs_real_t value[1 + 3 + 9];
+
+    for (int i = 0; i < 1+3+9; i++)
+      value[i] = 0.;
+
+    for (tn = cs_tree_node_get_child(tn_s, "dirichlet");
          tn != NULL;
          tn = cs_tree_node_get_next_of_name(tn)) {
       int c_id = (dim == 1) ? 0 : -1;
@@ -1392,22 +1503,21 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
       if (c_id > -1 && c_id < f->dim) {
         const  cs_real_t *v = cs_tree_node_get_values_real(tn);
         if (v != NULL)
-          boundaries->values[f_id][izone*dim + c_id].val1 = v[0];
+          value[1 + c_id] = v[0];
       }
     }
 
-    for (cs_tree_node_t *tn = cs_tree_node_get_child(tn_s, choice);
-         tn != NULL;
-         tn = cs_tree_node_get_next_of_name(tn)) {
-      int c_id = (dim == 1) ? 0 : -1;
-      cs_gui_node_get_child_int(tn, "component", &c_id);
-      if (c_id > -1 && c_id < f->dim) {
-        const  cs_real_t *v = cs_tree_node_get_values_real(tn);
-        if (v != NULL)
-          boundaries->values[f_id][izone*dim + c_id].val2 = v[0];
-      }
+    tn = cs_tree_node_get_child(tn_s, choice);
+    if (tn != NULL) {
+      const  cs_real_t *v = cs_tree_node_get_values_real(tn);
+      if (v != NULL)
+        value[0] = - v[0];
     }
 
+    cs_equation_add_bc_by_value(eqp,
+                                CS_PARAM_BC_ROBIN,
+                                z->name,
+                                value);
   }
 
   else if (cs_gui_strcmp(choice, "dirichlet_implicit")) {
@@ -1838,7 +1948,6 @@ _init_boundaries(void)
   BFT_MALLOC(boundaries->dh,        n_zones,    double);
   BFT_MALLOC(boundaries->xintur,    n_zones,    double);
   BFT_MALLOC(boundaries->type_code, n_fields,   int *);
-  BFT_MALLOC(boundaries->values,    n_fields,   cs_val_t *);
 
   boundaries->distch = NULL;
 
@@ -1896,7 +2005,6 @@ _init_boundaries(void)
 
     if (f->type & CS_FIELD_VARIABLE) {
       BFT_MALLOC(boundaries->type_code[f->id], n_zones, int);
-      BFT_MALLOC(boundaries->values[f->id], n_zones * f->dim, cs_val_t);
     }
   }
 
@@ -1957,10 +2065,6 @@ _init_boundaries(void)
       int i = f->id;
       for (int izone = 0; izone < n_zones; izone++) {
         boundaries->type_code[i][izone] = -1;
-        for (int ii = 0; ii < f->dim; ii++) {
-          boundaries->values[i][izone * f->dim + ii].val1 = 1.e30;
-          boundaries->values[i][izone * f->dim + ii].val2 = 1.e30;
-        }
       }
     }
   }
@@ -2493,8 +2597,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
 
-  const int n_fields = cs_field_n_fields();
-
   const int ncharm = CS_COMBUSTION_MAX_COALS;
 
   bool solid_fuels = false;
@@ -2539,57 +2641,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
     bft_printf("---zone %i nature: %s\n", zone_nbr, boundaries->nature[izone]);
     bft_printf("---zone %i number of faces: %i\n", zone_nbr, bz->n_elts);
 #endif
-
-    /* for each field */
-    for (int f_id = 0; f_id < n_fields; f_id++) {
-      const cs_field_t  *f = cs_field_by_id(f_id);
-      const int var_key_id = cs_field_key_id("variable_id");
-      cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
-
-      if (f->type & CS_FIELD_CDO)
-        continue; /* TODO: Avoid a SIGSEV (when sharing CDO and FV, one has to
-                     find a better fix) */
-
-      if (f->type & CS_FIELD_VARIABLE) {
-
-        switch (boundaries->type_code[f->id][izone]) {
-
-          case EXCHANGE_COEFF:
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
-              for (cs_lnum_t i = 0; i < f->dim; i++) {
-                icodcl[(ivar + i) * n_b_faces + face_id] = 5;
-                rcodcl[0 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + face_id]
-                  = boundaries->values[f->id][izone * f->dim + i].val1;
-                rcodcl[1 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + face_id]
-                  = boundaries->values[f->id][izone * f->dim + i].val2;
-              }
-            }
-            break;
-
-          case EXCHANGE_COEFF_FORMULA:
-            {
-              cs_real_t *new_vals =
-                cs_meg_boundary_function(bz, f->name, "exchange_coefficient_formula");
-
-              for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
-                for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-                  cs_lnum_t face_id = bz->elt_ids[elt_id];
-                  icodcl[(ivar + ii) *n_b_faces + face_id] = 5;
-
-                  rcodcl[0 * n_b_faces * (*nvar) + (ivar + ii) * n_b_faces + face_id]
-                    = new_vals[ii * bz->n_elts + elt_id];
-
-                  rcodcl[1 * n_b_faces * (*nvar) + (ivar + ii) * n_b_faces + face_id]
-                    = new_vals[f->dim * bz->n_elts + elt_id];
-                }
-              }
-              BFT_FREE(new_vals);
-              break;
-            }
-        }
-      } /* switch */
-    } /* Loop on fields */
 
     if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1) {
       const cs_field_t  *f = CS_F_(potr);
@@ -3408,8 +3459,6 @@ cs_gui_boundary_conditions_free_memory(void)
       if (f->type & CS_FIELD_VARIABLE) {
         if (boundaries->type_code != NULL)
           BFT_FREE(boundaries->type_code[f->id]);
-        if (boundaries->values != NULL)
-          BFT_FREE(boundaries->values[f->id]);
       }
     }
 
@@ -3459,7 +3508,6 @@ cs_gui_boundary_conditions_free_memory(void)
     BFT_FREE(boundaries->dh);
     BFT_FREE(boundaries->xintur);
     BFT_FREE(boundaries->type_code);
-    BFT_FREE(boundaries->values);
     BFT_FREE(boundaries->rough);
     BFT_FREE(boundaries->head_loss_e);
 

@@ -589,6 +589,125 @@ _compute_neumann_bc(const cs_mesh_t            *mesh,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Dirichlet BCs
+ *
+ * \param[in]       mesh         pointer to mesh structure
+ * \param[in]       boundaries   pointer to associated boundaries
+ * \param[in]       f            pointer to associated field
+ * \param[in]       eqp          pointer to a cs_equation_param_t
+ * \param[in]       def          pointer to a boundary condition definition
+ * \param[in]       description  description string (for error logging)
+ * \param[in]       nvar         number of variables
+ * \param[in]       var_id       matching variable id
+ * \param[in]       t_eval       time at which one evaluates the boundary cond.
+ * \param[in, out]  icodcl       boundary conditions type array
+ * \param[in, out]  rcodcl       boundary conditions values array
+ * \param           eval_buf     evaluation bufferb (work array)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_compute_robin_bc(const cs_mesh_t            *mesh,
+                  const cs_boundary_t        *boundaries,
+                  const cs_field_t           *f,
+                  const cs_equation_param_t  *eqp,
+                  const cs_xdef_t            *def,
+                  const char                 *description,
+                  cs_lnum_t                   nvar,
+                  cs_lnum_t                   var_id,
+                  cs_real_t                   t_eval,
+                  int                        *icodcl,
+                  double                     *rcodcl,
+                  cs_real_t                   eval_buf[])
+{
+  CS_UNUSED(t_eval);
+
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
+  const cs_zone_t *bz = cs_boundary_zone_by_id(def->z_id);
+  const cs_lnum_t *elt_ids = bz->elt_ids;
+  const cs_lnum_t  n_elts = bz->n_elts;
+  const cs_lnum_t  def_dim = def->dim;
+
+  const cs_lnum_t stride = 1 + eqp->dim + eqp->dim*eqp->dim;
+
+  assert(stride == def->dim);
+
+  cs_boundary_type_t boundary_type
+    = boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
+
+  int bc_type = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
+    bc_type = 6;
+
+  if (stride != def_dim) {
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Boundary condition definition:\n"
+                " field %s, zone %s, type %s;\n"
+                " dimension %d does not match expected dimension (%d)."),
+              __func__, f->name, bz->name, cs_xdef_type_get_name(def->type),
+              def_dim, stride);
+  }
+
+  switch(def->type) {
+
+  case CS_XDEF_BY_VALUE:  /* direct application (optimization)
+                             for constant value */
+    {
+      const cs_real_t  *constant_val = (cs_real_t *)def->context;
+
+      for (cs_lnum_t coo_id = 0; coo_id < eqp->dim; coo_id++) {
+
+        int        *_icodcl  = icodcl + (var_id+coo_id)*n_b_faces;
+        cs_real_t  *_rcodcl1 = rcodcl + (var_id+coo_id)*n_b_faces;
+        cs_real_t  *_rcodcl2 = rcodcl + n_b_faces*nvar
+                                      + (var_id+coo_id)*n_b_faces;
+
+        const cs_real_t alpha = constant_val[0];
+        const cs_real_t u0 = constant_val[1 + coo_id];
+
+#       pragma omp parallel for if (n_elts > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          const cs_lnum_t  elt_id = elt_ids[i];
+          _icodcl[elt_id]  = bc_type;
+          _rcodcl1[elt_id] = u0;
+          _rcodcl2[elt_id] = -alpha;
+        }
+
+      }
+    }
+    break;
+
+  default:
+    {
+      cs_xdef_eval_at_zone(def,
+                           description,
+                           t_eval,
+                           true,  /* dense */
+                           eval_buf);
+
+      for (cs_lnum_t coo_id = 0; coo_id < eqp->dim; coo_id++) {
+
+        int        *_icodcl  = icodcl + (var_id+coo_id)*n_b_faces;
+        cs_real_t  *_rcodcl1 = rcodcl + (var_id+coo_id)*n_b_faces;
+        cs_real_t  *_rcodcl2 = rcodcl + n_b_faces*nvar
+                                      + (var_id+coo_id)*n_b_faces;
+
+#       pragma omp parallel for if (n_elts > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          const cs_lnum_t  elt_id = elt_ids[i];
+          _icodcl[elt_id]  = bc_type;
+          _rcodcl1[elt_id] = eval_buf[stride*i + 1 + coo_id];
+          _rcodcl2[elt_id] = -eval_buf[stride*i];
+        }
+
+      }
+    }
+    break;
+  }
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -1395,6 +1514,31 @@ cs_boundary_conditions_compute(int     nvar,
                             icodcl,
                             rcodcl,
                             eval_buf);
+        break;
+
+      case CS_PARAM_BC_ROBIN:
+        {
+          cs_lnum_t stride = 1 + f->dim + f->dim*f->dim;
+          cs_lnum_t n_max_vals = stride * n_b_faces;
+          if (n_max_vals > eval_buf_size) {
+            eval_buf_size = n_max_vals;
+            BFT_FREE(eval_buf);
+            BFT_MALLOC(eval_buf, eval_buf_size, cs_real_t);
+          }
+
+          _compute_robin_bc(mesh,
+                            boundaries,
+                            f,
+                            eqp,
+                            def,
+                            description,
+                            nvar,
+                            var_id,
+                            t_eval,
+                            icodcl,
+                            rcodcl,
+                            eval_buf);
+        }
         break;
 
       default:
