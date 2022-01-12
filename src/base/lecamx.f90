@@ -249,7 +249,7 @@ if (nberro.ne.0) then
   jvolfl = 0
 endif
 
-car54 =' Finished reading options                             '
+car54 =' Finished reading options.                            '
 write(nfecra,1110)car54
 
 !===============================================================================
@@ -429,11 +429,11 @@ call restart_read_linked_fields(rp, oflmap, "diffusivity_id", nlfld)
 !       c'est discutable pour rho
 
 if (nberro.ne.0) then
-  car54 = 'Lecture des proprietes physiques                    '
+  car54 = 'Reading physical properties                         '
   write(nfecra,8300)car54
 endif
 
-car54 = ' Fin de la lecture des proprietes physiques           '
+car54 = ' Finished reading physical properties.                '
 write(nfecra,1110)car54
 
 !===============================================================================
@@ -450,7 +450,7 @@ jdtvar = ival(1)
 !  ---> On s'arrete si erreur
 !     Si on ne peut pas relire un entier, c'est que le fichier n'est pas bon
 if (ierror.ne.0) then
-  car54 ='Erreur a la lecture du mode de marche en temps        '
+  car54 ='Error reading the time stepping mode                  '
   write(nfecra,9200)car54
   call csexit(1)
 endif
@@ -487,11 +487,11 @@ endif
 !       c'est discutable
 
 if (nberro.ne.0) then
-  car54 = 'Lecture du pas de temps                               '
+  car54 = 'Reading time step                                     '
   write(nfecra,8300)car54
 endif
 
-car54 = ' Fin de la lecture du pas de temps                    '
+car54 = ' Finished reading time step.                          '
 write(nfecra,1110)car54
 
 !===============================================================================
@@ -576,11 +576,11 @@ if (nfaiok.eqv..true. .or. nfabok.eqv..true.) then
 
   ! In case of error, warn but do not stop
   if (nberro.ne.0) then
-    car54 = 'Lecture des flux de masse                             '
+    car54 = 'Reading mass flux                                     '
     write(nfecra,8300) car54
   endif
 
-  car54 = ' Fin de la lecture des flux de masse                  '
+  car54 = ' Finished reading mass flux                           '
   write(nfecra,1110) car54
 
 endif
@@ -614,11 +614,11 @@ if (ilu.eq.1) then
 !       (on n'a pas forcement les coefs 2
 !        si on prend les fichiers d'une version anterieure)
   if (nberro.ne.0) then
-    car54 = 'Lecture des conditions aux limites                    '
+    car54 = 'Reading boundary conditions                           '
     write(nfecra,8300)car54
   endif
 
-  car54 = ' Fin de la lecture des conditions aux limites         '
+  car54 = ' Finished reading boundary conditions.                '
   write(nfecra,1110)car54
 
 endif
@@ -640,7 +640,7 @@ ilu = 0
 call restart_read_linked_fields(rp, oflmap, "source_term_prev_id", ilu)
 
 if (ilu.ne.0) then
-  car54 =' Fin de la lecture des termes sources                 '
+  car54 =' Finished reading source terms.                       '
   write(nfecra,1110)car54
 endif
 
@@ -684,12 +684,12 @@ if (ineedy.eq.1) then
 endif
 
 if (nberro.ne.0) then
-  car54 = 'Lecture de la distance a la paroi                     '
+  car54 = 'Reading wall distance                                 '
   write(nfecra,8300)car54
 endif
 
 if (ilu.ne.0) then
-  car54 = ' Fin de la lecture de la distance a la paroi          '
+  car54 = ' Finished reading wall distance.                      '
   write(nfecra,1110)car54
 endif
 
@@ -799,7 +799,7 @@ if (iale.ge.1 .and. jale.ge.1) then
     call csexit(1)
   endif
 
-  car54 =' Fin de la lecture des donnees ALE                    '
+  car54 =' Finished reading ALE information.                    '
   write(nfecra,1110)car54
 
   nberro=0
@@ -850,7 +850,7 @@ if (iale.ge.1 .and. jale.ge.1) then
 
     enddo
 
-    car54 =' Fin de la lecture des donnees des structures ALE   '
+    car54 =' Finished reading ALE structures information        '
     write(nfecra,1110)car54
 
   endif
@@ -1464,12 +1464,12 @@ if ( ippmod(icfuel).ge.0 ) then
 endif
 
 if (nberro.ne.0) then
-  car54 = 'Lecture des informations combustion                   '
+  car54 = 'Reading combustion information                        '
   write(nfecra,8300)car54
 endif
 
 if (ilu.ne.0) then
-  car54=' Fin de la lecture des informations combustion        '
+  car54=' Finished reading combustion information.             '
   write(nfecra,1110)car54
 endif
 
@@ -1536,12 +1536,12 @@ if ( ippmod(ielarc).ge.1 ) then
 endif
 
 if (nberro.ne.0) then
-  car54 = 'Lecture des informations electriques                  '
+  car54 = 'Reading electric information                          '
   write(nfecra,8300)car54
 endif
 
 if (ilu.ne.0) then
-  car54=' Fin de la lecture des informations electriques       '
+  car54=' Finished reading electric information.               '
   write(nfecra,1110)car54
 endif
 
@@ -1575,7 +1575,7 @@ return
  1000 format(/,                                                   &
      3X,'      READING THE AUXILIARY RESTART FILE             ',/)
  1100 format(' Start reading                                          ')
- 1110 format('  ',A54                                                  )
+ 1110 format('  ', a54                                                 )
  1200 format(' End reading                                            ')
 
 ! --- INFORMATIONS
@@ -1649,7 +1649,7 @@ return
 '@                                                            ',/,&
 '@ @@ WARNING: WHEN READING THE AUXILIARY RESTART FILE        ',/,&
 '@    =======                                                 ',/,&
-'@      ', A54                                                 ,/,&
+'@      ', a54                                                 ,/,&
 '@                                                            ',/,&
 '@    It was not possible to read some values from the        ',/,&
 '@      auxiliary restart file.                               ',/,&
@@ -1757,7 +1757,7 @@ return
 '@ @@ WARNING: STOP WHILE READING THE AUXILIARY RESTART FILE  ',/,&
 '@    =======                                                 ',/,&
 '@                                                            ',/,&
-'@      ', A54                                                 ,/,&
+'@      ', a54                                                 ,/,&
 '@                                                            ',/,&
 '@    The run can not be executed.                            ',/,&
 '@                                                            ',/,&
