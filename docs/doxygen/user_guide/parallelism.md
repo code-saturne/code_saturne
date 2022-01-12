@@ -131,14 +131,11 @@ Note that periodic faces are not part of the domain boundary:
 periodicity is interpreted as a "geometric" condition
 rather than a classical boundary condition.
 
-Some particular points should be reminded:
+Some particular points should be noted:
 
 * Periodicity should work when the periodic boundaries are meshed
   differently (periodicity of non-conforming faces), *except* for
-  the case of a 180 degree rotation periodicity with faces coupled
-  on the rotation axis.
+  the case of a 180 degree rotation periodicity.
 * Rotation periodicity is incompatible with
   * semi-transparent radiation,
   * reinforced velocity-pressure coupling `ipucou=1`
-* In the case of rotation periodicity with the uncoupled *R<sub>ij</sub> model,
-  some terms which are usually implicited are handled explicitely.
