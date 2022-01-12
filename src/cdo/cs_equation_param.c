@@ -1314,7 +1314,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   dst->default_enforcement = ref->default_enforcement;
   dst->strong_pena_bc_coeff = ref->strong_pena_bc_coeff;
   dst->n_bc_defs = ref->n_bc_defs;
-  BFT_MALLOC(dst->bc_defs, dst->n_bc_defs, cs_xdef_t *);
+  BFT_REALLOC(dst->bc_defs, dst->n_bc_defs, cs_xdef_t *);
   for (int i = 0; i < ref->n_bc_defs; i++)
     dst->bc_defs[i] = cs_xdef_copy(ref->bc_defs[i]);
 
@@ -1330,7 +1330,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   /* Initial condition (zero value by default) */
 
   dst->n_ic_defs = ref->n_ic_defs;
-  BFT_MALLOC(dst->ic_defs, dst->n_ic_defs, cs_xdef_t *);
+  BFT_REALLOC(dst->ic_defs, dst->n_ic_defs, cs_xdef_t *);
   for (int i = 0; i < ref->n_ic_defs; i++)
     dst->ic_defs[i] = cs_xdef_copy(ref->ic_defs[i]);
 
@@ -1365,7 +1365,7 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   /* Reaction term */
 
   dst->n_reaction_terms = ref->n_reaction_terms;
-  BFT_MALLOC(dst->reaction_properties, dst->n_reaction_terms, cs_property_t *);
+  BFT_REALLOC(dst->reaction_properties, dst->n_reaction_terms, cs_property_t *);
   for (int i = 0; i < ref->n_reaction_terms; i++)
     dst->reaction_properties[i] = ref->reaction_properties[i];
 
@@ -1381,9 +1381,9 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   /* Mass injection term */
 
   dst->n_volume_mass_injections = ref->n_volume_mass_injections;
-  BFT_MALLOC(dst->volume_mass_injections,
-             dst->n_volume_mass_injections,
-             cs_xdef_t *);
+  BFT_REALLOC(dst->volume_mass_injections,
+              dst->n_volume_mass_injections,
+              cs_xdef_t *);
   for (int i = 0; i < dst->n_volume_mass_injections; i++)
     dst->volume_mass_injections[i]
       = cs_xdef_copy(ref->volume_mass_injections[i]);
@@ -1393,12 +1393,21 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
   if (ref->n_enforcements > 0) {
 
     dst->n_enforcements = ref->n_enforcements;
-    BFT_MALLOC(dst->enforcement_params, dst->n_enforcements,
-               cs_enforcement_param_t *);
+    BFT_REALLOC(dst->enforcement_params, dst->n_enforcements,
+                cs_enforcement_param_t *);
 
     for (int i = 0; i < ref->n_enforcements; i++)
       dst->enforcement_params[i] =
         cs_enforcement_param_copy(ref->enforcement_params[i]);
+
+  }
+  else {
+
+    if (dst->n_enforcements > 0)
+      BFT_FREE(dst->enforcement_params);
+
+    dst->enforcement_params = NULL;
+    dst->n_enforcements = 0;
 
   }
 
