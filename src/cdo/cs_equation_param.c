@@ -2187,7 +2187,8 @@ cs_equation_add_ic_by_dof_func(cs_equation_param_t    *eqp,
   cs_xdef_dof_context_t  context = { .func = func,
                                      .input = input,
                                      .free_input = NULL,
-                                     .loc = loc_flag };
+                                     .loc = loc_flag,
+                                     .z_id = z_id };
 
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
                                         eqp->dim, z_id,
@@ -3091,7 +3092,8 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_dof_context_t  context = { .func = func,
+  cs_xdef_dof_context_t  context = { .z_id = z_id,
+                                     .func = func,
                                      .input = input,
                                      .free_input = NULL,
                                      .loc = loc_flag };
