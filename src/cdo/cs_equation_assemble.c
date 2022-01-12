@@ -814,6 +814,55 @@ _free_equation_assembler_struct(cs_equation_assemble_t  **p_eqa)
   *p_eqa = NULL;
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to a requested \ref cs_matrix_structure_t
+ *         structure
+ *
+ * \param[in]  flag_id       id in the array of matrix structures
+ *
+ * \return  a pointer to a cs_matrix_structure_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_structure_t *
+cs_equation_get_matrix_structure(int  flag)
+{
+  if (cs_equation_assemble_ms == NULL || flag < 0)
+    return NULL;
+
+  if (flag < CS_CDO_CONNECT_N_CASES)
+    return cs_equation_assemble_ms[flag];
+  else
+    return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get a pointer to a cs_equation_assemble_t structure related
+ *         to a given thread
+ *
+ * \param[in]  t_id    id in the array of pointer
+ *
+ * \return a pointer to a cs_equation_assemble_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_assemble_t *
+cs_equation_assemble_get(int    t_id)
+{
+  if (t_id < 0 || t_id >= cs_glob_n_threads)
+    return NULL;
+
+  return cs_equation_assemble[t_id];
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate and define a cs_matrix_assembler_t structure
@@ -827,11 +876,11 @@ _free_equation_assembler_struct(cs_equation_assemble_t  **p_eqa)
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_matrix_assembler_t *
-_build_matrix_assembler(cs_lnum_t                n_elts,
-                        int                      n_dofbyx,
-                        const cs_adjacency_t    *x2x,
-                        const cs_range_set_t    *rs)
+cs_matrix_assembler_t *
+cs_equation_build_matrix_assembler(cs_lnum_t                n_elts,
+                                   int                      n_dofbyx,
+                                   const cs_adjacency_t    *x2x,
+                                   const cs_range_set_t    *rs)
 {
   cs_gnum_t  *grows = NULL, *gcols = NULL;
 
@@ -935,55 +984,6 @@ _build_matrix_assembler(cs_lnum_t                n_elts,
   return ma;
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to a requested \ref cs_matrix_structure_t
- *         structure
- *
- * \param[in]  flag_id       id in the array of matrix structures
- *
- * \return  a pointer to a cs_matrix_structure_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_structure_t *
-cs_equation_get_matrix_structure(int  flag)
-{
-  if (cs_equation_assemble_ms == NULL || flag < 0)
-    return NULL;
-
-  if (flag < CS_CDO_CONNECT_N_CASES)
-    return cs_equation_assemble_ms[flag];
-  else
-    return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get a pointer to a cs_equation_assemble_t structure related
- *         to a given thread
- *
- * \param[in]  t_id    id in the array of pointer
- *
- * \return a pointer to a cs_equation_assemble_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_assemble_t *
-cs_equation_assemble_get(int    t_id)
-{
-  if (t_id < 0 || t_id >= cs_glob_n_threads)
-    return NULL;
-
-  return cs_equation_assemble[t_id];
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate and initialize matrix-related structures according to
@@ -1056,10 +1056,10 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
 
-      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices, 1, v2v,
-                                                           rs);
-      cs_matrix_structure_t  *ms
-        = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+      cs_matrix_assembler_t  *ma =
+        cs_equation_build_matrix_assembler(n_vertices, 1, v2v, rs);
+      cs_matrix_structure_t  *ms =
+        cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
       cs_equation_assemble_ma[CS_CDO_CONNECT_VTX_SCAL] = ma;
       cs_equation_assemble_ms[CS_CDO_CONNECT_VTX_SCAL] = ms;
@@ -1075,10 +1075,10 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
 
-      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_vertices, 3, v2v,
-                                                           rs);
-      cs_matrix_structure_t  *ms
-        = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+      cs_matrix_assembler_t  *ma =
+        cs_equation_build_matrix_assembler(n_vertices, 3, v2v, rs);
+      cs_matrix_structure_t  *ms =
+        cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
       cs_equation_assemble_ma[CS_CDO_CONNECT_VTX_VECT] = ma;
       cs_equation_assemble_ms[CS_CDO_CONNECT_VTX_VECT] = ms;
@@ -1110,9 +1110,10 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_EDGE_SCAL];
 
-      cs_matrix_assembler_t  *ma = _build_matrix_assembler(n_edges, 1, e2e, rs);
-      cs_matrix_structure_t  *ms
-        = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
+      cs_matrix_assembler_t  *ma =
+        cs_equation_build_matrix_assembler(n_edges, 1, e2e, rs);
+      cs_matrix_structure_t  *ms =
+        cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
       cs_equation_assemble_ma[CS_CDO_CONNECT_EDGE_SCAL] = ma;
       cs_equation_assemble_ms[CS_CDO_CONNECT_EDGE_SCAL] = ms;
@@ -1140,7 +1141,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
 
-      ma0 = _build_matrix_assembler(n_faces, 1, f2f, rs);
+      ma0 = cs_equation_build_matrix_assembler(n_faces, 1, f2f, rs);
       ms0 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma0);
 
       cs_equation_assemble_ma[CS_CDO_CONNECT_FACE_SP0] = ma0;
@@ -1159,7 +1160,8 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
 
-      ma1 = _build_matrix_assembler(n_faces, CS_N_FACE_DOFS_1ST, f2f, rs);
+      ma1 = cs_equation_build_matrix_assembler(n_faces, CS_N_FACE_DOFS_1ST,
+                                               f2f, rs);
       ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
 
       assert((CS_CDO_CONNECT_FACE_SP1 == CS_CDO_CONNECT_FACE_VP0) &&
@@ -1183,7 +1185,8 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
 
-      ma2 = _build_matrix_assembler(n_faces, CS_N_FACE_DOFS_2ND, f2f, rs);
+      ma2 = cs_equation_build_matrix_assembler(n_faces, CS_N_FACE_DOFS_2ND,
+                                               f2f, rs);
       ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
 
       cs_equation_assemble_ma[CS_CDO_CONNECT_FACE_SP2] = ma2;
@@ -1209,7 +1212,8 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
         const cs_range_set_t  *rs
           = connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
 
-        ma1 = _build_matrix_assembler(n_faces, 3*CS_N_FACE_DOFS_1ST, f2f, rs);
+        ma1 = cs_equation_build_matrix_assembler(n_faces, 3*CS_N_FACE_DOFS_1ST,
+                                                 f2f, rs);
         ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
 
         cs_equation_assemble_ma[CS_CDO_CONNECT_FACE_VHP1] = ma1;
@@ -1229,7 +1233,8 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
         const cs_range_set_t  *rs
           = connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
 
-        ma2 = _build_matrix_assembler(n_faces, 3*CS_N_FACE_DOFS_2ND, f2f, rs);
+        ma2 = cs_equation_build_matrix_assembler(n_faces, 3*CS_N_FACE_DOFS_2ND,
+                                                 f2f, rs);
         ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
 
         cs_equation_assemble_ma[CS_CDO_CONNECT_FACE_VHP2] = ma2;
@@ -1261,14 +1266,12 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
     /* Each thread allocate its part. This yields a better memory affinity */
 
     int  t_id = omp_get_thread_num();
-    cs_equation_assemble[t_id] = _init_equation_assembler_struct(max_ddim,
-                                                                 max_edim,
-                                                                 n_max_cw_dofs);
+    cs_equation_assemble[t_id] =
+      _init_equation_assembler_struct(max_ddim, max_edim, n_max_cw_dofs);
   }
 #else
-  cs_equation_assemble[0] = _init_equation_assembler_struct(max_ddim,
-                                                            max_edim,
-                                                            n_max_cw_dofs);
+  cs_equation_assemble[0] =
+    _init_equation_assembler_struct(max_ddim, max_edim, n_max_cw_dofs);
 #endif
 }
 

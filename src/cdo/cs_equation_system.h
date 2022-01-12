@@ -52,20 +52,20 @@ BEGIN_C_DECLS
  *
  * \param[in]      c2p    true="current to previous" operation is performed
  * \param[in]      n_eqs  number of equations associated to the system to solve
- * \param[in]      mesh   pointer to a \ref cs_mesh_t structure
  * \param[in]      eqps   double pointer to a list of equation parameter struct.
  * \param[in, out] eqbs   double pointer to a list of builder struct.
  * \param[in, out] eqcs   double pointer to a list of scheme context struct.
+ * \param[in, out] p_ms   double pointer to a matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_equation_system_solve_t)(bool                         c2p,
                              int                          n_eqs,
-                             const cs_mesh_t             *mesh,
-                             const cs_equation_param_t  **eqps,
+                             cs_equation_param_t        **eqps,
                              cs_equation_builder_t      **eqbs,
-                             void                       **eqcs);
+                             void                       **eqcs,
+                             cs_matrix_structure_t      **p_ms);
 
 /*! \struct cs_equation_system_t
  *  \brief Main structure to handle a set of coupled equations
@@ -80,15 +80,6 @@ typedef struct {
    * \var name
    *      Name of the system of equations
    *
-   * \var n_equations
-   *      Number of coupled equations (> 1) composing the system
-   *
-   * \var equations
-   *      Array of pointer to the equations constituting the coupled
-   *      system. These equations correspond to the each row and the
-   *      cs_equation_param_t associated to an equation corresponds to the
-   *      setting of the diagonal block.
-   *
    * \var space_scheme
    *      Associated space discretization. One assumes that all blocks share
    *      the same space discretization.
@@ -98,13 +89,27 @@ typedef struct {
    */
 
   char *restrict            name;
-  int                       n_equations;
-  cs_equation_t           **equations;
-
   cs_param_space_scheme_t   space_scheme;
   int                       block_var_dim;
 
   int                       timer_id;      /*!< Id of the timer statistics */
+
+  /*!
+   * @name Diagonal block (equations)
+   * @{
+   *
+   * \var n_equations
+   *      Number of coupled equations (> 1) composing the system
+   *
+   * \var equations
+   *      Array of pointer to the equations constituting the coupled
+   *      system. These equations correspond to the each row and the
+   *      cs_equation_param_t associated to an equation corresponds to the
+   *      setting of the diagonal block.
+   */
+
+  int                       n_equations;
+  cs_equation_t           **equations;
 
   /*!
    * @}
@@ -227,11 +232,19 @@ cs_equation_system_log(cs_equation_system_t  *eqsys);
 /*!
  * \brief  Assign a set of pointer functions for managing the
  *         cs_equation_system_t structure.
+ *
+ * \param[in]  mesh        basic mesh structure
+ * \param[in]  connect     additional connectivity data
+ * \param[in]  quant       additional mesh quantities
+ * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_set_functions(void);
+cs_equation_system_set_structures(cs_mesh_t             *mesh,
+                                  cs_cdo_connect_t      *connect,
+                                  cs_cdo_quantities_t   *quant,
+                                  cs_time_step_t        *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -250,14 +263,12 @@ cs_equation_system_initialize(const cs_mesh_t             *mesh);
  * \brief  Solve of a system of coupled equations. Unsteady case.
  *
  * \param[in]      cur2prev   true="current to previous" operation is performed
- * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in, out] eqsys      pointer to the structure to log
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_system_solve(bool                     cur2prev,
-                         const cs_mesh_t         *mesh,
                          cs_equation_system_t    *eqsys);
 
 /*----------------------------------------------------------------------------*/

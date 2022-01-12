@@ -1769,7 +1769,7 @@ _mtpf_compute(const cs_mesh_t                   *mesh,
     /* Solve the algebraic system. By default, a current to previous operation
        is performed */
 
-    cs_equation_system_solve(cur2prev, mesh, mc->system);
+    cs_equation_system_solve(cur2prev, mc->system);
 
     /* Update the variables related to the groundwater flow system */
 

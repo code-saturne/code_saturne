@@ -167,55 +167,6 @@ _svb_create_cell_builder(const cs_cdo_connect_t   *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the boundary conditions known from the settings
- *         Define an indirection array for the enforcement of internal DoFs
- *         only if needed.
- *         Case of scalar-valued CDO-Vb schemes
- *
- * \param[in]      t_eval          time at which one evaluates BCs
- * \param[in]      mesh            pointer to a cs_mesh_t structure
- * \param[in]      eqp             pointer to a cs_equation_param_t structure
- * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
- * \param[in, out] vtx_bc_flag     pointer to an array of BC flag for each vtx
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_svb_setup(cs_real_t                      t_eval,
-           const cs_mesh_t               *mesh,
-           const cs_equation_param_t     *eqp,
-           cs_equation_builder_t         *eqb,
-           cs_flag_t                      vtx_bc_flag[])
-{
-  assert(vtx_bc_flag != NULL);  /* Sanity check */
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-
-  /* Compute the values of the Dirichlet BC */
-
-  BFT_MALLOC(eqb->dir_values, quant->n_vertices, cs_real_t);
-
-  cs_equation_compute_dirichlet_vb(t_eval,
-                                   mesh,
-                                   quant,
-                                   connect,
-                                   eqp,
-                                   eqb->face_bc,
-                                   _svb_cell_builder[0], /* static variable */
-                                   vtx_bc_flag,
-                                   eqb->dir_values);
-
-  /* Internal enforcement of DoFs */
-
-  if (cs_equation_param_has_internal_enforcement(eqp))
-    eqb->enforced_values =
-      cs_enforcement_define_at_vertices(connect,
-                                        eqp->n_enforcements,
-                                        eqp->enforcement_params);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Initialize the local structure for the current cell
  *         Case of scalar-valued CDO-Vb schemes
  *
@@ -1347,6 +1298,274 @@ cs_cdovb_scaleq_free_context(void   *builder)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the boundary conditions known from the settings
+ *         Define an indirection array for the enforcement of internal DoFs
+ *         only if needed.
+ *         Case of scalar-valued CDO-Vb schemes
+ *
+ * \param[in]      t_eval          time at which one evaluates BCs
+ * \param[in]      mesh            pointer to a cs_mesh_t structure
+ * \param[in]      eqp             pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
+ * \param[in, out] vtx_bc_flag     pointer to an array of BC flag for each vtx
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_setup(cs_real_t                      t_eval,
+                      const cs_mesh_t               *mesh,
+                      const cs_equation_param_t     *eqp,
+                      cs_equation_builder_t         *eqb,
+                      cs_flag_t                      vtx_bc_flag[])
+{
+  assert(vtx_bc_flag != NULL);  /* Sanity check */
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  /* Compute the values of the Dirichlet BC */
+
+  BFT_MALLOC(eqb->dir_values, quant->n_vertices, cs_real_t);
+
+  cs_equation_compute_dirichlet_vb(t_eval,
+                                   mesh,
+                                   quant,
+                                   connect,
+                                   eqp,
+                                   eqb->face_bc,
+                                   _svb_cell_builder[0], /* static variable */
+                                   vtx_bc_flag,
+                                   eqb->dir_values);
+
+  /* Internal enforcement of DoFs */
+
+  if (cs_equation_param_has_internal_enforcement(eqp))
+    eqb->enforced_values =
+      cs_enforcement_define_at_vertices(connect,
+                                        eqp->n_enforcements,
+                                        eqp->enforcement_params);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the main properties before the main loop on cells.
+ *         Case of scalar-valued CDO-Vb schemes
+ *
+ * \param[in]      t_id      thread id if > 0
+ * \param[in]      t_eval    time at which one evaluates BCs
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out] context   pointer to a scheme context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_init_properties(int                           t_id,
+                                cs_real_t                     t_eval,
+                                const cs_equation_param_t    *eqp,
+                                cs_equation_builder_t        *eqb,
+                                void                         *context)
+{
+  if (t_id < 0) t_id = 0;
+
+  cs_cdovb_scaleq_t  *eqc = context;
+  cs_cell_builder_t  *cb = _svb_cell_builder[t_id];
+  cs_hodge_t  *diff_hodge =
+    (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
+
+  /* Set times at which one evaluates quantities if needed */
+
+  cb->t_pty_eval = t_eval;
+  cb->t_bc_eval = t_eval;
+  cb->t_st_eval = t_eval;
+
+  /* Initialization of the values of properties */
+
+  cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build the cell system for the given cell id.
+ *         Case of scalar-valued CDO-Vb schemes.
+ *
+ * \param[in]      t_id      thread id if openMP is used
+ * \param[in]      c_id      cell id
+ * \param[in]      f_val     current field values
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out] context   pointer to a scheme context structure
+ * \param[in, out] cb        cell builder structure
+ * \param[in, out] csys      cell system structure
+ *
+ * \return the value of the rhs_norm for the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdovb_scaleq_cw_build_implicit(int                           t_id,
+                                  cs_lnum_t                     c_id,
+                                  const cs_real_t               f_val[],
+                                  const cs_equation_param_t    *eqp,
+                                  cs_equation_builder_t        *eqb,
+                                  void                         *context,
+                                  cs_cell_builder_t            *cb,
+                                  cs_cell_sys_t                *csys)
+{
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_time_step_t  *ts = cs_shared_time_step;
+
+  cs_cdovb_scaleq_t *eqc = context;
+
+  if (t_id < 0) t_id = 0;
+
+  /* Each thread get back its related structures:
+     Get the cell-wise view of the mesh and the algebraic system */
+
+  cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
+  cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+
+  cs_hodge_t  *diff_hodge =
+    (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
+  cs_hodge_t  *mass_hodge =
+    (eqc->mass_hodge == NULL) ? NULL : eqc->mass_hodge[t_id];
+
+  const cs_real_t  inv_dtcur = 1./ts->dt[0];
+
+  /* Begin cellwise build */
+  /* -------------------- */
+
+  /* Set the current cell flag */
+
+  cb->cell_flag = connect->cell_flag[c_id];
+
+  /* Set the local mesh structure for the current cell */
+
+  cs_cell_mesh_build(c_id,
+                     cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                     connect, quant, cm);
+
+  /* Set the local (i.e. cellwise) structures for the current cell */
+
+  _svb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, f_val, csys, cb);
+
+  /* Build and add the diffusion/advection/reaction term to the local
+     system. A mass matrix is also built if needed */
+
+  _svb_conv_diff_reac(eqp, eqb, eqc, cm,
+                      fm, mass_hodge, diff_hodge, csys, cb);
+
+  if (cs_equation_param_has_sourceterm(eqp)) { /* SOURCE TERM
+                                                * =========== */
+
+    /* Reset the local contribution */
+
+    memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+
+    /* Source term contribution to the algebraic system
+       If the equation is steady, the source term has already been computed
+       and is added to the right-hand side during its initialization. */
+
+    cs_source_term_compute_cellwise(eqp->n_source_terms,
+                                    (cs_xdef_t *const *)eqp->source_terms,
+                                    cm,
+                                    eqb->source_mask,
+                                    eqb->compute_source,
+                                    cb->t_st_eval,
+                                    mass_hodge,
+                                    cb,
+                                    csys->source);
+
+    for (short int v = 0; v < cm->n_vc; v++)
+      csys->rhs[v] += csys->source[v];
+
+  } /* End of term source */
+
+  /* Apply boundary conditions (those which are weakly enforced) */
+
+  _svb_apply_weak_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+
+  /* Unsteady term + time scheme
+   * =========================== */
+
+  if (!(eqb->time_pty_uniform))
+    cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property,
+                                             cb->t_pty_eval);
+
+  if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
+
+    /* |c|*wvc = |dual_cell(v) cap c| */
+
+    CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+    const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
+
+    /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
+     *       >> Update the cellwise system with the time matrix */
+
+    for (short int i = 0; i < cm->n_vc; i++) {
+
+      const double  dval =  ptyc * cm->wvc[i];
+
+      /* Update the RHS with values at time t_n */
+
+      csys->rhs[i] += dval * csys->val_n[i];
+
+      /* Add the diagonal contribution from time matrix */
+
+      csys->mat->val[i*(cm->n_vc + 1)] += dval;
+
+    }
+
+  }
+  else { /* Use the mass matrix */
+
+    const double  tpty_coef = cb->tpty_val * inv_dtcur;
+    const cs_sdm_t  *mass_mat = mass_hodge->matrix;
+
+    /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
+     *       >> Update the cellwise system with the time matrix */
+
+    /* Update rhs with csys->mat*p^n */
+
+    double  *time_pn = cb->values;
+    cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
+    for (short int i = 0; i < csys->n_dofs; i++)
+      csys->rhs[i] += tpty_coef*time_pn[i];
+
+    /* Update the cellwise system with the time matrix */
+
+    cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
+
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    cs_cell_sys_dump("\n>> Cell system after time", csys);
+#endif
+
+  /* Enforce values if needed (internal or Dirichlet) */
+
+  _svb_enforce_values(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+#endif
+
+  /* Compute a norm of the RHS for the normalization of the residual
+     of the linear system to solve */
+
+  double  rhs_norm = _svb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
+                                               cm, csys);
+
+  /* End build */
+  /* --------- */
+
+  return rhs_norm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the initial values of the variable field taking into account
  *         the boundary conditions.
  *         Case of scalar-valued CDO-Vb schemes.
@@ -1504,7 +1723,7 @@ cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
    * step of an unsteady computation.
    */
 
-  _svb_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag);
+  cs_cdovb_scaleq_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag);
 
   if (eqb->init_step)
     eqb->init_step = false;
@@ -1734,7 +1953,8 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
   /* Build an array storing the Dirichlet values at vertices and another one
      to detect vertices with an enforcement */
 
-  _svb_setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb, eqc->vtx_bc_flag);
+  cs_cdovb_scaleq_setup(ts->t_cur + ts->dt[0],
+                        mesh, eqp, eqb, eqc->vtx_bc_flag);
 
   if (eqb->init_step)
     eqb->init_step = false;
@@ -1751,8 +1971,8 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
 
   /* Initialize the structure to assemble values */
 
-  cs_matrix_assembler_values_t  *mav
-    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_matrix_assembler_values_t  *mav =
+    cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
   /* ------------------------- */
   /* Main OpenMP block on cell */
@@ -2024,7 +2244,8 @@ cs_cdovb_scaleq_solve_theta(bool                        cur2prev,
   /* Build an array storing the Dirichlet values at vertices and another one
      to detect vertices with an enforcement */
 
-  _svb_setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb, eqc->vtx_bc_flag);
+  cs_cdovb_scaleq_setup(ts->t_cur + ts->dt[0],
+                        mesh, eqp, eqb, eqc->vtx_bc_flag);
 
   /* Initialize the local system: rhs */
 

@@ -142,6 +142,76 @@ cs_cdovb_scaleq_free_context(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the boundary conditions known from the settings
+ *         Define an indirection array for the enforcement of internal DoFs
+ *         only if needed.
+ *         Case of scalar-valued CDO-Vb schemes
+ *
+ * \param[in]      t_eval          time at which one evaluates BCs
+ * \param[in]      mesh            pointer to a cs_mesh_t structure
+ * \param[in]      eqp             pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb             pointer to a cs_equation_builder_t structure
+ * \param[in, out] vtx_bc_flag     pointer to an array of BC flag for each vtx
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_setup(cs_real_t                      t_eval,
+                      const cs_mesh_t               *mesh,
+                      const cs_equation_param_t     *eqp,
+                      cs_equation_builder_t         *eqb,
+                      cs_flag_t                      vtx_bc_flag[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the main properties before the main loop on cells.
+ *         Case of scalar-valued CDO-Vb schemes
+ *
+ * \param[in]      t_id      thread id if > 0
+ * \param[in]      t_eval    time at which one evaluates BCs
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out] context   pointer to a scheme context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_init_properties(int                           t_id,
+                                cs_real_t                     t_eval,
+                                const cs_equation_param_t    *eqp,
+                                cs_equation_builder_t        *eqb,
+                                void                         *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build the cell system for the given cell id.
+ *         Case of scalar-valued CDO-Vb schemes.
+ *
+ * \param[in]      t_id      thread id if openMP is used
+ * \param[in]      c_id      cell id
+ * \param[in]      f_val     current field values
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out] context   pointer to a scheme context structure
+ * \param[in, out] cb        cell builder structure
+ * \param[in, out] csys      cell system structure
+ *
+ * \return the value of the rhs_norm for the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdovb_scaleq_cw_build_implicit(int                           t_id,
+                                  cs_lnum_t                     c_id,
+                                  const cs_real_t               f_val[],
+                                  const cs_equation_param_t    *eqp,
+                                  cs_equation_builder_t        *eqb,
+                                  void                         *context,
+                                  cs_cell_builder_t            *cb,
+                                  cs_cell_sys_t                *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the initial values of the variable field taking into account
  *         the boundary conditions.
  *         Case of scalar-valued CDO-Vb schemes.

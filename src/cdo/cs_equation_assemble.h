@@ -109,6 +109,25 @@ cs_equation_assemble_get(int    t_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Allocate and define a cs_matrix_assembler_t structure
+ *
+ * \param[in]  n_elts     number of elements
+ * \param[in]  n_dofbyx   number of DoFs by element
+ * \param[in]  x2x        pointer to a cs_adjacency_t structure
+ * \param[in]  rs         pointer to a range set or NULL if sequential
+ *
+ * \return a pointer to a new allocated cs_matrix_assembler_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_matrix_assembler_t *
+cs_equation_build_matrix_assembler(cs_lnum_t                n_elts,
+                                   int                      n_dofbyx,
+                                   const cs_adjacency_t    *x2x,
+                                   const cs_range_set_t    *rs);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate and initialize matrix-related structures according to
  *         the type of discretization used for this simulation
  *

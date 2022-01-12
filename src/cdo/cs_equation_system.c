@@ -38,6 +38,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_cdovb_scalsys.h"
 #include "cs_equation_param.h"
 #include "cs_timer_stats.h"
 
@@ -380,11 +381,19 @@ cs_equation_system_log(cs_equation_system_t  *eqsys)
 /*!
  * \brief  Assign a set of pointer functions for managing the
  *         cs_equation_system_t structure.
+ *
+ * \param[in]  mesh        basic mesh structure
+ * \param[in]  connect     additional connectivity data
+ * \param[in]  quant       additional mesh quantities
+ * \param[in]  time_step   pointer to a time step structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_set_functions(void)
+cs_equation_system_set_structures(cs_mesh_t             *mesh,
+                                  cs_cdo_connect_t      *connect,
+                                  cs_cdo_quantities_t   *quant,
+                                  cs_time_step_t        *time_step)
 {
   for (int i = 0; i < _n_equation_systems; i++) {
 
@@ -410,10 +419,12 @@ cs_equation_system_set_functions(void)
     case CS_SPACE_SCHEME_CDOVB:
       if (eqsys->block_var_dim == 1) { /* Each block is scalar-valued  */
 
+        cs_cdovb_scalsys_init_common(mesh, connect, quant, time_step);
+
         /* Set the solve functions */
 
         eqsys->solve_steady_state_system = NULL; /* Not used up to now */
-        eqsys->solve_system = NULL;              /* To be set */
+        eqsys->solve_system = cs_cdovb_scalsys_solve_implicit;
 
       }
       else
@@ -500,6 +511,13 @@ cs_equation_system_initialize(const cs_mesh_t             *mesh)
           assert(eqsys->builders[ij] == NULL);
           assert(eqsys->context_structures[ij] == NULL);
 
+          /* Copy the boundary conditions of the variable associated to the
+             diagonal block j */
+
+          cs_equation_param_copy_bc(eqsys->params[j*n_eqs+j], eqp);
+
+          /* Define the equation builder */
+
           cs_equation_builder_t  *eqb = cs_equation_builder_init(eqp, mesh);
 
           eqsys->builders[ij] = eqb;
@@ -524,14 +542,12 @@ cs_equation_system_initialize(const cs_mesh_t             *mesh)
  * \brief  Solve of a system of coupled equations. Unsteady case.
  *
  * \param[in]      cur2prev   true="current to previous" operation is performed
- * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in, out] eqsys      pointer to the structure to log
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_system_solve(bool                     cur2prev,
-                         const cs_mesh_t         *mesh,
                          cs_equation_system_t    *eqsys)
 {
   if (eqsys == NULL)
@@ -545,12 +561,21 @@ cs_equation_system_solve(bool                     cur2prev,
               "%s: No solve function set for system \"%s\"\n",
               __func__, eqsys->name);
 
+  /* One assumes that by default the matrix structure is not stored. So one
+     has to build this structure before each solving step */
+
+  cs_matrix_structure_t  *ms = NULL;
+
   eqsys->solve_system(cur2prev,
                       eqsys->n_equations,
-                      mesh,
                       eqsys->params,
                       eqsys->builders,
-                      eqsys->context_structures);
+                      eqsys->context_structures,
+                      &ms);
+
+  /* Free the matrix structure */
+
+  cs_matrix_structure_destroy(&ms);
 
   if (eqsys->timer_id > -1)
     cs_timer_stats_stop(eqsys->timer_id);

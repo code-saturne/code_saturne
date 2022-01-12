@@ -751,7 +751,13 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   domain->only_steady = cs_equation_set_functions();
 
-  cs_equation_system_set_functions();
+  /* Initialize and set main members before building and solving systems of
+     equations (should be done after cs_equation_set_functions()) */
+
+  cs_equation_system_set_structures(domain->mesh,
+                                    domain->connect,
+                                    domain->cdo_quantities,
+                                    domain->time_step);
 
   if (domain->only_steady)
     domain->is_last_iter = true;
