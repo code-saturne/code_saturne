@@ -63,7 +63,6 @@ BEGIN_C_DECLS
 
    \brief Functions to handle extended definitions of quantities thanks to the
           cs_xdef_t structures.
-
  */
 
 /*=============================================================================
@@ -133,6 +132,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
   d->qtype = CS_QUADRATURE_BARY; /* default value */
 
   /* Now define the context pointer */
+
   switch (type) {
 
   case CS_XDEF_BY_VALUE:
@@ -210,6 +210,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       b->index = a->index;
 
       /* Update state flag */
+
       if (cs_flag_test(b->loc, cs_flag_primal_cell) ||
           cs_flag_test(b->loc, cs_flag_dual_face_byc))
         d->state |= CS_FLAG_STATE_CELLWISE;
@@ -229,6 +230,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
         cs_mesh_location_get_type(f->location_id);
 
       /* Update state flag */
+
       switch(loc_type) {
 
       case CS_MESH_LOCATION_CELLS:
@@ -315,6 +317,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       for (int i = 0; i < dim; i++) _context_cpy[i] = _context[i];
 
       /* Update state flag */
+
       d->state |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE;
     }
     break;
@@ -365,6 +368,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       d->context = b;
 
       /* Update state flag */
+
       if (cs_flag_test(b->loc, cs_flag_primal_face))
         d->state |= CS_FLAG_STATE_FACEWISE;
     }
@@ -380,6 +384,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
         cs_mesh_location_get_type(f->location_id);
 
       /* Update flags */
+
       if (loc_type == CS_MESH_LOCATION_BOUNDARY_FACES) {
         d->meta |= CS_FLAG_FULL_LOC;
         d->state |= CS_FLAG_STATE_FACEWISE;
@@ -401,6 +406,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       _context_cpy[0] = _context[0];
 
       /* Update state flag */
+
       d->state |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE;
     }
     break;
@@ -461,6 +467,7 @@ cs_xdef_timestep_create(cs_xdef_type_t       type,
       _context_cpy[0] = _context[0];
 
       /* Update state flag */
+
       d->state |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_STEADY;
     }
     break;
@@ -764,10 +771,12 @@ cs_xdef_set_array(cs_xdef_t     *d,
   cs_xdef_array_context_t  *a = (cs_xdef_array_context_t *)d->context;
 
   /* An array is already assigned and one manages the lifecycle */
+
   if (a->is_owner && a->values != NULL)
     BFT_FREE(a->values);
 
   /* Set the new values */
+
   a->is_owner = is_owner;
   a->values = array;
 }
@@ -1013,7 +1022,6 @@ cs_xdef_log(const char          *prefix,
 
   cs_log_printf(CS_LOG_SETUP, "%s | Quadrature: %s\n",
                 _p, cs_quadrature_get_type_name(d->qtype));
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -248,22 +248,26 @@ typedef struct {
   /*! \var z_id
    * id related to a zone (volume or boundary) for this definition
    */
+
   int                    z_id;
 
   /*! \var func
    * pointer to a \ref cs_analytic_func_t to call
    */
+
   cs_analytic_func_t    *func;
 
   /*! \var input
    * NULL or pointer to a structure cast on-the-fly for additional information
    * used in the function
    */
+
   void                  *input;
 
   /*! \var free_input
    * NULL or pointer to a function to free a given input structure
    */
+
   cs_xdef_free_input_t  *free_input;
 
 } cs_xdef_analytic_context_t;
@@ -278,17 +282,20 @@ typedef struct {
   /*! \var z_id
    * id related to a zone (volume or boundary) for this definition
    */
+
   int                    z_id;
 
   /*! \var loc
    *  Flag to know which type of entities are given as parameter in the
    *  \ref cs_dof_func_t
    */
+
   cs_flag_t              loc;
 
   /*! \var func
    * pointer to a \ref cs_dof_func_t to call
    */
+
   cs_dof_func_t         *func;
 
   /*! \var input
@@ -300,6 +307,7 @@ typedef struct {
   /*! \var free_input
    * NULL or pointer to a function to free a given input structure
    */
+
   cs_xdef_free_input_t  *free_input;
 
 } cs_xdef_dof_context_t;
@@ -314,17 +322,20 @@ typedef struct {
   /*! \var func
    * pointer to a \ref cs_time_func_t to call
    */
+
   cs_time_func_t        *func;
 
   /*! \var input
    * NULL or pointer to a structure cast on-the-fly for additional information
    * used in the function
    */
+
   void                  *input;
 
   /*! \var free_input
    * NULL or pointer to a function to free a given input structure
    */
+
   cs_xdef_free_input_t  *free_input;
 
 } cs_xdef_time_func_context_t;

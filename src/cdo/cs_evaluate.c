@@ -80,6 +80,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
+
 static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
 
@@ -180,6 +181,7 @@ _synchronize_reduction(int              dim,
     return; /* Nothing to do */
 
   /* Min/Max */
+
   if (dim == 1) {
 
     cs_real_t  minmax[2] = {-min[0], max[0]};
@@ -204,6 +206,7 @@ _synchronize_reduction(int              dim,
   }
 
   /* Sums */
+
   if (dim == 1) {
 
     cs_real_t  sums[3] = {wsum[0], asum[0], ssum[0]};
@@ -263,7 +266,6 @@ _untag_frontier_vertices(cs_lnum_t         c_id,
     } /* This face belongs to the frontier of the selection (only interior) */
 
   } /* Loop on cell faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -297,6 +299,7 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
     memset(c_tags, 0, m->n_cells_with_ghosts * sizeof(cs_lnum_t));
 
     /* First pass: flag cells and vertices */
+
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) { /* Loop on selected cells */
 
@@ -328,15 +331,18 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
     cs_halo_sync_num(m->halo, CS_HALO_STANDARD, c_tags);
 
   /* Second pass: detect cells at the frontier of the selection */
+
   for (cs_lnum_t i = 0; i < n_elts; i++) {
     const cs_lnum_t  c_id = (n_elts == n_cells) ? i : elt_ids[i];
     _untag_frontier_vertices(c_id, c_tags, v_tags);
   }
 
   /* Not needed anymore */
+
   BFT_FREE(c_tags);
 
   /* Handle parallelism (always the scalar interface) */
+
   if (cs_cdo_connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
     cs_interface_set_max(cs_cdo_connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
                          n_vertices,
@@ -344,7 +350,6 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
                          true,        /* interlace, not useful here */
                          CS_LNUM_TYPE,
                          (void *)v_tags);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -377,9 +382,11 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
   BFT_MALLOC(v_tags, n_vertices, cs_lnum_t);
 
   /* Tag selected vertices and cells */
+
   _tag_geometric_entities(n_elts, elt_ids, v_tags);
 
   /* Third pass: compute the (really) available volume */
+
   double  volume_marked = 0.;
 
 #   pragma omp parallel for reduction(+:volume_marked) if (n_elts > CS_THR_MIN)
@@ -393,6 +400,7 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
   } /* Loop on selected cells */
 
   /* Handle parallelism */
+
   cs_parall_sum(1, CS_DOUBLE, &volume_marked);
 
   cs_real_t  val_to_set = quantity_val;
@@ -450,12 +458,14 @@ _pvcsp_by_qov(const cs_real_t    quantity_val,
   BFT_MALLOC(v_tags, n_vertices, cs_lnum_t);
 
   /* Tag selected vertices and cells */
+
   _tag_geometric_entities(n_elts, elt_ids, v_tags);
 
   /* Compute the (really) available volume:
      - 1/4 of the cell volume is associated to the cell unkonwn
      - 3/4 of the dual cell volume is associated to the vertex unknown
   */
+
   double  volume_marked = 0.;
 
 #   pragma omp parallel for reduction(+:volume_marked) if (n_elts > CS_THR_MIN)
@@ -471,6 +481,7 @@ _pvcsp_by_qov(const cs_real_t    quantity_val,
   } /* Loop on selected cells */
 
   /* Handle parallelism */
+
   cs_parall_sum(1, CS_DOUBLE, &volume_marked);
 
   cs_real_t  val_to_set = quantity_val;
@@ -536,6 +547,7 @@ _dcsd_by_analytic(cs_real_t                        time_eval,
   const cs_adjacency_t  *f2e = connect->f2e;
 
   /* Computation over dual volumes */
+
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
     const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
@@ -567,7 +579,6 @@ _dcsd_by_analytic(cs_real_t                        time_eval,
     } /* Loop on faces */
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -601,6 +612,7 @@ _dcvd_by_analytic(cs_real_t                        time_eval,
   const int  dim = 3;
 
   /* Computation over dual volumes */
+
   for (cs_lnum_t  id = 0; id < n_elts; id++) {
 
     const cs_lnum_t  c_id = (elt_ids == NULL) ? id : elt_ids[id];
@@ -632,7 +644,6 @@ _dcvd_by_analytic(cs_real_t                        time_eval,
     }  /* Loop on faces */
 
   }  /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -723,7 +734,6 @@ _pcsd_by_analytic(cs_real_t                        time_eval,
     } /* Not a tetrahedron */
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -814,7 +824,6 @@ _pcvd_by_analytic(cs_real_t                        time_eval,
     } /* Not a tetrahedron */
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -904,10 +913,10 @@ _pcsa_by_analytic(cs_real_t                        time_eval,
     } /* Not a tetrahedron */
 
     /* Average */
+
     values[c_id] /= quant->cell_vol[c_id];
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1007,7 +1016,6 @@ _pcva_by_analytic(cs_real_t                        time_eval,
     for (int k = 0; k < 3; k++) val_i[k] *= _overvol;
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1049,7 +1057,6 @@ _dcsd_by_value(const cs_real_t    const_val,
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1103,7 +1110,6 @@ _dcvd_by_value(const cs_real_t    const_vec[3],
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1139,7 +1145,6 @@ _pcsd_by_value(const cs_real_t    const_val,
       values[c_id] = quant->cell_vol[c_id]*const_val;
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1174,7 +1179,6 @@ _pcsa_by_value(const cs_real_t    const_val,
       values[c_id] = const_val;
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1221,7 +1225,6 @@ _pcvd_by_value(const cs_real_t     const_vec[3],
       val_c[2] = vol_c * const_vec[2];
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1255,7 +1258,6 @@ _pcva_by_value(const cs_real_t     const_vec[3],
       memcpy(values+3*c_id, const_vec, 3*sizeof(cs_real_t));
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1326,10 +1328,10 @@ _pfsa_by_analytic(cs_real_t                        time_eval,
     } /* End of switch */
 
     /* Average */
+
     val_i[0] /= pfq.meas;
 
   } /* Loop on faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1400,12 +1402,12 @@ _pfva_by_analytic(cs_real_t                       time_eval,
     } /* End of switch */
 
     /* Average */
+
     const double _oversurf = 1./pfq.meas;
     for (short int xyz = 0; xyz < 3; xyz++)
       val_i[xyz] *= _oversurf;
 
   } /* Loop on faces */
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1428,6 +1430,7 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
                                 const cs_cdo_connect_t       *connect)
 {
   /* Assign static const pointers */
+
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
 }
@@ -1463,6 +1466,7 @@ cs_evaluate_array_reduction(int                     dim,
   assert(cs_cdo_quant != NULL && cs_cdo_connect != NULL);
 
   /* Get reduced quantities for this array and for this MPI rank */
+
   cs_real_t  dummy[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   cs_array_reduce_simple_norms_l(n_x,
                                  dim,
@@ -1477,6 +1481,7 @@ cs_evaluate_array_reduction(int                     dim,
                                  ssum);
 
   /* Parallel treatment */
+
   _synchronize_reduction(dim, min, max, wsum, asum, ssum);
 }
 
@@ -1519,9 +1524,11 @@ cs_evaluate_scatter_array_reduction(int                     dim,
               " %s: One needs an adjacency.\n", __func__);
 
   /* Get the min/max for this MPI rank */
+
   cs_array_reduce_minmax_l(n_x, dim, NULL, array, min, max);
 
   /* Get reduced quantities for this array and for this MPI rank */
+
   cs_array_scatter_reduce_norms_l(cs_cdo_quant->n_cells,
                                   c2x->idx, c2x->ids,
                                   NULL, /* filter list */
@@ -1530,6 +1537,7 @@ cs_evaluate_scatter_array_reduction(int                     dim,
                                   wsum, asum, ssum); /* results */
 
   /* Parallel treatment */
+
   _synchronize_reduction(dim, min, max, wsum, asum, ssum);
 }
 
@@ -1551,14 +1559,14 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
                                 cs_real_t           time_eval,
                                 cs_real_t           retval[])
 {
-  /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
-    /* Retrieve information from mesh location structures */
+  /* Retrieve information from mesh location structures */
+
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
   const cs_lnum_t  *elt_ids
     = (cs_cdo_quant->n_cells == z->n_elts) ? NULL : z->elt_ids;
@@ -1568,6 +1576,7 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
     = cs_quadrature_get_tetra_integral(def->dim, def->qtype);
 
   /* Perform the evaluation */
+
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     if (cs_flag_test(dof_flag, cs_flag_primal_cell))
@@ -1598,7 +1607,6 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
   }
   else
     bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1618,7 +1626,6 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
                              const cs_xdef_t   *def,
                              cs_real_t          retval[])
 {
-  /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -1626,9 +1633,11 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
   /* Retrieve information from mesh location structures */
+
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   /* Perform the evaluation */
+
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
     const cs_real_t  *constant_val = (const cs_real_t *)def->context;
@@ -1655,7 +1664,6 @@ cs_evaluate_density_by_value(cs_flag_t          dof_flag,
   }
   else
     bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1678,7 +1686,6 @@ cs_evaluate_potential_at_vertices_by_analytic(const cs_xdef_t   *def,
                                               const cs_lnum_t   *selected_lst,
                                               cs_real_t          retval[])
 {
-  /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -1692,16 +1699,17 @@ cs_evaluate_potential_at_vertices_by_analytic(const cs_xdef_t   *def,
   const cs_lnum_t  n_vertices = quant->n_vertices;
 
   /* Perform the evaluation */
+
   if (n_vertices == n_v_selected)
     ac->func(time_eval,
              n_vertices, NULL, quant->vtx_coord,
-             false,  /* compacted output ? */
+             false,  /* dense output ? */
              ac->input,
              retval);
   else
     ac->func(time_eval,
              n_v_selected, selected_lst, quant->vtx_coord,
-             false,  /* compacted output ? */
+             false,  /* dense output ? */
              ac->input,
              retval);
 }
@@ -1726,7 +1734,6 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
                                            const cs_lnum_t   *selected_lst,
                                            cs_real_t          retval[])
 {
-  /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -1740,20 +1747,22 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
   const cs_lnum_t  n_faces = quant->n_faces;
 
   /* Perform the evaluation */
+
   if (n_faces == n_f_selected) {
 
     /* All the support entities are selected:
        - First pass: interior faces
        - Second pass: border faces
     */
+
     ac->func(time_eval,
              quant->n_i_faces, NULL, quant->i_face_center,
-             true, /* Output is compacted ? */
+             true, /* Output is dense ? */
              ac->input,
              retval);
     ac->func(time_eval,
              quant->n_b_faces, NULL, quant->b_face_center,
-             true, /* Output is compacted ? */
+             true, /* Output is dense ? */
              ac->input,
              retval + def->dim*quant->n_i_faces);
 
@@ -1763,6 +1772,7 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
     assert(selected_lst != NULL);
 
     /* Selected faces are stored by increasing number */
+
     cs_lnum_t  n_i_faces = 0;
     for (cs_lnum_t  i = 0; i < n_f_selected; i++) {
       if (selected_lst[i] < quant->n_i_faces)
@@ -1772,23 +1782,24 @@ cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
     }
 
     /* Interior faces */
+
     ac->func(time_eval,
              n_i_faces, selected_lst, quant->i_face_center,
-             false, /* Output is compacted ? */
+             false, /* Output is dense ? */
              ac->input,
              retval);
 
     /* Border faces */
+
     cs_lnum_t n_b_faces = n_f_selected - n_i_faces;
     assert(n_b_faces > -1);
     ac->func(time_eval,
              n_b_faces, selected_lst + n_i_faces, quant->b_face_center,
-             false, /* Output is compacted ? */
+             false, /* Output is dense ? */
              ac->input,
              retval);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1807,7 +1818,6 @@ cs_evaluate_potential_at_cells_by_analytic(const cs_xdef_t    *def,
                                            const cs_real_t     time_eval,
                                            cs_real_t           retval[])
 {
-  /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -1823,13 +1833,13 @@ cs_evaluate_potential_at_cells_by_analytic(const cs_xdef_t    *def,
   if (def->meta & CS_FLAG_FULL_LOC) /* All cells are selected */
     ac->func(time_eval,
              quant->n_cells, NULL, quant->cell_centers,
-             false,  /* compacted output */
+             false,  /* dense output */
              ac->input,
              retval);
   else
     ac->func(time_eval,
              z->n_elts, z->elt_ids, quant->cell_centers,
-             false,  /* compacted output */
+             false,  /* dense output */
              ac->input,
              retval);
 
@@ -1856,9 +1866,9 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
                              cs_real_t          vvals[],
                              cs_real_t          wvals[])
 {
-  /* Sanity check */
   if (vvals == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
@@ -1866,6 +1876,7 @@ cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
   const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
 
   /* Perform the evaluation */
+
   bool check = false;
   if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
 
@@ -1908,7 +1919,6 @@ cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
                                            const cs_lnum_t   *selected_lst,
                                            cs_real_t          retval[])
 {
-  /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
   assert(def != NULL);
@@ -1919,6 +1929,7 @@ cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
   const cs_real_t  *input = (cs_real_t *)def->context;
 
   /* Perform the evaluation */
+
   if (def->dim == 1) { /* DoF is scalar-valued */
 
     const cs_real_t  const_val = input[0];
@@ -1935,6 +1946,7 @@ cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
       assert(selected_lst != NULL);
 
       /* Loop on selected vertices */
+
       for (cs_lnum_t i = 0; i < n_vertices; i++)
         retval[selected_lst[i]] = const_val;
 
@@ -1957,6 +1969,7 @@ cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
       assert(selected_lst != NULL);
 
       /* Loop on selected vertices */
+
       for (cs_lnum_t i = 0; i < n_vertices; i++)
         memcpy(retval + 3*selected_lst[i], input, _3real);
 
@@ -1985,7 +1998,6 @@ cs_evaluate_potential_at_faces_by_value(const cs_xdef_t   *def,
                                         const cs_lnum_t   *selected_lst,
                                         cs_real_t          retval[])
 {
-  /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
   assert(def != NULL);
@@ -2059,7 +2071,6 @@ cs_evaluate_potential_at_faces_by_value(const cs_xdef_t   *def,
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2076,9 +2087,9 @@ void
 cs_evaluate_potential_at_cells_by_value(const cs_xdef_t   *def,
                                         cs_real_t          retval[])
 {
-  /* Sanity check */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
   assert(def != NULL);
   assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_VALUE);
@@ -2144,7 +2155,6 @@ cs_evaluate_potential_at_cells_by_value(const cs_xdef_t   *def,
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2165,7 +2175,6 @@ cs_evaluate_circulation_along_edges_by_value(const cs_xdef_t   *def,
                                              const cs_lnum_t   *selected_lst,
                                              cs_real_t          retval[])
 {
-  /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -2230,7 +2239,6 @@ cs_evaluate_circulation_along_edges_by_value(const cs_xdef_t   *def,
               __func__, def->dim);
 
   } /* End of switch on dimension */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2251,7 +2259,6 @@ cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
                                              const cs_lnum_t   *selected_lst,
                                              cs_real_t          retval[])
 {
-  /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -2320,7 +2327,6 @@ cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
               __func__, def->dim);
 
   } /* End of switch on dimension */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2343,7 +2349,6 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
                                                 const cs_lnum_t   *selected_lst,
                                                 cs_real_t          retval[])
 {
-  /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -2362,6 +2367,7 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
   /* DoF is scalar-valued since this is a circulation but the definition is
    * either scalar-valued meaning that one only gives the tangential part or
    * vector-valued (in this case, one needs to extract the tangential part) */
+
   switch (def->dim) {
 
   case 1: /* Scalar-valued integral */
@@ -2454,7 +2460,6 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
               __func__, def->dim);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2474,7 +2479,6 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
                                       const cs_lnum_t   *selected_lst,
                                       cs_real_t          retval[])
 {
-  /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -2525,7 +2529,6 @@ cs_evaluate_average_on_faces_by_value(const cs_xdef_t   *def,
     }
 
   } /* Deal with a selection of cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2548,7 +2551,6 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t    *def,
                                          const cs_lnum_t    *selected_lst,
                                          cs_real_t           retval[])
 {
-  /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -2583,7 +2585,6 @@ cs_evaluate_average_on_faces_by_analytic(const cs_xdef_t    *def,
               _(" %s: Invalid dimension of analytical function.\n"), __func__);
 
   } /* End of switch on dimension */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2599,7 +2600,6 @@ void
 cs_evaluate_average_on_cells_by_value(const cs_xdef_t   *def,
                                       cs_real_t          retval[])
 {
-  /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -2640,7 +2640,6 @@ void
 cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
                                       cs_real_t          retval[])
 {
-  /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -2682,8 +2681,7 @@ cs_evaluate_average_on_cells_by_array(const cs_xdef_t   *def,
 
     }
 
-  } /* deal with a selection of cells */
-
+  } /* Deal with a selection of cells */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2702,7 +2700,6 @@ cs_evaluate_average_on_cells_by_analytic(const cs_xdef_t   *def,
                                          cs_real_t          time_eval,
                                          cs_real_t          retval[])
 {
-  /* Sanity checks */
   if (retval == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
@@ -2772,7 +2769,6 @@ cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
 {
   cs_real_t  result = 0.;
 
-  /* Sanity checks */
   if (array_val == NULL)
     return result;
 
