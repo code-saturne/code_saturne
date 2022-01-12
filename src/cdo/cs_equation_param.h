@@ -1442,6 +1442,21 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Copy only the part dedicated to the boundary conditions and the DoF
+ *        (degrees of freedom) enforcement from one \ref cs_equation_param_t
+ *        structure to another one.
+ *
+ * \param[in]      ref       pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst       pointer to the \ref cs_equation_param_t to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_copy_bc(const cs_equation_param_t   *ref,
+                          cs_equation_param_t         *dst);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Copy the settings from one \ref cs_equation_param_t structure to
  *         another one. The name is not copied.
  *

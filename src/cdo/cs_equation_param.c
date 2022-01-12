@@ -1431,6 +1431,64 @@ cs_equation_param_copy_from(const cs_equation_param_t   *ref,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Copy only the part dedicated to the boundary conditions and the DoF
+ *        (degrees of freedom) enforcement from one \ref cs_equation_param_t
+ *        structure to another one.
+ *
+ * \param[in]      ref       pointer to the reference \ref cs_equation_param_t
+ * \param[in, out] dst       pointer to the \ref cs_equation_param_t to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_copy_bc(const cs_equation_param_t   *ref,
+                          cs_equation_param_t         *dst)
+{
+  if (ref == NULL)
+    return;
+
+  if (dst == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Structure is not allocated.\n"
+              "%s: Stop copying a cs_equation_param_t structure.\n",
+              __func__, __func__);
+
+  /* Boundary conditions structure */
+
+  dst->default_bc = ref->default_bc;
+  dst->default_enforcement = ref->default_enforcement;
+  dst->strong_pena_bc_coeff = ref->strong_pena_bc_coeff;
+  dst->n_bc_defs = ref->n_bc_defs;
+  BFT_REALLOC(dst->bc_defs, dst->n_bc_defs, cs_xdef_t *);
+  for (int i = 0; i < ref->n_bc_defs; i++)
+    dst->bc_defs[i] = cs_xdef_copy(ref->bc_defs[i]);
+
+  /* Enforcement of internal DoFs */
+
+  if (ref->n_enforcements > 0) {
+
+    dst->n_enforcements = ref->n_enforcements;
+    BFT_REALLOC(dst->enforcement_params, dst->n_enforcements,
+                cs_enforcement_param_t *);
+
+    for (int i = 0; i < ref->n_enforcements; i++)
+      dst->enforcement_params[i] =
+        cs_enforcement_param_copy(ref->enforcement_params[i]);
+
+  }
+  else {
+
+    if (dst->n_enforcements > 0)
+      BFT_FREE(dst->enforcement_params);
+
+    dst->enforcement_params = NULL;
+    dst->n_enforcements = 0;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free the contents of a \ref cs_equation_param_t
  *
  * The cs_equation_param_t structure itself is not freed, but all its
