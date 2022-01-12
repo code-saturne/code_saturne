@@ -73,7 +73,7 @@ class DefineUserScalarsModel(Variables, Model):
     def solveConflictingVariables(self):
         def _sortConflicts(variable_node):
             """ Priority rule : meteo > model (electrical) > var_model (combustion) > thermal > user"""
-            type = variable_node.xmlGetAttribute("type", default="") 
+            type = variable_node.xmlGetAttribute("type", default="")
             return {"":+1, "user":0, "thermal":-1, "var_model":-2, "model":-3, "meteo":-4}[type]
         variables = self.case.xmlGetNodeList("variable")
         varDict = {}
@@ -81,16 +81,16 @@ class DefineUserScalarsModel(Variables, Model):
         for var in variables:
             name = var["name"]
             if name not in varDict.keys():
-                varDict[name] = [] 
+                varDict[name] = []
             varDict[name].append(var)
         for name, varList in varDict.items():
             if len(varList) > 1:
                 varList.sort(key=_sortConflicts)
                 for var in varList[1:]:
-                    saveRejects+= var.__str__() 
+                    saveRejects+= var.__str__()
                     var.xmlRemoveNode()
-        return saveRejects 
-                
+        return saveRejects
+
 
     def defaultScalarValues(self):
         """Return the default values - Method also used by ThermalScalarModel"""

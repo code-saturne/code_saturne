@@ -220,7 +220,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
                 is_scalar = not( (dim != None) and (int(dim)>1) )
                 if is_scalar:
-                    dicoLabel2Name[label] = (name, None) 
+                    dicoLabel2Name[label] = (name, None)
 
         return dicoLabel2Name
 
