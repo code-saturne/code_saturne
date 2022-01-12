@@ -1712,7 +1712,7 @@ cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
 
       /* Loop on selected vertices */
 
-      for (cs_lnum_t i = 0; i < n_vertices; i++)
+      for (cs_lnum_t i = 0; i < n_v_selected; i++)
         retval[selected_lst[i]] = const_val;
 
     }
@@ -1735,7 +1735,7 @@ cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
 
       /* Loop on selected vertices */
 
-      for (cs_lnum_t i = 0; i < n_vertices; i++)
+      for (cs_lnum_t i = 0; i < n_v_selected; i++)
         memcpy(retval + 3*selected_lst[i], input, _3real);
 
     }
