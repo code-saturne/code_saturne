@@ -1543,6 +1543,63 @@ cs_evaluate_scatter_array_reduction(int                     dim,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate the quantity defined by a value in the case of a density
+ *         field for all the degrees of freedom
+ *         Accessor to the value is by unit of volume
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t structure
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_density_by_value(cs_flag_t          dof_flag,
+                             const cs_xdef_t   *def,
+                             cs_real_t          retval[])
+{
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+
+  /* Retrieve information from mesh location structures */
+
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+  /* Perform the evaluation */
+
+  if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
+
+    const cs_real_t  *constant_val = (const cs_real_t *)def->context;
+
+    if (cs_flag_test(dof_flag, cs_flag_primal_cell))
+      _pcsd_by_value(constant_val[0], z->n_elts, z->elt_ids, retval);
+    else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
+      _dcsd_by_value(constant_val[0], z->n_elts, z->elt_ids, retval);
+    else
+      bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
+
+  }
+  else if (dof_flag & CS_FLAG_VECTOR) { /* DoF is vector-valued */
+
+    const cs_real_t  *constant_vec = (const cs_real_t *)def->context;
+
+    if (cs_flag_test(dof_flag, cs_flag_primal_cell))
+      _pcvd_by_value(constant_vec, z->n_elts, z->elt_ids, retval);
+    else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
+      _dcvd_by_value(constant_vec, z->n_elts, z->elt_ids, retval);
+    else
+      bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
+
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the value related to each DoF in the case of a density field
  *         The value defined by the analytic function is by unity of volume
  *
@@ -1607,298 +1664,6 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
   }
   else
     bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Evaluate the quantity defined by a value in the case of a density
- *         field for all the degrees of freedom
- *         Accessor to the value is by unit of volume
- *
- * \param[in]      dof_flag  indicate where the evaluation has to be done
- * \param[in]      def       pointer to a cs_xdef_t structure
- * \param[in, out] retval    pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_evaluate_density_by_value(cs_flag_t          dof_flag,
-                             const cs_xdef_t   *def,
-                             cs_real_t          retval[])
-{
-  if (retval == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
-
-  assert(def != NULL);
-  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
-
-  /* Retrieve information from mesh location structures */
-
-  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-
-  /* Perform the evaluation */
-
-  if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
-
-    const cs_real_t  *constant_val = (const cs_real_t *)def->context;
-
-    if (cs_flag_test(dof_flag, cs_flag_primal_cell))
-      _pcsd_by_value(constant_val[0], z->n_elts, z->elt_ids, retval);
-    else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
-      _dcsd_by_value(constant_val[0], z->n_elts, z->elt_ids, retval);
-    else
-      bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
-
-  }
-  else if (dof_flag & CS_FLAG_VECTOR) { /* DoF is vector-valued */
-
-    const cs_real_t  *constant_vec = (const cs_real_t *)def->context;
-
-    if (cs_flag_test(dof_flag, cs_flag_primal_cell))
-      _pcvd_by_value(constant_vec, z->n_elts, z->elt_ids, retval);
-    else if (cs_flag_test(dof_flag, cs_flag_dual_cell))
-      _dcvd_by_value(constant_vec, z->n_elts, z->elt_ids, retval);
-    else
-      bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
-
-  }
-  else
-    bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Evaluate the quantity attached to a potential field at vertices
- *         when the definition relies on an analytic expression
- *
- * \param[in]      def           pointer to a cs_xdef_t pointer
- * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      n_v_selected  number of selected vertices
- * \param[in]      selected_lst  list of selected vertices
- * \param[in, out] retval        pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_evaluate_potential_at_vertices_by_analytic(const cs_xdef_t   *def,
-                                              const cs_real_t    time_eval,
-                                              const cs_lnum_t    n_v_selected,
-                                              const cs_lnum_t   *selected_lst,
-                                              cs_real_t          retval[])
-{
-  if (retval == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
-
-  assert(def != NULL);
-  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
-  assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
-
-  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
-
-  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  const cs_lnum_t  n_vertices = quant->n_vertices;
-
-  /* Perform the evaluation */
-
-  if (n_vertices == n_v_selected)
-    ac->func(time_eval,
-             n_vertices, NULL, quant->vtx_coord,
-             false,  /* dense output ? */
-             ac->input,
-             retval);
-  else
-    ac->func(time_eval,
-             n_v_selected, selected_lst, quant->vtx_coord,
-             false,  /* dense output ? */
-             ac->input,
-             retval);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Evaluate the quantity attached to a potential field at face centers
- *         when the definition relies on an analytic expression
- *
- * \param[in]      def           pointer to a cs_xdef_t pointer
- * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      n_f_selected  number of selected faces
- * \param[in]      selected_lst  list of selected faces
- * \param[in, out] retval        pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
-                                           const cs_real_t    time_eval,
-                                           const cs_lnum_t    n_f_selected,
-                                           const cs_lnum_t   *selected_lst,
-                                           cs_real_t          retval[])
-{
-  if (retval == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
-
-  assert(def != NULL);
-  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
-  assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
-
-  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
-
-  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  const cs_lnum_t  n_faces = quant->n_faces;
-
-  /* Perform the evaluation */
-
-  if (n_faces == n_f_selected) {
-
-    /* All the support entities are selected:
-       - First pass: interior faces
-       - Second pass: border faces
-    */
-
-    ac->func(time_eval,
-             quant->n_i_faces, NULL, quant->i_face_center,
-             true, /* Output is dense ? */
-             ac->input,
-             retval);
-    ac->func(time_eval,
-             quant->n_b_faces, NULL, quant->b_face_center,
-             true, /* Output is dense ? */
-             ac->input,
-             retval + def->dim*quant->n_i_faces);
-
-  }
-  else {
-
-    assert(selected_lst != NULL);
-
-    /* Selected faces are stored by increasing number */
-
-    cs_lnum_t  n_i_faces = 0;
-    for (cs_lnum_t  i = 0; i < n_f_selected; i++) {
-      if (selected_lst[i] < quant->n_i_faces)
-        n_i_faces++;
-      else
-        break;
-    }
-
-    /* Interior faces */
-
-    ac->func(time_eval,
-             n_i_faces, selected_lst, quant->i_face_center,
-             false, /* Output is dense ? */
-             ac->input,
-             retval);
-
-    /* Border faces */
-
-    cs_lnum_t n_b_faces = n_f_selected - n_i_faces;
-    assert(n_b_faces > -1);
-    ac->func(time_eval,
-             n_b_faces, selected_lst + n_i_faces, quant->b_face_center,
-             false, /* Output is dense ? */
-             ac->input,
-             retval);
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Evaluate the quantity attached to a potential field at cell centers
- *         when the definition relies on an analytic expression
- *
- * \param[in]      def         pointer to a cs_xdef_t pointer
- * \param[in]      time_eval   physical time at which one evaluates the term
- * \param[in, out] retval      pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_evaluate_potential_at_cells_by_analytic(const cs_xdef_t    *def,
-                                           const cs_real_t     time_eval,
-                                           cs_real_t           retval[])
-{
-  if (retval == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
-
-  assert(def != NULL);
-  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
-  assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
-
-  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
-
-  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-
-  if (def->meta & CS_FLAG_FULL_LOC) /* All cells are selected */
-    ac->func(time_eval,
-             quant->n_cells, NULL, quant->cell_centers,
-             false,  /* dense output */
-             ac->input,
-             retval);
-  else
-    ac->func(time_eval,
-             z->n_elts, z->elt_ids, quant->cell_centers,
-             false,  /* dense output */
-             ac->input,
-             retval);
-
-  /* No sync since theses values are computed by only one rank */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a value to each DoF in the case of a potential field in order
- *         to put a given quantity inside the volume associated to the zone
- *         related to the given definition
- *         wvals may be NULL.
- *
- * \param[in]      dof_flag  indicate where the evaluation has to be done
- * \param[in]      def       pointer to a cs_xdef_t pointer
- * \param[in, out] vvals     pointer to the first array of computed values
- * \param[in, out] wvals     pointer to the second array of computed values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
-                             const cs_xdef_t   *def,
-                             cs_real_t          vvals[],
-                             cs_real_t          wvals[])
-{
-  if (vvals == NULL)
-    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
-
-  assert(def != NULL);
-  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
-
-  const cs_real_t  *input = (cs_real_t *)def->context;
-  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
-
-  /* Perform the evaluation */
-
-  bool check = false;
-  if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
-
-    const cs_real_t  const_val = input[0];
-
-    if (cs_flag_test(dof_flag, cs_flag_primal_vtx | cs_flag_primal_cell)) {
-      if (wvals == NULL)
-        bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
-      _pvcsp_by_qov(const_val, z->n_elts, z->elt_ids, vvals, wvals);
-      check = true;
-    }
-    else if (cs_flag_test(dof_flag, cs_flag_primal_vtx)) {
-      _pvsp_by_qov(const_val, z->n_elts, z->elt_ids, vvals);
-      check = true;
-    }
-
-  } /* Located at primal vertices */
-
-  if (!check)
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Stop evaluating a potential from 'quantity over volume'."
-                "\n This situation is not handled yet."), __func__);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1978,6 +1743,97 @@ cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
   }
   else
     bft_error(__FILE__, __LINE__, 0, _err_not_handled, __func__);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the quantity attached to a potential field at vertices
+ *         when the definition relies on an analytic expression
+ *
+ * \param[in]      def           pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      n_v_selected  number of selected vertices
+ * \param[in]      selected_lst  list of selected vertices
+ * \param[in, out] retval        pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_vertices_by_analytic(const cs_xdef_t   *def,
+                                              const cs_real_t    time_eval,
+                                              const cs_lnum_t    n_v_selected,
+                                              const cs_lnum_t   *selected_lst,
+                                              cs_real_t          retval[])
+{
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
+
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
+
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_lnum_t  n_vertices = quant->n_vertices;
+
+  /* Perform the evaluation */
+
+  if (n_vertices == n_v_selected)
+    ac->func(time_eval,
+             n_vertices, NULL, quant->vtx_coord,
+             false,  /* dense output ? */
+             ac->input,
+             retval);
+  else
+    ac->func(time_eval,
+             n_v_selected, selected_lst, quant->vtx_coord,
+             false,  /* dense output ? */
+             ac->input,
+             retval);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the quantity attached to a potential field at vertices
+ *         when the definition relies on a DoF function (Degrees of freedom)
+ *
+ * \param[in]      def           pointer to a cs_xdef_t pointer
+ * \param[in]      n_v_selected  number of selected vertices
+ * \param[in]      selected_lst  list of selected vertices
+ * \param[in, out] retval        pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_vertices_by_dof_func(const cs_xdef_t   *def,
+                                              const cs_lnum_t    n_v_selected,
+                                              const cs_lnum_t   *selected_lst,
+                                              cs_real_t          retval[])
+{
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_DOF_FUNCTION);
+
+  cs_xdef_dof_context_t  *dcx = def->context;
+
+  /* Perform the evaluation */
+
+  if (cs_cdo_quant->n_vertices == n_v_selected)
+    dcx->func(n_v_selected,
+              NULL,   /* elt_ids */
+              false,  /* dense output ? */
+              dcx->input,
+              retval);
+  else
+    dcx->func(n_v_selected,
+              selected_lst,   /* elt_ids */
+              false,          /* dense output ? */
+              dcx->input,
+              retval);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2075,6 +1931,94 @@ cs_evaluate_potential_at_faces_by_value(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate the quantity attached to a potential field at face centers
+ *         when the definition relies on an analytic expression
+ *
+ * \param[in]      def           pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      n_f_selected  number of selected faces
+ * \param[in]      selected_lst  list of selected faces
+ * \param[in, out] retval        pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
+                                           const cs_real_t    time_eval,
+                                           const cs_lnum_t    n_f_selected,
+                                           const cs_lnum_t   *selected_lst,
+                                           cs_real_t          retval[])
+{
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
+
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
+
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+  const cs_lnum_t  n_faces = quant->n_faces;
+
+  /* Perform the evaluation */
+
+  if (n_faces == n_f_selected) {
+
+    /* All the support entities are selected:
+       - First pass: interior faces
+       - Second pass: border faces
+    */
+
+    ac->func(time_eval,
+             quant->n_i_faces, NULL, quant->i_face_center,
+             true, /* Output is dense ? */
+             ac->input,
+             retval);
+    ac->func(time_eval,
+             quant->n_b_faces, NULL, quant->b_face_center,
+             true, /* Output is dense ? */
+             ac->input,
+             retval + def->dim*quant->n_i_faces);
+
+  }
+  else {
+
+    assert(selected_lst != NULL);
+
+    /* Selected faces are stored by increasing number */
+
+    cs_lnum_t  n_i_faces = 0;
+    for (cs_lnum_t  i = 0; i < n_f_selected; i++) {
+      if (selected_lst[i] < quant->n_i_faces)
+        n_i_faces++;
+      else
+        break;
+    }
+
+    /* Interior faces */
+
+    ac->func(time_eval,
+             n_i_faces, selected_lst, quant->i_face_center,
+             false, /* Output is dense ? */
+             ac->input,
+             retval);
+
+    /* Border faces */
+
+    cs_lnum_t n_b_faces = n_f_selected - n_i_faces;
+    assert(n_b_faces > -1);
+    ac->func(time_eval,
+             n_b_faces, selected_lst + n_i_faces, quant->b_face_center,
+             false, /* Output is dense ? */
+             ac->input,
+             retval);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate a potential field at cell centers from a definition by
  *         value
  *
@@ -2155,6 +2099,148 @@ cs_evaluate_potential_at_cells_by_value(const cs_xdef_t   *def,
     }
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the quantity attached to a potential field at cell centers
+ *         when the definition relies on an analytic expression
+ *
+ * \param[in]      def         pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval   physical time at which one evaluates the term
+ * \param[in, out] retval      pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_cells_by_analytic(const cs_xdef_t    *def,
+                                           const cs_real_t     time_eval,
+                                           cs_real_t           retval[])
+{
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
+
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)def->context;
+
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
+
+  if (def->meta & CS_FLAG_FULL_LOC) /* All cells are selected */
+    ac->func(time_eval,
+             quant->n_cells, NULL, quant->cell_centers,
+             false,  /* dense output */
+             ac->input,
+             retval);
+  else
+    ac->func(time_eval,
+             z->n_elts, z->elt_ids, quant->cell_centers,
+             false,  /* dense output */
+             ac->input,
+             retval);
+
+  /* No sync since theses values are computed by only one rank */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the quantity attached to a potential field at cells
+ *         when the definition relies on a DoF function (Degrees of freedom)
+ *
+ * \param[in]      def           pointer to a cs_xdef_t pointer
+ * \param[in, out] retval        pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_cells_by_dof_func(const cs_xdef_t   *def,
+                                           cs_real_t          retval[])
+{
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+  assert(def->type == CS_XDEF_BY_DOF_FUNCTION);
+
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+  cs_xdef_dof_context_t  *dcx = def->context;
+
+  /* Perform the evaluation */
+
+  if (cs_cdo_quant->n_cells == z->n_elts)
+    dcx->func(z->n_elts,
+              NULL,   /* elt_ids */
+              false,  /* dense output ? */
+              dcx->input,
+              retval);
+  else
+    dcx->func(z->n_elts,
+              z->elt_ids,   /* elt_ids */
+              false,        /* dense output ? */
+              dcx->input,
+              retval);
+
+  /* No sync since theses values are computed by only one rank */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a value to each DoF in the case of a potential field in order
+ *         to put a given quantity inside the volume associated to the zone
+ *         related to the given definition
+ *         wvals may be NULL.
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] vvals     pointer to the first array of computed values
+ * \param[in, out] wvals     pointer to the second array of computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
+                             const cs_xdef_t   *def,
+                             cs_real_t          vvals[],
+                             cs_real_t          wvals[])
+{
+  if (vvals == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
+
+  const cs_real_t  *input = (cs_real_t *)def->context;
+  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+
+  /* Perform the evaluation */
+
+  bool check = false;
+  if (dof_flag & CS_FLAG_SCALAR) { /* DoF is scalar-valued */
+
+    const cs_real_t  const_val = input[0];
+
+    if (cs_flag_test(dof_flag, cs_flag_primal_vtx | cs_flag_primal_cell)) {
+      if (wvals == NULL)
+        bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+      _pvcsp_by_qov(const_val, z->n_elts, z->elt_ids, vvals, wvals);
+      check = true;
+    }
+    else if (cs_flag_test(dof_flag, cs_flag_primal_vtx)) {
+      _pvsp_by_qov(const_val, z->n_elts, z->elt_ids, vvals);
+      check = true;
+    }
+
+  } /* Located at primal vertices */
+
+  if (!check)
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Stop evaluating a potential from 'quantity over volume'."
+                "\n This situation is not handled yet."), __func__);
 }
 
 /*----------------------------------------------------------------------------*/

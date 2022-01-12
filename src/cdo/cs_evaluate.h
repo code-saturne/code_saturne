@@ -128,6 +128,23 @@ cs_evaluate_scatter_array_reduction(int                     dim,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate the quantity defined by a value in the case of a density
+ *         field for all the degrees of freedom
+ *         Accessor to the value is by unit of volume
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t structure
+ * \param[in, out] retval    pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_density_by_value(cs_flag_t          dof_flag,
+                             const cs_xdef_t   *def,
+                             cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the value related to each DoF in the case of a density field
  *         The value defined by the analytic function is by unity of volume
  *
@@ -146,20 +163,21 @@ cs_evaluate_density_by_analytic(cs_flag_t           dof_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the quantity defined by a value in the case of a density
- *         field for all the degrees of freedom
- *         Accessor to the value is by unit of volume
+ * \brief  Evaluate a potential field at vertices from a definition by a
+ *         constant value
  *
- * \param[in]      dof_flag  indicate where the evaluation has to be done
- * \param[in]      def       pointer to a cs_xdef_t structure
- * \param[in, out] retval    pointer to the computed values
+ * \param[in]      def             pointer to a cs_xdef_t pointer
+ * \param[in]      n_v_selected    number of selected vertices
+ * \param[in]      selected_lst    list of selected vertices
+ * \param[in, out] retval          pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_density_by_value(cs_flag_t          dof_flag,
-                             const cs_xdef_t   *def,
-                             cs_real_t          retval[]);
+cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
+                                           const cs_lnum_t    n_v_selected,
+                                           const cs_lnum_t   *selected_lst,
+                                           cs_real_t          retval[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -183,77 +201,21 @@ cs_evaluate_potential_at_vertices_by_analytic(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate the quantity attached to a potential field at face centers
- *         when the definition relies on an analytic expression
+ * \brief  Evaluate the quantity attached to a potential field at vertices
+ *         when the definition relies on a DoF function (Degrees of freedom)
  *
  * \param[in]      def           pointer to a cs_xdef_t pointer
- * \param[in]      time_eval     physical time at which one evaluates the term
- * \param[in]      n_f_selected  number of selected faces
- * \param[in]      selected_lst  list of selected faces
+ * \param[in]      n_v_selected  number of selected vertices
+ * \param[in]      selected_lst  list of selected vertices
  * \param[in, out] retval        pointer to the computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
-                                           const cs_real_t    time_eval,
-                                           const cs_lnum_t    n_f_selected,
-                                           const cs_lnum_t   *selected_lst,
-                                           cs_real_t          retval[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Evaluate the quantity attached to a potential field at cell centers
- *         when the definition relies on an analytic expression
- *
- * \param[in]      def         pointer to a cs_xdef_t pointer
- * \param[in]      time_eval   physical time at which one evaluates the term
- * \param[in, out] retval      pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_evaluate_potential_at_cells_by_analytic(const cs_xdef_t    *def,
-                                           const cs_real_t     time_eval,
-                                           cs_real_t           retval[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define a value to each DoF in the case of a potential field in order
- *         to put a given quantity inside the volume associated to the zone
- *         related to the given definition
- *         wvals may be NULL.
- *
- * \param[in]      dof_flag  indicate where the evaluation has to be done
- * \param[in]      def       pointer to a cs_xdef_t pointer
- * \param[in, out] vvals     pointer to the first array of computed values
- * \param[in, out] wvals     pointer to the second array of computed values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
-                             const cs_xdef_t   *def,
-                             cs_real_t          vvals[],
-                             cs_real_t          wvals[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Evaluate a potential field at vertices from a definition by a
- *         constant value
- *
- * \param[in]      def             pointer to a cs_xdef_t pointer
- * \param[in]      n_v_selected    number of selected vertices
- * \param[in]      selected_lst    list of selected vertices
- * \param[in, out] retval          pointer to the computed values
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_evaluate_potential_at_vertices_by_value(const cs_xdef_t   *def,
-                                           const cs_lnum_t    n_v_selected,
-                                           const cs_lnum_t   *selected_lst,
-                                           cs_real_t          retval[]);
+cs_evaluate_potential_at_vertices_by_dof_func(const cs_xdef_t   *def,
+                                              const cs_lnum_t    n_v_selected,
+                                              const cs_lnum_t   *selected_lst,
+                                              cs_real_t          retval[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -275,6 +237,26 @@ cs_evaluate_potential_at_faces_by_value(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate the quantity attached to a potential field at face centers
+ *         when the definition relies on an analytic expression
+ *
+ * \param[in]      def           pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      n_f_selected  number of selected faces
+ * \param[in]      selected_lst  list of selected faces
+ * \param[in, out] retval        pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_faces_by_analytic(const cs_xdef_t   *def,
+                                           const cs_real_t    time_eval,
+                                           const cs_lnum_t    n_f_selected,
+                                           const cs_lnum_t   *selected_lst,
+                                           cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate a potential field at cell centers from a definition by
  *         value
  *
@@ -286,6 +268,56 @@ cs_evaluate_potential_at_faces_by_value(const cs_xdef_t   *def,
 void
 cs_evaluate_potential_at_cells_by_value(const cs_xdef_t   *def,
                                         cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the quantity attached to a potential field at cell centers
+ *         when the definition relies on an analytic expression
+ *
+ * \param[in]      def         pointer to a cs_xdef_t pointer
+ * \param[in]      time_eval   physical time at which one evaluates the term
+ * \param[in, out] retval      pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_cells_by_analytic(const cs_xdef_t    *def,
+                                           const cs_real_t     time_eval,
+                                           cs_real_t           retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the quantity attached to a potential field at cells
+ *         when the definition relies on a DoF function (Degrees of freedom)
+ *
+ * \param[in]      def           pointer to a cs_xdef_t pointer
+ * \param[in, out] retval        pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_at_cells_by_dof_func(const cs_xdef_t   *def,
+                                           cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a value to each DoF in the case of a potential field in order
+ *         to put a given quantity inside the volume associated to the zone
+ *         related to the given definition
+ *         wvals may be NULL.
+ *
+ * \param[in]      dof_flag  indicate where the evaluation has to be done
+ * \param[in]      def       pointer to a cs_xdef_t pointer
+ * \param[in, out] vvals     pointer to the first array of computed values
+ * \param[in, out] wvals     pointer to the second array of computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_potential_by_qov(cs_flag_t          dof_flag,
+                             const cs_xdef_t   *def,
+                             cs_real_t          vvals[],
+                             cs_real_t          wvals[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

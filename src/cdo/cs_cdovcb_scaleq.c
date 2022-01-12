@@ -1411,6 +1411,14 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
         cs_evaluate_potential_at_cells_by_analytic(def, t_eval, c_vals);
         break;
 
+      case CS_XDEF_BY_DOF_FUNCTION:
+        cs_evaluate_potential_at_vertices_by_dof_func(def,
+                                                      n_v_selected,
+                                                      selected_lst,
+                                                      v_vals);
+        cs_evaluate_potential_at_cells_by_dof_func(def, c_vals);
+        break;
+
       default:
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid way to initialize field values for eq. %s.\n",
