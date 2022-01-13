@@ -101,6 +101,7 @@ cs_equation_common.h \
 cs_equation_param.h \
 cs_equation_priv.h \
 cs_equation_system.h \
+cs_equation_system_param.h \
 cs_evaluate.h \
 cs_flag.h \
 cs_gwf.h \
@@ -175,6 +176,7 @@ cs_equation_bc.c \
 cs_equation_common.c \
 cs_equation_param.c \
 cs_equation_system.c \
+cs_equation_system_param.c \
 cs_evaluate.c \
 cs_flag.c \
 cs_gwf.c \
