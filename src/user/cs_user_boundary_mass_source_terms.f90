@@ -136,21 +136,16 @@
 !> \param[in]     nfbpcd        number of faces with condensation source terms
 !> \param[in]     ifbpcd        index of faces with condensation source terms
 !> \param[in]     itypcd        type of condensation source term for each ivar
-!> \param[in]     izftcd        faces zone with condensation source terms imposed
-!>                              (at previous and current time steps)
 !> \param[out]    spcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, spcond is the flow rate
 !>                              \f$ \Gamma_{cond}^n \f$)
-!> \param[out]    tpar          temperature imposed at the cold wall
-!>                              as constant or variable in time
-!>                              with a 1D thermal model
 !_______________________________________________________________________________
 
 subroutine cs_user_boundary_mass_source_terms &
  ( nvar   , nscal  ,                                              &
    nfbpcd , iappel ,                                              &
-   ifbpcd , itypcd , izftcd ,                                     &
-   spcond , tpar)
+   ifbpcd , itypcd ,                                              &
+   spcond )
 
 !===============================================================================
 
@@ -169,7 +164,6 @@ use period
 use ppincl
 use mesh
 use field
-use cs_tagmr
 use cs_nz_condensation
 use cs_nz_tagmr
 use cs_c_bindings
@@ -186,10 +180,8 @@ integer          iappel
 integer          nfbpcd
 
 integer          ifbpcd(nfbpcd), itypcd(nfbpcd,nvar)
-integer          izftcd(ncel)
 
 double precision spcond(nfbpcd,nvar)
-double precision tpar
 
 ! Local variables
 

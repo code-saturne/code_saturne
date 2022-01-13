@@ -64,7 +64,6 @@ base/entsor.f90 \
 base/ihmpre.f90 \
 base/cs_nz_condensation.f90 \
 base/cs_nz_tagmr.f90 \
-base/cs_tagmr.f90 \
 base/cs_tagms.f90 \
 base/numvar.f90 \
 base/optcal.f90 \
@@ -118,8 +117,7 @@ base/cs_f_interfaces.lo: base/cs_c_bindings.lo base/paramx.lo base/dimens.lo \
  base/mesh.lo base/optcal.lo base/field.lo lagr/lagran.lo
 base/cs_nz_condensation.lo: base/pointe.lo
 base/cs_nz_tagmr.lo: base/optcal.lo base/pointe.lo base/parall.lo \
- base/cs_nz_condensation.lo base/cs_tagmr.lo
-base/cs_tagmr.lo: base/pointe.lo
+ base/cs_nz_condensation.lo
 base/cs_tagms.lo: base/mesh.lo
 base/entsor.lo: base/paramx.lo base/field.lo
 base/field_operator.lo: base/paramx.lo base/dimens.lo base/mesh.lo \

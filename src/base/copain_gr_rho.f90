@@ -481,7 +481,7 @@ do ii = 1, nfbpcd
 
     !-- Computation of (hcond) the exchange
     !-- coefficient of condensation function of the
-    !-- the user parameter choice (icophc).
+    !-- the user parameter choice (izcophc).
     !-------------------------------------------------
     if (izcophc(iz).eq.1) then
 
@@ -558,7 +558,7 @@ do ii = 1, nfbpcd
 
   !-- Computation of (hw_cop) the thermal exchange
   !-- coefficient to the wall surface, function of
-  !-- the user parameter choice (icophg).
+  !-- the user parameter choice (izcophg).
   !-------------------------------------------------
   dplus = 0.d0
   yplus = yplbr(ifac)

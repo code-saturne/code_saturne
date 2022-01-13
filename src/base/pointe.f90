@@ -211,9 +211,6 @@ module pointe
   !> See \c ifbpcd and the user subroutine \ref cs_user_boundary_mass_source_terms
   integer, allocatable, dimension(:) :: ifbpcd
 
-  !> zone where a condensation source terms is imposed.
-  integer, allocatable, dimension(:) :: izftcd
-
   !> reference point for wall condensation, used in forced and mixed convection regimes
   double precision, allocatable, dimension(:,:) :: xref_cond
 

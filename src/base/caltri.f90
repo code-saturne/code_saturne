@@ -73,7 +73,6 @@ use cdomod
 
 use, intrinsic :: iso_c_binding
 
-use cs_tagmr
 use cs_tagms
 use cs_nz_condensation
 use cs_nz_tagmr
@@ -305,7 +304,6 @@ legacy_mass_st_zones = .false.
 
 ! Allocate temporary arrays for zones definition
 allocate(izctsm(ncel))
-allocate(izftcd(ncel)) ! should be in init_pcond only
 
 ! -----------------
 ! Mass source terms
@@ -346,7 +344,7 @@ nfbpcd = 0
 call cs_user_boundary_mass_source_terms &
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
-  ivoid  , ivoid  , izftcd ,                                     &
+  ivoid  , ivoid  ,                                              &
   rvoid  , rvoid(1)  )
 
 ! Total number of cells with condensation source term
@@ -382,7 +380,6 @@ call cs_1d_wall_thermal_check(iappel, isuit1)
 
 ! Free memory if relevant
 if (nctsmt.eq.0) deallocate(izctsm)
-if (nftcdt.eq.0) deallocate(izftcd)
 if (nfpt1t.eq.0) call cs_1d_wall_thermal_finalize
 
 ! Formats
@@ -566,14 +563,12 @@ if (nftcdt.gt.0) then
 
   iappel = 2
 
-  call init_tagmr
-
   call init_nz_tagmr
 
   call cs_user_boundary_mass_source_terms &
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
-  ifbpcd , itypcd , izftcd ,                                     &
+  ifbpcd , itypcd ,                                              &
   spcond , rvoid(1) )
 
   call init_nz_mesh_tagmr
@@ -1214,7 +1209,6 @@ if(nftcdt.gt.0) then
   if (nztag1d.eq.1) then
     call finalize_nz_mesh_tagmr
     call finalize_nz_tagmr
-    call finalize_tagmr
   endif
 endif
 

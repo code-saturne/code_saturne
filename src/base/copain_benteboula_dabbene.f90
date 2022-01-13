@@ -356,7 +356,7 @@ do ii = 1, nfbpcd
 
   !-- Computation of (hw_cop) the thermal exchange
   !-- coefficient to the wall surface, function of
-  !-- the user parameter choice (icophg).
+  !-- the user parameter choice (izcophg).
   !-------------------------------------------------
   call hturbp(iwalfs,xnu,Prdtl,sigmat,rough_t,uk,yplus,dplus,hflui,ypth)
   hw_enth = cpro_venth(iel)/distbf*hpflui

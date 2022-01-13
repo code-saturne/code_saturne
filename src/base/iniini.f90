@@ -527,24 +527,6 @@ kleak = 2.9d0
 ! --- Radiative Transfert (not activated by default)
 iirayo = 0
 
-! ---  Choice the way to compute the condensation exchange coefficient (hcond)
-!      associated to the condensation source term
-!      ( not activated by default icophc =0)
-
-icophc = 0
-
-! ---  Choice the way to compute the thermal exchange coefficient (hpcond)
-!      associated to the heat transfer of the condensation to the cooling wall
-!      ( not activated by default icophg =0)
-
-icophg = 0
-
-! ---  Choice the way to compute to compute the wall temperature at
-!      the solid/fluid interface coupled with condensation to the wall
-!      ( not activated by default itag1d =0)
-
-itag1d = 0
-
 ! --- Initialize the zones number for the condensation modelling
 nzones = -1
 

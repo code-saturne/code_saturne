@@ -182,7 +182,6 @@ contains
 
     use optcal
     use pointe
-    use cs_tagmr
     use cs_nz_condensation
     use parall
 
@@ -194,48 +193,27 @@ contains
 
     ! Copy single-zone to multi-zone formulation for compatibility if needed.
 
-    if ((nzones == 1) .AND. (izcophc(1) == 0) .AND. (izcophg(1) == 0) ) then
-      nztag1d = itag1d
-      do iiii = 1, nfbpcd ! Is this loop necessary ???!
-        iz = izzftcd(iiii)
-        izcophc(iz) = icophc
-        izcophg(iz) = icophg
-        iztag1d(iz) = itag1d
-        zxrefcond(:, iz) = xrefcond(:)
-        zprojcond(:, iz) = projcond(:)
-        znmur (iz)  = nmur
-        ztheta(iz)  = theta
-        zdxmin(iz)  = dxmin
-        zepais(iz)  = epais
-        ztpar0(iz)  = tpar0
+    ! Calcul du max des nmurs (pour les fichiers suite)
+    nztag1d = 0
+    do iz = 1, nzones
+      do iiii = 1, nfbpcd
+        if (izzftcd(iiii).eq.iz.and.iztag1d(iz).eq.1.and.iiii.gt.0) then
+          nztag1d = max(iztag1d(iz), nztag1d)
+        endif
       enddo
-    else
-      ! Calcul du max des nmurs (pour les fichiers suite)
-      nztag1d = 0
-      do iz = 1, nzones
-        do iiii = 1, nfbpcd
-          if (izzftcd(iiii).eq.iz.and.iztag1d(iz).eq.1.and.iiii.gt.0) then
-            nztag1d = max(iztag1d(iz), nztag1d)
-          endif
-        enddo
-      enddo
-      if (irangp.ge.0) call parcmx(nztag1d)
-    endif
+    enddo
+    if (irangp.ge.0) call parcmx(nztag1d)
 
     ! the Condensation model coupled with a 1-D thermal model
     ! requires the 1-D mesh generation and temperature initialization
     if (nztag1d.eq.1) then
 
-      if (nzones.eq.1) then
-        znmurx = max(nmur,znmur(1))
-      else
-        ! Calcul du max des nmurs (pour les fichiers suite)
-        znmurx = 0
-        do iz = 1, nzones
-          znmurx = max(znmur(iz), znmurx)
-        enddo
-        if (irangp.ge.0) call parcmx(znmurx)
-      endif
+      ! Calcul du max des nmurs (pour les fichiers suite)
+      znmurx = 0
+      do iz = 1, nzones
+        znmurx = max(znmur(iz), znmurx)
+      enddo
+      if (irangp.ge.0) call parcmx(znmurx)
 
       ! Allocate zone data
 

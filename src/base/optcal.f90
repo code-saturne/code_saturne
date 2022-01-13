@@ -888,28 +888,6 @@ module optcal
   !>    - true
   logical(c_bool), pointer, save :: fluid_solid
 
-  !> choice the way to compute the exchange coefficient of the
-  !> condensation source term used by the copain model
-  !>    - 1: the turbulent exchange coefficient of the flow
-  !>    - 2: the exchange coefficient of the copain correlation
-  !>    - 3: the maximal value between the two previous exchange coefficients
-  integer, save :: icophc
-
-  !> choice the way to compute the thermal exchange coefficient associated
-  !> to the heat transfer to wall due to the condensation phenomenon
-  !>    - 2: the thermal exchange coefficient of the copain correlation
-  !>    - 3: the maximal value between the current and previous thermal
-  !>         exchange coefficient evaluated by the copain correlation
-  integer, save :: icophg
-
-  !> choice the way to compute the wall temperature at the solid/fluid interface
-  !> coupled with condensation to the wall
-  !>    - 1: the wall temperature is computed with a 1-D thermal model
-  !>         with implicit numerical scheme
-  !>    - 0: the wall temperature is imposed as constant by the user (default)
-  !>         exchange coefficient evaluated by the copain correlation
-  integer, save :: itag1d
-
   !> choice the way to compute the wall temperature at the solid/fluid interface
   !> coupled with condensation to the metal mass structures wall
   !>    - 1: the wall temperature is computed with a 0-D thermal model

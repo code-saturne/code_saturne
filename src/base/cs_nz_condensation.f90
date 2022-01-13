@@ -113,11 +113,6 @@ module cs_nz_condensation
   double precision, allocatable, dimension(:, :) :: zxrefcond
   double precision, allocatable, dimension(:, :) :: zprojcond
 
-  ! Shortcut for zxref when only one condensation zone is declared
-  double precision,  dimension(3) :: xrefcond
-
-  double precision, dimension(3) :: projcond
-
   !> \}
   !> \}
 

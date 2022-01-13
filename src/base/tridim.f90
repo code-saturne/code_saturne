@@ -77,7 +77,6 @@ use turbomachinery
 use darcy_module
 use cs_f_interfaces
 use cs_c_bindings
-use cs_tagmr, only: rob, condb, cpb, hext, text
 use cs_tagms, only: t_metal, tmet0
 use cs_nz_tagmr
 use cs_nz_condensation
@@ -121,7 +120,7 @@ double precision xxp0, xyp0, xzp0
 double precision relaxk, relaxe, relaxw, relaxn
 double precision hdls(6)
 
-double precision, save :: tpar, tmet
+double precision, save :: tmet
 
 integer          ipass
 data             ipass /0/
@@ -601,20 +600,8 @@ if (nftcdt.gt.0) then
   call cs_user_boundary_mass_source_terms &
 ( nvar   , nscal  ,                                              &
   nfbpcd , iappel ,                                              &
-  ifbpcd , itypcd , izftcd ,                                     &
-  spcond , tpar)
-
-  if (nzones.eq.1) then
-    do ii = 1, nfbpcd
-      iz = izzftcd(ii)
-      zrob  (iz) = max(zrob(iz),rob)
-      zcondb(iz) = max(zcondb(iz),condb)
-      zcpb  (iz) = max(zcpb(iz),cpb)
-      zhext (iz) = max(zhext(iz),hext)
-      ztext (iz) = max(ztext(iz),text)
-      ztpar (iz) = max(ztpar(iz),tpar)
-    enddo
-  endif
+  ifbpcd , itypcd ,                                              &
+  spcond )
 
   ! Use empiric correlations to compute heat and mass transfer due to wall condensation
   call condensation_model(nvar, nfbpcd, ifbpcd, izzftcd, &

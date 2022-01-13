@@ -76,7 +76,7 @@ use field
 use mesh
 use cs_c_bindings
 use cs_f_interfaces
-use cs_nz_condensation, only: izcophc, izcophg, iztag1d, ztpar
+use cs_nz_condensation, only: iztag1d, ztpar
 use cs_nz_tagmr, only: ztpar0, ztmur
 
 use condensation_module

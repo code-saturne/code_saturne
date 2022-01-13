@@ -47,8 +47,6 @@
 !> \param[in]     nfbpcd        number of faces with condensation source terms
 !> \param[in]     ifbpcd        index of faces with condensation source terms
 !> \param[in]     itypcd        type of condensation source term for each ivar
-!> \param[in]     izftcd        faces zone with condensation source terms imposed
-!>                              (at previous and current time steps)
 !> \param[out]    spcond        variable value associated to the condensation
 !>                              source term (for ivar=ipr, spcond is the flow rate
 !>                              \f$ \Gamma_{cond}^n \f$)
@@ -57,8 +55,8 @@
 subroutine cs_user_boundary_mass_source_terms &
  ( nvar   , nscal  ,                                              &
    nfbpcd , iappel ,                                              &
-   ifbpcd , itypcd , izftcd ,                                     &
-   spcond , tpar)
+   ifbpcd , itypcd ,                                              &
+   spcond )
 
 !===============================================================================
 
@@ -93,10 +91,8 @@ integer          iappel
 integer          nfbpcd
 
 integer          ifbpcd(nfbpcd), itypcd(nfbpcd,nvar)
-integer          izftcd(ncel)
 
 double precision spcond(nfbpcd,nvar)
-double precision tpar
 
 ! Local variables
 
@@ -210,7 +206,7 @@ endif
 ! Parameters padding of the wall thermal model and condensation model
 ! ------------------------------------------------------------------
 ! The condensation model can be used alone with a constant temperature
-! specified by the user at the cold wall (at iappel=3 tpar=tpar0 in this case)
+! specified by the user at the cold wall (at iappel=3 tpar=ztpar0(iz) in this case)
 ! or together with a 0-D thermal model. In the latter case, the two models are
 ! coupled.
 !===============================================================================
@@ -230,7 +226,7 @@ if (iappel.eq.2) then
       ! Choice the way to compute the exchange coefficient (hcond)
       ! associated to the condensation sink source term.
 
-      ! With the parameter icophc defined below:
+      ! With the parameter izcophc defined below:
       ! ----------------------------------------
       !  1 : this one provided by the turbulent flow
       !        at the cooling wall (hcond = hcdt)
@@ -245,7 +241,7 @@ if (iappel.eq.2) then
       ! associated to the heat transfer at the cooling wall,
       ! due to the energy loss by condensation phenomenon.
 
-      ! With the parameter icophg defined below:
+      ! With the parameter izcophg defined below:
       ! ----------------------------------------
       !  2 : this one is given by the copain
       !      correlation (hpcond = hw_cop)
@@ -256,13 +252,13 @@ if (iappel.eq.2) then
       !         hpcond= max(hw_cop^n, hw_cop^n+1)
       izcophg(iz) = 3
 
-      ! Choice the way to impose the wall temperature (tpar)
+      ! Choice the way to impose the wall temperature (ztpar(iz))
       ! at the solid/fluid interface:
       !
-      ! with the parameter itag1d defined below:
+      ! with the parameter iztag1d defined below:
       ! ----------------------------------------
       !  0 : A constant wall temperature imposed is given by the user
-      !     ( tpar = tpar0 used as the wall temperature by the condensation model )
+      !     ( ztpar(iz) = ztpar0(iz) used as the wall temperature by the condensation model )
       !  1 : A variable wall temperature is imposed with a 1-D thermal model
       !     ( tpar = tmur(ii,1) computed by tagmro.f90 and used as the
       !       wall temperature by the condensation model )
@@ -278,13 +274,13 @@ if (iappel.eq.2) then
         !---------------------------------------------------
         ! (theta) parameter of the implicit scheme
         ztheta(iz) = 1.d0
-        ! (dxmin) First cell size of the 1D mesh
-        ! -> with (dxmin.eq.0) the Dx is constant
-        ! -> with (dxmin.ne.0) the Dx is variable
+        ! (zxdmin(iz)) First cell size of the 1D mesh
+        ! -> with (zxdmin(iz).eq.0) the Dx is constant
+        ! -> with (zxdmin(iz).ne.0) the Dx is variable
         zdxmin(iz) = 0.d0
-        ! (nmur) space steps number of the 1D mesh
+        ! (znmur(iz)) space steps number of the 1D mesh
         znmur(iz) = 10
-        ! (epais) thickness of the 1D wall
+        ! (zepais(iz)) thickness of the 1D wall
         zepais(iz) = 0.024d0
 
         !-------------------------------------------
@@ -296,6 +292,7 @@ if (iappel.eq.2) then
 
   enddo
 
+  ! TODO : check if this is necessary
   if (irangp.ge.0) then
     call parimx(nzones, izcophc)
     call parimx(nzones, izcophg)
@@ -344,11 +341,11 @@ elseif (iappel.eq.3) then
         ! --------------------------------------------
         ! Physical properties of the concrete material
         ! --------------------------------------------
-        ! (rob) density (kg.m-3)
+        ! (zrob(iz)) density (kg.m-3)
         zrob(iz)   = 8000.d0
-        ! (condb) thermal conductivity (W.m-1.C-1)
+        ! (zcondb(iz)) thermal conductivity (W.m-1.C-1)
         zcondb(iz) = 12.8d0
-        ! (cpb)   Specific heat (J.kg-1.C-1)
+        ! (zcpb(iz))   Specific heat (J.kg-1.C-1)
         zcpb(iz) = 500.0d0
       else
         ! Wall temperature imposed as constant
@@ -364,11 +361,11 @@ elseif (iappel.eq.3) then
         ! --------------------------------------------
         ! Physical properties of the concrete material
         ! --------------------------------------------
-        ! (rob) density (kg.m-3)
+        ! (zrob(iz)) density (kg.m-3)
         zrob(iz)   = 8000.d0
-        ! (condb) thermal conductivity (W.m-1.C-1)
+        ! (zcondb(iz)) thermal conductivity (W.m-1.C-1)
         zcondb(iz) = 12.8d0
-        ! (cpb)   Specific heat (J.kg-1.C-1)
+        ! (zcpb(iz))   Specific heat (J.kg-1.C-1)
         zcpb(iz) = 500.0d0
       else
         ! Wall temperature imposed as constant
