@@ -325,24 +325,24 @@ cs_hho_stokes_initialize(cs_flag_t                      scheme_flag,
   if (scheme_flag & CS_FLAG_SCHEME_POLY2) {
 
     space_scheme = CS_SPACE_SCHEME_HHO_P2;
-    fbs = CS_N_FACE_DOFS_2ND; // DoF by face
-    cbs = CS_N_CELL_DOFS_2ND; // DoF for the cell
+    fbs = CS_N_DOFS_FACE_2ND; // DoF by face
+    cbs = CS_N_DOFS_CELL_2ND; // DoF for the cell
     order = 2;
 
   }
   else if (scheme_flag & CS_FLAG_SCHEME_POLY1) {
 
     space_scheme = CS_SPACE_SCHEME_HHO_P1;
-    fbs = CS_N_FACE_DOFS_1ST; // DoF by face
-    cbs = CS_N_CELL_DOFS_1ST;  // DoF for the cell
+    fbs = CS_N_DOFS_FACE_1ST; // DoF by face
+    cbs = CS_N_DOFS_CELL_1ST;  // DoF for the cell
     order = 1;
 
   }
   else {
 
     space_scheme = CS_SPACE_SCHEME_HHO_P0;
-    fbs = CS_N_FACE_DOFS_0TH; // DoF by face
-    cbs = CS_N_CELL_DOFS_0TH; // DoF for the cell
+    fbs = CS_N_DOFS_FACE_0TH; // DoF by face
+    cbs = CS_N_DOFS_CELL_0TH; // DoF for the cell
     order = 0;
 
   }
@@ -493,8 +493,8 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
   switch (eqp->space_scheme) {
 
   case CS_SPACE_SCHEME_HHO_P0:
-    eqc->n_cell_dofs = CS_N_CELL_DOFS_0TH;
-    eqc->n_face_dofs = CS_N_FACE_DOFS_0TH;
+    eqc->n_cell_dofs = CS_N_DOFS_CELL_0TH;
+    eqc->n_face_dofs = CS_N_DOFS_FACE_0TH;
     /* Not owner; Only shared */
     eqc->ma = cs_shared_ma0;
     eqc->ms = cs_shared_ms0;
@@ -502,8 +502,8 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_SPACE_SCHEME_HHO_P1:
-    eqc->n_cell_dofs = CS_N_CELL_DOFS_1ST;
-    eqc->n_face_dofs = CS_N_FACE_DOFS_1ST;
+    eqc->n_cell_dofs = CS_N_DOFS_CELL_1ST;
+    eqc->n_face_dofs = CS_N_DOFS_FACE_1ST;
     /* Not owner; Only shared */
     eqc->ma = cs_shared_ma1;
     eqc->ms = cs_shared_ms1;
@@ -511,8 +511,8 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
     break;
 
   case CS_SPACE_SCHEME_HHO_P2:
-    eqc->n_cell_dofs = CS_N_CELL_DOFS_2ND;
-    eqc->n_face_dofs = CS_N_FACE_DOFS_2ND;
+    eqc->n_cell_dofs = CS_N_DOFS_CELL_2ND;
+    eqc->n_face_dofs = CS_N_DOFS_FACE_2ND;
     /* Not owner; Only shared */
     eqc->ma = cs_shared_ma2;
     eqc->ms = cs_shared_ms2;

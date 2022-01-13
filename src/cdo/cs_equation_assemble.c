@@ -1158,7 +1158,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAP1];
 
-      ma1 = cs_equation_build_matrix_assembler(n_faces, CS_N_FACE_DOFS_1ST,
+      ma1 = cs_equation_build_matrix_assembler(n_faces, CS_N_DOFS_FACE_1ST,
                                                f2f, rs);
       ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
 
@@ -1183,7 +1183,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAP2];
 
-      ma2 = cs_equation_build_matrix_assembler(n_faces, CS_N_FACE_DOFS_2ND,
+      ma2 = cs_equation_build_matrix_assembler(n_faces, CS_N_DOFS_FACE_2ND,
                                                f2f, rs);
       ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
 
@@ -1193,8 +1193,8 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
       t1 = cs_timer_time();
       cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
 
-      max_ddim = CS_MAX(max_ddim, CS_N_FACE_DOFS_2ND);
-      max_edim = CS_MAX(max_edim, CS_N_FACE_DOFS_2ND);
+      max_ddim = CS_MAX(max_ddim, CS_N_DOFS_FACE_2ND);
+      max_edim = CS_MAX(max_edim, CS_N_DOFS_FACE_2ND);
 
     }
 
@@ -1210,7 +1210,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
         const cs_range_set_t  *rs
           = connect->range_sets[CS_DOF_FACE_VECP1];
 
-        ma1 = cs_equation_build_matrix_assembler(n_faces, 3*CS_N_FACE_DOFS_1ST,
+        ma1 = cs_equation_build_matrix_assembler(n_faces, 3*CS_N_DOFS_FACE_1ST,
                                                  f2f, rs);
         ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
 
@@ -1220,8 +1220,8 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
         t1 = cs_timer_time();
         cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
 
-        max_ddim = CS_MAX(max_ddim, 3*CS_N_FACE_DOFS_1ST);
-        max_edim = CS_MAX(max_edim, 3*CS_N_FACE_DOFS_1ST);
+        max_ddim = CS_MAX(max_ddim, 3*CS_N_DOFS_FACE_1ST);
+        max_edim = CS_MAX(max_edim, 3*CS_N_DOFS_FACE_1ST);
 
       }
       else if  (hho_flag & CS_FLAG_SCHEME_POLY2) {
@@ -1231,7 +1231,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
         const cs_range_set_t  *rs
           = connect->range_sets[CS_DOF_FACE_VECP2];
 
-        ma2 = cs_equation_build_matrix_assembler(n_faces, 3*CS_N_FACE_DOFS_2ND,
+        ma2 = cs_equation_build_matrix_assembler(n_faces, 3*CS_N_DOFS_FACE_2ND,
                                                  f2f, rs);
         ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
 
@@ -1241,9 +1241,9 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
         t1 = cs_timer_time();
         cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
 
-        /* 18 = 3*6 =  3*CS_N_FACE_DOFS_2ND */
-        max_ddim = CS_MAX(max_ddim, 3*CS_N_FACE_DOFS_2ND);
-        max_edim = CS_MAX(max_edim, 3*CS_N_FACE_DOFS_2ND);
+        /* 18 = 3*6 =  3*CS_N_DOFS_FACE_2ND */
+        max_ddim = CS_MAX(max_ddim, 3*CS_N_DOFS_FACE_2ND);
+        max_edim = CS_MAX(max_edim, 3*CS_N_DOFS_FACE_2ND);
 
       }
 

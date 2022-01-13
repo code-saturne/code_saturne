@@ -79,13 +79,13 @@ BEGIN_C_DECLS
 
 /* Number of DoFs on faces and cells according to the polynomial space */
 
-#define CS_N_FACE_DOFS_0TH  1
-#define CS_N_FACE_DOFS_1ST  3
-#define CS_N_FACE_DOFS_2ND  6
+#define CS_N_DOFS_FACE_0TH  1
+#define CS_N_DOFS_FACE_1ST  3
+#define CS_N_DOFS_FACE_2ND  6
 
-#define CS_N_CELL_DOFS_0TH  1
-#define CS_N_CELL_DOFS_1ST  4
-#define CS_N_CELL_DOFS_2ND  10
+#define CS_N_DOFS_CELL_0TH  1
+#define CS_N_DOFS_CELL_1ST  4
+#define CS_N_DOFS_CELL_2ND  10
 
 /*============================================================================
  * Type definitions

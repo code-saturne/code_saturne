@@ -708,20 +708,20 @@ cs_equation_get_global_n_dofs(const cs_equation_t         *eq,
 
   case CS_SPACE_SCHEME_HHO_P1:
     if (cs_glob_n_ranks > 1)
-      return CS_N_FACE_DOFS_1ST*cdoq->n_g_faces
-        + CS_N_CELL_DOFS_1ST*cdoq->n_g_cells;
+      return CS_N_DOFS_FACE_1ST*cdoq->n_g_faces
+        + CS_N_DOFS_CELL_1ST*cdoq->n_g_cells;
     else
-      return (cs_gnum_t)(CS_N_FACE_DOFS_1ST*cdoq->n_faces
-                         + CS_N_CELL_DOFS_1ST*cdoq->n_cells);
+      return (cs_gnum_t)(CS_N_DOFS_FACE_1ST*cdoq->n_faces
+                         + CS_N_DOFS_CELL_1ST*cdoq->n_cells);
     break;
 
   case CS_SPACE_SCHEME_HHO_P2:
     if (cs_glob_n_ranks > 1)
-      return CS_N_FACE_DOFS_2ND*cdoq->n_g_faces
-        + CS_N_CELL_DOFS_2ND*cdoq->n_g_cells;
+      return CS_N_DOFS_FACE_2ND*cdoq->n_g_faces
+        + CS_N_DOFS_CELL_2ND*cdoq->n_g_cells;
     else
-      return (cs_gnum_t)(CS_N_FACE_DOFS_2ND*cdoq->n_faces
-                         + CS_N_CELL_DOFS_2ND*cdoq->n_cells);
+      return (cs_gnum_t)(CS_N_DOFS_FACE_2ND*cdoq->n_faces
+                         + CS_N_DOFS_CELL_2ND*cdoq->n_cells);
     break;
 
   default:
@@ -1952,8 +1952,8 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
         /* Set the size of the algebraic system arising from the cellwise
            process (OK for a sequential run) */
 
-        eq->n_sles_gather_elts = CS_N_FACE_DOFS_1ST * n_faces;
-        eq->n_sles_scatter_elts = CS_N_FACE_DOFS_1ST * n_faces;
+        eq->n_sles_gather_elts = CS_N_DOFS_FACE_1ST * n_faces;
+        eq->n_sles_scatter_elts = CS_N_DOFS_FACE_1ST * n_faces;
 
       }
       else if (eqp->dim == 3) {
@@ -1965,8 +1965,8 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
         /* Set the size of the algebraic system arising from the cellwise
            process (OK for a sequential run) */
 
-        eq->n_sles_gather_elts = 3*CS_N_FACE_DOFS_1ST * n_faces;
-        eq->n_sles_scatter_elts = 3*CS_N_FACE_DOFS_1ST * n_faces;
+        eq->n_sles_gather_elts = 3*CS_N_DOFS_FACE_1ST * n_faces;
+        eq->n_sles_scatter_elts = 3*CS_N_DOFS_FACE_1ST * n_faces;
 
       }
       else
@@ -1984,8 +1984,8 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
         /* Set the size of the algebraic system arising from the cellwise
            process (OK for a sequential run) */
 
-        eq->n_sles_gather_elts = CS_N_FACE_DOFS_2ND * n_faces;
-        eq->n_sles_scatter_elts = CS_N_FACE_DOFS_2ND * n_faces;
+        eq->n_sles_gather_elts = CS_N_DOFS_FACE_2ND * n_faces;
+        eq->n_sles_scatter_elts = CS_N_DOFS_FACE_2ND * n_faces;
 
       }
       else if (eqp->dim == 3) {
@@ -1997,8 +1997,8 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
         /* Set the size of the algebraic system arising from the cellwise
            process (OK for a sequential run) */
 
-        eq->n_sles_gather_elts = 3*CS_N_FACE_DOFS_2ND * n_faces;
-        eq->n_sles_scatter_elts = 3*CS_N_FACE_DOFS_2ND * n_faces;
+        eq->n_sles_gather_elts = 3*CS_N_DOFS_FACE_2ND * n_faces;
+        eq->n_sles_scatter_elts = 3*CS_N_DOFS_FACE_2ND * n_faces;
 
       }
       else

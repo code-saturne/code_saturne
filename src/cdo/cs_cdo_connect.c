@@ -1171,7 +1171,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   if (cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY2))
-    _assign_face_ifs_rs(mesh, n_faces, CS_N_FACE_DOFS_2ND,
+    _assign_face_ifs_rs(mesh, n_faces, CS_N_DOFS_FACE_2ND,
                         connect->interfaces + CS_DOF_FACE_SCAP2,
                         connect->range_sets + CS_DOF_FACE_SCAP2);
 
@@ -1179,7 +1179,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   if (cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY1))
-    _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_FACE_DOFS_1ST,
+    _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_DOFS_FACE_1ST,
                         connect->interfaces + CS_DOF_FACE_VECP1,
                         connect->range_sets + CS_DOF_FACE_VECP1);
 
@@ -1187,7 +1187,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   if (cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2))
-    _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_FACE_DOFS_2ND,
+    _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_DOFS_FACE_2ND,
                         connect->interfaces + CS_DOF_FACE_VECP2,
                         connect->range_sets + CS_DOF_FACE_VECP2);
 

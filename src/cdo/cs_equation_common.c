@@ -208,13 +208,13 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
       assert((CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECT) &&
              (CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECP0));
 
-      cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_1ST * n_faces);
+      cwb_size = CS_MAX(cwb_size, (size_t)CS_N_DOFS_FACE_1ST * n_faces);
 
     } /* Vector CDO-Fb or HHO-P1 or vector HHO-P0 */
 
     if (cs_flag_test(hho_flag,
                      CS_FLAG_SCHEME_POLY2 | CS_FLAG_SCHEME_SCALAR))
-      cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_2ND * n_faces);
+      cwb_size = CS_MAX(cwb_size, (size_t)CS_N_DOFS_FACE_2ND * n_faces);
 
     /* For vector equations and HHO */
 
@@ -222,10 +222,10 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
         cs_flag_test(hho_flag, CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2)) {
 
       if  (hho_flag & CS_FLAG_SCHEME_POLY1)
-        cwb_size = CS_MAX(cwb_size, (size_t)3*CS_N_FACE_DOFS_1ST*n_faces);
+        cwb_size = CS_MAX(cwb_size, (size_t)3*CS_N_DOFS_FACE_1ST*n_faces);
 
       else if  (hho_flag & CS_FLAG_SCHEME_POLY2)
-        cwb_size = CS_MAX(cwb_size, (size_t)3*CS_N_FACE_DOFS_2ND*n_faces);
+        cwb_size = CS_MAX(cwb_size, (size_t)3*CS_N_DOFS_FACE_2ND*n_faces);
 
     }
 
