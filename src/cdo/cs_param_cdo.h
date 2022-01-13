@@ -42,12 +42,14 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Specifications for OpenMP loops */
+
 #define CS_CDO_OMP_CHUNK_SIZE     128
 #define CS_CDO_OMP_SCHEDULE       schedule(static, CS_CDO_OMP_CHUNK_SIZE)
 #define CS_CDO_OMP_SYNC_SECTIONS  0 /* > 0 --> critical sections
                                        otherwise atomic sections */
 
 /* Avoid issues with assert in some OpenMp contructs using gcc 9 */
+
 #if defined(HAVE_OPENMP) && defined(__GNUC__)
   #if __GNUC__ == 9
     #define CS_CDO_OMP_ASSERT(e)
@@ -61,12 +63,14 @@ BEGIN_C_DECLS
 /* Size of the buffer used to collect global ids for rows and columns
    when assembling the values in the global matrix from the local cellwise
    matrices */
+
 #define CS_CDO_ASSEMBLE_BUF_SIZE  99
 
 /* The following limitation only results from an optimization in the size of
    the bit mask (can be changed if needed by changing the definition of
    the type cs_mask_t)
    Here is the max. number of reaction terms allowed in an equation */
+
 #define CS_CDO_N_MAX_REACTIONS  8
 
 #define CS_ALL_FACES   0        /* All faces: interior + border */
@@ -74,6 +78,7 @@ BEGIN_C_DECLS
 #define CS_INT_FACES   2        /* Interior faces */
 
 /* Number of DoFs on faces and cells according to the polynomial space */
+
 #define CS_N_FACE_DOFS_0TH  1
 #define CS_N_FACE_DOFS_1ST  3
 #define CS_N_FACE_DOFS_2ND  6

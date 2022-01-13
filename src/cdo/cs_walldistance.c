@@ -74,7 +74,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Redefined the name of functions from cs_math to get shorter names */
+
 #define _dp3 cs_math_3_dot_product
+
 #define CS_WALLDISTANCE_DBG 0
 
 /*============================================================================
@@ -114,10 +116,12 @@ _compute_poisson_cdovcb(const cs_cdo_connect_t     *connect,
 
   /* Perform the computation of the gradient at vertices using a cellwise
      algorithm */
+
   cs_equation_compute_vtx_field_gradient(eq, (cs_real_t *)vtx_gradient);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_WALLDISTANCE_DBG > 1
   /* Post-processing */
+
   cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                            CS_POST_WRITER_ALL_ASSOCIATED,
                            "Poisson_Sol",
@@ -140,8 +144,9 @@ _compute_poisson_cdovcb(const cs_cdo_connect_t     *connect,
 #endif
 
   /* Compute now wall distance at each vertex */
+
   const cs_real_t  *var = field->val;
-  /* Compute now the wall distance at each vertex */
+
   int  count = 0;
 
 # pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)    \
@@ -165,6 +170,7 @@ _compute_poisson_cdovcb(const cs_cdo_connect_t     *connect,
   }
 
   /* Post-processing */
+
   cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                            CS_POST_WRITER_ALL_ASSOCIATED,
                            field->name,
@@ -175,7 +181,6 @@ _compute_poisson_cdovcb(const cs_cdo_connect_t     *connect,
                            dist,            /* values on vertices */
                            NULL);           /* time step management structure */
 
-  /* Free memory */
   BFT_FREE(vtx_gradient);
 }
 
@@ -198,6 +203,7 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
                        cs_real_t                   dist[])
 {
   /* Initialize arrays */
+
   cs_real_t  *dualcell_vol = NULL;
   cs_real_3_t  *vtx_gradient = NULL;
 
@@ -211,6 +217,7 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
   }
 
   /* Reconstruct gradient at vertices from gradient at cells */
+
   const cs_adjacency_t  *c2v = connect->c2v;
   const cs_real_t  *var = field->val;
 
@@ -258,6 +265,7 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_WALLDISTANCE_DBG > 1
   /* Post-processing */
+
   cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                            CS_POST_WRITER_ALL_ASSOCIATED,
                            "Poisson_Sol",
@@ -280,6 +288,7 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
 #endif
 
   /* Compute now the wall distance at each vertex */
+
   int  count = 0;
 # pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN) \
   reduction(+:count)
@@ -302,6 +311,7 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
   }
 
   /* Post-processing */
+
   cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
                            CS_POST_WRITER_ALL_ASSOCIATED,
                            field->name,
@@ -312,7 +322,6 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
                            dist,            /* values on vertices */
                            NULL);           /* time step management structure */
 
-  /* Free memory */
   BFT_FREE(dualcell_vol);
   BFT_FREE(vtx_gradient);
 }
@@ -343,6 +352,7 @@ _compute_poisson_cdofb(const cs_cdo_connect_t     *connect,
   const cs_real_t  *f_var = cs_equation_get_face_values(eq, false);
 
   /* Loop on cells */
+
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
     cs_real_3_t  cell_gradient = {0., 0., 0.};
@@ -364,6 +374,7 @@ _compute_poisson_cdofb(const cs_cdo_connect_t     *connect,
       cell_gradient[k] *= inv_cell_vol;
 
     /* Compute the distance from the wall at this cell center */
+
     cs_real_t  tmp = _dp3(cell_gradient, cell_gradient) + 2*c_var[c_id];
     assert(tmp >= 0.); /* Sanity check */
 
@@ -382,7 +393,6 @@ _compute_poisson_cdofb(const cs_cdo_connect_t     *connect,
                     NULL,            /* values at internal faces */
                     NULL,            /* values at border faces */
                     NULL);           /* time step management structure */
-
 }
 
 /*============================================================================
@@ -415,7 +425,6 @@ cs_walldistance_is_activated(void)
 void
 cs_walldistance_activate(void)
 {
-  /* Sanity check */
   assert(cs_wd_poisson_eq == NULL);
 
   cs_equation_t  *eq =
@@ -426,16 +435,20 @@ cs_walldistance_activate(void)
                     CS_PARAM_BC_HMG_NEUMANN);    /* default BC */
 
   /* Set now the default numerical parameters for this equation */
+
   cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
   /* Enforcement of the Dirichlet boundary conditions */
+
   cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
 
   /* System to solve is SPD by construction */
+
   cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
   cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
 
   /* Set the static pointer */
+
   cs_wd_poisson_eq = eq;
 }
 
@@ -459,9 +472,11 @@ cs_walldistance_setup(void)
   cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
   /* Unity is a property defined by default */
+
   cs_equation_add_diffusion(eqp, cs_property_by_name("unity"));
 
   /* Add boundary conditions */
+
   cs_real_t  zero_value = 0.;
   const char  bc_zone_name[] = CS_BOUNDARY_WALLS_NAME;
 
@@ -471,6 +486,7 @@ cs_walldistance_setup(void)
                               &zero_value);
 
   /* Add source term */
+
   const char *st_zone_name =
     cs_mesh_location_get_name(CS_MESH_LOCATION_CELLS);
   cs_real_t  unity = 1.0;
@@ -500,23 +516,21 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
   CS_UNUSED(time_step);
   cs_equation_t  *eq = cs_wd_poisson_eq;
 
-  /* First step:
-     Solve the equation related to the definition of the wall distance. */
+  /* 1. Solve the equation related to the definition of the wall distance */
 
   cs_equation_solve_steady_state(mesh, eq);
 
-  /* Second step:
-     Compute the wall distance. */
+  /* 2. Compute the wall distance */
 
   cs_field_t  *field_p = cs_equation_get_field(eq);
 
   const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(field_p->location_id);
 
-  /* Sanity checks */
   assert(field_p->is_owner);
   assert(field_p->dim == 1);
 
   /* Initialize dist array */
+
   cs_real_t  *dist = NULL;
   BFT_MALLOC(dist, n_elts[0], cs_real_t);
 # pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
@@ -547,11 +561,11 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
   }
 
   /* Replace field values by dist */
+
 # pragma omp parallel for if (n_elts[0] > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_elts[0]; i++)
     field_p->val[i] = dist[i];
 
-  /* Free memory */
   BFT_FREE(dist);
 }
 

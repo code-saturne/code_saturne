@@ -68,7 +68,6 @@ BEGIN_C_DECLS
 
   \brief Build additional connectivities (or adjacencies) useful for building
          CDO or HHO schemes.
-
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -103,8 +102,7 @@ _add_f2e_entry(cs_lnum_t                  shift,
                cs_adjacency_t            *f2e)
 {
   /* Convention:  sgn = -1 => v2 < v1 otherwise sgn = 1
-     Edge id corresponds to the position in v2v->idx
-  */
+     Edge id corresponds to the position in v2v->idx */
 
   cs_lnum_t  vidx, vref;
   if (v1_id < v2_id)
@@ -146,7 +144,6 @@ static cs_adjacency_t *
 _build_f2e_connect(const cs_mesh_t         *m,
                    const cs_adjacency_t    *v2v)
 {
-  /* Sanity checks */
   assert(v2v != NULL);
 
   const cs_lnum_t  n_i_faces = m->n_i_faces;
@@ -708,7 +705,6 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
     BFT_FREE(is_border_edge);
 
   } /* edge interfaces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -899,6 +895,7 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
   const cs_lnum_t  n_elts = n_vertices * n_vtx_dofs;
 
   /* Structure to define */
+
   cs_range_set_t  *rs =  NULL;
   cs_interface_set_t  *ifs = NULL;
 
@@ -1120,6 +1117,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   }
 
   /* Already defined. */
+
   connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] = mesh->vtx_interfaces;
 
   /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
@@ -1136,6 +1134,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
     if (mesh->vtx_range_set != NULL)
       cs_range_set_destroy(&(mesh->vtx_range_set));
     mesh->vtx_range_set = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+
   }
 
   /* CDO vertex- or vertex+cell-based schemes for vector-valued variables */
@@ -1183,7 +1182,6 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
     _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_FACE_DOFS_1ST,
                         connect->interfaces + CS_CDO_CONNECT_FACE_VHP1,
                         connect->range_sets + CS_CDO_CONNECT_FACE_VHP1);
-
 
   /* HHO schemes with vector-valued unknowns with polynomial order k=2*/
 
