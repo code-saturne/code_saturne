@@ -52,6 +52,40 @@ BEGIN_C_DECLS
 
 typedef struct _cs_equation_t cs_equation_t;
 
+/*!
+ * \struct cs_equation_core_t
+ * \brief Main structures composiing an equation structure
+ *
+ * Intermediate structure useful to manipulate an array of (sub-)structures.
+ * Especially, the scheme context relies on the space discretization and it is
+ * not easy to manipulate void ** object. This is a way around to this
+ * operation.
+ *
+ * These three structures allow one to use nearly all operations related to
+ * an equation without having to build an equation structure. This is useful
+ * when handling extra-diagonal block in systems of equations.
+ *
+ * \var param
+ *      Set of parameters to specifiy the settings
+ *
+ * \var builder
+ *      Part of the quantities useful to build/manipulate an equation. All
+ *      quantities that are shared among all discretizations are in this
+ *      structure.
+ *
+ * \var scheme_context
+ *      Part of the quantities useful to build/manipulate an equation. All
+ *      quantities that are specific to the discrization are in this structure.
+ */
+
+typedef struct {
+
+  cs_equation_param_t     *param;
+  cs_equation_builder_t   *builder;
+  void                    *scheme_context;
+
+} cs_equation_core_t;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -344,6 +378,20 @@ cs_equation_get_scheme_context(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return a pointer to a structure useful to handle low-level
+ *         operations for the given equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  structure storing the main structure associated to an equation
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_core_t
+cs_equation_get_core(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return true is the given equation is steady otherwise false
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
@@ -613,6 +661,21 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
                        const cs_time_step_t        *ts,
                        const cs_cdo_quantities_t   *quant,
                        cs_cdo_connect_t            *connect);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a pointer to a core structure. If the input core structure is
+ *         not allocated, then one allocates the structure.
+ *
+ * \param[in]       eq       pointer to a cs_equation_t structure
+ * \param[in, out]  p_core   double pointer to a core structure to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_define_core(const cs_equation_t    *eq,
+                        cs_equation_core_t    **p_core);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -881,6 +881,34 @@ cs_equation_get_scheme_context(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return a pointer to a structure useful to handle low-level
+ *         operations for the given equation
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ *
+ * \return  structure storing the main structure associated to an equation
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_core_t
+cs_equation_get_core(const cs_equation_t    *eq)
+{
+  cs_equation_core_t  core =
+    { .param = NULL, .builder = NULL, .scheme_context = NULL };
+
+  if (eq != NULL) {
+
+    core.param = eq->param;
+    core.builder = eq->builder;
+    core.scheme_context = eq->scheme_context;
+
+  }
+
+  return core;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return a pointer to the cs_property_t structure associated to the
  *         diffusion term for this equation (NULL if not activated).
  *
@@ -2625,6 +2653,33 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
       cs_timer_stats_stop(eq->main_ts_id);
 
   }  /* Loop on equations */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a pointer to a core structure. If the input core structure is
+ *         not allocated, then one allocates the structure.
+ *
+ * \param[in]       eq       pointer to a cs_equation_t structure
+ * \param[in, out]  p_core   double pointer to a core structure to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_define_core(const cs_equation_t    *eq,
+                        cs_equation_core_t    **p_core)
+{
+  cs_equation_core_t  *core = (p_core == NULL) ? NULL : *p_core;
+
+  if (eq == NULL)
+    return;
+
+  if (core == NULL)
+    BFT_MALLOC(core, 1, cs_equation_core_t);
+
+  core->param = eq->param;
+  core->builder = eq->builder;
+  core->scheme_context = eq->scheme_context;
 }
 
 /*----------------------------------------------------------------------------*/
