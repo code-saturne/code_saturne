@@ -58,33 +58,6 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-/*============================================================================
- *  Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Query or modification of the option for domain partitioning when no
- * partitioning file is present.
- *
- * This function returns 1 or 2 according to the selected algorithm.
- *
- * Fortran interface :
- *
- * subroutine algdom (iopt)
- * *****************
- *
- * integer          iopt        : <-> : choice of the partitioning base
- *                                        0: query
- *                                        1: initial numbering
- *                                        2: Morton curve (bounding box)
- *                                        3: Morton curve (bounding cube)
- *                                        4: Hilbert curve (bounding box)
- *                                        5: Hilbert curve (bounding cube)
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (algdom, ALGDOM)(int  *iopt);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

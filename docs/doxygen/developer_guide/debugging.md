@@ -467,8 +467,8 @@ many directories and waiting for pre-processing before each run.
 
   * To make this easier, code_saturne provides a
     <span style="color: rgb(0,91,187)">`cs_debug_wrapper.py`</span> script, in the
-    <span style="color: rgb(0,91,187)">`bin`</span> directory of the source tree
-    (and in the
+    <span style="color: rgb(0,91,187)">`python/code_saturne/base`</span> directory
+    of the source tree (and in the
     <span style="color: rgb(0,91,187)">`lib/python<version>/site-packages/code_saturne`</span>
     directory of an installed build).
 

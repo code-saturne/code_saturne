@@ -678,7 +678,7 @@ void CS_PROCF (cspstb, CSPSTB) (int  *ipstdv)
        conversion is available */
     if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_TEMPERATURE) {
       if (   cs_tree_find_node_simple(cs_glob_tree, "property") == NULL
-          || cs_gui_thermal_model() <= 0)
+          || cs_gui_thermal_model_code() <= 0)
         post_b_temp = false;
     }
     if (post_b_temp) {
@@ -850,14 +850,14 @@ cs_gui_postprocess_meshes(void)
     }
     else if (cs_gui_strcmp(type, "BoundaryZone_cells")) {
       const cs_zone_t *z = cs_boundary_zone_by_name(location);
-      char *criteria = NULL;
+      const char *criteria = NULL;
       if (z->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
         criteria = cs_mesh_location_get_selection_string(z->location_id);
       else
         criteria = "all[]";
       cs_post_define_volume_mesh_by_func(id, label,
                                          _selection_func_boundary_cells,
-                                         criteria,  /* input */
+                                         (void *)criteria,  /* input */
                                          true,
                                          add_groups, auto_vars,
                                          n_writers, writer_ids);

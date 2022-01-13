@@ -98,6 +98,12 @@ interface
     implicit none
   end subroutine cs_gui_physical_properties
 
+  subroutine cs_gui_define_fans()  &
+       bind(C, name='cs_gui_define_fans')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_define_fans
+
   subroutine cs_gui_porous_model()  &
        bind(C, name='cs_gui_porous_model')
     use, intrinsic :: iso_c_binding
@@ -109,6 +115,18 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_gui_radiative_transfer_parameters
+
+  subroutine cs_gui_thermal_model()  &
+       bind(C, name='cs_gui_thermal_model')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_thermal_model
+
+  subroutine cs_gui_scalar_model_settings()  &
+       bind(C, name='cs_gui_scalar_model_settings')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_scalar_model_settings
 
   subroutine cs_velocity_pressure_set_solid()  &
        bind(C, name='cs_velocity_pressure_set_solid')
@@ -150,7 +168,7 @@ call usppmo(1)
 call uialin (nalinf, nalimx, epalim)
 
 ! thermal model
-call csther
+call cs_gui_thermal_model
 
 ! turbulence model choice
 call cs_gui_turb_model
@@ -302,17 +320,14 @@ call cs_gui_turb_ref_values
 ! This can be overwritten by the user in cs_user_parameters()
 call cs_f_turb_complete_constants
 
-! Scamin, scamax, turbulent flux model
-call cssca2()
-
-! Diffusivities
-call cssca3()
+! Scamin, scamax, turbulent flux model, diffusivities
+call cs_gui_scalar_model_settings()
 
 ! Porosity model
 call cs_gui_porous_model()
 
 ! Init fan
-call uifans()
+call cs_gui_define_fans()
 
 ! Init error estimator
 call uieres(iescal, iespre, iesder, iescor, iestot)

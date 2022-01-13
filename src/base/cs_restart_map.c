@@ -424,7 +424,6 @@ cs_restart_map_build(void)
 
   nm = fvm_nodal_destroy(nm);
 
-
   /* Set associated read function if not already set */
 
   if (_read_section_f == NULL) {

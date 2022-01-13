@@ -112,6 +112,16 @@ type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
+interface
+
+  subroutine cs_gui_initial_conditions()  &
+      bind(C, name='cs_gui_initial_conditions')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_gui_initial_conditions
+
+end interface
+
 !===============================================================================
 ! 1. Initialization
 !===============================================================================
@@ -176,10 +186,10 @@ if (ippmod(iphpar).gt.0) then
   call ppiniv0
 endif
 
-! - Interface Code_Saturne
-!   ======================
+! GUI definitions
+! ===============
 
-call uiiniv (isuite, ippmod(idarcy), ithvar)
+call cs_gui_initial_conditions
 
 ! User subroutine
 ! ===============

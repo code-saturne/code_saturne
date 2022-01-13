@@ -57,31 +57,6 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Thermal model.
- *
- * Fortran Interface:
- *
- * SUBROUTINE CSTHER ()
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csther, CSTHER) (void);
-
-/*----------------------------------------------------------------------------
- * Turbulence model
- *----------------------------------------------------------------------------*/
-
-void cs_gui_turb_model(void);
-
-/*----------------------------------------------------------------------------
- * Define reference length and reference velocity for the initialization of
- * the turbulence variables
- *----------------------------------------------------------------------------*/
-
-void cs_gui_turb_ref_values(void);
-
-/*----------------------------------------------------------------------------
  * Specific heat variable or constant indicator.
  *
  * Fortran Interface:
@@ -209,24 +184,6 @@ void CS_PROCF (csnum2, CSNUM2) (double  *relaxp,
                                 int     *imrgra);
 
 /*----------------------------------------------------------------------------
- * User scalar min and max values for clipping.
- *
- * Fortran Interface:
- *
- * subroutine cssca2
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cssca2, CSSCA2) (void);
-
-/*----------------------------------------------------------------------------
- * Read reference dynamic and user scalar viscosity
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cssca3, CSSCA3) (void);
-
-/*----------------------------------------------------------------------------
  * Turbulence initialization parameters.
  *
  * Fortran Interface:
@@ -307,23 +264,6 @@ void CS_PROCF(uitsth, UITSTH)(const int                  *f_id,
                               cs_real_t         *restrict tsimp);
 
 /*----------------------------------------------------------------------------
- * Variables and user scalars initialization.
- *
- * Fortran Interface:
- *
- * subroutine uiiniv
- * *****************
- *
- * integer          isuite   <--  restart indicator
- * integer          idarcy   <--  groundwater module activation
- * integer          iccfth   <--  type of initialization (compressible model)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
-                              const int          *idarcy,
-                                    int          *iccfth);
-
-/*----------------------------------------------------------------------------
  * User law for material Properties
  *
  * Fortran Interface:
@@ -373,18 +313,6 @@ void CS_PROCF (uidapp, UIDAPP) (const int       *permeability,
                                 const int       *unsaturated);
 
 /*----------------------------------------------------------------------------
- * Define fans with GUI
- *
- * Fortran Interface:
- *
- * SUBROUTINE UIFANS
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uifans, UIFANS) (void);
-
-/*----------------------------------------------------------------------------
  * Define error estimators
  *
  * Fortran Interface:
@@ -411,6 +339,18 @@ void CS_PROCF (uieres, UIERES) (int *iescal,
 void
 cs_gui_finalize(void);
 
+/*-----------------------------------------------------------------------------
+ * Get value of reference fluid properties parameter.
+ *
+ * parameters:
+ *   name            <--   parameter name
+ *   value           -->   parameter value
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_fluid_properties_value(const char  *param,
+                              double      *value);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute GUI-defined head losses for a given volume zone.
@@ -428,6 +368,15 @@ void
 cs_gui_head_losses(const cs_zone_t   *zone,
                    const cs_real_3_t *cvara_vel,
                    cs_real_t          cku[][6]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply initial conditions based on GUI-defined settings.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_initial_conditions(void);
 
 /*-----------------------------------------------------------------------------
  * Selection of linear solvers.
@@ -498,17 +447,22 @@ cs_gui_properties_value_by_fluid_id(const int    fluid_id,
                                     const char  *property_name,
                                     double      *value);
 
-/*-----------------------------------------------------------------------------
- * Get value of reference fluid properties parameter.
+/*----------------------------------------------------------------------------
+ * Read minimum / maximum values (used in clipping) and turbulent flux model
+ * for additional user or model variables.
  *
- * parameters:
- *   name            <--   parameter name
- *   value           -->   parameter value
+ * Also read reference dynamic and user scalar viscosity
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_fluid_properties_value(const char  *param,
-                              double      *value);
+cs_gui_scalar_model_settings(void);
+
+/*----------------------------------------------------------------------------
+ * Thermal model.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_thermal_model(void);
 
 /*----------------------------------------------------------------------------
  * Get thermal scalar model.
@@ -518,7 +472,7 @@ cs_gui_fluid_properties_value(const char  *param,
  *----------------------------------------------------------------------------*/
 
 int
-cs_gui_thermal_model(void);
+cs_gui_thermal_model_code(void);
 
 /*----------------------------------------------------------------------------
  * Time moments definition
@@ -540,6 +494,21 @@ cs_gui_turbomachinery(void);
 
 void
 cs_gui_turbomachinery_rotor(void);
+
+/*----------------------------------------------------------------------------
+ * Turbulence model
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_turb_model(void);
+
+/*----------------------------------------------------------------------------
+ * Define reference length and reference velocity for the initialization of
+ * the turbulence variables
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_turb_ref_values(void);
 
 /*----------------------------------------------------------------------------
  * Logging output for MEI usage.
