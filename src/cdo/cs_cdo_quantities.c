@@ -217,7 +217,7 @@ _get_fspec(cs_lnum_t                    f_id,
            const cs_mesh_t             *m,
            const cs_mesh_quantities_t  *mq)
 {
-  const int X = 0, Y = 1, Z = 2;
+  assert(X == 0 && Y == 1 && Z == 2);
 
   cs_lnum_t  f, j, k, v, e, s;
   double  inv_n, nx, ny, nz;
@@ -931,7 +931,8 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
                    const cs_cdo_connect_t      *connect,
                    cs_cdo_quantities_t         *quant)
 {
-  const int X = 0, Y = 1, Z = 2;
+  assert(X == 0 && Y == 1 && Z == 2);
+
   const cs_lnum_t n_cells = quant->n_cells;
   const cs_lnum_t n_faces = quant->n_faces;
 
