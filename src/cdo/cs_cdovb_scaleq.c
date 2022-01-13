@@ -1266,16 +1266,16 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 /*!
  * \brief  Destroy a cs_cdovb_scaleq_t structure
  *
- * \param[in, out]  builder   pointer to a cs_cdovb_scaleq_t structure
+ * \param[in, out]  scheme_context   pointer to a cs_cdovb_scaleq_t structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdovb_scaleq_free_context(void   *builder)
+cs_cdovb_scaleq_free_context(void   *scheme_context)
 {
-  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)builder;
+  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)scheme_context;
 
   if (eqc == NULL)
     return eqc;

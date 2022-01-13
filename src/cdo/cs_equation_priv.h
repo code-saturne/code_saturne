@@ -216,7 +216,7 @@ typedef void
  * \param[in]      rhs        rhs associated to this solution array
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
- * \param[in, out] data       pointer to a data structure
+ * \param[in, out] context    pointer to a context structure
  * \param[in, out] field_val  pointer to the current value of the field
  */
 /*----------------------------------------------------------------------------*/
@@ -226,7 +226,7 @@ typedef void
                              const cs_real_t            *rhs,
                              const cs_equation_param_t  *eqp,
                              cs_equation_builder_t      *eqb,
-                             void                       *data,
+                             void                       *context,
                              cs_real_t                  *field_val);
 
 /*----------------------------------------------------------------------------*/
