@@ -545,7 +545,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
   cs_syr_coupling_ent_t *coupling_ent = NULL;
 
   int locator_options[PLE_LOCATOR_N_OPTIONS];
-  locator_options[PLE_LOCATOR_NUMBERING] = 1;
+  locator_options[PLE_LOCATOR_NUMBERING] = 0;
 
   assert(syr_coupling != NULL);
 
@@ -824,6 +824,10 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
     bft_printf_flush();
   }
 
+  /* Shift from 1-base to 0-based locations */
+
+  ple_locator_shift_locations(coupling_ent->locator, -1);
+
   if (location_elts != coupling_ent->elts)
     fvm_nodal_destroy(location_elts);
 
@@ -965,12 +969,12 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
     for (i = 0; i < (cs_lnum_t)n_exterior; i++) {
       post_vtx_num[i] = i+1;
-      if (exterior_list[i] > coupling_ent->n_elts)
+      if (exterior_list[i] >= coupling_ent->n_elts)
         bft_error(__FILE__, __LINE__, 0,
                   _("Error: invalid exterior elements selection."));
-      exterior_coords[3*i   ] = el_list[3*(exterior_list[i]-1)   ];
-      exterior_coords[3*i +1] = el_list[3*(exterior_list[i]-1) +1];
-      exterior_coords[3*i +2] = el_list[3*(exterior_list[i]-1) +2];
+      exterior_coords[3*i   ] = el_list[3*exterior_list[i]   ];
+      exterior_coords[3*i +1] = el_list[3*exterior_list[i] +1];
+      exterior_coords[3*i +2] = el_list[3*exterior_list[i] +2];
     }
 
     fvm_nodal_define_vertex_list(ulck_points,
@@ -1755,14 +1759,8 @@ _syr_coupling_send_tf_hf(cs_syr_coupling_t  *syr_coupling,
                          cs_real_t           hf[],
                          int                 mode)
 {
-  cs_lnum_t ii;
-
-  cs_lnum_t n_dist = 0;
-
   double *send_var = NULL;
   cs_syr_coupling_ent_t  *coupling_ent = NULL;
-
-  const cs_lnum_t *dist_loc = NULL;
 
   assert(mode == 0 || mode == 1);
 
@@ -1774,16 +1772,18 @@ _syr_coupling_send_tf_hf(cs_syr_coupling_t  *syr_coupling,
   if (coupling_ent == NULL)
     return;
 
-  n_dist = ple_locator_get_n_dist_points(coupling_ent->locator);
-  dist_loc = ple_locator_get_dist_locations(coupling_ent->locator);
+  const cs_lnum_t n_dist
+    = ple_locator_get_n_dist_points(coupling_ent->locator);
+  const cs_lnum_t *dist_loc
+    = ple_locator_get_dist_locations(coupling_ent->locator);
 
   /* Prepare and send data */
 
   BFT_MALLOC(send_var, n_dist*2, double);
 
-  for (ii = 0; ii < n_dist; ii++) {
-    send_var[ii*2]     = tf[dist_loc[ii] - 1];
-    send_var[ii*2 + 1] = hf[dist_loc[ii] - 1];
+  for (cs_lnum_t ii = 0; ii < n_dist; ii++) {
+    send_var[ii*2]     = tf[dist_loc[ii]];
+    send_var[ii*2 + 1] = hf[dist_loc[ii]];
   }
 
   ple_locator_exchange_point_var(coupling_ent->locator,
@@ -1804,7 +1804,7 @@ _syr_coupling_send_tf_hf(cs_syr_coupling_t  *syr_coupling,
     /* Saved hf for a future used in source term definition */
 
     assert(coupling_ent->hvol != NULL);
-    for (ii = 0; ii < coupling_ent->n_elts; ii++)
+    for (cs_lnum_t ii = 0; ii < coupling_ent->n_elts; ii++)
       coupling_ent->hvol[ii] = hf[ii];
 
   }
