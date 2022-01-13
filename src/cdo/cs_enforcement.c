@@ -412,7 +412,7 @@ cs_enforcement_define_at_vertices(const cs_cdo_connect_t     *connect,
      is not defined, one takes the min. values (since one initializes with
      FLT_MAX). */
 
-  cs_interface_set_t  *ifs = connect->interfaces[CS_CDO_CONNECT_VTX_SCAL];
+  cs_interface_set_t  *ifs = connect->interfaces[CS_DOF_VTX_SCAL];
 
   if (ifs != NULL)
     cs_interface_set_min(ifs,
@@ -543,7 +543,7 @@ cs_enforcement_define_at_faces(const cs_cdo_connect_t     *connect,
      is not defined, one takes the min. values (since one initializes with
      FLT_MAX). */
 
-  cs_interface_set_t  *ifs = connect->interfaces[CS_CDO_CONNECT_FACE_SP0];
+  cs_interface_set_t  *ifs = connect->interfaces[CS_DOF_FACE_SCAL];
 
   if (ifs != NULL)
     cs_interface_set_min(ifs,
@@ -674,7 +674,7 @@ cs_enforcement_define_at_edges(const cs_cdo_connect_t     *connect,
      is not defined, one takes the min. values (since one initializes with
      FLT_MAX). */
 
-  cs_interface_set_t  *ifs = connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL];
+  cs_interface_set_t  *ifs = connect->interfaces[CS_DOF_EDGE_SCAL];
 
   if (ifs != NULL)
     cs_interface_set_min(ifs,

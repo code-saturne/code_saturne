@@ -1643,7 +1643,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
         vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
       cs_matrix_structure_t  *ms
-        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_VTX_SCAL);
+        = cs_equation_get_matrix_structure(CS_DOF_VTX_SCAL);
 
       if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
         cs_cdovb_scaleq_init_common(quant, connect, time_step, ms);
@@ -1657,7 +1657,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
         vcb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
 
       cs_matrix_structure_t  *ms
-        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_VTX_VECT);
+        = cs_equation_get_matrix_structure(CS_DOF_VTX_VECT);
 
       if (vb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
         cs_cdovb_vecteq_init_common(quant, connect, time_step, ms);
@@ -1676,7 +1676,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
        * it is a circulation associated to each edge */
 
       cs_matrix_structure_t  *ms
-        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_EDGE_SCAL);
+        = cs_equation_get_matrix_structure(CS_DOF_EDGE_SCAL);
 
       cs_cdoeb_vecteq_init_common(quant, connect, time_step, ms);
 
@@ -1690,7 +1690,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
                      CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR)) {
 
       cs_matrix_structure_t  *ms
-        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_SP0);
+        = cs_equation_get_matrix_structure(CS_DOF_FACE_SCAL);
 
       cs_cdofb_scaleq_init_common(quant, connect, time_step, ms);
 
@@ -1700,7 +1700,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
                      CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)) {
 
       cs_matrix_structure_t  *ms
-        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_SP1);
+        = cs_equation_get_matrix_structure(CS_DOF_FACE_SCAP1);
 
       cs_cdofb_vecteq_init_common(quant, connect, time_step, ms);
 
@@ -1709,11 +1709,11 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
     if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
       cs_matrix_structure_t  *ms0
-        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_SP0);
+        = cs_equation_get_matrix_structure(CS_DOF_FACE_SCAL);
       cs_matrix_structure_t  *ms1
-        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_SP1);
+        = cs_equation_get_matrix_structure(CS_DOF_FACE_SCAP1);
       cs_matrix_structure_t  *ms2
-        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_SP2);
+        = cs_equation_get_matrix_structure(CS_DOF_FACE_SCAP2);
 
       cs_hho_scaleq_init_common(hho_scheme_flag,
                                 quant, connect, time_step,
@@ -1724,11 +1724,11 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
     if (hho_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
 
       cs_matrix_structure_t  *ms0
-        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_VHP0);
+        = cs_equation_get_matrix_structure(CS_DOF_FACE_VECP0);
       cs_matrix_structure_t  *ms1
-        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_VHP1);
+        = cs_equation_get_matrix_structure(CS_DOF_FACE_VECP1);
       cs_matrix_structure_t  *ms2
-        = cs_equation_get_matrix_structure(CS_CDO_CONNECT_FACE_VHP2);
+        = cs_equation_get_matrix_structure(CS_DOF_FACE_VECP2);
 
       cs_hho_vecteq_init_common(hho_scheme_flag,
                                 quant, connect, time_step,
@@ -1828,7 +1828,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
 
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+        eq->rset = connect->range_sets[CS_DOF_VTX_SCAL];
 
         /* Set the size of the algebraic system arising from the cellwise
            process */
@@ -1840,7 +1840,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
 
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
+        eq->rset = connect->range_sets[CS_DOF_VTX_VECT];
 
         /* Set the size of the algebraic system arising from the cellwise
            process */
@@ -1859,7 +1859,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
 
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+        eq->rset = connect->range_sets[CS_DOF_VTX_SCAL];
 
         /* Set the size of the algebraic system arising from the cellwise
            process */
@@ -1880,7 +1880,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
 
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_EDGE_SCAL];
+        eq->rset = connect->range_sets[CS_DOF_EDGE_SCAL];
 
         /* Set the size of the algebraic system arising from the cellwise
            process */
@@ -1898,7 +1898,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
 
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+        eq->rset = connect->range_sets[CS_DOF_FACE_SCAL];
 
         /* Set the size of the algebraic system arising from the cellwise
            process */
@@ -1910,7 +1910,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
 
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+        eq->rset = connect->range_sets[CS_DOF_FACE_VECT];
 
         /* Set the size of the algebraic system arising from the cellwise
            process (OK for a sequential run) */
@@ -1929,7 +1929,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
 
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+        eq->rset = connect->range_sets[CS_DOF_FACE_SCAL];
 
         /* Set the size of the algebraic system arising from the cellwise
            process */
@@ -1947,7 +1947,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
 
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
+        eq->rset = connect->range_sets[CS_DOF_FACE_SCAP1];
 
         /* Set the size of the algebraic system arising from the cellwise
            process (OK for a sequential run) */
@@ -1960,7 +1960,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
 
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
+        eq->rset = connect->range_sets[CS_DOF_FACE_VECP1];
 
         /* Set the size of the algebraic system arising from the cellwise
            process (OK for a sequential run) */
@@ -1979,7 +1979,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
 
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
+        eq->rset = connect->range_sets[CS_DOF_FACE_SCAP2];
 
         /* Set the size of the algebraic system arising from the cellwise
            process (OK for a sequential run) */
@@ -1992,7 +1992,7 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
 
-        eq->rset = connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
+        eq->rset = connect->range_sets[CS_DOF_FACE_VECP2];
 
         /* Set the size of the algebraic system arising from the cellwise
            process (OK for a sequential run) */
@@ -2609,8 +2609,8 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
     if (eqp->n_ic_defs > 0) {
       if (cs_param_space_scheme_is_face_based(eqp->space_scheme)) {
-        if (connect->interfaces[CS_CDO_CONNECT_FACE_SP0] == NULL)
-          connect->interfaces[CS_CDO_CONNECT_FACE_SP0] =
+        if (connect->interfaces[CS_DOF_FACE_SCAL] == NULL)
+          connect->interfaces[CS_DOF_FACE_SCAL] =
             cs_cdo_connect_define_face_interface(mesh);
       }
     }

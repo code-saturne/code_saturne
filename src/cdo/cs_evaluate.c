@@ -343,8 +343,8 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
 
   /* Handle parallelism (always the scalar interface) */
 
-  if (cs_cdo_connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
-    cs_interface_set_max(cs_cdo_connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+  if (cs_cdo_connect->interfaces[CS_DOF_VTX_SCAL] != NULL)
+    cs_interface_set_max(cs_cdo_connect->interfaces[CS_DOF_VTX_SCAL],
                          n_vertices,
                          1,           /* stride */
                          true,        /* interlace, not useful here */

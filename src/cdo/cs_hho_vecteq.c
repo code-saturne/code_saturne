@@ -805,11 +805,11 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     /* Not owner; Only shared */
     eqc->ms = cs_shared_ms0;
-    eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_VHP0];
+    eqc->rs = connect->range_sets[CS_DOF_FACE_VECP0];
 
     /* Assembly process */
     eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P0,
-                                             CS_CDO_CONNECT_FACE_VHP0);
+                                             CS_DOF_FACE_VECP0);
     break;
 
   case CS_SPACE_SCHEME_HHO_P1:
@@ -818,11 +818,11 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     /* Not owner; Only shared */
     eqc->ms = cs_shared_ms1;
-    eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
+    eqc->rs = connect->range_sets[CS_DOF_FACE_VECP1];
 
     /* Assembly process */
     eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P1,
-                                             CS_CDO_CONNECT_FACE_VHP1);
+                                             CS_DOF_FACE_VECP1);
     break;
 
   case CS_SPACE_SCHEME_HHO_P2:
@@ -831,11 +831,11 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
 
     /* Not owner; Only shared */
     eqc->ms = cs_shared_ms2;
-    eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
+    eqc->rs = connect->range_sets[CS_DOF_FACE_VECP2];
 
     /* Assembly process */
     eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P2,
-                                             CS_CDO_CONNECT_FACE_VHP2);
+                                             CS_DOF_FACE_VECP2);
     break;
 
     /* TODO: case CS_SPACE_SCHEME_HHO_PK */

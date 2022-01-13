@@ -35,6 +35,7 @@
 
 #include "cs_base.h"
 #include "cs_flag.h"
+#include "cs_param_types.h"
 #include "cs_mesh.h"
 #include "cs_mesh_adjacencies.h"
 #include "cs_range_set.h"
@@ -46,25 +47,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Macro definitions
  *============================================================================*/
-
-/* Main categories to consider for high-level structures
-   Remark: scalar-valued HHO-P1 and vector-valued CDO-Fb shares the same
-   structures
-   DoF = Degrees of Freedom
-*/
-
-#define CS_CDO_CONNECT_VTX_SCAL   0 /* Vb or VCb scalar-valued DoF */
-#define CS_CDO_CONNECT_VTX_VECT   1 /* Vb or VCb vector-valued DoF */
-#define CS_CDO_CONNECT_FACE_SP0   2 /* Fb or HHO-P0 scalar-valued DoF */
-#define CS_CDO_CONNECT_FACE_VP0   3 /* Fb vector-valued DoF */
-#define CS_CDO_CONNECT_FACE_SP1   3 /* HHO-P1 scalar-valued */
-#define CS_CDO_CONNECT_FACE_SP2   4 /* HHO-P2 scalar-valued DoF */
-#define CS_CDO_CONNECT_FACE_VHP0  3 /* HHO-P0 vector-valued DoF */
-#define CS_CDO_CONNECT_FACE_VHP1  5 /* HHO-P1 vector-valued DoF */
-#define CS_CDO_CONNECT_FACE_VHP2  6 /* HHO-P2 vector-valued DoF */
-#define CS_CDO_CONNECT_EDGE_SCAL  7 /* Eb scalar-valued DoF */
-
-#define CS_CDO_CONNECT_N_CASES    8
 
 /* Additional macros */
 
@@ -129,8 +111,8 @@ typedef struct {
 
   /* Structures to handle parallelism/assembler */
 
-  cs_range_set_t       *range_sets[CS_CDO_CONNECT_N_CASES];
-  cs_interface_set_t   *interfaces[CS_CDO_CONNECT_N_CASES];
+  cs_range_set_t       *range_sets[CS_N_DOF_CASES];
+  cs_interface_set_t   *interfaces[CS_N_DOF_CASES];
 
 } cs_cdo_connect_t;
 

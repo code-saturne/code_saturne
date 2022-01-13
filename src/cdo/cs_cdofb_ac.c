@@ -657,7 +657,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
   const cs_time_step_t *ts = cs_shared_time_step;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_VECT];
 
   assert(cs_equation_param_has_time(mom_eqp) == true);
   assert(mom_eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
@@ -1197,7 +1197,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_VECT];
 
   /* Retrieve fields */
 
@@ -1366,7 +1366,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
 

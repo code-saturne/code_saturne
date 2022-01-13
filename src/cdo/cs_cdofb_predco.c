@@ -689,8 +689,8 @@ _update_variables(cs_cdofb_predco_t           *sc)
 
   /* Parallel or periodic sum */
 
-  if (connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL)
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_FACE_SP0],
+  if (connect->interfaces[CS_DOF_FACE_SCAL] != NULL)
+    cs_interface_set_sum(connect->interfaces[CS_DOF_FACE_SCAL],
                          n_faces,
                          3,
                          true,
@@ -1065,7 +1065,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   const cs_time_step_t *ts = cs_shared_time_step;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *mom_rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+  const cs_range_set_t  *mom_rs = connect->range_sets[CS_DOF_FACE_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
 

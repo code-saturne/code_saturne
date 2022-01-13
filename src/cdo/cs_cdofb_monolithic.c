@@ -1967,7 +1967,7 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
 
   case CS_NAVSTO_SLES_BY_BLOCKS:
     {
-      cs_shared_range_set = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+      cs_shared_range_set = connect->range_sets[CS_DOF_FACE_SCAL];
       cs_shared_matrix_structure = cs_cdofb_scaleq_matrix_structure();
 
       int  block_sizes[3] =
@@ -2007,7 +2007,7 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
   case CS_NAVSTO_SLES_UZAWA_AL:
   case CS_NAVSTO_SLES_UZAWA_CG:
   case CS_NAVSTO_SLES_UZAWA_SCHUR_GCR:
-    cs_shared_range_set = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+    cs_shared_range_set = connect->range_sets[CS_DOF_FACE_VECT];
     cs_shared_matrix_structure = cs_cdofb_vecteq_matrix_structure();
     break;
 
@@ -2243,7 +2243,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
     sc->solve = cs_cdofb_monolithic_krylov_block_precond;
     sc->assemble = _assembly_by_blocks;
     sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                                      CS_CDO_CONNECT_FACE_SP0);
+                                                      CS_DOF_FACE_SCAL);
 
     BFT_MALLOC(sc->mav_structures, 9, cs_matrix_assembler_values_t *);
 
@@ -2260,7 +2260,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
     sc->solve = cs_cdofb_monolithic_gkb_solve;
     sc->assemble = _velocity_full_assembly;
     sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                                      CS_CDO_CONNECT_FACE_VP0);
+                                                      CS_DOF_FACE_VECT);
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
 
@@ -2284,7 +2284,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
     sc->solve = cs_cdofb_monolithic_krylov_block_precond;
     sc->assemble = _velocity_full_assembly;
     sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                                      CS_CDO_CONNECT_FACE_VP0);
+                                                      CS_DOF_FACE_VECT);
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
 
@@ -2318,7 +2318,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
     sc->solve = cs_cdofb_monolithic_uzawa_al_incr_solve;
     sc->assemble = _velocity_full_assembly;
     sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                                      CS_CDO_CONNECT_FACE_VP0);
+                                                      CS_DOF_FACE_VECT);
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
 
@@ -2335,7 +2335,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
     sc->solve = cs_cdofb_monolithic_uzawa_cg_solve;
     sc->assemble = _velocity_full_assembly;
     sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                                      CS_CDO_CONNECT_FACE_VP0);
+                                                      CS_DOF_FACE_VECT);
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
 

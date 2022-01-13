@@ -837,7 +837,7 @@ cs_equation_get_matrix_structure(int  flag)
   if (cs_equation_assemble_ms == NULL || flag < 0)
     return NULL;
 
-  if (flag < CS_CDO_CONNECT_N_CASES)
+  if (flag < CS_N_DOF_CASES)
     return cs_equation_assemble_ms[flag];
   else
     return NULL;
@@ -1017,14 +1017,12 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
    *  - The one related to matrix based on faces
    */
 
-  BFT_MALLOC(cs_equation_assemble_ma,
-             CS_CDO_CONNECT_N_CASES, cs_matrix_assembler_t *);
-  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
+  BFT_MALLOC(cs_equation_assemble_ma, CS_N_DOF_CASES, cs_matrix_assembler_t *);
+  for (int i = 0; i < CS_N_DOF_CASES; i++)
     cs_equation_assemble_ma[i] = NULL;
 
-  BFT_MALLOC(cs_equation_assemble_ms,
-             CS_CDO_CONNECT_N_CASES, cs_matrix_structure_t *);
-  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
+  BFT_MALLOC(cs_equation_assemble_ms, CS_N_DOF_CASES, cs_matrix_structure_t *);
+  for (int i = 0; i < CS_N_DOF_CASES; i++)
     cs_equation_assemble_ms[i] = NULL;
 
   const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
@@ -1054,15 +1052,15 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       /* Build the matrix structure and the matrix assembler structure */
 
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_SCAL];
 
       cs_matrix_assembler_t  *ma =
         cs_equation_build_matrix_assembler(n_vertices, 1, v2v, rs);
       cs_matrix_structure_t  *ms =
         cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
-      cs_equation_assemble_ma[CS_CDO_CONNECT_VTX_SCAL] = ma;
-      cs_equation_assemble_ms[CS_CDO_CONNECT_VTX_SCAL] = ms;
+      cs_equation_assemble_ma[CS_DOF_VTX_SCAL] = ma;
+      cs_equation_assemble_ms[CS_DOF_VTX_SCAL] = ms;
 
       t1 = cs_timer_time();
       cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
@@ -1073,15 +1071,15 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       t0 = cs_timer_time();
 
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
+      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_VECT];
 
       cs_matrix_assembler_t  *ma =
         cs_equation_build_matrix_assembler(n_vertices, 3, v2v, rs);
       cs_matrix_structure_t  *ms =
         cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
-      cs_equation_assemble_ma[CS_CDO_CONNECT_VTX_VECT] = ma;
-      cs_equation_assemble_ms[CS_CDO_CONNECT_VTX_VECT] = ms;
+      cs_equation_assemble_ma[CS_DOF_VTX_VECT] = ma;
+      cs_equation_assemble_ms[CS_DOF_VTX_VECT] = ms;
 
       t1 = cs_timer_time();
       cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
@@ -1108,15 +1106,15 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       /* Build the matrix structure and the matrix assembler structure */
 
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_EDGE_SCAL];
+      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_EDGE_SCAL];
 
       cs_matrix_assembler_t  *ma =
         cs_equation_build_matrix_assembler(n_edges, 1, e2e, rs);
       cs_matrix_structure_t  *ms =
         cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
-      cs_equation_assemble_ma[CS_CDO_CONNECT_EDGE_SCAL] = ma;
-      cs_equation_assemble_ms[CS_CDO_CONNECT_EDGE_SCAL] = ms;
+      cs_equation_assemble_ma[CS_DOF_EDGE_SCAL] = ma;
+      cs_equation_assemble_ms[CS_DOF_EDGE_SCAL] = ms;
 
       t1 = cs_timer_time();
       cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
@@ -1139,13 +1137,13 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       t0 = cs_timer_time();
 
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAL];
 
       ma0 = cs_equation_build_matrix_assembler(n_faces, 1, f2f, rs);
       ms0 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma0);
 
-      cs_equation_assemble_ma[CS_CDO_CONNECT_FACE_SP0] = ma0;
-      cs_equation_assemble_ms[CS_CDO_CONNECT_FACE_SP0] = ms0;
+      cs_equation_assemble_ma[CS_DOF_FACE_SCAL] = ma0;
+      cs_equation_assemble_ms[CS_DOF_FACE_SCAL] = ms0;
 
       t1 = cs_timer_time();
       cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
@@ -1158,17 +1156,17 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       t0 = cs_timer_time();
 
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
+      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAP1];
 
       ma1 = cs_equation_build_matrix_assembler(n_faces, CS_N_FACE_DOFS_1ST,
                                                f2f, rs);
       ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
 
-      assert((CS_CDO_CONNECT_FACE_SP1 == CS_CDO_CONNECT_FACE_VP0) &&
-             (CS_CDO_CONNECT_FACE_SP1 == CS_CDO_CONNECT_FACE_VHP0));
+      assert((CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECT) &&
+             (CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECP0));
 
-      cs_equation_assemble_ma[CS_CDO_CONNECT_FACE_SP1] = ma1;
-      cs_equation_assemble_ms[CS_CDO_CONNECT_FACE_SP1] = ms1;
+      cs_equation_assemble_ma[CS_DOF_FACE_SCAP1] = ma1;
+      cs_equation_assemble_ms[CS_DOF_FACE_SCAP1] = ms1;
 
       t1 = cs_timer_time();
       cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
@@ -1183,14 +1181,14 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 
       t0 = cs_timer_time();
 
-      const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
+      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAP2];
 
       ma2 = cs_equation_build_matrix_assembler(n_faces, CS_N_FACE_DOFS_2ND,
                                                f2f, rs);
       ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
 
-      cs_equation_assemble_ma[CS_CDO_CONNECT_FACE_SP2] = ma2;
-      cs_equation_assemble_ms[CS_CDO_CONNECT_FACE_SP2] = ms2;
+      cs_equation_assemble_ma[CS_DOF_FACE_SCAP2] = ma2;
+      cs_equation_assemble_ms[CS_DOF_FACE_SCAP2] = ms2;
 
       t1 = cs_timer_time();
       cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
@@ -1210,14 +1208,14 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
         t0 = cs_timer_time();
 
         const cs_range_set_t  *rs
-          = connect->range_sets[CS_CDO_CONNECT_FACE_VHP1];
+          = connect->range_sets[CS_DOF_FACE_VECP1];
 
         ma1 = cs_equation_build_matrix_assembler(n_faces, 3*CS_N_FACE_DOFS_1ST,
                                                  f2f, rs);
         ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
 
-        cs_equation_assemble_ma[CS_CDO_CONNECT_FACE_VHP1] = ma1;
-        cs_equation_assemble_ms[CS_CDO_CONNECT_FACE_VHP1] = ms1;
+        cs_equation_assemble_ma[CS_DOF_FACE_VECP1] = ma1;
+        cs_equation_assemble_ms[CS_DOF_FACE_VECP1] = ms1;
 
         t1 = cs_timer_time();
         cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
@@ -1231,14 +1229,14 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
         t0 = cs_timer_time();
 
         const cs_range_set_t  *rs
-          = connect->range_sets[CS_CDO_CONNECT_FACE_VHP2];
+          = connect->range_sets[CS_DOF_FACE_VECP2];
 
         ma2 = cs_equation_build_matrix_assembler(n_faces, 3*CS_N_FACE_DOFS_2ND,
                                                  f2f, rs);
         ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
 
-        cs_equation_assemble_ma[CS_CDO_CONNECT_FACE_VHP2] = ma2;
-        cs_equation_assemble_ms[CS_CDO_CONNECT_FACE_VHP2] = ms2;
+        cs_equation_assemble_ma[CS_DOF_FACE_VECP2] = ma2;
+        cs_equation_assemble_ms[CS_DOF_FACE_VECP2] = ms2;
 
         t1 = cs_timer_time();
         cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
@@ -1307,13 +1305,13 @@ cs_equation_assemble_finalize(void)
 
   /* Free matrix structures */
 
-  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
+  for (int i = 0; i < CS_N_DOF_CASES; i++)
     cs_matrix_structure_destroy(&(cs_equation_assemble_ms[i]));
   BFT_FREE(cs_equation_assemble_ms);
 
   /* Free matrix assemblers */
 
-  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
+  for (int i = 0; i < CS_N_DOF_CASES; i++)
     cs_matrix_assembler_destroy(&(cs_equation_assemble_ma[i]));
   BFT_FREE(cs_equation_assemble_ma);
 }
@@ -1336,35 +1334,35 @@ cs_equation_assemble_set(cs_param_space_scheme_t    scheme,
   switch (scheme) {
 
   case CS_SPACE_SCHEME_CDOVB:
-    if (ma_id == CS_CDO_CONNECT_VTX_SCAL)
+    if (ma_id == CS_DOF_VTX_SCAL)
       return _set_scalar_assembly_func();
-    else if (ma_id == CS_CDO_CONNECT_VTX_VECT)
+    else if (ma_id == CS_DOF_VTX_VECT)
       return _set_block33_assembly_func();
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
-    if (ma_id == CS_CDO_CONNECT_VTX_SCAL)
+    if (ma_id == CS_DOF_VTX_SCAL)
       return _set_scalar_assembly_func();
     break;
 
   case CS_SPACE_SCHEME_HHO_P0:
   case CS_SPACE_SCHEME_CDOFB:
-    if (ma_id == CS_CDO_CONNECT_FACE_SP0)
+    if (ma_id == CS_DOF_FACE_SCAL)
       return _set_scalar_assembly_func();
-    else if (ma_id == CS_CDO_CONNECT_FACE_VP0)
+    else if (ma_id == CS_DOF_FACE_VECT)
       return _set_block33_assembly_func();
     break;
 
   case CS_SPACE_SCHEME_HHO_P1:
   case CS_SPACE_SCHEME_HHO_P2:
-    if (ma_id == CS_CDO_CONNECT_FACE_SP1)
+    if (ma_id == CS_DOF_FACE_SCAP1)
       return _set_block33_assembly_func();
     else
       return _set_block_assembly_func();
     break;
 
   case CS_SPACE_SCHEME_CDOEB:
-    if (ma_id == CS_CDO_CONNECT_EDGE_SCAL)
+    if (ma_id == CS_DOF_EDGE_SCAL)
       return _set_scalar_assembly_func();
     break;
 

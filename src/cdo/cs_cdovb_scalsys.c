@@ -115,7 +115,7 @@ _init_matrix_structure(int       n_vtx_dofs)
 {
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_adjacency_t  *v2v = connect->v2v;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_SCAL];
   assert(rs != NULL);
   const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
 
@@ -329,7 +329,7 @@ cs_cdovb_scalsys_solve_implicit(bool                          cur2prev,
 
   /* End of the system building
    * Begin the solving step
-  /* -------------------------- */
+   * -------------------------- */
 
   /* TODO */
 

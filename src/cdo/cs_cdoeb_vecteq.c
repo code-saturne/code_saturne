@@ -740,7 +740,7 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Assembly process */
 
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOEB,
-                                           CS_CDO_CONNECT_EDGE_SCAL);
+                                           CS_DOF_EDGE_SCAL);
 
   if (eqp->sles_param->resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS)
     eqb->msh_flag |= CS_FLAG_COMP_PEC;
@@ -903,7 +903,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_EDGE_SCAL];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_EDGE_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_edges = quant->n_edges;
   const cs_time_step_t  *ts = cs_shared_time_step;

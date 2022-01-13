@@ -498,7 +498,7 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
     /* Not owner; Only shared */
     eqc->ma = cs_shared_ma0;
     eqc->ms = cs_shared_ms0;
-    eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+    eqc->rs = connect->range_sets[CS_DOF_FACE_SCAL];
     break;
 
   case CS_SPACE_SCHEME_HHO_P1:
@@ -507,7 +507,7 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
     /* Not owner; Only shared */
     eqc->ma = cs_shared_ma1;
     eqc->ms = cs_shared_ms1;
-    eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP1];
+    eqc->rs = connect->range_sets[CS_DOF_FACE_SCAP1];
     break;
 
   case CS_SPACE_SCHEME_HHO_P2:
@@ -516,7 +516,7 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
     /* Not owner; Only shared */
     eqc->ma = cs_shared_ma2;
     eqc->ms = cs_shared_ms2;
-    eqc->rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP2];
+    eqc->rs = connect->range_sets[CS_DOF_FACE_SCAP2];
     break;
 
     /* TODO: case CS_SPACE_SCHEME_HHO_PK */

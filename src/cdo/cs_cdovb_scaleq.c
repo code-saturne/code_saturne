@@ -1253,7 +1253,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Assembly process */
 
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOVB,
-                                           CS_CDO_CONNECT_VTX_SCAL);
+                                           CS_DOF_VTX_SCAL);
 
   /* Array used for extra-operations */
 
@@ -1708,7 +1708,7 @@ cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_time_step_t  *ts = cs_shared_time_step;
@@ -1939,7 +1939,7 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_lnum_t  n_vertices = quant->n_vertices;
@@ -2229,7 +2229,7 @@ cs_cdovb_scaleq_solve_theta(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_time_step_t  *ts = cs_shared_time_step;

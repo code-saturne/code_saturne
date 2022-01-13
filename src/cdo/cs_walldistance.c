@@ -238,16 +238,16 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
 
   } /* Loop on cells */
 
-  if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL) {
+  if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL) {
 
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+    cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
                          connect->n_vertices,
                          1,
                          true, /* interlace */
                          CS_REAL_TYPE,
                          dualcell_vol);
 
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+    cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
                          connect->n_vertices,
                          3,
                          true, /* interlace */

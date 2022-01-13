@@ -649,8 +649,8 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
 
     /* Synchronization needed in parallel or periodic computations */
 
-    if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
-      cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+    if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL)
+      cs_interface_set_max(connect->interfaces[CS_DOF_VTX_SCAL],
                            n_vertices,
                            1,             /* stride */
                            false,         /* interlace (not useful here) */
@@ -686,8 +686,8 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
 
     /* Synchronization needed in parallel or periodic computations */
 
-    if (connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL)
-      cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
+    if (connect->interfaces[CS_DOF_EDGE_SCAL] != NULL)
+      cs_interface_set_max(connect->interfaces[CS_DOF_EDGE_SCAL],
                            n_edges,
                            1,             /* stride */
                            false,         /* interlace (not useful here) */
@@ -1111,14 +1111,14 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   /* Members to handle assembly process and parallel sync. */
 
-  for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++) {
+  for (int i = 0; i < CS_N_DOF_CASES; i++) {
     connect->range_sets[i] = NULL;
     connect->interfaces[i] = NULL;
   }
 
   /* Already defined. */
 
-  connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] = mesh->vtx_interfaces;
+  connect->interfaces[CS_DOF_VTX_SCAL] = mesh->vtx_interfaces;
 
   /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
 
@@ -1126,14 +1126,14 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
       vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
     _assign_vtx_ifs_rs(mesh, 1,
-                       connect->interfaces + CS_CDO_CONNECT_VTX_SCAL,
-                       connect->range_sets + CS_CDO_CONNECT_VTX_SCAL);
+                       connect->interfaces + CS_DOF_VTX_SCAL,
+                       connect->range_sets + CS_DOF_VTX_SCAL);
 
     /* Shared structures */
 
     if (mesh->vtx_range_set != NULL)
       cs_range_set_destroy(&(mesh->vtx_range_set));
-    mesh->vtx_range_set = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+    mesh->vtx_range_set = connect->range_sets[CS_DOF_VTX_SCAL];
 
   }
 
@@ -1142,8 +1142,8 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   if (vb_scheme_flag & CS_FLAG_SCHEME_VECTOR ||
       vcb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
     _assign_vtx_ifs_rs(mesh, 3,
-                       connect->interfaces + CS_CDO_CONNECT_VTX_VECT,
-                       connect->range_sets + CS_CDO_CONNECT_VTX_VECT);
+                       connect->interfaces+CS_DOF_VTX_VECT,
+                       connect->range_sets+CS_DOF_VTX_VECT);
 
   /* CDO face-based schemes or HHO schemes with k=0 */
 
@@ -1151,8 +1151,8 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
       cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY0))
     _assign_face_ifs_rs(mesh, n_faces, 1,
-                        connect->interfaces + CS_CDO_CONNECT_FACE_SP0,
-                        connect->range_sets + CS_CDO_CONNECT_FACE_SP0);
+                        connect->interfaces + CS_DOF_FACE_SCAL,
+                        connect->range_sets + CS_DOF_FACE_SCAL);
 
   /* HHO schemes with k=1,
      CDO-Fb schemes with vector-valued unknowns
@@ -1164,38 +1164,38 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
       || cs_flag_test(hho_scheme_flag,
                       CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY0))
     _assign_face_ifs_rs(mesh, n_faces, 3,
-                        connect->interfaces + CS_CDO_CONNECT_FACE_SP1,
-                        connect->range_sets + CS_CDO_CONNECT_FACE_SP1);
+                        connect->interfaces + CS_DOF_FACE_SCAP1,
+                        connect->range_sets + CS_DOF_FACE_SCAP1);
 
   /* HHO schemes with k=2 */
 
   if (cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY2))
     _assign_face_ifs_rs(mesh, n_faces, CS_N_FACE_DOFS_2ND,
-                        connect->interfaces + CS_CDO_CONNECT_FACE_SP2,
-                        connect->range_sets + CS_CDO_CONNECT_FACE_SP2);
+                        connect->interfaces + CS_DOF_FACE_SCAP2,
+                        connect->range_sets + CS_DOF_FACE_SCAP2);
 
   /* HHO schemes with vector-valued unknowns with polynomial order k=1*/
 
   if (cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY1))
     _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_FACE_DOFS_1ST,
-                        connect->interfaces + CS_CDO_CONNECT_FACE_VHP1,
-                        connect->range_sets + CS_CDO_CONNECT_FACE_VHP1);
+                        connect->interfaces + CS_DOF_FACE_VECP1,
+                        connect->range_sets + CS_DOF_FACE_VECP1);
 
   /* HHO schemes with vector-valued unknowns with polynomial order k=2*/
 
   if (cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2))
     _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_FACE_DOFS_2ND,
-                        connect->interfaces + CS_CDO_CONNECT_FACE_VHP2,
-                        connect->range_sets + CS_CDO_CONNECT_FACE_VHP2);
+                        connect->interfaces + CS_DOF_FACE_VECP2,
+                        connect->range_sets + CS_DOF_FACE_VECP2);
 
   /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
 
   _assign_edge_ifs_rs(mesh, connect, eb_scheme_flag,
-                      connect->interfaces + CS_CDO_CONNECT_EDGE_SCAL,
-                      connect->range_sets + CS_CDO_CONNECT_EDGE_SCAL);
+                      connect->interfaces + CS_DOF_EDGE_SCAL,
+                      connect->range_sets + CS_DOF_EDGE_SCAL);
 
   /* Build the cell type for each cell */
 
@@ -1254,27 +1254,27 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
 
   /* Structures for parallelism */
 
-  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_VTX_VECT);
-  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP0);
-  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP1);
-  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP2);
-  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_VHP1);
-  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_VHP2);
-  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_EDGE_SCAL);
+  cs_range_set_destroy(connect->range_sets + CS_DOF_VTX_VECT);
+  cs_range_set_destroy(connect->range_sets + CS_DOF_FACE_SCAL);
+  cs_range_set_destroy(connect->range_sets + CS_DOF_FACE_SCAP1);
+  cs_range_set_destroy(connect->range_sets + CS_DOF_FACE_SCAP2);
+  cs_range_set_destroy(connect->range_sets + CS_DOF_FACE_VECP1);
+  cs_range_set_destroy(connect->range_sets + CS_DOF_FACE_VECP2);
+  cs_range_set_destroy(connect->range_sets + CS_DOF_EDGE_SCAL);
 
-  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_VTX_VECT);
-  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP0);
-  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP1);
-  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP2);
-  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_VHP1);
-  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_VHP2);
-  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_EDGE_SCAL);
+  cs_interface_set_destroy(connect->interfaces + CS_DOF_VTX_VECT);
+  cs_interface_set_destroy(connect->interfaces + CS_DOF_FACE_SCAL);
+  cs_interface_set_destroy(connect->interfaces + CS_DOF_FACE_SCAP1);
+  cs_interface_set_destroy(connect->interfaces + CS_DOF_FACE_SCAP2);
+  cs_interface_set_destroy(connect->interfaces + CS_DOF_FACE_VECP1);
+  cs_interface_set_destroy(connect->interfaces + CS_DOF_FACE_VECP2);
+  cs_interface_set_destroy(connect->interfaces + CS_DOF_EDGE_SCAL);
 
   if (   cs_glob_mesh->vtx_range_set
-      != connect->range_sets[CS_CDO_CONNECT_VTX_SCAL])
-    cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_VTX_SCAL);
+      != connect->range_sets[CS_DOF_VTX_SCAL])
+    cs_range_set_destroy(connect->range_sets + CS_DOF_VTX_SCAL);
   else
-    connect->range_sets[CS_CDO_CONNECT_VTX_SCAL] = NULL;
+    connect->range_sets[CS_DOF_VTX_SCAL] = NULL;
 
   BFT_FREE(connect);
 

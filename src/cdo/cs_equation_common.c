@@ -205,8 +205,8 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
         cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY1 | CS_FLAG_SCHEME_SCALAR) ||
         cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)) {
 
-      assert((CS_CDO_CONNECT_FACE_SP1 == CS_CDO_CONNECT_FACE_VP0) &&
-             (CS_CDO_CONNECT_FACE_SP1 == CS_CDO_CONNECT_FACE_VHP0));
+      assert((CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECT) &&
+             (CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECP0));
 
       cwb_size = CS_MAX(cwb_size, (size_t)CS_N_FACE_DOFS_1ST * n_faces);
 
@@ -1202,8 +1202,8 @@ cs_equation_balance_sync(const cs_cdo_connect_t    *connect,
 
     assert(b->size == connect->n_vertices);
 
-    if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL)
-      cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+    if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL)
+      cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
                            b->size,
                            7,   /* stride: 1 for each kind of balance */
                            false,
@@ -1294,11 +1294,11 @@ cs_equation_sync_vol_def_at_vertices(const cs_cdo_connect_t  *connect,
 
   } /* Loop on definitions */
 
-  if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL) {
+  if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL) {
 
     /* Last definition is used in case of conflict */
 
-    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+    cs_interface_set_max(connect->interfaces[CS_DOF_VTX_SCAL],
                          n_vertices,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
@@ -1398,11 +1398,11 @@ cs_equation_sync_vol_def_at_edges(const cs_cdo_connect_t  *connect,
 
   } /* Loop on definitions */
 
-  if (connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL) {
+  if (connect->interfaces[CS_DOF_EDGE_SCAL] != NULL) {
 
     /* Last definition is used in case of conflict */
 
-    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
+    cs_interface_set_max(connect->interfaces[CS_DOF_EDGE_SCAL],
                          n_edges,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
@@ -1502,11 +1502,11 @@ cs_equation_sync_vol_def_at_faces(const cs_cdo_connect_t    *connect,
 
   } /* Loop on definitions */
 
-  if (connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL) {
+  if (connect->interfaces[CS_DOF_FACE_SCAL] != NULL) {
 
     /* Last definition is used in case of conflict */
 
-    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_FACE_SP0],
+    cs_interface_set_max(connect->interfaces[CS_DOF_FACE_SCAL],
                          n_faces,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
@@ -1566,16 +1566,16 @@ cs_equation_sync_vertex_mean_values(const cs_cdo_connect_t     *connect,
 {
   const cs_lnum_t  n_vertices = connect->n_vertices;
 
-  if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL) {
+  if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL) {
 
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+    cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
                          n_vertices,
                          1,           /* stride */
                          false,       /* interlace (not useful here) */
                          CS_INT_TYPE, /* int */
                          counter);
 
-    cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+    cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
                          n_vertices,
                          dim,         /* stride */
                          true,        /* interlace */

@@ -1277,7 +1277,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Assembly process */
 
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOVCB,
-                                           CS_CDO_CONNECT_VTX_SCAL);
+                                           CS_DOF_VTX_SCAL);
 
   return eqc;
 }
@@ -1471,7 +1471,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
                              void                       *context)
 {
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_time_step_t  *ts = cs_shared_time_step;
@@ -1721,7 +1721,7 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_time_step_t  *ts = cs_shared_time_step;
@@ -1971,7 +1971,7 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_time_step_t  *ts = cs_shared_time_step;
@@ -2292,7 +2292,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_time_step_t  *ts = cs_shared_time_step;
@@ -3434,16 +3434,16 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 
     } /* Loop on cells */
 
-    if (connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL) {
+    if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL) {
 
-      cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+      cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
                            connect->n_vertices,
                            1,
                            true, /* interlace */
                            CS_REAL_TYPE,
                            dualcell_vol);
 
-      cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+      cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
                            connect->n_vertices,
                            3,
                            true, /* interlace */

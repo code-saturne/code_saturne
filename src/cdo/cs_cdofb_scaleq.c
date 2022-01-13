@@ -1055,7 +1055,7 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Assembly process */
 
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                           CS_CDO_CONNECT_FACE_SP0);
+                                           CS_DOF_FACE_SCAL);
 
   /* Renormalization of the residual */
 
@@ -1260,7 +1260,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
                             void                       *context)
 {
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
@@ -1508,7 +1508,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
@@ -1749,7 +1749,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
@@ -2047,7 +2047,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
+  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;

@@ -42,7 +42,34 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * @addtogroup scalar_params
+ * @addtogroup Main DoF categories
+ *
+ * Main categories of Degrees of freedom (DoF) to consider for high-level
+ * structures such as an interface, a range set, a matrix or an assembler
+ *
+ * Remark:
+ * - scalar-valued HHO-P1 and vector-valued CDO-Fb shares the same structures
+ * - face-based schemes or HHO 0th order schemes are equivalent
+ *
+ * @{
+ */
+
+#define CS_DOF_VTX_SCAL    0 /*!< Vertex or Vertex+Cell scalar-valued DoFs */
+#define CS_DOF_VTX_VECT    1 /*!< Vertex or Vertex+Cell vector-valued DoFs */
+#define CS_DOF_FACE_SCAL   2 /*!< Face or HHO 0th order scalar-valued DoFs */
+#define CS_DOF_FACE_VECT   3 /*!< Face vector-valued DoFs */
+#define CS_DOF_FACE_SCAP1  3 /*!< HHO 1st order polynomial scalar-valued DoFs */
+#define CS_DOF_FACE_SCAP2  4 /*!< HHO 2nd order polynomial scalar-valued DoFs */
+#define CS_DOF_FACE_VECP0  3 /*!< HHO 0th order polynomial vector-valued DoFs */
+#define CS_DOF_FACE_VECP1  5 /*!< HHO 1st order polynomial vector-valued DoFs */
+#define CS_DOF_FACE_VECP2  6 /*!< HHO 2nd order polynomial vector-valued DoFs */
+#define CS_DOF_EDGE_SCAL   7 /*!< Edge-based scalar-valued DoFs */
+
+#define CS_N_DOF_CASES     8
+
+/*!
+ *  @}
+ *  @addtogroup scalar_params
  *
  * @{
  */
