@@ -827,49 +827,11 @@ _assign_edge_ifs_rs(const cs_mesh_t       *mesh,
   *p_rs = rs;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and define a \ref cs_range_set_t structure and a
- *        \ref cs_interface_set_t structure for schemes with DoFs at faces.
- *
- * \param[in]       mesh          pointer to a cs_mesh_t structure
- * \param[in]       n_faces       number of faces (interior + border)
- * \param[in]       n_face_dofs   number of DoFs per face
- * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
- * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
- */
-/*----------------------------------------------------------------------------*/
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
-static void
-_assign_face_ifs_rs(const cs_mesh_t       *mesh,
-                    cs_lnum_t              n_faces,
-                    int                    n_face_dofs,
-                    cs_interface_set_t   **p_ifs,
-                    cs_range_set_t       **p_rs)
-{
-  cs_interface_set_t *ifs = cs_cdo_connect_define_face_interface(mesh);
-
-  if (ifs != NULL && n_face_dofs > 1) {
-    cs_interface_set_t  *ifs_s = cs_interface_set_dup(ifs, n_face_dofs);
-    cs_interface_set_destroy(&ifs);
-    ifs = ifs_s;
-  }
-
-  const cs_lnum_t  n_elts = n_faces * n_face_dofs;
-
-  cs_range_set_t
-    *rs = cs_range_set_create(ifs,    /* interface set */
-                              NULL,   /* halo */
-                              n_elts,
-                              false,  /* TODO: add option for balance */
-                              1,      /* tr_ignore */
-                              0);     /* g_id_base */
-
-  /* Return pointers */
-
-  *p_ifs = ifs;
-  *p_rs = rs;
-}
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -883,11 +845,11 @@ _assign_face_ifs_rs(const cs_mesh_t       *mesh,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
-                   int                    n_vtx_dofs,
-                   cs_interface_set_t   **p_ifs,
-                   cs_range_set_t       **p_rs)
+void
+cs_cdo_connect_assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
+                                 int                    n_vtx_dofs,
+                                 cs_interface_set_t   **p_ifs,
+                                 cs_range_set_t       **p_rs)
 {
   assert(mesh != NULL);
 
@@ -925,11 +887,49 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
   *p_rs = rs;
 }
 
-/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and define a \ref cs_range_set_t structure and a
+ *        \ref cs_interface_set_t structure for schemes with DoFs at faces.
+ *
+ * \param[in]       mesh          pointer to a cs_mesh_t structure
+ * \param[in]       n_faces       number of faces (interior + border)
+ * \param[in]       n_face_dofs   number of DoFs per face
+ * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
+ * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
+ */
+/*----------------------------------------------------------------------------*/
 
-/*============================================================================
- * Public function prototypes
- *============================================================================*/
+void
+cs_cdo_connect_assign_face_ifs_rs(const cs_mesh_t       *mesh,
+                                  cs_lnum_t              n_faces,
+                                  int                    n_face_dofs,
+                                  cs_interface_set_t   **p_ifs,
+                                  cs_range_set_t       **p_rs)
+{
+  cs_interface_set_t *ifs = cs_cdo_connect_define_face_interface(mesh);
+
+  if (ifs != NULL && n_face_dofs > 1) {
+    cs_interface_set_t  *ifs_s = cs_interface_set_dup(ifs, n_face_dofs);
+    cs_interface_set_destroy(&ifs);
+    ifs = ifs_s;
+  }
+
+  const cs_lnum_t  n_elts = n_faces * n_face_dofs;
+
+  cs_range_set_t
+    *rs = cs_range_set_create(ifs,    /* interface set */
+                              NULL,   /* halo */
+                              n_elts,
+                              false,  /* TODO: add option for balance */
+                              1,      /* tr_ignore */
+                              0);     /* g_id_base */
+
+  /* Return pointers */
+
+  *p_ifs = ifs;
+  *p_rs = rs;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1122,12 +1122,12 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
 
-  if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
+  if ( vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
       vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
-    _assign_vtx_ifs_rs(mesh, 1,
-                       connect->interfaces + CS_DOF_VTX_SCAL,
-                       connect->range_sets + CS_DOF_VTX_SCAL);
+    cs_cdo_connect_assign_vtx_ifs_rs(mesh, 1,
+                                     connect->interfaces + CS_DOF_VTX_SCAL,
+                                     connect->range_sets + CS_DOF_VTX_SCAL);
 
     /* Shared structures */
 
@@ -1139,20 +1139,20 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   /* CDO vertex- or vertex+cell-based schemes for vector-valued variables */
 
-  if (vb_scheme_flag & CS_FLAG_SCHEME_VECTOR ||
+  if ( vb_scheme_flag & CS_FLAG_SCHEME_VECTOR ||
       vcb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
-    _assign_vtx_ifs_rs(mesh, 3,
-                       connect->interfaces+CS_DOF_VTX_VECT,
-                       connect->range_sets+CS_DOF_VTX_VECT);
+    cs_cdo_connect_assign_vtx_ifs_rs(mesh, 3,
+                                     connect->interfaces + CS_DOF_VTX_VECT,
+                                     connect->range_sets + CS_DOF_VTX_VECT);
 
   /* CDO face-based schemes or HHO schemes with k=0 */
 
   if ((fb_scheme_flag & CS_FLAG_SCHEME_SCALAR) ||
       cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY0))
-    _assign_face_ifs_rs(mesh, n_faces, 1,
-                        connect->interfaces + CS_DOF_FACE_SCAL,
-                        connect->range_sets + CS_DOF_FACE_SCAL);
+    cs_cdo_connect_assign_face_ifs_rs(mesh, n_faces, 1,
+                                      connect->interfaces + CS_DOF_FACE_SCAL,
+                                      connect->range_sets + CS_DOF_FACE_SCAL);
 
   /* HHO schemes with k=1,
      CDO-Fb schemes with vector-valued unknowns
@@ -1163,33 +1163,33 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
                       CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY1)
       || cs_flag_test(hho_scheme_flag,
                       CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY0))
-    _assign_face_ifs_rs(mesh, n_faces, 3,
-                        connect->interfaces + CS_DOF_FACE_SCAP1,
-                        connect->range_sets + CS_DOF_FACE_SCAP1);
+    cs_cdo_connect_assign_face_ifs_rs(mesh, n_faces, 3,
+                                      connect->interfaces + CS_DOF_FACE_SCAP1,
+                                      connect->range_sets + CS_DOF_FACE_SCAP1);
 
   /* HHO schemes with k=2 */
 
   if (cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY2))
-    _assign_face_ifs_rs(mesh, n_faces, CS_N_DOFS_FACE_2ND,
-                        connect->interfaces + CS_DOF_FACE_SCAP2,
-                        connect->range_sets + CS_DOF_FACE_SCAP2);
+    cs_cdo_connect_assign_face_ifs_rs(mesh, n_faces, CS_N_DOFS_FACE_2ND,
+                                      connect->interfaces + CS_DOF_FACE_SCAP2,
+                                      connect->range_sets + CS_DOF_FACE_SCAP2);
 
   /* HHO schemes with vector-valued unknowns with polynomial order k=1*/
 
   if (cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY1))
-    _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_DOFS_FACE_1ST,
-                        connect->interfaces + CS_DOF_FACE_VECP1,
-                        connect->range_sets + CS_DOF_FACE_VECP1);
+    cs_cdo_connect_assign_face_ifs_rs(mesh, n_faces, 3*CS_N_DOFS_FACE_1ST,
+                                      connect->interfaces + CS_DOF_FACE_VECP1,
+                                      connect->range_sets + CS_DOF_FACE_VECP1);
 
   /* HHO schemes with vector-valued unknowns with polynomial order k=2*/
 
   if (cs_flag_test(hho_scheme_flag,
                    CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2))
-    _assign_face_ifs_rs(mesh, n_faces, 3*CS_N_DOFS_FACE_2ND,
-                        connect->interfaces + CS_DOF_FACE_VECP2,
-                        connect->range_sets + CS_DOF_FACE_VECP2);
+    cs_cdo_connect_assign_face_ifs_rs(mesh, n_faces, 3*CS_N_DOFS_FACE_2ND,
+                                      connect->interfaces + CS_DOF_FACE_VECP2,
+                                      connect->range_sets + CS_DOF_FACE_VECP2);
 
   /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
 

@@ -161,6 +161,44 @@ cs_connect_get_next_3_vertices(const cs_lnum_t   *f2e_ids,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Allocate and define a \ref cs_range_set_t structure and a
+ *        \ref cs_interface_set_t structure for schemes with DoFs at vertices
+ *
+ * \param[in]       mesh          pointer to a cs_mesh_t structure
+ * \param[in]       n_vtx_dofs    number of DoFs per vertex
+ * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
+ * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
+                                 int                    n_vtx_dofs,
+                                 cs_interface_set_t   **p_ifs,
+                                 cs_range_set_t       **p_rs);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and define a \ref cs_range_set_t structure and a
+ *        \ref cs_interface_set_t structure for schemes with DoFs at faces.
+ *
+ * \param[in]       mesh          pointer to a cs_mesh_t structure
+ * \param[in]       n_faces       number of faces (interior + border)
+ * \param[in]       n_face_dofs   number of DoFs per face
+ * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
+ * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_connect_assign_face_ifs_rs(const cs_mesh_t       *mesh,
+                                  cs_lnum_t              n_faces,
+                                  int                    n_face_dofs,
+                                  cs_interface_set_t   **p_ifs,
+                                  cs_range_set_t       **p_rs);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create and define a new cs_interface_set_t structure on faces
  *
  * \param[in]  mesh          pointer to a cs_mesh_t structure
