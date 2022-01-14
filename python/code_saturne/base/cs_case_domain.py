@@ -378,7 +378,8 @@ class base_domain:
         cs_pkg_dir = self.package.get_dir('pkgpythondir')
         if self.package.name != 'code_saturne':
             cs_pkg_dir = os.path.join(cs_pkg_dir, '../code_saturne')
-        dbg_wrapper_path = os.path.join(cs_pkg_dir, 'cs_debug_wrapper.py')
+        dbg_wrapper_path = os.path.join(cs_pkg_dir,
+                                        'base', 'cs_debug_wrapper.py')
         debug_args += dbg_wrapper_path + ' '
         for a in separate_args(debug_cmd):
             debug_args += enquote_arg(a) + ' '
