@@ -590,6 +590,8 @@ cs_equation_system_assign_equation(int                       row_id,
   cs_equation_define_core(eq, &block_ii);
   eqsys->block_factories[row_id*n_eqs + row_id] = block_ii;
 
+  block_ii->param->flag |= CS_EQUATION_INSIDE_SYSTEM;
+
   if (eqsys->timer_id > -1)
     cs_timer_stats_stop(eqsys->timer_id);
 }
@@ -641,6 +643,8 @@ cs_equation_system_assign_param(int                       row_id,
   cs_equation_core_t  *block_ij = NULL;
 
   BFT_MALLOC(block_ij, 1, cs_equation_core_t);
+
+  eqp->flag |= CS_EQUATION_INSIDE_SYSTEM;
 
   block_ij->param = eqp;
   block_ij->builder = NULL;

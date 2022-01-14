@@ -76,23 +76,31 @@ BEGIN_C_DECLS
  * \brief Add an algebraic manipulation to set the value of a given set of
  *        interior degrees of freedom
  *
+ * \def CS_EQUATION_INSIDE_SYSTEM
+ * \brief The current equation settings belong to a system of equation
+ *
  * \def CS_EQUATION_USER_HOOK
  * \brief Activate a user hook to get a fine control of the discretization
  *        process during the cellwise building of the linear system
  *        Need to match the cs_equation_user_hook_t prototype
  *
+ * \def CS_EQUATION_USER_TRIGGERED
+ * \brief The resolution of the current equation is driven by the user
+ *        and so this user-defined equation is not solved with the other
+ *        user-defined equations
  */
 
-#define CS_EQUATION_LOCKED         (1 <<  0)  /*   1 */
-#define CS_EQUATION_UNSTEADY       (1 <<  1)  /*   2 */
-#define CS_EQUATION_CONVECTION     (1 <<  2)  /*   4 */
-#define CS_EQUATION_DIFFUSION      (1 <<  3)  /*   8 */
-#define CS_EQUATION_CURLCURL       (1 <<  4)  /*  16 */
-#define CS_EQUATION_GRADDIV        (1 <<  5)  /*  32 */
-#define CS_EQUATION_REACTION       (1 <<  6)  /*  64 */
-#define CS_EQUATION_FORCE_VALUES   (1 <<  7)  /* 128 */
-#define CS_EQUATION_USER_HOOK      (1 <<  8)  /* 256 */
-#define CS_EQUATION_USER_TRIGGERED (1 <<  9)  /* 512 */
+#define CS_EQUATION_LOCKED         (1 <<  0)  /*    1 */
+#define CS_EQUATION_UNSTEADY       (1 <<  1)  /*    2 */
+#define CS_EQUATION_CONVECTION     (1 <<  2)  /*    4 */
+#define CS_EQUATION_DIFFUSION      (1 <<  3)  /*    8 */
+#define CS_EQUATION_CURLCURL       (1 <<  4)  /*   16 */
+#define CS_EQUATION_GRADDIV        (1 <<  5)  /*   32 */
+#define CS_EQUATION_REACTION       (1 <<  6)  /*   64 */
+#define CS_EQUATION_FORCE_VALUES   (1 <<  7)  /*  128 */
+#define CS_EQUATION_INSIDE_SYSTEM  (1 <<  8)  /*  256 */
+#define CS_EQUATION_USER_HOOK      (1 <<  9)  /*  512 */
+#define CS_EQUATION_USER_TRIGGERED (1 << 10)  /* 1024 */
 
 
 /*!

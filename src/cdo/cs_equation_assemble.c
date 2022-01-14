@@ -135,6 +135,13 @@ struct _cs_equation_assemble_t {
   int         edim;         /* Number of real values related to each
                                extra-diagonal entry */
 
+  /* When working with matrix build by scalar-valued blocks, one may need to
+     shift the row and/or the column local ids */
+
+
+  cs_lnum_t   l_col_shift;
+  cs_lnum_t   l_row_shift;
+
   cs_equation_assemble_row_t    *row;
 };
 
@@ -173,6 +180,38 @@ _set_scalar_assembly_func(void)
       return cs_equation_assemble_matrix_seqs;
     else                       /* With OpenMP */
       return cs_equation_assemble_matrix_seqt;
+
+  }
+
+  return NULL; /* Case not handled */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Choose which function will be used to perform the matrix assembly
+ *         Case of scalar-valued matrices used inside a system of equations.
+ *
+ * \return  a pointer to a function
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_equation_assembly_t *
+_set_scalar_sys_assembly_func(void)
+{
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {  /* Parallel */
+
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
+
+  }
+#endif /* defined(HAVE_MPI) */
+
+  if (cs_glob_n_ranks <= 1) { /* Sequential */
+
+    if (cs_glob_n_threads < 2) /* Without OpenMP */
+      return cs_equation_assemble_matrix_sys_seqs;
+    else                       /* With OpenMP */
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
 
   }
 
@@ -768,22 +807,41 @@ _init_equation_assembler_struct(int      max_ddim,
 
   BFT_MALLOC(eqa, 1, cs_equation_assemble_t);
 
+  /* Diagonal and extra-diagonal max. number of entries */
+
   eqa->ddim = max_ddim;
   eqa->edim = max_edim;
 
-  BFT_MALLOC(eqa->row, 1, cs_equation_assemble_row_t);
+  /* When working with matrix build by scalar-valued blocks, one may need to
+     shift the row and/or the column local ids */
+
+  eqa->l_row_shift = 0;
+  eqa->l_col_shift = 0;
+
+  /* Allocate the row structure used in the assembly process */
+
+  cs_equation_assemble_row_t  *row = NULL;
+
+  BFT_MALLOC(row, 1, cs_equation_assemble_row_t);
+
   if (max_ddim < 2) {
-    BFT_MALLOC(eqa->row->col_g_id, n_max_cw_dofs, cs_gnum_t);
-    BFT_MALLOC(eqa->row->col_idx, n_max_cw_dofs, int);
+
+    BFT_MALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
+    BFT_MALLOC(row->col_idx, n_max_cw_dofs, int);
+
   }
   else {
+
     n_max_cw_dofs *= max_ddim; /* Temporary (until the global matrix is not
                                   defined by block) */
 
-    BFT_MALLOC(eqa->row->col_g_id, n_max_cw_dofs, cs_gnum_t);
-    BFT_MALLOC(eqa->row->col_idx, n_max_cw_dofs, int);
-    BFT_MALLOC(eqa->row->expval, max_ddim*n_max_cw_dofs, cs_real_t);
+    BFT_MALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
+    BFT_MALLOC(row->col_idx, n_max_cw_dofs, int);
+    BFT_MALLOC(row->expval, max_ddim*n_max_cw_dofs, cs_real_t);
+
   }
+
+  eqa->row = row;
 
   return eqa;
 }
@@ -1373,6 +1431,87 @@ cs_equation_assemble_set(cs_param_space_scheme_t    scheme,
   return NULL;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the function pointer used to assemble the algebraic system
+ *         Case of a system of equation.
+ *
+ * \param[in] scheme     space discretization scheme
+ * \param[in] ma_id      id in the array of matrix assembler
+ *
+ * \return a function pointer cs_equation_assembly_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_assembly_t *
+cs_equation_assemble_system_set(cs_param_space_scheme_t    scheme,
+                                int                        ma_id)
+{
+  switch (scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    if (ma_id == CS_DOF_VTX_SCAL)
+      return _set_scalar_sys_assembly_func();
+    else if (ma_id == CS_DOF_VTX_VECT)
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    if (ma_id == CS_DOF_VTX_SCAL)
+      return _set_scalar_sys_assembly_func();
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P0:
+  case CS_SPACE_SCHEME_CDOFB:
+    if (ma_id == CS_DOF_FACE_SCAL)
+      return _set_scalar_sys_assembly_func();
+    else if (ma_id == CS_DOF_FACE_VECT)
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P1:
+  case CS_SPACE_SCHEME_HHO_P2:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
+    break;
+
+  case CS_SPACE_SCHEME_CDOEB:
+    if (ma_id == CS_DOF_EDGE_SCAL)
+      return _set_scalar_sys_assembly_func();
+    break;
+
+  default:
+    return NULL; /* Case not handle */
+  }
+
+  return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the current shift values to consider during the assembly stage
+ *
+ * \param[in, out] eqa          pointer to a cs_equation_assemble_t to update
+ * \param[in]      l_row_shift  shift to apply to local row ids
+ * \param[in]      l_col_shift  shift to apply to local col ids
+ *
+ * \return a function pointer cs_equation_assembly_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_assemble_set_shift(cs_equation_assemble_t   *eqa,
+                               cs_lnum_t                 l_row_shift,
+                               cs_lnum_t                 l_col_shift)
+{
+  if (eqa == NULL)
+    return;
+
+  assert(l_row_shift > -1 && l_col_shift > -1);
+
+  eqa->l_row_shift = l_row_shift;
+  eqa->l_col_shift = l_col_shift;
+}
+
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1538,7 +1677,8 @@ cs_equation_assemble_matrix_seqt(const cs_sdm_t                  *m,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise matrix into the global matrix
- *         Scalar-valued case. Sequential and without openMP.
+ *         Scalar-valued case.
+ *         Sequential and without openMP.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
@@ -1559,7 +1699,7 @@ cs_equation_assemble_matrix_seqs(const cs_sdm_t                  *m,
 
   cs_equation_assemble_row_t  *row = eqa->row;
 
-  row->n_cols = m->n_rows;
+  row->n_cols = m->n_rows; /* This is a square matrix */
 
   /* Switch to the global numbering */
 
@@ -1579,6 +1719,73 @@ cs_equation_assemble_matrix_seqs(const cs_sdm_t                  *m,
     _add_scal_values_single(row, mav->matrix);
 
   } /* Loop on rows */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assemble a cellwise (no-block) matrix into the global matrix
+ *         Scalar-valued case.
+ *         Sequential and without openMP.
+ *         Block matrices assembled from cellwise scalar-valued matrices
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_assemble_matrix_sys_seqs(const cs_sdm_t                  *m,
+                                     const cs_lnum_t                 *dof_ids,
+                                     const cs_range_set_t            *rset,
+                                     cs_equation_assemble_t          *eqa,
+                                     cs_matrix_assembler_values_t    *mav)
+{
+  const cs_matrix_assembler_t  *ma = mav->ma;
+
+  cs_equation_assemble_row_t  *row = eqa->row;
+
+  row->n_cols = m->n_rows; /* This is a square matrix */
+
+  /* Switch to the global numbering */
+
+  for (int i = 0; i < row->n_cols; i++)
+    row->col_g_id[i] = rset->g_id[dof_ids[i] + eqa->l_col_shift];
+
+  /* Push each row of the cellwise matrix into the assembler */
+
+  if (eqa->l_col_shift == eqa->l_row_shift) {
+
+    for (int i = 0; i < row->n_cols; i++) {
+
+      row->i = i;                               /* cellwise numbering */
+      row->g_id = row->col_g_id[i];             /* global numbering */
+      row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
+      row->val = m->val + i*row->n_cols;
+
+      _assemble_row_scal_l(ma, row);
+      _add_scal_values_single(row, mav->matrix);
+
+    } /* Loop on rows */
+
+  }
+  else {
+
+    for (int i = 0; i < row->n_cols; i++) {
+
+      row->i = i;                                     /* cellwise numbering */
+      row->g_id = rset->g_id[dof_ids[i] + eqa->l_row_shift]; /* global num. */
+      row->l_id = row->g_id - rset->l_range[0];      /* range set numbering */
+      row->val = m->val + i*row->n_cols;
+
+      _assemble_row_scal_l(ma, row);
+      _add_scal_values_single(row, mav->matrix);
+
+    } /* Loop on rows */
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

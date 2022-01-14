@@ -156,6 +156,48 @@ _init_algebraic_structures(int                      n_vtx_dofs,
   *p_ms = ms;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Perform the assembly step for scalar-valued CDO Vb systems
+ *
+ * \param[in]      row_shift  shift to apply to local row numbering
+ * \param[in]      eqc        context for this kind of discretization
+ * \param[in]      csys       pointer to a cellwise view of the system
+ * \param[in]      rs         pointer to a cs_range_set_t structure
+ * \param[in, out] eqa        pointer to a cs_equation_assemble_t structure
+ * \param[in, out] mav        pointer to a cs_matrix_assembler_values_t struct.
+ * \param[in, out] rhs        right-hand side array
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_svb_sys_assemble(cs_lnum_t                          row_shift,
+                  const cs_cdovb_scaleq_t           *eqc,
+                  const cs_cell_sys_t               *csys,
+                  const cs_range_set_t              *rs,
+                  cs_equation_assemble_t            *eqa,
+                  cs_matrix_assembler_values_t      *mav,
+                  cs_real_t                         *rhs)
+{
+  /* Matrix assembly */
+
+  eqc->assemble(csys->mat, csys->dof_ids, rs, eqa, mav);
+
+  /* RHS assembly */
+
+#if CS_CDO_OMP_SYNC_SECTIONS > 0
+# pragma omp critical
+  {
+    for (int v = 0; v < csys->n_dofs; v++)
+      rhs[csys->dof_ids[v] + row_shift] += csys->rhs[v];
+  }
+#else  /* Use atomic barrier */
+  for (int v = 0; v < csys->n_dofs; v++)
+#   pragma omp atomic
+    rhs[csys->dof_ids[v] + row_shift] += csys->rhs[v];
+#endif
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -351,12 +393,7 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
   /* Set the algebraic structures */
   /* ---------------------------- */
 
-  /* 1. Set the basic range set which is useful when one works with only one
-   *    block */
-
-  cs_range_set_t  *block_rs = connect->range_sets[CS_DOF_VTX_SCAL];
-
-  /* 2. Build the matrix structure if needed */
+  /* 1. Build the matrix structure if needed */
 
   cs_matrix_structure_t  *ms = (p_ms == NULL) ? NULL : *p_ms;
   cs_range_set_t  *rs = NULL;
@@ -424,6 +461,8 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
     cs_cdovb_scaleq_get(&csys, &cb);
 
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+
     const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
     /* Default initialization of properties associated to each block of the
@@ -436,6 +475,10 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
         int ij = i_eq*n_equations + j_eq;
 
         cs_equation_core_t  *block_ij = blocks[ij];
+
+        cs_equation_assemble_set_shift(eqa,
+                                       i_eq * n_vertices,  /* row shift */
+                                       j_eq * n_vertices); /* col shift */
 
         const cs_equation_param_t  *eqp = block_ij->param;
         const cs_real_t  *f_val = fields[j_eq]->val;
@@ -463,7 +506,8 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
           /* Assembly process
            * ================ */
 
-          /* TODO */
+          _svb_sys_assemble(i_eq*n_vertices, /* row shift (for RHS assembly) */
+                            eqc, csys, rs, eqa, mav, rhs);
 
         } /* Main loop on cells */
 

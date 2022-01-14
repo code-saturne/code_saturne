@@ -174,8 +174,40 @@ cs_equation_assembly_t *
 cs_equation_assemble_set(cs_param_space_scheme_t    scheme,
                          int                        ma_id);
 
-#if defined(HAVE_MPI)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define the function pointer used to assemble the algebraic system
+ *         Case of a system of equation.
+ *
+ * \param[in] scheme     space discretization scheme
+ * \param[in] ma_id      id in the array of matrix assembler
+ *
+ * \return a function pointer cs_equation_assembly_t
+ */
+/*----------------------------------------------------------------------------*/
 
+cs_equation_assembly_t *
+cs_equation_assemble_system_set(cs_param_space_scheme_t    scheme,
+                                int                        ma_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the current shift values to consider during the assembly stage
+ *
+ * \param[in, out] eqa          pointer to a cs_equation_assemble_t to update
+ * \param[in]      l_row_shift  shift to apply to local row ids
+ * \param[in]      l_col_shift  shift to apply to local col ids
+ *
+ * \return a function pointer cs_equation_assembly_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_assemble_set_shift(cs_equation_assemble_t   *eqa,
+                               cs_lnum_t                 l_row_shift,
+                               cs_lnum_t                 l_col_shift);
+
+#if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise matrix into the global matrix
@@ -215,7 +247,6 @@ cs_equation_assemble_matrix_mpis(const cs_sdm_t                   *m,
                                  const cs_range_set_t             *rset,
                                  cs_equation_assemble_t           *eqa,
                                  cs_matrix_assembler_values_t     *mav);
-
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
@@ -260,6 +291,28 @@ cs_equation_assemble_matrix_seqs(const cs_sdm_t                  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Assemble a cellwise (no-block) matrix into the global matrix
+ *         Scalar-valued case.
+ *         Sequential and without openMP.
+ *         Block matrices assembled from cellwise scalar-valued matrices
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_assemble_matrix_sys_seqs(const cs_sdm_t                  *m,
+                                     const cs_lnum_t                 *dof_ids,
+                                     const cs_range_set_t            *rset,
+                                     cs_equation_assemble_t          *eqa,
+                                     cs_matrix_assembler_values_t    *mav);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Assemble a cellwise matrix into the global matrix
  *         Case of a block 3x3 entries. Expand each row.
  *         Sequential run without openMP threading.
@@ -301,7 +354,6 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t                *m,
                                           cs_matrix_assembler_values_t  *mav);
 
 #if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise matrix into the global matrix
@@ -343,7 +395,6 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
                                           const cs_range_set_t         *rset,
                                           cs_equation_assemble_t       *eqa,
                                           cs_matrix_assembler_values_t *mav);
-
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
@@ -389,7 +440,6 @@ cs_equation_assemble_eblock_matrix_seqt(const cs_sdm_t                *m,
                                         cs_matrix_assembler_values_t  *mav);
 
 #if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise matrix into the global matrix
@@ -431,7 +481,6 @@ cs_equation_assemble_eblock_matrix_mpit(const cs_sdm_t                *m,
                                         const cs_range_set_t          *rset,
                                         cs_equation_assemble_t        *eqa,
                                         cs_matrix_assembler_values_t  *mav);
-
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/

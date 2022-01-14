@@ -1252,8 +1252,13 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Assembly process */
 
-  eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOVB,
-                                           CS_DOF_VTX_SCAL);
+  if (eqp->flag & CS_EQUATION_INSIDE_SYSTEM)
+    eqc->assemble = cs_equation_assemble_system_set(CS_SPACE_SCHEME_CDOVB,
+                                                    CS_DOF_VTX_SCAL);
+  else
+    eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOVB,
+                                             CS_DOF_VTX_SCAL);
+
 
   /* Array used for extra-operations */
 
