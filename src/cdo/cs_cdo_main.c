@@ -590,9 +590,13 @@ _log_setup(const cs_domain_t   *domain)
 
   } /* domain->verbosity > 0 */
 
-  /* Summary for each equation */
+  /* Summary of the setup for each equation */
 
   cs_equation_log_setup();
+
+  /* Summary of the setup for each system of equations */
+
+  cs_equation_system_log_setup();
 }
 
 /*============================================================================

@@ -828,7 +828,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                          domain->cdo_quantities,
                          domain->connect);
 
-  cs_equation_system_initialize(domain->mesh);
+  cs_equation_system_initialize();
 
   /* Set the initial condition for all advection fields */
 
@@ -924,6 +924,10 @@ cs_domain_setup_log(const cs_domain_t   *domain)
   int  n_equations, n_predef_equations, n_user_equations;
   cs_equation_get_count(&n_equations, &n_predef_equations, &n_user_equations);
 
+  int  n_systems = cs_equation_system_get_n_systems();
+
+  cs_log_printf(CS_LOG_SETUP, " * Number of systems of equations  %3d\n",
+                n_systems);
   cs_log_printf(CS_LOG_SETUP, " * Number of equations             %3d\n",
                 n_equations);
   cs_log_printf(CS_LOG_SETUP, " * Number of predefined equations  %3d\n",

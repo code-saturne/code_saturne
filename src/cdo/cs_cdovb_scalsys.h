@@ -34,8 +34,10 @@
 #include "cs_base.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
+#include "cs_equation.h"
 #include "cs_equation_common.h"
 #include "cs_equation_param.h"
+#include "cs_equation_system_param.h"
 #include "cs_mesh.h"
 #include "cs_time_step.h"
 
@@ -70,6 +72,44 @@ cs_cdovb_scalsys_init_common(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create and initialize equation builders and scheme context for each
+ *        equation which are in the extra-diagonal blocks related to a system
+ *        of equations. Structures associated to diagonal blocks should be
+ *        already initialized during the treatment of the classical full
+ *        equations.
+ *
+ *        Case of scalar-valued CDO-Vb scheme in each block
+ *
+ * \param[in]      n_eqs            number of equations
+ * \param[in, out] block_factories  array of the core members for an equation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scalsys_init_structures(int                        n_eqs,
+                                 cs_equation_core_t       **block_factories);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free an array of structures (equation parameters, equation builders
+ *        or scheme context) for each equation which are in the extra-diagonal
+ *        blocks related to a system of equations. Structures associated to
+ *        diagonal blocks are freed during the treatment of the classical full
+ *        equations.
+ *
+ *        Case of scalar-valued CDO-Vb scheme in each block
+ *
+ * \param[in]      n_eqs    number of equations
+ * \param[in, out] blocks   array of the core structures for an equation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scalsys_free_structures(int                        n_eqs,
+                                 cs_equation_core_t       **blocks);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Build and solve the linear system of equations. The number of rows in
  *        the system is equal to the number of equations. Thus there are
  *        n_eqs*n_eqs blocks in the system. Each block corresponds potentially
@@ -78,20 +118,18 @@ cs_cdovb_scalsys_init_common(const cs_mesh_t              *mesh,
  *
  * \param[in]      cur2prev  true="current to previous" operation is performed
  * \param[in]      n_eqs     number of equations
- * \param[in]      eqps      pointer to a list of cs_equation_param_t struct.
- * \param[in, out] eqbs      pointer to a list of cs_equation_builder_t struct.
- * \param[in, out] eqcs      pointer to a list of cs_cdovb_scaleq_t struct.
+ * \param[in]      sysp      set of paremeters for the system of equations
+ * \param[in, out] blocks    array of the core members for an equation
  * \param[in, out] p_ms      double pointer to a matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scalsys_solve_implicit(bool                          cur2prev,
-                                int                           n_equations,
-                                cs_equation_param_t         **eqps,
-                                cs_equation_builder_t       **eqbs,
-                                void                        **eqcs,
-                                cs_matrix_structure_t       **p_ms);
+cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
+                                int                            n_equations,
+                                cs_equation_system_param_t    *sysp,
+                                cs_equation_core_t           **blocks,
+                                cs_matrix_structure_t        **p_ms);
 
 /*----------------------------------------------------------------------------*/
 

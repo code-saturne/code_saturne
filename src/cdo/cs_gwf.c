@@ -1229,15 +1229,17 @@ _mtpf_init_context(void)
 
   /* Add a 2x2 system of coupled equations and define each block */
 
-  mc->system = cs_equation_system_add("TwoPhaseFlow system", 2);
+  mc->system = cs_equation_system_add("PorousTwoPhaseFlow",
+                                      2,   /* system size */
+                                      1);  /* scalar-valued block */
 
   /* Set the (0,0)-block */
 
-  cs_equation_system_set_equation(0, mc->wl_eq, mc->system);
+  cs_equation_system_assign_equation(0, mc->wl_eq, mc->system);
 
   /* Set the (1,1)-block */
 
-  cs_equation_system_set_equation(1, mc->hg_eq, mc->system);
+  cs_equation_system_assign_equation(1, mc->hg_eq, mc->system);
 
   /* Create and set the (0,1)-block */
 
@@ -1246,16 +1248,16 @@ _mtpf_init_context(void)
                                         1,
                                         CS_PARAM_BC_HMG_NEUMANN);
 
-  cs_equation_system_set_param(0, 1, mc->wg_eqp, mc->system);
+  cs_equation_system_assign_param(0, 1, mc->wg_eqp, mc->system);
 
   /* Create and set the (1,0)-block */
 
-  mc->hl_eqp = cs_equation_param_create("h_liquid_cross_term",
+  mc->hl_eqp = cs_equation_param_create("h_liquid_block",
                                         CS_EQUATION_TYPE_GROUNDWATER,
                                         1,
                                         CS_PARAM_BC_HMG_NEUMANN);
 
-  cs_equation_system_set_param(1, 0, mc->hl_eqp, mc->system);
+  cs_equation_system_assign_param(1, 0, mc->hl_eqp, mc->system);
 
   /* Add properties:
    * - unsteady term for wl_eq
@@ -1363,10 +1365,6 @@ _mtpf_log_context(cs_gwf_miscible_two_phase_t   *mc)
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Henry constant: %5.3e\n",
                 mc->henry_constant);
-
-  /* Log the system of equations */
-
-  cs_equation_system_log(mc->system);
 }
 
 /*----------------------------------------------------------------------------*/

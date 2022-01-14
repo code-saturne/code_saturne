@@ -42,10 +42,6 @@
 #include "cs_equation_param.h"
 #include "cs_timer_stats.h"
 
-#if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
-#endif
-
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -85,16 +81,15 @@ static cs_equation_system_t  **_equation_systems = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set metadata associated to a cs_equatino_system_t structure. This
- *         has to be done when cs_equation_parameter_t structure have been all
- *         set.
+ * \brief Check the coherency of the settings between a cs_equation_system_t
+ *        structure and each parameter structure associated to a block.
  *
  * \param[in] eqsys     pointer to the system of equations to set
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_common_metadata(cs_equation_system_t  *eqsys)
+_check_common_metadata(cs_equation_system_t  *eqsys)
 {
   if (eqsys == NULL)
     return;
@@ -102,10 +97,15 @@ _set_common_metadata(cs_equation_system_t  *eqsys)
   cs_param_space_scheme_t  common_space_scheme = CS_SPACE_N_SCHEMES;
   int  common_var_dim = -1;
 
-  for (int i = 0; i < eqsys->n_equations; i++) {
-    for  (int j = 0; j < eqsys->n_equations; j++) {
+  int n_eqs = eqsys->n_equations;
 
-      cs_equation_param_t  *eqp = eqsys->params[i*eqsys->n_equations + j];
+  for (int i = 0; i < n_eqs; i++) {
+    for  (int j = 0; j < n_eqs; j++) {
+
+      cs_equation_core_t  *block = eqsys->block_factories[i*n_eqs+j];
+      assert(block != NULL);
+
+      const cs_equation_param_t  *eqp = block->param;
 
       if (common_var_dim == -1)
         common_var_dim = eqp->dim;
@@ -134,24 +134,33 @@ _set_common_metadata(cs_equation_system_t  *eqsys)
     }
   }
 
-  eqsys->space_scheme = common_space_scheme;
-  eqsys->block_var_dim = common_var_dim;
+  if (eqsys->param->space_scheme != common_space_scheme)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Incompatible space scheme (system: %s; equations: %s)\n",
+              __func__,
+              cs_param_get_space_scheme_name(eqsys->param->space_scheme),
+              cs_param_get_space_scheme_name(common_space_scheme));
+
+  if (eqsys->param->block_var_dim != common_var_dim)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Incompatible var. dim. (system: %d; equations: %d)\n",
+              __func__, eqsys->param->block_var_dim, common_var_dim);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Create a new structure to handle system of coupled equations
  *
- * \param[in] sysname       name of the system of equations
- * \param[in] n_eqs         number of coupled equations composing the system
+ * \param[in] n_eqs      number of coupled equations composing the system
+ * \param[in] sysname    name of the system of equations
  *
  * \return  a pointer to the new allocated cs_equation_system_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_equation_system_t *
-_equation_system_create(const char                *sysname,
-                        int                        n_eqs)
+_equation_system_create(int            n_eqs,
+                        const char    *sysname)
 {
   cs_equation_system_t  *eqsys = NULL;
 
@@ -160,12 +169,7 @@ _equation_system_create(const char                *sysname,
 
   BFT_MALLOC(eqsys, 1, cs_equation_system_t);
 
-  /* Store sysname */
-
-  size_t  len = strlen(sysname);
-  BFT_MALLOC(eqsys->name, len + 1, char);
-  strncpy(eqsys->name, sysname, len);
-  eqsys->name[len] = '\0';
+  eqsys->n_equations = n_eqs;
 
   /* Set timer statistic structure to a default value */
 
@@ -175,28 +179,24 @@ _equation_system_create(const char                *sysname,
                                             sysname,
                                             sysname);
 
-  eqsys->n_equations = n_eqs;
-  eqsys->space_scheme = CS_SPACE_N_SCHEMES; /* not set */
-  eqsys->block_var_dim = -1;                /* not set */
+  /* Structures */
+
+  eqsys->param = NULL;
+
+  eqsys->matrix_structure = NULL;
 
   BFT_MALLOC(eqsys->equations, n_eqs, cs_equation_t *);
   for (int i = 0; i < n_eqs; i++)
     eqsys->equations[i] = NULL;
 
-  BFT_MALLOC(eqsys->params, n_eqs*n_eqs, cs_equation_param_t *);
+  BFT_MALLOC(eqsys->block_factories, n_eqs*n_eqs, cs_equation_core_t *);
   for (int i = 0; i < n_eqs*n_eqs; i++)
-    eqsys->params[i] = NULL;
+    eqsys->block_factories[i] = NULL;
 
-  BFT_MALLOC(eqsys->builders, n_eqs*n_eqs, cs_equation_builder_t *);
-  for (int i = 0; i < n_eqs*n_eqs; i++)
-    eqsys->builders[i] = NULL;
+  /* Function pointers */
 
-  BFT_MALLOC(eqsys->context_structures, n_eqs*n_eqs, void *);
-  for (int i = 0; i < n_eqs*n_eqs; i++)
-    eqsys->context_structures[i] = NULL;
-
-  eqsys->init_context = NULL;
-  eqsys->free_context = NULL;
+  eqsys->init_structures = NULL;
+  eqsys->free_structures = NULL;
   eqsys->solve_system = NULL;
   eqsys->solve_steady_state_system = NULL;
 
@@ -222,49 +222,22 @@ _equation_system_free(cs_equation_system_t  **p_eqsys)
   if (eqsys == NULL)
     return;
 
-  if (eqsys->timer_id > -1)
-    cs_timer_stats_start(eqsys->timer_id);
-
   int  n_eqs = eqsys->n_equations;
 
-  BFT_FREE(eqsys->name);
+  eqsys->param = cs_equation_system_param_free(eqsys->param);
 
-  if (n_eqs > 0) {
+  /* Free all structures inside array of structures */
 
-    /* Free the extra-diagonal cs_equation_param_t structures, builders and
-       scheme context structures */
+  eqsys->free_structures(n_eqs, eqsys->block_factories);
 
-    for (int i = 0; i < n_eqs; i++) {
+  BFT_FREE(eqsys->block_factories);
+  BFT_FREE(eqsys->equations);
 
-      cs_equation_param_t  **eqp_array = eqsys->params + i*n_eqs;
-      cs_equation_builder_t  **builders = eqsys->builders + i*n_eqs;
-      void  **context_structures = eqsys->context_structures + i*n_eqs;
-
-      for (int j = 0; j < n_eqs; j++) {
-        if (i != j) {
-
-          eqp_array[j] = cs_equation_param_free(eqp_array[j]);
-          cs_equation_builder_free(builders + j);
-          eqsys->free_context(context_structures + j);
-
-        }
-      } /* Loop on equations (j) */
-
-    } /* Loop on equations (i) */
-
-    BFT_FREE(eqsys->params);
-    BFT_FREE(eqsys->builders);
-    BFT_FREE(eqsys->context_structures);
-
-    BFT_FREE(eqsys->equations);
-
-  } /* n_eqs > 0 */
+  if (eqsys->matrix_structure != NULL)
+    cs_matrix_structure_destroy(&(eqsys->matrix_structure));
 
   BFT_FREE(eqsys);
   *p_eqsys = NULL;
-
-  if (eqsys->timer_id > -1)
-    cs_timer_stats_stop(eqsys->timer_id);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -275,23 +248,47 @@ _equation_system_free(cs_equation_system_t  **p_eqsys)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the number of systems of equations
+ *
+ * \return the number of systems
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_equation_system_get_n_systems(void)
+{
+  return _n_equation_systems;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Add a new structure to handle system of coupled equations
  *
- * \param[in] sysname       name of the system of equations
- * \param[in] n_eqs         number of coupled equations composing the system
+ * \param[in] sysname         name of the system of equations
+ * \param[in] n_eqs           number of coupled equations composing the system
+ * \param[in] block_var_dim   dimension of the variable in each block
  *
  * \return  a pointer to the new allocated cs_equation_system_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_equation_system_t *
-cs_equation_system_add(const char                *sysname,
-                       int                        n_eqs)
+cs_equation_system_add(const char             *sysname,
+                       int                     n_eqs,
+                       int                     block_var_dim)
 {
+  if (n_eqs < 2)
+    return NULL;
+
+  /* Create a new structure */
+
+  cs_equation_system_t  *eqsys = _equation_system_create(n_eqs, sysname);
+
+  /* Add a set of parameters by default */
+
+  eqsys->param = cs_equation_system_param_create(sysname, block_var_dim);
+
   int  sys_id = _n_equation_systems;
-
-  cs_equation_system_t  *eqsys = _equation_system_create(sysname, n_eqs);
-
   _n_equation_systems++;
   BFT_REALLOC(_equation_systems, _n_equation_systems, cs_equation_system_t *);
 
@@ -319,62 +316,77 @@ cs_equation_system_destroy_all(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Log a structure used to couple equations
- *
- * \param[in] eqsys    pointer to the structure to log
+ * \brief Log the setup for all structures managing systems of equations
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_log(cs_equation_system_t  *eqsys)
+cs_equation_system_log_setup(void)
 {
-  if (eqsys == NULL)
+  if (_n_equation_systems < 1)
     return;
 
-  if (eqsys->timer_id > -1)
-    cs_timer_stats_start(eqsys->timer_id);
-
+  cs_log_printf(CS_LOG_SETUP, "\nSettings for systems of equations\n");
   cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
-  cs_log_printf(CS_LOG_SETUP,
-                "## Summary of settings for the system of equations: %s\n",
-                eqsys->name);
 
-  cs_log_printf(CS_LOG_SETUP, "  * %s | Number of equations: %d\n",
-                eqsys->name, eqsys->n_equations);
-  cs_log_printf(CS_LOG_SETUP, "  * %s | Common space scheme: %s\n",
-                eqsys->name,
-                cs_param_get_space_scheme_name(eqsys->space_scheme));
-  cs_log_printf(CS_LOG_SETUP, "  * %s | Common variable dimension: %d\n",
-                eqsys->name, eqsys->block_var_dim);
-  cs_log_printf(CS_LOG_SETUP, "  * %s | Equations (diagonal blocks): ",
-                eqsys->name);
+  for (int sys_id = 0; sys_id < _n_equation_systems; sys_id++) {
 
-  for (int i = 0; i < eqsys->n_equations; i++) {
+    cs_equation_system_t  *eqsys = _equation_systems[sys_id];
 
-    cs_equation_t  *eq = eqsys->equations[i];
-    if (eq != NULL)
-      cs_log_printf(CS_LOG_SETUP, " %s (id=%d);", cs_equation_get_name(eq), i);
+    if (eqsys == NULL)
+      continue;
 
-  }
-  cs_log_printf(CS_LOG_SETUP, "\n");
+    if (eqsys->timer_id > -1)
+      cs_timer_stats_start(eqsys->timer_id);
 
-  /* Log the setting of the extra-diagonal blocks */
+    const char  *sysname = eqsys->param->name;
+    const int  n_eqs = eqsys->n_equations;
 
-  cs_log_printf(CS_LOG_SETUP, "  * %s | Settings for extra-diagonal blocks\n",
-                eqsys->name);
-  cs_log_printf(CS_LOG_SETUP, "%s", cs_sep_h2);
+    cs_log_printf(CS_LOG_SETUP,
+                  "\nSummary of settings for the system of equations: %s\n",
+                  sysname);
+    cs_log_printf(CS_LOG_SETUP, "%s", cs_sep_h2);
 
-  for (int i = 0; i < eqsys->n_equations; i++) {
-    for (int j = 0; j < eqsys->n_equations; j++) {
-      if (i != j)
-        cs_equation_param_log(eqsys->params[i*eqsys->n_equations + j]);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Number of equations: %d\n",
+                  sysname, eqsys->n_equations);
+
+    cs_equation_system_param_log(eqsys->param);
+
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Equations (diagonal blocks):\n",
+                  sysname);
+
+    for (int i = 0; i < n_eqs; i++) {
+
+      cs_equation_t  *eq = eqsys->equations[i];
+      if (eq != NULL)
+        cs_log_printf(CS_LOG_SETUP, "\t%s (block_row_id=%d)\n",
+                      cs_equation_get_name(eq), i);
+
     }
-  }
 
-  cs_log_printf(CS_LOG_SETUP, "%s\n\n", cs_sep_h1);
+    /* Log the setting of the extra-diagonal blocks */
 
-  if (eqsys->timer_id > -1)
-    cs_timer_stats_stop(eqsys->timer_id);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Settings for extra-diagonal blocks\n",
+                  sysname);
+
+    for (int i = 0; i < n_eqs; i++) {
+      for (int j = 0; j < n_eqs; j++) {
+        if (i != j) {
+
+          cs_equation_core_t  *block = eqsys->block_factories[i*n_eqs+j];
+
+          cs_equation_param_log(block->param);
+
+        }
+      }
+    }
+
+    cs_log_printf(CS_LOG_SETUP, "%s\n\n", cs_sep_h1);
+
+    if (eqsys->timer_id > -1)
+      cs_timer_stats_stop(eqsys->timer_id);
+
+  } /* Loop on systems of equations */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -408,20 +420,28 @@ cs_equation_system_set_structures(cs_mesh_t             *mesh,
     if (eqsys->timer_id > -1)
       cs_timer_stats_start(eqsys->timer_id);
 
-    /* Set the space scheme and block_var_dim for the system of equations */
+    /* Check if there is no issue with the settings between the system of
+       equation and the settings related to each block. Check the coherency for
+       the space scheme and block_var_dim */
 
-    _set_common_metadata(eqsys);
+    _check_common_metadata(eqsys);
 
     /* Now set the function pointers */
 
-    switch (eqsys->space_scheme) {
+    cs_equation_system_param_t  *sysp = eqsys->param;
+    assert(sysp != NULL);
+
+    switch (sysp->space_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
-      if (eqsys->block_var_dim == 1) { /* Each block is scalar-valued  */
+      if (sysp->block_var_dim == 1) { /* Each block is scalar-valued  */
 
         cs_cdovb_scalsys_init_common(mesh, connect, quant, time_step);
 
-        /* Set the solve functions */
+        /* Set associated function pointers */
+
+        eqsys->init_structures = cs_cdovb_scalsys_init_structures;
+        eqsys->free_structures = cs_cdovb_scalsys_free_structures;
 
         eqsys->solve_steady_state_system = NULL; /* Not used up to now */
         eqsys->solve_system = cs_cdovb_scalsys_solve_implicit;
@@ -431,24 +451,17 @@ cs_equation_system_set_structures(cs_mesh_t             *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid block_var_dim (=%d) for system \"%s\".\n"
                   "%s: Only scalar-valued (=1) blocks are handled.\n",
-                  __func__, eqsys->block_var_dim, eqsys->name, __func__);
+                  __func__, sysp->block_var_dim, sysp->name, __func__);
       break;
 
     default:
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Invalid space scheme (%s) for system \"%s\"\n",
-                __func__, cs_param_get_space_scheme_name(eqsys->space_scheme),
-                eqsys->name);
+                __func__, cs_param_get_space_scheme_name(sysp->space_scheme),
+                sysp->name);
       break;
 
     } /* Switch on space scheme */
-
-    /* The first equation should have the same init_context and free_context
-       functions as all other equations since they share the space
-       discretization and the same dimension of variable */
-
-    eqsys->init_context = eqsys->equations[0]->init_context;
-    eqsys->free_context = eqsys->equations[0]->free_context;
 
     if (eqsys->timer_id > -1)
       cs_timer_stats_stop(eqsys->timer_id);
@@ -460,13 +473,11 @@ cs_equation_system_set_structures(cs_mesh_t             *mesh,
 /*!
  * \brief  Initialize builder and scheme context structures associated to all
  *         the systems of equations which have been added
- *
- * \param[in]       mesh      pointer to a cs_mesh_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_initialize(const cs_mesh_t             *mesh)
+cs_equation_system_initialize(void)
 {
   for (int sys_id = 0; sys_id < _n_equation_systems; sys_id++) {
 
@@ -481,55 +492,19 @@ cs_equation_system_initialize(const cs_mesh_t             *mesh)
       cs_timer_stats_start(eqsys->timer_id);
 
     for (int i = 0; i < n_eqs; i++) {
-      for (int j = 0; j < n_eqs; j++) {
 
-        if (i == j) { /* Diagonal block => associated to an equation */
+      int ii = i*n_eqs+i;
 
-          cs_equation_t  *eq = eqsys->equations[i];
-          assert(eq != NULL);
+      const cs_equation_t  *eq = eqsys->equations[i];
+      assert(eq != NULL);
 
-          if (eq->builder == NULL)  /* This should not be the case */
-            eq->builder = cs_equation_builder_init(eq->param, mesh);
+      cs_equation_core_t  *block_ii = NULL;
+      cs_equation_define_core(eq, &block_ii);
+      eqsys->block_factories[ii] = block_ii;
 
-          eqsys->builders[i*n_eqs+i] = eq->builder;
+    } /* Loop on equations (Diagonal blocks) */
 
-          if (eq->scheme_context == NULL) /* This should not be the case */
-            eq->scheme_context = eq->init_context(eq->param,
-                                                  eq->field_id,
-                                                  eq->boundary_flux_id,
-                                                  eq->builder);
-
-          eqsys->context_structures[i*n_eqs+i] = eq->scheme_context;
-
-        }
-        else { /* Extra-diagonal block */
-
-          int  ij = i*n_eqs+j;
-          cs_equation_param_t  *eqp = eqsys->params[ij];
-
-          assert(eqp != NULL);
-          assert(eqsys->builders[ij] == NULL);
-          assert(eqsys->context_structures[ij] == NULL);
-
-          /* Copy the boundary conditions of the variable associated to the
-             diagonal block j */
-
-          cs_equation_param_copy_bc(eqsys->params[j*n_eqs+j], eqp);
-
-          /* Define the equation builder */
-
-          cs_equation_builder_t  *eqb = cs_equation_builder_init(eqp, mesh);
-
-          eqsys->builders[ij] = eqb;
-          eqsys->context_structures[ij] = eqsys->init_context(eqp,
-                                                              -1, /* No field */
-                                                              -1, /* No field */
-                                                              eqb);
-
-        }
-
-      } /* column j */
-    } /* row i */
+    eqsys->init_structures(n_eqs, eqsys->block_factories);
 
     if (eqsys->timer_id > -1)
       cs_timer_stats_stop(eqsys->timer_id);
@@ -542,7 +517,7 @@ cs_equation_system_initialize(const cs_mesh_t             *mesh)
  * \brief  Solve of a system of coupled equations. Unsteady case.
  *
  * \param[in]      cur2prev   true="current to previous" operation is performed
- * \param[in, out] eqsys      pointer to the structure to log
+ * \param[in, out] eqsys      pointer to the structure to solve
  */
 /*----------------------------------------------------------------------------*/
 
@@ -559,23 +534,21 @@ cs_equation_system_solve(bool                     cur2prev,
   if (eqsys->solve_system == NULL)
     bft_error(__FILE__, __LINE__, 0,
               "%s: No solve function set for system \"%s\"\n",
-              __func__, eqsys->name);
+              __func__, (eqsys->param == NULL) ? NULL : eqsys->param->name);
 
   /* One assumes that by default the matrix structure is not stored. So one
      has to build this structure before each solving step */
 
-  cs_matrix_structure_t  *ms = NULL;
-
   eqsys->solve_system(cur2prev,
                       eqsys->n_equations,
-                      eqsys->params,
-                      eqsys->builders,
-                      eqsys->context_structures,
-                      &ms);
+                      eqsys->param,
+                      eqsys->block_factories,
+                      &(eqsys->matrix_structure));
 
   /* Free the matrix structure */
 
-  cs_matrix_structure_destroy(&ms);
+  if (eqsys->param->keep_matrix_structure == false)
+    cs_matrix_structure_destroy(&(eqsys->matrix_structure));
 
   if (eqsys->timer_id > -1)
     cs_timer_stats_stop(eqsys->timer_id);
@@ -583,8 +556,7 @@ cs_equation_system_solve(bool                     cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the given equation and associate it to the row block with id
- *         equal to row_id. The equation parameter is also set.
+ * \brief  Assign the given equation to the row block with id row_id
  *
  * \param[in]      row_id  position in the block matrix
  * \param[in]      eq      pointer to the equation to add
@@ -593,31 +565,30 @@ cs_equation_system_solve(bool                     cur2prev,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_set_equation(int                       row_id,
-                                cs_equation_t            *eq,
-                                cs_equation_system_t     *eqsys)
+cs_equation_system_assign_equation(int                       row_id,
+                                   cs_equation_t            *eq,
+                                   cs_equation_system_t     *eqsys)
 {
   if (eqsys == NULL)
     return;
 
-  if (row_id >= eqsys->n_equations)
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid row id %d (max. possible is %d)\n",
-              __func__, row_id, eqsys->n_equations-1);
-
   if (eqsys->timer_id > -1)
     cs_timer_stats_start(eqsys->timer_id);
 
+  int  n_eqs = eqsys->n_equations;
+
+  if (row_id >= n_eqs)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid row id %d (max. possible is %d)\n",
+              __func__, row_id, n_eqs-1);
+
   eqsys->equations[row_id] = eq;
 
-  if (eq == NULL)
-    eqsys->params[row_id*eqsys->n_equations + row_id] = NULL;
+  /* Set what is already avaible as structure pointers */
 
-  else {
-
-    eqsys->params[row_id*eqsys->n_equations + row_id] = eq->param;
-
-  }
+  cs_equation_core_t  *block_ii = NULL;
+  cs_equation_define_core(eq, &block_ii);
+  eqsys->block_factories[row_id*n_eqs + row_id] = block_ii;
 
   if (eqsys->timer_id > -1)
     cs_timer_stats_stop(eqsys->timer_id);
@@ -625,8 +596,8 @@ cs_equation_system_set_equation(int                       row_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the given equation parameters and associate it to the matrix of
- *         equation parameters at (row_id, col_id)
+ * \brief  Assign the given equation parameters to the block with ids
+ *         (row_id, col_id) in the block matrix
  *
  * \param[in]      row_id   row position id
  * \param[in]      col_id   column position id
@@ -636,37 +607,49 @@ cs_equation_system_set_equation(int                       row_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_set_param(int                       row_id,
-                             int                       col_id,
-                             cs_equation_param_t      *eqp,
-                             cs_equation_system_t     *eqsys)
+cs_equation_system_assign_param(int                       row_id,
+                                int                       col_id,
+                                cs_equation_param_t      *eqp,
+                                cs_equation_system_t     *eqsys)
 {
   if (eqsys == NULL)
     return;
+  if (eqp == NULL)
+    return;
 
-  if (row_id >= eqsys->n_equations)
+  if (eqsys->timer_id > -1)
+    cs_timer_stats_start(eqsys->timer_id);
+
+  int  n_eqs = eqsys->n_equations;
+
+  if (row_id >= n_eqs)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid row_id %d (max. possible is %d)\n",
-              __func__, row_id, eqsys->n_equations-1);
-  if (col_id >= eqsys->n_equations)
+              __func__, row_id, n_eqs-1);
+  if (col_id >= n_eqs)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid col_id %d (max. possible is %d)\n",
-              __func__, col_id, eqsys->n_equations-1);
+              __func__, col_id, n_eqs-1);
 
-  eqsys->params[row_id*eqsys->n_equations + col_id] = eqp;
+  const char  *sysname = (eqsys->param == NULL) ? NULL : eqsys->param->name;
 
-  if (eqp != NULL) {
+  if (eqsys->block_factories[row_id*n_eqs + col_id] != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The block (%d, %d) has already been assigned in"
+              " system \"%s\"\n", __func__, row_id, col_id, sysname);
 
-    if (eqsys->space_scheme == CS_SPACE_N_SCHEMES)
-      eqsys->space_scheme = eqp->space_scheme;
-    else
-      if (eqsys->space_scheme != eqp->space_scheme)
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Stop adding an equation to the system \"%s\".\n"
-                  "%s: Space discretization differs.",
-                  __func__, eqsys->name, __func__);
+  cs_equation_core_t  *block_ij = NULL;
 
-  }
+  BFT_MALLOC(block_ij, 1, cs_equation_core_t);
+
+  block_ij->param = eqp;
+  block_ij->builder = NULL;
+  block_ij->scheme_context = NULL;
+
+  eqsys->block_factories[row_id*n_eqs + col_id] = block_ij;
+
+  if (eqsys->timer_id > -1)
+    cs_timer_stats_stop(eqsys->timer_id);
 }
 
 /*----------------------------------------------------------------------------*/
