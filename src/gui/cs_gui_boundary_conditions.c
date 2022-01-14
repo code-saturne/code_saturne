@@ -105,9 +105,7 @@ BEGIN_C_DECLS
 
 typedef enum {
   BY_XDEF = -1,           /* to mark usage of newer system */
-  DIRICHLET_IMPLICIT,
   HYDRAULIC_DIAMETER,
-  NEUMANN_IMPLICIT,
   TURBULENT_INTENSITY,
 } cs_boundary_value_t;
 
@@ -585,7 +583,7 @@ _b_mass_flow_to_vel(const cs_zone_t  *z,
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         pointer to cs_gui_boundary_vel_context_t
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -953,7 +951,7 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         pointer to cs_gui_boundary_const_context_t
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -1017,7 +1015,7 @@ _dof_const_t2h(cs_lnum_t         n_elts,
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
  * \param[in]      dense_output  perform an indirection in retval or not
- * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in]      input         pointer to cs_gui_boundary_meg_context_t
  * \param[in, out] retval        resulting value(s). Must be allocated.
  */
 /*----------------------------------------------------------------------------*/
@@ -1065,6 +1063,99 @@ _dof_meg_t2h(cs_lnum_t         n_elts,
   }
 
   BFT_FREE(t_loc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute the electic potential using an
+ *        implicitely-defined Dirichlet value.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         pointer to field structure (cs_field_t *)
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_dirichlet_implicit_elec_pot(cs_lnum_t         n_elts,
+                                 const cs_lnum_t  *elt_ids,
+                                 bool              dense_output,
+                                 void             *input,
+                                 cs_real_t        *retval)
+{
+  const cs_field_t  *f = (const cs_field_t *)input;
+
+  assert (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1);
+  assert(f == CS_F_(potr) || f == CS_F_(poti));
+
+  cs_real_t value = cs_glob_elec_option->pot_diff;
+
+  /* In case we have rescaling of the potential, all Dirichlet type values will
+     be multiplied by the "coejou" rescaling factor, so to obtain
+     the desired value later, we divide it now */
+
+  if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1) {
+    if (cs_glob_elec_option->ielcor == 1)
+      value /= cs_glob_elec_option->coejou;
+  }
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+    cs_lnum_t j = dense_output ? i : elt_id;
+
+    retval[j] = value;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute field values at boundary faces
+ *        using an implicit Neumann condition (converted to Dirichlet)
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         pointer to field structure (cs_field_t *)
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_neumann_implicit(cs_lnum_t         n_elts,
+                      const cs_lnum_t  *elt_ids,
+                      bool              dense_output,
+                      void             *input,
+                      cs_real_t        *retval)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+  const cs_field_t  *f = (const cs_field_t *)input;
+
+  assert(f->location_id == CS_MESH_LOCATION_CELLS);
+  const cs_lnum_t dim = f->dim;
+  const cs_real_t *val_pre = f->val_pre;
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
+    cs_lnum_t j = dense_output ? i : elt_id;
+    cs_lnum_t c_id = b_face_cells[elt_id];
+
+    for (cs_lnum_t k = 0; k < dim; k++)
+      retval[j*dim + k] = val_pre[c_id*dim + k];
+  }
 }
 
 /*-----------------------------------------------------------------------------
@@ -1327,8 +1418,6 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
                  const cs_zone_t  *z,
                  int               f_id)
 {
-  const int  izone = z->id - 1;
-
   cs_field_t  *f = cs_field_by_id(f_id);
   const int dim = f->dim;
 
@@ -1521,11 +1610,32 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
   }
 
   else if (cs_gui_strcmp(choice, "dirichlet_implicit")) {
-    boundaries->type_code[f_id][izone] = DIRICHLET_IMPLICIT;
+    /* Currently used only for electric arcs and real potential
+       (maybe also imaginary part of potential ?) */
+    assert(cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1);
+    assert(f == CS_F_(potr));
+
+    cs_equation_add_bc_by_dof_func(eqp,
+                                   CS_PARAM_BC_DIRICHLET,
+                                   z->name,
+                                   cs_flag_boundary_face,
+                                   _dof_dirichlet_implicit_elec_pot,
+                                   f);
   }
 
   else if (cs_gui_strcmp(choice, "neumann_implicit")) {
-    boundaries->type_code[f_id][izone] = NEUMANN_IMPLICIT;
+    /* Currently used only for electric arcs and vector potential */
+    assert(cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1);
+    assert(strcmp(f->name, "vec_potential") == 0);
+
+    /* Actually use Diriclet BC with values based on adjacent cell values,
+       rather than actual Neumann BC. */
+    cs_equation_add_bc_by_dof_func(eqp,
+                                   CS_PARAM_BC_DIRICHLET,
+                                   z->name,
+                                   cs_flag_boundary_face,
+                                   _dof_neumann_implicit,
+                                   f);
   }
 }
 
@@ -2458,16 +2568,15 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
  * Rescaling for Joule effect en electric arcs.
  *
  * parameters:
- *   itypfb  <-- boundary type
- *   idcodcl <-> boundary condition type
- *   rdcodcl <-> boundary condition values
+ *   rcodcl <-> boundary condition values
  *----------------------------------------------------------------------------*/
 
 static void
-_rescale_elec(const int  itypfb[],
-              int        icodcl[],
-              cs_real_t  rcodcl[])
+_rescale_elec(cs_real_t  rcodcl[])
 {
+  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
+
+  assert(ieljou > -1);
   assert(cs_glob_elec_option->ielcor == 1);
 
   const cs_mesh_t *m = cs_glob_mesh;
@@ -2475,11 +2584,8 @@ _rescale_elec(const int  itypfb[],
 
   const int var_key_id = cs_field_key_id("variable_id");
 
-  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
-
   /* Rescale potential */
 
-  int potr_id = CS_F_(potr)->id;
   cs_lnum_t ivar_r = cs_field_get_key_int(CS_F_(potr), var_key_id) -1;
   cs_lnum_t ivar_i = -1;
 
@@ -2487,7 +2593,6 @@ _rescale_elec(const int  itypfb[],
     ivar_i = cs_field_get_key_int(CS_F_(poti), var_key_id) -1;
 
   const cs_real_t coef_jl = cs_glob_elec_option->coejou;
-  const cs_real_t pot_diff = cs_glob_elec_option->pot_diff;
 
   /* Loop on zones */
 
@@ -2496,20 +2601,9 @@ _rescale_elec(const int  itypfb[],
     int zone_num = boundaries->bc_num[izone];
     const cs_zone_t *bz = cs_boundary_zone_by_id(zone_num);
 
-    if (ieljou > -1) {
-      for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-        cs_lnum_t face_id = bz->elt_ids[elt_id];
-        rcodcl[ivar_r * n_b_faces + face_id] *= coef_jl;
-      }
-    }
-    if (   cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1
-        && boundaries->type_code[potr_id][izone] == DIRICHLET_IMPLICIT) {
-      for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-        cs_lnum_t face_id = bz->elt_ids[elt_id];
-        int bc_type = (itypfb[face_id] == 5) ? 5 : 1;
-        icodcl[ivar_r * n_b_faces + face_id] = bc_type;
-        rcodcl[ivar_r * n_b_faces + face_id] = pot_diff;
-      }
+    for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+      cs_lnum_t face_id = bz->elt_ids[elt_id];
+      rcodcl[ivar_r * n_b_faces + face_id] *= coef_jl;
     }
 
     if (ivar_i > -1) {
@@ -2595,7 +2689,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
                                double     *rcodcl)
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+
+  const int var_key_id = cs_field_key_id("variable_id");
 
   const int ncharm = CS_COMBUSTION_MAX_COALS;
 
@@ -2641,28 +2736,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
     bft_printf("---zone %i nature: %s\n", zone_nbr, boundaries->nature[izone]);
     bft_printf("---zone %i number of faces: %i\n", zone_nbr, bz->n_elts);
 #endif
-
-    if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1) {
-      const cs_field_t  *f = CS_F_(potr);
-      const int var_key_id = cs_field_key_id("variable_id");
-      cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
-
-      const cs_field_t  *fp = cs_field_by_name_try("vec_potential");
-      ivar = cs_field_get_key_int(fp, var_key_id) -1;
-
-      if (boundaries->type_code[fp->id][izone] == NEUMANN_IMPLICIT) {
-        for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-          cs_lnum_t face_id = bz->elt_ids[elt_id];
-          cs_lnum_t iel = b_face_cells[face_id];
-          icodcl[ivar *n_b_faces + face_id] = 5;
-          icodcl[(ivar+1) *n_b_faces + face_id] = 5;
-          icodcl[(ivar+2) *n_b_faces + face_id] = 5;
-          rcodcl[ivar * n_b_faces + face_id] = fp->val_pre[3*iel];
-          rcodcl[(ivar+1) * n_b_faces + face_id] = fp->val_pre[3*iel+1];
-          rcodcl[(ivar+2) * n_b_faces + face_id] = fp->val_pre[3*iel+2];
-        }
-      }
-    }
 
     /* Boundary conditions by boundary type
        ------------------------------------ */
@@ -2711,7 +2784,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
         fment[zone_nbr-1]  = boundaries->fment[izone];
       }
       else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
-        const int var_key_id = cs_field_key_id("variable_id");
 
         if (  boundaries->itype[izone] == CS_ESICF
             ||boundaries->itype[izone] == CS_EPHCF) {
@@ -2768,8 +2840,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           }
         }
       }
-
-      const int var_key_id = cs_field_key_id("variable_id");
 
       /* turbulent inlet, with formula */
       if (boundaries->icalke[zone_nbr-1] == 0) {
@@ -2928,15 +2998,17 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
 #if _XML_DEBUG_
       if (solid_fuels) {
+        const cs_combustion_model_t *cm = cs_glob_combustion_model;
+
         bft_printf("-----ientat=%i, ientcp=%i, timpat=%12.5e \n",
             ientat[zone_nbr-1], ientcp[zone_nbr-1], timpat[zone_nbr-1]);
 
-        for (int icharb = 0; icharb < boundaries->n_coals; icharb++) {
+        for (int icharb = 0; icharb < cm->coal.n_coals; icharb++) {
           bft_printf("-----coal=%i, qimpcp=%12.5e, timpcp=%12.5e \n",
-              icharb+1, qimpcp[icharb *(*nozppm)+zone_nbr-1],
-              timpcp[icharb *(*nozppm)+zone_nbr-1]);
+                     icharb+1, qimpcp[icharb *(*nozppm)+zone_nbr-1],
+                     timpcp[icharb *(*nozppm)+zone_nbr-1]);
 
-          for (int iclass = 0; iclass < nclpch[icharb]; iclass++)
+          for (int iclass = 0; iclass < cm->coal.n_coals; iclass++)
             bft_printf("-----coal=%i, class=%i, distch=%f \n",
                        icharb+1, iclass+1,
                        distch[  iclass * (*nozppm) * ncharm
@@ -2945,10 +3017,10 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
       }
       else if (gas_combustion) {
         bft_printf("-----iqimp=%i \n",
-            iqimp[zone_nbr-1]);
+                   iqimp[zone_nbr-1]);
         bft_printf("-----ientox=%i, ientfu=%i, ientgf=%i, ientgb=%i \n",
-            ientox[zone_nbr-1], ientfu[zone_nbr-1],
-            ientgf[zone_nbr-1], ientgb[zone_nbr-1]);
+                   ientox[zone_nbr-1], ientfu[zone_nbr-1],
+                   ientgf[zone_nbr-1], ientgb[zone_nbr-1]);
       }
       else if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
         if (boundaries->itype[izone] == CS_ESICF) {
@@ -2969,7 +3041,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > -1) {
         bft_printf("-----iprofm=%i, automatic=%i \n",
-            iprofm[zone_nbr-1], boundaries->meteo[izone].automatic);
+                   iprofm[zone_nbr-1], boundaries->meteo[izone].automatic);
+      }
 #endif
 
     }
@@ -3053,7 +3126,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
           cs_meg_boundary_function(bz, "head_loss", "formula");
 
         const cs_field_t  *fp = cs_field_by_name_try("pressure");
-        const int var_key_id = cs_field_key_id("variable_id");
         int ivarp = cs_field_get_key_int(fp, var_key_id) -1;
 
         for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
@@ -3074,9 +3146,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
     }
 
     else if (cs_gui_strcmp(boundaries->nature[izone], "groundwater")) {
-
-      const int var_key_id = cs_field_key_id("variable_id");
-
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
         izfppp[face_id] = zone_nbr;
@@ -3118,9 +3187,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
     if (bz->n_elts > 0) {
       cs_lnum_t face_id = bz->elt_ids[0];
 
-      for (int f_id = 0; f_id < n_fields; f_id++) {
+      for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
         const cs_field_t  *f = cs_field_by_id(f_id);
-        const int var_key_id = cs_field_key_id("variable_id");
         cs_lnum_t ivar = cs_field_get_key_int(f, var_key_id) -1;
         if (f->type & CS_FIELD_VARIABLE) {
           bft_printf("------%s: icodcl=%i, "
@@ -3170,12 +3238,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
   }
 
   /* Rescaling for Joule effect (should be improved by using specialized
-     dof_functions including the rescaling) */
+     dof_functions including the rescaling, or handled at the equation
+     level) */
 
-  if (   cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1
-      || cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1) {
+  if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1) {
     if (cs_glob_elec_option->ielcor == 1)
-      _rescale_elec(itypfb, icodcl, rcodcl);
+      _rescale_elec(rcodcl);
   }
 }
 
