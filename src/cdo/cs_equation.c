@@ -2679,6 +2679,8 @@ cs_equation_define_core(const cs_equation_t    *eq,
   core->param = eq->param;
   core->builder = eq->builder;
   core->scheme_context = eq->scheme_context;
+
+  *p_core = core;
 }
 
 /*----------------------------------------------------------------------------*/
