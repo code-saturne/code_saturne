@@ -924,15 +924,15 @@ cs_domain_setup_log(const cs_domain_t   *domain)
   int  n_equations, n_predef_equations, n_user_equations;
   cs_equation_get_count(&n_equations, &n_predef_equations, &n_user_equations);
 
-  cs_log_printf(CS_LOG_SETUP, " **Number of equations**             %2d\n",
+  cs_log_printf(CS_LOG_SETUP, " * Number of equations             %3d\n",
                 n_equations);
-  cs_log_printf(CS_LOG_SETUP, " **Number of predefined equations**  %2d\n",
+  cs_log_printf(CS_LOG_SETUP, " * Number of predefined equations  %3d\n",
                 n_predef_equations);
-  cs_log_printf(CS_LOG_SETUP, " **Number of user equations**        %2d\n",
+  cs_log_printf(CS_LOG_SETUP, " * Number of user equations        %3d\n",
                 n_user_equations);
-  cs_log_printf(CS_LOG_SETUP, " **Number of properties**            %2d\n",
+  cs_log_printf(CS_LOG_SETUP, " * Number of properties            %3d\n",
                 cs_property_get_n_properties());
-  cs_log_printf(CS_LOG_SETUP, " **Number of advection fields**      %2d\n",
+  cs_log_printf(CS_LOG_SETUP, " * Number of advection fields      %3d\n",
                 cs_advection_field_get_n_fields());
 
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
@@ -962,9 +962,9 @@ cs_domain_setup_log(const cs_domain_t   *domain)
                     " * Final time step:", domain->time_step->nt_max);
 
     if (domain->time_options.idtvar == 0)
-      cs_log_printf(CS_LOG_SETUP, " * Time step **constant**\n\n");
+      cs_log_printf(CS_LOG_SETUP, " * Time step *constant*\n\n");
     else if (domain->time_options.idtvar == 1)
-      cs_log_printf(CS_LOG_SETUP, " * Time step **variable in time**\n\n");
+      cs_log_printf(CS_LOG_SETUP, " * Time step *variable in time*\n\n");
     else {
       if (cdo_mode != CS_DOMAIN_CDO_MODE_WITH_FV)
         bft_error(__FILE__, __LINE__, 0,

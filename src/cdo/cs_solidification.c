@@ -4629,13 +4629,13 @@ cs_solidification_log_setup(void)
   switch (solid->strategy) {
 
   case CS_SOLIDIFICATION_STRATEGY_LEGACY:
-    cs_log_printf(CS_LOG_SETUP, " Legacy\n");
+    cs_log_printf(CS_LOG_SETUP, " **Legacy**\n");
     break;
   case CS_SOLIDIFICATION_STRATEGY_TAYLOR:
-    cs_log_printf(CS_LOG_SETUP, " Legacy + Taylor-based updates\n");
+    cs_log_printf(CS_LOG_SETUP, " **Legacy + Taylor-based updates**\n");
     break;
   case CS_SOLIDIFICATION_STRATEGY_PATH:
-    cs_log_printf(CS_LOG_SETUP, " Rely on the solidification path\n");
+    cs_log_printf(CS_LOG_SETUP, " **Rely on the solidification path**\n");
     break;
 
   default:
@@ -4648,7 +4648,7 @@ cs_solidification_log_setup(void)
       cs_solidification_stefan_t  *s_model =
         (cs_solidification_stefan_t *)solid->model_context;
 
-      cs_log_printf(CS_LOG_SETUP, "  * %s | Model: Stefan\n", module);
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Model: **Stefan**\n", module);
       cs_log_printf(CS_LOG_SETUP,
                     "  * %s | Tliq/sol: %5.3e\n"
                     "  * %s | Latent heat: %5.3e\n"
@@ -4663,7 +4663,7 @@ cs_solidification_log_setup(void)
       cs_solidification_voller_t  *v_model
         = (cs_solidification_voller_t *)solid->model_context;
 
-      cs_log_printf(CS_LOG_SETUP, "  * %s | Model: Voller-Prakash (1987)\n",
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Model: **Voller-Prakash (1987)**\n",
                     module);
       if (solid->options & CS_SOLIDIFICATION_NO_VELOCITY_FIELD)
         cs_log_printf(CS_LOG_SETUP,
@@ -4692,7 +4692,7 @@ cs_solidification_log_setup(void)
       assert(ia != NULL);
 
       cs_log_printf(CS_LOG_SETUP, "  * %s |"
-                    " Model: Voller-Prakash (1987) with non-linearities\n",
+                    " **Model: Voller-Prakash (1987) with non-linearities**\n",
                     module);
 
       if (solid->options & CS_SOLIDIFICATION_NO_VELOCITY_FIELD)
@@ -4725,7 +4725,7 @@ cs_solidification_log_setup(void)
       cs_solidification_binary_alloy_t  *alloy
         = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-      cs_log_printf(CS_LOG_SETUP, "  * %s | Model: Binary alloy\n",
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Model: **Binary alloy**\n",
                     module);
       cs_log_printf(CS_LOG_SETUP, "  * %s | Alloy: %s\n",
                     module, cs_equation_get_name(alloy->solute_equation));

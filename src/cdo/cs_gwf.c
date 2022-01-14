@@ -1241,7 +1241,7 @@ _mtpf_init_context(void)
 
   /* Create and set the (0,1)-block */
 
-  mc->wg_eqp = cs_equation_param_create("water_gas_cross_term",
+  mc->wg_eqp = cs_equation_param_create("water_gas_block",
                                         CS_EQUATION_TYPE_GROUNDWATER,
                                         1,
                                         CS_PARAM_BC_HMG_NEUMANN);
@@ -1358,7 +1358,7 @@ _mtpf_log_context(cs_gwf_miscible_two_phase_t   *mc)
                 " in the liquid phase: %5.3e, molar mass: %5.3e\n",
                 mc->g_viscosity, mc->l_diffusivity_h, mc->h_molar_mass);
   cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Reference temperature: %5.3e K\n",
+                "  * GWF | Reference temperature: %5.2f K\n",
                 mc->ref_temperature);
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Henry constant: %5.3e\n",
@@ -1979,9 +1979,9 @@ cs_gwf_log_setup(void)
   /* Display information on the general options */
 
   if (gw->flag & CS_GWF_GRAVITATION)
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Gravitation: **True**\n");
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Gravitation: *True*\n");
   else
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Gravitation: **False**\n");
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Gravitation: *False*\n");
 
   if (gw->flag & CS_GWF_ENFORCE_DIVERGENCE_FREE)
     cs_log_printf(CS_LOG_SETUP,
@@ -2030,19 +2030,19 @@ cs_gwf_log_setup(void)
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
     cs_log_printf(CS_LOG_SETUP,
-                  "  * GWF | Model: %s\n", cs_gwf_model_name[gw->model]);
+                  "  * GWF | Model: **%s**\n", cs_gwf_model_name[gw->model]);
     _sspf_log_context(gw->model_context);
     break;
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
     cs_log_printf(CS_LOG_SETUP,
-                  "  * GWF | Model: %s\n", cs_gwf_model_name[gw->model]);
+                  "  * GWF | Model: **%s**\n", cs_gwf_model_name[gw->model]);
     _uspf_log_context(gw->model_context);
     break;
 
   case CS_GWF_MODEL_TWO_PHASE:
     cs_log_printf(CS_LOG_SETUP,
-                  "  * GWF | Model: %s\n", cs_gwf_model_name[gw->model]);
+                  "  * GWF | Model: **%s**\n", cs_gwf_model_name[gw->model]);
     _mtpf_log_context(gw->model_context);
     break;
 
