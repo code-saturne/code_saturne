@@ -194,10 +194,10 @@ class ElectricalModel(Variables, Model):
 
             else: # 'joule'
                 model = self.getJouleModel()
-                if model == 'PotComplexe' or model == 'PotComplexe+CDLTransfo':
+                if model in ('three-phase', 'three-phase+Transformer'):
                     listV.append('elec_pot_i')
-                if model == 'PotComplexe+CDLTransfo':
-                    listP3.append('current_im')
+                    if model == 'three-phase+Transformer':
+                        listP3.append('current_im')
 
             for v in listV:
                 self.setNewVariable(self.node_joule, v, tpe="model", label=v)
@@ -294,6 +294,8 @@ class ElectricalModel(Variables, Model):
 
         node = self.node_joule.xmlInitChildNode('joule_model', 'model')
         node['model'] = model
+
+        self.__updateScalarAndProperty()
 
 
     @Variables.noUndo
