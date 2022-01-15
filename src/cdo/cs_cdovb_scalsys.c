@@ -48,6 +48,7 @@
 #include "cs_cdovb_scaleq.h"
 #include "cs_equation_assemble.h"
 #include "cs_matrix.h"
+#include "cs_parameters.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"
@@ -196,6 +197,130 @@ _svb_sys_assemble(cs_lnum_t                          row_shift,
 #   pragma omp atomic
     rhs[csys->dof_ids[v] + row_shift] += csys->rhs[v];
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve a linear system arising from CDO schemes with scalar-valued
+ *         degrees of freedom
+ *
+ * \param[in]      n_eqs     number of equations constituting the system
+ * \param[in]      n_dofs    local number of DoFs (may be != n_gather_elts)
+ * \param[in]      sysp      parameter settings
+ * \param[in]      rs        pointer to a cs_range_set_t structure
+ * \param[in]      matrix    pointer to a cs_matrix_t structure
+ * \param[in, out] fields    array of field pointers (one for each eq.)
+ * \param[in, out] rhs       right-hand side (scatter/gather if needed)
+ *
+ * \return the number of iterations of the linear solver
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_solve_mumps(int                                 n_eqs,
+             cs_lnum_t                           n_dofs,
+             const cs_equation_system_param_t   *sysp,
+             const cs_range_set_t               *rset,
+             const cs_matrix_t                  *matrix,
+             cs_field_t                        **fields,
+             cs_real_t                          *rhs)
+{
+  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
+  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+
+  /* n_cols could be greater than n_dofs = n_equations*n_vertices in case of a
+     parallel computation */
+
+  assert(n_dofs <= n_cols);
+
+  /* Initialize the solution array */
+
+  cs_real_t  *dof_vals = NULL;
+  BFT_MALLOC(dof_vals, n_cols, cs_real_t);
+
+  for (int i = 0; i < n_eqs; i++) {
+
+    cs_field_t  *f = fields[i];
+    assert(f != NULL);
+    assert(f->val != NULL);
+
+    memcpy(dof_vals + i*n_vertices, f->val, sizeof(cs_real_t)*n_vertices);
+
+  }
+
+  if (rset != NULL) { /* parallel or periodic computations */
+
+    /* Move to a gathered view of the solution and rhs arrays */
+
+    cs_range_set_gather(rset,
+                        CS_REAL_TYPE, 1, /* type, stride */
+                        dof_vals,     /* in: size = n_dofs (scatter) */
+                        dof_vals);    /* out: size = n_gather_dofs */
+
+    /* The right-hand side stems from a cellwise building on this rank.
+       Other contributions from distant ranks contribute also to a vertex
+       owned by the local rank */
+
+    assert(rset->ifs != NULL);
+
+    cs_interface_set_sum(rset->ifs,
+                         n_dofs, 1, false, /* size, stride, interlaced */
+                         CS_REAL_TYPE,
+                         rhs);
+
+    cs_range_set_gather(rset,
+                        CS_REAL_TYPE, 1, /* type, stride */
+                        rhs,          /* in: size = n_dofs */
+                        rhs);         /* out: size = n_gather_dofs */
+
+  } /* scatter --> gather view + parallel sync. */
+
+  /* Retrieve the SLES structure */
+
+  cs_sles_t  *sles = cs_sles_find_or_add(-1, sysp->name);
+
+  /* Set the input monitoring state */
+
+  cs_solving_info_t  sinfo = {.n_it = 0, .rhs_norm = 1, .res_norm = 1e16};
+  cs_real_t  eps = 1e-6;        /* useless in case of a direct solver */
+
+  /* Solve the system as a scalar-valued system of size n_dofs */
+
+  cs_sles_convergence_state_t  code = cs_sles_solve(sles,
+                                                    matrix,
+                                                    eps,
+                                                    sinfo.rhs_norm,
+                                                    &(sinfo.n_it),
+                                                    &(sinfo.res_norm),
+                                                    rhs,
+                                                    dof_vals,
+                                                    0,      /* aux. size */
+                                                    NULL);  /* aux. buffers */
+
+  /* Output information about the convergence of the resolution */
+
+  cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
+                " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
+                sysp->name, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
+
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       dof_vals, dof_vals);
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE, 1, /* type and stride */
+                       rhs, rhs);
+
+  /* dof_vals --> fields */
+
+  for (int i = 0; i < n_eqs; i++) {
+
+    cs_field_t  *f = fields[i];
+
+    memcpy(f->val, dof_vals + i*n_vertices, sizeof(cs_real_t)*n_vertices);
+
+  }
+
+  BFT_FREE(dof_vals);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -537,11 +662,21 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
   cs_matrix_assembler_values_finalize(&mav);
 
-  /* End of the system building
-   * Begin the solving step
-   * -------------------------- */
+  /* Solve the linear system */
+  /* ======================= */
 
-  /* TODO */
+  switch (sysp->sles_strategy) {
+
+  case CS_EQUATION_SYSTEM_SLES_MUMPS:
+    _solve_mumps(n_equations, n_dofs, sysp, rs, matrix, fields, rhs);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy to solve the system.\n",
+              __func__);
+
+  } /* End of switch */
 
   /* Free temporary buffers and structures */
 

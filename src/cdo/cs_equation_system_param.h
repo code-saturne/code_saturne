@@ -101,7 +101,6 @@ typedef struct {
    *
    * \var sles_strategy
    *      Type of strategy used to solve the resulting system
-   *
    */
 
   cs_equation_system_sles_strategy_t     sles_strategy;
