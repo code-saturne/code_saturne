@@ -1026,7 +1026,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
   case CS_NSKEY_IL_ALGO_ATOL:
     nsp->sles_param->il_algo_param.atol = atof(val);
-    if (nsp->sles_param->il_algo_param.rtol < 0)
+    if (nsp->sles_param->il_algo_param.atol < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the absolute tolerance\n", __func__);
     break;
