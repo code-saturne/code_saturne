@@ -516,8 +516,7 @@ _add_scal_values_critical(const cs_equation_assemble_row_t   *row,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add values to a matrix assembler values structure using global
- *        row and column ids.
+ * \brief Set the column index for each entry of a row
  *        Case where the row belong to the local rank and all its colums too.
  *
  * See \ref cs_matrix_assembler_values_add_g which performs the same operations
@@ -530,8 +529,8 @@ _add_scal_values_critical(const cs_equation_assemble_row_t   *row,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_assemble_row_scal_l(const cs_matrix_assembler_t     *ma,
-                     cs_equation_assemble_row_t      *row)
+_set_col_idx_scal_l(const cs_matrix_assembler_t     *ma,
+                    cs_equation_assemble_row_t      *row)
 {
   const cs_lnum_t  l_r_id = row->l_id; /* g_r_id - ma->l_range[0]; */
   const cs_lnum_t  l_start = ma->r_idx[l_r_id], l_end = ma->r_idx[l_r_id+1];
@@ -561,8 +560,7 @@ _assemble_row_scal_l(const cs_matrix_assembler_t     *ma,
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add values to a matrix assembler values structure using global
- *        row and column ids.
+ * \brief Set the column index for each entry of a row
  *        Case where the row belong to the local rank but a part of the columns
  *        belong to a distant rank. Hence the naming *_ld
  *
@@ -576,8 +574,8 @@ _assemble_row_scal_l(const cs_matrix_assembler_t     *ma,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_assemble_row_scal_ld(const cs_matrix_assembler_t      *ma,
-                      cs_equation_assemble_row_t       *row)
+_set_col_idx_scal_ld(const cs_matrix_assembler_t      *ma,
+                     cs_equation_assemble_row_t       *row)
 {
   assert(ma->d_r_idx != NULL); /* local-id-based function, need to adapt */
 
@@ -605,6 +603,7 @@ _assemble_row_scal_ld(const cs_matrix_assembler_t      *ma,
     else { /* Distant part */
 
       /* column ids start and end of local row, so add n_l_cols */
+
       row->col_idx[j] = n_l_cols + _g_binary_search(n_d_cols,
                                                     g_c_id,
                                                     ma->d_g_c_id + d_start);
@@ -629,6 +628,7 @@ _assemble_row_scal_ld(const cs_matrix_assembler_t      *ma,
     else { /* Distant part */
 
       /* column ids start and end of local row, so add n_l_cols */
+
       row->col_idx[j] = n_l_cols + _g_binary_search(n_d_cols,
                                                     g_c_id,
                                                     ma->d_g_c_id + d_start);
@@ -1558,7 +1558,7 @@ cs_equation_assemble_matrix_mpit(const cs_sdm_t                   *m,
 
     else {
 
-      _assemble_row_scal_ld(ma, row);
+      _set_col_idx_scal_ld(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
@@ -1614,7 +1614,7 @@ cs_equation_assemble_matrix_mpis(const cs_sdm_t                   *m,
 
     else {
 
-      _assemble_row_scal_ld(ma, row);
+      _set_col_idx_scal_ld(ma, row);
       _add_scal_values_single(row, mav->matrix);
 
     }
@@ -1663,7 +1663,7 @@ cs_equation_assemble_matrix_seqt(const cs_sdm_t                  *m,
     row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
     row->val = m->val + i*row->n_cols;
 
-    _assemble_row_scal_l(ma, row);
+    _set_col_idx_scal_l(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
     _add_scal_values_critical(row, mav->matrix);
@@ -1715,7 +1715,7 @@ cs_equation_assemble_matrix_seqs(const cs_sdm_t                  *m,
     row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
     row->val = m->val + i*row->n_cols;
 
-    _assemble_row_scal_l(ma, row);
+    _set_col_idx_scal_l(ma, row);
     _add_scal_values_single(row, mav->matrix);
 
   } /* Loop on rows */
@@ -1765,7 +1765,7 @@ cs_equation_assemble_matrix_sys_seqs(const cs_sdm_t                  *m,
       row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
       row->val = m->val + i*row->n_cols;
 
-      _assemble_row_scal_l(ma, row);
+      _set_col_idx_scal_l(ma, row);
       _add_scal_values_single(row, mav->matrix);
 
     } /* Loop on rows */
@@ -1780,7 +1780,7 @@ cs_equation_assemble_matrix_sys_seqs(const cs_sdm_t                  *m,
       row->l_id = row->g_id - rset->l_range[0];      /* range set numbering */
       row->val = m->val + i*row->n_cols;
 
-      _assemble_row_scal_l(ma, row);
+      _set_col_idx_scal_l(ma, row);
       _add_scal_values_single(row, mav->matrix);
 
     } /* Loop on rows */
@@ -1860,7 +1860,7 @@ cs_equation_assemble_eblock33_matrix_seqs(const cs_sdm_t               *m,
       row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
       row->val = _vxyz[k];
 
-      _assemble_row_scal_l(ma, row);
+      _set_col_idx_scal_l(ma, row);
       _add_scal_values_single(row, mav->matrix);
 
     } /* Push each row of the block */
@@ -1940,7 +1940,7 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t               *m,
       row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
       row->val = _vxyz[k];
 
-      _assemble_row_scal_l(ma, row);
+      _set_col_idx_scal_l(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
@@ -2031,7 +2031,7 @@ cs_equation_assemble_eblock33_matrix_mpis(const cs_sdm_t               *m,
 
       else {
 
-        _assemble_row_scal_ld(ma, row);
+        _set_col_idx_scal_ld(ma, row);
         _add_scal_values_single(row, mav->matrix);
 
       }
@@ -2118,7 +2118,7 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
 
       else {
 
-        _assemble_row_scal_ld(ma, row);
+        _set_col_idx_scal_ld(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
         _add_scal_values_critical(row, mav->matrix);
@@ -2210,7 +2210,7 @@ cs_equation_assemble_eblock_matrix_seqs(const cs_sdm_t                *m,
       row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
       row->val = _vpointer[ki];
 
-      _assemble_row_scal_l(ma, row);
+      _set_col_idx_scal_l(ma, row);
       _add_scal_values_single(row, mav->matrix);
     }
 
@@ -2293,7 +2293,7 @@ cs_equation_assemble_eblock_matrix_seqt(const cs_sdm_t                *m,
       row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
       row->val = _vpointer[ki];
 
-      _assemble_row_scal_l(ma, row);
+      _set_col_idx_scal_l(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
       _add_scal_values_critical(row, mav->matrix);
@@ -2388,7 +2388,7 @@ cs_equation_assemble_eblock_matrix_mpis(const cs_sdm_t                *m,
 
       else {
 
-        _assemble_row_scal_ld(ma, row);
+        _set_col_idx_scal_ld(ma, row);
         _add_scal_values_single(row, mav->matrix);
 
       }
@@ -2480,7 +2480,7 @@ cs_equation_assemble_eblock_matrix_mpit(const cs_sdm_t                *m,
 
       else {
 
-        _assemble_row_scal_ld(ma, row);
+        _set_col_idx_scal_ld(ma, row);
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
         _add_scal_values_critical(row, mav->matrix);
