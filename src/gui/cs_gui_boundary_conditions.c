@@ -578,7 +578,7 @@ _b_mass_flow_to_vel(const cs_zone_t  *z,
  * For the calling function, elt_ids is optional. If not NULL, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
  * retval if dense_output is set to false.
- * In the current case, retval is allocated to mesh->n_b_faces
+ * In the current case, retval is allocated to mesh->n_b_faces * stride
  *
  * \param[in]      n_elts        number of elements to consider
  * \param[in]      elt_ids       list of elements ids
@@ -1324,8 +1324,8 @@ _inlet_turbulence(cs_tree_node_t  *tn_bc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief cs_dof_func_t function to compute the velocity at boundary faces
- *        using a MEG generated norm and direction.
+ * \brief cs_dof_func_t function to compute a boundary profiles
+ *        using a MEG generated function.
  *
  * For the calling function, elt_ids is optional. If not NULL, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
@@ -1394,8 +1394,8 @@ _dof_meg_profile(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief cs_dof_func_t function to compute the velocity at boundary faces
- *        using a MEG generated norm and direction for exchange coefficients.
+ * \brief cs_dof_func_t function to compute a profile at boundary faces
+ *        using a MEG generated function for exchange coefficients.
  *
  * For the calling function, elt_ids is optional. If not NULL, array(s) should
  * be accessed with an indirection. The same indirection can be applied to fill
@@ -1441,7 +1441,7 @@ _dof_meg_exchange_coefficient_profile(cs_lnum_t         n_elts,
                                               c->name,
                                               c->condition);
 
-  /* Dirichlet values produced first, exchange coefficient last */
+  /* Exchange coefficient first, Dirichlet values second */
 
   if (dense_output) {  /* common/expected case */
 

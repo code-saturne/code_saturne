@@ -828,9 +828,9 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
         w1[c_id]= fhybr;
         hybrid_fd_coeff[c_id] = xfd;
 
-        /* Storage of the Fd coefficient and check loy if
-         DDES is activated for post-propcessing
-         NB: for RANS zones (L_RANS < L_LES) Fd is clipped to 0 */
+        /* Storage of the Fd coefficient and check if
+           DDES is activated for post-processing
+           NB: for RANS zones (L_RANS < L_LES) Fd is clipped to 0 */
         if (cs_turb_cddes*xdelta >= xlt)
           hybrid_fd_coeff[c_id] = 0.;
 
