@@ -31,6 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_equation_param.h"
+#include "cs_iter_algo.h"
 #include "cs_param_types.h"
 
 /*----------------------------------------------------------------------------*/
@@ -76,6 +77,9 @@ typedef struct {
    * \var name
    *      Name of the system of equations
    *
+   * \var verbosity
+   *      Level of verbosity (quantity of output information)
+   *
    * \var space_scheme
    *      Associated space discretization. One assumes that all blocks share
    *      the same space discretization.
@@ -89,6 +93,8 @@ typedef struct {
 
   char *restrict            name;
 
+  int                       verbosity;
+
   cs_param_space_scheme_t   space_scheme;
 
   int                       block_var_dim;
@@ -101,9 +107,14 @@ typedef struct {
    *
    * \var sles_strategy
    *      Type of strategy used to solve the resulting system
+   *
+   * \var linear_solver
+   *      Set of parameters to control the (main) linear solver
    */
 
   cs_equation_system_sles_strategy_t     sles_strategy;
+
+  cs_iter_algo_param_t                   linear_solver;
 
   /*!
    * @}
@@ -116,14 +127,40 @@ typedef struct {
  *  \brief List of available keys for setting the parameters of a system
  *         of equations
  *
+ * \var CS_SYSKEY_LINEAR_SOLVER_ATOL
+ *      Absolute tolerance for which the (main) linear solver stops iterating
+ *
+ * \var CS_SYSKEY_LINEAR_SOLVER_DTOL
+ *      Divergence tolerance for which the (main) linear solver stops iterating
+ *
+ * \var CS_SYSKEY_LINEAR_SOLVER_RTOL
+ *      Relative tolerance for which the (main) linear solver stops iterating
+ *
+ * \var CS_SYSKEY_LINEAR_SOLVER_VERBOSITY
+ *      Level of verbosity for the (main) linear solver
+ *
+ * \var CS_SYSKEY_LINEAR_SOLVER_MAX_ITER
+ *      Maximal number of iterations for the (main) linear solver
+ *
  * \var CS_SYSKEY_SLES_STRATEGY
  *      Strategy for solving the linear system arising from the discretization
  *      of the system of equations
+ *
+ * \var CS_SYSKEY_VERBOSITY
+ *      Level of verbosity related to the system of equations (a specific
+ *      verbosity is available for the linear algebra;
+ *      cf. CS_SYSKEY_LINEAR_SOLVER_VERBOSITY)
  */
 
 typedef enum {
 
+  CS_SYSKEY_LINEAR_SOLVER_ATOL,
+  CS_SYSKEY_LINEAR_SOLVER_DTOL,
+  CS_SYSKEY_LINEAR_SOLVER_RTOL,
+  CS_SYSKEY_LINEAR_SOLVER_VERBOSITY,
+  CS_SYSKEY_LINEAR_SOLVER_MAX_ITER,
   CS_SYSKEY_SLES_STRATEGY,
+  CS_SYSKEY_VERBOSITY,
 
   CS_SYSKEY_N_KEYS
 

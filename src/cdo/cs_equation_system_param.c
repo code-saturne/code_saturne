@@ -32,6 +32,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -94,6 +95,8 @@ cs_equation_system_param_create(const char       *name,
 
   BFT_MALLOC(sysp, 1, cs_equation_system_param_t);
 
+  sysp->verbosity = 1;
+
   /* Store name */
 
   size_t  len = strlen(name);
@@ -117,6 +120,12 @@ cs_equation_system_param_create(const char       *name,
   /* Linear algebra settings by default */
 
   sysp->sles_strategy = CS_EQUATION_SYSTEM_SLES_MUMPS;
+
+  sysp->linear_solver.n_max_algo_iter = 100;
+  sysp->linear_solver.rtol = 1e-06;
+  sysp->linear_solver.atol = 1e-08;
+  sysp->linear_solver.dtol = 1e3;
+  sysp->linear_solver.verbosity = 1;
 
   return sysp;
 }
@@ -161,6 +170,7 @@ cs_equation_system_param_log(const cs_equation_system_param_t    *sysp)
   char desc[128];
   sprintf(desc, "  * %s |", sysp->name);
 
+  cs_log_printf(CS_LOG_SETUP, "%s Verbosity: %d\n", desc, sysp->verbosity);
   cs_log_printf(CS_LOG_SETUP, "%s Common space scheme: %s\n",
                 desc, cs_param_get_space_scheme_name(sysp->space_scheme));
   cs_log_printf(CS_LOG_SETUP, "%s Common variable dimension: %d\n",
@@ -180,6 +190,13 @@ cs_equation_system_param_log(const cs_equation_system_param_t    *sysp)
     break;
 
   } /* Switch on strategy */
+
+  cs_log_printf(CS_LOG_SETUP, "%s Tolerances of the linear solver:"
+                " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; verbosity: %d\n",
+                desc, sysp->linear_solver.rtol, sysp->linear_solver.atol,
+                sysp->linear_solver.dtol, sysp->linear_solver.verbosity);
+  cs_log_printf(CS_LOG_SETUP, "%s Max number of iterations: %d\n",
+                desc, sysp->linear_solver.n_max_algo_iter);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -212,6 +229,38 @@ cs_equation_system_param_set(cs_equation_system_param_t    *sysp,
 
   switch(key) {
 
+  case CS_SYSKEY_LINEAR_SOLVER_ATOL:
+    sysp->linear_solver.atol = atof(val);
+    if (sysp->linear_solver.atol < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the absolute tolerance"
+                " of the linear solver\n", __func__);
+    break;
+
+  case CS_SYSKEY_LINEAR_SOLVER_DTOL:
+    sysp->linear_solver.dtol = atof(val);
+    if (sysp->linear_solver.dtol < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the divergence tolerance"
+                " of the linear solver\n", __func__);
+    break;
+
+  case CS_SYSKEY_LINEAR_SOLVER_RTOL:
+    sysp->linear_solver.rtol = atof(val);
+    if (sysp->linear_solver.rtol < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the divergence tolerance"
+                " of the linear solver\n", __func__);
+    break;
+
+  case CS_SYSKEY_LINEAR_SOLVER_VERBOSITY:
+    sysp->linear_solver.verbosity = atoi(val);
+    break;
+
+  case CS_SYSKEY_LINEAR_SOLVER_MAX_ITER:
+    sysp->linear_solver.n_max_algo_iter = atoi(val);
+    break;
+
   case CS_SYSKEY_SLES_STRATEGY:
     if (strcmp(val, "mumps") == 0) {
 #if defined(HAVE_MUMPS)
@@ -237,6 +286,10 @@ cs_equation_system_param_set(cs_equation_system_param_t    *sysp,
                 " Choice between: mumps\n",
                 __func__, _val);
     }
+    break;
+
+  case CS_SYSKEY_VERBOSITY:
+    sysp->verbosity = atoi(val);
     break;
 
   default:
