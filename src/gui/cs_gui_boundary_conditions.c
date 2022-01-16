@@ -1067,6 +1067,104 @@ _dof_meg_t2h(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief cs_dof_func_t function to compute a rescaled electric potential
+ *        at boundary faces using a constant zone value.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         pointer to cs_gui_boundary_const_context_t
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_const_elec_rescaled(cs_lnum_t         n_elts,
+                         const cs_lnum_t  *elt_ids,
+                         bool              dense_output,
+                         void             *input,
+                         cs_real_t        *retval)
+{
+  cs_gui_boundary_const_context_t  *c
+    = (cs_gui_boundary_const_context_t *)input;
+
+  assert(n_elts == c->zone->n_elts && elt_ids == c->zone->elt_ids);
+  assert(cs_glob_elec_option->ielcor == 1);
+
+  cs_real_t pot_val = c->val * cs_glob_elec_option->coejou;
+
+  if (dense_output || elt_ids == NULL) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      retval[i] = pot_val;
+    }
+  }
+
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      retval[elt_ids[i]] = pot_val;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute a rescaled electric potential
+ *        at boundary faces using a MEG generated profile.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         pointer to cs_gui_boundary_meg_context_t
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_dof_meg_elec_rescaled(cs_lnum_t         n_elts,
+                       const cs_lnum_t  *elt_ids,
+                       bool              dense_output,
+                       void             *input,
+                       cs_real_t        *retval)
+{
+  cs_gui_boundary_meg_context_t  *c
+    = (cs_gui_boundary_meg_context_t *)input;
+
+  assert(n_elts == c->zone->n_elts && elt_ids == c->zone->elt_ids);
+  assert(cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1);
+  assert(cs_glob_elec_option->ielcor == 1);
+
+  const cs_real_t joule_coef = cs_glob_elec_option->coejou;
+
+  cs_real_t *v_loc = cs_meg_boundary_function(c->zone,
+                                              c->name,
+                                              c->condition);
+
+  if (dense_output || elt_ids == NULL) {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      retval[i] = v_loc[i] * joule_coef;
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      retval[elt_ids[i]] = v_loc[i] * joule_coef;
+    }
+  }
+
+  BFT_FREE(v_loc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief cs_dof_func_t function to compute the electic potential using an
  *        implicitely-defined Dirichlet value.
  *
@@ -1096,15 +1194,6 @@ _dof_dirichlet_implicit_elec_pot(cs_lnum_t         n_elts,
   assert(f == CS_F_(potr) || f == CS_F_(poti));
 
   cs_real_t value = cs_glob_elec_option->pot_diff;
-
-  /* In case we have rescaling of the potential, all Dirichlet type values will
-     be multiplied by the "coejou" rescaling factor, so to obtain
-     the desired value later, we divide it now */
-
-  if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1) {
-    if (cs_glob_elec_option->ielcor == 1)
-      value /= cs_glob_elec_option->coejou;
-  }
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
     cs_lnum_t elt_id = (elt_ids == NULL) ? i : elt_ids[i];
@@ -1405,20 +1494,132 @@ _dof_meg_exchange_coefficient_profile(cs_lnum_t         n_elts,
 }
 
 /*-----------------------------------------------------------------------------
+ * Handle specific scalar types for electric potential.
+ *
+ * parameters:
+ *   tn_bc  <-- tree node associated with "scalar" boundary condition
+ *   z      <-- associated zone
+ *   choice <-- BC type string in tree
+ *   f      <-> pointer to associated field
+ *   eqp    <-> pointer to associated equation (field) parameters
+ *
+ * return:
+ *   true if a special case was handled, false otherwise
+ *----------------------------------------------------------------------------*/
+
+static bool
+_boundary_elec_potential(cs_tree_node_t       *tn_s,
+                         const cs_zone_t      *z,
+                         const char           *choice,
+                         cs_field_t           *f,
+                         cs_equation_param_t  *eqp)
+{
+  bool special_case = true;
+
+  int rescale = cs_glob_elec_option->ielcor == 1;
+
+  /* BC definition type ? */
+
+  if (strcmp(choice, "dirichlet") == 0) {
+
+    if (rescale) {
+      assert(eqp->dim == 1);
+
+      cs_real_t value[1] = {0};
+      const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
+      if (v != NULL) {
+        value[0] = *v;
+      }
+
+      cs_gui_boundary_const_context_t  *c
+        = _add_boundary_const_context(z, value[0]);
+      cs_equation_add_bc_by_dof_func(eqp,
+                                     CS_PARAM_BC_DIRICHLET,
+                                     z->name,
+                                     cs_flag_boundary_face,
+                                     _dof_const_elec_rescaled,
+                                     c);
+    }
+    else
+      special_case = false;  /* Without rescaling, standard conditions apply */
+
+  }
+
+  else if (rescale && strcmp(choice, "dirichlet_formula") == 0) {
+
+    if (rescale) {
+      const char *s = cs_tree_node_get_child_value_str(tn_s, choice);
+
+      if (s != NULL) {
+        cs_gui_boundary_meg_context_t  *c
+          = _add_boundary_meg_context(z, f->name, choice, f->dim);
+
+        cs_equation_add_bc_by_dof_func(eqp,
+                                       CS_PARAM_BC_DIRICHLET,
+                                       z->name,
+                                       cs_flag_boundary_face,
+                                       _dof_meg_elec_rescaled,
+                                       c);
+      }
+    }
+    else
+      special_case = false;  /* Without rescaling, standard conditions apply */
+
+  }
+
+  else if (cs_gui_strcmp(choice, "dirichlet_implicit")) {
+
+    /* Currently used only real potential (according to theory documentation,
+       it seems this should also apply to the imaginary part of potential and
+       vector potential ?) */
+
+    assert(f == CS_F_(potr));
+
+    cs_equation_add_bc_by_dof_func(eqp,
+                                   CS_PARAM_BC_DIRICHLET,
+                                   z->name,
+                                   cs_flag_boundary_face,
+                                   _dof_dirichlet_implicit_elec_pot,
+                                   f);
+  }
+
+  else if (cs_gui_strcmp(choice, "neumann_implicit")) {
+
+    /* Currently used only for vector potential */
+
+    assert(f == CS_F_(potva));
+
+    /* Actually use Diriclet BC with values based on adjacent cell values,
+       rather than actual Neumann BC. */
+
+    cs_equation_add_bc_by_dof_func(eqp,
+                                   CS_PARAM_BC_DIRICHLET,
+                                   z->name,
+                                   cs_flag_boundary_face,
+                                   _dof_neumann_implicit,
+                                   f);
+  }
+
+  else
+    special_case = false;
+
+  return special_case;
+}
+
+/*-----------------------------------------------------------------------------
  * get scalar's values
  *
  * parameters:
  *   tn_bc <-- tree node associated with boundary condition
  *   z     <-- associated zone
- *   f_id  <--  field id
+ *   f     <-- associated field
  *----------------------------------------------------------------------------*/
 
 static void
 _boundary_scalar(cs_tree_node_t   *tn_bc,
                  const cs_zone_t  *z,
-                 int               f_id)
+                 cs_field_t       *f)
 {
-  cs_field_t  *f = cs_field_by_id(f_id);
   const int dim = f->dim;
 
   cs_tree_node_t *tn_s = cs_tree_node_get_child(tn_bc, "scalar");
@@ -1449,6 +1650,21 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
 
   if (choice == NULL)
     return;
+
+  /* Handle special cases for specific physical models: */
+
+  bool special_case = false;
+
+  if (   cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1
+      || cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1) {
+    if (f == CS_F_(potr) || f == CS_F_(poti) || f == CS_F_(potva))
+      special_case = _boundary_elec_potential(tn_s, z, choice, f, eqp);
+  }
+
+  if (special_case)
+    return;
+
+  /* Now handle standard scalar BC types */
 
   if (   strcmp(choice, "dirichlet") == 0
       || strcmp(choice, "neumann") == 0) {
@@ -1609,34 +1825,10 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
                                 value);
   }
 
-  else if (cs_gui_strcmp(choice, "dirichlet_implicit")) {
-    /* Currently used only for electric arcs and real potential
-       (maybe also imaginary part of potential ?) */
-    assert(cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1);
-    assert(f == CS_F_(potr));
-
-    cs_equation_add_bc_by_dof_func(eqp,
-                                   CS_PARAM_BC_DIRICHLET,
-                                   z->name,
-                                   cs_flag_boundary_face,
-                                   _dof_dirichlet_implicit_elec_pot,
-                                   f);
-  }
-
-  else if (cs_gui_strcmp(choice, "neumann_implicit")) {
-    /* Currently used only for electric arcs and vector potential */
-    assert(cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1);
-    assert(strcmp(f->name, "vec_potential") == 0);
-
-    /* Actually use Diriclet BC with values based on adjacent cell values,
-       rather than actual Neumann BC. */
-    cs_equation_add_bc_by_dof_func(eqp,
-                                   CS_PARAM_BC_DIRICHLET,
-                                   z->name,
-                                   cs_flag_boundary_face,
-                                   _dof_neumann_implicit,
-                                   f);
-  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: zone %s, BC type %s for variable %s not handled."),
+              __func__, z->name, f->name, choice);
 }
 
 /*-----------------------------------------------------------------------------
@@ -2365,9 +2557,9 @@ _init_boundaries(void)
 
       if (f_tm != NULL) {
         if (boundaries->meteo == NULL)
-          _boundary_scalar(tn, z, f_tm->id);
+          _boundary_scalar(tn, z, f_tm);
         else if (boundaries->meteo[izone].read_data == 0)
-          _boundary_scalar(tn, z, f_tm->id);
+          _boundary_scalar(tn, z, f_tm);
       }
 
       const char *scalar_sections[]
@@ -2397,16 +2589,16 @@ _init_boundaries(void)
           const char *_name = cs_gui_node_get_tag(tn_sv, "name");
           cs_field_t *f = cs_field_by_name_try(_name);
           if (f != NULL)
-            _boundary_scalar(tn, z, f->id);
+            _boundary_scalar(tn, z, f);
         }
       }
 
       /* User scalars */
       for (int f_id = 0; f_id < n_fields; f_id++) {
-        const cs_field_t  *f = cs_field_by_id(f_id);
+        cs_field_t  *f = cs_field_by_id(f_id);
         if (   (f->type & CS_FIELD_VARIABLE)
             && (f->type & CS_FIELD_USER))
-          _boundary_scalar(tn, z, f->id);
+          _boundary_scalar(tn, z, f);
       }
     }
 
@@ -2564,58 +2756,6 @@ _standard_turbulence_bcs(cs_real_t  rcodcl[])
 
 }
 
-/*----------------------------------------------------------------------------
- * Rescaling for Joule effect en electric arcs.
- *
- * parameters:
- *   rcodcl <-> boundary condition values
- *----------------------------------------------------------------------------*/
-
-static void
-_rescale_elec(cs_real_t  rcodcl[])
-{
-  int ieljou = cs_glob_physical_model_flag[CS_JOULE_EFFECT];
-
-  assert(ieljou > -1);
-  assert(cs_glob_elec_option->ielcor == 1);
-
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-
-  const int var_key_id = cs_field_key_id("variable_id");
-
-  /* Rescale potential */
-
-  cs_lnum_t ivar_r = cs_field_get_key_int(CS_F_(potr), var_key_id) -1;
-  cs_lnum_t ivar_i = -1;
-
-  if (ieljou == 2 || ieljou == 4)
-    ivar_i = cs_field_get_key_int(CS_F_(poti), var_key_id) -1;
-
-  const cs_real_t coef_jl = cs_glob_elec_option->coejou;
-
-  /* Loop on zones */
-
-  for (int izone = 0; izone < boundaries->n_zones; izone++) {
-
-    int zone_num = boundaries->bc_num[izone];
-    const cs_zone_t *bz = cs_boundary_zone_by_id(zone_num);
-
-    for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-      cs_lnum_t face_id = bz->elt_ids[elt_id];
-      rcodcl[ivar_r * n_b_faces + face_id] *= coef_jl;
-    }
-
-    if (ivar_i > -1) {
-      for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-        cs_lnum_t face_id = bz->elt_ids[elt_id];
-        rcodcl[ivar_i * n_b_faces + face_id] *= coef_jl;
-      }
-    }
-
-  } /*  for (izone=0; izone < boundaries->n_zones; izone++) */
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2637,7 +2777,7 @@ _rescale_elec(cs_real_t  rcodcl[])
  * integer          iqimp    <-- 1 if mass flow rate is applied
  * integer          ientat   <-- 1 for air temperature boundary conditions (coal)
  * integer          ientcp   <-- 1 for coal temperature boundary conditions (coal)
- * INTEGER          INMOXY   <-- coal: number of oxydant for the current inlet
+ * integer          inmoxy   <-- coal: number of oxydant for the current inlet
  * integer          ientox   <-- 1 for an air fow inlet (gas combustion)
  * integer          ientfu   <-- 1 for fuel flow inlet (gas combustion)
  * integer          ientgb   <-- 1 for burned gas inlet (gas combustion)
@@ -3235,15 +3375,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *nozppm,
     qimp[izone] = boundaries->qimp[izone];
     if (solid_fuels)
       qimpat[izone] = boundaries->qimp[izone];
-  }
-
-  /* Rescaling for Joule effect (should be improved by using specialized
-     dof_functions including the rescaling, or handled at the equation
-     level) */
-
-  if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1) {
-    if (cs_glob_elec_option->ielcor == 1)
-      _rescale_elec(rcodcl);
   }
 }
 
