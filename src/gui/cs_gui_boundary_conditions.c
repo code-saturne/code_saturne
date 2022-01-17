@@ -800,10 +800,8 @@ _set_vel_profile(cs_tree_node_t    *tn_vp,
 {
   cs_equation_param_t *eqp = _get_equation_param("velocity");
 
-  /* Ignore GUI setting if forced by model or user */
-
-  if (cs_equation_find_bc(eqp, z->name) != NULL)
-    return;
+  if (cs_equation_find_bc(eqp, z->name) != NULL)   /* Ignore if already set */
+    return;                                        /* (priority) */
 
   /* Add new context in list */
 
@@ -1260,6 +1258,11 @@ _sliding_wall(cs_tree_node_t   *tn_vp,
               const char       *z_name)
 {
   const char f_name[] = "velocity";
+  cs_equation_param_t *eqp = _get_equation_param(f_name);
+
+  if (cs_equation_find_bc(eqp, z_name) != NULL)  /* Ignore if already set */
+    return;
+
   cs_field_t  *f = cs_field_by_name(f_name);
 
   cs_real_t value[3] = {0, 0, 0};
@@ -1277,7 +1280,7 @@ _sliding_wall(cs_tree_node_t   *tn_vp,
     }
   }
 
-  cs_equation_add_bc_by_value(_get_equation_param(f_name),
+  cs_equation_add_bc_by_value(eqp,
                               CS_PARAM_BC_DIRICHLET,
                               z_name,
                               value);
@@ -1515,8 +1518,10 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
                          cs_equation_param_t  *eqp)
 {
   bool special_case = true;
-
   int rescale = cs_glob_elec_option->ielcor == 1;
+
+  if (cs_equation_find_bc(eqp, z->name) != NULL)  /* Ignore if already set */
+    return special_case;
 
   /* BC definition type ? */
 
@@ -1629,8 +1634,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
 
   /* Some specific models or the user may have associated boundary
      conditions already, so if the value here is the default, it should
-     probably be ignored (the XML/tree structure should be improved to
-     avoid this type of problem )*/
+     probably be ignored to ensure the appropriate priority */
 
   if (cs_equation_find_bc(eqp, z->name) != NULL)
     return;
@@ -2056,6 +2060,8 @@ _outlet_compressible(cs_tree_node_t  *tn_bc,
     boundaries->itype[izone] = CS_SOPCF;
 
     const char name[] = "pressure";
+    cs_equation_param_t *eqp = _get_equation_param(name);
+
     tn = cs_tree_node_get_child(tn_bc, "dirichlet");
     tn = cs_tree_node_get_sibling_with_tag(tn, "name", name);
 
@@ -2064,10 +2070,12 @@ _outlet_compressible(cs_tree_node_t  *tn_bc,
       const  cs_real_t *v = cs_tree_node_get_values_real(tn);
       if (v != NULL)
         value = v[0];
-      cs_equation_add_bc_by_value(_get_equation_param(name),
-                                  CS_PARAM_BC_DIRICHLET,
-                                  z_name,
-                                  &value);
+
+      if (cs_equation_find_bc(eqp, z_name) == NULL)  /* Ignore if already set */
+        cs_equation_add_bc_by_value(eqp,
+                                    CS_PARAM_BC_DIRICHLET,
+                                    z_name,
+                                    &value);
     }
   }
 }
@@ -2093,6 +2101,9 @@ _boundary_darcy(cs_tree_node_t   *tn_bc,
   cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(head));
   if (eqp == NULL)
     eqp = _get_equation_param("pressure_head"); /* CDO version */
+
+  if (cs_equation_find_bc(eqp, z->name) != NULL)  /* Ignore if already set */
+    return;
 
   if (cs_gui_strcmp(choice, "dirichlet")) {
     cs_real_t value = 0;
@@ -2154,10 +2165,12 @@ _boundary_imposed_pressure(cs_tree_node_t  *tn_bc,
   cs_gui_node_get_real(tn, &value);
 
   cs_equation_param_t *eqp = _get_equation_param(name);
-  cs_equation_add_bc_by_value(eqp,
-                              CS_PARAM_BC_DIRICHLET,
-                              z_name,
-                              &value);
+
+  if (cs_equation_find_bc(eqp, z_name) == NULL)  /* Ignore if already set */
+    cs_equation_add_bc_by_value(eqp,
+                                CS_PARAM_BC_DIRICHLET,
+                                z_name,
+                                &value);
 }
 
 /*-----------------------------------------------------------------------------
