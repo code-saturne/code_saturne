@@ -176,6 +176,16 @@ functions which will be able to access those elements.
   supported output formats, using the
   [mesh and writer](@ref cs_ug_postprocess_intro) concepts.
 
+- \ref cs_user_boundary_conditions_setup (in \ref cs_user_boundary_conditions.c)
+
+  May be used to define advanced boundary conditions using zone-based
+  definitions.
+
+- \ref cs_user_finalize_setup (in \ref cs_user_parameters.c)
+
+  May be used for additionl definitions, or as an alternative or extension
+  to \ref cs_user_boundary_conditions_setup.
+
 ### For specific models
 
 - \ref cs_user_combustion (in \ref cs_user_parameters.f90)

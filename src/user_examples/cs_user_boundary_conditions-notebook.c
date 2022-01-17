@@ -48,88 +48,82 @@
 
 BEGIN_C_DECLS
 
+/*============================================================================
+ * Private function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute an inlet value based
+ *        on the value of a notebook variable named "t_inlet" .
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces.
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+/*! [notebook_dof_func] */
+static void
+_notebook_t_inlet(cs_lnum_t         n_elts,
+                  const cs_lnum_t  *elt_ids,
+                  bool              dense_output,
+                  void             *input,
+                  cs_real_t        *retval)
+{
+  /* Get a user parameter defined in the GUI notebook */
+
+  cs_real_t t_bnd = cs_notebook_parameter_value_by_name("t_inlet");
+
+  /* Apply values at selected locations */
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    const cs_lnum_t  face_id = (elt_ids == NULL) ? i : elt_ids[i];
+    const cs_lnum_t  j = dense_output ? i : face_id;
+    retval[j] = t_bnd;
+  }
+}
+/*! [notebook_dof_func] */
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User definition of boundary conditions
+ * \brief Set boundary conditions to be applied.
  *
- * \param[in]     nvar          total number of variable BC's
- * \param[in]     bc_type       boundary face types
- * \param[in]     icodcl        boundary face code
- *                                - 1  -> Dirichlet
- *                                - 2  -> convective outlet
- *                                - 3  -> flux density
- *                                - 4  -> sliding wall and u.n=0 (velocity)
- *                                - 5  -> friction and u.n=0 (velocity)
- *                                - 6  -> roughness and u.n=0 (velocity)
- *                                - 9  -> free inlet/outlet (velocity)
- *                                inflowing possibly blocked
- * \param[in]     rcodcl        boundary condition values
- *                                rcodcl(3) = flux density value
- *                                (negative for gain) in W/m2
+ * This function is called just before \ref cs_user_finalize_setup, and
+ * boundary conditions can be defined in either of those functions,
+ * depending on whichever is considered more readable or practical for a
+ * given use.
+ *
+ * \param[in, out]  domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(int         nvar,
-                            int         bc_type[],
-                            int         icodcl[],
-                            cs_real_t   rcodcl[])
+cs_user_boundary_conditions_setup(cs_domain_t  *domain)
 {
-  CS_UNUSED(nvar);
-  CS_UNUSED(bc_type);
+  {
+    /*! [notebook_dof_inlet] */
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar_1");
 
-  /* Get a user parameter defined in the GUI notebook */
-  /*! [user_defined_param] */
-  cs_real_t t_bnd = cs_notebook_parameter_value_by_name("t_inlet");
-  /*! [user_defined_param] */
-
-  /* Define some variables needed for the boundary condition specification */
-
-  /*! [bc_param] */
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-
-  cs_field_t *scalar = cs_field_by_name_try("scalar1");
-  int var_id = cs_field_get_key_int(scalar, cs_field_key_id("variable_id")) - 1;
-
-  cs_lnum_t  nelts = 0;
-  cs_lnum_t *lstelt = NULL;
-
-  /*! [bc_param] */
-
-  /*! [apply_bc] */
-  BFT_MALLOC(lstelt, n_b_faces, cs_lnum_t);
-
-  cs_selector_get_b_face_list("inlet", &nelts, lstelt);
-
-  for (cs_lnum_t ielt = 0; ielt < nelts; ielt++) {
-    cs_lnum_t face_id = lstelt[ielt];
-
-    icodcl[var_id*n_b_faces + face_id] = 1;
-    rcodcl[var_id*n_b_faces + face_id] = t_bnd;
+    cs_equation_add_bc_by_dof_func(eqp,
+                                   CS_PARAM_BC_DIRICHLET,
+                                   "inlet",                // zone name
+                                   cs_flag_boundary_face,  // location flag
+                                   _notebook_t_inlet,      // callback function
+                                   NULL);                  // input structure
+    /*! [notebook_dof_inlet] */
   }
-
-  BFT_FREE(lstelt);
-  /*! [apply_bc] */
-  /* Use boundary zones */
-  const cs_zone_t *z = cs_boundary_zone_by_name("seine");
-
-  /* Get the fluid mesure (i.e. surface) of the zone */
-  cs_real_t flux = 1. / z->f_measure;
-
-  for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
-    cs_lnum_t face_id = z->elt_ids[elt_id];
-
-    /* Imposed a normalised flux on the scalar */
-    icodcl[var_id*n_b_faces + face_id] = 3;
-    rcodcl[2 * n_b_faces * nvar +  var_id*n_b_faces + face_id] = flux;
-  }
-
-
-
 }
 
 /*----------------------------------------------------------------------------*/

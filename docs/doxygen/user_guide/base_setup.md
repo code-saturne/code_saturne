@@ -201,7 +201,63 @@ as shown in the [examples](@ref user_initialization_remapper_3d).
 
 \page base_setup_boundary_conditions Manage boundary conditions
 
-Check [pdf user's guide](../../../user/user.pdf) for details.
+As usual, except for advanced models where a high level of automation
+is needed through specific preprocessing scripts or tools, using
+the GUI to define boundary conditions is recommended.
+
+Check the [pdf user's guide](../../../user/user.pdf) for details
+on legacy boundary condition settings and types.
+
+Boundary condition zones
+------------------------
+
+Prior to defining boundary conditions, the appropriate zones should be defined.
+Using the GUI, this is done in the Mesh section, as an early definition
+of the defined zones (before the mesh is actually read or built) may be useful
+for many other settings, not limited to boundary conditions.
+
+\anchor gui_bc_zones
+\image html gui_bc_regions.png "GUI: definition of the boundary zones"
+
+In most cases, the names of mesh groups than can be used for zone definitions
+faces may be read directly from `preprocessor.log` file created by the
+Preprocessor. Following an initial mesh proprocessing or verification run, these
+definitions can be imported directly by the GUI under the
+"Mesh/Boundary zones/Add from Preprocessor log" section.
+
+For advanced cases, or when it is necessary to define zones which overlap,
+or whose section is based on a (possibly time-varying) function,
+the \ref cs_user_zones function may be used.
+A few [examples](@ref cs_user_zones_examples) are also provided.
+
+Boundary condition values
+-------------------------
+
+Based on the defined zones, the GUI can be used to define boundary
+types and conditions:
+
+\anchor gui_bc_definitions
+\image html gui_bc_parameters.png "GUI: Base boundary condition definitions"
+
+For advanced cases, user-defined functions are available, as usual.
+Many [examples](@ref cs_user_boundary_conditions_examples) are provided.
+
+## Zone-based user-defined function definitions
+
+To define or re-define zone-based boundary condition values,
+the \ref cs_user_boundary_conditions_setup (or alternatively
+\ref cs_user_finalize_setup_wrapper) functions may be used.
+
+Note that at walls and when using wall laws (which is the case with most
+turbulence models), the boundary values prescribed through Dirichlet
+or Robin conditions are not currently directly appplied, but used in conjunction
+with the wall model. To force true Dirichlet or exchange conditions,
+using the legacy boundary condition settings is still needed.
+
+## Legacy user-defined function definitions
+
+For definitions using the legacy system, the \ref cs_user_boundary_conditions
+(in C) or \ref cs_f_user_boundary_conditions (Fortran) functions may be used.
 
 Boundary conditions with LES
 ----------------------------

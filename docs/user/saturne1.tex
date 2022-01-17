@@ -70,31 +70,7 @@ One can access the \texttt{Doxygen} main page through \doxygenfile{index.html}{t
 %==================================
 \subsection{Manage boundary conditions}
 %==================================
-\label{sec:prg_boundaryconditions}
-The boundary conditions can be specified in the Graphical User Interface (GUI) under the heading ``Boundary conditions''
-or in the user subroutine \texttt{cs\_user\_boundary\_conditions} called every time step.
-With the GUI, each region and the type of boundary condition associated to it are defined in
-\figurename~\ref{fig:gui_bc_regions}. Then, the parameters of the boundary condition are specified
- in \figurename~\ref{fig:gui_bc_parameters}. The colors of the boundary faces may be read directly from
-a ``preprocessor.log'' file created by the Preprocessor. This file can be generated directly by the interface
-under the heading ``Definition of boundary regions $\rightarrow$ Add from Preprocessor log $\rightarrow$ import groups and references from Preprocessor log'', see \figurename~\ref{fig:gui_bc_regions}.
-%
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.9\textwidth]{gui_bc_regions}
-\caption{Definition of the boundary conditions}
-\label{fig:gui_bc_regions}
-\end{center}
-\end{figure}
-%
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=13cm]{gui_bc_parameters}
-\caption{Parameters of the boundary conditions}
-\label{fig:gui_bc_parameters}
-\end{center}
-\end{figure}
-%
+
 \texttt{cs\_user\_boundary\_conditions} is the second compulsory subroutine for every calculation launched
 without interface (except in the case of specific physics where the
 corresponding boundary condition user subroutine must be used).

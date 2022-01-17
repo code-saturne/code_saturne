@@ -25,18 +25,20 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page cs_user_boundary_conditions_examples cs_user_boundary_conditions.f90
-
+  \page cs_user_boundary_conditions_examples User-defined functions for boundary conditions
 
   \section intro_bc Introduction
 
   This page provides several examples of code blocks that may be used
-  to define boundary conditions in \ref cs_user_boundary_conditions.
+  to define boundary conditions in \ref cs_user_boundary_conditions_setup
+  or \ref cs_user_boundary_conditions.
 
   \section cs_user_bc_examples Boundary condition definition examples
   Here is the list of examples dedicated to different physics:
 
   - \subpage base_examples
+  - \subpage note_book
+  - \subpage base_examples_legacy
   - \subpage channel_inlet_mapped
   - \subpage channel_inlet_auto
   - \subpage advanced_examples
@@ -50,7 +52,6 @@
   - \subpage gas_libby_williams_examples
   - \subpage pulverized_coal1
   - \subpage pulverized_coal2
-  - \subpage note_book
   - \subpage medcoupling_remapper_2d
 
 */
@@ -58,6 +59,190 @@
 /*!
 
   \page base_examples Basic examples
+
+  The preferred method for defining boundary conditions (besides using the GUI)
+  is to assign zone-based definitions in the \ref cs_user_boundary_conditions_setup
+  function (\ref cs_user_boundary_conditions.c).
+
+  As an alternative, the same definitions may be defined in
+  \ref cs_user_finalize_setup_wrapper (\ref cs_user_parameters), which is called
+  immediately after \ref cs_user_boundary_conditions_setup. Choosing one or the
+  other should be based on the best balance for reability and maintainability,
+
+  \section base_xdef_const Simple constant-valued boundary conditions.
+
+  The following examples illustrate how different types of boundary conditions can
+  be assigned to given variables at specified zones.
+  In each case, an input array is provided. Values are copied internally, so the
+  array does not need to continue existing after the boundary condition is defined.
+
+  \subsection base_xdef_const_vel Constant value or flux
+
+  Imposed values (Dirichlet conditions) can be defined using an array of the same
+  dimension as the variable, as shown here for a velocity vector (1.5, 0, 0)
+  at a zone named "inlet":
+
+  \snippet cs_user_boundary_conditions.c inlet_vel_value
+
+  Simple Neuman conditions can be defined in a simular manner, replacing
+  \ref CS_PARAM_BC_DIRICHLET with \ref CS_PARAM_BC_NEUMANN.
+
+  \subsection base_xdef_const_robin Constant exchange coefficient
+
+  For exchange-condition-type boundary conditions, where a given exchange coefficient
+  and exterior value are provided, a Robin boundary condition can be used.
+  In this case, a boundary condition of the form:
+  \f$ K du/dn + alpha*(u - u0) = g \f$
+  can be used by providing the values \emph (alpha, u0, g), where \empf alpha is
+  is the exchange coefficient mulitiplied by -1 (contribution fro mboundary to
+  domain sign convention), and u0 is the external value.
+
+  In the following example, and exchange coefficient of value 10.5 and an external
+  value of 0.1 is appplied to a scalar (named "scalar1") on a zone named
+  "exchanger_wall":
+
+  \snippet cs_user_boundary_conditions.c wall_scalar_exchange_const
+
+  \section base_xdef_callback Common boundary conditions types with local values.
+
+  The following examples illustrate how slightly more advanced boundary conditions
+  can be assigned with user-defined callback functions. Here, we use "static"
+  (i.e. local) functions that must be defined in the same file
+  (i.e. \ref cs_user_boundary_conditions.c) prior to being referenced in
+  \ref cs_user_boundary_conditions_define. It is of course possible to use functions
+  with global linkage, which can be defined in any file, as log as the matching
+  function prototypes are defined or included at the calling point.
+
+  Note the as many callback functions as required may be used, and can be named
+  in any manner chosen by the user (though of course using a consistent naming scheme
+  is recommended for readability and maintainability).
+
+  \subsection base_xdef_analytic Analytic functions
+
+  Analytic functions of type \ref cs_analytic_func_t are one of several callback
+  function types that may be used to define boundary conditions. For each zone,
+  they are called for a set of quadrature points at which values are evaluated.
+  For legacy schemes, the associated quadrature points are the face centers of
+  the selected zone. For CDO-based solvers, the set of points depends on the
+  quadrature type.
+
+  In this example, analytic functions are used to define the velocity and a scalar.
+  Here, the following functions are first defined, for the velocity:
+
+  \snippet cs_user_boundary_conditions.c inlet_vel_analytic_func
+
+  And for the scalar:
+
+  \snippet cs_user_boundary_conditions.c inlet_scalar_analytic_func
+
+  They are then associated to the matching zone in \ref cs_user_boundary_conditions_define:
+
+  \snippet cs_user_boundary_conditions.c inlet_vel_analytic
+
+  and
+
+  \snippet cs_user_boundary_conditions.c inlet_scalar_analytic
+
+  \subsection base_xdef_dof Boundary-face-based functions.
+
+  Degree-of-freedom-based callbacks of type \ref cs_dof_func_t can be used
+  to define boundary conditions at known locations, such as boundary faces for
+  a given zone, independently of the quadrature actually used. For legacy schemes,
+  boundary faces represent the natural boundary value locations, so using analytic
+  or dof-base functions is equivalent (though point coordinates are not provided
+  in dof-function arguments, so must be accessed through the mesh quantities if
+  needed). For CDO schemes, values are automatically interpolated from the provided
+  boundary face centers to the actual quadrature points.
+
+  In the following example, a function based on boundary face values of type
+  \ref cs_dof_func_t is used to define a Robin boundary condition based on
+  an exchange coefficient and external value.
+  As Robin conditions are expressed in the form:
+  \f$ K du/dn + alpha*(u - u0) = g \f$
+  for each location pont, a tuple of values (alpha, u0, g) is provided
+  with interleaved storage. This can be seen in the definition of the
+  associated function:
+
+  \snippet cs_user_boundary_conditions.c wall_exchange_dof_func
+
+  As usual, the function is then used as a callback for for Robin condition:
+
+  \snippet cs_user_boundary_conditions.c wall_scalar_exchange_dof
+
+  \subsection base_xdef_dof_const Scaling by zone surface.
+
+  To define even a constant boundary value using a scaling variable not yet known
+  at setup time, an appropriate callback function must be used.
+  This is the case, for division by a zone's surface, which is unknown
+  when calling \ref cs_user_boundary_conditions_setup (where the mesh
+  has not yet been read or built).
+
+  As an example, to define a unit flux such that the total flux over a zone
+  has value 1, we can simply divide it by a zone's measure, such as in the following
+  function for a zone named "wall_top":
+
+  \snippet cs_user_boundary_conditions.c wall_top_flux_dof_func
+
+  which we associate to the given zone and variable:
+
+  \snippet cs_user_boundary_conditions.c wall_top_flux_dof
+
+  A similar definition is done for zone "wall_side", with a slightly improved
+  function definition:
+
+  \snippet cs_user_boundary_conditions.c wall_side_flux_dof_func
+
+  This function is similar to the one used for "wall_top", but assumes the associated
+  input pointer is a pointer to the associated zone, which can thus be obtained
+  directly using a pointer cast.
+
+  In this case, the matching zone pointer must be passed as the associated input
+  when assigning the condition:
+
+  \snippet cs_user_boundary_conditions.c wall_side_flux_dof
+
+  Note that a structure passed as a callback input must still point to valid
+  data when the callback is executed. This is the case for zone pointers,
+  even for time-varying zones (whose data may change, but base structure pointer
+  is unvarying).
+
+*/
+// __________________________________________________________________________________
+/*!
+
+  \page note_book Boundary conditions using notebook
+
+  Get a user parameter defined in the GUI notebook.
+
+  To access a notebook-defined variable when defining boundary conditions,
+  a callback function of the type  of type \ref cs_dof_func_t can be defined,
+  such as the following (for a notebook variable named "t_inlet"):
+
+  \snippet cs_user_boundary_conditions-notebook.c notebook_dof_func
+
+  Note that accessing the notebook value in the function aboe is done through
+  the call to \ref cs_notebook_parameter_value_by_name.
+
+  The callback function can then be assigned to the zone named "inlet"
+  for variable "scalar1" in the usual way
+  (in \ref cs_user_boundary_conditions_setup):
+
+  \snippet cs_user_boundary_conditions-notebook.c notebook_dof_inlet
+
+*/
+// __________________________________________________________________________________
+/*!
+
+  \page base_examples_legacy Basic examples (legacy method)
+
+  The preferred method for defining boundary conditions (besides using the GUI)
+  is to assign zone-based definitions in the \ref cs_user_boundary_conditions_setup
+  function (\ref cs_user_boundary_conditions.c).
+
+  As an alternative, the same definitions may be defined in
+  \ref cs_user_finalize_setup_wrapper (\ref cs_user_parameters), which is called
+  immediately after \ref cs_user_boundary_conditions_setup. Choosing one or the
+  other should be based on the best balance for reability and maintainability,
 
   \section base_loc_var_bc Local variables to be added
 
@@ -907,25 +1092,6 @@ TODO : Verifier la traduction
   The colors 14 and 4 become a symmetry plane.
 
   \snippet cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 example_4
-
-*/
-// __________________________________________________________________________________
-/*!
-
-  \page note_book Boundary conditions using notebook
-
-  Get a user parameter defined in the GUI notebook.
-
-  \snippet cs_user_boundary_conditions-notebook.c user_defined_param
-
-  Define some variables needed for the boundary condition specification.
-
-  \snippet cs_user_boundary_conditions-notebook.c bc_param
-
-  Apply a Dirichlet boundary condition on temperature at inlet by using the
-  user parameter "t_inlet" which value has been retrieved above.
-
-  \snippet cs_user_boundary_conditions-notebook.c apply_bc
 
 */
 // __________________________________________________________________________________

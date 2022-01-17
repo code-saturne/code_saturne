@@ -134,13 +134,13 @@ _vel_profile(cs_real_t           time,
 
 /*! [inlet_scalar_analytic_func] */
 static void
-_scalar_profile(cs_real_t           time,
-                cs_lnum_t           n_elts,
-                const cs_lnum_t    *elt_ids,
-                const cs_real_t    *coords,
-                bool                dense_output,
-                void               *input,
-                cs_real_t          *val)
+_scalar_inlet_profile(cs_real_t           time,
+                      cs_lnum_t           n_elts,
+                      const cs_lnum_t    *elt_ids,
+                      const cs_real_t    *coords,
+                      bool                dense_output,
+                      void               *input,
+                      cs_real_t          *val)
 {
   CS_UNUSED(time);
 
@@ -167,6 +167,156 @@ _scalar_profile(cs_real_t           time,
 }
 /*! [inlet_scalar_analytic_func] */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute a profile at boundary faces
+ *        using a MEG generated function for exchange coefficients.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces * stride.
+ *
+ * The retval values can be decomposed into the alpha, u0, and g values in:
+ *
+ * K du/dn + alpha*(u - u0) = g
+ *
+ * For multidimentsional cases, we assume scalar alpha, variable dimension u0,
+ * and dimension^2 g (g = 0 here but storage required), so we have a stride
+ * of 1 + dim + dim*dim, with values alpha, u0, and g in order.
+ *
+ * This example assumes a scalar variable, with a resulting stride of 3.
+ * Here we set a constant exchange coefficient: alpha = -10.5,
+ *             a variable external value:       u0    = 25. + 0.1*x
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         NULL or pointer to a structure cast on-the-fly
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+/*! [wall_exchange_dof_func] */
+static void
+_scalar_exchange_profile(cs_lnum_t         n_elts,
+                         const cs_lnum_t  *elt_ids,
+                         bool              dense_output,
+                         void             *input,
+                         cs_real_t        *retval)
+{
+  CS_UNUSED(input);
+
+  const cs_lnum_t dim = 1;
+  const cs_lnum_t stride = 1 + dim + dim*dim;
+
+  /* Face center coordinates */
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_real_3_t *f_cog = (const cs_real_3_t *)mq->b_face_cog;
+
+  /* Exchange coefficient first, Dirichlet values second. */
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    const cs_lnum_t  face_id = (elt_ids == NULL) ? i : elt_ids[i];
+    const cs_lnum_t  j = dense_output ? i : face_id;
+    retval[j*stride]   = - 10.5;
+    retval[j*stride+1] = 25. + 0.1*f_cog[face_id][0];
+    retval[j*stride*3+2] = 0;
+  }
+}
+/*! [wall_exchange_dof_func] */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute a wall flux normalized by the
+ *        associated zone's surface.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces.
+ *
+ * In this example, the input variable is assumed to be a pointer
+ * to the associated zone.
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         pointer to associated zone
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+/*! [wall_top_flux_dof_func] */
+static void
+_w_flux_top(cs_lnum_t         n_elts,
+            const cs_lnum_t  *elt_ids,
+            bool              dense_output,
+            void             *input,
+            cs_real_t        *retval)
+{
+  CS_NO_WARN_IF_UNUSED(input);
+
+  const cs_zone_t *z = cs_boundary_zone_by_name("wall_top");
+
+  /* Get the fluid mesure (i.e. surface) of the zone */
+  cs_real_t flux = 1. / z->f_measure;
+
+  /* Exchange coefficient first, Dirichlet values second. */
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    const cs_lnum_t  face_id = (elt_ids == NULL) ? i : elt_ids[i];
+    const cs_lnum_t  j = dense_output ? i : face_id;
+    retval[j] = flux;
+  }
+}
+/*! [wall_top_flux_dof_func] */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief cs_dof_func_t function to compute a wall flux normalized by the
+ *        associated zone's surface.
+ *
+ * For the calling function, elt_ids is optional. If not NULL, array(s) should
+ * be accessed with an indirection. The same indirection can be applied to fill
+ * retval if dense_output is set to false.
+ * In the current case, retval is allocated to mesh->n_b_faces.
+ *
+ * In this example, the input variable is assumed to be a pointer
+ * to the associated zone.
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of elements ids
+ * \param[in]      dense_output  perform an indirection in retval or not
+ * \param[in]      input         pointer to associated zone
+ * \param[in, out] retval        resulting value(s). Must be allocated.
+ */
+/*----------------------------------------------------------------------------*/
+
+/*! [wall_side_flux_dof_func] */
+static void
+_w_flux_side(cs_lnum_t         n_elts,
+             const cs_lnum_t  *elt_ids,
+             bool              dense_output,
+             void             *input,
+             cs_real_t        *retval)
+{
+  const cs_zone_t *z = (const cs_zone_t *)input;
+
+  /* Get the fluid mesure (i.e. surface) of the zone */
+  cs_real_t flux = 1. / z->f_measure;
+
+  /* Exchange coefficient first, Dirichlet values second. */
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    const cs_lnum_t  face_id = (elt_ids == NULL) ? i : elt_ids[i];
+    const cs_lnum_t  j = dense_output ? i : face_id;
+    retval[j] = flux;
+  }
+}
+/*! [wall_side_flux_dof_func] */
+
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -189,11 +339,12 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
 {
   CS_UNUSED(domain);
 
+  /* Example: define constant inlet velocity with vector (1,0,0) */
   {
     /*! [inlet_vel_value] */
     cs_equation_param_t  *eqp = cs_equation_param_by_name("velocity");
 
-    cs_real_t inlet_velocity[] = {1, 0, 0};
+    cs_real_t inlet_velocity[] = {1.5, 0, 0};
 
     cs_equation_add_bc_by_value(eqp,
                                 CS_PARAM_BC_DIRICHLET,
@@ -203,6 +354,8 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
     /*! [inlet_vel_value] */
   }
 
+  /* Example: define inlet velocity using user-defined callback function */
+
   {
     /*! [inlet_vel_analytic] */
     cs_equation_param_t  *eqp = cs_equation_param_by_name("velocity");
@@ -210,10 +363,12 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
     cs_equation_add_bc_by_analytic(eqp,
                                    CS_PARAM_BC_DIRICHLET,
                                    "inlet",           // zone name
-                                   _vel_profile,      // pointer to the function
+                                   _vel_profile,      // callback function
                                    NULL);             // input structure
     /*! [inlet_vel_analytic] */
   }
+
+  /* Example: define inlet scalar value using user-defined callback function */
 
   {
     /*! [inlet_scalar_analytic] */
@@ -222,10 +377,76 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
 
     cs_equation_add_bc_by_analytic(eqp,
                                    CS_PARAM_BC_DIRICHLET,
-                                   "inlet",           // zone name
-                                   _scalar_profile,   // pointer to the function
-                                   f);                // input structure
+                                   "inlet",                 // zone name
+                                   _scalar_inlet_profile,   // callback function
+                                   f);                      // input structure
     /*! [inlet_scalar_analytic] */
+  }
+
+  /* Example: define constant wall exchange coefficient + external value */
+
+  {
+    /*! [wall_scalar_exchange_const] */
+
+    /* Robin BC: K du/dn + alpha*(u - u0) = g
+       with alpha = -10.5 and u0 = 0.1 */
+
+    cs_real_t robin_values[3] = {-10.5, 0.1, 0};
+
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar1");
+
+    cs_equation_add_bc_by_value(eqp,
+                                CS_PARAM_BC_ROBIN,
+                                "exchanger_wall",         // zone name
+                                robin_values);
+    /*! [wall_scalar_exchange_const] */
+  }
+
+  /* Example: define wall exchange coefficient + external value
+     with user-defined callback function. */
+  {
+    /*! [wall_scalar_exchange_dof] */
+    cs_field_t  *f = cs_field_by_name("scalar1");
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar1");
+
+    cs_equation_add_bc_by_dof_func(eqp,
+                                   CS_PARAM_BC_ROBIN,
+                                   "exchanger_wall",         // zone name
+                                   cs_flag_boundary_face,    // location flag
+                                   _scalar_exchange_profile, // callback function
+                                   f);                       // input structure
+    /*! [wall_scalar_exchange_dof] */
+  }
+
+  /* Example: define wall flux based on total flux on zone. */
+
+  {
+    /*! [wall_top_flux_dof] */
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar_1");
+
+    cs_equation_add_bc_by_dof_func(eqp,
+                                   CS_PARAM_BC_NEUMANN,
+                                   "wall_top",             // zone name
+                                   cs_flag_boundary_face,  // location flag
+                                   _w_flux_top,            // callback function
+                                   NULL);                  // input structure
+    /*! [wall_top_flux_dof] */
+  }
+
+  /* Example: define wall flux based on total flux on zone (variant) */
+
+  {
+    /*! [wall_side_flux_dof] */
+    const cs_zone_t *z = cs_boundary_zone_by_name("wall_side");
+    cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar_1");
+
+    cs_equation_add_bc_by_dof_func(eqp,
+                                   CS_PARAM_BC_NEUMANN,
+                                   z->name,                // zone name
+                                   cs_flag_boundary_face,  // location flag
+                                   _w_flux_side,           // callback function
+                                   (void *)z);             // input structure
+    /*! [wall_side_flux_dof] */
   }
 }
 
