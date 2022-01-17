@@ -93,7 +93,7 @@ typedef struct {
 
   int                       block_var_dim;
 
-  _Bool                     keep_matrix_structure;
+  bool                      keep_matrix_structure;
 
   /*!
    * @name Linear algebra (SLES)
