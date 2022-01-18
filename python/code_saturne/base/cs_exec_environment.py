@@ -1766,8 +1766,7 @@ class mpi_environment:
 
         if not self.mpmd:
             if launcher_base[:7] == 'mpiexec':
-                self.mpmd = MPI_MPMD_mpiexec
-                # alternatives are MPI_MPMD_configfile | MPI_MPMD_script
+                self.mpmd = MPI_MPMD_mpiexec | MPI_MPMD_configfile | MPI_MPMD_script
             elif launcher_base[:6] == 'mpirun':
                 self.mpmd = MPI_MPMD_script
 

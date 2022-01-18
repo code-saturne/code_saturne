@@ -1019,11 +1019,15 @@ class case:
             else:
                 mpi_cmd += ' '
 
-        # Check if we need MPS. Currently, this can be done
+        mpmd = mpi_env.mpmd
+
+        # Check if we need MPS. If this is the case, force the
+        # MPMD mode to script.
         use_mps = os.getenv('CS_USE_MPS')
         if use_mps:
             if use_mps.lower() not in ('0', 'false', 'no'):
                 use_mps = True
+                mpmd = cs_exec_environment.MPI_MPMD_script
         if use_mps != True:
             use_mps = False
 
@@ -1044,14 +1048,7 @@ class case:
 
         else:
 
-            if use_mps or (mpi_env.mpmd & cs_exec_environment.MPI_MPMD_script):
-
-                if mpi_env.mpiexec_separator != None:
-                    mpi_cmd += mpi_env.mpiexec_separator + ' '
-
-                e_path = self.generate_solver_mpmd_script(n_procs, mpi_env, use_mps)
-
-            elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
+            if mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
 
                 if mpi_env.mpiexec_separator != None:
                     mpi_cmd += mpi_env.mpiexec_separator + ' '
@@ -1059,7 +1056,7 @@ class case:
                 e_path = self.generate_solver_mpmd_mpiexec(n_procs,
                                                            mpi_env)
 
-            elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_configfile:
+            elif mpmd & cs_exec_environment.MPI_MPMD_configfile:
 
                 if mpi_env.mpiexec == 'srun':
                     e_path = self.generate_solver_mpmd_configfile_srun(n_procs,
@@ -1072,6 +1069,13 @@ class case:
                     mpi_cmd += '-configfile ' + e_path
 
                 e_path = ''
+
+            elif mpmd & cs_exec_environment.MPI_MPMD_script:
+
+                if mpi_env.mpiexec_separator != None:
+                    mpi_cmd += mpi_env.mpiexec_separator + ' '
+
+                e_path = self.generate_solver_mpmd_script(n_procs, mpi_env, use_mps)
 
             else:
                 raise RunCaseError(' No allowed MPI MPMD mode defined.\n')
