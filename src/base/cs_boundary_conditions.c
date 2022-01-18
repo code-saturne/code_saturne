@@ -1519,7 +1519,7 @@ cs_boundary_conditions_compute(int     nvar,
       case CS_PARAM_BC_ROBIN:
         {
           cs_lnum_t stride = 1 + f->dim + f->dim*f->dim;
-          cs_lnum_t n_max_vals = stride * n_b_faces;
+          n_max_vals = stride * n_b_faces;
           if (n_max_vals > eval_buf_size) {
             eval_buf_size = n_max_vals;
             BFT_FREE(eval_buf);
