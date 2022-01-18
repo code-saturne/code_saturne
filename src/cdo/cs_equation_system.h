@@ -89,20 +89,22 @@ typedef void
 /*!
  * \brief  Build and solve a linear system within the CDO framework
  *
- * \param[in]      c2p         Is a "current to previous" operation performed ?
- * \param[in]      n_eqs       number of equations in the system to solve
- * \param[in]      sysp        set of paremeters for the system of equations
- * \param[in, out] core_array  array of the core members for an equation
- * \param[in, out] p_ms        double pointer to a matrix structure
+ * \param[in]      c2p       Is a "current to previous" operation performed ?
+ * \param[in]      n_eqs     number of equations in the system to solve
+ * \param[in]      sysp      set of paremeters for the system of equations
+ * \param[in, out] blocks    array of the core members for an equation
+ * \param[in, out] p_ms      double pointer to a matrix structure
+ * \param[in, out] p_rs      double pointer to a range set structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_system_solve_t)(bool                          c2p,
-                             int                           n_eqs,
-                             cs_equation_system_param_t   *sysp,
-                             cs_equation_core_t          **core_array,
-                             cs_matrix_structure_t       **p_ms);
+(cs_equation_system_solve_t)(bool                           c2p,
+                             int                            n_eqs,
+                             cs_equation_system_param_t    *sysp,
+                             cs_equation_core_t           **blocks,
+                             cs_matrix_structure_t        **p_ms,
+                             cs_range_set_t               **p_rs);
 
 /*! \struct cs_equation_system_t
  *  \brief Main structure to handle a set of coupled equations
@@ -128,10 +130,17 @@ typedef struct {
    * @{
    *
    * \var matrix_structure
-   *      Matrix structure (may be NULL if build on-the-fly)
+   *      Matrix structure (may be NULL if build on-the-fly). This depends on
+   *      the parameter keep_structures
+   *
+   * \var rset
+   *      Range set structure (may be NULL if build on-the-fly). This depends
+   *      on the parameter keep_structures
    */
 
   cs_matrix_structure_t        *matrix_structure;
+
+  cs_range_set_t               *rset;
 
   /*!
    * @name Diagonal block (equations)
@@ -277,6 +286,15 @@ cs_equation_system_set_structures(cs_mesh_t             *mesh,
                                   cs_cdo_connect_t      *connect,
                                   cs_cdo_quantities_t   *quant,
                                   cs_time_step_t        *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the SLES associated to each system of equations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_system_set_sles(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

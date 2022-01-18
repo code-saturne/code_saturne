@@ -585,9 +585,13 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   if (cs_navsto_system_is_activated())
     cs_navsto_system_set_sles();
 
-  /* Set the remaining equations */
+  /* Set equations (those not implied in the NavSto module) */
 
   cs_equation_set_sles();
+
+  /* Set the SLES related to the systems of equations */
+
+  cs_equation_system_set_sles();
 }
 
 /*----------------------------------------------------------------------------*/

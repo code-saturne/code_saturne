@@ -39,6 +39,7 @@
 #include <bft_mem.h>
 
 #include "cs_cdovb_scalsys.h"
+#include "cs_equation_system_sles.h"
 #include "cs_equation_param.h"
 #include "cs_timer_stats.h"
 
@@ -232,6 +233,9 @@ _equation_system_free(cs_equation_system_t  **p_eqsys)
 
   BFT_FREE(eqsys->block_factories);
   BFT_FREE(eqsys->equations);
+
+  if (eqsys->rset != NULL)
+    cs_range_set_destroy(&(eqsys->rset));
 
   if (eqsys->matrix_structure != NULL)
     cs_matrix_structure_destroy(&(eqsys->matrix_structure));
@@ -471,6 +475,35 @@ cs_equation_system_set_structures(cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the SLES associated to each system of equations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_system_set_sles(void)
+{
+  for (int sys_id = 0; sys_id < _n_equation_systems; sys_id++) {
+
+    cs_equation_system_t  *eqsys = _equation_systems[sys_id];
+
+    if (eqsys == NULL)
+      bft_error(__FILE__, __LINE__, 0, "%s: System not allocated.", __func__);
+
+    if (eqsys->timer_id > -1)
+      cs_timer_stats_start(eqsys->timer_id);
+
+    cs_equation_system_sles_init(eqsys->n_equations,
+                                 eqsys->param,
+                                 eqsys->block_factories);
+
+    if (eqsys->timer_id > -1)
+      cs_timer_stats_stop(eqsys->timer_id);
+
+  } /* Loop on systems */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize builder and scheme context structures associated to all
  *         the systems of equations which have been added
  */
@@ -543,12 +576,17 @@ cs_equation_system_solve(bool                     cur2prev,
                       eqsys->n_equations,
                       eqsys->param,
                       eqsys->block_factories,
-                      &(eqsys->matrix_structure));
+                      &(eqsys->matrix_structure),
+                      &(eqsys->rset));
 
   /* Free the matrix structure */
 
-  if (eqsys->param->keep_matrix_structure == false)
+  if (eqsys->param->keep_structures == false) {
+
     cs_matrix_structure_destroy(&(eqsys->matrix_structure));
+    cs_range_set_destroy(&(eqsys->rset));
+
+  }
 
   if (eqsys->timer_id > -1)
     cs_timer_stats_stop(eqsys->timer_id);

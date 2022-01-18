@@ -49,6 +49,7 @@
 #include "cs_equation_assemble.h"
 #include "cs_matrix.h"
 #include "cs_parameters.h"
+#include "cs_sles.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"
@@ -123,29 +124,109 @@ _init_algebraic_structures(int                      n_vtx_dofs,
 
   assert(n_vtx_dofs > 1);
 
-  /* 1. Build a range set */
+  cs_range_set_t  *rset = NULL;
+  cs_interface_set_t  *ifs = NULL; /* temporary */
 
-  if (n_vtx_dofs == 3) { /* Perhaps already defined */
+  /* 1. Build a range set
+   *    interlaced = false since one wants a block viewpoint */
 
-    if (connect->range_sets[CS_DOF_VTX_VECT] != NULL)
-      *p_rs = connect->range_sets[CS_DOF_VTX_VECT];
+  cs_cdo_connect_assign_vtx_ifs_rs(cs_shared_mesh, n_vtx_dofs, false,
+                                   &ifs,
+                                   &rset);
+  assert(rset != NULL);
 
-  }
-  else {
+  /* 2. Intermediate structure (matrix assembler) */
 
-    cs_interface_set_t  *ifs = NULL; /* temporary */
+  cs_matrix_assembler_t  *ma = cs_matrix_assembler_create(rset->l_range,
+                                                          true);
 
-    cs_cdo_connect_assign_vtx_ifs_rs(cs_shared_mesh,
-                                     n_vtx_dofs,
-                                     &ifs,
-                                     p_rs);
+  /* Remark: The second parameter is set to "true" meaning that the diagonal is
+   * stored separately --> MSR storage */
 
-  }
+  int  max_size = 0;
+  for (cs_lnum_t v = 0; v < n_vertices; v++)
+    max_size = CS_MAX(max_size, v2v->idx[v+1]-v2v->idx[v] + 1);
+  max_size *= n_vtx_dofs*n_vtx_dofs;
 
-  /* 2. Intermediate structure */
+  cs_gnum_t  *grows = NULL, *gcols = NULL, *g_r_ids = NULL, *g_c_ids = NULL;
 
-  cs_matrix_assembler_t  *ma =
-    cs_equation_build_matrix_assembler(n_vertices, n_vtx_dofs, v2v, *p_rs);
+  BFT_MALLOC(grows, max_size, cs_gnum_t);
+  BFT_MALLOC(gcols, max_size, cs_gnum_t);
+  BFT_MALLOC(g_r_ids, n_vtx_dofs, cs_gnum_t);
+  BFT_MALLOC(g_c_ids, n_vtx_dofs, cs_gnum_t);
+
+  /*
+   *   | A_00  | A_01  |  ...  | A_0n  |
+   *   |-------|-------|-------|-------|
+   *   | A_10  | A_11  |  ...  | A_1n  |
+   *   |-------|-------|-------|-------|
+   *   | A_n0  | A_n1  |  ...  | A_nn  |
+   *
+   *  Each block A_.. is n_vertices * n_vertices
+   */
+
+  for (cs_lnum_t vrow_id = 0; vrow_id < n_vertices; vrow_id++) {
+
+    const cs_lnum_t  start = v2v->idx[vrow_id];
+    const cs_lnum_t  end = v2v->idx[vrow_id+1];
+
+    int  n_entries = (end-start + 1)*n_vtx_dofs*n_vtx_dofs;
+
+    for (int i = 0; i < n_vtx_dofs; i++)
+      g_r_ids[i] = rset->g_id[vrow_id + i*n_vertices];
+
+    int shift = 0;
+
+    /* Add the (vrow_id, vrow_id) entry in each block */
+
+    for (int i = 0; i < n_vtx_dofs; i++) {
+
+      const cs_gnum_t  g_i_id = g_r_ids[i]; /* global id for vrow_id in block
+                                               i */
+
+      for (int j = 0; j < n_vtx_dofs; j++) {
+
+        grows[shift] = g_i_id;
+        gcols[shift] = g_r_ids[j];
+        shift++;
+
+      } /* Loop on j in A_ij */
+
+    } /* Loop on i in A_i* */
+
+    /* Add (vrow_id, vcol_id) couples (linked through the v2v connectivity) in
+       each block */
+
+    for (cs_lnum_t idx = start; idx < end; idx++) {
+
+      const cs_lnum_t  vcol_id = v2v->ids[idx];
+
+      for (int i = 0; i < n_vtx_dofs; i++)
+        g_c_ids[i] = rset->g_id[vcol_id + i*n_vertices];
+
+      for (int i = 0; i < n_vtx_dofs; i++) {
+
+        const cs_gnum_t  g_i_id = g_r_ids[i]; /* global id for vrow_id in block
+                                                 i */
+
+        for (int j = 0; j < n_vtx_dofs; j++) {
+
+          grows[shift] = g_i_id;
+          gcols[shift] = g_c_ids[j];
+          shift++;
+
+        } /* Loop on j in A_ij */
+
+      } /* Loop on i in A_i* */
+
+    } /* Loop on extra-diag. entries */
+
+    cs_matrix_assembler_add_g_ids(ma, n_entries, grows, gcols);
+    assert(shift == n_entries);
+
+  } /* Loop on vertex entities */
+
+  cs_matrix_assembler_compute(ma);
 
   /* 3. Build the matrix structure */
 
@@ -155,6 +236,14 @@ _init_algebraic_structures(int                      n_vtx_dofs,
   /* Set the pointer to the structure to return */
 
   *p_ms = ms;
+  *p_rs = rset;
+
+  /* ma and ifs if not NULL are stored inside ms or rset */
+
+  BFT_FREE(grows);
+  BFT_FREE(gcols);
+  BFT_FREE(g_r_ids);
+  BFT_FREE(g_c_ids);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -248,7 +337,7 @@ _solve_mumps(int                                 n_eqs,
 
   }
 
-  if (rset != NULL) { /* parallel or periodic computations */
+  if (rset != NULL) { /* parallel/periodic operations */
 
     /* Move to a gathered view of the solution and rhs arrays */
 
@@ -261,12 +350,11 @@ _solve_mumps(int                                 n_eqs,
        Other contributions from distant ranks contribute also to a vertex
        owned by the local rank */
 
-    assert(rset->ifs != NULL);
-
-    cs_interface_set_sum(rset->ifs,
-                         n_dofs, 1, false, /* size, stride, interlaced */
-                         CS_REAL_TYPE,
-                         rhs);
+    if (rset->ifs != NULL) /* parallel or periodic computations */
+      cs_interface_set_sum(rset->ifs,
+                           n_dofs, 1, false, /* size, stride, interlaced */
+                           CS_REAL_TYPE,
+                           rhs);
 
     cs_range_set_gather(rset,
                         CS_REAL_TYPE, 1, /* type, stride */
@@ -299,9 +387,10 @@ _solve_mumps(int                                 n_eqs,
 
   /* Output information about the convergence of the resolution */
 
-  cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
-                " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
-                sysp->name, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
+  if (sysp->linear_solver.verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
+                  " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
+                  sysp->name, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
 
   cs_range_set_scatter(rset,
                        CS_REAL_TYPE, 1, /* type and stride */
@@ -463,6 +552,8 @@ cs_cdovb_scalsys_free_structures(int                        n_eqs,
         block_ij->scheme_context =
           cs_cdovb_scaleq_free_context(block_ij->scheme_context);
 
+        BFT_FREE(block_ij);
+
       }
     } /* Loop on equations (j) */
   } /* Loop on equations (i) */
@@ -481,6 +572,7 @@ cs_cdovb_scalsys_free_structures(int                        n_eqs,
  * \param[in]      sysp      set of paremeters for the system of equations
  * \param[in, out] blocks    array of the core members for an equation
  * \param[in, out] p_ms      double pointer to a matrix structure
+ * \param[in, out] p_rs      double pointer to a range set structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -489,7 +581,8 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
                                 int                            n_equations,
                                 cs_equation_system_param_t    *sysp,
                                 cs_equation_core_t           **blocks,
-                                cs_matrix_structure_t        **p_ms)
+                                cs_matrix_structure_t        **p_ms,
+                                cs_range_set_t               **p_rs)
 {
   const cs_mesh_t  *mesh = cs_shared_mesh;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -521,12 +614,15 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
   /* 1. Build the matrix structure if needed */
 
   cs_matrix_structure_t  *ms = (p_ms == NULL) ? NULL : *p_ms;
-  cs_range_set_t  *rs = NULL;
+  cs_range_set_t  *rs = (p_rs == NULL) ? NULL : *p_rs;
 
-  if (ms == NULL) {
+  if (ms == NULL)
     _init_algebraic_structures(n_equations, &rs, &ms);
-    *p_ms = ms;
-  }
+
+  *p_ms = ms;
+  *p_rs = rs;
+
+  assert(rs != NULL && ms != NULL);
 
   /* 3. Create the matrix and its rhs */
 

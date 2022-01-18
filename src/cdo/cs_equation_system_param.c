@@ -111,7 +111,7 @@ cs_equation_system_param_create(const char       *name,
 
   /* Other metadata set by default */
 
-  sysp->keep_matrix_structure = true;
+  sysp->keep_structures = true;
 
   /* Space discretization */
 
@@ -119,6 +119,7 @@ cs_equation_system_param_create(const char       *name,
 
   /* Linear algebra settings by default */
 
+  sysp->sles_setup_done = false;
   sysp->sles_strategy = CS_EQUATION_SYSTEM_SLES_MUMPS;
 
   sysp->linear_solver.n_max_algo_iter = 100;
@@ -175,8 +176,8 @@ cs_equation_system_param_log(const cs_equation_system_param_t    *sysp)
                 desc, cs_param_get_space_scheme_name(sysp->space_scheme));
   cs_log_printf(CS_LOG_SETUP, "%s Common variable dimension: %d\n",
                 desc, sysp->block_var_dim);
-  cs_log_printf(CS_LOG_SETUP, "%s Keep matrix structure: %s\n",
-                desc, cs_base_strtf(sysp->keep_matrix_structure));
+  cs_log_printf(CS_LOG_SETUP, "%s Keep structures: %s\n",
+                desc, cs_base_strtf(sysp->keep_structures));
 
   cs_log_printf(CS_LOG_SETUP, "%s Linear algebra setup\n", desc);
   switch (sysp->sles_strategy) {

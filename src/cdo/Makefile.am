@@ -102,6 +102,7 @@ cs_equation_param.h \
 cs_equation_priv.h \
 cs_equation_system.h \
 cs_equation_system_param.h \
+cs_equation_system_sles.h \
 cs_evaluate.h \
 cs_flag.h \
 cs_gwf.h \
@@ -219,6 +220,7 @@ libcscdo_extension_la_SOURCES = \
 cs_cdofb_ac.c \
 cs_cdofb_monolithic_sles.c \
 cs_cdofb_predco.c \
+cs_equation_system_sles.c \
 cs_navsto_param.c \
 cs_navsto_sles.c
 

@@ -87,8 +87,9 @@ typedef struct {
    * \var block_var_dim
    *      Dimension of the variable in each block
    *
-   * \var keep_matrix_structure
-   *      Destroy or not the matrix structure after each solve
+   * \var keep_structures
+   *      Destroy or not the matrix structure and the range set structure after
+   *      each solve
    */
 
   char *restrict            name;
@@ -99,11 +100,14 @@ typedef struct {
 
   int                       block_var_dim;
 
-  bool                      keep_matrix_structure;
+  bool                      keep_structures;
 
   /*!
    * @name Linear algebra (SLES)
    * @{
+   *
+   * \var sles_setup_done
+   *      Indicator to know if the setup stage has be done
    *
    * \var sles_strategy
    *      Type of strategy used to solve the resulting system
@@ -111,6 +115,8 @@ typedef struct {
    * \var linear_solver
    *      Set of parameters to control the (main) linear solver
    */
+
+  bool                                   sles_setup_done;
 
   cs_equation_system_sles_strategy_t     sles_strategy;
 

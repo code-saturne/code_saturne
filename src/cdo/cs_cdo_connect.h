@@ -166,6 +166,7 @@ cs_connect_get_next_3_vertices(const cs_lnum_t   *f2e_ids,
  *
  * \param[in]       mesh          pointer to a cs_mesh_t structure
  * \param[in]       n_vtx_dofs    number of DoFs per vertex
+ * \param[in]       interlaced    false means a block viewpoint
  * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
  * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
  */
@@ -174,6 +175,7 @@ cs_connect_get_next_3_vertices(const cs_lnum_t   *f2e_ids,
 void
 cs_cdo_connect_assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
                                  int                    n_vtx_dofs,
+                                 bool                   interlaced,
                                  cs_interface_set_t   **p_ifs,
                                  cs_range_set_t       **p_rs);
 

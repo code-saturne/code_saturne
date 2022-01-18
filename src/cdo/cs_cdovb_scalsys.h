@@ -121,6 +121,7 @@ cs_cdovb_scalsys_free_structures(int                        n_eqs,
  * \param[in]      sysp      set of paremeters for the system of equations
  * \param[in, out] blocks    array of the core members for an equation
  * \param[in, out] p_ms      double pointer to a matrix structure
+ * \param[in, out] p_rs      double pointer to a range set structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -129,7 +130,8 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
                                 int                            n_equations,
                                 cs_equation_system_param_t    *sysp,
                                 cs_equation_core_t           **blocks,
-                                cs_matrix_structure_t        **p_ms);
+                                cs_matrix_structure_t        **p_ms,
+                                cs_range_set_t               **p_rs);
 
 /*----------------------------------------------------------------------------*/
 

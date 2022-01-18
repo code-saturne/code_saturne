@@ -840,6 +840,7 @@ _assign_edge_ifs_rs(const cs_mesh_t       *mesh,
  *
  * \param[in]       mesh          pointer to a cs_mesh_t structure
  * \param[in]       n_vtx_dofs    number of DoFs per vertex
+ * \param[in]       interlaced    false means a block viewpoint
  * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
  * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
  */
@@ -848,6 +849,7 @@ _assign_edge_ifs_rs(const cs_mesh_t       *mesh,
 void
 cs_cdo_connect_assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
                                  int                    n_vtx_dofs,
+                                 bool                   interlaced,
                                  cs_interface_set_t   **p_ifs,
                                  cs_range_set_t       **p_rs)
 {
@@ -869,7 +871,12 @@ cs_cdo_connect_assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
     break;
 
   default:
-    ifs = cs_interface_set_dup(mesh->vtx_interfaces, n_vtx_dofs);
+    if (interlaced)
+      ifs = cs_interface_set_dup(mesh->vtx_interfaces, n_vtx_dofs);
+    else
+      ifs = cs_interface_set_dup_blocks(mesh->vtx_interfaces,
+                                        n_vertices,
+                                        n_vtx_dofs);
     break;
 
   } /* End of switch on dimension */
@@ -1125,7 +1132,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
   if ( vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
       vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
 
-    cs_cdo_connect_assign_vtx_ifs_rs(mesh, 1,
+    cs_cdo_connect_assign_vtx_ifs_rs(mesh, 1, true, /* interlaced */
                                      connect->interfaces + CS_DOF_VTX_SCAL,
                                      connect->range_sets + CS_DOF_VTX_SCAL);
 
@@ -1141,7 +1148,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   if ( vb_scheme_flag & CS_FLAG_SCHEME_VECTOR ||
       vcb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
-    cs_cdo_connect_assign_vtx_ifs_rs(mesh, 3,
+    cs_cdo_connect_assign_vtx_ifs_rs(mesh, 3, true, /* interlaced */
                                      connect->interfaces + CS_DOF_VTX_VECT,
                                      connect->range_sets + CS_DOF_VTX_VECT);
 
