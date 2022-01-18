@@ -224,7 +224,6 @@ _compute_steady_user_equations(cs_domain_t   *domain)
     } /* Steady-state equation */
 
   } /* Loop on equations */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -417,7 +416,6 @@ static void
 _define_current_time_step(cs_time_step_t           *ts,
                           cs_time_step_options_t   *ts_opt)
 {
-  /* Sanity check */
   assert(cs_dt_pty != NULL);
   assert(cs_property_is_uniform(cs_dt_pty));
 
@@ -430,6 +428,7 @@ _define_current_time_step(cs_time_step_t           *ts,
   if (cs_property_is_steady(cs_dt_pty) == false) {  /* dt_cur may change */
 
     /* Update time_options */
+
     double  dtmin = CS_MIN(ts_opt->dtmin, ts->dt[0]);
     double  dtmax = CS_MAX(ts_opt->dtmax, ts->dt[0]);
 
@@ -438,6 +437,7 @@ _define_current_time_step(cs_time_step_t           *ts,
 
     /* TODO: Check how the following value is set in FORTRAN
      * domain->time_options.dtref = 0.5*(dtmin + dtmax); */
+
     if (ts->dt_ref < 0) /* Should be the initial val. */
       ts->dt_ref = ts->dt[0];
 
@@ -675,8 +675,7 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
   if (pty == NULL) {
 
     pty = cs_property_add("time_step", CS_PROPERTY_ISO);
-    /* By default: -1 --> steady-state */
-    cs_property_set_reference_value(pty, -1);
+    cs_property_set_reference_value(pty, -1); /* Default=-1 => steady-state */
 
   }
   cs_dt_pty = pty;
@@ -750,8 +749,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   /* Assign to a cs_equation_t structure a list of function to manage this
    * structure during the computation.
    * The set of functions chosen for each equation depends on the parameters
-   * specifying the cs_equation_t structure
-   */
+   * specifying the cs_equation_t structure */
 
   domain->only_steady = cs_equation_set_functions();
 
@@ -1060,8 +1058,7 @@ cs_cdo_main(cs_domain_t   *domain)
 
   cs_domain_set_stage(domain, CS_DOMAIN_STAGE_AFTER_TIME_LOOP);
 
-  /* User-defined update/settings of physical properties (finalization
-     stage) */
+  /* User-defined update/settings of physical properties (finalization stage) */
 
   cs_user_physical_properties(domain);
 
@@ -1082,8 +1079,6 @@ cs_cdo_main(cs_domain_t   *domain)
     cs_log_printf(CS_LOG_DEFAULT, "%s", cs_sep_h1);
     cs_log_printf_flush(CS_LOG_DEFAULT);
   }
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/

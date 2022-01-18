@@ -914,7 +914,7 @@ cs_cdo_connect_assign_face_ifs_rs(const cs_mesh_t       *mesh,
                                   cs_interface_set_t   **p_ifs,
                                   cs_range_set_t       **p_rs)
 {
-  cs_interface_set_t *ifs = cs_cdo_connect_define_face_interface(mesh);
+  cs_interface_set_t  *ifs = cs_cdo_connect_define_face_interface(mesh);
 
   if (ifs != NULL && n_face_dofs > 1) {
     cs_interface_set_t  *ifs_s = cs_interface_set_dup(ifs, n_face_dofs);

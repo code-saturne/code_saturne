@@ -74,17 +74,19 @@ typedef struct {
 
   /*! \var amg_type
    *  type of AMG algorithm if needed */
+
   cs_param_amg_type_t        amg_type;
 
   /*! \var pcd_block_type
    *  type of block preconditioner to use (only meaningful for vector-valued
    *  systems or more complex systems */
+
   cs_param_precond_block_t   pcd_block_type;
 
   /*! \var resnorm_type
    *  normalized or not the norm of the residual used for the stopping criterion
-   *  See \ref CS_EQKEY_ITSOL_RESNORM_TYPE for more details.
-   */
+   *  See \ref CS_EQKEY_ITSOL_RESNORM_TYPE for more details. */
+
   cs_param_resnorm_type_t  resnorm_type;
   int                      n_max_iter;   /*!< max. number of iterations */
   int                      restart;      /*!< max. iter. before restarting  */

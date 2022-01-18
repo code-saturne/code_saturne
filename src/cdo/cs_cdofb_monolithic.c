@@ -188,8 +188,7 @@ _mono_enforce_solid_face_velocity(cs_real_t           *vel_f)
 {
   /* Enforcement of solid cells is always defined as follows for the momentum
    * equation:
-   * CS_EQUATION_ENFORCE_BY_CELLS | CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE
-   */
+   * CS_EQUATION_ENFORCE_BY_CELLS | CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE */
 
   cs_solid_selection_t  *solid = cs_solid_selection_get();
 
@@ -238,8 +237,7 @@ _mono_update_related_cell_fields(const cs_navsto_param_t       *nsp,
 
   /* Enforcement of solid cells is always defined as follows for the momentum
    * equation:
-   * CS_EQUATION_ENFORCE_BY_CELLS | CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE
-   */
+   * CS_EQUATION_ENFORCE_BY_CELLS | CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE */
 
   cs_solid_selection_t  *solid = cs_solid_selection_get();
 
@@ -286,8 +284,7 @@ _build_shared_full_structures(bool    add_pressure_diag)
    * velocity is attached to faces (one for each component) and pressure
    * to cells
    *
-   * Storage for the global numbering: Vel_X | Vel_Y | Vel_Z | Pressure
-   */
+   * Storage for the global numbering: Vel_X | Vel_Y | Vel_Z | Pressure */
 
   const cs_mesh_t  *m = cs_shared_mesh;
   const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
@@ -295,12 +292,10 @@ _build_shared_full_structures(bool    add_pressure_diag)
 
   /* 1. Build the interface set and the range set structures */
 
-  cs_interface_set_t *ifs
-    = cs_cdo_connect_define_face_interface(m);
+  cs_interface_set_t *ifs = cs_cdo_connect_define_face_interface(m);
 
   if (ifs != NULL) {
-    _shared_interface_set
-      = cs_interface_set_dup_blocks(ifs, n_faces, 3);
+    _shared_interface_set = cs_interface_set_dup_blocks(ifs, n_faces, 3);
     cs_interface_set_destroy(&ifs);
   }
   else
@@ -320,15 +315,13 @@ _build_shared_full_structures(bool    add_pressure_diag)
 
   /* The second parameter is set to "true" meaning that the diagonal is stored
    * separately --> MSR storage
-   * Create the matrix assembler structure
-   */
+   * Create the matrix assembler structure */
 
   _shared_matrix_assembler =
     cs_matrix_assembler_create(_shared_range_set->l_range, true);
 
   /* First loop to count max size of the buffer used to fill the matrix
-   * structure. +1 to take into account the diagonal term.
-   */
+   * structure. +1 to take into account the diagonal term. */
 
   int  max_sten = 0;
   for (cs_lnum_t f = 0; f < n_faces; f++) {
@@ -580,8 +573,7 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
     /* Update the divergence operator and the right-hand side related to the
      * mass equation.
-     * Enforcement of Dirichlet BC in a stronger way if this is the choice
-     */
+     * Enforcement of Dirichlet BC in a stronger way if this is the choice */
 
     for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -644,8 +636,7 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
         /* No need to update the mass RHS since there is no mass flux.
          * Weak-enforcement for the velocity-block (cf. _mono_apply_bc_partly)
-         * Strong enforcement of u.n (--> dp/dn = 0) on the divergence
-         */
+         * Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
 
         for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
 

@@ -139,17 +139,21 @@ BEGIN_C_DECLS
 typedef struct {
 
   /* Value of the grad-div coefficient */
+
   cs_real_t                gamma;
 
   /* Size of spaces */
+
   cs_lnum_t                n_u_dofs; /* Size of the space M */
   cs_lnum_t                n_p_dofs; /* Size of the space N */
 
   /* Vector transformation */
+
   cs_real_t               *b_tilda;  /* Modified RHS */
   cs_real_t               *u_tilda;  /* Modified velocity unknown */
 
   /* Auxiliary vectors */
+
   cs_real_t               *q;        /* vector iterates in space N */
   cs_real_t               *d;        /* vector iterates in space N */
   cs_real_t               *d__v;     /* buffer in space N */
@@ -158,11 +162,13 @@ typedef struct {
   cs_real_t               *v;        /* vector iterates in space M */
 
   /* Orthogonalization coefficients */
+
   cs_real_t                alpha;
   cs_real_t                beta;
   cs_real_t                zeta;
 
   /* Store z_size zeta coefficients */
+
   int                      z_size;
   cs_real_t               *zeta_array;
   cs_real_t                zeta_square_sum;
@@ -181,19 +187,24 @@ typedef struct {
 typedef struct {
 
   /* Value of the grad-div coefficient */
+
   cs_real_t               gamma;
 
   /* Size of spaces */
+
   cs_lnum_t               n_u_dofs; /* Size of the space U */
   cs_lnum_t               n_p_dofs; /* Size of the space P */
 
   /* Vector transformation */
+
   cs_real_t              *b_tilda;  /* Modified RHS (size U) */
 
   /* Auxiliary scaling coefficient */
+
   cs_real_t               alpha;
 
   /* Auxiliary vectors */
+
   cs_real_t              *inv_mp;   /* reciprocal of the pressure mass matrix */
   cs_real_t              *res_p;    /* buffer in space P */
   cs_real_t              *d__v;     /* buffer in space P */
@@ -211,6 +222,7 @@ typedef struct {
  *============================================================================*/
 
 /* Pointer to shared structures */
+
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_range_set_t         *cs_shared_range_set;
@@ -372,17 +384,20 @@ _set_gamg_pc(const char            prefix[],
              int                   smooth_lvl)
 {
   /* Estimate the number of levels */
+
   double  _n_levels = ceil(0.6*(log(system_size) - 5));
   int n_levels = 1, max_levels = 14;
   if (_n_levels > 1)
     n_levels = (int)_n_levels;
 
   /* Need to add a prefix */
+
   bool  use_pre = (prefix != NULL) ? true : false;
   if (use_pre)
     if (strlen(prefix) < 1) use_pre = false;
 
   /* Set the type of cycles (V or W) */
+
   switch(amg_type) {
 
   case CS_PARAM_AMG_HYPRE_BOOMER_V:
@@ -408,6 +423,7 @@ _set_gamg_pc(const char            prefix[],
 
   /* Symmetrize the graph before computing the aggregation. Some algorithms
    * require the graph be symmetric (default=false) */
+
   _petsc_cmd(use_pre, prefix, "pc_gamg_sym_graph", "true");
 
   /* Remark: -pc_gamg_reuse_interpolation
@@ -443,12 +459,14 @@ _set_gamg_pc(const char            prefix[],
 
   /* In parallel computing, migrate data to another rank if the grid has less
      than 200 rows */
+
   if (cs_glob_n_ranks > 1) {
     _petsc_cmd(use_pre, prefix, "pc_gamg_repartition", "true");
     _petsc_cmd(use_pre, prefix, "pc_gamg_process_eq_limit", "200");
   }
 
   /* More efficient sparse direct solver */
+
   if (cs_glob_n_ranks == 1) {
     _petsc_cmd(use_pre, prefix, "mg_coarse_ksp_type", "preonly");
     _petsc_cmd(use_pre, prefix, "mg_coarse_pc_type", "tfs");
@@ -457,20 +475,24 @@ _set_gamg_pc(const char            prefix[],
   if (is_sym) {
 
     /* Number of smoothing steps to use with smooth aggregation (default=1) */
+
     _petsc_cmd(use_pre, prefix, "pc_gamg_agg_nsmooths", "1");
     _petsc_cmd(use_pre, prefix, "pc_gamg_reuse_interpolation", "false");
     _petsc_cmd(use_pre, prefix, "pc_gamg_esteig_ksp_type", "cg");
 
     /* PCMG settings (options shared with PCGAMG) */
+
     _petsc_cmd(use_pre, prefix, "pc_gamg_threshold", "0.10");
     _petsc_cmd(use_pre, prefix, "pc_gamg_square_graph", "2");
 
     /* Apply one Richardson relaxation (scaling = 1.0 -- the default value) */
+
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_max_it", "1");
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_type", "richardson");
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_richardson_scale", "1.0");
 
     /* Set the up/down smoothers */
+
     if (smooth_lvl == 0) {
 
       _petsc_cmd(use_pre, prefix, "mg_levels_pc_type", "sor");
@@ -485,6 +507,7 @@ _set_gamg_pc(const char            prefix[],
     else {
 
       /* Each Richardson step is completed with a ILU(0)-GMRES call */
+
       _petsc_cmd(use_pre, prefix, "mg_levels_pc_type", "bjacobi");
       _petsc_cmd(use_pre, prefix, "mg_levels_pc_bjacobi_blocks", "1");
       _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_type", "gmres");
@@ -499,6 +522,7 @@ _set_gamg_pc(const char            prefix[],
   else { /* Not a symmetric system */
 
     /* Number of smoothing steps to use with smooth aggregation (default=1) */
+
     _petsc_cmd(use_pre, prefix, "pc_gamg_agg_nsmooths", "0");
     _petsc_cmd(use_pre, prefix, "pc_gamg_reuse_interpolation", "false");
     _petsc_cmd(use_pre, prefix, "pc_gamg_square_graph", "0");
@@ -506,6 +530,7 @@ _set_gamg_pc(const char            prefix[],
 
     /* Set the up/down smoothers
      * Apply one Richardson relaxation (scaling = 1.0 -- the default value) */
+
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_max_it", "1");
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_type", "richardson");
     _petsc_cmd(use_pre, prefix, "mg_levels_ksp_richardson_scale", "1.0");
@@ -527,6 +552,7 @@ _set_gamg_pc(const char            prefix[],
     else {
 
       /* Each Richardson step is completed with a ILU(0)-GMRES call */
+
       _petsc_cmd(use_pre, prefix, "mg_levels_pc_type", "bjacobi");
       _petsc_cmd(use_pre, prefix, "mg_levels_pc_bjacobi_blocks", "1");
       _petsc_cmd(use_pre, prefix, "mg_levels_sub_ksp_type", "gmres");
@@ -540,7 +566,6 @@ _set_gamg_pc(const char            prefix[],
     } /* Light smoothing ? */
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -606,6 +631,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   /* Compute scaling coefficients */
+
   const cs_real_t  rho0 = nsp->mass_density->ref_value;
   cs_real_t  *visc_val = NULL;
   int  visc_stride = 0;
@@ -631,6 +657,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   BFT_FREE(visc_val);
 
   /* Synchronize the diagonal values for A */
+
   const cs_real_t  *diagA = NULL;
   cs_real_t  *_diagA = NULL;
 
@@ -652,6 +679,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   }
 
   /* Native format for the Schur approximation matrix */
+
   cs_real_t   *diagK = NULL;
   cs_real_t   *xtraK = NULL;
 
@@ -662,6 +690,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   memset(xtraK, 0, 2*n_i_faces*sizeof(cs_real_t));
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
+
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
     const cs_real_t  *a_ff = diagA + 3*f_id;
@@ -674,10 +703,12 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
 
     /* Extra-diagonal contribution. This is scanned by the i_face_cells mesh
        adjacency */
+
     cs_real_t  *_xtraK = xtraK + 2*f_id;
     _xtraK[0] = _xtraK[1] = contrib;
 
     /* Diagonal contributions */
+
     cs_lnum_t cell_i = i_face_cells[f_id][0];
     cs_lnum_t cell_j = i_face_cells[f_id][1];
 
@@ -687,6 +718,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   } /* Loop on interior faces */
 
   /* Add diagonal contributions from border faces*/
+
   const cs_real_t  *diagA_shift = diagA + 3*n_i_faces;
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
@@ -701,16 +733,19 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
     contrib *= nvf.meas*nvf.meas;
 
     /* Diagonal contributions */
+
     diagK[b_face_cells[f_id]] += contrib;
 
   } /* Loop on border faces */
 
   /* Return the associated matrix */
+
   cs_lnum_t  db_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
   cs_lnum_t  eb_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
 
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
+
   cs_matrix_t  *K = cs_matrix_native(false, /* symmetry */
                                      db_size,
                                      eb_size);
@@ -721,6 +756,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
                              diagK, xtraK);
 
   /* Return arrays (to be freed when the algorithm is converged) */
+
   *p_diagK = diagK;
   *p_xtraK = xtraK;
 
@@ -766,6 +802,7 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   /* Compute scaling coefficients */
+
   const cs_real_t  rho0 = nsp->mass_density->ref_value;
   cs_real_t  *visc_val = NULL;
   int  visc_stride = 0;
@@ -793,6 +830,7 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   /* Compute A^-1 lumped */
 
   /* Modify the tolerance in order to be more accurate on this step */
+
   char  *system_name = NULL;
   BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":inv_lumped") + 1, char);
   sprintf(system_name, "%s:inv_lumped", eqp->name);
@@ -822,10 +860,12 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
                                         invA_lumped,
                                         uza->rhs));
   /* Partial memory free */
+
   BFT_FREE(system_name);
   cs_param_sles_free(&slesp0);
 
   /* Native format for the Schur approximation matrix */
+
   cs_real_t   *diagK = NULL;
   cs_real_t   *xtraK = NULL;
 
@@ -836,6 +876,7 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   memset(xtraK, 0, 2*n_i_faces*sizeof(cs_real_t));
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
+
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
     const cs_real_t  *a_ff = invA_lumped + 3*f_id;
@@ -848,10 +889,12 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
 
     /* Extra-diagonal contribution. This is scanned by the i_face_cells mesh
        adjacency */
+
     cs_real_t  *_xtraK = xtraK + 2*f_id;
     _xtraK[0] = _xtraK[1] = contrib;
 
     /* Diagonal contributions */
+
     cs_lnum_t cell_i = i_face_cells[f_id][0];
     cs_lnum_t cell_j = i_face_cells[f_id][1];
 
@@ -861,6 +904,7 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   } /* Loop on interior faces */
 
   /* Add diagonal contributions from border faces*/
+
   cs_real_t  *diagA_shift = invA_lumped + 3*n_i_faces;
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
@@ -875,16 +919,19 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
     contrib *= nvf.meas*nvf.meas;
 
     /* Diagonal contributions */
+
     diagK[b_face_cells[f_id]] += contrib;
 
   } /* Loop on border faces */
 
   /* Return the associated matrix */
+
   cs_lnum_t  db_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
   cs_lnum_t  eb_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
 
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
+
   cs_matrix_t  *K = cs_matrix_native(false, /* symmetry */
                                      db_size,
                                      eb_size);
@@ -895,6 +942,7 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
                              diagK, xtraK);
 
   /* Return arrays (to be freed when the algorithm is converged) */
+
   *p_diagK = diagK;
   *p_xtraK = xtraK;
 
@@ -983,6 +1031,7 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
     _xtraK[0] = _xtraK[1] = contrib;
 
     /* Diagonal contributions */
+
     cs_lnum_t cell_i = i_face_cells[f_id][0];
     cs_lnum_t cell_j = i_face_cells[f_id][1];
 
@@ -1064,6 +1113,7 @@ _scaled_mass_sbp(const cs_navsto_param_t       *nsp,
   BFT_MALLOC(sbp->mass22_diag, n_cells, cs_real_t);
 
   /* Compute scaling coefficients */
+
   if (nsp->turbulence->model->iturb == CS_TURB_NONE) {
 
     const cs_real_t  visc_val = nsp->lam_viscosity->ref_value;
@@ -2909,9 +2959,11 @@ _gkb_precond_hook(void     *context,
                                      SIGFPE detection */
 
   /* Set the main iterative solver for the saddle-point */
+
   _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
 
   /* Apply modifications to the KSP structure */
+
   PC up_pc;
 
   KSPGetPC(ksp, &up_pc);
@@ -2919,6 +2971,7 @@ _gkb_precond_hook(void     *context,
   PCFieldSplitSetType(up_pc, PC_COMPOSITE_GKB);
 
   /* Default settings for the GKB as preconditioner */
+
   PCFieldSplitSetGKBTol(up_pc,  1e-2);
   PCFieldSplitSetGKBMaxit(up_pc, 10);
   PCFieldSplitSetGKBNu(up_pc, 0); /* No augmentation */
@@ -2927,11 +2980,13 @@ _gkb_precond_hook(void     *context,
   _build_is_for_fieldsplit(&isp, &isv);
 
   /* First level Pressure | Velocity (X,Y,Z) */
+
   PCFieldSplitSetIS(up_pc, "velocity", isv);
   PCFieldSplitSetIS(up_pc, "pressure", isp);
 
   /* Need to call PCSetUp before configuring the second level (Thanks to
      Natacha Bereux) */
+
   PCSetFromOptions(up_pc);
   PCSetUp(up_pc);
   KSPSetUp(ksp);
@@ -2942,16 +2997,20 @@ _gkb_precond_hook(void     *context,
   assert(n_split == 2);
 
   /* Set KSP options for the velocity block */
+
   _set_velocity_ksp(slesp, slesp->eps, slesp->n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
+
   cs_user_sles_petsc_hook(context, ksp);
 
   /* Apply modifications to the KSP structure */
+
   KSPSetFromOptions(ksp);
   KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
+
   if (!slesp->setup_done) {
     cs_sles_petsc_log_setup(ksp);
     slesp->setup_done = true;
@@ -2996,15 +3055,17 @@ _mumps_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   slesp->eps,   /* relative convergence tolerance */
+                   slesp->eps,  /* relative convergence tolerance */
                    abstol,      /* absolute convergence tolerance */
                    dtol,        /* divergence tolerance */
                    slesp->n_max_iter); /* max number of iterations */
 
   /* User function for additional settings */
+
   cs_user_sles_petsc_hook(context, ksp);
 
   /* Dump the setup related to PETSc in a specific file */
+
   if (!slesp->setup_done) {
     cs_sles_petsc_log_setup(ksp);
     slesp->setup_done = true;
@@ -3014,7 +3075,6 @@ _mumps_hook(void     *context,
                                      SIGFPE detection */
 }
 #endif  /* PETSC_HAVE_MUMPS */
-
 #endif  /* HAVE_PETSC */
 
 /*----------------------------------------------------------------------------*/
@@ -3045,12 +3105,16 @@ _init_gkb_builder(const cs_navsto_param_t    *nsp,
   gkb->n_p_dofs = n_p_dofs;
 
   /* Vector transformation */
+
   BFT_MALLOC(gkb->u_tilda, n_u_dofs, cs_real_t);
+
   /* Rk: b_tilda stores quantities in space M and N alternatively */
+
   assert(n_u_dofs >= n_p_dofs);
   BFT_MALLOC(gkb->b_tilda, n_u_dofs, cs_real_t);
 
   /* Auxiliary vectors */
+
   BFT_MALLOC(gkb->v, n_u_dofs, cs_real_t);
   memset(gkb->v, 0, n_u_dofs*sizeof(cs_real_t));
 
@@ -3061,9 +3125,11 @@ _init_gkb_builder(const cs_navsto_param_t    *nsp,
   BFT_MALLOC(gkb->m__v, n_u_dofs, cs_real_t);
 
   /* Orthogonalization coefficients */
+
   gkb->alpha = gkb->beta = gkb->zeta = 0.;
 
   /* Convergence members */
+
   if (gamma < 1)
     gkb->z_size = CS_GKB_TRUNCATION_THRESHOLD + 1;
   else if (gamma < 10)
@@ -3156,6 +3222,7 @@ _init_uzawa_builder(const cs_navsto_param_t      *nsp,
   BFT_MALLOC(uza->b_tilda, n_u_dofs, cs_real_t);
 
   /* Auxiliary vectors */
+
   BFT_MALLOC(uza->inv_mp, n_p_dofs, cs_real_t);
   BFT_MALLOC(uza->res_p, n_p_dofs, cs_real_t);
   BFT_MALLOC(uza->d__v, n_p_dofs, cs_real_t);
@@ -3167,6 +3234,7 @@ _init_uzawa_builder(const cs_navsto_param_t      *nsp,
 
     /* Since gk is used as a variable in a cell system, one has to take into
        account the space for synchronization */
+
     cs_lnum_t  size = n_p_dofs;
     if (cs_glob_n_ranks > 1)
       size = CS_MAX(n_p_dofs, cs_glob_mesh->n_cells_with_ghosts);
@@ -3248,7 +3316,6 @@ _apply_div_op(const cs_real_t   *div_op,
     div_v[c_id] = _div_v;
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3291,7 +3358,6 @@ _apply_div_op_transpose(const cs_real_t   *div_op,
     } /* Loop on cell faces */
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3850,6 +3916,7 @@ cs_cdofb_monolithic_sles_init(cs_lnum_t                     n_cells,
   msles->b_c = msles->b_f + 3*n_faces;
 
   /* Set rhs to zero */
+
 #if defined(HAVE_OPENMP)
 # pragma omp parallel if (full_size > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < full_size; i++)
@@ -3884,6 +3951,7 @@ cs_cdofb_monolithic_sles_reset(cs_cdofb_monolithic_sles_t   *msles)
   cs_lnum_t  full_size = 3*msles->n_faces + msles->n_cells;
 
   /* Set rhs to zero (b_f and b_c are stored consecutively) */
+
 #if defined(HAVE_OPENMP)
 # pragma omp parallel if (full_size > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < full_size; i++)
@@ -3914,6 +3982,7 @@ cs_cdofb_monolithic_sles_clean(cs_cdofb_monolithic_sles_t   *msles)
     cs_matrix_destroy(&(msles->block_matrices[i]));
 
   /* b_f and b_c are stored consecutively */
+
   BFT_FREE(msles->b_f);
 }
 
@@ -3935,6 +4004,7 @@ cs_cdofb_monolithic_sles_free(cs_cdofb_monolithic_sles_t   **p_msles)
 
   BFT_FREE(msles->block_matrices);
   BFT_FREE(msles->div_op);
+
   /* other pointer are shared, thus no free at this stage */
 
   BFT_FREE(msles);
@@ -3959,6 +4029,7 @@ cs_cdofb_monolithic_sles_set_shared(const cs_cdo_connect_t        *connect,
   assert(rset != NULL);
 
   /* Assign static const pointers */
+
   cs_shared_connect = connect;
   cs_shared_quant = quant;
   cs_shared_range_set = rset;
@@ -4027,6 +4098,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
       /* Set the solver for the compatible Laplacian (the related SLES is
          defined using the system name instead of the field id since this is an
          auxiliary system) */
+
       int ier = cs_param_sles_set(false, nslesp->schur_sles_param);
 
       if (ier == -1)
@@ -4040,11 +4112,13 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
   case CS_NAVSTO_SLES_UZAWA_CG:
     {
       /* Set solver and preconditioner for solving A */
+
       cs_equation_param_set_sles(mom_eqp);
 
       /* Set the solver for the compatible Laplacian (the related SLES is
          defined using the system name instead of the field id since this is an
          auxiliary system) */
+
       int ier = cs_param_sles_set(false, nslesp->schur_sles_param);
 
       if (ier == -1)
@@ -4058,6 +4132,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
   case CS_NAVSTO_SLES_UZAWA_AL:
      /* Set solver and preconditioner for solving M = A + zeta * Bt*N^-1*B
       * Notice that zeta can be equal to 0 */
+
     cs_equation_param_set_sles(mom_eqp);
     break;
 
@@ -4199,15 +4274,16 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
   }
 
   /* Define the level of verbosity for SLES structure */
+
   if (mom_slesp->verbosity > 1) {
 
     cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
 
     /* Set verbosity */
+
     cs_sles_set_verbosity(sles, mom_slesp->verbosity);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4433,8 +4509,6 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
                                          const cs_equation_param_t     *eqp,
                                          cs_cdofb_monolithic_sles_t    *msles)
 {
-  /*  Sanity checks */
-
   if (msles == NULL)
     return 0;
   if (msles->n_row_blocks != 1) /* Only this case is handled up to now */
@@ -4617,7 +4691,6 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
   assert(nsp != NULL);
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  /* Sanity checks */
   assert(nslesp->strategy == CS_NAVSTO_SLES_GKB_SATURNE);
   assert(cs_shared_range_set != NULL);
 
@@ -4632,16 +4705,19 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
   cs_real_t  *b_c = msles->b_c;
 
   /* Allocate and initialize the GKB builder structure */
+
   cs_gkb_builder_t  *gkb = _init_gkb_builder(nsp,
                                              gamma,
                                              3*msles->n_faces,
                                              msles->n_cells);
 
   /* Transformation of the initial saddle-point system */
+
   _transform_gkb_system(matrix, eqp, nslesp, div_op, gkb, msles->sles,
                         u_f, b_f, b_c);
 
   /* Initialization */
+
   _init_gkb_algo(matrix, eqp, div_op, gkb, msles->sles, p_c);
 
   /* Main loop */
@@ -4650,6 +4726,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
   while (gkb->algo->cvg == CS_SLES_ITERATING) {
 
     /* Compute g (store as an update of d__v), q */
+
     _apply_div_op(div_op, gkb->v, gkb->d__v);
 
 #   pragma omp parallel for if (gkb->n_p_dofs > CS_THR_MIN)
@@ -4659,6 +4736,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
     }
 
     /* Compute beta */
+
     gkb->beta = cs_dot_wxx(gkb->n_p_dofs, vol, gkb->d__v);
     cs_parall_sum(1, CS_DOUBLE, &(gkb->beta));
     assert(gkb->beta > -DBL_MIN);
@@ -4671,6 +4749,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
       gkb->q[ip] = ov_beta*gkb->d__v[ip];
 
     /* Solve M.w_tilda = Dt.q */
+
     _apply_div_op_transpose(div_op, gkb->q, gkb->dt_q);
 
     if (cs_shared_range_set->ifs != NULL)
@@ -4681,6 +4760,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
 
     /* Prepare update of m__v:
      *  m__v(k+1) = 1/alpha(k+1) * (dt_q - beta*m__v(k)) */
+
 #   pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
     for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++) {
       gkb->m__v[iu] *= -gkb->beta;
@@ -4701,6 +4781,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                                           gkb->m__v));
 
     /* Compute alpha */
+
     gkb->alpha = _face_gdot(gkb->n_u_dofs, gkb->v, gkb->m__v);
     assert(gkb->alpha > -DBL_MIN);
     gkb->alpha = sqrt(gkb->alpha);
@@ -4708,14 +4789,18 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
     const double ov_alpha = 1./gkb->alpha;
 
     /* zeta(k+1) = -beta/alpha * zeta(k) */
+
     gkb->zeta *= -gkb->beta * ov_alpha;
 
     /* Update vectors and solutions */
+
 #   pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
     for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++) {
       gkb->v[iu] *= ov_alpha;
       gkb->u_tilda[iu] += gkb->zeta * gkb->v[iu];
+
       /* Last step: m__v(k+1) = 1/alpha(k+1) * (dt_q - beta*m__v(k)) */
+
       gkb->m__v[iu] *= ov_alpha;
     }
 
@@ -4726,6 +4811,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
     }
 
     /* Update error norm and test if one needs one more iteration */
+
     _gkb_cvg_test(gkb);
 
   }
@@ -4733,6 +4819,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
   /* Return to the initial velocity formulation
    * u: = u_tilda + M^-1.(b_f + gamma.N^-1.b_c)
    * where M^-1.(b_f + gamma.N^-1.b_c) is stored in b_tilda */
+
 # pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
   for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++)
     u_f[iu] = gkb->u_tilda[iu] + gkb->b_tilda[iu];
@@ -4740,6 +4827,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
   int n_inner_iter = gkb->algo->n_inner_iter;
 
   /* Last step: Free temporary memory */
+
   _free_gkb_builder(&gkb);
 
   return  n_inner_iter;
@@ -4768,8 +4856,6 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
                                    cs_cdofb_monolithic_sles_t    *msles)
 {
   int  _n_iter;
-
-  /* Sanity checks */
 
   assert(nsp != NULL && nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_CG);
   assert(cs_shared_range_set != NULL);
@@ -4963,6 +5049,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     normalization = _get_cbscal_norm(dwk);
 
     /* Solve K.zk = dwk */
+
     memset(zk, 0, sizeof(cs_real_t)*uza->n_p_dofs);
 
     _n_iter = cs_equation_solve_scalar_cell_system(uza->n_p_dofs,
@@ -5053,7 +5140,6 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
                                     const cs_equation_param_t     *eqp,
                                     cs_cdofb_monolithic_sles_t    *msles)
 {
-  /* Sanity checks */
   assert(nsp != NULL && nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_CG);
   assert(cs_shared_range_set != NULL);
 
@@ -5351,7 +5437,6 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
 
   } /* End of main loop */
 
-
   int n_inner_iter = uza->algo->n_inner_iter;
 
   /* Last step: Free temporary memory */
@@ -5382,8 +5467,6 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
                                    const cs_equation_param_t     *eqp,
                                    cs_cdofb_monolithic_sles_t    *msles)
 {
-  /* Sanity checks */
-
   assert(nsp != NULL && nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_AL);
   assert(cs_shared_range_set != NULL);
 
@@ -5504,6 +5587,7 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
   int n_inner_iter = uza->algo->n_inner_iter;
 
   /* Last step: Free temporary memory */
+
   _free_uza_builder(&uza);
   cs_param_sles_free(&slesp);
 
@@ -5719,6 +5803,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   int n_inner_iter = uza->algo->n_inner_iter;
 
   /* Last step: Free temporary memory */
+
   _free_uza_builder(&uza);
 
   return  n_inner_iter;
