@@ -109,6 +109,8 @@ Debugger options:
   --asan-bp              Adds a breakpoint for gcc's Address-Sanitizer
   --back-end=GDB         Path to debugger back-end (for graphical front-ends)
   --breakpoints=LIST     Comma-separated list of breakpoints to insert
+  --ranks=LIST           Comma-separated list of MPI ranks to debug;
+                         if specified, other ranks are run directly.
   --terminal=TERM        Select terminal type to use for console debugger
 
   Other, standard options specific to each debugger may also be
@@ -158,7 +160,8 @@ def process_cmd_line(argv, pkg):
                  "mpiexec": -1,
                  "program": -1}
 
-    debugger_options = ("asan-bp", "back-end", "breakpoints", "terminal")
+    debugger_options = ("asan-bp", "back-end", "breakpoints",
+                        "ranks", "terminal")
 
     files = []
 
@@ -485,6 +488,7 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
     # Start building debugger command options
 
     cmd = []
+    rank_filter = None
 
     # Add debugger options, with a specific handling of
     # existing debugger command files
@@ -507,13 +511,17 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
             elif file_next:
                 debugger_command_file = cmd
                 file_next = False
+            elif o == '--asan-bp': # gcc Adress sanitizer breakpoints
+                cmds.append('b __asan::ReportGenericError')
             elif o.find('--back-end=') == 0: # Specify back-end
                 gdb = o[o.find('=')+1:]
             elif o.find('--breakpoints=') == 0: # Specify breakpoints
                 for bp in o[o.find('=')+1:].split(','):
                     cmds.append('b ' + bp)
-            elif o == '--asan-bp': # gcc Adress sanitizer breakpoints
-                cmds.append('b __asan::ReportGenericError')
+            elif o.find('--ranks=') == 0: # Specify breakpoints
+                rank_filter = []
+                for r in o[o.find('=')+1:].split(','):
+                    rank_filter.append(r)
             elif o.find('--terminal=') == 0: # Specify terminal
                 term = o[o.find('=')+1:]
             else:
@@ -738,7 +746,6 @@ def run_debug(cmds):
     """
     Run debugger.
     """
-
     # Initializations
 
     cmd = []
@@ -746,6 +753,26 @@ def run_debug(cmds):
     debugger_type = 'gdb'
     vgdb = False
     need_terminal = False
+
+    # Separate rank filter (if provided) from debugger otpions
+
+    rank_filter = None
+    debugger_opts = None
+    if 'debugger' in cmds.keys():
+        debugger_opts = cmds['debugger'][1:]
+        for o in debugger_opts:
+            if o.find('--ranks=') == 0: # rank filter
+                rank_filter = []
+                for r in o[o.find('=')+1:].split(','):
+                    rank_filter.append(int(r))
+                debugger_opts.remove(o)
+
+    # Direct call if not in rank filter
+
+    if rank_filter != None:
+        if rank_id not in rank_filter:
+            cmd = cmds['program']
+            return subprocess.call(cmd)
 
     # Tests for Valgrind
 
@@ -791,7 +818,7 @@ def run_debug(cmds):
                               valgrind = cmds['valgrind'][0],
                               valgrind_opts = cmds['valgrind'][1:],
                               debugger = cmds['debugger'][0],
-                              debugger_opts = cmds['debugger'][1:],
+                              debugger_opts = debugger_opts,
                               debugger_ui = debugger_ui)
 
     elif 'debugger' in cmds.keys():
@@ -799,22 +826,19 @@ def run_debug(cmds):
             return run_minimal_debug(path = cmds['program'][0],
                                      args = cmds['program'][1:],
                                      debugger = cmds['debugger'][0],
-                                     debugger_opts = cmds['debugger'][1:],
+                                     debugger_opts = debugger_opts,
                                      debugger_ui = debugger_ui)
         else:
             p = run_gdb_debug(path = cmds['program'][0],
                               args = cmds['program'][1:],
                               gdb_cmds = None,
                               debugger = cmds['debugger'][0],
-                              debugger_opts = cmds['debugger'][1:],
+                              debugger_opts = debugger_opts,
                               debugger_ui = debugger_ui)
             p.communicate()
             return p.returncode
 
     elif 'valgrind' in cmds.keys():
-        debugger_opts = None
-        if 'debugger' in cmds.keys():
-            debugger_opts = cmds['debugger'][1:]
         return run_valgrind(path = cmds['program'][0],
                             args = cmds['program'][1:],
                             valgrind = cmds['valgrind'][0],

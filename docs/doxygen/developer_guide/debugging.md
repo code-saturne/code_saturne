@@ -528,6 +528,11 @@ debugging serial runs.
       <span style="color: rgb(0,91,187)">`cs_debug_wrapper.py`</span> script
       really becomes useful.
 
+      + This script also includes a `--ranks` filter option so as to call the
+        debugger only on selected ranks. For example, using `--ranks=2,5`
+        will launch MPI ranks 2 and 5 under a debugger, while other ranks will
+        be run normally.
+
 - For code_saturne under GDB, to determine a given process's rank, type:
   <span style="color: rgb(48,119,16)">`print cs_glob_rank_id`</span>
 
