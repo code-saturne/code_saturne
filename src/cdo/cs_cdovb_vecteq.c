@@ -48,9 +48,11 @@
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
 #include "cs_cdo_local.h"
+#include "cs_cdo_toolbox.h"
+#include "cs_cdo_solve.h"
 #include "cs_cdovb_priv.h"
 #include "cs_equation_bc.h"
-#include "cs_equation_common.h"
+#include "cs_equation_builder.h"
 #include "cs_evaluate.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -394,7 +396,7 @@ _vvb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
     /* Update the value of the reaction property(ies) if needed */
 
-    cs_equation_set_reaction_properties_cw(eqp, eqb, cm, cb);
+    cs_equation_builder_set_reaction_pty_cw(eqp, eqb, cm, cb);
 
     if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
 
@@ -562,7 +564,7 @@ _vvb_enforce_values(const cs_equation_param_t     *eqp,
 
     /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
 
-    cs_equation_enforced_internal_block_dofs(eqb, cb, csys);
+    cs_equation_builder_enforce_block_dofs(eqb, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1167,15 +1169,13 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
 
   if (eqp->n_ic_defs > 0) {
 
-    cs_lnum_t  *def2v_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
+    cs_lnum_t  *def2v_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
     cs_lnum_t  *def2v_idx = NULL;
+
     BFT_MALLOC(def2v_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
-    cs_equation_sync_vol_def_at_vertices(connect,
-                                         eqp->n_ic_defs,
-                                         eqp->ic_defs,
-                                         def2v_idx,
-                                         def2v_ids);
+    cs_cdo_sync_vol_def_at_vertices(eqp->n_ic_defs, eqp->ic_defs,
+                                    def2v_idx, def2v_ids);
 
     /* Initialize values at mesh vertices */
 
@@ -1340,7 +1340,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1356,7 +1356,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -1440,10 +1440,11 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
   /* Last step in the computation of the renormalization coefficient */
 
-  cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
-                                     eqc->n_dofs, /* 3*n_vertices */
-                                     rhs,
-                                     &rhs_norm);
+  cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
+                             quant->vol_tot,
+                             eqc->n_dofs, /* 3*n_vertices */
+                             rhs,
+                             &rhs_norm);
 
   /* Copy current field values to previous values */
 
@@ -1460,15 +1461,15 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
-  cs_equation_solve_scalar_system(eqc->n_dofs, /* 3*n_vertices */
-                                  eqp->sles_param,
-                                  matrix,
-                                  rs,
-                                  rhs_norm,
-                                  true, /* rhs_redux */
-                                  sles,
-                                  fld->val,
-                                  rhs);
+  cs_cdo_solve_scalar_system(eqc->n_dofs, /* 3*n_vertices */
+                             eqp->sles_param,
+                             matrix,
+                             rs,
+                             rhs_norm,
+                             true, /* rhs_redux */
+                             sles,
+                             fld->val,
+                             rhs);
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);

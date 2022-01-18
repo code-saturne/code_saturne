@@ -44,6 +44,7 @@
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
+#include "cs_cdo_toolbox.h"
 #include "cs_control.h"
 #include "cs_defs.h"
 #include "cs_domain.h"
@@ -901,7 +902,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   cs_equation_assemble_finalize();
 
-  cs_equation_common_finalize();
+  cs_cdo_toolbox_finalize();
 
   /* Free memory related to advection fields */
 

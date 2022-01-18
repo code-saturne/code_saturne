@@ -201,7 +201,7 @@ _post_courant_number(const cs_adv_field_t       *adv,
   BFT_MALLOC(label, len, char);
   sprintf(label, "%s.Courant", adv->name);
 
-  cs_real_t  *courant = cs_equation_get_tmpbuf();
+  cs_real_t  *courant = cs_cdo_toolbox_get_tmpbuf();
 
   cs_advection_get_courant(adv, time_step->dt[0], courant);
 
@@ -254,7 +254,7 @@ _post_peclet_number(const cs_equation_t        *eq,
   BFT_MALLOC(label, len, char);
   sprintf(label, "%s.Peclet", eqp->name);
 
-  cs_real_t  *peclet = cs_equation_get_tmpbuf();
+  cs_real_t  *peclet = cs_cdo_toolbox_get_tmpbuf();
   cs_equation_compute_peclet(eq, time_step, peclet);
 
   /* Brief output for the log */
@@ -297,7 +297,7 @@ _post_fourier_number(const cs_property_t        *pty,
   if (!(pty->process_flag & CS_PROPERTY_POST_FOURIER))
     return;
 
-  cs_real_t  *fourier = cs_equation_get_tmpbuf();
+  cs_real_t  *fourier = cs_cdo_toolbox_get_tmpbuf();
 
   cs_property_get_fourier(pty, time_step->t_cur, time_step->dt[0], fourier);
 

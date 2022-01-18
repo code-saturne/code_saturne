@@ -31,8 +31,9 @@
 
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
+#include "cs_cdo_toolbox.h"
 #include "cs_equation_param.h"
-#include "cs_equation_common.h"
+#include "cs_equation_builder.h"
 #include "cs_field.h"
 #include "cs_mesh.h"
 #include "cs_restart.h"

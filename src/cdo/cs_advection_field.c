@@ -44,8 +44,8 @@
 #include <bft_mem.h>
 
 #include "cs_boundary_zone.h"
+#include "cs_cdo_toolbox.h"
 #include "cs_evaluate.h"
-#include "cs_equation_common.h"
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_math.h"
@@ -1594,13 +1594,13 @@ cs_advection_field_in_cells(const cs_adv_field_t   *adv,
 
     case CS_XDEF_BY_DOF_FUNCTION:   /* P0 approximation in each cell */
       {
-        cs_real_t  *fluxes = cs_equation_get_tmpbuf();
+        cs_real_t  *fluxes = cs_cdo_toolbox_get_tmpbuf();
         cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)def->context;
 
         if (cs_flag_test(cx->loc, cs_flag_primal_face) == false)
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Invalid location for definition by DoFs.\n", __func__);
-        assert(cs_equation_get_tmpbuf_size() <= (size_t)cdoq->n_faces);
+        assert(cs_cdo_toolbox_get_tmpbuf_size() <= (size_t)cdoq->n_faces);
 
         /* Values of the function are defined at the primal faces */
 

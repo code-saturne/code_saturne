@@ -46,7 +46,6 @@
 #include "cs_cdofb_monolithic_sles.h"
 #include "cs_cdofb_navsto.h"
 #include "cs_equation_bc.h"
-#include "cs_equation_common.h"
 #include "cs_equation_priv.h"
 #include "cs_iter_algo.h"
 #include "cs_navsto_coupling.h"
@@ -105,13 +104,13 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdofb_monolithic_assemble_t)(const cs_cell_sys_t            *csys,
-                                 const cs_cell_mesh_t           *cm,
-                                 const cs_real_t                *div_op,
-                                 const bool                      has_sourceterm,
-                                 cs_cdofb_monolithic_t          *sc,
-                                 cs_cdofb_vecteq_t              *eqc,
-                                 cs_equation_assemble_t         *eqa);
+(cs_cdofb_monolithic_assemble_t)(const cs_cell_sys_t           *csys,
+                                 const cs_cell_mesh_t          *cm,
+                                 const cs_real_t               *div_op,
+                                 const bool                     has_sourceterm,
+                                 cs_cdofb_monolithic_t         *sc,
+                                 cs_cdofb_vecteq_t             *eqc,
+                                 cs_equation_assemble_t        *eqa);
 
 /*----------------------------------------------------------------------------*/
 /*!

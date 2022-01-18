@@ -44,7 +44,6 @@
 #include "cs_evaluate.h"
 #include "cs_equation.h"
 #include "cs_equation_assemble.h"
-#include "cs_equation_common.h"
 #include "cs_equation_param.h"
 #include "cs_gwf.h"
 #include "cs_hodge.h"
@@ -670,14 +669,12 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
 
   /* Allocate common structures for solving equations */
 
-  cs_equation_common_init(domain->connect,
-                          domain->cdo_quantities,
-                          domain->time_step,
-                          cc->eb_scheme_flag,
-                          cc->fb_scheme_flag,
-                          cc->vb_scheme_flag,
-                          cc->vcb_scheme_flag,
-                          cc->hho_scheme_flag);
+  cs_cdo_toolbox_init(domain->connect,
+                      cc->eb_scheme_flag,
+                      cc->fb_scheme_flag,
+                      cc->vb_scheme_flag,
+                      cc->vcb_scheme_flag,
+                      cc->hho_scheme_flag);
 
   /* Allocate matrix-related structures for the assembly stage */
 

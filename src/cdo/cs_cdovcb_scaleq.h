@@ -33,7 +33,7 @@
 #include "cs_base.h"
 #include "cs_time_step.h"
 #include "cs_mesh.h"
-#include "cs_equation_common.h"
+#include "cs_equation_builder.h"
 #include "cs_equation_param.h"
 #include "cs_field.h"
 #include "cs_cdo_connect.h"

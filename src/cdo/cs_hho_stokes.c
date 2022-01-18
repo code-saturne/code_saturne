@@ -45,7 +45,6 @@
 #include <bft_mem.h>
 
 #include "cs_boundary_zone.h"
-#include "cs_equation_common.h"
 #include "cs_equation_priv.h"
 #include "cs_hho_builder.h"
 #include "cs_log.h"

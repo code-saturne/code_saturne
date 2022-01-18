@@ -47,6 +47,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_cdo_toolbox.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovb_vecteq.h"
 #include "cs_cdovcb_scaleq.h"
@@ -54,7 +55,6 @@
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
 #include "cs_equation_bc.h"
-#include "cs_equation_common.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
 #include "cs_field_default.h"
@@ -1534,10 +1534,10 @@ cs_equation_log_monitoring(void)
 
     cs_equation_t  *eq = _equations[i];
 
-    /* Display high-level timer counter related to the current equation
-       before deleting the structure */
+    /* Display high-level timer counter related to the current equation before
+       deleting the structure */
 
-    cs_equation_write_monitoring(eq->param, eq->builder);
+    cs_equation_builder_log_performance(eq->param, eq->builder);
 
   } /* Loop on equations */
 }
@@ -2645,7 +2645,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     /* Not initialized here if it is a restart */
 
     if (eq->builder == NULL)
-      eq->builder = cs_equation_builder_init(eqp, mesh);
+      eq->builder = cs_equation_builder_create(eqp, mesh);
 
     if (eq->scheme_context == NULL)
       eq->scheme_context = eq->init_context(eqp,
@@ -3703,9 +3703,9 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
     if (eq->main_ts_id > -1)    /* Activate timer statistics */
       cs_timer_stats_start(eq->main_ts_id);
 
-    cs_equation_balance_t  *b = eq->compute_balance(eqp,
-                                                    eq->builder,
-                                                    eq->scheme_context);
+    cs_cdo_balance_t  *b = eq->compute_balance(eqp,
+                                               eq->builder,
+                                               eq->scheme_context);
 
     char *postlabel = NULL;
     int len = strlen(eqp->name) + 13 + 1;
@@ -3780,7 +3780,7 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
     /* Free buffers */
 
     BFT_FREE(postlabel);
-    cs_equation_balance_destroy(&b);
+    cs_cdo_balance_destroy(&b);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);

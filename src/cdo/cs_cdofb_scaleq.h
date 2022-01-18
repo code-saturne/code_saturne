@@ -41,9 +41,10 @@
 #include "cs_base.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
+#include "cs_cdo_toolbox.h"
 #include "cs_cdo_quantities.h"
 #include "cs_cdofb_priv.h"
-#include "cs_equation_common.h"
+#include "cs_equation_builder.h"
 #include "cs_equation_param.h"
 #include "cs_field.h"
 #include "cs_matrix.h"
@@ -297,11 +298,11 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
  * \param[in, out] eqb       pointer to a \ref cs_equation_builder_t structure
  * \param[in, out] context   pointer to a scheme builder structure
  *
- * \return a pointer to a \ref cs_equation_balance_t structure
+ * \return a pointer to a \ref cs_cdo_balance_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_balance_t *
+cs_cdo_balance_t *
 cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
                         cs_equation_builder_t         *eqb,
                         void                          *context);

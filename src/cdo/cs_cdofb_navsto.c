@@ -47,6 +47,7 @@
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_blas.h"
+#include "cs_cdo_toolbox.h"
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"
 #endif
@@ -754,6 +755,7 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
    *    and definitions that do not cover all the domain. Moreover, we need
    *    information (e.g. cs_cdo_quantities_t) which we do not know here
    */
+
   cs_cdofb_navsto_rescale_pressure_to_ref(nsp, quant, values);
 }
 
@@ -775,39 +777,41 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
                                    const cs_time_step_t        *ts,
                                    cs_real_t                   *pr_f)
 {
-  /* Sanity checks */
   assert(nsp != NULL && pr_f != NULL);
 
   /* Initial conditions for the pressure */
+
   if (nsp->n_pressure_ic_defs == 0)
     return; /* Nothing to do */
 
   assert(nsp->pressure_ic_defs != NULL);
 
-  cs_lnum_t  *def2f_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
+  cs_lnum_t  *def2f_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
   cs_lnum_t  *def2f_idx = NULL;
+
   BFT_MALLOC(def2f_idx, nsp->n_pressure_ic_defs + 1, cs_lnum_t);
 
-  cs_equation_sync_vol_def_at_faces(connect,
-                                    nsp->n_pressure_ic_defs,
-                                    nsp->pressure_ic_defs,
-                                    def2f_idx,
-                                    def2f_ids);
+  cs_cdo_sync_vol_def_at_faces(nsp->n_pressure_ic_defs, nsp->pressure_ic_defs,
+                               def2f_idx,
+                               def2f_ids);
 
   const cs_real_t  t_cur = ts->t_cur;
 
   for (int def_id = 0; def_id < nsp->n_pressure_ic_defs; def_id++) {
 
     /* Get and then set the definition of the initial condition */
+
     cs_xdef_t  *def = nsp->pressure_ic_defs[def_id];
     const cs_lnum_t  n_f_selected = def2f_idx[def_id+1] - def2f_idx[def_id];
     const cs_lnum_t  *selected_lst = def2f_ids + def2f_idx[def_id];
 
     /* Initialize face-based array */
+
     switch (def->type) {
 
       /* Evaluating the integrals: the averages will be taken care of at the
        * end when ensuring zero-mean valuedness */
+
     case CS_XDEF_BY_VALUE:
       cs_evaluate_potential_at_faces_by_value(def,
                                               n_f_selected,

@@ -5374,7 +5374,7 @@ cs_solidification_extra_post(void                      *input,
       cs_solidification_binary_alloy_t  *alloy
         = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-      cs_real_t  *wb = cs_equation_get_tmpbuf();
+      cs_real_t  *wb = cs_cdo_toolbox_get_tmpbuf();
 
       if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
 

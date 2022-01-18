@@ -48,9 +48,10 @@
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
 #include "cs_cdo_local.h"
+#include "cs_cdo_solve.h"
+#include "cs_cdo_toolbox.h"
 #include "cs_cdovb_priv.h"
 #include "cs_equation_bc.h"
-#include "cs_equation_common.h"
 #include "cs_evaluate.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -365,7 +366,7 @@ _svb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
     /* Update the value of the reaction property(ies) if needed */
 
-    cs_equation_set_reaction_properties_cw(eqp, eqb, cm, cb);
+    cs_equation_builder_set_reaction_pty_cw(eqp, eqb, cm, cb);
 
     if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
 
@@ -494,7 +495,7 @@ _svb_enforce_values(const cs_equation_param_t     *eqp,
 
   if (cs_equation_param_has_internal_enforcement(eqp)) {
 
-    cs_equation_enforced_internal_dofs(eqb, cb, csys);
+    cs_equation_builder_enforce_dofs(eqb, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1385,7 +1386,7 @@ cs_cdovb_scaleq_init_properties(int                           t_id,
 
   /* Initialization of the values of properties */
 
-  cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
+  cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1447,7 +1448,7 @@ cs_cdovb_scaleq_cw_build_implicit(int                           t_id,
   /* Set the local mesh structure for the current cell */
 
   cs_cell_mesh_build(c_id,
-                     cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                     cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                      connect, quant, cm);
 
   /* Set the local (i.e. cellwise) structures for the current cell */
@@ -1610,15 +1611,13 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
 
   if (eqp->n_ic_defs > 0) {
 
-    cs_lnum_t  *def2v_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
+    cs_lnum_t  *def2v_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
     cs_lnum_t  *def2v_idx = NULL;
+
     BFT_MALLOC(def2v_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
-    cs_equation_sync_vol_def_at_vertices(connect,
-                                         eqp->n_ic_defs,
-                                         eqp->ic_defs,
-                                         def2v_idx,
-                                         def2v_ids);
+    cs_cdo_sync_vol_def_at_vertices(eqp->n_ic_defs, eqp->ic_defs,
+                                    def2v_idx, def2v_ids);
 
     for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 
@@ -1784,7 +1783,7 @@ cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1800,7 +1799,7 @@ cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -1892,22 +1891,23 @@ cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
 
   /* Last step in the computation of the renormalization coefficient */
 
-  cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
-                                     eqc->n_dofs,
-                                     rhs,
-                                     &rhs_norm);
+  cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
+                             quant->vol_tot,
+                             eqc->n_dofs,
+                             rhs,
+                             &rhs_norm);
 
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
-  cs_equation_solve_scalar_system(eqc->n_dofs,
-                                  eqp->sles_param,
-                                  matrix,
-                                  rs,
-                                  rhs_norm,
-                                  true, /* rhs_redux */
-                                  sles,
-                                  fld->val,
-                                  rhs);
+  cs_cdo_solve_scalar_system(eqc->n_dofs,
+                             eqp->sles_param,
+                             matrix,
+                             rs,
+                             rhs_norm,
+                             true, /* rhs_redux */
+                             sles,
+                             fld->val,
+                             rhs);
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
@@ -2018,7 +2018,7 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -2034,7 +2034,7 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -2182,22 +2182,23 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
 
   /* Last step in the computation of the renormalization coefficient */
 
-  cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
-                                     eqc->n_dofs,
-                                     rhs,
-                                     &rhs_norm);
+  cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
+                             quant->vol_tot,
+                             eqc->n_dofs,
+                             rhs,
+                             &rhs_norm);
 
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
-  cs_equation_solve_scalar_system(eqc->n_dofs,
-                                  eqp->sles_param,
-                                  matrix,
-                                  rs,
-                                  rhs_norm,
-                                  true, /* rhs_redux */
-                                  sles,
-                                  fld->val,
-                                  rhs);
+  cs_cdo_solve_scalar_system(eqc->n_dofs,
+                             eqp->sles_param,
+                             matrix,
+                             rs,
+                             rhs_norm,
+                             true, /* rhs_redux */
+                             sles,
+                             fld->val,
+                             rhs);
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
@@ -2348,7 +2349,7 @@ cs_cdovb_scaleq_solve_theta(bool                        cur2prev,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* ---------------------------------------------
      * Main loop on cells to build the linear system
@@ -2364,7 +2365,7 @@ cs_cdovb_scaleq_solve_theta(bool                        cur2prev,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -2552,22 +2553,23 @@ cs_cdovb_scaleq_solve_theta(bool                        cur2prev,
 
   /* Last step in the computation of the renormalization coefficient */
 
-  cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
-                                     eqc->n_dofs,
-                                     rhs,
-                                     &rhs_norm);
+  cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
+                             quant->vol_tot,
+                             eqc->n_dofs,
+                             rhs,
+                             &rhs_norm);
 
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
-  cs_equation_solve_scalar_system(eqc->n_dofs,
-                                  eqp->sles_param,
-                                  matrix,
-                                  rs,
-                                  rhs_norm,
-                                  true, /* rhs_redux */
-                                  sles,
-                                  fld->val,
-                                  rhs);
+  cs_cdo_solve_scalar_system(eqc->n_dofs,
+                             eqp->sles_param,
+                             matrix,
+                             rs,
+                             rhs_norm,
+                             true, /* rhs_redux */
+                             sles,
+                             fld->val,
+                             rhs);
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
@@ -2668,11 +2670,11 @@ cs_cdovb_scaleq_get_cell_values(void      *context,
  * \param[in, out] eqb      pointer to a \ref cs_equation_builder_t structure
  * \param[in, out] context  pointer to a scheme builder structure
  *
- * \return a pointer to a \ref cs_equation_balance_t structure
+ * \return a pointer to a \ref cs_cdo_balance_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_balance_t *
+cs_cdo_balance_t *
 cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
                         cs_equation_builder_t         *eqb,
                         void                          *context)
@@ -2692,8 +2694,8 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
   /* Allocate and initialize the structure storing the balance evaluation */
 
-  cs_equation_balance_t  *eb = cs_equation_balance_create(cs_flag_primal_vtx,
-                                                          quant->n_vertices);
+  cs_cdo_balance_t  *eb = cs_cdo_balance_create(cs_flag_primal_vtx,
+                                                quant->n_vertices);
 
   /* OpenMP block */
 
@@ -2727,7 +2729,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* Set inside the OMP section so that each thread has its own value */
 
@@ -2749,7 +2751,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the value of the current potential */
@@ -2835,7 +2837,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
       if (cs_equation_param_has_reaction(eqp)) {
 
-        cs_equation_set_reaction_properties_cw(eqp, eqb, cm, cb);
+        cs_equation_builder_set_reaction_pty_cw(eqp, eqb, cm, cb);
 
         /* Define the local reaction property */
 
@@ -2995,7 +2997,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
   /* Parallel or periodic synchronisation */
 
-  cs_equation_balance_sync(connect, eb);
+  cs_cdo_balance_sync(connect, eb);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
@@ -3731,7 +3733,7 @@ cs_cdovb_scaleq_extra_post(const cs_equation_param_t  *eqp,
 
       /* Compute in each cell an evaluation of upwind weight value */
 
-      cs_real_t  *work_c = cs_equation_get_tmpbuf();
+      cs_real_t  *work_c = cs_cdo_toolbox_get_tmpbuf();
       cs_cdo_advection_cell_upwind_coef(cs_shared_quant,
                                         eqp->adv_scheme,
                                         work_c);

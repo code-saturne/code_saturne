@@ -47,6 +47,8 @@
 #include "cs_cdo_advection.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
+#include "cs_cdo_solve.h"
+#include "cs_cdo_toolbox.h"
 #include "cs_equation_bc.h"
 #include "cs_evaluate.h"
 #include "cs_hodge.h"
@@ -255,7 +257,7 @@ _vfb_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
   if (cs_equation_param_has_internal_enforcement(eqp)) {
 
-    cs_equation_enforced_internal_block_dofs(eqb, cb, csys);
+    cs_equation_builder_enforce_block_dofs(eqb, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -599,7 +601,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
 
     /* Update the value of the reaction property(ies) if needed */
 
-    cs_equation_set_reaction_properties_cw(eqp, eqb, cm, cb);
+    cs_equation_builder_set_reaction_pty_cw(eqp, eqb, cm, cb);
 
     if (eqp->reaction_hodgep.algo == CS_HODGE_ALGO_VORONOI) {
 
@@ -822,7 +824,7 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -838,7 +840,7 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -928,15 +930,15 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
-  cs_equation_solve_scalar_system(3*n_faces,
-                                  eqp->sles_param,
-                                  matrix,
-                                  rs,
-                                  normalization,
-                                  true, /* rhs_redux */
-                                  sles,
-                                  eqc->face_values,
-                                  rhs);
+  cs_cdo_solve_scalar_system(3*n_faces,
+                             eqp->sles_param,
+                             matrix,
+                             rs,
+                             normalization,
+                             true, /* rhs_redux */
+                             sles,
+                             eqc->face_values,
+                             rhs);
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
@@ -1039,7 +1041,7 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1055,7 +1057,7 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -1176,15 +1178,15 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
-  cs_equation_solve_scalar_system(3*n_faces,
-                                  eqp->sles_param,
-                                  matrix,
-                                  rs,
-                                  normalization,
-                                  true, /* rhs_redux */
-                                  sles,
-                                  eqc->face_values,
-                                  rhs);
+  cs_cdo_solve_scalar_system(3*n_faces,
+                             eqp->sles_param,
+                             matrix,
+                             rs,
+                             normalization,
+                             true, /* rhs_redux */
+                             sles,
+                             eqc->face_values,
+                             rhs);
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
@@ -1300,7 +1302,7 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1315,7 +1317,8 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
 
       /* Set the local mesh structure for the current cell */
 
-      cs_cell_mesh_build(c_id, cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+      cs_cell_mesh_build(c_id,
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -1469,15 +1472,15 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
 
-  cs_equation_solve_scalar_system(3*n_faces,
-                                  eqp->sles_param,
-                                  matrix,
-                                  rs,
-                                  normalization,
-                                  true, /* rhs_redux */
-                                  sles,
-                                  eqc->face_values,
-                                  rhs);
+  cs_cdo_solve_scalar_system(3*n_faces,
+                             eqp->sles_param,
+                             matrix,
+                             rs,
+                             normalization,
+                             true, /* rhs_redux */
+                             sles,
+                             eqc->face_values,
+                             rhs);
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
@@ -1971,13 +1974,12 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
 
   if (eqp->n_ic_defs > 0) {
 
-    cs_lnum_t  *def2f_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
+    cs_lnum_t  *def2f_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
     cs_lnum_t  *def2f_idx = NULL;
 
     BFT_MALLOC(def2f_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
-    cs_equation_sync_vol_def_at_faces(connect,
-                                      eqp->n_ic_defs,
+    cs_cdo_sync_vol_def_at_faces(eqp->n_ic_defs,
                                       eqp->ic_defs,
                                       def2f_idx,
                                       def2f_ids);

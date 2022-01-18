@@ -50,7 +50,6 @@
 #include "cs_cdo_diffusion.h"
 #include "cs_equation_assemble.h"
 #include "cs_equation_bc.h"
-#include "cs_equation_common.h"
 #include "cs_hho_builder.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -1131,7 +1130,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
     cs_property_data_init(true, true, eqp->diffusion_property, diff_pty);
 
     /* Initialization of the values of properties */
-    cs_equation_init_properties(eqp, eqb, NULL, cb);
+    cs_equation_builder_init_properties(eqp, eqb, NULL, cb);
 
     if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -1156,7 +1155,8 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
-      cs_cell_mesh_build(c_id, cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+      cs_cell_mesh_build(c_id,
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Define set of basis functions for cell faces and the current cell */
@@ -1381,7 +1381,8 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
       cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
-      cs_cell_mesh_build(c_id, cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+      cs_cell_mesh_build(c_id,
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Define set of basis functions for cell faces and the current cell */

@@ -194,7 +194,7 @@ cs_dbg_array_fprintf(FILE             *fp,
  *         side
  *
  * \param[in] eqname     name of the related equation
- * \param[in] nt         number of time step
+ * \param[in] id         id number
  * \param[in] level      level of debug
  * \param[in] sol        solution array
  * \param[in] rhs        rhs array
@@ -204,7 +204,7 @@ cs_dbg_array_fprintf(FILE             *fp,
 
 void
 cs_dbg_fprintf_system(const char        *eqname,
-                      int                nt,
+                      int                id,
                       int                level,
                       const cs_real_t   *sol,
                       const cs_real_t   *rhs,
@@ -215,11 +215,11 @@ cs_dbg_fprintf_system(const char        *eqname,
 
   BFT_MALLOC(filename, len, char);
 
-  sprintf(filename, "%s-sol-%04d.log", eqname, nt);
+  sprintf(filename, "%s-sol-%04d.log", eqname, id);
   if (sol != NULL && level > 4)
     cs_dbg_array_fprintf(NULL, filename, 1e-16, size, sol, 6);
 
-  sprintf(filename, "%s-rhs-%04d.log", eqname, nt);
+  sprintf(filename, "%s-rhs-%04d.log", eqname, id);
   if (rhs != NULL && level > 5)
     cs_dbg_array_fprintf(NULL, filename, 1e-16, size, rhs, 6);
 

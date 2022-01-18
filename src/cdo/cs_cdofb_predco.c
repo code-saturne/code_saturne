@@ -50,15 +50,12 @@
 
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
+#include "cs_cdo_solve.h"
 #include "cs_cdofb_priv.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
 #include "cs_cdofb_navsto.h"
-#if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
-#endif
 #include "cs_equation_bc.h"
-#include "cs_equation_common.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
 #include "cs_log.h"
@@ -71,6 +68,10 @@
 
 #if defined(HAVE_PETSC)
 #include "cs_sles_petsc.h"
+#endif
+
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------
@@ -387,7 +388,7 @@ _predco_apply_remaining_bc(const cs_cdofb_predco_t       *sc,
 
   if (cs_equation_param_has_internal_enforcement(eqp)) {
 
-    cs_equation_enforced_internal_dofs(eqb, cb, csys);
+    cs_equation_builder_enforce_dofs(eqb, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1154,7 +1155,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
 
     /* ---------------------------------------------
      * Main loop on cells to build the linear system
@@ -1169,9 +1170,10 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
       /* Set the local mesh structure for the current cell */
 
-      cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, mom_eqb),
-                         connect, quant, cm);
+      cs_eflag_t  cell_mesh_flag =
+        cs_equation_builder_cell_mesh_flag(cb->cell_flag, mom_eqb);
+
+      cs_cell_mesh_build(c_id, cell_mesh_flag, connect, quant, cm);
 
       /* Starts from the stationary Stokes problem where
        *
@@ -1336,15 +1338,15 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
 
-  cs_equation_solve_scalar_system(3*n_faces,
-                                  mom_eqp->sles_param,
-                                  matrix,
-                                  mom_rs,
-                                  normalization,
-                                  true, /* rhs_redux */
-                                  sles,
-                                  velp_f,
-                                  rhs);
+  cs_cdo_solve_scalar_system(3*n_faces,
+                             mom_eqp->sles_param,
+                             matrix,
+                             mom_rs,
+                             normalization,
+                             true, /* rhs_redux */
+                             sles,
+                             velp_f,
+                             rhs);
 
   /* Update pressure, velocity and divergence fields */
 

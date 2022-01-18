@@ -37,7 +37,6 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
-#include "cs_equation_common.h"
 #include "cs_equation_param.h"
 #include "cs_hho_builder.h"
 #include "cs_matrix.h"

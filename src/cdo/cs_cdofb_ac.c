@@ -51,6 +51,7 @@
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_blas.h"
+#include "cs_cdo_solve.h"
 #include "cs_cdofb_priv.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
@@ -59,7 +60,6 @@
 #include "cs_dbg.h"
 #endif
 #include "cs_equation_bc.h"
-#include "cs_equation_common.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
 #include "cs_iter_algo.h"
@@ -610,7 +610,7 @@ _ac_apply_remaining_bc(const cs_cdofb_ac_t           *sc,
 
     /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
 
-    cs_equation_enforced_internal_block_dofs(eqb, cb, csys);
+    cs_equation_builder_enforce_block_dofs(eqb, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -710,7 +710,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
 
     cs_real_t  o_zeta_c = 1./cs_property_get_cell_value(0, cb->t_pty_eval,
                                                         cc->zeta);
@@ -729,7 +729,8 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, mom_eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag,
+                                                            mom_eqb),
                          connect, quant, cm);
 
       /* Starts from the stationary Stokes problem where
@@ -1269,15 +1270,15 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
 
-  int  n_solver_iter = cs_equation_solve_scalar_system(3*n_faces,
-                                                       mom_eqp->sles_param,
-                                                       matrix,
-                                                       rs,
-                                                       normalization,
-                                                       true, /* rhs_redux */
-                                                       sles,
-                                                       vel_f, /* updated here */
-                                                       rhs);
+  int  n_solver_iter = cs_cdo_solve_scalar_system(3*n_faces,
+                                                  mom_eqp->sles_param,
+                                                  matrix,
+                                                  rs,
+                                                  normalization,
+                                                  true, /* rhs_redux */
+                                                  sles,
+                                                  vel_f, /* updated here */
+                                                  rhs);
 
   /* Update pressure, velocity at cells and divergence velocity fields */
 
@@ -1439,15 +1440,15 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
 
   nl_algo->n_inner_iter = (nl_algo->last_inner_iter =
-                           cs_equation_solve_scalar_system(3*n_faces,
-                                                           mom_eqp->sles_param,
-                                                           matrix,
-                                                           rs,
-                                                           normalization,
-                                                           true, /* rhs_redux */
-                                                           sles,
-                                                           vel_f,
-                                                           rhs));
+                           cs_cdo_solve_scalar_system(3*n_faces,
+                                                      mom_eqp->sles_param,
+                                                      matrix,
+                                                      rs,
+                                                      normalization,
+                                                      true, /* rhs_redux */
+                                                      sles,
+                                                      vel_f,
+                                                      rhs));
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -1530,15 +1531,15 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     cs_sles_setup(sles, matrix);
 
     nl_algo->n_inner_iter += (nl_algo->last_inner_iter =
-                         cs_equation_solve_scalar_system(3*n_faces,
-                                                         mom_eqp->sles_param,
-                                                         matrix,
-                                                         rs,
-                                                         normalization,
-                                                         true, /* rhs_redux */
-                                                         sles,
-                                                         vel_f,
-                                                         rhs));
+                         cs_cdo_solve_scalar_system(3*n_faces,
+                                                    mom_eqp->sles_param,
+                                                    matrix,
+                                                    rs,
+                                                    normalization,
+                                                    true, /* rhs_redux */
+                                                    sles,
+                                                    vel_f,
+                                                    rhs));
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);

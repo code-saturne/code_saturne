@@ -41,7 +41,7 @@
 #include <bft_mem.h>
 
 #include "cs_boundary_zone.h"
-#include "cs_equation_common.h"
+#include "cs_cdo_toolbox.h"
 #include "cs_evaluate.h"
 #include "cs_xdef.h"
 
@@ -650,7 +650,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
 
   /* Initialization */
 
-  cs_real_t  *bcvals = cs_equation_get_tmpbuf();
+  cs_real_t  *bcvals = cs_cdo_toolbox_get_tmpbuf();
   memset(bcvals, 0, eqp->dim*quant->n_vertices*sizeof(cs_real_t));
 
   /* Number of faces with a Dir. related to a vertex */
@@ -740,7 +740,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
 
   } /* Loop on faces with a non-homogeneous Dirichlet BC */
 
-  cs_equation_sync_vertex_mean_values(connect, eqp->dim, counter, bcvals);
+  cs_cdo_sync_vertex_mean_values(eqp->dim, counter, bcvals);
 
   /* Homogeneous Dirichlet are always enforced (even in case of multiple BCs).
      If multi-valued Dirichlet BCs are set, a weighted sum is used to set the
@@ -1395,7 +1395,7 @@ cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
 
   /* Synchronization of the definition of the circulation if needed */
 
-  cs_lnum_t  *def2e_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
+  cs_lnum_t  *def2e_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
   cs_lnum_t  *def2e_idx = NULL;
   BFT_MALLOC(def2e_idx, eqp->n_bc_defs + 1, cs_lnum_t);
 

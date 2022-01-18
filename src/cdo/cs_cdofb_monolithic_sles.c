@@ -59,6 +59,7 @@
 
 #include "cs_blas.h"
 #include "cs_cdo_blas.h"
+#include "cs_cdo_solve.h"
 #include "cs_equation.h"
 #include "cs_fp_exception.h"
 #include "cs_iter_algo.h"
@@ -850,15 +851,16 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
 
   uza->algo->n_inner_iter
     += (uza->algo->last_inner_iter =
-        cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                        slesp0,
-                                        a,
-                                        cs_shared_range_set,
-                                        1,     /* no normalization */
-                                        false, /* rhs_redux --> already done */
-                                        msles->sles,
-                                        invA_lumped,
-                                        uza->rhs));
+        cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                   slesp0,
+                                   a,
+                                   cs_shared_range_set,
+                                   1,     /* no normalization */
+                                   false, /* rhs_redux --> already done */
+                                   msles->sles,
+                                   invA_lumped,
+                                   uza->rhs));
+
   /* Partial memory free */
 
   BFT_FREE(system_name);
@@ -1295,15 +1297,15 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
   BFT_MALLOC(inv_lumped, b11_size, cs_real_t);
   memset(inv_lumped, 0, sizeof(cs_real_t)*b11_size);
 
-  cs_equation_solve_scalar_system(b11_size,
-                                  slesp0,
-                                  ssys->m11_matrices[0],
-                                  ssys->rset,
-                                  1,     /* no normalization */
-                                  false, /* rhs_redux --> already done */
-                                  sbp->m11_sles,
-                                  inv_lumped,
-                                  rhs);
+  cs_cdo_solve_scalar_system(b11_size,
+                             slesp0,
+                             ssys->m11_matrices[0],
+                             ssys->rset,
+                             1,     /* no normalization */
+                             false, /* rhs_redux --> already done */
+                             sbp->m11_sles,
+                             inv_lumped,
+                             rhs);
 
   /* Partial memory free */
 
@@ -3427,15 +3429,15 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
 
   gkb->algo->n_inner_iter
     += (gkb->algo->last_inner_iter
-        = cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                          slesp,
-                                          matrix,
-                                          cs_shared_range_set,
-                                          normalization,
-                                          true, /* rhs_redux, */
-                                          sles,
-                                          gkb->v,
-                                          gkb->b_tilda));
+        = cs_cdo_solve_scalar_system(gkb->n_u_dofs,
+                                     slesp,
+                                     matrix,
+                                     cs_shared_range_set,
+                                     normalization,
+                                     true, /* rhs_redux, */
+                                     sles,
+                                     gkb->v,
+                                     gkb->b_tilda));
 
   /* Compute the initial u_tilda := u_f - M^-1.(b_f + gamma. Bt.N^-1.b_c) */
 
@@ -3572,15 +3574,15 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
 
   gkb->algo->n_inner_iter
     += (gkb->algo->last_inner_iter =
-        cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                        eqp->sles_param,
-                                        matrix,
-                                        cs_shared_range_set,
-                                        normalization,
-                                        false, /* rhs_redux */
-                                        sles,
-                                        gkb->v,
-                                        gkb->dt_q));
+        cs_cdo_solve_scalar_system(gkb->n_u_dofs,
+                                   eqp->sles_param,
+                                   matrix,
+                                   cs_shared_range_set,
+                                   normalization,
+                                   false, /* rhs_redux */
+                                   sles,
+                                   gkb->v,
+                                   gkb->dt_q));
 
   gkb->alpha = _face_gdot(gkb->n_u_dofs, gkb->v, gkb->dt_q);
   assert(gkb->alpha > -DBL_MIN);
@@ -4355,12 +4357,12 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   /* Prepare solving (handle parallelism) */
 
-  cs_equation_prepare_system(1,     /* stride */
-                             n_scatter_elts,
-                             matrix,
-                             rset,
-                             true,  /* rhs_redux */
-                             sol, b);
+  cs_cdo_solve_prepare_system(1,     /* stride */
+                              n_scatter_elts,
+                              matrix,
+                              rset,
+                              true,  /* rhs_redux */
+                              sol, b);
 
   /* Solve the linear solver */
 
@@ -4770,15 +4772,15 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
     cs_real_t  normalization = gkb->alpha; /* TODO */
     gkb->algo->n_inner_iter
       += (gkb->algo->last_inner_iter =
-          cs_equation_solve_scalar_system(gkb->n_u_dofs,
-                                          eqp->sles_param,
-                                          matrix,
-                                          cs_shared_range_set,
-                                          normalization,
-                                          false, /* rhs_redux */
-                                          msles->sles,
-                                          gkb->v,
-                                          gkb->m__v));
+          cs_cdo_solve_scalar_system(gkb->n_u_dofs,
+                                     eqp->sles_param,
+                                     matrix,
+                                     cs_shared_range_set,
+                                     normalization,
+                                     false, /* rhs_redux */
+                                     msles->sles,
+                                     gkb->v,
+                                     gkb->m__v));
 
     /* Compute alpha */
 
@@ -4945,15 +4947,15 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   slesp0->eps = fmin(1e-6, 0.05*nslesp->il_algo_param.rtol);
 
   _n_iter =
-    cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                    slesp0,
-                                    A,
-                                    cs_shared_range_set,
-                                    normalization,
-                                    false, /* rhs_redux --> already done */
-                                    msles->sles,
-                                    u_f,
-                                    uza->rhs);
+    cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                               slesp0,
+                               A,
+                               cs_shared_range_set,
+                               normalization,
+                               false, /* rhs_redux --> already done */
+                               msles->sles,
+                               u_f,
+                               uza->rhs);
   uza->algo->n_inner_iter += _n_iter;
   uza->algo->last_inner_iter += _n_iter;
 
@@ -4987,13 +4989,13 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   memset(zk, 0, sizeof(cs_real_t)*uza->n_p_dofs);
 
-  _n_iter = cs_equation_solve_scalar_cell_system(uza->n_p_dofs,
-                                                 schur_slesp,
-                                                 K,
-                                                 div_l2_norm,
-                                                 msles->schur_sles,
-                                                 zk,
-                                                 rk);
+  _n_iter = cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
+                                            schur_slesp,
+                                            K,
+                                            div_l2_norm,
+                                            msles->schur_sles,
+                                            zk,
+                                            rk);
   uza->algo->n_inner_iter += _n_iter;
   uza->algo->last_inner_iter += _n_iter;
 
@@ -5034,15 +5036,15 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
     uza->algo->n_inner_iter
       += (uza->algo->last_inner_iter =
-          cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                          eqp->sles_param,
-                                          A,
-                                          cs_shared_range_set,
-                                          normalization,
-                                          false, /* rhs_redux -->already done */
-                                          msles->sles,
-                                          wk,
-                                          uza->rhs));
+          cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                     eqp->sles_param,
+                                     A,
+                                     cs_shared_range_set,
+                                     normalization,
+                                     false, /* rhs_redux -->already done */
+                                     msles->sles,
+                                     wk,
+                                     uza->rhs));
 
     _apply_div_op(B_op, wk, dwk); /* -B -w --> dwk has the right sign */
 
@@ -5052,13 +5054,13 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
     memset(zk, 0, sizeof(cs_real_t)*uza->n_p_dofs);
 
-    _n_iter = cs_equation_solve_scalar_cell_system(uza->n_p_dofs,
-                                                   schur_slesp,
-                                                   K,
-                                                   normalization,
-                                                   msles->schur_sles,
-                                                   zk,
-                                                   dwk);
+    _n_iter = cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
+                                              schur_slesp,
+                                              K,
+                                              normalization,
+                                              msles->schur_sles,
+                                              zk,
+                                              dwk);
     uza->algo->n_inner_iter += _n_iter;
     uza->algo->last_inner_iter += _n_iter;
 
@@ -5229,15 +5231,15 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
 
   uza->algo->n_inner_iter
     += (uza->algo->last_inner_iter =
-        cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                        slesp0,
-                                        A,
-                                        cs_shared_range_set,
-                                        normalization,
-                                        false, /* rhs_redux --> already done */
-                                        msles->sles,
-                                        u_f,
-                                        uza->rhs));
+        cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                   slesp0,
+                                   A,
+                                   cs_shared_range_set,
+                                   normalization,
+                                   false, /* rhs_redux --> already done */
+                                   msles->sles,
+                                   u_f,
+                                   uza->rhs));
 
   /* Partial memory free */
 
@@ -5274,13 +5276,13 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
 
   uza->algo->n_inner_iter
     += (uza->algo->last_inner_iter =
-        cs_equation_solve_scalar_cell_system(uza->n_p_dofs,
-                                             schur_slesp,
-                                             K,
-                                             div_l2_norm,
-                                             msles->schur_sles,
-                                             gk,
-                                             rk));
+        cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
+                                        schur_slesp,
+                                        K,
+                                        div_l2_norm,
+                                        msles->schur_sles,
+                                        gk,
+                                        rk));
 
 # pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
   for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
@@ -5308,15 +5310,15 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
 
   uza->algo->n_inner_iter
     += (uza->algo->last_inner_iter =
-        cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                        eqp->sles_param,
-                                        A,
-                                        cs_shared_range_set,
-                                        normalization,
-                                        false, /* rhs_redux --> already done */
-                                        msles->sles,
-                                        zk,
-                                        uza->rhs));
+        cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                   eqp->sles_param,
+                                   A,
+                                   cs_shared_range_set,
+                                   normalization,
+                                   false, /* rhs_redux --> already done */
+                                   msles->sles,
+                                   zk,
+                                   uza->rhs));
 
   /* First update (different from the next one)
    * k = 0
@@ -5355,13 +5357,13 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
 
     uza->algo->n_inner_iter
       += (uza->algo->last_inner_iter =
-          cs_equation_solve_scalar_cell_system(uza->n_p_dofs,
-                                               schur_slesp,
-                                               K,
-                                               uza->algo->res, /* ||r(k-1)|| */
-                                               msles->schur_sles,
-                                               gk,
-                                               rk));
+          cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
+                                          schur_slesp,
+                                          K,
+                                          uza->algo->res, /* ||r(k-1)|| */
+                                          msles->schur_sles,
+                                          gk,
+                                          rk));
 
 #   pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
     for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
@@ -5394,15 +5396,15 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
 
     uza->algo->n_inner_iter
       += (uza->algo->last_inner_iter =
-          cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                          eqp->sles_param,
-                                          A,
-                                          cs_shared_range_set,
-                                          normalization,
-                                          false, /* rhs_redux -->already done */
-                                          msles->sles,
-                                          zk,
-                                          uza->rhs));
+          cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                     eqp->sles_param,
+                                     A,
+                                     cs_shared_range_set,
+                                     normalization,
+                                     false, /* rhs_redux -->already done */
+                                     msles->sles,
+                                     zk,
+                                     uza->rhs));
 
     /* Updates
      *  - Compute the rho_factor = <r(k),c(k)> / <c(k), div(z(k))>
@@ -5558,15 +5560,15 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
 
     uza->algo->n_inner_iter
       += (uza->algo->last_inner_iter =
-          cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                          slesp,
-                                          msles->block_matrices[0],
-                                          cs_shared_range_set,
-                                          normalization,
-                                          false, /* rhs_redux */
-                                          msles->sles,
-                                          u_f,
-                                          uza->rhs));
+          cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                     slesp,
+                                     msles->block_matrices[0],
+                                     cs_shared_range_set,
+                                     normalization,
+                                     false, /* rhs_redux */
+                                     msles->sles,
+                                     u_f,
+                                     uza->rhs));
 
     /* Update p_c = p_c - gamma * (D.u_f - b_c) */
 
@@ -5704,15 +5706,15 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
   uza->algo->n_inner_iter
     += (uza->algo->last_inner_iter =
-        cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                        slesp,
-                                        msles->block_matrices[0],
-                                        cs_shared_range_set,
-                                        normalization,
-                                        false, /* rhs_redux */
-                                        msles->sles,
-                                        u_f,
-                                        uza->rhs));
+        cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                   slesp,
+                                   msles->block_matrices[0],
+                                   cs_shared_range_set,
+                                   normalization,
+                                   false, /* rhs_redux */
+                                   msles->sles,
+                                   u_f,
+                                   uza->rhs));
 
   /* Partia free */
 
@@ -5761,15 +5763,15 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
     uza->algo->n_inner_iter
       += (uza->algo->last_inner_iter =
-          cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                          eqp->sles_param,
-                                          msles->block_matrices[0],
-                                          cs_shared_range_set,
-                                          delta_u_l2, /* normalization */
-                                          false, /* rhs_redux */
-                                          msles->sles,
-                                          delta_u,
-                                          uza->rhs));
+          cs_cdo_solve_scalar_system(uza->n_u_dofs,
+                                     eqp->sles_param,
+                                     msles->block_matrices[0],
+                                     cs_shared_range_set,
+                                     delta_u_l2, /* normalization */
+                                     false, /* rhs_redux */
+                                     msles->sles,
+                                     delta_u,
+                                     uza->rhs));
 
     delta_u_l2 = cs_cdo_blas_square_norm_pfvp(delta_u);
     if (fabs(delta_u_l2) > 0)

@@ -54,6 +54,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_cdo_diffusion.h"
+#include "cs_cdo_toolbox.h"
+#include "cs_cdo_solve.h"
 #include "cs_evaluate.h"
 #include "cs_reco.h"
 
@@ -332,7 +334,7 @@ _eb_enforce_values(const cs_equation_param_t     *eqp,
 
     /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
 
-    cs_equation_enforced_internal_dofs(eqb, cb, csys);
+    cs_equation_builder_enforce_dofs(eqb, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -820,15 +822,14 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
 
     /* Initialize values at mesh vertices */
 
-    cs_lnum_t  *def2e_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
+    cs_lnum_t  *def2e_ids = (cs_lnum_t *)cs_cdo_toolbox_get_tmpbuf();
     cs_lnum_t  *def2e_idx = NULL;
     BFT_MALLOC(def2e_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
-    cs_equation_sync_vol_def_at_edges(connect,
-                                      eqp->n_ic_defs,
-                                      eqp->ic_defs,
-                                      def2e_idx,
-                                      def2e_ids);
+    cs_cdo_sync_vol_def_at_edges(eqp->n_ic_defs,
+                                 eqp->ic_defs,
+                                 def2e_idx,
+                                 def2e_ids);
 
     for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 
@@ -990,7 +991,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -1061,10 +1062,11 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
 
   /* Last step in the computation of the renormalization coefficient */
 
-  cs_equation_sync_rhs_normalization(eqp->sles_param->resnorm_type,
-                                     eqc->n_dofs,
-                                     rhs,
-                                     &rhs_norm);
+  cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
+                             quant->vol_tot,
+                             eqc->n_dofs,
+                             rhs,
+                             &rhs_norm);
 
   /* End of the system building */
 
@@ -1080,15 +1082,15 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   if (cur2prev && eqc->edge_values_pre != NULL)
     memcpy(eqc->edge_values_pre, eqc->edge_values, sizeof(cs_real_t)*n_edges);
 
-  cs_equation_solve_scalar_system(eqc->n_dofs,
-                                  eqp->sles_param,
-                                  matrix,
-                                  rs,
-                                  rhs_norm,
-                                  true, /* rhs_redux */
-                                  sles,
-                                  eqc->edge_values,
-                                  rhs);
+  cs_cdo_solve_scalar_system(eqc->n_dofs,
+                             eqp->sles_param,
+                             matrix,
+                             rs,
+                             rhs_norm,
+                             true, /* rhs_redux */
+                             sles,
+                             eqc->edge_values,
+                             rhs);
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);

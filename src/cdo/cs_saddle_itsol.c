@@ -53,7 +53,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_blas.h"
-#include "cs_equation_common.h"
+#include "cs_cdo_solve.h"
 #include "cs_log.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
@@ -741,13 +741,13 @@ _solve_schur_approximation(cs_saddle_system_t          *ssys,
     r_norm = sqrt(fabs(r_norm));
 
     memset(z_schur, 0, sizeof(cs_real_t)*ssys->x2_size);
-    n_iter += cs_equation_solve_scalar_cell_system(ssys->x2_size,
-                                                   sbp->schur_slesp,
-                                                   sbp->schur_matrix,
-                                                   r_norm,
-                                                   sbp->schur_sles,
-                                                   z_schur,
-                                                   r_schur);
+    n_iter += cs_cdo_solve_scalar_cell_system(ssys->x2_size,
+                                              sbp->schur_slesp,
+                                              sbp->schur_matrix,
+                                              r_norm,
+                                              sbp->schur_sles,
+                                              z_schur,
+                                              r_schur);
 
     if (sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_DIAG_INVERSE ||
         sbp->schur_type == CS_PARAM_SCHUR_MASS_SCALED_LUMPED_INVERSE) {

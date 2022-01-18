@@ -72,6 +72,8 @@ cs_cdo_field_interpolation.h \
 cs_cdo_local.h \
 cs_cdo_main.h \
 cs_cdo_quantities.h \
+cs_cdo_solve.h \
+cs_cdo_toolbox.h \
 cs_cdo_turbulence.h \
 cs_cdoeb_priv.h \
 cs_cdoeb_vecteq.h \
@@ -97,7 +99,7 @@ cs_enforcement.h \
 cs_equation.h \
 cs_equation_assemble.h \
 cs_equation_bc.h \
-cs_equation_common.h \
+cs_equation_builder.h \
 cs_equation_param.h \
 cs_equation_priv.h \
 cs_equation_system.h \
@@ -155,6 +157,8 @@ cs_cdo_field_interpolation.c \
 cs_cdo_local.c \
 cs_cdo_main.c \
 cs_cdo_quantities.c \
+cs_cdo_solve.c \
+cs_cdo_toolbox.c \
 cs_cdo_turbulence.c \
 cs_cdoeb_vecteq.c \
 cs_cdofb_monolithic.c \
@@ -174,7 +178,7 @@ cs_enforcement.c \
 cs_equation.c \
 cs_equation_assemble.c \
 cs_equation_bc.c \
-cs_equation_common.c \
+cs_equation_builder.c \
 cs_equation_param.c \
 cs_equation_system.c \
 cs_equation_system_param.c \

@@ -492,8 +492,8 @@ cs_cdovb_scalsys_init_structures(int                        n_eqs,
 
         /* Define the equation builder */
 
-        cs_equation_builder_t  *eqb = cs_equation_builder_init(block_ij->param,
-                                                               cs_shared_mesh);
+        cs_equation_builder_t  *eqb =
+          cs_equation_builder_create(block_ij->param, cs_shared_mesh);
 
         cs_cdovb_scaleq_t  *eqc =
           cs_cdovb_scaleq_init_context(block_ij->param,

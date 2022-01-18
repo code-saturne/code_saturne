@@ -61,7 +61,7 @@
 #include "cs_dbg.h"
 #endif
 #include "cs_equation_bc.h"
-#include "cs_equation_common.h"
+#include "cs_equation_builder.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
 #include "cs_log.h"
@@ -652,7 +652,7 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
     /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
 
-    cs_equation_enforced_internal_block_dofs(eqb, cb, csys);
+    cs_equation_builder_enforce_block_dofs(eqb, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1252,7 +1252,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1268,7 +1268,8 @@ _steady_build(const cs_navsto_param_t      *nsp,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, mom_eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag,
+                                                            mom_eqb),
                          connect, quant, cm);
 
       /* For the stationary problem, the global system writes:
@@ -1468,7 +1469,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1484,7 +1485,8 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, mom_eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag,
+                                                            mom_eqb),
                          connect, quant, cm);
 
       /* The global system problem writes:
@@ -1726,7 +1728,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
     /* Initialization of the values of properties */
 
-    cs_equation_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
+    cs_equation_builder_init_properties(mom_eqp, mom_eqb, diff_hodge, cb);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1742,7 +1744,8 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
       /* Set the local mesh structure for the current cell */
 
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, mom_eqb),
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag,
+                                                            mom_eqb),
                          connect, quant, cm);
 
       /* Starts from the stationary Stokes problem where
