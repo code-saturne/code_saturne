@@ -1343,7 +1343,8 @@ cs_equation_assemble_finalize(void)
 {
   /* Display profiling/performance information */
 
-  cs_log_printf(CS_LOG_PERFORMANCE, " <CDO/Assembly> structure: %5.3e\n",
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                " <CDO/Assembly> Structure initialization: %5.3e s\n",
                 cs_equation_ms_time.nsec*1e-9);
 
   /* Free common assemble buffers */

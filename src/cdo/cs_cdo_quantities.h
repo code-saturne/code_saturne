@@ -275,6 +275,17 @@ cs_compute_area_from_quant(const cs_quant_t    qa,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the time elapsed to build the cs_cdo_quantities_t structure
+ *
+ * \return the value of the time elapsed in ns
+ */
+/*----------------------------------------------------------------------------*/
+
+long long
+cs_cdo_quantities_get_time_perfo(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set which quantities have to be computed. Additionnal quantities
  *         are added to cs_cdo_quantities_flag (static variable)
  *

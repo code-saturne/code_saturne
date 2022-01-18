@@ -161,6 +161,17 @@ cs_connect_get_next_3_vertices(const cs_lnum_t   *f2e_ids,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the time elapsed to build the cs_cdo_connect_t structure
+ *
+ * \return the value of the time elapsed in ns
+ */
+/*----------------------------------------------------------------------------*/
+
+long long
+cs_cdo_connect_get_time_perfo(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and define a \ref cs_range_set_t structure and a
  *        \ref cs_interface_set_t structure for schemes with DoFs at vertices
  *

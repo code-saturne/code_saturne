@@ -118,6 +118,8 @@ typedef struct { /* These quantities are the integral of q on the plane
  * Static global variables
  *============================================================================*/
 
+static long long  cs_cdo_quantities_time = 0;
+
 /* Store in a flag which quantities have to be computed */
 
 cs_flag_t  cs_cdo_quantities_flag = 0;
@@ -993,6 +995,20 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the time elapsed to build the cs_cdo_quantities_t structure
+ *
+ * \return the value of the time elapsed in ns
+ */
+/*----------------------------------------------------------------------------*/
+
+long long
+cs_cdo_quantities_get_time_perfo(void)
+{
+  return cs_cdo_quantities_time;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set which quantities have to be computed. Additionnal quantities
  *         are added to cs_cdo_quantities_flag (static variable)
  *
@@ -1158,8 +1174,8 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                "<CDO/Quantities> Runtime", time_count.nsec*1e-9);
+
+  cs_cdo_quantities_time += time_count.nsec;
 
   return cdoq;
 }

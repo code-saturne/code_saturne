@@ -627,10 +627,10 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
 
-  CS_TIMER_COUNTER_ADD(time_count, domain->tcs, time_count);
+  CS_TIMER_COUNTER_ADD(domain->tca, domain->tca, time_count);
 
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                "<CDO> Total runtime", time_count.nsec*1e-9);
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-40s %9.3f s\n",
+                "<CDO/Boundary layer insertion> Runtime", time_count.nsec*1e-9);
   cs_cdo_finalize(domain);
 
   cs_mesh_extrude(m, e, interior_gc);

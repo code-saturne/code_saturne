@@ -83,6 +83,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 static int  _cdo_ts_id = -1;
+static long long  cs_cdo_setup_time = 0.;
+
 static cs_property_t  *cs_dt_pty = NULL;
 
 static bool _initialized_setup = false;
@@ -599,6 +601,42 @@ _log_setup(const cs_domain_t   *domain)
   cs_equation_system_log_setup();
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Summary of the performance monitoring for the major steps
+ *
+ * \param[in]   domain    pointer to the cs_domain_t structure to summarize
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_log_monitoring(const cs_domain_t   *domain)
+{
+  if (domain == NULL)
+    return;
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "\nSummary of the performance monitoring for the CDO part\n"
+                "------------------------------------------------------\n\n");
+
+  long long  connect_time = cs_cdo_connect_get_time_perfo();
+  long long  quant_time = cs_cdo_quantities_get_time_perfo();
+
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-38s Connect  Quantities  Total\n", " ");
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f %9.3f seconds\n",
+                "<CDO/Setup> Runtime", connect_time*1e-9, quant_time*1e-9,
+                cs_cdo_setup_time*1e-9);
+  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f seconds\n",
+                "<CDO/ExtraOperations> Runtime", domain->tcp.nsec*1e-9);
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n %-35s %9.3f seconds\n",
+                "<CDO> Total runtime", domain->tca.nsec*1e-9);
+
+  cs_equation_system_log_monitoring();
+
+  cs_equation_log_monitoring();
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -651,6 +689,7 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
 
   /* Timer statistics */
 
+  cs_timer_t t0 = cs_timer_time();
   _cdo_ts_id = cs_timer_stats_id_by_name("cdo");
   if (_cdo_ts_id < 0)
     _cdo_ts_id = cs_timer_stats_create("stages", "cdo", "cdo");
@@ -686,8 +725,6 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
 
   cs_boundary_def_wall_zones(domain->boundaries);
 
-  cs_timer_t t0 = cs_timer_time();
-
   /* First setup stage of the cs_domain_t structure
    * - Define extra domain boundaries
    * - Setup predefined equations
@@ -705,7 +742,7 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
 
-  CS_TIMER_COUNTER_ADD(domain->tcs, domain->tcs, time_count);
+  CS_TIMER_COUNTER_ADD(domain->tca, domain->tca, time_count);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -811,10 +848,8 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   _initialized_structures = true;
 
-  CS_TIMER_COUNTER_ADD(domain->tcs, domain->tcs, time_count);
-
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                "<CDO/Setup> Runtime", domain->tcs.nsec*1e-9);
+  CS_TIMER_COUNTER_ADD(domain->tca, domain->tca, time_count);
+  cs_cdo_setup_time += domain->tca.nsec;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -846,7 +881,7 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   /* Print monitoring information */
 
-  cs_equation_log_monitoring();
+  _log_monitoring(domain);
 
   /* Free memory related to equations */
 
@@ -1062,15 +1097,10 @@ cs_cdo_main(cs_domain_t   *domain)
 
   cs_user_physical_properties(domain);
 
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                "<CDO/Post> Runtime", domain->tcp.nsec*1e-9);
-
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
 
-  CS_TIMER_COUNTER_ADD(time_count, cs_glob_domain->tcs, time_count);
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                "<CDO> Total runtime", time_count.nsec*1e-9);
+  CS_TIMER_COUNTER_ADD(domain->tca, domain->tca, time_count);
 
   cs_timer_stats_stop(_cdo_ts_id);
   if (cs_glob_rank_id <= 0) {

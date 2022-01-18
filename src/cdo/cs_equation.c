@@ -1506,7 +1506,28 @@ cs_equation_needs_steady_state_solve(void)
 void
 cs_equation_log_monitoring(void)
 {
-  cs_log_printf(CS_LOG_PERFORMANCE, "%-36s %9s %9s %9s\n",
+  /* Check if there is something to output */
+
+  if (_n_equations < 1)
+    return;
+
+  bool  output = false;
+  for (int i = 0; i < _n_equations; i++) {
+
+    cs_equation_t  *eq = _equations[i];
+    const cs_equation_param_t  *eqp = eq->param;
+
+    if (eqp->flag & CS_EQUATION_INSIDE_SYSTEM)
+      continue;
+    else
+      output = true;
+
+  }
+
+  if (!output)
+    return;
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n%-36s %9s %9s %9s\n",
                 " ", "Build", "Solve", "Extra");
 
   for (int i = 0; i < _n_equations; i++) {
@@ -1516,7 +1537,7 @@ cs_equation_log_monitoring(void)
     /* Display high-level timer counter related to the current equation
        before deleting the structure */
 
-    cs_equation_write_monitoring(eq->param->name, eq->builder);
+    cs_equation_write_monitoring(eq->param, eq->builder);
 
   } /* Loop on equations */
 }

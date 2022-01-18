@@ -123,6 +123,7 @@ typedef struct {
 
   cs_equation_system_param_t   *param;
 
+  cs_timer_counter_t            timer;     /*!< Cumulated elapsed time */
   int                           timer_id;  /*!< Id of the timer statistics */
 
   /*!
@@ -268,6 +269,16 @@ cs_equation_system_destroy_all(void);
 
 void
 cs_equation_system_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print a synthesis of the monitoring information in the performance
+ *         file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_system_log_monitoring(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

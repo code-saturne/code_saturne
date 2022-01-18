@@ -222,7 +222,7 @@ cs_domain_create(void)
   /* Monitoring */
 
   CS_TIMER_COUNTER_INIT(domain->tcp); /* domain post */
-  CS_TIMER_COUNTER_INIT(domain->tcs); /* domain setup */
+  CS_TIMER_COUNTER_INIT(domain->tca); /* domain all op. */
 
   return domain;
 }

@@ -78,6 +78,8 @@ BEGIN_C_DECLS
 
 #define CS_CDO_CONNECT_DBG 0
 
+static long long cs_cdo_connect_time = 0;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -835,6 +837,20 @@ _assign_edge_ifs_rs(const cs_mesh_t       *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the time elapsed to build the cs_cdo_connect_t structure
+ *
+ * \return the value of the time elapsed in ns
+ */
+/*----------------------------------------------------------------------------*/
+
+long long
+cs_cdo_connect_get_time_perfo(void)
+{
+  return cs_cdo_connect_time;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and define a \ref cs_range_set_t structure and a
  *        \ref cs_interface_set_t structure for schemes with DoFs at vertices
  *
@@ -1219,8 +1235,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
-  cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f s\n",
-                "<CDO/Connectivity> Runtime", time_count.nsec*1e-9);
+  cs_cdo_connect_time += time_count.nsec;
 
   return connect;
 }

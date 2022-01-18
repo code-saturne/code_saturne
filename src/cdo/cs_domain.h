@@ -181,7 +181,7 @@ typedef struct {
 
   cs_timer_counter_t    tcp; /* Cumulated elapsed time for extra-operations
                                 and post-processing */
-  cs_timer_counter_t    tcs; /* Cumulated elapsed time for setup operations */
+  cs_timer_counter_t    tca; /* Cumulated elapsed time for all operations */
 
 } cs_domain_t;
 

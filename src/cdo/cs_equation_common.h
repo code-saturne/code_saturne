@@ -469,13 +469,13 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
  * \brief   Print a message in the performance output file related to the
  *          monitoring of equation
  *
- * \param[in]  eqname    pointer to the name of the current equation
- * \param[in]  eqb       pointer to a cs_equation_builder_t structure
+ * \param[in]  eqp    pointer to a set of equation parameters
+ * \param[in]  eqb    pointer to an equation builder  structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_write_monitoring(const char                    *eqname,
+cs_equation_write_monitoring(const cs_equation_param_t     *eqp,
                              const cs_equation_builder_t   *eqb);
 
 /*----------------------------------------------------------------------------*/

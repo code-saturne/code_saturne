@@ -172,7 +172,10 @@ _equation_system_create(int            n_eqs,
 
   eqsys->n_equations = n_eqs;
 
-  /* Set timer statistic structure to a default value */
+  /* Monitoring:
+   * Set timer statistic structure to a default value */
+
+  CS_TIMER_COUNTER_INIT(eqsys->timer);
 
   eqsys->timer_id = cs_timer_stats_id_by_name(sysname);
   if (eqsys->timer_id < 0)
@@ -340,6 +343,7 @@ cs_equation_system_log_setup(void)
     if (eqsys == NULL)
       continue;
 
+    cs_timer_t  t1 = cs_timer_time();
     if (eqsys->timer_id > -1)
       cs_timer_stats_start(eqsys->timer_id);
 
@@ -387,10 +391,40 @@ cs_equation_system_log_setup(void)
       }
     }
 
+    cs_timer_t  t2 = cs_timer_time();
+    cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);
     if (eqsys->timer_id > -1)
       cs_timer_stats_stop(eqsys->timer_id);
 
   } /* Loop on systems of equations */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print a synthesis of the monitoring information in the performance
+ *         file
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_system_log_monitoring(void)
+{
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n%-43s %9s\n", " ", "Total");
+
+  for (int i = 0; i < _n_equation_systems; i++) {
+
+    cs_equation_system_t  *eqsys = _equation_systems[i];
+    assert(eqsys != NULL);
+    cs_equation_system_param_t  *sysp = eqsys->param;
+
+    /* Display high-level timer counter related to the current equation
+       before deleting the structure */
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  " <CDO system/%20s> Runtime  %9.3f seconds\n",
+                  sysp->name, eqsys->timer.nsec*1e-9);
+
+  } /* Loop on equations */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -421,6 +455,7 @@ cs_equation_system_set_structures(cs_mesh_t             *mesh,
     if (eqsys->n_equations < 1)
       return;
 
+    cs_timer_t  t1 = cs_timer_time();
     if (eqsys->timer_id > -1)
       cs_timer_stats_start(eqsys->timer_id);
 
@@ -467,6 +502,8 @@ cs_equation_system_set_structures(cs_mesh_t             *mesh,
 
     } /* Switch on space scheme */
 
+    cs_timer_t  t2 = cs_timer_time();
+    cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);
     if (eqsys->timer_id > -1)
       cs_timer_stats_stop(eqsys->timer_id);
 
@@ -489,6 +526,7 @@ cs_equation_system_set_sles(void)
     if (eqsys == NULL)
       bft_error(__FILE__, __LINE__, 0, "%s: System not allocated.", __func__);
 
+    cs_timer_t  t1 = cs_timer_time();
     if (eqsys->timer_id > -1)
       cs_timer_stats_start(eqsys->timer_id);
 
@@ -496,6 +534,8 @@ cs_equation_system_set_sles(void)
                                  eqsys->param,
                                  eqsys->block_factories);
 
+    cs_timer_t  t2 = cs_timer_time();
+    cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);
     if (eqsys->timer_id > -1)
       cs_timer_stats_stop(eqsys->timer_id);
 
@@ -521,6 +561,7 @@ cs_equation_system_initialize(void)
 
     const int n_eqs = eqsys->n_equations;
 
+    cs_timer_t  t1 = cs_timer_time();
     if (eqsys->timer_id > -1)
       cs_timer_stats_start(eqsys->timer_id);
 
@@ -539,6 +580,8 @@ cs_equation_system_initialize(void)
 
     eqsys->init_structures(n_eqs, eqsys->block_factories);
 
+    cs_timer_t  t2 = cs_timer_time();
+    cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);
     if (eqsys->timer_id > -1)
       cs_timer_stats_stop(eqsys->timer_id);
 
@@ -561,6 +604,7 @@ cs_equation_system_solve(bool                     cur2prev,
   if (eqsys == NULL)
     return;
 
+  cs_timer_t  t1 = cs_timer_time();
   if (eqsys->timer_id > -1)
     cs_timer_stats_start(eqsys->timer_id);
 
@@ -588,6 +632,8 @@ cs_equation_system_solve(bool                     cur2prev,
 
   }
 
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);
   if (eqsys->timer_id > -1)
     cs_timer_stats_stop(eqsys->timer_id);
 }
@@ -610,6 +656,7 @@ cs_equation_system_assign_equation(int                       row_id,
   if (eqsys == NULL)
     return;
 
+  cs_timer_t  t1 = cs_timer_time();
   if (eqsys->timer_id > -1)
     cs_timer_stats_start(eqsys->timer_id);
 
@@ -630,6 +677,8 @@ cs_equation_system_assign_equation(int                       row_id,
 
   block_ii->param->flag |= CS_EQUATION_INSIDE_SYSTEM;
 
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);
   if (eqsys->timer_id > -1)
     cs_timer_stats_stop(eqsys->timer_id);
 }
@@ -657,6 +706,7 @@ cs_equation_system_assign_param(int                       row_id,
   if (eqp == NULL)
     return;
 
+  cs_timer_t  t1 = cs_timer_time();
   if (eqsys->timer_id > -1)
     cs_timer_stats_start(eqsys->timer_id);
 
@@ -690,6 +740,8 @@ cs_equation_system_assign_param(int                       row_id,
 
   eqsys->block_factories[row_id*n_eqs + col_id] = block_ij;
 
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);
   if (eqsys->timer_id > -1)
     cs_timer_stats_stop(eqsys->timer_id);
 }

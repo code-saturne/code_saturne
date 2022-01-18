@@ -756,29 +756,37 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
  * \brief   Print a message in the performance output file related to the
  *          monitoring of equation
  *
- * \param[in]  eqname    pointer to the name of the current equation
- * \param[in]  eqb       pointer to a cs_equation_builder_t structure
+ * \param[in]  eqp    pointer to a set of equation parameters
+ * \param[in]  eqb    pointer to an equation builder  structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_write_monitoring(const char                    *eqname,
+cs_equation_write_monitoring(const cs_equation_param_t     *eqp,
                              const cs_equation_builder_t   *eqb)
 {
+  if (eqb == NULL)
+    return;
+  if (eqp == NULL)
+    return;
+  if (eqp->flag & CS_EQUATION_INSIDE_SYSTEM)
+    return;
+
   double t[3] = {eqb->tcb.nsec, eqb->tcs.nsec, eqb->tce.nsec};
   for (int i = 0; i < 3; i++) t[i] *= 1e-9;
 
-  if (eqname == NULL)
-    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %10.4f %10.4f %10.4f (seconds)\n",
-                  "<CDO/Equation> Monitoring", t[0], t[1], t[2]);
+  if (eqp->name == NULL)
+    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f %9.3f seconds\n",
+                  "<CDO/Equation> Runtime", t[0], t[1], t[2]);
+
   else {
 
     char *msg = NULL;
-    int len = 1 + strlen("<CDO/> Monitoring") + strlen(eqname);
+    int len = 1 + strlen("<CDO/> Runtime") + strlen(eqp->name);
 
     BFT_MALLOC(msg, len, char);
-    sprintf(msg, "<CDO/%s> Monitoring", eqname);
-    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %10.4f %10.4f %10.4f (seconds)\n",
+    sprintf(msg, "<CDO/%s> Runtime", eqp->name);
+    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f %9.3f seconds\n",
                   msg, t[0], t[1], t[2]);
     BFT_FREE(msg);
 
