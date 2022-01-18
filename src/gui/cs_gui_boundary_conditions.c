@@ -1829,6 +1829,13 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
                                 value);
   }
 
+  else if (! strcmp(choice, "syrthes_coupling")) {
+    /* Handled locally, using legacy BC's for now.
+       To switch to an xdef-based definition, it will be necessary
+       to store the exchanged values in an array, as a coupling
+       can involve more than 1 zone. */
+  }
+
   else
     bft_error(__FILE__, __LINE__, 0,
               _("%s: zone %s, BC type %s for variable %s not handled."),
