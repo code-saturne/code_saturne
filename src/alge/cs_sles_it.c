@@ -4027,54 +4027,61 @@ cs_sles_it_log(const void  *context,
       n_it_mean = (int)(  c->n_iterations_tot
                          / ((unsigned long long)n_calls));
 
-    cs_log_printf(log_type,
-                  _("\n"
-                    "  Solver type:                   %s\n"),
-                  _(cs_sles_it_type_name[c->type]));
+    if (n_it_mean == 0)
+      cs_log_printf(log_type, _("\n  No resolution\n"));
 
-    if (c->pc != NULL)
+    else {
+
       cs_log_printf(log_type,
-                    _("  Preconditioning:               %s\n"),
-                    _(cs_sles_pc_get_type_name(c->pc)));
-    cs_log_printf(log_type,
-                  _("  Number of setups:              %12d\n"
-                    "  Number of calls:               %12d\n"
-                    "  Minimum number of iterations:  %12d\n"
-                    "  Maximum number of iterations:  %12d\n"
-                    "  Mean number of iterations:     %12d\n"
-                    "  Total setup time:              %12.3f\n"
-                    "  Total solution time:           %12.3f\n"),
-                  c->n_setups, n_calls, n_it_min, n_it_max, n_it_mean,
-                  c->t_setup.nsec*1e-9,
-                  c->t_solve.nsec*1e-9);
+                    _("\n"
+                      "  Solver type:                   %s\n"),
+                    _(cs_sles_it_type_name[c->type]));
 
-    if (c->fallback != NULL) {
+      if (c->pc != NULL)
+        cs_log_printf(log_type,
+                      _("  Preconditioning:               %s\n"),
+                      _(cs_sles_pc_get_type_name(c->pc)));
+      cs_log_printf(log_type,
+                    _("  Number of setups:              %12d\n"
+                      "  Number of calls:               %12d\n"
+                      "  Minimum number of iterations:  %12d\n"
+                      "  Maximum number of iterations:  %12d\n"
+                      "  Mean number of iterations:     %12d\n"
+                      "  Total setup time:              %12.3f\n"
+                      "  Total solution time:           %12.3f\n"),
+                    c->n_setups, n_calls, n_it_min, n_it_max, n_it_mean,
+                    c->t_setup.nsec*1e-9,
+                    c->t_solve.nsec*1e-9);
 
-      n_calls = c->fallback->n_solves;
-      n_it_min = c->fallback->n_iterations_min;
-      n_it_max = c->fallback->n_iterations_max;
-      n_it_mean = 0;
+      if (c->fallback != NULL) {
 
-      if (n_it_min < 0)
-        n_it_min = 0;
+        n_calls = c->fallback->n_solves;
+        n_it_min = c->fallback->n_iterations_min;
+        n_it_max = c->fallback->n_iterations_max;
+        n_it_mean = 0;
 
-      if (n_calls > 0)
-        n_it_mean = (int)(  c->fallback->n_iterations_tot
-                           / ((unsigned long long)n_calls));
+        if (n_it_min < 0)
+          n_it_min = 0;
 
-    cs_log_printf(log_type,
-                  _("\n"
-                    "  Backup solver type:            %s\n"),
-                  _(cs_sles_it_type_name[c->fallback->type]));
+        if (n_calls > 0)
+          n_it_mean = (int)(  c->fallback->n_iterations_tot
+                              / ((unsigned long long)n_calls));
 
-    cs_log_printf(log_type,
-                  _("  Number of calls:               %12d\n"
-                    "  Minimum number of iterations:  %12d\n"
-                    "  Maximum number of iterations:  %12d\n"
-                    "  Mean number of iterations:     %12d\n"
-                    "  Total solution time:           %12.3f\n"),
-                  n_calls, n_it_min, n_it_max, n_it_mean,
-                  c->fallback->t_solve.nsec*1e-9);
+        cs_log_printf(log_type,
+                      _("\n"
+                        "  Backup solver type:            %s\n"),
+                      _(cs_sles_it_type_name[c->fallback->type]));
+
+        cs_log_printf(log_type,
+                      _("  Number of calls:               %12d\n"
+                        "  Minimum number of iterations:  %12d\n"
+                        "  Maximum number of iterations:  %12d\n"
+                        "  Mean number of iterations:     %12d\n"
+                        "  Total solution time:           %12.3f\n"),
+                      n_calls, n_it_min, n_it_max, n_it_mean,
+                      c->fallback->t_solve.nsec*1e-9);
+
+      } /* If used */
 
     }
 
