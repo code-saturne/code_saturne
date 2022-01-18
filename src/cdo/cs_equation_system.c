@@ -370,8 +370,10 @@ cs_equation_system_log_setup(void)
 
     /* Log the setting of the extra-diagonal blocks */
 
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Settings for extra-diagonal blocks\n",
+    cs_log_printf(CS_LOG_SETUP,
+                  "\nSystem \"%s\": Settings for extra-diagonal blocks\n",
                   sysname);
+    cs_log_printf(CS_LOG_SETUP, "%s", cs_sep_h2);
 
     for (int i = 0; i < n_eqs; i++) {
       for (int j = 0; j < n_eqs; j++) {
@@ -384,8 +386,6 @@ cs_equation_system_log_setup(void)
         }
       }
     }
-
-    cs_log_printf(CS_LOG_SETUP, "%s\n\n", cs_sep_h1);
 
     if (eqsys->timer_id > -1)
       cs_timer_stats_stop(eqsys->timer_id);
