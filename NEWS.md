@@ -11,6 +11,10 @@ User changes:
 
 Bug fixes:
 
+- Fix restart with a previous mesh when new mesh is built from several files
+  (i.e. using a `mesh_input` directory at least temporarily). An incorrect
+  priority led to using the older mesh for computation in this case.
+
 - Fix anisotropic gradient reconstruction using Green-Gauss + LSQ face values.
 
 - Fix division of model-based thermal diffusivity by Cp for some models

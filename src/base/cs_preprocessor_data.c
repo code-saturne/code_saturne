@@ -186,9 +186,6 @@ _set_default_input_if_needed(void)
     if (cs_file_isreg(input_default))
       cs_preprocessor_data_add_file(input_default, 0, NULL, NULL);
 
-    else if (cs_file_isreg(cp_input_default))
-      cs_preprocessor_data_add_file(cp_input_default, 0, NULL, NULL);
-
     /* If not present, check without extension */
     else if (cs_file_isreg(input_default_noext))
       cs_preprocessor_data_add_file(input_default_noext, 0, NULL, NULL);
@@ -210,6 +207,10 @@ _set_default_input_if_needed(void)
       }
       BFT_FREE(dir_files);
     }
+
+    /* Now check for mesh_input in restart folder */
+    else if (cs_file_isreg(cp_input_default))
+      cs_preprocessor_data_add_file(cp_input_default, 0, NULL, NULL);
 
     else if (cs_file_isreg(cp_input_default_noext))
       cs_preprocessor_data_add_file(cp_input_default_noext, 0, NULL, NULL);
