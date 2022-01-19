@@ -132,6 +132,8 @@ main (int argc, char *argv[])
   sprintf(mem_trace_name, "cs_all_to_all_test_mem.%d", rank);
   bft_mem_init(mem_trace_name);
 
+#if defined(HAVE_MPI)
+
   cs_all_to_all_type_t a2at[5] = {CS_ALL_TO_ALL_MPI_DEFAULT,
                                   CS_ALL_TO_ALL_CRYSTAL_ROUTER,
                                   CS_ALL_TO_ALL_CRYSTAL_ROUTER,
@@ -337,6 +339,12 @@ main (int argc, char *argv[])
     BFT_FREE(src_val);
 
   }
+
+#else /* defined(HAVE_MPI) */
+
+  bft_printf("No all_to_all support in serial only mode.");
+
+#endif /* defined(HAVE_MPI) */
 
   bft_mem_end();
 
