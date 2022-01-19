@@ -15,6 +15,9 @@ Bug fixes:
   (i.e. using a `mesh_input` directory at least temporarily). An incorrect
   priority led to using the older mesh for computation in this case.
 
+- Fix crash in scripts when coupling with a Python script-based code
+  due to missing method.
+
 - Fix anisotropic gradient reconstruction using Green-Gauss + LSQ face values.
 
 - Fix division of model-based thermal diffusivity by Cp for some models
