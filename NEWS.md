@@ -3,6 +3,9 @@ Release 7.1.1 (not released yet)
 
 Bug fixes:
 
+- Fix crash in scripts when coupling with a Python script-based code
+  due to missing method.
+
 - Fix gradient reconstruction for anisotropic cases using
   Green-Gauss with least-squares gradient face values algorithm.
 

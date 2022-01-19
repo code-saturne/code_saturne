@@ -240,6 +240,13 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
+    def prepare_data(self):
+        """
+        Prepare data in the execution directory prior to run
+        """
+
+    #---------------------------------------------------------------------------
+
     def copy_result(self, name, purge=False):
         """
         Copy a file or directory to the results directory,
