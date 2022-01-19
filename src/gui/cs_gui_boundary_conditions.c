@@ -536,7 +536,7 @@ _b_mass_flow_to_vel(const cs_zone_t  *z,
         (__FILE__, __LINE__, 0,
          _("%s: cannot normalize requested mass flow (%g) for zone \"%s\"\n"
            "  with zero surface)."),
-         __func__, fabs(s[2]), z->name);
+         __func__, fabs(s[0]), z->name);
 
     return;
   }
