@@ -884,11 +884,11 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   _log_monitoring(domain);
 
-  /* Free memory related to equations */
+  /* Free the memory related to equations */
 
   cs_equation_destroy_all();
 
-  /* Free memory related to systems of equations */
+  /* Free the memory related to systems of equations */
 
   cs_equation_system_destroy_all();
 

@@ -211,7 +211,7 @@ typedef struct {
                                      which are in fact isolated */
 
   cs_gnum_t n_g_b_faces_all;       /*!< global number of boundary faces
-                                     inluding those ignored in FV schemes */
+                                     including those ignored in FV schemes */
   cs_lnum_t n_b_faces_all;         /*!< number of boundary faces including
                                      faces ignored in FV schemes */
 

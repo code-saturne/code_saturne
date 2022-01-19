@@ -589,8 +589,7 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Release shared structures among the activated class of discretization
- *         schemes
+ * \brief  Free shared local structures among the discretization schemes
  *
  * \param[in]  vb_scheme_flag   metadata for Vb schemes
  * \param[in]  vcb_scheme_flag  metadata for V+C schemes
@@ -738,7 +737,7 @@ cs_equation_solve_wrapper(bool                        cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the linear system for this equation
+ * \brief  Build the linear system for this equation (deprecated)
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure
  * \param[in, out]  eq          pointer to a cs_equation_t structure
@@ -751,7 +750,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the linear system for this equation
+ * \brief  Solve the linear system for this equation (deprecated)
  *
  * \param[in, out]  eq          pointer to a cs_equation_t structure
  */

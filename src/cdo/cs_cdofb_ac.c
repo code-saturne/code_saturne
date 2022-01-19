@@ -1163,7 +1163,6 @@ cs_cdofb_ac_set_sles(const cs_navsto_param_t    *nsp,
               "%s: Invalid strategy for solving the linear system %s\n",
               __func__, mom_eqp->name);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

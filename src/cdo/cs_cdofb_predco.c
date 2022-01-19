@@ -1040,7 +1040,6 @@ cs_cdofb_predco_set_sles(const cs_navsto_param_t    *nsp,
 
   corr_eqp->sles_param->field_id = cs_equation_get_field_id(nsc->correction);
   cs_equation_param_set_sles(corr_eqp);
-
 }
 
 /*----------------------------------------------------------------------------*/

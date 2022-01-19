@@ -161,6 +161,7 @@ extern const cs_flag_t  cs_flag_dual_cell;
 extern const cs_flag_t  cs_flag_dual_face_byc;
 
 /* Part of dual cell closure belonging to a boundary primal face */
+
 extern const cs_flag_t  cs_flag_dual_closure_byf;
 
 /* According to the extended flag defined below one can identify which set of
@@ -170,6 +171,7 @@ extern const cs_flag_t  cs_flag_dual_closure_byf;
 typedef unsigned int  cs_eflag_t;
 
 /* Store predefined flags */
+
 extern const cs_eflag_t  cs_flag_need_v;
 extern const cs_eflag_t  cs_flag_need_e;
 extern const cs_eflag_t  cs_flag_need_f;
@@ -184,63 +186,82 @@ extern const cs_eflag_t  cs_flag_need_pfc;
 typedef enum {
 
   /* Compute simple and cellwise information for vertices */
+
   CS_FLAG_COMP_PV      = 1 << 0,   /* = 1 */
 
   /* Compute cellwise quantities for vertices */
+
   CS_FLAG_COMP_PVQ     = 1 << 1,   /* = 2 */
 
   /* Compute simple and cellwise information for edges */
+
   CS_FLAG_COMP_PE      = 1 << 2,   /* = 4 */
 
   /* Compute cellwise quantities for edges */
+
   CS_FLAG_COMP_PEQ     = 1 << 3,   /* = 8 */
 
   /* Compute cellwise quantities for dual faces (associated to edges) */
+
   CS_FLAG_COMP_DFQ     = 1 << 4,   /* = 16 */
 
   /* Compute simple and cellwise information for faces */
+
   CS_FLAG_COMP_PF      = 1 << 5,   /* = 32 */
 
   /* Compute cellwise quantities for faces */
+
   CS_FLAG_COMP_PFQ     = 1 << 6,   /* = 64 */
 
   /* Compute cellwise quantities for dual edges (associated to faces) */
+
   CS_FLAG_COMP_DEQ     = 1 << 7,   /* = 128 */
 
   /* Compute the cellwise connectivity edge to vertices */
+
   CS_FLAG_COMP_EV      = 1 << 8,   /* = 256 */
 
   /* Compute cellwise connectivity face to edges */
+
   CS_FLAG_COMP_FE      = 1 << 9,   /* = 512 */
 
   /* Compute cellwise quantities associated to the couple (face, edge) */
+
   CS_FLAG_COMP_FEQ     = 1 << 10,  /* = 1024 */
 
   /* Compute cellwise connectivity face to vertices */
+
   CS_FLAG_COMP_FV      = 1 << 11,  /* = 2048 */
 
   /* Compute cellwise connectivity edge to faces */
+
   CS_FLAG_COMP_EF      = 1 << 12,  /* = 4096 */
 
   /* Compute elemental portion of dual faces associated to the couple
      (edge, face) */
+
   CS_FLAG_COMP_SEF     = 1 << 13,  /* = 8192 */
 
   /* Compute cellwise quantities related to the height of the pyramid with
      basis spanned by a face and with apex the cell center */
+
   CS_FLAG_COMP_HFQ     = 1 << 14,  /* = 16384 */
 
   /* Compute cellwise orientation of oriented edges belonging to a face */
+
   CS_FLAG_COMP_FES     = 1 << 15,  /* = 32768 */
 
   /* Compute cellwise quantities related to the volume of the pyramid with
      basis spanned by a face and with apex the cell center */
+
   CS_FLAG_COMP_PFC     = 1 << 16,  /* = 65536 */
 
   /* Compute cellwise quantities related to the volume surrounding an edge */
+
   CS_FLAG_COMP_PEC     = 1 << 17,  /* = 131072 */
 
   /* Compute cellwise diameters */
+
   CS_FLAG_COMP_DIAM    = 1 << 18,  /* = 262144 */
 
 } cs_flag_comp_bits_t;

@@ -73,7 +73,7 @@ typedef struct {
   cs_lnum_t    n_elts;
   cs_lnum_t   *idx;     /*!< index, or NULL if strided (size = n_elts + 1) */
   cs_lnum_t   *ids;     /*!< ids from 0 to n-1 (there is no multifold entry) */
-  short int   *sgn;     /*!< +/- 1 according to the orientation of the element */
+  short int   *sgn;     /*!< -/+1 according to the orientation of the element */
 
 } cs_adjacency_t;
 

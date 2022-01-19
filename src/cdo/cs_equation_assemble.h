@@ -132,7 +132,6 @@ cs_equation_build_matrix_assembler(cs_lnum_t                n_elts,
  *         the type of discretization used for this simulation
  *
  * \param[in]  connect      pointer to a cs_cdo_connect_t structure
- * \param[in]  time_step    pointer to a time step structure
  * \param[in]  eb_flag      metadata for Edge-based schemes
  * \param[in]  fb_flag      metadata for Face-based schemes
  * \param[in]  vb_flag      metadata for Vertex-based schemes

@@ -37,9 +37,6 @@
 #include "cs_equation_param.h"
 #include "cs_flag.h"
 #include "cs_matrix.h"
-#include "cs_time_step.h"
-#include "cs_timer.h"
-#include "cs_sles.h"
 #include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
@@ -76,7 +73,7 @@ typedef struct _equation_builder_t  cs_equation_builder_t;
 typedef void
 (cs_equation_user_hook_t)(const cs_equation_param_t     *eqp,
                           const cs_equation_builder_t   *eqb,
-                          const void                    *eq_context,
+                          const void                    *eqc,
                           const cs_cell_mesh_t          *cm,
                           cs_hodge_t                    *mass_hodge,
                           cs_hodge_t                    *diff_hodge,

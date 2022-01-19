@@ -189,7 +189,7 @@ cs_cdofb_monolithic_sles_set_shared(const cs_cdo_connect_t        *connect,
  * \brief  Start setting-up the Navier-Stokes equations when a monolithic
  *         algorithm is used to couple the system.
  *         No mesh information is available at this stage.
- *         nsp is not declared as cnost to avoid compilation warnings but
+ *         nsp is not declared as const to avoid compilation warnings but
  *         it should be modified at this stage.
  *
  * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure

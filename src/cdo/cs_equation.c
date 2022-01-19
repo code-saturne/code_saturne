@@ -1785,13 +1785,11 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
     } /* Vector-valued HHO schemes DoFs */
 
   } /* Face-based class of discretization schemes */
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Release shared structures among the activated class of discretization
- *         schemes
+ * \brief  Free shared local structures among the discretization schemes
  *
  * \param[in]  vb_scheme_flag   metadata for Vb schemes
  * \param[in]  vcb_scheme_flag  metadata for V+C schemes
@@ -1808,7 +1806,7 @@ cs_equation_unset_shared_structures(cs_flag_t    vb_scheme_flag,
                                     cs_flag_t    fb_scheme_flag,
                                     cs_flag_t    hho_scheme_flag)
 {
-  /* Free common structures specific to a numerical scheme */
+  /* Free common local structures specific to a numerical scheme */
 
   if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_cdovb_scaleq_finalize_common();
@@ -1846,7 +1844,6 @@ cs_equation_unset_shared_structures(cs_flag_t    vb_scheme_flag,
 
 void
 cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
-
 {
   if (_n_equations == 0)
     return;
@@ -2706,7 +2703,7 @@ cs_equation_define_core(const cs_equation_t    *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the linear system for this equation
+ * \brief  Build the linear system for this equation (deprecated)
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure
  * \param[in, out]  eq          pointer to a cs_equation_t structure
@@ -2749,7 +2746,7 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the linear system for this equation
+ * \brief  Solve the linear system for this equation (deprecated)
  *
  * \param[in, out]  eq          pointer to a cs_equation_t structure
  */
