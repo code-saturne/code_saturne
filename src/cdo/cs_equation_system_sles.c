@@ -158,8 +158,8 @@ cs_equation_system_sles_init(int                            n_eqs,
   switch (sysp->sles_strategy) {
 
   case CS_EQUATION_SYSTEM_SLES_MUMPS:
-#if defined(HAVE_MUMPS)
     {
+#if defined(HAVE_MUMPS)
       cs_equation_core_t  *block00 = blocks[0];
       cs_equation_param_t  *eqp00 = block00->param;
       cs_param_sles_t  *slesp00 = eqp00->sles_param;
