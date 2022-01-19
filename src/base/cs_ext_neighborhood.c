@@ -1139,6 +1139,8 @@ _neighborhood_reduce_anomax(cs_mesh_t             *mesh,
   const cs_real_t  cos_ij_fn_min = cos(non_ortho_max);
   const cs_real_t  *cell_cen = mesh_quantities->cell_cen;
 
+  enum {X, Y, Z};
+
   assert(mesh->dim == 3);
 
   if (non_ortho_max <= 0)

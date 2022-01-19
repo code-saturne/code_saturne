@@ -74,6 +74,8 @@ BEGIN_C_DECLS
 
 /* Geometric operation macros*/
 
+enum {X, Y, Z};
+
 #define _DOT_PRODUCT(vect1, vect2) \
   (vect1[X] * vect2[X] + vect1[Y] * vect2[Y] + vect1[Z] * vect2[Z])
 
