@@ -3,6 +3,9 @@ Release 7.1.1 (not released yet)
 
 Bug fixes:
 
+- Fix gradient reconstruction for anisotropic cases using
+  Green-Gauss with least-squares gradient face values algorithm.
+
 - Fix division of model-based thermal diffusivity by Cp for some models
   solving with enthalpy, including at least the electric arcs module.
 
@@ -24,11 +27,6 @@ Bug fixes:
 
 - Fix logging of compilation messages, which appeared in the
   calling terminal instead of `compile.log`.
-
-Bug fixes:
-
-- Fix gradient reconstruction for anisotropic cases using
-  Green-Gauss with least-squares gradient face values algorithm.
 
 Release 7.1.0 (December 21 2021)
 --------------------------------
