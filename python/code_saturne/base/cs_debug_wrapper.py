@@ -484,6 +484,7 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
         cmds.append('continue')
 
     cmds.append('b exit')
+    cmds.append('b MPI_Abort')
 
     # Start building debugger command options
 

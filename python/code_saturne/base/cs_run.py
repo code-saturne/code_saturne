@@ -156,6 +156,18 @@ def arg_parser(argv):
     parser.add_argument("--kw-args", nargs='*', action = multi_append,
                         help="additional keywords to pass to user scripts")
 
+    parser.add_argument("--debug-args", nargs='*', action = multi_append,
+                        help="additional commands and keywords for " \
+                        + "debug wrapper (see developer guide for options)")
+
+    parser.add_argument("--tool-args", nargs='*', action = multi_append,
+                        help="additional commands and keywords to run tool " \
+                        + "with solver (such as profiler)")
+
+    parser.add_argument("--mpi-tool-args", nargs='*', action = multi_append,
+                        help="additional commands and keywords to run tool " \
+                        + "(such as debugger or profiler) prefixing MPI launch")
+
     parser.add_argument("-p", "--param", dest="param", type=str,
                         metavar="<param>",
                         help="path or name of the parameters file")
@@ -358,7 +370,17 @@ def process_options(options, pkg):
            'n_procs': options.nprocs,
            'n_threads': options.nthreads,
            'time_limit': None,
-           'compute_build': compute_build}
+           'compute_build': compute_build,
+           'debug_args': None,
+           'tool_args': None,
+           'mpi_tool_args': None}
+
+    if options.debug_args:
+        r_c['debug_args'] = cs_exec_environment.assemble_args(options.debug_args)
+    if options.tool_args:
+        r_c['tool_args'] = cs_exec_environment.assemble_args(options.tool_args)
+    if options.mpi_tool_args:
+        r_c['mpi_tool_args'] = cs_exec_environment.assemble_args(options.mpi_tool_args)
 
     return r_c, s_c, run_conf
 
@@ -385,9 +407,10 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
 
     # Ensure some keys are set in all cases to simplify future tests
 
-    run_conf_kw= ('job_parameters', 'job_header',
-                  'run_prologue', 'run_epilogue',
-                  'compute_prologue', 'compute_epilogue')
+    run_conf_kw = ('job_parameters', 'job_header',
+                   'run_prologue', 'run_epilogue',
+                   'compute_prologue', 'compute_epilogue',
+                   'debug_args', 'tool_args', 'mpi_tool_args')
 
     for kw in run_conf_kw:
         if not kw in r_c:
@@ -550,7 +573,8 @@ def generate_run_config_file(path, resource_name, r_c, s_c, pkg):
             r_d[kw] = r_c[kw]
 
     for kw in ('job_parameters', 'job_header',
-               'compute_prologue', 'compute_epilogue'):
+               'compute_prologue', 'compute_epilogue',
+               'debug_args', 'tool_args', 'mpi_tool_args'):
         if r_c[kw]:
             r_d[kw] = r_c[kw]
 
@@ -654,16 +678,24 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
         print(r_c['run_id'])
         return 0, r_c['run_id'], None
 
+    # Check stages
+
     if submit_args != None:
         submit_stages = {'prepare_data': False}
         for s in ('initialize', 'run_solver', 'save_results'):
             submit_stages[s] = stages[s]
             stages[s] = False
 
+    # Set script hooks
+
     c.run_prologue = r_c['run_prologue']
     c.run_epilogue = r_c['run_epilogue']
     c.compute_prologue = r_c['compute_prologue']
     c.compute_epilogue = r_c['compute_epilogue']
+
+    c.debug_args = r_c['debug_args']
+    c.tool_args = r_c['tool_args']
+    c.mpi_tool_args = r_c['mpi_tool_args']
 
     # Now run case
 

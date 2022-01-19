@@ -230,32 +230,34 @@ class case:
         else:
             self.domains = [domains]
 
-        if syr_domains == None:
-            self.syr_domains = []
-        elif type(syr_domains) == tuple :
-            self.syr_domains = list(syr_domains)
-        elif type(syr_domains) == list:
-            self.syr_domains = syr_domains
-        else:
-            self.syr_domains = [syr_domains]
+        self.n_domains_native = self.domains  # code_saturne based domains
 
-        if py_domains == None:
-            self.py_domains = []
-        elif type(py_domains) == tuple:
-            self.py_domains = list(py_domains)
+        if type(syr_domains) == tuple :
+            self.domains += list(syr_domains)
+        elif type(syr_domains) == list:
+            self.domains += syr_domains
+        elif syr_domains:
+            self.domains += [syr_domains]
+
+        n_domains = len(self.domains)
+
+        if type(py_domains) == tuple:
+            self.domains += list(py_domains)
         elif type(py_domains) == list:
-            self.py_domains = py_domains
-        else:
-            self.py_domains = [py_domains]
+            self.domains += py_domains
+        elif py_domains:
+            self.domains = [py_domains]
+
+        self.n_domains_python = len(self.domains) - n_domains
+
+        n_domains = len(self.domains)
 
         # Check names in case of multiple domains (coupled by MPI)
-
-        n_domains = len(self.domains) + len(self.syr_domains) + len(self.py_domains)
 
         if n_domains > 1:
             err_str = 'In case of multiple domains (i.e. code coupling), ' \
                 + 'each domain must have a name.\n'
-            for d in (self.domains + self.syr_domains + self.py_domains):
+            for d in self.domains:
                 if d.name == None:
                     raise RunCaseError(err_str)
 
@@ -273,12 +275,7 @@ class case:
         if (os.path.isdir(os.path.join(case_dir, 'DATA')) and n_domains == 1):
             # Simple domain case from standard directory structure
             (self.study_dir, self.name) = os.path.split(case_dir)
-            if len(self.domains) == 1:
-                self.domains[0].name = None
-            elif len(self.syr_domains) == 1:
-                self.syr_domains[0].name = None
-            elif len(self.py_domains) == 1:
-                self.py_domains[0].name = None
+            self.domains[0].name = None
 
         else:
             # Coupling or single domain run from coupling script
@@ -290,7 +287,7 @@ class case:
 
         n_nc_solver = 0
 
-        for d in (self.domains + self.syr_domains + self.py_domains):
+        for d in self.domains:
             d.set_case_dir(self.case_dir, staging_dir)
             try:
                 solver_name = os.path.basename(d.solver_path)
@@ -300,7 +297,7 @@ class case:
                 pass
 
         self.module_name = 'code_saturne'
-        if n_nc_solver == len(self.domains):
+        if n_nc_solver == self.n_domains_native:
             self.module_name = 'neptune_cfd'
 
         # Working directory
@@ -311,15 +308,13 @@ class case:
         self.exec_solver = True
 
         n_exec_solver = 0
-        for d in ( self.domains + self.syr_domains \
-                 + self.py_domains):
+        for d in self.domains:
             if d.exec_solver:
                 n_exec_solver += 1
 
         if n_exec_solver == 0:
             self.exec_solver = False
-        elif n_exec_solver <   len(self.domains) + len(self.syr_domains) \
-                             + len(self.py_domains):
+        elif n_exec_solver < n_domains:
             err_str = 'In case of multiple domains (i.e. code coupling), ' \
                 + 'all or no domains must execute their solver.\n'
             raise RunCaseError(err_str)
@@ -330,6 +325,12 @@ class case:
         self.run_epilogue = None
         self.compute_prologue = None
         self.compute_epilogue = None
+
+        # Tool hooks
+
+        self.debug_args = None
+        self.tool_args = None
+        self.mpi_tool_args = None
 
         # Date or other name
 
@@ -366,49 +367,17 @@ class case:
         name = self.module_name
 
         for d in self.domains:
-            solver_name = os.path.basename(d.solver_path)
-            if solver_name == 'cs_solver':
-                name = 'code_saturne'
-            elif solver_name == 'nc_solver':
-                name = 'neptune_cfd'
-
             if len(self.domains) == 1:
                 if d.n_procs > 1:
-                    msg = ' Parallel ' + name + ' on ' \
+                    msg = ' Parallel ' + d.code_name + ' on ' \
                           + str(d.n_procs) + ' processes.\n'
                 else:
-                    msg = ' Single processor ' + name + ' simulation.\n'
+                    msg = ' Single processor ' + d.code_name + ' simulation.\n'
                 sys.stdout.write(msg)
             else:
-                msg = ' ' + name + ' domain ' + d.name + ' on ' \
+                msg = ' ' + d.code_name + ' domain "' + d.name + '" on ' \
                     + str(d.n_procs) + ' process(es).\n'
                 sys.stdout.write(msg)
-
-        if len(self.syr_domains) == 1:
-            if self.syr_domains[0].n_procs > 1:
-                msg = ' Parallel SYRTHES on ' \
-                    + str(self.syr_domains[0].n_procs) + ' processes.\n'
-            else:
-                msg = ' Single processor SYRTHES simulation.\n'
-            sys.stdout.write(msg)
-        else:
-            for d in self.syr_domains:
-                msg = ' SYRTHES domain ' + d.name + ' on ' \
-                    + str(d.n_procs) + ' processes.\n'
-                sys.stdout.write(msg)
-
-        if len(self.py_domains) == 1:
-            if self.py_domains[0].n_procs > 1:
-                msg = ' Parallel Python script on ' \
-                    + str(self.py_domains[0].n_procs) + ' processes.\n'
-            else:
-                msg = ' Single processor Python script simulation.\n'
-            sys.stdout.write(msg)
-        else:
-            for d in self.py_domains:
-                msg = ' Python script domain ' + d.name + ' on ' \
-                    + str(d.n_procs) + ' processes.\n'
-                sys.stdout(msg)
 
         sys.stdout.write('\n')
 
@@ -425,7 +394,7 @@ class case:
 
         np_list = []
 
-        for d in (self.domains + self.syr_domains + self.py_domains):
+        for d in self.domains:
             np_list.append(d.get_n_procs())
 
         n_procs_tot = 0
@@ -525,7 +494,7 @@ class case:
 
         app_id = 0
 
-        for d in (self.domains + self.syr_domains + self.py_domains):
+        for d in self.domains:
             d.set_n_procs(np_list[app_id][0])
             app_id += 1
 
@@ -588,7 +557,7 @@ class case:
 
         # Set execution directory
 
-        for d in (self.domains + self.syr_domains + self.py_domains):
+        for d in self.domains:
             d.set_exec_dir(self.exec_dir)
 
     #---------------------------------------------------------------------------
@@ -604,8 +573,7 @@ class case:
         r = os.path.join(base_dir, 'RESU')
 
         # Coupled case
-        if len(self.domains) + len(self.syr_domains) \
-         + len(self.py_domains) > 1:
+        if len(self.domains) > 1:
             r += '_COUPLING'
 
         if not os.path.isdir(r):
@@ -630,7 +598,7 @@ class case:
         else:
             os.mkdir(self.result_dir)
 
-        for d in (self.domains + self.syr_domains + self.py_domains):
+        for d in self.domains:
             d.set_result_dir(self.run_id, self.result_dir)
 
     #---------------------------------------------------------------------------
@@ -686,7 +654,7 @@ class case:
             s.write('\n')
         s.write(hline)
 
-        if len(self.domains) + len(self.syr_domains) + len(self.py_domains)  > 1:
+        if len(self.domains) > 1:
             s.write('  Exec. dir.     : ' + self.exec_dir + '\n')
             s.write(hline)
 
@@ -697,7 +665,7 @@ class case:
             s.write('    ' + k + '=' + os.environ[k] + '\n')
         s.write(hline)
 
-        for d in (self.domains + self.syr_domains + self.py_domains):
+        for d in self.domains:
             d.summary_info(s)
             s.write(hline)
 
@@ -792,7 +760,27 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def generate_solver_mpmd_mpiexec(self, n_procs, mpi_env):
+    def debug_wrapper_args(self):
+        """
+        Additional arguments to use debug wrapper
+        """
+        debug_args = ''
+        python_exec = self.package.config.python
+        if os.path.isfile(python_exec) or os.path.islink(python_exec):
+            debug_args += python_exec + ' '
+        else:
+            debug_args += 'python '
+        cs_pkg_dir = self.package.get_dir('pkgpythondir')
+        if self.package.name != 'code_saturne':
+            cs_pkg_dir = os.path.join(cs_pkg_dir, '../code_saturne')
+        dbg_wrapper_path = os.path.join(cs_pkg_dir,
+                                        'base', 'cs_debug_wrapper.py')
+        debug_args += dbg_wrapper_path + ' '
+        return debug_args
+
+    #---------------------------------------------------------------------------
+
+    def generate_solver_mpmd_mpiexec(self, n_procs, mpi_env, tool_args=''):
         """
         Generate MPMD mpiexec command.
         """
@@ -801,38 +789,23 @@ class case:
 
         app_id = 0
 
-        for d in self.syr_domains:
-            s_args = d.solver_command()
-            if len(cmd) > 0:
-                cmd += ' : '
-            cmd += '-n ' + str(d.n_procs) \
-                + ' -wdir ' + os.path.basename(s_args[0]) \
-                + ' ' + s_args[1] + s_args[2]
-            app_id += 1
-
         for d in self.domains:
             s_args = d.solver_command()
             if len(cmd) > 0:
                 cmd += ' : '
             cmd += '-n ' + str(d.n_procs) \
                 + ' -wdir ' + os.path.basename(s_args[0]) \
-                + ' ' + s_args[1] + s_args[2]
-            app_id += 1
-
-        for d in self.py_domains:
-            s_args = d.solver_command()
-            if len(cmd) > 0:
-                cmd += ' : '
-            cmd += '-n ' + str(d.n_procs) \
-                + ' -wdir ' + os.path.basename(s_args[0]) \
-                + ' ' + s_args[1] + s_args[2]
+                + ' ' + tool_args + s_args[1] + s_args[2]
             app_id += 1
 
         return cmd
 
     #---------------------------------------------------------------------------
 
-    def generate_solver_mpmd_configfile(self, n_procs, mpi_env):
+    def generate_solver_mpmd_configfile(self,
+                                        n_procs,
+                                        mpi_env,
+                                        tool_args=''):
         """
         Generate MPMD mpiexec config file.
         """
@@ -842,11 +815,11 @@ class case:
 
         app_id = 0
 
-        for d in (self.syr_domains + self.domains + self.py_domains):
+        for d in self.domains:
             s_args = d.solver_command()
             cmd = '-n ' + str(d.n_procs) \
                 + ' -wdir ' + os.path.basename(s_args[0]) \
-                + ' ' + s_args[1] + s_args[2] + '\n'
+                + ' ' + tool_args + s_args[1] + s_args[2] + '\n'
             e.write(cmd)
             app_id += 1
 
@@ -856,7 +829,10 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def generate_solver_mpmd_configfile_srun(self, n_procs, mpi_env):
+    def generate_solver_mpmd_configfile_srun(self,
+                                             n_procs,
+                                             mpi_env,
+                                             tool_args=''):
         """
         Generate MPMD mpiexec config file for SLURM's srun.
         """
@@ -870,28 +846,12 @@ class case:
 
         rank_id = 0
 
-        for d in (self.syr_domains + self.domains):
-            s_args = d.solver_command()
-            if s_args[1][0:2] == './':
-                s_path = os.path.join(s_args[0], s_args[1])
-                s_path = './' + os.path.relpath(s_path, self.exec_dir)
-            else:
-                s_path = s_args[1]
+        for d in self.domains:
+            s_args = d.solver_command(need_abs_path=True)
+
             cmd = '%d-%d\t' % (rank_id, rank_id + d.n_procs - 1) \
-                   + s_path + s_args[2] \
+                   + tool_args + s_args[1] + s_args[2] \
                    + ' -wdir ' + os.path.basename(s_args[0]) + '\n'
-            e.write(cmd)
-            rank_id += d.n_procs
-
-        for d in self.py_domains:
-            s_args = d.solver_command()
-            _pypath, _pyscript = s_args[1].split(" ")
-            _rundir = os.path.basename(s_args[0])
-
-            cmd  = '%d-%d\t' % (rank_id, rank_id + d.n_procs - 1)
-            cmd += '%s %s/%s\t' % (_pypath, _rundir, _pyscript)
-            cmd += s_args[2]
-            cmd += ' -wdir %s' % _rundir
 
             e.write(cmd)
             rank_id += d.n_procs
@@ -902,7 +862,10 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def generate_solver_mpmd_script(self, n_procs, mpi_env, use_mps=False):
+    def generate_solver_mpmd_script(self, n_procs,
+                                    mpi_env,
+                                    tool_args='',
+                                    use_mps=False):
         """
         Generate MPMD dispatch file.
         """
@@ -929,32 +892,12 @@ class case:
         test_pf = 'if [ $MPI_RANK -lt '
         test_sf = ' ] ; then\n'
 
-        for d in self.syr_domains:
-            nr += d.n_procs
-            e.write(test_pf + str(nr) + test_sf)
-            s_args = d.solver_command()
-            e.write('  cd ' + s_args[0] + '\n')
-            e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
-            if app_id == 0:
-                test_pf = 'el' + test_pf
-            app_id += 1
-
         for d in self.domains:
             nr += d.n_procs
             e.write(test_pf + str(nr) + test_sf)
             s_args = d.solver_command()
             e.write('  cd ' + s_args[0] + '\n')
-            e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
-            if app_id == 0:
-                test_pf = 'el' + test_pf
-            app_id += 1
-
-        for d in self.py_domains:
-            nr += d.n_procs
-            e.write(test_pf + str(nr) + test_sf)
-            s_args = d.solver_command()
-            e.write('  cd ' + s_args[0] + '\n')
-            e.write('  ' + s_args[1] + s_args[2] + ' $@\n')
+            e.write('  ' + tool_args + s_args[1] + s_args[2] + ' $@\n')
             if app_id == 0:
                 test_pf = 'el' + test_pf
             app_id += 1
@@ -985,11 +928,13 @@ class case:
         # Determine if an MPMD syntax (mpiexec variant) will be used
 
         mpiexec_mpmd = False
-        if len(self.domains) + len(self.syr_domains) + len(self.py_domains) > 1:
+        if len(self.domains) > 1:
             if mpi_env.mpmd & cs_exec_environment.MPI_MPMD_mpiexec:
                 mpiexec_mpmd = True
             elif mpi_env.mpmd & cs_exec_environment.MPI_MPMD_configfile:
                 mpiexec_mpmd = True
+
+        use_srun = False
 
         # Start assembling command
 
@@ -997,9 +942,14 @@ class case:
         mpi_cmd_exe = ''
         mpi_cmd_args = ''
 
+        if self.mpi_tool_args:
+            mpi_cmd = self.mpi_tool_args + ' '
+
         if mpi_env.mpiexec != None:
-            if (n_procs > 1 or os.path.basename(mpi_env.mpiexec)[:4] == 'srun'):
-                mpi_cmd = mpi_env.mpiexec
+            if os.path.basename(mpi_env.mpiexec)[:4] == 'srun':
+                use_srun = True
+            if (n_procs > 1 or use_srun):
+                mpi_cmd += mpi_env.mpiexec
 
         if mpi_cmd:
             if mpi_env.mpiexec_opts != None:
@@ -1020,6 +970,17 @@ class case:
                 mpi_cmd += ' '
 
         mpmd = mpi_env.mpmd
+        if use_srun:
+            mpmd = cs_exec_environment.MPI_MPMD_configfile
+
+        # Additional (rank local) tool-related arguments
+
+        tool_args = ''
+
+        if self.tool_args:
+            tool_args = self.tool_args + ' '
+        if self.debug_args:
+            tool_args += self.debug_wrapper_args() + self.debug_args + ' '
 
         # Check if we need MPS. If this is the case, force the
         # MPMD mode to script.
@@ -1033,14 +994,14 @@ class case:
 
         # Case with only one cs_solver instance possibly under MPI
 
-        n_domains = len(self.domains) + len(self.syr_domains) + len(self.py_domains)
+        n_domains = len(self.domains)
 
         if n_domains == 1 and not use_mps:
 
             s_args = self.domains[0].solver_command()
 
             cs_exec_environment.write_script_comment(s, 'Run solver.\n')
-            s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2])
+            s.write(mpi_cmd + mpi_cmd_args + tool_args + s_args[1] + s_args[2])
             s.write(' ' + cs_exec_environment.get_script_positional_args() +
                     '\n')
 
@@ -1054,18 +1015,21 @@ class case:
                     mpi_cmd += mpi_env.mpiexec_separator + ' '
 
                 e_path = self.generate_solver_mpmd_mpiexec(n_procs,
-                                                           mpi_env)
+                                                           mpi_env,
+                                                           tool_args)
 
             elif mpmd & cs_exec_environment.MPI_MPMD_configfile:
 
                 if mpi_env.mpiexec == 'srun':
                     e_path = self.generate_solver_mpmd_configfile_srun(n_procs,
-                                                                       mpi_env)
+                                                                       mpi_env,
+                                                                       tool_args)
                     mpi_cmd += '--multi-prog ' + e_path
 
                 else:
                     e_path = self.generate_solver_mpmd_configfile(n_procs,
-                                                                  mpi_env)
+                                                                  mpi_env,
+                                                                  tool_args)
                     mpi_cmd += '-configfile ' + e_path
 
                 e_path = ''
@@ -1075,7 +1039,8 @@ class case:
                 if mpi_env.mpiexec_separator != None:
                     mpi_cmd += mpi_env.mpiexec_separator + ' '
 
-                e_path = self.generate_solver_mpmd_script(n_procs, mpi_env, use_mps)
+                e_path = self.generate_solver_mpmd_script(n_procs, mpi_env,
+                                                          tool_args, use_mps)
 
             else:
                 raise RunCaseError(' No allowed MPI MPMD mode defined.\n')
@@ -1104,7 +1069,7 @@ class case:
 
         if n_procs == None:
             n_procs = 0
-            for d in (self.syr_domains + self.py_domains):
+            for d in self.domains:
                 n_procs += d.n_procs
 
         # Set PATH for Windows DLL search PATH
@@ -1154,7 +1119,7 @@ class case:
                         s.write('\n')
 
         # Handle python coupling
-        if self.py_domains:
+        if self.n_domains_python > 0:
             cs_exec_environment.write_script_comment(s, \
                 'Export paths necessary for python coupling.\n')
             pydir = self.package_compute.get_dir("pythondir")
@@ -1472,7 +1437,7 @@ class case:
                          '--------------------------\n\n')
         sys.stdout.flush()
 
-        for d in (self.domains + self.syr_domains + self.py_domains):
+        for d in self.domains:
             d.prepare_data()
             if len(d.error) > 0:
                 self.error = d.error
@@ -1518,17 +1483,6 @@ class case:
         os.chdir(self.exec_dir)
 
         for d in self.domains:
-            solver = os.path.basename(d.solver_path)
-            if os.path.isfile(os.path.join(d.exec_dir, solver)):
-                d.solver_path = os.path.join('.', solver)
-            d.init_staged_data()
-
-        for d in self.syr_domains:
-            d.solver_path = os.path.join('.', 'syrthes')
-            d.init_staged_data()
-
-        for d in self.py_domains:
-            d.solver_path = self.package.config.python
             d.init_staged_data()
 
     #---------------------------------------------------------------------------
@@ -1561,8 +1515,7 @@ class case:
         # resource manager, method argument).
 
         n_procs_default = None
-        if len(self.domains) == 1 and len(self.syr_domains) == 0 \
-           and len(self.py_domains) == 0:
+        if len(self.domains) == 1:
             d = self.domains[0]
             if hasattr(d, 'case_n_procs'):
                 n_procs_default = int(d.case_n_procs)
@@ -1577,17 +1530,6 @@ class case:
 
         if mpiexec_options != None:
             exec_env.mpi_env.mpiexec_opts = mpiexec_options
-
-        # Transfer parameters MPI parameters from user scripts here.
-
-        if len(self.domains) == 1 and len(self.syr_domains) == 0 \
-           and len(self.py_domains) == 0:
-            d = self.domains[0]
-            if d.user_locals:
-                m = 'define_mpi_environment'
-                if m in d.user_locals.keys():
-                    eval(m + '(exec_env.mpi_env)', locals(), d.user_locals)
-                    del d.user_locals[m]
 
         # Compute number of processors.
 
@@ -1607,7 +1549,7 @@ class case:
 
         self.summary_init(exec_env)
 
-        for d in (self.domains + self.syr_domains + self.py_domains):
+        for d in self.domains:
             d.preprocess()
             if len(d.error) > 0:
                 self.error = d.error
@@ -1699,27 +1641,34 @@ class case:
 
         if self.error == 'solver':
 
-            if len(self.syr_domains) > 0:
-                err_str = \
-                    'Error running the coupled calculation.\n\n' \
-                    'Either ' + name + ' or SYRTHES may have failed.\n\n' \
-                    'Check ' + name + ' log (listing) and SYRTHES log (syrthes.log)\n' \
-                    'for details, as well as error* files.\n\n'
-            elif len(self.py_domains) > 0:
-                err_str = \
-                    'Error running the coupled calculation.\n\n' \
-                    'Either ' + name + ' or Python script may have failed.\n\n' \
-                    'Check ' + name + ' log (listing) and Python log (python.log)\n' \
-                    'for details, as well as error* files.\n\n'
-            else:
+            if len(self.domains) == 1:
                 err_str = \
                     'Error running the calculation.\n\n' \
-                    'Check ' + name + ' log (listing) and error* files for details.\n\n'
+                    'Check run_solver.log and error* files for details.\n\n'
+
+            else:
+                err_str = \
+                    'Error running the coupled calculation.\n\n' \
+                    'Either of the coupled codes may have failed.\n\n' \
+                    'Check the following log files for details.\n\n'
+
+            for d in self.domains:
+                err_str += \
+                    'Domain ' + str(d.name) + ' (' + d.code_name + '):\n'
+                if d.code_name in ('code_saturne', 'neptune_cfd'):
+                    err_str += '  run_solver.log, error*.\n\n'
+                elif d.code_name == 'SYRTHES':
+                    err_str += '  syrthes.log / listing\n\n'
+                elif d.code_name == 'Python script':
+                    err_str += '  python.log / listing\n\n'
+                else:
+                    err_str += '  available log files\n\n'
+
             sys.stderr.write(err_str)
 
             # Update error status for domains
 
-            for d in (self.domains + self.syr_domains + self.py_domains):
+            for d in self.domains:
                 d.error = self.error
 
         # Indicate status using temporary file for SALOME.
@@ -1755,7 +1704,7 @@ class case:
         self.summary_finalize()
         self.copy_log('summary')
 
-        n_domains = len(self.domains) + len(self.syr_domains) + len(self.py_domains)
+        n_domains = len(self.domains)
         if n_domains > 1 and self.error == '':
             dir_files = os.listdir(self.exec_dir)
             for f in [self.package.runsolver,
@@ -1767,7 +1716,7 @@ class case:
                         pass
 
         e_caption = None
-        for d in (self.domains + self.syr_domains + self.py_domains):
+        for d in self.domains:
             d.copy_results()
             if d.error:
                 e_caption = d.error
@@ -1924,7 +1873,9 @@ class case:
             sys.stdout.write(msg)
 
         if notebook_args:
-            for d in (self.domains):
+            for d in self.domains:
+                if not hasattr(d, "notebook"):
+                    continue
                 if d.notebook == None:
                     d.notebook = notebook_args
                 else:
@@ -1933,7 +1884,9 @@ class case:
                     sys.stderr.write(err_str)
 
         if parametric_args:
-            for d in (self.domains):
+            for d in self.domains:
+                if not hasattr(d, "parametric_args"):
+                    continue
                 if d.parametric_args == None:
                     d.parametric_args = parametric_args
                 else:
@@ -1942,7 +1895,7 @@ class case:
                     sys.stderr.write(err_str)
 
         if kw_args:
-            for d in (self.domains + self.syr_domains + self.py_domains):
+            for d in self.domains:
                 if d.kw_args == None:
                     d.kw_args = kw_args
                 else:
@@ -2036,8 +1989,7 @@ class case:
 
         r = os.path.join(base_dir, 'RESU')
 
-        if len(self.domains) + len(self.syr_domains) \
-         + len(self.py_domains) > 1:
+        if len(self.domains) > 1:
             r += '_COUPLING'
         elif len(self.domains) == 1 and not (run_id_prefix or run_id_suffix):
             try:

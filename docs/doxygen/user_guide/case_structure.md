@@ -547,7 +547,7 @@ using one of several keywords:
 * `job_header_file`
 
    Defines the path to a file that contains the job header to insert
-   (ohtherwise as above). Either an  absolute or relative (to `run.cfg`)
+   (otherwise as above). Either an  absolute or relative (to `run.cfg`)
    path may be used.
 
 * `jobmanager`
@@ -596,6 +596,28 @@ additional environment variables. The associated key names are:
   after the main solver execution, and is restricted to the computation
   environment; it is thus usually preferred to `run_epilogue` when both
   could be used.
+
+* `debug_args`
+
+   Allows running the solver through a debugger using a wrapper to
+   allow simple handling of options and arguments (see
+   [section in developer guide](@ref code_saturne_debug_launch_set)
+   for more details).
+
+* `tool_args`
+
+   Allows running the solver through a tool whose command-line
+   arguments can be passed before those of the solver executable.
+   This is similar to `debug_args`, but with no transformation of the
+   given arguments.
+
+* `mpi_tool_args`
+
+   Allows running the solver through a tool whose command-line
+   arguments can be passed before those of the MPI launch command.
+   This is similar to `tool_args`, but prefixes the MPI command
+   when it is present, so should be used for tools designed to
+   integrate with MPI, such as parallel debuggers.
 
 ### [${coupled_case_name}] {#case_structure_coupling_options}
 <!-- -->

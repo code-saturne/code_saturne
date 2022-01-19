@@ -493,7 +493,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         # Advanced options
 
-        self.debug = self.mdl.getString('debug')
+        self.debug = self.job_dict['debug_args']
         if self.debug is not None:
             self.lineEdit_tool.setText(str(self.debug))
 
@@ -700,7 +700,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         self.mdl.setTrace(self.trace_iter)
         self.mdl.setLogParallel(self.log_parallel)
-        self.mdl.setString('debug', self.debug.strip())
 
         # Apply state
 
@@ -786,6 +785,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Input for Debug.
         """
         self.debug = str(text)
+        self.job_dict['debug_args'] = self.debug.strip()
 
 
     @pyqtSlot()

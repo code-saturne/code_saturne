@@ -34,9 +34,6 @@ import os, sys, string
 
 from optparse import OptionParser
 
-if not hasattr(sys, 'version_info') or sys.version_info <= (2, 4, 0, 'final'):
-    raise SystemExit("Graphical user interface requires python 2.4 or later.")
-
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------

@@ -1,6 +1,12 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Architectural changes:
+
+- Debug wrapper and other tool wrappers are now configured in the
+  `run.cfg` file, and can be directly defined through the
+  `code_saturne run` command-line arguments.
+
 Bug fixes:
 
 - Fix gradient reconstruction for anisotropic cases using

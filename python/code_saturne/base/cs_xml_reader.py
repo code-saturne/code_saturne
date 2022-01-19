@@ -356,10 +356,6 @@ class Parser:
         if logging_args:
             self.dict['logging_args'] = logging_args
 
-        val = getDataFromNode(calc_node, 'debug')
-        if val:
-            self.dict['debug'] = val
-
     #---------------------------------------------------------------------------
 
     def getParams(self):

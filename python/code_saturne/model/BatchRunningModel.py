@@ -150,6 +150,9 @@ class BatchRunningModel(object):
         if not self.have_openmp:
             self.job_dict['n_threads'] = None
 
+        if self.job_dict['debug_args'] == '':
+            self.job_dict['debug_args'] = None
+
         if not self.run_conf:
             return
 
@@ -213,6 +216,8 @@ class BatchRunningModel(object):
                                                          'n_procs')
         self.job_dict['n_threads'] = self.run_conf.get_int(self.resource_name,
                                                            'n_threads')
+        self.job_dict['debug_args'] = self.run_conf.get(self.resource_name,
+                                                        'debug_args')
 
         self.job_header_lines = None
 

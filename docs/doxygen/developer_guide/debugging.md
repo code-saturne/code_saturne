@@ -398,34 +398,129 @@ as division by zero, some memory errors, integer overflows, and more.
 Application to code_saturne
 ===========================
 
-Starting code_saturne under a debugger
---------------------------------------
+Starting the code_saturne solver under a debugger  {#code_saturne_debug_launch_set}
+-------------------------------------------------
 
-Several ways of running code_saturne under a debugger are possible:
+Several ways of setting code_saturne to run under a debugger are possible:
 
-- Using the GUI or the <span style="color: rgb(0,91,187)">`domain.debug`</span>
-  setting in <span style="color: rgb(0,91,187)">`cs_user_scripts.py`</span> to
-  automatically run the code under a debugger.
-
-  * Set options in
+- Using the GUI, set options in
     <span style="color: rgb(0,91,187)">Run computation/Advanced options`</span>
 
-  * As for regular runs, this will create a new directory under
-    <span style="color: rgb(0,91,187)">`RESU`</span> for each run and test.
+  * The associated help provides several examples
 
-- Preparing a run directory using
-  <span style="color: rgb(48,119,16)">`code_saturne run [options] –initialize`</span>
-  then running the debugger manually from the run directory.
+  * This sets a <span style="color: rgb(0,91,187)">`debug_args`</span> option
+    under the current resources section in the case's
+     <span style="color: rgb(0,91,187)">`run.cfg`</span> file, which
+    can also be edited directly.
 
-  * If the code has crashed during a previous run, this is not necessary,
-    as the matching run directory remains in a initialized state.
-
-- Combining both approaches:
-
-  * Prepare a first run using the GUI or user script to handle the
-    debugger syntax, then (re-)run the debugger manually.
+- The same options can be provided directly to
+  <span style="color: rgb(48,119,16)">`code_saturne run`</span>
+  using the <span style="color: rgb(0,91,187)">`--debug-args`</span> option
 
 \image html dg/debug_wrapper.png "Example of use of debugger wrapper" width=60%
+
+When the code is run, the debugger will then be launched automatically.
+
+Arguments required by the debug wrapper
+---------------------------------------
+
+To run the execution under a debugger, a string with the following syntax
+structure should be used:
+  ```
+  <debugger> [debugger_options] [valgrind [[valgrind_options]]
+  ```
+
+Or, for Valgrind only:
+
+  ```
+  <valgrind> [valgrind options]
+  ```
+
+where `< >` denote required arguments, and `[ ]` optional arguments.
+
+
+The following debuggers and user interfaces are handled:
+**gdb** (GNU Debugger), **cuda-gdb**, **cgdb** (console-front-end to gdb),
+**gdbgui** (browser-based frontend to gdb), **ddd** (Data Display Debugger),
+**emacs** (as gdb front-end), **kdbg** (KDbg),
+**kdevelop** (KDE developement environment),
+**gede** (simple Qt-based gdb GUI), **nemiver** (GNOME Nemiver debugger),
+**valgrind** (Valgrind tools for memory debugging).
+
+If a debugger may not be found in the PATH, an absolute path should be given instead.
+
+The following debug wrapper options are handled:
+
+<table>
+<tr><td> `--asan-bp`          <td> adds a breakpoint for gcc's Address-Sanitizer
+<tr><td> `--back-end=gdb`     <td> path to debugger back-end (for graphical front-ends)
+<tr><td> `--breakpoints=LIST` <td> comma-separated list of breakpoints to insert
+<tr><td> `--ranks=LIST`       <td> comma-separated list of MPI ranks to debug
+<tr><td> `--terminal`         <td> terminal type to use for console debugger
+</table>
+
+Other, standard options specific to each debugger may also be used, as long as they
+do not conflict with options in this wrapper
+
+To combine a Valgrind tool with another debugger, Valgrind's `--vgdb-error=<num>`
+option should be used, where `<num>` is the number of errors after which Valgrind's
+gdb server should be invoked. This mode is only compatible with the following
+debuggers: gdb, gdbgui, ddd, emacs, as the other debugger front-ends do not provide
+the required startup options to connect with the gdb server.
+
+Note that compared to a standalone use of the gdb debugger, running under
+the debug wrapper automatically sets breakpoints at program start and end
+and launch the program.
+
+To define commands such as setting breakpoints, a small gdb script with
+the `.gdb` extension is generated for each rank. It can be removed safely
+after program start.
+
+When running in parallel, several debugging windows will be opened if necessary.
+
+### Example commands:
+
+To simply run using the gdb debugger:
+```
+gdb
+```
+
+To run Valgrind's gdb server, stopping at the second error in the terminal:
+```
+--terminal=gnome-terminal gdb valgrind --vgdb-error=1
+```
+
+To run Valgrind's gdb server, stopping at the second error:
+```
+gdb valgrind --vgdb-error=1
+```
+
+Do do the same using the ddd front-end:
+```
+ddd valgrind --vgdb-error=1
+```
+
+To run under gdb with preset brekpoints at bft_error and exit functions:
+```
+gdb --asan-bp --breakpoints=bft_error,exit
+```
+
+To debug under gdbgui:
+```
+gdbgui
+```
+
+To run under Valgrind's default tool (Memcheck), with a user Valgrind build
+```
+<path_to_valgrind> --tool=massif
+```
+
+To run under Valgrind's Massif heap profiler:
+```
+valgrind --tool=massif
+```
+
+### Terminal settings
 
 To allow for debugging parallel runs and combining GDB and Valgrind, GDB is
 run under a new terminal.
@@ -486,12 +581,18 @@ many directories and waiting for pre-processing before each run.
   <span style="color: rgb(48,119,16)">`code_saturne compile -s src_saturne`</span>
   to update the <span style="color: rgb(0,91,187)">`cs_solver`</span> executable.
 
-### Running under vim
+### Running under Vim, Neovim, or Atom
 
-The code_saturne debug wrapper does not yet launching GDB under Vim.
-Various examples of use of that module are found on the web, explaining
+The code_saturne debug wrapper does not yet support launching GDB under Vim,
+Neovim, or Atom.
+
+Various examples of use of debugging with Vim are found on the web, explaining
 how [Termdebug](https://www.dannyadam.com/blog/2019/05/debugging-in-vim/)
 for example can be used.
+
+Support for these tools could be added if users can provide a command-line
+example for launching a debugging session with their favorite editor
+and help test this.
 
 Parallel Debugging
 ==================

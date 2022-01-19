@@ -398,7 +398,7 @@ Environment variables specific to the code_saturne environment {#sec_env_var_cs}
 
 Variable               | Role
 -----------------------|------------------------------------------------------------
-`CS_SCRATCHDIR`        | Allows defining the execution directory (see [temporary directory](@ref case_structure_scratchdir)),overriding the default path or settings from the global or user `code_saturne.cfg`.
+`CS_SCRATCHDIR`        | Allows defining the execution directory (see [temporary directory](@ref case_structure_scratchdir)), overriding the default path or settings from the global or user `code_saturne.cfg`.
 `CS_MEM_LOG`           | Allows defining a file name in which memory management based on the [BFT_MALLOC](@ref BFT_MALLOC), [BFT_REALLOC](@ref BFT_REALLOC), and [BFT_FREE](@ref BFT_FREE) is logged (useful to check for some memory leaks).
 `CS_MPIEXEC_OPTIONS`   | This variable allows defining extra arguments to be passed to the MPI execution command by the run scripts.  If this option is defined, it will have priority over the value defined in the preferences file (or by computed defaults), so if necessary, it is possible to define a setting specific to a given run using this mechanism.  This may be useful when tuning the installation to a given system, for example experimenting MPI mapping and "bind to core" type features.
 `CS_RENUMBER`          | Deactivating mesh renumbering in the Solver is possible by setting `CS_RENUMBER=off`.

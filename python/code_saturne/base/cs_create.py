@@ -401,8 +401,6 @@ class study:
         e_pkg = re.compile('PACKAGE')
         e_dom = re.compile('DOMAIN')
 
-        solver_name = self.package.code_name
-
         coupled_domains = []
 
         sep = ""
@@ -412,7 +410,7 @@ class study:
             c = os.path.normpath(c)
             base_c = os.path.basename(c)
 
-            coupled_domains.append({'solver': solver_name,
+            coupled_domains.append({'solver': 'Code_Saturne',
                                     'domain': base_c,
                                     'n_procs_weight': 'None'})
 

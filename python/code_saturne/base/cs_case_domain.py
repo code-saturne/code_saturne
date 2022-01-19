@@ -102,15 +102,18 @@ class base_domain:
     #---------------------------------------------------------------------------
 
     def __init__(self,
-                 package,                 # main package
-                 name = None,             # domain name
-                 n_procs_weight = None,   # recommended number of processes
-                 n_procs_min = 1,         # min. number of processes
-                 n_procs_max = None):     # max. number of processes
+                 package,                    # main package
+                 code_name = '<undefined>',  # code name
+                 name = None,                # domain name
+                 n_procs_weight = None,      # recommended number of processes
+                 n_procs_min = 1,            # min. number of processes
+                 n_procs_max = None):        # max. number of processes
 
         # Package specific information
 
         self.package = package
+
+        self.code_name = code_name
 
         # User functions
 
@@ -138,7 +141,7 @@ class base_domain:
         self.exec_dir = None
         self.solver_path = None
 
-        # Execution and debugging options
+        # Execution options
 
         self.n_procs = n_procs_weight
         if not n_procs_min:
@@ -151,8 +154,6 @@ class base_domain:
         self.n_procs = max(self.n_procs, self.n_procs_min)
         if self.n_procs_max != None:
             self.n_procs = min(self.n_procs, self.n_procs_max)
-
-        self.debug = None
 
         # Error reporting
         self.error = ''
@@ -237,6 +238,13 @@ class base_domain:
         """
 
         return
+
+    #---------------------------------------------------------------------------
+
+    def prepare_data(self):
+        """
+        Prepare data in the execution directory prior to run
+        """
 
     #---------------------------------------------------------------------------
 
@@ -333,13 +341,18 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
-    def solver_command(self, **kw):
+    def solver_command(self, need_abs_path=False):
         """
         Returns a tuple indicating the solver's working directory,
         executable path, and associated command-line arguments.
         """
 
-        return enquote_arg(self.exec_dir), enquote_arg(self.solver_path), ''
+        exec_path = self.solver_path
+        if not os.path.isabs(exec_path) and need_abs_path:
+            exec_path = os.path.join(self.exec_dir,
+                                     os.path.basename(exec_path))
+
+        return enquote_arg(self.exec_dir), enquote_arg(exec_path), ''
 
     #---------------------------------------------------------------------------
 
@@ -363,28 +376,6 @@ class base_domain:
         if exec_dir != result_dir:
             s.write('    exec. dir.   : ' + self.exec_dir + '\n')
 
-    #---------------------------------------------------------------------------
-
-    def debug_wrapper_args(self, debug_cmd):
-        """
-        Additional arguments to use debug wrapper
-        """
-        debug_args = ''
-        python_exec = self.package.config.python
-        if os.path.isfile(python_exec) or os.path.islink(python_exec):
-            debug_args += python_exec + ' '
-        else:
-            debug_args += 'python '
-        cs_pkg_dir = self.package.get_dir('pkgpythondir')
-        if self.package.name != 'code_saturne':
-            cs_pkg_dir = os.path.join(cs_pkg_dir, '../code_saturne')
-        dbg_wrapper_path = os.path.join(cs_pkg_dir,
-                                        'base', 'cs_debug_wrapper.py')
-        debug_args += dbg_wrapper_path + ' '
-        for a in separate_args(debug_cmd):
-            debug_args += enquote_arg(a) + ' '
-        return debug_args
-
 #-------------------------------------------------------------------------------
 
 class domain(base_domain):
@@ -404,7 +395,9 @@ class domain(base_domain):
                  prefix = None,               # installation prefix
                  adaptation = None):          # HOMARD adaptation script
 
-        base_domain.__init__(self, package,
+        base_domain.__init__(self,
+                             package,
+                             'code_saturne',
                              name,
                              n_procs_weight,
                              n_procs_min,
@@ -446,8 +439,6 @@ class domain(base_domain):
 
         self.logging_args = logging_args
         self.solver_args = None
-
-        self.debug = None
 
         # Additional data
 
@@ -508,6 +499,7 @@ class domain(base_domain):
                 solver_dir = self.package_compute.get_dir("pkglibexecdir")
                 solver_name = "nc_solver" + self.package_compute.config.exeext
                 self.solver_path = os.path.join(solver_dir, solver_name)
+                self.code_name = 'neptune_cfd'
 
             self.param = "setup.xml"
 
@@ -748,6 +740,12 @@ class domain(base_domain):
                 solver_name = os.path.basename(self.solver_path)
                 self.solver_path = os.path.join('.', solver_name)
 
+        # Additional precaution (in case source files were removed)
+
+        solver = os.path.basename(self.solver_path)
+        if os.path.isfile(os.path.join(self.exec_dir, solver)):
+            self.solver_path = os.path.join('.', solver)
+
     #---------------------------------------------------------------------------
 
     def symlink(self, target, link=None, check_type=None):
@@ -905,7 +903,7 @@ class domain(base_domain):
 
     def prepare_data(self):
         """
-        Copy data to the execution directory
+        Prepare data in the execution directory prior to run
         """
 
         err_str = ""
@@ -1199,14 +1197,16 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def solver_command(self, **kw):
+    def solver_command(self, need_abs_path=False):
         """
         Returns a tuple indicating the solver's working directory,
         executable path, and associated command-line arguments.
         """
 
-        wd = enquote_arg(self.exec_dir)              # Working directory
-        exec_path = enquote_arg(self.solver_path)    # Executable
+        # Working directory and solver path from base class
+
+        wd, exec_path, args = \
+            base_domain.solver_command(self, need_abs_path)
 
         # Build kernel command-line arguments
 
@@ -1223,12 +1223,6 @@ class domain(base_domain):
                 args += ' --mpi --app-name ' + enquote_arg(self.name)
             elif self.n_procs > 1:
                 args += ' --mpi'
-
-        # Adjust for debugger if used
-
-        if self.debug != None:
-            args = enquote_arg(self.solver_path) + ' ' + args
-            exec_path = self.debug_wrapper_args(self.debug)
 
         return wd, exec_path, args
 
@@ -1362,10 +1356,13 @@ class syrthes_domain(base_domain):
 
         base_domain.__init__(self,
                              package,
+                             'SYRTHES',
                              name,
                              n_procs_weight,
                              n_procs_min,
                              n_procs_max)
+
+        self.code_name = 'SYRTHES'
 
         self.n_procs_radiation = n_procs_radiation
 
@@ -1390,6 +1387,10 @@ class syrthes_domain(base_domain):
         self.echo_comm = None
 
         self.exec_solver = True
+
+        # Always requires local buildn so relative path always known.
+
+        self.solver_path = os.path.join('.', 'syrthes')
 
         # Generation of SYRTHES case deferred until we know how
         # many processors are really required
@@ -1460,16 +1461,18 @@ class syrthes_domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def solver_command(self, **kw):
+    def solver_command(self, need_abs_path=False):
         """
         Returns a tuple indicating SYRTHES's working directory,
         executable path, and associated command-line arguments.
         """
 
-        wd = enquote_arg(self.exec_dir)              # Working directory
-        exec_path = enquote_arg(self.solver_path)    # Executable
+        # Working directory and solver path from base class
 
-        # Build kernel command-line arguments
+        wd, exec_path, args = \
+            base_domain.solver_command(self, need_abs_path)
+
+        # Build Syrthes command-line arguments
 
         args = ''
 
@@ -1483,12 +1486,6 @@ class syrthes_domain(base_domain):
 
         # Output to a logfile
         args += ' --log ' + enquote_arg(self.logfile)
-
-        # Adjust for Debug if used
-
-        if self.debug != None:
-            args = enquote_arg(self.solver_path) + ' ' + args
-            exec_path = self.debug_wrapper_args(self.debug)
 
         return wd, exec_path, args
 
@@ -1621,9 +1618,9 @@ class syrthes_domain(base_domain):
                     self.copy_result(f)
             raise RunCaseError(err_str)
 
-        # Set executable
+        sys.stdout.write('\n')
 
-        self.solver_path = os.path.join('.', 'syrthes')
+        # Restore environment
 
         self.__ld_library_path_restore__(ld_library_path_save)
 
@@ -1698,8 +1695,7 @@ class syrthes_domain(base_domain):
 
         base_domain.summary_info(self, s)
 
-        if self.solver_path:
-            s.write('    SYRTHES      : ' + self.solver_path + '\n')
+        s.write('    SYRTHES      : ' + self.solver_path + '\n')
 
 #-------------------------------------------------------------------------------
 
@@ -1877,13 +1873,14 @@ class cathare_domain(domain):
 
     #---------------------------------------------------------------------------
 
-    def solver_command(self, **kw):
+    def solver_command(self, need_abs_path=False):
         """
         Returns a tuple indicating the script's working directory,
         executable path, and associated command-line arguments.
         """
 
-        wd, exec_path, args = super(cathare_domain, self).solver_command()
+        wd, exec_path, args \
+            = super(cathare_domain, self).solver_command(need_abs_path)
         args += " --c2-wrapper"
 
         return wd, exec_path, args
@@ -1909,6 +1906,7 @@ class python_domain(base_domain):
 
         base_domain.__init__(self,
                              package,
+                             'Python script',
                              name,
                              n_procs_weight,
                              n_procs_min,
@@ -2008,16 +2006,22 @@ class python_domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def solver_command(self, **kw):
+    def solver_command(self, need_abs_path=False):
         """
         Returns a tuple indicating the script's working directory,
         executable path, and associated command-line arguments.
         """
 
         wd = enquote_arg(self.exec_dir)              # Working directory
+
         # Executable
-        exec_path = enquote_arg(self.solver_path) \
-                  + ' ' + self.script_name
+
+        script_name = self.script_name
+        if need_abs_path and not os.path.isabs(script_name):
+            script_name = os.path.join(self.exec_dir,
+                                       os.path.basename(script_name))
+
+        exec_path = enquote_arg(self.solver_path) + ' ' + enquote_arg(script_name)
 
         # Build kernel command-line arguments
 

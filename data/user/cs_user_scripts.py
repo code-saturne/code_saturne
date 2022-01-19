@@ -158,19 +158,6 @@ def define_domain_parameters(domain):
     domain.compile_fcflags = None
     domain.compile_libs = None
 
-    # Debugging options
-    #------------------
-
-    # To run the solver through a debugger, domain.debug should contain
-    # the matching command-line arguments, such as:
-    #   domain.debug = '--debugger=gdb'
-    # or (for Valgrind):
-    #   domain.debug = 'valgrind --tool=memcheck'
-    # or (for Valgrind and ddd):
-    #   domain.debug = '--debugger=ddd valgrind --tool=memcheck --vgdb-error=1'
-
-    # domain.debug = None
-
     # import pprint
     # pprint.pprint(domain.__dict__)
 

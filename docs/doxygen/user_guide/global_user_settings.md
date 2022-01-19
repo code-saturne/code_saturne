@@ -71,8 +71,9 @@ Note that this user configuration file's settings usually apply to all installed
 code_saturne versions, so only the necessary options should be defined.
 
 Two options in the `.code_saturne.cfg` file can be useful for the user:
-* Set the temporary directory (see [sec_prg_temporarydirectory] for more details
-  on the temporary execution directory).
+* Set the optional temporary directory
+  (see [case_structure_scratchdir](@ref case_structure_scratchdir))
+  for more details on the temporary execution directory).
 * Set the mesh database directory: it is possible to indicate a path where
   meshes are stored. In this case, the GUI will propose this directory
   automatically for mesh selection. Without the GUI, it is
