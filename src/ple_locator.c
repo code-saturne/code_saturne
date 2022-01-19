@@ -263,8 +263,6 @@ typedef int
  * Static global variables
  *============================================================================*/
 
-#if defined(PLE_HAVE_MPI)
-
 /* Default location algorithm */
 
 static int _ple_locator_location_algorithm = _LOCATE_BB_SENDRECV_ORDERED;
@@ -273,6 +271,8 @@ static int _ple_locator_location_algorithm = _LOCATE_BB_SENDRECV_ORDERED;
    MPI sends and receives instead of MPI_SendRecv */
 
 static int _ple_locator_async_threshold = 128;
+
+#if defined(PLE_HAVE_MPI)
 
 /* global logging function */
 
@@ -3051,8 +3051,6 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
   double comm_timing[4] = {0., 0., 0., 0.};
   int mpi_flag = 0;
 
-  const int dim = this_locator->dim;
-
   /* Initialize timing */
 
   w_start = ple_timer_wtime();
@@ -3071,6 +3069,8 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
   /*-------------------------------*/
 
 #if defined(PLE_HAVE_MPI)
+
+  const int dim = this_locator->dim;
 
   MPI_Initialized(&mpi_flag);
 
