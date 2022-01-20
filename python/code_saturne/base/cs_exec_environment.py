@@ -1529,9 +1529,9 @@ class mpi_environment:
         init_method = self.__init_other__
 
         if len(self.type) > 0:
-            mpi_env_by_type = {'MPICH':self.__init_mpich2_3__,
-                               'MPICH2':self.__init_mpich2_3__,
-                               'Intel_MPI':self.__init_mpich2_3__,
+            mpi_env_by_type = {'MPICH':self.__init_mpich__,
+                               'MPICH2':self.__init_mpich__,
+                               'Intel_MPI':self.__init_mpich__,
                                'MSMPI':self.__init_msmpi__,
                                'OpenMPI':self.__init_openmpi__,
                                'BullxMPI':self.__init_openmpi__,
@@ -1597,7 +1597,7 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __get_mpich2_3_default_pm__(self, mpiexec_path):
+    def __get_mpich_default_pm__(self, mpiexec_path):
 
         """
         Try to determine the program manager for MPICH2 or MPICH-3.
@@ -1676,7 +1676,7 @@ class mpi_environment:
 
     #---------------------------------------------------------------------------
 
-    def __init_mpich2_3__(self, p, resource_info=None, wdir = None):
+    def __init_mpich__(self, p, resource_info=None, wdir = None):
 
         """
         Initialize for MPICH-3 environment.
@@ -1719,20 +1719,20 @@ class mpi_environment:
 
         if self.mpiexec != None:
             absname = self.__get_mpiexec_absname__(p)
-            pm = self.__get_mpich2_3_default_pm__(absname)
+            pm = self.__get_mpich_default_pm__(absname)
 
         else:
-            launcher_names = ['mpiexec.mpich', 'mpiexec.mpich2', 'mpiexec',
+            launcher_names = ['mpiexec.mpich', 'mpiexec',
                               'mpiexec.hydra',
                               'mpiexec.gforker', 'mpiexec.remshell',
-                              'mpirun.mpich2', 'mpirun.mpich',
+                              'mpirun.mpich',
                               'aprun', 'mpirun']
 
             for d in p:
                 for name in launcher_names:
                     absname = os.path.join(d, name)
                     if os.path.isfile(absname):
-                        pm = self.__get_mpich2_3_default_pm__(absname)
+                        pm = self.__get_mpich_default_pm__(absname)
                         # MPD and SMPD are deprecated; avoid them
                         if pm == 'mpd' or pm == 'smpd':
                             continue
