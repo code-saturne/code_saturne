@@ -144,6 +144,8 @@ int _n_mesh_files = 0;
 int _n_max_mesh_files = 0;
 _mesh_file_info_t  *_mesh_file_info = NULL;
 
+bool _is_restart = false;
+
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -173,12 +175,14 @@ static void
 _set_default_input_if_needed(void)
 {
   const char input_default[] = "mesh_input.csm";
-  const char cp_input_default[] = "restart/mesh_input.csm";
-
   const char input_default_noext[] = "mesh_input";
+
+  const char cp_input_default[] = "restart/mesh_input.csm";
   const char cp_input_default_noext[] = "restart/mesh_input";
 
   const char input_default_folder[] = "mesh_input";
+
+  _is_restart = false;
 
   if (_n_mesh_files == 0) {
 
@@ -209,11 +213,15 @@ _set_default_input_if_needed(void)
     }
 
     /* Now check for mesh_input in restart folder */
-    else if (cs_file_isreg(cp_input_default))
+    else if (cs_file_isreg(cp_input_default)) {
       cs_preprocessor_data_add_file(cp_input_default, 0, NULL, NULL);
+      _is_restart = true;
+    }
 
-    else if (cs_file_isreg(cp_input_default_noext))
+    else if (cs_file_isreg(cp_input_default_noext)) {
       cs_preprocessor_data_add_file(cp_input_default_noext, 0, NULL, NULL);
+      _is_restart = true;
+    }
 
     else
       bft_error(__FILE__, __LINE__, 0,
@@ -2165,6 +2173,21 @@ cs_preprocessor_check_perio(void)
   return perio_flag;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if the last preprocessing data defined or read is restart data.
+ *
+ * \return true if preprocessing data is read from "restart" folder,
+ *         false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_preprocessor_data_is_restart(void)
+{
+  return _is_restart;
+}
+
 /*----------------------------------------------------------------------------
  * Read mesh meta-data.
  *
@@ -2181,7 +2204,7 @@ cs_preprocessor_data_read_headers(cs_mesh_t          *mesh,
 
   /* Initialize reading of Preprocessor output */
 
-  if (cs_mesh_cartesian_need_build()) {
+  if (_n_mesh_files == 0 && cs_mesh_cartesian_need_build()) {
 
     _read_cartesian_dimensions(mesh, mesh_builder);
 
