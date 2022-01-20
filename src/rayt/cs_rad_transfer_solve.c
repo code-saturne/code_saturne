@@ -832,29 +832,34 @@ _cs_rad_transfer_sol(int                        gg_id,
       int_abso[cell_id] = ckg[cell_id] * int_rad_domega[cell_id];
 
     /* Emission and implicit ST */
-    if (   cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] == -1) {
-      if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == -1
-          && cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == -1) {
-        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-          int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
-            * cs_math_pow4(tempk[cell_id]);
-
-          int_rad_ist[cell_id] -=   16.0 * dcp[cell_id] * ckg[cell_id]
-            * c_stefan * cs_math_pow3(tempk[cell_id]);
-        }
-      } else {
-        cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
-        cs_real_t *cpro_t3m = cs_field_by_name("temperature_3")->val;
-
-        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-          int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
-            * cpro_t4m[cell_id];
-
-          int_rad_ist[cell_id] -=   16.0 * dcp[cell_id] * ckg[cell_id]
-            * c_stefan * cpro_t3m[cell_id];
-        }
+    if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 0) {
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        int_emi[cell_id] = 0.0;
+        int_rad_ist[cell_id] = 0.0;
       }
     }
+    else if (   cs_glob_physical_model_flag[CS_COMBUSTION_3PT] == -1
+             && cs_glob_physical_model_flag[CS_COMBUSTION_EBU] == -1) {
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
+          * cs_math_pow4(tempk[cell_id]);
+
+        int_rad_ist[cell_id] -=   16.0 * dcp[cell_id] * ckg[cell_id]
+          * c_stefan * cs_math_pow3(tempk[cell_id]);
+      }
+    } else {
+      cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
+      cs_real_t *cpro_t3m = cs_field_by_name("temperature_3")->val;
+
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+        int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
+          * cpro_t4m[cell_id];
+
+        int_rad_ist[cell_id] -=   16.0 * dcp[cell_id] * ckg[cell_id]
+          * c_stefan * cpro_t3m[cell_id];
+      }
+    }
+
   }
 
   BFT_FREE(dcp);
