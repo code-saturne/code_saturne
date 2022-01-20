@@ -50,7 +50,7 @@ def update_run_steps(s_c, run_conf, final=False):
 
     filter_stages = False
     for k in s_c:
-        if s_c[k]:
+        if s_c[k] != None and s_c[k] != '':
             filter_stages = True
 
     if run_conf and not filter_stages:
@@ -60,7 +60,7 @@ def update_run_steps(s_c, run_conf, final=False):
 
     filter_stages = False
     for k in s_c:
-        if s_c[k]:
+        if s_c[k] != None and s_c[k] != '':
             filter_stages = True
 
     # Default if nothing provided, ensure range is filled otherwise
@@ -77,6 +77,11 @@ def update_run_steps(s_c, run_conf, final=False):
                 if i_s < 0:
                     i_s = i
                 i_f = i + 1
+            elif s_c[k] == False:
+               if i_s < i:
+                    i_s = i + 1
+        if i_f < 0:
+            i_f = len(stages)
         for i, k in enumerate(stages):
             if i < i_s:
                 s_c[k] = False
@@ -295,7 +300,7 @@ def process_options(options, pkg):
     if os.path.isfile(run_config_path):
         run_conf = cs_run_conf.run_conf(run_config_path, package=pkg)
         if not run_id and not filter_stages:
-            if 'run' in run_conf.sections and not filter_stages:
+            if 'run' in run_conf.sections:
                 update_run_steps(s_c, run_conf)
                 if s_c['stage'] == False:
                     if 'id' in run_conf.sections['run']:
