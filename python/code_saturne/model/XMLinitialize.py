@@ -98,7 +98,8 @@ class BaseXmlInit(Variables):
         known_versions = ["3.0", "3.1", "3.2", "3.3",
                           "4.0", "4.1", "4.2", "4.3",
                           "5.0", "5.1", "5.2", "5.3",
-                          "6.0", "6.1", "6.2", "6.3"]
+                          "6.0", "6.1", "6.2", "6.3",
+                          "7.0", "7.1"]
         j = -2
         for i in range(0, len(known_versions)):
             if vers.find(known_versions[i]) == 0:
@@ -113,7 +114,6 @@ class BaseXmlInit(Variables):
         elif j > 0:
             vers = known_versions[j]
         return vers
-
 
     def _backwardCompatibility(self):
         """
