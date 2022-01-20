@@ -48,7 +48,6 @@
 #include "cs_param_cdo.h"
 #include "cs_parall.h"
 #include "cs_sort.h"
-#include "cs_timer.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"
@@ -58,7 +57,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_equation_assemble.h"
+#include "cs_cdo_assembly.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -69,7 +68,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_equation_assemble.c
+  \file cs_cdo_assembly.c
 
   \brief Assembly of local cellwise system into a cs_matrix_t structure through
   the cs_matrix_assembler_t and its related structures.
@@ -85,20 +84,13 @@ BEGIN_C_DECLS
  * Type definitions and macros
  *============================================================================*/
 
-#define CS_EQUATION_ASSEMBLE_DBG          0 /* Debug level */
+#define CS_CDO_ASSEMBLY_DBG    0  /* Debug level */
 
 /*============================================================================
  * Local private variables
  *============================================================================*/
 
-/* Store the matrix structure and its assembler structures for each family
-   of space discretizations */
-
-static cs_matrix_assembler_t  **cs_equation_assemble_ma = NULL;
-static cs_matrix_structure_t  **cs_equation_assemble_ms = NULL;
-static cs_equation_assemble_t  **cs_equation_assemble = NULL;
-
-static cs_timer_counter_t  cs_equation_ms_time;
+static cs_cdo_assembly_t  **cs_cdo_assembly = NULL;
 
 /*=============================================================================
  * Local function pointer definitions
@@ -126,9 +118,9 @@ typedef struct {
   const cs_real_t    *val;       /* Row values */
   cs_real_t          *expval;    /* Expanded row values */
 
-} cs_equation_assemble_row_t;
+} cs_cdo_assembly_row_t;
 
-struct _cs_equation_assemble_t {
+struct _cs_cdo_assembly_t {
 
   int         ddim;         /* Number of real values related to each diagonal
                                entry */
@@ -138,159 +130,12 @@ struct _cs_equation_assemble_t {
   /* When working with matrix build by scalar-valued blocks, one may need to
      shift the row and/or the column local ids */
 
-
   cs_lnum_t   l_col_shift;
   cs_lnum_t   l_row_shift;
 
-  cs_equation_assemble_row_t    *row;
+  cs_cdo_assembly_row_t    *row;
+
 };
-
-/*============================================================================
- * Static inline private function prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Choose which function will be used to perform the matrix assembly
- *         Case of scalar-valued matrices.
- *
- * \return  a pointer to a function
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_equation_assembly_t *
-_set_scalar_assembly_func(void)
-{
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {  /* Parallel */
-
-    if (cs_glob_n_threads < 2) /* Without OpenMP */
-      return cs_equation_assemble_matrix_mpis;
-    else                       /* With OpenMP */
-      return cs_equation_assemble_matrix_mpit;
-
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  if (cs_glob_n_ranks <= 1) { /* Sequential */
-
-    if (cs_glob_n_threads < 2) /* Without OpenMP */
-      return cs_equation_assemble_matrix_seqs;
-    else                       /* With OpenMP */
-      return cs_equation_assemble_matrix_seqt;
-
-  }
-
-  return NULL; /* Case not handled */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Choose which function will be used to perform the matrix assembly
- *         Case of scalar-valued matrices used inside a system of equations.
- *
- * \return  a pointer to a function
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_equation_assembly_t *
-_set_scalar_sys_assembly_func(void)
-{
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {  /* Parallel */
-
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
-
-  }
-#endif /* defined(HAVE_MPI) */
-
-  if (cs_glob_n_ranks <= 1) { /* Sequential */
-
-    if (cs_glob_n_threads < 2) /* Without OpenMP */
-      return cs_equation_assemble_matrix_sys_seqs;
-    else                       /* With OpenMP */
-      bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
-
-  }
-
-  return NULL; /* Case not handled */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Choose which function will be used to perform the matrix assembly
- *         Case of block 3x3 matrices.
- *
- * \return  a pointer to a function
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_equation_assembly_t *
-_set_block33_assembly_func(void)
-{
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {  /* Parallel */
-
-    if (cs_glob_n_threads < 2) /* Without OpenMP */
-      return cs_equation_assemble_eblock33_matrix_mpis;
-    else                      /* With OpenMP */
-      return cs_equation_assemble_eblock33_matrix_mpit;
-
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  if (cs_glob_n_ranks <= 1) {  /* Sequential */
-
-    if (cs_glob_n_threads < 2) /* Without OpenMP */
-      return cs_equation_assemble_eblock33_matrix_seqs;
-    else                      /* With OpenMP */
-      return cs_equation_assemble_eblock33_matrix_seqt;
-
-  }
-
-  return NULL; /* Case not handled */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Choose which function will be used to perform the matrix assembly
- *         Case of block NxN matrices.
- *
- * \return  a pointer to a function
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_equation_assembly_t *
-_set_block_assembly_func(void)
-{
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {  /* Parallel */
-
-    if (cs_glob_n_threads < 2) /* Without OpenMP */
-      return cs_equation_assemble_eblock_matrix_mpis;
-    else                      /* With OpenMP */
-      return cs_equation_assemble_eblock_matrix_mpit;
-
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  if (cs_glob_n_ranks <= 1) {  /* Sequential */
-
-    if (cs_glob_n_threads < 2) /* Without OpenMP */
-      return cs_equation_assemble_eblock_matrix_seqs;
-    else                      /* With OpenMP */
-      return cs_equation_assemble_eblock_matrix_seqt;
-
-  }
-
-  return NULL; /* Case not handled */
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -390,14 +235,14 @@ _g_binary_search(int              g_id_array_size,
  *          caller is already assumed to have identified the index
  *          matching a given column id.
  *
- * \param[in]      row         pointer to a cs_equation_assemble_row_t type
+ * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_add_scal_values_single(const cs_equation_assemble_row_t   *row,
-                        void                               *matrix_p)
+_add_scal_values_single(const cs_cdo_assembly_row_t    *row,
+                        void                           *matrix_p)
 {
   assert(row->l_id > -1);
 
@@ -435,14 +280,14 @@ _add_scal_values_single(const cs_equation_assemble_row_t   *row,
  *          caller is already assumed to have identified the index
  *          matching a given column id.
  *
- * \param[in]      row         pointer to a cs_equation_assemble_row_t type
+ * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_add_scal_values_atomic(const cs_equation_assemble_row_t   *row,
-                        void                               *matrix_p)
+_add_scal_values_atomic(const cs_cdo_assembly_row_t    *row,
+                        void                           *matrix_p)
 {
   assert(row->l_id > -1);
 
@@ -483,14 +328,14 @@ _add_scal_values_atomic(const cs_equation_assemble_row_t   *row,
  *          caller is already assumed to have identified the index
  *          matching a given column id.
  *
- * \param[in]      row         pointer to a cs_equation_assemble_row_t type
+ * \param[in]      row         pointer to a cs_cdo_assembly_row_t type
  * \param[in, out] matrix_p    untyped pointer to matrix description structure
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_add_scal_values_critical(const cs_equation_assemble_row_t   *row,
-                          void                               *matrix_p)
+_add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
+                          void                           *matrix_p)
 {
   assert(row->l_id > -1);
 
@@ -524,13 +369,13 @@ _add_scal_values_critical(const cs_equation_assemble_row_t   *row,
  * order to get a more optimized version of this function
  *
  * \param[in, out]  ma     pointer to matrix assembler values structure
- * \param[in, out]  row    pointer to a cs_equation_assemble_row_t structure
+ * \param[in, out]  row    pointer to a cs_cdo_assembly_row_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
 _set_col_idx_scal_l(const cs_matrix_assembler_t     *ma,
-                    cs_equation_assemble_row_t      *row)
+                    cs_cdo_assembly_row_t           *row)
 {
   const cs_lnum_t  l_r_id = row->l_id; /* g_r_id - ma->l_range[0]; */
   const cs_lnum_t  l_start = ma->r_idx[l_r_id], l_end = ma->r_idx[l_r_id+1];
@@ -569,13 +414,13 @@ _set_col_idx_scal_l(const cs_matrix_assembler_t     *ma,
  * order to get a more optimized version of this function
  *
  * \param[in, out]  ma     pointer to matrix assembler values structure
- * \param[in, out]  row    pointer to a cs_equation_assemble_row_t structure
+ * \param[in, out]  row    pointer to a cs_cdo_assembly_row_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_set_col_idx_scal_ld(const cs_matrix_assembler_t      *ma,
-                     cs_equation_assemble_row_t       *row)
+_set_col_idx_scal_ld(const cs_matrix_assembler_t    *ma,
+                     cs_cdo_assembly_row_t          *row)
 {
   assert(ma->d_r_idx != NULL); /* local-id-based function, need to adapt */
 
@@ -650,14 +495,14 @@ _set_col_idx_scal_ld(const cs_matrix_assembler_t      *ma,
  *
  * \param[in, out]  mav    pointer to matrix assembler values structure
  * \param[in]       ma     pointer to matrix assembler values structure
- * \param[in]       row    pointer to a cs_equation_assemble_row_t structure
+ * \param[in]       row    pointer to a cs_cdo_assembly_row_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_assemble_row_scal_dt(cs_matrix_assembler_values_t         *mav,
-                      const cs_matrix_assembler_t          *ma,
-                      const cs_equation_assemble_row_t     *row)
+_assemble_row_scal_dt(cs_matrix_assembler_values_t       *mav,
+                      const cs_matrix_assembler_t        *ma,
+                      const cs_cdo_assembly_row_t        *row)
 {
   /* Case where coefficient is handled by other rank. No need to call
      add_values() function in this case */
@@ -723,14 +568,14 @@ _assemble_row_scal_dt(cs_matrix_assembler_values_t         *mav,
  *
  * \param[in, out]  mav    pointer to matrix assembler values structure
  * \param[in]       ma     pointer to matrix assembler values structure
- * \param[in]       row    pointer to a cs_equation_assemble_row_t structure
+ * \param[in]       row    pointer to a cs_cdo_assembly_row_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_assemble_row_scal_ds(cs_matrix_assembler_values_t         *mav,
-                      const cs_matrix_assembler_t          *ma,
-                      const cs_equation_assemble_row_t     *row)
+_assemble_row_scal_ds(cs_matrix_assembler_values_t       *mav,
+                      const cs_matrix_assembler_t        *ma,
+                      const cs_cdo_assembly_row_t        *row)
 {
   /* Case where coefficient is handled by other rank. No need to call
      add_values() function in this case */
@@ -788,88 +633,124 @@ _assemble_row_scal_ds(cs_matrix_assembler_values_t         *mav,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and initialize a cs_equation_assemble_t structure
+ * \brief  Allocate and initialize a cs_cdo_assembly_t structure
  *
- * \param[in]  max_ddim        max. dim of the diagonal entries
- * \param[in]  max_edim        max. dim of the extra-diagonal entries
- * \param[in]  n_max_cw_dofs   max. number of DoF to be handled
- *
- * \return a pointer to a new allocated cs_equation_assemble_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_equation_assemble_t *
-_init_equation_assembler_struct(int      max_ddim,
-                                int      max_edim,
-                                int      n_max_cw_dofs)
-{
-  cs_equation_assemble_t  *eqa = NULL;
-
-  BFT_MALLOC(eqa, 1, cs_equation_assemble_t);
-
-  /* Diagonal and extra-diagonal max. number of entries */
-
-  eqa->ddim = max_ddim;
-  eqa->edim = max_edim;
-
-  /* When working with matrix build by scalar-valued blocks, one may need to
-     shift the row and/or the column local ids */
-
-  eqa->l_row_shift = 0;
-  eqa->l_col_shift = 0;
-
-  /* Allocate the row structure used in the assembly process */
-
-  cs_equation_assemble_row_t  *row = NULL;
-
-  BFT_MALLOC(row, 1, cs_equation_assemble_row_t);
-
-  if (max_ddim < 2) {
-
-    BFT_MALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
-    BFT_MALLOC(row->col_idx, n_max_cw_dofs, int);
-
-  }
-  else {
-
-    n_max_cw_dofs *= max_ddim; /* Temporary (until the global matrix is not
-                                  defined by block) */
-
-    BFT_MALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
-    BFT_MALLOC(row->col_idx, n_max_cw_dofs, int);
-    BFT_MALLOC(row->expval, max_ddim*n_max_cw_dofs, cs_real_t);
-
-  }
-
-  eqa->row = row;
-
-  return eqa;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free a cs_equation_assemble_t structure
- *
- * \param[in, out]  p_eqa    pointer to a structure pointer to be freed
+ * \param[in]      max_ddim        max. dim of the diagonal entries
+ * \param[in]      max_edim        max. dim of the extra-diagonal entries
+ * \param[in]      n_max_cw_dofs   max. number of DoF to be handled
+ * \param[in, out] p_asb           double pointer to an assembly structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_free_equation_assembler_struct(cs_equation_assemble_t  **p_eqa)
+_init_assembly_struct(int                   max_ddim,
+                      int                   max_edim,
+                      int                   n_max_cw_dofs,
+                      cs_cdo_assembly_t   **p_asb)
 {
-  if (*p_eqa == NULL)
+  cs_cdo_assembly_t  *asb = *p_asb;
+  bool  update_only = true;
+
+  if (asb == NULL) {
+    BFT_MALLOC(asb, 1, cs_cdo_assembly_t);
+    update_only = false;
+  }
+
+  /* Diagonal and extra-diagonal max. number of entries */
+
+  asb->ddim = max_ddim;
+  asb->edim = max_edim;
+
+  /* When working with matrix build by scalar-valued blocks, one may need to
+     shift the row and/or the column local ids */
+
+  asb->l_row_shift = 0;
+  asb->l_col_shift = 0;
+
+  if (update_only) {
+
+    cs_cdo_assembly_row_t  *row = asb->row;
+    assert(row != NULL);
+
+    /* Re-allocate the row structure given the new sizes */
+
+
+    if (max_ddim < 2) {
+
+      BFT_REALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
+      BFT_REALLOC(row->col_idx, n_max_cw_dofs, int);
+
+    }
+    else {
+
+      n_max_cw_dofs *= max_ddim; /* Temporary (until the global matrix is not
+                                    defined by block) */
+
+      BFT_REALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
+      BFT_REALLOC(row->col_idx, n_max_cw_dofs, int);
+      BFT_REALLOC(row->expval, max_ddim*n_max_cw_dofs, cs_real_t);
+
+    }
+
+  }
+  else {
+
+    /* Allocate the row structure used in the assembly process */
+
+    cs_cdo_assembly_row_t  *row = NULL;
+
+    BFT_MALLOC(row, 1, cs_cdo_assembly_row_t);
+
+    if (max_ddim < 2) {
+
+      BFT_MALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
+      BFT_MALLOC(row->col_idx, n_max_cw_dofs, int);
+
+    }
+    else {
+
+      n_max_cw_dofs *= max_ddim; /* Temporary (until the global matrix is not
+                                    defined by block) */
+
+      BFT_MALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
+      BFT_MALLOC(row->col_idx, n_max_cw_dofs, int);
+      BFT_MALLOC(row->expval, max_ddim*n_max_cw_dofs, cs_real_t);
+
+    }
+
+    asb->row = row;
+
+  }
+
+  /* Return the pointer */
+
+  *p_asb = asb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_cdo_assembly_t structure
+ *
+ * \param[in, out]  p_asb    pointer to a structure pointer to be freed
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_free_equation_assembler_struct(cs_cdo_assembly_t  **p_asb)
+{
+  if (*p_asb == NULL)
     return;
 
-  cs_equation_assemble_t  *eqa = *p_eqa;
+  cs_cdo_assembly_t  *asb = *p_asb;
 
-  if (eqa->ddim > 1)
-    BFT_FREE(eqa->row->expval);
-  BFT_FREE(eqa->row->col_g_id);
-  BFT_FREE(eqa->row->col_idx);
-  BFT_FREE(eqa->row);
+  if (asb->ddim > 1)
+    BFT_FREE(asb->row->expval);
+  BFT_FREE(asb->row->col_g_id);
+  BFT_FREE(asb->row->col_idx);
+  BFT_FREE(asb->row);
 
-  BFT_FREE(eqa);
-  *p_eqa = NULL;
+  BFT_FREE(asb);
+  *p_asb = NULL;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -880,440 +761,51 @@ _free_equation_assembler_struct(cs_equation_assemble_t  **p_eqa)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to a requested \ref cs_matrix_structure_t
- *         structure
- *
- * \param[in]  flag_id       id in the array of matrix structures
- *
- * \return  a pointer to a cs_matrix_structure_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_structure_t *
-cs_equation_get_matrix_structure(int  flag)
-{
-  if (cs_equation_assemble_ms == NULL || flag < 0)
-    return NULL;
-
-  if (flag < CS_N_DOF_CASES)
-    return cs_equation_assemble_ms[flag];
-  else
-    return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get a pointer to a cs_equation_assemble_t structure related
+ * \brief  Get a pointer to a cs_cdo_assembly_t structure related
  *         to a given thread
  *
  * \param[in]  t_id    id in the array of pointer
  *
- * \return a pointer to a cs_equation_assemble_t structure
+ * \return a pointer to a cs_cdo_assembly_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_assemble_t *
-cs_equation_assemble_get(int    t_id)
+cs_cdo_assembly_t *
+cs_cdo_assembly_get(int    t_id)
 {
   if (t_id < 0 || t_id >= cs_glob_n_threads)
     return NULL;
 
-  return cs_equation_assemble[t_id];
+  return cs_cdo_assembly[t_id];
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and define a cs_matrix_assembler_t structure
+ * \brief  Allocate cs_cdo_assembly_t structure (shared among schemes). Each
+ *         thread has its own copy this structure to enable a multithreaded
+ *         assembly process.
  *
- * \param[in]  n_elts     number of elements
- * \param[in]  n_dofbyx   number of DoFs by element
- * \param[in]  x2x        pointer to a cs_adjacency_t structure
- * \param[in]  rs         pointer to a range set or NULL if sequential
- *
- * \return a pointer to a new allocated cs_matrix_assembler_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_assembler_t *
-cs_equation_build_matrix_assembler(cs_lnum_t                n_elts,
-                                   int                      n_dofbyx,
-                                   const cs_adjacency_t    *x2x,
-                                   const cs_range_set_t    *rs)
-{
-  cs_gnum_t  *grows = NULL, *gcols = NULL;
-
-  /* The second paramter is set to "true" meaning that the diagonal is stored
-     separately --> MSR storage */
-
-  cs_matrix_assembler_t  *ma = cs_matrix_assembler_create(rs->l_range, true);
-
-  /* First loop to count max size of the buffer */
-
-  cs_lnum_t  max_size = 0;
-  for (cs_lnum_t id = 0; id < n_elts; id++)
-    max_size = CS_MAX(max_size, x2x->idx[id+1] - x2x->idx[id]);
-
-  /* We increment max_size to take into account the diagonal entry */
-
-  int  buf_size = n_dofbyx * n_dofbyx * (max_size + 1);
-  BFT_MALLOC(grows, buf_size, cs_gnum_t);
-  BFT_MALLOC(gcols, buf_size, cs_gnum_t);
-
-  if (n_dofbyx == 1)  { /* Simplified version */
-
-    for (cs_lnum_t row_id = 0; row_id < n_elts; row_id++) {
-
-      const cs_gnum_t  grow_id = rs->g_id[row_id];
-      const cs_lnum_t  start = x2x->idx[row_id];
-      const cs_lnum_t  end = x2x->idx[row_id+1];
-
-      /* Diagonal term is excluded in this connectivity. Add it "manually" */
-
-      grows[0] = grow_id, gcols[0] = grow_id;
-
-      /* Extra diagonal couples */
-
-      for (cs_lnum_t j = start, i = 1; j < end; j++, i++) {
-        grows[i] = grow_id;
-        gcols[i] = rs->g_id[x2x->ids[j]];
-      }
-
-      cs_matrix_assembler_add_g_ids(ma, end - start + 1, grows, gcols);
-
-    } /* Loop on entities */
-
-  }
-  else {
-
-    for (cs_lnum_t row_id = 0; row_id < n_elts; row_id++) {
-
-      const cs_lnum_t  start = x2x->idx[row_id];
-      const cs_lnum_t  end = x2x->idx[row_id+1];
-      const int  n_entries = (end - start + 1) * n_dofbyx * n_dofbyx;
-      const cs_gnum_t  *grow_ids = rs->g_id + row_id*n_dofbyx;
-
-      int shift = 0;
-
-      /* Diagonal term is excluded in this connectivity. Add it "manually" */
-
-      for (int dof_i = 0; dof_i < n_dofbyx; dof_i++) {
-        const cs_gnum_t  grow_id = grow_ids[dof_i];
-        for (int dof_j = 0; dof_j < n_dofbyx; dof_j++) {
-          grows[shift] = grow_id;
-          gcols[shift] = grow_ids[dof_j];
-          shift++;
-        }
-      }
-
-      /* Extra diagonal couples */
-
-      for (cs_lnum_t j = start; j < end; j++) {
-
-        const cs_lnum_t  col_id = x2x->ids[j];
-        const cs_gnum_t  *gcol_ids = rs->g_id + col_id*n_dofbyx;
-
-        for (int dof_i = 0; dof_i < n_dofbyx; dof_i++) {
-          const cs_gnum_t  grow_id = grow_ids[dof_i];
-          for (int dof_j = 0; dof_j < n_dofbyx; dof_j++) {
-            grows[shift] = grow_id;
-            gcols[shift] = gcol_ids[dof_j];
-            shift++;
-          }
-        }
-
-      } /* Loop on number of DoFs by entity */
-
-      assert(shift == n_entries);
-      cs_matrix_assembler_add_g_ids(ma, n_entries, grows, gcols);
-
-    } /* Loop on entities */
-
-  }
-
-  /* Now compute structure */
-
-  cs_matrix_assembler_compute(ma);
-
-  /* Free temporary buffers */
-
-  BFT_FREE(grows);
-  BFT_FREE(gcols);
-
-  return ma;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize matrix-related structures according to
- *         the type of discretization used for this simulation
- *
- * \param[in]  connect      pointer to a cs_cdo_connect_t structure
- * \param[in]  eb_flag      metadata for Edge-based schemes
- * \param[in]  fb_flag      metadata for Face-based schemes
- * \param[in]  vb_flag      metadata for Vertex-based schemes
- * \param[in]  vcb_flag     metadata for Vertex+Cell-basde schemes
- * \param[in]  hho_flag     metadata for HHO schemes
+ * \param[in]  ddim          max number of dof values on the diagonal part
+ * \param[in]  edim          max number of dof values on the extra-diag. part
+ * \param[in]  n_cw_dofs     max number of DoFs in a cell
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
-                          cs_flag_t                     eb_flag,
-                          cs_flag_t                     fb_flag,
-                          cs_flag_t                     vb_flag,
-                          cs_flag_t                     vcb_flag,
-                          cs_flag_t                     hho_flag)
+cs_cdo_assembly_init(int     ddim,
+                     int     edim,
+                     int     n_cw_dofs)
 {
-  assert(connect != NULL); /* Sanity check */
-
-  cs_timer_t t0, t1;
-  CS_TIMER_COUNTER_INIT(cs_equation_ms_time);
-
-  /* Two types of matrix assembler are considered:
-   *  - The one related to matrix based on vertices
-   *  - The one related to matrix based on faces
-   */
-
-  BFT_MALLOC(cs_equation_assemble_ma, CS_N_DOF_CASES, cs_matrix_assembler_t *);
-  for (int i = 0; i < CS_N_DOF_CASES; i++)
-    cs_equation_assemble_ma[i] = NULL;
-
-  BFT_MALLOC(cs_equation_assemble_ms, CS_N_DOF_CASES, cs_matrix_structure_t *);
-  for (int i = 0; i < CS_N_DOF_CASES; i++)
-    cs_equation_assemble_ms[i] = NULL;
-
-  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
-  const cs_lnum_t  n_vertices = connect->n_vertices;
-  const cs_lnum_t  n_edges = connect->n_edges;
-
-  /* Allocate shared buffer and initialize shared structures
-     Number max of DoFs at the cell level: n_max_cw_dofs
-     Greatest dimension of the diagonal block: max_ddim
-     Greatest dimension of the extra-diagonal block: max_edim
-   */
-
-  int  n_max_cw_dofs = 0, max_ddim = 1, max_edim = 1;
-
-  /* Allocate and initialize matrix assembler and matrix structures */
-
-  if (vb_flag > 0 || vcb_flag > 0) {
-
-    const cs_adjacency_t  *v2v = connect->v2v;
-
-    assert(v2v != NULL);
-    n_max_cw_dofs = CS_MAX(n_max_cw_dofs, connect->n_max_vbyc);
-
-    if (vb_flag & CS_FLAG_SCHEME_SCALAR || vcb_flag & CS_FLAG_SCHEME_SCALAR) {
-
-      t0 = cs_timer_time();
-
-      /* Build the matrix structure and the matrix assembler structure */
-
-      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_SCAL];
-
-      cs_matrix_assembler_t  *ma =
-        cs_equation_build_matrix_assembler(n_vertices, 1, v2v, rs);
-      cs_matrix_structure_t  *ms =
-        cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
-
-      cs_equation_assemble_ma[CS_DOF_VTX_SCAL] = ma;
-      cs_equation_assemble_ms[CS_DOF_VTX_SCAL] = ms;
-
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
-
-    } /* scalar-valued DoFs */
-
-    if (vb_flag & CS_FLAG_SCHEME_VECTOR || vcb_flag & CS_FLAG_SCHEME_VECTOR) {
-
-      t0 = cs_timer_time();
-
-      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_VTX_VECT];
-
-      cs_matrix_assembler_t  *ma =
-        cs_equation_build_matrix_assembler(n_vertices, 3, v2v, rs);
-      cs_matrix_structure_t  *ms =
-        cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
-
-      cs_equation_assemble_ma[CS_DOF_VTX_VECT] = ma;
-      cs_equation_assemble_ms[CS_DOF_VTX_VECT] = ms;
-
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
-
-      max_ddim = CS_MAX(max_ddim, 3);
-      max_edim = CS_MAX(max_edim, 3);
-
-    } /* vector-valued DoFs */
-
-  } /* Vertex-based schemes and related ones */
-
-  /* Allocate and initialize matrix assembler and matrix structures */
-
-  if (eb_flag > 0) {
-
-    const cs_adjacency_t  *e2e = connect->e2e;
-
-    assert(e2e != NULL);
-    n_max_cw_dofs = CS_MAX(n_max_cw_dofs, connect->n_max_ebyc);
-
-    if (eb_flag & CS_FLAG_SCHEME_SCALAR) {
-
-      t0 = cs_timer_time();
-
-      /* Build the matrix structure and the matrix assembler structure */
-
-      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_EDGE_SCAL];
-
-      cs_matrix_assembler_t  *ma =
-        cs_equation_build_matrix_assembler(n_edges, 1, e2e, rs);
-      cs_matrix_structure_t  *ms =
-        cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
-
-      cs_equation_assemble_ma[CS_DOF_EDGE_SCAL] = ma;
-      cs_equation_assemble_ms[CS_DOF_EDGE_SCAL] = ms;
-
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
-
-    } /* scalar-valued DoFs */
-
-  } /* Edge-based schemes and related ones */
-
-  if (fb_flag > 0 || hho_flag > 0) {
-
-    cs_matrix_structure_t  *ms0 = NULL, *ms1 = NULL, *ms2 = NULL;
-    cs_matrix_assembler_t  *ma0 = NULL, *ma1 = NULL, *ma2 = NULL;
-
-    n_max_cw_dofs = CS_MAX(n_max_cw_dofs, connect->n_max_fbyc);
-
-    const cs_adjacency_t  *f2f = connect->f2f;
-
-    if (cs_flag_test(fb_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR) ||
-        cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR)) {
-
-      t0 = cs_timer_time();
-
-      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAL];
-
-      ma0 = cs_equation_build_matrix_assembler(n_faces, 1, f2f, rs);
-      ms0 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma0);
-
-      cs_equation_assemble_ma[CS_DOF_FACE_SCAL] = ma0;
-      cs_equation_assemble_ms[CS_DOF_FACE_SCAL] = ms0;
-
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
-
-    } /* Scalar-valued CDO-Fb or HHO-P0 */
-
-    if (cs_flag_test(fb_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR) ||
-        cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY1 | CS_FLAG_SCHEME_SCALAR) ||
-        cs_flag_test(hho_flag, CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)) {
-
-      t0 = cs_timer_time();
-
-      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAP1];
-
-      ma1 = cs_equation_build_matrix_assembler(n_faces, CS_N_DOFS_FACE_1ST,
-                                               f2f, rs);
-      ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
-
-      assert((CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECT) &&
-             (CS_DOF_FACE_SCAP1 == CS_DOF_FACE_VECP0));
-
-      cs_equation_assemble_ma[CS_DOF_FACE_SCAP1] = ma1;
-      cs_equation_assemble_ms[CS_DOF_FACE_SCAP1] = ms1;
-
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
-
-      max_ddim = CS_MAX(max_ddim, 3);
-      max_edim = CS_MAX(max_edim, 3);
-
-    } /* Vector CDO-Fb or HHO-P1 or vector HHO-P0 */
-
-    if (cs_flag_test(hho_flag,
-                     CS_FLAG_SCHEME_POLY2 | CS_FLAG_SCHEME_SCALAR)) {
-
-      t0 = cs_timer_time();
-
-      const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAP2];
-
-      ma2 = cs_equation_build_matrix_assembler(n_faces, CS_N_DOFS_FACE_2ND,
-                                               f2f, rs);
-      ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
-
-      cs_equation_assemble_ma[CS_DOF_FACE_SCAP2] = ma2;
-      cs_equation_assemble_ms[CS_DOF_FACE_SCAP2] = ms2;
-
-      t1 = cs_timer_time();
-      cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
-
-      max_ddim = CS_MAX(max_ddim, CS_N_DOFS_FACE_2ND);
-      max_edim = CS_MAX(max_edim, CS_N_DOFS_FACE_2ND);
-
-    }
-
-    /* For vector equations and HHO */
-
-    if (cs_flag_test(hho_flag, CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY1) ||
-        cs_flag_test(hho_flag, CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2)) {
-
-      if  (hho_flag & CS_FLAG_SCHEME_POLY1) {
-
-        t0 = cs_timer_time();
-
-        const cs_range_set_t  *rs
-          = connect->range_sets[CS_DOF_FACE_VECP1];
-
-        ma1 = cs_equation_build_matrix_assembler(n_faces, 3*CS_N_DOFS_FACE_1ST,
-                                                 f2f, rs);
-        ms1 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma1);
-
-        cs_equation_assemble_ma[CS_DOF_FACE_VECP1] = ma1;
-        cs_equation_assemble_ms[CS_DOF_FACE_VECP1] = ms1;
-
-        t1 = cs_timer_time();
-        cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
-
-        max_ddim = CS_MAX(max_ddim, 3*CS_N_DOFS_FACE_1ST);
-        max_edim = CS_MAX(max_edim, 3*CS_N_DOFS_FACE_1ST);
-
-      }
-      else if  (hho_flag & CS_FLAG_SCHEME_POLY2) {
-
-        t0 = cs_timer_time();
-
-        const cs_range_set_t  *rs
-          = connect->range_sets[CS_DOF_FACE_VECP2];
-
-        ma2 = cs_equation_build_matrix_assembler(n_faces, 3*CS_N_DOFS_FACE_2ND,
-                                                 f2f, rs);
-        ms2 = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma2);
-
-        cs_equation_assemble_ma[CS_DOF_FACE_VECP2] = ma2;
-        cs_equation_assemble_ms[CS_DOF_FACE_VECP2] = ms2;
-
-        t1 = cs_timer_time();
-        cs_timer_counter_add_diff(&cs_equation_ms_time, &t0, &t1);
-
-        /* 18 = 3*6 =  3*CS_N_DOFS_FACE_2ND */
-        max_ddim = CS_MAX(max_ddim, 3*CS_N_DOFS_FACE_2ND);
-        max_edim = CS_MAX(max_edim, 3*CS_N_DOFS_FACE_2ND);
-
-      }
-
-    }
-
-  } /* Face-based schemes (CDO or HHO) */
-
   /* Common buffers for assemble usage */
 
-  const int  n_threads = cs_glob_n_threads;
-  BFT_MALLOC(cs_equation_assemble, n_threads, cs_equation_assemble_t *);
-  for (int i = 0; i < n_threads; i++)
-    cs_equation_assemble[i] = NULL;
+  if (cs_cdo_assembly == NULL) {
+
+    const int  n_threads = cs_glob_n_threads;
+    BFT_MALLOC(cs_cdo_assembly, n_threads, cs_cdo_assembly_t *);
+    for (int i = 0; i < n_threads; i++)
+      cs_cdo_assembly[i] = NULL;
+
+  }
 
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
 #pragma omp parallel
@@ -1321,12 +813,10 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
     /* Each thread allocate its part. This yields a better memory affinity */
 
     int  t_id = omp_get_thread_num();
-    cs_equation_assemble[t_id] =
-      _init_equation_assembler_struct(max_ddim, max_edim, n_max_cw_dofs);
+    _init_assembly_struct(ddim, edim, n_cw_dofs, &(cs_cdo_assembly[t_id]));
   }
 #else
-  cs_equation_assemble[0] =
-    _init_equation_assembler_struct(max_ddim, max_edim, n_max_cw_dofs);
+  _init_assembly_struct(ddim, edim, n_cw_dofs, &(cs_cdo_assembly[0]));
 #endif
 }
 
@@ -1338,178 +828,48 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_finalize(void)
+cs_cdo_assembly_finalize(void)
 {
-  /* Display profiling/performance information */
-
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                " <CDO/Assembly> Structure initialization: %5.3e s\n",
-                cs_equation_ms_time.nsec*1e-9);
-
-  /* Free common assemble buffers */
+  /* Free shared buffers for the assembly process */
 
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
 #pragma omp parallel
   {
     int  t_id = omp_get_thread_num();
-    cs_equation_assemble_t  *eqa = cs_equation_assemble[t_id];
-    _free_equation_assembler_struct(&eqa);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly[t_id];
+    _free_equation_assembler_struct(&asb);
   }
 #else
-  cs_equation_assemble_t  *eqa = cs_equation_assemble[0];
-  _free_equation_assembler_struct(&eqa);
+  cs_cdo_assembly_t  *asb = cs_cdo_assembly[0];
+  _free_equation_assembler_struct(&asb);
 #endif
-  BFT_FREE(cs_equation_assemble);
-
-  /* Free matrix structures */
-
-  for (int i = 0; i < CS_N_DOF_CASES; i++)
-    cs_matrix_structure_destroy(&(cs_equation_assemble_ms[i]));
-  BFT_FREE(cs_equation_assemble_ms);
-
-  /* Free matrix assemblers */
-
-  for (int i = 0; i < CS_N_DOF_CASES; i++)
-    cs_matrix_assembler_destroy(&(cs_equation_assemble_ma[i]));
-  BFT_FREE(cs_equation_assemble_ma);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the function pointer used to assemble the algebraic system
- *
- * \param[in] scheme     space discretization scheme
- * \param[in] ma_id      id in the array of matrix assembler
- *
- * \return a function pointer cs_equation_assembly_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_assembly_t *
-cs_equation_assemble_set(cs_param_space_scheme_t    scheme,
-                         int                        ma_id)
-{
-  switch (scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-    if (ma_id == CS_DOF_VTX_SCAL)
-      return _set_scalar_assembly_func();
-    else if (ma_id == CS_DOF_VTX_VECT)
-      return _set_block33_assembly_func();
-    break;
-
-  case CS_SPACE_SCHEME_CDOVCB:
-    if (ma_id == CS_DOF_VTX_SCAL)
-      return _set_scalar_assembly_func();
-    break;
-
-  case CS_SPACE_SCHEME_HHO_P0:
-  case CS_SPACE_SCHEME_CDOFB:
-    if (ma_id == CS_DOF_FACE_SCAL)
-      return _set_scalar_assembly_func();
-    else if (ma_id == CS_DOF_FACE_VECT)
-      return _set_block33_assembly_func();
-    break;
-
-  case CS_SPACE_SCHEME_HHO_P1:
-  case CS_SPACE_SCHEME_HHO_P2:
-    if (ma_id == CS_DOF_FACE_SCAP1)
-      return _set_block33_assembly_func();
-    else
-      return _set_block_assembly_func();
-    break;
-
-  case CS_SPACE_SCHEME_CDOEB:
-    if (ma_id == CS_DOF_EDGE_SCAL)
-      return _set_scalar_assembly_func();
-    break;
-
-  default:
-    return NULL; /* Case not handle */
-  }
-
-  return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the function pointer used to assemble the algebraic system
- *         Case of a system of equation.
- *
- * \param[in] scheme     space discretization scheme
- * \param[in] ma_id      id in the array of matrix assembler
- *
- * \return a function pointer cs_equation_assembly_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_assembly_t *
-cs_equation_assemble_system_set(cs_param_space_scheme_t    scheme,
-                                int                        ma_id)
-{
-  switch (scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-    if (ma_id == CS_DOF_VTX_SCAL)
-      return _set_scalar_sys_assembly_func();
-    else if (ma_id == CS_DOF_VTX_VECT)
-      bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
-    break;
-
-  case CS_SPACE_SCHEME_CDOVCB:
-    if (ma_id == CS_DOF_VTX_SCAL)
-      return _set_scalar_sys_assembly_func();
-    break;
-
-  case CS_SPACE_SCHEME_HHO_P0:
-  case CS_SPACE_SCHEME_CDOFB:
-    if (ma_id == CS_DOF_FACE_SCAL)
-      return _set_scalar_sys_assembly_func();
-    else if (ma_id == CS_DOF_FACE_VECT)
-      bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
-    break;
-
-  case CS_SPACE_SCHEME_HHO_P1:
-  case CS_SPACE_SCHEME_HHO_P2:
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
-    break;
-
-  case CS_SPACE_SCHEME_CDOEB:
-    if (ma_id == CS_DOF_EDGE_SCAL)
-      return _set_scalar_sys_assembly_func();
-    break;
-
-  default:
-    return NULL; /* Case not handle */
-  }
-
-  return NULL;
+  BFT_FREE(cs_cdo_assembly);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the current shift values to consider during the assembly stage
  *
- * \param[in, out] eqa          pointer to a cs_equation_assemble_t to update
+ * \param[in, out] asb          pointer to a cs_cdo_assembly_t to update
  * \param[in]      l_row_shift  shift to apply to local row ids
  * \param[in]      l_col_shift  shift to apply to local col ids
  *
- * \return a function pointer cs_equation_assembly_t
+ * \return a function pointer cs_cdo_assembly_func_t
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_set_shift(cs_equation_assemble_t   *eqa,
-                               cs_lnum_t                 l_row_shift,
-                               cs_lnum_t                 l_col_shift)
+cs_cdo_assembly_set_shift(cs_cdo_assembly_t    *asb,
+                          cs_lnum_t             l_row_shift,
+                          cs_lnum_t             l_col_shift)
 {
-  if (eqa == NULL)
+  if (asb == NULL)
     return;
 
   assert(l_row_shift > -1 && l_col_shift > -1);
 
-  eqa->l_row_shift = l_row_shift;
-  eqa->l_col_shift = l_col_shift;
+  asb->l_row_shift = l_row_shift;
+  asb->l_col_shift = l_col_shift;
 }
 
 #if defined(HAVE_MPI)
@@ -1521,21 +881,21 @@ cs_equation_assemble_set_shift(cs_equation_assemble_t   *eqa,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] asb      pointer to a matrix assembler buffers
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_matrix_mpit(const cs_sdm_t                   *m,
-                                 const cs_lnum_t                  *dof_ids,
-                                 const cs_range_set_t             *rset,
-                                 cs_equation_assemble_t           *eqa,
-                                 cs_matrix_assembler_values_t     *mav)
+cs_cdo_assembly_matrix_mpit(const cs_sdm_t                   *m,
+                            const cs_lnum_t                  *dof_ids,
+                            const cs_range_set_t             *rset,
+                            cs_cdo_assembly_t                *asb,
+                            cs_matrix_assembler_values_t     *mav)
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   row->n_cols = m->n_rows;
 
@@ -1579,21 +939,21 @@ cs_equation_assemble_matrix_mpit(const cs_sdm_t                   *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] asb      pointer to a matrix assembler buffers
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_matrix_mpis(const cs_sdm_t                   *m,
-                                 const cs_lnum_t                  *dof_ids,
-                                 const cs_range_set_t             *rset,
-                                 cs_equation_assemble_t           *eqa,
-                                 cs_matrix_assembler_values_t     *mav)
+cs_cdo_assembly_matrix_mpis(const cs_sdm_t                   *m,
+                            const cs_lnum_t                  *dof_ids,
+                            const cs_range_set_t             *rset,
+                            cs_cdo_assembly_t                *asb,
+                            cs_matrix_assembler_values_t     *mav)
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   row->n_cols = m->n_rows;
 
@@ -1631,21 +991,21 @@ cs_equation_assemble_matrix_mpis(const cs_sdm_t                   *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] asb      pointer to a matrix assembler buffers
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_matrix_seqt(const cs_sdm_t                  *m,
-                                 const cs_lnum_t                 *dof_ids,
-                                 const cs_range_set_t            *rset,
-                                 cs_equation_assemble_t          *eqa,
-                                 cs_matrix_assembler_values_t    *mav)
+cs_cdo_assembly_matrix_seqt(const cs_sdm_t                  *m,
+                            const cs_lnum_t                 *dof_ids,
+                            const cs_range_set_t            *rset,
+                            cs_cdo_assembly_t               *asb,
+                            cs_matrix_assembler_values_t    *mav)
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   row->n_cols = m->n_rows;
 
@@ -1683,21 +1043,21 @@ cs_equation_assemble_matrix_seqt(const cs_sdm_t                  *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] asb      pointer to a matrix assembler buffers
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_matrix_seqs(const cs_sdm_t                  *m,
-                                 const cs_lnum_t                 *dof_ids,
-                                 const cs_range_set_t            *rset,
-                                 cs_equation_assemble_t          *eqa,
-                                 cs_matrix_assembler_values_t    *mav)
+cs_cdo_assembly_matrix_seqs(const cs_sdm_t                  *m,
+                            const cs_lnum_t                 *dof_ids,
+                            const cs_range_set_t            *rset,
+                            cs_cdo_assembly_t               *asb,
+                            cs_matrix_assembler_values_t    *mav)
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   row->n_cols = m->n_rows; /* This is a square matrix */
 
@@ -1724,6 +1084,7 @@ cs_equation_assemble_matrix_seqs(const cs_sdm_t                  *m,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise (no-block) matrix into the global matrix
+ *         corresponding to a system of coupled equations.
  *         Scalar-valued case.
  *         Sequential and without openMP.
  *         Block matrices assembled from cellwise scalar-valued matrices
@@ -1731,32 +1092,33 @@ cs_equation_assemble_matrix_seqs(const cs_sdm_t                  *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] asb      pointer to a matrix assembler buffers
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_matrix_sys_seqs(const cs_sdm_t                  *m,
-                                     const cs_lnum_t                 *dof_ids,
-                                     const cs_range_set_t            *rset,
-                                     cs_equation_assemble_t          *eqa,
-                                     cs_matrix_assembler_values_t    *mav)
+cs_cdo_assembly_matrix_sys_seqs(const cs_sdm_t                  *m,
+                                const cs_lnum_t                 *dof_ids,
+                                const cs_range_set_t            *rset,
+                                cs_cdo_assembly_t               *asb,
+                                cs_matrix_assembler_values_t    *mav)
 {
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   row->n_cols = m->n_rows; /* This is a square matrix */
 
   /* Switch to the global numbering */
 
+  const cs_gnum_t  *_rset_g_id = rset->g_id + asb->l_col_shift;
   for (int i = 0; i < row->n_cols; i++)
-    row->col_g_id[i] = rset->g_id[dof_ids[i] + eqa->l_col_shift];
+    row->col_g_id[i] = _rset_g_id[dof_ids[i]];
 
   /* Push each row of the cellwise matrix into the assembler */
 
-  if (eqa->l_col_shift == eqa->l_row_shift) {
+  if (asb->l_col_shift == asb->l_row_shift) {
 
     for (int i = 0; i < row->n_cols; i++) {
 
@@ -1776,7 +1138,7 @@ cs_equation_assemble_matrix_sys_seqs(const cs_sdm_t                  *m,
     for (int i = 0; i < row->n_cols; i++) {
 
       row->i = i;                                     /* cellwise numbering */
-      row->g_id = rset->g_id[dof_ids[i] + eqa->l_row_shift]; /* global num. */
+      row->g_id = rset->g_id[dof_ids[i] + asb->l_row_shift]; /* global num. */
       row->l_id = row->g_id - rset->l_range[0];      /* range set numbering */
       row->val = m->val + i*row->n_cols;
 
@@ -1790,6 +1152,170 @@ cs_equation_assemble_matrix_sys_seqs(const cs_sdm_t                  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Assemble a cellwise (no-block) matrix into the global matrix
+ *         corresponding to a system of coupled equations.
+ *         Scalar-valued case.
+ *         Sequential and with openMP.
+ *         Block matrices assembled from cellwise scalar-valued matrices
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] asb      pointer to a matrix assembler buffers
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
+                                const cs_lnum_t                 *dof_ids,
+                                const cs_range_set_t            *rset,
+                                cs_cdo_assembly_t               *asb,
+                                cs_matrix_assembler_values_t    *mav)
+{
+  const cs_matrix_assembler_t  *ma = mav->ma;
+
+  cs_cdo_assembly_row_t  *row = asb->row;
+
+  row->n_cols = m->n_rows; /* This is a square matrix */
+
+  /* Switch to the global numbering */
+
+  const cs_gnum_t  *_rset_g_id = rset->g_id + asb->l_col_shift;
+  for (int i = 0; i < row->n_cols; i++)
+    row->col_g_id[i] = _rset_g_id[dof_ids[i]];
+
+  /* Push each row of the cellwise matrix into the assembler */
+
+  if (asb->l_col_shift == asb->l_row_shift) {
+
+    for (int i = 0; i < row->n_cols; i++) {
+
+      row->i = i;                               /* cellwise numbering */
+      row->g_id = row->col_g_id[i];             /* global numbering */
+      row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
+      row->val = m->val + i*row->n_cols;
+
+      _set_col_idx_scal_l(ma, row);
+
+#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+      _add_scal_values_critical(row, mav->matrix);
+#else
+      _add_scal_values_atomic(row, mav->matrix);
+#endif
+
+    } /* Loop on rows */
+
+  }
+  else {
+
+    for (int i = 0; i < row->n_cols; i++) {
+
+      row->i = i;                                     /* cellwise numbering */
+      row->g_id = rset->g_id[dof_ids[i] + asb->l_row_shift]; /* global num. */
+      row->l_id = row->g_id - rset->l_range[0];      /* range set numbering */
+      row->val = m->val + i*row->n_cols;
+
+      _set_col_idx_scal_l(ma, row);
+
+#if CS_CDO_OMP_SYNC_SECTIONS > 0 /* OpenMP with critical section */
+      _add_scal_values_critical(row, mav->matrix);
+#else
+      _add_scal_values_atomic(row, mav->matrix);
+#endif
+
+    } /* Loop on rows */
+
+  }
+}
+
+#if defined(HAVE_MPI)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assemble a cellwise matrix into the global matrix
+ *         Scalar-valued case. Parallel without openMP threading.
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] asb      pointer to a matrix assembler buffers
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_matrix_sys_mpis(const cs_sdm_t                   *m,
+                                const cs_lnum_t                  *dof_ids,
+                                const cs_range_set_t             *rset,
+                                cs_cdo_assembly_t                *asb,
+                                cs_matrix_assembler_values_t     *mav)
+{
+  const cs_matrix_assembler_t  *ma = mav->ma;
+
+  cs_cdo_assembly_row_t  *row = asb->row;
+
+  row->n_cols = m->n_rows;
+
+  /* Switch to the global numbering */
+
+  const cs_gnum_t  *_rset_gc_id = rset->g_id + asb->l_col_shift;
+  for (int i = 0; i < row->n_cols; i++)
+    row->col_g_id[i] = _rset_gc_id[dof_ids[i]];
+
+  /* Push each row of the cellwise matrix into the assembler */
+
+  if (asb->l_col_shift == asb->l_row_shift) {
+
+    for (int i = 0; i < row->n_cols; i++) {
+
+      row->i = i;                               /* cellwise numbering */
+      row->g_id = row->col_g_id[i];             /* global numbering */
+      row->l_id = row->g_id - rset->l_range[0]; /* range set numbering */
+      row->val = m->val + i*row->n_cols;
+
+      if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
+        _assemble_row_scal_ds(mav, ma, row);
+
+      else {
+
+        _set_col_idx_scal_ld(ma, row);
+        _add_scal_values_single(row, mav->matrix);
+
+      }
+
+    } /* Loop on rows */
+
+  }
+  else {
+
+    const cs_gnum_t  *_rset_gr_id = rset->g_id + asb->l_row_shift;
+
+    for (int i = 0; i < row->n_cols; i++) {
+
+      row->i = i;                                 /* cellwise numbering */
+      row->g_id = _rset_gr_id[dof_ids[i]];        /* global num. */
+      row->l_id = row->g_id - rset->l_range[0];   /* range set numbering */
+      row->val = m->val + i*row->n_cols;
+
+      if (row->l_id < 0 || row->l_id >= rset->n_elts[0])
+        _assemble_row_scal_ds(mav, ma, row);
+
+      else {
+
+        _set_col_idx_scal_ld(ma, row);
+        _add_scal_values_single(row, mav->matrix);
+
+      }
+
+    } /* Loop on rows */
+
+  } /* col_shift != row_shift */
+
+}
+#endif /* defined(HAVE_MPI) */
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Assemble a cellwise matrix into the global matrix
  *         Case of a block 3x3 entries. Expand each row.
  *         Sequential run without openMP threading.
@@ -1797,27 +1323,27 @@ cs_equation_assemble_matrix_sys_seqs(const cs_sdm_t                  *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock33_matrix_seqs(const cs_sdm_t               *m,
-                                          const cs_lnum_t              *dof_ids,
-                                          const cs_range_set_t         *rset,
-                                          cs_equation_assemble_t       *eqa,
-                                          cs_matrix_assembler_values_t *mav)
+cs_cdo_assembly_eblock33_matrix_seqs(const cs_sdm_t               *m,
+                                     const cs_lnum_t              *dof_ids,
+                                     const cs_range_set_t         *rset,
+                                     cs_cdo_assembly_t            *asb,
+                                     cs_matrix_assembler_values_t *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim >= 3);
+  assert(asb->ddim >= 3);
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
@@ -1877,27 +1403,27 @@ cs_equation_assemble_eblock33_matrix_seqs(const cs_sdm_t               *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t               *m,
-                                          const cs_lnum_t              *dof_ids,
-                                          const cs_range_set_t         *rset,
-                                          cs_equation_assemble_t       *eqa,
-                                          cs_matrix_assembler_values_t *mav)
+cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t               *m,
+                                     const cs_lnum_t              *dof_ids,
+                                     const cs_range_set_t         *rset,
+                                     cs_cdo_assembly_t            *asb,
+                                     cs_matrix_assembler_values_t *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim >= 3);
+  assert(asb->ddim >= 3);
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
@@ -1963,27 +1489,27 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t               *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock33_matrix_mpis(const cs_sdm_t               *m,
-                                          const cs_lnum_t              *dof_ids,
-                                          const cs_range_set_t         *rset,
-                                          cs_equation_assemble_t       *eqa,
-                                          cs_matrix_assembler_values_t *mav)
+cs_cdo_assembly_eblock33_matrix_mpis(const cs_sdm_t               *m,
+                                     const cs_lnum_t              *dof_ids,
+                                     const cs_range_set_t         *rset,
+                                     cs_cdo_assembly_t            *asb,
+                                     cs_matrix_assembler_values_t *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim >= 3);
+  assert(asb->ddim >= 3);
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
@@ -2050,27 +1576,27 @@ cs_equation_assemble_eblock33_matrix_mpis(const cs_sdm_t               *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
-                                          const cs_lnum_t              *dof_ids,
-                                          const cs_range_set_t         *rset,
-                                          cs_equation_assemble_t       *eqa,
-                                          cs_matrix_assembler_values_t *mav)
+cs_cdo_assembly_eblock33_matrix_mpit(const cs_sdm_t               *m,
+                                     const cs_lnum_t              *dof_ids,
+                                     const cs_range_set_t         *rset,
+                                     cs_cdo_assembly_t            *asb,
+                                     cs_matrix_assembler_values_t *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim >= 3);
+  assert(asb->ddim >= 3);
   assert(row->expval != NULL);
 
   /* Expand the values for a bundle of rows */
@@ -2132,8 +1658,8 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
 
   } /* Loop on row-wise blocks */
 }
-
 #endif /* defined(HAVE_MPI) */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise matrix into the global matrix
@@ -2143,31 +1669,31 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock_matrix_seqs(const cs_sdm_t                *m,
-                                        const cs_lnum_t               *dof_ids,
-                                        const cs_range_set_t          *rset,
-                                        cs_equation_assemble_t        *eqa,
-                                        cs_matrix_assembler_values_t  *mav)
+cs_cdo_assembly_eblock_matrix_seqs(const cs_sdm_t                *m,
+                                   const cs_lnum_t               *dof_ids,
+                                   const cs_range_set_t          *rset,
+                                   cs_cdo_assembly_t             *asb,
+                                   cs_matrix_assembler_values_t  *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim < 19);
-  assert(eqa->edim == eqa->ddim);
+  assert(asb->ddim < 19);
+  assert(asb->edim == asb->ddim);
   assert(row->expval != NULL);
 
-  const int  dim = eqa->ddim;
+  const int  dim = asb->ddim;
 
   /* Expand the values for a bundle of rows */
 
@@ -2226,31 +1752,31 @@ cs_equation_assemble_eblock_matrix_seqs(const cs_sdm_t                *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock_matrix_seqt(const cs_sdm_t                *m,
-                                        const cs_lnum_t               *dof_ids,
-                                        const cs_range_set_t          *rset,
-                                        cs_equation_assemble_t        *eqa,
-                                        cs_matrix_assembler_values_t  *mav)
+cs_cdo_assembly_eblock_matrix_seqt(const cs_sdm_t                *m,
+                                   const cs_lnum_t               *dof_ids,
+                                   const cs_range_set_t          *rset,
+                                   cs_cdo_assembly_t             *asb,
+                                   cs_matrix_assembler_values_t  *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim < 19);
-  assert(eqa->edim == eqa->ddim);
+  assert(asb->ddim < 19);
+  assert(asb->edim == asb->ddim);
   assert(row->expval != NULL);
 
-  const int  dim = eqa->ddim;
+  const int  dim = asb->ddim;
 
   /* Expand the values for a bundle of rows */
 
@@ -2315,31 +1841,31 @@ cs_equation_assemble_eblock_matrix_seqt(const cs_sdm_t                *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock_matrix_mpis(const cs_sdm_t                *m,
-                                        const cs_lnum_t               *dof_ids,
-                                        const cs_range_set_t          *rset,
-                                        cs_equation_assemble_t        *eqa,
-                                        cs_matrix_assembler_values_t  *mav)
+cs_cdo_assembly_eblock_matrix_mpis(const cs_sdm_t                *m,
+                                   const cs_lnum_t               *dof_ids,
+                                   const cs_range_set_t          *rset,
+                                   cs_cdo_assembly_t             *asb,
+                                   cs_matrix_assembler_values_t  *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim < 19);
-  assert(eqa->edim == eqa->ddim);
+  assert(asb->ddim < 19);
+  assert(asb->edim == asb->ddim);
   assert(row->expval != NULL);
 
-  const int  dim = eqa->ddim;
+  const int  dim = asb->ddim;
 
   /* Expand the values for a bundle of rows */
 
@@ -2407,31 +1933,31 @@ cs_equation_assemble_eblock_matrix_mpis(const cs_sdm_t                *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock_matrix_mpit(const cs_sdm_t                *m,
-                                        const cs_lnum_t               *dof_ids,
-                                        const cs_range_set_t          *rset,
-                                        cs_equation_assemble_t        *eqa,
-                                        cs_matrix_assembler_values_t  *mav)
+cs_cdo_assembly_eblock_matrix_mpit(const cs_sdm_t                *m,
+                                   const cs_lnum_t               *dof_ids,
+                                   const cs_range_set_t          *rset,
+                                   cs_cdo_assembly_t             *asb,
+                                   cs_matrix_assembler_values_t  *mav)
 {
   const cs_sdm_block_t  *bd = m->block_desc;
   const cs_matrix_assembler_t  *ma = mav->ma;
 
-  cs_equation_assemble_row_t  *row = eqa->row;
+  cs_cdo_assembly_row_t  *row = asb->row;
 
   assert(m->flag & CS_SDM_BY_BLOCK);
   assert(m->block_desc != NULL);
   assert(bd->n_row_blocks == bd->n_col_blocks);
-  assert(eqa->ddim < 19);
-  assert(eqa->edim == eqa->ddim);
+  assert(asb->ddim < 19);
+  assert(asb->edim == asb->ddim);
   assert(row->expval != NULL);
 
-  const int  dim = eqa->ddim;
+  const int  dim = asb->ddim;
 
   /* Expand the values for a bundle of rows */
 

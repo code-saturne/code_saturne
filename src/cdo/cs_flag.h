@@ -266,6 +266,21 @@ typedef enum {
 
 } cs_flag_comp_bits_t;
 
+typedef enum {
+
+  CS_FLAG_LOCATION_PRIMAL_VTX = CS_FLAG_PRIMAL | CS_FLAG_VERTEX,
+  CS_FLAG_LOCATION_PRIMAL_EDGE = CS_FLAG_PRIMAL | CS_FLAG_EDGE,
+  CS_FLAG_LOCATION_PRIMAL_FACE = CS_FLAG_PRIMAL | CS_FLAG_FACE,
+  CS_FLAG_LOCATION_PRIMAL_CELL = CS_FLAG_PRIMAL | CS_FLAG_CELL,
+  CS_FLAG_LOCATION_DUAL_VTX  = CS_FLAG_DUAL | CS_FLAG_VERTEX,
+  CS_FLAG_LOCATION_DUAL_EDGE = CS_FLAG_DUAL | CS_FLAG_EDGE,
+  CS_FLAG_LOCATION_DUAL_FACE = CS_FLAG_DUAL | CS_FLAG_FACE,
+  CS_FLAG_LOCATION_DUAL_CELL = CS_FLAG_DUAL | CS_FLAG_CELL,
+
+  CS_FLAG_N_LOCATIONS
+
+} cs_flag_location_t;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

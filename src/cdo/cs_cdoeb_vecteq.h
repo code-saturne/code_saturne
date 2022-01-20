@@ -58,6 +58,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Algebraic system for CDO edge-based discretization */
+
 typedef struct _cs_cdoeb_t  cs_cdoeb_vecteq_t;
 
 /*============================================================================
@@ -84,15 +85,13 @@ cs_cdoeb_vecteq_is_initialized(void);
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
- * \param[in]  ms          pointer to a cs_matrix_structure_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_vecteq_init_common(const cs_cdo_quantities_t    *quant,
-                            const cs_cdo_connect_t       *connect,
-                            const cs_time_step_t         *time_step,
-                            const cs_matrix_structure_t  *ms);
+cs_cdoeb_vecteq_init_sharing(const cs_cdo_quantities_t    *quant,
+                             const cs_cdo_connect_t       *connect,
+                             const cs_time_step_t         *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -116,7 +115,7 @@ cs_cdoeb_vecteq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_vecteq_finalize_common(void);
+cs_cdoeb_vecteq_finalize_sharing(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

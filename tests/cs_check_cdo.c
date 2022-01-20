@@ -1798,7 +1798,7 @@ _main_hho_schemes(FILE             *out_hho,
   cs_cell_builder_t  *cb = NULL;
   cs_cell_sys_t  *csys = NULL;
 
-  cs_hho_scaleq_init_common(flag, quant, connect, time_step, NULL, NULL, NULL);
+  cs_hho_scaleq_init_sharing(flag, quant, connect, time_step);
   cs_hho_scaleq_get(&csys, &cb, &hhob);
 
   int order = 0;
@@ -1822,7 +1822,7 @@ _main_hho_schemes(FILE             *out_hho,
   _test_basis_functions(out_hho, order, cm, cb);
   _test_hho_schemes(out_hho, order, cm, fm, csys, cb, hhob);
 
-  cs_hho_scaleq_finalize_common();
+  cs_hho_scaleq_finalize_sharing();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1845,7 +1845,7 @@ _main_cdovb_schemes(FILE             *out,
   cs_cell_builder_t  *cb = NULL;
   cs_cell_sys_t  *csys = NULL;
 
-  cs_cdovb_scaleq_init_common(quant, connect, time_step, NULL);
+  cs_cdovb_scaleq_init_sharing(quant, connect, time_step);
   cs_cdovb_scaleq_get(&csys, &cb);
 
     /* Initialize a cell view of the BC */
@@ -1892,7 +1892,7 @@ _main_cdovb_schemes(FILE             *out,
 
   _test_cdovb_schemes(out, cm, fm, csys, cb);
 
-  cs_cdovb_scaleq_finalize_common();
+  cs_cdovb_scaleq_finalize_sharing();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2075,7 +2075,7 @@ _main_cdofb_schemes(FILE             *out,
   cs_cell_builder_t  *cb = NULL;
   cs_cell_sys_t  *csys = NULL;
 
-  cs_cdofb_scaleq_init_common(quant, connect, time_step, NULL);
+  cs_cdofb_scaleq_init_sharing(quant, connect, time_step);
   cs_cdofb_scaleq_get(&csys, &cb);
 
   /* Initialize a cell view of the algebraic system */
@@ -2109,7 +2109,7 @@ _main_cdofb_schemes(FILE             *out,
   _test_hodge_fb(out, cm, hodge->matrix);
 
   cs_hodge_free(&hodge);
-  cs_cdofb_scaleq_finalize_common();
+  cs_cdofb_scaleq_finalize_sharing();
 }
 
 /*============================================================================
@@ -2182,7 +2182,7 @@ main(int    argc,
   BFT_MALLOC(time_step, 1, cs_time_step_t);
   time_step->t_cur = 0.; /* Useful when analytic function are called */
 
-  cs_source_term_set_shared_pointers(quant, connect);
+  cs_source_term_init_sharing(quant, connect);
 
   /* Allocate local structures */
   cs_cell_mesh_t  *cm = cs_cell_mesh_create(connect);

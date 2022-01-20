@@ -49,6 +49,7 @@
 #include <bft_mem.h>
 
 #include "cs_blas.h"
+#include "cs_cdo_assembly.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_solve.h"
 #include "cs_cdofb_priv.h"
@@ -253,8 +254,6 @@ typedef struct {
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
-static const cs_matrix_structure_t  *cs_shared_mom_ms;
-static const cs_matrix_structure_t  *cs_shared_pre_ms;
 
 /*============================================================================
  * Private function prototypes
@@ -690,8 +689,8 @@ _update_variables(cs_cdofb_predco_t           *sc)
 
   /* Parallel or periodic sum */
 
-  if (connect->interfaces[CS_DOF_FACE_SCAL] != NULL)
-    cs_interface_set_sum(connect->interfaces[CS_DOF_FACE_SCAL],
+  if (connect->face_ifs != NULL)
+    cs_interface_set_sum(connect->face_ifs,
                          n_faces,
                          3,
                          true,
@@ -796,15 +795,6 @@ cs_cdofb_predco_init_common(const cs_cdo_quantities_t     *quant,
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
-
-  /*
-   * Matrix structure related to the algebraic system for
-   * the momentum equation --> vector-valued equation
-   * the pressure equation --> scalar-valued equation
-   */
-
-  cs_shared_mom_ms = cs_cdofb_vecteq_matrix_structure();
-  cs_shared_pre_ms = cs_cdofb_scaleq_matrix_structure();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1065,7 +1055,6 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   const cs_time_step_t *ts = cs_shared_time_step;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *mom_rs = connect->range_sets[CS_DOF_FACE_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
 
@@ -1077,6 +1066,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
+  cs_cdo_system_helper_t  *mom_sh = mom_eqb->system_helper;
 
   assert(cs_equation_param_has_time(mom_eqp) == true);
   assert(mom_eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
@@ -1100,23 +1090,14 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb);
 
-  /* Initialize the local system: matrix and rhs */
+  /* Initialize the matrix and all its related structures needed during
+   * the assembly step as well as the rhs */
 
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_mom_ms);
-  cs_real_t  *rhs = NULL;
+  cs_real_t  *rhs = NULL;  /* Since it is NULL, sh get sthe ownership */
 
-  BFT_MALLOC(rhs, 3*n_faces, cs_real_t);
-# pragma omp parallel for if (3*n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
+  cs_cdo_system_helper_init_system(mom_sh, &rhs);
 
-  /* Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
-
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
-  shared(quant, connect, ts, mom_eqp, mom_eqb, mom_eqc, sc, rhs, matrix, \
-         mav, mom_rs, vel_c, pr_c)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1130,7 +1111,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
                                                                     connect);
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
       (mom_eqc->diffusion_hodge == NULL) ? NULL:mom_eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -1295,8 +1276,8 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
       /* ASSEMBLY PROCESS */
       /* ================ */
 
-      cs_cdofb_vecteq_assembly(csys, mom_rs, cm, has_sourceterm,
-                               mom_eqc, eqa, mav, rhs);
+      cs_cdofb_vecteq_assembly(csys,
+                               mom_sh->blocks[0], mom_sh->rhs, mom_eqc, asb);
 
     } /* Main loop on cells */
 
@@ -1306,12 +1287,10 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
-
   /* Free temporary buffers and structures */
 
+  cs_cdo_system_helper_finalize_assembly(mom_sh);
   cs_equation_builder_reset(mom_eqb);
-  cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
 
@@ -1336,11 +1315,13 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(mom_sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(mom_sh, 0);
 
   cs_cdo_solve_scalar_system(3*n_faces,
                              mom_eqp->sles_param,
                              matrix,
-                             mom_rs,
+                             range_set,
                              normalization,
                              true, /* rhs_redux */
                              sles,
@@ -1358,9 +1339,8 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
                                         mom_eqc->rc_tilda, mom_eqc->acf_tilda,
                                         velp_f, velp_c);
 
-  BFT_FREE(rhs);
   cs_sles_free(sles);
-  cs_matrix_destroy(&matrix);
+  cs_cdo_system_helper_reset(mom_sh);      /* free rhs and matrix */
 
   t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);

@@ -58,13 +58,17 @@ BEGIN_C_DECLS
  *        Generic prototype to define the function pointer.
  *
  * \param[in]      n_eqs       number of equations
+ * \param[in]      sysp        set of parameters to specify a system of eqs
  * \param[in, out] core_array  array of the core structures for an equation
+ * \param[out]     p_sh        double pointer to a system helper to define
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_system_init_structures_t)(int                       n_eqs,
-                                       cs_equation_core_t      **core_array);
+(cs_equation_system_init_structures_t)(int                                n_eqs,
+                                       const cs_equation_system_param_t  *sysp,
+                                       cs_equation_core_t         **core_array,
+                                       cs_cdo_system_helper_t     **p_sh);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -93,8 +97,7 @@ typedef void
  * \param[in]      n_eqs     number of equations in the system to solve
  * \param[in]      sysp      set of paremeters for the system of equations
  * \param[in, out] blocks    array of the core members for an equation
- * \param[in, out] p_ms      double pointer to a matrix structure
- * \param[in, out] p_rs      double pointer to a range set structure
+ * \param[in, out] sh        pointer to a system helper structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -103,8 +106,8 @@ typedef void
                              int                            n_eqs,
                              cs_equation_system_param_t    *sysp,
                              cs_equation_core_t           **blocks,
-                             cs_matrix_structure_t        **p_ms,
-                             cs_range_set_t               **p_rs);
+                             cs_cdo_system_helper_t        *sh);
+
 
 /*! \struct cs_equation_system_t
  *  \brief Main structure to handle a set of coupled equations
@@ -127,21 +130,15 @@ typedef struct {
   int                           timer_id;  /*!< Id of the timer statistics */
 
   /*!
-   * @name Structures
+   * @name Structure of the system of equations
    * @{
    *
-   * \var matrix_structure
-   *      Matrix structure (may be NULL if build on-the-fly). This depends on
-   *      the parameter keep_structures
-   *
-   * \var rset
-   *      Range set structure (may be NULL if build on-the-fly). This depends
-   *      on the parameter keep_structures
+   * \var system_helper
+   *      Set of structures to define the system of equations (rhs, matrix or
+   *      matrices, range sets, interface sets, etc.)
    */
 
-  cs_matrix_structure_t        *matrix_structure;
-
-  cs_range_set_t               *rset;
+  cs_cdo_system_helper_t       *system_helper;
 
   /*!
    * @name Diagonal block (equations)
@@ -282,8 +279,7 @@ cs_equation_system_log_monitoring(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign a set of pointer functions for managing the
- *         cs_equation_system_t structure.
+ * \brief  Assign a set of shared pointer to the main structures
  *
  * \param[in]  mesh        basic mesh structure
  * \param[in]  connect     additional connectivity data
@@ -293,10 +289,20 @@ cs_equation_system_log_monitoring(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_set_structures(cs_mesh_t             *mesh,
-                                  cs_cdo_connect_t      *connect,
-                                  cs_cdo_quantities_t   *quant,
-                                  cs_time_step_t        *time_step);
+cs_equation_system_init_sharing(const cs_mesh_t             *mesh,
+                                const cs_cdo_connect_t      *connect,
+                                const cs_cdo_quantities_t   *quant,
+                                const cs_time_step_t        *time_step);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a set of pointer functions for managing all the systems of
+ *         equations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_system_set_functions(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -86,10 +86,6 @@ typedef struct {
    *
    * \var block_var_dim
    *      Dimension of the variable in each block
-   *
-   * \var keep_structures
-   *      Destroy or not the matrix structure and the range set structure after
-   *      each solve
    */
 
   char *restrict            name;
@@ -99,8 +95,6 @@ typedef struct {
   cs_param_space_scheme_t   space_scheme;
 
   int                       block_var_dim;
-
-  bool                      keep_structures;
 
   /*!
    * @name Linear algebra (SLES)

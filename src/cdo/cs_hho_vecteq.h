@@ -81,13 +81,10 @@ typedef struct _cs_hho_vecteq_t cs_hho_vecteq_t;
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_vecteq_init_common(cs_flag_t                      scheme_flag,
-                          const cs_cdo_quantities_t     *quant,
-                          const cs_cdo_connect_t        *connect,
-                          const cs_time_step_t          *time_step,
-                          const cs_matrix_structure_t   *ms0,
-                          const cs_matrix_structure_t   *ms1,
-                          const cs_matrix_structure_t   *ms2);
+cs_hho_vecteq_init_sharing(cs_flag_t                      scheme_flag,
+                           const cs_cdo_quantities_t     *quant,
+                           const cs_cdo_connect_t        *connect,
+                           const cs_time_step_t          *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -111,7 +108,7 @@ cs_hho_vecteq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_vecteq_finalize_common(void);
+cs_hho_vecteq_finalize_sharing(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -186,27 +183,6 @@ cs_hho_vecteq_compute_source(const cs_equation_param_t  *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         data structure
- *
- * \param[in]      eqp            pointer to a cs_equation_param_t structure
- * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to generic data structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of cs_real_t
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hho_vecteq_initialize_system(const cs_equation_param_t  *eqp,
-                                cs_equation_builder_t      *eqb,
-                                void                       *data,
-                                cs_matrix_t               **system_matrix,
-                                cs_real_t                 **system_rhs);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Build the linear system arising from a scalar convection/diffusion
  *         equation with a HHO scheme.
  *         One works cellwise and then process to the assembly
@@ -215,9 +191,7 @@ cs_hho_vecteq_initialize_system(const cs_equation_param_t  *eqp,
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_hho_vecteq_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
+ * \param[in, out] context    pointer to cs_hho_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -226,9 +200,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
                            const cs_real_t            *field_val,
                            const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
-                           void                       *data,
-                           cs_real_t                  *rhs,
-                           cs_matrix_t                *matrix);
+                           void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!

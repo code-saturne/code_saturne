@@ -672,8 +672,8 @@ _create_property(const char           *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                const cs_cdo_connect_t       *connect)
+cs_property_init_sharing(const cs_cdo_quantities_t    *quant,
+                         const cs_cdo_connect_t       *connect)
 {
   /* Assign static const pointers */
   cs_cdo_quant = quant;

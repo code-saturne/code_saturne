@@ -179,10 +179,10 @@ cs_solid_selection_sync(const cs_cdo_connect_t   *connect)
 
     /* Synchronize face tags */
 
-    if (connect->interfaces[CS_DOF_FACE_SCAL] != NULL) {
+    if (connect->face_ifs != NULL) {
 
       assert(sizeof(bool) == sizeof(char));
-      cs_interface_set_max(connect->interfaces[CS_DOF_FACE_SCAL],
+      cs_interface_set_max(connect->face_ifs,
                            connect->n_faces[0],
                            1,             /* stride */
                            false,         /* interlace (not useful here) */

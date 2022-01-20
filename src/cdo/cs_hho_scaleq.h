@@ -74,20 +74,14 @@ typedef struct _cs_hho_scaleq_t cs_hho_scaleq_t;
  * \param[in]  quant        additional mesh quantities struct.
  * \param[in]  connect      pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step    pointer to a time step structure
- * \param[in]  ms0          pointer to a cs_matrix_structure_t structure (P0)
- * \param[in]  ms1          pointer to a cs_matrix_structure_t structure (P1)
- * \param[in]  ms2          pointer to a cs_matrix_structure_t structure (P2)
 */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_init_common(cs_flag_t                      scheme_flag,
-                          const cs_cdo_quantities_t     *quant,
-                          const cs_cdo_connect_t        *connect,
-                          const cs_time_step_t          *time_step,
-                          const cs_matrix_structure_t   *ms0,
-                          const cs_matrix_structure_t   *ms1,
-                          const cs_matrix_structure_t   *ms2);
+cs_hho_scaleq_init_sharing(cs_flag_t                      scheme_flag,
+                           const cs_cdo_quantities_t     *quant,
+                           const cs_cdo_connect_t        *connect,
+                           const cs_time_step_t          *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -111,7 +105,7 @@ cs_hho_scaleq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_finalize_common(void);
+cs_hho_scaleq_finalize_sharing(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -200,9 +194,7 @@ cs_hho_scaleq_initialize_system(const cs_equation_param_t  *eqp,
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_hho_scaleq_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
+ * \param[in, out] context    pointer to cs_hho_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -211,9 +203,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
                            const cs_real_t            *field_val,
                            const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
-                           void                       *data,
-                           cs_real_t                  *rhs,
-                           cs_matrix_t                *matrix);
+                           void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!

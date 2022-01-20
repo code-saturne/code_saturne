@@ -194,8 +194,6 @@ cs_hho_stokes_initialize_system(const cs_equation_param_t  *eqp,
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
  * \param[in, out] data       pointer to cs_hho_stokes_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */
 /*----------------------------------------------------------------------------*/
 
@@ -205,9 +203,7 @@ cs_hho_stokes_build_system(const cs_mesh_t            *mesh,
                            double                      dt_cur,
                            const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
-                           void                       *data,
-                           cs_real_t                  *rhs,
-                           cs_matrix_t                *matrix);
+                           void                       *data);
 
 /*----------------------------------------------------------------------------*/
 /*!

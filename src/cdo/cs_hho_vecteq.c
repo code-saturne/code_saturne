@@ -46,9 +46,9 @@
 
 #include "cs_boundary_zone.h"
 #include "cs_cdo_advection.h"
+#include "cs_cdo_assembly.h"
 #include "cs_cdo_bc.h"
 #include "cs_cdo_diffusion.h"
-#include "cs_equation_assemble.h"
 #include "cs_hho_builder.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -99,10 +99,6 @@ struct _cs_hho_vecteq_t {
   int                            n_cell_dofs;
   int                            n_face_dofs;
 
-  /* Structures related to the algebraic sytem construction (shared) */
-  const cs_matrix_structure_t   *ms;
-  const cs_range_set_t          *rs;
-
   /* Solution of the algebraic system at the last computed iteration.
      cell_values is different from the values stored in the associated
      field since here it's the values of polynomial coefficients which
@@ -117,11 +113,6 @@ struct _cs_hho_vecteq_t {
 
   /* Handle the definition of the BCs */
   short int                     *bf2def_ids;
-
-  /* Assembly process */
-  /* ================ */
-
-  cs_equation_assembly_t        *assemble;
 
   /* Static condensation members */
   /* =========================== */
@@ -151,9 +142,6 @@ static cs_hho_builder_t  **cs_hho_builders = NULL;
 static const cs_cdo_quantities_t  *cs_shared_quant;
 static const cs_cdo_connect_t  *cs_shared_connect;
 static const cs_time_step_t  *cs_shared_time_step;
-static const cs_matrix_structure_t  *cs_shared_ms0;
-static const cs_matrix_structure_t  *cs_shared_ms1;
-static const cs_matrix_structure_t  *cs_shared_ms2;
 
 /*============================================================================
  * Private function prototypes
@@ -600,21 +588,15 @@ _condense_and_store(const cs_adjacency_t    *c2f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_vecteq_init_common(cs_flag_t                      scheme_flag,
-                          const cs_cdo_quantities_t     *quant,
-                          const cs_cdo_connect_t        *connect,
-                          const cs_time_step_t          *time_step,
-                          const cs_matrix_structure_t   *ms0,
-                          const cs_matrix_structure_t   *ms1,
-                          const cs_matrix_structure_t   *ms2)
+cs_hho_vecteq_init_sharing(cs_flag_t                      scheme_flag,
+                           const cs_cdo_quantities_t     *quant,
+                           const cs_cdo_connect_t        *connect,
+                           const cs_time_step_t          *time_step)
 {
   /* Assign static const pointers */
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
-  cs_shared_ms0 = ms0;
-  cs_shared_ms1 = ms1;
-  cs_shared_ms2 = ms2;
 
   const int n_fc = connect->n_max_fbyc;
 
@@ -731,7 +713,7 @@ cs_hho_vecteq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_vecteq_finalize_common(void)
+cs_hho_vecteq_finalize_sharing(void)
 {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -801,40 +783,16 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   case CS_SPACE_SCHEME_HHO_P0:
     eqc->n_cell_dofs = 3*CS_N_DOFS_CELL_0TH;
     eqc->n_face_dofs = 3*CS_N_DOFS_FACE_0TH;
-
-    /* Not owner; Only shared */
-    eqc->ms = cs_shared_ms0;
-    eqc->rs = connect->range_sets[CS_DOF_FACE_VECP0];
-
-    /* Assembly process */
-    eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P0,
-                                             CS_DOF_FACE_VECP0);
     break;
 
   case CS_SPACE_SCHEME_HHO_P1:
     eqc->n_cell_dofs = 3*CS_N_DOFS_CELL_1ST;
     eqc->n_face_dofs = 3*CS_N_DOFS_FACE_1ST;
-
-    /* Not owner; Only shared */
-    eqc->ms = cs_shared_ms1;
-    eqc->rs = connect->range_sets[CS_DOF_FACE_VECP1];
-
-    /* Assembly process */
-    eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P1,
-                                             CS_DOF_FACE_VECP1);
     break;
 
   case CS_SPACE_SCHEME_HHO_P2:
     eqc->n_cell_dofs = 3*CS_N_DOFS_CELL_2ND;
     eqc->n_face_dofs = 3*CS_N_DOFS_FACE_2ND;
-
-    /* Not owner; Only shared */
-    eqc->ms = cs_shared_ms2;
-    eqc->rs = connect->range_sets[CS_DOF_FACE_VECP2];
-
-    /* Assembly process */
-    eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_HHO_P2,
-                                             CS_DOF_FACE_VECP2);
     break;
 
     /* TODO: case CS_SPACE_SCHEME_HHO_PK */
@@ -846,6 +804,27 @@ cs_hho_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* System dimension */
   eqc->n_dofs = eqc->n_face_dofs * n_faces;
   eqc->n_max_loc_dofs = eqc->n_face_dofs*connect->n_max_fbyc + eqc->n_cell_dofs;
+
+  /* Helper structures (range set, interface set, matrix structure and all the
+     assembly process) */
+
+  cs_cdo_system_helper_t  *sh = NULL;
+
+  sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_DEFAULT,
+                                   1,            /* n_col_blocks */
+                                   &eqc->n_dofs, /* col_block_sizes */
+                                   1);           /* n_blocks */
+
+  cs_cdo_system_add_dblock(sh, 0,
+                           cs_flag_primal_face,
+                           n_faces,
+                           eqc->n_face_dofs, /* stride */
+                           false,            /* interlaced */
+                           true);            /* unrolled */
+
+  cs_cdo_system_build_block(sh, 0); /* build/set structures */
+
+  eqb->system_helper = sh;
 
   /* Values of each DoF related to the cells */
   const cs_lnum_t  n_cell_dofs = n_cells * eqc->n_cell_dofs;
@@ -1080,49 +1059,6 @@ cs_hho_vecteq_compute_source(const cs_equation_param_t  *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         data structure
- *
- * \param[in]      eqp            pointer to a cs_equation_param_t structure
- * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to generic data structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of cs_real_t
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hho_vecteq_initialize_system(const cs_equation_param_t   *eqp,
-                                cs_equation_builder_t       *eqb,
-                                void                        *data,
-                                cs_matrix_t                **system_matrix,
-                                cs_real_t                  **system_rhs)
-{
-  CS_UNUSED(eqp);
-
-  assert(*system_matrix == NULL && *system_rhs == NULL);
-
-  cs_hho_vecteq_t  *eqc = (cs_hho_vecteq_t *)data;
-
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-
-  cs_timer_t  t0 = cs_timer_time();
-  const cs_lnum_t  n_elts = quant->n_faces * eqc->n_face_dofs;
-
-  *system_matrix = cs_matrix_create(eqc->ms);
-
-  /* Allocate and initialize the related right-hand side */
-  BFT_MALLOC(*system_rhs, n_elts, cs_real_t);
-# pragma omp parallel for if  (n_elts > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_elts; i++) (*system_rhs)[i] = 0.0;
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Build the linear system arising from a scalar convection/diffusion
  *         equation with a HHO scheme.
  *         One works cellwise and then process to the assembly
@@ -1131,9 +1067,7 @@ cs_hho_vecteq_initialize_system(const cs_equation_param_t   *eqp,
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_hho_vecteq_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
+ * \param[in, out] context    pointer to cs_hho_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1142,15 +1076,13 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
                            const cs_real_t            *field_val,
                            const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
-                           void                       *data,
-                           cs_real_t                  *rhs,
-                           cs_matrix_t                *matrix)
+                           void                       *context)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(field_val);
 
   /* Sanity checks */
-  assert(rhs != NULL && matrix != NULL && eqp != NULL && eqb != NULL);
+  assert(eqp != NULL && eqb != NULL);
   /* The only way to set a Dirichlet up to now */
   assert(eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED);
 
@@ -1162,7 +1094,8 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
     bft_error(__FILE__, __LINE__, 0,
               _(" Unsteady terms are not handled yet.\n"));
 
-  cs_hho_vecteq_t  *eqc = (cs_hho_vecteq_t *)data;
+  cs_hho_vecteq_t  *eqc = (cs_hho_vecteq_t *)context;
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -1171,14 +1104,13 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav
-    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  /* Initialize the local system: rhs, matrix and assembler values */
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav,               \
-         field_val, cs_hho_cell_sys, cs_hho_cell_bld, cs_hho_builders)  \
-  firstprivate(dt_cur, t_cur)
+  cs_real_t  *rhs = NULL;
+
+  cs_cdo_system_helper_init_system(sh, &rhs);
+
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1189,7 +1121,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
     /* Set inside the OMP section so that each thread has its own value
      * Each thread get back its related structures:
      * Get the cell-wise view of the mesh and the algebraic system */
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_hho_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
@@ -1381,13 +1313,18 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
       /* ASSEMBLY */
       /* ======== */
 
+      cs_cdo_system_block_t  *block = sh->blocks[0];
+      cs_cdo_system_dblock_t  *db = block->block_pointer;
+
       /* Matrix assembly */
-      eqc->assemble(csys->mat, csys->dof_ids, eqc->rs, eqa, mav);
+
+      db->assembly_func(csys->mat, csys->dof_ids, db->range_set, asb, db->mav);
 
       /* RHS assembly */
+
       for (short int i = 0; i < eqc->n_face_dofs*cm->n_fc; i++) {
 #       pragma omp atomic
-        rhs[csys->dof_ids[i]] += csys->rhs[i];
+        sh->rhs[csys->dof_ids[i]] += csys->rhs[i];
       }
 
     } /* Main loop on cells */
@@ -1396,7 +1333,8 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
+  /* Free temporary buffers and structures */
+  cs_cdo_system_helper_finalize_assembly(sh);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_VECTEQ_DBG > 2
   cs_dbg_darray_to_listing("FINAL RHS_FACE",
@@ -1405,9 +1343,6 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
     cs_dbg_darray_to_listing("FINAL RHS_CELL", 3*quant->n_cells,
                              eqc->source_terms, eqc->n_cell_dofs);
 #endif
-
-  /* Free temporary buffers and structures */
-  cs_matrix_assembler_values_finalize(&mav);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);

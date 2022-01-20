@@ -44,14 +44,15 @@
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
+#include "cs_cdo_assembly.h"
 #include "cs_cdo_toolbox.h"
+#include "cs_cdo_system.h"
 #include "cs_control.h"
 #include "cs_defs.h"
 #include "cs_domain.h"
 #include "cs_domain_op.h"
 #include "cs_domain_setup.h"
 #include "cs_equation.h"
-#include "cs_equation_assemble.h"
 #include "cs_equation_system.h"
 #include "cs_gwf.h"
 #include "cs_log.h"
@@ -783,7 +784,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
 
   cs_domain_finalize_user_setup(domain);
 
-  /* Assign to a cs_equation_t structure a list of function to manage this
+  /* Assign to a cs_equation_t structure a list of functions to manage this
    * structure during the computation.
    * The set of functions chosen for each equation depends on the parameters
    * specifying the cs_equation_t structure */
@@ -793,10 +794,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   /* Initialize and set main members before building and solving systems of
      equations (should be done after cs_equation_set_functions()) */
 
-  cs_equation_system_set_structures(domain->mesh,
-                                    domain->connect,
-                                    domain->cdo_quantities,
-                                    domain->time_step);
+  cs_equation_system_set_functions();
 
   if (domain->only_steady)
     domain->is_last_iter = true;
@@ -883,6 +881,14 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   _log_monitoring(domain);
 
+  /* Free common structures relatated to equations */
+
+  cs_equation_finalize_sharing(domain->cdo_context->vb_scheme_flag,
+                               domain->cdo_context->vcb_scheme_flag,
+                               domain->cdo_context->eb_scheme_flag,
+                               domain->cdo_context->fb_scheme_flag,
+                               domain->cdo_context->hho_scheme_flag);
+
   /* Free the memory related to equations */
 
   cs_equation_destroy_all();
@@ -891,21 +897,20 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   cs_equation_system_destroy_all();
 
-  /* Free common structures relatated to equations */
-
-  cs_equation_unset_shared_structures(domain->cdo_context->vb_scheme_flag,
-                                      domain->cdo_context->vcb_scheme_flag,
-                                      domain->cdo_context->eb_scheme_flag,
-                                      domain->cdo_context->fb_scheme_flag,
-                                      domain->cdo_context->hho_scheme_flag);
-
-  cs_equation_assemble_finalize();
-
-  cs_cdo_toolbox_finalize();
-
   /* Free memory related to advection fields */
 
   cs_advection_field_destroy_all();
+
+  /* Free the memory used inside modules using CDO schemes */
+  /* ----------------------------------------------------- */
+
+  /* Solid cells */
+
+  cs_solid_selection_free();
+
+  /* ALE */
+
+  cs_ale_destroy_all();
 
   /* Free memory related to the thermal module */
 
@@ -927,13 +932,14 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   cs_solidification_destroy_all();
 
-  /* Solid cells */
+  /* Free the memory related to "low-level" structures shared among schemes */
+  /* ---------------------------------------------------------------------- */
 
-  cs_solid_selection_free();
+  cs_cdo_assembly_finalize();
 
-  /* ALE */
+  cs_cdo_system_destroy_all();
 
-  cs_ale_destroy_all();
+  cs_cdo_toolbox_finalize();
 
   /* Set flag to OFF */
 

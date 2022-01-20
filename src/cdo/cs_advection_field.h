@@ -402,8 +402,8 @@ cs_advection_field_get_field(const cs_adv_field_t       *adv,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_set_shared_pointers(const cs_cdo_quantities_t  *quant,
-                                       const cs_cdo_connect_t     *connect);
+cs_advection_field_init_sharing(const cs_cdo_quantities_t  *quant,
+                                const cs_cdo_connect_t     *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!

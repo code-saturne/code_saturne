@@ -363,8 +363,8 @@ cs_cdo_balance_sync(const cs_cdo_connect_t    *connect,
 
     assert(b->size == connect->n_vertices);
 
-    if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL)
-      cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
+    if (connect->vtx_ifs != NULL)
+      cs_interface_set_sum(connect->vtx_ifs,
                            b->size,
                            7,   /* stride: 1 for each kind of balance */
                            false,
@@ -454,11 +454,11 @@ cs_cdo_sync_vol_def_at_vertices(int                      n_defs,
 
   } /* Loop on definitions */
 
-  if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL) {
+  if (connect->vtx_ifs != NULL) {
 
     /* Last definition is used in case of conflict */
 
-    cs_interface_set_max(connect->interfaces[CS_DOF_VTX_SCAL],
+    cs_interface_set_max(connect->vtx_ifs,
                          n_vertices,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
@@ -557,11 +557,11 @@ cs_cdo_sync_vol_def_at_edges(int                      n_defs,
 
   } /* Loop on definitions */
 
-  if (connect->interfaces[CS_DOF_EDGE_SCAL] != NULL) {
+  if (connect->edge_ifs != NULL) {
 
     /* Last definition is used in case of conflict */
 
-    cs_interface_set_max(connect->interfaces[CS_DOF_EDGE_SCAL],
+    cs_interface_set_max(connect->edge_ifs,
                          n_edges,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
@@ -660,11 +660,11 @@ cs_cdo_sync_vol_def_at_faces(int                        n_defs,
 
   } /* Loop on definitions */
 
-  if (connect->interfaces[CS_DOF_FACE_SCAL] != NULL) {
+  if (connect->face_ifs != NULL) {
 
     /* Last definition is used in case of conflict */
 
-    cs_interface_set_max(connect->interfaces[CS_DOF_FACE_SCAL],
+    cs_interface_set_max(connect->face_ifs,
                          n_faces,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
@@ -723,16 +723,16 @@ cs_cdo_sync_vertex_mean_values(int                         dim,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_lnum_t  n_vertices = connect->n_vertices;
 
-  if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL) {
+  if (connect->vtx_ifs != NULL) {
 
-    cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
+    cs_interface_set_sum(connect->vtx_ifs,
                          n_vertices,
                          1,           /* stride */
                          false,       /* interlace (not useful here) */
                          CS_INT_TYPE, /* int */
                          counter);
 
-    cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
+    cs_interface_set_sum(connect->vtx_ifs,
                          n_vertices,
                          dim,         /* stride */
                          true,        /* interlace */

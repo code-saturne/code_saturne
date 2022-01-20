@@ -39,7 +39,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_cdo_assembly.h"
 #include "cs_cdo_bc.h"
+#include "cs_cdo_system.h"
 #include "cs_cdofb_priv.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
@@ -49,6 +51,8 @@
 #include "cs_equation_priv.h"
 #include "cs_iter_algo.h"
 #include "cs_navsto_coupling.h"
+#include "cs_navsto_param.h"
+#include "cs_sles.h"
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
 
@@ -68,6 +72,38 @@ BEGIN_C_DECLS
  *        monolithic approach
  */
 
+/* Context related to the resolution of a saddle point problem */
+
+typedef struct {
+
+  /* B*.approx(A^-1).B^t which corresponds to a compatible discretization of
+     the discrete Laplacian on the pressure space */
+
+  cs_matrix_t   *compatible_laplacian;
+
+  cs_real_t     *div_op;    /* Block related to the -divergence (block
+                               A_{10}) */
+
+  /* Arrays split according to the block shape. U is interlaced or not
+   * according to the SLES strategy */
+
+  cs_lnum_t      n_faces;       /* local number of DoFs for each component
+                                 * of the velocity */
+  cs_lnum_t      n_cells;       /* local number of DoFs for the pressure */
+
+  cs_real_t     *u_f;           /* velocity values at faces */
+  cs_real_t     *p_c;           /* pressure values at cells */
+
+  cs_sles_t     *sles;          /* main SLES structure */
+  cs_sles_t     *schur_sles;    /* auxiliary SLES for the Schur complement
+                                 * May be NULL */
+
+  cs_real_t      graddiv_coef;  /* value of the grad-div coefficient in case
+                                 * of augmented system */
+
+} cs_cdofb_monolithic_sles_t;
+
+
 typedef struct _cdofb_monolithic_t  cs_cdofb_monolithic_t;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -78,39 +114,25 @@ typedef struct _cdofb_monolithic_t  cs_cdofb_monolithic_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a matrix and its related structures needed during the
- *         assembly step.
- *
- * \param[in, out]  sc           pointer to scheme context structure
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_cdofb_monolithic_init_matrix_t)(cs_cdofb_monolithic_t     *sc);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb schemes
  *
  * \param[in]       csys              pointer to a cs_cell_sys_t structure
  * \param[in]       cm                pointer to a cs_cell_mesh_t structure
  * \param[in]       div_op            array with the divergence op. values
- * \param[in]       has_sourceterm    has the equation a source term?
  * \param[in, out]  sc                pointer to scheme context structure
  * \param[in, out]  eqc               context structure for a vector-valued Fb
- * \param[in, out]  eqa               pointer to cs_equation_assemble_t
+ * \param[in, out]  asb               pointer to cs_cdo_assembly_t
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdofb_monolithic_assemble_t)(const cs_cell_sys_t           *csys,
-                                 const cs_cell_mesh_t          *cm,
-                                 const cs_real_t               *div_op,
-                                 const bool                     has_sourceterm,
-                                 cs_cdofb_monolithic_t         *sc,
-                                 cs_cdofb_vecteq_t             *eqc,
-                                 cs_equation_assemble_t        *eqa);
+(cs_cdofb_monolithic_assemble_t)(const cs_cell_sys_t        *csys,
+                                 const cs_cell_mesh_t       *cm,
+                                 const cs_real_t            *div_op,
+                                 cs_cdofb_monolithic_t      *sc,
+                                 cs_cdofb_vecteq_t          *eqc,
+                                 cs_cdo_assembly_t          *asb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -145,6 +167,7 @@ typedef void
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
@@ -152,9 +175,10 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef int
-(cs_cdofb_monolithic_solve_t)(const cs_navsto_param_t       *nsp,
-                              const cs_equation_param_t     *eqp,
-                              cs_cdofb_monolithic_sles_t    *msles);
+(cs_cdofb_monolithic_solve_t)(const cs_navsto_param_t        *nsp,
+                              const cs_equation_param_t      *eqp,
+                              const cs_cdo_system_helper_t   *sh,
+                              cs_cdofb_monolithic_sles_t     *msles);
 
 /*=============================================================================
  * Structure definitions
@@ -273,7 +297,6 @@ struct _cdofb_monolithic_t {
    * @{
    */
 
-  cs_cdofb_monolithic_init_matrix_t   *init_system;
   cs_cdofb_monolithic_build_t         *steady_build;
   cs_cdofb_monolithic_build_t         *build;
 
@@ -297,20 +320,13 @@ struct _cdofb_monolithic_t {
    * system of equation
    */
 
-  cs_cdofb_monolithic_assemble_t      *assemble;
+  cs_cdofb_monolithic_assemble_t     *assemble;
 
-  /* \var elemental_assembly
-   * Function pointer to manage the assembly process at low-level
+  /* \var system_helper
+   * Set of structure to handle the saddle-point matrix and its rhs
    */
 
-  cs_equation_assembly_t              *elemental_assembly;
-
-  /* \var mav_structures
-   * Set of pointers to the matrix assembler structures for matrix values
-   * Size = 1 or 9
-   */
-
-  cs_matrix_assembler_values_t       **mav_structures;
+  cs_cdo_system_helper_t             *system_helper;
 
   /*!
    * @}
@@ -319,7 +335,7 @@ struct _cdofb_monolithic_t {
    * @{
    */
 
-  cs_cdofb_monolithic_solve_t      *solve;
+  cs_cdofb_monolithic_solve_t        *solve;
 
   /* \var msles
    * Set of pointers to enable the resolution of saddle-point system
@@ -329,14 +345,14 @@ struct _cdofb_monolithic_t {
    * is requested.
    */
 
-  cs_cdofb_monolithic_sles_t       *msles;
+  cs_cdofb_monolithic_sles_t         *msles;
 
   /*!
    * \var nl_algo
    * Structure used to drive the convergence of high-level iterative algorithms
    */
 
-  cs_iter_algo_t                   *nl_algo;
+  cs_iter_algo_t                    *nl_algo;
 
   /*!
    * @}
@@ -352,7 +368,6 @@ struct _cdofb_monolithic_t {
   cs_timer_counter_t  timer;
 
   /*! @} */
-
 };
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

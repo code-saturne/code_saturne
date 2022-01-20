@@ -38,7 +38,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_navsto_param.h"
+#include "cs_cdofb_monolithic_priv.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -52,60 +52,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Context related to the resolution of a saddle point problem */
-typedef struct {
-
-  /* Block matrices: The gradient operator is the -transpose of div_op */
-
-  /*
-   * If n_row_blocks = 1 and div_op == NULL then all the velocity-pressure
-   * components are gathered in one block. In this case, the full matrix is a
-   * 1x1 matrix
-   *
-   * If n_row_blocks = 1 and div_op != NULL then all the velocity components
-   * are gathered in one block. In this case, the full matrix is a 2x2 matrix
-
-   * If n_row_blocks = 3 and div_op == NULL then there is one block dedicated
-   * to each velocity component. In this case, the full matrix is a 4x4 matrix
-   *
-   * Please notice that div_op if not NULL is stored in a non-assembled way.
-   */
-
-  int            n_row_blocks;
-
-  /* Blocks related to the velocity momentum */
-  cs_matrix_t  **block_matrices;
-
-  /* B*.approx(A^-1).B^t which corresponds to a compatible discretization of
-     the discrete Laplacian on the pressure space */
-  cs_matrix_t   *compatible_laplacian;
-
-  cs_real_t     *div_op;    /* Block related to the -divergence (block
-                               A_{10}) */
-
-  /* Arrays split according to the block shape. U is interlaced or not
-   * according to the SLES strategy */
-
-  cs_lnum_t      n_faces;       /* local number of DoFs for each component
-                                 * of the velocity */
-  cs_lnum_t      n_cells;       /* local number of DoFs for the pressure */
-
-  cs_real_t     *u_f;           /* velocity values at faces */
-  cs_real_t     *p_c;           /* pressure values at cells */
-
-  cs_real_t     *b_f;           /* RHS for the momentum (size = 3*n_faces) */
-  cs_real_t     *b_c;           /* RHS for the mass equation (size =
-                                   n_cells) */
-
-  cs_sles_t     *sles;          /* main SLES structure */
-  cs_sles_t     *schur_sles;    /* auxiliary SLES for the Schur complement
-                                 * May be NULL */
-
-  cs_real_t      graddiv_coef;  /* value of the grad-div coefficient in case
-                                 * of augmented system */
-
-} cs_cdofb_monolithic_sles_t;
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -114,27 +60,16 @@ typedef struct {
 /*!
  * \brief  Create an empty cs_cdofb_monolithic_sles_t structure
  *
+ * \param[in] n_faces     number of faces (interior + border)
+ * \param[in] n_cells     number of cells
+ *
  * \return a pointer to a newly allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdofb_monolithic_sles_t *
-cs_cdofb_monolithic_sles_create(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize the rhs
- *
- * \param[in]       n_cells    local number of cells
- * \param[in]       n_faces    local number of faces
- * \param[in, out]  msles      pointer to the structure to reset
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_monolithic_sles_init(cs_lnum_t                     n_cells,
-                              cs_lnum_t                     n_faces,
-                              cs_cdofb_monolithic_sles_t   *msles);
+cs_cdofb_monolithic_sles_create(cs_lnum_t    n_faces,
+                                cs_lnum_t    n_cells);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -175,14 +110,12 @@ cs_cdofb_monolithic_sles_free(cs_cdofb_monolithic_sles_t   **p_msles);
  *
  * \param[in]  connect  pointer to cdo connectivities
  * \param[in]  quant    pointer to additional mesh quantities
- * \param[in]  rset     pointer to a \ref cs_range_set_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_sles_set_shared(const cs_cdo_connect_t        *connect,
-                                    const cs_cdo_quantities_t     *quant,
-                                    const cs_range_set_t          *rset);
+cs_cdofb_monolithic_sles_init_sharing(const cs_cdo_connect_t        *connect,
+                                      const cs_cdo_quantities_t     *quant);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -210,6 +143,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the (cumulated) number of iterations of the solver
@@ -219,6 +153,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 int
 cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                           const cs_equation_param_t     *eqp,
+                          const cs_cdo_system_helper_t  *sh,
                           cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
@@ -231,6 +166,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the (cumulated) number of iterations of the solver
@@ -240,6 +176,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 int
 cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
                                          const cs_equation_param_t     *eqp,
+                                         const cs_cdo_system_helper_t  *sh,
                                          cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
@@ -251,6 +188,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the (cumulated) number of iterations of the solver
@@ -260,6 +198,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
 int
 cs_cdofb_monolithic_by_blocks_solve(const cs_navsto_param_t       *nsp,
                                     const cs_equation_param_t     *eqp,
+                                    const cs_cdo_system_helper_t  *sh,
                                     cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
@@ -270,6 +209,7 @@ cs_cdofb_monolithic_by_blocks_solve(const cs_navsto_param_t       *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
@@ -279,6 +219,7 @@ cs_cdofb_monolithic_by_blocks_solve(const cs_navsto_param_t       *nsp,
 int
 cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                               const cs_equation_param_t     *eqp,
+                              const cs_cdo_system_helper_t  *sh,
                               cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
@@ -292,6 +233,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
@@ -301,6 +243,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
 int
 cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
                                    const cs_equation_param_t     *eqp,
+                                   const cs_cdo_system_helper_t  *sh,
                                    cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
@@ -315,6 +258,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
@@ -324,6 +268,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 int
 cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
                                     const cs_equation_param_t     *eqp,
+                                    const cs_cdo_system_helper_t  *sh,
                                     cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
@@ -334,6 +279,7 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
@@ -343,6 +289,7 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
 int
 cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
                                    const cs_equation_param_t     *eqp,
+                                   const cs_cdo_system_helper_t  *sh,
                                    cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
@@ -354,6 +301,7 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
@@ -363,6 +311,7 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
 int
 cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                         const cs_equation_param_t     *eqp,
+                                        const cs_cdo_system_helper_t  *sh,
                                         cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/

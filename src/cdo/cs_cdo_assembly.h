@@ -1,5 +1,5 @@
-#ifndef __CS_EQUATION_ASSEMBLE_H__
-#define __CS_EQUATION_ASSEMBLE_H__
+#ifndef __CS_CDO_ASSEMBLY_H__
+#define __CS_CDO_ASSEMBLY_H__
 
 /*============================================================================
  * Functions to handle the assembly process of equatino discretized with CDO
@@ -30,11 +30,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdo_connect.h"
 #include "cs_matrix.h"
 #include "cs_matrix_assembler.h"
 #include "cs_param_cdo.h"
 #include "cs_param_types.h"
+#include "cs_range_set.h"
 #include "cs_sdm.h"
 
 /*----------------------------------------------------------------------------*/
@@ -49,7 +49,7 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-typedef struct _cs_equation_assemble_t  cs_equation_assemble_t;
+typedef struct _cs_cdo_assembly_t  cs_cdo_assembly_t;
 
 /*============================================================================
  * Function pointer type definitions
@@ -69,11 +69,11 @@ typedef struct _cs_equation_assemble_t  cs_equation_assemble_t;
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_assembly_t)(const cs_sdm_t                         *m,
-                         const cs_lnum_t                        *dof_ids,
-                         const cs_range_set_t                   *rset,
-                         cs_equation_assemble_t                 *eqa,
-                         cs_matrix_assembler_values_t           *mav);
+(cs_cdo_assembly_func_t)(const cs_sdm_t                    *m,
+                         const cs_lnum_t                   *dof_ids,
+                         const cs_range_set_t              *rset,
+                         cs_cdo_assembly_t                 *eqa,
+                         cs_matrix_assembler_values_t      *mav);
 
 /*============================================================================
  * Public function prototypes
@@ -81,72 +81,34 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the pointer to a requested \ref cs_matrix_structure_t
- *         structure
- *
- * \param[in]  flag_id       id in the array of matrix structures
- *
- * \return  a pointer to a cs_matrix_structure_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_structure_t *
-cs_equation_get_matrix_structure(int  flag);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get a pointer to a cs_equation_assemble_t structure related
+ * \brief  Get a pointer to a cs_cdo_assembly_t structure related
  *         to a given thread
  *
  * \param[in]  t_id    id in the array of pointer
  *
- * \return a pointer to a cs_equation_assemble_t structure
+ * \return a pointer to a cs_cdo_assembly_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_assemble_t *
-cs_equation_assemble_get(int    t_id);
+cs_cdo_assembly_t *
+cs_cdo_assembly_get(int    t_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate and define a cs_matrix_assembler_t structure
+ * \brief  Allocate cs_cdo_assembly_t structure (shared among schemes). Each
+ *         thread has its own copy this structure to enable a multithreaded
+ *         assembly process.
  *
- * \param[in]  n_elts     number of elements
- * \param[in]  n_dofbyx   number of DoFs by element
- * \param[in]  x2x        pointer to a cs_adjacency_t structure
- * \param[in]  rs         pointer to a range set or NULL if sequential
- *
- * \return a pointer to a new allocated cs_matrix_assembler_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_matrix_assembler_t *
-cs_equation_build_matrix_assembler(cs_lnum_t                n_elts,
-                                   int                      n_dofbyx,
-                                   const cs_adjacency_t    *x2x,
-                                   const cs_range_set_t    *rs);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize matrix-related structures according to
- *         the type of discretization used for this simulation
- *
- * \param[in]  connect      pointer to a cs_cdo_connect_t structure
- * \param[in]  eb_flag      metadata for Edge-based schemes
- * \param[in]  fb_flag      metadata for Face-based schemes
- * \param[in]  vb_flag      metadata for Vertex-based schemes
- * \param[in]  vcb_flag     metadata for Vertex+Cell-basde schemes
- * \param[in]  hho_flag     metadata for HHO schemes
+ * \param[in]  ddim          max number of dof values on the diagonal part
+ * \param[in]  edim          max number of dof values on the extra-diag. part
+ * \param[in]  n_cw_dofs     max number of DoFs in a cell
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
-                          cs_flag_t                     eb_flag,
-                          cs_flag_t                     fb_flag,
-                          cs_flag_t                     vb_flag,
-                          cs_flag_t                     vcb_flag,
-                          cs_flag_t                     hho_flag);
+cs_cdo_assembly_init(int     ddim,
+                     int     edim,
+                     int     n_cw_dofs);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -156,55 +118,24 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_finalize(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the function pointer used to assemble the algebraic system
- *
- * \param[in] scheme     space discretization scheme
- * \param[in] ma_id      id in the array of matrix assembler
- *
- * \return a function pointer cs_equation_assembly_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_assembly_t *
-cs_equation_assemble_set(cs_param_space_scheme_t    scheme,
-                         int                        ma_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Define the function pointer used to assemble the algebraic system
- *         Case of a system of equation.
- *
- * \param[in] scheme     space discretization scheme
- * \param[in] ma_id      id in the array of matrix assembler
- *
- * \return a function pointer cs_equation_assembly_t
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_assembly_t *
-cs_equation_assemble_system_set(cs_param_space_scheme_t    scheme,
-                                int                        ma_id);
+cs_cdo_assembly_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the current shift values to consider during the assembly stage
  *
- * \param[in, out] eqa          pointer to a cs_equation_assemble_t to update
+ * \param[in, out] asb          pointer to a cs_cdo_assembly_t to update
  * \param[in]      l_row_shift  shift to apply to local row ids
  * \param[in]      l_col_shift  shift to apply to local col ids
  *
- * \return a function pointer cs_equation_assembly_t
+ * \return a function pointer cs_cdo_assembly_func_t
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_set_shift(cs_equation_assemble_t   *eqa,
-                               cs_lnum_t                 l_row_shift,
-                               cs_lnum_t                 l_col_shift);
+cs_cdo_assembly_set_shift(cs_cdo_assembly_t    *asb,
+                          cs_lnum_t             l_row_shift,
+                          cs_lnum_t             l_col_shift);
 
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
@@ -215,17 +146,17 @@ cs_equation_assemble_set_shift(cs_equation_assemble_t   *eqa,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] asb      pointer to a matrix assembler buffers
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_matrix_mpit(const cs_sdm_t                   *m,
-                                 const cs_lnum_t                  *dof_ids,
-                                 const cs_range_set_t             *rset,
-                                 cs_equation_assemble_t           *eqa,
-                                 cs_matrix_assembler_values_t     *mav);
+cs_cdo_assembly_matrix_mpit(const cs_sdm_t                   *m,
+                            const cs_lnum_t                  *dof_ids,
+                            const cs_range_set_t             *rset,
+                            cs_cdo_assembly_t                *asb,
+                            cs_matrix_assembler_values_t     *mav);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -235,17 +166,17 @@ cs_equation_assemble_matrix_mpit(const cs_sdm_t                   *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] asb      pointer to a matrix assembler buffers
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_matrix_mpis(const cs_sdm_t                   *m,
-                                 const cs_lnum_t                  *dof_ids,
-                                 const cs_range_set_t             *rset,
-                                 cs_equation_assemble_t           *eqa,
-                                 cs_matrix_assembler_values_t     *mav);
+cs_cdo_assembly_matrix_mpis(const cs_sdm_t                   *m,
+                            const cs_lnum_t                  *dof_ids,
+                            const cs_range_set_t             *rset,
+                            cs_cdo_assembly_t                *asb,
+                            cs_matrix_assembler_values_t     *mav);
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
@@ -256,41 +187,43 @@ cs_equation_assemble_matrix_mpis(const cs_sdm_t                   *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] asb      pointer to a matrix assembler buffers
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_matrix_seqt(const cs_sdm_t                  *m,
-                                 const cs_lnum_t                 *dof_ids,
-                                 const cs_range_set_t            *rset,
-                                 cs_equation_assemble_t          *eqa,
-                                 cs_matrix_assembler_values_t    *mav);
+cs_cdo_assembly_matrix_seqt(const cs_sdm_t                  *m,
+                            const cs_lnum_t                 *dof_ids,
+                            const cs_range_set_t            *rset,
+                            cs_cdo_assembly_t               *asb,
+                            cs_matrix_assembler_values_t    *mav);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise matrix into the global matrix
- *         Scalar-valued case. Sequential and without openMP.
+ *         Scalar-valued case.
+ *         Sequential and without openMP.
  *
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] asb      pointer to a matrix assembler buffers
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_matrix_seqs(const cs_sdm_t                  *m,
-                                 const cs_lnum_t                 *dof_ids,
-                                 const cs_range_set_t            *rset,
-                                 cs_equation_assemble_t          *eqa,
-                                 cs_matrix_assembler_values_t    *mav);
+cs_cdo_assembly_matrix_seqs(const cs_sdm_t                  *m,
+                            const cs_lnum_t                 *dof_ids,
+                            const cs_range_set_t            *rset,
+                            cs_cdo_assembly_t               *asb,
+                            cs_matrix_assembler_values_t    *mav);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Assemble a cellwise (no-block) matrix into the global matrix
+ *         corresponding to a system of coupled equations.
  *         Scalar-valued case.
  *         Sequential and without openMP.
  *         Block matrices assembled from cellwise scalar-valued matrices
@@ -298,17 +231,62 @@ cs_equation_assemble_matrix_seqs(const cs_sdm_t                  *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to a matrix assembler buffers
+ * \param[in, out] asb      pointer to a matrix assembler buffers
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_matrix_sys_seqs(const cs_sdm_t                  *m,
-                                     const cs_lnum_t                 *dof_ids,
-                                     const cs_range_set_t            *rset,
-                                     cs_equation_assemble_t          *eqa,
-                                     cs_matrix_assembler_values_t    *mav);
+cs_cdo_assembly_matrix_sys_seqs(const cs_sdm_t                  *m,
+                                const cs_lnum_t                 *dof_ids,
+                                const cs_range_set_t            *rset,
+                                cs_cdo_assembly_t               *asb,
+                                cs_matrix_assembler_values_t    *mav);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assemble a cellwise (no-block) matrix into the global matrix
+ *         corresponding to a system of coupled equations.
+ *         Scalar-valued case.
+ *         Sequential and with openMP.
+ *         Block matrices assembled from cellwise scalar-valued matrices
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] asb      pointer to a matrix assembler buffers
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_matrix_sys_seqt(const cs_sdm_t                  *m,
+                                const cs_lnum_t                 *dof_ids,
+                                const cs_range_set_t            *rset,
+                                cs_cdo_assembly_t               *asb,
+                                cs_matrix_assembler_values_t    *mav);
+
+#if defined(HAVE_MPI)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assemble a cellwise matrix into the global matrix
+ *         Scalar-valued case. Parallel without openMP threading.
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] asb      pointer to a matrix assembler buffers
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_matrix_sys_mpis(const cs_sdm_t                   *m,
+                                const cs_lnum_t                  *dof_ids,
+                                const cs_range_set_t             *rset,
+                                cs_cdo_assembly_t                *asb,
+                                cs_matrix_assembler_values_t     *mav);
+#endif  /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -319,17 +297,17 @@ cs_equation_assemble_matrix_sys_seqs(const cs_sdm_t                  *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock33_matrix_seqs(const cs_sdm_t               *m,
-                                          const cs_lnum_t              *dof_ids,
-                                          const cs_range_set_t         *rset,
-                                          cs_equation_assemble_t       *eqa,
-                                          cs_matrix_assembler_values_t *mav);
+cs_cdo_assembly_eblock33_matrix_seqs(const cs_sdm_t               *m,
+                                     const cs_lnum_t              *dof_ids,
+                                     const cs_range_set_t         *rset,
+                                     cs_cdo_assembly_t            *asb,
+                                     cs_matrix_assembler_values_t *mav);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -340,17 +318,17 @@ cs_equation_assemble_eblock33_matrix_seqs(const cs_sdm_t               *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t                *m,
-                                          const cs_lnum_t               *dof_ids,
-                                          const cs_range_set_t          *rset,
-                                          cs_equation_assemble_t        *eqa,
-                                          cs_matrix_assembler_values_t  *mav);
+cs_cdo_assembly_eblock33_matrix_seqt(const cs_sdm_t               *m,
+                                     const cs_lnum_t              *dof_ids,
+                                     const cs_range_set_t         *rset,
+                                     cs_cdo_assembly_t            *asb,
+                                     cs_matrix_assembler_values_t *mav);
 
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
@@ -362,17 +340,17 @@ cs_equation_assemble_eblock33_matrix_seqt(const cs_sdm_t                *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock33_matrix_mpis(const cs_sdm_t                *m,
-                                          const cs_lnum_t               *dof_ids,
-                                          const cs_range_set_t          *rset,
-                                          cs_equation_assemble_t        *eqa,
-                                          cs_matrix_assembler_values_t  *mav);
+cs_cdo_assembly_eblock33_matrix_mpis(const cs_sdm_t               *m,
+                                     const cs_lnum_t              *dof_ids,
+                                     const cs_range_set_t         *rset,
+                                     cs_cdo_assembly_t            *asb,
+                                     cs_matrix_assembler_values_t *mav);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -383,17 +361,17 @@ cs_equation_assemble_eblock33_matrix_mpis(const cs_sdm_t                *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
-                                          const cs_lnum_t              *dof_ids,
-                                          const cs_range_set_t         *rset,
-                                          cs_equation_assemble_t       *eqa,
-                                          cs_matrix_assembler_values_t *mav);
+cs_cdo_assembly_eblock33_matrix_mpit(const cs_sdm_t               *m,
+                                     const cs_lnum_t              *dof_ids,
+                                     const cs_range_set_t         *rset,
+                                     cs_cdo_assembly_t            *asb,
+                                     cs_matrix_assembler_values_t *mav);
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
@@ -405,17 +383,17 @@ cs_equation_assemble_eblock33_matrix_mpit(const cs_sdm_t               *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock_matrix_seqs(const cs_sdm_t                *m,
-                                        const cs_lnum_t               *dof_ids,
-                                        const cs_range_set_t          *rset,
-                                        cs_equation_assemble_t        *eqa,
-                                        cs_matrix_assembler_values_t  *mav);
+cs_cdo_assembly_eblock_matrix_seqs(const cs_sdm_t                *m,
+                                   const cs_lnum_t               *dof_ids,
+                                   const cs_range_set_t          *rset,
+                                   cs_cdo_assembly_t             *asb,
+                                   cs_matrix_assembler_values_t  *mav);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -426,17 +404,17 @@ cs_equation_assemble_eblock_matrix_seqs(const cs_sdm_t                *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock_matrix_seqt(const cs_sdm_t                *m,
-                                        const cs_lnum_t               *dof_ids,
-                                        const cs_range_set_t          *rset,
-                                        cs_equation_assemble_t        *eqa,
-                                        cs_matrix_assembler_values_t  *mav);
+cs_cdo_assembly_eblock_matrix_seqt(const cs_sdm_t                *m,
+                                   const cs_lnum_t               *dof_ids,
+                                   const cs_range_set_t          *rset,
+                                   cs_cdo_assembly_t             *asb,
+                                   cs_matrix_assembler_values_t  *mav);
 
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
@@ -448,17 +426,17 @@ cs_equation_assemble_eblock_matrix_seqt(const cs_sdm_t                *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock_matrix_mpis(const cs_sdm_t                *m,
-                                        const cs_lnum_t               *dof_ids,
-                                        const cs_range_set_t          *rset,
-                                        cs_equation_assemble_t        *eqa,
-                                        cs_matrix_assembler_values_t  *mav);
+cs_cdo_assembly_eblock_matrix_mpis(const cs_sdm_t                *m,
+                                   const cs_lnum_t               *dof_ids,
+                                   const cs_range_set_t          *rset,
+                                   cs_cdo_assembly_t             *asb,
+                                   cs_matrix_assembler_values_t  *mav);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -469,21 +447,21 @@ cs_equation_assemble_eblock_matrix_mpis(const cs_sdm_t                *m,
  * \param[in]      m        cellwise view of the algebraic system
  * \param[in]      dof_ids  local DoF numbering
  * \param[in]      rset     pointer to a cs_range_set_t structure
- * \param[in, out] eqa      pointer to an equation assembly structure
+ * \param[in, out] asb      pointer to an equation assembly structure
  * \param[in, out] mav      pointer to a matrix assembler structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_assemble_eblock_matrix_mpit(const cs_sdm_t                *m,
-                                        const cs_lnum_t               *dof_ids,
-                                        const cs_range_set_t          *rset,
-                                        cs_equation_assemble_t        *eqa,
-                                        cs_matrix_assembler_values_t  *mav);
+cs_cdo_assembly_eblock_matrix_mpit(const cs_sdm_t                *m,
+                                   const cs_lnum_t               *dof_ids,
+                                   const cs_range_set_t          *rset,
+                                   cs_cdo_assembly_t             *asb,
+                                   cs_matrix_assembler_values_t  *mav);
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_EQUATION_ASSEMBLE_H__ */
+#endif /* __CS_CDO_ASSEMBLY_H__ */

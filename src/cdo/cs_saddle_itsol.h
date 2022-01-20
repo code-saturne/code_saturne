@@ -84,7 +84,7 @@ typedef struct {
   int              m21_stride;
 
   /* Indexed list used to scan the unassembled m21 operator */
-  cs_adjacency_t  *m21_adjacency;
+  const cs_adjacency_t  *m21_adjacency;
 
   /* Structure used for synchronisation (parallel or periodic). Enable to
      switch from a scatter view (the mesh view) to a gather view (the algebraic

@@ -365,8 +365,8 @@ _compute_adv_vector_at_vertices(const cs_cdo_quantities_t  *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_advection_field_set_shared_pointers(const cs_cdo_quantities_t  *quant,
-                                       const cs_cdo_connect_t     *connect)
+cs_advection_field_init_sharing(const cs_cdo_quantities_t  *quant,
+                                const cs_cdo_connect_t     *connect)
 {
   /* Assign static const pointers */
 
@@ -1737,8 +1737,8 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
 
     /* Synchronization of values at vertices */
 
-    if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL)
-      cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
+    if (connect->vtx_ifs != NULL)
+      cs_interface_set_sum(connect->vtx_ifs,
                            cdoq->n_vertices,
                            3,             /* stride */
                            true,          /* = interlace */
@@ -1749,8 +1749,8 @@ cs_advection_field_at_vertices(const cs_adv_field_t    *adv,
     BFT_MALLOC(dual_vol, cdoq->n_vertices, cs_real_t);
     cs_cdo_quantities_compute_dual_volumes(cdoq, connect->c2v, dual_vol);
 
-    if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL)
-      cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
+    if (connect->vtx_ifs != NULL)
+      cs_interface_set_sum(connect->vtx_ifs,
                            cdoq->n_vertices,
                            1,             /* stride */
                            true,          /* = interlace */
@@ -3503,15 +3503,13 @@ cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
 
   } /* Boundary part */
 
-#if defined(HAVE_MPI) /* Synchronization if needed */
-  if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL)
-    cs_interface_set_sum(connect->interfaces[CS_DOF_VTX_SCAL],
+  if (connect->vtx_ifs != NULL)
+    cs_interface_set_sum(connect->vtx_ifs,
                          cdoq->n_vertices,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
                          CS_REAL_TYPE,
                          divergence);
-#endif  /* MPI */
 
   return divergence;
 }

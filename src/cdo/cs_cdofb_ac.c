@@ -280,7 +280,6 @@ typedef struct {
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
-static const cs_matrix_structure_t  *cs_shared_ms;
 
 /*============================================================================
  * Private function prototypes
@@ -630,8 +629,6 @@ _ac_apply_remaining_bc(const cs_cdofb_ac_t           *sc,
  * \param[in]      vel_c_pre   velocity cell DoFs of the previous time step
  * \param[in]      prs_c_pre   pressure cell DoFs of the previous time step
  * \param[in, out] sc          void cast into to a \ref cs_cdofb_ac_t pointer
- * \param[in, out] matrix      pointer to a \ref cs_matrix_t structure
- * \param[in, out] rhs         rhs array related to the momentum eq.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -640,38 +637,30 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                       const cs_real_t           vel_f_pre[],
                       const cs_real_t           vel_c_pre[],
                       const cs_real_t           prs_c_pre[],
-                      cs_cdofb_ac_t            *sc,
-                      cs_matrix_t              *matrix,
-                      cs_real_t                *rhs)
+                      cs_cdofb_ac_t            *sc)
 {
   /* Retrieve high-level structures */
 
-  cs_navsto_ac_t *cc = sc->coupling_context;
+  cs_navsto_ac_t  *cc = sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
-  cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
-  cs_equation_param_t *mom_eqp = mom_eq->param;
-  cs_equation_builder_t *mom_eqb = mom_eq->builder;
+  cs_cdofb_vecteq_t  *mom_eqc= mom_eq->scheme_context;
+  cs_equation_param_t  *mom_eqp = mom_eq->param;
+  cs_equation_builder_t  *mom_eqb = mom_eq->builder;
+  cs_cdo_system_helper_t  *mom_sh = mom_eqb->system_helper;
 
   /* Retrieve shared structures */
 
   const cs_time_step_t *ts = cs_shared_time_step;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_VECT];
 
   assert(cs_equation_param_has_time(mom_eqp) == true);
   assert(mom_eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
-  assert(matrix != NULL && rhs != NULL);
 
 #if defined(DEBUG) && !defined(NDEBUG)
   if (quant->n_b_faces > 0)
     assert(mom_eqb->dir_values != NULL);
 #endif
-
-  /* Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
@@ -687,7 +676,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
                                                                     connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
       (mom_eqc->diffusion_hodge == NULL) ? NULL:mom_eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -882,8 +871,8 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* ASSEMBLY PROCESS */
       /* ================ */
 
-      cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               mom_eqc, eqa, mav, rhs);
+      cs_cdofb_vecteq_assembly(csys,
+                               mom_sh->blocks[0], mom_sh->rhs, mom_eqc, asb);
 
     } /* Main loop on cells */
 
@@ -893,8 +882,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
   } /* End of the OpenMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
-  cs_matrix_assembler_values_finalize(&mav);
+  cs_cdo_system_helper_finalize_assembly(mom_sh);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -923,10 +911,6 @@ cs_cdofb_ac_init_common(const cs_cdo_quantities_t     *quant,
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
-
-  /* Matrix structure related to the algebraic system for vector-valued eq. */
-
-  cs_shared_ms = cs_cdofb_vecteq_matrix_structure();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1192,12 +1176,12 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
+  cs_cdo_system_helper_t  *mom_sh = mom_eqb->system_helper;
 
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
-  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_VECT];
 
   /* Retrieve fields */
 
@@ -1217,18 +1201,12 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
   cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb);
 
-  /* Initialize the linear system: matrix and rhs */
+  /* Initialize the matrix and all its related structures needed during
+   * the assembly step as well as the rhs */
 
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
-  cs_real_t  *rhs = NULL;
+  cs_real_t  *rhs = NULL;  /* Since it is NULL, sh get sthe ownership */
 
-  BFT_MALLOC(rhs, 3*n_faces, cs_real_t);
-#if defined(HAVE_OPENMP)
-# pragma omp parallel for if (3*n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
-#else
-  memset(rhs, 0, 3*n_faces*sizeof(cs_real_t));
-#endif
+  cs_cdo_system_helper_init_system(mom_sh, &rhs);
 
   /* Main function for the building stage */
 
@@ -1236,8 +1214,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
                         vel_f,  /* previous values for the velocity at faces */
                         vel_c,  /* previous values for the velocity at cells */
                         pr,     /* previous values for the pressure */
-                        sc,
-                        matrix, rhs);
+                        sc);
 
   /* Free temporary buffers and structures */
 
@@ -1268,11 +1245,13 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(mom_sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(mom_sh, 0);
 
   int  n_solver_iter = cs_cdo_solve_scalar_system(3*n_faces,
                                                   mom_eqp->sles_param,
                                                   matrix,
-                                                  rs,
+                                                  range_set,
                                                   normalization,
                                                   true, /* rhs_redux */
                                                   sles,
@@ -1322,9 +1301,8 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Frees */
 
-  BFT_FREE(rhs);
   cs_sles_free(sles);
-  cs_matrix_destroy(&matrix);
+  cs_cdo_system_helper_reset(mom_sh);      /* free rhs and matrix */
 
   t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_cmpt, &t_tmp);
@@ -1358,6 +1336,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
+  cs_cdo_system_helper_t  *mom_sh = mom_eqb->system_helper;
   cs_iter_algo_t  *nl_algo = sc->nl_algo;
 
   /*--------------------------------------------------------------------------
@@ -1366,7 +1345,6 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
 
@@ -1388,18 +1366,12 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb);
 
-  /* Initialize the linear system: matrix and rhs */
+  /* Initialize the matrix and all its related structures needed during
+   * the assembly step as well as the rhs */
 
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
-  cs_real_t  *rhs = NULL;
+  cs_real_t  *rhs = NULL;  /* Since it is NULL, sh get sthe ownership */
 
-  BFT_MALLOC(rhs, 3*n_faces, cs_real_t);
-#if defined(HAVE_OPENMP)
-# pragma omp parallel for if (3*n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
-#else
-  memset(rhs, 0, 3*n_faces*sizeof(cs_real_t));
-#endif
+  cs_cdo_system_helper_init_system(mom_sh, &rhs);
 
   /* Main function for the building stage */
 
@@ -1407,8 +1379,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
                         vel_f,  /* previous values for the velocity at faces */
                         vel_c,  /* previous values for the velocity at cells */
                         pr,     /* previous values for the pressure */
-                        sc,
-                        matrix, rhs);
+                        sc);
 
   /* End of the system building */
 
@@ -1437,12 +1408,14 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(mom_sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(mom_sh, 0);
 
   nl_algo->n_inner_iter = (nl_algo->last_inner_iter =
                            cs_cdo_solve_scalar_system(3*n_faces,
                                                       mom_eqp->sles_param,
                                                       matrix,
-                                                      rs,
+                                                      range_set,
                                                       normalization,
                                                       true, /* rhs_redux */
                                                       sles,
@@ -1498,13 +1471,8 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     /* rhs set to zero and cs_sles_t structure is freed in order to do
      * the setup once again since the matrix should be modified */
 
-#if defined(HAVE_OPENMP)
-# pragma omp parallel for if (3*n_faces > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
-#else
-    memset(rhs, 0, 3*n_faces*sizeof(cs_real_t));
-#endif
-    cs_sles_free(sles); sles = NULL;
+    cs_cdo_system_helper_init_system(mom_sh, &rhs);
+    cs_sles_free(sles), sles = NULL;
 
     /* Main loop on cells to define the linear system to solve */
 
@@ -1512,8 +1480,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
                           vel_f_pre,  /* velocity at faces: previous values */
                           vel_c_pre,  /* velocity at cells: previous values */
                           pr_c_pre,   /* pressure at cells: previous values */
-                          sc,
-                          matrix, rhs);
+                          sc);
 
     /* End of the system building */
 
@@ -1533,7 +1500,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
                          cs_cdo_solve_scalar_system(3*n_faces,
                                                     mom_eqp->sles_param,
                                                     matrix,
-                                                    rs,
+                                                    range_set,
                                                     normalization,
                                                     true, /* rhs_redux */
                                                     sles,
@@ -1605,10 +1572,9 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_dbg_darray_to_listing("VELOCITY_DIV", n_cells, div, 9);
 #endif
 
-  BFT_FREE(rhs);
   cs_equation_builder_reset(mom_eqb);
   cs_sles_free(sles);
-  cs_matrix_destroy(&matrix);
+  cs_cdo_system_helper_reset(mom_sh);      /* free rhs and matrix */
 
   t_tmp = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_cmpt, &t_tmp);

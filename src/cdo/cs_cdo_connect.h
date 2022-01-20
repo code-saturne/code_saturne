@@ -60,17 +60,36 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  /* Vertex-related members */
+  /* ---------------------- */
+
   cs_lnum_t          n_vertices;
-  cs_lnum_t          n_edges;
-  cs_gnum_t          n_g_edges;
-  cs_lnum_t          n_faces[3];  /* 0: all, 1: border, 2: interior */
-  cs_lnum_t          n_cells;
+
+  /* range set and interface set structures for scalar-valued vertex DoFs
+     (these structures may be not allocated according to the settings) */
+
+  cs_range_set_t      *vtx_rset;
+  cs_interface_set_t  *vtx_ifs;
+
 
   /* Edge-related members */
+  /* -------------------- */
 
-  cs_adjacency_t    *e2v;         /* edge --> vertices connectivity */
+  cs_lnum_t          n_edges;
+  cs_gnum_t          n_g_edges;
+
+  cs_adjacency_t      *e2v;             /* edge --> vertices connectivity */
+
+  /* range set and interface set structures for scalar-valued edge DoFs
+     (these structures may be not allocated according to the settings) */
+
+  cs_range_set_t      *edge_rset;
+  cs_interface_set_t  *edge_ifs;
 
   /* Face-related members */
+  /* -------------------- */
+
+  cs_lnum_t          n_faces[3];  /* 0: all, 1: border, 2: interior */
 
   cs_adjacency_t    *f2c;         /* face --> cells connectivity */
   cs_adjacency_t    *f2e;         /* face --> edges connectivity */
@@ -79,7 +98,16 @@ typedef struct {
   cs_adjacency_t    *if2v;        /* interior face --> vertices connectivity
                                      (map from cs_mesh_t) */
 
+  /* range set and interface set structures for scalar-valued edge DoFs
+     (these structures may be not allocated according to the settings) */
+
+  cs_range_set_t      *face_rset;
+  cs_interface_set_t  *face_ifs;
+
   /* Cell-related members */
+  /* -------------------- */
+
+  cs_lnum_t          n_cells;
 
   fvm_element_t     *cell_type;   /* type of cell */
   cs_flag_t         *cell_flag;   /* Flag (Border/Solid) */
@@ -108,11 +136,6 @@ typedef struct {
   cs_adjacency_t       *v2v;    /* vertex to vertices through cells */
   cs_adjacency_t       *f2f;    /* face to faces through cells */
   cs_adjacency_t       *e2e;    /* edge to edges through cells */
-
-  /* Structures to handle parallelism/assembler */
-
-  cs_range_set_t       *range_sets[CS_N_DOF_CASES];
-  cs_interface_set_t   *interfaces[CS_N_DOF_CASES];
 
 } cs_cdo_connect_t;
 

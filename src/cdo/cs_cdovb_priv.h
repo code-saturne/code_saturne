@@ -32,7 +32,6 @@
 #include "cs_defs.h"
 #include "cs_hodge.h"
 #include "cs_cdo_advection.h"
-#include "cs_equation_assemble.h"
 #include "cs_equation_bc.h"
 
 /*----------------------------------------------------------------------------*/
@@ -79,10 +78,6 @@ struct _cs_cdovb_t {
   /* Array for extra-operations */
 
   cs_real_t   *cell_values;     /* NULL if not requested */
-
-  /* Assembly process */
-
-  cs_equation_assembly_t   *assemble;
 
   /* Boundary conditions */
 

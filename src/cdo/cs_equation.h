@@ -264,7 +264,9 @@ cs_equation_get_field_id(const cs_equation_t    *eq);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return the range set structure associated to a cs_equation_t
- *         structure
+ *         structure. One assumes that there is only one block (it could be a
+ *         split block) otherwise this means that one handles systems of
+ *         equations.
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
@@ -563,8 +565,8 @@ cs_equation_set_sles(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared structures among the activated class of discretization
- *         schemes
+ * \brief  Set shared pointers to the main structures. Associate these
+ *         structures among the activated class of discretization schemes
  *
  * \param[in]  connect          pointer to a cs_cdo_connect_t structure
  * \param[in]  quant            pointer to additional mesh quantities struct.
@@ -578,14 +580,14 @@ cs_equation_set_sles(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
-                                  const cs_cdo_quantities_t   *quant,
-                                  const cs_time_step_t        *time_step,
-                                  cs_flag_t                    eb_scheme_flag,
-                                  cs_flag_t                    fb_scheme_flag,
-                                  cs_flag_t                    vb_scheme_flag,
-                                  cs_flag_t                    vcb_scheme_flag,
-                                  cs_flag_t                    hho_scheme_flag);
+cs_equation_init_sharing(const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *quant,
+                         const cs_time_step_t        *time_step,
+                         cs_flag_t                    eb_scheme_flag,
+                         cs_flag_t                    fb_scheme_flag,
+                         cs_flag_t                    vb_scheme_flag,
+                         cs_flag_t                    vcb_scheme_flag,
+                         cs_flag_t                    hho_scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -600,23 +602,11 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_unset_shared_structures(cs_flag_t    vb_scheme_flag,
-                                    cs_flag_t    vcb_scheme_flag,
-                                    cs_flag_t    eb_scheme_flag,
-                                    cs_flag_t    fb_scheme_flag,
-                                    cs_flag_t    hho_scheme_flag);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assign a \ref cs_range_set_t structures for synchronization when
- *         computing in parallel mode.
- *
- * \param[in]  connect        pointer to a cs_cdo_connect_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_range_set(const cs_cdo_connect_t   *connect);
+cs_equation_finalize_sharing(cs_flag_t    vb_scheme_flag,
+                             cs_flag_t    vcb_scheme_flag,
+                             cs_flag_t    eb_scheme_flag,
+                             cs_flag_t    fb_scheme_flag,
+                             cs_flag_t    hho_scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -649,10 +639,10 @@ cs_equation_create_fields(void);
  *        initialize condition to all variable fields associated to each
  *        cs_equation_t structure.
  *
- * \param[in]       mesh      pointer to a cs_mesh_t structure
- * \param[in]       ts        pointer to a cs_time_step_t structure
- * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
- * \param[in, out]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -660,8 +650,7 @@ void
 cs_equation_initialize(const cs_mesh_t             *mesh,
                        const cs_time_step_t        *ts,
                        const cs_cdo_quantities_t   *quant,
-                       cs_cdo_connect_t            *connect);
-
+                       const cs_cdo_connect_t      *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!

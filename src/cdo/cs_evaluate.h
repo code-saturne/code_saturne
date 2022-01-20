@@ -63,8 +63,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                const cs_cdo_connect_t       *connect);
+cs_evaluate_init_sharing(const cs_cdo_quantities_t    *quant,
+                         const cs_cdo_connect_t       *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!

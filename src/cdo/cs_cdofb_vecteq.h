@@ -39,10 +39,10 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_cdo_assembly.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_quantities.h"
 #include "cs_cdofb_priv.h"
-#include "cs_equation_assemble.h"
 #include "cs_equation_builder.h"
 #include "cs_equation_param.h"
 #include "cs_field.h"
@@ -70,6 +70,60 @@ BEGIN_C_DECLS
 typedef struct _cs_cdofb_t cs_cdofb_vecteq_t;
 
 /*============================================================================
+ * Static inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the source term for a vector-valued CDO-Fb scheme
+ *         and add it to the local rhs
+ *         Mass matrix is optional. It can be set to NULL.
+ *
+ * \param[in]       cm      pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       eqp     pointer to a \ref cs_equation_param_t structure
+ * \param[in]       coef    scaling of the time source (for theta schemes)
+ * \param[in]       t_eval  time at which the source term is evaluated
+ * \param[in, out]  hodge   pointer to a \ref cs_hodge_t structure (mass matrix)
+ * \param[in, out]  cb      pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  eqb     pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out]  csys    pointer to a \ref cs_cell_sys_t structure
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_cdofb_vecteq_sourceterm(const cs_cell_mesh_t         *cm,
+                           const cs_equation_param_t    *eqp,
+                           const cs_real_t               t_eval,
+                           const cs_real_t               coef,
+                           cs_hodge_t                   *mass_hodge,
+                           cs_cell_builder_t            *cb,
+                           cs_equation_builder_t        *eqb,
+                           cs_cell_sys_t                *csys)
+{
+  /* Reset the local contribution */
+
+  memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+
+  cs_source_term_compute_cellwise(eqp->n_source_terms,
+              (cs_xdef_t *const *)eqp->source_terms,
+                                  cm,
+                                  eqb->source_mask,
+                                  eqb->compute_source,
+                                  t_eval,
+                                  mass_hodge,  /* Mass matrix context */
+                                  cb,
+                                  csys->source);
+
+  /* Only cell-DoFs are involved */
+
+  const short int _off = 3*cm->n_fc;
+  csys->rhs[_off    ] += coef * csys->source[_off    ];
+  csys->rhs[_off + 1] += coef * csys->source[_off + 1];
+  csys->rhs[_off + 2] += coef * csys->source[_off + 2];
+}
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -94,26 +148,13 @@ cs_cdofb_vecteq_is_initialized(void);
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
- * \param[in]  ms          pointer to a cs_matrix_structure_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_init_common(const cs_cdo_quantities_t     *quant,
-                            const cs_cdo_connect_t        *connect,
-                            const cs_time_step_t          *time_step,
-                            const cs_matrix_structure_t   *ms);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the pointer to the related cs_matrix_structure_t
- *
- * \return a  pointer to a cs_matrix_structure_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_matrix_structure_t *
-cs_cdofb_vecteq_matrix_structure(void);
+cs_cdofb_vecteq_init_sharing(const cs_cdo_quantities_t     *quant,
+                             const cs_cdo_connect_t        *connect,
+                             const cs_time_step_t          *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -136,7 +177,7 @@ cs_cdofb_vecteq_get(cs_cell_sys_t            **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_finalize_common(void);
+cs_cdofb_vecteq_finalize_sharing(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -298,79 +339,23 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the source term for a vector-valued CDO-Fb scheme
- *         and add it to the local rhs
- *         Mass matrix is optional. It can be set to NULL.
- *
- * \param[in]       cm      pointer to a \ref cs_cell_mesh_t structure
- * \param[in]       eqp     pointer to a \ref cs_equation_param_t structure
- * \param[in]       coef    scaling of the time source (for theta schemes)
- * \param[in]       t_eval  time at which the source term is evaluated
- * \param[in, out]  hodge   pointer to a \ref cs_hodge_t structure (mass matrix)
- * \param[in, out]  cb      pointer to a \ref cs_cell_builder_t structure
- * \param[in, out]  eqb     pointer to a \ref cs_equation_builder_t structure
- * \param[in, out]  csys    pointer to a \ref cs_cell_sys_t structure
- *
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_cdofb_vecteq_sourceterm(const cs_cell_mesh_t         *cm,
-                           const cs_equation_param_t    *eqp,
-                           const cs_real_t               t_eval,
-                           const cs_real_t               coef,
-                           cs_hodge_t                   *mass_hodge,
-                           cs_cell_builder_t            *cb,
-                           cs_equation_builder_t        *eqb,
-                           cs_cell_sys_t                *csys)
-{
-  /* Reset the local contribution */
-
-  memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
-
-  cs_source_term_compute_cellwise(eqp->n_source_terms,
-              (cs_xdef_t *const *)eqp->source_terms,
-                                  cm,
-                                  eqb->source_mask,
-                                  eqb->compute_source,
-                                  t_eval,
-                                  mass_hodge,  /* Mass matrix context */
-                                  cb,
-                                  csys->source);
-
-  /* Only cell-DoFs are involved */
-
-  const short int _off = 3*cm->n_fc;
-  csys->rhs[_off    ] += coef * csys->source[_off    ];
-  csys->rhs[_off + 1] += coef * csys->source[_off + 1];
-  csys->rhs[_off + 2] += coef * csys->source[_off + 2];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb scheme
  *
- * \param[in]      csys              pointer to a cs_cell_sys_t structure
- * \param[in]      rs                pointer to a cs_range_set_t structure
- * \param[in]      cm                pointer to a cs_cell_mesh_t structure
- * \param[in]      has_sourceterm    has the equation a source term?
- * \param[in, out] eqc               context structure for a vector-valued Fb
- * \param[in, out] eqa               pointer to cs_equation_assemble_t
- * \param[in, out] mav               pointer to cs_matrix_assembler_values_t
- * \param[in, out] rhs               right-end side of the system
+ * \param[in]      csys         pointer to a cs_cell_sys_t structure
+ * \param[in, out] block        pointer to a block structure
+ * \param[in, out] rhs          array of values for the rhs
+ * \param[in, out] eqc          context structure for a vector-valued Fb
+ * \param[in, out] asb          pointer to cs_cdo_assembly_t
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_vecteq_assembly(const cs_cell_sys_t            *csys,
-                         const cs_range_set_t           *rs,
-                         const cs_cell_mesh_t           *cm,
-                         const bool                      has_sourceterm,
+                         cs_cdo_system_block_t          *block,
+                         cs_real_t                      *rhs,
                          cs_cdofb_vecteq_t              *eqc,
-                         cs_equation_assemble_t         *eqa,
-                         cs_matrix_assembler_values_t   *mav,
-                         cs_real_t                       rhs[]);
+                         cs_cdo_assembly_t              *asb);
 
 /*----------------------------------------------------------------------------*/
 /*!

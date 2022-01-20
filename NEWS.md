@@ -17,6 +17,18 @@ Bug fixes:
 - Fix gradient reconstruction for anisotropic cases using
   Green-Gauss with least-squares gradient face values algorithm.
 
+CDO:
+
+- *Major reshape*: Add a generic framework to manipulate linear systems arising
+  from CDO schemes. This framework handles classical linear systems (scalar- or
+  vector-valued) but also (2x2) saddle-point systems and linear systems of
+  coupled equations (NxN). The notion of block is at the core of the framework
+  and it can handle matrix in the standard way (cs_matrix_t) but also a
+  collection of cs_matrix_t structures or a matrix which is unassembled in a
+  part of the system or for the full system. The aim is to get a framework to
+  manipulate block matrices and apply to it either external libraries or
+  in-house algorithms to solve these systems.
+
 Release 7.1.0 (December 21 2021)
 --------------------------------
 

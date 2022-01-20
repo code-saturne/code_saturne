@@ -31,7 +31,6 @@
 
 #include "cs_defs.h"
 #include "cs_hodge.h"
-#include "cs_equation_assemble.h"
 #include "cs_equation_bc.h"
 
 /*----------------------------------------------------------------------------*/
@@ -75,9 +74,6 @@ struct _cs_cdoeb_t {
   /* Array storing the value arising from the contribution of all source
      terms */
   cs_real_t   *source_terms;
-
-  /* Assembly process */
-  cs_equation_assembly_t   *assemble;
 
   /* Boundary conditions */
   cs_flag_t                *edge_bc_flag;

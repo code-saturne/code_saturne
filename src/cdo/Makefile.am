@@ -64,6 +64,7 @@ pkginclude_HEADERS = \
 cs_advection_field.h \
 cs_basis_func.h \
 cs_cdo_advection.h \
+cs_cdo_assembly.h \
 cs_cdo_bc.h \
 cs_cdo_blas.h \
 cs_cdo_connect.h \
@@ -73,6 +74,7 @@ cs_cdo_local.h \
 cs_cdo_main.h \
 cs_cdo_quantities.h \
 cs_cdo_solve.h \
+cs_cdo_system.h \
 cs_cdo_toolbox.h \
 cs_cdo_turbulence.h \
 cs_cdoeb_priv.h \
@@ -97,7 +99,6 @@ cs_domain_op.h \
 cs_domain_setup.h \
 cs_enforcement.h \
 cs_equation.h \
-cs_equation_assemble.h \
 cs_equation_bc.h \
 cs_equation_builder.h \
 cs_equation_param.h \
@@ -149,6 +150,7 @@ libcscdo_la_SOURCES = \
 cs_advection_field.c \
 cs_basis_func.c \
 cs_cdo_advection.c \
+cs_cdo_assembly.c \
 cs_cdo_bc.c \
 cs_cdo_blas.c \
 cs_cdo_connect.c \
@@ -158,6 +160,7 @@ cs_cdo_local.c \
 cs_cdo_main.c \
 cs_cdo_quantities.c \
 cs_cdo_solve.c \
+cs_cdo_system.c \
 cs_cdo_toolbox.c \
 cs_cdo_turbulence.c \
 cs_cdoeb_vecteq.c \
@@ -176,7 +179,6 @@ cs_domain_op.c \
 cs_domain_setup.c \
 cs_enforcement.c \
 cs_equation.c \
-cs_equation_assemble.c \
 cs_equation_bc.c \
 cs_equation_builder.c \
 cs_equation_param.c \

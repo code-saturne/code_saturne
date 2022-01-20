@@ -153,6 +153,7 @@ cs_equation_system_sles_init(int                            n_eqs,
                              cs_equation_system_param_t    *sysp,
                              cs_equation_core_t           **blocks)
 {
+  CS_UNUSED(n_eqs);
   assert(sysp != NULL);
 
   switch (sysp->sles_strategy) {

@@ -97,7 +97,6 @@ static cs_cell_builder_t  **cs_cdofb_cell_bld = NULL;
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
-static const cs_matrix_structure_t  *cs_shared_ms;
 
 /*============================================================================
  * Private function prototypes
@@ -656,50 +655,48 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb scheme
  *
- * \param[in]      csys              pointer to a cs_cell_sys_t structure
- * \param[in]      rs                pointer to a cs_range_set_t structure
- * \param[in]      cm                pointer to a cs_cell_mesh_t structure
- * \param[in]      has_sourceterm    has the equation a source term?
- * \param[in, out] eqc               context structure for a vector-valued Fb
- * \param[in, out] eqa               pointer to cs_equation_assemble_t
- * \param[in, out] mav               pointer to cs_matrix_assembler_values_t
- * \param[in, out] rhs               right-end side of the system
+ * \param[in]      csys         pointer to a cs_cell_sys_t structure
+ * \param[in, out] block        pointer to a block structure
+ * \param[in, out] rhs          array of values for the rhs
+ * \param[in, out] eqc          context structure for a vector-valued Fb
+ * \param[in, out] asb          pointer to cs_cdo_assembly_t
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdofb_vecteq_assembly(const cs_cell_sys_t            *csys,
-                         const cs_range_set_t           *rs,
-                         const cs_cell_mesh_t           *cm,
-                         const bool                      has_sourceterm,
+                         cs_cdo_system_block_t          *block,
+                         cs_real_t                      *rhs,
                          cs_cdofb_vecteq_t              *eqc,
-                         cs_equation_assemble_t         *eqa,
-                         cs_matrix_assembler_values_t   *mav,
-                         cs_real_t                       rhs[])
+                         cs_cdo_assembly_t              *asb)
 {
-  assert(eqa != NULL); /* Sanity check */
-
-  const short int n_f_dofs = 3*cm->n_fc;
+  assert(asb != NULL && block != NULL); /* Sanity check */
+  assert(block->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
+  cs_cdo_system_dblock_t  *db = block->block_pointer;
 
   /* Matrix assembly */
 
-  eqc->assemble(csys->mat, csys->dof_ids, rs, eqa, mav);
+  db->assembly_func(csys->mat, csys->dof_ids, db->range_set, asb, db->mav);
 
-  /* RHS assembly */
+  /* RHS assembly (only on faces since a static condensation has been performed
+     to reduce the size) so that n_dofs = 3*n_fc */
 
 # pragma omp critical
   {
-    for (short int f = 0; f < n_f_dofs; f++)
+    for (short int f = 0; f < csys->n_dofs; f++)
       rhs[csys->dof_ids[f]] += csys->rhs[f];
   }
 
   /* Reset the value of the source term for the cell DoF
      Source term is only hold by the cell DoF in face-based schemes */
 
-  if (has_sourceterm) {
-    cs_real_t  *st = eqc->source_terms + 3*cm->c_id;
+  if (eqc->source_terms != NULL) {
+
+    const cs_real_t  *_st = csys->source + csys->n_dofs;
+    cs_real_t  *cell_st = eqc->source_terms + 3*csys->c_id;
     for (int k = 0; k < 3; k++)
-      st[k] = csys->source[n_f_dofs + k];
+      cell_st[k] = _st[k];
+
   }
 }
 
@@ -765,7 +762,6 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
@@ -773,6 +769,7 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
 
   cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
 
   /* Build an array storing the Dirichlet values at faces.
    * First argument is set to t_cur even if this is a steady computation since
@@ -781,19 +778,11 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
 
   cs_cdofb_vecteq_setup(time_eval, mesh, eqp, eqb);
 
-  /* Initialize the local system: matrix and rhs */
+  /* Initialize the local system: rhs, matrix and assembler values */
 
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
-  BFT_MALLOC(rhs, 3*n_faces, cs_real_t);
-# pragma omp parallel for if  (3*n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
-
-  /* Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav
-    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_cdo_system_helper_init_system(sh, &rhs);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
@@ -810,7 +799,7 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
       (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -857,8 +846,7 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
                                      mass_hodge, diff_hodge,
                                      csys, cb);
 
-      const bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
-      if (has_sourceterm) /* SOURCE TERM */
+      if (cs_equation_param_has_sourceterm(eqp)) /* SOURCE TERM */
         cs_cdofb_vecteq_sourceterm(cm, eqp, time_eval, 1., /* time scaling */
                                    mass_hodge,
                                    cb, eqb, csys);
@@ -902,19 +890,16 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
       /* ASSEMBLY PROCESS */
       /* ================ */
 
-      cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               eqc, eqa, mav, rhs);
+      cs_cdofb_vecteq_assembly(csys, sh->blocks[0], sh->rhs, eqc, asb);
 
     } /* Main loop on cells */
 
   } /* OpenMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
-
   /* Free temporary buffers and structures */
 
+  cs_cdo_system_helper_finalize_assembly(sh);
   cs_equation_builder_reset(eqb);
-  cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
 
@@ -929,11 +914,13 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
 
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
 
   cs_cdo_solve_scalar_system(3*n_faces,
                              eqp->sles_param,
                              matrix,
-                             rs,
+                             range_set,
                              normalization,
                              true, /* rhs_redux */
                              sles,
@@ -949,9 +936,8 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
 
   /* Free remaining buffers */
 
-  BFT_FREE(rhs);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
-  cs_matrix_destroy(&matrix);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -980,7 +966,6 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_real_t  t_cur = cs_shared_time_step->t_cur;
@@ -990,6 +975,7 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
 
   cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
 
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
@@ -998,19 +984,12 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
 
   cs_cdofb_vecteq_setup(t_cur + dt_cur, mesh, eqp, eqb);
 
-  /* Initialize the local system: matrix and rhs */
+  /* Initialize the local system: rhs, matrix and assembler values */
 
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
-  BFT_MALLOC(rhs, 3*n_faces, cs_real_t);
-# pragma omp parallel for if  (3*n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
-
-  /* Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav
-    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_cdo_system_helper_init_system(sh, &rhs);
+  assert(rhs == sh->rhs);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
@@ -1027,7 +1006,7 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
       (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -1150,19 +1129,17 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
       /* ASSEMBLY PROCESS */
       /* ================ */
 
-      cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               eqc, eqa, mav, rhs);
+      cs_cdofb_vecteq_assembly(csys, sh->blocks[0], rhs, eqc, asb);
 
     } /* Main loop on cells */
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
 
   /* Free temporary buffers and structures */
 
+  cs_cdo_system_helper_finalize_assembly(sh);
   cs_equation_builder_reset(eqb);
-  cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
 
@@ -1177,11 +1154,13 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
 
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
 
   cs_cdo_solve_scalar_system(3*n_faces,
                              eqp->sles_param,
                              matrix,
-                             rs,
+                             range_set,
                              normalization,
                              true, /* rhs_redux */
                              sles,
@@ -1197,9 +1176,8 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
 
   /* Free remaining buffers */
 
-  BFT_FREE(rhs);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
-  cs_matrix_destroy(&matrix);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1228,13 +1206,13 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
 
   cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
 
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
@@ -1252,19 +1230,12 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
 
   cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb);
 
-  /* Initialize the local system: matrix and rhs */
+  /* Initialize the local system: rhs, matrix and assembler values */
 
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
 
-  BFT_MALLOC(rhs, 3*n_faces, cs_real_t);
-# pragma omp parallel for if  (3*n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
-
-  /* Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav
-    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_cdo_system_helper_init_system(sh, &rhs);
+  assert(rhs == sh->rhs);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
@@ -1281,7 +1252,7 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
       (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -1336,7 +1307,7 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
                                      csys, cb);
 
       const short int  n_f = cm->n_fc;
-      const bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
+      const bool  has_sourceterm = cs_equation_param_has_sourceterm(eqp);
 
       if (has_sourceterm) { /* SOURCE TERM
                              * =========== */
@@ -1444,19 +1415,16 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
       /* ASSEMBLY PROCESS */
       /* ================ */
 
-      cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
-                               eqc, eqa, mav, rhs);
+      cs_cdofb_vecteq_assembly(csys, sh->blocks[0], rhs, eqc, asb);
 
     } /* Main loop on cells */
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
-
   /* Free temporary buffers and structures */
 
+  cs_cdo_system_helper_finalize_assembly(sh);
   cs_equation_builder_reset(eqb);
-  cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
 
@@ -1471,11 +1439,13 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
 
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
 
   cs_cdo_solve_scalar_system(3*n_faces,
                              eqp->sles_param,
                              matrix,
-                             rs,
+                             range_set,
                              normalization,
                              true, /* rhs_redux */
                              sles,
@@ -1489,9 +1459,10 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
 
   cs_cdofb_vecteq_update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
-  BFT_FREE(rhs);
+  /* Final step */
+
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
-  cs_matrix_destroy(&matrix);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1521,22 +1492,19 @@ cs_cdofb_vecteq_is_initialized(void)
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
- * \param[in]  ms          pointer to a cs_matrix_structure_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_init_common(const cs_cdo_quantities_t     *quant,
-                            const cs_cdo_connect_t        *connect,
-                            const cs_time_step_t          *time_step,
-                            const cs_matrix_structure_t   *ms)
+cs_cdofb_vecteq_init_sharing(const cs_cdo_quantities_t     *quant,
+                             const cs_cdo_connect_t        *connect,
+                             const cs_time_step_t          *time_step)
 {
   /* Assign static const pointers */
 
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
-  cs_shared_ms = ms;
 
   /* Specific treatment for handling openMP */
 
@@ -1581,20 +1549,6 @@ cs_cdofb_vecteq_init_common(const cs_cdo_quantities_t     *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Get the pointer to the related cs_matrix_structure_t
- *
- * \return a  pointer to a cs_matrix_structure_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_matrix_structure_t *
-cs_cdofb_vecteq_matrix_structure(void)
-{
-  return cs_shared_ms;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Retrieve work buffers used for building a CDO system cellwise
  *
  * \param[out]  csys   double pointer to a \ref cs_cell_sys_t structure
@@ -1625,7 +1579,7 @@ cs_cdofb_vecteq_get(cs_cell_sys_t            **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_finalize_common(void)
+cs_cdofb_vecteq_finalize_sharing(void)
 {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -1894,10 +1848,27 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
-  /* Assembly process */
+  /* Helper structures (range set, interface set, matrix structure and all the
+     assembly process) */
 
-  eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                           CS_DOF_FACE_VECT);
+  cs_cdo_system_helper_t  *sh = NULL;
+  cs_lnum_t  col_block_size = 3*n_faces;
+
+  sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_DEFAULT,
+                                   1,                /* n_col_blocks */
+                                   &col_block_size,  /* col_block_size */
+                                   1);               /* n_blocks */
+
+  cs_cdo_system_add_dblock(sh, 0,  /* block_id */
+                           cs_flag_primal_face,
+                           n_faces,
+                           3,      /* stride */
+                           true,   /* interlaced */
+                           true);  /* unrolled */
+
+  cs_cdo_system_build_block(sh, 0);
+
+  eqb->system_helper = sh;
 
   return eqc;
 }

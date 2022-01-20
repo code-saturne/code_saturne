@@ -87,7 +87,6 @@ static cs_cell_builder_t  **cs_cdoeb_cell_builder = NULL;
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
-static const cs_matrix_structure_t  *cs_shared_ms;
 
 /*============================================================================
  * Private function prototypes
@@ -403,25 +402,27 @@ _eb_cw_rhs_normalization(cs_param_resnorm_type_t     type,
  * \param[in]      eqc    context for this kind of discretization
  * \param[in]      cm     pointer to a cellwise view of the mesh
  * \param[in]      csys   pointer to a cellwise view of the system
- * \param[in]      rs     pointer to a cs_range_set_t structure
- * \param[in, out] eqa    pointer to a cs_equation_assemble_t structure
- * \param[in, out] mav    pointer to a cs_matrix_assembler_values_t structure
- * \param[in, out] rhs    right-hand side array
+ * \param[in, out] sh     pointer to a system helper structure
+ * \param[in, out] asb    pointer to a cs_cdo_assembly_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_assemble(const cs_cdoeb_vecteq_t           *eqc,
-          const cs_cell_mesh_t              *cm,
-          const cs_cell_sys_t               *csys,
-          const cs_range_set_t              *rs,
-          cs_equation_assemble_t            *eqa,
-          cs_matrix_assembler_values_t      *mav,
-          cs_real_t                         *rhs)
+_eb_assemble(const cs_cdoeb_vecteq_t      *eqc,
+             const cs_cell_mesh_t         *cm,
+             const cs_cell_sys_t          *csys,
+             cs_cdo_system_helper_t       *sh,
+             cs_cdo_assembly_t            *asb)
 {
+  assert(asb != NULL && sh != NULL); /* Sanity check */
+
   /* Matrix assembly */
 
-  eqc->assemble(csys->mat, csys->dof_ids, rs, eqa, mav);
+  cs_cdo_system_block_t  *b = sh->blocks[0];
+  assert(b->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
+  cs_cdo_system_dblock_t  *db = b->block_pointer;
+
+  db->assembly_func(csys->mat, csys->dof_ids, db->range_set, asb, db->mav);
 
   /* RHS assembly */
 
@@ -429,7 +430,7 @@ _assemble(const cs_cdoeb_vecteq_t           *eqc,
 # pragma omp critical
   {
     for (int e = 0; e < cm->n_ec; e++)
-      rhs[cm->e_ids[e]] += csys->rhs[e];
+      sh->rhs[cm->e_ids[e]] += csys->rhs[e];
   }
 
   if (eqc->source_terms != NULL) { /* Source term */
@@ -445,7 +446,7 @@ _assemble(const cs_cdoeb_vecteq_t           *eqc,
 
   for (int e = 0; e < cm->n_ec; e++)
 #   pragma omp atomic
-    rhs[cm->e_ids[e]] += csys->rhs[e];
+    sh->rhs[cm->e_ids[e]] += csys->rhs[e];
 
   if (eqc->source_terms != NULL) { /* Source term */
     for (int e = 0; e < cm->n_ec; e++) /* Source term assembly */
@@ -487,22 +488,19 @@ cs_cdoeb_vecteq_is_initialized(void)
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
- * \param[in]  ms          pointer to a cs_matrix_structure_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_vecteq_init_common(const cs_cdo_quantities_t    *quant,
-                            const cs_cdo_connect_t       *connect,
-                            const cs_time_step_t         *time_step,
-                            const cs_matrix_structure_t  *ms)
+cs_cdoeb_vecteq_init_sharing(const cs_cdo_quantities_t    *quant,
+                             const cs_cdo_connect_t       *connect,
+                             const cs_time_step_t         *time_step)
 {
   /* Assign static const pointers */
 
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
-  cs_shared_ms = ms;
 
   /* Structure used to build the final system by a cell-wise process */
 
@@ -574,7 +572,7 @@ cs_cdoeb_vecteq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_vecteq_finalize_common(void)
+cs_cdoeb_vecteq_finalize_sharing(void)
 {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -739,13 +737,32 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Add a mass matrix */
 
-  /* Assembly process */
-
-  eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOEB,
-                                           CS_DOF_EDGE_SCAL);
-
   if (eqp->sles_param->resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS)
     eqb->msh_flag |= CS_FLAG_COMP_PEC;
+
+  /* Whatever is the algorithm to solve, the algebraic system is the same */
+
+  /* Helper structures (range set, interface set, matrix structure and all the
+     assembly process) */
+
+  cs_cdo_system_helper_t  *sh = NULL;
+
+  sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_DEFAULT,
+                                   1,         /* n_col_blocks */
+                                   &n_edges,  /* col_block_size */
+                                   1);        /* n_blocks */
+
+  cs_cdo_system_add_dblock(CS_CDO_SYSTEM_BLOCK_DEFAULT,
+                           0,      /* block_id */
+                           cs_flag_primal_edge,
+                           n_edges,
+                           1,
+                           false,  /* interlaced (useless) */
+                           true);  /* unrolled (useless) */
+
+  cs_cdo_system_build_block(sh, 0);
+
+  eqb->system_helper = sh;
 
   return eqc;
 }
@@ -903,15 +920,16 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
 {
   cs_timer_t  t0 = cs_timer_time();
 
+  cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
+  cs_field_t  *fld = cs_field_by_id(field_id); /* vector-valued cell-based */
+
+  const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_EDGE_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_edges = quant->n_edges;
-  const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
-  cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
-  cs_field_t  *fld = cs_field_by_id(field_id); /* vector-valued cell-based */
 
   /* Build an array storing the values of the prescribed circulation at
      boundary */
@@ -932,19 +950,12 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
                                      eqp->n_enforcements,
                                      eqp->enforcement_params);
 
-  /* Initialize the local system: matrix and rhs */
+  /* Initialize the local system: rhs, matrix and assembler values */
 
-  cs_real_t  rhs_norm = 0.0;
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
+  double  rhs_norm = 0.;
   cs_real_t  *rhs = NULL;
 
-  BFT_MALLOC(rhs, n_edges, cs_real_t);
-  memset(rhs, 0, n_edges*sizeof(cs_real_t));
-
-  /* Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav
-    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_cdo_system_helper_init_system(sh, &rhs);
 
   /* ------------------------- */
   /* Main OpenMP block on cell */
@@ -965,7 +976,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdoeb_cell_system[t_id];
     cs_cell_builder_t  *cb = cs_cdoeb_cell_builder[t_id];
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *curlcurl_hodge = eqc->curlcurl_hodge[t_id];
 
     cb->t_pty_eval = time_eval; /* Dummy parameter if really steady */
@@ -1047,18 +1058,16 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
       /* ASSEMBLY PROCESS
        * ================ */
 
-      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
+      _eb_assemble(eqc, cm, csys, sh, asb);
 
     } /* Main loop on cells */
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
-
   /* Free temporary buffers and structures */
 
+  cs_cdo_system_helper_finalize_assembly(sh);
   cs_equation_builder_reset(eqb);
-  cs_matrix_assembler_values_finalize(&mav);
 
   /* Last step in the computation of the renormalization coefficient */
 
@@ -1076,6 +1085,8 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   /* Solve the linear system */
 
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
 
   /* Update edge arrays */
 
@@ -1085,7 +1096,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_cdo_solve_scalar_system(eqc->n_dofs,
                              eqp->sles_param,
                              matrix,
-                             rs,
+                             range_set,
                              rhs_norm,
                              true, /* rhs_redux */
                              sles,
@@ -1107,9 +1118,8 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t3 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t2, &t3);
 
-  BFT_FREE(rhs);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
-  cs_matrix_destroy(&matrix);
 }
 
 /*----------------------------------------------------------------------------*/

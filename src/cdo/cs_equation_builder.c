@@ -146,10 +146,6 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
     eqb->reac_pty_uniform[i]
       = cs_property_is_uniform(eqp->reaction_properties[i]);
 
-  /* Enforcement of DoFs */
-
-  eqb->enforced_values = NULL;
-
   /* Handle source terms */
 
   eqb->source_mask = NULL;
@@ -165,6 +161,15 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
                                            &(eqb->source_mask));
 
   } /* There is at least one source term */
+
+  /* The helper structure is allocated during the initialization of the context
+     structure */
+
+  eqb->system_helper = NULL;
+
+  /* Enforcement of DoFs */
+
+  eqb->enforced_values = NULL;
 
   /* Set members and structures related to the management of the BCs
      Translate user-defined information about BC into a structure well-suited
@@ -190,6 +195,70 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the range set structure associated to a builder structure
+ *        for the block defined in block_id in the system helper structure
+ *
+ * \param[in, out]  builder      pointer to a cs_equation_builder_t
+ * \param[in]       block_id     id of the block to consider
+ *
+ * \return a pointer to a cs_matrix_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_matrix_t *
+cs_equation_builder_get_matrix(const cs_equation_builder_t  *builder,
+                               int                           block_id)
+{
+  if (builder == NULL)
+    return NULL;
+
+  cs_cdo_system_helper_t  *sh = builder->system_helper;
+
+  if (sh == NULL)
+    return NULL;
+
+  if (block_id > sh->n_blocks - 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid block_id \"%d\". Number of blocks: %d\n",
+              __func__, block_id, sh->n_blocks);
+
+  return cs_cdo_system_get_matrix(sh, block_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the range set structure associated to a builder structure
+ *        for the block defined in block_id in the system helper structure
+ *
+ * \param[in, out]  builder      pointer to a cs_equation_builder_t
+ * \param[in]       block_id     id of the block to consider
+ *
+ * \return a pointer to a cs_range_set structure
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_range_set_t *
+cs_equation_builder_get_range_set(const cs_equation_builder_t  *builder,
+                                  int                           block_id)
+{
+  if (builder == NULL)
+    return NULL;
+
+  cs_cdo_system_helper_t  *sh = builder->system_helper;
+
+  if (sh == NULL)
+    return NULL;
+
+  if (block_id > sh->n_blocks - 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid block_id \"%d\". Number of blocks: %d\n",
+              __func__, block_id, sh->n_blocks);
+
+  return cs_cdo_system_get_range_set(sh, block_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free a cs_equation_builder_t structure
  *
  * \param[in, out]  p_builder  pointer of pointer to the cs_equation_builder_t
@@ -211,6 +280,8 @@ cs_equation_builder_free(cs_equation_builder_t  **p_builder)
 
   if (eqb->source_mask != NULL)
     BFT_FREE(eqb->source_mask);
+
+  cs_cdo_system_helper_free(&eqb->system_helper);
 
   /* Free BC structure */
 

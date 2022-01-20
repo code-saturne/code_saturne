@@ -342,8 +342,8 @@ _hho_add_tetra_by_ana_vd(const cs_xdef_analytic_context_t  *ac,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                   const cs_cdo_connect_t       *connect)
+cs_source_term_init_sharing(const cs_cdo_quantities_t    *quant,
+                            const cs_cdo_connect_t       *connect)
 {
   /* Assign static const pointers */
   cs_cdo_quant = quant;

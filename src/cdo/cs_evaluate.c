@@ -343,8 +343,8 @@ _tag_geometric_entities(cs_lnum_t          n_elts,
 
   /* Handle parallelism (always the scalar interface) */
 
-  if (cs_cdo_connect->interfaces[CS_DOF_VTX_SCAL] != NULL)
-    cs_interface_set_max(cs_cdo_connect->interfaces[CS_DOF_VTX_SCAL],
+  if (cs_cdo_connect->vtx_ifs != NULL)
+    cs_interface_set_max(cs_cdo_connect->vtx_ifs,
                          n_vertices,
                          1,           /* stride */
                          true,        /* interlace, not useful here */
@@ -1426,8 +1426,8 @@ _pfva_by_analytic(cs_real_t                       time_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                const cs_cdo_connect_t       *connect)
+cs_evaluate_init_sharing(const cs_cdo_quantities_t    *quant,
+                         const cs_cdo_connect_t       *connect)
 {
   /* Assign static const pointers */
 

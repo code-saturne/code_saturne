@@ -89,8 +89,8 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                   const cs_cdo_connect_t       *connect);
+cs_source_term_init_sharing(const cs_cdo_quantities_t    *quant,
+                            const cs_cdo_connect_t       *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!

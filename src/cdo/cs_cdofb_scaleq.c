@@ -107,7 +107,6 @@ static cs_cell_builder_t  **cs_cdofb_cell_bld = NULL;
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
-static const cs_matrix_structure_t  *cs_shared_ms;
 
 /*============================================================================
  * Private function prototypes
@@ -586,35 +585,36 @@ _sfb_cw_rhs_normalization(cs_param_resnorm_type_t     type,
 /*!
  * \brief   Perform the assembly step
  *
- * \param[in]      eqc    context for this kind of discretization
- * \param[in]      cm     pointer to a cellwise view of the mesh
  * \param[in]      csys   pointer to a cellwise view of the system
- * \param[in]      rs     pointer to a cs_range_set_t structure
- * \param[in, out] eqa    pointer to a cs_equation_assemble_t structure
- * \param[in, out] mav    pointer to a cs_matrix_assembler_values_t structure
+ * \param[in, out] block  pointer to a block structure
  * \param[in, out] rhs    right-hand side array
+ * \param[in, out] eqc    context for this kind of discretization
+ * \param[in, out] asb    pointer to a cs_cdo_assembly_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
-_assemble(const cs_cdofb_scaleq_t           *eqc,
-          const cs_cell_mesh_t              *cm,
-          const cs_cell_sys_t               *csys,
-          const cs_range_set_t              *rs,
-          cs_equation_assemble_t            *eqa,
-          cs_matrix_assembler_values_t      *mav,
-          cs_real_t                         *rhs)
+static void
+_sfb_assemble(const cs_cell_sys_t         *csys,
+              cs_cdo_system_block_t       *block,
+              cs_real_t                   *rhs,
+              cs_cdofb_scaleq_t           *eqc,
+              cs_cdo_assembly_t           *asb)
 {
+  assert(asb != NULL && block != NULL && rhs != NULL); /* Sanity check */
+  assert(block->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
+  cs_cdo_system_dblock_t  *db = block->block_pointer;
+
   /* Matrix assembly */
 
-  eqc->assemble(csys->mat, csys->dof_ids, rs, eqa, mav);
+  db->assembly_func(csys->mat, csys->dof_ids, db->range_set, asb, db->mav);
 
-  /* RHS assembly */
+  /* RHS assembly (only on faces since a static condensation has been performed
+     to reduce the size) so that n_dofs = n_fc */
 
 # pragma omp critical
   {
-    for (short int f = 0; f < cm->n_fc; f++)
-      rhs[cm->f_ids[f]] += csys->rhs[f];
+    for (short int f = 0; f < csys->n_dofs; f++)
+      rhs[csys->dof_ids[f]] += csys->rhs[f];
   }
 
   if (eqc->source_terms != NULL) { /* Source term */
@@ -622,7 +622,7 @@ _assemble(const cs_cdofb_scaleq_t           *eqc,
     /* Reset the value of the source term for the cell DoF
        Source term is only hold by the cell DoF in face-based schemes */
 
-    eqc->source_terms[cm->c_id] = csys->source[cm->n_fc];
+    eqc->source_terms[csys->c_id] = csys->source[csys->n_dofs];
 
   }
 }
@@ -697,22 +697,19 @@ cs_cdofb_scaleq_is_initialized(void)
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a cs_cdo_connect_t struct.
  * \param[in]  time_step   pointer to a time step structure
- * \param[in]  ms          pointer to a cs_matrix_structure_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_init_common(const cs_cdo_quantities_t     *quant,
-                            const cs_cdo_connect_t        *connect,
-                            const cs_time_step_t          *time_step,
-                            const cs_matrix_structure_t   *ms)
+cs_cdofb_scaleq_init_sharing(const cs_cdo_quantities_t     *quant,
+                             const cs_cdo_connect_t        *connect,
+                             const cs_time_step_t          *time_step)
 {
   /* Assign static const pointers */
 
   cs_shared_quant = quant;
   cs_shared_connect = connect;
   cs_shared_time_step = time_step;
-  cs_shared_ms = ms;
 
   /* Specific treatment for handling openMP */
 
@@ -742,20 +739,6 @@ cs_cdofb_scaleq_init_common(const cs_cdo_quantities_t     *quant,
                                             1, NULL);
   cs_cdofb_cell_bld[0] = _cell_builder_create(connect);
 #endif /* openMP */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the pointer to the related cs_matrix_structure_t
- *
- * \return a  pointer to a cs_matrix_structure_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_matrix_structure_t *
-cs_cdofb_scaleq_matrix_structure(void)
-{
-  return cs_shared_ms;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -790,7 +773,7 @@ cs_cdofb_scaleq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_finalize_common(void)
+cs_cdofb_scaleq_finalize_sharing(void)
 {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -838,9 +821,8 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
               " Expected: scalar-valued CDO face-based equation.");
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_cells = connect->n_cells;
-  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
-
+  cs_lnum_t  n_cells = connect->n_cells;
+  cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
   cs_cdofb_scaleq_t  *eqc = NULL;
 
   BFT_MALLOC(eqc, 1, cs_cdofb_scaleq_t);
@@ -1054,10 +1036,26 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   } /* There is at least one source term */
 
-  /* Assembly process */
+  /* Helper structures (range set, interface set, matrix structure and all the
+     assembly process) */
 
-  eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                           CS_DOF_FACE_SCAL);
+  cs_cdo_system_helper_t  *sh = NULL;
+
+  sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_DEFAULT,
+                                   1,        /* n_col_blocks */
+                                   &n_faces, /* col_block_sizes */
+                                   1);       /* n_blocks */
+
+  cs_cdo_system_add_dblock(sh, 0,
+                           cs_flag_primal_face,
+                           n_faces,
+                           1,       /* stride */
+                           false,   /* interlaced (useless for scalar) */
+                           true);   /* unrolled (useless for scalar )*/
+
+  cs_cdo_system_build_block(sh, 0); /* build/set structures */
+
+  eqb->system_helper = sh;
 
   /* Renormalization of the residual */
 
@@ -1261,7 +1259,6 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
                             void                       *context)
 {
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
@@ -1269,6 +1266,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
 
   cs_timer_t  t0 = cs_timer_time();
 
@@ -1279,20 +1277,12 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   _setup(time_eval, mesh, eqp, eqb);
 
-  /* Initialize the local system: matrix and rhs */
+  /* Initialize the local system: rhs, matrix and assembler values */
 
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
-  cs_real_t  *rhs = NULL;
   double  rhs_norm = 0.;
+  cs_real_t  *rhs = NULL;
 
-  BFT_MALLOC(rhs, n_faces, cs_real_t);
-# pragma omp parallel for if (n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_faces; i++) rhs[i] = 0.0;
-
-  /* Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav
-    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_cdo_system_helper_init_system(sh, &rhs);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
@@ -1309,7 +1299,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
       (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -1407,6 +1397,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
           csys->rhs[i] -= cell_values[csys->c_id] * old_i[cm->n_fc];
 
         }
+
         csys->n_dofs = cm->n_fc;
         csys->mat->n_rows = csys->mat->n_cols = cm->n_fc;
 
@@ -1436,17 +1427,16 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
       /* ASSEMBLY PROCESS
        * ================ */
 
-      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
+      _sfb_assemble(csys, sh->blocks[0], rhs, eqc, asb);
 
     } /* Main loop on cells */
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
-
   /* Free temporary buffers and structures */
 
-  cs_matrix_assembler_values_finalize(&mav);
+  cs_cdo_system_helper_finalize_assembly(sh);
+  cs_equation_builder_reset(eqb);
 
   /* End of the system building */
 
@@ -1465,11 +1455,13 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
                              &rhs_norm);
 
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
 
   cs_cdo_solve_scalar_system(n_faces,
                              eqp->sles_param,
                              matrix,
-                             rs,
+                             range_set,
                              rhs_norm,
                              true, /* rhs_redux */
                              sles,
@@ -1480,9 +1472,8 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   memcpy(fld->val, cell_values, quant->n_cells*sizeof(cs_real_t));
 
-  BFT_FREE(rhs);
   cs_sles_free(sles);
-  cs_matrix_destroy(&matrix);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1511,7 +1502,6 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
@@ -1519,6 +1509,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
 
   /* Build an array storing the Dirichlet values at faces
    * First argument is set to t_cur even if this is a steady computation since
@@ -1527,20 +1518,12 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
 
   _setup(time_eval, mesh, eqp, eqb);
 
-  /* Initialize the local system: matrix and rhs */
+  /* Initialize the local system: rhs, matrix and assembler values */
 
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
+  double  rhs_norm = 0.;
   cs_real_t  *rhs = NULL;
-  double  rhs_norm = 0.0;
 
-  BFT_MALLOC(rhs, n_faces, cs_real_t);
-# pragma omp parallel for if (n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_faces; i++) rhs[i] = 0.0;
-
-  /* Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav
-    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_cdo_system_helper_init_system(sh, &rhs);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
@@ -1557,7 +1540,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
       (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -1671,17 +1654,16 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
       /* ASSEMBLY PROCESS
        * ================ */
 
-      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
+      _sfb_assemble(csys, sh->blocks[0], rhs, eqc, asb);
 
     } /* Main loop on cells */
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
-
   /* Free temporary buffers and structures */
 
-  cs_matrix_assembler_values_finalize(&mav);
+  cs_cdo_system_helper_finalize_assembly(sh);
+  cs_equation_builder_reset(eqb);
 
   /* End of the system building */
 
@@ -1703,11 +1685,13 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
                              &rhs_norm);
 
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
 
   cs_cdo_solve_scalar_system(n_faces,
                              eqp->sles_param,
                              matrix,
-                             rs,
+                             range_set,
                              rhs_norm,
                              true, /* rhs_redux */
                              sles,
@@ -1721,9 +1705,8 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
 
   _update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
-  BFT_FREE(rhs);
   cs_sles_free(sles);
-  cs_matrix_destroy(&matrix);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1753,12 +1736,12 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
   cs_field_t  *fld = cs_field_by_id(field_id);
 
   assert(cs_equation_param_has_time(eqp) == true);
@@ -1769,20 +1752,12 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
 
   _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb);
 
-  /* Initialize the local system: matrix and rhs */
+  /* Initialize the local system: rhs, matrix and assembler values */
 
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
-  cs_real_t  *rhs = NULL;
   double  rhs_norm = 0.;
+  cs_real_t  *rhs = NULL;
 
-  BFT_MALLOC(rhs, n_faces, cs_real_t);
-# pragma omp parallel for if  (n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_faces; i++) rhs[i] = 0.0;
-
-  /* Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav
-    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_cdo_system_helper_init_system(sh, &rhs);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
@@ -1799,7 +1774,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
       (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -1969,18 +1944,16 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
       /* ASSEMBLY PROCESS
        * ================ */
 
-      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
+      _sfb_assemble(csys, sh->blocks[0], rhs, eqc, asb);
 
     } /* Main loop on cells */
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
-
   /* Free temporary buffers and structures */
 
+  cs_cdo_system_helper_finalize_assembly(sh);
   cs_equation_builder_reset(eqb);
-  cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
 
@@ -2002,11 +1975,13 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
                              &rhs_norm);
 
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
 
   cs_cdo_solve_scalar_system(n_faces,
                              eqp->sles_param,
                              matrix,
-                             rs,
+                             range_set,
                              rhs_norm,
                              true, /* rhs_redux */
                              sles,
@@ -2020,9 +1995,8 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
 
   _update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
-  BFT_FREE(rhs);
   cs_sles_free(sles);
-  cs_matrix_destroy(&matrix);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2052,13 +2026,13 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = connect->range_sets[CS_DOF_FACE_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
 
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
@@ -2082,20 +2056,12 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
   _setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb);
 
-  /* Initialize the local system: matrix and rhs */
+  /* Initialize the local system: rhs, matrix and assembler values */
 
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
-  cs_real_t  *rhs = NULL;
   double  rhs_norm = 0.;
+  cs_real_t  *rhs = NULL;
 
-  BFT_MALLOC(rhs, n_faces, cs_real_t);
-# pragma omp parallel for if  (n_faces > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_faces; i++) rhs[i] = 0.0;
-
-  /* Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav
-    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
+  cs_cdo_system_helper_init_system(sh, &rhs);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
@@ -2112,7 +2078,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdofb_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
       (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -2328,18 +2294,16 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
       /* ASSEMBLY PROCESS
        * ================ */
 
-      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
+      _sfb_assemble(csys, sh->blocks[0], rhs, eqc, asb);
 
     } /* Main loop on cells */
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
-
   /* Free temporary buffers and structures */
 
+  cs_cdo_system_helper_finalize_assembly(sh);
   cs_equation_builder_reset(eqb);
-  cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
 
@@ -2361,11 +2325,13 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
                              &rhs_norm);
 
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
 
   cs_cdo_solve_scalar_system(n_faces,
                              eqp->sles_param,
                              matrix,
-                             rs,
+                             range_set,
                              rhs_norm,
                              true, /* rhs_redux */
                              sles,
@@ -2379,9 +2345,8 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
   _update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
-  BFT_FREE(rhs);
   cs_sles_free(sles);
-  cs_matrix_destroy(&matrix);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/

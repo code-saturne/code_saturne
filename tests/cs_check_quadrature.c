@@ -1947,15 +1947,15 @@ main(int    argc,
   BFT_MALLOC(time_step, 1, cs_time_step_t);
   time_step->t_cur = 0.; /* Useful when analytic function are called */
 
-  cs_source_term_set_shared_pointers(quant, connect);
+  cs_source_term_init_sharing(quant, connect);
 
   /* Allocate local structures */
   cs_cell_mesh_t  *cm = cs_cell_mesh_create(connect);
 
-  cs_cdofb_scaleq_init_common(quant, connect, time_step, NULL);
-  cs_cdofb_vecteq_init_common(quant, connect, time_step, NULL);
-  cs_cdovb_scaleq_init_common(quant, connect, time_step, NULL);
-  cs_cdovb_vecteq_init_common(quant, connect, time_step, NULL);
+  cs_cdofb_scaleq_init_sharing(quant, connect, time_step);
+  cs_cdofb_vecteq_init_sharing(quant, connect, time_step);
+  cs_cdovb_scaleq_init_sharing(quant, connect, time_step);
+  cs_cdovb_vecteq_init_sharing(quant, connect, time_step);
 
   /* ========= */
   /* TEST HEXA */
@@ -1976,10 +1976,10 @@ main(int    argc,
   _main_quadratures(quadrature, cm);
 
   /* Free memory */
-  cs_cdofb_scaleq_finalize_common();
-  cs_cdofb_vecteq_finalize_common();
-  cs_cdovb_scaleq_finalize_common();
-  cs_cdovb_vecteq_finalize_common();
+  cs_cdofb_scaleq_finalize_sharing();
+  cs_cdofb_vecteq_finalize_sharing();
+  cs_cdovb_scaleq_finalize_sharing();
+  cs_cdovb_vecteq_finalize_sharing();
 
   cs_cell_mesh_free(&cm);
 

@@ -33,6 +33,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
+#include "cs_cdo_system.h"
 #include "cs_enforcement.h"
 #include "cs_equation_param.h"
 #include "cs_flag.h"
@@ -135,6 +136,15 @@ struct _equation_builder_t {
 
   cs_source_term_cellwise_t  *compute_source[CS_N_MAX_SOURCE_TERMS];
 
+  /*!
+   * @}
+   * @name Helper structure to build the matrix and manage arrays of DoFs
+   * @{
+   */
+
+  cs_cdo_system_helper_t     *system_helper;
+
+  /*! \var  */
   /*!
    * @}
    * @name Enforcement of degrees of freedom (DoFs)
@@ -240,7 +250,7 @@ cs_equation_builder_cell_mesh_flag(cs_flag_t                      cell_flag,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate a new structure to handle the building of algebraic system
- *         related to an cs_equation_t structure
+ *         related to a cs_equation_t structure
  *
  * \param[in] eqp       pointer to a cs_equation_param_t structure
  * \param[in] mesh      pointer to a cs_mesh_t structure
@@ -253,6 +263,37 @@ cs_equation_builder_t *
 cs_equation_builder_create(const cs_equation_param_t   *eqp,
                            const cs_mesh_t             *mesh);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the range set structure associated to a builder structure
+ *        for the block defined in block_id in the system helper structure
+ *
+ * \param[in, out]  builder      pointer to a cs_equation_builder_t
+ * \param[in]       block_id     id of the block to consider
+ *
+ * \return a pointer to a cs_matrix_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_matrix_t *
+cs_equation_builder_get_matrix(const cs_equation_builder_t  *builder,
+                               int                           block_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the range set structure associated to a builder structure
+ *        for the block defined in block_id in the system helper structure
+ *
+ * \param[in, out]  builder      pointer to a cs_equation_builder_t
+ * \param[in]       block_id     id of the block to consider
+ *
+ * \return a pointer to a cs_range_set structure
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_range_set_t *
+cs_equation_builder_get_range_set(const cs_equation_builder_t  *builder,
+                                  int                           block_id);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Free a cs_equation_builder_t structure

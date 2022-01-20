@@ -30,7 +30,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_cdo_advection.h"
-#include "cs_equation_assemble.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_builder.h"
 #include "cs_hodge.h"
@@ -65,10 +64,6 @@ struct  _cs_cdofb_t {
 
   cs_real_t   *face_values;     /* At the last iteration */
   cs_real_t   *face_values_pre; /* At the previous iteration */
-
-  /* Assembly process */
-
-  cs_equation_assembly_t    *assemble;
 
   /* Members related to the static condensation */
 

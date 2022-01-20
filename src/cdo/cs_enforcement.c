@@ -412,10 +412,8 @@ cs_enforcement_define_at_vertices(const cs_cdo_connect_t     *connect,
      is not defined, one takes the min. values (since one initializes with
      FLT_MAX). */
 
-  cs_interface_set_t  *ifs = connect->interfaces[CS_DOF_VTX_SCAL];
-
-  if (ifs != NULL)
-    cs_interface_set_min(ifs,
+  if (connect->vtx_ifs != NULL)
+    cs_interface_set_min(connect->vtx_ifs,
                          n_vertices,  /* array size */
                          stride,      /* array stride */
                          true,        /* interlace */
@@ -543,10 +541,8 @@ cs_enforcement_define_at_faces(const cs_cdo_connect_t     *connect,
      is not defined, one takes the min. values (since one initializes with
      FLT_MAX). */
 
-  cs_interface_set_t  *ifs = connect->interfaces[CS_DOF_FACE_SCAL];
-
-  if (ifs != NULL)
-    cs_interface_set_min(ifs,
+  if (connect->face_ifs != NULL)
+    cs_interface_set_min(connect->face_ifs,
                          n_faces,     /* array size */
                          stride,      /* array stride */
                          true,        /* interlace */
@@ -674,10 +670,8 @@ cs_enforcement_define_at_edges(const cs_cdo_connect_t     *connect,
      is not defined, one takes the min. values (since one initializes with
      FLT_MAX). */
 
-  cs_interface_set_t  *ifs = connect->interfaces[CS_DOF_EDGE_SCAL];
-
-  if (ifs != NULL)
-    cs_interface_set_min(ifs,
+  if (connect->edge_ifs != NULL)
+    cs_interface_set_min(connect->edge_ifs,
                          n_edges,     /* array size */
                          stride,      /* array stride */
                          true,        /* interlace */

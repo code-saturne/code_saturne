@@ -115,20 +115,6 @@ static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
 
-/* If one solves the saddle-point system as it is, then one needs to define
- * new shared structure. Otherwise, one points to shared structures with
- * vector-valued face-based schemes */
-
-static cs_range_set_t         *_shared_range_set = NULL;
-static cs_interface_set_t     *_shared_interface_set = NULL;
-static cs_matrix_structure_t  *_shared_matrix_structure = NULL;
-static cs_matrix_assembler_t  *_shared_matrix_assembler = NULL;
-
-static const cs_range_set_t         *cs_shared_range_set;
-static const cs_interface_set_t     *cs_shared_interface_set;
-static const cs_matrix_structure_t  *cs_shared_matrix_structure;
-static const cs_matrix_assembler_t  *cs_shared_matrix_assembler;
-
 static cs_sdm_t **cs_cdofb_monolithic_cw_mat = NULL;
 
 /*============================================================================
@@ -265,20 +251,21 @@ _mono_update_related_cell_fields(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define shared structures such as the cs_range_set_t,
- *         cs_interface_set_t, cs_matrix_assembler_t and cs_matrix_structure_t
- *         structures in case of a full assembly (i.e. the full saddle-point
- *         matrix is built).
- *         A variant, activated with add_pressure_diag, is available in order
- *         to enforce the pressure.
+ * \brief Define several structures such as the cs_range_set_t,
+ *        cs_interface_set_t, cs_matrix_assembler_t and cs_matrix_structure_t
+ *        in case of a full assembly (i.e. the full saddle-point matrix is
+ *        built).
+ *        A variant, activated with add_pressure_diag, is available in order to
+ *        enforce the pressure.
  *
- * \param[in]  add_pressure_diag    true = add diagonal entries in the pressure
- *                                  block
+ * \param[in, out]  block              pointer to a block structure
+ * \param[in]       add_pressure_diag  true or false (pressure diagonal block)
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_shared_full_structures(bool    add_pressure_diag)
+_build_shared_full_structures(cs_cdo_system_block_t     *block,
+                              bool                       add_pressure_diag)
 {
   /* Compute the range set for an array of size 3*n_faces + n_cells
    * velocity is attached to faces (one for each component) and pressure
@@ -286,39 +273,39 @@ _build_shared_full_structures(bool    add_pressure_diag)
    *
    * Storage for the global numbering: Vel_X | Vel_Y | Vel_Z | Pressure */
 
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_mesh_t  *m = cs_shared_mesh;
   const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
   const cs_lnum_t  size = 3*n_faces + m->n_cells;
 
+  assert(block->type == CS_CDO_SYSTEM_BLOCK_EXT);
+  cs_cdo_system_xblock_t  *xb = block->block_pointer;
+
   /* 1. Build the interface set and the range set structures */
 
-  cs_interface_set_t *ifs = cs_cdo_connect_define_face_interface(m);
+  cs_interface_set_t *ifs = connect->face_ifs;
 
-  if (ifs != NULL) {
-    _shared_interface_set = cs_interface_set_dup_blocks(ifs, n_faces, 3);
-    cs_interface_set_destroy(&ifs);
-  }
-  else
-    _shared_interface_set = NULL;
+  if (ifs != NULL)
+    xb->interface_set = cs_interface_set_dup_blocks(ifs, n_faces, 3);
 
-  _shared_range_set = cs_range_set_create(_shared_interface_set,
-                                          NULL,   /* halo */
-                                          size,
-                                          false,  /* TODO: add balance option */
-                                          1,      /* tr_ignore */
-                                          0);     /* g_id_base */
+  xb->range_set = cs_range_set_create(xb->interface_set,
+                                      NULL,   /* halo */
+                                      size,
+                                      false,  /* TODO: add balance option */
+                                      1,      /* tr_ignore */
+                                      0);     /* g_id_base */
 
   /* 2. Build the matrix assembler structure */
 
-  const cs_adjacency_t  *f2f = cs_shared_connect->f2f;
-  const cs_adjacency_t  *f2c = cs_shared_connect->f2c;
+  const cs_adjacency_t  *f2f = connect->f2f;
+  const cs_adjacency_t  *f2c = connect->f2c;
 
   /* The second parameter is set to "true" meaning that the diagonal is stored
    * separately --> MSR storage
    * Create the matrix assembler structure */
 
-  _shared_matrix_assembler =
-    cs_matrix_assembler_create(_shared_range_set->l_range, true);
+  xb->matrix_assembler = cs_matrix_assembler_create(xb->range_set->l_range,
+                                                    true);
 
   /* First loop to count max size of the buffer used to fill the matrix
    * structure. +1 to take into account the diagonal term. */
@@ -363,9 +350,9 @@ _build_shared_full_structures(bool    add_pressure_diag)
                    + 6*(f2c->idx[frow_id+1]-f2c->idx[frow_id]);
 
     const cs_gnum_t  grow_ids[3]
-      = {_shared_range_set->g_id[frow_id],              /* x-component */
-         _shared_range_set->g_id[frow_id +   n_faces],  /* y-component */
-         _shared_range_set->g_id[frow_id + 2*n_faces]}; /* z-component */
+      = { xb->range_set->g_id[frow_id],               /* x-component */
+          xb->range_set->g_id[frow_id +   n_faces],   /* y-component */
+          xb->range_set->g_id[frow_id + 2*n_faces] }; /* z-component */
 
     int shift = 0;
 
@@ -386,9 +373,9 @@ _build_shared_full_structures(bool    add_pressure_diag)
 
       const cs_lnum_t  fcol_id = f2f->ids[idx];
       const cs_gnum_t  gcol_ids[3]
-        = {_shared_range_set->g_id[fcol_id],              /* x-component */
-           _shared_range_set->g_id[fcol_id + n_faces],    /* y-component */
-           _shared_range_set->g_id[fcol_id + 2*n_faces]}; /* z-component */
+        = { xb->range_set->g_id[fcol_id],               /* x-component */
+            xb->range_set->g_id[fcol_id + n_faces],     /* y-component */
+            xb->range_set->g_id[fcol_id + 2*n_faces] }; /* z-component */
 
       for (int i = 0; i < 3; i++) {
         const cs_gnum_t  grow_id = grow_ids[i];
@@ -406,7 +393,7 @@ _build_shared_full_structures(bool    add_pressure_diag)
     for (cs_lnum_t idx = f2c->idx[frow_id]; idx < f2c->idx[frow_id+1]; idx++) {
 
       const cs_lnum_t  ccol_id = f2c->ids[idx];
-      const cs_gnum_t  gcol_id = _shared_range_set->g_id[3*n_faces + ccol_id];
+      const cs_gnum_t  gcol_id = xb->range_set->g_id[3*n_faces + ccol_id];
 
       for (int i = 0; i < 3; i++) { /* x,y,z-component */
 
@@ -424,7 +411,7 @@ _build_shared_full_structures(bool    add_pressure_diag)
 
     } /* Loop on pressure related DoFs */
 
-    cs_matrix_assembler_add_g_ids(_shared_matrix_assembler,
+    cs_matrix_assembler_add_g_ids(xb->matrix_assembler,
                                   n_entries, grows, gcols);
     assert(shift == n_entries);
 
@@ -432,20 +419,20 @@ _build_shared_full_structures(bool    add_pressure_diag)
 
   if (add_pressure_diag) {
 
-    const cs_gnum_t  *cell_g_ids = _shared_range_set->g_id + 3*n_faces;
+    const cs_gnum_t  *cell_g_ids = xb->range_set->g_id + 3*n_faces;
 
-    cs_matrix_assembler_add_g_ids(_shared_matrix_assembler,
+    cs_matrix_assembler_add_g_ids(xb->matrix_assembler,
                                   m->n_cells, cell_g_ids, cell_g_ids);
 
   }
 
   /* 3. Build the matrix structure */
 
-  cs_matrix_assembler_compute(_shared_matrix_assembler);
+  cs_matrix_assembler_compute(xb->matrix_assembler);
 
-  _shared_matrix_structure
+  xb->matrix_structure
     = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR,
-                                                _shared_matrix_assembler);
+                                                xb->matrix_assembler);
 
   /* Free temporary buffers */
 
@@ -569,7 +556,7 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
     const cs_boundary_type_t  *bf_type = nsb->bf_type;
     cs_real_t  *div_op = nsb->div_op;
-    cs_real_t  *mass_rhs = sc->msles->b_c;
+    cs_real_t  *mass_rhs = sc->system_helper->rhs + 3*cs_shared_quant->n_faces;
 
     /* Update the divergence operator and the right-hand side related to the
      * mass equation.
@@ -664,94 +651,27 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a matrix and its related structures needed during the
- *         assembly step.
- *         Default case.
- *
- * \param[in, out]  sc           pointer to the scheme context structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_init_system_default(cs_cdofb_monolithic_t        *sc)
-{
-  assert(sc != NULL); /* sanity check */
-
-  /* Initialize the local matrix */
-
-  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_matrix_structure);
-
-  sc->msles->block_matrices[0] = matrix;
-
-  /* Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
-
-  sc->mav_structures[0] = mav;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize a matrix and its related structures needed during the
- *         assembly step.
- *         Case of component-wise blocks.
- *
- * \param[in, out]  sc           pointer to the scheme context structure
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_init_system_by_blocks(cs_cdofb_monolithic_t        *sc)
-{
-  assert(sc != NULL); /* sanity check */
-
-  cs_cdofb_monolithic_sles_t  *msles = sc->msles;
-
-  /* Initialize the local matrix */
-
-  for (int i = 0; i < msles->n_row_blocks*msles->n_row_blocks; i++) {
-
-    cs_matrix_t  *matrix = cs_matrix_create(cs_shared_matrix_structure);
-
-    sc->msles->block_matrices[i] = matrix;
-
-    /* Initialize the structure to assemble values */
-
-    cs_matrix_assembler_values_t  *mav =
-      cs_matrix_assembler_values_init(matrix, NULL, NULL);
-
-    sc->mav_structures[i] = mav;
-
-  } /* Loop on blocks */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb schemes
- *         Shares similarities with cs_equation_assemble_block_matrix()
+ *         Shares similarities with cs_cdo_assembly_block_matrix()
  *
  * \param[in]       csys              pointer to a cs_cell_sys_t structure
  * \param[in]       cm                pointer to a cs_cell_mesh_t structure
  * \param[in]       div_op            array with the divergence op. values
- * \param[in]       has_sourceterm    has the equation a source term?
  * \param[in, out]  sc                pointer to scheme context structure
  * \param[in, out]  eqc               context structure for a vector-valued Fb
- * \param[in, out]  eqa               pointer to cs_equation_assemble_t
+ * \param[in, out]  asb               pointer to cs_cdo_assembly_t
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_assembly_by_blocks(const cs_cell_sys_t            *csys,
-                    const cs_cell_mesh_t           *cm,
-                    const cs_real_t                *div_op,
-                    const bool                      has_sourceterm,
-                    cs_cdofb_monolithic_t          *sc,
-                    cs_cdofb_vecteq_t              *eqc,
-                    cs_equation_assemble_t         *eqa)
+_assembly_by_blocks(const cs_cell_sys_t        *csys,
+                    const cs_cell_mesh_t       *cm,
+                    const cs_real_t            *div_op,
+                    cs_cdofb_monolithic_t      *sc,
+                    cs_cdofb_vecteq_t          *eqc,
+                    cs_cdo_assembly_t          *asb)
 {
-  const cs_range_set_t  *rs = cs_shared_range_set;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   int  t_id = 0;
@@ -759,6 +679,10 @@ _assembly_by_blocks(const cs_cell_sys_t            *csys,
   t_id = omp_get_thread_num();
 #endif
 
+  cs_cdo_system_helper_t  *sh = sc->system_helper;
+  cs_cdo_system_block_t  *b = sh->blocks[0];
+  assert(b->type == CS_CDO_SYSTEM_BLOCK_SPLIT);
+  cs_cdo_system_sblock_t  *sb = b->block_pointer;
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
   cs_sdm_t  *cw_mat = cs_cdofb_monolithic_cw_mat[t_id];
 
@@ -768,35 +692,32 @@ _assembly_by_blocks(const cs_cell_sys_t            *csys,
 
   /* Assembly is performed block by block */
 
-  for (int i = 0; i < msles->n_row_blocks; i++) {
-    for (int j = 0; j < msles->n_row_blocks; j++) {
+  for (int i = 0; i < sh->n_col_blocks; i++) {
+    for (int j = 0; j < sh->n_col_blocks; j++) {
 
-      cs_matrix_assembler_values_t   *mav = sc->mav_structures[3*i+j];
+      cs_matrix_assembler_values_t   *mav = sb->mav_array[3*i+j];
       cs_sdm_t  *m_ij = cs_sdm_get_block(cw_mat, i, j);
 
-      sc->elemental_assembly(m_ij, cm->f_ids, rs, eqa, mav);
+      sb->assembly_func(m_ij, cm->f_ids, sb->range_set, asb, mav);
 
     } /* Loop on blocks (j) */
   } /* Loop on blocks (i) */
 
   /* RHS assembly */
 
-  cs_real_t  *rhs_x = msles->b_f, *rhs_y = rhs_x + msles->n_faces;
-  cs_real_t  *rhs_z = rhs_y + msles->n_faces;
-
 # pragma omp critical
   {
     for (short int f = 0; f < cm->n_fc; f++) {
-      rhs_x[cm->f_ids[f]] += csys->rhs[3*f];
-      rhs_y[cm->f_ids[f]] += csys->rhs[3*f+1];
-      rhs_z[cm->f_ids[f]] += csys->rhs[3*f+2];
+      sh->rhs_array[0][cm->f_ids[f]] += csys->rhs[3*f];
+      sh->rhs_array[1][cm->f_ids[f]] += csys->rhs[3*f+1];
+      sh->rhs_array[2][cm->f_ids[f]] += csys->rhs[3*f+2];
     }
   }
 
   /* Reset the value of the source term for the cell DoF
      Source term is only hold by the cell DoF in face-based schemes */
 
-  if (has_sourceterm) {
+  if (eqc->source_terms != NULL) {
     cs_real_t  *st = eqc->source_terms + 3*cm->c_id;
     for (int k = 0; k < 3; k++)
       st[k] = csys->source[3*cm->n_fc + k];
@@ -807,7 +728,6 @@ _assembly_by_blocks(const cs_cell_sys_t            *csys,
 
   cs_real_t  *_div = msles->div_op + 3*connect->c2f->idx[cm->c_id];
   memcpy(_div, div_op, 3*cm->n_fc*sizeof(cs_real_t));
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -819,10 +739,9 @@ _assembly_by_blocks(const cs_cell_sys_t            *csys,
  * \param[in]       csys              pointer to a cs_cell_sys_t structure
  * \param[in]       cm                pointer to a cs_cell_mesh_t structure
  * \param[in]       div_op            array with the divergence op. values
- * \param[in]       has_sourceterm    has the equation a source term?
  * \param[in, out]  sc                pointer to scheme context structure
  * \param[in, out]  eqc               context structure for a vector-valued Fb
- * \param[in, out]  eqa               pointer to cs_equation_assemble_t
+ * \param[in, out]  asb               pointer to cs_cdo_assembly_t
  */
 /*----------------------------------------------------------------------------*/
 
@@ -830,17 +749,14 @@ static void
 _velocity_full_assembly(const cs_cell_sys_t            *csys,
                         const cs_cell_mesh_t           *cm,
                         const cs_real_t                *div_op,
-                        const bool                      has_sourceterm,
                         cs_cdofb_monolithic_t          *sc,
                         cs_cdofb_vecteq_t              *eqc,
-                        cs_equation_assemble_t         *eqa)
+                        cs_cdo_assembly_t              *asb)
 {
   const short int  n_f = cm->n_fc;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_range_set_t  *rs = cs_shared_range_set;
 
-  cs_matrix_assembler_values_t   *mav = sc->mav_structures[0];
-  cs_real_t  *rhs = sc->msles->b_f;
+  cs_cdo_system_helper_t  *sh = sc->system_helper;
   cs_real_t  *_div = sc->msles->div_op + 3*connect->c2f->idx[cm->c_id];
 
   /* 1. Store divergence operator in non assembly
@@ -870,22 +786,21 @@ _velocity_full_assembly(const cs_cell_sys_t            *csys,
 
   }
 
-  cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm, eqc, eqa, mav, rhs);
+  cs_cdofb_vecteq_assembly(csys, sh->blocks[0], sh->rhs, eqc, asb);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb schemes
- *         Shares similarities with cs_equation_assemble_block_matrix()
+ *         Shares similarities with cs_cdo_assembly_block_matrix()
  *
  * \param[in]      csys             pointer to a cs_cell_sys_t structure
  * \param[in]      cm               pointer to a cs_cell_mesh_t structure
  * \param[in]      div_op           array with the divergence op. values
- * \param[in]      has_sourceterm   has the equation a source term ?
  * \param[in, out] sc               pointer to scheme context structure
  * \param[in, out] eqc              context structure for a vector-valued Fb
- * \param[in, out] eqa              pointer to cs_equation_assemble_t
+ * \param[in, out] asb              pointer to cs_cdo_assembly_t
  */
 /*----------------------------------------------------------------------------*/
 
@@ -893,16 +808,14 @@ static void
 _full_assembly(const cs_cell_sys_t            *csys,
                const cs_cell_mesh_t           *cm,
                const cs_real_t                *div_op,
-               const bool                      has_sourceterm,
                cs_cdofb_monolithic_t          *sc,
                cs_cdofb_vecteq_t              *eqc,
-               cs_equation_assemble_t         *eqa)
+               cs_cdo_assembly_t              *asb)
 {
-  CS_UNUSED(eqa);
+  CS_UNUSED(asb);
 
   const short int  n_f = cm->n_fc;
   const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
-  const cs_range_set_t  *rset = cs_shared_range_set;
   const cs_sdm_t  *m = csys->mat;
   const cs_sdm_block_t  *bd = m->block_desc;
 
@@ -911,9 +824,15 @@ _full_assembly(const cs_cell_sys_t            *csys,
   assert(bd->n_row_blocks == bd->n_col_blocks);
   assert(bd->n_row_blocks == n_f);
 
+  cs_cdo_system_helper_t  *sh = sc->system_helper;
+  cs_cdo_system_block_t  *b = sh->blocks[0];
+  assert(b->type == CS_CDO_SYSTEM_BLOCK_EXT);
+  cs_cdo_system_xblock_t  *xb = b->block_pointer;
+
   cs_real_t  *eqc_st = eqc->source_terms;
-  cs_matrix_assembler_values_t   *mav = sc->mav_structures[0];
-  cs_real_t  *rhs = sc->msles->b_f;
+  cs_real_t  *rhs = sh->rhs;
+
+  const cs_range_set_t  *rset = xb->range_set;
 
   /* 1. Matrix assembly
    * ================== */
@@ -965,7 +884,7 @@ _full_assembly(const cs_cell_sys_t            *csys,
 
           if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
 #           pragma omp critical
-            cs_matrix_assembler_values_add_g(mav, bufsize,
+            cs_matrix_assembler_values_add_g(xb->mav, bufsize,
                                              r_gids, c_gids, values);
             bufsize = 0;
           }
@@ -986,7 +905,8 @@ _full_assembly(const cs_cell_sys_t            *csys,
 
       if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
 #       pragma omp critical
-        cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, values);
+        cs_matrix_assembler_values_add_g(xb->mav, bufsize,
+                                         r_gids, c_gids, values);
         bufsize = 0;
       }
 
@@ -999,7 +919,8 @@ _full_assembly(const cs_cell_sys_t            *csys,
 
       if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
 #       pragma omp critical
-        cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, values);
+        cs_matrix_assembler_values_add_g(xb->mav, bufsize,
+                                         r_gids, c_gids, values);
         bufsize = 0;
       }
 
@@ -1009,7 +930,8 @@ _full_assembly(const cs_cell_sys_t            *csys,
 
   if (bufsize > 0) {
 #   pragma omp critical
-    cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, values);
+    cs_matrix_assembler_values_add_g(xb->mav, bufsize,
+                                     r_gids, c_gids, values);
     bufsize = 0;
   }
 
@@ -1024,7 +946,7 @@ _full_assembly(const cs_cell_sys_t            *csys,
      Source term is only hold by the cell DoF in face-based schemes so
      there is no need to assemble this term. */
 
-  if (has_sourceterm)
+  if (eqc_st != NULL)
     for (int k = 0; k < 3; k++)
       eqc_st[3*cm->c_id + k] = csys->source[3*n_f + k];
 }
@@ -1033,17 +955,16 @@ _full_assembly(const cs_cell_sys_t            *csys,
 /*!
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb schemes
- *         Shares similarities with cs_equation_assemble_block_matrix()
+ *         Shares similarities with cs_cdo_assembly_block_matrix()
  *         This is a _full_assembly() function plus a specific treatment for
  *         the enforcement of pressure to zero inside the solid region(s).
  *
  * \param[in]      csys             pointer to a cs_cell_sys_t structure
  * \param[in]      cm               pointer to a cs_cell_mesh_t structure
  * \param[in]      div_op           array with the divergence op. values
- * \param[in]      has_sourceterm   has the equation a source term ?
  * \param[in, out] sc               pointer to scheme context structure
  * \param[in, out] eqc              context structure for a vector-valued Fb
- * \param[in, out] eqa              pointer to cs_equation_assemble_t
+ * \param[in, out] asb              pointer to cs_cdo_assembly_t
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1051,15 +972,14 @@ static void
 _solidification_full_assembly(const cs_cell_sys_t            *csys,
                               const cs_cell_mesh_t           *cm,
                               const cs_real_t                *div_op,
-                              const bool                      has_sourceterm,
                               cs_cdofb_monolithic_t          *sc,
                               cs_cdofb_vecteq_t              *eqc,
-                              cs_equation_assemble_t         *eqa)
+                              cs_cdo_assembly_t              *asb)
 {
   /* 1. First part shared with the assembly of the full saddle-point problem
    * ======================================================================= */
 
-  _full_assembly(csys, cm, div_op, has_sourceterm, sc, eqc, eqa);
+  _full_assembly(csys, cm, div_op, sc, eqc, asb);
 
   /* 2. Treatment of the solid zone(s)
    * ================================= */
@@ -1068,13 +988,17 @@ _solidification_full_assembly(const cs_cell_sys_t            *csys,
 
   if (solid->cell_is_solid[cm->c_id]) {
 
-    /* Modify the row related to the cell pressure: Add a +1 to the diagonal
-       and reset the divergence operator */
+    cs_cdo_system_block_t  *b = sc->system_helper->blocks[0];
+    assert(b->type == CS_CDO_SYSTEM_BLOCK_EXT);
+    cs_cdo_system_xblock_t  *xb = b->block_pointer;
 
-    cs_matrix_assembler_values_t   *mav = sc->mav_structures[0];
+    const cs_range_set_t  *rset = xb->range_set;
+
+    /* Modify the row related to the cell pressure: Add a +1 to the diagonal
+       and reset the divergence operator (rhs is equal to zero in this part by
+       default so that there is no need to modify the rhs) */
 
     const cs_lnum_t  n_faces = cs_shared_quant->n_faces;
-    const cs_range_set_t  *rset = cs_shared_range_set;
     const cs_gnum_t  p_gid = rset->g_id[3*n_faces + cm->c_id];
 
     cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
@@ -1114,7 +1038,7 @@ _solidification_full_assembly(const cs_cell_sys_t            *csys,
     assert(bufsize <= CS_CDO_ASSEMBLE_BUF_SIZE);
 
 #   pragma omp critical
-    cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, values);
+    cs_matrix_assembler_values_add_g(xb->mav, bufsize, r_gids, c_gids, values);
 
   } /* This cell is tag as solid */
 }
@@ -1123,17 +1047,16 @@ _solidification_full_assembly(const cs_cell_sys_t            *csys,
 /*!
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb schemes
- *         Shares similarities with cs_equation_assemble_block_matrix()
+ *         Shares similarities with cs_cdo_assembly_block_matrix()
  *         Specify to the Notay's transformation of the saddle-point system.
  *         Rely on the _full_assembly() function
  *
  * \param[in]      csys             pointer to a cs_cell_sys_t structure
  * \param[in]      cm               pointer to a cs_cell_mesh_t structure
  * \param[in]      div_op           array with the divergence op. values
- * \param[in]      has_sourceterm   has the equation a source term ?
  * \param[in, out] sc               pointer to scheme context structure
  * \param[in, out] eqc              context structure for a vector-valued Fb
- * \param[in, out] eqa              pointer to cs_equation_assemble_t
+ * \param[in, out] asb              pointer to cs_cdo_assembly_t
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1141,15 +1064,14 @@ static void
 _notay_full_assembly(const cs_cell_sys_t            *csys,
                      const cs_cell_mesh_t           *cm,
                      const cs_real_t                *div_op,
-                     const bool                      has_sourceterm,
                      cs_cdofb_monolithic_t          *sc,
                      cs_cdofb_vecteq_t              *eqc,
-                     cs_equation_assemble_t         *eqa)
+                     cs_cdo_assembly_t              *asb)
 {
   /* 1. First part shared with the assembly of the full saddle-point problem
    * ======================================================================= */
 
-  _full_assembly(csys, cm, div_op, has_sourceterm, sc, eqc, eqa);
+  _full_assembly(csys, cm, div_op, sc, eqc, asb);
 
   /* 2. Store divergence operator in non assembly
    * ============================================ */
@@ -1214,11 +1136,6 @@ _steady_build(const cs_navsto_param_t      *nsp,
     assert(mom_eqb->dir_values != NULL);
 #endif
 
-  /* Initialize the matrix and all its related structures needed during
-   * the assembly step */
-
-  sc->init_system(sc);
-
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1233,7 +1150,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
                                                                     connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
       (mom_eqc->diffusion_hodge == NULL) ? NULL:mom_eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -1309,8 +1226,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
       /* ====================================================== */
 
-      const bool has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
-      if (has_sourceterm)
+      if (cs_equation_param_has_sourceterm(mom_eqp))
         cs_cdofb_vecteq_sourceterm(cm, mom_eqp, cb->t_st_eval,
                                    1., /* time scaling */
                                    mass_hodge,
@@ -1368,7 +1284,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      sc->assemble(csys, cm, nsb.div_op, has_sourceterm, sc, mom_eqc, eqa);
+      sc->assemble(csys, cm, nsb.div_op, sc, mom_eqc, asb);
 
     } /* Main loop on cells */
 
@@ -1378,10 +1294,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
   } /* End of the OpenMP Block */
 
-  for (int i = 0; i < sc->msles->n_row_blocks*sc->msles->n_row_blocks; i++) {
-    cs_matrix_assembler_values_done(sc->mav_structures[i]); /* optional */
-    cs_matrix_assembler_values_finalize(&(sc->mav_structures[i]));
-  }
+  cs_cdo_system_helper_finalize_assembly(sc->system_helper);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1428,11 +1341,6 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
     assert(mom_eqb->dir_values != NULL);
 #endif
 
-  /* Initialize the matrix and all its related structures needed during
-   * the assembly step */
-
-  sc->init_system(sc);
-
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1450,7 +1358,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
                                                                     connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
       (mom_eqc->diffusion_hodge == NULL) ? NULL:mom_eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
@@ -1527,8 +1435,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
       /* ====================================================== */
 
-      const bool  has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
-      if (has_sourceterm)
+      if (cs_equation_param_has_sourceterm(mom_eqp))
         cs_cdofb_vecteq_sourceterm(cm, mom_eqp, cb->t_st_eval,
                                    1., /* time scaling */
                                    mass_hodge,
@@ -1615,7 +1522,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* ASSEMBLY PROCESS */
       /* ================ */
 
-      sc->assemble(csys, cm, nsb.div_op, has_sourceterm, sc, mom_eqc, eqa);
+      sc->assemble(csys, cm, nsb.div_op, sc, mom_eqc, asb);
 
     } /* Main loop on cells */
 
@@ -1625,10 +1532,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
   } /* OPENMP Block */
 
-  for (int i = 0; i < sc->msles->n_row_blocks*sc->msles->n_row_blocks; i++) {
-    cs_matrix_assembler_values_done(sc->mav_structures[i]); /* optional */
-    cs_matrix_assembler_values_finalize(&(sc->mav_structures[i]));
-  }
+  cs_cdo_system_helper_finalize_assembly(sc->system_helper);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1675,11 +1579,6 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
     assert(mom_eqb->dir_values != NULL);
 #endif
 
-  /* Initialize the matrix and all its related structures needed during
-   * the assembly step */
-
-  sc->init_system(sc);
-
   /* Detect the first call (in this case, we compute the initial source term)*/
 
   bool  compute_initial_source = false;
@@ -1706,9 +1605,9 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
                                                                     connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
     cs_hodge_t  *diff_hodge =
-      (mom_eqc->diffusion_hodge == NULL) ? NULL : mom_eqc->diffusion_hodge[t_id];
+      (mom_eqc->diffusion_hodge == NULL) ? NULL:mom_eqc->diffusion_hodge[t_id];
     cs_hodge_t  *mass_hodge =
       (mom_eqc->mass_hodge == NULL) ? NULL : mom_eqc->mass_hodge[t_id];
 
@@ -1793,8 +1692,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
       /* ====================================================== */
 
-      const bool  has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
-      if (has_sourceterm) {
+      if (cs_equation_param_has_sourceterm(mom_eqp)) {
 
         if (compute_initial_source)
           /* First time step: Compute source term at a previous step */
@@ -1907,7 +1805,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
       /* ************************* ASSEMBLY PROCESS ************************* */
 
-      sc->assemble(csys, cm, nsb.div_op, has_sourceterm, sc, mom_eqc, eqa);
+      sc->assemble(csys, cm, nsb.div_op, sc, mom_eqc, asb);
 
     } /* Main loop on cells */
 
@@ -1917,10 +1815,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
   } /* OPENMP Block */
 
-  for (int i = 0; i < sc->msles->n_row_blocks*sc->msles->n_row_blocks; i++) {
-    cs_matrix_assembler_values_done(sc->mav_structures[i]); /* optional */
-    cs_matrix_assembler_values_finalize(&(sc->mav_structures[i]));
-  }
+  cs_cdo_system_helper_finalize_assembly(sc->system_helper);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1942,11 +1837,11 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
-                                const cs_mesh_t               *mesh,
-                                const cs_cdo_quantities_t     *quant,
-                                const cs_cdo_connect_t        *connect,
-                                const cs_time_step_t          *time_step)
+cs_cdofb_monolithic_init_sharing(const cs_navsto_param_t       *nsp,
+                                 const cs_mesh_t               *mesh,
+                                 const cs_cdo_quantities_t     *quant,
+                                 const cs_cdo_connect_t        *connect,
+                                 const cs_time_step_t          *time_step)
 {
   /* Assign static const pointers */
 
@@ -1957,95 +1852,35 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
 
   /* Need to build special range set and interfaces ? */
 
-  switch (nsp->sles_param->strategy) {
+  if (nsp->sles_param->strategy == CS_NAVSTO_SLES_BY_BLOCKS) {
 
-  case CS_NAVSTO_SLES_BY_BLOCKS:
-    {
-      cs_shared_range_set = connect->range_sets[CS_DOF_FACE_SCAL];
-      cs_shared_matrix_structure = cs_cdofb_scaleq_matrix_structure();
+    int  block_sizes[3] =
+      {connect->n_max_fbyc, connect->n_max_fbyc, connect->n_max_fbyc};
 
-      int  block_sizes[3] =
-        {connect->n_max_fbyc, connect->n_max_fbyc, connect->n_max_fbyc};
-
-      BFT_MALLOC(cs_cdofb_monolithic_cw_mat, cs_glob_n_threads, cs_sdm_t *);
-      for (int i = 0; i < cs_glob_n_threads; i++)
-        cs_cdofb_monolithic_cw_mat[i] = NULL;
+    BFT_MALLOC(cs_cdofb_monolithic_cw_mat, cs_glob_n_threads, cs_sdm_t *);
+    for (int i = 0; i < cs_glob_n_threads; i++)
+      cs_cdofb_monolithic_cw_mat[i] = NULL;
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 # pragma omp parallel
-      {
-        int t_id = omp_get_thread_num();
-        assert(t_id < cs_glob_n_threads);
-        cs_cdofb_monolithic_cw_mat[t_id] = cs_sdm_block_create(3, 3,
-                                                               block_sizes,
-                                                               block_sizes);
-      }
-#else
-      assert(cs_glob_n_threads == 1);
-      cs_cdofb_monolithic_cw_mat[0] = cs_sdm_block_create(3, 3,
-                                                          block_sizes,
-                                                          block_sizes);
-#endif /* openMP */
+    {
+      int t_id = omp_get_thread_num();
+      assert(t_id < cs_glob_n_threads);
+      cs_cdofb_monolithic_cw_mat[t_id] = cs_sdm_block_create(3, 3,
+                                                             block_sizes,
+                                                             block_sizes);
     }
-    break;
-
-  case CS_NAVSTO_SLES_DIAG_SCHUR_GCR:
-  case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
-  case CS_NAVSTO_SLES_GCR:
-  case CS_NAVSTO_SLES_GKB_SATURNE:
-  case CS_NAVSTO_SLES_LOWER_SCHUR_GCR:
-  case CS_NAVSTO_SLES_MINRES:
-  case CS_NAVSTO_SLES_SGS_SCHUR_GCR:
-  case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
-  case CS_NAVSTO_SLES_USER:
-  case CS_NAVSTO_SLES_UZAWA_AL:
-  case CS_NAVSTO_SLES_UZAWA_CG:
-  case CS_NAVSTO_SLES_UZAWA_SCHUR_GCR:
-    cs_shared_range_set = connect->range_sets[CS_DOF_FACE_VECT];
-    cs_shared_matrix_structure = cs_cdofb_vecteq_matrix_structure();
-    break;
-
-  case CS_NAVSTO_SLES_MUMPS:
-    _build_shared_full_structures(true); /* Add entries on the diagonal of
-                                            pressure block */
-
-    cs_shared_interface_set = _shared_interface_set;
-    cs_shared_range_set = _shared_range_set;
-
-    /* Build the fully coupled system */
-
-    cs_shared_matrix_structure = _shared_matrix_structure;
-    cs_shared_matrix_assembler = _shared_matrix_assembler;
-    break;
-
-  default:
-    /* CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK
-     * CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
-     * CS_NAVSTO_SLES_DIAG_SCHUR_GMRES
-     * CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
-     * CS_NAVSTO_SLES_GKB_PETSC
-     * CS_NAVSTO_SLES_GKB_GMRES
-     * CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
-     * CS_NAVSTO_SLES_NOTAY_TRANSFORM
-     * CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
-     */
-
-    _build_shared_full_structures(false); /* No addition */
-
-    cs_shared_interface_set = _shared_interface_set;
-    cs_shared_range_set = _shared_range_set;
-
-    /* Build the fully coupled system */
-
-    cs_shared_matrix_structure = _shared_matrix_structure;
-    cs_shared_matrix_assembler = _shared_matrix_assembler;
-    break;
-
+#else
+    assert(cs_glob_n_threads == 1);
+    cs_cdofb_monolithic_cw_mat[0] = cs_sdm_block_create(3, 3,
+                                                        block_sizes,
+                                                        block_sizes);
+#endif /* openMP */
   }
 
   /* SLES needs these structures for advanced PETSc hooks */
 
-  cs_cdofb_monolithic_sles_set_shared(connect, quant, cs_shared_range_set);
+  cs_cdofb_monolithic_sles_init_sharing(connect, quant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2108,11 +1943,12 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
                                         cs_boundary_type_t       *bf_type,
                                         void                     *cc_context)
 {
-  /* Sanity checks */
-
   assert(nsp != NULL && cc_context != NULL);
   if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.\n", __func__);
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   /* Navier-Stokes scheme context (SC) */
 
@@ -2155,10 +1991,10 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
                                           1,         /* Dimension */
                                           nsp->n_pressure_bc_defs,
                                           nsp->pressure_bc_defs,
-                                          cs_shared_quant->n_b_faces);
+                                          quant->n_b_faces);
 
   sc->pressure_rescaling =
-    cs_boundary_need_pressure_rescaling(cs_shared_quant->n_b_faces, bf_type);
+    cs_boundary_need_pressure_rescaling(quant->n_b_faces, bf_type);
 
   /* Set the way to enforce the Dirichlet BC on the velocity
    * "fixed_wall" means a no-slip BC */
@@ -2226,135 +2062,174 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
 
   /* Handle the resolution of a saddle-point system */
 
-  cs_cdofb_monolithic_sles_t  *msles = cs_cdofb_monolithic_sles_create();
+  cs_cdo_system_helper_t  *sh = NULL;
+  cs_cdofb_monolithic_sles_t  *msles =
+    cs_cdofb_monolithic_sles_create(quant->n_faces, quant->n_cells);
 
-  /* Set the solve and assemble functions */
+  /* Define the layout of the system and how to assemble the system. It depends
+     on the strategy to solve the saddle-point problem */
 
-  switch (nsp->sles_param->strategy) {
+  cs_navsto_sles_t  strategy = nsp->sles_param->strategy;
+
+  switch (strategy) {
 
   case CS_NAVSTO_SLES_BY_BLOCKS:
-    sc->init_system = _init_system_by_blocks;
-    sc->solve = cs_cdofb_monolithic_krylov_block_precond;
-    sc->assemble = _assembly_by_blocks;
-    sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                                      CS_DOF_FACE_SCAL);
+    {
+      sc->assemble = _assembly_by_blocks;
 
-    BFT_MALLOC(sc->mav_structures, 9, cs_matrix_assembler_values_t *);
+      cs_lnum_t  block_sizes[2];
+      block_sizes[0] = 3*quant->n_faces, block_sizes[1] = quant->n_cells;
 
-    msles->graddiv_coef = nsp->gd_scale_coef;
-    msles->n_row_blocks = 3;
-    BFT_MALLOC(msles->block_matrices, 9, cs_matrix_t *);
-    BFT_MALLOC(msles->div_op,
-               3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
-               cs_real_t);
-    break;
+      sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_SADDLE_POINT,
+                                       2,
+                                       block_sizes,
+                                       2);
 
-  case CS_NAVSTO_SLES_GKB_SATURNE:
-    sc->init_system = _init_system_default;
-    sc->solve = cs_cdofb_monolithic_gkb_solve;
-    sc->assemble = _velocity_full_assembly;
-    sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                                      CS_DOF_FACE_VECT);
+      /* Add a first block for the (0,0) block and then define the underpinning
+         structures */
 
-    BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
+      cs_cdo_system_add_sblock(sh, 0,                /* block id */
+                               cs_flag_primal_face , /* location */
+                               quant->n_faces,       /* n_elements */
+                               3);                   /* stride */
 
-    msles->graddiv_coef = nsp->gd_scale_coef;
-    msles->n_row_blocks = 1;
-    BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
-    BFT_MALLOC(msles->div_op,
-               3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
-               cs_real_t);
+      cs_cdo_system_build_block(sh, 0); /* build structures */
+
+      cs_cdo_system_block_t  *bdiv =
+        cs_cdo_system_add_ublock(sh, 1,               /* block_id */
+                                 connect->c2f,        /* adjacency */
+                                 cs_flag_primal_face, /* col.location */
+                                 quant->n_faces,      /* n_elements */
+                                 3,                   /* stride */
+                                 true);               /* interlaced */
+
+      cs_cdo_system_build_block(sh, 1); /* build range_set and interface_set
+                                           structures */
+
+      BFT_MALLOC(msles->div_op, 3*connect->c2f->idx[quant->n_cells], cs_real_t);
+
+      cs_cdo_system_ublock_t  *b_ub = bdiv->block_pointer;
+
+      b_ub->values = msles->div_op;              /* shared pointer */
+      b_ub->adjacency = connect->c2f;            /* shared pointer */
+    }
     break;
 
   case CS_NAVSTO_SLES_DIAG_SCHUR_GCR:
   case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
   case CS_NAVSTO_SLES_GCR:
+  case CS_NAVSTO_SLES_GKB_SATURNE:
   case CS_NAVSTO_SLES_LOWER_SCHUR_GCR:
   case CS_NAVSTO_SLES_MINRES:
   case CS_NAVSTO_SLES_SGS_SCHUR_GCR:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
+  case CS_NAVSTO_SLES_UZAWA_AL:
+  case CS_NAVSTO_SLES_UZAWA_CG:
   case CS_NAVSTO_SLES_UZAWA_SCHUR_GCR:
-    sc->init_system = _init_system_default;
-    sc->solve = cs_cdofb_monolithic_krylov_block_precond;
-    sc->assemble = _velocity_full_assembly;
-    sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                                      CS_DOF_FACE_VECT);
+    {
+      sc->assemble = _velocity_full_assembly;
 
-    BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
+      cs_lnum_t  block_sizes[2];
+      block_sizes[0] = 3*quant->n_faces, block_sizes[1] = quant->n_cells;
 
-    msles->graddiv_coef = 0;    /* No augmentation */
-    msles->n_row_blocks = 1;
-    BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
-    BFT_MALLOC(msles->div_op,
-               3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
-               cs_real_t);
+      /* Create the system helper */
+
+      sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_SADDLE_POINT,
+                                       2,
+                                       block_sizes,
+                                       2);
+
+      /* Add a first block for the (0,0) block and then define the underpinning
+         structures */
+
+      cs_cdo_system_block_t  *a =
+        cs_cdo_system_add_dblock(sh, 0,                /* block id */
+                                 cs_flag_primal_face , /* location */
+                                 quant->n_faces,       /* n_elements */
+                                 3,                    /* stride */
+                                 true,                 /* interlaced */
+                                 true);                /* unrolled */
+
+      cs_cdo_system_build_block(sh, 0); /* build structures */
+
+      /* Add a second block for the (1,0) and (0,1) blocks and then define the
+         underpinning structures. The (0,1) block needs to be transposed before
+         using it */
+
+      cs_cdo_system_block_t  *bdiv =
+        cs_cdo_system_add_ublock(sh, 1,               /* block_id */
+                                 connect->c2f,        /* adjacency */
+                                 cs_flag_primal_face, /* column location */
+                                 quant->n_faces,      /* n_elements */
+                                 3,                   /* stride */
+                                 true);               /* interlaced */
+
+      BFT_MALLOC(msles->div_op, 3*connect->c2f->idx[quant->n_cells], cs_real_t);
+
+      cs_cdo_system_dblock_t  *a_db = a->block_pointer;
+      cs_cdo_system_ublock_t  *b_ub = bdiv->block_pointer;
+
+      /* Define the bdiv block by hand */
+
+      b_ub->adjacency = connect->c2f;            /* shared pointer */
+      b_ub->values = msles->div_op;              /* shared pointer */
+      b_ub->shared_structures = true;
+      b_ub->range_set = a_db->range_set;         /* shared pointer */
+      b_ub->interface_set = a_db->interface_set; /* shared pointer */
+    }
     break;
 
   case CS_NAVSTO_SLES_MUMPS:
+    {
+      if (nsp->model_flag & CS_NAVSTO_MODEL_WITH_SOLIDIFICATION)
+        sc->assemble = _solidification_full_assembly;
+      else
+        sc->assemble = _full_assembly;
 
-    sc->init_system = _init_system_default;
-    sc->solve = cs_cdofb_monolithic_solve;
-    if (nsp->model_flag & CS_NAVSTO_MODEL_WITH_SOLIDIFICATION)
-      sc->assemble = _solidification_full_assembly;
-    else
-      sc->assemble = _full_assembly;
-    sc->elemental_assembly = NULL;
+      cs_lnum_t  block_size = 3*quant->n_faces + quant->n_cells;
 
-    BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
+      sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_SADDLE_POINT,
+                                       1,
+                                       &block_size,
+                                       1);
 
-    msles->graddiv_coef = nsp->gd_scale_coef;
-    msles->n_row_blocks = 1;
-    BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
+      /* Add the block and then define the underpinning structures */
+
+      cs_cdo_system_block_t  *a =
+        cs_cdo_system_add_xblock(sh, 0,        /* block id */
+                                 block_size);  /* n_dofs */
+
+      /* Define the xblock (with diagonal pressure block) */
+
+      _build_shared_full_structures(a, true);
+    }
     break;
 
-  case CS_NAVSTO_SLES_UZAWA_AL:
-    sc->init_system = _init_system_default;
-    sc->solve = cs_cdofb_monolithic_uzawa_al_incr_solve;
-    sc->assemble = _velocity_full_assembly;
-    sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                                      CS_DOF_FACE_VECT);
+  case CS_NAVSTO_SLES_NOTAY_TRANSFORM: /* Experimental */
+    {
+      sc->assemble = _notay_full_assembly;
 
-    BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
+      cs_lnum_t  block_size = 3*quant->n_faces + quant->n_cells;
 
-    msles->graddiv_coef = nsp->gd_scale_coef;
-    msles->n_row_blocks = 1;
-    BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
-    BFT_MALLOC(msles->div_op,
-               3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
-               cs_real_t);
-    break;
+      sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_SADDLE_POINT,
+                                       1,
+                                       &block_size,
+                                       1);
 
-  case CS_NAVSTO_SLES_UZAWA_CG:
-    sc->init_system = _init_system_default;
-    sc->solve = cs_cdofb_monolithic_uzawa_cg_solve;
-    sc->assemble = _velocity_full_assembly;
-    sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
-                                                      CS_DOF_FACE_VECT);
+      /* Add the block and then define the underpinning structures */
 
-    BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
+      cs_cdo_system_block_t  *a =
+        cs_cdo_system_add_xblock(sh, 0,             /* block id */
+                                 block_size);       /* n_dofs */
 
-    msles->graddiv_coef = 0;    /* No augmentation */
-    msles->n_row_blocks = 1;
-    BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
-    BFT_MALLOC(msles->div_op,
-               3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
-               cs_real_t);
-    break;
+      /* Define the xblock (with diagonal pressure block) */
 
-  case CS_NAVSTO_SLES_NOTAY_TRANSFORM:
-    sc->init_system = _init_system_default;
-    sc->solve = cs_cdofb_monolithic_solve;
-    sc->assemble = _notay_full_assembly;
-    sc->elemental_assembly = NULL;
+      _build_shared_full_structures(a, false);
 
-    BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
+      /* Define also the unassembled form of the divergence operator */
 
-    msles->graddiv_coef = 0;    /* No augmentation */
-    msles->n_row_blocks = 1;
-    BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
-    BFT_MALLOC(msles->div_op,
-               3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
-               cs_real_t);
+      BFT_MALLOC(msles->div_op, 3*connect->c2f->idx[quant->n_cells], cs_real_t);
+    }
     break;
 
   default:
@@ -2365,18 +2240,116 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
      * CS_NAVSTO_SLES_GKB_PETSC
      * CS_NAVSTO_SLES_GKB_GMRES
      * CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
+     * CS_NAVSTO_SLES_NOTAY_TRANSFORM:
      * CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
      */
-    sc->init_system = _init_system_default;
-    sc->solve = cs_cdofb_monolithic_solve;
-    sc->assemble = _full_assembly;
-    sc->elemental_assembly = NULL;
+    {
+      sc->assemble = _full_assembly;
 
-    BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
+      cs_lnum_t block_size = 3*quant->n_faces + quant->n_cells;
 
+      sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_SADDLE_POINT,
+                                       1,
+                                       &block_size,
+                                       1);
+
+      /* Add the block and then define the underpinning structures */
+
+      cs_cdo_system_block_t  *a =
+        cs_cdo_system_add_xblock(sh, 0,             /* block id */
+                                 block_size);       /* n_dofs */
+
+      /* Fill the xblock (without diagonal pressure block) */
+
+      _build_shared_full_structures(a, false);
+    }
+    break;
+
+  } /* Switch on strategy */
+
+  sc->system_helper = sh;
+
+  /* Set the grad-div scaling coefficient: Enable or not augmentation of the
+     linear system */
+
+  switch (strategy) {
+
+  case CS_NAVSTO_SLES_BY_BLOCKS:
+  case CS_NAVSTO_SLES_GKB_SATURNE:
+  case CS_NAVSTO_SLES_MUMPS:
+  case CS_NAVSTO_SLES_UZAWA_AL:
+    msles->graddiv_coef = nsp->gd_scale_coef;
+    break;
+
+  default:
+    /* CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK
+     * CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
+     * CS_NAVSTO_SLES_DIAG_SCHUR_GCR
+     * CS_NAVSTO_SLES_DIAG_SCHUR_GMRES
+     * CS_NAVSTO_SLES_DIAG_SCHUR_MINRES
+     * CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
+     * CS_NAVSTO_SLES_GCR
+     * CS_NAVSTO_SLES_GKB_GMRES
+     * CS_NAVSTO_SLES_GKB_PETSC
+     * CS_NAVSTO_SLES_LOWER_SCHUR_GCR
+     * CS_NAVSTO_SLES_MINRES
+     * CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
+     * CS_NAVSTO_SLES_NOTAY_TRANSFORM
+     * CS_NAVSTO_SLES_SGS_SCHUR_GCR
+     * CS_NAVSTO_SLES_UPPER_SCHUR_GCR
+     * CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
+     * CS_NAVSTO_SLES_UZAWA_CG
+     * CS_NAVSTO_SLES_UZAWA_SCHUR_GCR
+     */
     msles->graddiv_coef = 0;    /* No augmentation */
-    msles->n_row_blocks = 1;
-    BFT_MALLOC(msles->block_matrices, 1, cs_matrix_t *);
+    break;
+
+  } /* Switch on strategy */
+
+  /* Set the solve function pointer */
+
+  switch (nsp->sles_param->strategy) {
+
+  case CS_NAVSTO_SLES_BY_BLOCKS:
+    sc->solve = cs_cdofb_monolithic_krylov_block_precond;
+    break;
+
+  case CS_NAVSTO_SLES_GKB_SATURNE:
+    sc->solve = cs_cdofb_monolithic_gkb_solve;
+    break;
+
+  case CS_NAVSTO_SLES_DIAG_SCHUR_GCR:
+  case CS_NAVSTO_SLES_DIAG_SCHUR_MINRES:
+  case CS_NAVSTO_SLES_GCR:
+  case CS_NAVSTO_SLES_LOWER_SCHUR_GCR:
+  case CS_NAVSTO_SLES_MINRES:
+  case CS_NAVSTO_SLES_SGS_SCHUR_GCR:
+  case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
+  case CS_NAVSTO_SLES_UZAWA_SCHUR_GCR:
+    sc->solve = cs_cdofb_monolithic_krylov_block_precond;
+    break;
+
+  case CS_NAVSTO_SLES_UZAWA_AL:
+    sc->solve = cs_cdofb_monolithic_uzawa_al_incr_solve;
+    break;
+
+  case CS_NAVSTO_SLES_UZAWA_CG:
+    sc->solve = cs_cdofb_monolithic_uzawa_cg_solve;
+    break;
+
+  default:
+    /* CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK
+     * CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
+     * CS_NAVSTO_SLES_DIAG_SCHUR_GMRES
+     * CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
+     * CS_NAVSTO_SLES_GKB_PETSC
+     * CS_NAVSTO_SLES_GKB_GMRES
+     * CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
+     * CS_NAVSTO_SLES_MUMPS
+     * CS_NAVSTO_SLES_NOTAY_TRANSFORM
+     * CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
+     */
+    sc->solve = cs_cdofb_monolithic_solve;
     break;
 
   }
@@ -2393,7 +2366,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
 
   if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
     sc->nl_algo->context = cs_iter_algo_aa_create(nslesp->anderson_param,
-                                                  cs_shared_quant->n_faces);
+                                                  quant->n_faces);
 
   /* Monitoring */
 
@@ -2424,26 +2397,9 @@ cs_cdofb_monolithic_free_scheme_context(void   *scheme_context)
 
   sc->pressure_bc = cs_cdo_bc_free(sc->pressure_bc);
 
-  /* Shared structures which have been allocated only for the function used
-   * in the monolithic approach have to be freed */
+  /* Free the systemm helper */
 
-  if (_shared_interface_set != NULL)
-    cs_interface_set_destroy(&_shared_interface_set);
-  if (_shared_range_set != NULL)
-    cs_range_set_destroy(&_shared_range_set);
-  if (_shared_matrix_assembler != NULL)
-    cs_matrix_assembler_destroy(&_shared_matrix_assembler);
-  if (_shared_matrix_structure != NULL)
-    cs_matrix_structure_destroy(&_shared_matrix_structure);
-
-  /* Unset shared pointers */
-
-  cs_shared_range_set = NULL;
-  cs_shared_matrix_structure = NULL;
-  cs_shared_matrix_assembler = NULL;
-  cs_shared_interface_set = NULL;
-
-  BFT_FREE(sc->mav_structures);
+  cs_cdo_system_helper_free(&(sc->system_helper));
 
   /* Free the context structure for solving saddle-point system */
 
@@ -2484,6 +2440,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   /* Retrieve high-level structures */
 
   cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
+  cs_cdo_system_helper_t  *sh = sc->system_helper;
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
@@ -2495,7 +2452,6 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
    *--------------------------------------------------------------------------*/
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces, n_cells = quant->n_cells;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
 
@@ -2503,9 +2459,12 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
 
   cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb);
 
-  /* Initialize the rhs */
+  /* Initialize the matrix and all its related structures needed during
+   * the assembly step as well as the rhs */
 
-  cs_cdofb_monolithic_sles_init(n_cells, n_faces, sc->msles);
+  cs_real_t  *rhs = NULL;  /* Since it is NULL, sh get sthe ownership */
+
+  cs_cdo_system_helper_init_system(sh, &rhs);
 
   /* Main loop on cells to define the linear system to solve */
 
@@ -2542,7 +2501,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   msles->u_f = mom_eqc->face_values; /* velocity DoFs at faces */
   msles->p_c = sc->pressure->val;    /* pressure DoFs at cells */
 
-  int  cumulated_inner_iters = sc->solve(nsp, mom_eqp, msles);
+  int  cumulated_inner_iters = sc->solve(nsp, mom_eqp, sh, msles);
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2598,6 +2557,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /* Retrieve high-level structures */
 
   cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
+  cs_cdo_system_helper_t  *sh = sc->system_helper;
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
@@ -2610,7 +2570,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    *--------------------------------------------------------------------------*/
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces, n_cells = quant->n_cells;
+  const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
 
@@ -2618,9 +2578,12 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb);
 
-  /* Initialize the rhs */
+  /* Initialize the matrix and all its related structures needed during
+   * the assembly step as well as the rhs */
 
-  cs_cdofb_monolithic_sles_init(n_cells, n_faces, sc->msles);
+  cs_real_t  *rhs = NULL;  /* Since it is NULL, sh get sthe ownership */
+
+  cs_cdo_system_helper_init_system(sh, &rhs);
 
   /* Main loop on cells to define the linear system to solve */
 
@@ -2658,7 +2621,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    * Update the value of mom_eqc->face_values and sc->pressure->val */
 
   nl_algo->n_inner_iter =
-    (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+    (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh, msles));
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2697,6 +2660,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
     /* rhs set to zero and cs_sles_t structure is freed in order to do
      * the setup once again since the matrix should be modified */
 
+    cs_cdo_system_helper_init_system(sh, &rhs);
     cs_cdofb_monolithic_sles_reset(msles);
 
     sc->steady_build(nsp,
@@ -2716,7 +2680,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
     t_solve_start = cs_timer_time();
 
     nl_algo->n_inner_iter +=
-      (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+      (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh, msles));
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2766,6 +2730,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   cs_equation_builder_reset(mom_eqb);
   cs_cdofb_monolithic_sles_clean(msles);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 
   cs_timer_t  t_end = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);
@@ -2794,6 +2759,7 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   /* Retrieve high-level structures */
 
   cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
+  cs_cdo_system_helper_t  *sh = sc->system_helper;
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
@@ -2805,7 +2771,6 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
    *--------------------------------------------------------------------------*/
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces, n_cells = quant->n_cells;
   const cs_time_step_t *ts = cs_shared_time_step;
   const cs_real_t  t_eval = ts->t_cur + ts->dt[0];
 
@@ -2813,9 +2778,12 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
 
   cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb);
 
-  /* Initialize the rhs */
+  /* Initialize the matrix and all its related structures needed during
+   * the assembly step as well as the rhs */
 
-  cs_cdofb_monolithic_sles_init(n_cells, n_faces, sc->msles);
+  cs_real_t  *rhs = NULL;  /* Since it is NULL, sh get sthe ownership */
+
+  cs_cdo_system_helper_init_system(sh, &rhs);
 
   /* Main loop on cells to define the linear system to solve */
 
@@ -2852,7 +2820,7 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   msles->u_f = mom_eqc->face_values; /* velocity DoFs at faces */
   msles->p_c = sc->pressure->val;    /* pressure DoFs at cells */
 
-  int  cumulated_inner_iters = sc->solve(nsp, mom_eqp, msles);
+  int  cumulated_inner_iters = sc->solve(nsp, mom_eqp, sh, msles);
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2881,6 +2849,7 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   /* Frees */
 
   cs_cdofb_monolithic_sles_clean(msles);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 
   cs_timer_t  t_end = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);
@@ -2910,10 +2879,11 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Retrieve high-level structures */
 
-  cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
-  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_cdofb_monolithic_t  *sc = scheme_context;
+  cs_cdo_system_helper_t  *sh = sc->system_helper;
+  cs_navsto_monolithic_t *cc = sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
-  cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
+  cs_cdofb_vecteq_t  *mom_eqc = mom_eq->scheme_context;
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
   cs_iter_algo_t  *nl_algo = sc->nl_algo;
@@ -2923,7 +2893,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *--------------------------------------------------------------------------*/
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces, n_cells = quant->n_cells;
+  const cs_lnum_t  n_faces = quant->n_faces;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_eval = ts->t_cur + ts->dt[0];
 
@@ -2933,7 +2903,9 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Initialize the rhs */
 
-  cs_cdofb_monolithic_sles_init(n_cells, n_faces, sc->msles);
+  cs_real_t  *rhs = NULL;
+
+  cs_cdo_system_helper_init_system(sh, &rhs);
 
   /* Main loop on cells to define the linear system to solve */
 
@@ -2970,7 +2942,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    * Update the value of mom_eqc->face_values and sc->pressure->val */
 
   nl_algo->n_inner_iter =
-    (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+    (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh, msles));
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -3015,6 +2987,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     /* rhs set to zero and cs_sles_t structure is freed in order to do
      * the setup once again since the matrix should be modified */
 
+    cs_cdo_system_helper_init_system(sh, &rhs);
     cs_cdofb_monolithic_sles_reset(msles);
 
     /* Main loop on cells to define the linear system to solve */
@@ -3035,7 +3008,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     t_solve_start = cs_timer_time();
 
     nl_algo->n_inner_iter +=
-      (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+      (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh, msles));
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -3092,6 +3065,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Frees */
 
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_cdofb_monolithic_sles_clean(msles);
   cs_equation_builder_reset(mom_eqb);
   if (mass_flux_array_k != NULL)

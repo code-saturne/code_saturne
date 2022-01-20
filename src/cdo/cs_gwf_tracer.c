@@ -692,8 +692,8 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
 
   /* Parallel synchronization (in case of dissolution) */
 
-  if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL)
-    cs_interface_set_max(connect->interfaces[CS_DOF_VTX_SCAL],
+  if (connect->vtx_ifs != NULL)
+    cs_interface_set_max(connect->vtx_ifs,
                          quant->n_vertices,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
@@ -857,8 +857,8 @@ _add_precipitation(const cs_cdo_connect_t      *connect,
 
   /* Interface synchronization */
 
-  if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL)
-    cs_interface_set_min(connect->interfaces[CS_DOF_VTX_SCAL],
+  if (connect->vtx_ifs != NULL)
+    cs_interface_set_min(connect->vtx_ifs,
                          quant->n_vertices,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */

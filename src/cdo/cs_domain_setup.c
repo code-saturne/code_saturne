@@ -41,10 +41,10 @@
 #include "cs_ale.h"
 #include "cs_boundary_zone.h"
 #include "cs_cdo_blas.h"
-#include "cs_evaluate.h"
+#include "cs_cdo_system.h"
 #include "cs_equation.h"
-#include "cs_equation_assemble.h"
 #include "cs_equation_param.h"
+#include "cs_evaluate.h"
 #include "cs_gwf.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
@@ -634,22 +634,33 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
   /* Main generic structures are shared with low-level files.
      Avoid the declaration of global variables by sharing pointers */
 
-  cs_advection_field_set_shared_pointers(domain->cdo_quantities,
-                                         domain->connect);
+  cs_advection_field_init_sharing(domain->cdo_quantities, domain->connect);
 
-  cs_cdo_blas_set_shared_pointers(domain->cdo_quantities,
-                                  domain->connect);
+  cs_cdo_blas_init_sharing(domain->cdo_quantities, domain->connect);
 
-  cs_evaluate_set_shared_pointers(domain->cdo_quantities,
-                                  domain->connect);
+  cs_cdo_system_init_sharing(domain->mesh, domain->connect);
 
-  cs_property_set_shared_pointers(domain->cdo_quantities,
-                                  domain->connect);
+  cs_evaluate_init_sharing(domain->cdo_quantities, domain->connect);
 
-  cs_source_term_set_shared_pointers(domain->cdo_quantities,
-                                     domain->connect);
+  cs_equation_init_sharing(domain->connect,
+                           domain->cdo_quantities,
+                           domain->time_step,
+                           cc->eb_scheme_flag,
+                           cc->fb_scheme_flag,
+                           cc->vb_scheme_flag,
+                           cc->vcb_scheme_flag,
+                           cc->hho_scheme_flag);
 
-  /* Allocate common structures for solving equations */
+  cs_equation_system_init_sharing(domain->mesh,
+                                  domain->connect,
+                                  domain->cdo_quantities,
+                                  domain->time_step);
+
+  cs_property_init_sharing(domain->cdo_quantities, domain->connect);
+
+  cs_source_term_init_sharing(domain->cdo_quantities, domain->connect);
+
+  /* Allocate common local structures for building/solving equations */
 
   cs_cdo_toolbox_init(domain->connect,
                       cc->eb_scheme_flag,
@@ -657,29 +668,6 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                       cc->vb_scheme_flag,
                       cc->vcb_scheme_flag,
                       cc->hho_scheme_flag);
-
-  /* Allocate matrix-related structures for the assembly stage */
-
-  cs_equation_assemble_init(domain->connect,
-                            cc->eb_scheme_flag,
-                            cc->fb_scheme_flag,
-                            cc->vb_scheme_flag,
-                            cc->vcb_scheme_flag,
-                            cc->hho_scheme_flag);
-
-  /* Set the range set structure for synchronization in parallel computing */
-
-  cs_equation_set_range_set(domain->connect);
-
-  cs_equation_set_shared_structures(domain->connect,
-                                    domain->cdo_quantities,
-                                    domain->time_step,
-                                    cc->eb_scheme_flag,
-                                    cc->fb_scheme_flag,
-                                    cc->vb_scheme_flag,
-                                    cc->vcb_scheme_flag,
-                                    cc->hho_scheme_flag);
-
 }
 
 /*----------------------------------------------------------------------------*/

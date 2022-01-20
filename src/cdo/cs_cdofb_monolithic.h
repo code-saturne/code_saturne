@@ -97,11 +97,11 @@ cs_cdofb_monolithic_get_face_velocity(bool     previous)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
-                                const cs_mesh_t               *mesh,
-                                const cs_cdo_quantities_t     *quant,
-                                const cs_cdo_connect_t        *connect,
-                                const cs_time_step_t          *time_step);
+cs_cdofb_monolithic_init_sharing(const cs_navsto_param_t       *nsp,
+                                 const cs_mesh_t               *mesh,
+                                 const cs_cdo_quantities_t     *quant,
+                                 const cs_cdo_connect_t        *connect,
+                                 const cs_time_step_t          *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -149,36 +149,13 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         builder structure
- *
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to generic data structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_equation_initialize_system_t)(const cs_equation_param_t   *eqp,
-                                  cs_equation_builder_t       *eqb,
-                                  void                        *data,
-                                  cs_matrix_t                **system_matrix,
-                                  cs_real_t                  **system_rhs);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Build a linear system within the CDO framework
  *
  * \param[in]      m          pointer to a \ref cs_mesh_t structure
  * \param[in]      field_val  pointer to the current value of the field
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
- * \param[in, out] data       pointer to a scheme builder structure
- * \param[in, out] rhs        right-hand side to compute
- * \param[in, out] matrix     pointer to \ref cs_matrix_t structure to compute
+ * \param[in, out] context    pointer to a scheme context structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -187,9 +164,7 @@ typedef void
                              const cs_real_t            *field_val,
                              const cs_equation_param_t  *eqp,
                              cs_equation_builder_t      *eqb,
-                             void                       *data,
-                             cs_real_t                  *rhs,
-                             cs_matrix_t                *matrix);
+                             void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -199,14 +174,12 @@ typedef void
  *
  * \param[in, out] eq_cast    pointer to generic builder structure
  * \param[in, out] p_x        pointer of pointer to the solution array
- * \param[in, out] p_rhs      pointer of pointer to the RHS array
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_equation_prepare_solve_t)(void              *eq_to_cast,
-                              cs_real_t         *p_x[],
-                              cs_real_t         *p_rhs[]);
+                              cs_real_t         *p_x[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -353,55 +326,6 @@ struct _cs_equation_t {
 
   /*!
    * @}
-   * @name Algebraic system
-   * @{
-   *
-   *  There can be two different sizes for the linear system to handle
-   *  - One for "scatter"-type operations based on the number of geometrical
-   *    entities owned by the local rank of the mesh
-   *  - One for "gather"-type operations based on a balance of the number of
-   *
-   * DoFs from a algebraic point of view. In parallel runs, these two sizes can
-   * be different. In the "gather" viewpoint, some entities which are shared
-   * across ranks may be discard on the local if the algorithm to balance
-   * entities has decided that the local is not the "owner" of this
-   * entity. Thus, n_sles_gather_elts <= n_sles_scatter_elts
-   *
-   * \var n_sles_scatter_elts
-   *  number of local elements in the scatter viewpoint
-   *
-   * \var n_sles_gather_elts
-   *  number of local elements in the gather viewpoint
-   *
-   */
-
-  cs_lnum_t                n_sles_scatter_elts;
-  cs_lnum_t                n_sles_gather_elts;
-
-  /*! \var rhs
-   * Right-hand side defined by a local cellwise building. This may be
-   * different from the rhs given to cs_sles_solve() in parallel mode.
-   */
-
-  cs_real_t               *rhs;  /* Deprecated.
-                                    Only used in deprecated functions */
-
-  /*! \var matrix
-   * Matrix to inverse with cs_sles_solve() The matrix size can be different
-   * from the rhs size in parallel mode since the decomposition is different
-   */
-
-  cs_matrix_t             *matrix;  /* Deprecated.
-                                       Only used in deprecated functions */
-
-  /*! \var rset
-   * Range set to handle parallelism. Shared with cs_cdo_connect_t structure
-   */
-
-  const cs_range_set_t    *rset;
-
-  /*!
-   * @}
    * @name Generic pointers to manage a cs_equation_t structure
    * @{
    *
@@ -495,10 +419,10 @@ struct _cs_equation_t {
 
   cs_equation_get_builders_t       *get_cw_build_structures;
 
-  /* Deprecated functions --> use rather solve() and solve_steady_state() */
-  /* -------------------- */
+  /* Deprecated functions --> use rather solve() and solve_steady_state()
+   * Only HHO schemes rely on these functions
+   */
 
-  cs_equation_initialize_system_t  *initialize_system;
   cs_equation_set_dir_bc_t         *set_dir_bc;
   cs_equation_build_system_t       *build_system;
   cs_equation_prepare_solve_t      *prepare_solving;

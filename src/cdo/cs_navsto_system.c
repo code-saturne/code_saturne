@@ -893,7 +893,6 @@ cs_navsto_system_set_sles(void)
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  void  *nscc = ns->coupling_context;
   cs_navsto_param_t *nsp = ns->param;
 
   switch (nsp->space_scheme) {
@@ -903,15 +902,15 @@ cs_navsto_system_set_sles(void)
     switch (nsp->coupling) {
 
     case CS_NAVSTO_COUPLING_MONOLITHIC:
-      cs_cdofb_monolithic_set_sles(nsp, nscc);
+      cs_cdofb_monolithic_set_sles(nsp, ns->scheme_context);
       break;
 
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-      cs_cdofb_ac_set_sles(nsp, nscc);
+      cs_cdofb_ac_set_sles(nsp, ns->coupling_context);
       break;
 
     case CS_NAVSTO_COUPLING_PROJECTION:
-      cs_cdofb_predco_set_sles(nsp, nscc);
+      cs_cdofb_predco_set_sles(nsp, ns->coupling_context);
       break;
 
     default:
@@ -1149,7 +1148,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
       } /* Switch */
 
-      cs_cdofb_monolithic_init_common(nsp, mesh, quant, connect, time_step);
+      cs_cdofb_monolithic_init_sharing(nsp, mesh, quant, connect, time_step);
       break;
 
     case CS_NAVSTO_COUPLING_PROJECTION:

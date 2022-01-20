@@ -44,9 +44,10 @@
 
 #include <bft_mem.h>
 
+#include "cs_cdo_assembly.h"
+#include "cs_cdo_system.h"
 #include "cs_cdovb_priv.h"
 #include "cs_cdovb_scaleq.h"
-#include "cs_equation_assemble.h"
 #include "cs_matrix.h"
 #include "cs_parameters.h"
 #include "cs_sles.h"
@@ -248,43 +249,58 @@ _init_algebraic_structures(int                      n_vtx_dofs,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Perform the assembly step for scalar-valued CDO Vb systems
+ * \brief   Perform the assembly step. Add the block (row_id, col_id) in the
+ *          full (coupled) system
  *
- * \param[in]      row_shift  shift to apply to local row numbering
- * \param[in]      eqc        context for this kind of discretization
+ * \param[in]      row_id     id of the row in the coupled system
  * \param[in]      csys       pointer to a cellwise view of the system
- * \param[in]      rs         pointer to a cs_range_set_t structure
- * \param[in, out] eqa        pointer to a cs_equation_assemble_t structure
- * \param[in, out] mav        pointer to a cs_matrix_assembler_values_t struct.
- * \param[in, out] rhs        right-hand side array
+ * \param[in, out] sh         pointer to the system helper of the coupled sys.
+ * \param[in, out] eqc        context for this kind of discretization
+ * \param[in, out] asb        pointer to a cs_cdo_assembly_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_svb_sys_assemble(cs_lnum_t                          row_shift,
-                  const cs_cdovb_scaleq_t           *eqc,
-                  const cs_cell_sys_t               *csys,
-                  const cs_range_set_t              *rs,
-                  cs_equation_assemble_t            *eqa,
-                  cs_matrix_assembler_values_t      *mav,
-                  cs_real_t                         *rhs)
+_svb_sys_assemble(int                           row_id,
+                  const cs_cell_sys_t          *csys,
+                  cs_cdo_system_helper_t       *sh,
+                  cs_equation_builder_t        *eqb,
+                  cs_cdo_assembly_t            *asb)
 {
-  /* Matrix assembly */
+  /* Members of the coupled system helper structure */
 
-  eqc->assemble(csys->mat, csys->dof_ids, rs, eqa, mav);
+  assert(sh->n_blocks == 1);
+  cs_cdo_system_block_t  *block = sh->blocks[0];
+  assert(block->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
+  cs_cdo_system_dblock_t  *db = block->block_pointer;
+
+  /* Members of the (sub) system helper structure */
+
+  cs_cdo_system_helper_t  *sub_sh = eqb->system_helper;
+  assert(sub_sh->n_blocks == 1);
+  cs_cdo_system_block_t  *sub_block = sub_sh->blocks[0];
+  assert(sub_block->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
+  cs_cdo_system_dblock_t  *sub_db = sub_block->block_pointer;
+
+  /* Matrix assembly for the sub-system inside the full system */
+
+  sub_db->slave_assembly_func(csys->mat, csys->dof_ids, db->range_set,
+                              asb, db->mav);
 
   /* RHS assembly */
+
+  cs_real_t  *rhs = sh->rhs_array[row_id];
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0
 # pragma omp critical
   {
     for (int v = 0; v < csys->n_dofs; v++)
-      rhs[csys->dof_ids[v] + row_shift] += csys->rhs[v];
+      rhs[csys->dof_ids[v]] += csys->rhs[v];
   }
 #else  /* Use atomic barrier */
   for (int v = 0; v < csys->n_dofs; v++)
 #   pragma omp atomic
-    rhs[csys->dof_ids[v] + row_shift] += csys->rhs[v];
+    rhs[csys->dof_ids[v]] += csys->rhs[v];
 #endif
 }
 
@@ -296,10 +312,8 @@ _svb_sys_assemble(cs_lnum_t                          row_shift,
  * \param[in]      n_eqs     number of equations constituting the system
  * \param[in]      n_dofs    local number of DoFs (may be != n_gather_elts)
  * \param[in]      sysp      parameter settings
- * \param[in]      rs        pointer to a cs_range_set_t structure
- * \param[in]      matrix    pointer to a cs_matrix_t structure
+ * \param[in, out] sh        pointer to the system helper structure
  * \param[in, out] fields    array of field pointers (one for each eq.)
- * \param[in, out] rhs       right-hand side (scatter/gather if needed)
  *
  * \return the number of iterations of the linear solver
  */
@@ -309,11 +323,16 @@ static void
 _solve_mumps(int                                 n_eqs,
              cs_lnum_t                           n_dofs,
              const cs_equation_system_param_t   *sysp,
-             const cs_range_set_t               *rset,
-             const cs_matrix_t                  *matrix,
-             cs_field_t                        **fields,
-             cs_real_t                          *rhs)
+             cs_cdo_system_helper_t             *sh,
+             cs_field_t                        **fields)
 {
+  assert(sh != NULL);
+  assert(sh->n_blocks == 1);
+  assert(sh->blocks[0]->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
+  assert(n_dofs == sh->full_rhs_size);
+
+  const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
   const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
 
@@ -354,12 +373,12 @@ _solve_mumps(int                                 n_eqs,
       cs_interface_set_sum(rset->ifs,
                            n_dofs, 1, false, /* size, stride, interlaced */
                            CS_REAL_TYPE,
-                           rhs);
+                           sh->rhs);
 
     cs_range_set_gather(rset,
                         CS_REAL_TYPE, 1, /* type, stride */
-                        rhs,          /* in: size = n_dofs */
-                        rhs);         /* out: size = n_gather_dofs */
+                        sh->rhs,         /* in: size = n_dofs */
+                        sh->rhs);        /* out: size = n_gather_dofs */
 
   } /* scatter --> gather view + parallel sync. */
 
@@ -380,7 +399,7 @@ _solve_mumps(int                                 n_eqs,
                                                     sinfo.rhs_norm,
                                                     &(sinfo.n_it),
                                                     &(sinfo.res_norm),
-                                                    rhs,
+                                                    sh->rhs,
                                                     dof_vals,
                                                     0,      /* aux. size */
                                                     NULL);  /* aux. buffers */
@@ -397,7 +416,7 @@ _solve_mumps(int                                 n_eqs,
                        dof_vals, dof_vals);
   cs_range_set_scatter(rset,
                        CS_REAL_TYPE, 1, /* type and stride */
-                       rhs, rhs);
+                       sh->rhs, sh->rhs);
 
   /* dof_vals --> fields */
 
@@ -430,10 +449,10 @@ _solve_mumps(int                                 n_eqs,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scalsys_init_common(const cs_mesh_t              *mesh,
-                             const cs_cdo_connect_t       *connect,
-                             const cs_cdo_quantities_t    *quant,
-                             const cs_time_step_t         *time_step)
+cs_cdovb_scalsys_init_sharing(const cs_mesh_t              *mesh,
+                              const cs_cdo_connect_t       *connect,
+                              const cs_cdo_quantities_t    *quant,
+                              const cs_time_step_t         *time_step)
 {
   /* Assign static const pointers */
 
@@ -455,13 +474,17 @@ cs_cdovb_scalsys_init_common(const cs_mesh_t              *mesh,
  *        Case of scalar-valued CDO-Vb scheme in each block
  *
  * \param[in]      n_eqs            number of equations
+ * \param[in]      sysp             set of parameters to specify a system of eqs
  * \param[in, out] block_factories  array of the core members for an equation
+ * \param[out]     sh               system helper structure to initialize
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scalsys_init_structures(int                        n_eqs,
-                                 cs_equation_core_t       **block_factories)
+cs_cdovb_scalsys_init_structures(int                           n_eqs,
+                                 const cs_equation_system_param_t  *sysp,
+                                 cs_equation_core_t          **block_factories,
+                                 cs_cdo_system_helper_t      **p_sh)
 {
   if (n_eqs == 0)
     return;
@@ -469,6 +492,67 @@ cs_cdovb_scalsys_init_structures(int                        n_eqs,
   if (block_factories == NULL)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Array of structures is not allocated.\n", __func__);
+  if (*p_sh != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: System helper should be not allocated.\n", __func__);
+
+  assert(sysp != NULL);
+
+  /* Create and initialize the system helper for the system of equations
+   * A similar initialization is done for each block during the
+   * initialization of the context structure */
+
+  cs_cdo_system_helper_t  *sh = NULL;
+
+  /* Up to now, only one full block with all equations is built. More complex
+     are possible according to the type of linear solvers. Work in progress. */
+
+  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
+
+  switch (sysp->sles_strategy) {
+
+  case CS_EQUATION_SYSTEM_SLES_MUMPS:
+    {
+      cs_lnum_t  col_block_sizes = n_eqs * n_vertices;
+
+      sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_COUPLED,
+                                       1,   /* n_col_blocks */
+                                       &col_block_sizes,
+                                       1);  /* n_blocks */
+
+      cs_cdo_system_add_dblock(sh, 0,
+                               cs_flag_primal_vtx,
+                               n_vertices,
+                               n_eqs,   /* stride */
+                               false,   /* interlaced */
+                               true);   /* unrolled */
+
+      cs_cdo_system_build_block(sh, 0); /* build/set structures */
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid SLES strategy for system \"%s\"\n",
+              __func__, sysp->name);
+    break;
+
+  } /* Switch on the SLES strategy */
+
+#if 0
+  cs_lnum_t  *col_block_sizes = NULL;
+  BFT_MALLOC(col_block_sizes, n_eqs, cs_lnum_t);
+  for (int i = 0; i < n_eqs; i++)
+    col_block_sizes[i] = n_vertices;
+
+  sh = cs_cdo_system_helper_create(CS_CDO_SYSTEM_COUPLED,
+                                   n_eqs,            /* n_col_blocks */
+                                   &col_block_sizes,
+                                   n_eqs*n_eqs);     /* n_blocks */
+#endif
+
+  /* Initialize the builder and the context structure for each extra-diagonal
+     block */
 
   for (int j = 0; j < n_eqs; j++) { /* Loop on columns */
 
@@ -509,6 +593,10 @@ cs_cdovb_scalsys_init_structures(int                        n_eqs,
     } /* row i */
 
   } /* column j */
+
+  /* Return the allocated and initialized system helper */
+
+  *p_sh = sh;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -571,8 +659,7 @@ cs_cdovb_scalsys_free_structures(int                        n_eqs,
  * \param[in]      n_eqs     number of equations
  * \param[in]      sysp      set of paremeters for the system of equations
  * \param[in, out] blocks    array of the core members for an equation
- * \param[in, out] p_ms      double pointer to a matrix structure
- * \param[in, out] p_rs      double pointer to a range set structure
+ * \param[in, out] sh        pointer to a system helper structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -581,8 +668,7 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
                                 int                            n_equations,
                                 cs_equation_system_param_t    *sysp,
                                 cs_equation_core_t           **blocks,
-                                cs_matrix_structure_t        **p_ms,
-                                cs_range_set_t               **p_rs)
+                                cs_cdo_system_helper_t        *sh)
 {
   const cs_mesh_t  *mesh = cs_shared_mesh;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -608,36 +694,6 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
   }
 
-  /* Set the algebraic structures */
-  /* ---------------------------- */
-
-  /* 1. Build the matrix structure if needed */
-
-  cs_matrix_structure_t  *ms = (p_ms == NULL) ? NULL : *p_ms;
-  cs_range_set_t  *rs = (p_rs == NULL) ? NULL : *p_rs;
-
-  if (ms == NULL)
-    _init_algebraic_structures(n_equations, &rs, &ms);
-
-  *p_ms = ms;
-  *p_rs = rs;
-
-  assert(rs != NULL && ms != NULL);
-
-  /* 3. Create the matrix and its rhs */
-
-  cs_matrix_t  *matrix = cs_matrix_create(ms);
-  cs_real_t  *rhs = NULL;
-
-  BFT_MALLOC(rhs, n_dofs, cs_real_t);
-# pragma omp parallel for if  (n_dofs > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_dofs; i++) rhs[i] = 0.0;
-
-  /* 4. Initialize the structure to assemble values */
-
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
-
   /* Setup stage: Set useful arrays:
    * -----------
    * -> the Dirichlet values at vertices
@@ -660,11 +716,19 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
   } /* Loop on equations (diagonal blocks) */
 
+  /* Initialize the algebraic structures
+   * -----------------------------------
+   * ->  Initialize the rhs, matrix and assembler values
+   */
+
+  double  rhs_norm = 0.;
+  cs_real_t  *rhs = NULL;
+
+  cs_cdo_system_helper_init_system(sh, &rhs);
+
   /* ------------------------- */
   /* Main OpenMP block on cell */
   /* ------------------------- */
-
-  double  rhs_norm = 0.;
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
@@ -682,7 +746,7 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
     cs_cdovb_scaleq_get(&csys, &cb);
 
-    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
 
     const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
 
@@ -697,9 +761,9 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
         cs_equation_core_t  *block_ij = blocks[ij];
 
-        cs_equation_assemble_set_shift(eqa,
-                                       i_eq * n_vertices,  /* row shift */
-                                       j_eq * n_vertices); /* col shift */
+        cs_cdo_assembly_set_shift(asb,
+                                  i_eq * n_vertices,  /* row shift */
+                                  j_eq * n_vertices); /* col shift */
 
         const cs_equation_param_t  *eqp = block_ij->param;
         const cs_real_t  *f_val = fields[j_eq]->val;
@@ -727,8 +791,7 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
           /* Assembly process
            * ================ */
 
-          _svb_sys_assemble(i_eq*n_vertices, /* row shift (for RHS assembly) */
-                            eqc, csys, rs, eqa, mav, rhs);
+          _svb_sys_assemble(i_eq, csys, sh, eqb, asb);
 
         } /* Main loop on cells */
 
@@ -737,7 +800,7 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
   } /* OPENMP Block */
 
-  cs_matrix_assembler_values_done(mav); /* optional */
+  cs_cdo_system_helper_finalize_assembly(sh);
 
   for (int i_eq = 0; i_eq < n_equations; i_eq++) {
 
@@ -756,15 +819,13 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
   }
 
-  cs_matrix_assembler_values_finalize(&mav);
-
   /* Solve the linear system */
   /* ======================= */
 
   switch (sysp->sles_strategy) {
 
   case CS_EQUATION_SYSTEM_SLES_MUMPS:
-    _solve_mumps(n_equations, n_dofs, sysp, rs, matrix, fields, rhs);
+    _solve_mumps(n_equations, n_dofs, sysp, sh, fields);
     break;
 
   default:
@@ -776,9 +837,8 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
   /* Free temporary buffers and structures */
 
-  BFT_FREE(rhs);
   BFT_FREE(fields);
-  cs_matrix_destroy(&matrix);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/

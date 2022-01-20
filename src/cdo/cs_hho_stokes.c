@@ -88,11 +88,6 @@ struct _cs_hho_stokes_t {
   int                            n_cell_dofs;
   int                            n_face_dofs;
 
-  /* Structures related to the algebraic sytem construction (shared) */
-  const cs_matrix_assembler_t   *ma;
-  const cs_matrix_structure_t   *ms;
-  const cs_range_set_t          *rs;
-
   /* Solution of the algebraic system at the last computed iteration.
      cell_values is different from the values stored in the associated
      field since here it's the values of polynomial coefficients which
@@ -494,28 +489,16 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
   case CS_SPACE_SCHEME_HHO_P0:
     eqc->n_cell_dofs = CS_N_DOFS_CELL_0TH;
     eqc->n_face_dofs = CS_N_DOFS_FACE_0TH;
-    /* Not owner; Only shared */
-    eqc->ma = cs_shared_ma0;
-    eqc->ms = cs_shared_ms0;
-    eqc->rs = connect->range_sets[CS_DOF_FACE_SCAL];
     break;
 
   case CS_SPACE_SCHEME_HHO_P1:
     eqc->n_cell_dofs = CS_N_DOFS_CELL_1ST;
     eqc->n_face_dofs = CS_N_DOFS_FACE_1ST;
-    /* Not owner; Only shared */
-    eqc->ma = cs_shared_ma1;
-    eqc->ms = cs_shared_ms1;
-    eqc->rs = connect->range_sets[CS_DOF_FACE_SCAP1];
     break;
 
   case CS_SPACE_SCHEME_HHO_P2:
     eqc->n_cell_dofs = CS_N_DOFS_CELL_2ND;
     eqc->n_face_dofs = CS_N_DOFS_FACE_2ND;
-    /* Not owner; Only shared */
-    eqc->ma = cs_shared_ma2;
-    eqc->ms = cs_shared_ms2;
-    eqc->rs = connect->range_sets[CS_DOF_FACE_SCAP2];
     break;
 
     /* TODO: case CS_SPACE_SCHEME_HHO_PK */
@@ -527,6 +510,8 @@ cs_hho_stokes_init_context(const cs_equation_param_t   *eqp,
   /* System dimension */
   eqc->n_dofs = eqc->n_face_dofs * n_faces;
   eqc->n_max_loc_dofs = eqc->n_face_dofs*connect->n_max_fbyc + eqc->n_cell_dofs;
+
+  /* TODO: Add a system helper */
 
   /* Values of each DoF related to the cells */
   const cs_lnum_t  n_cell_dofs = n_cells * eqc->n_cell_dofs;
@@ -659,49 +644,6 @@ cs_hho_stokes_compute_source(const cs_equation_param_t  *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the matrix of the current algebraic system.
- *         Allocate and initialize the right-hand side associated to the given
- *         data structure
- *
- * \param[in]      eqp            pointer to a cs_equation_param_t structure
- * \param[in, out] eqb            pointer to a cs_equation_builder_t structure
- * \param[in, out] data           pointer to generic data structure
- * \param[in, out] system_matrix  pointer of pointer to a cs_matrix_t struct.
- * \param[in, out] system_rhs     pointer of pointer to an array of double
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hho_stokes_initialize_system(const cs_equation_param_t  *eqp,
-                                cs_equation_builder_t      *eqb,
-                                void                       *data,
-                                cs_matrix_t               **system_matrix,
-                                cs_real_t                 **system_rhs)
-{
-  CS_UNUSED(eqp);
-
-  assert(*system_matrix == NULL && *system_rhs == NULL);
-
-  cs_hho_stokes_t  *eqc = (cs_hho_stokes_t *)data;
-
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-
-  cs_timer_t  t0 = cs_timer_time();
-  const cs_lnum_t  n_elts = quant->n_faces * eqc->n_face_dofs;
-
-  *system_matrix = cs_matrix_create(eqc->ms);
-
-  /* Allocate and initialize the related right-hand side */
-  BFT_MALLOC(*system_rhs, n_elts, cs_real_t);
-# pragma omp parallel for if  (n_elts > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_elts; i++) (*system_rhs)[i] = 0.0;
-
-  cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Build the linear system arising from a scalar convection/diffusion
  *         equation with a HHO scheme.
  *         One works cellwise and then process to the assembly
@@ -712,8 +654,6 @@ cs_hho_stokes_initialize_system(const cs_equation_param_t  *eqp,
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
  * \param[in, out] data       pointer to cs_hho_stokes_t structure
- * \param[in, out] rhs        right-hand side
- * \param[in, out] matrix     pointer to cs_matrix_t structure to compute
  */
 /*----------------------------------------------------------------------------*/
 
@@ -723,16 +663,14 @@ cs_hho_stokes_build_system(const cs_mesh_t            *mesh,
                            double                      dt_cur,
                            const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
-                           void                       *data,
-                           cs_real_t                  *rhs,
-                           cs_matrix_t                *matrix)
+                           void                       *data)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(field_val);
   CS_UNUSED(dt_cur);
 
   /* Sanity checks */
-  assert(rhs != NULL && matrix != NULL && eqp != NULL && eqb != NULL);
+  assert(eqp != NULL && eqb != NULL);
   /* The only way to set a Dirichlet up to now */
   assert(eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED);
 
@@ -755,8 +693,6 @@ cs_hho_stokes_build_system(const cs_mesh_t            *mesh,
   CS_UNUSED(quant);
   CS_UNUSED(connect);
   CS_UNUSED(eqc);
-  CS_UNUSED(rhs);
-  CS_UNUSED(matrix);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);

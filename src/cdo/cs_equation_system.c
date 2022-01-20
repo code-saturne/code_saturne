@@ -183,11 +183,13 @@ _equation_system_create(int            n_eqs,
                                             sysname,
                                             sysname);
 
-  /* Structures */
+  /* Metadata */
 
   eqsys->param = NULL;
 
-  eqsys->matrix_structure = NULL;
+  /* Structures */
+
+  eqsys->system_helper = NULL;
 
   BFT_MALLOC(eqsys->equations, n_eqs, cs_equation_t *);
   for (int i = 0; i < n_eqs; i++)
@@ -234,14 +236,10 @@ _equation_system_free(cs_equation_system_t  **p_eqsys)
 
   eqsys->free_structures(n_eqs, eqsys->block_factories);
 
+  cs_cdo_system_helper_free(&(eqsys->system_helper));
+
   BFT_FREE(eqsys->block_factories);
   BFT_FREE(eqsys->equations);
-
-  if (eqsys->rset != NULL)
-    cs_range_set_destroy(&(eqsys->rset));
-
-  if (eqsys->matrix_structure != NULL)
-    cs_matrix_structure_destroy(&(eqsys->matrix_structure));
 
   BFT_FREE(eqsys);
   *p_eqsys = NULL;
@@ -429,8 +427,7 @@ cs_equation_system_log_monitoring(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign a set of pointer functions for managing the
- *         cs_equation_system_t structure.
+ * \brief  Assign a set of shared pointer to the main structures
  *
  * \param[in]  mesh        basic mesh structure
  * \param[in]  connect     additional connectivity data
@@ -440,10 +437,10 @@ cs_equation_system_log_monitoring(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_set_structures(cs_mesh_t             *mesh,
-                                  cs_cdo_connect_t      *connect,
-                                  cs_cdo_quantities_t   *quant,
-                                  cs_time_step_t        *time_step)
+cs_equation_system_init_sharing(const cs_mesh_t             *mesh,
+                                const cs_cdo_connect_t      *connect,
+                                const cs_cdo_quantities_t   *quant,
+                                const cs_time_step_t        *time_step)
 {
   for (int i = 0; i < _n_equation_systems; i++) {
 
@@ -473,11 +470,65 @@ cs_equation_system_set_structures(cs_mesh_t             *mesh,
     switch (sysp->space_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
+      if (sysp->block_var_dim == 1)
+        cs_cdovb_scalsys_init_sharing(mesh, connect, quant, time_step); /*  */
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid block_var_dim (=%d) for system \"%s\".\n"
+                  "%s: Only scalar-valued (=1) blocks are handled.\n",
+                  __func__, sysp->block_var_dim, sysp->name, __func__);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid space scheme (%s) for system \"%s\"\n",
+                __func__, cs_param_get_space_scheme_name(sysp->space_scheme),
+                sysp->name);
+      break;
+
+    } /* Switch on space scheme */
+
+    cs_timer_t  t2 = cs_timer_time();
+    cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);
+    if (eqsys->timer_id > -1)
+      cs_timer_stats_stop(eqsys->timer_id);
+
+  } /* Loop on systems of equations */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a set of pointer functions for managing all the systems of
+ *         equations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_system_set_functions(void)
+{
+  for (int i = 0; i < _n_equation_systems; i++) {
+
+    cs_equation_system_t  *eqsys = _equation_systems[i];
+
+    if (eqsys == NULL)
+      bft_error(__FILE__, __LINE__, 0, "%s: System not allocated.", __func__);
+
+    if (eqsys->n_equations < 1)
+      return;
+
+    cs_timer_t  t1 = cs_timer_time();
+    if (eqsys->timer_id > -1)
+      cs_timer_stats_start(eqsys->timer_id);
+
+    /* Set associated function pointers */
+
+    cs_equation_system_param_t  *sysp = eqsys->param;
+    assert(sysp != NULL);
+
+    switch (sysp->space_scheme) {
+
+    case CS_SPACE_SCHEME_CDOVB:
       if (sysp->block_var_dim == 1) { /* Each block is scalar-valued  */
-
-        cs_cdovb_scalsys_init_common(mesh, connect, quant, time_step);
-
-        /* Set associated function pointers */
 
         eqsys->init_structures = cs_cdovb_scalsys_init_structures;
         eqsys->free_structures = cs_cdovb_scalsys_free_structures;
@@ -560,6 +611,8 @@ cs_equation_system_initialize(void)
       bft_error(__FILE__, __LINE__, 0, "%s: System not allocated.", __func__);
 
     const int n_eqs = eqsys->n_equations;
+    const cs_equation_system_param_t  *sysp = eqsys->param;
+    assert(sysp != NULL);
 
     cs_timer_t  t1 = cs_timer_time();
     if (eqsys->timer_id > -1)
@@ -578,7 +631,8 @@ cs_equation_system_initialize(void)
 
     } /* Loop on equations (Diagonal blocks) */
 
-    eqsys->init_structures(n_eqs, eqsys->block_factories);
+    eqsys->init_structures(n_eqs, sysp, eqsys->block_factories,
+                           &eqsys->system_helper);
 
     cs_timer_t  t2 = cs_timer_time();
     cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);
@@ -586,6 +640,10 @@ cs_equation_system_initialize(void)
       cs_timer_stats_stop(eqsys->timer_id);
 
   } /* Loop on systems of equations */
+
+  /* Allocate or update the low-level assemble structures */
+
+  cs_cdo_system_allocate_assembly();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -620,17 +678,7 @@ cs_equation_system_solve(bool                     cur2prev,
                       eqsys->n_equations,
                       eqsys->param,
                       eqsys->block_factories,
-                      &(eqsys->matrix_structure),
-                      &(eqsys->rset));
-
-  /* Free the matrix structure */
-
-  if (eqsys->param->keep_structures == false) {
-
-    cs_matrix_structure_destroy(&(eqsys->matrix_structure));
-    cs_range_set_destroy(&(eqsys->rset));
-
-  }
+                      eqsys->system_helper);
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);

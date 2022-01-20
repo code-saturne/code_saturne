@@ -165,91 +165,77 @@ _post_balance_at_vertices(const cs_equation_t   *eq,
  * \brief  Carry out operations for allocating and/or initializing the solution
  *         array and the right hand side of the linear system to solve.
  *         Handle parallelism thanks to cs_range_set_t structure.
+ *         Deprecated function.
  *
  * \param[in, out] eq_to_cast   pointer to generic builder structure
  * \param[in, out] p_x          pointer of pointer to the solution array
- * \param[in, out] p_rhs        pointer of pointer to the RHS array
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _prepare_fb_solving(void              *eq_to_cast,
-                    cs_real_t         *p_x[],
-                    cs_real_t         *p_rhs[])
+                    cs_real_t         *p_x[])
 {
   cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
+  cs_equation_param_t  *eqp = eq->param;
+  cs_equation_builder_t  *eqb = eq->builder;
 
+  const cs_range_set_t  *rset = cs_equation_builder_get_range_set(eqb, 0);
+  const cs_matrix_t *matrix = cs_equation_builder_get_matrix(eqb, 0);
+  const cs_lnum_t  n_dofs = eqp->dim * rset->n_elts[1];
   const cs_real_t  *f_values = eq->get_face_values(eq->scheme_context, false);
   const int  stride = 1;  /* Since the global numbering is adapted in each
                              case (scalar-, vector-valued equations) */
 
   assert(f_values != NULL);
 
-  cs_real_t  *x = NULL, *b = NULL;
-  BFT_MALLOC(x, CS_MAX(eq->n_sles_scatter_elts,
-                       cs_matrix_get_n_columns(eq->matrix)), cs_real_t);
+  cs_real_t  *x = NULL;
+  BFT_MALLOC(x, CS_MAX(n_dofs, cs_matrix_get_n_columns(matrix)), cs_real_t);
 
-  /* x and b are a "gathered" view of field->val and eq->rhs respectively
-     through the range set operation.
-     Their size is equal to n_sles_gather_elts <= n_sles_scatter_elts */
+  /* x and the right-hand side are a "gathered" view of field->val and the
+   * right-hand side respectively through the range set operation.
+   *
+   *  Their size is equal to n_sles_gather_elts <= n_dofs
+   */
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 
+    cs_cdo_system_helper_t  *sh = eqb->system_helper;
+
     /* Compact numbering to fit the algebraic decomposition */
 
-    cs_range_set_gather(eq->rset,
+    cs_range_set_gather(rset,
                         CS_REAL_TYPE,  /* type */
                         stride,        /* stride */
-                        f_values,      /* in: size = n_sles_scatter_elts */
+                        f_values,      /* in: size = n_dofs */
                         x);            /* out: size = n_sles_gather_elts */
 
-    /* The right-hand side stems from a cellwise building on this rank.
-       Other contributions from distant ranks may contribute to an element
-       owned by the local rank */
+    cs_interface_set_sum(rset->ifs,
+                         n_dofs, stride, false, CS_REAL_TYPE,
+                         sh->rhs);
 
-    BFT_MALLOC(b, eq->n_sles_scatter_elts, cs_real_t);
-
-#if defined(HAVE_OPENMP)
-#   pragma omp parallel for if (eq->n_sles_scatter_elts > CS_THR_MIN)
-    for (cs_lnum_t  i = 0; i < eq->n_sles_scatter_elts; i++)
-      b[i] = eq->rhs[i];
-#else
-    memcpy(b, eq->rhs, eq->n_sles_scatter_elts * sizeof(cs_real_t));
-#endif
-
-    cs_interface_set_sum(eq->rset->ifs,
-                         eq->n_sles_scatter_elts, stride, false, CS_REAL_TYPE,
-                         b);
-
-    cs_range_set_gather(eq->rset,
+    cs_range_set_gather(rset,
                         CS_REAL_TYPE,  /* type */
                         stride,        /* stride */
-                        b,             /* in: size = n_sles_scatter_elts */
-                        b);            /* out: size = n_sles_gather_elts */
+                        sh->rhs,       /* in: size = n_dofs */
+                        sh->rhs);      /* out: size = n_sles_gather_elts */
 
   }
   else { /* Serial mode *** without periodicity *** */
 
-    assert(eq->n_sles_gather_elts == eq->n_sles_scatter_elts);
-
 #if defined(HAVE_OPENMP)
-#   pragma omp parallel for if (eq->n_sles_scatter_elts > CS_THR_MIN)
-    for (cs_lnum_t  i = 0; i < eq->n_sles_scatter_elts; i++)
+#   pragma omp parallel for if (n_dofs > CS_THR_MIN)
+    for (cs_lnum_t  i = 0; i < n_dofs; i++)
       x[i] = f_values[i];
 #else
-    memcpy(x, f_values, eq->n_sles_scatter_elts * sizeof(cs_real_t));
+    memcpy(x, f_values, n_dofs * sizeof(cs_real_t));
 #endif
-
-    /* Nothing to do for the right-hand side */
-
-    b = eq->rhs;
 
   }
 
   /* Return pointers */
 
   *p_x = x;
-  *p_rhs = b;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -289,7 +275,6 @@ _set_scal_hho_function_pointers(cs_equation_t  *eq)
 
   /* Deprecated functions */
 
-  eq->initialize_system = cs_hho_scaleq_initialize_system;
   eq->set_dir_bc = NULL;
   eq->build_system = cs_hho_scaleq_build_system;
   eq->prepare_solving = _prepare_fb_solving;
@@ -333,7 +318,6 @@ _set_vect_hho_function_pointers(cs_equation_t  *eq)
 
   /* Deprecated functions */
 
-  eq->initialize_system = cs_hho_vecteq_initialize_system;
   eq->build_system = cs_hho_vecteq_build_system;
   eq->prepare_solving = _prepare_fb_solving;
   eq->update_field = cs_hho_vecteq_update_field;
@@ -639,7 +623,9 @@ cs_equation_get_field_id(const cs_equation_t    *eq)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Return the range set structure associated to a cs_equation_t
- *         structure
+ *         structure. One assumes that there is only one block (it could be a
+ *         split block) otherwise this means that one handles systems of
+ *         equations.
  *
  * \param[in]  eq       pointer to a cs_equation_t structure
  *
@@ -652,8 +638,21 @@ cs_equation_get_range_set(const cs_equation_t    *eq)
 {
   if (eq == NULL)
     return NULL;
-  else
-    return eq->rset;
+
+  else { /* Equation has been allocated */
+
+    cs_equation_builder_t  *eqb = eq->builder;
+
+    if (eqb == NULL)
+      return NULL;
+    else {
+
+      return cs_equation_builder_get_range_set(eqb, 0);
+    }
+
+  }
+
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1273,11 +1272,6 @@ cs_equation_add(const char            *eqname,
   eq->field_id = -1;           /* This field is created in a second step */
   eq->boundary_flux_id = -1;   /* Not always defined (done in a second step) */
 
-  /* Algebraic system: allocated later */
-
-  eq->rset = NULL;
-  eq->n_sles_gather_elts = eq->n_sles_scatter_elts = 0;
-
   /* Builder structure for this equation */
 
   eq->builder = NULL;
@@ -1314,15 +1308,9 @@ cs_equation_add(const char            *eqname,
 
   /* Deprecated functions */
 
-  eq->initialize_system = NULL;
   eq->set_dir_bc = NULL;
   eq->build_system = NULL;
   eq->update_field = NULL;
-
-  /* Deprecated members related to deprecated functions */
-
-  eq->matrix = NULL;
-  eq->rhs = NULL;
 
   /* Set timer statistic structure to a default value */
 
@@ -1447,10 +1435,6 @@ cs_equation_destroy_all(void)
       cs_timer_stats_start(eq->main_ts_id);
 
     eq->param = cs_equation_free_param(eq->param);
-
-    assert(eq->matrix == NULL && eq->rhs == NULL);
-
-    /* Since eq->rset is only shared, no free is done at this stage */
 
     /* Free the associated builder structure */
 
@@ -1661,8 +1645,9 @@ cs_equation_set_sles(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set shared structures among the activated class of discretization
- *         schemes
+ * \brief  Set shared pointers to the main structures. Associate these
+ *         structures among the activated class of discretization schemes.
+ *         Initialize
  *
  * \param[in]  connect          pointer to a cs_cdo_connect_t structure
  * \param[in]  quant            pointer to additional mesh quantities struct.
@@ -1676,115 +1661,59 @@ cs_equation_set_sles(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
-                                  const cs_cdo_quantities_t   *quant,
-                                  const cs_time_step_t        *time_step,
-                                  cs_flag_t                    eb_scheme_flag,
-                                  cs_flag_t                    fb_scheme_flag,
-                                  cs_flag_t                    vb_scheme_flag,
-                                  cs_flag_t                    vcb_scheme_flag,
-                                  cs_flag_t                    hho_scheme_flag)
+cs_equation_init_sharing(const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *quant,
+                         const cs_time_step_t        *time_step,
+                         cs_flag_t                    eb_scheme_flag,
+                         cs_flag_t                    fb_scheme_flag,
+                         cs_flag_t                    vb_scheme_flag,
+                         cs_flag_t                    vcb_scheme_flag,
+                         cs_flag_t                    hho_scheme_flag)
 {
   if (vb_scheme_flag > 0 || vcb_scheme_flag > 0) {
 
-    if (vb_scheme_flag  & CS_FLAG_SCHEME_SCALAR ||
-        vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
+    if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+      cs_cdovb_scaleq_init_sharing(quant, connect, time_step);
 
-      cs_matrix_structure_t  *ms
-        = cs_equation_get_matrix_structure(CS_DOF_VTX_SCAL);
+    if (vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+      cs_cdovcb_scaleq_init_sharing(quant, connect, time_step);
 
-      if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-        cs_cdovb_scaleq_init_common(quant, connect, time_step, ms);
-
-      if (vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-        cs_cdovcb_scaleq_init_common(quant, connect, time_step, ms);
-
-    } /* scalar-valued DoFs */
-
-    if (vb_scheme_flag  & CS_FLAG_SCHEME_VECTOR ||
-        vcb_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
-
-      cs_matrix_structure_t  *ms
-        = cs_equation_get_matrix_structure(CS_DOF_VTX_VECT);
-
-      if (vb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
-        cs_cdovb_vecteq_init_common(quant, connect, time_step, ms);
-
-      /* TODO: VCb schemes DoFs */
-
-    } /* vector-valued DoFs */
+    if (vb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+      cs_cdovb_vecteq_init_sharing(quant, connect, time_step);
 
   } /* Vertex-based class of discretization schemes */
 
   if (eb_scheme_flag > 0) {
 
-    if (eb_scheme_flag  & CS_FLAG_SCHEME_SCALAR) {
-
       /* This is a vector-valued equation but the DoF is scalar-valued since
        * it is a circulation associated to each edge */
 
-      cs_matrix_structure_t  *ms
-        = cs_equation_get_matrix_structure(CS_DOF_EDGE_SCAL);
-
-      cs_cdoeb_vecteq_init_common(quant, connect, time_step, ms);
-
-    } /* scalar-valued DoFs */
+    if (eb_scheme_flag  & CS_FLAG_SCHEME_SCALAR)
+      cs_cdoeb_vecteq_init_sharing(quant, connect, time_step);
 
   } /* Edge-based class of discretization schemes */
 
-  if (fb_scheme_flag > 0 || hho_scheme_flag > 0) {
+  if (fb_scheme_flag > 0) {
 
     if (cs_flag_test(fb_scheme_flag,
-                     CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR)) {
-
-      cs_matrix_structure_t  *ms
-        = cs_equation_get_matrix_structure(CS_DOF_FACE_SCAL);
-
-      cs_cdofb_scaleq_init_common(quant, connect, time_step, ms);
-
-    } /* Scalar-valued CDO-Fb DoFs */
+                     CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR))
+      cs_cdofb_scaleq_init_sharing(quant, connect, time_step);
 
     if (cs_flag_test(fb_scheme_flag,
-                     CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR)) {
-
-      cs_matrix_structure_t  *ms
-        = cs_equation_get_matrix_structure(CS_DOF_FACE_SCAP1);
-
-      cs_cdofb_vecteq_init_common(quant, connect, time_step, ms);
-
-    } /* Vector-valued CDO-Fb DoFs */
-
-    if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
-
-      cs_matrix_structure_t  *ms0
-        = cs_equation_get_matrix_structure(CS_DOF_FACE_SCAL);
-      cs_matrix_structure_t  *ms1
-        = cs_equation_get_matrix_structure(CS_DOF_FACE_SCAP1);
-      cs_matrix_structure_t  *ms2
-        = cs_equation_get_matrix_structure(CS_DOF_FACE_SCAP2);
-
-      cs_hho_scaleq_init_common(hho_scheme_flag,
-                                quant, connect, time_step,
-                                ms0, ms1, ms2);
-
-    } /* Scalar-valued HHO schemes DoFs */
-
-    if (hho_scheme_flag & CS_FLAG_SCHEME_VECTOR) {
-
-      cs_matrix_structure_t  *ms0
-        = cs_equation_get_matrix_structure(CS_DOF_FACE_VECP0);
-      cs_matrix_structure_t  *ms1
-        = cs_equation_get_matrix_structure(CS_DOF_FACE_VECP1);
-      cs_matrix_structure_t  *ms2
-        = cs_equation_get_matrix_structure(CS_DOF_FACE_VECP2);
-
-      cs_hho_vecteq_init_common(hho_scheme_flag,
-                                quant, connect, time_step,
-                                ms0, ms1, ms2);
-
-    } /* Vector-valued HHO schemes DoFs */
+                     CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_VECTOR))
+      cs_cdofb_vecteq_init_sharing(quant, connect, time_step);
 
   } /* Face-based class of discretization schemes */
+
+  if (hho_scheme_flag > 0) {
+
+    if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+      cs_hho_scaleq_init_sharing(hho_scheme_flag, quant, connect, time_step);
+
+    if (hho_scheme_flag & CS_FLAG_SCHEME_VECTOR)
+      cs_hho_vecteq_init_sharing(hho_scheme_flag, quant, connect, time_step);
+
+  } /* Higher-order face-based class of discretization schemes */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1800,271 +1729,37 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_unset_shared_structures(cs_flag_t    vb_scheme_flag,
-                                    cs_flag_t    vcb_scheme_flag,
-                                    cs_flag_t    eb_scheme_flag,
-                                    cs_flag_t    fb_scheme_flag,
-                                    cs_flag_t    hho_scheme_flag)
+cs_equation_finalize_sharing(cs_flag_t    vb_scheme_flag,
+                             cs_flag_t    vcb_scheme_flag,
+                             cs_flag_t    eb_scheme_flag,
+                             cs_flag_t    fb_scheme_flag,
+                             cs_flag_t    hho_scheme_flag)
 {
   /* Free common local structures specific to a numerical scheme */
 
   if (vb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-    cs_cdovb_scaleq_finalize_common();
+    cs_cdovb_scaleq_finalize_sharing();
 
   if (vb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
-    cs_cdovb_vecteq_finalize_common();
+    cs_cdovb_vecteq_finalize_sharing();
 
   if (vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-    cs_cdovcb_scaleq_finalize_common();
+    cs_cdovcb_scaleq_finalize_sharing();
 
   if (eb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-    cs_cdoeb_vecteq_finalize_common();
+    cs_cdoeb_vecteq_finalize_sharing();
 
   if (fb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-    cs_cdofb_scaleq_finalize_common();
+    cs_cdofb_scaleq_finalize_sharing();
 
   if (fb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
-    cs_cdofb_vecteq_finalize_common();
+    cs_cdofb_vecteq_finalize_sharing();
 
   if (hho_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-    cs_hho_scaleq_finalize_common();
+    cs_hho_scaleq_finalize_sharing();
 
   if (hho_scheme_flag & CS_FLAG_SCHEME_VECTOR)
-    cs_hho_vecteq_finalize_common();
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Assign a \ref cs_range_set_t structures for synchronization when
- *         computing in parallel mode.
- *
- * \param[in]  connect        pointer to a cs_cdo_connect_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
-{
-  if (_n_equations == 0)
-    return;
-
-  const char  s_err_msg[] =
-    "%s: Only the scalar-valued case is handled for this scheme.\n";
-  const char  sv_err_msg[] =
-    "%s: Only the scalar-valued and vector-valued case are handled"
-    "for this scheme.\n";
-
-  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
-
-  for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
-
-    cs_equation_t  *eq = _equations[eq_id];
-    cs_equation_param_t  *eqp = eq->param;
-
-    if (eq->main_ts_id > -1)
-      cs_timer_stats_start(eq->main_ts_id);
-
-    /* Set function pointers */
-
-    switch(eqp->space_scheme) {
-
-    case CS_SPACE_SCHEME_CDOVB:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-
-        eq->rset = connect->range_sets[CS_DOF_VTX_SCAL];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
-
-      }
-      else if (eqp->dim == 3) {
-
-        /* Set the cs_range_set_t structure */
-
-        eq->rset = connect->range_sets[CS_DOF_VTX_VECT];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-
-        eq->n_sles_gather_elts = eqp->dim * connect->n_vertices;
-        eq->n_sles_scatter_elts = eqp->dim * connect->n_vertices;
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
-
-      break;
-
-    case CS_SPACE_SCHEME_CDOVCB:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-
-        eq->rset = connect->range_sets[CS_DOF_VTX_SCAL];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
-
-      break;
-
-    case CS_SPACE_SCHEME_CDOEB:
-      if (eqp->dim == 3) {
-
-        /* This is a vector-valued equation but the DoF is scalar-valued since
-         * it is a circulation associated to each edge */
-
-        /* Set the cs_range_set_t structure */
-
-        eq->rset = connect->range_sets[CS_DOF_EDGE_SCAL];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
-
-      break;
-
-    case CS_SPACE_SCHEME_CDOFB:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-
-        eq->rset = connect->range_sets[CS_DOF_FACE_SCAL];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = n_faces;
-
-      }
-      else if (eqp->dim == 3) {
-
-        /* Set the cs_range_set_t structure */
-
-        eq->rset = connect->range_sets[CS_DOF_FACE_VECT];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process (OK for a sequential run) */
-
-        eq->n_sles_gather_elts = eqp->dim * n_faces;
-        eq->n_sles_scatter_elts = eqp->dim * n_faces;
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, sv_err_msg, __func__);
-
-      break;
-
-    case CS_SPACE_SCHEME_HHO_P0:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-
-        eq->rset = connect->range_sets[CS_DOF_FACE_SCAL];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process */
-
-        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = n_faces;
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
-
-      break;
-
-    case CS_SPACE_SCHEME_HHO_P1:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-
-        eq->rset = connect->range_sets[CS_DOF_FACE_SCAP1];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process (OK for a sequential run) */
-
-        eq->n_sles_gather_elts = CS_N_DOFS_FACE_1ST * n_faces;
-        eq->n_sles_scatter_elts = CS_N_DOFS_FACE_1ST * n_faces;
-
-      }
-      else if (eqp->dim == 3) {
-
-        /* Set the cs_range_set_t structure */
-
-        eq->rset = connect->range_sets[CS_DOF_FACE_VECP1];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process (OK for a sequential run) */
-
-        eq->n_sles_gather_elts = 3*CS_N_DOFS_FACE_1ST * n_faces;
-        eq->n_sles_scatter_elts = 3*CS_N_DOFS_FACE_1ST * n_faces;
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
-
-      break;
-
-    case CS_SPACE_SCHEME_HHO_P2:
-      if (eqp->dim == 1) {
-
-        /* Set the cs_range_set_t structure */
-
-        eq->rset = connect->range_sets[CS_DOF_FACE_SCAP2];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process (OK for a sequential run) */
-
-        eq->n_sles_gather_elts = CS_N_DOFS_FACE_2ND * n_faces;
-        eq->n_sles_scatter_elts = CS_N_DOFS_FACE_2ND * n_faces;
-
-      }
-      else if (eqp->dim == 3) {
-
-        /* Set the cs_range_set_t structure */
-
-        eq->rset = connect->range_sets[CS_DOF_FACE_VECP2];
-
-        /* Set the size of the algebraic system arising from the cellwise
-           process (OK for a sequential run) */
-
-        eq->n_sles_gather_elts = 3*CS_N_DOFS_FACE_2ND * n_faces;
-        eq->n_sles_scatter_elts = 3*CS_N_DOFS_FACE_2ND * n_faces;
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
-
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Invalid scheme for the space discretization.\n"
-                  " Please check your settings."), __func__);
-      break;
-    }
-
-    if (cs_glob_n_ranks > 1)
-      eq->n_sles_gather_elts = eq->rset->n_elts[0];
-
-    if (eq->main_ts_id > -1)
-      cs_timer_stats_stop(eq->main_ts_id);
-
-  } /* Loop on equations */
+    cs_hho_vecteq_finalize_sharing();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2123,7 +1818,6 @@ cs_equation_set_functions(void)
         /* deprecated */
 
         eq->set_dir_bc = NULL;
-        eq->initialize_system = NULL;
         eq->build_system = NULL;
         eq->prepare_solving = NULL;
         eq->update_field = NULL;
@@ -2176,7 +1870,6 @@ cs_equation_set_functions(void)
         /* Deprecated */
 
         eq->set_dir_bc = NULL;
-        eq->initialize_system = NULL;
         eq->build_system = NULL;
         eq->prepare_solving = NULL;
         eq->update_field = NULL;
@@ -2229,7 +1922,6 @@ cs_equation_set_functions(void)
         /* Deprecated */
 
         eq->set_dir_bc = NULL;
-        eq->initialize_system = NULL;
         eq->build_system = NULL;
         eq->prepare_solving = NULL;
         eq->update_field = NULL;
@@ -2289,7 +1981,6 @@ cs_equation_set_functions(void)
         /* Deprecated */
 
         eq->set_dir_bc = NULL;
-        eq->initialize_system = NULL;
         eq->build_system = NULL;
         eq->prepare_solving = NULL;
         eq->update_field = NULL;
@@ -2343,7 +2034,6 @@ cs_equation_set_functions(void)
 
         /* Deprecated */
 
-        eq->initialize_system = NULL;
         eq->set_dir_bc = NULL;
         eq->build_system = NULL;
         eq->prepare_solving = NULL;
@@ -2412,7 +2102,6 @@ cs_equation_set_functions(void)
         /* Deprecated */
 
         eq->set_dir_bc = NULL;
-        eq->initialize_system = NULL;
         eq->build_system = NULL;
         eq->prepare_solving = NULL;
         eq->update_field = NULL;
@@ -2613,10 +2302,10 @@ cs_equation_create_fields(void)
  *        initialize condition to all variable fields associated to each
  *        cs_equation_t structure.
  *
- * \param[in]       mesh      pointer to a cs_mesh_t structure
- * \param[in]       ts        pointer to a cs_time_step_t structure
- * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
- * \param[in, out]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2624,7 +2313,7 @@ void
 cs_equation_initialize(const cs_mesh_t             *mesh,
                        const cs_time_step_t        *ts,
                        const cs_cdo_quantities_t   *quant,
-                       cs_cdo_connect_t            *connect)
+                       const cs_cdo_connect_t      *connect)
 {
   CS_UNUSED(quant);
 
@@ -2650,15 +2339,16 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
                                             eq->boundary_flux_id,
                                             eq->builder);
 
-    /* Define a face interface if not already allocated in this specific case */
+#if defined(DEBUG) && !defined(NDEBUG)
+    /* Check that a face interface has been defined */
 
-    if (eqp->n_ic_defs > 0) {
-      if (cs_param_space_scheme_is_face_based(eqp->space_scheme)) {
-        if (connect->interfaces[CS_DOF_FACE_SCAL] == NULL)
-          connect->interfaces[CS_DOF_FACE_SCAL] =
-            cs_cdo_connect_define_face_interface(mesh);
-      }
-    }
+    if (eqp->n_ic_defs > 0)
+      if (cs_param_space_scheme_is_face_based(eqp->space_scheme))
+        if (connect->face_ifs == NULL)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Interface set structure at faces not allocated.\n",
+                    __func__);
+#endif
 
     /* Assign an initial value for the variable fields */
 
@@ -2670,6 +2360,10 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
       cs_timer_stats_stop(eq->main_ts_id);
 
   }  /* Loop on equations */
+
+  /* Allocate or update the low-level assemble structures */
+
+  cs_cdo_system_allocate_assembly();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2721,24 +2415,9 @@ cs_equation_build_system(const cs_mesh_t            *mesh,
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
 
-  assert(eq->matrix == NULL && eq->rhs == NULL);
-
-  /* Initialize the algebraic system to build */
-
-  eq->initialize_system(eq->param,
-                        eq->builder,
-                        eq->scheme_context,
-                        &(eq->matrix),
-                        &(eq->rhs));
-
   /* Build the algebraic system to solve */
 
-  eq->build_system(mesh, fld->val,
-                   eq->param,
-                   eq->builder,
-                   eq->scheme_context,
-                   eq->rhs,
-                   eq->matrix);
+  eq->build_system(mesh, fld->val, eq->param, eq->builder, eq->scheme_context);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
@@ -2759,7 +2438,10 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
   double  residual = DBL_MAX;
   cs_sles_t  *sles = cs_sles_find_or_add(eq->field_id, NULL);
   cs_field_t  *fld = cs_field_by_id(eq->field_id);
-  cs_real_t  *x = NULL, *b = NULL;
+  cs_equation_builder_t  *eqb = eq->builder;
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
+
+  cs_real_t  *x = NULL;
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
@@ -2768,70 +2450,41 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
   const cs_param_sles_t  *sles_param = eqp->sles_param;
 
-  /* Up to now, only scalar field are handled */
+  /* Handle parallelism (the the x array and for the rhs) */
 
-  assert(eq->n_sles_gather_elts <= eq->n_sles_scatter_elts);
-  assert(eq->n_sles_gather_elts == cs_matrix_get_n_rows(eq->matrix));
+  eq->prepare_solving(eq, &x);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT,
-                " n_sles_gather_elts:  %d\n"
-                " n_sles_scatter_elts: %d\n"
-                " n_matrix_rows:       %d\n"
-                " n_matrix_columns:    %d\n",
-                eq->n_sles_gather_elts, eq->n_sles_scatter_elts,
-                cs_matrix_get_n_rows(eq->matrix),
-                cs_matrix_get_n_columns(eq->matrix));
-#endif
-
-  /* Handle parallelism */
-
-  eq->prepare_solving(eq, &x, &b);
+  const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
 
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
-                                                   eq->matrix,
+                                                   matrix,
                                                    sles_param->eps,
                                                    r_norm,
                                                    &n_iters,
                                                    &residual,
-                                                   b,
+                                                   sh->rhs,
                                                    x,
                                                    0,      /* aux. size */
                                                    NULL);  /* aux. buffers */
 
-  if (sles_param->verbosity > 0) {
-
-    const cs_lnum_t  size = eq->n_sles_gather_elts;
-    const cs_lnum_t  *row_index, *col_id;
-    const cs_real_t  *d_val, *x_val;
-
-    cs_matrix_get_msr_arrays(eq->matrix, &row_index, &col_id, &d_val, &x_val);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_DBG > 1
-    cs_dbg_dump_linear_system(eqp->name, size, CS_EQUATION_DBG,
-                              x, b,
-                              row_index, col_id, x_val, d_val);
-#endif
-
-    cs_gnum_t  nnz = row_index[size];
-    cs_parall_counter(&nnz, 1);
-    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d n_iters %d"
-                  " residual % -8.4e nnz %lu\n",
-                  eqp->name, code, n_iters, residual, nnz);
-
-  }
+  if (sles_param->verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "  <%s/sles_cvg> code %-d n_iters %d residual % -8.4e\n",
+                  eqp->name, code, n_iters, residual);
 
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 
-    cs_range_set_scatter(eq->rset,
+    const cs_range_set_t  *rset = cs_equation_get_range_set(eq);
+
+    cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, // type and stride
                          x,
                          x);
 
-    cs_range_set_scatter(eq->rset,
+    cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, // type and stride
-                         b,
-                         eq->rhs);
+                         sh->rhs,
+                         sh->rhs);
 
   }
 
@@ -2841,8 +2494,7 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
 
   /* Define the new field value for the current time */
 
-  eq->update_field(x, eq->rhs, eq->param,
-                   eq->builder, eq->scheme_context, fld->val);
+  eq->update_field(x, sh->rhs, eq->param, eqb, eq->scheme_context, fld->val);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
@@ -2850,11 +2502,8 @@ cs_equation_solve_deprecated(cs_equation_t   *eq)
   /* Free memory */
 
   BFT_FREE(x);
-  if (b != eq->rhs)
-    BFT_FREE(b);
-  BFT_FREE(eq->rhs);
   cs_sles_free(sles);
-  cs_matrix_destroy(&(eq->matrix));
+  cs_cdo_system_helper_reset(sh);  /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/

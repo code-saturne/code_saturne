@@ -384,8 +384,8 @@ cs_property_get_dim(const cs_property_t   *pty)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_shared_pointers(const cs_cdo_quantities_t    *quant,
-                                const cs_cdo_connect_t       *connect);
+cs_property_init_sharing(const cs_cdo_quantities_t    *quant,
+                         const cs_cdo_connect_t       *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -651,8 +651,8 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
 
     /* Synchronization needed in parallel or periodic computations */
 
-    if (connect->interfaces[CS_DOF_VTX_SCAL] != NULL)
-      cs_interface_set_max(connect->interfaces[CS_DOF_VTX_SCAL],
+    if (connect->vtx_ifs != NULL)
+      cs_interface_set_max(connect->vtx_ifs,
                            n_vertices,
                            1,             /* stride */
                            false,         /* interlace (not useful here) */
@@ -688,8 +688,8 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
 
     /* Synchronization needed in parallel or periodic computations */
 
-    if (connect->interfaces[CS_DOF_EDGE_SCAL] != NULL)
-      cs_interface_set_max(connect->interfaces[CS_DOF_EDGE_SCAL],
+    if (connect->edge_ifs != NULL)
+      cs_interface_set_max(connect->edge_ifs,
                            n_edges,
                            1,             /* stride */
                            false,         /* interlace (not useful here) */
@@ -829,6 +829,72 @@ _assign_edge_ifs_rs(const cs_mesh_t       *mesh,
   *p_rs = rs;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create and define a new cs_interface_set_t structure on faces
+ *
+ * \param[in]  mesh          pointer to a cs_mesh_t structure
+ *
+ * \return a pointer to a new allocated cs_interface_set_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_interface_set_t *
+_define_face_interface(const cs_mesh_t  *mesh)
+{
+  cs_interface_set_t  *ifs = NULL;
+
+  const cs_gnum_t *face_gnum = mesh->global_i_face_num;
+  cs_gnum_t *_face_gnum = NULL;
+
+  if (face_gnum == NULL) {
+    cs_lnum_t _n_faces = mesh->n_i_faces;
+    BFT_MALLOC(_face_gnum, _n_faces, cs_gnum_t);
+
+#   pragma omp parallel for if (_n_faces > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < _n_faces; i++)
+      _face_gnum[i] = i+1;
+
+    face_gnum = _face_gnum;
+  }
+
+  int n_perio = mesh->n_init_perio;
+  int *perio_num = NULL;
+  cs_lnum_t *n_perio_face_couples = NULL;
+  cs_gnum_t **perio_face_couples = NULL;
+
+  if (n_perio > 0) {
+    BFT_MALLOC(perio_num, n_perio, int);
+    for (int i = 0; i < n_perio; i++)
+      perio_num[i] = i+1;
+  }
+
+  cs_mesh_get_perio_faces(mesh,
+                          &n_perio_face_couples,
+                          &perio_face_couples);
+
+  ifs = cs_interface_set_create(mesh->n_i_faces,
+                                NULL,
+                                face_gnum,
+                                mesh->periodicity,
+                                n_perio,
+                                perio_num,
+                                n_perio_face_couples,
+                                (const cs_gnum_t *const *)perio_face_couples);
+
+  if (n_perio > 0) {
+    for (int i = 0; i < n_perio; i++)
+      BFT_FREE(perio_face_couples[i]);
+    BFT_FREE(perio_face_couples);
+    BFT_FREE(n_perio_face_couples);
+    BFT_FREE(perio_num);
+  }
+
+  BFT_FREE(_face_gnum);
+
+  return ifs;
+}
+
 /*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -908,116 +974,6 @@ cs_cdo_connect_assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
 
   *p_ifs = ifs;
   *p_rs = rs;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and define a \ref cs_range_set_t structure and a
- *        \ref cs_interface_set_t structure for schemes with DoFs at faces.
- *
- * \param[in]       mesh          pointer to a cs_mesh_t structure
- * \param[in]       n_faces       number of faces (interior + border)
- * \param[in]       n_face_dofs   number of DoFs per face
- * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
- * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_connect_assign_face_ifs_rs(const cs_mesh_t       *mesh,
-                                  cs_lnum_t              n_faces,
-                                  int                    n_face_dofs,
-                                  cs_interface_set_t   **p_ifs,
-                                  cs_range_set_t       **p_rs)
-{
-  cs_interface_set_t  *ifs = cs_cdo_connect_define_face_interface(mesh);
-
-  if (ifs != NULL && n_face_dofs > 1) {
-    cs_interface_set_t  *ifs_s = cs_interface_set_dup(ifs, n_face_dofs);
-    cs_interface_set_destroy(&ifs);
-    ifs = ifs_s;
-  }
-
-  const cs_lnum_t  n_elts = n_faces * n_face_dofs;
-
-  cs_range_set_t
-    *rs = cs_range_set_create(ifs,    /* interface set */
-                              NULL,   /* halo */
-                              n_elts,
-                              false,  /* TODO: add option for balance */
-                              1,      /* tr_ignore */
-                              0);     /* g_id_base */
-
-  /* Return pointers */
-
-  *p_ifs = ifs;
-  *p_rs = rs;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Create and define a new cs_interface_set_t structure on faces
- *
- * \param[in]  mesh          pointer to a cs_mesh_t structure
- *
- * \return a pointer to a new allocated cs_interface_set_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_interface_set_t *
-cs_cdo_connect_define_face_interface(const cs_mesh_t  *mesh)
-{
-  cs_interface_set_t  *ifs = NULL;
-
-  const cs_gnum_t *face_gnum = mesh->global_i_face_num;
-  cs_gnum_t *_face_gnum = NULL;
-
-  if (face_gnum == NULL) {
-    cs_lnum_t _n_faces = mesh->n_i_faces;
-    BFT_MALLOC(_face_gnum, _n_faces, cs_gnum_t);
-
-#   pragma omp parallel for if (_n_faces > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < _n_faces; i++)
-      _face_gnum[i] = i+1;
-
-    face_gnum = _face_gnum;
-  }
-
-  int n_perio = mesh->n_init_perio;
-  int *perio_num = NULL;
-  cs_lnum_t *n_perio_face_couples = NULL;
-  cs_gnum_t **perio_face_couples = NULL;
-
-  if (n_perio > 0) {
-    BFT_MALLOC(perio_num, n_perio, int);
-    for (int i = 0; i < n_perio; i++)
-      perio_num[i] = i+1;
-  }
-
-  cs_mesh_get_perio_faces(mesh,
-                          &n_perio_face_couples,
-                          &perio_face_couples);
-
-  ifs = cs_interface_set_create(mesh->n_i_faces,
-                                NULL,
-                                face_gnum,
-                                mesh->periodicity,
-                                n_perio,
-                                perio_num,
-                                n_perio_face_couples,
-                                (const cs_gnum_t *const *)perio_face_couples);
-
-  if (n_perio > 0) {
-    for (int i = 0; i < n_perio; i++)
-      BFT_FREE(perio_face_couples[i]);
-    BFT_FREE(perio_face_couples);
-    BFT_FREE(n_perio_face_couples);
-    BFT_FREE(perio_num);
-  }
-
-  BFT_FREE(_face_gnum);
-
-  return ifs;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1134,91 +1090,54 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   /* Members to handle assembly process and parallel sync. */
 
-  for (int i = 0; i < CS_N_DOF_CASES; i++) {
-    connect->range_sets[i] = NULL;
-    connect->interfaces[i] = NULL;
-  }
+  connect->vtx_rset = NULL;
+  connect->vtx_ifs = mesh->vtx_interfaces;  /* Already defined */
 
-  /* Already defined. */
+  connect->edge_rset = NULL;
+  connect->edge_ifs = NULL;
 
-  connect->interfaces[CS_DOF_VTX_SCAL] = mesh->vtx_interfaces;
+  connect->face_rset = NULL;
+  connect->face_ifs = NULL;
 
-  /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
+  /* At least one CDO vertex- or vertex+cell-based schemes has been requested */
 
-  if ( vb_scheme_flag & CS_FLAG_SCHEME_SCALAR ||
-      vcb_scheme_flag & CS_FLAG_SCHEME_SCALAR) {
+  if ( vb_scheme_flag > 0 || vcb_scheme_flag > 0) {
 
-    cs_cdo_connect_assign_vtx_ifs_rs(mesh, 1, true, /* interlaced */
-                                     connect->interfaces + CS_DOF_VTX_SCAL,
-                                     connect->range_sets + CS_DOF_VTX_SCAL);
-
-    /* Shared structures */
+    connect->vtx_rset = cs_range_set_create(connect->vtx_ifs,
+                                            NULL,
+                                            n_vertices,
+                                            false,  /* option for balance */
+                                            1,      /* tr_ignore */
+                                            0);     /* g_id_base */
 
     if (mesh->vtx_range_set != NULL)
       cs_range_set_destroy(&(mesh->vtx_range_set));
-    mesh->vtx_range_set = connect->range_sets[CS_DOF_VTX_SCAL];
+
+    mesh->vtx_range_set = connect->vtx_rset;
 
   }
 
-  /* CDO vertex- or vertex+cell-based schemes for vector-valued variables */
-
-  if ( vb_scheme_flag & CS_FLAG_SCHEME_VECTOR ||
-      vcb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
-    cs_cdo_connect_assign_vtx_ifs_rs(mesh, 3, true, /* interlaced */
-                                     connect->interfaces + CS_DOF_VTX_VECT,
-                                     connect->range_sets + CS_DOF_VTX_VECT);
-
   /* CDO face-based schemes or HHO schemes with k=0 */
 
-  if ((fb_scheme_flag & CS_FLAG_SCHEME_SCALAR) ||
-      cs_flag_test(hho_scheme_flag,
-                   CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY0))
-    cs_cdo_connect_assign_face_ifs_rs(mesh, n_faces, 1,
-                                      connect->interfaces + CS_DOF_FACE_SCAL,
-                                      connect->range_sets + CS_DOF_FACE_SCAL);
+  if (fb_scheme_flag > 0 || hho_scheme_flag > 0) {
 
-  /* HHO schemes with k=1,
-     CDO-Fb schemes with vector-valued unknowns
-     HHO schemes with k=0 and vector-valued unknowns */
+    connect->face_ifs = _define_face_interface(mesh);
 
-  if ((fb_scheme_flag & CS_FLAG_SCHEME_VECTOR)
-      || cs_flag_test(hho_scheme_flag,
-                      CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY1)
-      || cs_flag_test(hho_scheme_flag,
-                      CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY0))
-    cs_cdo_connect_assign_face_ifs_rs(mesh, n_faces, 3,
-                                      connect->interfaces + CS_DOF_FACE_SCAP1,
-                                      connect->range_sets + CS_DOF_FACE_SCAP1);
+    connect->face_rset = cs_range_set_create(connect->face_ifs,
+                                             NULL,   /* halo */
+                                             n_faces,
+                                             false,  /* option for balance */
+                                             1,      /* tr_ignore */
+                                             0);     /* g_id_base */
 
-  /* HHO schemes with k=2 */
+  }
 
-  if (cs_flag_test(hho_scheme_flag,
-                   CS_FLAG_SCHEME_SCALAR | CS_FLAG_SCHEME_POLY2))
-    cs_cdo_connect_assign_face_ifs_rs(mesh, n_faces, CS_N_DOFS_FACE_2ND,
-                                      connect->interfaces + CS_DOF_FACE_SCAP2,
-                                      connect->range_sets + CS_DOF_FACE_SCAP2);
-
-  /* HHO schemes with vector-valued unknowns with polynomial order k=1*/
-
-  if (cs_flag_test(hho_scheme_flag,
-                   CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY1))
-    cs_cdo_connect_assign_face_ifs_rs(mesh, n_faces, 3*CS_N_DOFS_FACE_1ST,
-                                      connect->interfaces + CS_DOF_FACE_VECP1,
-                                      connect->range_sets + CS_DOF_FACE_VECP1);
-
-  /* HHO schemes with vector-valued unknowns with polynomial order k=2*/
-
-  if (cs_flag_test(hho_scheme_flag,
-                   CS_FLAG_SCHEME_VECTOR | CS_FLAG_SCHEME_POLY2))
-    cs_cdo_connect_assign_face_ifs_rs(mesh, n_faces, 3*CS_N_DOFS_FACE_2ND,
-                                      connect->interfaces + CS_DOF_FACE_VECP2,
-                                      connect->range_sets + CS_DOF_FACE_VECP2);
-
-  /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
+  /* CDO edge-based schemes for vector-valued variables if needed (DoF is
+     scalar-valued) */
 
   _assign_edge_ifs_rs(mesh, connect, eb_scheme_flag,
-                      connect->interfaces + CS_DOF_EDGE_SCAL,
-                      connect->range_sets + CS_DOF_EDGE_SCAL);
+                      &(connect->edge_ifs),
+                      &(connect->edge_rset));
 
   /* Build the cell type for each cell */
 
@@ -1276,27 +1195,19 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
 
   /* Structures for parallelism */
 
-  cs_range_set_destroy(connect->range_sets + CS_DOF_VTX_VECT);
-  cs_range_set_destroy(connect->range_sets + CS_DOF_FACE_SCAL);
-  cs_range_set_destroy(connect->range_sets + CS_DOF_FACE_SCAP1);
-  cs_range_set_destroy(connect->range_sets + CS_DOF_FACE_SCAP2);
-  cs_range_set_destroy(connect->range_sets + CS_DOF_FACE_VECP1);
-  cs_range_set_destroy(connect->range_sets + CS_DOF_FACE_VECP2);
-  cs_range_set_destroy(connect->range_sets + CS_DOF_EDGE_SCAL);
-
-  cs_interface_set_destroy(connect->interfaces + CS_DOF_VTX_VECT);
-  cs_interface_set_destroy(connect->interfaces + CS_DOF_FACE_SCAL);
-  cs_interface_set_destroy(connect->interfaces + CS_DOF_FACE_SCAP1);
-  cs_interface_set_destroy(connect->interfaces + CS_DOF_FACE_SCAP2);
-  cs_interface_set_destroy(connect->interfaces + CS_DOF_FACE_VECP1);
-  cs_interface_set_destroy(connect->interfaces + CS_DOF_FACE_VECP2);
-  cs_interface_set_destroy(connect->interfaces + CS_DOF_EDGE_SCAL);
-
-  if (   cs_glob_mesh->vtx_range_set
-      != connect->range_sets[CS_DOF_VTX_SCAL])
-    cs_range_set_destroy(connect->range_sets + CS_DOF_VTX_SCAL);
+  if (cs_glob_mesh->vtx_range_set != connect->vtx_rset)
+    cs_range_set_destroy(&(connect->vtx_rset));
   else
-    connect->range_sets[CS_DOF_VTX_SCAL] = NULL;
+    connect->vtx_rset = NULL;
+
+  cs_range_set_destroy(&(connect->edge_rset));
+  cs_range_set_destroy(&(connect->face_rset));
+
+  /* Done in cs_mesh.c since it is shared with the mesh structure :
+     cs_interface_set_destroy(&(connect->vtx_ifs)); */
+
+  cs_interface_set_destroy(&(connect->edge_ifs));
+  cs_interface_set_destroy(&(connect->face_ifs));
 
   BFT_FREE(connect);
 

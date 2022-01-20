@@ -109,10 +109,6 @@ cs_equation_system_param_create(const char       *name,
   assert(block_var_dim > 0);
   sysp->block_var_dim = block_var_dim;
 
-  /* Other metadata set by default */
-
-  sysp->keep_structures = true;
-
   /* Space discretization */
 
   sysp->space_scheme = CS_SPACE_SCHEME_CDOVB;
@@ -176,8 +172,6 @@ cs_equation_system_param_log(const cs_equation_system_param_t    *sysp)
                 desc, cs_param_get_space_scheme_name(sysp->space_scheme));
   cs_log_printf(CS_LOG_SETUP, "%s Common variable dimension: %d\n",
                 desc, sysp->block_var_dim);
-  cs_log_printf(CS_LOG_SETUP, "%s Keep structures: %s\n",
-                desc, cs_base_strtf(sysp->keep_structures));
 
   cs_log_printf(CS_LOG_SETUP, "%s Linear algebra setup\n", desc);
   switch (sysp->sles_strategy) {
