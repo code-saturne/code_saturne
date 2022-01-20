@@ -766,7 +766,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.nept.setHeatMassTransferStatus("on")
             for field_id in self.nept.getFieldIdList():
                 self.nept.setEnergyResolution(field_id, "on")
-                self.nept.setEnergyModel(field_id, "total_enthalpy")
+                if self.nept.getEnergyModel(field_id) == "off":
+                    self.nept.setEnergyModel(field_id, "total_enthalpy")
         self.browser.configureTree(self.case)
 
     @pyqtSlot(str)
