@@ -82,7 +82,7 @@ class OutputSurfacicFieldsModel(Model):
             self.list_label.append(node['label'])
 
             field_id = node['field_id']
-            if field_id != "none":
+            if (field_id != None) and (field_id.lower() != "none"):
                 name += str(field_id)
             self.dicoLabelName[name] = node['label']
             self.list_name.append(name)

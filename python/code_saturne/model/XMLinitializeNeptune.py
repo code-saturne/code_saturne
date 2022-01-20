@@ -97,6 +97,25 @@ class XMLinitNeptune(BaseXmlInit):
             self.XMLUserScalar   = self.case.xmlGetNode('additional_scalars')
             self.XMLUser         = self.XMLUserScalar.xmlInitNode('users')
 
+            # Add surfacic properties to post-process
+            # TODO : check if NCFD version allows it !!!
+            self.XMLNodeProperty = self.XMLThermo.xmlInitNode('properties')
+            node = self.XMLNodeProperty
+            n = self.setNewProperty(node, 'stress')
+            n['support'] = 'boundary'
+            n['label'] = 'Stress'
+            if not node.xmlGetChildNode('property', name='stress_tangential'):
+                n = self.setNewProperty(node, 'stress_tangential')
+                n['label'] = 'Stress, tangential'
+                n['support'] = 'boundary'
+                n.xmlInitNode('postprocessing_recording')['status']= "off"
+            if not node.xmlGetChildNode('property', name='stress_normal'):
+                n = self.setNewProperty(node, 'stress_normal')
+                n['label'] = 'Stress, normal'
+                n['support'] = 'boundary'
+                n.xmlInitNode('postprocessing_recording')['status']= "off"
+ 
+
             # First Volume Zone definition for all cells -> initialization
 
             zones = LocalizationModel("VolumicZone", self.case).getZones()
@@ -170,22 +189,22 @@ class XMLinitNeptune(BaseXmlInit):
         Change XML in order to ensure backward compatibility for old version
         there is nothing to do for 2.1 to 2.2
         """
-        if (from_vers <= "-1.0") or (from_vers[:3] < "3.0.0"):
+        if (from_vers <= "-1.0") or (from_vers[:3] < "3.0"):
             self.__backwardCompatibilityFrom_2_0()
             self.__backwardCompatibilityFrom_2_2()
 
-        if from_vers[:3] < "5.0.0":
-            if from_vers[:3] < "4.3.0":
+        if from_vers[:3] < "5.0":
+            if from_vers[:3] < "4.3":
                 self.__backwardCompatibilityFrom_4_2()
 
             self.__backwardCompatibilityFrom_4_4()
 
-        if from_vers[:3] < "7.0.0":
-            if from_vers[:3] < "6.1.0":
+        if from_vers[:3] < "7.0":
+            if from_vers[:3] < "6.1":
                 self.__backwardCompatibilityFrom_6_0()
-            if from_vers[:3] < "6.2.0":
+            if from_vers[:3] < "6.2":
                 self.__backwardCompatibilityFrom_6_1()
-            if from_vers[:3] < "6.4.0":
+            if from_vers[:3] < "6.4":
                 self.__backwardCompatibilityFrom_6_3()
 
 
