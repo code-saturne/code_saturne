@@ -186,29 +186,15 @@ bool
 cs_preprocess_mesh_is_needed(void)
 {
   bool retval = true;
-  int needed = 1;
 
-  if (cs_glob_rank_id < 1) {
-    /* Check first for file with extension */
-    if (cs_file_isreg("restart/mesh_input.csm")) {
-      const char path[] = "mesh_input.csm";
-      if (! (cs_file_isreg(path) || cs_file_isdir(path)))
-        needed = 0;
-
-    }
-    else if (cs_file_isreg("restart/mesh_input")) {
-      const char path[] = "mesh_input";
-      if (! (cs_file_isreg(path) || cs_file_isdir(path)))
-        needed = 0;
-    }
-  }
+  int is_restart = (cs_preprocessor_data_is_restart()) ? 1 : 0;
 
 #if defined(HAVE_MPI)
   if (cs_glob_rank_id >= 0)
-    MPI_Bcast(&needed,  1, MPI_INT,  0, cs_glob_mpi_comm);
+    MPI_Bcast(&is_restart,  1, MPI_INT,  0, cs_glob_mpi_comm);
 #endif
 
-  if (! needed)
+  if (is_restart)
     retval = false;
 
   return retval;

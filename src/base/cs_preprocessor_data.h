@@ -101,6 +101,18 @@ cs_preprocessor_data_add_file(const char     *file_name,
 int
 cs_preprocessor_check_perio(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if the last preprocessing data defined or read is restart data.
+ *
+ * \return true if preprocessing data is read from "restart" folder,
+ *         false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_preprocessor_data_is_restart(void);
+
 /*----------------------------------------------------------------------------
  * Read mesh meta-data.
  *
