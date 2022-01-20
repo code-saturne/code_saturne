@@ -955,7 +955,7 @@ class case:
             if mpi_env.mpiexec_opts != None:
                 mpi_cmd += ' ' + mpi_env.mpiexec_opts
             if mpiexec_mpmd == False:
-                if mpi_env.mpiexec_n != None:
+                if mpi_env.mpiexec_n != None and n_procs:
                     mpi_cmd += mpi_env.mpiexec_n + str(n_procs)
                 if mpi_env.mpiexec_n_per_node != None:
                     mpi_cmd += mpi_env.mpiexec_n_per_node
