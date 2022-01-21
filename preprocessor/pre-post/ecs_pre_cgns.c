@@ -241,6 +241,20 @@ ecs_loc_pre_cgns__cree(const char  *nom_fichier,
   ECS_MALLOC(base->nom_fic, strlen(nom_fichier) + 1, char);
   strcpy(base->nom_fic, nom_fichier);
 
+  /* Detect CGNS file type */
+
+  int filetype = CG_FILE_NONE;
+  ret = cg_is_cgns(base->nom_fic, &filetype);
+
+  if (ret != CG_OK)
+    ecs_error(__FILE__, __LINE__, 0,
+              _("CGNS: error checking file type \"%s\":\n%s"),
+              nom_fichier, cg_get_error());
+
+  cg_set_file_type(filetype);
+
+  /* Now open it */
+
   ret = cg_open(base->nom_fic, CG_MODE_READ, &(base->num_fic));
 
   if (ret < 0)
