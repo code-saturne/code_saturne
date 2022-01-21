@@ -1539,6 +1539,48 @@ ecs_loc_pre__cgns__cree_ent_inf_som(const ecs_loc_cgns_base_t  *base_maillage,
 
     nbr_som_elt = pos_som_elt[ind_elt + 1] - pos_som_elt[ind_elt];
 
+    /* Cas spécifique pour les polyèdres */
+
+    if (nbr_som_elt > 8) {
+
+      ecs_int_t ind_val = pos_som_elt[ind_elt]-1;
+      ecs_int_t ind_val_e = pos_som_elt[ind_elt + 1] - 1;
+
+      while (ind_val < ind_val_e) {
+        ecs_int_t ind_sub_s = ind_val;
+        ecs_int_t ind_sub_e = ind_val;
+        ecs_int_t val_s = val_som_elt[ind_val];
+        ind_val++;
+        while (ind_val < ind_val_e) {
+          if (val_som_elt[ind_val] == val_s) {
+            ind_sub_e = ind_val;
+            ind_val++;
+            break;
+          }
+          else
+            ind_val++;
+        }
+        if (ind_val == ind_val_e)
+          ind_sub_e = ind_val;
+
+        bool_cree = true;
+        for (ecs_int_t i = ind_sub_s; i < ind_sub_e; i++) {
+          if (indic_som[val_som_elt[i] - 1] == 0)
+            bool_cree = false;
+        }
+
+        if (bool_cree == true) {
+          cpt_sselt     += 1;
+          cpt_val_sselt += ind_sub_e - ind_sub_s;
+        }
+
+      }
+
+      continue;
+    }
+
+    /* Cas pour les cellules usuelles */
+
     typ_elt = typ_geo_base[nbr_som_elt];
 
     ind_pos_elt = pos_som_elt[ind_elt] - 1;
@@ -1616,6 +1658,59 @@ ecs_loc_pre__cgns__cree_ent_inf_som(const ecs_loc_cgns_base_t  *base_maillage,
 
     nbr_som_elt = pos_som_elt[ind_elt + 1] - pos_som_elt[ind_elt];
 
+    /* Cas spécifique pour les polyèdres */
+
+    if (nbr_som_elt > 8) {
+
+      ecs_int_t ind_val = pos_som_elt[ind_elt]-1;
+      ecs_int_t ind_val_e = pos_som_elt[ind_elt + 1] - 1;
+
+      while (ind_val < ind_val_e) {
+        ecs_int_t ind_sub_s = ind_val;
+        ecs_int_t ind_sub_e = ind_val;
+        ecs_int_t val_s = val_som_elt[ind_val];
+        ind_val++;
+        while (ind_val < ind_val_e) {
+          if (val_som_elt[ind_val] == val_s) {
+            ind_sub_e = ind_val;
+            ind_val++;
+            break;
+          }
+          else
+            ind_val++;
+        }
+        if (ind_val == ind_val_e)
+          ind_sub_e = ind_val;
+
+        bool_cree = true;
+        for (ecs_int_t i = ind_sub_s; i < ind_sub_e; i++) {
+          if (indic_som[val_som_elt[i] - 1] == 0)
+            bool_cree = false;
+        }
+
+        /* Si l'on crée une face */
+
+        if (bool_cree == true) {
+
+          /* Définition de la face en fonction des sommets */
+
+          for (ecs_int_t i = ind_sub_s; i < ind_sub_e; i++)
+            val_som_sselt[cpt_val_sselt++] = val_som_elt[i];
+
+          /* Position de la face dans sa définition en fonction des sommets */
+
+          pos_som_sselt[cpt_sselt + 1] =   pos_som_sselt[cpt_sselt]
+                                         + ind_sub_e - ind_sub_s;
+
+          cpt_sselt     += 1;
+
+        } /* Fin création face */
+
+      }
+
+      continue;
+    }
+
     typ_elt = typ_geo_base[nbr_som_elt];
 
     ind_pos_elt = pos_som_elt[ind_elt] - 1;
@@ -1652,7 +1747,6 @@ ecs_loc_pre__cgns__cree_ent_inf_som(const ecs_loc_cgns_base_t  *base_maillage,
         ind_som = 0;
 
         while(   ind_som < ECS_CGNS_SSELT_NBR_MAX_SOM
-              && bool_cree == true
               && (num_def
                   = ecs_fic_elt_typ_liste_c
                       [typ_elt].sous_elt[ind_sselt].som[ind_som]) != 0) {
