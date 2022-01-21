@@ -69,6 +69,9 @@ Bug fixes:
 - Fix bug in hydrostatic pressure computation
   (synchronisation missing in periodic computation).
 
+- GUI: avoid crash when user first defines a scalar of a given name
+  then activates a physical model using a scalar of the same name.
+
 - GUI: fix bad initialization in meteo preprocessor.
 
 - GUI: fix crash on MEG expression with missing parentheses.
