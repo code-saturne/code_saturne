@@ -3,6 +3,9 @@ Release 7.1.1 (not released yet)
 
 Bug fixes:
 
+- GUI: avoid crash when user first defines a scalar of a given name
+  then activates a physical model using a scalar of the same name.
+
 - Preprocessor: automatically detect CGNS file type (ADF or HDF5).
 
 - Preprocessor: fix crash when reading CGNS files with NGON (polyhedra)
