@@ -380,7 +380,6 @@ itycat = FIELD_PROPERTY
 ityloc = 1         ! variables defined on cells
 idimf  = -1        ! Field dimension
 
-
 do f_id = 0, nfld - 1
   call field_get_type(f_id, f_type)
   ! Is the field of type FIELD_VARIABLE?

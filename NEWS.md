@@ -9,6 +9,9 @@ Architectural changes:
 
 Bug fixes:
 
+- Preprocessor: fix crash when reading CGNS files with NGON (polyhedra)
+  sections and vertex-based boundary condition definitions.
+
 - Fix gradient reconstruction for anisotropic cases using
   Green-Gauss with least-squares gradient face values algorithm.
 
