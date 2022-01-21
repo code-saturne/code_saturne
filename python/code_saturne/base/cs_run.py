@@ -78,7 +78,7 @@ def update_run_steps(s_c, run_conf, final=False):
                     i_s = i
                 i_f = i + 1
             elif s_c[k] == False:
-               if i_s < i:
+               if i_s < 0 or i_s == i:
                     i_s = i + 1
         if i_f < 0:
             i_f = len(stages)
