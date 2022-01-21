@@ -11,6 +11,9 @@ User changes:
 
 Bug fixes:
 
+- Preprocessor: fix crash when reading CGNS files with NGON (polyhedra)
+  sections and vertex-based boundary condition definitions.
+
 - Fix restart with a previous mesh when new mesh is built from several files
   (i.e. using a `mesh_input` directory at least temporarily). An incorrect
   priority led to using the older mesh for computation in this case.
