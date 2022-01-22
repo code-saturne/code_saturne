@@ -191,6 +191,7 @@ cs_user_physical_properties-coal_drift.f90 \
 cs_user_physical_properties-compressible_flow.f90 \
 cs_user_physical_properties-richards_sat.f90 \
 cs_user_physical_properties-richards_unsat.f90 \
+cs_user_profile.cxx \
 cs_user_profile.h \
 cs_user_profile_plot.py
 

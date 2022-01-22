@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2021 EDF S.A.
+  Copyright (C) 1998-2022 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -99,40 +99,41 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations_initialize(cs_domain_t     *domain)
+cs_user_extra_operations_initialize(cs_domain_t *domain)
 {
   CS_UNUSED(domain);
 
   /* initialize a  mean temperature profile over z*/
-  cs_real_t v_dir[3] = {0.0, 0.0, 1.0};
+  cs_real_t v_dir[3] = { 0.0, 0.0, 1.0 };
 
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
-  user_profile_t *profile_t=user_create_profile("T_vertical_profile", /* name*/
-                                                "temperature", /* field*/
-                                                "all[]", /* cell selection */
-                                                v_dir, /* profile direction */
-                                                10, /* number of layers */
-                                                "PARABOLIC", /*progression law*/
-                                                1.5, /*geometric progression*/
-                                                "MASS", /*MASS, VOLUME or NO: Weight */
-                                                "MEDCOUPLING"); /*Method used to intersect volume*/
+  user_profile_t *profile_t
+    = user_create_profile("T_vertical_profile", /* name*/
+                          "temperature",        /* field*/
+                          "all[]",              /* cell selection */
+                          v_dir,                /* profile direction */
+                          10,                   /* number of layers */
+                          "PARABOLIC",          /*progression law*/
+                          1.5,                  /*geometric progression*/
+                          "MASS",               /*MASS, VOLUME or NO: Weight */
+                          "MEDCOUPLING"); /*Method used to intersect volume*/
 
 #else
-  user_profile_t *profile_t=user_create_profile("T_vertical_profile", /* name*/
-                                                "temperature", /* field*/
-                                                "all[]", /* cell selection */
-                                                v_dir, /* profile direction */
-                                                10, /* number of layers */
-                                                "CONSTANT", /*progression law*/
-                                                1.0, /*geometric progression*/
-                                                "MASS", /*MASS, VOLUME or NO: Weight */
-                                                "STL"); /*Method used to intersect volume*/
+  user_profile_t *profile_t
+    = user_create_profile("T_vertical_profile", /* name*/
+                          "temperature",        /* field*/
+                          "all[]",              /* cell selection */
+                          v_dir,                /* profile direction */
+                          10,                   /* number of layers */
+                          "CONSTANT",           /*progression law*/
+                          1.0,                  /*geometric progression*/
+                          "MASS",               /*MASS, VOLUME or NO: Weight */
+                          "STL");               /*Method used to intersect volume*/
 
 #endif
 
   /* Calculate once for each cell percent lying in each layers */
   user_compute_cell_volume_per_layer(profile_t);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -147,18 +148,17 @@ cs_user_extra_operations_initialize(cs_domain_t     *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(cs_domain_t     *domain)
+cs_user_extra_operations(cs_domain_t *domain)
 {
   CS_UNUSED(domain);
 
   /*Mean profile calculation and results dumping*/
 
-  user_profile_t *profile_t=user_profile_get_by_name("T_vertical_profile");
+  user_profile_t *profile_t = user_profile_get_by_name("T_vertical_profile");
   user_profile_compute(profile_t);
 
   user_profile_dump(profile_t, /* pointer to profile structure*/
-                    15); /* dumping periodicity (time step) */
-
+                    15);       /* dumping periodicity (time step) */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -173,19 +173,18 @@ cs_user_extra_operations(cs_domain_t     *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations_finalize(cs_domain_t     *domain)
+cs_user_extra_operations_finalize(cs_domain_t *domain)
 {
   CS_UNUSED(domain);
 
   /*Mean profile calculation and dump at last time step*/
 
   user_profiles_compute_all();
-  user_profiles_dump_all(1); /*dumping periodicity*/
+  user_profiles_dump_all(1);              /*dumping periodicity*/
   user_profiles_histogram_OT_dump_all(1); /*dumping periodicity*/
 
   /* Free profiles memory */
   user_free_profiles();
-
 }
 
 /*----------------------------------------------------------------------------*/
