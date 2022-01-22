@@ -532,10 +532,15 @@ itycat = FIELD_INTENSIVE
 ! Transient velocity/pressure coupling, postprocessing field
 ! (variant used for computation is a tensorial field, not this one)
 
-if (ipucou.ne.0 .or. ncpdct.gt.0) then
+if (ipucou.ne.0 .or. ncpdct.gt.0 .or. iporos.eq.2) then
   call field_create('dttens', itycat, ityloc, 6, .false., idtten)
-  call field_set_key_int(idtten, keyvis, POST_ON_LOCATION)
+  if (ipucou.ne.0 .or. ncpdct.gt.0) then
+    call field_set_key_int(idtten, keyvis, POST_ON_LOCATION)
+  endif
   call field_set_key_int(idtten, keylog, 1)
+  if (iporos.eq.2) then
+    call field_set_key_int(ivarfl(ipr), kwgrec, idtten)
+  endif
 endif
 
 ! Error estimators

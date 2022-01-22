@@ -245,6 +245,18 @@ if (icalhy.eq.1) then
   call field_set_key_struct_var_cal_opt(f_id, vcopt)
 endif
 
+! Head losses weighting field in case of Lagrangian deposition and
+! reentrainment model (general case in varpos, but the Lagrangian
+! options are not know yet at the call site, so we have a similar
+! code block here for this special case.
+
+if (iflow .gt. 0 .and. idtten .lt. 0) then
+  call field_create('dttens', itycat, ityloc, 6, .false., idtten)
+  call field_set_key_int(idtten, keyvis, POST_ON_LOCATION)
+  call field_set_key_int(idtten, keylog, 1)
+  call field_set_key_int(ivarfl(ipr), kwgrec, idtten)
+endif
+
 !===============================================================================
 ! 2. Additional property fields
 !===============================================================================

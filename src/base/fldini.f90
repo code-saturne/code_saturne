@@ -92,10 +92,10 @@ integer          iopchr, ilog
 integer          iscdri, icla, iclap
 integer          keyccl, keydri
 integer          idfm, iggafm, nfld
-integer          iflidp, idimf, n_fans
+integer          iflidp, idimf, idimc, n_fans
 integer          f_dim, kiflux, kbflux
 
-character(len=80) :: name, f_name
+character(len=80) :: name, f_name, f_namec
 
 type(var_cal_opt) :: vcopt
 
@@ -397,8 +397,23 @@ do f_id = 0, nfld - 1
         else if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
           idimf = 6
         endif
-        call field_create(f_name, itycat, ityloc, idimf, inoprv, iflid)
-        call field_set_key_int(f_id, kwgrec, iflid)
+
+        ! Check if weighting has been assigned already
+        ! (in case of head losses or tensorial porosity).
+        ! If present; check compatibility.
+        ! If not present yet, create it.
+        call field_get_key_int(f_id, kwgrec, iflid)
+        if (iflid .ge. 0) then
+          call field_get_dim(iflid, idimc)
+          if (idimc .ne. idimf) then
+            call field_get_name(iflid, f_namec)
+            write(nfecra,8100) name, idimf, f_namec, idimc
+            call csexit(1)
+          endif
+        else
+          call field_create(f_name, itycat, ityloc, idimf, inoprv, iflid)
+          call field_set_key_int(f_id, kwgrec, iflid)
+        endif
 
       endif
 
@@ -696,6 +711,29 @@ endif
 ! Some C mappings
 call cs_field_pointer_map_base
 call cs_field_pointer_map_boundary
+
+!===============================================================================
+! Formats
+!===============================================================================
+
+ 8100 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ERROR: STOP IN THE INITIAL DATA SETUP',                   /,&
+'@    =======',                                                 /,&
+'@',                                                            /,&
+'@    Variable ', a, ' should be assigned a',                   /,&
+'@    gradient_weighting_field, of dimension ', i2,             /,&
+'@    but has already been assigned field ', a,                 /,&
+'@    ', a, ', of dimension ', i2,                              /,&
+'@',                                                            /,&
+'@  The calculation cannot be executed',                        /,&
+'@',                                                            /,&
+'@  Check parameters.',                                         /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
 
 return
 

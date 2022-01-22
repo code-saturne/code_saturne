@@ -293,13 +293,13 @@ endif
 
 call initi2
 
+! First pass for every subroutine requiring pass count
+iappel = 1
+
 !===============================================================================
 ! Zone definition for head-loss, mass sources term,
 !   condensation sources term and 1D-wall module
 !===============================================================================
-
-! First pass for every subroutine
-iappel = 1
 
 legacy_mass_st_zones = .false.
 
@@ -311,49 +311,16 @@ allocate(izftcd(ncel)) ! should be in init_pcond only
 ! Head-loss
 ! ---------
 
-! Initialize
-
-ncetsm = volume_zone_n_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM)
-ncepdc = volume_zone_n_type_cells(VOLUME_ZONE_HEAD_LOSS)
-nfbpcd = 0
-
-! Total number of cells with head-loss
-ncpdct = ncepdc
-if (irangp.ge.0) then
-  call parcpt(ncpdct)
-endif
-
-if (iflow .eq. 1) then
-  if (ncpdct.eq.0) then
-    ncepdc = ncel
-    ncpdct = ncel
-  endif
-  if (irangp.ge.0) then
-    call parcpt(ncpdct)
-  endif
-endif
-
-if (ncpdct.gt.0) then
-  write(nfecra,2001) ncpdct
-  write(nfecra,3000)
-  ! Add matching field if not already done
-  if (idtten.lt.0) then
-    call field_create('dttens', FIELD_INTENSIVE, 1, 6, .false., idtten)
-    call field_set_key_int(ivarfl(ipr), kwgrec, idtten)
-  endif
-else if (iporos.eq.2) then
-  ! Add matching field if not already done
-  if (idtten.lt.0) then
-    call field_create('dttens', FIELD_INTENSIVE, 1, 6, .false., idtten)
-    call field_set_key_int(ivarfl(ipr), kwgrec, idtten)
-  endif
-endif
+ncepdc = 0
+ncpdct = volume_zone_n_type_zones(VOLUME_ZONE_HEAD_LOSS)
+if (iflow.eq.1) ncpdct = ncpdct + 1
 
 ! -----------------
 ! Mass source terms
 ! -----------------
 
 ! Total number of cells with mass source term
+ncetsm = volume_zone_n_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM)
 nctsmt = ncetsm
 if (irangp.ge.0) then
   call parcpt(nctsmt)
@@ -381,6 +348,8 @@ endif
 
 ! Condensation mass source terms
 ! ------------------------------
+
+nfbpcd = 0
 
 call cs_user_boundary_mass_source_terms &
 ( nvar   , nscal  ,                                              &
@@ -425,9 +394,6 @@ if (nftcdt.eq.0) deallocate(izftcd)
 if (nfpt1t.eq.0) call cs_1d_wall_thermal_finalize
 
 ! Formats
- 2001 format(                                               &
- /,/,'HEAD LOSS TERMS TREATMENT ACTIVATED ',/,              &
- '                 ON   A TOTAL OF NCEPDC = ',I10,' CELLS',/)
  2002 format(                                    &
  /,/,'MASS SOURCE TERMS TREATMENT ACTIVATED ',/, &
    '                 ON A TOTAL OF ',I10,' CELLS')
@@ -757,7 +723,7 @@ deallocate(isostd)
 ! Arrays for time block, to discard afterwards
 !===============================================================================
 
-if (ncpdct.gt.0) then
+if (ncpdct .gt. 0) then
 
   if (iflow .eq.1) then
     do iel = 1, ncepdc
@@ -765,6 +731,7 @@ if (ncpdct.gt.0) then
     enddo
   endif
 
+  ncepdc = volume_zone_n_type_cells(VOLUME_ZONE_HEAD_LOSS)
   call volume_zone_select_type_cells(VOLUME_ZONE_HEAD_LOSS, icepdc)
 
 endif

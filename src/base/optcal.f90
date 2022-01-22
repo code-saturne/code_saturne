@@ -989,8 +989,7 @@ module optcal
   !> \addtogroup additional_source_terms
   !> \{
 
-  !> Indicateur pertes de charge global (ie somme sur les processeurs
-  !>   de ncepdc)
+  !> Global head losses indicator (ie number of head loss zones)
   integer, save :: ncpdct
 
   !> Indicateur termes sources de masse global (ie somme sur les processeurs
