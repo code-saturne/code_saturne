@@ -117,8 +117,8 @@ struct _cs_grid_t {
   bool                symmetric;    /* Symmetric matrix coefficients
                                        indicator */
 
-  cs_lnum_t           db_size[4];   /* Block sizes for diagonal */
-  cs_lnum_t           eb_size[4];   /* Block sizes for extra diagonal */
+  cs_lnum_t           db_size;      /* Block sizes for diagonal */
+  cs_lnum_t           eb_size;      /* Block sizes for extra diagonal */
 
   cs_gnum_t           n_g_rows;     /* Global number of rows */
 
@@ -317,17 +317,18 @@ _l_id_binary_search(cs_lnum_t        l_id_array_size,
 
 static void
 _reduce_block(cs_lnum_t         n_blocks,
-              const cs_lnum_t   b_size[4],
+              const cs_lnum_t   b_size,
               const cs_real_t   b_vals[],
               cs_real_t         s_vals[])
 {
-  const cs_real_t b_div = 1.0 / b_size[0];
+  const cs_real_t b_div = 1.0 / b_size;
+  const cs_lnum_t b_stride = b_size*b_size;
 
 # pragma omp parallel for if(n_blocks > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_blocks; i++) {
     cs_real_t s = 0;
-    for (cs_lnum_t j = 0; j < b_size[0]; j++)
-      s += b_vals[i*b_size[3] + b_size[2]*j + j];
+    for (cs_lnum_t j = 0; j < b_size; j++)
+      s += b_vals[i*b_stride + b_size*j + j];
     s_vals[i] = s * b_div;
   }
 }
@@ -351,15 +352,8 @@ _create_grid(void)
   g->conv_diff = false;
   g->symmetric = false;
 
-  g->db_size[0] = 1;
-  g->db_size[1] = 1;
-  g->db_size[2] = 1;
-  g->db_size[3] = 1;
-
-  g->eb_size[0] = 1;
-  g->eb_size[1] = 1;
-  g->eb_size[2] = 1;
-  g->eb_size[3] = 1;
+  g->db_size = 1;
+  g->eb_size = 1;
 
   g->level = 0;
 
@@ -446,27 +440,20 @@ _create_grid(void)
 static cs_grid_t *
 _coarse_init(const cs_grid_t *f)
 {
-  cs_lnum_t ii;
-  int i;
-  cs_grid_t *c = NULL;
-
-  c = _create_grid();
+  cs_grid_t *c = _create_grid();
 
   c->parent = f;
 
   c->level = f->level + 1;
   c->symmetric = f->symmetric;
   c->conv_diff = f->conv_diff;
-  for (i = 0; i < 4; i++)
-    c->db_size[i] = f->db_size[i];
-
-  for (i = 0; i < 4; i++)
-    c->eb_size[i] = f->eb_size[i];
+  c->db_size = f->db_size;
+  c->eb_size = f->eb_size;
 
   BFT_MALLOC(c->coarse_row, f->n_cols_ext, cs_lnum_t);
 
 # pragma omp parallel for if(f->n_cols_ext > CS_THR_MIN)
-  for (ii = 0; ii < f->n_cols_ext; ii++)
+  for (cs_lnum_t ii = 0; ii < f->n_cols_ext; ii++)
     c->coarse_row[ii] = -1;
 
 #if defined(HAVE_MPI)
@@ -1890,6 +1877,8 @@ _append_cell_data(cs_grid_t  *g)
   MPI_Status status;
   MPI_Comm  comm = cs_glob_mpi_comm;
 
+  const cs_lnum_t db_stride = g->db_size * g->db_size;
+
   static const int tag = 'a'+'p'+'p'+'e'+'n'+'d'+'_'+'c';
 
   /* Reallocate arrays for receiving rank and append data */
@@ -1903,7 +1892,8 @@ _append_cell_data(cs_grid_t  *g)
       BFT_REALLOC(g->_cell_cen, g->n_cols_ext * 3, cs_real_t);
       BFT_REALLOC(g->_cell_vol, g->n_cols_ext, cs_real_t);
     }
-    BFT_REALLOC(g->_da, g->n_cols_ext*g->db_size[3], cs_real_t);
+
+    BFT_REALLOC(g->_da, g->n_cols_ext*db_stride, cs_real_t);
 
     for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
 
@@ -1919,8 +1909,8 @@ _append_cell_data(cs_grid_t  *g)
                  CS_MPI_REAL, dist_rank, tag, comm, &status);
       }
 
-      MPI_Recv(g->_da + g->merge_cell_idx[rank_id]*g->db_size[3],
-               n_recv*g->db_size[3],
+      MPI_Recv(g->_da + g->merge_cell_idx[rank_id]*db_stride,
+               n_recv*db_stride,
                CS_MPI_REAL, dist_rank, tag, comm, &status);
 
     }
@@ -1937,7 +1927,7 @@ _append_cell_data(cs_grid_t  *g)
       BFT_FREE(g->_cell_vol);
     }
 
-    MPI_Send(g->_da, g->n_rows*g->db_size[3], CS_MPI_REAL,
+    MPI_Send(g->_da, g->n_rows*db_stride, CS_MPI_REAL,
              g->merge_sub_root, tag, comm);
     BFT_FREE(g->_da);
 
@@ -1973,8 +1963,9 @@ _sync_merged_cell_data(cs_grid_t  *g)
       cs_halo_sync_var(g->halo, CS_HALO_STANDARD, g->_cell_vol);
     }
 
+    cs_lnum_t db_stride = g->db_size*g->db_size;
     cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD,
-                             g->_da, g->db_size[3]);
+                             g->_da, db_stride);
 
   }
 }
@@ -2822,16 +2813,16 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
                            &d_val,
                            &x_val);
 
-  const cs_lnum_t *db_size = f->db_size;
-  const cs_lnum_t *eb_size = f->eb_size;
+  const cs_lnum_t db_size = f->db_size;
+  const cs_lnum_t eb_size = f->eb_size;
 
-  if (db_size[0] > 1) {
+  if (db_size > 1) {
     BFT_MALLOC(_d_val, f_n_rows, cs_real_t);
     _reduce_block(f_n_rows, db_size, d_val, _d_val);
     d_val = _d_val;
   }
 
-  if (eb_size[0] > 1) {
+  if (eb_size > 1) {
     cs_lnum_t f_n_enz = row_index[f_n_rows];
     BFT_MALLOC(_x_val, f_n_enz, cs_real_t);
     _reduce_block(f_n_enz, eb_size, x_val, _x_val);
@@ -2910,16 +2901,16 @@ _automatic_aggregation_mx_native(const cs_grid_t  *f,
   if (f->symmetric)
     isym = 1;
 
-  const cs_lnum_t *db_size = f->db_size;
-  const cs_lnum_t *eb_size = f->eb_size;
+  const cs_lnum_t db_size = f->db_size;
+  const cs_lnum_t eb_size = f->eb_size;
 
-  if (db_size[0] > 1) {
+  if (db_size > 1) {
     BFT_MALLOC(_d_val, f_n_rows, cs_real_t);
     _reduce_block(f_n_rows, db_size, d_val, _d_val);
     d_val = _d_val;
   }
 
-  if (eb_size[0] > 1) {
+  if (eb_size > 1) {
     BFT_MALLOC(_x_val, n_edges*isym, cs_real_t);
     _reduce_block(n_edges*isym, eb_size, x_val, _x_val);
     x_val = _x_val;
@@ -3119,16 +3110,16 @@ _automatic_aggregation_mx_msr(const cs_grid_t  *f,
                            &d_val,
                            &x_val);
 
-  const cs_lnum_t *db_size = f->db_size;
-  const cs_lnum_t *eb_size = f->eb_size;
+  const cs_lnum_t db_size = f->db_size;
+  const cs_lnum_t eb_size = f->eb_size;
 
-  if (db_size[0] > 1) {
+  if (db_size > 1) {
     BFT_MALLOC(_d_val, f_n_rows, cs_real_t);
     _reduce_block(f_n_rows, db_size, d_val, _d_val);
     d_val = _d_val;
   }
 
-  if (eb_size[0] > 1) {
+  if (eb_size > 1) {
     cs_lnum_t f_n_enz = row_index[f_n_rows];
     BFT_MALLOC(_x_val, f_n_enz, cs_real_t);
     _reduce_block(f_n_enz, eb_size, x_val, _x_val);
@@ -3312,8 +3303,8 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
   cs_real_t epsilon = 1.e-6;
 
-  const cs_lnum_t *db_size = f->db_size;
-  const cs_lnum_t *eb_size = f->eb_size;
+  const cs_lnum_t db_size = f->db_size;
+  const cs_lnum_t eb_size = f->eb_size;
   const cs_lnum_2_t *f_face_cells = f->face_cell;
   const cs_real_t *f_da = f->da;
   const cs_real_t *f_xa = f->xa;
@@ -3325,15 +3316,15 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
   cs_real_t *s_da = NULL, *s_xa = NULL;
 
-  if (db_size[0] > 1) {
+  if (db_size > 1) {
     BFT_MALLOC(s_da, f_n_cells, cs_real_t);
     _reduce_block(f_n_cells, db_size, f_da, s_da);
     _f_da = s_da;
   }
 
-  if (eb_size[0] > 1) {
+  if (eb_size > 1) {
     BFT_MALLOC(s_xa, f_n_faces*isym, cs_real_t);
-    _reduce_block(f_n_faces*isym, db_size, f_xa, s_xa);
+    _reduce_block(f_n_faces*isym, eb_size, f_xa, s_xa);
     _f_xa = s_xa;
   }
 
@@ -3592,10 +3583,10 @@ _verify_matrix(const cs_grid_t  *g)
 {
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(g->matrix);
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(g->matrix);
-  const cs_lnum_t *db_size = g->db_size;
+  const cs_lnum_t db_size = g->db_size;
 
   cs_real_t *val;
-  BFT_MALLOC(val, n_cols*db_size[1], cs_real_t);
+  BFT_MALLOC(val, n_cols*db_size, cs_real_t);
 
   /* Evaluate fine and coarse grids diagonal dominance */
 
@@ -3603,7 +3594,7 @@ _verify_matrix(const cs_grid_t  *g)
 
   cs_real_t vmin = HUGE_VAL, vmax = -HUGE_VAL;
 
-  const cs_lnum_t n_ents = n_rows*db_size[1];
+  const cs_lnum_t n_ents = n_rows*db_size;
 
   for (cs_lnum_t i = 0; i < n_ents; i++) {
     if (val[i] < vmin)
@@ -3662,14 +3653,15 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
 
   cs_real_t *w1 = NULL;
 
-  const cs_lnum_t *db_size = fine_grid->db_size;
+  const cs_lnum_t db_size = fine_grid->db_size;
+  const cs_lnum_t db_stride = db_size*db_size;
 
   const cs_lnum_2_t *f_face_cell = fine_grid->face_cell;
   const cs_lnum_2_t *c_face_cell = coarse_grid->face_cell;
 
   const cs_real_t *f_xa = fine_grid->xa;
 
-  BFT_MALLOC(w1, f_n_cells_ext*db_size[3], cs_real_t);
+  BFT_MALLOC(w1, f_n_cells_ext*db_stride, cs_real_t);
 
   if (fine_grid->symmetric == true)
     isym = 1;
@@ -3696,9 +3688,9 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
   double anmin[2] = {HUGE_VAL, HUGE_VAL};
   double anmax[2] = {-HUGE_VAL, -HUGE_VAL};
 
-  BFT_MALLOC(w2, f_n_cells_ext*db_size[3], cs_real_t);
-  BFT_MALLOC(w3, c_n_cells_ext*db_size[3], cs_real_t);
-  BFT_MALLOC(w4, c_n_cells_ext*db_size[3], cs_real_t);
+  BFT_MALLOC(w2, f_n_cells_ext*db_stride, cs_real_t);
+  BFT_MALLOC(w3, c_n_cells_ext*db_stride, cs_real_t);
+  BFT_MALLOC(w4, c_n_cells_ext*db_stride, cs_real_t);
 
   /* Evaluate anisotropy of fine and coarse grids */
 
@@ -3884,7 +3876,8 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   cs_real_t *c_da = coarse_grid->_da;
   cs_real_t *c_xa = coarse_grid->_xa;
 
-  const cs_lnum_t *db_size = fine_grid->db_size;
+  const cs_lnum_t db_size = fine_grid->db_size;
+  const cs_lnum_t db_stride = db_size*db_size;
 
   const cs_lnum_2_t *f_face_cell = fine_grid->face_cell;
   const cs_lnum_2_t *c_face_cell = coarse_grid->face_cell;
@@ -4066,9 +4059,9 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   /* Initialize non differential fine grid term saved in w1 */
 
   cs_real_t *w1 = NULL;
-  BFT_MALLOC(w1, f_n_cells_ext*db_size[3], cs_real_t);
+  BFT_MALLOC(w1, f_n_cells_ext*db_stride, cs_real_t);
 
-  if (db_size[0] == 1) {
+  if (db_size == 1) {
 #   pragma omp parallel for if(f_n_cells > CS_THR_MIN)
     for (ii = 0; ii < f_n_cells; ii++)
       w1[ii] = f_da[ii];
@@ -4076,33 +4069,33 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   else {
 #   pragma omp parallel for private(jj, kk) if(f_n_cells > CS_THR_MIN)
     for (ii = 0; ii < f_n_cells; ii++) {
-      for (jj = 0; jj < db_size[0]; jj++) {
-        for (kk = 0; kk < db_size[0]; kk++)
-          w1[ii*db_size[3] + db_size[2]*jj + kk]
-            = f_da[ii*db_size[3] + db_size[2]*jj + kk];
+      for (jj = 0; jj < db_size; jj++) {
+        for (kk = 0; kk < db_size; kk++)
+          w1[ii*db_stride + db_size*jj + kk]
+            = f_da[ii*db_stride + db_size*jj + kk];
       }
     }
   }
 # pragma omp parallel for if(f_n_cells_ext - f_n_cells > CS_THR_MIN)
-  for (ii = f_n_cells*db_size[3]; ii < f_n_cells_ext*db_size[3]; ii++)
+  for (ii = f_n_cells*db_stride; ii < f_n_cells_ext*db_stride; ii++)
     w1[ii] = 0.;
 
   for (face_id = 0; face_id < f_n_faces; face_id++) {
     ii = f_face_cell[face_id][0];
     jj = f_face_cell[face_id][1];
-    for (kk = 0; kk < db_size[0]; kk++) {
-      w1[ii*db_size[3] + db_size[2]*kk + kk] += f_xa[face_id*isym];
-      w1[jj*db_size[3] + db_size[2]*kk + kk] += f_xa[(face_id +1)*isym -1];
+    for (kk = 0; kk < db_size; kk++) {
+      w1[ii*db_stride + db_size*kk + kk] += f_xa[face_id*isym];
+      w1[jj*db_stride + db_size*kk + kk] += f_xa[(face_id +1)*isym -1];
     }
   }
 
   /* Diagonal term */
 
 # pragma omp parallel for if(c_n_cells_ext > CS_THR_MIN)
-  for (ic = 0; ic < c_n_cells_ext*db_size[3]; ic++)
+  for (ic = 0; ic < c_n_cells_ext*db_stride; ic++)
     c_da[ic] = 0.;
 
-  if (db_size[0] == 1) {
+  if (db_size == 1) {
     for (ii = 0; ii < f_n_cells; ii++) {
       ic = c_coarse_row[ii];
       if (ic > -1)
@@ -4113,10 +4106,10 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
     for (ii = 0; ii < f_n_cells; ii++) {
       ic = c_coarse_row[ii];
       if (ic > -1) {
-        for (jj = 0; jj < db_size[0]; jj++) {
-          for (kk = 0; kk < db_size[0]; kk++)
-            c_da[ic*db_size[3] + db_size[2]*jj + kk]
-              += w1[ii*db_size[3] + db_size[2]*jj + kk];
+        for (jj = 0; jj < db_size; jj++) {
+          for (kk = 0; kk < db_size; kk++)
+            c_da[ic*db_stride + db_size*jj + kk]
+              += w1[ii*db_stride + db_size*jj + kk];
         }
       }
     }
@@ -4125,9 +4118,9 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
     ic = c_face_cell[c_face][0];
     jc = c_face_cell[c_face][1];
-    for (kk = 0; kk < db_size[0]; kk++) {
-      c_da[ic*db_size[3] + db_size[2]*kk + kk] -= c_xa[c_face*isym];
-      c_da[jc*db_size[3] + db_size[2]*kk + kk] -= c_xa[(c_face +1)*isym -1];
+    for (kk = 0; kk < db_size; kk++) {
+      c_da[ic*db_stride + db_size*kk + kk] -= c_xa[c_face*isym];
+      c_da[jc*db_stride + db_size*kk + kk] -= c_xa[(c_face +1)*isym -1];
     }
   }
 
@@ -4191,7 +4184,8 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
   cs_real_t *w1 = NULL;
 
-  const cs_lnum_t *db_size = fine_grid->db_size;
+  const cs_lnum_t db_size = fine_grid->db_size;
+  const cs_lnum_t db_stride = db_size*db_size;
 
   const cs_lnum_2_t *f_face_cell = fine_grid->face_cell;
   const cs_lnum_2_t *c_face_cell = coarse_grid->face_cell;
@@ -4204,7 +4198,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   const cs_real_t *f_xa0_diff = fine_grid->xa0_diff;
   const cs_real_t *f_xa_diff = fine_grid->xa_diff;
 
-  BFT_MALLOC(w1, 2*f_n_cells_ext*db_size[3], cs_real_t);
+  BFT_MALLOC(w1, 2*f_n_cells_ext*db_stride, cs_real_t);
 
   assert(fine_grid->symmetric == false);
 
@@ -4275,7 +4269,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   }
 
 # pragma omp parallel for if(f_n_cells_ext - f_n_cells > CS_THR_MIN)
-  for (ii = f_n_cells*db_size[3]; ii < f_n_cells_ext*db_size[3]; ii++)
+  for (ii = f_n_cells*db_stride; ii < f_n_cells_ext*db_stride; ii++)
     w1[ii] = 0.;
 
   /* Finest grid: we need to separate convective and diffusive coefficients.
@@ -4337,7 +4331,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   /* Initialize coarse matrix storage on (c_da, c_xa) */
 
 # pragma omp parallel for if(c_n_cells_ext > CS_THR_MIN)
-  for (ic = 0; ic < c_n_cells_ext*db_size[3]; ic++) {
+  for (ic = 0; ic < c_n_cells_ext*db_stride; ic++) {
     c_da[ic] = 0.;
   }
 
@@ -4447,7 +4441,8 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
                                cs_grid_t        *coarse_grid)
 
 {
-  const cs_lnum_t *db_size = fine_grid->db_size;
+  const cs_lnum_t db_size = fine_grid->db_size;
+  const cs_lnum_t db_stride = db_size*db_size;
 
   const cs_lnum_t f_n_rows = fine_grid->n_rows;
 
@@ -4474,15 +4469,15 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   /* Diagonal elements
      ----------------- */
 
-  BFT_MALLOC(c_d_val, c_n_rows*db_size[3], cs_real_t);
+  BFT_MALLOC(c_d_val, c_n_rows*db_stride, cs_real_t);
 
-  for (cs_lnum_t i = 0; i < c_n_rows*db_size[3]; i++)
+  for (cs_lnum_t i = 0; i < c_n_rows*db_stride; i++)
     c_d_val[i] = 0.0;
 
   /* Careful here, we exclude penalized rows
      from the aggregation process */
 
-  if (db_size[0] == 1) {
+  if (db_size == 1) {
     for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
       cs_lnum_t ic = c_coarse_row[ii];
       if (ic > -1 && ic < c_n_rows)
@@ -4493,10 +4488,10 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
     for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
       cs_lnum_t ic = c_coarse_row[ii];
       if (ic > -1 && ic < c_n_rows) {
-        for (cs_lnum_t jj = 0; jj < db_size[0]; jj++) {
-          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-            c_d_val[ic*db_size[3] + db_size[2]*jj + kk]
-              += f_d_val[ii*db_size[3] + db_size[2]*jj + kk];
+        for (cs_lnum_t jj = 0; jj < db_size; jj++) {
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            c_d_val[ic*db_stride + db_size*jj + kk]
+              += f_d_val[ii*db_stride + db_size*jj + kk];
         }
       }
     }
@@ -4675,9 +4670,9 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
               c_x_val[k + s_id] += f_x_val[jj_ind];
             }
             else { /* i == j */
-              for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
+              for (cs_lnum_t kk = 0; kk < db_size; kk++) {
                 /* diagonal terms only */
-                c_d_val[i*db_size[3] + db_size[2]*kk + kk]
+                c_d_val[i*db_stride + db_size*kk + kk]
                   += f_x_val[jj_ind];
               }
             }
@@ -4707,8 +4702,8 @@ static void
 _native_from_msr(cs_grid_t  *g)
 
 {
-  const cs_lnum_t db_stride = g->db_size[3];
-  const cs_lnum_t eb_stride = g->eb_size[3];
+  const cs_lnum_t db_stride = g->db_size*g->db_size;
+  const cs_lnum_t eb_stride = g->eb_size*g->eb_size;
 
   const cs_lnum_t n_rows = g->n_rows;
   const cs_lnum_t n_cols_ext = g->n_cols_ext;
@@ -4769,7 +4764,7 @@ _native_from_msr(cs_grid_t  *g)
   /* Synchronize matrix diagonal values */
 
   if (g->halo != NULL)
-    cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, g->_da, g->db_size[3]);
+    cs_halo_sync_var_strided(g->halo, CS_HALO_STANDARD, g->_da, db_stride);
 
   cs_matrix_destroy(&(g->_matrix));
   g->matrix = NULL;
@@ -4788,7 +4783,6 @@ _msr_from_native(cs_grid_t  *g)
 
 {
   g->matrix_struct = cs_matrix_structure_create(CS_MATRIX_MSR,
-                                                true,
                                                 g->n_rows,
                                                 g->n_cols_ext,
                                                 g->n_faces,
@@ -4854,7 +4848,6 @@ _build_coarse_matrix_null(cs_grid_t         *c,
 {
   cs_matrix_structure_t  *ms
     = cs_matrix_structure_create(matrix_type,
-                                 true,
                                  0,
                                  0,
                                  0,
@@ -4939,8 +4932,8 @@ _prolong_row_int(const cs_grid_t  *c,
  *
  * parameters:
  *   n_faces        <-- Local number of faces
- *   db_size        <-- Block sizes for diagonal, or NULL
- *   eb_size        <-- Block sizes for diagonal, or NULL
+ *   db_size        <-- Block sizes for diagonal
+ *   eb_size        <-- Block sizes for diagonal
  *   face_cell      <-- Face -> cells connectivity
  *   cell_cen       <-- Cell center (size: 3.n_cells_ext)
  *   cell_vol       <-- Cell volume (size: n_cells_ext)
@@ -4954,8 +4947,8 @@ _prolong_row_int(const cs_grid_t  *c,
 
 cs_grid_t *
 cs_grid_create_from_shared(cs_lnum_t              n_faces,
-                           const cs_lnum_t       *db_size,
-                           const cs_lnum_t       *eb_size,
+                           cs_lnum_t              db_size,
+                           cs_lnum_t              eb_size,
                            const cs_lnum_2_t     *face_cell,
                            const cs_real_t       *cell_cen,
                            const cs_real_t       *cell_vol,
@@ -4973,23 +4966,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   g->conv_diff = conv_diff;
   g->symmetric = cs_matrix_is_symmetric(a);
 
-  if (db_size != NULL) {
-    for (int ii = 0; ii < 4; ii++)
-      g->db_size[ii] = db_size[ii];
-  }
-  else {
-    for (int ii = 0; ii < 4; ii++)
-      g->db_size[ii] = 1;
-  }
-
-  if (eb_size != NULL) {
-    for (int ii = 0; ii < 4; ii++)
-      g->eb_size[ii] = eb_size[ii];
-  }
-  else {
-    for (int ii = 0; ii < 4; ii++)
-      g->eb_size[ii] = 1;
-  }
+  g->db_size = db_size;
+  g->eb_size = eb_size;
 
   g->n_rows = cs_matrix_get_n_rows(a);
   g->n_cols_ext = cs_matrix_get_n_columns(a);
@@ -5143,14 +5121,11 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
   g->level = 0;
   g->symmetric = cs_matrix_is_symmetric(g->matrix);
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(g->matrix);
-  const cs_lnum_t *eb_size = cs_matrix_get_extra_diag_block_size(g->matrix);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(g->matrix);
+  const cs_lnum_t eb_size = cs_matrix_get_extra_diag_block_size(g->matrix);
 
-  for (cs_lnum_t ii = 0; ii < 4; ii++)
-    g->db_size[ii] = db_size[ii];
-
-  for (cs_lnum_t ii = 0; ii < 4; ii++)
-    g->eb_size[ii] = eb_size[ii];
+  g->db_size = db_size;
+  g->eb_size = eb_size;
 
   g->n_rows = cs_matrix_get_n_rows(g->matrix);
   g->n_cols_ext = cs_matrix_get_n_columns(g->matrix);
@@ -5280,19 +5255,11 @@ cs_grid_get_info(const cs_grid_t  *g,
   if (symmetric != NULL)
     *symmetric = g->symmetric;
 
-  if (db_size != NULL) {
-    db_size[0] = g->db_size[0];
-    db_size[1] = g->db_size[1];
-    db_size[2] = g->db_size[2];
-    db_size[3] = g->db_size[3];
-  }
+  if (db_size != NULL)
+    *db_size = g->db_size;
 
- if (eb_size != NULL) {
-    eb_size[0] = g->eb_size[0];
-    eb_size[1] = g->eb_size[1];
-    eb_size[2] = g->eb_size[2];
-    eb_size[3] = g->eb_size[3];
-  }
+  if (eb_size != NULL)
+    *eb_size = g->eb_size;
 
   if (n_ranks != NULL) {
 #if defined(HAVE_MPI)
@@ -5516,7 +5483,8 @@ cs_grid_coarsen(const cs_grid_t  *f,
 
   cs_grid_t *c = NULL;
 
-  const cs_lnum_t *db_size = f->db_size;
+  const cs_lnum_t db_size = f->db_size;
+  const cs_lnum_t db_stride = db_size * db_size;
 
   assert(f != NULL);
 
@@ -5612,7 +5580,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
   if (verbosity > 3)
     _aggregation_stats_log(f, c, verbosity);
 
-  BFT_MALLOC(c->_da, c->n_cols_ext * c->db_size[3], cs_real_t);
+  BFT_MALLOC(c->_da, c->n_cols_ext * db_stride, cs_real_t);
   c->da = c->_da;
 
   BFT_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
@@ -5697,7 +5665,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
     /* Synchronize matrix's geometric quantities */
 
     if (c->halo != NULL)
-      cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_da, db_size[3]);
+      cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_da, db_stride);
 
     /* Merge grids if we are below the threshold */
 
@@ -5712,7 +5680,6 @@ cs_grid_coarsen(const cs_grid_t  *f,
 #endif
 
     c->matrix_struct = cs_matrix_structure_create(coarse_matrix_type,
-                                                  true,
                                                   c->n_rows,
                                                   c->n_cols_ext,
                                                   c->n_faces,
@@ -5875,7 +5842,8 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
 
   cs_grid_t *c = NULL;
 
-  const cs_lnum_t *db_size = f->db_size;
+  const cs_lnum_t db_size = f->db_size;
+  const cs_lnum_t db_stride = db_size * db_size;
 
   assert(f != NULL);
 
@@ -5912,7 +5880,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
 
   else if (f->face_cell != NULL) {
 
-    BFT_MALLOC(c->_da, c->n_cols_ext * c->db_size[3], cs_real_t);
+    BFT_MALLOC(c->_da, c->n_cols_ext * db_stride, cs_real_t);
     c->da = c->_da;
 
     BFT_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
@@ -5923,7 +5891,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
     /* Synchronize matrix's geometric quantities */
 
     if (c->halo != NULL)
-      cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_da, db_size[3]);
+      cs_halo_sync_var_strided(c->halo, CS_HALO_STANDARD, c->_da, db_stride);
 
     /* Merge grids if we are below the threshold */
 
@@ -5970,7 +5938,7 @@ cs_grid_restrict_row_var(const cs_grid_t  *f,
   cs_lnum_t c_n_cols_ext = c->n_elts_r[1];
 
   const cs_lnum_t *coarse_row;
-  const cs_lnum_t *db_size = f->db_size;
+  const cs_lnum_t db_size = f->db_size;
 
   assert(f != NULL);
   assert(c != NULL);
@@ -5982,7 +5950,7 @@ cs_grid_restrict_row_var(const cs_grid_t  *f,
 
   coarse_row = c->coarse_row;
 
-  cs_lnum_t _c_n_cols_ext = c_n_cols_ext*db_size[0];
+  cs_lnum_t _c_n_cols_ext = c_n_cols_ext*db_size;
 
 # pragma omp parallel for  if(_c_n_cols_ext > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < _c_n_cols_ext; ii++)
@@ -5990,7 +5958,7 @@ cs_grid_restrict_row_var(const cs_grid_t  *f,
 
   if (f->level == 0) { /* possible penalization at first level */
 
-    if (db_size[0] == 1) {
+    if (db_size == 1) {
       for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
         cs_lnum_t i = coarse_row[ii];
         if (i >= 0)
@@ -6001,23 +5969,23 @@ cs_grid_restrict_row_var(const cs_grid_t  *f,
       for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
         cs_lnum_t i = coarse_row[ii];
         if (i >= 0) {
-          for (cs_lnum_t j = 0; j < db_size[0]; j++)
-            c_var[i*db_size[1]+j] += f_var[ii*db_size[1]+j];
+          for (cs_lnum_t j = 0; j < db_size; j++)
+            c_var[i*db_size+j] += f_var[ii*db_size+j];
         }
       }
     }
   }
 
   else {
-    if (db_size[0] == 1) {
+    if (db_size == 1) {
       for (cs_lnum_t ii = 0; ii < f_n_rows; ii++)
         c_var[coarse_row[ii]] += f_var[ii];
     }
     else {
       for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
         cs_lnum_t i = coarse_row[ii];
-        for (cs_lnum_t j = 0; j < db_size[0]; j++)
-          c_var[i*db_size[1]+j] += f_var[ii*db_size[1]+j];
+        for (cs_lnum_t j = 0; j < db_size; j++)
+          c_var[i*db_size+j] += f_var[ii*db_size+j];
       }
     }
   }
@@ -6041,12 +6009,12 @@ cs_grid_restrict_row_var(const cs_grid_t  *f,
         cs_lnum_t n_recv = (  c->merge_cell_idx[rank_id+1]
                             - c->merge_cell_idx[rank_id]);
         int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
-        MPI_Recv(c_var + c->merge_cell_idx[rank_id]*db_size[1],
-                 n_recv*db_size[1], CS_MPI_REAL, dist_rank, tag, comm, &status);
+        MPI_Recv(c_var + c->merge_cell_idx[rank_id]*db_size,
+                 n_recv*db_size, CS_MPI_REAL, dist_rank, tag, comm, &status);
       }
     }
     else
-      MPI_Send(c_var, c->n_elts_r[0]*db_size[1], CS_MPI_REAL,
+      MPI_Send(c_var, c->n_elts_r[0]*db_size, CS_MPI_REAL,
                c->merge_sub_root, tag, comm);
   }
 
@@ -6072,7 +6040,7 @@ cs_grid_prolong_row_var(const cs_grid_t  *c,
   const cs_lnum_t *coarse_row;
   const cs_real_t *_c_var = c_var;
 
-  const cs_lnum_t *db_size = f->db_size;
+  const cs_lnum_t db_size = f->db_size;
 
   cs_lnum_t f_n_rows = f->n_rows;
 
@@ -6100,13 +6068,13 @@ cs_grid_prolong_row_var(const cs_grid_t  *c,
         cs_lnum_t n_send = (  c->merge_cell_idx[rank_id+1]
                             - c->merge_cell_idx[rank_id]);
         int dist_rank = c->merge_sub_root + c->merge_stride*rank_id;
-        MPI_Send(c_var + c->merge_cell_idx[rank_id]*db_size[1],
-                 n_send*db_size[1], CS_MPI_REAL, dist_rank, tag, comm);
+        MPI_Send(c_var + c->merge_cell_idx[rank_id]*db_size,
+                 n_send*db_size, CS_MPI_REAL, dist_rank, tag, comm);
       }
     }
     else {
       MPI_Status status;
-      MPI_Recv(c_var, c->n_elts_r[0]*db_size[1], CS_MPI_REAL,
+      MPI_Recv(c_var, c->n_elts_r[0]*db_size, CS_MPI_REAL,
                c->merge_sub_root, tag, comm, &status);
     }
   }
@@ -6119,7 +6087,7 @@ cs_grid_prolong_row_var(const cs_grid_t  *c,
 
   if (f->level == 0) {
 
-    if (db_size[0] == 1) {
+    if (db_size == 1) {
 #     pragma omp parallel if(f_n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
         cs_lnum_t ic = coarse_row[ii];
@@ -6135,12 +6103,12 @@ cs_grid_prolong_row_var(const cs_grid_t  *c,
       for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
         cs_lnum_t ic = coarse_row[ii];
         if (ic >= 0) {
-          for (cs_lnum_t i = 0; i < db_size[0]; i++)
-            f_var[ii*db_size[1]+i] = _c_var[ic*db_size[1]+i];
+          for (cs_lnum_t i = 0; i < db_size; i++)
+            f_var[ii*db_size+i] = _c_var[ic*db_size+i];
         }
         else {
-          for (cs_lnum_t i = 0; i < db_size[0]; i++)
-            f_var[ii*db_size[1]+i] = 0;
+          for (cs_lnum_t i = 0; i < db_size; i++)
+            f_var[ii*db_size+i] = 0;
         }
       }
     }
@@ -6149,7 +6117,7 @@ cs_grid_prolong_row_var(const cs_grid_t  *c,
 
   else { /* coarser levels, no need for penaliation tests */
 
-    if (db_size[0] == 1) {
+    if (db_size == 1) {
 #     pragma omp parallel if(f_n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < f_n_rows; ii++)
         f_var[ii] = _c_var[coarse_row[ii]];
@@ -6158,8 +6126,8 @@ cs_grid_prolong_row_var(const cs_grid_t  *c,
 #     pragma omp parallel if(f_n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
         cs_lnum_t ic = coarse_row[ii];
-        for (cs_lnum_t i = 0; i < db_size[0]; i++)
-          f_var[ii*db_size[1]+i] = _c_var[ic*db_size[1]+i];
+        for (cs_lnum_t i = 0; i < db_size; i++)
+          f_var[ii*db_size+i] = _c_var[ic*db_size+i];
       }
     }
 
@@ -6350,7 +6318,7 @@ cs_grid_project_var(const cs_grid_t  *g,
   cs_real_t *tmp_var_1 = NULL, *tmp_var_2 = NULL;
   const cs_grid_t *_g = g;
 
-  const cs_lnum_t *db_size = g->db_size;
+  const cs_lnum_t db_size = g->db_size;
 
   assert(g != NULL);
   assert(c_var != NULL || g->n_rows == 0);
@@ -6362,8 +6330,8 @@ cs_grid_project_var(const cs_grid_t  *g,
       n_max_rows = _g->n_rows;
   }
 
-  BFT_MALLOC(tmp_var_1, n_max_rows*db_size[1], cs_real_t);
-  memcpy(tmp_var_1, c_var, g->n_rows*db_size[1]*sizeof(cs_real_t));
+  BFT_MALLOC(tmp_var_1, n_max_rows*db_size, cs_real_t);
+  memcpy(tmp_var_1, c_var, g->n_rows*db_size*sizeof(cs_real_t));
 
   /* Project to finer levels */
 
@@ -6371,7 +6339,7 @@ cs_grid_project_var(const cs_grid_t  *g,
 
     /* Allocate temporary arrays */
 
-    BFT_MALLOC(tmp_var_2, n_max_rows*db_size[1], cs_real_t);
+    BFT_MALLOC(tmp_var_2, n_max_rows*db_size, cs_real_t);
 
     for (_g = g; _g->level > 0; _g = _g->parent) {
 
@@ -6383,8 +6351,8 @@ cs_grid_project_var(const cs_grid_t  *g,
                               tmp_var_2);
 
       for (ii = 0; ii < n_parent_rows; ii++)
-        for (i = 0; i < db_size[0]; i++)
-          tmp_var_1[ii*db_size[1]+i] = tmp_var_2[ii*db_size[1]+i];
+        for (i = 0; i < db_size; i++)
+          tmp_var_1[ii*db_size+i] = tmp_var_2[ii*db_size+i];
 
     }
 
@@ -6396,7 +6364,7 @@ cs_grid_project_var(const cs_grid_t  *g,
     BFT_FREE(tmp_var_2);
   }
 
-  memcpy(f_var, tmp_var_1, n_base_rows*db_size[1]*sizeof(cs_real_t));
+  memcpy(f_var, tmp_var_1, n_base_rows*db_size*sizeof(cs_real_t));
 
   BFT_FREE(tmp_var_1);
 }
@@ -6416,7 +6384,8 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
                          cs_real_t         diag_dom[])
 {
   cs_real_t *dd = NULL;
-  const cs_lnum_t *db_size = g->db_size;
+  const cs_lnum_t db_size = g->db_size;
+  const cs_lnum_t db_stride = db_size * db_size;
 
   assert(g != NULL);
   assert(diag_dom != NULL);
@@ -6424,7 +6393,7 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
   if (g->level == 0)
     dd = diag_dom;
   else
-    BFT_MALLOC(dd, g->n_cols_ext*db_size[3], cs_real_t);
+    BFT_MALLOC(dd, g->n_cols_ext*db_stride, cs_real_t);
 
   /* Compute coarse diagonal dominance */
 

@@ -89,9 +89,9 @@ typedef const cs_real_t *
 (cs_matrix_get_diagonal_t)(const cs_matrix_t  *matrix);
 
 typedef cs_matrix_assembler_values_t *
-(cs_matrix_assembler_values_create_t) (cs_matrix_t      *matrix,
-                                       const cs_lnum_t  *diag_block_size,
-                                       const cs_lnum_t  *extra_diag_block_size);
+(cs_matrix_assembler_values_create_t) (cs_matrix_t  *matrix,
+                                       cs_lnum_t     diag_block_size,
+                                       cs_lnum_t     extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
  * Function pointer for matrix-veector product (y = A.x).
@@ -137,27 +137,6 @@ typedef struct _cs_matrix_struct_native_t {
 
 } cs_matrix_struct_native_t;
 
-/* Native matrix coefficients */
-/*----------------------------*/
-
-typedef struct _cs_matrix_coeff_native_t {
-
-  bool              symmetric;       /* Symmetry indicator */
-  int               max_db_size;     /* Current max allocated diag block size */
-  int               max_eb_size;     /* Current max allocated extradiag block size */
-
-  /* Pointers to possibly shared arrays */
-
-  const cs_real_t   *da;            /* Diagonal terms */
-  const cs_real_t   *xa;            /* Extra-diagonal terms */
-
-  /* Pointers to private arrays (NULL if shared) */
-
-  cs_real_t         *_da;           /* Diagonal terms */
-  cs_real_t         *_xa;           /* Extra-diagonal terms */
-
-} cs_matrix_coeff_native_t;
-
 /* CSR (Compressed Sparse Row) matrix structure representation */
 /*-------------------------------------------------------------*/
 
@@ -170,7 +149,7 @@ typedef struct _cs_matrix_struct_csr_t {
 
   bool              have_diag;        /* Has non-zero diagonal */
   bool              direct_assembly;  /* True if each value corresponds to
-                                         a unique face ; false if multiple
+                                         a unique face; false if multiple
                                          faces contribute to the same
                                          value (i.e. we have split faces) */
 
@@ -181,6 +160,45 @@ typedef struct _cs_matrix_struct_csr_t {
   cs_lnum_t        *_col_id;          /* Column id (0 to n-1), if owner */
 
 } cs_matrix_struct_csr_t;
+
+/* Distributed matrix structure representation */
+/*---------------------------------------------*/
+
+/* This storage assumes a representation in the following form:
+
+   - D+E+H
+
+   Where D is the diagonal, E the local extra-diagonal, and H is the part
+   of the matrix referencing halo values (only the upper-part of the
+   coefficients are needed on a given rank).
+
+   In cases where a partial block structure is used for the diagonal
+   (usually at boundary cells), the diagonal values may be indexed.
+
+   Sub-matrices are stored in CSR format, to allow easy indexing
+   or access to a given row's elements (which is useful for multigrid
+   coarsening).
+
+   Since the H portion of the matrix may be very sparse, with most rows
+   empty, the matching row ids can be stored in addition to the column ids,
+   defining a simple coordinate-type structure as a COO-type SpMv product
+   can be expected to be cheaper than a CSR-based one in this case.
+ */
+
+typedef struct _cs_matrix_struct_dist_t {
+
+  cs_lnum_t         n_rows;           /* Local number of rows */
+  cs_lnum_t         n_cols_ext;       /* Local number of columns + ghosts */
+
+  /* Pointers to structure arrays and info */
+
+  cs_matrix_struct_csr_t  e;          /* E (local off-diagonal) CSR structure */
+  cs_matrix_struct_csr_t  h;          /* H (halo) CSR structure */
+
+  cs_lnum_t               *h_row_id;  /* Optional row id for coordinates
+                                         format (col_id in h structure) */
+
+} cs_matrix_struct_dist_t;
 
 /* CSR matrix coefficients representation */
 /*----------------------------------------*/
@@ -204,26 +222,42 @@ typedef struct _cs_matrix_coeff_csr_t {
 
 } cs_matrix_coeff_csr_t;
 
-/* MSR matrix coefficients representation */
-/*----------------------------------------*/
+/* Distributed matrix coefficients representation */
+/*------------------------------------------------*/
 
-typedef struct _cs_matrix_coeff_msr_t {
+/* Used for native, MSR, and distributed matrices */
 
-  int              max_db_size;       /* Current max allocated block size */
-  int              max_eb_size;       /* Current max allocated extradiag
-                                         block size */
+typedef struct _cs_matrix_coeff_dist_t {
+
+  bool             symmetric;         /* Symmetry indicator */
+
+  int              db_size;           /* Diagonal block size */
+  int              eb_size;           /* Extra-diagonal  block size */
 
   /* Pointers to possibly shared arrays */
 
-  const cs_real_t  *d_val;            /* Diagonal matrix coefficients */
-  const cs_real_t  *x_val;            /* Extra-diagonal matrix coefficients */
+  const cs_real_t  *d_val;            /* D (diagonal-only) coefficients */
+  const cs_real_t  *e_val;            /* E (extra-diagonal) coefficients */
+  const cs_real_t  *h_val;            /* H (halo-only) coefficients */
 
-  /* Pointers to private arrays (NULL if shared) */
+   /* Pointers to private arrays.
+      NULL if shared:
+      * If non-NULL, d_val, e_val, and h_val should point
+        to matching private array.
+      * In the case of CSR storage, where diagonal values can be stored in
+        the e_val array, d_val will be NULL but _d_val may be used to store
+        (cache) diagonal values. */
 
-  cs_real_t        *_d_val;           /* Diagonal matrix coefficients */
-  cs_real_t        *_x_val;           /* Extra-diagonal matrix coefficients */
+  cs_real_t        *_d_val;          /* D (diagonal) coefficients */
+  cs_real_t        *_e_val;          /* E (local extra-diagonal) coefficients */
+  cs_real_t        *_h_val;          /* H (halo) coefficients */
 
-} cs_matrix_coeff_msr_t;
+  /* Pointers to auxiliary matrix structure elements */
+
+  cs_lnum_t        *d_idx;           /* Index for diagonal matrix coefficients
+                                        in case of multiple block sizes */
+
+} cs_matrix_coeff_dist_t;
 
 /* Matrix structure (representation-independent part) */
 /*----------------------------------------------------*/
@@ -234,6 +268,8 @@ struct _cs_matrix_structure_t {
 
   cs_lnum_t              n_rows;       /* Local number of rows */
   cs_lnum_t              n_cols_ext;   /* Local number of columns + ghosts */
+
+  cs_alloc_mode_t        alloc_mode;   /* Preferred allocation mode */
 
   void                  *structure;    /* Matrix structure */
 
@@ -267,17 +303,11 @@ struct _cs_matrix_t {
 
   bool                   symmetric;    /* true if coefficients are symmetric */
 
-  cs_lnum_t              db_size[4];   /* Diag Block size, including padding:
-                                          0: useful block size
-                                          1: vector block extents
-                                          2: matrix line extents
-                                          3: matrix line*column extents */
+  cs_lnum_t              db_size;      /* Diagonal block size */
 
-  cs_lnum_t              eb_size[4];   /* Extradiag block size, including padding:
-                                          0: useful block size
-                                          1: vector block extents
-                                          2: matrix line extents
-                                          3: matrix line*column extents */
+  cs_lnum_t              eb_size;      /* Extradiag block size */
+
+  cs_alloc_mode_t        alloc_mode;   /* Preferred allocation mode */
 
   /* Pointer to shared structure */
 

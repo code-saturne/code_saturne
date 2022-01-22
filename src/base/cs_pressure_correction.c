@@ -1682,7 +1682,7 @@ cs_pressure_correction(int        iterns,
     cs_real_t ressol = residual;   /* solver residual */
 
     cs_sles_solve_native(f_p->id, NULL,
-                         symmetric, NULL, NULL,
+                         symmetric, 1, 1,
                          dam, xam,
                          eqp_p->epsilo,
                          rnormp,

@@ -764,8 +764,8 @@ cs_sles_petsc_setup(void               *context,
 
   const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
   const PetscInt n_rows = cs_matrix_get_n_rows(a);
-  const PetscInt db_size = cs_matrix_get_diag_block_size(a)[0];
-  const PetscInt eb_size = cs_matrix_get_extra_diag_block_size(a)[0];
+  const PetscInt db_size = cs_matrix_get_diag_block_size(a);
+  const PetscInt eb_size = cs_matrix_get_extra_diag_block_size(a);
   const cs_halo_t *halo = cs_matrix_get_halo(a);
 
   bool have_perio = false;
@@ -1016,7 +1016,8 @@ cs_sles_petsc_setup(void               *context,
       const cs_lnum_2_t  *face_cell;
       const cs_real_t    *d_val, *x_val;
 
-      const cs_lnum_t *b_size = cs_matrix_get_diag_block_size(a);
+      cs_lnum_t b_size = cs_matrix_get_diag_block_size(a);
+      cs_lnum_t b_size_2 = b_size * b_size;
 
       cs_matrix_get_native_arrays(a, &symmetric, &n_faces, &face_cell,
                                   &d_val, &x_val);
@@ -1028,15 +1029,16 @@ cs_sles_petsc_setup(void               *context,
           for (cs_lnum_t jj = 0; jj < db_size; jj++) {
             PetscInt idxm[] = {grow_id[b_id*db_size + ii]};
             PetscInt idxn[] = {grow_id[b_id*db_size + jj]};
-            PetscScalar v[] = {d_val[b_id*b_size[3] + ii*b_size[2] + jj]};
+            PetscScalar v[] = {d_val[b_id*b_size_2 + ii*b_size + jj]};
             MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
           }
         }
       }
 
       b_size = cs_matrix_get_extra_diag_block_size(a);
+      b_size_2 = b_size * b_size;
 
-      if (b_size[0] == 1) {
+      if (b_size == 1) {
 
         if (symmetric) {
 
@@ -1089,7 +1091,7 @@ cs_sles_petsc_setup(void               *context,
 
       }
 
-      else { /* if (b_size[0] > 1) */
+      else { /* if (b_size > 1) */
 
         if (symmetric) {
 
@@ -1102,7 +1104,7 @@ cs_sles_petsc_setup(void               *context,
                 for (cs_lnum_t jj = 0; jj < db_size; jj++) {
                   PetscInt idxn[] = {grow_id[c_id_1*db_size + jj]};
                   PetscScalar v[]
-                    = {x_val[face_id*b_size[3] + ii*b_size[2] + jj]};
+                    = {x_val[face_id*b_size_2 + ii*b_size + jj]};
                   MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
                 }
               }
@@ -1113,7 +1115,7 @@ cs_sles_petsc_setup(void               *context,
                 for (cs_lnum_t jj = 0; jj < db_size; jj++) {
                   PetscInt idxn[] = {grow_id[c_id_0*db_size + jj]};
                   PetscScalar v[]
-                    = {x_val[face_id*b_size[3] + ii*b_size[2] + jj]};
+                    = {x_val[face_id*b_size_2 + ii*b_size + jj]};
                   MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
                 }
               }
@@ -1133,7 +1135,7 @@ cs_sles_petsc_setup(void               *context,
                 for (cs_lnum_t jj = 0; jj < db_size; jj++) {
                   PetscInt idxn[] = {grow_id[c_id_1*db_size + jj]};
                   PetscScalar v[]
-                    = {x_val[face_id*2*b_size[3] + ii*b_size[2] + jj]};
+                    = {x_val[face_id*2*b_size_2 + ii*b_size + jj]};
                   MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
                 }
               }
@@ -1144,7 +1146,7 @@ cs_sles_petsc_setup(void               *context,
                 for (cs_lnum_t jj = 0; jj < db_size; jj++) {
                   PetscInt idxn[] = {grow_id[c_id_0*db_size + jj]};
                   PetscScalar v[]
-                    = {x_val[(face_id*2+1)*b_size[3] + ii*b_size[2] + jj]};
+                    = {x_val[(face_id*2+1)*b_size_2 + ii*b_size + jj]};
                   MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
                 }
               }
@@ -1163,7 +1165,6 @@ cs_sles_petsc_setup(void               *context,
       const cs_lnum_t *a_row_index, *a_col_id;
       const cs_real_t *a_val;
       const cs_real_t *d_val = NULL;
-      const cs_lnum_t *b_size = NULL;
 
       PetscInt m = 1, n = 1;
 
@@ -1174,14 +1175,15 @@ cs_sles_petsc_setup(void               *context,
 
         cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &d_val, &a_val);
 
-        b_size = cs_matrix_get_diag_block_size(a);
+        const cs_lnum_t b_size = cs_matrix_get_diag_block_size(a);
+        const cs_lnum_t b_size_2 = b_size * b_size;
 
         for (cs_lnum_t b_id = 0; b_id < n_rows; b_id++) {
           for (cs_lnum_t ii = 0; ii < db_size; ii++) {
             for (cs_lnum_t jj = 0; jj < db_size; jj++) {
               PetscInt idxm[] = {grow_id[b_id*db_size + ii]};
               PetscInt idxn[] = {grow_id[b_id*db_size + jj]};
-              PetscScalar v[] = {d_val[b_id*b_size[3] + ii*b_size[2] + jj]};
+              PetscScalar v[] = {d_val[b_id*b_size_2 + ii*b_size + jj]};
               MatSetValues(sd->a, m, idxm, n, idxn, v, INSERT_VALUES);
             }
           }
@@ -1189,9 +1191,10 @@ cs_sles_petsc_setup(void               *context,
 
       }
 
-      b_size = cs_matrix_get_extra_diag_block_size(a);
+      const cs_lnum_t b_size = cs_matrix_get_extra_diag_block_size(a);
+      const cs_lnum_t b_size_2 = b_size * b_size;
 
-      if (b_size[0] == 1) {
+      if (b_size == 1) {
 
         for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
           for (cs_lnum_t i = a_row_index[row_id]; i < a_row_index[row_id+1]; i++) {
@@ -1215,7 +1218,7 @@ cs_sles_petsc_setup(void               *context,
               PetscInt idxm[] = {grow_id[row_id*db_size + ii]};
               for (cs_lnum_t jj = 0; jj < db_size; jj++) {
                 PetscInt idxn[] = {grow_id[c_id*db_size + jj]};
-                PetscScalar v[] = {d_val[i*b_size[3] + ii*b_size[2] + jj]};
+                PetscScalar v[] = {d_val[i*b_size_2 + ii*b_size + jj]};
                 MatSetValues(sd->a, m, idxm, n, idxn, v, INSERT_VALUES);
               }
             }
@@ -1360,7 +1363,7 @@ cs_sles_petsc_solve(void                *context,
   PetscScalar    _residue;
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
-  const int  db_size = cs_matrix_get_diag_block_size(a)[0];
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
 
   if (cs_glob_n_ranks > 1) {
 

@@ -384,10 +384,10 @@ _sles_pc_poly_setup(void               *context,
 
   cs_sles_pc_poly_t  *c = context;
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
 
-  c->n_rows = cs_matrix_get_n_rows(a)*db_size[0];
-  c->n_cols = cs_matrix_get_n_columns(a)*db_size[0];
+  c->n_rows = cs_matrix_get_n_rows(a)*db_size;
+  c->n_cols = cs_matrix_get_n_columns(a)*db_size;
 
   c->a = a;
 
@@ -424,10 +424,10 @@ _sles_pc_poly_setup_none(void               *context,
 
   cs_sles_pc_poly_t  *c = context;
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
 
-  c->n_rows = cs_matrix_get_n_rows(a)*db_size[0];
-  c->n_cols = cs_matrix_get_n_columns(a)*db_size[0];
+  c->n_rows = cs_matrix_get_n_rows(a)*db_size;
+  c->n_cols = cs_matrix_get_n_columns(a)*db_size;
 
   c->a = a;
 

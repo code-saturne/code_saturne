@@ -361,7 +361,7 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
 
   const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
   const int n_rows = cs_matrix_get_n_rows(a);
-  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const int db_size = cs_matrix_get_diag_block_size(a);
   const cs_halo_t *halo = cs_matrix_get_halo(a);
 
   const cs_lnum_t *a_row_index, *a_col_id;
@@ -456,7 +456,8 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
 
   }
 
-  const int b_mem_size = cs_matrix_get_diag_block_size(a)[3] *sizeof(cs_real_t);
+  const int b_size = cs_matrix_get_diag_block_size(a);
+  const int b_mem_size = b_size*b_size*sizeof(cs_real_t);
 
   cs_alloc_mode_t amode_row_index = cs_check_device_ptr(row_index);
   cs_alloc_mode_t amode_col_id = cs_check_device_ptr(col_id);
@@ -475,8 +476,8 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
   retval = AMGX_matrix_upload_all(sd->matrix,
                                   n_rows,
                                   cs_matrix_get_n_entries(a),
-                                  db_size[1],
-                                  db_size[2],
+                                  db_size,
+                                  db_size,
                                   row_index,
                                   col_id,
                                   a_val,
@@ -528,7 +529,7 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
 
   const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
   const int n_rows = cs_matrix_get_n_rows(a);
-  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const int db_size = cs_matrix_get_diag_block_size(a);
   const cs_halo_t *halo = cs_matrix_get_halo(a);
 
   const cs_lnum_t *a_row_index, *a_col_id;
@@ -611,7 +612,8 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
   }
   n_g_rows = partition_offsets[n_ranks];
 
-  const int b_mem_size = cs_matrix_get_diag_block_size(a)[3] *sizeof(cs_real_t);
+  const int b_size = cs_matrix_get_diag_block_size(a);
+  const int b_mem_size = b_size*b_size*sizeof(cs_real_t);
 
   cs_alloc_mode_t amode_row_index = cs_check_device_ptr(row_index);
   cs_alloc_mode_t amode_a_val = cs_check_device_ptr(a_val);
@@ -646,7 +648,7 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
 
   retval = AMGX_matrix_upload_distributed(sd->matrix,
                                           n_g_rows, n_rows, nnz,
-                                          db_size[1], db_size[2],
+                                          db_size, db_size,
                                           row_index, col_gid,
                                           a_val, a_d_val,
                                           dist);
@@ -709,7 +711,8 @@ _setup_update_coeffs(cs_sles_amgx_t     *c,
 
   AMGX_RC retval;
 
-  const int b_mem_size = cs_matrix_get_diag_block_size(a)[3] *sizeof(cs_real_t);
+  const int b_size = cs_matrix_get_diag_block_size(a);
+  const int b_mem_size = b_size*b_size*sizeof(cs_real_t);
 
   cs_alloc_mode_t amode_a_val = cs_check_device_ptr(a_val);
   cs_alloc_mode_t amode_a_d_val = cs_check_device_ptr(a_d_val);
@@ -1204,7 +1207,7 @@ cs_sles_amgx_setup(void               *context,
       _load_amgx_config(c);
 
     const cs_matrix_type_t cs_mat_type = cs_matrix_get_type(a);
-    const int db_size = cs_matrix_get_diag_block_size(a)[0];
+    const int db_size = cs_matrix_get_diag_block_size(a);
     const cs_halo_t *halo = cs_matrix_get_halo(a);
 
     /* Periodicity is not handled (at least not in serial mode), as the matrix
@@ -1300,7 +1303,7 @@ cs_sles_amgx_setup(void               *context,
   {
     const int n_rows = cs_matrix_get_n_rows(a);
     const int n_cols_ext = cs_matrix_get_n_columns(a);
-    const int  b_size = cs_matrix_get_diag_block_size(a)[0];
+    const int  b_size = cs_matrix_get_diag_block_size(a);
     const cs_lnum_t n_r = n_rows*b_size;
     const cs_lnum_t n_c = n_cols_ext*b_size;
 
@@ -1434,7 +1437,7 @@ cs_sles_amgx_solve(void                *context,
   int       its = -1;
   double    _residue = -1;
   const int n_rows = cs_matrix_get_n_rows(a);
-  const int  db_size = cs_matrix_get_diag_block_size(a)[0];
+  const int db_size = cs_matrix_get_diag_block_size(a);
 
   /* Try to set tolerance to normalized value. */
   {

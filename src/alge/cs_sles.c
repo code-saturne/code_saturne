@@ -654,11 +654,8 @@ _needs_solving(const  char        *name,
 
   /* Initialize residue, check for immediate return */
 
-  const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
-  const cs_lnum_t _diag_block_size = diag_block_size[1];
-  assert(diag_block_size[0] == diag_block_size[1]);
-
-  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * _diag_block_size;
+  const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
 
   double r[2] = {
     cs_dot_xx(n_rows, rhs),
@@ -781,17 +778,13 @@ _ensure_alloc_post(cs_sles_t          *sles,
                    const cs_matrix_t  *a)
 {
   if (sles->post_info != NULL) {
-
-    const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
-    const cs_lnum_t n_vals = cs_matrix_get_n_columns(a) * diag_block_size[1];
+    const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
+    const cs_lnum_t n_vals = cs_matrix_get_n_columns(a) * diag_block_size;
 
     sles->post_info->n_rows = cs_matrix_get_n_rows(a);
-    sles->post_info->block_size = diag_block_size[1];
+    sles->post_info->block_size = diag_block_size;
 
     BFT_REALLOC(sles->post_info->row_residual, n_vals, cs_real_t);
-
-    assert(diag_block_size[0] == diag_block_size[1]); /* for now */
-
   }
 }
 
@@ -1673,7 +1666,7 @@ cs_sles_solve(cs_sles_t           *sles,
 
 #if 0
   {
-    const cs_lnum_t block_size = cs_matrix_get_diag_block_size(a)[0];
+    const cs_lnum_t block_size = cs_matrix_get_diag_block_size(a);
     const cs_lnum_t n_vals_ext = cs_matrix_get_n_columns(a) * block_size;
     const cs_lnum_t n_vals = cs_matrix_get_n_rows(a) * block_size;
 
@@ -1887,7 +1880,7 @@ cs_sles_post_error_output_def(const char          *name,
 
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
     const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
-    const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
+    const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
 
     /* Check for mesh location */
 
@@ -1909,7 +1902,7 @@ cs_sles_post_error_output_def(const char          *name,
     /* Now generate output */
 
     cs_real_t *val;
-    BFT_MALLOC(val, n_cols*diag_block_size[1], cs_real_t);
+    BFT_MALLOC(val, n_cols*diag_block_size, cs_real_t);
 
     for (int val_id = 0; val_id < 5; val_id++) {
 
@@ -1922,17 +1915,17 @@ cs_sles_post_error_output_def(const char          *name,
 
       case 1:
         strcpy(base_name, "RHS");
-        memcpy(val, rhs, n_rows*diag_block_size[1]*sizeof(cs_real_t));
+        memcpy(val, rhs, n_rows*diag_block_size*sizeof(cs_real_t));
         break;
 
       case 2:
         strcpy(base_name, "X");
-        memcpy(val, vx, n_rows*diag_block_size[1]*sizeof(cs_real_t));
+        memcpy(val, vx, n_rows*diag_block_size*sizeof(cs_real_t));
         break;
 
       case 3:
         strcpy(base_name, "Residual");
-        _residual(n_rows*diag_block_size[1],
+        _residual(n_rows*diag_block_size,
                   a,
                   rhs,
                   vx,
@@ -1956,13 +1949,11 @@ cs_sles_post_error_output_def(const char          *name,
         val_name[31] = '\0';
       }
 
-      assert(diag_block_size[0] == diag_block_size[1]); /* for now */
-
       cs_sles_post_output_var(val_name,
                               mesh_id,
                               location_id,
                               CS_POST_WRITER_ERRORS,
-                              diag_block_size[1],
+                              diag_block_size,
                               val);
     }
 

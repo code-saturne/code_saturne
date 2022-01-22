@@ -1827,7 +1827,8 @@ _block_jacobi(cs_sles_it_t              *c,
   /*-------------------------------------------------------------*/
   assert(c->setup_data != NULL);
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size_2 = db_size * db_size;
 
   const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
 
@@ -1868,16 +1869,16 @@ _block_jacobi(cs_sles_it_t              *c,
 
 #   pragma omp parallel for reduction(+:res2) if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
-      _fw_and_bw_lu(ad_inv + db_size[3]*ii,
-                    db_size[0],
-                    vx + db_size[1]*ii,
-                    vxx + db_size[1]*ii,
-                    rhs + db_size[1]*ii);
-      for (cs_lnum_t jj = 0; jj < db_size[0]; jj++) {
+      _fw_and_bw_lu(ad_inv + db_size_2*ii,
+                    db_size,
+                    vx + db_size*ii,
+                    vxx + db_size*ii,
+                    rhs + db_size*ii);
+      for (cs_lnum_t jj = 0; jj < db_size; jj++) {
         register double r = 0.0;
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-          r +=    ad[ii*db_size[3] + jj*db_size[2] + kk]
-               * (vx[ii*db_size[1] + kk] - rk[ii*db_size[1] + kk]);
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          r +=    ad[ii*db_size_2 + jj*db_size + kk]
+               * (vx[ii*db_size + kk] - rk[ii*db_size + kk]);
         res2 += (r*r);
       }
     }
@@ -3013,7 +3014,9 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size_2 = db_size * db_size;
+
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   const cs_lnum_t  *order = c->add_data->order;
@@ -3078,26 +3081,26 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 
         cs_real_t vx0[DB_SIZE_MAX], vxm1[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-          vxm1[kk] = vx[ii*db_size[1] + kk];
-          vx0[kk] = rhs[ii*db_size[1] + kk];
+        for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+          vxm1[kk] = vx[ii*db_size + kk];
+          vx0[kk] = rhs[ii*db_size + kk];
         }
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size + kk]);
         }
 
-        _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                         db_size[0],
+        _fw_and_bw_lu_gs(ad_inv + db_size_2*ii,
+                         db_size,
                          _vx,
                          vx0);
 
         double rr = 0;
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-          register double r = ad[ii*db_size[1] + kk] * (_vx[kk]-vxm1[kk]);
+        for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+          register double r = ad[ii*db_size + kk] * (_vx[kk]-vxm1[kk]);
           rr += (r*r);
-          vx[ii*db_size[1] + kk] = _vx[kk];
+          vx[ii*db_size + kk] = _vx[kk];
         }
         res2 += rr;
 
@@ -3172,7 +3175,9 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size_2 = db_size * db_size;
+
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   cvg = CS_SLES_ITERATING;
@@ -3230,26 +3235,26 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
         cs_real_t vx0[DB_SIZE_MAX], vxm1[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-          vxm1[kk] = vx[ii*db_size[1] + kk];
-          vx0[kk] = rhs[ii*db_size[1] + kk];
+        for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+          vxm1[kk] = vx[ii*db_size + kk];
+          vx0[kk] = rhs[ii*db_size + kk];
         }
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size + kk]);
         }
 
-        _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                         db_size[0],
+        _fw_and_bw_lu_gs(ad_inv + db_size_2*ii,
+                         db_size,
                          _vx,
                          vx0);
 
         double rr = 0;
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-          register double r = ad[ii*db_size[1] + kk] * (_vx[kk]-vxm1[kk]);
+        for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+          register double r = ad[ii*db_size + kk] * (_vx[kk]-vxm1[kk]);
           rr += (r*r);
-          vx[ii*db_size[1] + kk] = _vx[kk];
+          vx[ii*db_size + kk] = _vx[kk];
         }
         res2 += rr;
 
@@ -3346,7 +3351,9 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size_2 = db_size * db_size;
+
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   cvg = CS_SLES_ITERATING;
@@ -3396,20 +3403,20 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
         cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
         for (cs_lnum_t kk = 0; kk < diag_block_size; kk++)
-          vx0[kk] = rhs[ii*db_size[1] + kk];
+          vx0[kk] = rhs[ii*db_size + kk];
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
           for (cs_lnum_t kk = 0; kk < diag_block_size; kk++)
-            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size + kk]);
         }
 
-        _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                         db_size[0],
+        _fw_and_bw_lu_gs(ad_inv + db_size_2*ii,
+                         db_size,
                          _vx,
                          vx0);
 
         for (cs_lnum_t kk = 0; kk < diag_block_size; kk++)
-          vx[ii*db_size[1] + kk] = _vx[kk];
+          vx[ii*db_size + kk] = _vx[kk];
 
       }
 
@@ -3461,26 +3468,26 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
         cs_real_t vx0[DB_SIZE_MAX], vxm1[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-          vxm1[kk] = vx[ii*db_size[1] + kk];
-          vx0[kk] = rhs[ii*db_size[1] + kk];
+        for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+          vxm1[kk] = vx[ii*db_size + kk];
+          vx0[kk] = rhs[ii*db_size + kk];
         }
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size + kk]);
         }
 
-        _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                         db_size[0],
+        _fw_and_bw_lu_gs(ad_inv + db_size_2*ii,
+                         db_size,
                          _vx,
                          vx0);
 
         double rr = 0;
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-          register double r = ad[ii*db_size[1] + kk] * (_vx[kk]-vxm1[kk]);
+        for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+          register double r = ad[ii*db_size + kk] * (_vx[kk]-vxm1[kk]);
           rr += (r*r);
-          vx[ii*db_size[1] + kk] = _vx[kk];
+          vx[ii*db_size + kk] = _vx[kk];
         }
         res2 += rr;
 
@@ -4119,7 +4126,7 @@ cs_sles_it_setup(void               *context,
   if (c->update_stats == true)
     t0 = cs_timer_time();
 
-  const int diag_block_size = (cs_matrix_get_diag_block_size(a))[0];
+  const int diag_block_size = (cs_matrix_get_diag_block_size(a));
 
   if (verbosity > 1) {
     bft_printf(_("\n Setup of solver for linear system \"%s\"\n"),
@@ -4292,10 +4299,7 @@ cs_sles_it_solve(void                *context,
   if (c->update_stats == true)
     t0 = cs_timer_time();
 
-  const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
-  const cs_lnum_t _diag_block_size = diag_block_size[0];
-
-  assert(diag_block_size[0] == diag_block_size[1]);
+  const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
 
   /* Initialize number of iterations and residue,
      check for immediate return,
@@ -4353,7 +4357,7 @@ cs_sles_it_solve(void                *context,
 
   if (local_solve)
     cvg = c->solve(c,
-                   a, _diag_block_size, &convergence,
+                   a, diag_block_size, &convergence,
                    rhs, vx,
                    aux_size, aux_vectors);
 

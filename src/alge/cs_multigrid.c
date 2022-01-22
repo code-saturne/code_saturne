@@ -1318,14 +1318,14 @@ _multigrid_pc_apply(void                *context,
 
   const cs_real_t *rhs = x_in;
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
-  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * db_size[1];
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * db_size;
 
   /* If preconditioner is "in-place", use additional buffer */
 
   if (x_in == NULL) {
     if (mgd->pc_aux == NULL) {
-      const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * db_size[1];
+      const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * db_size;
       BFT_MALLOC(mgd->pc_aux, n_cols, cs_real_t);
     }
     cs_real_t *restrict _rhs = mgd->pc_aux;
@@ -1828,8 +1828,7 @@ _multigrid_setup_sles_k_cycle_bottom(cs_multigrid_t  *mg,
 
   /* Diagonal block size is the same for all levels */
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(m);
-  stride = db_size[1];
+  stride = cs_matrix_get_diag_block_size(m);
 
   _multigrid_setup_sles_work_arrays(mg, stride);
 
@@ -2007,8 +2006,7 @@ _multigrid_setup_sles(cs_multigrid_t  *mg,
 
     /* Diagonal block size is the same for all levels */
 
-    const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(m);
-    stride = db_size[1];
+    stride = cs_matrix_get_diag_block_size(m);
 
   }
 
@@ -2679,9 +2677,9 @@ _log_residual(const cs_multigrid_t   *mg,
               const cs_real_t        *rhs,
               cs_real_t              *restrict vx)
 {
-  const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
-  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * diag_block_size[0];
-  const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size[0];
+  const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
+  const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
 
   cs_real_t  *r;
   BFT_MALLOC(r, n_cols, cs_real_t);
@@ -2795,22 +2793,21 @@ _level_names_init(const char  *name,
 
   char *_buffer = buffer;
   char **_lv_names = buffer;
-  const char **lv_names = (const char **)_lv_names;
   const size_t name_len = strlen(name) + strlen(":descent:") + w + 1;
 
   /* Second part: buffers */
 
   for (int i = 0; i < n_levels -1; i++) {
-    lv_names[i*2] = _buffer + ptr_size + i*2*name_len;
-    lv_names[i*2+1] = lv_names[i*2] + name_len;
+    _lv_names[i*2] = _buffer + ptr_size + i*2*name_len;
+    _lv_names[i*2+1] = _lv_names[i*2] + name_len;
     sprintf(_lv_names[i*2], "%s:descent:%0*d", name, w, i);
     sprintf(_lv_names[i*2+1], "%s:ascent:%0*d", name, w, i);
   }
 
   if (n_levels > 1) {
     int i = n_levels - 1;
-    lv_names[i*2] = _buffer + ptr_size + i*2*name_len;
-    lv_names[i*2+1] = NULL;
+    _lv_names[i*2] = _buffer + ptr_size + i*2*name_len;
+    _lv_names[i*2+1] = NULL;
     sprintf(_lv_names[i*2], "%s:coarse:%0*d", name, w, i);
   }
 }
@@ -4182,8 +4179,8 @@ cs_multigrid_setup_conv_diff(void               *context,
   /* Build coarse grids hierarchy */
   /*------------------------------*/
 
-  const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
-  const cs_lnum_t *extra_diag_block_size
+  const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t extra_diag_block_size
     = cs_matrix_get_extra_diag_block_size(a);
 
   cs_grid_t *f
@@ -4256,9 +4253,7 @@ cs_multigrid_solve(void                *context,
   cs_multigrid_t *mg = context;
   cs_multigrid_info_t *mg_info = &(mg->info);
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
-
-  assert(db_size[0] == db_size[1]);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
 
   cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
 
@@ -4288,7 +4283,7 @@ cs_multigrid_solve(void                *context,
   /* Buffer size sufficient to avoid local reallocation for most solvers */
   size_t  lv_names_size = _level_names_size(name, mg->setup_data->n_levels);
   size_t  _aux_size =   lv_names_size
-                      + n_rows * 6 * db_size[1] * sizeof(cs_real_t);
+                      + n_rows * 6 * db_size * sizeof(cs_real_t);
   unsigned char *_aux_buf = aux_vectors;
 
   if (_aux_size > aux_size)

@@ -1767,7 +1767,7 @@ module cs_c_bindings
       integer(c_int), value :: f_id
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
       logical(kind=c_bool), value :: symmetric
-      integer(c_int), dimension(*) :: diag_block_size, extra_diag_block_size
+      integer(c_int), value :: diag_block_size, extra_diag_block_size
       real(kind=c_double), value :: precision, r_norm
       integer(c_int), intent(out) :: n_iter
       real(kind=c_double), intent(out) :: residue
@@ -4899,7 +4899,7 @@ contains
 
     character(len=len_trim(name)+1, kind=c_char) :: c_name
     integer(c_int) :: cvg
-    integer(c_int), dimension(4) :: db_size, eb_size
+    integer(c_int) :: db_size, eb_size
     logical(kind=c_bool) :: c_sym
 
     c_name = trim(name)//c_null_char
@@ -4910,15 +4910,8 @@ contains
       c_sym = .false.
     endif
 
-    db_size(1) = ibsize
-    db_size(2) = ibsize
-    db_size(3) = ibsize
-    db_size(4) = ibsize*ibsize
-
-    eb_size(1) = iesize
-    eb_size(2) = iesize
-    eb_size(3) = iesize
-    eb_size(4) = iesize*iesize
+    db_size = ibsize
+    eb_size = iesize
 
     cvg = cs_sles_solve_native(f_id, c_name, c_sym, db_size, eb_size,         &
                                dam, xam, epsilp, rnorm,                       &

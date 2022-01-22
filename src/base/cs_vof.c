@@ -587,7 +587,8 @@ _smoothe(const cs_mesh_t              *m,
   cs_parall_sum(1, CS_DOUBLE, &rnorm);
   rnorm = sqrt(rnorm); /* Residue normalization */
 
-  /* Triple line model (WARNING: model terms are added after residue normalization ?) */
+  /* Triple line model (WARNING: model terms are added after
+     residue normalization ?) */
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
     cs_lnum_t ii = b_face_cells[f_id];
 
@@ -603,7 +604,7 @@ _smoothe(const cs_mesh_t              *m,
   cs_sles_solve_native(-1,
                        "ITM_diffusion_equation",
                        true,                   /* symmetric */
-                       NULL, NULL,             /* diag/extradiag block size */
+                       1, 1,                   /* diag/extradiag block size */
                        dam, xam,
                        precision,
                        rnorm,

@@ -246,17 +246,16 @@ _sles_default_native(int                f_id,
 /*!
  * \brief Setup sparse linear equation solver using native matrix arrays.
  *
- * \param[in]       f_id                   associated field id, or < 0
- * \param[in]       name                   associated name if f_id < 0, or NULL
- * \param[in]       setup_id               associated setup id
- * \param[in]       sc                     associated solver context
- * \param[in]       symmetric              indicates if matrix coefficients
- *                                         are symmetric
- * \param[in]       diag_block_size        block sizes for diagonal, or NULL
- * \param[in]       extra_diag_block_size  block sizes for extra diagonal,
- *                                         or NULL
- * \param[in]       da                     diagonal values (NULL if zero)
- * \param[in]       xa                     extradiagonal values (NULL if zero)
+ * \param[in]       f_id          associated field id, or < 0
+ * \param[in]       name          associated name if f_id < 0, or NULL
+ * \param[in]       setup_id      associated setup id
+ * \param[in]       sc            associated solver context
+ * \param[in]       symmetric     indicates if matrix coefficients
+ *                                are symmetric
+ * \param[in]       db_size       block sizes for diagonal
+ * \param[in]       eb_size       block sizes for extra diagonal
+ * \param[in]       da            diagonal values (NULL if zero)
+ * \param[in]       xa            extradiagonal values (NULL if zero)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -266,8 +265,8 @@ _sles_setup_matrix_native(int                  f_id,
                           int                  setup_id,
                           cs_sles_t           *sc,
                           bool                 symmetric,
-                          const cs_lnum_t     *diag_block_size,
-                          const cs_lnum_t     *extra_diag_block_size,
+                          cs_lnum_t            db_size,
+                          cs_lnum_t            eb_size,
                           const cs_real_t     *da,
                           const cs_real_t     *xa)
 {
@@ -288,22 +287,14 @@ _sles_setup_matrix_native(int                  f_id,
      constraints. */
 
   if (cs_sles_get_context(sc) == NULL) {
-    int eb_size = 1;
-    if (extra_diag_block_size != NULL)
-      eb_size = extra_diag_block_size[1];
-    if (eb_size > 1)
-      a = cs_matrix_native(symmetric,
-                           diag_block_size,
-                           extra_diag_block_size);
-    else
-      a = cs_matrix_msr(symmetric,
-                        diag_block_size,
-                        extra_diag_block_size);
+    a = cs_matrix_msr(symmetric,
+                      db_size,
+                      eb_size);
 
     cs_matrix_set_coefficients(a,
                                symmetric,
-                               diag_block_size,
-                               extra_diag_block_size,
+                               db_size,
+                               eb_size,
                                m->n_i_faces,
                                (const cs_lnum_2_t *)(m->i_face_cells),
                                da,
@@ -355,31 +346,25 @@ _sles_setup_matrix_native(int                  f_id,
       need_msr = true;
   }
 
-  /* MSR not supported yet for full blocks */
-  if (extra_diag_block_size != NULL) {
-    if (extra_diag_block_size[0] > 1)
-      need_msr = false;
-  }
-
   if (need_msr)
     a = cs_matrix_msr(symmetric,
-                      diag_block_size,
-                      extra_diag_block_size);
+                      db_size,
+                      eb_size);
   else if (need_external) {
     a = cs_matrix_external(external_type,
                            symmetric,
-                           diag_block_size,
-                           extra_diag_block_size);
+                           db_size,
+                           eb_size);
   }
   else
     a = cs_matrix_default(symmetric,
-                          diag_block_size,
-                          extra_diag_block_size);
+                          db_size,
+                          eb_size);
 
   cs_matrix_set_coefficients(a,
                              symmetric,
-                             diag_block_size,
-                             extra_diag_block_size,
+                             db_size,
+                             eb_size,
                              m->n_i_faces,
                              (const cs_lnum_2_t *)(m->i_face_cells),
                              da,
@@ -401,9 +386,8 @@ _sles_setup_matrix_native(int                  f_id,
  * \param[in]  sc                     associated solver context
  * \param[in]  symmetric              indicates if matrix coefficients
  *                                    are symmetric
- * \param[in]  diag_block_size        block sizes for diagonal, or NULL
- * \param[in]  extra_diag_block_size  block sizes for extra diagonal,
- *                                    or NULL
+ * \param[in]  db_size                block sizes for diagonal
+ * \param[in]  eb_size                block sizes for extra diagonal
  * \param[in]  da                     diagonal values (NULL if zero)
  * \param[in]  xa                     extradiagonal values (NULL if zero)
  */
@@ -414,8 +398,8 @@ _sles_setup_matrix_by_assembler(int               f_id,
                                 int               setup_id,
                                 cs_sles_t        *sc,
                                 bool              symmetric,
-                                const cs_lnum_t  *diag_block_size,
-                                const cs_lnum_t  *extra_diag_block_size,
+                                const cs_lnum_t   db_size,
+                                const cs_lnum_t   eb_size,
                                 const cs_real_t  *da,
                                 const cs_real_t  *xa)
 {
@@ -436,8 +420,8 @@ _sles_setup_matrix_by_assembler(int               f_id,
   a = cs_matrix_set_coefficients_by_assembler(f,
                                               m_type,
                                               symmetric,
-                                              diag_block_size,
-                                              extra_diag_block_size,
+                                              db_size,
+                                              eb_size,
                                               da,
                                               xa);
   cs_matrix_default_set_tuned(a);
@@ -605,8 +589,8 @@ cs_sles_default_get_verbosity(int          f_id,
 void
 cs_sles_setup_native_conv_diff(int                  f_id,
                                const char          *name,
-                               const cs_lnum_t     *diag_block_size,
-                               const cs_lnum_t     *extra_diag_block_size,
+                               const cs_lnum_t      diag_block_size,
+                               const cs_lnum_t      extra_diag_block_size,
                                const cs_real_t     *da,
                                const cs_real_t     *xa,
                                bool                 conv_diff)
@@ -687,9 +671,8 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  * \param[in]       name                   associated name if f_id < 0, or NULL
  * \param[in]       symmetric              indicates if matrix coefficients
  *                                         are symmetric
- * \param[in]       diag_block_size        block sizes for diagonal, or NULL
- * \param[in]       extra_diag_block_size  block sizes for extra diagonal,
- *                                         or NULL
+ * \param[in]       diag_block_size        block sizes for diagonal
+ * \param[in]       extra_diag_block_size  block sizes for extra diagonal
  * \param[in]       da                     diagonal values (NULL if zero)
  * \param[in]       xa                     extradiagonal values (NULL if zero)
  * \param[in]       precision              solver precision
@@ -707,8 +690,8 @@ cs_sles_convergence_state_t
 cs_sles_solve_native(int                  f_id,
                      const char          *name,
                      bool                 symmetric,
-                     const cs_lnum_t     *diag_block_size,
-                     const cs_lnum_t     *extra_diag_block_size,
+                     cs_lnum_t            diag_block_size,
+                     cs_lnum_t            extra_diag_block_size,
                      const cs_real_t     *da,
                      const cs_real_t     *xa,
                      double               precision,
@@ -800,9 +783,7 @@ cs_sles_solve_native(int                  f_id,
   const cs_halo_t *halo = cs_matrix_get_halo(a);
   if (halo != NULL && halo != m->halo) {
 
-    size_t stride = 1;
-    if (diag_block_size != NULL)
-      stride = diag_block_size[1];
+    size_t stride = diag_block_size;
     cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
     cs_lnum_t n_cols_ext = cs_matrix_get_n_columns(a);
     assert(n_rows == m->n_cells);
@@ -834,9 +815,7 @@ cs_sles_solve_native(int                  f_id,
 
   BFT_FREE(_rhs);
   if (_vx != vx) {
-    size_t stride = 1;
-    if (diag_block_size != NULL)
-      stride = diag_block_size[1];
+    size_t stride = diag_block_size;
     cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
     cs_lnum_t _n_rows = n_rows*stride;
 #   pragma omp parallel for  if(_n_rows > CS_THR_MIN)
@@ -1015,8 +994,8 @@ cs_sles_default_error(cs_sles_t                    *sles,
   /* Reset solution if new solve is expected */
 
   if (alternative) {
-    const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
-    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * db_size[1];
+    const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * db_size;
     for (cs_lnum_t i = 0; i < n_cols; i++)
       vx[i] = 0;
   }

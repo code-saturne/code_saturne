@@ -1833,8 +1833,8 @@ cs_sles_mumps_setup(void               *context,
   /* Sanity checks */
 
   assert(a != NULL);
-  if (cs_matrix_get_diag_block_size(a)[0] > 1 ||
-      cs_matrix_get_extra_diag_block_size(a)[0] > 1)
+  if (cs_matrix_get_diag_block_size(a) > 1 ||
+      cs_matrix_get_extra_diag_block_size(a) > 1)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid matrix structure for MUMPS. No block requested.\n",
               __func__);

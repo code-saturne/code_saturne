@@ -631,20 +631,6 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   int isym = 1;
   bool symmetric = true;
 
-  /* Matrix block size */
-  cs_lnum_t eb_size[4], db_size[4];
-  int ibsize = 1, iesize = 1;
-
-  db_size[0] = ibsize;
-  db_size[1] = ibsize;
-  db_size[2] = ibsize;
-  db_size[3] = ibsize*ibsize;
-
-  eb_size[0] = iesize;
-  eb_size[1] = iesize;
-  eb_size[2] = iesize;
-  eb_size[3] = iesize*iesize;
-
   cs_real_3_t *next_fext;
   BFT_MALLOC(next_fext, m->n_cells_with_ghosts, cs_real_3_t);
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
@@ -792,8 +778,8 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     cs_sles_solve_native(f_id,
                          "",
                          symmetric,
-                         db_size,
-                         eb_size,
+                         1, /* db_size */
+                         1, /* eb_size */
                          dam,
                          xam,
                          vcopt.epsilo,

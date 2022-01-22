@@ -748,18 +748,14 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
 
   /* Return the associated matrix */
 
-  cs_lnum_t  db_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
-  cs_lnum_t  eb_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
-
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
   cs_matrix_t  *K = cs_matrix_native(false, /* symmetry */
-                                     db_size,
-                                     eb_size);
+                                     1, 1);
 
   cs_matrix_set_coefficients(K, false, /* symmetry */
-                             db_size, eb_size,
+                             1, 1,
                              n_i_faces, i_face_cells,
                              diagK, xtraK);
 
@@ -939,18 +935,14 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
 
   /* Return the associated matrix */
 
-  cs_lnum_t  db_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
-  cs_lnum_t  eb_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
-
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
   cs_matrix_t  *K = cs_matrix_native(false, /* symmetry */
-                                     db_size,
-                                     eb_size);
+                                     1, 1);
 
   cs_matrix_set_coefficients(K, false, /* symmetry */
-                             db_size, eb_size,
+                             1, 1,
                              n_i_faces, i_face_cells,
                              diagK, xtraK);
 
@@ -1076,18 +1068,14 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
 
   /* Return the associated matrix */
 
-  cs_lnum_t  db_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
-  cs_lnum_t  eb_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
-
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
   sbp->schur_matrix = cs_matrix_native(false, /* symmetry */
-                                       db_size,
-                                       eb_size);
+                                       1, 1);
 
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
-                             db_size, eb_size,
+                             1, 1,
                              n_i_faces, i_face_cells,
                              diagK, xtraK);
 
@@ -1239,17 +1227,13 @@ _elman_schur_sbp(const cs_navsto_param_t       *nsp,
 
   /* Return the associated matrix */
 
-  cs_lnum_t  db_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
-  cs_lnum_t  eb_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
-
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
   sbp->schur_matrix = cs_matrix_native(false, /* symmetry */
-                                       db_size,
-                                       eb_size);
+                                       1, 1);
 
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
-                             db_size, eb_size,
+                             1, 1,
                              n_i_faces, i_face_cells,
                              diagK, xtraK);
 
@@ -1385,18 +1369,14 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
 
   /* Return the associated matrix */
 
-  cs_lnum_t  db_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
-  cs_lnum_t  eb_size[4] = {1, 1, 1, 1}; /* 1, 1, 1, 1*1 */
-
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
   sbp->schur_matrix = cs_matrix_native(false, /* symmetry */
-                                       db_size,
-                                       eb_size);
+                                       1, 1);
 
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
-                             db_size, eb_size,
+                             1, 1,
                              n_i_faces, i_face_cells,
                              diagK, xtraK);
 

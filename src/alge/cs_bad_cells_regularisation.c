@@ -154,14 +154,11 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
 
   cs_real_t epsilp = 1.e-12;
 
-  /* Matrix block size */
-  cs_lnum_t db_size[4] = {1, 1, 1, 1};
-
   cs_sles_solve_native(-1, /* f_id */
                        "potential_regularisation_scalar",
                        true, /* symmetric */
-                       db_size,
-                       NULL, /* eb_size */
+                       1, /* db_size */
+                       1, /* eb_size */
                        (cs_real_t *)dam,
                        xam,
                        epsilp,
@@ -331,14 +328,11 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
 
   cs_real_t epsilp = 1.e-12;
 
-  /* Matrix block size */
-  cs_lnum_t db_size[4] = {3, 3, 3, 3*3};
-
   cs_sles_solve_native(-1, /* f_id */
                        "potential_regularisation_vector",
                        true, /* symmetric */
-                       db_size,
-                       NULL, /* eb_size */
+                       3, /* db_size */
+                       1, /* eb_size */
                        (cs_real_t *)dam,
                        xam,
                        epsilp,
@@ -513,14 +507,11 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
 
   cs_real_t epsilp = 1.e-12;
 
-  /* Matrix block size */
-  cs_lnum_t db_size[4] = {6, 6, 6, 6*6};
-
   cs_sles_solve_native(-1, /* f_id */
                        "potential_regularisation_sym_tensor",
                        true, /* symmetric */
-                       db_size,
-                       NULL, /* eb_size */
+                       6, /* db_size */
+                       1, /* eb_size */
                        (cs_real_t *)dam,
                        xam,
                        epsilp,
@@ -694,14 +685,11 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
 
   cs_real_t epsilp = 1.e-12;
 
-  /* Matrix block size */
-  cs_lnum_t db_size[4] = {9, 9, 9, 9*9};
-
   cs_sles_solve_native(-1, /* f_id */
                        "potential_regularisation_tensor",
                        true, /* symmetric */
-                       db_size,
-                       NULL, /* eb_size */
+                       9, /* db_size */
+                       1, /* eb_size */
                        (cs_real_t *)dam,
                        xam,
                        epsilp,

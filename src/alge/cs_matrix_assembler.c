@@ -3029,10 +3029,6 @@ cs_matrix_assembler_log_rank_counts(const cs_matrix_assembler_t  *ma,
  *
  * The associated values will initially be set to zero.
  *
- * Block sizes are defined by an optional array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * This is a low-level function, which should be called by a simpler
  * function (\ref cs_matrix_assembler_values_init) which provides
  * the necessary function pointers.
@@ -3046,8 +3042,8 @@ cs_matrix_assembler_log_rank_counts(const cs_matrix_assembler_t  *ma,
  *
  * \param[in]       ma        associated matrix assembly structure
  * \param[in]       sep_diag  true if diagonal terms are stored separately
- * \param[in]       db_size   optional diagonal block sizes
- * \param[in]       eb_size   optional extra-diagonal block sizes
+ * \param[in]       db_size   diagonal block sizes
+ * \param[in]       eb_size   extra-diagonal block sizes
  * \param[in, out]  matrix    untyped pointer to matrix description structure
  * \param[in]       init      pointer to matrix coefficients
  *                            initialization function
@@ -3067,8 +3063,8 @@ cs_matrix_assembler_log_rank_counts(const cs_matrix_assembler_t  *ma,
 cs_matrix_assembler_values_t *
 cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
                                   bool                                  sep_diag,
-                                  const cs_lnum_t                      *db_size,
-                                  const cs_lnum_t                      *eb_size,
+                                  const cs_lnum_t                       db_size,
+                                  const cs_lnum_t                       eb_size,
                                   void                                 *matrix,
                                   cs_matrix_assembler_values_init_t    *init,
                                   cs_matrix_assembler_values_add_t     *add,
@@ -3085,15 +3081,8 @@ cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
   mav->separate_diag = sep_diag;
   mav->final_assembly = false;
 
-  for (int i = 0; i < 4; i++) {
-    mav->db_size[i] = 1;
-    mav->eb_size[i] = 1;
-  }
-
-  if (db_size != NULL)
-    memcpy(mav->db_size, db_size, 4*sizeof(int));
-  if (eb_size != NULL)
-    memcpy(mav->eb_size, eb_size, 4*sizeof(int));
+  mav->db_size = db_size;
+  mav->eb_size = eb_size;
 
   mav->diag_idx = NULL;
 
@@ -3105,9 +3094,11 @@ cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
   mav->assembly_begin = begin;
   mav->assembly_end = end;
 
+  const cs_lnum_t eb_size_2 = eb_size*eb_size;
+
 #if defined(HAVE_MPI)
 
-  cs_lnum_t  alloc_size = ma->coeff_send_size * mav->eb_size[3];
+  cs_lnum_t  alloc_size = ma->coeff_send_size * eb_size_2;
 
   BFT_MALLOC(mav->coeff_send, alloc_size, cs_real_t);
 
@@ -3203,9 +3194,9 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
   /* Base stride on first type of value encountered */
 
   if (row_id[0] == col_id[0])
-    stride = mav->db_size[3];
+    stride = mav->db_size * mav->db_size;
   else
-    stride = mav->eb_size[3];
+    stride = mav->eb_size * mav->eb_size;
 
   /* Case where we compute a column index first */
 
@@ -3313,9 +3304,9 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
   /* Base stride on first type of value encountered */
 
   if (row_g_id[0] == col_g_id[0])
-    stride = mav->db_size[3];
+    stride = mav->db_size * mav->db_size;
   else
-    stride = mav->eb_size[3];
+    stride = mav->eb_size * mav->eb_size;
 
   cs_gnum_t s_g_row_id[COEFF_GROUP_SIZE];
   cs_gnum_t s_g_col_id[COEFF_GROUP_SIZE];
@@ -3543,7 +3534,7 @@ cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
 
     cs_real_t  *recv_coeffs = NULL;
 
-    cs_lnum_t stride = mav->eb_size[3];
+    cs_lnum_t stride = mav->eb_size * mav->eb_size;
 
     MPI_Request *request = NULL;
     MPI_Status *status = NULL;

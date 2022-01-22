@@ -91,8 +91,8 @@ extern const char *cs_grid_coarsening_type_name[];
  *
  * parameters:
  *   n_faces        <-- Local number of faces
- *   db_size        <-- Block sizes for diagonal, or NULL
- *   eb_size        <-- Block sizes for diagonal, or NULL
+ *   db_size        <-- Block sizes for diagonal
+ *   eb_size        <-- Block sizes for extra-diagonal
  *   face_cell      <-- Face -> cells connectivity
  *   cell_cen       <-- Cell center (size: 3.n_cells_ext)
  *   cell_vol       <-- Cell volume (size: n_cells_ext)
@@ -106,8 +106,8 @@ extern const char *cs_grid_coarsening_type_name[];
 
 cs_grid_t *
 cs_grid_create_from_shared(cs_lnum_t              n_faces,
-                           const cs_lnum_t       *db_size,
-                           const cs_lnum_t       *eb_size,
+                           cs_lnum_t              db_size,
+                           cs_lnum_t              eb_size,
                            const cs_lnum_2_t     *face_cell,
                            const cs_real_t       *cell_cen,
                            const cs_real_t       *cell_vol,

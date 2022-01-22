@@ -155,17 +155,8 @@ struct _cs_matrix_assembler_values_t {
   bool        separate_diag;          /* is diagonal handled separately ? */
   bool        final_assembly;         /* are we ready for final assembly ? */
 
-  cs_lnum_t   db_size[4];             /* Diag Block size including padding:
-                                         0: useful block size
-                                         1: vector block extents
-                                         2: matrix line extents
-                                         3: matrix line*column extents */
-
-  cs_lnum_t   eb_size[4];             /* Extradiag block size including padding:
-                                         0: useful block size
-                                         1: vector block extents
-                                         2: matrix line extents
-                                         3: matrix line*column extents */
+  cs_lnum_t   db_size;                /* Diagonal blocks size */
+  cs_lnum_t   eb_size;                /* Extradiagonal blocks size */
 
   cs_lnum_t  *diag_idx;               /* Local index of diagonal in each row
                                          when conversion beween separate

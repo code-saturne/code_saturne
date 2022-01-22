@@ -135,11 +135,7 @@ _diag_dom_diag_contrib(const cs_real_t  *restrict da,
  *   dd         --> Resulting vector
  *   n_rows     <-- Number of rows
  *   n_cols_ext <-- Number of colmuns + ghost columns
- *   b_size     <-- block size, including padding:
- *                  b_size[0]: useful block size
- *                  b_size[1]: vector block extents
- *                  b_size[2]: matrix line extents
- *                  b_size[3]: matrix line*column (block) extents
+ *   b_size     <-- block size
  *----------------------------------------------------------------------------*/
 
 static void
@@ -147,11 +143,12 @@ _b_diag_dom_diag_contrib(const cs_real_t  *restrict da,
                          cs_real_t        *restrict dd,
                          cs_lnum_t         n_rows,
                          cs_lnum_t         n_cols_ext,
-                         const cs_lnum_t   b_size[4])
+                         const cs_lnum_t   b_size)
 {
   cs_lnum_t  ii, jj, kk;
   double  sign;
-  const cs_lnum_t  dd_size = n_cols_ext*b_size[1];
+  const cs_lnum_t  b_size_2 = b_size * b_size;
+  const cs_lnum_t  dd_size = n_cols_ext*b_size;
 
 # pragma omp parallel for
   for (ii = 0; ii < dd_size; ii++)
@@ -160,13 +157,13 @@ _b_diag_dom_diag_contrib(const cs_real_t  *restrict da,
   if (da != NULL) {
 #   pragma omp parallel for private(jj, kk, sign)
     for (ii = 0; ii < n_rows; ii++) {
-      for (jj = 0; jj < b_size[1]; jj++)
-        dd[ii*b_size[1] + jj] = 0.0;
-      for (jj = 0; jj < b_size[0]; jj++) {
-        for (kk = 0; kk < b_size[0]; kk++) {
+      for (jj = 0; jj < b_size; jj++)
+        dd[ii*b_size + jj] = 0.0;
+      for (jj = 0; jj < b_size; jj++) {
+        for (kk = 0; kk < b_size; kk++) {
           sign = (jj == kk) ? 1. : -1.;
-          dd[ii*b_size[1] + kk]
-            += sign*fabs(da[ii*b_size[3] + jj*b_size[2] + kk]);
+          dd[ii*b_size + kk]
+            += sign*fabs(da[ii*b_size_2 + jj*b_size + kk]);
         }
       }
     }
@@ -218,33 +215,30 @@ _diag_dom_diag_normalize(const cs_real_t  *restrict da,
  *   da      <-- Pointer to coefficients array (usually matrix diagonal)
  *   dd      --> Resulting vector
  *   n_rows  <-- Number of rows
- *   b_size  <-- block size, including padding:
- *               b_size[0]: useful block size
- *               b_size[1]: vector block extents
- *               b_size[2]: matrix line extents
- *               b_size[3]: matrix line*column (block) extents
+ *   b_size  <-- block size
  *----------------------------------------------------------------------------*/
 
 static void
 _b_diag_dom_diag_normalize(const cs_real_t  *restrict da,
                            cs_real_t        *restrict dd,
                            cs_lnum_t         n_rows,
-                           const cs_lnum_t   b_size[4])
+                           const cs_lnum_t   b_size)
 {
   cs_lnum_t  ii, jj;
   double  d_val;
 
   if (da != NULL) {
+    const cs_lnum_t b_size_2 = b_size*b_size;
 #   pragma omp parallel for private(jj, d_val)
     for (ii = 0; ii < n_rows; ii++) {
-      for (jj = 0; jj < b_size[0]; jj++) {
-        d_val = fabs(da[ii*b_size[3] + jj*b_size[2] + jj]);
+      for (jj = 0; jj < b_size; jj++) {
+        d_val = fabs(da[ii*b_size_2 + jj*b_size + jj]);
         if (d_val > 1.e-18)
-          dd[ii*b_size[1] + jj] /= d_val;
-        else if (dd[ii*b_size[1] + jj] > -1.e-18)
-          dd[ii*b_size[1] + jj] = -1.e18;
+          dd[ii*b_size + jj] /= d_val;
+        else if (dd[ii*b_size + jj] > -1.e-18)
+          dd[ii*b_size + jj] = -1.e18;
         else
-          dd[ii*b_size[1] + jj] = 0;
+          dd[ii*b_size + jj] = 0;
       }
     }
   }
@@ -265,17 +259,17 @@ _diag_dom_native(const cs_matrix_t  *matrix,
   cs_lnum_t  ii, jj, edge_id;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_real_t  *restrict xa = mc->xa;
+  const cs_real_t  *restrict xa = mc->e_val;
 
   /* diagonal contribution */
 
-  _diag_dom_diag_contrib(mc->da, dd, ms->n_rows, ms->n_cols_ext);
+  _diag_dom_diag_contrib(mc->d_val, dd, ms->n_rows, ms->n_cols_ext);
 
   /* non-diagonal terms */
 
-  if (mc->xa != NULL) {
+  if (mc->e_val != NULL) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -302,7 +296,7 @@ _diag_dom_native(const cs_matrix_t  *matrix,
 
   }
 
-  _diag_dom_diag_normalize(mc->da, dd, ms->n_rows);
+  _diag_dom_diag_normalize(mc->d_val, dd, ms->n_rows);
 }
 
 /*----------------------------------------------------------------------------
@@ -320,18 +314,18 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
   cs_lnum_t  ii, jj, kk, edge_id;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_real_t  *restrict xa = mc->xa;
-  const cs_lnum_t *db_size = matrix->db_size;
+  const cs_real_t  *restrict xa = mc->e_val;
+  const cs_lnum_t db_size = matrix->db_size;
 
   /* block diagonal contribution */
 
-  _b_diag_dom_diag_contrib(mc->da, dd, ms->n_rows, ms->n_cols_ext, db_size);
+  _b_diag_dom_diag_contrib(mc->d_val, dd, ms->n_rows, ms->n_cols_ext, db_size);
 
   /* non-diagonal terms */
 
-  if (mc->xa != NULL) {
+  if (mc->e_val != NULL) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -340,9 +334,9 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
       for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
         ii = face_cel_p[edge_id][0];
         jj = face_cel_p[edge_id][1];
-        for (kk = 0; kk < db_size[0]; kk++) {
-          dd[ii*db_size[1] + kk] -= fabs(xa[edge_id]);
-          dd[jj*db_size[1] + kk] -= fabs(xa[edge_id]);
+        for (kk = 0; kk < db_size; kk++) {
+          dd[ii*db_size + kk] -= fabs(xa[edge_id]);
+          dd[jj*db_size + kk] -= fabs(xa[edge_id]);
         }
       }
     }
@@ -351,9 +345,9 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
       for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
         ii = face_cel_p[edge_id][0];
         jj = face_cel_p[edge_id][1];
-        for (kk = 0; kk < db_size[0]; kk++) {
-          dd[ii*db_size[1] + kk] -= fabs(xa[2*edge_id]);
-          dd[jj*db_size[1] + kk] -= fabs(xa[2*edge_id + 1]);
+        for (kk = 0; kk < db_size; kk++) {
+          dd[ii*db_size + kk] -= fabs(xa[2*edge_id]);
+          dd[jj*db_size + kk] -= fabs(xa[2*edge_id + 1]);
         }
       }
 
@@ -361,7 +355,7 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
 
   }
 
-  _b_diag_dom_diag_normalize(mc->da, dd, ms->n_rows, db_size);
+  _b_diag_dom_diag_normalize(mc->d_val, dd, ms->n_rows, db_size);
 }
 
 /*----------------------------------------------------------------------------
@@ -379,19 +373,20 @@ _bb_diag_dom_native(const cs_matrix_t  *matrix,
   cs_lnum_t  ii, jj, kk, ll, edge_id;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_real_t  *restrict xa = mc->xa;
-  const cs_lnum_t *db_size = matrix->db_size;
-  const cs_lnum_t *eb_size = matrix->eb_size;
+  const cs_real_t  *restrict xa = mc->e_val;
+  const cs_lnum_t db_size = matrix->db_size;
+  const cs_lnum_t eb_size = matrix->eb_size;
+  const cs_lnum_t eb_size_2 = eb_size*eb_size;
 
   /* block diagonal contribution */
 
-  _b_diag_dom_diag_contrib(mc->da, dd, ms->n_rows, ms->n_cols_ext, db_size);
+  _b_diag_dom_diag_contrib(mc->d_val, dd, ms->n_rows, ms->n_cols_ext, db_size);
 
   /* non-diagonal terms */
 
-  if (mc->xa != NULL) {
+  if (mc->e_val != NULL) {
 
     const cs_lnum_2_t *restrict face_cel_p = ms->edges;
 
@@ -400,11 +395,11 @@ _bb_diag_dom_native(const cs_matrix_t  *matrix,
       for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
         ii = face_cel_p[edge_id][0];
         jj = face_cel_p[edge_id][1];
-        for (kk = 0; kk < eb_size[0]; kk++) {
-          for (ll = 0; ll < eb_size[0]; ll++) {
-            cs_lnum_t si = edge_id*eb_size[3] + kk*eb_size[2] + ll;
-            dd[ii*db_size[1] + kk] -= fabs(xa[si]);
-            dd[jj*db_size[1] + kk] -= fabs(xa[si]);
+        for (kk = 0; kk < eb_size; kk++) {
+          for (ll = 0; ll < eb_size; ll++) {
+            cs_lnum_t si = edge_id*eb_size_2 + kk*eb_size + ll;
+            dd[ii*db_size + kk] -= fabs(xa[si]);
+            dd[jj*db_size + kk] -= fabs(xa[si]);
           }
         }
       }
@@ -414,12 +409,12 @@ _bb_diag_dom_native(const cs_matrix_t  *matrix,
       for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
         ii = face_cel_p[edge_id][0];
         jj = face_cel_p[edge_id][1];
-        for (kk = 0; kk < db_size[0]; kk++) {
-          for (ll = 0; ll < eb_size[0]; ll++) {
-            cs_lnum_t si0 = 2*edge_id*eb_size[3] + kk*eb_size[2] + ll;
-            cs_lnum_t si1 = (2*edge_id+1)*eb_size[3] + kk*eb_size[2] + ll;
-            dd[ii*db_size[1] + kk] -= fabs(xa[si0]);
-            dd[jj*db_size[1] + kk] -= fabs(xa[si1]);
+        for (kk = 0; kk < db_size; kk++) {
+          for (ll = 0; ll < eb_size; ll++) {
+            cs_lnum_t si0 = 2*edge_id*eb_size_2 + kk*eb_size + ll;
+            cs_lnum_t si1 = (2*edge_id+1)*eb_size_2 + kk*eb_size + ll;
+            dd[ii*db_size + kk] -= fabs(xa[si0]);
+            dd[jj*db_size + kk] -= fabs(xa[si1]);
           }
         }
       }
@@ -428,7 +423,7 @@ _bb_diag_dom_native(const cs_matrix_t  *matrix,
 
   }
 
-  _b_diag_dom_diag_normalize(mc->da, dd, ms->n_rows, db_size);
+  _b_diag_dom_diag_normalize(mc->d_val, dd, ms->n_rows, db_size);
 }
 
 /*----------------------------------------------------------------------------
@@ -481,7 +476,7 @@ _diag_dom_csr(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Measure Diagonal dominance of MSR matrix.
+ * Measure Diagonal dominance of MSR or distributed matrix.
  *
  * parameters:
  *   matrix <-- Pointer to matrix structure
@@ -489,15 +484,12 @@ _diag_dom_csr(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_diag_dom_msr(const cs_matrix_t  *matrix,
+_diag_dom_dist(const cs_matrix_t  *matrix,
               cs_real_t          *restrict dd)
 {
-  cs_lnum_t  ii, jj, n_cols;
-  cs_real_t  sii;
-  const cs_real_t  *restrict m_row;
+  const cs_matrix_struct_dist_t  *ms = matrix->structure;
+  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
   cs_lnum_t  n_rows = ms->n_rows;
 
   /* diagonal contribution */
@@ -506,14 +498,32 @@ _diag_dom_msr(const cs_matrix_t  *matrix,
 
   /* extra-diagonal contribution */
 
-  if (mc->x_val != NULL) {
+  if (mc->e_val != NULL) {
 
-#   pragma omp parallel for private(jj, m_row, n_cols, sii)
-    for (ii = 0; ii < n_rows; ii++) {
-      m_row = mc->x_val + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      sii = 0.0;
-      for (jj = 0; jj < n_cols; jj++)
+    const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      const cs_real_t *restrict m_row = mc->e_val + ms_e->row_index[ii];
+      cs_lnum_t n_cols = ms_e->row_index[ii+1] - ms_e->row_index[ii];
+      cs_real_t sii = 0.0;
+      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+        sii -= fabs(m_row[jj]);
+      dd[ii] += sii;
+    }
+
+  }
+
+  if (mc->h_val != NULL) {
+
+    const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
+
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      const cs_real_t *restrict m_row = mc->h_val + ms_h->row_index[ii];
+      cs_lnum_t n_cols = ms_h->row_index[ii+1] - ms_h->row_index[ii];
+      cs_real_t sii = 0.0;
+      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
         sii -= fabs(m_row[jj]);
       dd[ii] += sii;
     }
@@ -524,7 +534,7 @@ _diag_dom_msr(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Measure Diagonal dominance of MSR matrix, blocked version.
+ * Measure Diagonal dominance of MSR or distributed matrix, blocked version.
  *
  * parameters:
  *   matrix <-- Pointer to matrix structure
@@ -532,15 +542,13 @@ _diag_dom_msr(const cs_matrix_t  *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_b_diag_dom_msr(const cs_matrix_t  *matrix,
-                cs_real_t          *restrict dd)
+_b_diag_dom_dist(const cs_matrix_t  *matrix,
+                 cs_real_t          *restrict dd)
 {
-  cs_lnum_t  ii, jj, kk, n_cols;
-  const cs_real_t  *restrict m_row;
+  const cs_matrix_struct_dist_t  *ms = matrix->structure;
+  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const cs_lnum_t *db_size = matrix->db_size;
+  const cs_lnum_t db_size = matrix->db_size;
   const cs_lnum_t  n_rows = ms->n_rows;
 
   /* diagonal contribution */
@@ -549,15 +557,33 @@ _b_diag_dom_msr(const cs_matrix_t  *matrix,
 
   /* extra-diagonal contribution */
 
-  if (mc->x_val != NULL) {
+  if (mc->e_val != NULL) {
 
-#   pragma omp parallel for private(jj, kk, m_row, n_cols)
-    for (ii = 0; ii < n_rows; ii++) {
-      m_row = mc->x_val + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      for (jj = 0; jj < n_cols; jj++) {
-        for (kk = 0; kk < db_size[0]; kk++)
-          dd[ii*db_size[1] + kk] -= fabs(m_row[jj]);
+    const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      const cs_real_t *restrict m_row = mc->e_val + ms_e->row_index[ii];
+      cs_lnum_t n_cols = ms_e->row_index[ii+1] - ms_e->row_index[ii];
+      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          dd[ii*db_size + kk] -= fabs(m_row[jj]);
+      }
+    }
+
+  }
+
+  if (mc->h_val != NULL) {
+
+    const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
+
+#   pragma omp parallel for
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      const cs_real_t *restrict m_row = mc->h_val + ms_h->row_index[ii];
+      cs_lnum_t n_cols = ms_h->row_index[ii+1] - ms_h->row_index[ii];
+      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          dd[ii*db_size + kk] -= fabs(m_row[jj]);
       }
     }
 
@@ -613,11 +639,7 @@ _pre_dump_diag_contrib(const cs_real_t  *restrict da,
  *   m_val     <-- Matrix coefficient values array
  *   g_coo_num <-- Global coordinate numbers
  *   n_rows    <-- Number of rows
- *   b_size    <-- block size, including padding:
- *                 b_size[0]: useful block size
- *                 b_size[1]: vector block extents
- *                 b_size[2]: matrix line extents
- *                 b_size[3]: matrix line*column (block) extents
+ *   b_size    <-- block size
  *----------------------------------------------------------------------------*/
 
 static void
@@ -626,22 +648,22 @@ _b_pre_dump_diag_contrib(const cs_real_t  *restrict da,
                          cs_real_t        *restrict m_val,
                          const cs_gnum_t  *restrict g_coo_num,
                          cs_lnum_t         n_rows,
-                         const cs_lnum_t   b_size[4])
+                         cs_lnum_t         b_size)
 {
   cs_lnum_t  ii, jj, kk;
-  cs_lnum_t  db_size[2] = {b_size[0], b_size[0]*b_size[0]};
+  cs_lnum_t  b_size_2 = b_size * b_size;
 
   if (da != NULL) {
 #   pragma omp parallel for private(jj, kk)
     for (ii = 0; ii < n_rows; ii++) {
-      for (jj = 0; jj < b_size[0]; jj++) {
-        for (kk = 0; kk < b_size[0]; kk++) {
-          m_coo[(ii*db_size[1] + jj*db_size[0] + kk)*2]
-            = g_coo_num[ii]*b_size[0] + jj;
-          m_coo[(ii*db_size[1] + jj*db_size[0] + kk)*2 + 1]
-            = g_coo_num[ii]*b_size[0] + kk;
-          m_val[ii*db_size[1] + jj*db_size[0] + kk]
-            = da[ii*b_size[3] + jj*b_size[2] + kk];
+      for (jj = 0; jj < b_size; jj++) {
+        for (kk = 0; kk < b_size; kk++) {
+          m_coo[(ii*b_size_2 + jj*b_size + kk)*2]
+            = g_coo_num[ii]*b_size + jj;
+          m_coo[(ii*b_size_2 + jj*b_size + kk)*2 + 1]
+            = g_coo_num[ii]*b_size + kk;
+          m_val[ii*b_size_2 + jj*b_size + kk]
+            = da[ii*b_size_2 + jj*b_size + kk];
         }
       }
     }
@@ -649,13 +671,13 @@ _b_pre_dump_diag_contrib(const cs_real_t  *restrict da,
   else {
 #   pragma omp parallel for private(jj, kk)
     for (ii = 0; ii < n_rows; ii++) {
-      for (jj = 0; jj < b_size[0]; jj++) {
-        for (kk = 0; kk < b_size[0]; kk++) {
-          m_coo[(ii*db_size[1] + jj*db_size[0] + kk)*2]
-            = g_coo_num[ii]*b_size[0] + jj;
-          m_coo[(ii*db_size[1] + jj*db_size[0] + kk)*2 + 1]
-            = g_coo_num[ii]*b_size[0] + kk;
-          m_val[ii*db_size[1] + jj*db_size[0] + kk] = 0.0;
+      for (jj = 0; jj < b_size; jj++) {
+        for (kk = 0; kk < b_size; kk++) {
+          m_coo[(ii*b_size_2 + jj*b_size + kk)*2]
+            = g_coo_num[ii]*b_size + jj;
+          m_coo[(ii*b_size_2 + jj*b_size + kk)*2 + 1]
+            = g_coo_num[ii]*b_size + kk;
+          m_val[ii*b_size_2 + jj*b_size + kk] = 0.0;
         }
       }
     }
@@ -687,9 +709,9 @@ _pre_dump_native(const cs_matrix_t   *matrix,
   cs_real_t   *restrict _m_val;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_real_t  *restrict xa = mc->xa;
+  const cs_real_t  *restrict xa = mc->e_val;
 
   cs_lnum_t  n_entries = ms->n_rows + ms->n_edges*2;
 
@@ -703,13 +725,13 @@ _pre_dump_native(const cs_matrix_t   *matrix,
 
   /* diagonal contribution */
 
-  _pre_dump_diag_contrib(mc->da, _m_coo, _m_val, g_coo_num, ms->n_rows);
+  _pre_dump_diag_contrib(mc->d_val, _m_coo, _m_val, g_coo_num, ms->n_rows);
 
   /* non-diagonal terms */
 
   dump_id = ms->n_rows;
 
-  if (mc->xa != NULL) {
+  if (mc->e_val != NULL) {
 
     const cs_lnum_2_t *restrict face_cel_p
       = (const cs_lnum_2_t *restrict)(ms->edges);
@@ -775,12 +797,12 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
   cs_real_t   *restrict _m_val;
 
   const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
+  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_real_t  *restrict xa = mc->xa;
-  const cs_lnum_t *db_size = matrix->db_size;
+  const cs_real_t  *restrict xa = mc->e_val;
+  const cs_lnum_t db_size = matrix->db_size;
 
-  cs_lnum_t  n_entries = (ms->n_rows*db_size[0] + ms->n_edges*2) * db_size[0];
+  cs_lnum_t  n_entries = (ms->n_rows*db_size + ms->n_edges*2) * db_size;
 
   /* Allocate arrays */
 
@@ -792,14 +814,14 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
 
   /* block diagonal contribution */
 
-  _b_pre_dump_diag_contrib(mc->da, _m_coo, _m_val,
+  _b_pre_dump_diag_contrib(mc->d_val, _m_coo, _m_val,
                            g_coo_num, ms->n_rows, db_size);
 
   /* non-diagonal terms */
 
-  dump_id = ms->n_rows*db_size[0]*db_size[0];
+  dump_id = ms->n_rows*db_size*db_size;
 
-  if (mc->xa != NULL) {
+  if (mc->e_val != NULL) {
 
     const cs_lnum_2_t *restrict face_cel_p
       = (const cs_lnum_2_t *restrict)(ms->edges);
@@ -809,12 +831,12 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
       for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
         ii = face_cel_p[edge_id][0];
         jj = face_cel_p[edge_id][1];
-        for (kk = 0; kk < db_size[0]; kk++) {
-          _m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
-          _m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size[0] + kk;
+        for (kk = 0; kk < db_size; kk++) {
+          _m_coo[dump_id*2] = g_coo_num[ii]*db_size + kk;
+          _m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size + kk;
           _m_val[dump_id] = xa[edge_id];
-          _m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size[0] + kk;
-          _m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size[0] + kk;
+          _m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size + kk;
+          _m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size + kk;
           _m_val[dump_id + 1] = xa[edge_id];
           dump_id += 2;
         }
@@ -825,12 +847,12 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
       for (edge_id = 0; edge_id < ms->n_edges; edge_id++) {
         ii = face_cel_p[edge_id][0];
         jj = face_cel_p[edge_id][1];
-        for (kk = 0; kk < db_size[0]; kk++) {
-          _m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
-          _m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size[0] + kk;
+        for (kk = 0; kk < db_size; kk++) {
+          _m_coo[dump_id*2] = g_coo_num[ii]*db_size + kk;
+          _m_coo[dump_id*2 + 1] = g_coo_num[jj]*db_size + kk;
           _m_val[dump_id] = xa[edge_id*2];
-          _m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size[0] + kk;
-          _m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size[0] + kk;
+          _m_coo[dump_id*2 + 2] = g_coo_num[jj]*db_size + kk;
+          _m_coo[dump_id*2 + 3] = g_coo_num[ii]*db_size + kk;
           _m_val[dump_id + 1] = xa[edge_id*2 + 1];
           dump_id += 2;
         }
@@ -939,11 +961,12 @@ _pre_dump_msr(const cs_matrix_t   *matrix,
   cs_gnum_t   *restrict _m_coo;
   cs_real_t   *restrict _m_val;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const cs_lnum_t  n_rows = ms->n_rows;
+  const cs_matrix_struct_dist_t  *ms = matrix->structure;
+  const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  cs_lnum_t  n_entries = ms->row_index[n_rows] + ms->n_rows;
+  const cs_lnum_t  n_rows = ms->n_rows;
+  cs_lnum_t  n_entries = ms_e->row_index[n_rows] + ms_e->n_rows;
 
   /* Allocate arrays */
 
@@ -959,14 +982,14 @@ _pre_dump_msr(const cs_matrix_t   *matrix,
 
   /* extra-diagonal contribution */
 
-  if (mc->x_val != NULL) {
+  if (mc->e_val != NULL) {
 #   pragma omp parallel for private(jj, dump_id, col_id, m_row, n_cols)
     for (ii = 0; ii < n_rows; ii++) {
-      col_id = ms->col_id + ms->row_index[ii];
-      m_row = mc->x_val + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+      col_id = ms_e->col_id + ms_e->row_index[ii];
+      m_row = mc->e_val + ms_e->row_index[ii];
+      n_cols = ms_e->row_index[ii+1] - ms_e->row_index[ii];
       for (jj = 0; jj < n_cols; jj++) {
-        dump_id = ms->row_index[ii] + jj + ms->n_rows;
+        dump_id = ms_e->row_index[ii] + jj + ms_e->n_rows;
         _m_coo[dump_id*2] = g_coo_num[ii];
         _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]];
         _m_val[dump_id] = m_row[jj];
@@ -976,10 +999,10 @@ _pre_dump_msr(const cs_matrix_t   *matrix,
   else {
 #   pragma omp parallel for private(jj, dump_id, col_id, n_cols)
     for (ii = 0; ii < n_rows; ii++) {
-      col_id = ms->col_id + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+      col_id = ms_e->col_id + ms_e->row_index[ii];
+      n_cols = ms_e->row_index[ii+1] - ms_e->row_index[ii];
       for (jj = 0; jj < n_cols; jj++) {
-        dump_id = ms->row_index[ii] + jj + ms->n_rows;
+        dump_id = ms_e->row_index[ii] + jj + ms_e->n_rows;
         _m_coo[dump_id*2] = g_coo_num[ii];
         _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]];
         _m_val[dump_id] = 0.0;
@@ -1016,14 +1039,15 @@ _b_pre_dump_msr(const cs_matrix_t   *matrix,
   cs_gnum_t   *restrict _m_coo;
   cs_real_t   *restrict _m_val;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const cs_lnum_t  *db_size = matrix->db_size;
+  const cs_matrix_struct_dist_t  *ms = matrix->structure;
+  const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+  const cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
+  const cs_lnum_t  db_size = matrix->db_size;
   const cs_lnum_t  n_rows = ms->n_rows;
-  const cs_lnum_t  dump_id_shift = ms->n_rows*db_size[0]*db_size[0];
+  const cs_lnum_t  dump_id_shift = ms->n_rows*db_size*db_size;
 
-  cs_lnum_t  n_entries =   ms->row_index[n_rows]*db_size[0]
-                         + ms->n_rows*db_size[0]*db_size[0];
+  cs_lnum_t  n_entries =   ms_e->row_index[n_rows]*db_size
+                         + ms_e->n_rows*db_size*db_size;
 
   /* Allocate arrays */
 
@@ -1041,17 +1065,17 @@ _b_pre_dump_msr(const cs_matrix_t   *matrix,
 
   /* extra-diagonal contribution */
 
-  if (mc->x_val != NULL) {
+  if (mc->e_val != NULL) {
 #   pragma omp parallel for private(jj, kk, dump_id, col_id, m_row, n_cols)
     for (ii = 0; ii < n_rows; ii++) {
-      col_id = ms->col_id + ms->row_index[ii];
-      m_row = mc->x_val + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+      col_id = ms_e->col_id + ms_e->row_index[ii];
+      m_row = mc->e_val + ms_e->row_index[ii];
+      n_cols = ms_e->row_index[ii+1] - ms_e->row_index[ii];
       for (jj = 0; jj < n_cols; jj++) {
-        for (kk = 0; kk < db_size[0]; kk++) {
-          dump_id = (ms->row_index[ii] + jj)*db_size[0] + kk + dump_id_shift;
-          _m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
-          _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*db_size[0] + kk;
+        for (kk = 0; kk < db_size; kk++) {
+          dump_id = (ms_e->row_index[ii] + jj)*db_size + kk + dump_id_shift;
+          _m_coo[dump_id*2] = g_coo_num[ii]*db_size + kk;
+          _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*db_size + kk;
           _m_val[dump_id] = m_row[jj];
         }
       }
@@ -1060,13 +1084,13 @@ _b_pre_dump_msr(const cs_matrix_t   *matrix,
   else {
 #   pragma omp parallel for private(jj, kk, dump_id, col_id, n_cols)
     for (ii = 0; ii < n_rows; ii++) {
-      col_id = ms->col_id + ms->row_index[ii];
-      n_cols = ms->row_index[ii+1] - ms->row_index[ii];
+      col_id = ms_e->col_id + ms_e->row_index[ii];
+      n_cols = ms_e->row_index[ii+1] - ms_e->row_index[ii];
       for (jj = 0; jj < n_cols; jj++) {
-        for (kk = 0; kk < db_size[0]; kk++) {
-          dump_id = (ms->row_index[ii] + jj)*db_size[0] + kk + dump_id_shift;
-          _m_coo[dump_id*2] = g_coo_num[ii]*db_size[0] + kk;
-          _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*db_size[0] + kk;
+        for (kk = 0; kk < db_size; kk++) {
+          dump_id = (ms_e->row_index[ii] + jj)*db_size + kk + dump_id_shift;
+          _m_coo[dump_id*2] = g_coo_num[ii]*db_size + kk;
+          _m_coo[dump_id*2+1] = g_coo_num[col_id[jj]]*db_size + kk;
           _m_val[dump_id] = 0.0;
         }
       }
@@ -1203,17 +1227,17 @@ _prepare_matrix_dump_data(const cs_matrix_t   *m,
 
   switch(m->type) {
   case CS_MATRIX_NATIVE:
-    if (m->db_size[3] == 1)
+    if (m->db_size == 1)
       _n_entries = _pre_dump_native(m, g_coo_num, &_m_coords, &_m_vals);
     else
       _n_entries = _b_pre_dump_native(m, g_coo_num, &_m_coords, &_m_vals);
     break;
   case CS_MATRIX_CSR:
-    assert(m->db_size[3] == 1);
+    assert(m->db_size == 1);
     _n_entries = _pre_dump_csr(m, g_coo_num, &_m_coords, &_m_vals);
     break;
   case CS_MATRIX_MSR:
-    if (m->db_size[3] == 1)
+    if (m->db_size == 1)
       _n_entries = _pre_dump_msr(m, g_coo_num, &_m_coords, &_m_vals);
     else
       _n_entries = _b_pre_dump_msr(m, g_coo_num, &_m_coords, &_m_vals);
@@ -1633,57 +1657,53 @@ _frobenius_norm(const cs_matrix_t  *m)
 
   case CS_MATRIX_NATIVE:
     {
-      if (   (m->eb_size[0]*m->eb_size[0] == m->eb_size[3])
-          && (m->db_size[0]*m->db_size[0] == m->db_size[3])) {
+      cs_lnum_t  d_stride = m->db_size * m->db_size;
+      cs_lnum_t  e_stride = m->eb_size * m->eb_size;
+      const cs_matrix_struct_native_t  *ms = m->structure;
+      const cs_matrix_coeff_dist_t  *mc = m->coeffs;
+      double e_mult = (m->eb_size == 1) ? m->db_size : 1;
+      if (mc->symmetric)
+        e_mult *= 2;
+      else
+        e_stride *= 2;
 
-        cs_lnum_t  d_stride = m->db_size[3];
-        cs_lnum_t  e_stride = m->eb_size[3];
-        const cs_matrix_struct_native_t  *ms = m->structure;
-        const cs_matrix_coeff_native_t  *mc = m->coeffs;
-        double e_mult = (m->eb_size[3] == 1) ? m->db_size[0] : 1;
-        if (mc->symmetric)
-          e_mult *= 2;
-        else
-          e_stride *= 2;
+      retval = cs_dot_xx(d_stride*m->n_rows, mc->d_val);
 
-        retval = cs_dot_xx(d_stride*m->n_rows, mc->da);
-
-        double ed_contrib = 0.;
-        const cs_real_t  *restrict xa = mc->xa;
-#       pragma omp parallel reduction(+:ed_contrib) if (ms->n_edges > CS_THR_MIN)
-        {
-          double c = 0; /* Use Kahan compensated summation for
-                           sum of block contributions (but not for local
-                           block sums, for simplicity and performance) */
-#         pragma omp for
-          for (cs_lnum_t edge_id = 0; edge_id < ms->n_edges; edge_id++) {
-            cs_lnum_t ii = ms->edges[edge_id][0];
-            if (ii < ms->n_rows) {
-              double bsum = 0;
-              for (cs_lnum_t kk = 0; kk < e_stride; kk++) {
-                bsum  += (  xa[edge_id*e_stride + kk]
-                          * xa[edge_id*e_stride + kk]);
-              }
-              double z = bsum - c;
-              double t = ed_contrib + z;
-              c = (t - ed_contrib) - z;
-              ed_contrib = t;
+      double ed_contrib = 0.;
+      const cs_real_t  *restrict xa = mc->e_val;
+#     pragma omp parallel reduction(+:ed_contrib) if (ms->n_edges > CS_THR_MIN)
+      {
+        double c = 0; /* Use Kahan compensated summation for
+                         sum of block contributions (but not for local
+                         block sums, for simplicity and performance) */
+#       pragma omp for
+        for (cs_lnum_t edge_id = 0; edge_id < ms->n_edges; edge_id++) {
+          cs_lnum_t ii = ms->edges[edge_id][0];
+          if (ii < ms->n_rows) {
+            double bsum = 0;
+            for (cs_lnum_t kk = 0; kk < e_stride; kk++) {
+              bsum  += (  xa[edge_id*e_stride + kk]
+                        * xa[edge_id*e_stride + kk]);
             }
+            double z = bsum - c;
+            double t = ed_contrib + z;
+            c = (t - ed_contrib) - z;
+            ed_contrib = t;
           }
         }
-        retval += ed_contrib*e_mult;
-
-        cs_parall_sum(1, CS_DOUBLE, &retval);
       }
+      retval += ed_contrib*e_mult;
+
+      cs_parall_sum(1, CS_DOUBLE, &retval);
     }
     break;
 
   case CS_MATRIX_CSR:
-    assert(   ft == CS_MATRIX_SCALAR
-           || ft == CS_MATRIX_SCALAR_SYM
-           || ft == CS_MATRIX_BLOCK);
-    if (m->eb_size[0]*m->eb_size[0] == m->eb_size[3]) {
-      cs_lnum_t  stride = m->eb_size[3];
+    {
+      assert(   ft == CS_MATRIX_SCALAR
+             || ft == CS_MATRIX_SCALAR_SYM
+             || ft == CS_MATRIX_BLOCK);
+      cs_lnum_t  stride = m->eb_size * m->eb_size;
       const cs_matrix_struct_csr_t  *ms = m->structure;
       const cs_matrix_coeff_csr_t  *mc = m->coeffs;
       cs_lnum_t n_vals = ms->row_index[m->n_rows];
@@ -1693,16 +1713,34 @@ _frobenius_norm(const cs_matrix_t  *m)
     break;
 
   case CS_MATRIX_MSR:
-    if (   (m->eb_size[0]*m->eb_size[0] == m->eb_size[3])
-        && (m->db_size[0]*m->db_size[0] == m->db_size[3])) {
-      cs_lnum_t  d_stride = m->db_size[3];
-      cs_lnum_t  e_stride = m->eb_size[3];
-      const cs_matrix_struct_csr_t  *ms = m->structure;
-      const cs_matrix_coeff_msr_t  *mc = m->coeffs;
-      cs_lnum_t n_vals = ms->row_index[m->n_rows];
-      double d_mult = (m->eb_size[3] == 1) ? m->db_size[0] : 1;
+    {
+      cs_lnum_t  d_stride = m->db_size * m->db_size;
+      cs_lnum_t  e_stride = m->eb_size * m->eb_size;
+      const cs_matrix_struct_dist_t  *ms = m->structure;
+      const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+      const cs_matrix_coeff_dist_t  *mc = m->coeffs;
+      cs_lnum_t n_vals = ms_e->row_index[m->n_rows];
+      double d_mult = (m->eb_size == 1) ? m->db_size : 1;
       retval = cs_dot_xx(d_stride*m->n_rows, mc->d_val);
-      retval += d_mult * cs_dot_xx(e_stride*n_vals, mc->x_val);
+      retval += d_mult * cs_dot_xx(e_stride*n_vals, mc->e_val);
+      cs_parall_sum(1, CS_DOUBLE, &retval);
+    }
+    break;
+
+  case CS_MATRIX_DIST:
+    {
+      cs_lnum_t  d_stride = m->db_size * m->db_size;
+      cs_lnum_t  e_stride = m->eb_size * m->eb_size;
+      const cs_matrix_struct_dist_t  *ms = m->structure;
+      const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
+      const cs_matrix_struct_csr_t  *ms_h = &(ms->h);
+      const cs_matrix_coeff_dist_t  *mc = m->coeffs;
+      cs_lnum_t n_e_vals = ms_e->row_index[m->n_rows];
+      cs_lnum_t n_h_vals = ms_h->row_index[m->n_rows];
+      double d_mult = (m->eb_size == 1) ? m->db_size : 1;
+      retval = cs_dot_xx(d_stride*m->n_rows, mc->d_val);
+      retval += d_mult * cs_dot_xx(e_stride*n_e_vals, mc->e_val);
+      retval += d_mult * cs_dot_xx(e_stride*n_h_vals, mc->h_val);
       cs_parall_sum(1, CS_DOUBLE, &retval);
     }
     break;
@@ -1739,22 +1777,22 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
 
   switch(matrix->type) {
   case CS_MATRIX_NATIVE:
-    if (matrix->db_size[3] == 1)
+    if (matrix->db_size == 1)
       _diag_dom_native(matrix, dd);
-    else if (matrix->eb_size[3] == 1)
+    else if (matrix->eb_size == 1)
       _b_diag_dom_native(matrix, dd);
     else
       _bb_diag_dom_native(matrix, dd);
     break;
   case CS_MATRIX_CSR:
-    assert(matrix->db_size[3] == 1);
+    assert(matrix->db_size == 1);
     _diag_dom_csr(matrix, dd);
     break;
   case CS_MATRIX_MSR:
-    if (matrix->db_size[3] == 1)
-      _diag_dom_msr(matrix, dd);
+    if (matrix->db_size == 1)
+      _diag_dom_dist(matrix, dd);
     else
-      _b_diag_dom_msr(matrix, dd);
+      _b_diag_dom_dist(matrix, dd);
     break;
     break;
   default:
@@ -1768,15 +1806,15 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
   /* Sync ghost rows as a precaution */
 
   if (halo != NULL) {
-    if (matrix->db_size[3] == 1)
+    if (matrix->db_size == 1)
       cs_halo_sync_var(halo, CS_HALO_STANDARD, dd);
     else {
-      cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, dd, matrix->db_size[1]);
-      if (halo->n_transforms > 0 && matrix->db_size[0] == 3)
+      cs_halo_sync_var_strided(halo, CS_HALO_STANDARD, dd, matrix->db_size);
+      if (halo->n_transforms > 0 && matrix->db_size == 3)
         cs_halo_perio_sync_var_vect(halo,
                                     CS_HALO_STANDARD,
                                     dd,
-                                    matrix->db_size[1]);
+                                    matrix->db_size);
     }
   }
 }
@@ -1988,8 +2026,8 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
   int  test_id;
 
   cs_real_t  *da = NULL, *xa = NULL, *rhs = NULL;
-  cs_lnum_t  diag_block_size[4] = {3, 3, 3, 9};
-  cs_lnum_t  extra_diag_block_size[4] = {1, 1, 1, 1};
+  cs_lnum_t  db_size = 3, db_size_2 = 3*3;
+  cs_lnum_t  eb_size = 1;
 
   const int n_tests = 7;
   const char *name[] = {"matrix_native",
@@ -2010,16 +2048,16 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
 
-  BFT_MALLOC(rhs, n_cols_ext*diag_block_size[1], cs_real_t);
+  BFT_MALLOC(rhs, n_cols_ext*db_size, cs_real_t);
 
-  BFT_MALLOC(da, n_cols_ext*diag_block_size[3], cs_real_t);
+  BFT_MALLOC(da, n_cols_ext*db_size_2, cs_real_t);
   BFT_MALLOC(xa, n_edges*2, cs_real_t);
 
 # pragma omp parallel for
-  for (ii = 0; ii < n_cols_ext*diag_block_size[3]; ii++)
+  for (ii = 0; ii < n_cols_ext*db_size_2; ii++)
     da[ii] = 1.0 + ii*0.1/n_cols_ext;
 # pragma omp parallel for
-  for (ii = 0; ii < n_cols_ext*diag_block_size[1]; ii++)
+  for (ii = 0; ii < n_cols_ext*db_size; ii++)
     rhs[ii] = ii*0.1/n_cols_ext;
 
 # pragma omp parallel for
@@ -2033,13 +2071,11 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
 
   for (test_id = 0; test_id < n_tests; test_id++) {
 
-    cs_lnum_t *_diag_block_size = (block_flag[test_id]) ? diag_block_size : NULL;
-    cs_lnum_t *_extra_diag_block_size = (block_flag[test_id]-1) ?
-      extra_diag_block_size : NULL;
+    cs_lnum_t _db_size = (block_flag[test_id]) ? db_size : 1;
+    cs_lnum_t _eb_size = (block_flag[test_id]-1) ? eb_size : 1;
 
     cs_matrix_structure_t
       *ms = cs_matrix_structure_create(type[test_id],
-                                       true,
                                        n_rows,
                                        n_cols_ext,
                                        n_edges,
@@ -2050,8 +2086,8 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
 
     cs_matrix_set_coefficients(m,
                                sym_flag[test_id],
-                               _diag_block_size,
-                               _extra_diag_block_size,
+                               _db_size,
+                               _eb_size,
                                n_edges,
                                edges,
                                da,

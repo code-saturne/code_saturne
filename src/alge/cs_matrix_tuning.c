@@ -150,7 +150,7 @@ _matrix_tune_test(const cs_matrix_t     *m,
   /*-----------------------------------------*/
 
   cs_lnum_t n_cols = cs_matrix_get_n_columns(m);
-  cs_lnum_t b_size = cs_matrix_get_diag_block_size(m)[0];
+  cs_lnum_t b_size = cs_matrix_get_diag_block_size(m);
 
   cs_lnum_t n = n_cols*b_size;
 

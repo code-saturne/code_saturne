@@ -1830,21 +1830,14 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
                     "%s: Matrix assembler values has not been finalized.\n",
                     __func__);
 
-        cs_lnum_t db_size[4] = {1, 1, 1, 1};
-        cs_lnum_t eb_size[4] = {1, 1, 1, 1};
+        cs_lnum_t db_size = 1;
+        cs_lnum_t eb_size = 1;
 
         if (!b->info.unrolled) {
 
           cs_lnum_t stride = b->info.stride;
-          db_size[0] = stride;
-          db_size[1] = stride;
-          db_size[2] = stride;
-          db_size[3] = stride*stride;
-
-          eb_size[0] = stride;
-          eb_size[1] = stride;
-          eb_size[2] = stride;
-          eb_size[3] = stride*stride;
+          db_size = stride;
+          eb_size = stride;
 
         }
 
@@ -1875,7 +1868,7 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
                       __func__);
 
           sb->mav_array[k] = cs_matrix_assembler_values_init(sb->matrices[k],
-                                                             NULL, NULL);
+                                                             1, 1);
 
         } /* Loop on each matrix */
       }
@@ -1900,7 +1893,7 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
                     "%s: Matrix assembler values has not been finalized.\n",
                     __func__);
 
-        xb->mav = cs_matrix_assembler_values_init(xb->matrix, NULL, NULL);
+        xb->mav = cs_matrix_assembler_values_init(xb->matrix, 1, 1);
       }
       break;
 

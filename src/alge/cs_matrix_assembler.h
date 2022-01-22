@@ -28,7 +28,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
@@ -75,15 +75,15 @@ typedef struct _cs_matrix_assembler_values_t  cs_matrix_assembler_values_t;
  *           structure.
  *
  * \param[in, out]  matrix   untyped pointer to matrix description structure
- * \param[in]       db size  optional diagonal block sizes
- * \param[in]       eb size  optional extra-diagonal block sizes
+ * \param[in]       db size  diagonal block sizes
+ * \param[in]       eb size  extra-diagonal block sizes
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_matrix_assembler_values_init_t) (void             *matrix,
-                                     const cs_lnum_t  *db_size,
-                                     const cs_lnum_t  *eb_size);
+(cs_matrix_assembler_values_init_t) (void       *matrix,
+                                     cs_lnum_t   db_size,
+                                     cs_lnum_t   eb_size);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -550,10 +550,6 @@ cs_matrix_assembler_log_rank_counts(const cs_matrix_assembler_t  *ma,
  *
  * The associated values will initially be set to zero.
  *
- * Block sizes are defined by an optional array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * This is a low-level function, which should be called by a simpler
  * function (\ref cs_matrix_assembler_values_init) which provides
  * the necessary function pointers.
@@ -588,8 +584,8 @@ cs_matrix_assembler_log_rank_counts(const cs_matrix_assembler_t  *ma,
 cs_matrix_assembler_values_t *
 cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
                                   bool                                  sep_diag,
-                                  const cs_lnum_t                      *db_size,
-                                  const cs_lnum_t                      *eb_size,
+                                  cs_lnum_t                             db_size,
+                                  cs_lnum_t                             eb_size,
                                   void                                 *matrix,
                                   cs_matrix_assembler_values_init_t    *init,
                                   cs_matrix_assembler_values_add_t     *add,

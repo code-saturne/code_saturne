@@ -57,6 +57,10 @@ typedef enum {
   CS_MATRIX_CSR,              /*!< Compressed Sparse Row storage */
   CS_MATRIX_MSR,              /*!< Modified Compressed Sparse Row storage
                                    (separate diagonal) */
+  CS_MATRIX_DIST,             /*!< Distributed matrix storage
+                                   (separate diagonal, off-diagonal, and
+                                   distant coefficients) */
+
   CS_MATRIX_N_BUILTIN_TYPES,  /*!< Number of known and built-in matrix types */
 
   CS_MATRIX_N_TYPES           /*!< Number of known matrix types */
@@ -84,9 +88,8 @@ typedef enum {
 
 /*! SpMV operation types.
  *
- * Assuming a matrix is a sum of a lower (L), diagonal (D), and upper (U)
- * - A = L + D + U
- * - A = D + E (where E = L+U)
+ * Assuming a matrix is a sum of a diagonal (D), and extra-diagonal (E) part
+ * - A = D + E
  */
 
 typedef enum {
@@ -147,15 +150,14 @@ extern const char  *cs_matrix_spmv_type_name[];
  * structure, so it must be destroyed before they are freed
  * (usually along with the code's main face -> cell structure).
  *
- * Note that the resulting matrix structure will contain either a full or
- * an empty main diagonal, and that the extra-diagonal structure is always
+ * Note that the resulting matrix structure will contain a full main
+ * main diagonal, and that the extra-diagonal structure is always
  * symmetric (though the coefficients my not be, and we may choose a
  * matrix format that does not exploit this symmetry). If the edges
  * connectivity argument is NULL, the matrix will be purely diagonal.
  *
  * parameters:
  *   type        <-- type of matrix considered
- *   have_diag   <-- indicates if the diagonal structure contains nonzeroes
  *   n_rows      <-- local number of rows
  *   n_cols_ext  <-- number of columns + ghosts
  *   n_edges     <-- local number of (undirected) graph edges
@@ -169,7 +171,6 @@ extern const char  *cs_matrix_spmv_type_name[];
 
 cs_matrix_structure_t *
 cs_matrix_structure_create(cs_matrix_type_t       type,
-                           bool                   have_diag,
                            cs_lnum_t              n_rows,
                            cs_lnum_t              n_cols_ext,
                            cs_lnum_t              n_edges,
@@ -226,8 +227,6 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
  * (usually along with the code's main face -> cell structure).
  *
  * parameters:
- *   have_diag        <-- indicates if the structure includes the
- *                        diagonal (should be the same for all rows)
  *   direct_assembly  <-- true if each value corresponds to a unique face
  *   n_rows           <-- local number of rows
  *   n_cols_ext       <-- local number of columns + ghosts
@@ -242,8 +241,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
  *----------------------------------------------------------------------------*/
 
 cs_matrix_structure_t *
-cs_matrix_structure_create_msr_shared(bool                    have_diag,
-                                      bool                    direct_assmbly,
+cs_matrix_structure_create_msr_shared(bool                    direct_assmbly,
                                       cs_lnum_t               n_rows,
                                       cs_lnum_t               n_cols_ext,
                                       const cs_lnum_t        *row_index,
@@ -424,35 +422,27 @@ cs_matrix_get_n_entries(const cs_matrix_t  *matrix);
 /*----------------------------------------------------------------------------
  * Return matrix diagonal block sizes.
  *
- * Block sizes are defined by a array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * parameters:
  *   matrix <-- pointer to matrix structure
  *
  * returns:
- *   pointer to block sizes
+ *   diagonal block sizes
  *----------------------------------------------------------------------------*/
 
-const cs_lnum_t *
+cs_lnum_t
 cs_matrix_get_diag_block_size(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
  * Return matrix extra-diagonal block sizes.
  *
- * Block sizes are defined by a array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * parameters:
  *   matrix <-- pointer to matrix structure
  *
  * returns:
- *   pointer to block sizes
+ *   extra-diagonal block sizes
  *----------------------------------------------------------------------------*/
 
-const cs_lnum_t *
+cs_lnum_t
 cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
@@ -485,23 +475,19 @@ cs_matrix_get_l_range(const cs_matrix_t  *matrix);
 /*----------------------------------------------------------------------------
  * Get matrix fill type, depending on block sizes.
  *
- * Block sizes are defined by an optional array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * parameters:
  *   symmetric              <-- indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
+ *   diag_block_size        <-- block sizes for diagonal
+ *   extra_diag_block_size  <-- block sizes for extra diagonal
  *
  * returns:
  *   matrix fill type
  *----------------------------------------------------------------------------*/
 
 cs_matrix_fill_type_t
-cs_matrix_get_fill_type(bool              symmetric,
-                        const cs_lnum_t  *diag_block_size,
-                        const cs_lnum_t  *extra_diag_block_size);
+cs_matrix_get_fill_type(bool       symmetric,
+                        cs_lnum_t  diag_block_size,
+                        cs_lnum_t  extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
  * Set matrix coefficients defined relative to a "native" edge graph,
@@ -514,15 +500,11 @@ cs_matrix_get_fill_type(bool              symmetric,
  * Depending on current options and initialization, values will be copied
  * or simply mapped.
  *
- * Block sizes are defined by an optional array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * parameters:
  *   matrix                 <-> pointer to matrix structure
  *   symmetric              <-- indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
+ *   diag_block_size        <-- block sizes for diagonal
+ *   extra_diag_block_size  <-- block sizes for extra diagonal
  *   n_edges                <-- local number of graph edges
  *   edges                  <-- edges (row <-> column) connectivity
  *   da                     <-- diagonal values (NULL if zero)
@@ -535,8 +517,8 @@ cs_matrix_get_fill_type(bool              symmetric,
 void
 cs_matrix_set_coefficients(cs_matrix_t        *matrix,
                            bool                symmetric,
-                           const cs_lnum_t    *diag_block_size,
-                           const cs_lnum_t    *extra_diag_block_size,
+                           cs_lnum_t           diag_block_size,
+                           cs_lnum_t           extra_diag_block_size,
                            const cs_lnum_t     n_edges,
                            const cs_lnum_2_t   edges[],
                            const cs_real_t    *da,
@@ -548,15 +530,11 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
  * With private arrays, the matrix becomes independant from the
  * arrays passed as arguments.
  *
- * Block sizes are defined by an optional array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * parameters:
  *   matrix                 <-> pointer to matrix structure
  *   symmetric              <-- indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
+ *   diag_block_size        <-- block sizes for diagonal
+ *   extra_diag_block_size  <-- block sizes for extra diagonal
  *   n_edges                <-- local number of graph edges
  *   edges                  <-- edges (row <-> column) connectivity
  *   da                     <-- diagonal values (NULL if zero)
@@ -569,8 +547,8 @@ cs_matrix_set_coefficients(cs_matrix_t        *matrix,
 void
 cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
                             bool                symmetric,
-                            const cs_lnum_t    *diag_block_size,
-                            const cs_lnum_t    *extra_diag_block_size,
+                            cs_lnum_t           diag_block_size,
+                            cs_lnum_t           extra_diag_block_size,
                             const cs_lnum_t     n_edges,
                             const cs_lnum_2_t   edges[],
                             const cs_real_t    *da,
@@ -586,15 +564,11 @@ cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
  * arguments are set to NULL, to help ensure the caller does not use the
  * original arrays directly after this call.
  *
- * Block sizes are defined by an optional array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * parameters:
  *   matrix                 <-> pointer to matrix structure
  *   symmetric              <-- indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
+ *   diag_block_size        <-- block sizes for diagonal
+ *   extra_diag_block_size  <-- block sizes for extra diagonal
  *   row_index              <-- MSR row index (0 to n-1)
  *   col_id                 <-- MSR column id (0 to n-1)
  *   d_val                  <-> diagonal values (NULL if zero)
@@ -604,8 +578,8 @@ cs_matrix_copy_coefficients(cs_matrix_t        *matrix,
 void
 cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
                                     bool                 symmetric,
-                                    const cs_lnum_t     *diag_block_size,
-                                    const cs_lnum_t     *extra_diag_block_size,
+                                    cs_lnum_t            diag_block_size,
+                                    cs_lnum_t            extra_diag_block_size,
                                     const cs_lnum_t      row_index[],
                                     const cs_lnum_t      col_id[],
                                     cs_real_t          **d_val,
@@ -618,23 +592,18 @@ cs_matrix_transfer_coefficients_msr(cs_matrix_t         *matrix,
  * The associated matrix's structure must have been created using
  * \ref cs_matrix_structure_create_from_assembler.
  *
- * Block sizes are defined by an optional array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * \param[in, out]  matrix                 pointer to matrix structure
- * \param[in]       diag_block_size        block sizes for diagonal, or NULL
- * \param[in]       extra_diag_block_size  block sizes for extra diagonal,
- *                                         or NULL
+ * \param[in]       diag_block_size        block sizes for diagonal
+ * \param[in]       extra_diag_block_size  block sizes for extra diagonal
  *
  * \return  pointer to initialized matrix assembler values structure;
  */
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_assembler_values_t *
-cs_matrix_assembler_values_init(cs_matrix_t      *matrix,
-                                const cs_lnum_t  *diag_block_size,
-                                const cs_lnum_t  *extra_diag_block_size);
+cs_matrix_assembler_values_init(cs_matrix_t  *matrix,
+                                cs_lnum_t     diag_block_size,
+                                cs_lnum_t     extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
  * Release shared matrix coefficients.

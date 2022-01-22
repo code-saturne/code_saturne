@@ -249,7 +249,7 @@ _add_scal_values_single(const cs_cdo_assembly_row_t    *row,
   assert(row->l_id > -1);
 
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
+  cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
@@ -259,7 +259,7 @@ _add_scal_values_single(const cs_cdo_assembly_row_t    *row,
 
   /* Update the extra-diagonal values */
 
-  cs_real_t  *xvals = mc->_x_val + ms->row_index[row->l_id];
+  cs_real_t  *xvals = mc->_e_val + ms->row_index[row->l_id];
   for (int j = 0; j < row->i; j++) /* Lower part */
     xvals[row->col_idx[j]] += row->val[j];
   for (int j = row->i+1; j < row->n_cols; j++) /* Upper part */
@@ -294,7 +294,7 @@ _add_scal_values_atomic(const cs_cdo_assembly_row_t    *row,
   assert(row->l_id > -1);
 
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
+  cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
@@ -305,7 +305,7 @@ _add_scal_values_atomic(const cs_cdo_assembly_row_t    *row,
 
   /* Update the extra-diagonal values */
 
-  cs_real_t  *xvals = mc->_x_val + ms->row_index[row->l_id];
+  cs_real_t  *xvals = mc->_e_val + ms->row_index[row->l_id];
   for (int j = 0; j < row->n_cols; j++) {
     if (j != row->i) {
 #     pragma omp atomic
@@ -342,7 +342,7 @@ _add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
   assert(row->l_id > -1);
 
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
+  cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
@@ -354,7 +354,7 @@ _add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
 
     /* Update the extra-diagonal values */
 
-    cs_real_t  *xvals = mc->_x_val + ms->row_index[row->l_id];
+    cs_real_t  *xvals = mc->_e_val + ms->row_index[row->l_id];
     for (int j = 0; j < row->n_cols; j++)
       if (j != row->i)
         xvals[row->col_idx[j]] += row->val[j];
@@ -657,32 +657,32 @@ _add_vect_values_single(const cs_cdo_assembly_row_t    *row,
   assert(row->l_id > -1);
 
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
+  cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_lnum_t *db_size = matrix->db_size;
-  const cs_lnum_t *eb_size = matrix->eb_size;
+  const cs_lnum_t db_size = matrix->db_size;
+  const cs_lnum_t eb_size = matrix->eb_size;
 
   cs_lnum_t stride;
 
   /* db_size != ebsize has not been handled by
    * cs_matrix_assembler_t in mpi case yet */
 
-  assert(db_size[0] == 3 && db_size[3] == 9);
-  assert(eb_size[0] == 3 && eb_size[3] == 9);
+  assert(db_size == 3);
+  assert(eb_size == 3);
 
   /* Update the diagonal value */
 
-  stride = db_size[3];
+  stride = db_size * db_size;
 
   for (int j = 0; j < stride; j++)
     mc->_d_val[row->l_id*stride + j] += row->val[9*row->i + j];
 
   /* Update the extra-diagonal values */
 
-  stride = eb_size[3];
+  stride = eb_size * eb_size;
 
-  cs_real_t  *xvals = mc->_x_val + stride*ms->row_index[row->l_id];
+  cs_real_t  *xvals = mc->_e_val + stride*ms->row_index[row->l_id];
   for (int j = 0; j < row->i; j++) /* Lower part */
     for (int k = 0; k < stride; k++)
       xvals[row->col_idx[j]*stride + k] += row->val[9*j + k];
@@ -720,23 +720,23 @@ _add_vect_values_atomic(const cs_cdo_assembly_row_t    *row,
   assert(row->l_id > -1);
 
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
+  cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_lnum_t *db_size = matrix->db_size;
-  const cs_lnum_t *eb_size = matrix->eb_size;
+  const cs_lnum_t db_size = matrix->db_size;
+  const cs_lnum_t eb_size = matrix->eb_size;
 
   cs_lnum_t stride;
 
   /* db_size != ebsize has not been handled by
    * cs_matrix_assembler_t in mpi case yet */
 
-  assert(db_size[0] == 3 && db_size[3] == 9);
-  assert(eb_size[0] == 3 && eb_size[3] == 9);
+  assert(db_size == 3);
+  assert(eb_size == 3);
 
   /* Update the diagonal value */
 
-  stride = db_size[3];
+  stride = db_size * db_size;
 
   for (int j = 0; j < stride; j++) {
 # pragma omp atomic
@@ -745,9 +745,9 @@ _add_vect_values_atomic(const cs_cdo_assembly_row_t    *row,
 
   /* Update the extra-diagonal values */
 
-  stride = eb_size[3];
+  stride = eb_size * eb_size;
 
-  cs_real_t  *xvals = mc->_x_val + stride*ms->row_index[row->l_id];
+  cs_real_t  *xvals = mc->_e_val + stride*ms->row_index[row->l_id];
   for (int j = 0; j < row->n_cols; j++) {
     if (j != row->i) {
       for (int k = 0; k < stride; k++) {
@@ -786,34 +786,34 @@ _add_vect_values_critical(const cs_cdo_assembly_row_t    *row,
   assert(row->l_id > -1);
 
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
-  cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
+  cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_lnum_t *db_size = matrix->db_size;
-  const cs_lnum_t *eb_size = matrix->eb_size;
+  const cs_lnum_t db_size = matrix->db_size;
+  const cs_lnum_t eb_size = matrix->eb_size;
 
   cs_lnum_t stride;
 
   /* db_size != ebsize has not been handled by
    * cs_matrix_assembler_t in mpi case yet */
 
-  assert(db_size[0] == 3 && db_size[3] == 9);
-  assert(eb_size[0] == 3 && eb_size[3] == 9);
+  assert(db_size == 3);
+  assert(eb_size == 3);
 
   /* Update the diagonal value */
 
 # pragma omp critical
   {
-    stride = db_size[3];
+    stride = db_size*db_size;
 
     for (int j = 0; j < stride; j++)
       mc->_d_val[row->l_id*stride + j] += row->val[9*row->i + j];
 
     /* Update the extra-diagonal values */
 
-    stride = eb_size[3];
+    stride = eb_size*eb_size;
 
-    cs_real_t  *xvals = mc->_x_val + stride*ms->row_index[row->l_id];
+    cs_real_t  *xvals = mc->_e_val + stride*ms->row_index[row->l_id];
     for (int j = 0; j < row->n_cols; j++)
       if (j != row->i)
         for (int k = 0; k < stride; k++)
@@ -856,16 +856,16 @@ _assemble_row_vect_dt(cs_matrix_assembler_values_t       *mav,
   const cs_gnum_t  *coeff_send_g_id = ma->coeff_send_col_g_id + r_start;
 
   cs_matrix_t  *matrix = (cs_matrix_t *)mav->matrix;
-  const cs_lnum_t *db_size = matrix->db_size;
-  const cs_lnum_t *eb_size = matrix->eb_size;
+  const cs_lnum_t db_size = matrix->db_size;
+  const cs_lnum_t eb_size = matrix->eb_size;
 
   cs_lnum_t stride;
 
   /* db_size != ebsize has not been handled by
    * cs_matrix_assembler_t in mpi case yet */
 
-  assert(db_size[0] == 3 && db_size[3] == 9);
-  assert(eb_size[0] == 3 && eb_size[3] == 9);
+  assert(db_size == 3);
+  assert(eb_size == 3);
 
   /* Diagonal term */
 
@@ -875,7 +875,7 @@ _assemble_row_vect_dt(cs_matrix_assembler_values_t       *mav,
 
   /* Now add values to send coefficients */
 
-  stride = db_size[3];
+  stride = db_size*db_size;
 
   for (int k = 0; k < stride; k++) {
 # pragma omp atomic
@@ -884,7 +884,7 @@ _assemble_row_vect_dt(cs_matrix_assembler_values_t       *mav,
 
   /* Loop on extra-diagonal entries */
 
-  stride = eb_size[3];
+  stride = eb_size*eb_size;
 
   for (int j = 0; j < row->i; j++) { /* Lower-part */
 
@@ -950,16 +950,16 @@ _assemble_row_vect_ds(cs_matrix_assembler_values_t       *mav,
   const cs_gnum_t  *coeff_send_g_id = ma->coeff_send_col_g_id + r_start;
 
   cs_matrix_t  *matrix = (cs_matrix_t *)mav->matrix;
-  const cs_lnum_t *db_size = matrix->db_size;
-  const cs_lnum_t *eb_size = matrix->eb_size;
+  const cs_lnum_t db_size = matrix->db_size;
+  const cs_lnum_t eb_size = matrix->eb_size;
 
   cs_lnum_t stride;
 
   /* db_size != ebsize has not been handled by
    * cs_matrix_assembler_t in mpi case yet */
 
-  assert(db_size[0] == 3 && db_size[3] == 9);
-  assert(eb_size[0] == 3 && eb_size[3] == 9);
+  assert(db_size == 3);
+  assert(eb_size == 3);
 
   /* Diagonal term */
 
@@ -969,14 +969,14 @@ _assemble_row_vect_ds(cs_matrix_assembler_values_t       *mav,
 
   /* Now add values to send coefficients */
 
-  stride = db_size[3];
+  stride = db_size*db_size;
 
   for (int k = 0; k < stride; k++)
     mav->coeff_send[e_diag_id*stride + k] += row->val[9*row->i + k];
 
   /* Loop on extra-diagonal entries */
 
-  stride = eb_size[3];
+  stride = eb_size*eb_size;
 
   for (int j = 0; j < row->i; j++) { /* Lower-part */
 

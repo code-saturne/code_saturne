@@ -282,7 +282,7 @@ cs_matrix_wrapper_vector(int                  iconvp,
                          int                  tensorial_diffusion,
                          int                  ndircp,
                          int                  isym,
-                         cs_lnum_t            eb_size[4],
+                         cs_lnum_t            eb_size,
                          double               thetap,
                          const cs_real_33_t   coefbp[],
                          const cs_real_33_t   cofbfp[],
@@ -307,7 +307,7 @@ cs_matrix_wrapper_vector(int                  iconvp,
   if (tensorial_diffusion == 1) {
     /* Symmetric matrix */
     if (isym == 1) {
-      assert(eb_size[0] == 1);
+      assert(eb_size == 1);
       cs_sym_matrix_vector(m,
                            idiffp,
                            thetap,
@@ -1169,7 +1169,7 @@ cs_matrix_vector(const cs_mesh_t            *m,
                  const cs_mesh_quantities_t *mq,
                  int                         iconvp,
                  int                         idiffp,
-                 cs_lnum_t                   eb_size[4],
+                 cs_lnum_t                   eb_size,
                  double                      thetap,
                  const cs_real_33_t          coefbp[],
                  const cs_real_33_t          cofbfp[],
@@ -1241,15 +1241,15 @@ cs_matrix_vector(const cs_mesh_t            *m,
     }
   }
 
-  if (eb_size[0] == 1) {
+  if (eb_size == 1) {
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
       xa[face_id][0] = 0.;
       xa[face_id][1] = 0.;
     }
   } else {
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-      for (cs_lnum_t i = 0; i < eb_size[0]; i++) {
-        for (cs_lnum_t j = 0; j < eb_size[1]; j++) {
+      for (cs_lnum_t i = 0; i < eb_size; i++) {
+        for (cs_lnum_t j = 0; j < eb_size; j++) {
           _xa[face_id][0][i][j] = 0.;
           _xa[face_id][1][i][j] = 0.;
         }
@@ -1259,7 +1259,7 @@ cs_matrix_vector(const cs_mesh_t            *m,
 
   /* 2. Computation of extradiagonal terms */
 
-  if (eb_size[0] == 1) {
+  if (eb_size == 1) {
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
       /*
@@ -1298,10 +1298,10 @@ cs_matrix_vector(const cs_mesh_t            *m,
        * the n(x)n term is multiplied by i_f_face_factor and (1 - n(x)n) by 1
        * XA_ij <= XA_ik n_k n_j (factor - 1) + XA_ij
        * XA_ij used to be diagonal: XA_ik n_k n_j = XA_ii n_i n_j*/
-      for (cs_lnum_t i = 0; i < eb_size[0]; i++) {
+      for (cs_lnum_t i = 0; i < eb_size; i++) {
         _xa[face_id][0][i][i] = flu[0];
         _xa[face_id][1][i][i] = flu[1];
-        for (cs_lnum_t j = 0; j < eb_size[1]; j++) {
+        for (cs_lnum_t j = 0; j < eb_size; j++) {
           _xa[face_id][0][i][j] = thetap*(_xa[face_id][0][i][j]
               + flu[0]
               * (i_f_face_factor[is_p*face_id][1] - 1.) * normal[i] * normal[j]);
@@ -1317,7 +1317,7 @@ cs_matrix_vector(const cs_mesh_t            *m,
 
   /* 3. Contribution of the extra-diagonal terms to the diagonal */
 
-  if (eb_size[0] == 1) {
+  if (eb_size == 1) {
     for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
 
       cs_lnum_t ii = i_face_cells[face_id][0];
@@ -1351,11 +1351,11 @@ cs_matrix_vector(const cs_mesh_t            *m,
        *      = -X_ji + (1-theta)*m_ij
        *      = -X_ij + m_ij
        */
-      for (cs_lnum_t i = 0; i < eb_size[0]; i++) {
+      for (cs_lnum_t i = 0; i < eb_size; i++) {
         da[ii][i][i] -= iconvp * i_massflux[face_id];
         da[jj][i][i] += iconvp * i_massflux[face_id];
 
-        for (cs_lnum_t j = 0; j < eb_size[1]; j++) {
+        for (cs_lnum_t j = 0; j < eb_size; j++) {
           da[ii][i][j] -= _xa[face_id][1][i][j];
           da[jj][i][j] -= _xa[face_id][0][i][j];
         }

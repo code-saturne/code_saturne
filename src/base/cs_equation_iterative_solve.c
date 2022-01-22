@@ -252,13 +252,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   int isym, inc, isweep, niterf, iccocg, nswmod;
-  int lvar, ibsize, iesize, imasac, key_sinfo_id;
+  int lvar, imasac, key_sinfo_id;
   double residu, rnorm, ressol;
   double thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk;
 
   double rnorm2 = 0, alph = 0, beta = 0;
-
-  cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
 
@@ -314,20 +312,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   bool symmetric = (isym == 1) ? true : false;
 
   BFT_MALLOC(xam, isym*n_i_faces, cs_real_t);
-
-  /* Matrix block size */
-  ibsize = 1;
-  iesize = 1;
-
-  db_size[0] = ibsize;
-  db_size[1] = ibsize;
-  db_size[2] = ibsize;
-  db_size[3] = ibsize*ibsize;
-
-  eb_size[0] = iesize;
-  eb_size[1] = iesize;
-  eb_size[2] = iesize;
-  eb_size[3] = iesize*iesize;
 
   /* Periodicity has to be taken into account */
 
@@ -535,8 +519,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       w2[cell_id] = (pvar[cell_id]-p_mean);
 
     cs_matrix_vector_native_multiply(symmetric,
-                                     db_size,
-                                     eb_size,
+                                     1,  /* db_size */
+                                     1,  /* eb_size */
                                      f_id,
                                      dam,
                                      xam,
@@ -597,8 +581,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     if (conv_diff_mg)
       cs_sles_setup_native_conv_diff(f_id,
                                      var_name,
-                                     db_size,
-                                     eb_size,
+                                     1,  /* db_size */
+                                     1,  /* eb_size */
                                      dam,
                                      xam,
                                      true);
@@ -606,8 +590,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     cs_sles_solve_native(f_id,
                          var_name,
                          symmetric,
-                         db_size,
-                         eb_size,
+                         1,  /* db_size */
+                         1,  /* eb_size */
                          dam,
                          xam,
                          epsilp,
@@ -1155,15 +1139,13 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   const cs_lnum_t n_faces = cs_glob_mesh->n_i_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  int isym, inc, isweep, niterf, nswmod, ibsize;
+  int isym, inc, isweep, niterf, nswmod;
   int key_sinfo_id;
-  int iesize, lvar, imasac;
+  int lvar, imasac;
   double residu, rnorm, ressol, thetex;
   double paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax;
 
   double alph = 0., beta = 0.;
-
-  cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
 
@@ -1179,25 +1161,16 @@ cs_equation_iterative_solve_vector(int                   idtvar,
    *==========================================================================*/
 
   /* Matrix block size */
-  ibsize = 3;
-  iesize = 1; /* CS_ISOTROPIC_DIFFUSION or CS_ANISOTROPIC_RIGHT_DIFFUSION */
+  cs_lnum_t db_size = 3;
+  cs_lnum_t eb_size = 1; /* CS_ISOTROPIC_DIFFUSION
+                            or CS_ANISOTROPIC_RIGHT_DIFFUSION */
   if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION)
-    iesize = 3;
+    eb_size = 3;
 
   if (cs_glob_porous_model == 3) { //FIXME iphydr + other option?
     if (iconvp > 0)
-      iesize = 3;
+      eb_size = 3;
   }
-
-  db_size[0] = ibsize;
-  db_size[1] = ibsize;
-  db_size[2] = ibsize;
-  db_size[3] = ibsize*ibsize;
-
-  eb_size[0] = iesize;
-  eb_size[1] = iesize;
-  eb_size[2] = iesize;
-  eb_size[3] = iesize*iesize;
 
   /* Allocate temporary arrays */
   BFT_MALLOC(dam, n_cells_ext, cs_real_33_t);
@@ -1228,10 +1201,9 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   bool symmetric = (isym == 1) ? true : false;
 
   /*  be careful here, xam is interleaved*/
-  if (iesize == 1)
-    BFT_MALLOC(xam, isym*n_faces, cs_real_t);
-  if (iesize == 3)
-    BFT_MALLOC(xam, 3*3*isym*n_faces, cs_real_t);
+
+  cs_lnum_t eb_stride = eb_size*eb_size;
+  BFT_MALLOC(xam, eb_stride*isym*n_faces, cs_real_t);
 
   /*============================================================================
    * 1.  Building of the "simplified" matrix
@@ -1528,14 +1500,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
           dpvar[iel][isou] = 0.;
       }
     }
-
-    /* Matrix block size */
-    ibsize = 3;
-
-    db_size[0] = ibsize;
-    db_size[1] = ibsize;
-    db_size[2] = ibsize;
-    db_size[3] = ibsize*ibsize;
 
     /*  Solver residual */
     ressol = residu;
@@ -2014,15 +1978,13 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   const cs_lnum_t n_faces = cs_glob_mesh->n_i_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  int isym, inc, isweep, niterf, nswmod, ibsize;
+  int isym, inc, isweep, niterf, nswmod;
   int key_sinfo_id;
-  int iesize, lvar, imasac;
+  int lvar, imasac;
   double residu, rnorm, ressol, thetex;
   double paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax;
 
   double rnorm2 = 0, alph = 0, beta = 0;
-
-  cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
 
@@ -2038,19 +2000,10 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
    *==========================================================================*/
 
   /* Matrix block size */
-  ibsize = 6;
-  iesize = 1; /* CS_ISOTROPIC_DIFFUSION or CS_ANISOTROPIC_RIGHT_DIFFUSION */
-  if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) iesize = 6;
-
-  db_size[0] = ibsize;
-  db_size[1] = ibsize;
-  db_size[2] = ibsize;
-  db_size[3] = ibsize*ibsize;
-
-  eb_size[0] = iesize;
-  eb_size[1] = iesize;
-  eb_size[2] = iesize;
-  eb_size[3] = iesize*iesize;
+  cs_lnum_t db_size = 6;
+  cs_lnum_t eb_size = 1; /* CS_ISOTROPIC_DIFFUSION
+                            or CS_ANISOTROPIC_RIGHT_DIFFUSION */
+  if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) eb_size = 6;
 
   /* Allocate temporary arrays */
   BFT_MALLOC(dam, n_cells_ext, cs_real_66_t);
@@ -2081,17 +2034,15 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   bool symmetric = (isym == 1) ? true : false;
 
   /*  be carefull here, xam is interleaved*/
-  if (iesize == 1)
-    BFT_MALLOC(xam, isym*n_faces, cs_real_t);
-  if (iesize == 6)
-    BFT_MALLOC(xam, 6*6*isym*n_faces, cs_real_t);
+  cs_lnum_t eb_stride = eb_size*eb_size;
+  BFT_MALLOC(xam, eb_stride*isym*n_faces, cs_real_t);
 
   /*============================================================================
    * 1.  Building of the "simplified" matrix
    *==========================================================================*/
 
   int tensorial_diffusion = 1;
-  if (iesize == 6)
+  if (eb_size == 6)
     tensorial_diffusion = 2;
 
   cs_matrix_wrapper_tensor(iconvp,
@@ -2367,14 +2318,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
           dpvar[iel][isou] = 0.;
       }
     }
-
-    /* Matrix block size */
-    ibsize = 6;
-
-    db_size[0] = ibsize;
-    db_size[1] = ibsize;
-    db_size[2] = ibsize;
-    db_size[3] = ibsize*ibsize;
 
     /*  Solver residual */
     ressol = residu;

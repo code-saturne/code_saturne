@@ -117,8 +117,8 @@ cs_sles_default_finalize(void);
  * parameters:
  *   f_id                   associated field id, or < 0
  *   name                   associated name if f_id < 0, or NULL
- *   diag_block_size        block sizes for diagonal, or NULL
- *   extra_diag_block_size  block sizes for extra diagonal, or NULL
+ *   diag_block_size        block sizes for diagonal
+ *   extra_diag_block_size  block sizes for extra diagonal
  *   da                     diagonal values (NULL if zero)
  *   xa                     extradiagonal values (NULL if zero)
  *   conv_diff              convection-diffusion mode
@@ -128,8 +128,8 @@ cs_sles_default_finalize(void);
 void
 cs_sles_setup_native_conv_diff(int                  f_id,
                                const char          *name,
-                               const cs_lnum_t     *diag_block_size,
-                               const cs_lnum_t     *extra_diag_block_size,
+                               const cs_lnum_t      diag_block_size,
+                               const cs_lnum_t      extra_diag_block_size,
                                const cs_real_t     *da,
                                const cs_real_t     *xa,
                                bool                 conv_diff);
@@ -141,8 +141,8 @@ cs_sles_setup_native_conv_diff(int                  f_id,
  *   f_id                   <-- associated field id, or < 0
  *   name                   <-- associated name if f_id < 0, or NULL
  *   symmetric              <-- indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- block sizes for extra diagonal, or NULL
+ *   diag_block_size        <-- block sizes for diagonal
+ *   extra_diag_block_size  <-- block sizes for extra diagonal
  *   da                     <-- diagonal values (NULL if zero)
  *   xa                     <-- extradiagonal values (NULL if zero)
  *   r_epsilon              <-- precision
@@ -160,8 +160,8 @@ cs_sles_convergence_state_t
 cs_sles_solve_native(int                  f_id,
                      const char          *name,
                      bool                 symmetric,
-                     const cs_lnum_t     *diag_block_size,
-                     const cs_lnum_t     *extra_diag_block_size,
+                     cs_lnum_t            diag_block_size,
+                     cs_lnum_t            extra_diag_block_size,
                      const cs_real_t     *da,
                      const cs_real_t     *xa,
                      double               precision,

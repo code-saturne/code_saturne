@@ -965,7 +965,8 @@ _block_jacobi(cs_sles_it_t              *c,
   /*-------------------------------------------------------------*/
   assert(c->setup_data != NULL);
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size_2 = db_size * db_size;
 
   const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
 
@@ -999,11 +1000,11 @@ _block_jacobi(cs_sles_it_t              *c,
 
 #   pragma omp parallel for if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
-      _fw_and_bw_lu(ad_inv + db_size[3]*ii,
-                    db_size[0],
-                    vx + db_size[1]*ii,
-                    vxx + db_size[1]*ii,
-                    rhs + db_size[1]*ii);
+      _fw_and_bw_lu(ad_inv + db_size_2*ii,
+                    db_size,
+                    vx + db_size*ii,
+                    vxx + db_size*ii,
+                    rhs + db_size*ii);
     }
 
   }
@@ -1052,7 +1053,8 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   const cs_lnum_t  *order = c->add_data->order;
@@ -1093,6 +1095,8 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
     }
     else {
 
+      const cs_lnum_t db_size_2 = db_size * db_size;
+
 #     pragma omp parallel for if(n_rows > CS_THR_MIN  && !_thread_debug)
       for (cs_lnum_t ll = 0; ll < n_rows; ll++) {
 
@@ -1104,16 +1108,16 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 
         cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-          vx0[kk] = rhs[ii*db_size[1] + kk];
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          vx0[kk] = rhs[ii*db_size + kk];
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size + kk]);
         }
 
-        _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                         db_size[0],
+        _fw_and_bw_lu_gs(ad_inv + db_size_2*ii,
+                         db_size,
                          _vx,
                          vx0);
 
@@ -1164,7 +1168,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   /* Current iteration */
@@ -1201,6 +1205,8 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
     }
     else {
 
+      const cs_lnum_t db_size_2 = db_size * db_size;
+
 #     pragma omp parallel for if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
@@ -1210,21 +1216,21 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
         cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-          vx0[kk] = rhs[ii*db_size[1] + kk];
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          vx0[kk] = rhs[ii*db_size + kk];
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size + kk]);
         }
 
-        _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                         db_size[0],
+        _fw_and_bw_lu_gs(ad_inv + db_size_2*ii,
+                         db_size,
                          _vx,
                          vx0);
 
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-          vx[ii*db_size[1] + kk] = _vx[kk];
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          vx[ii*db_size + kk] = _vx[kk];
 
       }
 
@@ -1287,7 +1293,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   /* Current iteration */
@@ -1323,6 +1329,8 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
     }
     else {
 
+      const cs_lnum_t db_size_2 = db_size*db_size;
+
 #     pragma omp parallel for if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
@@ -1333,20 +1341,20 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
         cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
         for (cs_lnum_t kk = 0; kk < diag_block_size; kk++)
-          vx0[kk] = rhs[ii*db_size[1] + kk];
+          vx0[kk] = rhs[ii*db_size + kk];
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
           for (cs_lnum_t kk = 0; kk < diag_block_size; kk++)
-            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size + kk]);
         }
 
-        _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                         db_size[0],
+        _fw_and_bw_lu_gs(ad_inv + db_size_2*ii,
+                         db_size,
                          _vx,
                          vx0);
 
         for (cs_lnum_t kk = 0; kk < diag_block_size; kk++)
-          vx[ii*db_size[1] + kk] = _vx[kk];
+          vx[ii*db_size + kk] = _vx[kk];
 
       }
 
@@ -1381,6 +1389,8 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
     }
     else {
 
+      const cs_lnum_t db_size_2 = db_size*db_size;
+
 #     pragma omp parallel for if(n_rows > CS_THR_MIN && !_thread_debug)
       for (cs_lnum_t ii = n_rows - 1; ii > - 1; ii--) {
 
@@ -1390,21 +1400,21 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 
         cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-          vx0[kk] = rhs[ii*db_size[1] + kk];
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          vx0[kk] = rhs[ii*db_size + kk];
 
         for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-          for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+          for (cs_lnum_t kk = 0; kk < db_size; kk++)
+            vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size + kk]);
         }
 
-        _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                         db_size[0],
+        _fw_and_bw_lu_gs(ad_inv + db_size_2*ii,
+                         db_size,
                          _vx,
                          vx0);
 
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-          vx[ii*db_size[1] + kk] = _vx[kk];
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          vx[ii*db_size + kk] = _vx[kk];
 
       }
 
@@ -1458,7 +1468,7 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   /* Single iteration */
@@ -1498,6 +1508,8 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
   }
   else {
 
+    const cs_lnum_t db_size_2 = db_size*db_size;
+
 #   pragma omp parallel for  if(n_rows > CS_THR_MIN && !_thread_debug)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
@@ -1507,23 +1519,23 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
 
       cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-      for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-        vx0[kk] = rhs[ii*db_size[1] + kk];
+      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+        vx0[kk] = rhs[ii*db_size + kk];
       }
 
       for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
         if (col_id[jj] > ii) break;
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-          vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size + kk]);
       }
 
-      _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                       db_size[0],
+      _fw_and_bw_lu_gs(ad_inv + db_size_2*ii,
+                       db_size,
                        _vx,
                        vx0);
 
-      for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-        vx[ii*db_size[1] + kk] = _vx[kk];
+      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+        vx[ii*db_size + kk] = _vx[kk];
       }
 
     }
@@ -1576,7 +1588,7 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   /* Single iteration */
@@ -1616,6 +1628,8 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
   }
   else {
 
+    const cs_lnum_t db_size_2 = db_size*db_size;
+
 #   pragma omp parallel for  if(n_rows > CS_THR_MIN && !_thread_debug)
     for (cs_lnum_t ii = n_rows - 1; ii > - 1; ii--) {
 
@@ -1625,23 +1639,23 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
 
       cs_real_t vx0[DB_SIZE_MAX], _vx[DB_SIZE_MAX];
 
-      for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-        vx0[kk] = rhs[ii*db_size[1] + kk];
+      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+        vx0[kk] = rhs[ii*db_size + kk];
       }
 
       for (cs_lnum_t jj = n_cols-1; jj > -1; jj--) {
         if (col_id[jj] < ii) break;
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-          vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size[1] + kk]);
+        for (cs_lnum_t kk = 0; kk < db_size; kk++)
+          vx0[kk] -= (m_row[jj]*vx[col_id[jj]*db_size + kk]);
       }
 
-      _fw_and_bw_lu_gs(ad_inv + db_size[3]*ii,
-                       db_size[0],
+      _fw_and_bw_lu_gs(ad_inv + db_size_2*ii,
+                       db_size,
                        _vx,
                        vx0);
 
-      for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-        vx[ii*db_size[1] + kk] = _vx[kk];
+      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+        vx[ii*db_size + kk] = _vx[kk];
       }
 
     }
@@ -1851,7 +1865,7 @@ cs_multigrid_smoother_setup(void               *context,
 {
   cs_sles_it_t  *c = context;
 
-  const int diag_block_size = (cs_matrix_get_diag_block_size(a))[0];
+  const int diag_block_size = cs_matrix_get_diag_block_size(a);
 
   if (verbosity > 1) {
     bft_printf(_("\n Setup of solver for linear system \"%s\"\n"),
@@ -1998,10 +2012,7 @@ cs_multigrid_smoother_solve(void                *context,
 
   cs_sles_it_convergence_t  convergence;
 
-  const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
-  const cs_lnum_t _diag_block_size = diag_block_size[0];
-
-  assert(diag_block_size[0] == diag_block_size[1]);
+  const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
 
   /* Initialize number of iterations and residue,
      and smooth linear system */
@@ -2040,7 +2051,7 @@ cs_multigrid_smoother_solve(void                *context,
 #endif
 
     cvg = c->solve(c,
-                   a, _diag_block_size, &convergence,
+                   a, diag_block_size, &convergence,
                    rhs, vx,
                    aux_size, aux_vectors);
 

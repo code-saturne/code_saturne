@@ -218,8 +218,7 @@ _update_matrix_struct(cs_matrix_type_t  t)
     {
       if (ma != NULL)
         _matrix_struct[t]
-          = cs_matrix_structure_create_msr_shared(true,
-                                                  ma->single_faces_to_cells,
+          = cs_matrix_structure_create_msr_shared(ma->single_faces_to_cells,
                                                   mesh->n_cells,
                                                   mesh->n_cells_with_ghosts,
                                                   ma->cell_cells_idx,
@@ -229,7 +228,6 @@ _update_matrix_struct(cs_matrix_type_t  t)
       else
         _matrix_struct[t]
           = cs_matrix_structure_create(CS_MATRIX_MSR,
-                                       true,
                                        mesh->n_cells,
                                        mesh->n_cells_with_ghosts,
                                        mesh->n_i_faces,
@@ -243,7 +241,6 @@ _update_matrix_struct(cs_matrix_type_t  t)
     {
       _matrix_struct[t]
         = cs_matrix_structure_create(t,
-                                     true,
                                      mesh->n_cells,
                                      mesh->n_cells_with_ghosts,
                                      mesh->n_i_faces,
@@ -388,8 +385,8 @@ _create_assembler(int  coupling_id)
 
 void
 cs_matrix_vector_native_multiply(bool                symmetric,
-                                 const cs_lnum_t     db_size[4],
-                                 const cs_lnum_t     eb_size[4],
+                                 cs_lnum_t           db_size,
+                                 cs_lnum_t           eb_size,
                                  int                 f_id,
                                  const cs_real_t    *dam,
                                  const cs_real_t    *xam,
@@ -543,9 +540,9 @@ cs_matrix_update_mesh(void)
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_default(bool             symmetric,
-                  const cs_lnum_t  diag_block_size[],
-                  const cs_lnum_t  extra_diag_block_size[])
+cs_matrix_default(bool       symmetric,
+                  cs_lnum_t  diag_block_size,
+                  cs_lnum_t  extra_diag_block_size)
 {
   cs_matrix_t *m = NULL;
 
@@ -570,17 +567,17 @@ cs_matrix_default(bool             symmetric,
  *
  * parameters:
  *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *   diag_block_size        <-- Block sizes for diagonal
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal
  *
  * returns:
  *   pointer to MSR matrix adapted to fill type
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_msr(bool              symmetric,
-              const cs_lnum_t  *diag_block_size,
-              const cs_lnum_t  *extra_diag_block_size)
+cs_matrix_msr(bool       symmetric,
+              cs_lnum_t  diag_block_size,
+              cs_lnum_t  extra_diag_block_size)
 {
   cs_matrix_type_t t = CS_MATRIX_MSR;
   cs_matrix_fill_type_t mft = cs_matrix_get_fill_type(symmetric,
@@ -598,17 +595,17 @@ cs_matrix_msr(bool              symmetric,
  *
  * parameters:
  *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *   diag_block_size        <-- Block sizes for diagonal
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal
  *
  * returns:
  *   pointer to native matrix adapted to fill type
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_native(bool              symmetric,
-                 const cs_lnum_t  *diag_block_size,
-                 const cs_lnum_t  *extra_diag_block_size)
+cs_matrix_native(bool       symmetric,
+                 cs_lnum_t  diag_block_size,
+                 cs_lnum_t  extra_diag_block_size)
 {
   CS_UNUSED(symmetric);
   CS_UNUSED(diag_block_size);
@@ -623,18 +620,18 @@ cs_matrix_native(bool              symmetric,
  *
  * \param[in]  type_name              Matrix type name
  * \param[in]  symmetric              Indicates if coefficients are symmetric
- * \param[in]  diag_block_size        Nlock sizes for diagonal, or NULL
- * \param[in]  extra_diag_block_size  Block sizes for extra diagonal, or NULL
+ * \param[in]  diag_block_size        Block sizes for diagonal
+ * \param[in]  extra_diag_block_size  Block sizes for extra diagonal
  *
  * \return  Pointer to matrix matching requested type
  */
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_external(const char       *type_name,
-                   bool              symmetric,
-                   const cs_lnum_t  *diag_block_size,
-                   const cs_lnum_t  *extra_diag_block_size)
+cs_matrix_external(const char  *type_name,
+                   bool         symmetric,
+                   cs_lnum_t    diag_block_size,
+                   cs_lnum_t    extra_diag_block_size)
 {
   cs_matrix_fill_type_t mft = cs_matrix_get_fill_type(symmetric,
                                                       diag_block_size,
@@ -689,7 +686,7 @@ cs_matrix_external(const char       *type_name,
  * Note that the matrix containers share the same assigned structure,
  * so they must be both destroyed before that structure.
  *
- * Coefficients and matching structures are not copied or created..
+ * Coefficients and matching structures are not copied or created.
  *
  * This function is intended to allow sharing of a base structure or assembler
  * with an external library matrix wrapper, so as to allow efficient
@@ -699,18 +696,18 @@ cs_matrix_external(const char       *type_name,
  * this function, so that it can the be accessed using \ref cs_matrix_external.
  *
  * \param[in]  symmetric              Indicates if matrix coefficients are symmetric
- * \param[in]  diag_block_size        Block sizes for diagonal, or NULL
- * \param[in]  extra_diag_block_size  Block sizes for extra diagonal, or NULL
+ * \param[in]  diag_block_size        Block sizes for diagonal
+ * \param[in]  extra_diag_block_size  Block sizes for extra diagonal
  *
  * \return  pointer to native matrix adapted to fill type
  */
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_copy_to_external(cs_matrix_t      *src,
-                           bool              symmetric,
-                           const cs_lnum_t  *diag_block_size,
-                           const cs_lnum_t  *extra_diag_block_size)
+cs_matrix_copy_to_external(cs_matrix_t  *src,
+                           bool          symmetric,
+                           cs_lnum_t     diag_block_size,
+                           cs_lnum_t     extra_diag_block_size)
 {
   int m_id = _n_ext_matrices;
   _n_ext_matrices += 1;
@@ -881,8 +878,8 @@ cs_matrix_t *
 cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
                                         cs_matrix_type_t   type,
                                         bool               symmetric,
-                                        const cs_lnum_t   *diag_block_size,
-                                        const cs_lnum_t   *extra_diag_block_size,
+                                        cs_lnum_t          diag_block_size,
+                                        cs_lnum_t          extra_diag_block_size,
                                         const cs_real_t   *da,
                                         const cs_real_t   *xa)
 {
@@ -944,13 +941,9 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
 
   /* Extradiagonal values based on internal faces */
 
-  cs_lnum_t db_size = 1;
-  if (diag_block_size != NULL)
-    db_size = diag_block_size[0];
+  cs_lnum_t db_size = diag_block_size;
 
-  cs_lnum_t eb_size = 1;
-  if (extra_diag_block_size != NULL)
-    eb_size = extra_diag_block_size[0];
+  cs_lnum_t eb_size = extra_diag_block_size;
 
   cs_lnum_t jj = 0;
 

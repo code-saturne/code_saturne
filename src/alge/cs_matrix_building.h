@@ -135,7 +135,7 @@ cs_matrix_wrapper_vector(int                  iconvp,
                          int                  tensorial_diffusion,
                          int                  ndircp,
                          int                  isym,
-                         cs_lnum_t            eb_size[4],
+                         cs_lnum_t            eb_size,
                          double               thetap,
                          const cs_real_33_t   coefbu[],
                          const cs_real_33_t   cofbfu[],
@@ -429,6 +429,7 @@ cs_sym_matrix_vector(const cs_mesh_t          *m,
  * \param[in]     idiffp        indicator
  *                               - 1 diffusion
  *                               - 0 otherwise
+ * \param[in]     eb_size       size of extra-diagonal blocks
  * \param[in]     thetap        weighting coefficient for the theta-scheme,
  *                               - thetap = 0: explicit scheme
  *                               - thetap = 0.5: time-centered
@@ -456,7 +457,7 @@ cs_matrix_vector(const cs_mesh_t            *m,
                  const cs_mesh_quantities_t *mq,
                  int                         iconvp,
                  int                         idiffp,
-                 cs_lnum_t                   eb_size[4],
+                 cs_lnum_t                   eb_size,
                  double                      thetap,
                  const cs_real_33_t          coefbu[],
                  const cs_real_33_t          cofbfu[],

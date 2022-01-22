@@ -74,14 +74,14 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_vector_native_multiply(bool                symmetric,
-                                 const cs_lnum_t     db_size[4],
-                                 const cs_lnum_t     eb_size[4],
-                                 int                 f_id,
-                                 const cs_real_t    *dam,
-                                 const cs_real_t    *xam,
-                                 cs_real_t          *vx,
-                                 cs_real_t          *vy);
+cs_matrix_vector_native_multiply(bool              symmetric,
+                                 cs_lnum_t         db_size,
+                                 cs_lnum_t         eb_size,
+                                 int               f_id,
+                                 const cs_real_t  *dam,
+                                 const cs_real_t  *xam,
+                                 cs_real_t        *vx,
+                                 cs_real_t        *vy);
 
 /*----------------------------------------------------------------------------
  * Initialize sparse matrix API.
@@ -109,51 +109,51 @@ cs_matrix_update_mesh(void);
  *
  * parameters:
  *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *   diag_block_size        <-- Block sizes for diagonal
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal
  *
  * returns:
  *   pointer to default matrix structure adapted to fill type
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_default(bool             symmetric,
-                  const cs_lnum_t  *diag_block_size,
-                  const cs_lnum_t  *extra_diag_block_size);
+cs_matrix_default(bool       symmetric,
+                  cs_lnum_t  diag_block_size,
+                  cs_lnum_t  extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
  * Return MSR matrix for a given fill type
  *
  * parameters:
  *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *   diag_block_size        <-- Block sizes for diagonal
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal
  *
  * returns:
  *   pointer to MSR matrix adapted to fill type
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_msr(bool             symmetric,
-              const cs_lnum_t  *diag_block_size,
-              const cs_lnum_t  *extra_diag_block_size);
+cs_matrix_msr(bool       symmetric,
+              cs_lnum_t  diag_block_size,
+              cs_lnum_t  extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
  * Return native matrix for a given fill type
  *
  * parameters:
  *   symmetric              <-- Indicates if matrix coefficients are symmetric
- *   diag_block_size        <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size  <-- Block sizes for extra diagonal, or NULL
+ *   diag_block_size        <-- Block sizes for diagonal
+ *   extra_diag_block_size  <-- Block sizes for extra diagonal
  *
  * returns:
  *   pointer to native matrix adapted to fill type
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_native(bool              symmetric,
-                 const cs_lnum_t  *diag_block_size,
-                 const cs_lnum_t  *extra_diag_block_size);
+cs_matrix_native(bool       symmetric,
+                 cs_lnum_t  diag_block_size,
+                 cs_lnum_t  extra_diag_block_size);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -161,18 +161,18 @@ cs_matrix_native(bool              symmetric,
  *
  * \param[in]  type_name              Matrix type name
  * \param[in]  symmetric              Indicates if coefficients are symmetric
- * \param[in]  diag_block_size        Nlock sizes for diagonal, or NULL
- * \param[in]  extra_diag_block_size  Block sizes for extra diagonal, or NULL
+ * \param[in]  diag_block_size        Block sizes for diagonal
+ * \param[in]  extra_diag_block_size  Block sizes for extra diagonal
  *
  * \return  Pointer to matrix matching requested type
  */
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_external(const char       *type_name,
-                   bool              symmetric,
-                   const cs_lnum_t  *diag_block_size,
-                   const cs_lnum_t  *extra_diag_block_size);
+cs_matrix_external(const char  *type_name,
+                   bool         symmetric,
+                   cs_lnum_t    diag_block_size,
+                   cs_lnum_t    extra_diag_block_size);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -191,18 +191,18 @@ cs_matrix_external(const char       *type_name,
  * this function, so that it can the be accessed using \ref cs_matrix_external.
  *
  * \param[in]  symmetric              Indicates if matrix coefficients are symmetric
- * \param[in]  diag_block_size        Block sizes for diagonal, or NULL
- * \param[in]  extra_diag_block_size  Block sizes for extra diagonal, or NULL
+ * \param[in]  diag_block_size        Block sizes for diagonal
+ * \param[in]  extra_diag_block_size  Block sizes for extra diagonal
  *
  * \return  pointer to native matrix adapted to fill type
  */
 /*----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_copy_to_external(cs_matrix_t      *src,
-                           bool              symmetric,
-                           const cs_lnum_t  *diag_block_size,
-                           const cs_lnum_t  *extra_diag_block_size);
+cs_matrix_copy_to_external(cs_matrix_t  *src,
+                           bool          symmetric,
+                           cs_lnum_t     diag_block_size,
+                           cs_lnum_t     extra_diag_block_size);
 
 /*----------------------------------------------------------------------------
  * Determine or apply default tuning for a given matrix type
@@ -288,8 +288,8 @@ cs_matrix_get_block_row_g_id(cs_lnum_t         n_rows,
  * \param[in]  f                      pointer to associated field
  * \param[in]  type                   matrix type
  * \param[in]  symmetric              is matrix symmetric ?
- * \param[in]  diag_block_size        block sizes for diagonal, or NULL
- * \param[in]  extra_diag_block_size  block sizes for extra diagonal, or NULL
+ * \param[in]  diag_block_size        block sizes for diagonal
+ * \param[in]  extra_diag_block_size  block sizes for extra diagonal
  * \param[in]  da                     diagonal values (NULL if zero)
  * \param[in]  xa                     extradiagonal values (NULL if zero)
  *                                    casts as:
@@ -304,8 +304,8 @@ cs_matrix_t *
 cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
                                         cs_matrix_type_t   type,
                                         bool               symmetric,
-                                        const cs_lnum_t   *diag_block_size,
-                                        const cs_lnum_t   *extra_diag_block_size,
+                                        cs_lnum_t          diag_block_size,
+                                        cs_lnum_t          extra_diag_block_size,
                                         const cs_real_t   *da,
                                         const cs_real_t   *xa);
 

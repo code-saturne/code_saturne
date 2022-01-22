@@ -481,6 +481,53 @@ _variant_build_list(int                             n_fill_types,
 
   }
 
+  if (type_filter[CS_MATRIX_DIST]) {
+
+    _variant_add("distributed",
+                 NULL,
+                 CS_MATRIX_DIST,
+                 n_fill_types,
+                 fill_types,
+                 op_flag_ae,
+                 "default",
+                 "default",
+                 "default",
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+#if defined(HAVE_MKL)
+
+    _variant_add("distributed, with MKL",
+                 NULL,
+                 CS_MATRIX_DIST,
+                 n_fill_types,
+                 fill_types,
+                 op_flag_ae,
+                 "mkl",
+                 NULL,
+                 NULL,
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+#endif /* defined(HAVE_MKL) */
+
+    _variant_add("distributed, OpenMP scheduling",
+                 NULL,
+                 CS_MATRIX_DIST,
+                 n_fill_types,
+                 fill_types,
+                 op_flag_ae,
+                 "omp_sched",
+                 NULL,
+                 NULL,
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+  }
+
   n_variants_max = *n_variants;
   BFT_REALLOC(*m_variant, *n_variants, cs_matrix_timing_variant_t);
 }
@@ -555,8 +602,8 @@ _matrix_check(int                          n_variants,
   cs_real_t  *yr0 = NULL, *yr1 = NULL;
   cs_matrix_structure_t *ms = NULL;
   cs_matrix_t *m = NULL;
-  cs_lnum_t d_block_size[4] = {3, 3, 3, 9};
-  cs_lnum_t ed_block_size[4] = {3, 3, 3, 9};
+  cs_lnum_t d_block_size = 3;
+  cs_lnum_t e_block_size = 3;
 
   bft_printf
     ("\n"
@@ -566,20 +613,23 @@ _matrix_check(int                          n_variants,
   /* Allocate and initialize  working arrays */
 
   if (CS_MEM_ALIGN > 0) {
-    BFT_MEMALIGN(x, CS_MEM_ALIGN, n_cols_ext*d_block_size[1], cs_real_t);
-    BFT_MEMALIGN(y, CS_MEM_ALIGN, n_cols_ext*d_block_size[1], cs_real_t);
-    BFT_MEMALIGN(yr0, CS_MEM_ALIGN, n_cols_ext*d_block_size[1], cs_real_t);
-    BFT_MEMALIGN(yr1, CS_MEM_ALIGN, n_cols_ext*d_block_size[1], cs_real_t);
+    BFT_MEMALIGN(x, CS_MEM_ALIGN, n_cols_ext*d_block_size, cs_real_t);
+    BFT_MEMALIGN(y, CS_MEM_ALIGN, n_cols_ext*d_block_size, cs_real_t);
+    BFT_MEMALIGN(yr0, CS_MEM_ALIGN, n_cols_ext*d_block_size, cs_real_t);
+    BFT_MEMALIGN(yr1, CS_MEM_ALIGN, n_cols_ext*d_block_size, cs_real_t);
   }
   else {
-    BFT_MALLOC(x, n_cols_ext*d_block_size[1], cs_real_t);
-    BFT_MALLOC(y, n_cols_ext*d_block_size[1], cs_real_t);
-    BFT_MALLOC(yr0, n_cols_ext*d_block_size[1], cs_real_t);
-    BFT_MALLOC(yr1, n_cols_ext*d_block_size[1], cs_real_t);
+    BFT_MALLOC(x, n_cols_ext*d_block_size, cs_real_t);
+    BFT_MALLOC(y, n_cols_ext*d_block_size, cs_real_t);
+    BFT_MALLOC(yr0, n_cols_ext*d_block_size, cs_real_t);
+    BFT_MALLOC(yr1, n_cols_ext*d_block_size, cs_real_t);
   }
 
-  BFT_MALLOC(da, n_cols_ext*d_block_size[3], cs_real_t);
-  BFT_MALLOC(xa, n_edges*2*ed_block_size[3], cs_real_t);
+  cs_lnum_t d_block_stride = d_block_size*d_block_size;
+  cs_lnum_t e_block_stride = e_block_size*e_block_size;
+
+  BFT_MALLOC(da, n_cols_ext*d_block_stride, cs_real_t);
+  BFT_MALLOC(xa, n_edges*2*e_block_stride, cs_real_t);
 
   /* Initialize arrays */
 
@@ -603,22 +653,19 @@ _matrix_check(int                          n_variants,
 
   for (int f_id = 0; f_id < CS_MATRIX_N_FILL_TYPES; f_id++) {
 
-    const cs_lnum_t *_d_block_size
-      = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size : NULL;
-    const cs_lnum_t *_ed_block_size
-      = (f_id >= CS_MATRIX_BLOCK) ? ed_block_size : NULL;
-    const cs_lnum_t _block_mult = (_d_block_size != NULL) ? d_block_size[1] : 1;
+    cs_lnum_t _d_block_size
+      = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size : 1;
+    cs_lnum_t _e_block_size
+      = (f_id >= CS_MATRIX_BLOCK) ? e_block_size : 1;
+    const cs_lnum_t _block_mult = _d_block_size;
     const bool sym_coeffs = (   f_id == CS_MATRIX_SCALAR_SYM
                              || f_id == CS_MATRIX_BLOCK_D_SYM) ? true : false;
 
     /* Generate matrix coefficients */
 
-    const cs_lnum_t stride
-      = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size[1] : 1;
-    const cs_lnum_t sd
-      = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size[3] : 1;
-    const cs_lnum_t se
-      = (f_id >= CS_MATRIX_BLOCK) ? ed_block_size[3] : 1;
+    const cs_lnum_t stride = _d_block_size;
+    const cs_lnum_t sd = _d_block_size*_d_block_size;
+    const cs_lnum_t se = _e_block_size*_e_block_size;
 
 #   pragma omp parallel for
     for (cs_lnum_t ii = 0; ii < n_cols_ext; ii++) {
@@ -670,7 +717,6 @@ _matrix_check(int                          n_variants,
           continue;
 
         ms = cs_matrix_structure_create(v->type,
-                                        true,
                                         n_rows,
                                         n_cols_ext,
                                         n_edges,
@@ -693,7 +739,7 @@ _matrix_check(int                          n_variants,
         cs_matrix_set_coefficients(m,
                                    sym_coeffs,
                                    _d_block_size,
-                                   _ed_block_size,
+                                   _e_block_size,
                                    n_edges,
                                    edges,
                                    da,
@@ -800,35 +846,30 @@ _matrix_time_test(double                       t_measure,
   cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
   cs_matrix_structure_t *ms = NULL;
   cs_matrix_t *m = NULL;
-  cs_lnum_t d_block_size[4] = {3, 3, 3, 9};
-  cs_lnum_t ed_block_size[4] = {3, 3, 3, 9};
+  cs_lnum_t d_block_size = 3, e_block_size = 3;
+  cs_lnum_t d_block_stride = d_block_size*d_block_size;
+  cs_lnum_t e_block_stride = e_block_size*e_block_size;
 
   type_prev = CS_MATRIX_N_TYPES;
 
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
 
-  if (CS_MEM_ALIGN > 0) {
-    BFT_MEMALIGN(x, CS_MEM_ALIGN, n_cells_ext*d_block_size[1], cs_real_t);
-    BFT_MEMALIGN(y, CS_MEM_ALIGN, n_cells_ext*d_block_size[1], cs_real_t);
-  }
-  else {
-    BFT_MALLOC(x, n_cells_ext*d_block_size[1], cs_real_t);
-    BFT_MALLOC(y, n_cells_ext*d_block_size[1], cs_real_t);
-  }
+  CS_MALLOC_HD(x, n_cells_ext*d_block_size, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(y, n_cells_ext*d_block_size, cs_real_t, cs_alloc_mode);
 
-  BFT_MALLOC(da, n_cells_ext*d_block_size[3], cs_real_t);
-  BFT_MALLOC(xa, n_faces*ed_block_size[3]*2, cs_real_t);
+  CS_MALLOC_HD(da, n_cells_ext*d_block_stride, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(xa, n_faces*e_block_stride*2, cs_real_t, cs_alloc_mode);
 
 # pragma omp parallel for
-  for (ii = 0; ii < n_cells_ext*d_block_size[3]; ii++)
+  for (ii = 0; ii < n_cells_ext*d_block_stride; ii++)
     da[ii] = 1.0;
 # pragma omp parallel for
-  for (ii = 0; ii < n_cells_ext*d_block_size[1]; ii++)
+  for (ii = 0; ii < n_cells_ext*d_block_size; ii++)
     x[ii] = ii*0.1/n_cells_ext;
 
 # pragma omp parallel for
-  for (ii = 0; ii < n_faces*ed_block_size[3]; ii++) {
+  for (ii = 0; ii < n_faces*e_block_stride; ii++) {
     xa[ii*2] = 0.5;
     xa[ii*2 + 1] = -0.5;
   }
@@ -857,7 +898,6 @@ _matrix_time_test(double                       t_measure,
           if (ms != NULL)
             cs_matrix_structure_destroy(&ms);
           ms = cs_matrix_structure_create(type,
-                                          true,
                                           n_cells,
                                           n_cells_ext,
                                           n_faces,
@@ -880,10 +920,10 @@ _matrix_time_test(double                       t_measure,
 
     for (f_id = 0; f_id < CS_MATRIX_N_FILL_TYPES; f_id++) {
 
-      const cs_lnum_t *_d_block_size
-        = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size : NULL;
-      const cs_lnum_t *_ed_block_size
-        = (f_id >= CS_MATRIX_BLOCK) ? ed_block_size : NULL;
+      const cs_lnum_t _d_block_size
+        = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size : 1;
+      const cs_lnum_t _e_block_size
+        = (f_id >= CS_MATRIX_BLOCK) ? e_block_size : 1;
       const bool sym_coeffs
         = (   f_id == CS_MATRIX_SCALAR_SYM
            || f_id == CS_MATRIX_BLOCK_D_SYM) ? true : false;
@@ -917,7 +957,7 @@ _matrix_time_test(double                       t_measure,
           cs_matrix_set_coefficients(m,
                                      sym_coeffs,
                                      _d_block_size,
-                                     _ed_block_size,
+                                     _e_block_size,
                                      n_faces,
                                      (const cs_lnum_2_t *)face_cell,
                                      da,
@@ -964,8 +1004,8 @@ _matrix_time_test(double                       t_measure,
 
         cs_lnum_t n_rows = cs_matrix_get_n_rows(m);
         cs_lnum_t nnz = cs_matrix_get_n_entries(m);
-        const cs_lnum_t db_size = cs_matrix_get_diag_block_size(m)[1];
-        const cs_lnum_t eb_size = cs_matrix_get_extra_diag_block_size(m)[1];
+        const cs_lnum_t db_size = cs_matrix_get_diag_block_size(m);
+        const cs_lnum_t eb_size = cs_matrix_get_extra_diag_block_size(m);
 
         v->matrix_vector_n_ops[f_id][op_id] = n_rows*db_size*db_size;
         if (eb_size == 1)
@@ -1472,6 +1512,7 @@ cs_benchmark_matrix(double                 t_measure,
   int  t_id, f_id, v_id, ed_flag;
 
   bool                   type_filter[CS_MATRIX_N_BUILTIN_TYPES] = {true,
+                                                                   true,
                                                                    true,
                                                                    true};
 

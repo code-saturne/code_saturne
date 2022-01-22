@@ -589,8 +589,8 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 {
   cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
   cs_real_t  *yr0 = NULL;
-  cs_lnum_t d_block_size[4] = {3, 3, 3, 9};
-  cs_lnum_t ed_block_size[4] = {3, 3, 3, 9};
+  cs_lnum_t a_block_size = 3;
+  cs_lnum_t a_block_stride = a_block_size*a_block_size;
 
   cs_matrix_fill_type_t f_type[]
     = {CS_MATRIX_SCALAR,           /* Simple scalar matrix */
@@ -603,18 +603,18 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
   /* Allocate and initialize  working arrays */
 
   if (CS_MEM_ALIGN > 0) {
-    BFT_MEMALIGN(x, CS_MEM_ALIGN, n_cols_ext*d_block_size[1], cs_real_t);
-    BFT_MEMALIGN(y, CS_MEM_ALIGN, n_cols_ext*d_block_size[1], cs_real_t);
-    BFT_MEMALIGN(yr0, CS_MEM_ALIGN, n_cols_ext*d_block_size[1], cs_real_t);
+    BFT_MEMALIGN(x, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
+    BFT_MEMALIGN(y, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
+    BFT_MEMALIGN(yr0, CS_MEM_ALIGN, n_cols_ext*a_block_size, cs_real_t);
   }
   else {
-    BFT_MALLOC(x, n_cols_ext*d_block_size[1], cs_real_t);
-    BFT_MALLOC(y, n_cols_ext*d_block_size[1], cs_real_t);
-    BFT_MALLOC(yr0, n_cols_ext*d_block_size[1], cs_real_t);
+    BFT_MALLOC(x, n_cols_ext*a_block_size, cs_real_t);
+    BFT_MALLOC(y, n_cols_ext*a_block_size, cs_real_t);
+    BFT_MALLOC(yr0, n_cols_ext*a_block_size, cs_real_t);
   }
 
-  BFT_MALLOC(da, n_cols_ext*d_block_size[3], cs_real_t);
-  BFT_MALLOC(xa, n_edges*2*ed_block_size[3], cs_real_t);
+  BFT_MALLOC(da, n_cols_ext*a_block_stride, cs_real_t);
+  BFT_MALLOC(xa, n_edges*2*a_block_stride, cs_real_t);
 
   cs_gnum_t *cell_gnum = NULL;
   BFT_MALLOC(cell_gnum, n_cols_ext, cs_gnum_t);
@@ -663,9 +663,9 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
   for (int f_id = 0; f_id < 2; f_id++) {
 
-    const cs_lnum_t *_d_block_size
-      = (f_type[f_id] >= CS_MATRIX_BLOCK_D) ? d_block_size : NULL;
-    const cs_lnum_t stride = (_d_block_size != NULL) ? d_block_size[1] : 1;
+    const cs_lnum_t d_block_size
+      = (f_type[f_id] >= CS_MATRIX_BLOCK_D) ? a_block_size : 1;
+    const cs_lnum_t stride = d_block_size;
     const cs_lnum_t sd = stride*stride; /* for current fill types */
     const cs_lnum_t se = 1;             /* for current fill types */
 
@@ -705,8 +705,8 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
     /* Reference */
 
     cs_matrix_vector_native_multiply(false,  /* symmetric */
-                                     _d_block_size,
-                                     NULL,   /* extra diag block size */
+                                     d_block_size,
+                                     1,      /* extra diag block size */
                                      -1,     /* field id or -1 */
                                      da,
                                      xa,
@@ -829,9 +829,9 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
         cs_matrix_assembler_values_t *mav = NULL;
 
         if (f_type[f_id] == CS_MATRIX_SCALAR)
-          mav = cs_matrix_assembler_values_init(m, NULL, NULL);
+          mav = cs_matrix_assembler_values_init(m, 1, 1);
         else if (f_type[f_id] == CS_MATRIX_BLOCK_D)
-          mav = cs_matrix_assembler_values_init(m, d_block_size, NULL);
+          mav = cs_matrix_assembler_values_init(m, d_block_size, 1);
 
         cs_matrix_assembler_values_add_g(mav, n_rows,
                                          r_g_id, r_g_id, da);

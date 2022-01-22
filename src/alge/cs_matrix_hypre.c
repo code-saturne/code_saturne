@@ -193,7 +193,7 @@ _mat_vec_p_parcsr(const cs_matrix_t  *matrix,
 {
   assert(exclude_diag == false);
 
-  const cs_lnum_t  n_rows = matrix->n_rows * matrix->db_size[0];
+  const cs_lnum_t  n_rows = matrix->n_rows * matrix->db_size;
   const cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
 
   /* Get pointers to structures through coefficients,
@@ -446,9 +446,9 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
                            HYPRE_Int         **offdiag_sizes)
 {
   cs_lnum_t  n_rows = matrix->n_rows;
-  cs_lnum_t  b_size = matrix->db_size[0];
-  cs_lnum_t  e_size = matrix->eb_size[0];
-  cs_lnum_t  b_stride = matrix->db_size[3];
+  cs_lnum_t  b_size = matrix->db_size;
+  cs_lnum_t  e_size = matrix->eb_size;
+  cs_lnum_t  b_stride = b_size * b_size;
 
   cs_lnum_t _n_rows = n_rows*b_size;
 
@@ -624,9 +624,9 @@ _setup_coeffs(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 static void
-_assembler_values_init(void              *matrix_p,
-                       const cs_lnum_t    db_size[4],
-                       const cs_lnum_t    eb_size[4])
+_assembler_values_init(void        *matrix_p,
+                       cs_lnum_t    db_size,
+                       cs_lnum_t    eb_size)
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
@@ -660,8 +660,8 @@ _assembler_values_init(void              *matrix_p,
     else {
       const cs_lnum_t n_rows = cs_matrix_assembler_get_n_rows(ma);
       const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
-      cs_lnum_t nnz =   row_index[n_rows] * eb_size[3]
-                      + n_rows*db_size[3];
+      cs_lnum_t nnz =   row_index[n_rows] * eb_size*eb_size
+                      + n_rows * db_size*db_size;
       coeffs->max_chunk_size = nnz;
     }
     CS_MALLOC_HD(coeffs->row_buf, coeffs->max_chunk_size, HYPRE_BigInt, amode);
@@ -674,7 +674,7 @@ _assembler_values_init(void              *matrix_p,
 
     const cs_gnum_t *l_range = cs_matrix_assembler_get_l_range(ma);
 
-    HYPRE_BigInt b_size = db_size[0];
+    HYPRE_BigInt b_size = db_size;
     HYPRE_BigInt ilower = b_size*l_range[0];
     HYPRE_BigInt iupper = b_size*l_range[1] - 1;
 
@@ -694,18 +694,18 @@ _assembler_values_init(void              *matrix_p,
 
     HYPRE_Int *diag_sizes = NULL, *offdiag_sizes = NULL;
 
-    if (db_size[0] == 1)
+    if (db_size == 1)
       _compute_diag_sizes_assembler(ma,
                                     &diag_sizes,
                                     &offdiag_sizes);
-    else if (eb_size[0] == 1)
+    else if (eb_size == 1)
       _compute_diag_sizes_assembler_db(ma,
-                                      db_size[0],
+                                      db_size,
                                       &diag_sizes,
                                       &offdiag_sizes);
     else
       _compute_diag_sizes_assembler_b(ma,
-                                      db_size[0],
+                                      db_size,
                                       &diag_sizes,
                                       &offdiag_sizes);
 
@@ -914,7 +914,7 @@ _assembler_values_add_g(void             *matrix_p,
 
   HYPRE_Int hypre_ierr = 0;
   HYPRE_Int nrows = n;
-  HYPRE_Int b_size = matrix->db_size[0];
+  HYPRE_Int b_size = matrix->db_size;
 
   HYPRE_Int max_chunk_size = coeffs->max_chunk_size;
 
@@ -1061,7 +1061,7 @@ _assembler_values_end(void  *matrix_p)
        (and possible overhead) where used */
 
     const HYPRE_Int  n_off_proc = matrix->n_cols_ext - matrix->n_rows;
-    const HYPRE_BigInt b_size = matrix->db_size[0];
+    const HYPRE_BigInt b_size = matrix->db_size;
 
     HYPRE_BigInt ilower = b_size*(coeffs->l_range[0]);
     HYPRE_BigInt iupper = b_size*(coeffs->l_range[1]) - 1;
@@ -1090,14 +1090,9 @@ _assembler_values_end(void  *matrix_p)
  * The associated matrix's structure must have been created using
  * \ref cs_matrix_structure_create_from_assembler.
  *
- * Block sizes are defined by an optional array of 4 values:
- *   0: useful block size, 1: vector block extents,
- *   2: matrix line extents,  3: matrix line*column extents
- *
  * \param[in, out]  matrix                 pointer to matrix structure
- * \param[in]       diag_block_size        block sizes for diagonal, or NULL
- * \param[in]       extra_diag_block_size  block sizes for extra diagonal,
- *                                         or NULL
+ * \param[in]       diag_block_size        block sizes for diagonal
+ * \param[in]       extra_diag_block_size  block sizes for extra diagonal
  *
  * \return  pointer to initialized matrix assembler values structure;
  */
@@ -1105,8 +1100,8 @@ _assembler_values_end(void  *matrix_p)
 
 static cs_matrix_assembler_values_t *
 _assembler_values_create_hypre(cs_matrix_t      *matrix,
-                               const cs_lnum_t  *diag_block_size,
-                               const cs_lnum_t  *extra_diag_block_size)
+                               const cs_lnum_t   diag_block_size,
+                               const cs_lnum_t   extra_diag_block_size)
 {
   cs_matrix_assembler_values_t *mav
     = cs_matrix_assembler_values_create(matrix->assembler,
@@ -1161,10 +1156,10 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
   /* Sizes and buffers */
 
   HYPRE_IJMatrix hm = coeffs->hm;
-  HYPRE_BigInt h_b_size = matrix->db_size[0];
+  HYPRE_BigInt h_b_size = matrix->db_size;
 
-  cs_lnum_t b_size = matrix->db_size[0];
-  cs_lnum_t b_stride = matrix->db_size[3];
+  cs_lnum_t b_size = matrix->db_size;
+  cs_lnum_t b_stride = b_size * b_size;
 
   assert(b_stride == b_size*b_size);
 
@@ -1344,10 +1339,10 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
   /* Sizes and buffers */
 
   HYPRE_IJMatrix hm = coeffs->hm;
-  HYPRE_BigInt h_b_size = matrix->db_size[0];
+  HYPRE_BigInt h_b_size = matrix->db_size;
 
-  cs_lnum_t b_size = matrix->db_size[0];
-  cs_lnum_t b_stride = matrix->db_size[3];
+  cs_lnum_t b_size = matrix->db_size;
+  cs_lnum_t b_stride = b_size * b_size;
 
   assert(b_stride == b_size*b_size);
 
@@ -1547,9 +1542,10 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
     l_range[1] = g_id[n_rows-1] + 1;
   }
 
-  cs_lnum_t b_size = matrix->db_size[0];
-  cs_lnum_t e_size = matrix->eb_size[0];
-  cs_lnum_t b_stride = matrix->db_size[3];
+  cs_lnum_t b_size = matrix->db_size;
+  cs_lnum_t e_size = matrix->eb_size;
+  cs_lnum_t b_stride = b_size * b_size;
+  cs_lnum_t e_stride = e_size * e_size;
 
   assert(b_stride == b_size*b_size);
 
@@ -1567,7 +1563,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
       coeffs->max_chunk_size = 32768;
     }
     else {
-      cs_lnum_t nnz = n_edges*2*matrix->eb_size[3] + n_rows*matrix->db_size[3];
+      cs_lnum_t nnz = n_edges*2*e_stride + n_rows*b_stride;
       coeffs->max_chunk_size = nnz;
     }
 
@@ -1835,7 +1831,7 @@ _copy_diagonal_ij(const cs_matrix_t  *matrix,
 {
   const cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
 
-  const HYPRE_BigInt b_size = matrix->db_size[0];
+  const HYPRE_BigInt b_size = matrix->db_size;
 
   HYPRE_BigInt ilower = b_size*(coeffs->l_range[0]);
 
