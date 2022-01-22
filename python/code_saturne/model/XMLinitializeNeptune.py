@@ -114,7 +114,7 @@ class XMLinitNeptune(BaseXmlInit):
                 n['label'] = 'Stress, normal'
                 n['support'] = 'boundary'
                 n.xmlInitNode('postprocessing_recording')['status']= "off"
- 
+
 
             # First Volume Zone definition for all cells -> initialization
 
