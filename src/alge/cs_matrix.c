@@ -93,6 +93,7 @@
 
 #include "cs_matrix.h"
 #include "cs_matrix_priv.h"
+#include "cs_matrix_spmv.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -114,10 +115,6 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
-
-/* Cache line multiple, in cs_real_t units */
-
-static const cs_lnum_t _cs_cl = (CS_CL_SIZE/8);
 
 /*=============================================================================
  * Local Type Definitions
@@ -153,6 +150,11 @@ const char  *cs_matrix_fill_type_name[] = {"CS_MATRIX_SCALAR",
                                            "CS_MATRIX_BLOCK_D_66",
                                            "CS_MATRIX_BLOCK_D_SYM",
                                            "CS_MATRIX_BLOCK"};
+
+/*! Operation type type names for partial SpMV functions */
+
+const char  *cs_matrix_spmv_type_name[] = {"y ← A.x",
+                                           "y ← (A-D).x"};
 
 #if defined (HAVE_MKL)
 
@@ -1018,873 +1020,6 @@ _get_diagonal_native(const cs_matrix_t  *matrix)
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_mat_vec_p_l_native(const cs_matrix_t  *matrix,
-                    bool                exclude_diag,
-                    bool                sync,
-                    cs_real_t           x[restrict],
-                    cs_real_t           y[restrict])
-{
-  cs_lnum_t  ii, jj, face_id;
-
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-
-  const cs_real_t  *restrict xa = mc->xa;
-
-  /* Initialize ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _diag_vec_p_l(mc->da, x, y, ms->n_rows);
-    _zero_range(y, ms->n_rows, ms->n_cols_ext);
-  }
-  else
-    _zero_range(y, 0, ms->n_cols_ext);
-
-  /* Finalize ghost cell comunication if overlap used */
-
-  if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
-
-    if (mc->symmetric) {
-
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        y[ii] += xa[face_id] * x[jj];
-        y[jj] += xa[face_id] * x[ii];
-      }
-
-    }
-    else {
-
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        y[ii] += xa[2*face_id] * x[jj];
-        y[jj] += xa[2*face_id + 1] * x[ii];
-      }
-
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_b_mat_vec_p_l_native(const cs_matrix_t  *matrix,
-                      bool                exclude_diag,
-                      bool                sync,
-                      cs_real_t           x[restrict],
-                      cs_real_t           y[restrict])
-{
-  cs_lnum_t  ii, jj, kk, face_id;
-
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-
-  const cs_real_t  *restrict xa = mc->xa;
-  const cs_lnum_t *db_size = matrix->db_size;
-
-  /* Initialize ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _b_diag_vec_p_l(mc->da, x, y, ms->n_rows, db_size);
-    _b_zero_range(y, ms->n_rows, ms->n_cols_ext, db_size);
-  }
-  else
-    _b_zero_range(y, 0, ms->n_cols_ext, db_size);
-
-  /* Finalize ghost cell comunication if overlap used */
-
-  if (hs != NULL)
-    _pre_vector_multiply_sync_x_end(matrix, hs, x);
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
-
-    if (mc->symmetric) {
-
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        for (kk = 0; kk < db_size[0]; kk++) {
-          y[ii*db_size[1] + kk] += xa[face_id] * x[jj*db_size[1] + kk];
-          y[jj*db_size[1] + kk] += xa[face_id] * x[ii*db_size[1] + kk];
-        }
-      }
-    }
-    else {
-
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        for (kk = 0; kk < db_size[0]; kk++) {
-          y[ii*db_size[1] + kk] += xa[2*face_id]     * x[jj*db_size[1] + kk];
-          y[jj*db_size[1] + kk] += xa[2*face_id + 1] * x[ii*db_size[1] + kk];
-        }
-      }
-
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_bb_mat_vec_p_l_native(const cs_matrix_t  *matrix,
-                       bool                exclude_diag,
-                       bool                sync,
-                       cs_real_t           x[restrict],
-                       cs_real_t           y[restrict])
-{
-  cs_lnum_t  ii, jj, face_id;
-
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-
-  const cs_real_t  *restrict xa = mc->xa;
-  const cs_lnum_t *db_size = matrix->db_size;
-  const cs_lnum_t *eb_size = matrix->eb_size;
-
-  /* Initialize ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _b_diag_vec_p_l(mc->da, x, y, ms->n_rows, db_size);
-    _b_zero_range(y, ms->n_rows, ms->n_cols_ext, db_size);
-  }
-  else
-    _b_zero_range(y, 0, ms->n_cols_ext, db_size);
-
-  /* Finalize ghost cell comunication if overlap used */
-
-  if (hs != NULL)
-    _pre_vector_multiply_sync_x_end(matrix, hs, x);
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
-
-    if (mc->symmetric) {
-
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        _dense_eb_ax_add(ii, jj, face_id, eb_size, xa, x, y);
-        _dense_eb_ax_add(jj, ii, face_id, eb_size, xa, x, y);
-      }
-    }
-    else {
-
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        _dense_eb_ax_add(ii, jj, 2*face_id, eb_size, xa, x, y);
-        _dense_eb_ax_add(jj, ii, 2*face_id + 1, eb_size, xa, x, y);
-      }
-
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
- *
- * This variant uses a fixed 3x3 block, for better compiler optimization.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_3_3_mat_vec_p_l_native(const cs_matrix_t  *matrix,
-                        bool                exclude_diag,
-                        bool                sync,
-                        cs_real_t           x[restrict],
-                        cs_real_t           y[restrict])
-{
-  cs_lnum_t  ii, jj, kk, face_id;
-
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-
-  const cs_real_t  *restrict xa = mc->xa;
-
-  assert(matrix->db_size[0] == 3 && matrix->db_size[3] == 9);
-
-  /* Initialize ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _3_3_diag_vec_p_l(mc->da, x, y, ms->n_rows);
-    _3_3_zero_range(y, ms->n_rows, ms->n_cols_ext);
-  }
-  else
-    _3_3_zero_range(y, 0, ms->n_cols_ext);
-
-  /* Finalize ghost cell comunication */
-
-  if (hs != NULL)
-    _pre_vector_multiply_sync_x_end(matrix, hs, x);
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
-
-    if (mc->symmetric) {
-
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        for (kk = 0; kk < 3; kk++) {
-          y[ii*3 + kk] += xa[face_id] * x[jj*3 + kk];
-          y[jj*3 + kk] += xa[face_id] * x[ii*3 + kk];
-        }
-      }
-    }
-    else {
-
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        for (kk = 0; kk < 3; kk++) {
-          y[ii*3 + kk] += xa[2*face_id]     * x[jj*3 + kk];
-          y[jj*3 + kk] += xa[2*face_id + 1] * x[ii*3 + kk];
-        }
-      }
-
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
- *
- * This variant uses a fixed 6x6 block, for better compiler optimization.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_6_6_mat_vec_p_l_native(const cs_matrix_t  *matrix,
-                        bool                exclude_diag,
-                        bool                sync,
-                        cs_real_t           x[restrict],
-                        cs_real_t           y[restrict])
-{
-  cs_lnum_t  ii, jj, kk, face_id;
-
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-
-  const cs_real_t  *restrict xa = mc->xa;
-
-  assert(matrix->db_size[0] == 6 && matrix->db_size[3] == 36);
-
-  /* Initialize ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _6_6_diag_vec_p_l(mc->da, x, y, ms->n_rows);
-    _6_6_zero_range(y, ms->n_rows, ms->n_cols_ext);
-  }
-  else
-    _6_6_zero_range(y, 0, ms->n_cols_ext);
-
-  /* Finalize ghost cell comunication if overlap used */
-
-  if (hs != NULL)
-    _pre_vector_multiply_sync_x_end(matrix, hs, x);
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
-
-    if (mc->symmetric) {
-
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        for (kk = 0; kk < 6; kk++) {
-          y[ii*6 + kk] += xa[face_id] * x[jj*6 + kk];
-          y[jj*6 + kk] += xa[face_id] * x[ii*6 + kk];
-        }
-      }
-    }
-    else {
-
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        for (kk = 0; kk < 6; kk++) {
-          y[ii*6 + kk] += xa[2*face_id]     * x[jj*6 + kk];
-          y[jj*6 + kk] += xa[2*face_id + 1] * x[ii*6 + kk];
-        }
-      }
-
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix, blocked version.
- *
- * This variant uses fixed block size variants for common cases.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_b_mat_vec_p_l_native_fixed(const cs_matrix_t  *matrix,
-                            bool                exclude_diag,
-                            bool                sync,
-                            cs_real_t           x[restrict],
-                            cs_real_t           y[restrict])
-{
-  if (matrix->db_size[0] == 3 && matrix->db_size[3] == 9)
-    _3_3_mat_vec_p_l_native(matrix, exclude_diag, sync, x, y);
-
-  else if (matrix->db_size[0] == 6 && matrix->db_size[3] == 36)
-    _6_6_mat_vec_p_l_native(matrix, exclude_diag, sync, x, y);
-
-  else
-    _b_mat_vec_p_l_native(matrix, exclude_diag, sync, x, y);
-}
-
-#if defined(HAVE_OPENMP) /* OpenMP variants */
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
- *
- * parameters:
- *   matrix       <-- Pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> Multipliying vector values
- *   y            --> Resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
-                        bool                exclude_diag,
-                        bool                sync,
-                        cs_real_t           x[restrict],
-                        cs_real_t           y[restrict])
-{
-  const int n_threads = matrix->numbering->n_threads;
-  const int n_groups = matrix->numbering->n_groups;
-  const cs_lnum_t *group_index = matrix->numbering->group_index;
-
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa = mc->xa;
-
-  assert(matrix->numbering->type == CS_NUMBERING_THREADS);
-
-  /* Initialize ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _diag_vec_p_l(mc->da, x, y, ms->n_rows);
-    _zero_range(y, ms->n_rows, ms->n_cols_ext);
-  }
-  else
-    _zero_range(y, 0, ms->n_cols_ext);
-
-  /* Finalize ghost cell comunication if overlap used */
-
-  if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
-
-    if (mc->symmetric) {
-
-      for (int g_id = 0; g_id < n_groups; g_id++) {
-
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_threads; t_id++) {
-
-          for (cs_lnum_t face_id = group_index[(t_id*n_groups + g_id)*2];
-               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
-               face_id++) {
-            cs_lnum_t ii = face_cel_p[face_id][0];
-            cs_lnum_t jj = face_cel_p[face_id][1];
-            y[ii] += xa[face_id] * x[jj];
-            y[jj] += xa[face_id] * x[ii];
-          }
-        }
-      }
-    }
-    else {
-
-      for (int g_id = 0; g_id < n_groups; g_id++) {
-
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_threads; t_id++) {
-
-          for (cs_lnum_t face_id = group_index[(t_id*n_groups + g_id)*2];
-               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
-               face_id++) {
-            cs_lnum_t ii = face_cel_p[face_id][0];
-            cs_lnum_t jj = face_cel_p[face_id][1];
-            y[ii] += xa[2*face_id] * x[jj];
-            y[jj] += xa[2*face_id + 1] * x[ii];
-          }
-        }
-      }
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix, blocked version
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_b_mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
-                          bool                exclude_diag,
-                          bool                sync,
-                          cs_real_t           x[restrict],
-                          cs_real_t           y[restrict])
-{
-  const cs_lnum_t *db_size = matrix->db_size;
-
-  const int n_threads = matrix->numbering->n_threads;
-  const int n_groups = matrix->numbering->n_groups;
-  const cs_lnum_t *group_index = matrix->numbering->group_index;
-
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa = mc->xa;
-
-  assert(matrix->numbering->type == CS_NUMBERING_THREADS);
-
-  /* Initialize ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _b_diag_vec_p_l(mc->da, x, y, ms->n_rows, db_size);
-    _b_zero_range(y, ms->n_rows, ms->n_cols_ext, db_size);
-  }
-  else
-    _b_zero_range(y, 0, ms->n_cols_ext, db_size);
-
-  /* Finalize ghost cell comunication if overlap used */
-
-  if (hs != NULL)
-    _pre_vector_multiply_sync_x_end(matrix, hs, x);
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
-
-    if (mc->symmetric) {
-
-      for (int g_id = 0; g_id < n_groups; g_id++) {
-
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_threads; t_id++) {
-
-          for (cs_lnum_t face_id = group_index[(t_id*n_groups + g_id)*2];
-               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
-               face_id++) {
-            cs_lnum_t ii = face_cel_p[face_id][0];
-            cs_lnum_t jj = face_cel_p[face_id][1];
-            for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-              y[ii*db_size[1] + kk] += xa[face_id] * x[jj*db_size[1] + kk];
-              y[jj*db_size[1] + kk] += xa[face_id] * x[ii*db_size[1] + kk];
-            }
-          }
-        }
-      }
-
-    }
-    else {
-
-      for (int g_id = 0; g_id < n_groups; g_id++) {
-
-#       pragma omp parallel for
-        for (int t_id = 0; t_id < n_threads; t_id++) {
-
-          for (cs_lnum_t face_id = group_index[(t_id*n_groups + g_id)*2];
-               face_id < group_index[(t_id*n_groups + g_id)*2 + 1];
-               face_id++) {
-            cs_lnum_t ii = face_cel_p[face_id][0];
-            cs_lnum_t jj = face_cel_p[face_id][1];
-            for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-              y[ii*db_size[1] + kk] += xa[2*face_id]     * x[jj*db_size[1] + kk];
-              y[jj*db_size[1] + kk] += xa[2*face_id + 1] * x[ii*db_size[1] + kk];
-            }
-          }
-        }
-      }
-
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_mat_vec_p_l_native_omp_atomic(const cs_matrix_t  *matrix,
-                               bool                exclude_diag,
-                               bool                sync,
-                               cs_real_t           x[restrict],
-                               cs_real_t           y[restrict])
-{
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa = mc->xa;
-
-  /* Initialize ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _diag_vec_p_l(mc->da, x, y, ms->n_rows);
-    _zero_range(y, ms->n_rows, ms->n_cols_ext);
-  }
-  else
-    _zero_range(y, 0, ms->n_cols_ext);
-
-  /* Finalize ghost cell comunication if overlap used */
-
-  if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
-
-    if (mc->symmetric) {
-
-#     pragma omp parallel for
-      for (cs_lnum_t face_id = 0; face_id < ms->n_edges; face_id++) {
-        cs_lnum_t ii = face_cel_p[face_id][0];
-        cs_lnum_t jj = face_cel_p[face_id][1];
-#       pragma omp atomic
-        y[ii] += xa[face_id] * x[jj];
-#       pragma omp atomic
-        y[jj] += xa[face_id] * x[ii];
-      }
-    }
-    else {
-
-#     pragma omp parallel for
-      for (cs_lnum_t face_id = 0; face_id < ms->n_edges; face_id++) {
-        cs_lnum_t ii = face_cel_p[face_id][0];
-        cs_lnum_t jj = face_cel_p[face_id][1];
-#       pragma omp atomic
-        y[ii] += xa[2*face_id] * x[jj];
-#       pragma omp atomic
-        y[jj] += xa[2*face_id + 1] * x[ii];
-      }
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix, blocked version
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_b_mat_vec_p_l_native_omp_atomic(const cs_matrix_t  *matrix,
-                                 bool                exclude_diag,
-                                 bool                sync,
-                                 cs_real_t           x[restrict],
-                                 cs_real_t           y[restrict])
-{
-  const cs_lnum_t *db_size = matrix->db_size;
-
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa = mc->xa;
-
-  /* Initialize ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _b_diag_vec_p_l(mc->da, x, y, ms->n_rows, db_size);
-    _b_zero_range(y, ms->n_rows, ms->n_cols_ext, db_size);
-  }
-  else
-    _b_zero_range(y, 0, ms->n_cols_ext, db_size);
-
-  /* Finalize ghost cell comunication if overlap used */
-
-  if (hs != NULL)
-    _pre_vector_multiply_sync_x_end(matrix, hs, x);
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
-
-    if (mc->symmetric) {
-
-#     pragma omp parallel for
-      for (cs_lnum_t face_id = 0; face_id < ms->n_edges; face_id++) {
-        cs_lnum_t ii = face_cel_p[face_id][0];
-        cs_lnum_t jj = face_cel_p[face_id][1];
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-#         pragma omp atomic
-          y[ii*db_size[1] + kk] += xa[face_id] * x[jj*db_size[1] + kk];
-#         pragma omp atomic
-          y[jj*db_size[1] + kk] += xa[face_id] * x[ii*db_size[1] + kk];
-        }
-      }
-
-    }
-    else {
-
-#     pragma omp parallel for
-      for (cs_lnum_t face_id = 0; face_id < ms->n_edges; face_id++) {
-        cs_lnum_t ii = face_cel_p[face_id][0];
-        cs_lnum_t jj = face_cel_p[face_id][1];
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-#         pragma omp atomic
-          y[ii*db_size[1] + kk] += xa[2*face_id]   * x[jj*db_size[1] + kk];
-#         pragma omp atomic
-          y[jj*db_size[1] + kk] += xa[2*face_id+1] * x[ii*db_size[1] + kk];
-        }
-      }
-
-    }
-
-  }
-}
-
-#endif /* defined(HAVE_OPENMP) */
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
-                           bool                exclude_diag,
-                           bool                sync,
-                           cs_real_t           x[restrict],
-                           cs_real_t           y[restrict])
-{
-  cs_lnum_t  ii, jj, face_id;
-  const cs_matrix_struct_native_t  *ms = matrix->structure;
-  const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
-  const cs_real_t  *restrict xa = mc->xa;
-
-  assert(matrix->numbering->type == CS_NUMBERING_VECTORIZE);
-
-  /* Initialize ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-
-  /* Diagonal part of matrix.vector product */
-
-  if (! exclude_diag) {
-    _diag_vec_p_l(mc->da, x, y, ms->n_rows);
-    _zero_range(y, ms->n_rows, ms->n_cols_ext);
-  }
-  else
-    _zero_range(y, 0, ms->n_cols_ext);
-
-  /* Finalize ghost cell comunication if overlap used */
-
-  if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
-
-  /* non-diagonal terms */
-
-  if (mc->xa != NULL) {
-
-    const cs_lnum_2_t *restrict face_cel_p = ms->edges;
-
-    if (mc->symmetric) {
-
-#     if defined(HAVE_OPENMP_SIMD)
-#       pragma omp simd safelen(CS_NUMBERING_SIMD_SIZE)
-#     else
-#       pragma dir nodep
-#       pragma GCC ivdep
-#       pragma _NEC ivdep
-#     endif
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        y[ii] += xa[face_id] * x[jj];
-        y[jj] += xa[face_id] * x[ii];
-      }
-
-    }
-    else {
-
-#     if defined(HAVE_OPENMP_SIMD)
-#       pragma omp simd safelen(CS_NUMBERING_SIMD_SIZE)
-#     else
-#       pragma dir nodep
-#       pragma GCC ivdep
-#       pragma _NEC ivdep
-#     endif
-      for (face_id = 0; face_id < ms->n_edges; face_id++) {
-        ii = face_cel_p[face_id][0];
-        jj = face_cel_p[face_id][1];
-        y[ii] += xa[2*face_id] * x[jj];
-        y[jj] += xa[2*face_id + 1] * x[ii];
-      }
-
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Destroy a CSR matrix structure.
  *
  * parameters:
@@ -1903,6 +1038,64 @@ _destroy_struct_csr(void  **ms)
 
     *ms= NULL;
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Order and compact CSR matrix structure.
+ *
+ * parameters:
+ *   ms         <-> CSR matrix structure
+ *   alloc_mode <-- allocation mode
+ *----------------------------------------------------------------------------*/
+
+static void
+_compact_struct_csr(cs_matrix_struct_csr_t  *ms,
+                    cs_alloc_mode_t          alloc_mode)
+{
+  /* Sort line elements by column id (for better access patterns) */
+
+  ms->direct_assembly = cs_sort_indexed(ms->n_rows,
+                                        ms->_row_index,
+                                        ms->_col_id);
+
+  /* Compact elements if necessary */
+
+  if (ms->direct_assembly == false) {
+
+    cs_lnum_t *tmp_row_index = NULL;
+    cs_lnum_t  kk = 0;
+
+    BFT_MALLOC(tmp_row_index, ms->n_rows+1, cs_lnum_t);
+    memcpy(tmp_row_index, ms->_row_index, (ms->n_rows+1)*sizeof(cs_lnum_t));
+
+    kk = 0;
+
+    for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++) {
+      cs_lnum_t *col_id = ms->_col_id + ms->_row_index[ii];
+      cs_lnum_t n_cols = ms->_row_index[ii+1] - ms->_row_index[ii];
+      cs_lnum_t col_id_prev = -1;
+      ms->_row_index[ii] = kk;
+      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
+        if (col_id_prev != col_id[jj]) {
+          ms->_col_id[kk++] = col_id[jj];
+          col_id_prev = col_id[jj];
+        }
+      }
+    }
+    ms->_row_index[ms->n_rows] = kk;
+
+    assert(ms->_row_index[ms->n_rows] < tmp_row_index[ms->n_rows]);
+
+    BFT_FREE(tmp_row_index);
+    CS_REALLOC_HD(ms->_col_id,
+                  (ms->_row_index[ms->n_rows]),
+                  cs_lnum_t,
+                  alloc_mode);
+
+  }
+
+  ms->row_index = ms->_row_index;
+  ms->col_id = ms->_col_id;
 }
 
 /*----------------------------------------------------------------------------
@@ -2014,47 +1207,9 @@ _create_struct_csr(bool                have_diag,
 
   BFT_FREE(ccount);
 
-  /* Sort line elements by column id (for better access patterns) */
+  /* Compact and finalize indexes */
 
-  ms->direct_assembly = cs_sort_indexed(ms->n_rows,
-                                        ms->_row_index,
-                                        ms->_col_id);
-
-  /* Compact elements if necessary */
-
-  if (ms->direct_assembly == false) {
-
-    cs_lnum_t *tmp_row_index = NULL;
-    cs_lnum_t  kk = 0;
-
-    BFT_MALLOC(tmp_row_index, ms->n_rows+1, cs_lnum_t);
-    memcpy(tmp_row_index, ms->_row_index, (ms->n_rows+1)*sizeof(cs_lnum_t));
-
-    kk = 0;
-
-    for (ii = 0; ii < ms->n_rows; ii++) {
-      cs_lnum_t *col_id = ms->_col_id + ms->_row_index[ii];
-      cs_lnum_t n_cols = ms->_row_index[ii+1] - ms->_row_index[ii];
-      cs_lnum_t col_id_prev = -1;
-      ms->_row_index[ii] = kk;
-      for (jj = 0; jj < n_cols; jj++) {
-        if (col_id_prev != col_id[jj]) {
-          ms->_col_id[kk++] = col_id[jj];
-          col_id_prev = col_id[jj];
-        }
-      }
-    }
-    ms->_row_index[ms->n_rows] = kk;
-
-    assert(ms->_row_index[ms->n_rows] < tmp_row_index[ms->n_rows]);
-
-    BFT_FREE(tmp_row_index);
-    BFT_REALLOC(ms->_col_id, (ms->_row_index[ms->n_rows]), cs_lnum_t);
-
-  }
-
-  ms->row_index = ms->_row_index;
-  ms->col_id = ms->_col_id;
+  _compact_struct_csr(ms, CS_ALLOC_HOST);
 
   return ms;
 }
@@ -2993,118 +2148,6 @@ _assembler_values_create_csr(cs_matrix_t      *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with CSR matrix.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_mat_vec_p_l_csr(const cs_matrix_t  *matrix,
-                 bool                exclude_diag,
-                 bool                sync,
-                 cs_real_t          *restrict x,
-                 cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  /* Ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
-
-  /* Standard case */
-
-  if (!exclude_diag) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row = mc->val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t sii = 0.0;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-        sii += (m_row[jj]*x[col_id[jj]]);
-
-      y[ii] = sii;
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row = mc->val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t sii = 0.0;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        if (col_id[jj] != ii)
-          sii += (m_row[jj]*x[col_id[jj]]);
-      }
-
-      y[ii] = sii;
-
-    }
-  }
-}
-
-#if defined (HAVE_MKL)
-
-static void
-_mat_vec_p_l_csr_mkl(const cs_matrix_t  *matrix,
-                     bool                exclude_diag,
-                     bool                sync,
-                     cs_real_t          *restrict x,
-                     cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-
-  /* Ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
-
-  /* MKL call */
-
-  int n_rows = ms->n_rows;
-  char transa[] = "n";
-
-  if (exclude_diag)
-    bft_error(__FILE__, __LINE__, 0,
-              _(_no_exclude_diag_error_str), __func__);
-
-  mkl_cspblas_dcsrgemv(transa,
-                       &n_rows,
-                       mc->val,
-                       ms->row_index,
-                       ms->col_id,
-                       (double *)x,
-                       y);
-}
-
-#endif /* defined (HAVE_MKL) */
-
-/*----------------------------------------------------------------------------
  * Create MSR matrix coefficients.
  *
  * returns:
@@ -4038,757 +3081,31 @@ _assembler_values_create_msr(cs_matrix_t      *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
-                 bool                exclude_diag,
-                 bool                sync,
-                 cs_real_t          *restrict x,
-                 cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  /* Ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
-
-  /* Standard case */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t sii = 0.0;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-        sii += (m_row[jj]*x[col_id[jj]]);
-
-      y[ii] = sii + mc->d_val[ii]*x[ii];
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t sii = 0.0;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-        sii += (m_row[jj]*x[col_id[jj]]);
-
-      y[ii] = sii;
-
-    }
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_mat_vec_p_l_msr_omp_sched(const cs_matrix_t  *matrix,
-                           bool                exclude_diag,
-                           bool                sync,
-                           cs_real_t          *restrict x,
-                           cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  cs_lnum_t  n_rows = ms->n_rows;
-
-  /* Ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
-
-  /* Standard case */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-
-      cs_lnum_t n_s_rows = cs_align(n_rows * 0.9, _cs_cl);
-      if (n_s_rows > n_rows)
-        n_s_rows = n_rows;
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_s_rows; ii++) {
-
-        const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-        const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-        cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-        cs_real_t sii = 0.0;
-
-        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-          sii += (m_row[jj]*x[col_id[jj]]);
-
-        y[ii] = sii + mc->d_val[ii]*x[ii];
-
-      }
-
-#     pragma omp for schedule(dynamic, _cs_cl)
-      for (cs_lnum_t ii = n_s_rows; ii < n_rows; ii++) {
-
-        const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-        const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-        cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-        cs_real_t sii = 0.0;
-
-        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-          sii += (m_row[jj]*x[col_id[jj]]);
-
-        y[ii] = sii + mc->d_val[ii]*x[ii];
-
-      }
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-
-      cs_lnum_t n_s_rows = cs_align(n_rows * 0.9, _cs_cl);
-      if (n_s_rows > n_rows)
-        n_s_rows = n_rows;
-
-#     pragma omp for
-      for (cs_lnum_t ii = 0; ii < n_s_rows; ii++) {
-
-        const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-        const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-        cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-        cs_real_t sii = 0.0;
-
-        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-          sii += (m_row[jj]*x[col_id[jj]]);
-
-        y[ii] = sii;
-
-      }
-
-#     pragma omp for schedule(dynamic, _cs_cl)
-      for (cs_lnum_t ii = n_s_rows; ii < n_rows; ii++) {
-
-        const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-        const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-        cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-        cs_real_t sii = 0.0;
-
-        for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-          sii += (m_row[jj]*x[col_id[jj]]);
-
-        y[ii] = sii;
-
-      }
-
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_b_mat_vec_p_l_msr_generic(const cs_matrix_t  *matrix,
-                           bool                exclude_diag,
-                           bool                sync,
-                           cs_real_t           x[restrict],
-                           cs_real_t           y[restrict])
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const cs_lnum_t  n_rows = ms->n_rows;
-  const cs_lnum_t *db_size = matrix->db_size;
-
-  /* Ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
-    _pre_vector_multiply_sync_x_end(matrix, hs, x);
-
-  /* Standard case */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      _dense_b_ax(ii, db_size, mc->d_val, x, y);
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-          y[ii*db_size[1] + kk]
-            += (m_row[jj]*x[col_id[jj]*db_size[1] + kk]);
-        }
-      }
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-        y[ii*db_size[1] + kk] = 0.;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-          y[ii*db_size[1] + kk]
-            += (m_row[jj]*x[col_id[jj]*db_size[1] + kk]);
-        }
-      }
-
-    }
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, 3x3 blocked version.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_3_3_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
-                     bool                exclude_diag,
-                     bool                sync,
-                     cs_real_t          *restrict x,
-                     cs_real_t          *restrict y)
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const cs_lnum_t  n_rows = ms->n_rows;
-
-  assert(matrix->db_size[0] == 3 && matrix->db_size[3] == 9);
-
-  /* Ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
-    _pre_vector_multiply_sync_x_end(matrix, hs, x);
-
-  /* Standard case */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      _dense_3_3_ax(ii, mc->d_val, x, y);
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        for (cs_lnum_t kk = 0; kk < 3; kk++)
-          y[ii*3 + kk] += (m_row[jj]*x[col_id[jj]*3 + kk]);
-      }
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        y[ii*3 + kk] = 0.;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        for (cs_lnum_t kk = 0; kk < 3; kk++)
-          y[ii*3 + kk] += (m_row[jj]*x[col_id[jj]*3 + kk]);
-      }
-
-    }
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, 6x6 blocked version.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_6_6_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
-                     bool                exclude_diag,
-                     bool                sync,
-                     cs_real_t           x[restrict],
-                     cs_real_t           y[restrict])
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const cs_lnum_t  n_rows = ms->n_rows;
-
-  assert(matrix->db_size[0] == 6 && matrix->db_size[3] == 36);
-
-  /* Ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
-    _pre_vector_multiply_sync_x_end(matrix, hs, x);
-
-  /* Standard case */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      _dense_6_6_ax(ii, mc->d_val, x, y);
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        for (cs_lnum_t kk = 0; kk < 6; kk++)
-          y[ii*6 + kk] += (m_row[jj]*x[col_id[jj]*6 + kk]);
-      }
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row = mc->x_val + ms->row_index[ii];
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      for (cs_lnum_t kk = 0; kk < 6; kk++)
-        y[ii*6 + kk] = 0.;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        for (cs_lnum_t kk = 0; kk < 6; kk++)
-          y[ii*6 + kk] += (m_row[jj]*x[col_id[jj]*6 + kk]);
-      }
-
-    }
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
- *
- * This variant uses fixed block size variants for common cases.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_b_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
-                   bool                exclude_diag,
-                   bool                sync,
-                   cs_real_t           x[restrict],
-                   cs_real_t           y[restrict])
-{
-  if (matrix->db_size[0] == 3 && matrix->db_size[3] == 9)
-    _3_3_mat_vec_p_l_msr(matrix, exclude_diag, sync, x, y);
-
-  else if (matrix->db_size[0] == 6 && matrix->db_size[3] == 36)
-    _6_6_mat_vec_p_l_msr(matrix, exclude_diag, sync, x, y);
-
-  else
-    _b_mat_vec_p_l_msr_generic(matrix, exclude_diag, sync, x, y);
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_bb_mat_vec_p_l_msr_3(const cs_matrix_t  *matrix,
-                      bool                exclude_diag,
-                      bool                sync,
-                      cs_real_t           x[restrict],
-                      cs_real_t           y[restrict])
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const cs_lnum_t  n_rows = ms->n_rows;
-  const cs_lnum_t *db_size = matrix->db_size;
-
-  /* Ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
-    _pre_vector_multiply_sync_x_end(matrix, hs, x);
-
-  /* Standard case */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row =  mc->x_val + (ms->row_index[ii]*9);
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      _dense_b_ax(ii, db_size, mc->d_val, x, y);
-
-      cs_real_t * _y = y + ii*3;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        _y[0] += (  m_row[jj*9]         * x[col_id[jj]*3]
-                  + m_row[jj*9 + 1]     * x[col_id[jj]*3 + 1]
-                  + m_row[jj*9 + 2]     * x[col_id[jj]*3 + 2]);
-        _y[1] += (  m_row[jj*9 + 3]     * x[col_id[jj]*3]
-                  + m_row[jj*9 + 3 + 1] * x[col_id[jj]*3 + 1]
-                  + m_row[jj*9 + 3 + 2] * x[col_id[jj]*3 + 2]);
-        _y[2] += (  m_row[jj*9 + 6]     * x[col_id[jj]*3]
-                  + m_row[jj*9 + 6 + 1] * x[col_id[jj]*3 + 1]
-                  + m_row[jj*9 + 6 + 2] * x[col_id[jj]*3 + 2]);
-      }
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row =  mc->x_val + (ms->row_index[ii]*9);
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      cs_real_t * _y = y + (ii*db_size[1]);
-
-      for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-        _y[kk] = 0.;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        _y[0] += (  m_row[jj*9]         * x[col_id[jj]*3]
-                  + m_row[jj*9 + 1]     * x[col_id[jj]*3 + 1]
-                  + m_row[jj*9 + 2]     * x[col_id[jj]*3 + 2]);
-        _y[1] += (  m_row[jj*9 + 3]     * x[col_id[jj]*3]
-                  + m_row[jj*9 + 3 + 1] * x[col_id[jj]*3 + 1]
-                  + m_row[jj*9 + 3 + 2] * x[col_id[jj]*3 + 2]);
-        _y[2] += (  m_row[jj*9 + 6]     * x[col_id[jj]*3]
-                  + m_row[jj*9 + 6 + 1] * x[col_id[jj]*3 + 1]
-                  + m_row[jj*9 + 6 + 2] * x[col_id[jj]*3 + 2]);
-      }
-
-    }
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_bb_mat_vec_p_l_msr_generic(const cs_matrix_t  *matrix,
-                            bool                exclude_diag,
-                            bool                sync,
-                            cs_real_t           x[restrict],
-                            cs_real_t           y[restrict])
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const cs_lnum_t  n_rows = ms->n_rows;
-  const cs_lnum_t *db_size = matrix->db_size;
-  const cs_lnum_t *eb_size = matrix->eb_size;
-
-  /* Ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
-    _pre_vector_multiply_sync_x_end(matrix, hs, x);
-
-  /* Standard case */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row =   mc->x_val
-                                        + (ms->row_index[ii]*eb_size[3]);
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      _dense_b_ax(ii, db_size, mc->d_val, x, y);
-
-      cs_real_t * _y = y + (ii*db_size[1]);
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-          for (cs_lnum_t ll = 0; ll < db_size[0]; ll++) {
-            _y[kk] += (  m_row[jj*eb_size[3] + kk*eb_size[2] + ll]
-                       * x[col_id[jj]*db_size[1] + ll]);
-          }
-        }
-      }
-
-    }
-
-  }
-
-  /* Exclude diagonal */
-
-  else {
-
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-
-      const cs_lnum_t *restrict col_id = ms->col_id + ms->row_index[ii];
-      const cs_real_t *restrict m_row =   mc->x_val
-                                        + (ms->row_index[ii]*eb_size[3]);
-      cs_lnum_t n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-      cs_real_t * _y = y + (ii*db_size[1]);
-
-      for (cs_lnum_t kk = 0; kk < db_size[0]; kk++)
-        _y[kk] = 0.;
-
-      for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-        for (cs_lnum_t kk = 0; kk < db_size[0]; kk++) {
-          for (cs_lnum_t ll = 0; ll < db_size[0]; ll++) {
-            _y[kk] += (  m_row[jj*eb_size[3] + kk*eb_size[2] + ll]
-                       * x[col_id[jj]*db_size[1] + ll]);
-          }
-        }
-      }
-
-    }
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
- *
- * parameters:
- *   matrix       <-- pointer to matrix structure
- *   exclude_diag <-- exclude diagonal if true,
- *   sync         <-- synchronize ghost cells if true
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-static void
-_bb_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
-                    bool                exclude_diag,
-                    bool                sync,
-                    cs_real_t           x[restrict],
-                    cs_real_t           y[restrict])
-{
-  if (matrix->eb_size[0] == 3 && matrix->eb_size[3] == 9)
-    _bb_mat_vec_p_l_msr_3(matrix, exclude_diag, sync, x, y);
-
-  else
-    _bb_mat_vec_p_l_msr_generic(matrix, exclude_diag, sync, x, y);
-}
-
-/*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, using MKL
- *
- * parameters:
- *   exclude_diag <-- exclude diagonal if true
- *   matrix       <-- pointer to matrix structure
- *   hs           <-- halo state: if non-NULL, call cs_halo_sync_wait
- *                    locally (possibly allowing computation/communication
- *                    overlap)
- *   x            <-> multipliying vector values
- *   y            --> resulting vector
- *----------------------------------------------------------------------------*/
-
-#if defined (HAVE_MKL)
-
-static void
-_mat_vec_p_l_msr_mkl(const cs_matrix_t  *matrix,
-                     bool                exclude_diag,
-                     bool                sync,
-                     cs_real_t           x[restrict],
-                     cs_real_t           y[restrict])
-{
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-  const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-
-  /* Ghost cell communication */
-
-  cs_halo_state_t *hs
-    = (sync) ? _pre_vector_multiply_sync_x_start(matrix, x) : NULL;
-  if (hs != NULL)
-    cs_halo_sync_wait(matrix->halo, x, hs);
-
-  /* Call MKL function */
-
-  int n_rows = ms->n_rows;
-  char transa[] = "n";
-
-  mkl_cspblas_dcsrgemv(transa,
-                       &n_rows,
-                       mc->x_val,
-                       ms->row_index,
-                       ms->col_id,
-                       (double *)x,
-                       y);
-
-  /* Add diagonal contribution */
-
-  if (!exclude_diag && mc->d_val != NULL) {
-    cs_lnum_t ii;
-    const double *restrict da = mc->d_val;
-#   pragma omp parallel for  if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
-      y[ii] += da[ii] * x[ii];
-  }
-}
-
-#endif /* defined (HAVE_MKL) */
-
-/*----------------------------------------------------------------------------
  * Add variant
  *
  * parameters:
  *   type                 <-- matrix type
  *   mft                  <-- fill type tuned for
- *   ed_flag              <-- 0: with diagonal only, 1 exclude only; 2; both
- *   vector_multiply      <-- function pointer for A.x
+ *   func_names           <-- function names for SpMV operation types
  *   n_variants           <-> number of variants
  *   n_variants_max       <-> current maximum number of variants
  *   m_variant            <-> array of matrix variants
  *----------------------------------------------------------------------------*/
 
 static void
-_variant_add(const char                        *name,
-             cs_matrix_type_t                   type,
-             cs_matrix_fill_type_t              mft,
-             int                                ed_flag,
-             cs_matrix_vector_product_t        *vector_multiply,
-             int                               *n_variants,
-             int                               *n_variants_max,
-             cs_matrix_variant_t              **m_variant)
+_variant_add(const char                *name,
+             cs_matrix_type_t           type,
+             cs_matrix_fill_type_t      mft,
+             const cs_numbering_t      *numbering,
+             const char                *func_name,
+             int                       *n_variants,
+             int                       *n_variants_max,
+             cs_matrix_variant_t      **m_variant)
 {
   cs_matrix_variant_t  *v;
   int i = *n_variants;
 
-  if (vector_multiply == NULL)
+  if (func_name == NULL)
     return;
 
   if (*n_variants_max == *n_variants) {
@@ -4801,7 +3118,7 @@ _variant_add(const char                        *name,
 
   v = (*m_variant) + i;
 
-  for (int j = 0; j < 2; j++) {
+  for (int j = 0; j < CS_MATRIX_SPMV_N_TYPES; j++) {
     v->vector_multiply[j] = NULL;
     strncpy(v->name[j], name, 31);
     v->name[j][31] = '\0';
@@ -4810,287 +3127,15 @@ _variant_add(const char                        *name,
   v->type = type;
   v->fill_type = mft;
 
-  if (ed_flag != 1)
-    v->vector_multiply[0] = vector_multiply;
-  if (ed_flag != 0)
-    v->vector_multiply[1] = vector_multiply;
+  int retval = cs_matrix_spmv_set_func(type,
+                                       mft,
+                                       CS_MATRIX_SPMV_N_TYPES,
+                                       numbering,
+                                       "standard",
+                                       v->vector_multiply);
 
-  *n_variants += 1;
-}
-
-/*----------------------------------------------------------------------------
- * Select the sparse matrix-vector product function to be used by a
- * matrix or variant for a given fill type.
- *
- * Currently, possible variant functions are:
- *
- *   CS_MATRIX_NATIVE  (all fill types)
- *     default
- *     standard
- *     fixed           (for CS_MATRIX_33_BLOCK_D or CS_MATRIX_33_BLOCK_D_SYM)
- *     omp             (for OpenMP with compatible numbering)
- *     vector          (For vector machine with compatible numbering)
- *
- *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
- *     default
- *     standard
- *     mkl             (with MKL)
- *
- *   CS_MATRIX_MSR
- *     default
- *     standard
- *     omp_sched       (Improved OpenMP scheduling, , for CS_MATRIX_SCALAR*)
- *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
- *
- * parameters:
- *   m_type          <-- Matrix type
- *   numbering       <-- mesh numbering type, or NULL
- *   fill type       <-- matrix fill type to merge from
- *   ed_flag         <-- 0: with diagonal only, 1 exclude only; 2; both
- *   func_name       <-- function type name, or NULL for default
- *   vector_multiply <-> multiplication function array
- *
- * returns:
- *   0 for success, 1 for incompatible function, 2 for compatible
- *   function not available in current build
- *----------------------------------------------------------------------------*/
-
-static int
-_set_spmv_func(cs_matrix_type_t             m_type,
-               const cs_numbering_t        *numbering,
-               cs_matrix_fill_type_t        fill_type,
-               int                          ed_flag,
-               const char                  *func_name,
-               cs_matrix_vector_product_t  *vector_multiply[2])
-{
-  int retcode = 1;
-  int standard = 0;
-
-  cs_matrix_vector_product_t *spmv[2] = {NULL, NULL};
-
-  if (func_name == NULL)
-    standard = 2;
-  else if (!strcmp(func_name, "default"))
-    standard = 2;
-  else if (!strcmp(func_name, "standard"))
-    standard = 1;
-
-  switch(m_type) {
-
-  case CS_MATRIX_NATIVE:
-
-    if (standard > 0) { /* standard or default */
-
-      switch(fill_type) {
-      case CS_MATRIX_SCALAR:
-      case CS_MATRIX_SCALAR_SYM:
-        spmv[0] = _mat_vec_p_l_native;
-        spmv[1] = _mat_vec_p_l_native;
-        break;
-      case CS_MATRIX_BLOCK_D:
-      case CS_MATRIX_BLOCK_D_66:
-      case CS_MATRIX_BLOCK_D_SYM:
-        spmv[0] = _b_mat_vec_p_l_native_fixed;
-        spmv[1] = _b_mat_vec_p_l_native_fixed;
-        break;
-      case CS_MATRIX_BLOCK:
-        spmv[0] = _bb_mat_vec_p_l_native;
-        spmv[1] = _bb_mat_vec_p_l_native;
-        break;
-      default:
-        break;
-      }
-
-      if (standard > 1) { /* default optimized variants */
-        switch(fill_type) {
-        case CS_MATRIX_SCALAR:
-        case CS_MATRIX_SCALAR_SYM:
-          if (numbering != NULL) {
-#if defined(HAVE_OPENMP)
-            if (numbering->type == CS_NUMBERING_THREADS) {
-              spmv[0] = _mat_vec_p_l_native_omp;
-              spmv[1] = _mat_vec_p_l_native_omp;
-            }
-#endif
-            if (numbering->type == CS_NUMBERING_VECTORIZE) {
-              spmv[0] = _mat_vec_p_l_native_vector;
-              spmv[1] = _mat_vec_p_l_native_vector;
-            }
-          }
-          break;
-        case CS_MATRIX_BLOCK_D:
-        case CS_MATRIX_BLOCK_D_66:
-        case CS_MATRIX_BLOCK_D_SYM:
-          if (numbering != NULL) {
-#if defined(HAVE_OPENMP)
-            if (numbering->type == CS_NUMBERING_THREADS) {
-              spmv[0] = _b_mat_vec_p_l_native_omp;
-              spmv[1] = _b_mat_vec_p_l_native_omp;
-            }
-#endif
-          }
-          break;
-        default:
-          break;
-        }
-      }
-
-    }
-
-    else if (!strcmp(func_name, "omp")) {
-#if defined(HAVE_OPENMP)
-      if (numbering != NULL) {
-        if (numbering->type == CS_NUMBERING_THREADS) {
-          switch(fill_type) {
-          case CS_MATRIX_SCALAR:
-          case CS_MATRIX_SCALAR_SYM:
-            spmv[0] = _mat_vec_p_l_native_omp;
-            spmv[1] = _mat_vec_p_l_native_omp;
-            break;
-          case CS_MATRIX_BLOCK_D:
-          case CS_MATRIX_BLOCK_D_66:
-          case CS_MATRIX_BLOCK_D_SYM:
-            spmv[0] = _b_mat_vec_p_l_native_omp;
-            spmv[1] = _b_mat_vec_p_l_native_omp;
-            break;
-          default:
-            break;
-          }
-        }
-      }
-#else
-      retcode = 2;
-#endif
-    }
-
-    else if (!strcmp(func_name, "omp_atomic")) {
-#if defined(HAVE_OPENMP)
-      switch(fill_type) {
-      case CS_MATRIX_SCALAR:
-      case CS_MATRIX_SCALAR_SYM:
-        spmv[0] = _mat_vec_p_l_native_omp_atomic;
-        spmv[1] = _mat_vec_p_l_native_omp_atomic;
-        break;
-      case CS_MATRIX_BLOCK_D:
-      case CS_MATRIX_BLOCK_D_66:
-      case CS_MATRIX_BLOCK_D_SYM:
-        spmv[0] = _b_mat_vec_p_l_native_omp_atomic;
-        spmv[1] = _b_mat_vec_p_l_native_omp_atomic;
-        break;
-      default:
-        break;
-      }
-#else
-      retcode = 2;
-#endif
-    }
-
-    else if (!strcmp(func_name, "vector")) {
-      switch(fill_type) {
-      case CS_MATRIX_SCALAR:
-      case CS_MATRIX_SCALAR_SYM:
-        spmv[0] = _mat_vec_p_l_native_vector;
-        spmv[1] = _mat_vec_p_l_native_vector;
-        break;
-      default:
-        break;
-      }
-    }
-
-    break;
-
-  case CS_MATRIX_CSR:
-
-    switch(fill_type) {
-    case CS_MATRIX_SCALAR:
-    case CS_MATRIX_SCALAR_SYM:
-      if (standard > 0) {
-        spmv[0] = _mat_vec_p_l_csr;
-        spmv[1] = _mat_vec_p_l_csr;
-      }
-      else if (!strcmp(func_name, "mkl")) {
-#if defined(HAVE_MKL)
-        spmv[0] = _mat_vec_p_l_csr_mkl;
-        spmv[1] = _mat_vec_p_l_csr_mkl;
-#else
-        retcode = 2;
-#endif
-      }
-      break;
-    default:
-      break;
-    }
-
-    break;
-
-  case CS_MATRIX_MSR:
-
-    if (standard > 0) {
-      switch(fill_type) {
-      case CS_MATRIX_SCALAR:
-      case CS_MATRIX_SCALAR_SYM:
-        spmv[0] = _mat_vec_p_l_msr;
-        spmv[1] = _mat_vec_p_l_msr;
-        break;
-      case CS_MATRIX_BLOCK_D:
-      case CS_MATRIX_BLOCK_D_66:
-      case CS_MATRIX_BLOCK_D_SYM:
-        spmv[0] = _b_mat_vec_p_l_msr;
-        spmv[1] = _b_mat_vec_p_l_msr;
-        break;
-      case CS_MATRIX_BLOCK:
-        spmv[0] = _bb_mat_vec_p_l_msr;
-        spmv[1] = _bb_mat_vec_p_l_msr;
-        break;
-      default:
-        break;
-      }
-    }
-
-    else if (!strcmp(func_name, "mkl")) {
-#if defined(HAVE_MKL)
-      switch(fill_type) {
-      case CS_MATRIX_SCALAR:
-      case CS_MATRIX_SCALAR_SYM:
-        spmv[0] = _mat_vec_p_l_msr_mkl;
-        spmv[1] = _mat_vec_p_l_msr_mkl;
-        break;
-      default:
-        break;
-      }
-#else
-      retcode = 2;
-#endif
-    }
-
-    else if (!strcmp(func_name, "omp_sched")) {
-      switch(fill_type) {
-      case CS_MATRIX_SCALAR:
-      case CS_MATRIX_SCALAR_SYM:
-        spmv[0] = _mat_vec_p_l_msr_omp_sched;
-        spmv[1] = _mat_vec_p_l_msr_omp_sched;
-        break;
-      default:
-        break;
-      }
-    }
-
-    break;
-
-  default:
-    break;
-  }
-
-  if (ed_flag != 1 && spmv[0] != NULL) {
-    vector_multiply[0] = spmv[0];
-    retcode = 0;
-  }
-  if (ed_flag != 0 && spmv[0] != NULL) {
-    vector_multiply[1] = spmv[1];
-    retcode = 0;
-  }
-
-  return retcode;
+  if (retval == 0)
+    *n_variants += 1;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5254,7 +3299,6 @@ _structure_destroy(cs_matrix_type_t   type,
 static cs_matrix_t *
 _matrix_create(cs_matrix_type_t  type)
 {
-  int i;
   cs_matrix_fill_type_t mft;
   cs_matrix_t *m;
 
@@ -5278,7 +3322,7 @@ _matrix_create(cs_matrix_type_t  type)
 
   m->symmetric = false;
 
-  for (i = 0; i < 4; i++) {
+  for (int i = 0; i < 4; i++) {
     m->db_size[i] = 0;
     m->eb_size[i] = 0;
   }
@@ -5292,7 +3336,7 @@ _matrix_create(cs_matrix_type_t  type)
   m->assembler = NULL;
 
   for (mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++) {
-    for (i = 0; i < 2; i++)
+    for (cs_matrix_spmv_type_t i = 0; i < CS_MATRIX_SPMV_N_TYPES; i++)
       m->vector_multiply[mft][i] = NULL;
   }
 
@@ -5322,13 +3366,7 @@ _matrix_create(cs_matrix_type_t  type)
 
   m->set_coefficients = NULL;
 
-  for (mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++)
-    _set_spmv_func(m->type,
-                   m->numbering,
-                   mft,
-                   2,    /* ed_flag */
-                   NULL, /* func_name */
-                   m->vector_multiply[mft]);
+  cs_matrix_spmv_set_defaults(m);
 
   switch(m->type) {
 
@@ -5369,7 +3407,7 @@ _matrix_create(cs_matrix_type_t  type)
 
   }
 
-  for (i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
+  for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
     if (m->vector_multiply[i][1] == NULL)
       m->vector_multiply[i][1] = m->vector_multiply[i][0];
   }
@@ -7036,11 +5074,14 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Matrix.vector product y = (A-D).x
+ * \brief  Partial matrix.vector product.
  *
- * This function includes a halo update of x prior to multiplication by A.
+ * This function includes a halo update of x prior to multiplication,
+ * except for the CS_MATRIX_SPMV_L operation type, which does not require it,
+ * as halo adjacencies are only present and useful in the upper-diagonal part..
  *
  * \param[in]       matrix         pointer to matrix structure
+ * \param[in]       op_type        SpMV operation type
  * \param[in, out]  x              multipliying vector values
  *                                 (ghost values updated)
  * \param[out]      y              resulting vector
@@ -7048,20 +5089,23 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_exdiag_vector_multiply(const cs_matrix_t   *matrix,
-                                 cs_real_t           *restrict x,
-                                 cs_real_t           *restrict y)
+cs_matrix_vector_multiply_partial(const cs_matrix_t      *matrix,
+                                  cs_matrix_spmv_type_t   op_type,
+                                  cs_real_t              *restrict x,
+                                  cs_real_t              *restrict y)
 {
   assert(matrix != NULL);
 
-  if (matrix->vector_multiply[matrix->fill_type][1] != NULL)
-    matrix->vector_multiply[matrix->fill_type][1](matrix, true, true, x, y);
+  if (matrix->vector_multiply[matrix->fill_type][op_type] != NULL)
+    matrix->vector_multiply[matrix->fill_type][op_type]
+              (matrix, true, true, x, y);
 
   else
     bft_error(__FILE__, __LINE__, 0,
-              _("%s: Matrix of type: %s is missing a vector multiply\n"
-                "vy extra-diagonal function for fill type %s."),
+              _("%s: Matrix of type: %s is missing a partial SpMV\n"
+                "(%s) function for fill type %s."),
               __func__, cs_matrix_get_type_name(matrix),
+              cs_matrix_spmv_type_name[op_type],
               cs_matrix_fill_type_name[matrix->fill_type]);
 }
 
@@ -7092,12 +5136,17 @@ cs_matrix_variant_create(cs_matrix_t  *m)
     mv->name[j][31] = '\0';
   }
 
-  (void) _set_spmv_func(m->type,
-                        m->numbering,
-                        m->fill_type,
-                        2,
-                        NULL, /* func_name */
-                        mv->vector_multiply);
+  for (cs_matrix_fill_type_t mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++) {
+    for (cs_matrix_spmv_type_t spmv_type = 0;
+         spmv_type < CS_MATRIX_SPMV_N_TYPES;
+         spmv_type++)
+      cs_matrix_spmv_set_func(m->type,
+                              m->fill_type,
+                              spmv_type,
+                              m->numbering,
+                              NULL, /* func_name */
+                              mv->vector_multiply);
+  }
 
   return mv;
 }
@@ -7125,32 +5174,13 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
   *n_variants = 0;
   *m_variant = NULL;
 
-  cs_matrix_vector_product_t  *vector_multiply = NULL;
-
   if (m->type == CS_MATRIX_NATIVE) {
-
-    switch(m->fill_type) {
-    case CS_MATRIX_SCALAR:
-    case CS_MATRIX_SCALAR_SYM:
-      vector_multiply = _mat_vec_p_l_native;
-      break;
-    case CS_MATRIX_BLOCK_D:
-    case CS_MATRIX_BLOCK_D_66:
-    case CS_MATRIX_BLOCK_D_SYM:
-      vector_multiply = _b_mat_vec_p_l_native_fixed;
-      break;
-    case CS_MATRIX_BLOCK:
-      vector_multiply = _bb_mat_vec_p_l_native;
-      break;
-    default:
-      vector_multiply = NULL;
-    }
 
     _variant_add(_("native, baseline"),
                  m->type,
                  m->fill_type,
-                 2, /* ed_flag */
-                 vector_multiply,
+                 m->numbering,
+                 "standard",
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -7160,50 +5190,21 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 #if defined(HAVE_OPENMP)
 
       if (m->numbering->type == CS_NUMBERING_THREADS) {
-
-        switch(m->fill_type) {
-        case CS_MATRIX_SCALAR:
-        case CS_MATRIX_SCALAR_SYM:
-          vector_multiply = _mat_vec_p_l_native_omp;
-          break;
-        case CS_MATRIX_BLOCK_D:
-        case CS_MATRIX_BLOCK_D_66:
-        case CS_MATRIX_BLOCK_D_SYM:
-          vector_multiply = _b_mat_vec_p_l_native_omp;
-          break;
-        default:
-          vector_multiply = NULL;
-        }
-
         _variant_add(_("native, OpenMP"),
                      m->type,
                      m->fill_type,
-                     2, /* ed_flag */
-                     vector_multiply,
+                     m->numbering,
+                     "default",
                      n_variants,
                      &n_variants_max,
                      m_variant);
       }
 
-      switch(m->fill_type) {
-      case CS_MATRIX_SCALAR:
-      case CS_MATRIX_SCALAR_SYM:
-        vector_multiply = _mat_vec_p_l_native_omp_atomic;
-        break;
-      case CS_MATRIX_BLOCK_D:
-      case CS_MATRIX_BLOCK_D_66:
-      case CS_MATRIX_BLOCK_D_SYM:
-        vector_multiply = _b_mat_vec_p_l_native_omp_atomic;
-        break;
-      default:
-        vector_multiply = NULL;
-      }
-
       _variant_add(_("native, OpenMP atomic"),
                    m->type,
                    m->fill_type,
-                   2, /* ed_flag */
-                   vector_multiply,
+                   m->numbering,
+                   "omp_atomic",
                    n_variants,
                    &n_variants_max,
                    m_variant);
@@ -7211,25 +5212,14 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 #endif
 
       if (m->numbering->type == CS_NUMBERING_VECTORIZE) {
-
-        switch(m->fill_type) {
-        case CS_MATRIX_SCALAR:
-        case CS_MATRIX_SCALAR_SYM:
-          vector_multiply = _mat_vec_p_l_native_vector;
-          break;
-        default:
-          vector_multiply = NULL;
-        }
-
         _variant_add(_("native, vectorized"),
                      m->type,
                      m->fill_type,
-                     2, /* ed_flag */
-                     vector_multiply,
+                     m->numbering,
+                     "default",
                      n_variants,
                      &n_variants_max,
                      m_variant);
-
       }
 
     }
@@ -7238,40 +5228,22 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
   if (m->type == CS_MATRIX_CSR) {
 
-    switch(m->fill_type) {
-    case CS_MATRIX_SCALAR:
-    case CS_MATRIX_SCALAR_SYM:
-      vector_multiply = _mat_vec_p_l_csr;
-      break;
-    default:
-      vector_multiply = NULL;
-    }
-
     _variant_add(_("CSR"),
                  m->type,
                  m->fill_type,
-                 2, /* ed_flag */
-                 vector_multiply,
+                 m->numbering,
+                 "default",
                  n_variants,
                  &n_variants_max,
                  m_variant);
 
 #if defined(HAVE_MKL)
 
-    switch(m->fill_type) {
-    case CS_MATRIX_SCALAR:
-    case CS_MATRIX_SCALAR_SYM:
-      vector_multiply = _mat_vec_p_l_csr_mkl;
-      break;
-    default:
-      vector_multiply = NULL;
-    }
-
     _variant_add(_("CSR, with MKL"),
                  m->type,
                  m->fill_type,
-                 0, /* ed_flag */
-                 vector_multiply,
+                 m->numbering,
+                 "mkl",
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -7282,48 +5254,22 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
   if (m->type == CS_MATRIX_MSR) {
 
-      switch(m->fill_type) {
-      case CS_MATRIX_SCALAR:
-      case CS_MATRIX_SCALAR_SYM:
-        vector_multiply = _mat_vec_p_l_msr;
-        break;
-      case CS_MATRIX_BLOCK_D:
-      case CS_MATRIX_BLOCK_D_66:
-      case CS_MATRIX_BLOCK_D_SYM:
-        vector_multiply = _b_mat_vec_p_l_msr;
-        break;
-      case CS_MATRIX_BLOCK:
-        vector_multiply = _bb_mat_vec_p_l_msr;
-        break;
-      default:
-        vector_multiply = NULL;
-      }
-
     _variant_add(_("MSR"),
                  m->type,
                  m->fill_type,
-                 2, /* ed_flag */
-                 vector_multiply,
+                 m->numbering,
+                 "default",
                  n_variants,
                  &n_variants_max,
                  m_variant);
 
 #if defined(HAVE_MKL)
 
-    switch(m->fill_type) {
-    case CS_MATRIX_SCALAR:
-    case CS_MATRIX_SCALAR_SYM:
-      vector_multiply = _mat_vec_p_l_msr_mkl;
-      break;
-    default:
-      vector_multiply = NULL;
-    }
-
     _variant_add(_("MSR, with MKL"),
                  m->type,
                  m->fill_type,
-                 2, /* ed_flag */
-                 vector_multiply,
+                 m->numbering,
+                 "mkl",
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -7333,25 +5279,14 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 #if defined(HAVE_OPENMP)
 
     if (omp_get_num_threads() > 1) {
-
-      switch(m->fill_type) {
-      case CS_MATRIX_SCALAR:
-      case CS_MATRIX_SCALAR_SYM:
-        vector_multiply = _mat_vec_p_l_msr_omp_sched;
-        break;
-      default:
-        vector_multiply = NULL;
-      }
-
       _variant_add(_("MSR, OpenMP scheduling"),
                    m->type,
                    m->fill_type,
-                   2, /* ed_flag */
-                   vector_multiply,
+                   m->numbering,
+                   "omp_sched",
                    n_variants,
                    &n_variants_max,
                    m_variant);
-
     }
 
 #endif /* defined(HAVE_OPENMP) */
@@ -7410,64 +5345,65 @@ cs_matrix_variant_apply(cs_matrix_t          *m,
  *
  *   CS_MATRIX_NATIVE  (all fill types)
  *     default
- *     standard
+ *     baseline
  *     omp             (for OpenMP with compatible numbering)
  *     omp_atomic      (for OpenMP with atomics)
  *     vector          (For vector machine with compatible numbering)
  *
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     default
- *     standard
  *     mkl             (with MKL)
  *
- *   CS_MATRIX_MSR     (all fill types except CS_MATRIX_33_BLOCK)
+ *   CS_MATRIX_MSR     (all fill types)
  *     default
- *     standard
  *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     omp_sched       (For OpenMP with scheduling)
  *
  * parameters:
- *   mv        <-> Pointer to matrix variant
- *   numbering <-- mesh numbering info, or NULL
- *   fill type <-- matrix fill type to merge from
- *   ed_flag   <-- 0: with diagonal only, 1 exclude only; 2; both
- *   func_name <-- function type name
+ *   mv         <->  pointer to matrix variant
+ *   numbering  <--  mesh numbering info, or NULL
+ *   fill type  <--  matrix fill type to merge from
+ *   spmv_type  <--  SpMV operation type (full or sub-matrix)
+ *                   (all types if CS_MATRIX_SPMV_N_TYPES)
+ *   func_name  <--  function type name
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
-                           const cs_numbering_t    *numbering,
                            cs_matrix_fill_type_t    fill_type,
-                           int                      ed_flag,
+                           cs_matrix_spmv_type_t    spmv_type,
+                           const cs_numbering_t    *numbering,
                            const char              *func_name)
 {
-  int s_id = (ed_flag != 1) ? 0 : 1;
-  int e_id = (ed_flag != 0) ? 2 : 1;
+  int retcode = cs_matrix_spmv_set_func(mv->type,
+                                        fill_type,
+                                        spmv_type,
+                                        numbering,
+                                        func_name,
+                                        mv->vector_multiply);
 
-  for (int j = s_id; j < e_id; j++) {
-
-    int retcode = _set_spmv_func(mv->type,
-                                 numbering,
-                                 fill_type,
-                                 j,
-                                 func_name,
-                                 mv->vector_multiply);
-
-  if (retcode == 1)
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Assignment of matrix.vector product \"%s\" to matrix variant \"%s\"\n"
-         "of type \"%s\" for fill \"%s\" not allowed."),
-       func_name, mv->name[j], _matrix_type_name[mv->type],
-       cs_matrix_fill_type_name[fill_type]);
+  if (retcode == 1) {
+    if (spmv_type < CS_MATRIX_SPMV_N_TYPES)
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Assignment of matrix.vector product \"%s\" to variant \"%s\"\n"
+           "of type \"%s\" for fill \"%s\" not allowed."),
+         func_name, mv->name[spmv_type], _matrix_type_name[mv->type],
+         cs_matrix_fill_type_name[fill_type]);
+    else
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Assignment of matrix.vector product \"%s\" to variant \"%s\"\n"
+           "of type \"%s\" not allowed."),
+         func_name, mv->name[spmv_type], _matrix_type_name[mv->type]);
+  }
   else if (retcode == 2)
     bft_error
       (__FILE__, __LINE__, 0,
        _("Matrix.vector product function type \"%s\"\n"
          "is not available in this build."),
        func_name);
-  }
 }
 
 /*----------------------------------------------------------------------------*/

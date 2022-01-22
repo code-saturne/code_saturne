@@ -320,9 +320,10 @@ struct _cs_matrix_t {
   cs_matrix_assembler_values_create_t  *assembler_values_create;
 
   /* Function pointer arrays, with CS_MATRIX_N_FILL_TYPES variants:
-     fill_type*2 + exclude_diagonal_flag */
+     fill_type*4 + full, extra-diagonal, lower, upper parts */
 
-  cs_matrix_vector_product_t  *vector_multiply[CS_MATRIX_N_FILL_TYPES][2];
+  cs_matrix_vector_product_t  *vector_multiply[CS_MATRIX_N_FILL_TYPES]
+                                              [CS_MATRIX_SPMV_N_TYPES];
 
 };
 
@@ -336,9 +337,9 @@ struct _cs_matrix_variant_t {
   cs_matrix_type_t       type;        /* Matrix storage and definition type */
   cs_matrix_fill_type_t  fill_type;   /* Matrix storage and definition type */
 
-  /* Function pointer arrays, with and without exclude_diagonal_flag */
+  /* Function pointer arrays */
 
-  cs_matrix_vector_product_t   *vector_multiply[2];
+  cs_matrix_vector_product_t   *vector_multiply[CS_MATRIX_SPMV_N_TYPES];
 };
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

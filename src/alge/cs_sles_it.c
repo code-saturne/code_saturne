@@ -1625,7 +1625,7 @@ _jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk and residue. */
 
-    cs_matrix_exdiag_vector_multiply(a, rk, vx);
+    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vx);
 
     res2 = 0.0;
 
@@ -1741,7 +1741,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
 
     /* Compute vxx <- vx - (a-diag).rk and residue. */
 
-    cs_matrix_exdiag_vector_multiply(a, rk, vxx);
+    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vxx);
 
     res2 = 0.0;
 
@@ -1862,7 +1862,7 @@ _block_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk and residue. */
 
-    cs_matrix_exdiag_vector_multiply(a, rk, vxx);
+    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vxx);
 
     res2 = 0.0;
 

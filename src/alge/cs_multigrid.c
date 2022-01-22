@@ -4838,7 +4838,7 @@ cs_multigrid_get_grid(const cs_multigrid_t  *mg,
     if (level < 0)
       level = mgd->n_levels - 1;
 
-    if (level < mgd->n_levels)
+    if ((unsigned)level < mgd->n_levels)
       g = mgd->grid_hierarchy[level];
 
   }

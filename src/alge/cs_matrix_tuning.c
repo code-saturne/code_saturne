@@ -140,7 +140,7 @@ _matrix_tune_test(const cs_matrix_t     *m,
                   cs_matrix_variant_t   *m_variant,
                   double                 spmv_cost[])
 {
-  int  n_runs, run_id, v_id, ed_flag;
+  int  n_runs, run_id, v_id;
   double  wt0, wt1, wtu;
 
   double test_sum = 0.0;
@@ -178,17 +178,17 @@ _matrix_tune_test(const cs_matrix_t     *m,
 
     /* Measure matrix.vector operations */
 
-    for (ed_flag = 0; ed_flag < 2; ed_flag++) {
+    for (int op_type = 0; op_type < CS_MATRIX_SPMV_N_TYPES; op_type++) {
 
       cs_matrix_vector_product_t
-        *vector_multiply = v->vector_multiply[ed_flag];
+        *vector_multiply = v->vector_multiply[op_type];
 
       if (vector_multiply != NULL) {
 
         cs_matrix_t m_t;
         memcpy(&m_t, m, sizeof(cs_matrix_t));
 
-        m_t.vector_multiply[m->fill_type][ed_flag] = vector_multiply;
+        m_t.vector_multiply[m->fill_type][op_type] = vector_multiply;
 
         wt0 = cs_timer_wtime(), wt1 = wt0;
         run_id = 0, n_runs = (n_measure > 0) ? n_measure : 1;
@@ -197,10 +197,10 @@ _matrix_tune_test(const cs_matrix_t     *m,
           while (run_id < n_runs) {
             if (run_id % 8)
               test_sum = 0;
-            if (ed_flag == 0)
+            if (op_type == 0)
               cs_matrix_vector_multiply(&m_t, x, y);
             else
-              cs_matrix_exdiag_vector_multiply(&m_t, x, y);
+              cs_matrix_vector_multiply_partial(&m_t, op_type, x, y);
             test_sum += y[n-1];
             run_id++;
           }
@@ -221,10 +221,10 @@ _matrix_tune_test(const cs_matrix_t     *m,
             n_runs *= 2;
         }
         wtu = (wt1 - wt0) / n_runs;
-        spmv_cost[v_id*2 + ed_flag] = wtu;
+        spmv_cost[v_id*CS_MATRIX_SPMV_N_TYPES + op_type] = wtu;
       }
       else
-        spmv_cost[v_id*2 + ed_flag] = -1;
+        spmv_cost[v_id*CS_MATRIX_SPMV_N_TYPES + op_type] = -1;
 
     } /* end of loop on ed_flag */
 
@@ -280,15 +280,16 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
   int min_c[2] = {0, 0};
 
   for (int i = 1; i < n_variants; i++) {
-    for (int j = 0; j < 2; j++) {
-      if (    spmv_cost[i*2 + j] > 0
-          && (spmv_cost[i*2 + j] < spmv_cost[min_c[j]*2 + j]))
+    for (int j = 0; j < CS_MATRIX_SPMV_N_TYPES; j++) {
+      if (    spmv_cost[i*CS_MATRIX_SPMV_N_TYPES + j] > 0
+          && (  spmv_cost[i*CS_MATRIX_SPMV_N_TYPES + j]
+              < spmv_cost[min_c[j]*CS_MATRIX_SPMV_N_TYPES + j]))
         min_c[j] = i;
     }
   }
 
-  for (int j = 0; j < 2; j++) {
-    if (spmv_cost[min_c[j]*2 + j] < spmv_cost[j]) {
+  for (int j = 0; j < CS_MATRIX_SPMV_N_TYPES; j++) {
+    if (spmv_cost[min_c[j]*CS_MATRIX_SPMV_N_TYPES + j] < spmv_cost[j]) {
       const cs_matrix_variant_t *mv_s = m_variant+min_c[j];
       strcpy(m_variant->name[j], mv_s->name[j]);
       m_variant->vector_multiply[j] = mv_s->vector_multiply[j];
@@ -303,8 +304,10 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
                     "  %32s for y <= (A-D).x   (speedup: %6.2f)\n"),
                   _(cs_matrix_get_type_name(m)),
                   _(cs_matrix_fill_type_name[m->fill_type]),
-                  m_variant[0].name[0], spmv_cost[0]/spmv_cost[min_c[0]*2],
-                  m_variant[0].name[1], spmv_cost[1]/spmv_cost[min_c[1]*2+1]);
+                  m_variant[0].name[0],
+                  spmv_cost[0]/spmv_cost[min_c[0]*CS_MATRIX_SPMV_N_TYPES],
+                  m_variant[0].name[1],
+                  spmv_cost[1]/spmv_cost[min_c[1]*CS_MATRIX_SPMV_N_TYPES+1]);
   }
 }
 
@@ -351,7 +354,7 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
                     cs_matrix_fill_type_name[m->fill_type]);
 
     double *spmv_cost;
-    BFT_MALLOC(spmv_cost, n_variants*2, double);
+    BFT_MALLOC(spmv_cost, n_variants*CS_MATRIX_SPMV_N_TYPES, double);
 
     _matrix_tune_test(m,
                       n_measure,

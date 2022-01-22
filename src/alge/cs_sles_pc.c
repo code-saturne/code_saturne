@@ -568,7 +568,7 @@ _sles_pc_poly_apply_poly(void                *context,
 
     /* Compute Wk = (A-diag).Gk */
 
-    cs_matrix_exdiag_vector_multiply(c->a, x_out, w);
+    cs_matrix_vector_multiply_partial(c->a, CS_MATRIX_SPMV_E, x_out, w);
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)

@@ -35,7 +35,6 @@
 
 #include "cs_halo.h"
 #include "cs_numbering.h"
-#include "cs_halo_perio.h"
 #include "cs_matrix_assembler.h"
 
 /*----------------------------------------------------------------------------*/
@@ -58,7 +57,6 @@ typedef enum {
   CS_MATRIX_CSR,              /*!< Compressed Sparse Row storage */
   CS_MATRIX_MSR,              /*!< Modified Compressed Sparse Row storage
                                    (separate diagonal) */
-
   CS_MATRIX_N_BUILTIN_TYPES,  /*!< Number of known and built-in matrix types */
 
   CS_MATRIX_N_TYPES           /*!< Number of known matrix types */
@@ -83,6 +81,22 @@ typedef enum {
   CS_MATRIX_N_FILL_TYPES      /* Number of possible matrix fill types */
 
 } cs_matrix_fill_type_t;
+
+/*! SpMV operation types.
+ *
+ * Assuming a matrix is a sum of a lower (L), diagonal (D), and upper (U)
+ * - A = L + D + U
+ * - A = D + E (where E = L+U)
+ */
+
+typedef enum {
+
+  CS_MATRIX_SPMV,             /*!< y ← A.x (full matrix)*/
+  CS_MATRIX_SPMV_E,           /*!< y ← E.x (extra-diagonal only) */
+
+  CS_MATRIX_SPMV_N_TYPES      /*!< Number of handled SpMV operations */
+
+} cs_matrix_spmv_type_t;
 
 /* Structure associated with opaque matrix structure object */
 
@@ -113,9 +127,13 @@ typedef struct {
  *  Global variables
  *============================================================================*/
 
-/* Fill type names for matrices */
+/*! Fill type names for matrices */
 
 extern const char  *cs_matrix_fill_type_name[];
+
+/*! Operation type type names for partial SpMV functions */
+
+extern const char  *cs_matrix_spmv_type_name[];
 
 /*=============================================================================
  * Public function prototypes
@@ -883,20 +901,24 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
                                  cs_real_t          *restrict y);
 
 /*----------------------------------------------------------------------------
- * Matrix.vector product y = (A-D).x
+ * Partial matrix.vector product.
  *
- * This function includes a halo update of x prior to multiplication by A.
+ * This function includes a halo update of x prior to multiplication,
+ * except for the CS_MATRIX_SPMV_L operation type, which does not require it,
+ * as halo adjacencies are only present and useful in the upper-diagonal part..
  *
  * parameters:
  *   matrix        <-- pointer to matrix structure
+ *   op_type       <-- SpMV operation type
  *   x             <-> multipliying vector values (ghost values updated)
  *   y             --> resulting vector
  *----------------------------------------------------------------------------*/
 
 void
-cs_matrix_exdiag_vector_multiply(const cs_matrix_t   *matrix,
-                                 cs_real_t           *restrict x,
-                                 cs_real_t           *restrict y);
+cs_matrix_vector_multiply_partial(const cs_matrix_t      *matrix,
+                                  cs_matrix_spmv_type_t   op_type,
+                                  cs_real_t              *restrict x,
+                                  cs_real_t              *restrict y);
 
 /*----------------------------------------------------------------------------
  * Synchronize ghost values prior to matrix.vector product
@@ -973,34 +995,34 @@ cs_matrix_variant_apply(cs_matrix_t          *m,
  *
  *   CS_MATRIX_NATIVE  (all fill types)
  *     default
- *     standard
+ *     baseline
  *     omp             (for OpenMP with compatible numbering)
+ *     omp_atomic      (for OpenMP with atomics)
  *     vector          (For vector machine with compatible numbering)
  *
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     default
- *     standard
  *     mkl             (with MKL)
  *
- *   CS_MATRIX_MSR     (all fill types except CS_MATRIX_33_BLOCK)
+ *   CS_MATRIX_MSR     (all fill types)
  *     default
- *     standard
  *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     omp_sched       (For OpenMP with scheduling)
  *
  * parameters:
- *   mv        <-> pointer to matrix variant
- *   numbering <-- mesh numbering info, or NULL
- *   fill type <-- matrix fill type to merge from
- *   ed_flag   <-- 0: with diagonal only, 1 exclude only; 2; both
- *   func_name <-- function type name
+ *   mv         <->  pointer to matrix variant
+ *   numbering  <--  mesh numbering info, or NULL
+ *   fill type  <--  matrix fill type to merge from
+ *   spmv_type  <--  SpMV operation type (full or sub-matrix)
+ *                   (all types if CS_MATRIX_SPMV_N_TYPES)
+ *   func_name  <--  function type name
  *----------------------------------------------------------------------------*/
 
 void
 cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
-                           const cs_numbering_t    *numbering,
                            cs_matrix_fill_type_t    fill_type,
-                           int                      ed_flag,
+                           cs_matrix_spmv_type_t    spmv_type,
+                           const cs_numbering_t    *numbering,
                            const char              *func_name);
 
 /*----------------------------------------------------------------------------

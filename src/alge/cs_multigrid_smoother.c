@@ -818,7 +818,7 @@ _jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk */
 
-    cs_matrix_exdiag_vector_multiply(a, rk, vx);
+    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vx);
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (ii = 0; ii < n_rows; ii++) {
@@ -906,7 +906,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
 
     /* Compute vxx <- vx - (a-diag).rk */
 
-    cs_matrix_exdiag_vector_multiply(a, rk, vxx);
+    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vxx);
 
     /* Compute vx <- diag^-1 . (vxx - rhs) */
 #   pragma omp parallel for if(n_blocks > CS_THR_MIN)
@@ -995,7 +995,7 @@ _block_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk */
 
-    cs_matrix_exdiag_vector_multiply(a, rk, vxx);
+    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, rk, vxx);
 
 #   pragma omp parallel for if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
