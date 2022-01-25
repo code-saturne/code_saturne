@@ -307,14 +307,6 @@ legacy_mass_st_zones = .false.
 allocate(izctsm(ncel))
 allocate(izftcd(ncel)) ! should be in init_pcond only
 
-! ---------
-! Head-loss
-! ---------
-
-ncepdc = 0
-ncpdct = volume_zone_n_type_zones(VOLUME_ZONE_HEAD_LOSS)
-if (iflow.eq.1) ncpdct = ncpdct + 1
-
 ! -----------------
 ! Mass source terms
 ! -----------------
@@ -431,8 +423,22 @@ if (iale.ge.1) then
   call init_ale (nfabor, nnod)
 endif
 
+if (iflow.eq.1) ncpdct = ncpdct + 1
+
 if (ncpdct.gt.0) then
+  if (iflow .eq.1) then
+    ncepdc = ncel
+  else
+    ncepdc = volume_zone_n_type_cells(VOLUME_ZONE_HEAD_LOSS)
+  endif
   call init_kpdc
+  if (iflow .eq.1) then
+    do iel = 1, ncepdc
+      icepdc(iel) = iel
+    enddo
+  else
+    call volume_zone_select_type_cells(VOLUME_ZONE_HEAD_LOSS, icepdc)
+  endif
 endif
 
 if (nctsmt.gt.0) then
@@ -723,18 +729,9 @@ deallocate(isostd)
 ! Arrays for time block, to discard afterwards
 !===============================================================================
 
-if (ncpdct .gt. 0) then
-
-  if (iflow .eq.1) then
-    do iel = 1, ncepdc
-      icepdc(iel) = iel
-    enddo
-  endif
-
-  ncepdc = volume_zone_n_type_cells(VOLUME_ZONE_HEAD_LOSS)
-  call volume_zone_select_type_cells(VOLUME_ZONE_HEAD_LOSS, icepdc)
-
-endif
+!===============================================================================
+! Arrays for time block, to discard afterwards
+!===============================================================================
 
 ! Build volume mass injection cell lists when present on at least one rank.
 ! This is a collective call for consistency and in case the user requires it.

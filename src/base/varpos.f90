@@ -532,6 +532,8 @@ itycat = FIELD_INTENSIVE
 ! Transient velocity/pressure coupling, postprocessing field
 ! (variant used for computation is a tensorial field, not this one)
 
+ncpdct = volume_zone_n_type_zones(VOLUME_ZONE_HEAD_LOSS)
+
 if (ipucou.ne.0 .or. ncpdct.gt.0 .or. iporos.eq.2) then
   call field_create('dttens', itycat, ityloc, 6, .false., idtten)
   if (ipucou.ne.0 .or. ncpdct.gt.0) then
