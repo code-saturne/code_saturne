@@ -3142,19 +3142,21 @@ cs_matrix_assembler_values_create(const cs_matrix_assembler_t          *ma,
 void
 cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav)
 {
-  if (mav != NULL) {
+  if (mav == NULL)
+    return;
 
-    cs_matrix_assembler_values_t *_mav = *mav;
+  cs_matrix_assembler_values_t  *_mav = *mav;
+  if (_mav == NULL)
+    return;
 
-    if (_mav->final_assembly == false)
-      cs_matrix_assembler_values_done(_mav);
+  if (_mav->final_assembly == false)
+    cs_matrix_assembler_values_done(_mav);
 
-    if (_mav->assembly_end != NULL)
-      _mav->assembly_end(_mav->matrix);
+  if (_mav->assembly_end != NULL)
+    _mav->assembly_end(_mav->matrix);
 
-    BFT_FREE(*mav);
-
-  }
+  BFT_FREE(*mav);
+  *mav = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
