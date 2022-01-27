@@ -168,6 +168,7 @@ class base_domain:
 
         self.case_dir = case_dir
         self.case_root_dir = case_dir
+        self.dest_root_dir = None
 
         if self.name != None:
             self.case_dir = os.path.join(self.case_dir, self.name)
@@ -204,7 +205,7 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
-    def set_result_dir(self, name, given_dir = None):
+    def set_result_dir(self, name, given_dir = None, dest_root_dir=None):
         """
         If suffix = true, add suffix to all names in result dir.
         Otherwise, create subdirectory
@@ -217,6 +218,8 @@ class base_domain:
 
         if self.name != None:
             self.result_dir = os.path.join(self.result_dir, self.name)
+
+        self.dest_root_dir = dest_root_dir
 
         if not os.path.isdir(self.result_dir):
             os.makedirs(self.result_dir)
@@ -937,7 +940,7 @@ class domain(base_domain):
 
                 restart_input =  os.path.expanduser(self.restart_input)
                 if not os.path.isabs(restart_input):
-                    restart_input = os.path.join(self.case_dir, restart_input)
+                    restart_input = os.path.join(self.dest_root_dir, restart_input)
 
                 if not os.path.exists(restart_input):
                     err_str += restart_input + ' does not exist.\n\n'
@@ -953,7 +956,7 @@ class domain(base_domain):
 
                 restart_mesh_input =  os.path.expanduser(self.restart_mesh_input)
                 if not os.path.isabs(restart_mesh_input):
-                    restart_mesh_input = os.path.join(self.case_dir,
+                    restart_mesh_input = os.path.join(self.dest_root_dir,
                                                       restart_mesh_input)
 
                 if not os.path.exists(restart_mesh_input):
@@ -979,7 +982,7 @@ class domain(base_domain):
             if self.mesh_input:
                 mesh_input = os.path.expanduser(self.mesh_input)
                 if not os.path.isabs(mesh_input):
-                    mesh_input = os.path.join(self.case_dir, mesh_input)
+                    mesh_input = os.path.join(self.dest_root_dir, mesh_input)
 
                 # Differentiate between a folder and file, since we now
                 # have a file extension
@@ -1000,7 +1003,7 @@ class domain(base_domain):
 
             partition_input = os.path.expanduser(self.partition_input)
             if not os.path.isabs(partition_input):
-                partition_input = os.path.join(self.case_dir, partition_input)
+                partition_input = os.path.join(self.dest_root_dir, partition_input)
 
             if os.path.exists(partition_input):
 
@@ -1444,20 +1447,6 @@ class syrthes_domain(base_domain):
 
         if not os.path.isdir(self.exec_dir):
             os.mkdir(self.exec_dir)
-
-    #---------------------------------------------------------------------------
-
-    def set_result_dir(self, name, given_dir = None):
-
-        if given_dir == None:
-            self.result_dir = os.path.join(self.result_dir,
-                                           'RESU_' + self.name,
-                                           name)
-        else:
-            self.result_dir = os.path.join(given_dir, self.name)
-
-        if not os.path.isdir(self.result_dir):
-            os.makedirs(self.result_dir)
 
     #---------------------------------------------------------------------------
 
@@ -1948,20 +1937,6 @@ class python_domain(base_domain):
 
         if not os.path.isdir(self.exec_dir):
             os.mkdir(self.exec_dir)
-
-    #---------------------------------------------------------------------------
-
-    def set_result_dir(self, name, given_dir = None):
-
-        if given_dir == None:
-            self.result_dir = os.path.join(self.result_dir,
-                                           'RESU_' + self.name,
-                                           name)
-        else:
-            self.result_dir = os.path.join(given_dir, self.name)
-
-        if not os.path.isdir(self.result_dir):
-            os.makedirs(self.result_dir)
 
     #---------------------------------------------------------------------------
 

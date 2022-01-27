@@ -598,8 +598,15 @@ class case:
         else:
             os.mkdir(self.result_dir)
 
+        dest_root_dir = None
+        if self.dest_dir != None:
+            dest_root_dir = os.path.join(self.dest_dir,
+                                         os.path.basename(self.case_dir))
+
         for d in self.domains:
-            d.set_result_dir(self.run_id, self.result_dir)
+            d.set_result_dir(self.run_id,
+                             self.result_dir,
+                             dest_root_dir=dest_root_dir)
 
     #---------------------------------------------------------------------------
 
