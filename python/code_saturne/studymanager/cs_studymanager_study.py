@@ -1254,7 +1254,8 @@ class Studies(object):
         global_graph = dependency_graph()
         for l, s in self.studies:
             for case in s.cases:
-                global_graph.add_node(case)
+                if case.compute == "on":
+                    global_graph.add_node(case)
 
         # extract the sub graph based on filters and tags
         if filter_level is not None or filter_n_procs is not None:
