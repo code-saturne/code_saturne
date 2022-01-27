@@ -914,6 +914,14 @@ class domain(base_domain):
         if not self.exec_solver:
             return
 
+        # Prepare some output directories
+        # (Note: LUSTRE striping could be set here)
+
+        try:
+            os.mkdir(os.path.join(self.exec_dir, 'checkpoint'))
+        except Exception:
+            pass
+
         # Call user script if necessary
 
         if self.user_locals:
@@ -936,6 +944,8 @@ class domain(base_domain):
             if self.restart_input == '*':
                 self.__set_auto_restart__()
 
+            restart_pending = None    # Case where restart is not yet available
+
             if self.restart_input != None:
 
                 restart_input =  os.path.expanduser(self.restart_input)
@@ -950,7 +960,14 @@ class domain(base_domain):
                     self.symlink(restart_input,
                                  os.path.join(self.exec_dir, 'restart'))
 
-                print(' Restart from ' + self.restart_input + '\n')
+                    print(' Restart from ' + self.restart_input)
+                    print('')
+
+                    r = os.path.join(self.restart_input, 'main.csc')
+                    if not os.path.isfile(r):
+                        if not os.path.isfile(os.path.join(self.restart_input, 'main')):
+                            restart_pending = [r]
+
 
             if self.restart_mesh_input != None and err_str == '':
 
@@ -960,7 +977,11 @@ class domain(base_domain):
                                                       restart_mesh_input)
 
                 if not os.path.exists(restart_mesh_input):
-                    err_str += restart_mesh_input + ' does not exist.\n\n'
+                    if restart_pending:
+                        restart_pending.append(restart_mesh_input)
+                    else:
+                        err_str += restart_mesh_input + ' does not exist.\n\n'
+
                 elif not os.path.isfile(restart_mesh_input):
                     err_str += restart_mesh_input + ' is not a file.\n\n.'
                 else:
@@ -968,6 +989,13 @@ class domain(base_domain):
                                  os.path.join(self.exec_dir, 'restart_mesh_input'))
 
                 print(' Restart mesh ' + self.restart_mesh_input + '\n')
+
+            if restart_pending:
+                print(' Upstream computation might be staged but not run yet.')
+                print(' Files required for computation stage but not yet present:')
+                for r in restart_pending:
+                    print('   ' + r)
+                print('')
 
         # Mesh input file
 

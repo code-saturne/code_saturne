@@ -1961,7 +1961,7 @@ class case:
                 error_stage = check_stage[self.error]
             else:
                 error_stage = self.error
-            err_str = ' Error in ' + error_stage + ' stage.\n\n'
+            err_str = 'Run failed in ' + error_stage + ' stage.\n\n'
             if len(self.error_long) > 0:
                 err_str += self.error_long + '\n\n'
             sys.stderr.write(err_str)
