@@ -88,6 +88,8 @@ typedef struct {
 
   double        mu2;
 
+  double        sigmaS;      /* surface tension */
+
   int           idrift;      /* drift velocity model */
 
   double        cdrift;      /* C_gamma constante (drift flux factor)*/
@@ -189,6 +191,17 @@ cs_vof_compute_linear_rho_mu(const cs_domain_t *domain);
 
 void
 cs_vof_update_phys_prop(const cs_domain_t *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface tension momentum source term following the CSF
+ * model of Brackbill et al. (1992).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_surface_tension(const cs_domain_t  *domain,
+                       cs_real_3_t         stf[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

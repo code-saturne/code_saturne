@@ -228,7 +228,8 @@ if (ivofmt.gt.0) then
 
   write(nfecra,2121) rho1, mu1
   write(nfecra,2131) rho2, mu2
-  write(nfecra,2141) idrift, kdrift, cdrift
+  write(nfecra,2141) sigmaS
+  write(nfecra,2151) idrift, kdrift, cdrift
 
   ! --- cavitation model
 
@@ -285,6 +286,9 @@ write(nfecra,9900)
 '       RHO2   = ', e14.5,    ' (Reference density           )',/,&
 '       MU2    = ', e14.5,    ' (Ref. molecular dyn. visc.   )',/)
  2141 format(                                                     &
+'  -- Surface tension:',                                        /,&
+'       SIGMA  = ', e14.5,    ' (Surface tension             )',/)
+ 2151 format(                                                     &
 '  -- Drift velocity:',                                         /,&
 '       IDRIFT = ',4x,i10,    ' (0: disabled; > 0: enabled   )',/,&
 '       KDRIFT = ', e14.5,    ' (Diffusion effect coeff.     )',/,&

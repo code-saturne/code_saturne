@@ -237,6 +237,7 @@ double precision, dimension(:), pointer :: imasfl_prev, bmasfl_prev
 double precision, dimension(:), pointer :: cpro_beta, cvar_t
 double precision, dimension(:), allocatable, target :: cpro_rho_tc
 double precision, dimension(:), pointer :: cpro_rho_mass
+double precision, dimension(:,:), allocatable, target :: stf
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 type(var_cal_opt), target :: vcopt_loc
@@ -894,6 +895,13 @@ if (iappel.eq.1) then
   endif
 endif
 
+!-------------------------------------------------------------------------------
+! ---> Surface tension force for VoF
+
+if (ivofmt.gt.0.and.sigmaS.gt.0.d0) then
+  allocate(stf(3,ncel))
+  call vof_surface_tension(stf)
+endif
 
 !-------------------------------------------------------------------------------
 ! ---> Coriolis force
@@ -1327,6 +1335,18 @@ if (iappel.eq.1.and.iphydr.eq.1) then
     enddo
   endif
 
+  ! Surface tension force for VoF
+  if (ivofmt.gt.0.and.sigmaS.gt.0.d0) then
+    do iel = 1, ncel
+      dvol = 0.d0
+      ! If it is not a solid cell
+      if (cell_is_active(iel).eq.1) dvol = 1.d0 / cell_f_vol(iel)
+      do isou = 1, 3
+        dfrcxt(isou, iel) = dfrcxt(isou, iel) + stf(isou, iel)*dvol
+      enddo
+    enddo
+  endif
+
   ! ---> Use user source terms
 
   if (igpust.eq.1) then
@@ -1417,11 +1437,34 @@ if ((iphydr.ne.1.or.igpust.ne.1)) then
     endif
 
   else
-    ! Alwways in the current work array because this may be updated
+    ! Always in the current work array because this may be updated
     ! during inner iterations
      do iel = 1, ncel
        do isou = 1, 3
          trav(isou,iel) = trav(isou,iel) + tsexp(isou,iel)
+       enddo
+    enddo
+  endif
+endif
+
+! Surface tension is added
+if (iphydr.ne.1.and.sigmaS.gt.0.d0) then
+  ! If source terms are time-extrapolated, they are stored in fields
+  if (isno2t.gt.0) then
+    if (iterns.eq.1) then
+      do iel = 1, ncel
+        do isou = 1, 3
+          c_st_vel(isou,iel) = c_st_vel(isou,iel) + stf(isou,iel)
+        enddo
+      enddo
+    endif
+
+  else
+    ! Always in the current work array because this may be updated
+    ! during inner iterations
+     do iel = 1, ncel
+       do isou = 1, 3
+         trav(isou,iel) = trav(isou,iel) + stf(isou,iel)
        enddo
     enddo
   endif
@@ -1853,6 +1896,7 @@ deallocate(tsimp)
 if (allocated(viscce)) deallocate(viscce)
 if (allocated(divt)) deallocate(divt)
 if (allocated(cproa_rho_tc)) deallocate(cproa_rho_tc)
+if (allocated(stf)) deallocate(stf)
 
 !--------
 ! Formats

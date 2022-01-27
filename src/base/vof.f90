@@ -57,6 +57,9 @@ module vof
   !> reference molecular viscosity of fluid 2 (kg/(m s))
   real(c_double), pointer, save :: mu2
 
+  !> surface tension (N/m)
+  real(c_double), pointer, save :: sigmaS
+
   !> Drift flux factor
   real(c_double), pointer, save :: cdrift
 
@@ -79,12 +82,12 @@ module vof
      ! and parameters
 
      subroutine cs_f_vof_get_pointers(ivofmt, rho1, rho2, mu1, mu2, &
-       idrift, cdrift, kdrift) &
+       sigmaS, idrift, cdrift, kdrift) &
        bind(C, name='cs_f_vof_get_pointers')
        use, intrinsic :: iso_c_binding
        implicit none
        type(c_ptr), intent(out) :: ivofmt, rho1, rho2, mu1, mu2, &
-       idrift, cdrift, kdrift
+       sigmaS, idrift, cdrift, kdrift
      end subroutine cs_f_vof_get_pointers
 
      !---------------------------------------------------------------------------
@@ -107,6 +110,18 @@ module vof
        use, intrinsic :: iso_c_binding
        implicit none
      end subroutine vof_update_phys_prop
+
+     !---------------------------------------------------------------------------
+
+     ! Interface to C function computing the surface tension momentum source
+     ! term in VOF model
+
+     subroutine vof_surface_tension(stf) &
+       bind(C, name='cs_f_vof_surface_tension')
+       use, intrinsic :: iso_c_binding
+       implicit none
+       real(kind=c_double), dimension(*), intent(inout) :: stf
+     end subroutine vof_surface_tension
 
      !---------------------------------------------------------------------------
 
@@ -170,16 +185,17 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_ivofmt, c_rho1, c_rho2, c_mu1, c_mu2, &
-         c_idrift, c_cdrift, c_kdrift
+         c_sigmaS, c_idrift, c_cdrift, c_kdrift
 
     call cs_f_vof_get_pointers(c_ivofmt, c_rho1, c_rho2, c_mu1, c_mu2,       &
-                               c_idrift, c_cdrift, c_kdrift)
+                               c_sigmaS, c_idrift, c_cdrift, c_kdrift)
 
     call c_f_pointer(c_ivofmt, ivofmt)
     call c_f_pointer(c_rho1, rho1)
     call c_f_pointer(c_rho2, rho2)
     call c_f_pointer(c_mu1, mu1)
     call c_f_pointer(c_mu2, mu2)
+    call c_f_pointer(c_sigmaS, sigmaS)
     call c_f_pointer(c_idrift, idrift)
     call c_f_pointer(c_cdrift, cdrift)
     call c_f_pointer(c_kdrift, kdrift)

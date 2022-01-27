@@ -100,6 +100,7 @@ def dicoLabel(name):
                             ('total_energy',                  "EnerTot",    "TotEner"),
                             ('density',                       "MasseVol",   "Density"),
                             ('molecular_viscosity',           "ViscLam",    "LamVisc"),
+                            ('surface_tension',               "TenSurf",    "SurfTen"),
                             ('specific_heat',                 "ChSpec",     "SpecHeat"),
                             ('thermal_conductivity',          "CondTherm",  "ThermalCond"),
                             ('dynamic_diffusion',             "DynDiff",    "DiffDyn"),

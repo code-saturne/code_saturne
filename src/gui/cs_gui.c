@@ -3928,6 +3928,11 @@ cs_gui_physical_properties(void)
                          &phys_pp->viscl0);
   }
 
+  if (vof_param->vof_model & CS_VOF_ENABLED) {
+    const char *st_name = "surface_tension";
+    cs_gui_properties_value(st_name, &vof_param->sigmaS);
+  }
+
   if (_thermal_table_needed("specific_heat") == 0)
     cs_gui_properties_value("specific_heat", &phys_pp->cp0);
   else

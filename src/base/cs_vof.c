@@ -38,6 +38,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_blas.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
 #include "cs_cdo_quantities.h"
@@ -51,6 +52,7 @@
 #include "cs_face_viscosity.h"
 #include "cs_divergence.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
 #include "cs_gui_mobile_mesh.h"
@@ -64,6 +66,8 @@
 #include "cs_parall.h"
 #include "cs_time_step.h"
 #include "cs_rotation.h"
+#include "cs_sles_default.h"
+#include "cs_sles_it.h"
 #include "cs_turbomachinery.h"
 
 /*----------------------------------------------------------------------------
@@ -128,6 +132,9 @@ BEGIN_C_DECLS
 
   \var  cs_vof_parameters_t::mu2
         reference molecular viscosity of fluid 2 (kg/(m s))
+
+  \var  cs_vof_parameters_t::sigmaS
+        reference surface tension (N/m)
 
   \var  cs_vof_parameters_t::idrift
         drift velocity model
@@ -231,6 +238,7 @@ static cs_vof_parameters_t  _vof_parameters =
   .rho2          = 1.,
   .mu1           = 1.e-3,
   .mu2           = 1.e-5,
+  .sigmaS        = 0.,
   .idrift        = 0,
   .cdrift        = 1.,
   .kdrift        = 0.
@@ -265,6 +273,7 @@ cs_f_vof_get_pointers(unsigned **ivofmt,
                       double   **rho2,
                       double   **mu1,
                       double   **mu2,
+                      double   **sigmaS,
                       int      **idrift,
                       double   **cdrift,
                       double   **kdrift);
@@ -274,6 +283,9 @@ cs_f_vof_compute_linear_rho_mu(void);
 
 void
 cs_f_vof_update_phys_prop(void);
+
+void
+cs_f_vof_surface_tension(cs_real_3_t stf[]);
 
 void
 cs_f_vof_log_mass_budget(void);
@@ -310,6 +322,7 @@ cs_f_cavitation_get_pointers(double **presat,
  *   rho2   --> pointer to cs_glob_vof_parameters->rho2
  *   mu1    --> pointer to cs_glob_vof_parameters->mu1
  *   mu2    --> pointer to cs_glob_vof_parameters->mu2
+ *   sigmaS --> pointer to cs_glob_vof_parameters->sigmaS
  *   idrift --> pointer to cs_glob_vof_parameters->idrift
  *   cdrift --> pointer to cs_glob_vof_parameters->cdrift
  *   kdrift --> pointer to cs_glob_vof_parameters->kdrift
@@ -321,6 +334,7 @@ cs_f_vof_get_pointers(unsigned **ivofmt,
                       double   **rho2,
                       double   **mu1,
                       double   **mu2,
+                      double   **sigmaS,
                       int      **idrift,
                       double   **cdrift,
                       double   **kdrift)
@@ -330,6 +344,7 @@ cs_f_vof_get_pointers(unsigned **ivofmt,
   *rho2   = &(_vof_parameters.rho2);
   *mu1    = &(_vof_parameters.mu1);
   *mu2    = &(_vof_parameters.mu2);
+  *sigmaS = &(_vof_parameters.sigmaS);
   *idrift = &(_vof_parameters.idrift);
   *cdrift = &(_vof_parameters.cdrift);
   *kdrift = &(_vof_parameters.kdrift);
@@ -349,6 +364,12 @@ void
 cs_f_vof_update_phys_prop(void)
 {
   cs_vof_update_phys_prop(cs_glob_domain);
+}
+
+void
+cs_f_vof_surface_tension(cs_real_3_t stf[])
+{
+  cs_vof_surface_tension(cs_glob_domain, stf);
 }
 
 void
@@ -416,6 +437,206 @@ cs_vof_parameters_t *
 cs_get_glob_vof_parameters(void)
 {
   return &_vof_parameters;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Smoothing a variable after several double-projections
+ * cells->faces->cells.
+ *
+ * \param[in]     domain        pointer to a \ref cs_domain_t structure
+ * \param[in]     coefa         boundary condition array for the variable
+ * \param[in]     coefb         boundary condition array for the variable
+ * \param[in,out] pvar          diffused variable
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+cs_smooth(cs_domain_t  *domain,
+          cs_real_t *restrict coefa,
+          cs_real_t *restrict coefb,
+          cs_real_t *restrict pvar)
+{
+  const cs_mesh_t *m = domain->mesh;
+  const cs_mesh_quantities_t *mq = domain->mesh_quantities;
+
+  int n_cells_ext   = m->n_cells_with_ghosts;
+  int n_cells     = m->n_cells;
+  int n_i_faces     = m->n_i_faces;
+  int n_b_faces   = m->n_b_faces;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
+  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+
+  cs_real_t *restrict dist   = mq->i_dist;
+  cs_real_t *restrict pond   = mq->weight;
+  cs_real_t *restrict volume = mq->cell_vol;
+  cs_real_t *restrict surfn  = mq->i_face_surf;
+
+  cs_real_3_t *restrict surfac = (cs_real_3_t *restrict )mq->i_face_normal;
+  cs_real_3_t *restrict diipf  = (cs_real_3_t *restrict )mq->diipf;
+  cs_real_3_t *restrict djjpf  = (cs_real_3_t *restrict )mq->djjpf;
+
+  double DTau = 0.1; /* Sharpening interface on 5 cells (0.1 for 3 cells) */
+  /* User Intialization Triple line model */
+  /*   alpha_p = 0 - Surface hydrophobe
+       alpha_p = 1 - Surface hydrophile
+       B_s         - Paramètre de pénalité */
+  double B_s = 0.;
+  double alpha_p = 0.263544;
+  /* User Intialization Triple line model */
+
+  const cs_equation_param_t *eqp_volf
+    = cs_field_get_equation_param_const(CS_F_(void_f));
+
+  cs_real_t *viscf, *xam, *dam, *rtpdp, *smbdp;
+  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
+  BFT_MALLOC(xam, n_i_faces, cs_real_t);
+  BFT_MALLOC(dam, n_cells_ext, cs_real_t);
+  BFT_MALLOC(rtpdp, n_cells_ext, cs_real_t);
+  BFT_MALLOC(smbdp, n_cells_ext, cs_real_t);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    rtpdp[c_id] = 0.;
+    smbdp[c_id] = pvar[c_id] * volume[c_id];
+  }
+
+  /* PREPARE SYSTEM TO SOLVE */
+  /* Compute the gradient of "diffused void fraction" */
+  cs_real_3_t *grad;
+  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  cs_gradient_type_by_imrgra(eqp_volf->imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  cs_gradient_scalar("pvar_grad",
+                     gradient_type,
+                     halo_type,
+                     1,     /* inc */
+                     true,  /* iccocg */
+                     eqp_volf->nswrgr,
+                     0,
+                     0,
+                     1,     /* w_stride */
+                     eqp_volf->verbosity,
+                     eqp_volf->imligr,
+                     eqp_volf->epsrgr,
+                     eqp_volf->climgr,
+                     NULL,
+                     coefa,
+                     coefb,
+                     pvar,
+                     pond,
+                     NULL, /* internal coupling */
+                     grad);
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    cs_lnum_t ii = i_face_cells[f_id][0];
+    cs_lnum_t jj = i_face_cells[f_id][1];
+
+    cs_real_t taille = 0.5 * (pow(volume[ii], cs_math_1ov3) + pow(volume[jj], cs_math_1ov3));
+    cs_real_t visco = taille * taille * DTau;
+
+    cs_real_3_t distxyz;
+    for (int i = 0; i < 3; i++)
+      distxyz[i] =  dist[f_id] * surfac[f_id][i] / surfn[f_id]
+                  + diipf[f_id][i] + djjpf[f_id][i];
+
+    viscf[f_id] = visco * surfn[f_id] / cs_math_3_norm(distxyz);
+
+    cs_real_t *gradi = (cs_real_t *)grad + 3 * ii;
+    cs_real_t *gradj = (cs_real_t *)grad + 3 * jj;
+
+    cs_real_t reconstr = viscf[f_id] * (  cs_math_3_dot_product(diipf[f_id], gradi)
+                                        - cs_math_3_dot_product(djjpf[f_id], gradj));
+
+    smbdp[ii] -= reconstr;
+    smbdp[jj] += reconstr;
+  }
+
+  /* Initialization */
+  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+    dam[c_id] = volume[c_id];
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
+    xam[f_id] = 0.;
+
+  /* Extra-diagonal terms computation */
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
+    xam[f_id] -= viscf[f_id];
+
+  /* Extra-diagonal terms contribution to the diagonal
+     (without boundary contribution (0 flux)) */
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    cs_lnum_t ii = i_face_cells[f_id][0];
+    cs_lnum_t jj = i_face_cells[f_id][1];
+
+    dam[ii] -= xam[f_id];
+    dam[jj] -= xam[f_id];
+  }
+
+  /* Slight re-inforcement of the diagonal if we are not on a
+     Dirichlet condition (move the eigenvalues spectrum) */
+  cs_real_t epsi = 1.e-7;
+
+  for (int c_id = 0; c_id < n_cells; c_id++)
+    dam[c_id] *= (1. + epsi);
+
+  /* SOLVE SYSTEM */
+  /* Linear system initialization is in nc_sles_default */
+  /* Linear system resolution options */
+  cs_real_t precision = 1.e-5; /* Solver precision */
+  int n_equiv_iter = 0;     /* Number of equivalent iterative solver iterations */
+  cs_real_t residue;           /* Residue */
+
+  /* Linear system resolution */
+  /* Get the residue normalization */
+  cs_real_t rnorm = cs_dot(n_cells, smbdp, smbdp);
+
+  cs_parall_sum(1, CS_DOUBLE, &rnorm);
+  rnorm = sqrt(rnorm); /* Residue normalization */
+
+  /* Triple line model (WARNING: model terms are added after residue normalization ?) */
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    cs_lnum_t ii = b_face_cells[f_id];
+
+    cs_real_t is_wall = 0.;
+    if (   cs_glob_bc_type[f_id] == CS_SMOOTHWALL
+        || cs_glob_bc_type[f_id] == CS_ROUGHWALL)
+      is_wall = 1.;
+
+    smbdp[ii] += B_s * volume[ii] * alpha_p * is_wall;
+    dam[ii] += volume[ii] * B_s * is_wall;
+  }
+
+  cs_sles_solve_native(-1,
+                       "ITM_diffusion_equation",
+                       true,                   /* symmetric */
+                       NULL, NULL,             /* diag/extradiag block size */
+                       dam, xam,
+                       precision,
+                       rnorm,
+                       &n_equiv_iter,
+                       &residue,
+                       smbdp,
+                       rtpdp);
+
+  /* Destroy multigrid structure */
+  cs_sles_free_native(-1, "ITM_diffusion_equation");
+
+  /* Increment the distance to the wall */
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    pvar[c_id] = rtpdp[c_id];
+
+  BFT_FREE(viscf);
+  BFT_FREE(xam);
+  BFT_FREE(dam);
+  BFT_FREE(rtpdp);
+  BFT_FREE(smbdp);
+  BFT_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -708,6 +929,181 @@ cs_vof_log_mass_budget(const cs_domain_t *domain)
              cs_glob_time_step->nt_cur, glob_m_budget);
 
   BFT_FREE(divro);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the surface tension momentum source term following the CSF
+ * model of Brackbill et al. (1992).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_surface_tension(const cs_domain_t  *domain,
+                       cs_real_3_t        stf[])
+{
+  const cs_mesh_t *m = domain->mesh;
+  const cs_mesh_quantities_t *mq = domain->mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+
+  const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
+
+  cs_real_t *pond = mq->weight;
+
+  cs_real_3_t *restrict surfac = (cs_real_3_t *restrict )mq->i_face_normal;
+  cs_real_3_t *restrict dofij = (cs_real_3_t *restrict)mq->dofij;
+
+  const cs_equation_param_t *eqp_volf
+    = cs_field_get_equation_param_const(CS_F_(void_f));
+
+  cs_real_t *curv, *coefa, *coefb, *pvar;
+  cs_real_3_t *coefa_vec;
+  cs_real_33_t *coefb_vec;
+
+  const cs_real_t cpro_surftens = _vof_parameters.sigmaS;
+
+  BFT_MALLOC(curv, n_cells_ext, cs_real_t);
+  BFT_MALLOC(pvar, n_cells_ext, cs_real_t);
+  BFT_MALLOC(coefa, n_b_faces, cs_real_t);
+  BFT_MALLOC(coefb, n_b_faces, cs_real_t);
+  BFT_MALLOC(coefa_vec, n_b_faces, cs_real_3_t);
+  BFT_MALLOC(coefb_vec, n_b_faces, cs_real_33_t);
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    coefa[face_id] = 0.;
+    coefb[face_id] = 1.;
+
+    for (int i = 0; i < 3; i++) {
+      coefa_vec[face_id][i] = 0.;
+
+      for (int j = 0; j < 3; j++)
+        coefb_vec[face_id][i][j] = 0.;
+      coefb_vec[face_id][i][i] = 1.;
+    }
+  }
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    pvar[c_id] = 1. - CS_F_(void_f)->val[c_id];
+    pvar[c_id] = cs_math_fmin(cs_math_fmax(pvar[c_id], 0.), 1.);
+  }
+
+  /* Void fraction diffusion solving */
+  int ncycles = 5;
+  for (int i = 0; i < ncycles; i++)
+    cs_smooth(domain,
+              coefa,
+              coefb,
+              pvar);
+
+  /* Compute the gradient of "diffused void fraction" */
+  cs_real_3_t *surfxyz_unnormed;
+  BFT_MALLOC(surfxyz_unnormed, n_cells_ext, cs_real_3_t);
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  cs_gradient_type_by_imrgra(eqp_volf->imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  cs_gradient_scalar("diff_void_grad",
+                     gradient_type,
+                     halo_type,
+                     1,     /* inc */
+                     true,  /* iccocg */
+                     eqp_volf->nswrgr,
+                     0,
+                     0,
+                     1,     /* w_stride */
+                     eqp_volf->verbosity,
+                     eqp_volf->imligr,
+                     eqp_volf->epsrgr,
+                     eqp_volf->climgr,
+                     NULL,
+                     coefa,
+                     coefb,
+                     pvar,
+                     pond,
+                     NULL, /* internal coupling */
+                     surfxyz_unnormed);
+
+
+  /* Compute the norm of grad(alpha_diffu) */
+  cs_real_3_t *surfxyz_norm;
+  BFT_MALLOC(surfxyz_norm, n_cells_ext, cs_real_3_t);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    double snorm = cs_math_3_norm(surfxyz_unnormed[c_id]);
+    if (snorm < 1.e-10)
+      snorm = 1.;
+
+    double unsnorm = 1. / snorm;
+
+    for (int i = 0; i < 3; i++)
+      surfxyz_norm[c_id][i] = surfxyz_unnormed[c_id][i] * unsnorm;
+  }
+
+  /* Curvature Computation */
+  cs_real_33_t *gradnxyz;
+  BFT_MALLOC(gradnxyz, n_cells_ext, cs_real_33_t);
+
+  cs_gradient_vector("grad_diff_void_grad",
+                     gradient_type,
+                     halo_type,
+                     1,     /* inc */
+                     eqp_volf->nswrgr,
+                     eqp_volf->verbosity,
+                     eqp_volf->imligr,
+                     eqp_volf->epsrgr,
+                     eqp_volf->climgr,
+                     (const cs_real_3_t *)coefa_vec,
+                     (const cs_real_33_t *)coefb_vec,
+                     surfxyz_norm,
+                     pond,
+                     NULL,
+                     gradnxyz);
+
+  /* Reconstructions for curvature computation */
+  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++)
+    curv[c_id] = 0.;
+
+  for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
+
+    cs_real_3_t gradf;
+
+    for (int k = 0; k < 3; k++)
+      gradf[k] = pond[face_id] * surfxyz_norm[ii][k] + (1. - pond[face_id]) * surfxyz_norm[jj][k];
+
+    for (int k = 0; k < 3; k++)
+      for (int l = 0; l < 3; l++)
+        gradf[k] += 0.5 * dofij[face_id][l] * (gradnxyz[ii][k][l] + gradnxyz[jj][k][l]);
+
+    double flux = cs_math_3_dot_product(gradf, surfac[face_id]);
+    curv[ii] += flux;
+    curv[jj] -= flux;
+  }
+
+  /* Compute volumic surface tension */
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    for (int i = 0; i < 3; i++) {
+      stf[c_id][i] = -cpro_surftens * surfxyz_unnormed[c_id][i] * curv[c_id];
+    }
+
+  BFT_FREE(surfxyz_norm);
+  BFT_FREE(surfxyz_unnormed);
+  BFT_FREE(gradnxyz);
+  BFT_FREE(curv);
+  BFT_FREE(pvar);
+  BFT_FREE(coefa);
+  BFT_FREE(coefb);
+  BFT_FREE(coefa_vec);
+  BFT_FREE(coefb_vec);
 }
 
 /*----------------------------------------------------------------------------*/

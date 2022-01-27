@@ -1167,6 +1167,9 @@ cs_user_parameters(cs_domain_t *domain)
   vof_param->rho2 = 1.;
   vof_param->mu2 = 1.e-5;
 
+  /* Surface tension, in N/m */
+  vof_param->sigmaS = 0.0;
+
   /*! [phprop] */
 
   /* Example: retrieve cavitation parameters structure */

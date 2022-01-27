@@ -149,6 +149,7 @@ molecular_viscosity = -999.0;
 T0 = 291.15;
 mu_ref = 18.27e-6;
 molecular_viscosity = mu_ref * (T0+CST);
+
 """
 
     specific_heat="""# specific heat for mixtures of gases
@@ -231,6 +232,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         self.modelRho       = ComboModel(self.comboBoxRho,      2, 1)
         self.modelMu        = ComboModel(self.comboBoxMu,       2, 1)
+        self.modelSigma     = ComboModel(self.comboBoxSigma,    1, 1)
         self.modelCp        = ComboModel(self.comboBoxCp,       2, 1)
         self.modelAl        = ComboModel(self.comboBoxAl,       2, 1)
         self.modelDiff      = ComboModel(self.comboBoxDiff,     2, 1)
@@ -264,6 +266,9 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if mdl_hgn != "off":
             self.modelMu.addItem(self.tr('linear mixture law'), 'predefined_law')
         self.modelMu.addItem(self.tr('user law'), 'user_law')
+
+        if mdl_hgn != "off":
+            self.modelSigma.addItem(self.tr('constant'), 'constant')
 
         if mdl_joule == 'off':
             self.modelCp.addItem(self.tr('constant'), 'constant')
@@ -329,6 +334,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         validatorMu     = DoubleValidator(self.lineEditMu,     min = 0.0)
         validatorMu1    = DoubleValidator(self.lineEditMu1,    min = 0.0)
         validatorMu2    = DoubleValidator(self.lineEditMu2,    min = 0.0)
+        validatorSigma  = DoubleValidator(self.lineEditSigma,  min = 0.0)
         validatorCp     = DoubleValidator(self.lineEditCp,     min = 0.0)
         validatorAl     = DoubleValidator(self.lineEditAl,     min = 0.0)
         validatorDiff   = DoubleValidator(self.lineEditDiff,   min = 0.0)
@@ -352,6 +358,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.lineEditMu.setValidator(validatorMu)
         self.lineEditMu1.setValidator(validatorMu1)
         self.lineEditMu2.setValidator(validatorMu2)
+        self.lineEditSigma.setValidator(validatorSigma)
         self.lineEditCp.setValidator(validatorCp)
         self.lineEditAl.setValidator(validatorAl)
         self.lineEditDiff.setValidator(validatorDiff)
@@ -368,6 +375,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
 
         self.comboBoxRho.currentIndexChanged[str].connect(self.slotStateRho)
         self.comboBoxMu.currentIndexChanged[str].connect(self.slotStateMu)
+        self.comboBoxSigma.currentIndexChanged[str].connect(self.slotStateSigma)
         self.comboBoxCp.currentIndexChanged[str].connect(self.slotStateCp)
         self.comboBoxAl.currentIndexChanged[str].connect(self.slotStateAl)
         self.comboBoxDiff.currentIndexChanged[str].connect(self.slotStateDiff)
@@ -382,6 +390,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.lineEditMu.textChanged[str].connect(self.slotMu)
         self.lineEditMu1.textChanged[str].connect(self.slotMu1)
         self.lineEditMu2.textChanged[str].connect(self.slotMu2)
+        self.lineEditSigma.textChanged[str].connect(self.slotSigma)
         self.lineEditCp.textChanged[str].connect(self.slotCp)
         self.lineEditAl.textChanged[str].connect(self.slotAl)
         self.lineEditDiff.textChanged[str].connect(self.slotDiff)
@@ -491,11 +500,13 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.widgetVofRho.setVisible(is_main_zone)
             self.widgetRefMu.hide()
             self.widgetVofMu.setVisible(is_main_zone)
+            self.groupBoxSigma.setVisible(is_main_zone)
         elif mdl_atmo != 'off' and isLargeScaleMeteoChecked:
             self.widgetRefRho.hide()
             self.widgetVofRho.hide()
             self.widgetRefMu.setVisible(is_main_zone)
             self.widgetVofMu.hide()
+            self.groupBoxSigma.hide()
         else:
             if mdl_comp != "off":
                 self.widgetRefRho.hide()
@@ -504,6 +515,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.widgetVofRho.hide()
             self.widgetRefMu.setVisible(is_main_zone)
             self.widgetVofMu.hide()
+            self.groupBoxSigma.hide()
 
         # compressible
         self.groupBoxViscv0.hide()
@@ -666,6 +678,11 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                     __combo.setEnabled(False)
                     __button.setEnabled(False)
                     __button.hide()
+                if tag == 'surface_tension':
+                    __model.disableItem(str_model='constant')
+                    __combo.setEnabled(False)
+                    __button.setEnabled(False)
+                    __button.hide()
 
             # Compressible Flows
             if mdl_comp != 'off':
@@ -704,6 +721,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.lineEditMu1.setText(str(self.mdl.getVofValueViscosity(0)))
             self.lineEditMu2.setText(str(self.mdl.getVofValueViscosity(1)))
 
+            self.lineEditSigma.setText(str(self.mdl.getInitialValueSurfaceTension()))
 
     def updateTypeChoice(self, old_choice):
         """
@@ -875,6 +893,14 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         Method to call 'getState' with correct arguements for 'Mu'
         """
         self.__changeChoice(str(text), 'Mu', 'molecular_viscosity')
+
+
+    @pyqtSlot(str)
+    def slotStateSigma(self, text):
+        """
+        Method to call 'getState' with correct arguments for 'Sigma'
+        """
+        self.__changeChoice(str(text), 'Sigma', 'surface_tension')
 
 
     @pyqtSlot(str)
@@ -1069,6 +1095,16 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         if self.lineEditMu2.validator().state == QValidator.Acceptable:
             mu = from_qvariant(text, float)
             self.mdl.setVofValueViscosity(1, mu)
+
+
+    @pyqtSlot(str)
+    def slotSigma(self, text):
+        """
+        Update the surface tension
+        """
+        if self.lineEditSigma.validator().state == QValidator.Acceptable:
+            sigma = from_qvariant(text, float)
+            self.mdl.setInitialValueSurfaceTension(sigma)
 
 
     @pyqtSlot(str)

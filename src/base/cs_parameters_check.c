@@ -70,6 +70,7 @@
 #include "cs_convection_diffusion.h"
 #include "cs_thermal_model.h"
 #include "cs_velocity_pressure.h"
+#include "cs_vof.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -1892,6 +1893,15 @@ cs_parameters_check(void)
                                   "cs_glob_fluid_properties->viscl0",
                                   cs_glob_fluid_properties->viscl0,
                                   0.);
+
+  if (cs_glob_vof_parameters->vof_model > 0) {
+    cs_parameters_is_greater_double(CS_ABORT_DELAYED,
+                                    _("while reading reference surface "
+                                      "tension value"),
+                                    "cs_glob_vof_parameters->sigmaS",
+                                    cs_glob_vof_parameters->sigmaS,
+                                    0.);
+  }
 
   /* check variances */
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {

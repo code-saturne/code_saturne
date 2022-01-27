@@ -195,6 +195,7 @@ class FluidCharacteristicsModel(Variables, Model):
         self.node_comp   = self.node_models.xmlInitNode('compressible_model', 'model')
         self.node_gas    = self.node_models.xmlInitNode('gas_combustion',     'model')
         self.node_coal   = self.node_models.xmlInitNode('solid_fuels',        'model')
+        self.node_hgn    = self.node_models.xmlInitNode('hgn_model',          'model')
 
         # Info on available libraries
 
@@ -215,6 +216,10 @@ class FluidCharacteristicsModel(Variables, Model):
                                           output="Molecular viscosity",
                                           ref_tag="mu0",
                                           unit="Pa.s")
+        self.properties_info.add_property(name="surface_tension",
+                                          output="Surface tension",
+                                          ref_tag="sigma0",
+                                          unit="N/m")
         self.properties_info.add_property(name="specific_heat",
                                           output="Sepcific heat",
                                           ref_tag="cp0",
@@ -285,6 +290,14 @@ class FluidCharacteristicsModel(Variables, Model):
         self.node_vol_visc = None
         self.node_dyn = None
 
+        # Get surface tension for Vof model
+
+        if self.node_hgn['model'] not in [None, "off"]:
+            self.lst.append(('surface_tension', 'Sigma'))
+            self.node_surface_tension   = self.setNewFluidProperty(self.node_fluid, \
+                                                                   'surface_tension')
+            self.node_lst.append(self.node_surface_tension)
+
         # Get thermal scalar and model
 
         thm = ThermalScalarModel(self.case)
@@ -354,6 +367,10 @@ class FluidCharacteristicsModel(Variables, Model):
         """
 
         l = ['density', 'molecular_viscosity']
+
+        # Vof properties
+        if self.node_hgn['model'] not in [None, "off"]:
+            l.append('surface_tension')
 
         # Thermal properties
         if self.tsm != 'off':
@@ -443,6 +460,7 @@ class FluidCharacteristicsModel(Variables, Model):
         default['molecular_viscosity']    = 1.83e-05
         default['molecular_viscosity_0']  = 1.e-03
         default['molecular_viscosity_1']  = 1.e-05
+        default['surface_tension']        = 0.
         if mdl_hgn != "off":
            default['density']             = default['density_1']
            default['molecular_viscosity'] = default['molecular_viscosity_1']
@@ -768,9 +786,9 @@ class FluidCharacteristicsModel(Variables, Model):
     def getInitialValue(self, tag):
         """
         Return initial value of the markup tag : 'density', or
-        'molecular_viscosity', or 'specific_heat'or 'thermal_conductivity'
+        'molecular_viscosity', or 'surface_tension', or 'specific_heat' or 'thermal_conductivity'
         """
-        self.isInList(tag, ('density', 'molecular_viscosity',
+        self.isInList(tag, ('density', 'molecular_viscosity', 'surface_tension',
                             'specific_heat', 'thermal_conductivity',
                             'volume_viscosity', 'dynamic_diffusion'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
@@ -800,12 +818,12 @@ class FluidCharacteristicsModel(Variables, Model):
     def setInitialValue(self, tag, val):
         """
         Set initial value for the markup tag : 'density', or
-        'molecular_viscosity', or 'specific_heat'or 'thermal_conductivity'
+        'molecular_viscosity', or 'surface_tension', or 'specific_heat'or 'thermal_conductivity'
         """
-        self.isInList(tag, ('density', 'molecular_viscosity',
+        self.isInList(tag, ('density', 'molecular_viscosity', 'surface_tension',
                             'specific_heat', 'thermal_conductivity',
                             'volume_viscosity', 'dynamic_diffusion'))
-        if tag != 'volume_viscosity':
+        if tag != 'volume_viscosity' and tag != 'surface_tension':
             self.isGreater(val, 0.)
         else:
             self.isPositiveFloat(val)
@@ -882,6 +900,18 @@ class FluidCharacteristicsModel(Variables, Model):
     def setInitialValueVolumeViscosity(self, val):
         """Put initial value for volume viscosity"""
         self.setInitialValue('volume_viscosity', val)
+
+
+    @Variables.noUndo
+    def getInitialValueSurfaceTension(self):
+        """Return value of surface tension"""
+        return self.getInitialValue('surface_tension')
+
+
+    @Variables.undoLocal
+    def setInitialValueSurfaceTension(self, val):
+        """Set value for surface tension"""
+        self.setInitialValue('surface_tension', val)
 
 
     @Variables.noUndo
@@ -971,7 +1001,7 @@ class FluidCharacteristicsModel(Variables, Model):
     def setFormula(self, tag, formula, zone="1"):
         """
         Gives a formula for 'density', 'molecular_viscosity',
-        'specific_heat'or 'thermal_conductivity'
+        'specific_heat' or 'thermal_conductivity'
         """
         self.isInList(tag, self.properties_info.get_property_list())
 
@@ -1137,6 +1167,7 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         mdl = FluidCharacteristicsModel(self.case)
         mdl.setInitialValue('density', 123.0)
         mdl.setInitialValue('molecular_viscosity', 1.5e-5)
+        mdl.setInitialValue('surface_tension', 0.)
         mdl.setInitialValue('specific_heat', 1212)
         mdl.setInitialValue('thermal_conductivity', 0.04)
         doc = '''<fluid_properties>
@@ -1145,6 +1176,9 @@ class FluidCharacteristicsModelTestCase(ModelTest):
                     </property>
                     <property choice="constant" label="LamVisc" name="molecular_viscosity">
                         <initial_value>1.5e-05</initial_value>
+                    </property>
+                    <property choice="constant" label="SurfTen" name="surface_tension">
+                        <initial_value>0.</initial_value>
                     </property>
                     <property choice="constant" label="Sp. heat" name="specific_heat">
                         <initial_value>1212</initial_value>
@@ -1181,6 +1215,18 @@ class FluidCharacteristicsModelTestCase(ModelTest):
         'Could not set initial value of molecular_viscosity'
         assert mdl.getInitialValueViscosity() == 1.2e-4,\
         'Could not get initial value of molecular_viscosity'
+
+    def checkSetandGetInitialValueSurfaceTension(self):
+        """Check whether the initial value for surface_tension could be set and get"""
+        mdl = FluidCharacteristicsModel(self.case)
+        mdl.setInitialValueSurfaceTension(0.)
+        doc = '''<property choice="constant" label="SurfTen" name="surface_tension">
+                    <initial_value>0.</initial_value>
+                 </property>'''
+        assert mdl.node_surface_tension == self.xmlNodeFromString(doc),\
+        'Could not set initial value of surface_tension'
+        assert mdl.getInitialValueSurfaceTension() == 0.,\
+        'Could not get initial value of surface_tension'
 
     def checkSetandGetInitialValueHeat(self):
         """Check whether the initial value for specific_heat could be set and get"""
