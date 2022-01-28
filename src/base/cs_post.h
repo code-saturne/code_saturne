@@ -906,6 +906,19 @@ cs_post_activate_by_time_step(const cs_time_step_t  *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Query if a given writer is currently active.
+ *
+ * \param[in]  writer_id  writer id
+ *
+ * \return  true if writer is active atr this time step, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_post_writer_is_active(int  writer_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Force the "active" or "inactive" flag for a specific writer or for all
  * writers for the current time step.
  *

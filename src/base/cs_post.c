@@ -2189,17 +2189,15 @@ _cs_post_write_mesh(cs_post_mesh_t        *post_mesh,
 
       _divide_poly(post_mesh, writer);
 
-      fvm_writer_set_mesh_time(writer->writer, nt_cur, t_cur);
+      if (nt_cur >= 0 && time_dep != FVM_WRITER_FIXED_MESH)
+        fvm_writer_set_mesh_time(writer->writer, nt_cur, t_cur);
+
       fvm_writer_export_nodal(writer->writer, post_mesh->exp_mesh);
 
-      if (nt_cur >= 0) {
+      if (nt_cur >= 0 && time_dep != FVM_WRITER_FIXED_MESH) {
         writer->tc.last_nt = nt_cur;
         writer->tc.last_t = t_cur;
       }
-
-    }
-
-    if (write_mesh == true) {
 
       if (post_mesh->post_domain)
         _cs_post_write_domain(writer->writer,
@@ -2211,11 +2209,6 @@ _cs_post_write_mesh(cs_post_mesh_t        *post_mesh,
                                      post_mesh,
                                      nt_cur,
                                      t_cur);
-
-      if (nt_cur >= 0) {
-        writer->tc.last_nt = nt_cur;
-        writer->tc.last_t = t_cur;
-      }
 
     }
 
@@ -5197,6 +5190,25 @@ cs_post_activate_by_time_step(const cs_time_step_t  *ts)
     }
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query if a given writer is currently active.
+ *
+ * \param[in]  writer_id  writer id
+ *
+ * \return  true if writer is active atr this time step, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_post_writer_is_active(int  writer_id)
+{
+  int i = _cs_post_writer_id(writer_id);
+  const cs_post_writer_t  *writer = _cs_post_writers + i;
+
+  return writer->active;
 }
 
 /*----------------------------------------------------------------------------*/

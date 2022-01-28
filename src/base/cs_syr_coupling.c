@@ -834,9 +834,14 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
   if (elt_centers != NULL)
     BFT_FREE(elt_centers);
 
+  bool default_writer_is_active = false;
+
   if (syr_coupling->visualization != 0) {
 
-    cs_post_activate_writer(-1, 1);
+    default_writer_is_active
+      = cs_post_writer_is_active(CS_POST_WRITER_DEFAULT);
+
+    cs_post_activate_writer(CS_POST_WRITER_DEFAULT, true);
     cs_post_write_meshes(cs_glob_time_step);
 
     const float *b_dist = NULL, *v_dist = NULL;
@@ -882,7 +887,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
         && syr_coupling->allow_nearest == false) {
 
       cs_lnum_t i;
-      int writer_ids[] = {-1};
+      int writer_ids[] = {CS_POST_WRITER_DEFAULT};
       int mesh_id = coupling_ent->post_mesh_id - 1;
       cs_lnum_t *p_vtx_num = NULL;
       fvm_io_num_t *vtx_io_num = NULL;
@@ -917,7 +922,6 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
                                    1,
                                    writer_ids);
 
-      cs_post_activate_writer(-1, 1);
       cs_post_write_meshes(cs_glob_time_step);
 
       cs_post_write_vertex_var(mesh_id,
@@ -999,7 +1003,6 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
                                  1,
                                  writer_ids);
 
-    cs_post_activate_writer(writer_ids[0], 1);
     cs_post_write_meshes(cs_glob_time_step);
     cs_post_free_mesh(mesh_id);
 
@@ -1017,6 +1020,11 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
                fvm_nodal_get_name(coupling_ent->elts));
 
   }
+
+  /* Restore writer active status */
+
+  if (syr_coupling->visualization != 0)
+    cs_post_activate_writer(CS_POST_WRITER_DEFAULT, default_writer_is_active);
 
   /* Ensure clean stop */
 
