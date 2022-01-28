@@ -851,6 +851,12 @@ cs_compute_porosity_from_scan(void)
   } /* End loop over sources */
 
   /* Free memory */
+
+  BFT_FREE(_porosity_from_scan_opt.output_name);
+  BFT_FREE(_porosity_from_scan_opt.file_name);
+  BFT_FREE(_porosity_from_scan_opt.sources);
+  BFT_FREE(_porosity_from_scan_opt.source_c_ids);
+
   BFT_FREE(pvar);
   BFT_FREE(dpvar);
   BFT_FREE(rhs);
