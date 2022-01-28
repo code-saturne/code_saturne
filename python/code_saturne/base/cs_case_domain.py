@@ -771,8 +771,9 @@ class domain(base_domain):
                 raise RunCaseError(err_str)
 
         if not os.path.exists(target):
-            err_str = 'File: ' + target + ' does not exist.'
-            raise RunCaseError(err_str)
+            if check_type != 'allow_future':
+                err_str = 'File: ' + target + ' does not exist.'
+                raise RunCaseError(err_str)
 
         elif check_type == 'file':
             if not os.path.isfile(target):
@@ -984,9 +985,11 @@ class domain(base_domain):
 
                 elif not os.path.isfile(restart_mesh_input):
                     err_str += restart_mesh_input + ' is not a file.\n\n.'
-                else:
+
+                if err_str == '':
                     self.symlink(restart_mesh_input,
-                                 os.path.join(self.exec_dir, 'restart_mesh_input'))
+                                 os.path.join(self.exec_dir, 'restart_mesh_input'),
+                                 check_type='allow_future')
 
                 print(' Restart mesh ' + self.restart_mesh_input + '\n')
 
