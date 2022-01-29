@@ -656,14 +656,14 @@ cs_compute_porosity_from_scan(void)
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)mq->cell_cen;
-  const cs_real_3_t *restrict i_face_normal
-    = (const cs_real_3_t *restrict)mq->i_face_normal;
-  const cs_real_3_t *restrict b_face_normal
-    = (const cs_real_3_t *restrict)mq->b_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)mq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)mq->b_face_cog;
+  cs_real_3_t *restrict i_f_face_normal =
+     (cs_real_3_t *restrict)mq->i_f_face_normal;
+  cs_real_3_t *restrict b_f_face_normal =
+     (cs_real_3_t *restrict)mq->b_f_face_normal;
 
   /* Pointer to porosity field */
   cs_field_t *f = cs_field_by_name_try("porosity_w_field");
@@ -720,12 +720,8 @@ cs_compute_porosity_from_scan(void)
         i_face_cog[face_id][1] - source_cen[1],
         i_face_cog[face_id][2] - source_cen[2]
       };
-      cs_real_t normal[3];
-      /* Normal direction is given by x-x0 */
-      cs_math_3_normalise(x0xf, normal);
-
-      i_massflux[face_id] = cs_math_3_dot_product(normal,
-                                                  i_face_normal[face_id]);
+      i_massflux[face_id] = cs_math_3_dot_product(x0xf,
+                                                  i_f_face_normal[face_id]);
     }
 
     for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
@@ -734,12 +730,9 @@ cs_compute_porosity_from_scan(void)
         b_face_cog[face_id][1] - source_cen[1],
         b_face_cog[face_id][2] - source_cen[2]
       };
-      cs_real_3_t normal;
-      /* Normal direction is given by x-x0 */
-      cs_math_3_normalise(x0xf, normal);
 
-      b_massflux[face_id] = cs_math_3_dot_product(normal,
-                                                  b_face_normal[face_id]);
+      b_massflux[face_id] = cs_math_3_dot_product(x0xf,
+                                                  b_f_face_normal[face_id]);
     }
 
     /* Boundary conditions
