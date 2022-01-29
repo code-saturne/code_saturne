@@ -454,6 +454,9 @@ _count_from_file(const cs_mesh_t             *m,
     }
   }
 
+  /* Parallel synchronisation */
+  cs_mesh_sync_var_scal(cell_f_vol);
+
   cs_real_3_t *restrict i_face_normal
     =  (cs_real_3_t *restrict)mq->i_face_normal;
   cs_real_3_t *restrict b_face_normal
@@ -847,6 +850,9 @@ cs_compute_porosity_from_scan(void)
 
     for (cs_lnum_t cell_id = 0; cell_id< m->n_cells; cell_id++)
       f->val[cell_id] = CS_MAX(f->val[cell_id], pvar[cell_id]);
+
+    /* Parallel synchronisation */
+    cs_mesh_sync_var_scal(f->val);
 
   } /* End loop over sources */
 
