@@ -675,6 +675,14 @@ cs_compute_porosity_from_scan(void)
    * at least 3 (???) points */
   _count_from_file(m, mq);
 
+  bft_printf(_("  Positions of the %d given sources:\n"), nb_sources);
+  const cs_real_3_t *s_pos = _porosity_from_scan_opt.sources;
+  for (int s_id = 0; s_id < nb_sources; s_id++) {
+    bft_printf(_("   - Source %3d: [ %12.5e, %12.5e, %12.5e ]\n"),
+              s_id, s_pos[s_id][0], s_pos[s_id][1], s_pos[s_id][2]);
+  } /* Loop on s_id */
+  bft_printf(_("\n"));
+
   cs_real_t *restrict i_massflux
     = cs_field_by_id
         (cs_field_get_key_int(f, cs_field_key_id("inner_mass_flux_id")))->val;
@@ -776,7 +784,7 @@ cs_compute_porosity_from_scan(void)
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
       rovsdt[cell_id] = 0.;
 
-    /* Penalisation terme for the source
+    /* Penalisation term for the source
      * in parallel, only one rank takes that
      * */
     if (source_c_ids[s_id] > -1)
