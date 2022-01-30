@@ -162,6 +162,39 @@ class base_domain:
 
     #---------------------------------------------------------------------------
 
+    def __input_path_abs_dir__(self, path):
+
+        """
+        Determine root directory based on given path.
+        Paths including RESU should be based on dest_root_dir,
+        those including MESH based on case_root_dir,
+        others in case_dir.
+        """
+
+        prefix, base = os.path.split(path)
+        while prefix != '':
+            if prefix in ('RESU', 'RESU_COUPLING'):
+                if self.dest_root_dir:
+                    r_path = os.path.join(self.dest_root_dir, path)
+                    if os.path.exists(r_path):
+                        return r_path
+                    c_path = os.path.join(self.case_root_dir, path)
+                    if os.path.exists(c_path):
+                        return c_path
+                    # If path does not exist, assume it will be created
+                    # later, in chich case we use dest_root_dir
+                    return r_path
+                else:
+                    return os.path.join(self.case_root_dir, path)
+            elif prefix == 'MESH':
+                return os.path.join(self.case_root_dir, path)
+
+            prefix, base = os.path.split(prefix)
+
+        return os.path.join(self.case_dir, path)
+
+    #---------------------------------------------------------------------------
+
     def set_case_dir(self, case_dir, staging_dir = None):
 
         # Names, directories, and files in case structure
@@ -951,7 +984,7 @@ class domain(base_domain):
 
                 restart_input =  os.path.expanduser(self.restart_input)
                 if not os.path.isabs(restart_input):
-                    restart_input = os.path.join(self.dest_root_dir, restart_input)
+                    restart_input = self.__input_path_abs_dir__(restart_input)
 
                 if not os.path.exists(restart_input):
                     err_str += restart_input + ' does not exist.\n\n'
@@ -969,13 +1002,11 @@ class domain(base_domain):
                         if not os.path.isfile(os.path.join(self.restart_input, 'main')):
                             restart_pending = [r]
 
-
             if self.restart_mesh_input != None and err_str == '':
 
                 restart_mesh_input =  os.path.expanduser(self.restart_mesh_input)
                 if not os.path.isabs(restart_mesh_input):
-                    restart_mesh_input = os.path.join(self.dest_root_dir,
-                                                      restart_mesh_input)
+                    restart_mesh_input = self.__input_path_abs_dir__(restart_mesh_input)
 
                 if not os.path.exists(restart_mesh_input):
                     if restart_pending:
@@ -1013,7 +1044,7 @@ class domain(base_domain):
             if self.mesh_input:
                 mesh_input = os.path.expanduser(self.mesh_input)
                 if not os.path.isabs(mesh_input):
-                    mesh_input = os.path.join(self.dest_root_dir, mesh_input)
+                    mesh_input = self.__input_path_abs_dir__(mesh_input)
 
                 # Differentiate between a folder and file, since we now
                 # have a file extension
@@ -1034,7 +1065,7 @@ class domain(base_domain):
 
             partition_input = os.path.expanduser(self.partition_input)
             if not os.path.isabs(partition_input):
-                partition_input = os.path.join(self.dest_root_dir, partition_input)
+                partition_input = self.__input_path_abs_dir__(partition_input)
 
             if os.path.exists(partition_input):
 
