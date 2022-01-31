@@ -173,7 +173,7 @@ class base_domain:
 
         prefix, base = os.path.split(path)
         while prefix != '':
-            if prefix in ('RESU', 'RESU_COUPLING'):
+            if base in ('RESU', 'RESU_COUPLING'):
                 if self.dest_root_dir:
                     r_path = os.path.join(self.dest_root_dir, path)
                     if os.path.exists(r_path):
