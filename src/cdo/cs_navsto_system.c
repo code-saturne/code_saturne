@@ -1730,7 +1730,7 @@ cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
       const cs_equation_t  *eq = cs_navsto_system_get_momentum_eq();
       const cs_real_t  *u_face = cs_equation_get_face_values(eq, need_prev);
       const cs_real_t  *u_cell = navsto->velocity->val;
-      const cs_real_t  *p_cell = navsto->pressure->val;
+      cs_real_t  *p_cell = navsto->pressure->val;
 
       /* Synchronize the cell pressure before doing something */
 
