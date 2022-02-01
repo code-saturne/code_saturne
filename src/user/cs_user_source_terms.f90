@@ -37,51 +37,13 @@
 !>
 !> See \ref cs_user_source_terms and
 !> \ref cs_user_source_terms-scalar_in_a_channel for examples.
-!>
+!===============================================================================
+
 !===============================================================================
 !> \brief Additional right-hand side source terms for velocity components equation
 !> (Navier-Stokes)
 !>
 !> \deprecated Use \ref cs_user_source_terms instead.
-!>
-!> \section ustsnv_use  Usage
-!>
-!> The additional source term is decomposed into an explicit part (\c crvexp) and
-!> an implicit part (\c crvimp) that must be provided here.
-!> The resulting equation solved by the code for a velocity is:
-!> \f[
-!>  \rho \norm{\vol{\celli}} \DP{\vect{u}} + ....
-!>   = \tens{crvimp} \cdot \vect{u} + \vect{crvexp}
-!> \f]
-!>
-!> Note that \c crvexp and \c crvimp are defined after the Finite Volume integration
-!> over the cells, so they include the "volume" term. More precisely:
-!>   - crvexp is expressed in kg.m/s2
-!>   - crvimp is expressed in kg/s
-!>
-!> The \c crvexp and \c crvimp arrays are already initialized to 0
-!> before entering the
-!> the routine. It is not needed to do it in the routine (waste of CPU time).
-!>
-!> \remark The additional force on \f$ x_i \f$ direction is given by
-!>  \c crvexp(i, iel) + vel(j, iel)* crvimp(j, i, iel).
-!>
-!> For stability reasons, Code_Saturne will not add -crvimp directly to the
-!> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
-!> treated implicitely only if it strengthens the diagonal of the matrix.
-!> However, when using the second-order in time scheme, this limitation cannot
-!> be done anymore and -crvimp is added directly. The user should therefore test
-!> the negativity of crvimp by himself.
-!>
-!> When using the second-order in time scheme, one should supply:
-!>   - crvexp at time n
-!>   - crvimp at time n+1/2
-!>
-!> The selection of cells where to apply the source terms is based on a
-!> \ref getcel command. For more info on the syntax of the \ref getcel command,
-!> refer to the user manual or to the comments on the similar command
-!> \ref getfbr in the routine \ref cs_user_boundary_conditions.
-!
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -183,89 +145,13 @@ deallocate(lstelt)
 return
 end subroutine ustsnv
 
-
 !===============================================================================
 
 !===============================================================================
-!>    User subroutine.
 !> \brief    Additional right-hand side source terms for scalar equations (user
-!>     scalars and specific physics scalars).
+!>           scalars and specific physics scalars).
 !>
 !> \deprecated Use \ref cs_user_source_terms instead.
-!>
-!> Usage
-!> -----
-!> The routine is called for each scalar, user or specific physisc. It is
-!> therefore necessary to test the value of the scalar number iscal to separate
-!> the treatments of the different scalars (if (iscal.eq.p) then ....).
-!>
-!> The additional source term is decomposed into an explicit part (crvexp) and
-!> an implicit part (crvimp) that must be provided here.
-!> The resulting equation solved by the code for a scalar f is:
-!>
-!>   \f[ \rho*volume*\frac{df}{dt} + .... = crvimp*f + crvexp \f]
-!>
-!>
-!> Note that crvexp and crvimp are defined after the Finite Volume integration
-!> over the cells, so they include the "volume" term. More precisely:
-!>   - crvexp is expressed in kg.[scal]/s, where [scal] is the unit of the scalar
-!>   - crvimp is expressed in kg/s
-!>
-!>
-!> The crvexp and crvimp arrays are already initialized to 0 before entering the
-!> the routine. It is not needed to do it in the routine (waste of CPU time).
-!>
-!> For stability reasons, Code_Saturne will not add -crvimp directly to the
-!> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
-!> treated implicitely only if it strengthens the diagonal of the matrix.
-!> However, when using the second-order in time scheme, this limitation cannot
-!> be done anymore and -crvimp is added directly. The user should therefore test
-!> the negativity of crvimp by himself.
-!>
-!> When using the second-order in time scheme, one should supply:
-!>   - crvexp at time n
-!>   - crvimp at time n+1/2
-!>
-!>
-!> The selection of cells where to apply the source terms is based on a getcel
-!> command. For more info on the syntax of the getcel command, refer to the
-!> user manual or to the comments on the similar command \ref getfbr in the routine
-!> \ref cs_user_boundary_conditions.
-
-!> WARNING: If scalar is the temperature, the resulting equation
-!>          solved by the code is:
-!>
-!>  rho*Cp*volume*dT/dt + .... = crvimp*T + crvexp
-!>
-!>
-!> Note that crvexp and crvimp are defined after the Finite Volume integration
-!> over the cells, so they include the "volume" term. More precisely:
-!>   - crvexp is expressed in W
-!>   - crvimp is expressed in W/K
-!>
-
-!>
-!> STEP SOURCE TERMS
-!>===================
-!> In case of a complex, non-linear source term, say F(f), for scalar f, the
-!> easiest method is to implement the source term explicitely.
-!>
-!>   df/dt = .... + F(f(n))
-!>   where f(n) is the value of f at time tn, the beginning of the time step.
-!>
-!> This yields :
-!>   crvexp = volume*F(f(n))
-!>   crvimp = 0
-!>
-!> However, if the source term is potentially steep, this fully explicit
-!> method will probably generate instabilities. It is therefore wiser to
-!> partially implicit the term by writing:
-!>
-!>   df/dt = .... + dF/df*f(n+1) - dF/df*f(n) + F(f(n))
-!>
-!> This yields:
-!>   crvexp = volume*( F(f(n)) - dF/df*f(n) )
-!>   crvimp = volume*dF/df
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -374,81 +260,6 @@ end subroutine ustssc
 !>           (user vectors and specific physics vectors).
 !>
 !> \deprecated Use \ref cs_user_source_terms instead.
-!>
-!> Usage
-!> -----
-!> The routine is called for each vector, user or specific physisc. It is
-!> therefore necessary to test the value of the vector number iscal to separate
-!> the treatments of the different vectors (if (iscal.eq.p) then ....).
-!>
-!> The additional source term is decomposed into an explicit part (crvexp) and
-!> an implicit part (crvimp) that must be provided here.
-!> The resulting equation solved by the code for a vector f is:
-!>
-!>   \f[ \rho*volume*\frac{d\vect{f}}{dt} + .... = \tens{crvimp}*\vect{f} +
-!>                                                 \vect{crvexp} \f]
-!>
-!>
-!> Note that crvexp and crvimp are defined after the Finite Volume integration
-!> over the cells, so they include the "volume" term. More precisely:
-!>   - crvexp is expressed in kg.[scal]/s, where [scal] is vector unit
-!>   - crvimp is expressed in kg/s
-!>
-!>
-!> The crvexp and crvimp arrays are already initialized to 0 before entering the
-!> the routine. It is not needed to do it in the routine (waste of CPU time).
-!>
-!> For stability reasons, Code_Saturne will not add -crvimp directly to the
-!> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
-!> treated implicitely only if it strengthens the diagonal of the matrix.
-!> However, when using the second-order in time scheme, this limitation cannot
-!> be done anymore and -crvimp is added directly. The user should therefore test
-!> the negativity of crvimp by himself.
-!>
-!> When using the second-order in time scheme, one should supply:
-!>   - crvexp at time n
-!>   - crvimp at time n+1/2
-!>
-!>
-!> The selection of cells where to apply the source terms is based on a getcel
-!> command. For more info on the syntax of the getcel command, refer to the
-!> user manual or to the comments on the similar command \ref getfbr in the routine
-!> \ref cs_user_boundary_conditions.
-
-!> WARNING: If scalar is the temperature, the resulting equation
-!>          solved by the code is:
-!>
-!>  rho*Cp*volume*dT/dt + .... = crvimp*T + crvexp
-!>
-!>
-!> Note that crvexp and crvimp are defined after the Finite Volume integration
-!> over the cells, so they include the "volume" term. More precisely:
-!>   - crvexp is expressed in W
-!>   - crvimp is expressed in W/K
-!>
-
-!>
-!> STEEP SOURCE TERMS
-!>===================
-!> In case of a complex, non-linear source term, say F(f), for scalar f, the
-!> easiest method is to implement the source term explicitely.
-!>
-!>   df/dt = .... + F(f(n))
-!>   where f(n) is the value of f at time tn, the beginning of the time step.
-!>
-!> This yields :
-!>   crvexp = volume*F(f(n))
-!>   crvimp = 0
-!>
-!> However, if the source term is potentially steep, this fully explicit
-!> method will probably generate instabilities. It is therefore wiser to
-!> partially implicit the term by writing:
-!>
-!>   df/dt = .... + dF/df*f(n+1) - dF/df*f(n) + F(f(n))
-!>
-!> This yields:
-!>   crvexp = volume*( F(f(n)) - dF/df*f(n) )
-!>   crvimp = volume*dF/df
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

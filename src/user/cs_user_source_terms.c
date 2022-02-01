@@ -68,7 +68,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Additional user-defined source terms for variable equations
- *   (momentum, scalars, turbulence...).
+ *        (momentum, scalars, turbulence...).
  *
  *  This function is called at each time step, for each relevant field.
  *  It is therefore necessary to
