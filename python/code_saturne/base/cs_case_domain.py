@@ -173,23 +173,25 @@ class base_domain:
 
         prefix, base = os.path.split(path)
         while prefix != '':
-            if base in ('RESU', 'RESU_COUPLING'):
-                if self.dest_root_dir:
-                    r_path = os.path.join(self.dest_root_dir, path)
-                    if os.path.exists(r_path):
-                        return r_path
-                    c_path = os.path.join(self.case_root_dir, path)
-                    if os.path.exists(c_path):
-                        return c_path
-                    # If path does not exist, assume it will be created
-                    # later, in chich case we use dest_root_dir
-                    return r_path
-                else:
-                    return os.path.join(self.case_root_dir, path)
-            elif prefix == 'MESH':
-                return os.path.join(self.case_root_dir, path)
-
+            if base in ('RESU', 'RESU_COUPLING', 'MESH'):
+                break
             prefix, base = os.path.split(prefix)
+
+        if base in ('RESU', 'RESU_COUPLING'):
+            if self.dest_root_dir:
+                r_path = os.path.join(self.dest_root_dir, path)
+                if os.path.exists(r_path):
+                    return r_path
+                c_path = os.path.join(self.case_root_dir, path)
+                if os.path.exists(c_path):
+                    return c_path
+                # If path does not exist, assume it will be created
+                # later, in chich case we use dest_root_dir
+                return r_path
+            else:
+                return os.path.join(self.case_root_dir, path)
+        elif base == 'MESH':
+            return os.path.join(self.case_root_dir, path)
 
         return os.path.join(self.case_dir, path)
 
