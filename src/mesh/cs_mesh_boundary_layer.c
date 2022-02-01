@@ -496,6 +496,10 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
                          domain->cdo_quantities,
                          domain->connect);
 
+  /* Define the cs_sles_t structure related to each equation */
+
+  cs_equation_set_sles();
+
   /* Compute or access reference volume for displacement limiter */
 
   const cs_lnum_t n_cells_ini = m->n_cells;

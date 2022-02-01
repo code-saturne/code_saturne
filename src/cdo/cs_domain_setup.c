@@ -573,24 +573,6 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   /* Set the scheme flag for the computational domain */
 
   _set_scheme_flags(domain);
-
-  /* Last step: Proceed to the settings of a cs_equation_t structure.
-   * Setup the structure related to cs_sles_*
-   * This should be done after the creation of fields
-   */
-
-  /* Navier-Stokes system */
-
-  if (cs_navsto_system_is_activated())
-    cs_navsto_system_set_sles();
-
-  /* Set equations (those not implied in the NavSto module) */
-
-  cs_equation_set_sles();
-
-  /* Set the SLES related to the systems of equations */
-
-  cs_equation_system_set_sles();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -831,6 +813,18 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 
   cs_equation_system_initialize();
 
+  /* Last step: Proceed to the setup of the structure related to cs_sles_*
+   * This should be done after the creation of fields
+   */
+
+  /* Set equations (those not implied in the NavSto module) */
+
+  cs_equation_set_sles();
+
+  /* Set the SLES related to the systems of equations */
+
+  cs_equation_system_set_sles();
+
   /* Set the initial condition for all advection fields */
 
   cs_advection_field_update(domain->time_step->t_cur,
@@ -847,11 +841,18 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 
   /* Set the initial state for the Navier-Stokes system */
 
-  if (cs_navsto_system_is_activated())
+  if (cs_navsto_system_is_activated()) {
+
     cs_navsto_system_initialize(domain->mesh,
                                 domain->connect,
                                 domain->cdo_quantities,
                                 domain->time_step);
+
+    /* Need that the scheme context is allocated */
+
+    cs_navsto_system_set_sles();
+
+  }
 
   /* Set the initial state for the Maxwell module */
 

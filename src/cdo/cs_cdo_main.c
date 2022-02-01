@@ -730,7 +730,6 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
    * - Define extra domain boundaries
    * - Setup predefined equations
    * - Create fields
-   * - Define cs_sles_t structures for variable fields
    */
 
   cs_domain_initialize_setup(domain);
@@ -1010,6 +1009,7 @@ cs_cdo_main(cs_domain_t   *domain)
   cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
 
   /*  Build high-level structures and create algebraic systems
+      Define associated cs_sles_t structure to solve the linear systems
       Set the initial values of the fields and properties. */
 
   cs_domain_initialize_systems(domain);
