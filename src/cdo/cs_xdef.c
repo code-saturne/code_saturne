@@ -350,6 +350,11 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       b->free_input = a->free_input;
 
       d->context = b;
+
+      /* Update state flag */
+
+      if (cs_flag_test(b->loc, cs_flag_primal_face))
+        d->state |= CS_FLAG_STATE_FACEWISE;
     }
     break;
 
