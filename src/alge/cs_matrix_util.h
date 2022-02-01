@@ -52,7 +52,7 @@ cs_matrix_diag_dominance(const cs_matrix_t  *matrix,
  * Dump a linear system matrix and right-hand side to file.
  *
  * parameters:
- *   matrix <-- pointer to matrix structure
+ *   matrix <-- pointer to mat$rix structure
  *   rhs    <-- right hand side vector
  *   name   <-- identifier string used in file name
  *----------------------------------------------------------------------------*/
@@ -61,6 +61,34 @@ void
 cs_matrix_dump_linear_system(const cs_matrix_t  *matrix,
                              const cs_real_t     rhs[],
                              const char         *name);
+
+/*----------------------------------------------------------------------------
+ * Dump a vector to file.
+ *
+ * parameters:
+ *   n_rows <-- number of local rows
+ *   stride <-- associated stride
+ *   x      <-- associated vector
+ *   name   <-- identifier string used in file name
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_dump_vector(const cs_lnum_t     n_rows,
+                      const cs_lnum_t     stride,
+                      const cs_real_t     x[],
+                      const char         *name);
+
+/*----------------------------------------------------------------------------
+ * Dump a matrix to file.
+ *
+ * parameters:
+ *   matrix <-- pointer to matrix structure
+ *   name   <-- identifier string used in file name
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_dump(const cs_matrix_t  *matrix,
+               const char         *name);
 
 /*----------------------------------------------------------------------------
  * Log general info relative to matrix.

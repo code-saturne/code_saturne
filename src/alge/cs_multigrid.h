@@ -440,6 +440,25 @@ cs_multigrid_set_merge_options(cs_multigrid_t  *mg,
                                cs_gnum_t        rows_glob_threshold);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to a grid associated with a given multigrid
+ *        setup and level.
+ *
+ * If the multigrid hierarchy is not set up, or a level coarser than the
+ * coarsest level is requested, NULL is returned.
+
+ * \param[in]  mg     pointer to multigrid info and context
+ * \param[in]  level  level of the requested grid (or -1 for coarsest)
+ *
+ * \return  pointer to grid of requested level (NULL id not present)
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_grid_t *
+cs_multigrid_get_grid(const cs_multigrid_t  *mg,
+                      int                    level);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

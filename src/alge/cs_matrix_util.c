@@ -1828,6 +1828,99 @@ cs_matrix_dump_linear_system(const cs_matrix_t  *matrix,
   f = cs_file_free(f);
 }
 
+/*----------------------------------------------------------------------------
+ * Dump a vector to file.
+ *
+ * parameters:
+ *   n_rows <-- number of local rows
+ *   stride <-- associated stride
+ *   x      <-- associated vector
+ *   name   <-- identifier string used in file name
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_dump_vector(const cs_lnum_t     n_rows,
+                      const cs_lnum_t     stride,
+                      const cs_real_t     x[],
+                      const char         *name)
+{
+  char filename[64];
+  cs_lnum_t n_l_rows = n_rows*stride;
+  cs_gnum_t n_g_rows = n_l_rows;
+
+  cs_file_t  *f = NULL;
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    cs_lnum_t _n_g_rows = n_l_rows;
+    MPI_Allreduce(&n_l_rows, &n_g_rows, 1, CS_MPI_GNUM, MPI_SUM,
+                  cs_glob_mpi_comm);
+  }
+#endif
+
+  snprintf(filename, 63, "%s_%010llu", name, (unsigned long long)n_g_rows);
+  filename[63] = '\0';
+
+  f = cs_file_open_default(filename, CS_FILE_MODE_WRITE);
+
+  _write_header_simple(f);
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    _write_vector_g(n_l_rows, x, f);
+  }
+#endif
+  if (cs_glob_n_ranks == 1) {
+    _write_vector_l(n_l_rows, x, f);
+  }
+
+  f = cs_file_free(f);
+}
+
+/*----------------------------------------------------------------------------
+ * Dump a matrix to file.
+ *
+ * parameters:
+ *   matrix <-- pointer to matrix structure
+ *   name   <-- identifier string used in file name
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_dump(const cs_matrix_t  *matrix,
+               const char         *name)
+{
+  char filename[64];
+  cs_gnum_t n_g_rows = matrix->n_rows;
+
+  cs_file_t  *f = NULL;
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    cs_gnum_t n_l_rows = matrix->n_rows;
+    MPI_Allreduce(&n_l_rows, &n_g_rows, 1, CS_MPI_GNUM, MPI_SUM,
+                  cs_glob_mpi_comm);
+  }
+#endif
+
+  snprintf(filename, 63, "%s_%010llu", name, (unsigned long long)n_g_rows);
+  filename[63] = '\0';
+
+  f = cs_file_open_default(filename, CS_FILE_MODE_WRITE);
+
+  _write_header_simple(f);
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    _write_matrix_g(matrix, f);
+  }
+#endif
+  if (cs_glob_n_ranks == 1) {
+    _write_matrix_l(matrix, f);
+  }
+
+  f = cs_file_free(f);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Log general info relative to matrix.

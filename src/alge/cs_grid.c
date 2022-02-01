@@ -3326,10 +3326,6 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
   cs_real_t epsilon = 1.e-6;
 
-  cs_lnum_t *c_cardinality = NULL, *f_c_face = NULL;
-  cs_lnum_t *merge_flag = NULL, *c_aggr_count = NULL;
-  cs_lnum_t *i_work_array = NULL;
-
   const cs_lnum_t *db_size = f->db_size;
   const cs_lnum_t *eb_size = f->eb_size;
   const cs_lnum_2_t *f_face_cells = f->face_cell;
@@ -3357,12 +3353,13 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
 
   /* Allocate working arrays */
 
+  cs_lnum_t *i_work_array = NULL;
   BFT_MALLOC(i_work_array, f_n_cells_ext*2 + f_n_faces*3, cs_lnum_t);
 
-  c_cardinality = i_work_array;
-  c_aggr_count = i_work_array + f_n_cells_ext;
-  f_c_face = i_work_array + 2*f_n_cells_ext; /* fine face -> coarse face */
-  merge_flag = i_work_array + 2*f_n_cells_ext + f_n_faces;
+  cs_lnum_t *c_cardinality = i_work_array;
+  cs_lnum_t *c_aggr_count = i_work_array + f_n_cells_ext;
+  cs_lnum_t *f_c_face = i_work_array + 2*f_n_cells_ext; /* fine -> coarse face */
+  cs_lnum_t *merge_flag = i_work_array + 2*f_n_cells_ext + f_n_faces;
 
   /* Initialization */
 
