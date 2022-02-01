@@ -1470,8 +1470,7 @@ class MainView(object):
             w = QMessageBox(self)
             w.information(self,
                           self.tr("Warning"),
-                          msg,
-                          self.tr('OK'))
+                          msg)
             return
 
         self.page = self.Browser.display(self,
