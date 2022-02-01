@@ -50,6 +50,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_time_step.h"
 #include "fvm_nodal_extract.h"
 #include "fvm_point_location.h"
 

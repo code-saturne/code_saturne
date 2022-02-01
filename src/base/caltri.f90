@@ -802,9 +802,7 @@ if (italin.eq.1) then
   write(nfecra,3002) ttcabs
 endif
 
-!     En cas de couplage avec SYRTHES, on lit des maintenant l'entete
-!     du premier message, au cas ou il s'agisse d'un message de
-!     terminaison.
+! In case of code coupling, sync status with other codes.
 
 if (itrale.gt.0) then
 
@@ -815,7 +813,7 @@ if (itrale.gt.0) then
   endif
 
   if (ntmabs .eq. ntcabs .and. ntmabs.gt.ntpabs) then
-    call csexit (1)
+    call csexit(1)
   endif
 
 endif

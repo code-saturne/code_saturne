@@ -51,6 +51,7 @@
 #include <bft_mem.h>
 
 #include "cs_boundary_zone.h"
+#include "cs_coupling.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
@@ -364,6 +365,11 @@ cs_domain_needs_iteration(cs_domain_t  *domain)
   bool  one_more_iter = true;
 
   cs_time_step_t  *ts = domain->time_step;
+
+  cs_coupling_sync_apps(0,                /* flags */
+                        ts->nt_cur,
+                        &(ts->nt_max),
+                        &(ts->dt_ref));
 
   if (ts->nt_max > 0) /* nt_max has been set */
     if (ts->nt_cur >= ts->nt_max)
