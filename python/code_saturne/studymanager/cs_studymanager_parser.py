@@ -328,7 +328,7 @@ class Parser(object):
 
         for node in self.getStudyNode(l).getElementsByTagName("case"):
             if str(node.attributes["status"].value) == 'on':
- 
+
                 d = {}
                 d['node']    = node
                 d['label']   = str(node.attributes["label"].value)

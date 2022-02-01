@@ -75,8 +75,7 @@ use field
 use mesh
 use cs_c_bindings
 use cs_f_interfaces
-use cs_nz_condensation, only: thermal_condensation_flux, iztag1d, ztpar,flthr, dflthr
-use cs_nz_tagmr, only: ztpar0, ztmur
+use cs_nz_condensation, only: thermal_condensation_flux, iztag1d, flthr, dflthr
 
 use condensation_module
 
@@ -94,12 +93,12 @@ double precision hpcond(nfbpcd)
 
 ! Local variables
 
-integer          ii, iz, iel, ifac, iesp
+integer          ii, iz, iel, ifac
 integer          ivar, f_id, ifcvsl
 
 double precision flux, h_uchida, h_cond
 double precision sink_term, gamma_cond, pressure
-double precision lambda, theta, tinf, psat, t_wall 
+double precision lambda, theta, tinf, psat, t_wall
 double precision mol_mas_int
 double precision Prdtl, xnu, drho, gravity
 double precision rho_wall, rho_av
@@ -108,16 +107,16 @@ double precision h1min, h1max
 double precision h2min, h2max
 double precision flmin, flmax
 
-type(gas_mix_species_prop) s_h2o_g, s_k
+type(gas_mix_species_prop) s_h2o_g
 type(var_cal_opt) :: vcopt
 
 double precision, allocatable, dimension(:) :: mix_mol_mas, mol_mas_ncond
-double precision, allocatable, dimension(:) :: x_h2o_g, diff_m 
+double precision, allocatable, dimension(:) :: x_h2o_g, diff_m
 double precision, dimension(:), pointer :: cpro_rho, cpro_viscl, cpro_cp, cpro_venth
-double precision, dimension(:), pointer :: cvar_enth, cvar_yk
+double precision, dimension(:), pointer :: cvar_enth
 double precision, dimension(:), pointer :: y_h2o_g
 
-if (regime > 0) then 
+if (regime > 0) then
   write(nfecra,*) "***********************************************************************"
   write(nfecra,*) "*** Stop : icondb_regime > 0 non authorized with (icondb_model = 2) ***"
   write(nfecra,*) "***********************************************************************"
@@ -127,7 +126,7 @@ endif
 !===============================================================================
 ! Allocate a temporary array for cells selection
 allocate(mix_mol_mas(ncelet), diff_m(ncelet), mol_mas_ncond(ncelet) )
-allocate(x_h2o_g(ncelet)) 
+allocate(x_h2o_g(ncelet))
 
 !===============================================================================
 ! 0 - Initialization
@@ -229,7 +228,7 @@ do ii = 1, nfbpcd
 
   x_ncond_int = 1.d0 - x_vapint
   mol_mas_int = x_vapint*s_h2o_g%mol_mas + x_ncond_int*mol_mas_ncond(iel)
-  rho_wall = pressure*mol_mas_int / (cs_physical_constants_r*t_wall) 
+  rho_wall = pressure*mol_mas_int / (cs_physical_constants_r*t_wall)
   rho_av = 0.5d0 * (rho_wall + cpro_rho(iel))
   drho = dabs(rho_wall - cpro_rho(iel)) / rho_av
   theta = 1.d0
@@ -239,7 +238,7 @@ do ii = 1, nfbpcd
     x_inc = 1.d0-x_h2o_g(iel)
 
 ! Total heat flux (latent + sensible) from 2*UCHIDA correlation
-    h_uchida = 380.0d0 * ( (1.0d0-y_h2o_g(iel)) / y_h2o_g(iel) )**(-0.7d0) 
+    h_uchida = 380.0d0 * ( (1.0d0-y_h2o_g(iel)) / y_h2o_g(iel) )**(-0.7d0)
 
 ! Sensible component (Mc Adams)
     theta = 1.d0 +0.625d0*(x_ncond_int-x_inc)/x_ncond_int
@@ -252,7 +251,7 @@ do ii = 1, nfbpcd
 
     ! Computation of sink source term gam_s(ii)
     !         per unit of area (kg/s/m2)
-    sink_term = h_cond * (tinf - t_wall) / lcond 
+    sink_term = h_cond * (tinf - t_wall) / lcond
     gam_s(ii,ipr) = gam_s(ii, ipr) - sink_term
 
     ! Heat flux
@@ -264,7 +263,7 @@ do ii = 1, nfbpcd
     hpcond(ii) = 0.13d0*theta*lambda                     &
            *( gravity*drho*Prdtl/(xnu**2) )**(1.d0/3.d0) &
            /cpro_cp(iel)
-    flux = hpcond(ii)*cpro_cp(iel)*(tinf-t_wall)  
+    flux = hpcond(ii)*cpro_cp(iel)*(tinf-t_wall)
     sink_term = 0.d0
     h_cond = 0.0d0
   endif
@@ -279,8 +278,8 @@ do ii = 1, nfbpcd
   flmin = min(flmin,flux)
   flmax = max(flmax,flux)
 
-  !For 1D thermal conduction model : 
-  !store the flux and its derivative 
+  !For 1D thermal conduction model :
+  !store the flux and its derivative
   if(iztag1d(iz).eq.1) then
     flthr(ii) = flux
    dflthr(ii) = 0.d0

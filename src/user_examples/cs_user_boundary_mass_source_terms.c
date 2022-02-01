@@ -183,25 +183,24 @@ cs_user_boundary_mass_source_terms(int nvar,
   int ieltcd = 0;
   int izone = 0;
 
-  if (iappel == 1 || iappel == 2) {
-  /*
-  ===============================================================================
+  /*==========================================================================
    1. One or two calls
    -------------------
     - iappel = 1: nfbpcd: calculation of the number of faces with
                                condensation source term
     - iappel = 2: ifbpcd: index number of faces with condensation source terms
-  
+
    Remarks
    =======
     - Do not use spcond in this section (it is set on the third call, iappel=3)
     - Do not use ifbpcd in this section on the first call (iappel=1)
     - This section (iappel=1 or 2) is only accessed at the beginning of a
-       calculation. Should the localization of the condensation source terms evolve
-       in time, the user must identify at the beginning all cells that can
-       potentially becomea condensation  source term.
-  ===============================================================================
-  */
+       calculation. Should the localization of the condensation source terms
+       evolve in time, the user must identify at the beginning all cells that
+       can potentially become a condensation  source term.
+  ===========================================================================*/
+
+  if (iappel == 1 || iappel == 2) {
 
     // WARNING : list of face ids from 1 to n (for Fortran use)
     cs_selector_get_b_face_num_list("60", &nlelt, lstelt);
@@ -228,7 +227,7 @@ cs_user_boundary_mass_source_terms(int nvar,
   ===============================================================================
    Parameters of the 1-D thermal model and condensation model
    ------------------------------------------------------------------
-   Both models can be activated and coupled together or the condensation model 
+   Both models can be activated and coupled together or the condensation model
    can be used with a constant wall temperature specified by the user
    (at iappel=3 tpar=ztpar0(iz) in this case).
   ===============================================================================
@@ -242,26 +241,26 @@ cs_user_boundary_mass_source_terms(int nvar,
  *    Integer.
  *    1 : Turbulent wall law
  *    2 : Natural convection correlation
- *    3 : Maximum of the two previous (for mixed regime) 
+ *    3 : Maximum of the two previous (for mixed regime)
  *    */
       wall_cond->izcophc[iz] = 3;
 
       /*
- *    izcophg = model for the thermal exchange coefficient 
+ *    izcophg = model for the thermal exchange coefficient
  *    ----------------------------------------------------------------
  *    Integer.
  *    1 : Turbulent wall law
  *    2 : Natural convection correlation
- *    3 : Maximum of the two previous (for mixed regime) 
+ *    3 : Maximum of the two previous (for mixed regime)
  *    */
       wall_cond->izcophg[iz] = 3;
 
       /*
- *    iztag1d = on/off switch for 1D thermal module 
+ *    iztag1d = on/off switch for 1D thermal module
  *    ----------------------------------------------------------------
  *    Integer.
- *    0 : Constant wall temperature (equal to ztpar0(iz)) 
- *    1 : Variable wall temperature computed with a 1D model 
+ *    0 : Constant wall temperature (equal to ztpar0(iz))
+ *    1 : Variable wall temperature computed with a 1D model
  *    */
       wall_cond->iztag1d[iz] = 1;
 
@@ -278,9 +277,9 @@ cs_user_boundary_mass_source_terms(int nvar,
         wall_thermal->ztheta[iz] = 1.0;
 
         /*
- *      zdxmin = Wall cell size parameters 
+ *      zdxmin = Wall cell size parameters
  *      ----------------------------------------------------------------
- *      Float 
+ *      Float
  *      Special values:
  *        <=0 : Constant cell size
  *        > 0 : Variable cell size. In this case, the first cell size (fluid side)
@@ -289,25 +288,25 @@ cs_user_boundary_mass_source_terms(int nvar,
         wall_thermal->zdxmin[iz] = 0.0;
 
         /*
- *      znmur = Number of cells in the wall mesh 
+ *      znmur = Number of cells in the wall mesh
  *      ----------------------------------------------------------------
- *      Positive integer 
+ *      Positive integer
  *      */
-        wall_thermal->znmur[iz] = 10; 
+        wall_thermal->znmur[iz] = 10;
 
         /*
  *      zepais = Total thickness of the solid wall [meters]
  *      ----------------------------------------------------------------
- *      Positive float 
+ *      Positive float
  *      */
-        wall_thermal->zepais[iz] = 0.024; 
+        wall_thermal->zepais[iz] = 0.024;
 
         /*
- *      ztpar0 = Initial temperature in the solid wall [celsius] 
+ *      ztpar0 = Initial temperature in the solid wall [celsius]
  *      ----------------------------------------------------------------
  *      Float.
  *      */
-        wall_thermal->ztpar0[iz] = 26.57; 
+        wall_thermal->ztpar0[iz] = 26.57;
       }
     }
   }
@@ -331,7 +330,7 @@ cs_user_boundary_mass_source_terms(int nvar,
       if (wall_cond->iztag1d[iz] == 1) {
 
         /*
- *      zhext = External exchange coefficient [watt.meter^(-2).kelvin^(-1)] 
+ *      zhext = External exchange coefficient [watt.meter^(-2).kelvin^(-1)]
  *      ----------------------------------------------------------------
  *      Positive float.
  *      */
@@ -368,7 +367,7 @@ cs_user_boundary_mass_source_terms(int nvar,
       else {
 
         /*
- *      ztpar = Constant wall temperature [celsius] 
+ *      ztpar = Constant wall temperature [celsius]
  *      ----------------------------------------------------------------
  *      Float.
  *      */
@@ -378,17 +377,17 @@ cs_user_boundary_mass_source_terms(int nvar,
 
 /*
  * From here on to the end : fill in
- * 
- * itypcd = for all variables except mass, type of source term 
+ *
+ * itypcd = for all variables except mass, type of source term
  * ---------------------------------------------------------------------
  *  Array of integers in [0, 1].
  *  0 : use ambient value
  *  1 : impose user value (in this case, corresponding value of spcond must
- *      be provided 
- * 
- * spcond = user values for condensation source term (if itypcd = 1) 
+ *      be provided
+ *
+ * spcond = user values for condensation source term (if itypcd = 1)
  * ---------------------------------------------------------------------
- *  Array of floats. 
+ *  Array of floats.
  * */
 
     if (CS_F_(cp) == NULL)
@@ -433,7 +432,7 @@ cs_user_boundary_mass_source_terms(int nvar,
       // Enthalpy of steam
       cs_lnum_t ifac = wall_cond->ifbpcd[ieltcd]-1; // Warning : Fortran numbering (from 1 to n)
       cs_lnum_t iel = ifabor[ifac];
-      cs_real_t tk = cs_glob_fluid_properties->t0; 
+      cs_real_t tk = cs_glob_fluid_properties->t0;
       cs_lnum_t ntcabs = cs_get_glob_time_step()->nt_cur;
       if (ntcabs >= 1)
         tk = cvar_h[iel] / cpro_cp[iel];
@@ -457,7 +456,7 @@ cs_user_boundary_mass_source_terms(int nvar,
         wall_cond->spcond[iep*nfbpcd + ieltcd] = 0.0;
       }
 
-      // Source term for scalars 
+      // Source term for scalars
       for (int f_id = 0; f_id < n_fields; f_id++) {
         cs_field_t  *f = cs_field_by_id(f_id);
         if (f->type & CS_FIELD_VARIABLE) {
@@ -474,13 +473,12 @@ cs_user_boundary_mass_source_terms(int nvar,
           }
         }
       }
-      
+
     }
 
   }
 
   BFT_FREE(lstelt);
-  return;
 };
 
 /*----------------------------------------------------------------------------*/

@@ -132,7 +132,7 @@ interface
     bind(C, name='cs_f_wall_condensation_1d_thermal_get_pointers')
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr), intent(out) :: znmur, ztheta, zdxmin, zepais, zrob, zcondb 
+    type(c_ptr), intent(out) :: znmur, ztheta, zdxmin, zepais, zrob, zcondb
     type(c_ptr), intent(out) :: zcpb, zhext, ztext, ztpar0
   end subroutine cs_f_wall_condensation_1d_thermal_get_pointers
 
@@ -140,7 +140,7 @@ interface
     bind(C, name='cs_wall_condensation_1d_thermal_create')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value, intent(in) :: nzones 
+    integer(c_int), value, intent(in) :: nzones
   end subroutine cs_f_wall_condensation_1d_thermal_create
 
   subroutine cs_f_wall_condensation_1d_thermal_free() &
@@ -162,8 +162,8 @@ contains
     use cs_nz_condensation, only:nzones
 
     implicit none
-    type(c_ptr) :: c_znmur, c_ztheta, c_zdxmin 
-    type(c_ptr) :: c_zepais, c_zrob, c_zcondb 
+    type(c_ptr) :: c_znmur, c_ztheta, c_zdxmin
+    type(c_ptr) :: c_zepais, c_zrob, c_zcondb
     type(c_ptr) :: c_zcpb, c_zhext, c_ztext, c_ztpar0
 
     if (nzones.lt.1) nzones = 1

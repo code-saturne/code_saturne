@@ -126,7 +126,7 @@ double precision, dimension(:), pointer :: cpro_rho, cpro_viscl, cpro_cp, cpro_v
 double precision, dimension(:), pointer :: cvar_enth, cvar_yk
 double precision, dimension(:), pointer :: y_h2o_g
 double precision, dimension(:), pointer :: yplbr
-double precision, dimension(:,:), pointer :: cvar_vel 
+double precision, dimension(:,:), pointer :: cvar_vel
 
 !===============================================================================
 ! Allocate a temporary array for cells selection
@@ -195,7 +195,7 @@ else
 endif
 
 !===============================================================================
-! 3 - Compute mixture properties 
+! 3 - Compute mixture properties
 !===============================================================================
 
 ! mix_mol_mas = molecular weight of the mixture
@@ -215,7 +215,7 @@ call compute_mix_properties(ncel, mix_mol_mas, mol_mas_ncond, x_h2o_g, diff_m)
 !        is computed at each face and imposed at the boundary condition
 !        for the enthalpy scalar.
 !        --------------------------------------------------------------
-!          the correlations used are those from Dehbi 2015 
+!          the correlations used are those from Dehbi 2015
 !===============================================================================
 
 lcar = 1.0d0
@@ -249,7 +249,7 @@ do ii = 1, nfbpcd
   call compute_psat(t_wall, psat)
   x_vapint = psat/pressure
 
-  ! if (Xv > Xi,v) we have condensation 
+  ! if (Xv > Xi,v) we have condensation
   if (x_h2o_g(iel).gt.x_vapint) then
 
     lambda = cpro_venth(iel)*cpro_cp(iel)
@@ -260,7 +260,7 @@ do ii = 1, nfbpcd
     y_ncond =  1.d0 - y_h2o_g(iel)
     y_ncond_int = x_ncond_int*mol_mas_ncond(iel)/mol_mas_int
 
-    rho_wall = pressure*mol_mas_int / (cs_physical_constants_r*t_wall) 
+    rho_wall = pressure*mol_mas_int / (cs_physical_constants_r*t_wall)
     rho_av = 0.5d0 * (rho_wall + cpro_rho(iel))
     drho = dabs(rho_wall - cpro_rho(iel)) / rho_av
 
@@ -276,15 +276,15 @@ do ii = 1, nfbpcd
 
     ! Sensible heat flux, computed with COPAIN expression
     hpcond(ii) = Nu_z * lambda / (lcar * cpro_cp(iel))
-   
+
     hcdcop = diff_m(iel)*Sh_z/lcar
     h_dehbi = hcdcop * rho_av * (y_ncond_int -y_ncond) / y_ncond_int &
-              * lcond / (tinf - t_wall) 
+              * lcond / (tinf - t_wall)
 
     h3max = max(h3max,h_dehbi)
     h3min = min(h3min,h_dehbi)
 
-    hcond = h_dehbi - hpcond(ii) * cpro_cp(iel) 
+    hcond = h_dehbi - hpcond(ii) * cpro_cp(iel)
 
     !=================================================
     !== Computation of sink source term gam_s(ii)
@@ -293,10 +293,10 @@ do ii = 1, nfbpcd
     !==       (if Xv > Xi,v we have condensation )
     !=================================================
 
-    sink_term = hcond * (tinf - t_wall) / lcond 
+    sink_term = hcond * (tinf - t_wall) / lcond
     gam_s(ii,ipr) = gam_s(ii, ipr) - sink_term
 
-    flux = h_dehbi * (tinf - t_wall) 
+    flux = h_dehbi * (tinf - t_wall)
 
   else
 
@@ -311,7 +311,7 @@ do ii = 1, nfbpcd
 
     sink_term = 0.d0
     hcond = 0.0d0
-    !-- Grasholf number based on temperature if no condensation --- 
+    !-- Grasholf number based on temperature if no condensation ---
     drho = abs((tinf-t_wall)/tinf )
     theta = 1.0d0
     call compute_grashof(gravity, drho, lcar, xnu, Gr_z)

@@ -129,7 +129,7 @@ double precision, dimension(:), pointer :: cvar_enth, cvar_yk
 double precision, dimension(:), pointer :: y_h2o_g
 double precision, dimension(:), pointer :: yplbr
 double precision, dimension(:), pointer :: bpro_ustar
-double precision, dimension(:,:), pointer :: cvar_vel 
+double precision, dimension(:,:), pointer :: cvar_vel
 
 !===============================================================================
 ! Allocate a temporary array for cells selection
@@ -248,7 +248,7 @@ do ii = 1, nfbpcd
     call compute_tangential_velocity(cvar_vel(1:3, iel), surfbo(1:3, ifac), 1.0d0/surfbn(ifac), u_ref)
     Re_z = cpro_rho(iel) * u_ref * lcar / cpro_viscl(iel)
   endif
-  
+
   call get_wall_temperature(iz, ii, t_wall)
 
   !-- kinematic viscosity --------------------------
@@ -266,7 +266,7 @@ do ii = 1, nfbpcd
   yplus = yplbr(ifac)
   sigmat = 0.9d0
 
-  ! Bulk temperature is taken at first cell center 
+  ! Bulk temperature is taken at first cell center
   call get_temperature(cvar_enth(iel), cpro_cp(iel), tinf)
   call compute_drho(tinf, t_wall, drho)
   call compute_grashof(gravity, drho, lcar, xnu, Gr_z)
@@ -313,9 +313,9 @@ do ii = 1, nfbpcd
 
     ! Final value of condensation exchange coefficient
     hcond = cpro_rho(iel) * hcond * (y_ncond_int - y_ncond) / y_ncond_int * &
-            lcond / (tinf - t_wall) 
+            lcond / (tinf - t_wall)
 
-    sink_term = hcond * (tinf - t_wall) / lcond 
+    sink_term = hcond * (tinf - t_wall) / lcond
     gam_s(ii,ipr) = gam_s(ii, ipr) - sink_term
 
   else ! no condensation
@@ -325,7 +325,7 @@ do ii = 1, nfbpcd
 
   endif
 
-  !-- Convective exchange coefficient from COPAIN correlation 
+  !-- Convective exchange coefficient from COPAIN correlation
   lambda = cpro_venth(iel)*cpro_cp(iel)
   call compute_prandtl(cpro_viscl(iel), cpro_venth(iel), Prdtl)
   call compute_exchange_adimensional(theta, Re_z, Gr_z, Prdtl, conv_regime, Nu_z)

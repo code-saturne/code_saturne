@@ -54,7 +54,7 @@ module cs_nz_condensation
   !> See \c ifbpcd and the user subroutine \ref cs_f_user_boundary_mass_source_terms
   integer(c_int), pointer, save :: nfbpcd
 
-  !> \anchor itypcd 
+  !> \anchor itypcd
   !> type of condensation source terms for each variable
   !> - 0 for an variable at ambient value,
   !> - 1 for an variable at imposed value.
@@ -66,12 +66,12 @@ module cs_nz_condensation
   !> See the user subroutine \ref cs_f_user_boundary_mass_source_terms
   double precision, dimension(:), pointer, save :: thermal_condensation_flux
 
-  !> \anchor flthr     
+  !> \anchor flthr
   !> external heat flux used as flux conditions
   !> of the 1d thermal model (in unit \f$W.m^{-2}\f$).
   double precision, dimension(:), pointer, save :: flthr
 
-  !> \anchor dflthr    
+  !> \anchor dflthr
   !> external heat flux derivative used as flux conditions
   !> of the 1d thermal model (in unit \f$W.m^{-3}\f$).
   double precision, dimension(:), pointer, save :: dflthr
@@ -84,11 +84,11 @@ module cs_nz_condensation
 
   !> \anchor twall_cond
   !> Temperature at condensing wall faces (for post-processing purposes)
-  double precision, dimension(:), pointer, save :: twall_cond 
+  double precision, dimension(:), pointer, save :: twall_cond
   !> value of the thermal exchange coefficient associated to
   !> the condensation model used.
   !> See the user subroutine \ref cs_f_user_boundary_mass_source_terms
-  double precision, dimension(:), pointer, save:: hpcond 
+  double precision, dimension(:), pointer, save:: hpcond
 
   !> list on the nfbpcd faces in which a condensation source terms is imposed.
   !> See \c ifbpcd and the user subroutine \ref cs_f_user_boundary_mass_source_terms
@@ -154,8 +154,8 @@ module cs_nz_condensation
   double precision, dimension(:), pointer, save :: ztpar
 
   !> \anchor zxref
-  !> Coordinates of the reference point for forced and mixed convection regimes 
-  !> index 1 : coordinate, index 2: zone_id 
+  !> Coordinates of the reference point for forced and mixed convection regimes
+  !> index 1 : coordinate, index 2: zone_id
   double precision, dimension(:, :), pointer, save :: zxrefcond
   double precision, dimension(:, :), pointer, save :: zprojcond
 
@@ -165,35 +165,35 @@ module cs_nz_condensation
 interface
 
   !---------------------------------------------------------------------------
-  !> \brief Create wall condensation structure 
+  !> \brief Create wall condensation structure
   !
-  !> \param[in]   nfbpcd    Number of faces with wall condensation activated 
-  !> \param[in]   nvar      Number of variables (?) 
+  !> \param[in]   nfbpcd    Number of faces with wall condensation activated
+  !> \param[in]   nvar      Number of variables (?)
   !---------------------------------------------------------------------------
 
   subroutine cs_f_wall_condensation_create(nfbpcd, nzones, nvar) &
     bind(C, name='cs_wall_condensation_create')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nfbpcd, nzones, nvar 
+    integer(c_int), value :: nfbpcd, nzones, nvar
   end subroutine cs_f_wall_condensation_create
 
   !---------------------------------------------------------------------------
-  !> \brief Return pointers to spcond 
+  !> \brief Return pointers to spcond
   !
-  !> \param[out]   spcond   Pointer to spcond 
+  !> \param[out]   spcond   Pointer to spcond
   !---------------------------------------------------------------------------
   subroutine cs_f_wall_condensation_get_size_pointers(nfbpcd, nzones) &
     bind(C, name='cs_f_wall_condensation_get_size_pointers')
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr), intent(out) :: nfbpcd, nzones 
+    type(c_ptr), intent(out) :: nfbpcd, nzones
   end subroutine cs_f_wall_condensation_get_size_pointers
 
   !---------------------------------------------------------------------------
-  !> \brief Return pointers to spcond 
+  !> \brief Return pointers to spcond
   !
-  !> \param[out]   spcond   Pointer to spcond 
+  !> \param[out]   spcond   Pointer to spcond
   !---------------------------------------------------------------------------
   subroutine cs_f_wall_condensation_get_pointers(ifbpcd, itypcd, izzftcd, &
                                                  spcond, hpcond, twall_cond, &
@@ -203,13 +203,13 @@ interface
     bind(C, name='cs_f_wall_condensation_get_pointers')
     use, intrinsic :: iso_c_binding
     implicit none
-    type(c_ptr), intent(out) :: spcond, hpcond, ifbpcd, twall_cond, itypcd 
-    type(c_ptr), intent(out) :: izzftcd, thermflux, flthr, dflthr, izcophc 
-    type(c_ptr), intent(out) :: izcophg, iztag1d, ztpar, zxrefcond, zprojcond 
+    type(c_ptr), intent(out) :: spcond, hpcond, ifbpcd, twall_cond, itypcd
+    type(c_ptr), intent(out) :: izzftcd, thermflux, flthr, dflthr, izcophc
+    type(c_ptr), intent(out) :: izcophg, iztag1d, ztpar, zxrefcond, zprojcond
   end subroutine cs_f_wall_condensation_get_pointers
 
   !---------------------------------------------------------------------------
-  !> \brief Deallocate wall condensation arrays 
+  !> \brief Deallocate wall condensation arrays
   !---------------------------------------------------------------------------
   subroutine cs_wall_condensation_free() &
     bind(C, name='cs_wall_condensation_free')
@@ -247,7 +247,6 @@ contains
     type(c_ptr) :: c_izzftcd, c_itypcd, c_thermflux, c_flthr, c_dflthr
     type(c_ptr) :: c_izcophc, c_izcophg, c_iztag1d, c_ztpar
     type(c_ptr) :: c_zxrefcond, c_zprojcond
-    integer :: ii
 
     if (nzones<1) nzones = 1
 

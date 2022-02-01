@@ -67,36 +67,37 @@ extern const cs_wall_cond_1d_thermal_t *cs_glob_wall_cond_1d_thermal;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the context for wall condensation models 
+ * \brief  Create the context for wall condensation models.
  *
  * \param[in] nfbpcd   number of faces with wall condensation
- * \param[in] nvar     number of variables (?)  
- *
- * \return 
+ * \param[in] nvar     number of variables (?)
  */
 /*----------------------------------------------------------------------------*/
+
 void
-cs_wall_condensation_1d_thermal_create(int nzones);
+cs_wall_condensation_1d_thermal_create(int  nzones);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all structures related to wall condensation models 
- *
- * \return 
+ * \brief  Free all structures related to wall condensation models.
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_wall_condensation_1d_thermal_free(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide access to _wall_cond structure 
+ * \brief Provide writeable access to _wall_cond structure.
  *
- * \return static _wall_cond structure 
+ * \return pointer to global wall_cond structure
  */
 /*----------------------------------------------------------------------------*/
+
 cs_wall_cond_1d_thermal_t *
 cs_get_glob_wall_cond_1d_thermal(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

@@ -135,7 +135,7 @@ double precision, dimension(:), pointer :: cvar_enth, cvar_yk
 double precision, dimension(:), pointer :: y_h2o_g
 double precision, dimension(:), pointer :: bpro_ustar
 double precision, dimension(:), pointer :: yplbr
-double precision, dimension(:,:), pointer :: cvar_vel 
+double precision, dimension(:,:), pointer :: cvar_vel
 
 !===============================================================================
 ! Allocate a temporary array for cells selection
@@ -224,7 +224,7 @@ do iel = 1, ncel
   y_h2o_g(iel) = 1.d0        ! Mass fraction of steam
   mix_mol_mas(iel) = 0.d0    ! Molecular weight of mixture
   mol_mas_ncond(iel) = 0.d0  ! Molecular weight of non condensable gas
-  x_ncond(iel) = 0.d0        ! Mole fraction of non condensable gas 
+  x_ncond(iel) = 0.d0        ! Mole fraction of non condensable gas
   diff_m(iel) = 0.d0         ! Molecular diffusivity of steam in non condensable gases
 enddo
 
@@ -244,7 +244,7 @@ do iel = 1, ncel
   mix_mol_mas(iel) = 1.d0/mix_mol_mas(iel)
 enddo
 
-! Mole fraction of steam 
+! Mole fraction of steam
 do iel = 1, ncel
   x_h2o_g(iel) = y_h2o_g(iel)*mix_mol_mas(iel)/s_h2o_g%mol_mas
 enddo
@@ -434,7 +434,7 @@ do ii = 1, nfbpcd
     ! Density-based grashof, as given in Mechitoua et al.
     rho_wall = pressure*xkloc / (cs_physical_constants_r*(t_wall+tkelvi))
     drho = rho_wall - cpro_rho(iel)
-    rho_ref = cpro_rho(iel) ! Reference properties in the "bulk" (i.e. at cell center) 
+    rho_ref = cpro_rho(iel) ! Reference properties in the "bulk" (i.e. at cell center)
     Gr_z = sqrt(gx**2+gy**2+gz**2)*(drho/rho_ref)*lcar**3/(xnu**2)
 
     !-- The McAdams correlation gives the following
@@ -448,9 +448,9 @@ do ii = 1, nfbpcd
       Sh_z = Sh_z_FC
     else
       ! Incropera value for buoyancy aided mixed convection regime
-      Sh_z = (abs(Sh_z_FC**3.d0 - Sh_z_NC**3.0d0))**(1.d0/3.d0) 
+      Sh_z = (abs(Sh_z_FC**3.d0 - Sh_z_NC**3.0d0))**(1.d0/3.d0)
     end if
-  
+
     Sh_z = theta * Sh_z
     Nu_z = Sh_z * (Prdtl/schdt)**(1.d0/3.d0)
 
@@ -522,19 +522,19 @@ do ii = 1, nfbpcd
     !================================================
 
     sink_term = 0.d0
-    !-- Grasholf number based on temperature if no condensation --- 
+    !-- Grasholf number based on temperature if no condensation ---
     drho = abs((tinf-t_wall)/(tinf+tkelvi) )
     Gr_z = sqrt(gx**2+gy**2+gz**2)*drho*lcar**3/(xnu**2)
     theta = 1.0d0
     Nu_z_NC = 0.13d0*(Gr_z*Prdtl)**(1.d0/3.d0)
     Nu_z_NC = 0.0296*(Re_z**0.8d0)*(Prdtl**(1.d0/3.d0))
     if (conv_regime == 1) then
-      Nu_z = Nu_z_NC 
+      Nu_z = Nu_z_NC
     else if (conv_regime == 2) then
       Nu_z = Nu_z_FC
     else
       ! Incropera value for buoyancy aided mixed convection regime
-      Nu_z = (abs(Nu_z_FC**3.d0 - Nu_z_NC**3.0d0))**(1.d0/3.d0) 
+      Nu_z = (abs(Nu_z_FC**3.d0 - Nu_z_NC**3.0d0))**(1.d0/3.d0)
     end if
 
   endif

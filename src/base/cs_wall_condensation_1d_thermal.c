@@ -1,5 +1,5 @@
 /*============================================================================
- * Base turbulence model data.
+ * Base wall condensation model data.
  *============================================================================*/
 
 /*
@@ -93,10 +93,9 @@ BEGIN_C_DECLS
 //const double cs_turb_xkappa = 0.42;
 
 //
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-// TODO : to remove when the general 1D thermal model replaces 
+// TODO : to remove when the general 1D thermal model replaces
 // the condensation-specific 1D thermal model
+
 static cs_wall_cond_1d_thermal_t _wall_cond_thermal =
 {
   .nzones = 0,
@@ -114,9 +113,10 @@ static cs_wall_cond_1d_thermal_t _wall_cond_thermal =
   .ztpar  = NULL
 };
 
-// TODO : to remove when the general 1D thermal model replaces 
+// TODO : to remove when the general 1D thermal model replaces
 // the condensation-specific 1D thermal model
-const cs_wall_cond_1d_thermal_t *cs_glob_wall_cond_1d_thermal = &_wall_cond_thermal; 
+const cs_wall_cond_1d_thermal_t *cs_glob_wall_cond_1d_thermal
+  = &_wall_cond_thermal;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -124,15 +124,15 @@ const cs_wall_cond_1d_thermal_t *cs_glob_wall_cond_1d_thermal = &_wall_cond_ther
  *============================================================================*/
 
 void
-cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur ,
+cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur,
                                                cs_real_t **ztheta,
                                                cs_real_t **zdxmin,
                                                cs_real_t **zepais,
-                                               cs_real_t **zrob  ,
+                                               cs_real_t **zrob,
                                                cs_real_t **zcondb,
-                                               cs_real_t **zcpb  ,
-                                               cs_real_t **zhext ,
-                                               cs_real_t **ztext ,
+                                               cs_real_t **zcpb,
+                                               cs_real_t **zhext,
+                                               cs_real_t **ztext,
                                                cs_real_t **ztpar0);
 
 /*============================================================================
@@ -144,28 +144,30 @@ cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur ,
  *============================================================================*/
 
 void
-cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur ,
+cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur,
                                                cs_real_t **ztheta,
                                                cs_real_t **zdxmin,
                                                cs_real_t **zepais,
-                                               cs_real_t **zrob  ,
+                                               cs_real_t **zrob,
                                                cs_real_t **zcondb,
-                                               cs_real_t **zcpb  ,
-                                               cs_real_t **zhext ,
-                                               cs_real_t **ztext ,
+                                               cs_real_t **zcpb,
+                                               cs_real_t **zhext,
+                                               cs_real_t **ztext,
                                                cs_real_t **ztpar0)
 {
-  *znmur  = _wall_cond_thermal.znmur ;
+  *znmur  = _wall_cond_thermal.znmur;
   *ztheta = _wall_cond_thermal.ztheta;
   *zdxmin = _wall_cond_thermal.zdxmin;
   *zepais = _wall_cond_thermal.zepais;
-  *zrob   = _wall_cond_thermal.zrob  ;
+  *zrob   = _wall_cond_thermal.zrob;
   *zcondb = _wall_cond_thermal.zcondb;
-  *zcpb   = _wall_cond_thermal.zcpb  ;
-  *zhext  = _wall_cond_thermal.zhext ;
-  *ztext  = _wall_cond_thermal.ztext ;
+  *zcpb   = _wall_cond_thermal.zcpb;
+  *zhext  = _wall_cond_thermal.zhext;
+  *ztext  = _wall_cond_thermal.ztext;
   *ztpar0 = _wall_cond_thermal.ztpar0;
 }
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Public function definitions
@@ -173,17 +175,17 @@ cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur ,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the context for wall condensation models 
+ * \brief  Create the context for wall condensation models.
  *
  * \param[in] nfbpcd   number of faces with wall condensation
- * \param[in] nvar     number of variables (?)  
- *
- * \return 
+ * \param[in] nvar     number of variables (?)
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_1d_thermal_create(int nzones)
+
+void
+cs_wall_condensation_1d_thermal_create(int  nzones)
 {
-  _wall_cond_thermal.nzones = nzones; 
+  _wall_cond_thermal.nzones = nzones;
 
   BFT_MALLOC(_wall_cond_thermal.znmur, nzones, cs_lnum_t);
   BFT_MALLOC(_wall_cond_thermal.ztheta, nzones, cs_real_t);
@@ -197,44 +199,52 @@ void cs_wall_condensation_1d_thermal_create(int nzones)
   BFT_MALLOC(_wall_cond_thermal.ztpar0, nzones, cs_real_t);
 
   for (cs_lnum_t iz = 0; iz<_wall_cond_thermal.nzones; iz++) {
-    _wall_cond_thermal.znmur[iz]  = 0   ;
-    _wall_cond_thermal.ztheta[iz] = 0.e0;
-    _wall_cond_thermal.zdxmin[iz] = 0.e0;
-    _wall_cond_thermal.zepais[iz] = 0.e0;
-    _wall_cond_thermal.zrob[iz]   = 0.e0;
-    _wall_cond_thermal.zcondb[iz] = 0.e0;
-    _wall_cond_thermal.zcpb[iz]   = 0.e0;
-    _wall_cond_thermal.zhext[iz]  = 0.e0;
-    _wall_cond_thermal.ztext[iz]  = 0.e0;
-    _wall_cond_thermal.ztpar0[iz] = 0.e0;
+    _wall_cond_thermal.znmur[iz]  = 0;
+    _wall_cond_thermal.ztheta[iz] = 0.;
+    _wall_cond_thermal.zdxmin[iz] = 0.;
+    _wall_cond_thermal.zepais[iz] = 0.;
+    _wall_cond_thermal.zrob[iz]   = 0.;
+    _wall_cond_thermal.zcondb[iz] = 0.;
+    _wall_cond_thermal.zcpb[iz]   = 0.;
+    _wall_cond_thermal.zhext[iz]  = 0.;
+    _wall_cond_thermal.ztext[iz]  = 0.;
+    _wall_cond_thermal.ztpar0[iz] = 0.;
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all structures related to wall condensation models 
- *
- * \return 
+ * \brief  Free all structures related to wall condensation models.
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_1d_thermal_free(void)
+
+void
+cs_wall_condensation_1d_thermal_free(void)
 {
-  BFT_FREE(_wall_cond_thermal.znmur );
+  BFT_FREE(_wall_cond_thermal.znmur);
   BFT_FREE(_wall_cond_thermal.ztheta);
   BFT_FREE(_wall_cond_thermal.zdxmin);
   BFT_FREE(_wall_cond_thermal.zepais);
-  BFT_FREE(_wall_cond_thermal.zrob  );
+  BFT_FREE(_wall_cond_thermal.zrob);
   BFT_FREE(_wall_cond_thermal.zcondb);
-  BFT_FREE(_wall_cond_thermal.zcpb  );
-  BFT_FREE(_wall_cond_thermal.zhext );
-  BFT_FREE(_wall_cond_thermal.ztext );
+  BFT_FREE(_wall_cond_thermal.zcpb);
+  BFT_FREE(_wall_cond_thermal.zhext);
+  BFT_FREE(_wall_cond_thermal.ztext);
   BFT_FREE(_wall_cond_thermal.ztpar0);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide writeable access to _wall_cond structure.
+ *
+ * \return pointer to global wall_cond structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_wall_cond_1d_thermal_t *
 cs_get_glob_wall_cond_1d_thermal(void)
 {
-  return cs_glob_wall_cond_1d_thermal;
+  return &_wall_cond_thermal;
 }
 
 /*----------------------------------------------------------------------------*/

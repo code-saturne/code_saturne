@@ -1,5 +1,5 @@
 /*============================================================================
- * Base turbulence model data.
+ * Base wall condensation model data.
  *============================================================================*/
 
 /*
@@ -74,11 +74,11 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- * Type definitions
+ * Local type definitions
  *============================================================================*/
 
 /*============================================================================
- *  Global variables
+ * Global variables
  *============================================================================*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -90,12 +90,10 @@ BEGIN_C_DECLS
  *  (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
  * LES, v2f or \f$k-\omega\f$).
  */
+
 //const double cs_turb_xkappa = 0.42;
 
-//
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-static cs_wall_cond_t _wall_cond = 
+static cs_wall_cond_t _wall_cond =
 {
   .icondb     = -1,
   .model      = CS_WALL_COND_MODEL_NONE,
@@ -124,12 +122,13 @@ static cs_wall_cond_t _wall_cond =
   .zprojcond  = NULL
 };
 
-const cs_wall_cond_t *cs_glob_wall_cond = &_wall_cond; 
+const cs_wall_cond_t *cs_glob_wall_cond = &_wall_cond;
 
 /*============================================================================
- * Fortran functions
+ * Fortran function prototypes
  *============================================================================*/
-extern void CS_PROCF (condensation_copain_model, CONDENSATION_COPAIN_MODEL)
+
+extern void CS_PROCF(condensation_copain_model, CONDENSATION_COPAIN_MODEL)
 (
   const int *nvar,
   const int *nfbpcd,
@@ -140,7 +139,8 @@ extern void CS_PROCF (condensation_copain_model, CONDENSATION_COPAIN_MODEL)
   const int *icondb_regime
 );
 
-extern void CS_PROCF (condensation_copain_benteboula_dabbene_model, CONDENSATION_COPAIN_BENTEBOULA_DABBENE_MODEL)
+extern void CS_PROCF(condensation_copain_benteboula_dabbene_model,
+                     CONDENSATION_COPAIN_BENTEBOULA_DABBENE_MODEL)
 (
   const int *nvar,
   const int *nfbpcd,
@@ -151,7 +151,7 @@ extern void CS_PROCF (condensation_copain_benteboula_dabbene_model, CONDENSATION
   const int *icondb_regime
 );
 
-extern void CS_PROCF (condensation_uchida_model, CONDENSATION_UCHIDA_MODEL)
+extern void CS_PROCF(condensation_uchida_model, CONDENSATION_UCHIDA_MODEL)
 (
   const int *nvar,
   const int *nfbpcd,
@@ -162,7 +162,7 @@ extern void CS_PROCF (condensation_uchida_model, CONDENSATION_UCHIDA_MODEL)
   const int *icondb_regime
 );
 
-extern void CS_PROCF (condensation_dehbi_model, CONDENSATION_DEHBI_MODEL)
+extern void CS_PROCF(condensation_dehbi_model, CONDENSATION_DEHBI_MODEL)
 (
   const int *nvar,
   const int *nfbpcd,
@@ -243,32 +243,36 @@ cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd, cs_lnum_t **itypcd,
   *zprojcond = _wall_cond.zprojcond;
 }
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the wall condensation model 
+ * \brief Set the wall condensation model
  *
- * \param[in] model    integer corresponding to the desired model 
- *
- * \return 
+ * \param[in] model    integer corresponding to the desired model
  */
 /*----------------------------------------------------------------------------*/
+
 void
-cs_wall_condensation_set_model(cs_wall_cond_model_t model)
+cs_wall_condensation_set_model(cs_wall_cond_model_t  model)
 {
   _wall_cond.model = model;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the wall condensation regime 
+ * \brief Set the wall condensation regime
  *
- * \param[in] model    integer corresponding to the desired model 
- *
- * \return 
+ * \param[in] model    integer corresponding to the desired model
  */
 /*----------------------------------------------------------------------------*/
+
 void
-cs_wall_condensation_set_regime(cs_wall_cond_regime_t regime)
+cs_wall_condensation_set_regime(cs_wall_cond_regime_t  regime)
 {
   _wall_cond.regime = regime;
 }
@@ -277,33 +281,30 @@ cs_wall_condensation_set_regime(cs_wall_cond_regime_t regime)
 /*!
  * \brief Set the onoff state of wall condensation modeling
  *
- * \param[in] icondb integer corresponding to the onoff state (-1 : off, 0: on) 
- *
- * \return 
+ * \param[in] icondb integer corresponding to the onoff state (-1 : off, 0: on)
  */
 /*----------------------------------------------------------------------------*/
+
 void
-cs_wall_condensation_set_onoff_state(int icondb)
+cs_wall_condensation_set_onoff_state(int  icondb)
 {
   _wall_cond.icondb = icondb;
 }
 
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the context for wall condensation models 
+ * \brief  Create the context for wall condensation models.
  *
  * \param[in] nfbpcd   number of faces with wall condensation
- * \param[in] nvar     number of variables (?)  
- *
- * \return 
+ * \param[in] nzones   number of zones with wall condensation
+ * \param[in] nvar     number of variables (?)
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_create(cs_lnum_t nfbpcd, cs_lnum_t nzones, cs_lnum_t nvar)
+
+void
+cs_wall_condensation_create(cs_lnum_t  nfbpcd,
+                            cs_lnum_t  nzones,
+                            cs_lnum_t  nvar)
 {
   _wall_cond.nfbpcd = nfbpcd;
   if (nzones < 1) {
@@ -314,23 +315,23 @@ void cs_wall_condensation_create(cs_lnum_t nfbpcd, cs_lnum_t nzones, cs_lnum_t n
   }
 
   // Mesh related quantities
-  BFT_MALLOC(_wall_cond.ifbpcd, nfbpcd, cs_lnum_t); 
-  BFT_MALLOC(_wall_cond.itypcd, nfbpcd*nvar, cs_lnum_t); 
-  BFT_MALLOC(_wall_cond.izzftcd, nfbpcd, cs_lnum_t); 
-  BFT_MALLOC(_wall_cond.spcond, nfbpcd*nvar, cs_real_t); 
-  BFT_MALLOC(_wall_cond.hpcond, nfbpcd, cs_real_t); 
-  BFT_MALLOC(_wall_cond.twall_cond, nfbpcd, cs_real_t); 
+  BFT_MALLOC(_wall_cond.ifbpcd, nfbpcd, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.itypcd, nfbpcd*nvar, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.izzftcd, nfbpcd, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.spcond, nfbpcd*nvar, cs_real_t);
+  BFT_MALLOC(_wall_cond.hpcond, nfbpcd, cs_real_t);
+  BFT_MALLOC(_wall_cond.twall_cond, nfbpcd, cs_real_t);
   BFT_MALLOC(_wall_cond.thermal_condensation_flux, nfbpcd, cs_real_t);
-  BFT_MALLOC(_wall_cond.flthr, nfbpcd, cs_real_t); 
-  BFT_MALLOC(_wall_cond.dflthr, nfbpcd, cs_real_t); 
+  BFT_MALLOC(_wall_cond.flthr, nfbpcd, cs_real_t);
+  BFT_MALLOC(_wall_cond.dflthr, nfbpcd, cs_real_t);
 
   // Zone related quantities
-  BFT_MALLOC(_wall_cond.izcophc, nzones, cs_lnum_t); 
-  BFT_MALLOC(_wall_cond.izcophg, nzones, cs_lnum_t); 
-  BFT_MALLOC(_wall_cond.iztag1d, nzones, cs_lnum_t); 
-  BFT_MALLOC(_wall_cond.ztpar, nzones, cs_real_t); 
-  BFT_MALLOC(_wall_cond.zxrefcond, 3*nzones, cs_real_t); 
-  BFT_MALLOC(_wall_cond.zprojcond, 3*nzones, cs_real_t); 
+  BFT_MALLOC(_wall_cond.izcophc, nzones, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.izcophg, nzones, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.iztag1d, nzones, cs_lnum_t);
+  BFT_MALLOC(_wall_cond.ztpar, nzones, cs_real_t);
+  BFT_MALLOC(_wall_cond.zxrefcond, 3*nzones, cs_real_t);
+  BFT_MALLOC(_wall_cond.zprojcond, 3*nzones, cs_real_t);
 
   for (cs_lnum_t i= 0 ; i< nfbpcd; i++) {
     _wall_cond.ifbpcd[i] = 0;
@@ -363,17 +364,16 @@ void cs_wall_condensation_create(cs_lnum_t nfbpcd, cs_lnum_t nzones, cs_lnum_t n
     _wall_cond.zprojcond[3*i+1] = 0.0;
     _wall_cond.zprojcond[3*i+2] = 0.0;
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all structures related to wall condensation models 
- *
- * \return 
+ * \brief  Free all structures related to wall condensation models
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_free(void)
+
+void
+cs_wall_condensation_free(void)
 {
   BFT_FREE(_wall_cond.ifbpcd);
   BFT_FREE(_wall_cond.itypcd);
@@ -395,49 +395,61 @@ void cs_wall_condensation_free(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the wall condensation source terms 
+ * \brief Compute the wall condensation source terms.
  *
- * \param[in] nvar     number of variables (?) 
- * \param[in] izzftcd  pointer to the table connecting faces to their 
- *                     condensation zone 
+ * \param[in] nvar     number of variables (?)
+ * \param[in] izzftcd  pointer to the table connecting faces to their
+ *                     condensation zone
  *
- * \return 
+ * \return
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_compute(int nvar, 
-                                  int nfbpcd,
-                                  int ifbpcd[],
-                                  int izzftcd[],
-                                  cs_real_t spcond[],
-                                  cs_real_t hpcond[]) 
+
+void
+cs_wall_condensation_compute(int        nvar,
+                             cs_lnum_t  nfbpcd,
+                             cs_lnum_t  ifbpcd[],
+                             int        izzftcd[],
+                             cs_real_t  spcond[],
+                             cs_real_t  hpcond[])
 {
-  int *icondb_regime = &_wall_cond.regime; 
+  int *icondb_regime = (int *)(&_wall_cond.regime);
+
   switch (_wall_cond.model) {
     case CS_WALL_COND_MODEL_NONE:
       return;
     case CS_WALL_COND_MODEL_COPAIN:
       CS_PROCF(condensation_copain_model, CONDENSATION_COPAIN_MODEL)
-        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime); 
+        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime);
       return;
     case CS_WALL_COND_MODEL_COPAIN_BD:
-      CS_PROCF(condensation_copain_benteboula_dabbene_model, CONDENSATION_COPAIN_BENTEBOULA_DABBENE_MODEL)
-        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime); 
+      CS_PROCF(condensation_copain_benteboula_dabbene_model,
+               CONDENSATION_COPAIN_BENTEBOULA_DABBENE_MODEL)
+        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime);
       return;
     case CS_WALL_COND_MODEL_UCHIDA:
       CS_PROCF(condensation_uchida_model, CONDENSATION_UCHIDA_MODEL)
-        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime); 
+        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime);
       return;
     case CS_WALL_COND_MODEL_DEHBI:
       CS_PROCF(condensation_dehbi_model, CONDENSATION_DEHBI_MODEL)
-        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime); 
+        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime);
       return;
-  } 
+  }
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide writable access to _wall_cond structure.
+ *
+ * \return pointer to global wall_cond structure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_wall_cond_t *
 cs_get_glob_wall_cond(void)
 {
-  return cs_glob_wall_cond;
+  return &_wall_cond;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -37,6 +37,10 @@
 
 BEGIN_C_DECLS
 
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
 typedef enum {
   CS_WALL_COND_MODEL_NONE      = -1,
   CS_WALL_COND_MODEL_COPAIN    = 0,
@@ -93,54 +97,93 @@ extern const cs_wall_cond_t *cs_glob_wall_cond;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the context for wall condensation models 
+ * \brief Set the wall condensation model
  *
- * \param[in] nfbpcd   number of faces with wall condensation
- * \param[in] nvar     number of variables (?)  
- *
- * \return 
+ * \param[in] model    integer corresponding to the desired model
  */
 /*----------------------------------------------------------------------------*/
+
 void
-cs_wall_condensation_create(cs_lnum_t nfbpcd, cs_lnum_t nzones_cd, cs_lnum_t nvar);
+cs_wall_condensation_set_model(cs_wall_cond_model_t  model);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all structures related to wall condensation models 
+ * \brief Set the wall condensation regime
  *
- * \return 
+ * \param[in] model    integer corresponding to the desired model
  */
 /*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_set_regime(cs_wall_cond_regime_t  regime);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the onoff state of wall condensation modeling
+ *
+ * \param[in] icondb integer corresponding to the onoff state (-1 : off, 0: on)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_set_onoff_state(int  icondb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create the context for wall condensation models.
+ *
+ * \param[in] nfbpcd   number of faces with wall condensation
+ * \param[in] nzones   number of zones with wall condensation
+ * \param[in] nvar     number of variables (?)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_wall_condensation_create(cs_lnum_t  nfbpcd,
+                            cs_lnum_t  nzones,
+                            cs_lnum_t  nvar);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free all structures related to wall condensation models
+ */
+/*----------------------------------------------------------------------------*/
+
 void
 cs_wall_condensation_free(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the wall condensation source terms 
+ * \brief Compute the wall condensation source terms.
  *
- * \param[in] nvar     number of variables (?) 
- * \param[in] izzftcd  pointer to the table connecting faces to their 
- *                     condensation zone 
+ * \param[in] nvar     number of variables (?)
+ * \param[in] izzftcd  pointer to the table connecting faces to their
+ *                     condensation zone
  *
- * \return 
+ * \return
  */
 /*----------------------------------------------------------------------------*/
-void cs_wall_condensation_compute(int nvar, 
-                                  int nfbpcd,
-                                  int ifbpcd[],
-                                  int izzftcd[],
-                                  cs_real_t spcond[],
-                                  cs_real_t hpcond[]); 
+
+void
+cs_wall_condensation_compute(int        nvar,
+                             cs_lnum_t  nfbpcd,
+                             cs_lnum_t  ifbpcd[],
+                             int        izzftcd[],
+                             cs_real_t  spcond[],
+                             cs_real_t  hpcond[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide access to _wall_cond structure 
+ * \brief Provide writable access to _wall_cond structure.
  *
- * \return static _wall_cond structure 
+ * \return pointer to global wall_cond structure
  */
 /*----------------------------------------------------------------------------*/
+
 cs_wall_cond_t *
 cs_get_glob_wall_cond(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

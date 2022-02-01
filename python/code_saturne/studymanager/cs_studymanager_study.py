@@ -290,10 +290,10 @@ class Case(object):
 
             if self.notebook:
                 cmd += " --notebook-args " + self.notebook
- 
+
             if self.parametric:
                 cmd += " --parametric-args " + '"' + self.parametric + '"'
- 
+
             if self.kw_args:
                 if self.kw_args.find(" ") < 0:
                     self.kw_args += " "  # workaround for arg-parser issue
@@ -309,7 +309,7 @@ class Case(object):
                           % self.title]
             self.compute = "off"
             self.post = "off"
-            self.compare = "off" 
+            self.compare = "off"
 
         os.chdir(home)
         return log_lines
@@ -985,12 +985,12 @@ class Studies(object):
         if options.runcase or options.compare or options.post:
 
             # create if necessary the destination directory
-  
+
             if not os.path.isdir(self.__dest):
                 os.makedirs(self.__dest)
-  
+
             # copy the smgr file in destination for update and restart
-  
+
             file = os.path.join(self.__dest, os.path.basename(filename))
             try:
                 shutil.copyfile(filename, file)
@@ -998,7 +998,7 @@ class Studies(object):
                 pass
 
             # create definitive parser for smgr file in destination
-  
+
             self.__parser  = Parser(file)
             self.__parser.setDestination(self.__dest)
             self.__parser.setRepository(self.__repo)
@@ -1019,7 +1019,7 @@ class Studies(object):
 
             # create plotter
 
-            if options.post: 
+            if options.post:
                 try:
                     self.__plotter = Plotter(self.__parser)
                 except Exception:
@@ -1036,7 +1036,7 @@ class Studies(object):
             without_tags = re.split(',', options.without_tags)
             self.__without_tags = [tag.strip() for tag in without_tags]
 
-        
+
         # build the list of the studies
 
         self.labels  = self.__parser.getStudiesLabel()

@@ -335,7 +335,7 @@ cs_user_1d_wall_thermal(int iappel,
                         int isuit1);
 
 /*----------------------------------------------------------------------------
- * Data Entry of the wall condensation module 
+ * Data Entry of the wall condensation module
  *----------------------------------------------------------------------------*/
 
 void

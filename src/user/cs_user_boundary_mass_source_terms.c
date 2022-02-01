@@ -171,9 +171,9 @@ cs_user_boundary_mass_source_terms(int nvar,
                                    int nscal,
                                    int iappel)
 {
-  CS_UNUSED(nvar); 
-  CS_UNUSED(nscal); 
-  CS_UNUSED(iappel); 
+  CS_UNUSED(nvar);
+  CS_UNUSED(nscal);
+  CS_UNUSED(iappel);
 };
 
 /*----------------------------------------------------------------------------*/

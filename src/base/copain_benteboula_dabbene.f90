@@ -102,7 +102,7 @@ integer          ivar, f_id, ifcvsl, idir
 integer          ustar_id, conv_regime
 
 double precision flux
-double precision gravity 
+double precision gravity
 double precision sink_term, gamma_cond
 double precision lambda, theta, tinf, psat
 double precision Sh_z, Nu_z, Gr_z, schdt, Prdtl
@@ -113,7 +113,7 @@ double precision x_inc,y_ncond, x_k
 double precision x_vapint,x_ncond_int,y_ncond_int
 double precision distbf
 double precision ratio_tkpr,drho
-double precision mix_mol_mas_int 
+double precision mix_mol_mas_int
 double precision xmab,xvab,a1
 double precision dplus, yplus, sigmat, ypth
 double precision hcond,hcdt,hcdcop,hw_cop,hflui,hpflui,hw_enth
@@ -136,7 +136,7 @@ double precision, dimension(:), pointer :: cvar_enth, cvar_yk
 double precision, dimension(:), pointer :: y_h2o_g
 double precision, dimension(:), pointer :: bpro_ustar
 double precision, dimension(:), pointer :: yplbr
-double precision, dimension(:,:), pointer :: cvar_vel 
+double precision, dimension(:,:), pointer :: cvar_vel
 
 !===============================================================================
 ! Allocate a temporary array for cells selection
@@ -265,7 +265,7 @@ do ii = 1, nfbpcd
   yplus = yplbr(ifac)
   sigmat = 0.9d0
 
-  ! Bulk temperature is taken at first cell center 
+  ! Bulk temperature is taken at first cell center
   call get_temperature(cvar_enth(iel), cpro_cp(iel), tinf)
   call compute_prandtl(cpro_viscl(iel), cpro_venth(iel), Prdtl)
 
@@ -320,8 +320,8 @@ do ii = 1, nfbpcd
     !=================================================
 
     hcond = cpro_rho(iel) * hcond * (y_ncond_int - y_ncond) / y_ncond_int * &
-            lcond / (tinf - t_wall) 
-    sink_term = hcond * (tinf - t_wall) / lcond 
+            lcond / (tinf - t_wall)
+    sink_term = hcond * (tinf - t_wall) / lcond
     gam_s(ii,ipr) = gam_s(ii, ipr) - sink_term
 
   else
@@ -334,7 +334,7 @@ do ii = 1, nfbpcd
     !================================================
 
     sink_term = 0.d0
-    !-- Grasholf number based on temperature if no condensation --- 
+    !-- Grasholf number based on temperature if no condensation ---
     drho = abs((tinf-t_wall)/(tinf) )
     theta = 1.0d0
     call compute_grashof(gravity, drho, lcar, xnu, Gr_z)
