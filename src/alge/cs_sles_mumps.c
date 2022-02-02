@@ -1718,6 +1718,10 @@ cs_sles_mumps_free(void  *context)
   t0 = cs_timer_time();
 
   cs_sles_mumps_t  *c  = context;
+
+  if (c == NULL)
+    return;
+
   cs_sles_mumps_setup_t *sd = c->setup_data;
 
   if (sd != NULL) {
