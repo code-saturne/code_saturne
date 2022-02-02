@@ -966,6 +966,11 @@ class domain(base_domain):
                 eval(m + '(self)', globals(), self.user_locals)
                 del self.user_locals[m]
 
+        # Files or directories which migh be required but not available
+        # yet (when the matching case may be staged but not run yet).
+
+        upstream_pending = None
+
         # Restart files
 
         # Handle automatic case first
@@ -979,8 +984,6 @@ class domain(base_domain):
         if not ignore_checkpoint:
             if self.restart_input == '*':
                 self.__set_auto_restart__()
-
-            restart_pending = None    # Case where restart is not yet available
 
             if self.restart_input != None:
 
@@ -1002,7 +1005,7 @@ class domain(base_domain):
                     r = os.path.join(self.restart_input, 'main.csc')
                     if not os.path.isfile(r):
                         if not os.path.isfile(os.path.join(self.restart_input, 'main')):
-                            restart_pending = [r]
+                            upstream_pending = [r]
 
             if self.restart_mesh_input != None and err_str == '':
 
@@ -1011,8 +1014,8 @@ class domain(base_domain):
                     restart_mesh_input = self.__input_path_abs_dir__(restart_mesh_input)
 
                 if not os.path.exists(restart_mesh_input):
-                    if restart_pending:
-                        restart_pending.append(restart_mesh_input)
+                    if upstream_pending:
+                        upstream_pending.append(restart_mesh_input)
                     else:
                         err_str += restart_mesh_input + ' does not exist.\n\n'
 
@@ -1025,13 +1028,6 @@ class domain(base_domain):
                                  check_type='allow_future')
 
                 print(' Restart mesh ' + self.restart_mesh_input + '\n')
-
-            if restart_pending:
-                print(' Upstream computation might be staged but not run yet.')
-                print(' Files required for computation stage but not yet present:')
-                for r in restart_pending:
-                    print('   ' + r)
-                print('')
 
         # Mesh input file
 
@@ -1056,7 +1052,13 @@ class domain(base_domain):
                     link_path = os.path.join(self.exec_dir, 'mesh_input.csm')
 
                 self.purge_result(link_path) # in case of previous run here
-                self.symlink(mesh_input, link_path)
+                self.symlink(mesh_input, link_path, check_type='allow_future')
+
+                if not os.path.exists(mesh_input):
+                    if not upstream_pending:
+                        upstream_pending = []
+                    upstream_pending.append(mesh_input)
+
         else:
             # use mesh from restart, with no symbolic link
             self.mesh_input = restart_input_mesh
@@ -1076,6 +1078,17 @@ class domain(base_domain):
                 else:
                     self.symlink(partition_input,
                                  os.path.join(self.exec_dir, 'partition_input'))
+
+        if upstream_pending:
+            print(' Upstream computation might be staged but not run yet.')
+            print(' Files required for computation stage but not yet present:')
+            for r in upstream_pending:
+                if os.path.islink(r):
+                    print('   ' + (r))
+                    print('   (-> ' + os.path.realpath(r) + ')')
+                else:
+                    print('   ' + os.path.normpath(r))
+            print('')
 
         if len(err_str) > 0:
             self.error = 'data preparation'
