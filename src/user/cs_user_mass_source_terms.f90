@@ -36,7 +36,7 @@
 !> See \ref cs_user_volume_mass_injection for examples.
 !>
 !> \remark Compared to previous versions, this subroutine is only
-!> called with parameter id iappel 1 or 2 of no user-defined zone already
+!> called with parameter id iappel 1 or 2 if no user-defined zone already
 !> has the CS_VOLUME_ZONE_MASS_SOURCE_TERM type. If this type was assigned
 !> to one or more zones (using \ref cs_volume_zone_set_type or directly
 !> modifying the type flag), the matching zones will be selected
@@ -131,7 +131,7 @@ if (iappel.eq.1.or.iappel.eq.2) then
 !   This section (iappel=1 or 2) is only accessed at the beginning of a
 !     calculation. Should the localization of the mass source terms evolve
 !     in time, the user must identify at the beginning all cells that can
-!     potentially become mass source term.
+!     potentially include a mass source term.
 
 !===============================================================================
 
