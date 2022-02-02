@@ -2661,7 +2661,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
      * the setup once again since the matrix should be modified */
 
     cs_cdo_system_helper_init_system(sh, &rhs);
-    cs_cdofb_monolithic_sles_reset(msles);
+    cs_cdofb_monolithic_sles_clean(msles);
 
     sc->steady_build(nsp,
                      /* A current to previous op. has been done */
@@ -2988,7 +2988,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
      * the setup once again since the matrix should be modified */
 
     cs_cdo_system_helper_init_system(sh, &rhs);
-    cs_cdofb_monolithic_sles_reset(msles);
+    cs_cdofb_monolithic_sles_clean(msles);
 
     /* Main loop on cells to define the linear system to solve */
 

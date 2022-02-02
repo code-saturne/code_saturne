@@ -76,11 +76,6 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  /* B*.approx(A^-1).B^t which corresponds to a compatible discretization of
-     the discrete Laplacian on the pressure space */
-
-  cs_matrix_t   *compatible_laplacian;
-
   cs_real_t     *div_op;    /* Block related to the -divergence (block
                                A_{10}) */
 

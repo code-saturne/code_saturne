@@ -73,17 +73,6 @@ cs_cdofb_monolithic_sles_create(cs_lnum_t    n_faces,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reset to zero rhs and clean the cs_sles_t structure
- *
- * \param[in, out]  msles   pointer to the structure to reset
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_monolithic_sles_reset(cs_cdofb_monolithic_sles_t   *msles);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Free a part of the structure
  *
  * \param[in, out]  msles   pointer to the structure to clean

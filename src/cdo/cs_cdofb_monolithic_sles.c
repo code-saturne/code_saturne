@@ -3964,7 +3964,6 @@ cs_cdofb_monolithic_sles_create(cs_lnum_t    n_faces,
 
   BFT_MALLOC(msles, 1, cs_cdofb_monolithic_sles_t);
 
-  msles->compatible_laplacian = NULL;
   msles->div_op = NULL;
 
   msles->graddiv_coef = 0.;
@@ -3979,26 +3978,6 @@ cs_cdofb_monolithic_sles_create(cs_lnum_t    n_faces,
   msles->p_c = NULL;
 
   return msles;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Reset to zero rhs and clean the cs_sles_t structure
- *
- * \param[in, out]  msles   pointer to the structure to reset
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_monolithic_sles_reset(cs_cdofb_monolithic_sles_t   *msles)
-{
-  if (msles == NULL)
-    return;
-
-  cs_matrix_destroy(&msles->compatible_laplacian);
-
-  cs_sles_free(msles->sles);
-  cs_sles_free(msles->schur_sles);
 }
 
 /*----------------------------------------------------------------------------*/
