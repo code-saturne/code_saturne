@@ -207,13 +207,21 @@ typedef struct {
   cs_real_t meteo_tstar;
   /*! Meteo pressure at sea level */
   cs_real_t meteo_psea;
+  /* meteo u profiles */
+  cs_real_t *u_met;
+  /* meteo v profiles */
+  cs_real_t *v_met;
 
+  /* Altitudes of the dynamic profiles */
+  cs_real_t *z_dyn_met;
   /* Altitudes of the temperature profile */
   cs_real_t *z_temp_met;
-  /* Time (in sec) of the meteo profile */
+  /* Time (in seconds) of the meteo profile */
   cs_real_t *time_met;
   /* Hydrostatic pressure from Laplace integration */
   cs_real_t *hyd_p_met;
+  /* potential temperature profile */
+  cs_real_t *pot_t_met;
 
 } cs_atmo_option_t;
 
@@ -377,7 +385,7 @@ cs_atmo_hydrostatic_profiles_compute(void);
 
 cs_real_t
 cs_mo_phim(cs_real_t              z,
-           cs_real_t              dlmo);
+	   cs_real_t              dlmo);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -391,7 +399,7 @@ cs_mo_phim(cs_real_t              z,
 
 cs_real_t
 cs_mo_phih(cs_real_t              z,
-           cs_real_t              dlmo);
+	   cs_real_t              dlmo);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -406,8 +414,8 @@ cs_mo_phih(cs_real_t              z,
 
 cs_real_t
 cs_mo_psim(cs_real_t              z,
-           cs_real_t              z0,
-           cs_real_t              dlmo);
+	   cs_real_t              z0,
+	   cs_real_t              dlmo);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -422,8 +430,8 @@ cs_mo_psim(cs_real_t              z,
 
 cs_real_t
 cs_mo_psih(cs_real_t              z,
-           cs_real_t              z0,
-           cs_real_t              dlmo);
+	   cs_real_t              z0,
+	   cs_real_t              dlmo);
 
 
 /*----------------------------------------------------------------------------*/
@@ -516,14 +524,14 @@ cs_atmo_declare_chem_from_spack(void);
 
 void
 cs_atmo_compute_solar_angles(cs_real_t xlat,
-                             cs_real_t xlong,
-                             cs_real_t jour,
-                             cs_real_t heurtu,
-                             int       imer,
-                             cs_real_t *albe,
-                             cs_real_t *muzero,
-                             cs_real_t *omega,
-                             cs_real_t *fo);
+			     cs_real_t xlong,
+			     cs_real_t jour,
+			     cs_real_t heurtu,
+			     int       imer,
+			     cs_real_t *albe,
+			     cs_real_t *muzero,
+			     cs_real_t *omega,
+			     cs_real_t *fo);
 
 /*----------------------------------------------------------------------------*/
 /*!

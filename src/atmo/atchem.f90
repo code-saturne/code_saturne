@@ -25,82 +25,86 @@
 
 module atchem
 
-!=============================================================================
-use, intrinsic :: iso_c_binding
-use ppppar, only: nozppm
+  !=============================================================================
 
-!=============================================================================
-!> \defgroup at_gaseous_chemistry Gaseous chemistry parameters for the
-!>                                atmospheric module
+  use, intrinsic :: iso_c_binding
+  use ppppar, only: nozppm
 
-!> \addtogroup at_gaseous_chemistry
-!> \{
-! Useful constants for chemistry
-!> Avogadro constant (molecules/mol)
-double precision :: navo
-!> Molar mass of dry air constant (Kg/mol)
-double precision :: Mair
-parameter (navo = 6.022d+23)         ! Molecules/mol
-parameter (Mair = 28.9d-3)           ! Kg/mol
+  !=============================================================================
 
-!> Choice of chemistry resolution scheme
-!> - 0 --> no atmospheric chemistry
-!> - 1 --> quasi steady equilibrium NOx scheme with 4 species and 5 reactions
-!> - 2 --> scheme with 20 species and 34 reactions
-!> - 3 --> scheme CB05 with 52 species and 155 reactions
-!> - 4 --> user defined schema
-integer(c_int), pointer, save :: ichemistry
+  !> \defgroup at_gaseous_chemistry Gaseous chemistry parameters for the
+  !>                                atmospheric module
 
-!> ifilechemistry: choice to read (=1,2,3,4, according to the scheme) or not (0)
-!> a concentration profile file
-integer, save :: ifilechemistry
-!> isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun) resolution
-!> of chemistry
-integer, save :: isepchemistry
-!> photolysis: inclusion (true) or not (false) of photolysis reactions
-logical(kind=c_bool), pointer, save :: photolysis
-!> Number of chemical species
-integer(c_int), pointer, save :: nespg
-!> Number of chemical reactions
-integer(c_int), pointer, save :: nrg
+  !> \addtogroup at_gaseous_chemistry
+  !> \{
+  ! Useful constants for chemistry
+  !> Avogadro constant (molecules/mol)
+  double precision :: navo
+  !> Molar mass of dry air constant (Kg/mol)
+  double precision :: Mair
+  parameter (navo = 6.022d+23)         ! Molecules/mol
+  parameter (Mair = 28.9d-3)           ! Kg/mol
 
-!> scalar id for chemical species
-integer(c_int), dimension(:), pointer, save ::  isca_chem
-!> Molar mass of chemical species (g/mol)
-double precision, dimension(:), pointer ::  dmmk
-!> pointer to deal with different orders of chemical species
-integer(c_int), dimension(:), pointer ::  chempoint
-!> conversion factors for reaction rates Jacobian matrix
-double precision, allocatable, dimension(:) ::  conv_factor_jac
-!> kinetics constants
-double precision, allocatable, dimension(:) ::  reacnum
+  !> Choice of chemistry resolution scheme
+  !> - 0 --> no atmospheric chemistry
+  !> - 1 --> quasi steady equilibrium NOx scheme with 4 species and 5 reactions
+  !> - 2 --> scheme with 20 species and 34 reactions
+  !> - 3 --> scheme CB05 with 52 species and 155 reactions
+  !> - 4 --> user defined schema
+  integer(c_int), pointer, save :: ichemistry
 
-!> maximal time step for chemistry resolution
-double precision dtchemmax
+  !> ifilechemistry: choice to read (=1,2,3,4, according to the scheme) or not (0)
+  !> a concentration profile file
+  integer, save :: ifilechemistry
+  !> isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun) resolution
+  !> of chemistry
+  integer, save :: isepchemistry
+  !> photolysis: inclusion (true) or not (false) of photolysis reactions
+  logical(kind=c_bool), pointer, save :: photolysis
+  !> Number of chemical species
+  integer(c_int), pointer, save :: nespg
+  !> Number of chemical reactions
+  integer(c_int), pointer, save :: nrg
 
-!> number of time steps for the concentration profiles file
-integer, save         ::  nbchim
-!> number of altitudes for the concentration profiles file
-integer, save         ::  nbchmz
-!> number of initialized chemical species in the concentration profiles file
-integer, save         ::  nespgi = 0
+  !> scalar id for chemical species
+  integer(c_int), dimension(:), pointer, save ::  isca_chem
+  !> Molar mass of chemical species (g/mol)
+  double precision, dimension(:), pointer ::  dmmk
+  !> pointer to deal with different orders of chemical species
+  integer(c_int), dimension(:), pointer ::  chempoint
+  !> conversion factors for reaction rates Jacobian matrix
+  double precision, allocatable, dimension(:) ::  conv_factor_jac
+  !> kinetics constants
+  double precision, allocatable, dimension(:) ::  reacnum
 
-!> indices of chemical species in the concentration profiles file
-integer, allocatable, dimension(:)          :: idespgi
-!> concentration profiles
-double precision, allocatable, dimension(:) :: espnum
-!> altitudes of the concentration profiles
-double precision, allocatable, dimension(:) :: zproc
-!> time steps of the concentration profiles
-double precision, allocatable, dimension(:) :: tchem
-!> X coordinates of concentration profiles
-double precision, allocatable, dimension(:) :: xchem
-!> Y coordinates of concentration profiles
-double precision, allocatable, dimension(:) :: ychem
-!> read zone boundary conditions from profile
-integer, save :: iprofc(nozppm)
+  !> maximal time step for chemistry resolution
+  double precision dtchemmax
 
-!> \}
+  !> number of time steps for the concentration profiles file
+  integer, save         ::  nbchim
+  !> number of altitudes for the concentration profiles file
+  integer, save         ::  nbchmz
+  !> number of initialized chemical species in the concentration profiles file
+  integer, save         ::  nespgi = 0
+
+  !> indices of chemical species in the concentration profiles file
+  integer, allocatable, dimension(:)          :: idespgi
+  !> concentration profiles
+  double precision, allocatable, dimension(:) :: espnum
+  !> altitudes of the concentration profiles
+  double precision, allocatable, dimension(:) :: zproc
+  !> time steps of the concentration profiles
+  double precision, allocatable, dimension(:) :: tchem
+  !> X coordinates of concentration profiles
+  double precision, allocatable, dimension(:) :: xchem
+  !> Y coordinates of concentration profiles
+  double precision, allocatable, dimension(:) :: ychem
+  !> read zone boundary conditions from profile
+  integer, save :: iprofc(nozppm)
+
+  !> \}
+
+  !=============================================================================
 
   interface
 
@@ -130,197 +134,212 @@ integer, save :: iprofc(nozppm)
       integer(c_int), intent(out) :: f_name_len
     end subroutine cs_f_atmo_get_aero_conc_file_name
 
+    !---------------------------------------------------------------------------
+
+    !> \brief Deallocate arrays for atmo chemistry
+
+    subroutine cs_f_atmo_chem_finalize() &
+      bind(C, name='cs_f_atmo_chem_finalize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_atmo_chem_finalize
+
+    !---------------------------------------------------------------------------
+
 
   end interface
 
+  !=============================================================================
+
 contains
 
-!=============================================================================
+  !-------------------------------------------------------------------------------
 
-!> \brief Return chemistry concentration file name
+  !> \brief Return chemistry concentration file name
 
-!> \param[out]  name   chemistry concentration file name
+  !> \param[out]  name   chemistry concentration file name
 
-subroutine atmo_get_chem_conc_file_name(name)
+  subroutine atmo_get_chem_conc_file_name(name)
 
-  use, intrinsic :: iso_c_binding
-  implicit none
+    use, intrinsic :: iso_c_binding
+    implicit none
 
-  ! Arguments
+    ! Arguments
 
-  character(len=*), intent(out) :: name
+    character(len=*), intent(out) :: name
 
-  ! Local variables
+    ! Local variables
 
-  integer :: i
-  integer(c_int) :: name_max, c_name_len
-  type(c_ptr) :: c_name_p
-  character(kind=c_char, len=1), dimension(:), pointer :: c_name
+    integer :: i
+    integer(c_int) :: name_max, c_name_len
+    type(c_ptr) :: c_name_p
+    character(kind=c_char, len=1), dimension(:), pointer :: c_name
 
-  name_max = len(name)
+    name_max = len(name)
 
-  call cs_f_atmo_get_chem_conc_file_name(name_max, c_name_p, c_name_len)
-  call c_f_pointer(c_name_p, c_name, [c_name_len])
+    call cs_f_atmo_get_chem_conc_file_name(name_max, c_name_p, c_name_len)
+    call c_f_pointer(c_name_p, c_name, [c_name_len])
 
-  do i = 1, c_name_len
-    name(i:i) = c_name(i)
-  enddo
-  do i = c_name_len + 1, name_max
-    name(i:i) = ' '
-  enddo
+    do i = 1, c_name_len
+      name(i:i) = c_name(i)
+    enddo
+    do i = c_name_len + 1, name_max
+      name(i:i) = ' '
+    enddo
 
-  return
+    return
 
-end subroutine atmo_get_chem_conc_file_name
+  end subroutine atmo_get_chem_conc_file_name
 
-!=============================================================================
+  !=============================================================================
 
-!> \brief Return aerosol concentration file name
+  !> \brief Return aerosol concentration file name
 
-!> \param[out]  name   aerosol concentration file name
+  !> \param[out]  name   aerosol concentration file name
 
-subroutine atmo_get_aero_conc_file_name(name)
+  subroutine atmo_get_aero_conc_file_name(name)
 
-  use, intrinsic :: iso_c_binding
-  implicit none
+    use, intrinsic :: iso_c_binding
+    implicit none
 
-  ! Arguments
+    ! Arguments
 
-  character(len=*), intent(out) :: name
+    character(len=*), intent(out) :: name
 
-  ! Local variables
+    ! Local variables
 
-  integer :: i
-  integer(c_int) :: name_max, c_name_len
-  type(c_ptr) :: c_name_p
-  character(kind=c_char, len=1), dimension(:), pointer :: c_name
+    integer :: i
+    integer(c_int) :: name_max, c_name_len
+    type(c_ptr) :: c_name_p
+    character(kind=c_char, len=1), dimension(:), pointer :: c_name
 
-  name_max = len(name)
+    name_max = len(name)
 
-  call cs_f_atmo_get_aero_conc_file_name(name_max, c_name_p, c_name_len)
-  call c_f_pointer(c_name_p, c_name, [c_name_len])
+    call cs_f_atmo_get_aero_conc_file_name(name_max, c_name_p, c_name_len)
+    call c_f_pointer(c_name_p, c_name, [c_name_len])
 
-  do i = 1, c_name_len
-    name(i:i) = c_name(i)
-  enddo
-  do i = c_name_len + 1, name_max
-    name(i:i) = ' '
-  enddo
+    do i = 1, c_name_len
+      name(i:i) = c_name(i)
+    enddo
+    do i = c_name_len + 1, name_max
+      name(i:i) = ' '
+    enddo
 
-  return
+    return
 
-end subroutine atmo_get_aero_conc_file_name
+  end subroutine atmo_get_aero_conc_file_name
 
-!=============================================================================
-!> \brief Allocate memory
-subroutine init_chemistry
+  !=============================================================================
 
-implicit none
+  !> \brief Allocate some atmoshperic chemistry arrays
+  subroutine init_chemistry
 
-integer imode
+    implicit none
 
-! First reading of concentration profiles file
-imode = 0
+    integer imode
 
-call atlecc(imode)
+    ! First reading of concentration profiles file
+    imode = 0
 
-! Dynamical allocations
+    call atlecc(imode)
 
-allocate(conv_factor_jac(nespg*nespg))
-allocate(idespgi(nespgi))
-allocate(espnum(nespg*nbchim*nbchmz))
-allocate(zproc(nbchmz))
-allocate(tchem(nbchim))
-allocate(xchem(nbchim))
-allocate(ychem(nbchim))
+    ! Dynamical allocations
 
-!--------
-! Formats
-!--------
+    allocate(conv_factor_jac(nespg*nespg))
+    allocate(idespgi(nespgi))
+    allocate(espnum(nespg*nbchim*nbchmz))
+    allocate(zproc(nbchmz))
+    allocate(tchem(nbchim))
+    allocate(xchem(nbchim))
+    allocate(ychem(nbchim))
 
-end subroutine init_chemistry
+  end subroutine init_chemistry
 
-!=============================================================================
-!> \brief Allocate memory relative to mesh size
-subroutine init_chemistry_reacnum
+  !=============================================================================
 
-use mesh, only: ncel
+  !> \brief Allocate memory relative to mesh size
 
-implicit none
+  subroutine init_chemistry_reacnum
 
-! Dynamical allocations
-allocate(reacnum(ncel*nrg))
+    use mesh, only: ncel
 
-!--------
-! Formats
-!--------
+    implicit none
 
-end subroutine init_chemistry_reacnum
+    ! Dynamical allocations
+    allocate(reacnum(ncel*nrg))
 
+  end subroutine init_chemistry_reacnum
 
-!=============================================================================
-!> \brief Initialize species_to_field_id
-subroutine cs_atmo_chem_init_c_chemistry
+  !=============================================================================
 
-use numvar, only : ivarfl, isca
-use cs_c_bindings
+  !> \brief Initialize species_to_field_id
+  subroutine cs_atmo_chem_init_c_chemistry
 
-implicit none
+    use numvar, only : ivarfl, isca
+    use cs_c_bindings
 
-! Local variables
-integer i
-integer(c_int), dimension(nespg) :: c_species_to_fid
+    implicit none
 
-do i = 1, nespg
-  c_species_to_fid(i) = ivarfl(isca(isca_chem(i)))
-enddo
+    ! Local variables
+    integer i
+    integer(c_int), dimension(nespg) :: c_species_to_fid
 
-call cs_f_atmo_chem_initialize_species_to_fid(c_species_to_fid)
+    do i = 1, nespg
+      c_species_to_fid(i) = ivarfl(isca(isca_chem(i)))
+    enddo
 
-end subroutine cs_atmo_chem_init_c_chemistry
+    call cs_f_atmo_chem_initialize_species_to_fid(c_species_to_fid)
 
-!=============================================================================
-!> \brief Map pointers to arrays
-subroutine init_chemistry_pointers
+  end subroutine cs_atmo_chem_init_c_chemistry
 
-  use, intrinsic :: iso_c_binding
-  use cs_c_bindings
+  !=============================================================================
 
-  implicit none
+  !> \brief Map pointers to arrays
 
-  ! Local variables
+  subroutine init_chemistry_pointers
 
-  type(c_ptr) :: c_species_to_scalar_id, c_molar_mass, c_chempoint
+    use, intrinsic :: iso_c_binding
+    use cs_c_bindings
 
-  call cs_f_atmo_chem_arrays_get_pointers(c_species_to_scalar_id, &
-                                          c_molar_mass, &
-                                          c_chempoint)
+    implicit none
 
-  call c_f_pointer(c_species_to_scalar_id, isca_chem, [nespg])
-  call c_f_pointer(c_molar_mass, dmmk, [nespg])
-  call c_f_pointer(c_chempoint, chempoint, [nespg])
+    ! Local variables
 
-end subroutine init_chemistry_pointers
+    type(c_ptr) :: c_species_to_scalar_id, c_molar_mass, c_chempoint
 
-!=============================================================================
-!> \brief deallocate the space
-subroutine finalize_chemistry
+    call cs_f_atmo_chem_arrays_get_pointers(c_species_to_scalar_id, &
+                                            c_molar_mass, &
+                                            c_chempoint)
 
-use cs_c_bindings
+    call c_f_pointer(c_species_to_scalar_id, isca_chem, [nespg])
+    call c_f_pointer(c_molar_mass, dmmk, [nespg])
+    call c_f_pointer(c_chempoint, chempoint, [nespg])
 
-implicit none
+  end subroutine init_chemistry_pointers
 
-call cs_f_atmo_chem_finalize()
+  !=============================================================================
 
-deallocate(conv_factor_jac)
-deallocate(reacnum)
-deallocate(idespgi)
-deallocate(espnum)
-deallocate(zproc)
-deallocate(tchem)
-deallocate(xchem)
-deallocate(ychem)
+  !> \brief deallocate the space
 
-end subroutine finalize_chemistry
+  subroutine finalize_chemistry
+
+    use cs_c_bindings
+
+    implicit none
+
+    call cs_f_atmo_chem_finalize()
+
+    deallocate(conv_factor_jac)
+    deallocate(reacnum)
+    deallocate(idespgi)
+    deallocate(espnum)
+    deallocate(zproc)
+    deallocate(tchem)
+    deallocate(xchem)
+    deallocate(ychem)
+
+  end subroutine finalize_chemistry
+
+  !=============================================================================
 
 end module atchem

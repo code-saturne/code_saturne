@@ -2687,29 +2687,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Return pointers to atmo arrays
-
-    subroutine cs_f_atmo_arrays_get_pointers(p_ztmet, p_tmmet, &
-         p_phmet, dim_phmet)                                   &
-         bind(C, name='cs_f_atmo_arrays_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), dimension(2) :: dim_phmet
-      type(c_ptr), intent(out) :: p_ztmet, p_tmmet, p_phmet
-    end subroutine cs_f_atmo_arrays_get_pointers
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Deallocate arrays for atmo chemistry
-
-    subroutine cs_f_atmo_chem_finalize() &
-      bind(C, name='cs_f_atmo_chem_finalize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_f_atmo_chem_finalize
-
-    !---------------------------------------------------------------------------
-
     !> \brief Sets the meteo file name
 
     subroutine cs_atmo_set_meteo_file_name(name) &

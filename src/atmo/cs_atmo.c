@@ -151,9 +151,13 @@ static cs_atmo_option_t  _atmo_option = {
   .nbmett = 0,
   .nbmetm = 0,
   .nbmaxt = 0,
+  .z_dyn_met  = NULL,
   .z_temp_met = NULL,
+  .u_met      = NULL,
+  .v_met      = NULL,
   .time_met   = NULL,
-  .hyd_p_met  = NULL
+  .hyd_p_met  = NULL,
+  .pot_t_met  = NULL
 };
 
 /* global atmo constants structure */
@@ -257,10 +261,16 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **meteo_zi);
 
 void
-cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
+cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
+                              cs_real_t **z_temp_met,
+                              cs_real_t **u_met,
+                              cs_real_t **v_met,
                               cs_real_t **time_met,
                               cs_real_t **hyd_p_met,
-                              int         dim_hyd_p_met[2]);
+                              cs_real_t **pot_t_met,
+                              int         dim_u_met[2],
+                              int         dim_hyd_p_met[2],
+                              int         dim_pot_t_met[2]);
 
 void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
@@ -458,23 +468,52 @@ cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
 }
 
 void
-cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
+cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
+                              cs_real_t **z_temp_met,
+                              cs_real_t **u_met,
+                              cs_real_t **v_met,
                               cs_real_t **time_met,
                               cs_real_t **hyd_p_met,
-                              int         dim_hyd_p_met[2])
+                              cs_real_t **pot_t_met,
+                              int         dim_u_met[2],
+                              int         dim_hyd_p_met[2],
+                              int         dim_pot_t_met[2])
 {
+  int n_level = 0;
+  int n_times = 0;
+  if (_atmo_option.meteo_profile) {
+    n_level = CS_MAX(1, _atmo_option.nbmetd);
+    n_times = CS_MAX(1, _atmo_option.nbmetm);
+  }
+
+  if (_atmo_option.z_dyn_met == NULL)
+    BFT_MALLOC(_atmo_option.z_dyn_met, n_level, cs_real_t);
   if (_atmo_option.z_temp_met == NULL)
     BFT_MALLOC(_atmo_option.z_temp_met, _atmo_option.nbmaxt, cs_real_t);
+  if (_atmo_option.u_met == NULL)
+    BFT_MALLOC(_atmo_option.u_met, n_level*n_times, cs_real_t);
+  if (_atmo_option.v_met == NULL)
+    BFT_MALLOC(_atmo_option.v_met, n_level*n_times, cs_real_t);
   if (_atmo_option.time_met == NULL)
     BFT_MALLOC(_atmo_option.time_met, _atmo_option.nbmetm, cs_real_t);
   if (_atmo_option.hyd_p_met == NULL)
     BFT_MALLOC(_atmo_option.hyd_p_met,
                _atmo_option.nbmetm*_atmo_option.nbmaxt, cs_real_t);
+  if (_atmo_option.pot_t_met == NULL)
+    BFT_MALLOC(_atmo_option.pot_t_met, n_level*n_times, cs_real_t);
 
+  *u_met           = _atmo_option.u_met;
+  *v_met           = _atmo_option.v_met;
   *hyd_p_met       = _atmo_option.hyd_p_met;
+  *pot_t_met       = _atmo_option.pot_t_met;
+  dim_u_met[0]     = _atmo_option.nbmetd;
+  dim_u_met[1]     = _atmo_option.nbmetm;
   dim_hyd_p_met[0] = _atmo_option.nbmaxt;
   dim_hyd_p_met[1] = _atmo_option.nbmetm;
+  dim_pot_t_met[0] = _atmo_option.nbmaxt;
+  dim_pot_t_met[1] = _atmo_option.nbmetm;
 
+  *z_dyn_met  = _atmo_option.z_dyn_met;
   *z_temp_met = _atmo_option.z_temp_met;
   *time_met   = _atmo_option.time_met;
 }
@@ -2232,9 +2271,13 @@ void
 cs_atmo_finalize(void)
 {
   BFT_FREE(_atmo_option.meteo_file_name);
+  BFT_FREE(_atmo_option.z_dyn_met);
   BFT_FREE(_atmo_option.z_temp_met);
+  BFT_FREE(_atmo_option.u_met);
+  BFT_FREE(_atmo_option.v_met);
   BFT_FREE(_atmo_option.time_met);
   BFT_FREE(_atmo_option.hyd_p_met);
+  BFT_FREE(_atmo_option.pot_t_met);
 }
 
 /*----------------------------------------------------------------------------*/

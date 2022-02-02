@@ -49,7 +49,7 @@ implicit none
 double precision, dimension(:), pointer :: tmmet
 
 !> altitudes of the dynamic profiles (read in the input meteo file)
-double precision, allocatable, dimension(:) :: zdmet
+double precision, dimension(:), pointer :: zdmet
 
 !> Pressure drop integrated over a time step (used for automatic open boundaries)
 double precision, allocatable, dimension(:) :: dpdt_met
@@ -62,10 +62,10 @@ double precision, allocatable, dimension(:,:) :: mom
 double precision, dimension(:), pointer :: ztmet
 
 !> meteo u  profiles (read in the input meteo file)
-double precision, allocatable, dimension(:,:) :: umet
+double precision, dimension(:,:), pointer :: umet
 
 !> meteo  v profiles (read in the input meteo file)
-double precision, allocatable, dimension(:,:) :: vmet
+double precision, dimension(:,:), pointer :: vmet
 
 !> meteo w profiles - unused
 double precision, allocatable, dimension(:,:) :: wmet
@@ -100,7 +100,7 @@ double precision, allocatable, dimension(:) :: ymet
 double precision, allocatable, dimension(:,:) :: rmet
 
 !> potential temperature profile
-double precision, allocatable, dimension(:,:) :: tpmet
+double precision, dimension(:,:), pointer :: tpmet
 
 !> hydrostatic pressure from Laplace integration
 double precision, dimension(:,:), pointer :: phmet
@@ -430,7 +430,7 @@ double precision, save:: zaero
     subroutine cs_f_atmo_get_pointers(ps,                               &
         syear, squant, shour, smin, ssec,                               &
         longitude, latitude,                                            &
-        x_l93, y_l93,                                                     &
+        x_l93, y_l93,                                                   &
         compute_z_ground, iatmst,                                       &
         sedimentation_model, deposition_model, nucleation_model,        &
         subgrid_model, distribution_model,                              &
@@ -458,6 +458,20 @@ double precision, save:: zaero
       type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, nbmaxt
       type(c_ptr), intent(out) :: meteo_zi
     end subroutine cs_f_atmo_get_pointers
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Return pointers to atmo arrays
+
+    subroutine cs_f_atmo_arrays_get_pointers(p_zdmet, p_ztmet, p_umet, p_vmet, &
+         p_tmmet, p_phmet, p_tpmet, dim_pumet, dim_phmet, dim_tpmet)           &
+         bind(C, name='cs_f_atmo_arrays_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), dimension(2) :: dim_phmet, dim_pumet, dim_tpmet
+      type(c_ptr), intent(out) :: p_zdmet, p_ztmet, p_umet, p_vmet, p_tmmet
+      type(c_ptr), intent(out) :: p_phmet, p_tpmet
+    end subroutine cs_f_atmo_arrays_get_pointers
 
     !---------------------------------------------------------------------------
 
@@ -746,10 +760,10 @@ implicit none
 ! Local variables
 integer :: imode, n_level, n_times, n_level_t
 
-type(c_ptr) :: c_z_temp_met, c_time_met
-type(c_ptr) :: c_hyd_p_met
+type(c_ptr) :: c_z_dyn_met, c_z_temp_met, c_u_met, c_v_met, c_time_met
+type(c_ptr) :: c_hyd_p_met, c_pot_t_met
 
-integer(c_int),   dimension(2) :: dim_hyd_p_met
+integer(c_int), dimension(2) :: dim_hyd_p_met, dim_u_met, dim_pot_t_met
 
 if (imeteo.eq.1) then
   call atlecm(0)
@@ -758,12 +772,19 @@ if (imeteo.eq.2) then
   call cs_atmo_init_meteo_profiles()
 endif
 
-call cs_f_atmo_arrays_get_pointers(c_z_temp_met, c_time_met,     &
-                                   c_hyd_p_met, dim_hyd_p_met)
+call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
+                                   c_u_met, c_v_met, c_time_met,  &
+                                   c_hyd_p_met, c_pot_t_met,      &
+                                   dim_u_met, dim_hyd_p_met,      &
+                                   dim_pot_t_met)
 
+call c_f_pointer(c_z_dyn_met, zdmet, [nbmetd])
 call c_f_pointer(c_z_temp_met, ztmet, [nbmaxt])
+call c_f_pointer(c_u_met, umet, [dim_u_met])
+call c_f_pointer(c_v_met, vmet, [dim_u_met])
 call c_f_pointer(c_time_met, tmmet, [nbmetm])
 call c_f_pointer(c_hyd_p_met, phmet, [dim_hyd_p_met])
+call c_f_pointer(c_pot_t_met, tpmet, [dim_pot_t_met])
 
 ! Allocate additional arrays for Water Microphysics
 
@@ -774,7 +795,6 @@ if (imeteo.gt.0) then
   n_level = max(1, nbmetd)
   n_times = max(1, nbmetm)
   n_level_t = max(1, nbmaxt)
-  allocate(zdmet(n_level))
 
   if (iatmst.ge.1) then
     allocate(dpdt_met(n_level))
@@ -782,12 +802,12 @@ if (imeteo.gt.0) then
     allocate(mom_met(3, n_level))
   endif
 
-  allocate(umet(n_level,n_times), vmet(n_level,n_times), wmet(n_level,n_times))
+  allocate(wmet(n_level,n_times))
   allocate(ekmet(n_level,n_times), epmet(n_level,n_times))
   allocate(ttmet(n_level_t,n_times), qvmet(n_level_t,n_times), ncmet(n_level_t,n_times))
   allocate(pmer(n_times))
   allocate(xmet(n_times), ymet(n_times))
-  allocate(rmet(n_level_t,n_times), tpmet(n_level_t,n_times))
+  allocate(rmet(n_level_t,n_times))
 
   ! Allocate additional arrays for 1D radiative model
 
@@ -861,16 +881,15 @@ implicit none
 
 if (imeteo.gt.0) then
 
-  deallocate(zdmet)
   if (allocated(mom)) then
     deallocate(mom, mom_met, dpdt_met)
   endif
-  deallocate(umet, vmet, wmet)
+  deallocate(wmet)
   deallocate(ekmet, epmet)
   deallocate(ttmet, qvmet, ncmet)
   deallocate(pmer)
   deallocate(xmet, ymet)
-  deallocate(rmet, tpmet)
+  deallocate(rmet)
 
   deallocate(iautom)
 
