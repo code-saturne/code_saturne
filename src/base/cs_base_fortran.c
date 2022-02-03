@@ -263,39 +263,6 @@ void CS_PROCF (dmtmps, DMTMPS)
 }
 
 /*----------------------------------------------------------------------------
- * Create a directory, or check it exists.
- *
- * Fortran interface
- *
- * subroutine csmkdr (dirnam, dirlen)
- * *****************
- *
- * character*       dirnam      : <-- : Directory name
- * integer          dirlen      : <-- : Directory name length
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csmkdr, CSMKDR)
-(
- const char  *dirnam,
- const int   *dirlen
-)
-{
-  char    *bufname;
-
-  /* Handle name for C API */
-
-  bufname = cs_base_string_f_to_c_create(dirnam, *dirlen);
-
-  if (cs_file_mkdir_default(bufname) == 1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("The directory %s cannot be created"), bufname);
-
-  /* Free memory if necessary */
-
-  cs_base_string_f_to_c_free(&bufname);
-}
-
-/*----------------------------------------------------------------------------
  * Compute the gamma function of x.
  *
  * Fortran interface

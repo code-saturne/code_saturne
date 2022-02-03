@@ -805,32 +805,22 @@ _fortran_time_plot_realloc(int                     plot_num,
  * double precision xmstru      : <-- : mass matrixes
  * double precision xcstru      : <-- : damping matrixes
  * double precision xkstru      : <-- : stiffness matrixes
- * integer          lnam        : <-- : name length
- * integer          lpre        : <-- : prefix length
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tpsini, TPSINI)
 (
  const int       *tplnum,
- const char      *tplnam,
- const char      *tplpre,
+ const char      *plot_name,
+ const char      *file_prefix,
  const int       *tplfmt,
  const int       *idtvar,
  const int       *nstru,
  const cs_real_t *xmstru,
  const cs_real_t *xcstru,
- const cs_real_t *xkstru,
- const int       *lnam,
- const int       *lpre
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
+ const cs_real_t *xkstru
 )
 {
-  /* Copy Fortran strings to C strings */
-
   cs_time_plot_format_t fmt;
-  char *plot_name   = cs_base_string_f_to_c_create(tplnam, *lnam);
-  char *file_prefix = cs_base_string_f_to_c_create(tplpre, *lpre);
   bool use_iteration = false;
 
   if (*idtvar == CS_TIME_STEP_STEADY || *idtvar == CS_TIME_STEP_LOCAL)
@@ -860,11 +850,6 @@ void CS_PROCF (tpsini, TPSINI)
     }
 
   }
-
-  /* Free temporary C strings */
-
-  cs_base_string_f_to_c_free(&plot_name);
-  cs_base_string_f_to_c_free(&file_prefix);
 }
 
 /*----------------------------------------------------------------------------

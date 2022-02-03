@@ -74,21 +74,6 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
                                 double *const tfuel);
 
 /*----------------------------------------------------------------------------
- * Atmospheric flows: read of meteorological file of data
- *
- * Fortran Interface:
- *
- * subroutine uiati1
- * *****************
- * char(*)         fmeteo   <--   meteo file name
- * int             len      <--   meteo file name destination string length
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uiati1, UIATI1) (char          *fmeteo,
-                                int           *len
-                                CS_ARGF_SUPP_CHAINE);
-
-/*----------------------------------------------------------------------------
  * Indirection between the solver numbering and the XML one
  * for physical properties of the activated specific physics
  * (pulverized solid fuels)

@@ -86,24 +86,6 @@ void CS_PROCF (dmtmps, DMTMPS)
 );
 
 /*----------------------------------------------------------------------------
- * Create a directory, or check it exists.
- *
- * Fortran interface
- *
- * subroutine csmkdr (dirnam, dirlen)
- * *****************
- *
- * character*       dirnam      : --> : Directory name
- * integer          dirlen      : --> : Directory name length
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (csmkdr, CSMKDR)
-(
- const char  *dirnam,
- const int   *dirlen
-);
-
-/*----------------------------------------------------------------------------
  * Compute the gamma function of x.
  *
  * Fortran interface

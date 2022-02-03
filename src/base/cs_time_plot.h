@@ -85,8 +85,6 @@ typedef enum {
  * double precision xmstru      : <-- : mass matrixes
  * double precision xcstru      : <-- : damping matrixes
  * double precision xkstru      : <-- : stiffness matrixes
- * integer          lnam        : <-- : name length
- * integer          lpre        : <-- : prefix length
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (tpsini, TPSINI)
@@ -99,11 +97,7 @@ void CS_PROCF (tpsini, TPSINI)
  const int       *nstru,
  const cs_real_t *xmstru,
  const cs_real_t *xcstru,
- const cs_real_t *xkstru,
- const int       *lnam,
- const int       *lpre
- CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
-                                         by many Fortran compilers) */
+ const cs_real_t *xkstru
 );
 
 /*----------------------------------------------------------------------------

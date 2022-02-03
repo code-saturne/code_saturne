@@ -325,33 +325,6 @@ void
 cs_base_atexit_set(cs_base_atexit_t  *const fct);
 
 /*----------------------------------------------------------------------------
- * Convert a character string from the Fortran API to the C API.
- *
- * Eventual leading and trailing blanks are removed.
- *
- * parameters:
- *   f_str <-- Fortran string
- *   f_len <-- Fortran string length
- *
- * returns:
- *   pointer to C string
- *----------------------------------------------------------------------------*/
-
-char *
-cs_base_string_f_to_c_create(const char  *f_str,
-                             int          f_len);
-
-/*----------------------------------------------------------------------------
- * Free a string converted from the Fortran API to the C API.
- *
- * parameters:
- *   str <-> pointer to C string
- *----------------------------------------------------------------------------*/
-
-void
-cs_base_string_f_to_c_free(char  **c_str);
-
-/*----------------------------------------------------------------------------
  * Clean a string representing options.
  *
  * Characters are converted to lowercase, leading and trailing whitespace

@@ -1120,6 +1120,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function creating a directory
+
+    subroutine cs_file_mkdir_default(path)  &
+      bind(C, name='cs_file_mkdir_default')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: path
+    end subroutine cs_file_mkdir_default
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function returning the product of a matrix (native format)
     ! by a vector
 

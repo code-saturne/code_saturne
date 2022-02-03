@@ -858,11 +858,10 @@ cs_interpol_grids_destroy(void)
  *
  * Fortran interface; use mestcr;
  *
- * subroutine mestcr (name, lname, idim, ilved, imeset)
+ * subroutine mestcr (name, idim, ilved, imeset)
  * *****************
  *
  * character*       name        : <-- : Measure set name
- * integer          lname       : <-- : Measure set name length
  * integer          idim        : <-- : Measures set dimension
  * integer          ilved       : <-- : 0: not intereaved; 1: interleaved
  * integer          imesset     : --> : id of defined measures set
@@ -871,25 +870,19 @@ cs_interpol_grids_destroy(void)
 void CS_PROCF(mestcr, MESTCR)
 (
  const char   *name,
- const int    *lname,
  const int    *idim,
  const int    *ilved,
  int          *imeset
 )
 {
-  char *bufname;
   int type_flag = 0;
   bool interleaved = (*ilved == 0) ? false : true;
   cs_measures_set_t *ms = NULL;
 
-  bufname = cs_base_string_f_to_c_create(name, *lname);
-
-  ms = cs_measures_set_create(bufname,
+  ms = cs_measures_set_create(name,
                               type_flag,
                               *idim,
                               interleaved);
-
-  cs_base_string_f_to_c_free(&bufname);
 
   *imeset = ms->id;
 }
@@ -899,29 +892,22 @@ void CS_PROCF(mestcr, MESTCR)
  *
  * Fortran interface
  *
- * subroutine gridcr (name, lname, igrid)
+ * subroutine gridcr (name, igrid)
  * *****************
  *
  * character*       name        : <-- : Measure set name
- * integer          lname       : <-- : Measure set name length
  * integer          igrid       : --> : id of defined grid
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(gridcr, GRIDCR)
 (
  const char     *name,
- const int      *lname,
  int            *igrid
 )
 {
-  char *bufname;
   cs_interpol_grid_t *ig = NULL;
 
-  bufname = cs_base_string_f_to_c_create(name, *lname);
-
-  ig = cs_interpol_grid_create(bufname);
-
-  cs_base_string_f_to_c_free(&bufname);
+  ig = cs_interpol_grid_create(name);
 
   *igrid = ig->id;
 }

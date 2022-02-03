@@ -98,16 +98,6 @@ BEGIN_C_DECLS
 
 #define DIR_SEPARATOR '/'
 
-/* Fortran API */
-/*-------------*/
-
-/*
- * 'usual' maximum name length; a longer name is possible, but will
- * provoke a dynamic memory allocation.
- */
-
-#define CS_BASE_N_STRINGS                               5
-
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -139,11 +129,6 @@ typedef void (*_cs_base_sighandler_t) (int);
 static bft_error_handler_t  *cs_glob_base_err_handler_save = NULL;
 
 static bool  cs_glob_base_bft_mem_init = false;
-
-static bool  cs_glob_base_str_init = false;
-static bool  cs_glob_base_str_is_free[CS_BASE_N_STRINGS];
-static char  cs_glob_base_str[CS_BASE_N_STRINGS][CS_BASE_STRING_LEN + 1];
-
 
 /* Global variables associated with signal handling */
 
@@ -2095,93 +2080,6 @@ void
 cs_base_atexit_set(cs_base_atexit_t  *const fct)
 {
   _cs_base_atexit = fct;
-}
-
-/*----------------------------------------------------------------------------
- * Convert a character string from the Fortran API to the C API.
- *
- * Eventual leading and trailing blanks are removed.
- *
- * parameters:
- *   f_str <-- Fortran string
- *   f_len <-- Fortran string length
- *
- * returns:
- *   pointer to C string
- *----------------------------------------------------------------------------*/
-
-char *
-cs_base_string_f_to_c_create(const char  *f_str,
-                             int          f_len)
-{
-  char * c_str = NULL;
-  int    i, i1, i2, l;
-
-  /* Initialization if necessary */
-
-  if (cs_glob_base_str_init == false) {
-    for (i = 0 ; i < CS_BASE_N_STRINGS ; i++)
-      cs_glob_base_str_is_free[i] = true;
-    cs_glob_base_str_init = true;
-  }
-
-  /* Handle name for C API */
-
-  for (i1 = 0 ;
-       i1 < f_len && (f_str[i1] == ' ' || f_str[i1] == '\t') ;
-       i1++);
-
-  for (i2 = f_len - 1 ;
-       i2 > i1 && (f_str[i2] == ' ' || f_str[i2] == '\t') ;
-       i2--);
-
-  l = i2 - i1 + 1;
-
-  /* Allocation if necessary */
-
-  if (l < CS_BASE_STRING_LEN) {
-    for (i = 0 ; i < CS_BASE_N_STRINGS ; i++) {
-      if (cs_glob_base_str_is_free[i] == true) {
-        c_str = cs_glob_base_str[i];
-        cs_glob_base_str_is_free[i] = false;
-        break;
-      }
-    }
-  }
-
-  if (c_str == NULL)
-    BFT_MALLOC(c_str, l + 1, char);
-
-  for (i = 0 ; i < l ; i++, i1++)
-    c_str[i] = f_str[i1];
-
-  c_str[l] = '\0';
-
-  return c_str;
-}
-
-/*----------------------------------------------------------------------------
- * Free a string converted from the Fortran API to the C API.
- *
- * parameters:
- *   str <-> pointer to C string
- *----------------------------------------------------------------------------*/
-
-void
-cs_base_string_f_to_c_free(char  **c_str)
-{
-  int ind;
-
-  for (ind = 0; ind < CS_BASE_N_STRINGS; ind++) {
-    if (*c_str == cs_glob_base_str[ind]) {
-      cs_glob_base_str_is_free[ind] = true;
-      *c_str = NULL;
-      break;
-    }
-  }
-
-  if (ind == CS_BASE_N_STRINGS && *c_str != NULL)
-    BFT_FREE(*c_str);
 }
 
 /*----------------------------------------------------------------------------

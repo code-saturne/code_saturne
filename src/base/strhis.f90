@@ -53,6 +53,7 @@ use entsor
 use optcal
 use alstru
 use parall
+use cs_c_bindings
 
 use, intrinsic :: iso_c_binding
 
@@ -69,6 +70,7 @@ integer          modhis
 integer          nbname
 parameter        (nbname=12)
 character(len=300) :: nompre, nenvar
+character(len=300, kind=c_char) :: c_nompre, c_nenvar
 character(len=80) :: namevr(nbname)
 integer          ii, jj, ii1, ii2, lpre, lnam, tplnum
 double precision, dimension(:), allocatable :: vartmp
@@ -84,6 +86,8 @@ save     nptpl
 integer  ipass
 data     ipass /0/
 save     ipass
+
+!===============================================================================
 
 !===============================================================================
 ! 0. Local initializations
@@ -108,7 +112,7 @@ endif
 
 ! Create directory if required
 if (ipass.eq.1 .and. irangp.le.0) then
-  call csmkdr(emphis, len(emphis))
+  call cs_file_mkdir_default(trim(emphis)//c_null_char)
 endif
 
 if (ipass.eq.1 .and. irangp.le.0) then
@@ -146,7 +150,10 @@ if (ipass.eq.1 .and. irangp.le.0) then
 
     tplnum = nptpl + ii
 
-    call tpsini(tplnum, nenvar, nompre, tplfmt, idtvar, &
+    c_nenvar = trim(nenvar)//c_null_char
+    c_nompre = trim(nompre)//c_null_char
+
+    call tpsini(tplnum, c_nenvar, c_nompre, tplfmt, idtvar, &
                 nbstru, xmstru, xcstru, xkstru, lnam, lpre)
 
   enddo

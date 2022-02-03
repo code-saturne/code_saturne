@@ -310,7 +310,6 @@ cs_interpol_grids_destroy(void);
  * *****************
  *
  * character*       name        : <-- : Measure set name
- * integer          lname       : <-- : Measure set name length
  * integer          idim        : <-- : Measures set dimension
  * integer          ilved       : <-- : 0: not intereaved; 1: interleaved
  * integer          imesset     : --> : id of defined measures set
@@ -319,7 +318,6 @@ cs_interpol_grids_destroy(void);
 void CS_PROCF(mestcr, MESTCR)
 (
  const char   *name,
- const int    *lname,
  const int    *idim,
  const int    *ilved,
  int          *imeset);
@@ -329,18 +327,16 @@ void CS_PROCF(mestcr, MESTCR)
  *
  * Fortran interface
  *
- * subroutine gridcr (name, lname, igrid)
+ * subroutine gridcr (name, igrid)
  * *****************
  *
  * character*       name        : <-- : Measure set name
- * integer          lname       : <-- : Measure set name length
  * integer          igrid       : --> : id of defined grid
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(gridcr, GRIDCR)
 (
  const char     *name,
- const int      *lname,
  int            *igrid);
 
 /*----------------------------------------------------------------------------

@@ -806,9 +806,9 @@ if (imeteo.gt.0) then
 
     allocate(soilvert(nvert))
 
-    call mestcr("rayi",  len("rayi"), 1, 0, idrayi)
-    call mestcr("rayst", len("rayst"), 1, 0, idrayst)
-    call gridcr("int_grid", len("int_grid"), igrid)
+    call mestcr("rayi"//c_null_char, 1, 0, idrayi)
+    call mestcr("rayst"//c_null_char, 1, 0, idrayst)
+    call gridcr("int_grid"//c_null_char, igrid)
 
     if (irdu.eq.1) then
       allocate(iru(kmx,nvert), ird(kmx,nvert))

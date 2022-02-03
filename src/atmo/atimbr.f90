@@ -1825,8 +1825,12 @@ end subroutine activate_imbrication
 !______________________________________________________________________________!
 !> \param[in]   the_time        current time
 !-------------------------------------------------------------------------------
+
 subroutine summon_cressman(the_time)
+
+use, intrinsic :: iso_c_binding
 implicit none
+
 double precision the_time
 logical first_call
 data first_call /.true./
@@ -1836,27 +1840,28 @@ integer lb2, ub2
 integer nbmes
 integer i,j
 integer, dimension(:,:), allocatable :: ones
+
 if (first_call) then
   if (cressman_u) then
-    call mestcr("u",len("u"),1,0,id_u)
+    call mestcr("u"//c_null_char, 1,0, id_u)
   endif
   if (cressman_v) then
-    call mestcr("v",len("v"),1,0,id_v)
+    call mestcr("v"//c_null_char, 1,0, id_v)
   endif
   if (cressman_tke) then
-    call mestcr("tke",len("tke"),1,0,id_tke)
+    call mestcr("tke"//c_null_char, 1,0, id_tke)
   endif
   if (cressman_eps) then
-    call mestcr("eps",len("eps"),1,0,id_eps)
+    call mestcr("eps"//c_null_char, 1, 0, id_eps)
   endif
   if (cressman_theta .and. ippmod(iatmos).ge.1) then
-    call mestcr("theta",len("theta"),1,0,id_theta)
+    call mestcr("theta"//c_null_char, 1, 0, id_theta)
   endif
   if (cressman_qw .and. ippmod(iatmos).ge.2) then
-    call mestcr("qw",len("qw"),1,0,id_qw)
+    call mestcr("qw"//c_null_char, 1, 0, id_qw)
   endif
   if (cressman_nc.and.ippmod(iatmos).ge.2) then
-    call mestcr("nc",len("nc"),1,0,id_nc)
+    call mestcr("nc"//c_null_char, 1, 0, id_nc)
   endif
   call red_tape
   first_call = .false.
