@@ -96,7 +96,7 @@ BEGIN_C_DECLS
 static cs_wall_cond_t _wall_cond =
 {
   .icondb     = -1,
-  .model      = CS_WALL_COND_MODEL_NONE,
+  .model      = CS_WALL_COND_MODEL_COPAIN,
   .regime     = CS_WALL_COND_REGIME_NATURAL_CONVECTION,
 
    // Mesh related quantities
@@ -179,6 +179,11 @@ extern void CS_PROCF(condensation_dehbi_model, CONDENSATION_DEHBI_MODEL)
  *============================================================================*/
 
 void
+cs_f_wall_condensation_get_model_pointers(int **icondb,
+                                          cs_lnum_t **icondb_model,
+                                          cs_lnum_t **icondb_regime);
+
+void
 cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd, cs_lnum_t **nzones);
 
 void
@@ -210,10 +215,20 @@ cs_wall_condensation_set_onoff_state(int icondb);
  *============================================================================*/
 
 void
+cs_f_wall_condensation_get_model_pointers(int **icondb,
+                                          cs_lnum_t **icondb_model,
+                                          cs_lnum_t **icondb_regime)
+{
+  *icondb        = &(_wall_cond.icondb);
+  *icondb_model  = &(_wall_cond.model);
+  *icondb_regime = &(_wall_cond.regime);
+}
+
+void
 cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd, cs_lnum_t **nzones)
 {
-  *nfbpcd = &_wall_cond.nfbpcd;
-  *nzones = &_wall_cond.nzones;
+  *nfbpcd = &(_wall_cond.nfbpcd);
+  *nzones = &(_wall_cond.nzones);
 }
 
 void

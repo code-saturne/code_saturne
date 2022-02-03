@@ -90,8 +90,8 @@ icondb = -1
 icondv = -1
 
 !> Wall condensation modelling
-icondb_model  = 0 ! Wall condensation correlation
-icondb_regime = 0 ! Convection regime
+icondb_model  = 0 ! Wall condensation correlation (default: COPAIN)
+icondb_regime = 0 ! Convection regime (default: natural convection)
 
 ! ---> Initialisation pour la combustion gaz
 !       Variables transportees
