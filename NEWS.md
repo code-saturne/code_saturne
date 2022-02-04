@@ -1,6 +1,10 @@
 Master (not on release branches yet)
 ------------------------------------
 
+User changes:
+
+- Remove legacy `cs_user_mass_source_terms` function.
+
 Architectural changes:
 
 - Debug wrapper and other tool wrappers are now configured in the

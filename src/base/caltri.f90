@@ -99,9 +99,6 @@ integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 double precision titer1, titer2
 
 integer          ivoid(1)
-double precision rvoid(1)
-
-logical          legacy_mass_st_zones
 
 double precision, save :: ttchis
 
@@ -300,8 +297,6 @@ iappel = 1
 !   condensation sources term and 1D-wall module
 !===============================================================================
 
-legacy_mass_st_zones = .false.
-
 ! Allocate temporary arrays for zones definition
 allocate(izctsm(ncel))
 
@@ -316,21 +311,6 @@ if (irangp.ge.0) then
   call parcpt(nctsmt)
 endif
 
-! If already defined through zones, do not use first (counting)
-! call for legacy user mass source terms.
-if (nctsmt.eq.0) then
-  call cs_user_mass_source_terms(nvar, nscal, ncepdc, ncetsm, 1,   &
-                                 ivoid, ivoid, ivoid, izctsm,      &
-                                 rvoid, ckupdc, rvoid )
-  nctsmt = ncetsm
-  if (irangp.ge.0) then
-    call parcpt(nctsmt)
-  endif
-  if (nctsmt.gt.0) then
-    legacy_mass_st_zones = .true.
-  endif
-endif
-
 if (nctsmt.gt.0) then
   write(nfecra,2002) nctsmt
   write(nfecra,3000)
@@ -339,10 +319,7 @@ endif
 ! Condensation mass source terms
 ! ------------------------------
 
-call cs_f_user_boundary_mass_source_terms &
-( nvar   , nscal  ,                                              &
-  iappel)
-
+call cs_f_user_boundary_mass_source_terms(nvar, nscal, iappel)
 call cs_user_boundary_mass_source_terms(nvar, nscal, iappel)
 
 ! Total number of cells with condensation source term
@@ -734,15 +711,7 @@ deallocate(isostd)
 ! This is a collective call for consistency and in case the user requires it.
 
 if (nctsmt.gt.0) then
-
-  if (.not. legacy_mass_st_zones) then
-    call cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm)
-  else
-    call cs_user_mass_source_terms(nvar, nscal, ncepdc, ncetsm, 2,   &
-                                   icepdc, icetsm, itypsm, izctsm,   &
-                                   dt, ckupdc, smacel)
-  endif
-
+  call cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm)
 endif
 
 ! -- Structures mobiles en ALE
@@ -834,7 +803,7 @@ call timer_stats_stop(post_stats_id)
  100  continue
 
 if (ttmabs.gt.0 .and. ttmabs.gt.ttcabs) then
-  ntmabs = ntcabs + (ttmabs-ttcabs)/dtref
+  ntmabs = ntcabs + int((ttmabs-ttcabs)/dtref)
   if (ntmabs.le.ntcabs) ntmabs = ntcabs + 1
 endif
 

@@ -47,7 +47,6 @@
 !> \param[in]     icepdc        index of the ncepdp cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        mass source type for the variables
-!>                              (cf. cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     tslagr        coupling term of the lagangian module
 !> \param[in]     ckupdc        work array for the head loss

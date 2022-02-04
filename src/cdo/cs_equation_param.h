@@ -2175,6 +2175,29 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using a DoF function.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      loc_flag  where information is computed
+ * \param[in]      func      pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t  *eqp,
+                                                  const char           *z_name,
+                                                  cs_flag_t             loc_flag,
+                                                  cs_dof_func_t        *func,
+                                                  void                 *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Add an enforcement of the value of degrees of freedom located at
  *         the mesh vertices.
  *         The spatial discretization scheme for the given equation has to be

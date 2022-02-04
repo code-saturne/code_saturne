@@ -41,7 +41,6 @@
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for each variable
-!>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     gradv         work array for the term grad
 !>                               of velocity only for iturb=31
@@ -51,7 +50,6 @@
 !> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        value associated to each variable in the mass
 !>                               source terms or mass rate
-!>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     viscf         visc*surface/dist at internal faces
 !> \param[in]     viscb         visc*surface/dist at edge faces
 !> \param[in]     smbr          working array

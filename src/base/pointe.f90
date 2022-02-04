@@ -175,7 +175,7 @@ module pointe
 
   !> \anchor ncetsm
   !> number of the \c ncetsm cells in which a mass source term is imposed.
-  !> See \c iicesm and the user subroutine \ref cs_user_mass_source_terms
+  !> See \c iicesm also
   integer, save :: ncetsm
 
   !> \anchor icetsm
@@ -190,7 +190,6 @@ module pointe
   !> type of mass source term for each variable
   !> - 0 for an injection at ambient value,
   !> - 1 for an injection at imposed value.
-  !> See the user subroutine \ref cs_user_mass_source_terms
   integer, allocatable, dimension(:,:), target :: itypsm
 
   !> \anchor smacel

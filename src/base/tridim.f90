@@ -557,10 +557,6 @@ if (nctsmt.gt.0) then
 
   call cs_volume_mass_injection_eval(nvar, ncetsm, itypsm, smacel)
 
-  call cs_user_mass_source_terms(nvar, nscal, ncepdc, ncetsm, 3,      &
-                                 icepdc, icetsm, itypsm, izctsm,      &
-                                 dt, ckupdc, smacel)
-
   if (ippmod(iaeros).gt.0) then
 
     allocate(mass_source(ncelet))

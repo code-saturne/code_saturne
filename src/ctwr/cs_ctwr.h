@@ -157,7 +157,7 @@ cs_ctwr_field_pointer_map(void);
  *        bulk, humid air.
  *
  * Careful, this is different from an injection source term, which would
- * normally be handled with 'cs_user_mass_source_term'
+ * normally be handled with a 'cs_equation_add_volume_mass_injection_' function.
  *
  * \param[in]   p0              Reference pressure
  * \param[in]   molmassrat      Dry air to water vapor molecular mass ratio

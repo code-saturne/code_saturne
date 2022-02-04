@@ -127,7 +127,6 @@ cs_f_mass_source_terms_t(cs_lnum_t             ncesmp,
  * \param[in]     iterns        iteration number on Navier-Stoke
  * \param[in]     icetsm        source mass cells pointer (1-based numbering)
  * \param[in]     itpsmp        mass source type for the working variable
- *                              (see \ref cs_user_mass_source_terms)
  * \param[in]     volume        cells volume
  * \param[in]     pvara         variable value at time step beginning
  * \param[in]     smcelp        value of the variable associated with mass source
@@ -175,7 +174,6 @@ cs_f_mass_source_terms_s(cs_lnum_t             ncesmp,
  * \param[in]     iterns        iteration number on Navier-Stoke
  * \param[in]     icetsm        source mass cells pointer (1-based numbering)
  * \param[in]     itpsmp        mass source type for the working variable
- *                              (see \ref cs_user_mass_source_terms)
  * \param[in]     volume        cells volume
  * \param[in]     pvara         variable value at time step beginning
  * \param[in]     smcelp        value of the variable associated with mass source
@@ -223,7 +221,6 @@ cs_f_mass_source_terms_v(cs_lnum_t             ncesmp,
  * \param[in]     iterns        iteration number on Navier-Stoke
  * \param[in]     icetsm        source mass cells pointer (1-based numbering)
  * \param[in]     itpsmp        mass source type for the working variable
- *                              (see \ref cs_user_mass_source_terms)
  * \param[in]     volume        cells volume
  * \param[in]     pvara         variable value at time step beginning
  * \param[in]     smcelp        value of the variable associated with mass source
@@ -278,7 +275,6 @@ cs_f_mass_source_terms_t(cs_lnum_t             ncesmp,
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        source mass cells pointer (1-based numbering)
  * \param[in]     itpsmp        mass source type for the working variable
- *                              (see \ref cs_user_mass_source_terms)
  * \param[in]     volume        cells volume
  * \param[in]     pvara         variable value at time step beginning
  * \param[in]     smcelp        value of the variable associated with mass source

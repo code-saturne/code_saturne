@@ -102,7 +102,6 @@ cs_volume_mass_injection_eval(int        nvar,
  * \param[out]  ncesmp    number of cells with mass source terms
  * \param[out]  icetsm    pointet to source mass cells list (1-based numbering)
  * \param[out]  itpsmp    mass source type for the working variable
- *                              (see \ref cs_user_mass_source_terms)
  * \param[out]  s_type    mass source types (0: ambient value, 1: s_val value)
  * \param[out]  smcelp    pointer to mass source values
  * \param[out]  gamma     pointer to flow mass value
