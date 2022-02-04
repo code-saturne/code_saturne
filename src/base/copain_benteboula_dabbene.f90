@@ -57,7 +57,8 @@
 
 subroutine condensation_copain_benteboula_dabbene_model&
  ( nvar   , nfbpcd , ifbpcd , izzftcd ,  &
-   gam_s  , hpcond , regime)
+   p_gam_s  , hpcond , regime) &
+ bind(C, name="condensation_copain_benteboula_dabbene_model")
 
 !===============================================================================
 
@@ -89,11 +90,12 @@ implicit none
 
 ! Arguments
 
-integer          nvar, nfbpcd, ifbpcd(nfbpcd), izzftcd(nfbpcd)
-integer          regime
+integer(c_int), value :: nvar, nfbpcd, regime
+integer(c_int), dimension(*) :: ifbpcd, izzftcd
 
-double precision gam_s(nfbpcd,nvar)
-double precision hpcond(nfbpcd)
+real(kind=c_double), dimension(*) :: hpcond
+type(c_ptr) :: p_gam_s
+double precision, dimension(:,:), pointer :: gam_s
 
 ! Local variables
 
@@ -137,6 +139,10 @@ double precision, dimension(:), pointer :: y_h2o_g
 double precision, dimension(:), pointer :: bpro_ustar
 double precision, dimension(:), pointer :: yplbr
 double precision, dimension(:,:), pointer :: cvar_vel
+
+!===============================================================================
+! C pointer to table bindings
+call c_f_pointer(p_gam_s, gam_s, [nfbpcd,nvar])
 
 !===============================================================================
 ! Allocate a temporary array for cells selection

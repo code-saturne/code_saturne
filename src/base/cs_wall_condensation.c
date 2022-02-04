@@ -128,49 +128,48 @@ const cs_wall_cond_t *cs_glob_wall_cond = &_wall_cond;
  * Fortran function prototypes
  *============================================================================*/
 
-extern void CS_PROCF(condensation_copain_model, CONDENSATION_COPAIN_MODEL)
+void condensation_copain_model
 (
-  const int *nvar,
-  const int *nfbpcd,
+  const int nvar,
+  const int nfbpcd,
   const int ifbpcd[],
   const int izzftcd[],
   cs_real_t spcond[],
   cs_real_t hpcond[],
-  const int *icondb_regime
+  const int icondb_regime
 );
 
-extern void CS_PROCF(condensation_copain_benteboula_dabbene_model,
-                     CONDENSATION_COPAIN_BENTEBOULA_DABBENE_MODEL)
+void condensation_copain_benteboula_dabbene_model
 (
-  const int *nvar,
-  const int *nfbpcd,
+  const int nvar,
+  const int nfbpcd,
   const int ifbpcd[],
   const int izzftcd[],
   cs_real_t spcond[],
   cs_real_t hpcond[],
-  const int *icondb_regime
+  const int icondb_regime
 );
 
-extern void CS_PROCF(condensation_uchida_model, CONDENSATION_UCHIDA_MODEL)
+void condensation_uchida_model
 (
-  const int *nvar,
-  const int *nfbpcd,
+  const int nvar,
+  const int nfbpcd,
   const int ifbpcd[],
   const int izzftcd[],
   cs_real_t spcond[],
   cs_real_t hpcond[],
-  const int *icondb_regime
+  const int icondb_regime
 );
 
-extern void CS_PROCF(condensation_dehbi_model, CONDENSATION_DEHBI_MODEL)
+void condensation_dehbi_model
 (
-  const int *nvar,
-  const int *nfbpcd,
+  const int nvar,
+  const int nfbpcd,
   const int ifbpcd[],
   const int izzftcd[],
   cs_real_t spcond[],
   cs_real_t hpcond[],
-  const int *icondb_regime
+  const int icondb_regime
 );
 
 /*============================================================================
@@ -180,8 +179,8 @@ extern void CS_PROCF(condensation_dehbi_model, CONDENSATION_DEHBI_MODEL)
 
 void
 cs_f_wall_condensation_get_model_pointers(int **icondb,
-                                          cs_lnum_t **icondb_model,
-                                          cs_lnum_t **icondb_regime);
+                                          cs_wall_cond_model_t **icondb_model,
+                                          cs_wall_cond_regime_t **icondb_regime);
 
 void
 cs_f_wall_condensation_get_size_pointers(cs_lnum_t **nfbpcd, cs_lnum_t **nzones);
@@ -210,14 +209,16 @@ cs_wall_condensation_set_onoff_state(int icondb);
  * Private function definitions
  *============================================================================*/
 
+static void compute_mix_properties(void);
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
 
 void
 cs_f_wall_condensation_get_model_pointers(int **icondb,
-                                          cs_lnum_t **icondb_model,
-                                          cs_lnum_t **icondb_regime)
+                                          cs_wall_cond_model_t **icondb_model,
+                                          cs_wall_cond_regime_t **icondb_regime)
 {
   *icondb        = &(_wall_cond.icondb);
   *icondb_model  = &(_wall_cond.model);
@@ -428,27 +429,26 @@ cs_wall_condensation_compute(int        nvar,
                              cs_real_t  spcond[],
                              cs_real_t  hpcond[])
 {
-  int *icondb_regime = (int *)(&_wall_cond.regime);
+  int icondb_regime = _wall_cond.regime;
 
   switch (_wall_cond.model) {
     case CS_WALL_COND_MODEL_NONE:
       return;
     case CS_WALL_COND_MODEL_COPAIN:
-      CS_PROCF(condensation_copain_model, CONDENSATION_COPAIN_MODEL)
-        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime);
+      condensation_copain_model(nvar, nfbpcd, ifbpcd, izzftcd, spcond,
+		      hpcond, icondb_regime);
       return;
     case CS_WALL_COND_MODEL_COPAIN_BD:
-      CS_PROCF(condensation_copain_benteboula_dabbene_model,
-               CONDENSATION_COPAIN_BENTEBOULA_DABBENE_MODEL)
-        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime);
+      condensation_copain_benteboula_dabbene_model(nvar, nfbpcd, ifbpcd,
+		      izzftcd, spcond, hpcond, icondb_regime);
       return;
     case CS_WALL_COND_MODEL_UCHIDA:
-      CS_PROCF(condensation_uchida_model, CONDENSATION_UCHIDA_MODEL)
-        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime);
+      condensation_uchida_model(nvar, nfbpcd, ifbpcd, izzftcd, spcond,
+		      hpcond, icondb_regime);
       return;
     case CS_WALL_COND_MODEL_DEHBI:
-      CS_PROCF(condensation_dehbi_model, CONDENSATION_DEHBI_MODEL)
-        (&nvar, &nfbpcd, ifbpcd, izzftcd, spcond, hpcond, icondb_regime);
+      condensation_dehbi_model(nvar, nfbpcd, ifbpcd, izzftcd, spcond,
+		      hpcond, icondb_regime);
       return;
   }
 }
