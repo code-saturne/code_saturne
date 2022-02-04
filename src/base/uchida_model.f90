@@ -55,8 +55,7 @@
 
 subroutine condensation_uchida_model &
  ( nvar   , nfbpcd , ifbpcd , izzftcd ,  &
-   p_gam_s  , hpcond , regime)&
-  bind(C, name="condensation_uchida_model")
+   gam_s  , hpcond , regime)
 
 !===============================================================================
 
@@ -86,12 +85,11 @@ implicit none
 
 ! Arguments
 
-integer(c_int), value :: nvar, nfbpcd, regime
-integer(c_int), dimension(*) :: ifbpcd, izzftcd
+integer          nvar, nfbpcd, ifbpcd(nfbpcd), izzftcd(nfbpcd)
+integer          regime
 
-real(kind=c_double), dimension(*) :: hpcond
-type(c_ptr) :: p_gam_s
-double precision, dimension(:,:), pointer :: gam_s
+double precision gam_s(nfbpcd,nvar)
+double precision hpcond(nfbpcd)
 
 ! Local variables
 
@@ -124,10 +122,6 @@ if (regime > 0) then
   write(nfecra,*) "***********************************************************************"
   call csexit(1)
 endif
-
-!===============================================================================
-! C pointer to table bindings
-call c_f_pointer(p_gam_s, gam_s, [nfbpcd,nvar])
 
 !===============================================================================
 ! Allocate a temporary array for cells selection

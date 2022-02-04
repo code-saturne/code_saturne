@@ -55,16 +55,13 @@
 
 subroutine condensation_copain_model &
  ( nvar   , nfbpcd , ifbpcd , izzftcd ,  &
-   p_gam_s  , hpcond , regime) &
- bind(C, name="condensation_copain_model")
+   gam_s  , hpcond , regime)
 
 !===============================================================================
 
 !===============================================================================
 ! Module files
 !===============================================================================
-
-use, intrinsic :: iso_c_binding
 
 use paramx
 use numvar
@@ -90,12 +87,11 @@ implicit none
 
 ! Arguments
 
-integer(c_int), value :: nvar, nfbpcd, regime
-integer(c_int), dimension(*) :: ifbpcd, izzftcd
+integer          nvar, nfbpcd, ifbpcd(nfbpcd), izzftcd(nfbpcd)
+integer          regime
 
-real(kind=c_double), dimension(*) :: hpcond
-type(c_ptr) :: p_gam_s
-double precision, dimension(:,:), pointer :: gam_s
+double precision gam_s(nfbpcd,nvar)
+double precision hpcond(nfbpcd)
 
 ! Local variables
 
@@ -134,10 +130,6 @@ double precision, dimension(:), pointer :: y_h2o_g
 double precision, dimension(:), pointer :: yplbr
 double precision, dimension(:), pointer :: bpro_ustar
 double precision, dimension(:,:), pointer :: cvar_vel
-
-!===============================================================================
-! C pointer to table bindings
-call c_f_pointer(p_gam_s, gam_s, [nfbpcd,nvar])
 
 !===============================================================================
 ! Allocate a temporary array for cells selection
