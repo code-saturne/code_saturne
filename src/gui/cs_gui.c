@@ -3356,12 +3356,11 @@ void cs_gui_initial_conditions(void)
                 BFT_FREE(ini_vals);
               }
             }
-            else {
-              for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-                cs_lnum_t c_id = cell_ids[e_id];
-                c->val[c_id] = 0.0;
-              }
-            }
+
+            /* else:
+               - Do not overwrite possible prior automatic initialization;
+               - All fields are otherwise set to 0 by default when
+                 allocated, so no need to assign a value here. */
           }
 
         }
