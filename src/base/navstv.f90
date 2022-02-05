@@ -177,6 +177,7 @@ double precision, dimension(:), pointer :: cpro_rho_mass
 double precision, dimension(:), pointer :: bpro_rho_mass
 double precision, dimension(:), pointer :: brom_eos, crom_eos
 double precision, dimension(:), pointer :: cpro_wgrec_s
+double precision, dimension(:,:), pointer :: cpro_wgrec_v
 
 type(var_cal_opt) :: vcopt_p, vcopt_u, vcopt
 
@@ -918,11 +919,21 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
     if (ivofmt.ne.0) then
       call field_get_key_int(ivarfl(ipr), kwgrec, iflwgr)
       call field_get_dim(iflwgr, f_dim)
-      call field_get_val_s(iflwgr, cpro_wgrec_s)
-      do iel = 1, ncel
-        cpro_wgrec_s(iel) = dt(iel) / crom(iel)
-      enddo
-      call synsca(cpro_wgrec_s)
+      if (f_dim.eq.1) then
+        call field_get_val_s(iflwgr, cpro_wgrec_s)
+        do iel = 1, ncel
+          cpro_wgrec_s(iel) = dt(iel) / crom(iel)
+        enddo
+        call synsca(cpro_wgrec_s)
+      else if (f_dim.eq.6) then
+        call field_get_val_v(iflwgr, cpro_wgrec_v)
+        do iel = 1, ncel
+          do ii = 1, 6
+            cpro_wgrec_v(ii,iel) = dttens(ii,iel) / crom(iel)
+          enddo
+        enddo
+        call syntin(cpro_wgrec_v)
+      endif
     endif
 
     call field_gradient_potential(f_iddp, 0, 0, inc,                   &

@@ -3146,6 +3146,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-> structure associated with internal coupling, or NULL
+ *   w_stride       <-- stride for weighting coefficient
  *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   f_ext          <-- exterior force generating pressure
@@ -3162,6 +3163,7 @@ static void
 _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                              const cs_mesh_quantities_t      *fvq,
                              const cs_internal_coupling_t    *cpl,
+                             int                              w_stride,
                              int                              hyd_p_flag,
                              cs_real_t                        inc,
                              const cs_real_t                  f_ext[][3],
@@ -3265,11 +3267,32 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
           cs_lnum_t c_id1 = i_face_cells[f_id][0];
           cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-          cs_real_t ktpond = (c_weight == NULL) ?
-             weight[f_id] :              /* no cell weighting */
-             weight[f_id] * c_weight[c_id1] /* cell weighting active */
+          cs_real_t ktpond = weight[f_id]; /* no cell weighting */
+          /* if cell weighting is active */
+          if (w_stride == 1 && c_weight != NULL) {
+            ktpond = weight[f_id] * c_weight[c_id1]
                / (      weight[f_id] * c_weight[c_id1]
                  + (1.0-weight[f_id])* c_weight[c_id2]);
+          } else if (w_stride == 6 && c_weight != NULL) {
+
+            cs_real_6_t sum;
+            cs_real_6_t inv_sum;
+
+            cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+            for (cs_lnum_t ii = 0; ii < 6; ii++)
+              sum[ii] = weight[f_id]*_c_weight[c_id1][ii]
+                 +(1.0-weight[f_id])*_c_weight[c_id2][ii];
+
+            cs_math_sym_33_inv_cramer(sum, inv_sum);
+
+            ktpond = weight[f_id] / 3.0 *
+              (   inv_sum[0]*_c_weight[c_id1][0]
+                + inv_sum[1]*_c_weight[c_id1][1]
+                + inv_sum[2]*_c_weight[c_id1][2]
+                + 2.0*(inv_sum[3]*_c_weight[c_id1][3]
+                      +inv_sum[4]*_c_weight[c_id1][4]
+                      +inv_sum[5]*_c_weight[c_id1][5]));
+          }
 
           cs_real_2_t poro = {
             i_poro_duq_0[is_porous*f_id],
@@ -7425,6 +7448,7 @@ _gradient_scalar(const char                    *var_name,
       _reconstruct_scalar_gradient(mesh,
                                    fvq,
                                    cpl,
+                                   w_stride,
                                    hyd_p_flag,
                                    inc,
                                    (const cs_real_3_t *)f_ext,
