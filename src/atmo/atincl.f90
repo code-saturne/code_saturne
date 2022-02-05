@@ -94,7 +94,7 @@ double precision, allocatable, dimension(:) :: xmet
 !> Y axis coordinates of the meteo profile (read in the input meteo file)
 double precision, allocatable, dimension(:) :: ymet
 
-!   Arrays specific to values calculated from the meteo file (cf atlecm.f90):
+! Arrays specific to values calculated from the meteo file (cf atlecm.f90):
 
 !> density profile
 double precision, allocatable, dimension(:,:) :: rmet
@@ -558,7 +558,8 @@ double precision, save:: zaero
 
     !---------------------------------------------------------------------------
 
-    !> \brief Convert the absolute humidity of humid air to the air water mass fraction.
+    !> \brief Convert the absolute humidity of humid air to the
+    !>        air water mass fraction.
 
     !> \param[in]  x  absolute humidity of humid air
 
@@ -572,7 +573,8 @@ double precision, save:: zaero
 
     !---------------------------------------------------------------------------
 
-    !> \brief Convert the air water mass fraction to the absolute humidity of humid air.
+    !> \brief Convert the air water mass fraction to the
+    !>        absolute humidity of humid air.
 
     !> \param[in]  qw  air water mass fraction
 
@@ -804,7 +806,8 @@ if (imeteo.gt.0) then
 
   allocate(wmet(n_level,n_times))
   allocate(ekmet(n_level,n_times), epmet(n_level,n_times))
-  allocate(ttmet(n_level_t,n_times), qvmet(n_level_t,n_times), ncmet(n_level_t,n_times))
+  allocate(ttmet(n_level_t,n_times), qvmet(n_level_t,n_times),  &
+           ncmet(n_level_t,n_times))
   allocate(pmer(n_times))
   allocate(xmet(n_times), ymet(n_times))
   allocate(rmet(n_level_t,n_times))

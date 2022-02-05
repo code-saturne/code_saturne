@@ -479,10 +479,11 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               int         dim_hyd_p_met[2],
                               int         dim_pot_t_met[2])
 {
-  int n_level = 0;
+  int n_level = 0, n_level_t = 0;
   int n_times = 0;
   if (_atmo_option.meteo_profile) {
     n_level = CS_MAX(1, _atmo_option.nbmetd);
+    n_level_t = CS_MAX(1, _atmo_option.nbmaxt);
     n_times = CS_MAX(1, _atmo_option.nbmetm);
   }
 
@@ -500,7 +501,7 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
     BFT_MALLOC(_atmo_option.hyd_p_met,
                _atmo_option.nbmetm*_atmo_option.nbmaxt, cs_real_t);
   if (_atmo_option.pot_t_met == NULL)
-    BFT_MALLOC(_atmo_option.pot_t_met, n_level*n_times, cs_real_t);
+    BFT_MALLOC(_atmo_option.pot_t_met, n_level_t*n_times, cs_real_t);
 
   *u_met           = _atmo_option.u_met;
   *v_met           = _atmo_option.v_met;

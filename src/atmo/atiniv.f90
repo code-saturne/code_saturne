@@ -150,9 +150,7 @@ endif
 if (iatra1.gt.0) then
 
   imode = 1
-  call usatdv &
-  !==========
-  ( imode )
+  call usatdv(imode)
 
 endif
 
@@ -161,9 +159,7 @@ if (ifilechemistry.ge.1) then
 
   ! Second reading of chemical profiles file
   imode = 1
-  call atlecc                                                     &
-  !==========
-  ( imode)
+  call atlecc(imode)
 
   ! Volume initilization with profiles for species present
   ! in the chemical profiles file
@@ -409,17 +405,14 @@ if (isuite.eq.0) then
 
           if (imeteo.eq.1) then
             ! The thermal scalar is liquid potential temperature
-            call intprf &
-              (nbmett, nbmetm,                                               &
-              ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
+            call intprf(nbmett, nbmetm,   &
+                        ztmet, tmmet, tpmet, zent, ttcabs, tpent)
 
-            call intprf &
-              (nbmett, nbmetm,                                               &
-              ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
+            call intprf(nbmett, nbmetm,   &
+                        ztmet, tmmet, qvmet, zent, ttcabs, qvent)
 
-            call intprf &
-              (nbmett, nbmetm,                                               &
-              ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
+            call intprf(nbmett, nbmetm,  &
+                        ztmet, tmmet, ncmet, zent, ttcabs, ncent)
           else
             tpent = cpro_met_potemp(iel)
             qvent = cpro_met_qv(iel)
