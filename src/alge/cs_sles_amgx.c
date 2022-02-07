@@ -134,7 +134,6 @@ struct _cs_sles_amgx_t {
   char                   *amgx_config_string;
 
   AMGX_Mode               amgx_mode;
-  bool                    pin_memory;
 
   int                     flags;              /* additional option flags */
 
@@ -459,13 +458,19 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
 
   const int b_mem_size = cs_matrix_get_diag_block_size(a)[3] *sizeof(cs_real_t);
 
-  if (c->pin_memory) {
+  cs_alloc_mode_t amode_row_index = cs_check_device_ptr(row_index);
+  cs_alloc_mode_t amode_col_id = cs_check_device_ptr(col_id);
+  cs_alloc_mode_t amode_a_val = cs_check_device_ptr(a_val);
+  cs_alloc_mode_t amode_a_d_val = cs_check_device_ptr(a_d_val);
+
+  if (amode_row_index < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)row_index, (n_rows+1)*sizeof(int));
+  if (amode_col_id < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)col_id, a_row_index[n_rows]*sizeof(int));
+  if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)a_val, a_row_index[n_rows]*b_mem_size);
-    if (a_d_val != NULL)
+  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
       AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
-  }
 
   retval = AMGX_matrix_upload_all(sd->matrix,
                                   n_rows,
@@ -483,13 +488,14 @@ _setup_matrix_1_ring(cs_sles_amgx_t     *c,
               "AMGX_matrix_upload_all", retval, err_str);
   }
 
-  if (c->pin_memory) {
-    if (a_d_val != NULL)
-      AMGX_unpin_memory((void *)a_d_val);
+  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
+    AMGX_unpin_memory((void *)a_d_val);
+  if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)a_val);
+  if (amode_col_id < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)col_id);
+  if (amode_row_index < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)row_index);
-  }
 
   BFT_FREE(_row_index);
   BFT_FREE(_col_id);
@@ -538,20 +544,40 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
   int              *_row_index = NULL;
   cs_gnum_t        *col_gid = NULL;
 
+  cs_alloc_mode_t amode = CS_ALLOC_HOST_DEVICE;
+
   if (sizeof(int) != sizeof(cs_lnum_t)) {
-    BFT_MALLOC(_row_index, n_rows, int);
+    CS_MALLOC_HD(_row_index, n_rows, int, amode);
     for (cs_lnum_t i = 0; i < n_rows; i++)
       _row_index[i] = a_row_index[i];
     row_index = _row_index;
   }
 
   cs_lnum_t nnz = row_index[n_rows];
-  BFT_MALLOC(col_gid, nnz, cs_gnum_t);
-  const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(n_rows, halo);
+  CS_MALLOC_HD(col_gid, nnz, cs_gnum_t, amode);
+
+  const cs_gnum_t *grow_id = NULL;
+  cs_gnum_t *_grow_id = NULL;
+
+  const cs_gnum_t *l_range = cs_matrix_get_l_range(a);
+  if (l_range != NULL) {
+    const int n_cols_ext = cs_matrix_get_n_columns(a);
+    const cs_gnum_t _n_rows = n_rows;
+    BFT_MALLOC(_grow_id, n_cols_ext, cs_gnum_t);
+    for (cs_gnum_t j = 0; j < _n_rows; j++)
+      _grow_id[j] = l_range[0] + j;
+    cs_halo_sync_untyped(halo, CS_HALO_STANDARD, sizeof(cs_gnum_t), _grow_id);
+    grow_id = _grow_id;
+  }
+  else
+    grow_id = cs_matrix_get_block_row_g_id(n_rows, halo);
+
   for (cs_lnum_t j = 0; j < n_rows; j++) {
     for (cs_lnum_t i = a_row_index[j]; i < a_row_index[j+1]; ++i)
       col_gid[i] = grow_id[a_col_id[i]];
   }
+
+  BFT_FREE(_grow_id);
 
   /* Matrix */
 
@@ -570,7 +596,7 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
   /* Assume partitioning with continuous blocks */
 
   cs_gnum_t *partition_offsets;
-  BFT_MALLOC(partition_offsets, cs_glob_n_ranks + 1, cs_gnum_t);
+  CS_MALLOC_HD(partition_offsets, cs_glob_n_ranks + 1, cs_gnum_t, amode);
 
   /* Gather the number of rows on each rank, use exclusive scan to get the offsets */
 
@@ -587,14 +613,20 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
 
   const int b_mem_size = cs_matrix_get_diag_block_size(a)[3] *sizeof(cs_real_t);
 
-  if (c->pin_memory) {
+  cs_alloc_mode_t amode_row_index = cs_check_device_ptr(row_index);
+  cs_alloc_mode_t amode_a_val = cs_check_device_ptr(a_val);
+  cs_alloc_mode_t amode_a_d_val = cs_check_device_ptr(a_d_val);
+
+  if (amode_row_index < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)row_index, (n_rows+1)*sizeof(int));
+  if (amode < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory(col_gid, a_row_index[n_rows]*sizeof(int));
+  if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)a_val, a_row_index[n_rows]*b_mem_size);
-    if (a_d_val != NULL)
-      AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
+  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
+    AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
+  if (amode < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory(partition_offsets, (n_ranks+1)*sizeof(cs_gnum_t));
-  }
 
   AMGX_distribution_handle dist;
   AMGX_distribution_create(&dist, c->amgx_config);
@@ -627,18 +659,20 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
 
   AMGX_distribution_destroy(dist);
 
-  if (c->pin_memory) {
+  if (amode < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory(partition_offsets);
-    if (a_d_val != NULL)
-      AMGX_unpin_memory((void *)a_d_val);
+  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
+    AMGX_unpin_memory((void *)a_d_val);
+  if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)a_val);
+  if (amode < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory(col_gid);
+  if (amode_row_index < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)row_index);
-  }
 
-  BFT_FREE(partition_offsets);
-  BFT_FREE(col_gid);
-  BFT_FREE(_row_index);
+  CS_FREE_HD(partition_offsets);
+  CS_FREE_HD(col_gid);
+  CS_FREE_HD(_row_index);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -677,11 +711,12 @@ _setup_update_coeffs(cs_sles_amgx_t     *c,
 
   const int b_mem_size = cs_matrix_get_diag_block_size(a)[3] *sizeof(cs_real_t);
 
-  if (c->pin_memory) {
+  cs_alloc_mode_t amode_a_val = cs_check_device_ptr(a_val);
+  cs_alloc_mode_t amode_a_d_val = cs_check_device_ptr(a_d_val);
+  if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)a_val, a_row_index[n_rows]*b_mem_size);
-    if (a_d_val != NULL)
-      AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
-  }
+  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
+    AMGX_pin_memory((void *)a_d_val, n_rows*b_mem_size);
 
   retval = AMGX_matrix_replace_coefficients(sd->matrix,
                                             n_rows,
@@ -695,11 +730,10 @@ _setup_update_coeffs(cs_sles_amgx_t     *c,
               "AMGX_matrix_replace_coefficients", retval, err_str);
   }
 
-  if (c->pin_memory) {
-    if (a_d_val != NULL)
-      AMGX_unpin_memory((void *)a_d_val);
+  if (a_d_val != NULL && amode_a_d_val < CS_ALLOC_HOST_DEVICE_PINNED)
+    AMGX_unpin_memory((void *)a_d_val);
+  if (amode_a_val < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)a_val);
-  }
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -801,7 +835,6 @@ cs_sles_amgx_create(void)
 
   cs_sles_amgx_set_use_device(c, true);
 
-  c->pin_memory = true;
   c->flags = 0;
 
   return c;
@@ -843,7 +876,6 @@ cs_sles_amgx_copy(const void  *context)
     }
 
     d->amgx_mode = c->amgx_mode;
-    d->pin_memory = c->pin_memory;
     d->flags = c->flags;
   }
 
@@ -1035,49 +1067,6 @@ cs_sles_amgx_set_config_file(void        *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Indicate whether an AmgX solver should pin host memory.
- *
- * By default, host memory will be pinned for faster transfers.
- * This setting is relevant only when not using unified memory.
- *
- * \param[in]  context  pointer to AmgX solver info and context
- *
- * \return  true for device, false for host only
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_sles_amgx_get_pin_memory(void  *context)
-{
-  cs_sles_amgx_t  *c = context;
-
-  return c->pin_memory;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define whether an AmgX solver should pin host memory.
- *
- * By default, host memory will be pinned for faster transfers, but by calling
- * this function with "pin_memory = false", this may be deactivated.
- * This setting is relevant only when not using unified memory.
- *
- * \param[in, out]  context       pointer to AmgX solver info and context
- * \param[in]       pin_memory   true for devince, false for host only
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sles_amgx_set_pin_memory(void  *context,
-                            bool   pin_memory)
-{
-  cs_sles_amgx_t  *c = context;
-
-  c->pin_memory = pin_memory;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Query whether an AmgX solver should use the device or host.
  *
  * \param[in]  context  pointer to AmgX solver info and context
@@ -1235,9 +1224,9 @@ cs_sles_amgx_setup(void               *context,
         || (cs_mat_type != CS_MATRIX_CSR && cs_mat_type != CS_MATRIX_MSR))
       bft_error
         (__FILE__, __LINE__, 0,
-         _("Matrix type %s with block size %d for system \"%s\"\n"
+         _("Matrix type %s with block size %d for system \"%s\""
            "is not usable by AmgX.\n"
-           "Only block size 1 with CSR or MSR format "
+           "Only block size 1 with CSR or MSR type "
            "is currently supported by AmgX."),
          cs_matrix_get_type_name(a), db_size,
          name);
@@ -1304,6 +1293,75 @@ cs_sles_amgx_setup(void               *context,
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(c->t_setup), &t0, &t1);
+
+#if 0
+  /* Check matrix coefficients are correctly set by comparing
+     spmv with reference (debug) */
+  {
+    const int n_rows = cs_matrix_get_n_rows(a);
+    const int n_cols_ext = cs_matrix_get_n_columns(a);
+    const int  b_size = cs_matrix_get_diag_block_size(a)[0];
+    const cs_lnum_t n_r = n_rows*b_size;
+    const cs_lnum_t n_c = n_cols_ext*b_size;
+
+    cs_real_t *x, *y, *z;
+    CS_MALLOC_HD(x, n_c, cs_real_t, CS_ALLOC_HOST_DEVICE_PINNED);
+    CS_MALLOC_HD(y, n_c, cs_real_t, CS_ALLOC_HOST_DEVICE_PINNED);
+    CS_MALLOC_HD(z, n_c, cs_real_t, CS_ALLOC_HOST);
+
+    for (cs_lnum_t ii = 0; ii < n_cols_ext; ii++) {
+      cs_gnum_t jj = ii*b_size;
+      for (cs_lnum_t kk = 0; kk < b_size; kk++) {
+        x[ii*b_size+kk] = sin(jj*b_size+kk);
+        y[ii*b_size+kk] = 0.0;
+      }
+    }
+
+    /* Vector */
+
+    AMGX_vector_handle  hx, hy;
+
+    AMGX_vector_create(&hx, c->amgx_resources, c->amgx_mode);
+    AMGX_vector_create(&hy, c->amgx_resources, c->amgx_mode);
+
+    if (cs_glob_n_ranks > 1) {
+      AMGX_vector_bind(hx, c->setup_data->matrix);
+      AMGX_vector_bind(hy, c->setup_data->matrix);
+    }
+
+    AMGX_vector_upload(hx, n_rows, b_size, x);
+    AMGX_vector_upload(hy, n_rows, b_size, y);
+    AMGX_matrix_vector_multiply(sd->matrix, hx, hy);
+    AMGX_vector_download(hy, y);
+
+    cs_matrix_vector_multiply(a, x, z);
+
+    CS_FREE_HD(x);
+    AMGX_vector_destroy(hx);
+
+    double dmax = 0.0;
+    for (cs_lnum_t ii = 0; ii < n_r; ii++) {
+      double d = CS_ABS(y[ii] - z[ii]);
+      if (d > dmax)
+        dmax = d;
+    }
+
+    CS_FREE_HD(y);
+    AMGX_vector_destroy(hy);
+
+    CS_FREE_HD(z);
+
+#if defined(HAVE_MPI)
+    if (cs_glob_n_ranks > 1) {
+      double dmaxg;
+      MPI_Allreduce(&dmax, &dmaxg, 1, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
+      dmax = dmaxg;
+    }
+#endif
+
+    bft_printf("AmgX matrix check: max diff with ref: %g\n", dmax);
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1417,10 +1475,12 @@ cs_sles_amgx_solve(void                *context,
 
   unsigned int n_bytes = n_rows*db_size*sizeof(cs_real_t);
 
-  if (c->pin_memory) {
+  cs_alloc_mode_t amode_vx = cs_check_device_ptr(vx);
+  cs_alloc_mode_t amode_rhs = cs_check_device_ptr(rhs);
+  if (amode_vx < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)vx, n_bytes);
+  if (amode_rhs < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_pin_memory((void *)rhs, n_bytes);
-  }
 
   retval = AMGX_vector_upload(x, n_rows, db_size, vx);
   if (retval != AMGX_RC_OK) {
@@ -1462,10 +1522,10 @@ cs_sles_amgx_solve(void                *context,
   AMGX_solver_get_iterations_number(sd->solver, &its);
   AMGX_solver_get_iteration_residual(sd->solver, its-1, 0, &_residue);
 
-  if (c->pin_memory) {
+  if (amode_vx < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)vx);
+  if (amode_rhs < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory((void *)rhs);
-  }
 
   AMGX_SOLVE_STATUS  solve_status;
   AMGX_solver_get_status(sd->solver, &solve_status);

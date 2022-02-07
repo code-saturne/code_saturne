@@ -450,6 +450,20 @@ cs_matrix_get_extra_diag_block_size(const cs_matrix_t  *matrix);
 const cs_halo_t *
 cs_matrix_get_halo(const cs_matrix_t  *matrix);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to local global row range associated with a
+ *        matrix, if available
+ *
+ * \param[in]  ma   pointer to matrix structure
+ *
+ * \return  pointer to local range, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_gnum_t *
+cs_matrix_get_l_range(const cs_matrix_t  *matrix);
+
 /*----------------------------------------------------------------------------
  * Get matrix fill type, depending on block sizes.
  *

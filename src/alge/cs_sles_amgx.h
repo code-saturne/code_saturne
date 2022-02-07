@@ -202,39 +202,6 @@ cs_sles_amgx_set_config_file(void        *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Indicate whether an AmgX solver should pin host memory.
- *
- * By default, host memory will be pinned for faster transfers.
- * This setting is relevant only when not using unified memory.
- *
- * \param[in]  context  pointer to AmgX solver info and context
- *
- * \return  true for device, false for host only
- */
-/*----------------------------------------------------------------------------*/
-
-bool
-cs_sles_amgx_get_pin_memory(void  *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define whether an AmgX solver should pin host memory.
- *
- * By default, host memory will be pinned for faster transfers, but by calling
- * this function with "pin_memory = false", this may be deactivated.
- * This setting is relevant only when not using unified memory.
- *
- * \param[in, out]  context       pointer to AmgX solver info and context
- * \param[in]       pin_memory   true for devince, false for host only
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sles_amgx_set_pin_memory(void  *context,
-                            bool   pin_memory);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Define whether an AmgX solver should use the device or host
  *
  * By default, the device will be used, but by callingg this function
