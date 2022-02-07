@@ -2488,7 +2488,6 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
 {
   CS_UNUSED(copy);
 
-  cs_lnum_t  ii, jj;
   cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
@@ -2499,7 +2498,7 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
 
   /* Initialize coefficients to zero if assembly is incremental */
 
-  if (ms->direct_assembly == false)
+  if (ms->direct_assembly == false || (n_edges > 0 && xa == NULL))
     _zero_coeffs_csr(matrix);
 
   /* Copy diagonal values */
@@ -2507,14 +2506,14 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
   if (ms->have_diag == true) {
 
     if (da != NULL) {
-      for (ii = 0; ii < ms->n_rows; ii++) {
+      for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++) {
         cs_lnum_t kk;
         for (kk = ms->row_index[ii]; ms->col_id[kk] != ii; kk++);
         mc->_val[kk] = da[ii];
       }
     }
     else {
-      for (ii = 0; ii < ms->n_rows; ii++) {
+      for (cs_lnum_t ii = 0; ii < ms->n_rows; ii++) {
         cs_lnum_t kk;
         for (kk = ms->row_index[ii]; ms->col_id[kk] != ii; kk++);
         mc->_val[kk] = 0.0;
@@ -2529,33 +2528,14 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
 
   /* Copy extra-diagonal values */
 
-  if (edges != NULL) {
+  if (edges != NULL && xa != NULL) {
 
-    if (xa != NULL) {
+    if (ms->direct_assembly == true)
+      _set_xa_coeffs_csr_direct(matrix, symmetric, n_edges, edges, xa);
+    else
+      _set_xa_coeffs_csr_increment(matrix, symmetric, n_edges, edges, xa);
 
-      if (ms->direct_assembly == true)
-        _set_xa_coeffs_csr_direct(matrix, symmetric, n_edges, edges, xa);
-      else
-        _set_xa_coeffs_csr_increment(matrix, symmetric, n_edges, edges, xa);
-
-    }
-    else { /* if (xa == NULL) */
-
-      for (ii = 0; ii < ms->n_rows; ii++) {
-        const cs_lnum_t  *restrict col_id = ms->col_id + ms->row_index[ii];
-        cs_real_t  *m_row = mc->_val + ms->row_index[ii];
-        cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-
-        for (jj = 0; jj < n_cols; jj++) {
-          if (col_id[jj] != ii)
-            m_row[jj] = 0.0;
-        }
-
-      }
-
-    }
-
-  } /* (matrix->edges != NULL) */
+  }
 
 }
 
@@ -2598,7 +2578,7 @@ _set_coeffs_csr_from_msr(cs_matrix_t       *matrix,
       (__FILE__, __LINE__, 0,
        "%s:\n"
        "  case with diagonal block size %ld en extradiagonal block size %ld\n"
-       "  not implemented.\n",
+       "  not implemented.",
        __func__, (long)matrix->db_size[0], (long)matrix->eb_size[0]);
 
   /* Special configuration where ownership is transferred directly */
@@ -5394,6 +5374,8 @@ _matrix_create(cs_matrix_type_t  type)
       m->vector_multiply[i][1] = m->vector_multiply[i][0];
   }
 
+  m->destroy_adaptor = NULL;
+
   return m;
 }
 
@@ -5935,6 +5917,10 @@ cs_matrix_destroy(cs_matrix_t **matrix)
   if (matrix != NULL && *matrix != NULL) {
 
     cs_matrix_t *m = *matrix;
+
+    if (m->destroy_adaptor != NULL) {
+      m->destroy_adaptor(m);
+    }
 
     m->destroy_coefficients(m);
 

@@ -1852,8 +1852,8 @@ cs_matrix_dump_vector(const cs_lnum_t     n_rows,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    cs_lnum_t _n_g_rows = n_l_rows;
-    MPI_Allreduce(&n_l_rows, &n_g_rows, 1, CS_MPI_GNUM, MPI_SUM,
+    cs_gnum_t _n_g_rows = n_l_rows;
+    MPI_Allreduce(&_n_g_rows, &n_g_rows, 1, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
   }
 #endif

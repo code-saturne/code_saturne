@@ -653,10 +653,10 @@ cs_matrix_external(const char       *type_name,
     cs_matrix_t *m_r = NULL;
 
     if (_matrix_struct[CS_MATRIX_MSR] != NULL) {
-      m_r =  cs_matrix_msr(symmetric, diag_block_size, extra_diag_block_size);
+      m_r = cs_matrix_msr(symmetric, diag_block_size, extra_diag_block_size);
     }
     else {
-      m_r =  cs_matrix_native(symmetric, diag_block_size, extra_diag_block_size);
+      m_r = cs_matrix_native(symmetric, diag_block_size, extra_diag_block_size);
     }
 
     cs_matrix_t *m = cs_matrix_copy_to_external(m_r,

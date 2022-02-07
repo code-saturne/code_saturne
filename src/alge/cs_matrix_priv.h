@@ -79,6 +79,9 @@ typedef void
 (cs_matrix_destroy_coeffs_t) (cs_matrix_t  *matrix);
 
 typedef void
+(cs_matrix_destroy_adaptor_t) (cs_matrix_t  *matrix);
+
+typedef void
 (cs_matrix_copy_diagonal_t) (const cs_matrix_t  *matrix,
                              cs_real_t          *restrict da);
 
@@ -190,7 +193,7 @@ typedef struct _cs_matrix_coeff_csr_t {
 
   /* Pointers to private arrays (NULL if shared) */
 
-  cs_real_t        *_val;             /* Diagonal matrix coefficients */
+  cs_real_t        *_val;             /* Matrix coefficients */
 
   /* Pointers to auxiliary arrays used for queries */
 
@@ -312,6 +315,7 @@ struct _cs_matrix_t {
 
   cs_matrix_destroy_struct_t           *destroy_structure;
   cs_matrix_destroy_coeffs_t           *destroy_coefficients;
+  cs_matrix_destroy_adaptor_t          *destroy_adaptor;
 
   cs_matrix_assembler_values_create_t  *assembler_values_create;
 
