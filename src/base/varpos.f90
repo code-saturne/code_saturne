@@ -572,6 +572,22 @@ if (iescal(iestot).gt.0) then
   call add_property_field(f_name, f_label, 1, .false., iestim(iestot))
 endif
 
+! Tensorial diffusivity
+
+if (iporos.eq.2) then
+  call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+  vcopt%idften = ANISOTROPIC_LEFT_DIFFUSION
+  call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+endif
+
+! Diagonal cell tensor for the pressure solving when needed
+
+if (ncpdct.gt.0.or.ipucou.eq.1.or.iporos.eq.2) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+  vcopt%idften = ANISOTROPIC_LEFT_DIFFUSION
+  call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+endif
+
 !===============================================================================
 ! Map to field pointers
 !===============================================================================

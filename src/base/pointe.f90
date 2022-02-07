@@ -296,21 +296,6 @@ contains
       allocate(idfstr(nfabor))
     endif
 
-    ! Also tensorial diffusion for the velocity in case of tensorial porosity
-    if (iporos.eq.2) then
-      ! Tensorial diffusivity
-      call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-      vcopt%idften = ANISOTROPIC_LEFT_DIFFUSION
-      call field_set_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-    endif
-
-    ! Diagonal cell tensor for the pressure solving when needed
-    if (ncpdct.gt.0.or.ipucou.eq.1.or.iporos.eq.2) then
-      call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-      vcopt%idften = ANISOTROPIC_LEFT_DIFFUSION
-      call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-    endif
-
     ! liquid-vapor mass transfer term for cavitating flows
     ! and its part implicit in pressure
     if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) then

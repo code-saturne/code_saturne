@@ -154,12 +154,9 @@ do ivar = 1, nvar
     if (iflid.eq.iflidp) cycle
     iflidp = iflid
 
-    if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
-      idimf = 1
-    elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-      idimf = 6
-    endif
     call field_get_key_int(iflid, kwgrec, f_id)
+    call field_get_dim(f_id, idimf)
+
     if (idimf.eq.6) then
       call field_get_val_v(f_id, field_v_v)
       do iel = 1, ncelet
