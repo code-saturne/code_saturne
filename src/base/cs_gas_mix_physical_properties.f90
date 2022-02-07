@@ -83,6 +83,8 @@ character(len=80) :: name_i, name_j, name_d
 
 double precision xsum_mu, xsum_lambda, phi_mu, phi_lambda, x_k
 double precision mu_i, mu_j, lambda_i, lambda_j
+double precision pressure
+double precision x_ncond_tot, a1, y_k, xmab, xvab, ratio_tkpr
 
 type(gas_mix_species_prop), pointer :: s_j, s_i
 type(gas_mix_species_prop), target :: s_d
@@ -98,7 +100,11 @@ double precision, dimension(:), pointer :: cvar_enth , cvar_yk, tempk
 double precision, dimension(:), pointer :: cvar_yi, cvar_yj
 double precision, dimension(:), pointer :: y_d, ya_d
 double precision, dimension(:), pointer :: mix_mol_mas
+double precision, dimension(:), pointer :: mol_mas_ncond
+double precision, dimension(:), pointer :: steam_binary_diffusion
 double precision, dimension(:), pointer :: lambda
+
+double precision, parameter :: patm = 101320.0d0
 
 !===============================================================================
 
@@ -120,8 +126,7 @@ if (ippmod(icompf).lt.0) then
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_enth)
   ! Density value
   call field_get_val_s(icrom, cpro_rho)
-  allocate(tk_loc(ncel))
-  tempk => tk_loc
+  call field_get_val_s_by_name("tempk", tempk)
 else
   call field_get_val_s(ivarfl(isca(itempk)), tempk)
 endif
@@ -143,6 +148,9 @@ call field_get_key_int(ivarfl(isca(iscalt)), kivisl, ifcvsl)
 call field_get_val_s(ifcvsl, cpro_venth)
 
 call field_get_val_s(igmxml, mix_mol_mas)
+
+call field_get_val_s_by_name("steam_binary_diffusion", steam_binary_diffusion)
+call field_get_val_s_by_name("mol_mas_ncond", mol_mas_ncond)
 
 ! Deduce mass fraction (y_d) which is
 ! y_h2o_g in presence of steam or
@@ -170,6 +178,7 @@ else
 endif
 
 allocate(s_k(nscasp+1))
+s_k(nscasp+1) = s_d
 
 !===============================================================================
 !2. Define the physical properties for the gas mixture with:
@@ -179,6 +188,12 @@ allocate(s_k(nscasp+1))
 !     the gas mixture function ot the enthalpy and species scalars,
 !   - the diffusivity coefficients of the scalars (Dk, D_enh).
 !===============================================================================
+
+if (idilat.eq.3) then
+  pressure = pther
+else
+  pressure = p0
+endif
 
 !Storage the previous value of the deduced mass fraction ya_d
 do iel=1, ncelet
@@ -190,8 +205,10 @@ enddo
 ! from the mass fraction (yk) transported
 !-----------------------------------------
 
-! Initialization
+
 do iel = 1, ncel
+
+! Initialization
   y_d(iel) = 1.d0
 
   ! Mixture specific heat
@@ -205,33 +222,36 @@ do iel = 1, ncel
 
   ! Thermal conductivity
   lambda(iel) = 0.d0
-enddo
 
-do iesp = 1, nscasp
-  ! Mass fraction array of the different species
-  call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
+  steam_binary_diffusion(iel) = 0.0d0
+  mol_mas_ncond(iel) = 0.0d0
 
-  call field_get_key_struct_gas_mix_species_prop( &
-       ivarfl(isca(iscasp(iesp))), s_k(iesp))
+  do iesp = 1, nscasp
+    ! Mass fraction array of the different species
+    call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
 
-  do iel = 1, ncel
-    y_d(iel) = y_d(iel)-cvar_yk(iel)
-    mix_mol_mas(iel) = mix_mol_mas(iel) + cvar_yk(iel)/s_k(iesp)%mol_mas
+    call field_get_key_struct_gas_mix_species_prop( &
+         ivarfl(isca(iscasp(iesp))), s_k(iesp))
+
+      y_d(iel) = y_d(iel)-cvar_yk(iel)
+      mix_mol_mas(iel) = mix_mol_mas(iel) + cvar_yk(iel)/s_k(iesp)%mol_mas
+      mol_mas_ncond(iel) = mol_mas_ncond(iel) + cvar_yk(iel) / s_k(iesp)%mol_mas
   enddo
-enddo
 
-! Clipping
-do iel = 1, ncel
+  ! Clipping
   y_d(iel) = max(y_d(iel), 0.d0)
-enddo
 
-!Finalize the computation of the Mixture molar mass
-s_k(nscasp+1) = s_d
-do iel = 1, ncel
+  ! Finalize the computation of the Mixture molar mass
   mix_mol_mas(iel) = mix_mol_mas(iel) + y_d(iel)/s_d%mol_mas
   mix_mol_mas(iel) = 1.d0/mix_mol_mas(iel)
-enddo
+  mol_mas_ncond(iel) = (1.0d0 - y_d(iel))/mol_mas_ncond(iel)
 
+  do iesp = 1, nscasp+1
+    if (iesp.eq.(nscasp+1)) then
+      cvar_yk => y_d
+    else
+      call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
+    endif
 !==============================================================
 ! Mixture specific heat function of species specific heat (cpk)
 ! and mass fraction of each gas species (yk), as below:
@@ -246,17 +266,8 @@ enddo
 !             - igmix = 0 or 1, a noncondensable gas
 !             - igmix > 2     , a condensable gas (steam)
 !==============================================================
-do iesp = 1, nscasp
-  call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yk)
-
-  do iel = 1, ncel
     cpro_cp(iel) = cpro_cp(iel) + cvar_yk(iel)*s_k(iesp)%cp
   enddo
-enddo
-
-! Finalization
-do iel = 1, ncel
-  cpro_cp(iel) = cpro_cp(iel) + y_d(iel)*s_d%cp
 enddo
 
 !===========================================================
@@ -282,11 +293,7 @@ if (ippmod(icompf).lt.0) then
   do iel = 1, ncel
     ! Evaluate the temperature thanks to the enthalpy
     tempk(iel) = cvar_enth(iel)/ cpro_cp(iel)
-    if (idilat.eq.3) then
-      cpro_rho(iel) = pther*mix_mol_mas(iel)/(cs_physical_constants_r*tempk(iel))
-    else
-      cpro_rho(iel) = p0*mix_mol_mas(iel)/(cs_physical_constants_r*tempk(iel))
-    endif
+    cpro_rho(iel) = pressure*mix_mol_mas(iel)/(cs_physical_constants_r*tempk(iel))
   enddo
 endif
 
@@ -406,6 +413,30 @@ do iesp = 1, nscasp
 
 enddo
 
+! Steam binary diffusion
+do iel = 1, ncel
+
+  x_ncond_tot = 0.0d0;
+  ratio_tkpr = tempk(iel)**1.75d0 / pressure;
+
+  do iesp = 1, nscasp
+    s_i => s_k(iesp)
+    call field_get_val_s(ivarfl(isca(iscasp(iesp))), cvar_yi)
+    y_k = cvar_yi(iel)
+    x_k = y_k * mix_mol_mas(iel) / s_i%mol_mas
+    xmab = DSQRT(2.0d0 / (1.0d0 / (s_d%mol_mas*1000.0d0) &
+                         +1.0d0 / (s_i%mol_mas*1000.0d0))) 
+    xvab = ((s_d%vol_dif)**(1.0d0/3.0d0) + (s_i%vol_dif)**(1.d0/3.d0))**2.d0
+    a1 = 1.43d-7 / (xmab * xvab) * patm
+    steam_binary_diffusion(iel) = steam_binary_diffusion(iel) &
+                                  + x_k / (a1 * ratio_tkpr)
+    x_ncond_tot = x_ncond_tot + x_k
+  enddo
+
+  steam_binary_diffusion(iel) = x_ncond_tot / steam_binary_diffusion(iel)
+
+enddo
+
 if(ippmod(icompf).lt.0) then
   ! --- Lambda/Cp of the thermal scalar
   do iel = 1, ncel
@@ -413,7 +444,6 @@ if(ippmod(icompf).lt.0) then
   enddo
 
   ! deallocate local arrays if not compressible
-  deallocate(tk_loc)
   deallocate(lam_loc)
   tempk => null()
   lambda => null()

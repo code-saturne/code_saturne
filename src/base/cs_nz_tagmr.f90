@@ -30,6 +30,8 @@ module cs_nz_tagmr
 
   !=============================================================================
 
+  use, intrinsic :: iso_c_binding
+
   implicit none
 
   !=============================================================================
@@ -50,7 +52,7 @@ module cs_nz_tagmr
   !> \anchor znmurx
   !> Maximal number of discretized points associated to the (ii)th face
   !> with the 1-D thermal model coupled with condensation
-  integer, save :: znmurx
+  integer(c_int), pointer, save :: znmurx
 
   !> \anchor znmur
   !> number of discretized points associated to the (ii)th face
@@ -60,7 +62,7 @@ module cs_nz_tagmr
   !> \anchor zdxp
   !> space step associated to the spatial discretization of the 1-D thermal model
   !> coupled with condensation model
-  double precision, allocatable, dimension(:,:) :: zdxp
+  double precision, dimension(:,:), pointer, save :: zdxp
 
   !> \anchor ztheta-scheme of the 1-D thermal model
   !>    - 0 : explicit scheme
@@ -117,7 +119,7 @@ module cs_nz_tagmr
   !> \anchor ztmur
   !> the wall temperature computed with the 1-D thermal model
   !> associated to concrete solid material
-  double precision, dimension(:,:),  allocatable :: ztmur
+  double precision, dimension(:,:), pointer, save :: ztmur
 
   !> \}
 
@@ -136,12 +138,26 @@ interface
     type(c_ptr), intent(out) :: zcpb, zhext, ztext, ztpar0
   end subroutine cs_f_wall_condensation_1d_thermal_get_pointers
 
+  subroutine cs_f_wall_condensation_1d_thermal_get_mesh_pointers(znmurx, zdxp, ztmur)&
+    bind(C, name='cs_f_wall_condensation_1d_thermal_get_mesh_pointers')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), intent(out) :: znmurx, zdxp, ztmur
+  end subroutine cs_f_wall_condensation_1d_thermal_get_mesh_pointers
+
   subroutine cs_f_wall_condensation_1d_thermal_create(nzones) &
     bind(C, name='cs_wall_condensation_1d_thermal_create')
     use, intrinsic :: iso_c_binding
     implicit none
     integer(c_int), value, intent(in) :: nzones
   end subroutine cs_f_wall_condensation_1d_thermal_create
+
+  subroutine cs_f_wall_condensation_1d_thermal_mesh_create(znmurx, nfbpcd, nzones) &
+    bind(C, name='cs_wall_condensation_1d_thermal_mesh_create')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value, intent(in) :: znmurx, nfbpcd, nzones
+  end subroutine cs_f_wall_condensation_1d_thermal_mesh_create
 
   subroutine cs_f_wall_condensation_1d_thermal_free() &
     bind(C, name='cs_wall_condensation_1d_thermal_free')
@@ -198,6 +214,7 @@ contains
 
   subroutine init_nz_mesh_tagmr
 
+    use, intrinsic :: iso_c_binding
     use optcal
     use pointe
     use cs_nz_condensation
@@ -208,8 +225,11 @@ contains
     ! Local variables
 
     integer  iiii, iz
+    type(c_ptr) :: c_znmurx, c_zdxp, c_ztmur, c_dummy1, c_dummy2
 
     ! Copy single-zone to multi-zone formulation for compatibility if needed.
+    call cs_f_wall_condensation_1d_thermal_get_mesh_pointers(c_znmurx, c_dummy1, c_dummy2)
+    call c_f_pointer(c_znmurx, znmurx)
 
     ! Calcul du max des nmurs (pour les fichiers suite)
     nztag1d = 0
@@ -233,13 +253,10 @@ contains
       enddo
       if (irangp.ge.0) call parcmx(znmurx)
 
-      ! Allocate zone data
-
-      allocate(zdxp(nzones,znmurx))
-      allocate(ztmur(nfbpcd,znmurx))
-
-      zdxp(:,:) = 0.d0
-      ztmur(:,:) = 0.d0
+      call cs_f_wall_condensation_1d_thermal_mesh_create(znmurx, nfbpcd, nzones)
+      call cs_f_wall_condensation_1d_thermal_get_mesh_pointers(c_dummy1, c_zdxp, c_ztmur)
+      call c_f_pointer(c_zdxp, zdxp, [nzones, znmurx])
+      call c_f_pointer(c_ztmur, ztmur, [nfbpcd, znmurx])
 
       !1-D mesh generated and temperature initialization
       call cs_mesh_tagmr(nfbpcd, izzftcd)
@@ -251,10 +268,7 @@ contains
   !=============================================================================
 
   subroutine finalize_nz_mesh_tagmr
-
-    deallocate(zdxp)
-    deallocate(ztmur)
-
+    return
   end subroutine finalize_nz_mesh_tagmr
 
   !=============================================================================

@@ -632,7 +632,7 @@ endif
 call inivar(nvar, nscal)
 
 if (icdo.ge.1) then ! CDO mode
-  call cs_f_domain_initialize_cdo_systems
+  call cs_f_initialize_cdo_systems
 endif
 
 iterns = -1

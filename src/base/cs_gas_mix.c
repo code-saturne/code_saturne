@@ -621,6 +621,36 @@ cs_gas_mix_add_property_fields(void)
     _map_field(f);
     _set_predefined_property(f);
 
+    /* Add binary diffusion coefficient of steam into non-condensables */
+    f = cs_field_create("steam_binary_diffusion",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        1, /* dim */
+                        false);
+
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+
+    /* Add molecular weight of non-condensable mixture */ 
+    f = cs_field_create("mol_mas_ncond",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        1, /* dim */
+                        false);
+
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+
+    /* Add molecular weight of non-condensable mixture */ 
+    f = cs_field_create("tempk",
+                        field_type,
+                        CS_MESH_LOCATION_CELLS,
+                        1, /* dim */
+                        false);
+
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 1);
+
   }
 
   /* Add molar mass property */

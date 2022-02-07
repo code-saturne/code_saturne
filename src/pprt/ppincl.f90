@@ -291,12 +291,6 @@ module ppincl
   !>      if =  3 Dehbi model (Dehbi 2015)
   integer(c_int), pointer, save ::  icondb_model
 
-  !> Wall condensation convection regime (only if icondb > -1)
-  !>      if =  0 natural convection
-  !>      if =  1 forced convection
-  !>      if =  2 mixed convection
-  integer(c_int), pointer, save ::  icondb_regime
-
   !> Specific condensation modelling
   !>      if = -1 module not activated
   !>      if =  0 condensation source terms with metal
@@ -879,12 +873,11 @@ module ppincl
     ! global physical model flags
 
     subroutine cs_f_wall_condensation_get_model_pointers(p_icondb, &
-                                                         p_icondb_model, &
-                                                         p_icondb_regime) &
+                                                         p_icondb_model) &
       bind(C, name='cs_f_wall_condensation_get_model_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_icondb, p_icondb_model, p_icondb_regime
+      type(c_ptr), intent(out) :: p_icondb, p_icondb_model
     end subroutine cs_f_wall_condensation_get_model_pointers
 
     !---------------------------------------------------------------------------
@@ -912,7 +905,6 @@ contains
     ! Local variables
 
     type(c_ptr) :: p_viscv0, p_ippmod, p_isoot, p_icondb, p_icondb_model
-    type(c_ptr) :: p_icondb_regime
 
     call cs_f_fluid_properties_pp_get_pointers(p_viscv0)
     call c_f_pointer(p_viscv0, viscv0)
@@ -920,14 +912,12 @@ contains
     call cs_f_physical_model_get_pointers(p_ippmod)
     call cs_f_combustion_model_get_pointers(p_isoot)
     call cs_f_wall_condensation_get_model_pointers(p_icondb,&
-                                                   p_icondb_model,&
-                                                   p_icondb_regime)
+                                                   p_icondb_model)
 
     call c_f_pointer(p_ippmod, ippmod, [nmodmx])
     call c_f_pointer(p_isoot, isoot)
     call c_f_pointer(p_icondb, icondb)
     call c_f_pointer(p_icondb_model, icondb_model)
-    call c_f_pointer(p_icondb_regime, icondb_regime)
 
   end subroutine pp_models_init
 

@@ -2315,18 +2315,6 @@ module cs_c_bindings
     end subroutine cs_wall_condensation_set_model
 
     !---------------------------------------------------------------------------
-    !> \brief Set wall condensation regime
-    !
-    !> \param[in]   regime     Integer related to the choice of regime
-    !---------------------------------------------------------------------------
-    subroutine cs_wall_condensation_set_regime(regime)   &
-      bind(C, name='cs_wall_condensation_set_regime')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), intent(in), value :: regime
-    end subroutine cs_wall_condensation_set_regime
-
-    !---------------------------------------------------------------------------
     !> \brief Set wall condensation on/off state
     !
     !> \param[in]   icondb     Integer related to the onoff state of wall

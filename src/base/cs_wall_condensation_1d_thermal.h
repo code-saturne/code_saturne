@@ -39,6 +39,7 @@ BEGIN_C_DECLS
 
 typedef struct {
   int        nzones;
+  int        znmurx;
   cs_real_t *ztheta;
   cs_real_t *zdxmin;
   cs_lnum_t *znmur ;
@@ -51,6 +52,10 @@ typedef struct {
   cs_real_t *zcondb;
   cs_real_t *zcpb  ;
   cs_real_t *ztpar ;
+
+  cs_real_t *zdxp;
+  cs_real_t *ztmur;
+
 } cs_wall_cond_1d_thermal_t;
 
 /*============================================================================
@@ -67,15 +72,19 @@ extern const cs_wall_cond_1d_thermal_t *cs_glob_wall_cond_1d_thermal;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create the context for wall condensation models.
+ * \brief  Create the context for wall condensation thermal models.
  *
- * \param[in] nfbpcd   number of faces with wall condensation
- * \param[in] nvar     number of variables (?)
+ * \param[in] nzones number of zones
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_wall_condensation_1d_thermal_create(int  nzones);
+
+void
+cs_wall_condensation_1d_thermal_mesh_create(int  znmurx,
+    int nfbpcd,
+    int nzones);
 
 /*----------------------------------------------------------------------------*/
 /*!

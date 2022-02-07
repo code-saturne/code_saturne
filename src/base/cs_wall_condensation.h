@@ -42,24 +42,29 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 typedef enum {
-  CS_WALL_COND_MODEL_NONE      = -1,
   CS_WALL_COND_MODEL_COPAIN    = 0,
   CS_WALL_COND_MODEL_COPAIN_BD = 1,
   CS_WALL_COND_MODEL_UCHIDA    = 2,
-  CS_WALL_COND_MODEL_DEHBI     = 3
-} cs_wall_cond_model_t;
+  CS_WALL_COND_MODEL_DEHBI     = 3,
+} cs_wall_cond_natural_conv_model_t;
+
 
 typedef enum {
-  CS_WALL_COND_REGIME_NATURAL_CONVECTION = 0,
-  CS_WALL_COND_REGIME_MIXED_CONVECTION   = 1,
-  CS_WALL_COND_REGIME_FORCED_CONVECTION  = 2
-} cs_wall_cond_regime_t;
+  CS_WALL_COND_MODEL_WALL_LAW  = 0,
+  CS_WALL_COND_MODEL_SCHLICHTING = 1
+} cs_wall_cond_forced_conv_model_t;
+
+typedef enum {
+  CS_WALL_COND_MIXED_MAX = 0,
+  CS_WALL_COND_MIXED_INCROPERA = 1
+} cs_wall_cond_mixed_conv_model_t;
 
 typedef struct {
   int icondb; // Switch used to activate wall condensation (0 : activated)
   // Model type
-  cs_wall_cond_model_t model;
-  cs_wall_cond_regime_t regime;
+  cs_wall_cond_natural_conv_model_t natural_conv_model;
+  cs_wall_cond_forced_conv_model_t forced_conv_model;
+  cs_wall_cond_mixed_conv_model_t mixed_conv_model;
 
   // Mesh-related information
   cs_lnum_t            nfbpcd;
@@ -70,6 +75,8 @@ typedef struct {
   cs_real_t            *hpcond;
   cs_real_t            *twall_cond;
   cs_real_t            *thermal_condensation_flux;
+  cs_real_t            *convective_htc;
+  cs_real_t            *condensation_htc;
   cs_real_t            *flthr;
   cs_real_t            *dflthr;
 
@@ -104,18 +111,7 @@ extern const cs_wall_cond_t *cs_glob_wall_cond;
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_condensation_set_model(cs_wall_cond_model_t  model);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the wall condensation regime
- *
- * \param[in] model    integer corresponding to the desired model
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_wall_condensation_set_regime(cs_wall_cond_regime_t  regime);
+cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t  model);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -165,12 +161,10 @@ cs_wall_condensation_free(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_condensation_compute(int        nvar,
-                             cs_lnum_t  nfbpcd,
-                             cs_lnum_t  ifbpcd[],
-                             int        izzftcd[],
-                             cs_real_t  spcond[],
-                             cs_real_t  hpcond[]);
+cs_wall_condensation_compute();
+
+void
+cs_wall_condensation_log();
 
 /*----------------------------------------------------------------------------*/
 /*!

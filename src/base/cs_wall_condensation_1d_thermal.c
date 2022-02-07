@@ -64,6 +64,7 @@
 #include "cs_math.h"
 #include "cs_log_iteration.h"
 #include "cs_wall_condensation_1d_thermal.h"
+#include "cs_wall_condensation.h" // not great...
 
 /*----------------------------------------------------------------------------*/
 
@@ -99,6 +100,7 @@ BEGIN_C_DECLS
 static cs_wall_cond_1d_thermal_t _wall_cond_thermal =
 {
   .nzones = 0,
+  .znmurx = 0,
   .ztheta = NULL,
   .zdxmin = NULL,
   .znmur  = NULL,
@@ -110,7 +112,9 @@ static cs_wall_cond_1d_thermal_t _wall_cond_thermal =
   .zrob   = NULL,
   .zcondb = NULL,
   .zcpb   = NULL,
-  .ztpar  = NULL
+
+  .zdxp = NULL,
+  .ztmur = NULL
 };
 
 // TODO : to remove when the general 1D thermal model replaces
@@ -134,6 +138,12 @@ cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur,
                                                cs_real_t **zhext,
                                                cs_real_t **ztext,
                                                cs_real_t **ztpar0);
+
+void
+cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **znmurx,
+                                                    cs_real_t **zdxp,
+						    cs_real_t **ztmur);
+
 
 /*============================================================================
  * Private function definitions
@@ -165,6 +175,16 @@ cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur,
   *zhext  = _wall_cond_thermal.zhext;
   *ztext  = _wall_cond_thermal.ztext;
   *ztpar0 = _wall_cond_thermal.ztpar0;
+}
+
+
+void
+cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **znmurx,
+                                                    cs_real_t **zdxp,
+						    cs_real_t **ztmur) {
+  *znmurx = &(_wall_cond_thermal.znmurx);
+  *zdxp = _wall_cond_thermal.zdxp;
+  *ztmur = _wall_cond_thermal.ztmur;
 }
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -212,6 +232,26 @@ cs_wall_condensation_1d_thermal_create(int  nzones)
   }
 }
 
+void
+cs_wall_condensation_1d_thermal_mesh_create(int  znmurx, 
+    int nfbpcd,
+    int nzones)
+{
+  _wall_cond_thermal.znmurx = znmurx;
+
+  BFT_MALLOC(_wall_cond_thermal.zdxp, nzones*znmurx, cs_real_t);
+  BFT_MALLOC(_wall_cond_thermal.ztmur, nfbpcd*znmurx, cs_real_t);
+
+  for (int im = 0; im<znmurx; im++) {
+    for (cs_lnum_t ieltcd = 0; ieltcd<nfbpcd; ieltcd++) {
+      _wall_cond_thermal.ztmur[ieltcd*znmurx + im] = 0.0;
+    }
+    for (int iz = 0; iz<nzones; iz++) {
+      _wall_cond_thermal.zdxp[iz*znmurx + im] = 0.0;
+    }
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Free all structures related to wall condensation models.
@@ -231,6 +271,8 @@ cs_wall_condensation_1d_thermal_free(void)
   BFT_FREE(_wall_cond_thermal.zhext);
   BFT_FREE(_wall_cond_thermal.ztext);
   BFT_FREE(_wall_cond_thermal.ztpar0);
+  BFT_FREE(_wall_cond_thermal.zdxp);
+  BFT_FREE(_wall_cond_thermal.ztmur);
 }
 
 /*----------------------------------------------------------------------------*/
