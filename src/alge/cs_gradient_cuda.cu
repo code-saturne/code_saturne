@@ -723,14 +723,6 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   /* Compute gradient */
   /*------------------*/
 
-  cs_real_t rhsv2[9][4];
-  cs_cuda_copy_d2h(rhsv2, rhsv, 9*4*sizeof(cs_real_t));
-
-  double srh = 0;
-  for (int ii = 0; ii < cs_glob_mesh->n_cells; ii++)
-    for (int jj = 0; jj < 4; jj++)
-      srh += rhsv2[ii][jj];
-
   void *_grad_d = NULL;
   cs_real_3_t *grad_d = NULL;
 

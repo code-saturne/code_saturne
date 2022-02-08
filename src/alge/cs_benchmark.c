@@ -251,11 +251,6 @@ _mat_vec_exdiag_native(cs_lnum_t            n_faces,
 {
   cs_lnum_t  ii, jj, face_id;
 
-  /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*x, *y, *xa)
-#endif
-
   const cs_lnum_t *restrict face_cel_p
     = (const cs_lnum_t *restrict)face_cell;
 
@@ -361,11 +356,6 @@ _mat_vec_exdiag_part_p1(cs_lnum_t            n_faces,
                         cs_real_t           *restrict ya)
 {
   cs_lnum_t  ii, jj, face_id;
-
-  /* Tell IBM compiler not to alias */
-#if defined(__xlc__)
-#pragma disjoint(*x, *xa, *ya)
-#endif
 
   const cs_lnum_t *restrict face_cel_p
     = (const cs_lnum_t *restrict)face_cell;
