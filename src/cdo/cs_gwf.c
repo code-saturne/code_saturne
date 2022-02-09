@@ -608,19 +608,35 @@ _sspf_init_setup(cs_gwf_saturated_single_phase_t   *mc)
 
   if (mc == NULL)
     return;
-  if (mc->richards == NULL)
+
+  cs_equation_t  *eq = mc->richards;
+
+  if (eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               "%s: The Richards equation is not defined. Stop execution.\n",
               __func__);
-  assert(cs_equation_is_steady(mc->richards) == true);
+  assert(cs_equation_is_steady(eq) == true);
 
-  cs_equation_param_t  *eqp = cs_equation_get_param(mc->richards);
+  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
   assert(eqp != NULL);
 
   /* Add the diffusion term to the Richards equation by associating the
      absolute permeability to the diffusion property of the Richards eq. */
 
   cs_equation_add_diffusion(eqp, gw->abs_permeability);
+
+  /* Add the variable field */
+
+  bool has_previous = false;
+
+  if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS) {
+
+    has_previous = true;
+    cs_equation_predefined_create_field(1, eq); /* Keep two states */
+
+  }
+  else
+    cs_equation_predefined_create_field(0, eq); /* Keep only one state */
 
   /* Add new fields if needed */
 
@@ -641,7 +657,7 @@ _sspf_init_setup(cs_gwf_saturated_single_phase_t   *mc)
                                           field_mask,
                                           v_loc_id,
                                           1,
-                                          false); /* has_previous */
+                                          has_previous);
       break;
 
     case CS_SPACE_SCHEME_CDOFB:
@@ -650,7 +666,7 @@ _sspf_init_setup(cs_gwf_saturated_single_phase_t   *mc)
                                           field_mask,
                                           c_loc_id,
                                           1,
-                                          false); /* has_previous */
+                                          has_previous);
       break;
 
     default:
@@ -899,6 +915,7 @@ _uspf_init_setup(cs_gwf_unsaturated_single_phase_t   *mc,
 
   if (mc == NULL)
     return;
+
   if (mc->richards == NULL)
     bft_error(__FILE__, __LINE__, 0,
               "%s: The Richards equation is not defined. Stop execution.\n",
@@ -915,6 +932,10 @@ _uspf_init_setup(cs_gwf_unsaturated_single_phase_t   *mc,
   cs_equation_param_t  *eqp = cs_equation_get_param(mc->richards);
 
   cs_equation_add_diffusion(eqp, mc->permeability);
+
+  /* Add the variable field (Keep one previous state) */
+
+  cs_equation_predefined_create_field(1, mc->richards);
 
   /* Set additional fields */
 
@@ -1411,6 +1432,11 @@ _mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc,
   cs_equation_param_t  *hg_eqp = cs_equation_get_param(mc->hg_eq);
 
   cs_equation_add_diffusion(hg_eqp, mc->diff_hg_eq_pty);
+
+  /* Add the variable fields (Keep always two states) */
+
+  cs_equation_predefined_create_field(1, mc->wl_eq);
+  cs_equation_predefined_create_field(1, mc->hg_eq);
 
   /* Cross-terms */
 

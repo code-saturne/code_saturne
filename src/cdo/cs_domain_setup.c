@@ -496,9 +496,12 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
    * numerical parameters are set.
    */
 
-  /* Add variable field related to user-defined and predefined equations */
+  /*  Add variable field related to user-defined equations.
+   *
+   *  Adding a variable field related to a predefined equation is done inside
+   *  each setup function of the module */
 
-  cs_equation_create_fields();
+  cs_equation_user_create_fields();
 
   /* Wall distance */
 

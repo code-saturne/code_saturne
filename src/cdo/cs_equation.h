@@ -624,12 +624,34 @@ cs_equation_set_functions(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a field structure related to all cs_equation_t structures
+ * \brief  Create a field structure related to all predefined equations
+ *         This includes equations associated to all modules and also
+ *         wall distance or mesh deformation for instance
+ *
+ *         When an automatic behavior is asked then one checks the flag
+ *         CS_EQUATION_UNSTEADY to decide. One can force the behavior when
+ *         handling predefined equations since more complex situations can
+ *         occur such as a steady computation with non-linearities (in which
+ *         case one wants a field with a previous state)
+ *
+ * \param[in]       n_previous     number of previous states to keep
+ *                                 -1 means automatic
+ * \param[in, out]  eq             pointer to an equation structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_create_fields(void);
+cs_equation_predefined_create_field(int               n_previous,
+                                    cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create a field structure related to all user-defined equations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_user_create_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -323,6 +323,122 @@ _set_vect_hho_function_pointers(cs_equation_t  *eq)
   eq->update_field = cs_hho_vecteq_update_field;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a field (type=variable) to an equation
+ *
+ * \param[in]       n_previous   number of previous states to keep
+ * \param[in, out]  eq           pointer to a cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_add_field(int               n_previous,
+           cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return;
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  cs_equation_param_t  *eqp = eq->param;
+
+  /* Redundant definition to handle C/FORTRAN */
+
+  bool  previous;
+  if (n_previous == 0)
+    previous = false;
+  else if (n_previous > 0)
+    previous = true;
+  else {
+
+    previous = false; /* avoid a compiler warning */
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Expected value for n_previous is > -1. Here %d\n"
+              "%s: Eq. \"%s\"\n",
+              __func__, n_previous, __func__, eqp->name);
+
+  }
+
+  /* Associate a predefined mesh_location_id to this field */
+
+  int  location_id = -1; /* initialize values to avoid a warning */
+
+  switch (eqp->space_scheme) {
+  case CS_SPACE_SCHEME_CDOVB:
+  case CS_SPACE_SCHEME_CDOVCB:
+    location_id = cs_mesh_location_get_id_by_name("vertices");
+    break;
+  case CS_SPACE_SCHEME_CDOEB:
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
+  case CS_SPACE_SCHEME_HHO_P1:
+  case CS_SPACE_SCHEME_HHO_P2:
+    location_id = cs_mesh_location_get_id_by_name("cells");
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Space scheme for eq. \"%s\" is incompatible with a field.\n"
+              "%s: Stop adding a cs_field_t structure.\n",
+              __func__, eqp->name, __func__);
+    break;
+  }
+
+  if (location_id == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid mesh location id (= -1) for the field associated"
+              " to Eq. \"%s\"\n", __func__, eqp->name);
+
+  /* Store the related field id */
+
+  eq->field_id = cs_variable_cdo_field_create(eq->varname,
+                                              NULL, /* label */
+                                              location_id,
+                                              eqp->dim,
+                                              n_previous);
+
+  /* SLES is associated to a field_id */
+
+  eqp->sles_param->field_id = eq->field_id;
+
+  if (eqp->post_flag & CS_EQUATION_POST_NORMAL_FLUX) {
+
+    /* Add a field for the normal boundary flux */
+
+    location_id = cs_mesh_location_get_id_by_name("boundary_faces");
+
+    char  *bdy_flux_name = NULL;
+    int  len = strlen(eq->varname) + strlen("_normal_boundary_flux") + 2;
+
+    BFT_MALLOC(bdy_flux_name, len, char);
+    sprintf(bdy_flux_name, "%s_normal_boundary_flux", eq->varname);
+
+    /* If a scalar: the scalar diffusive flux across the boundary
+     *  If a vector: the vector dot the normal of the boundary face */
+
+    int  flx_dim = (eqp->dim > 5) ? 3 : 1;
+    cs_field_t  *bdy_flux_fld = cs_field_find_or_create(bdy_flux_name,
+                                                        0, /* field_mask */
+                                                        location_id,
+                                                        flx_dim,
+                                                        previous);
+
+    eq->boundary_flux_id = cs_field_id_by_name(bdy_flux_name);
+
+    const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+    cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("log"), 1);
+    cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("post_vis"),
+                         post_flag);
+
+    BFT_FREE(bdy_flux_name);
+
+  } /* Create a boundary flux field */
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2194,6 +2310,45 @@ cs_equation_set_functions(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Create a field structure related to all predefined equations
+ *         This includes equations associated to all modules and also
+ *         wall distance or mesh deformation for instance
+ *
+ *         When an automatic behavior is asked then one checks the flag
+ *         CS_EQUATION_UNSTEADY to decide. One can force the behavior when
+ *         handling predefined equations since more complex situations can
+ *         occur such as a steady computation with non-linearities (in which
+ *         case one wants a field with a previous state)
+ *
+ * \param[in]       n_previous     number of previous states to keep
+ *                                 -1 means automatic
+ * \param[in, out]  eq             pointer to an equation structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_predefined_create_field(int               n_previous,
+                                    cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    return;
+
+  cs_equation_param_t  *eqp = eq->param;
+
+  if (eqp->type == CS_EQUATION_TYPE_USER)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Only predefined equation are managed with this function.\n"
+              "%s: Eq. \"%s\"\n",
+              __func__, __func__, eqp->name);
+
+  if (n_previous < 0)
+    n_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? 1 : 0;
+
+  _add_field(n_previous, eq);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create a field structure related to all user-defined equations
  */
 /*----------------------------------------------------------------------------*/
@@ -2203,93 +2358,18 @@ cs_equation_user_create_fields(void)
 {
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 
-    int  location_id = -1; /* initialize values to avoid a warning */
     cs_equation_t  *eq = _equations[eq_id];
 
     assert(eq != NULL);
 
     cs_equation_param_t  *eqp = eq->param;
 
-    /* Redundant definition to handle C/FORTRAN */
+    if (eqp->type !=  CS_EQUATION_TYPE_USER)
+      continue;
 
-    int  has_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? 1 : 0;
-    bool  previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
+    int  n_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? 1 : 0;
 
-    if (eq->main_ts_id > -1)
-      cs_timer_stats_start(eq->main_ts_id);
-
-    /* Associate a predefined mesh_location_id to this field */
-
-    switch (eqp->space_scheme) {
-    case CS_SPACE_SCHEME_CDOVB:
-    case CS_SPACE_SCHEME_CDOVCB:
-      location_id = cs_mesh_location_get_id_by_name("vertices");
-      break;
-    case CS_SPACE_SCHEME_CDOEB:
-    case CS_SPACE_SCHEME_CDOFB:
-    case CS_SPACE_SCHEME_HHO_P0:
-    case CS_SPACE_SCHEME_HHO_P1:
-    case CS_SPACE_SCHEME_HHO_P2:
-      location_id = cs_mesh_location_get_id_by_name("cells");
-      break;
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Space scheme for eq. %s is incompatible with a field.\n"
-                  " Stop adding a cs_field_t structure.\n"), eqp->name);
-      break;
-    }
-
-    if (location_id == -1)
-      bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid mesh location id (= -1) for the current field\n"));
-
-    /* Store the related field id */
-
-    eq->field_id = cs_variable_cdo_field_create(eq->varname,
-                                                NULL, /* label */
-                                                location_id,
-                                                eqp->dim,
-                                                has_previous);
-
-    /* SLES is associated to a field_id */
-
-    eqp->sles_param->field_id = eq->field_id;
-
-    if (eqp->post_flag & CS_EQUATION_POST_NORMAL_FLUX) {
-
-      /* Add a field for the normal boundary flux */
-
-      location_id = cs_mesh_location_get_id_by_name("boundary_faces");
-
-      char  *bdy_flux_name = NULL;
-      int  len = strlen(eq->varname) + strlen("_normal_boundary_flux") + 2;
-
-      BFT_MALLOC(bdy_flux_name, len, char);
-      sprintf(bdy_flux_name, "%s_normal_boundary_flux", eq->varname);
-
-      /* If a scalar: the scalar diffusive flux across the boundary
-       *  If a vector: the vector dot the normal of the boundary face */
-
-      int  flx_dim = (eqp->dim > 5) ? 3 : 1;
-      cs_field_t  *bdy_flux_fld = cs_field_find_or_create(bdy_flux_name,
-                                                          0, /* field_mask */
-                                                          location_id,
-                                                          flx_dim,
-                                                          previous);
-
-      eq->boundary_flux_id = cs_field_id_by_name(bdy_flux_name);
-
-      const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
-      cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("log"), 1);
-      cs_field_set_key_int(bdy_flux_fld, cs_field_key_id("post_vis"),
-                           post_flag);
-
-      BFT_FREE(bdy_flux_name);
-
-    } /* Create a boundary flux field */
-
-    if (eq->main_ts_id > -1)
-      cs_timer_stats_stop(eq->main_ts_id);
+    _add_field(n_previous, eq);
 
   } /* Loop on equations */
 }

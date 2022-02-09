@@ -4365,6 +4365,10 @@ cs_solidification_init_setup(void)
       }
 
       solid->forcing_coef = 180./(alloy->s_das*alloy->s_das);
+
+      /* Add the variable field (automatic) */
+
+      cs_equation_predefined_create_field(-1, alloy->solute_equation);
     }
     break; /* Binary alloy model */
 

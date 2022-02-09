@@ -1617,9 +1617,15 @@ cs_ale_init_setup(cs_domain_t   *domain)
                              cs_glob_log_frequency,
                              var_cal_opt.verbosity);
 
-  cs_equation_param_t  *eqp = cs_equation_param_by_name("mesh_velocity");
+  cs_equation_t  *eq = cs_equation_by_name("mesh_velocity");
+  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+
   assert(mesh_visc != NULL);
   cs_equation_add_diffusion(eqp, mesh_visc);
+
+  /* Add the variable field */
+
+  cs_equation_predefined_create_field(1, eq); /* Always has_previous */
 }
 
 /*----------------------------------------------------------------------------*/

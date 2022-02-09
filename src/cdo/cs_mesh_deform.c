@@ -267,7 +267,9 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
 
   for (int i = 0; i < 3; i++) {
 
-    cs_equation_param_t  *eqp = cs_equation_param_by_name(eq_name[i]);
+    cs_equation_t  *eq = cs_equation_by_name(eq_name[i]);
+    cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+    assert(eqp != NULL);
 
     for (int j = 0; j < _n_b_zones; j++) {
       const cs_zone_t *z = cs_boundary_zone_by_id(_b_zone_ids[j]);
@@ -304,6 +306,10 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
     }
 
     cs_equation_add_diffusion(eqp, conductivity);
+
+    /* Add the variable field */
+
+    cs_equation_predefined_create_field(-1, eq); /* automatic */
 
   } /* Loop on Cartesian coordinates */
 }

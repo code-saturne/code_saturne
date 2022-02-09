@@ -207,6 +207,10 @@ cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
   /* All considered models needs a viscous term */
 
   cs_equation_add_diffusion(mom_eqp, nsp->tot_viscosity);
+
+  /* Add the variable field (Keep the previous state) */
+
+  cs_equation_predefined_create_field(1, nsc->momentum);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -381,6 +385,10 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
   /* All considered models needs a viscous term */
 
   cs_equation_add_diffusion(mom_eqp, nsp->tot_viscosity);
+
+  /* Add the variable field (Always keep a previous state) */
+
+  cs_equation_predefined_create_field(1, nsc->momentum);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -561,6 +569,7 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
   assert(nsp != NULL && nsc != NULL);
 
   /* Prediction step: Approximate the velocity */
+  /* ----------------------------------------- */
 
   cs_equation_param_t *u_eqp = cs_equation_get_param(nsc->prediction);
 
@@ -581,7 +590,12 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
   if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
     cs_equation_add_advection(u_eqp, adv_field);
 
+  /* Add the variable field (Always keep a previous state) */
+
+  cs_equation_predefined_create_field(1, nsc->prediction);
+
   /* Correction step: Approximate the pressure */
+  /* ----------------------------------------- */
 
   cs_equation_param_t *p_eqp = cs_equation_get_param(nsc->correction);
 
@@ -596,6 +610,10 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
                                             loc_id,
                                             3,
                                             has_previous);
+
+  /* Add the variable field */
+
+  cs_equation_predefined_create_field((has_previous ? 1 : 0), nsc->prediction);
 }
 
 /*----------------------------------------------------------------------------*/

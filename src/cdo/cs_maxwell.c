@@ -512,6 +512,12 @@ cs_maxwell_init_setup(void)
     cs_field_set_key_int(mxl->d_field, log_key, 1);
     cs_field_set_key_int(mxl->d_field, post_key, 1);
 
+    /* Add the variable field */
+
+    cs_equation_t  *eq = cs_equation_by_name(CS_MAXWELL_ESTATIC_EQNAME);
+
+    cs_equation_predefined_create_field(-1, eq); /* automatic */
+
   }
 
   if (mxl->model & CS_MAXWELL_MODEL_MAGNETOSTATIC) {
@@ -533,6 +539,12 @@ cs_maxwell_init_setup(void)
 
     cs_field_set_key_int(mxl->h_field, log_key, 1);
     cs_field_set_key_int(mxl->h_field, post_key, 1);
+
+    /* Add the variable field */
+
+    cs_equation_t  *eq = cs_equation_by_name(CS_MAXWELL_MSTATIC_EQNAME);
+
+    cs_equation_predefined_create_field(-1, eq); /* automatic */
 
   }
 

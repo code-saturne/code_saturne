@@ -494,6 +494,10 @@ cs_walldistance_setup(void)
   cs_equation_add_source_term_by_val(eqp,
                                      st_zone_name,   /* zone name */
                                      &unity);        /* value to set */
+
+  /* Add the variable field */
+
+  cs_equation_predefined_create_field(-1, eq); /* automatic */
 }
 
 /*----------------------------------------------------------------------------*/

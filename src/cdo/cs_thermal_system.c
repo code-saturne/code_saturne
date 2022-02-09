@@ -689,6 +689,13 @@ cs_thermal_system_init_setup(void)
     cs_field_set_key_int(thm->enthalpy, post_key, 1);
 
   } /* enthalpy */
+
+  /* Add the variable field */
+
+  if (has_previous)
+    cs_equation_predefined_create_field(1, thm->thermal_eq);
+  else
+    cs_equation_predefined_create_field(0, thm->thermal_eq);
 }
 
 /*----------------------------------------------------------------------------*/
