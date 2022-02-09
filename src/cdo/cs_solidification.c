@@ -3127,7 +3127,6 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
        iteration */
 
     delta_temp = -1, delta_cbulk = -1;
-    cs_lnum_t  cid_maxt = -1, cid_maxc = -1;
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       cs_real_t  dtemp = fabs(temp[c_id] - alloy->tk_bulk[c_id]);
@@ -3137,11 +3136,24 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
       alloy->ck_bulk[c_id] = conc[c_id];
 
       if (dtemp > delta_temp)
-        delta_temp = dtemp, cid_maxt = c_id;
+        delta_temp = dtemp;
       if (dconc > delta_cbulk)
-        delta_cbulk = dconc, cid_maxc = c_id;
+        delta_cbulk = dconc;
 
     } /* Loop on cells */
+
+    /* Parallel synchronization */
+
+    if (cs_glob_n_ranks > 1) {
+
+      cs_real_t  parall_delta_max[2] = {delta_temp, delta_cbulk};
+
+      cs_parall_max(2, CS_REAL_TYPE, parall_delta_max);
+
+      delta_temp = parall_delta_max[0];
+      delta_cbulk = parall_delta_max[1];
+
+    }
 
     alloy->iter += 1;
     if (solid->verbosity > 0) {
@@ -3149,11 +3161,6 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
                     "### Solidification.NL: "
                     " k= %d | delta_temp= %5.3e | delta_cbulk= %5.3e\n",
                     alloy->iter, delta_temp, delta_cbulk);
-      if (solid->verbosity > 1)
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "### Solidification.NL: "
-                      " k= %d | delta_temp= %7ld | delta_cbulk= %7ld\n",
-                      alloy->iter, (long)cid_maxt, (long)cid_maxc);
     }
 
   } /* while iterating */
