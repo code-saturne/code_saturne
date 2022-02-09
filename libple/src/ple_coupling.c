@@ -967,6 +967,28 @@ ple_coupling_mpi_intracomm_create(MPI_Comm   base_comm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get base communicator of an PLE coupling MPI set
+ *
+ * \param[in] s pointer to PLE coupling MPI set info structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+MPI_Comm
+ple_coupling_mpi_set_get_base_comm(const ple_coupling_mpi_set_t *s)
+{
+  assert(s != NULL);
+
+  if (s == NULL) {
+    ple_printf("  Coupling MPI set info: nil\n");
+    return MPI_COMM_NULL;
+  }
+
+  return s->base_comm;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Dump printout of an PLE coupling MPI set info structure.
  *
  * \param[in] s pointer to PLE coupling MPI set info structure.
