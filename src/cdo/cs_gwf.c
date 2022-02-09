@@ -1433,7 +1433,7 @@ _mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc,
 
   cs_equation_add_diffusion(hg_eqp, mc->diff_hg_eq_pty);
 
-  /* Add the variable fields (Keep always two states) */
+  /* Add the variable fields (Keep always the previous state) */
 
   cs_equation_predefined_create_field(1, mc->wl_eq);
   cs_equation_predefined_create_field(1, mc->hg_eq);
@@ -1786,7 +1786,8 @@ _mtpf_compute(const cs_mesh_t                   *mesh,
 
   bool cur2prev = true;
 
-  /* Build and solve the linear system related to the Richards equations */
+  /* Build and solve the linear system related to the coupled system of
+     equations */
 
   if (!cs_equation_is_steady(wl_eq) || !cs_equation_is_steady(hg_eq)) {
 

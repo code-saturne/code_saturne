@@ -505,7 +505,8 @@ cs_cdovb_scalsys_init_structures(int                           n_eqs,
   cs_cdo_system_helper_t  *sh = NULL;
 
   /* Up to now, only one full block with all equations is built. More complex
-     are possible according to the type of linear solvers. Work in progress. */
+   * cases are possible according to the type of linear solvers. Work in
+   * progress. */
 
   const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
 
@@ -810,14 +811,14 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
       cs_equation_builder_reset(block_ij->builder);
 
-    }
+    } /* Loop on blocks corresponding to the column of the system  */
 
     /* Copy current field values to previous values */
 
     if (cur2prev)
       cs_field_current_to_previous(fields[i_eq]);
 
-  }
+  } /* Loop on blocks corresponding to the row of the system  */
 
   /* Solve the linear system */
   /* ======================= */

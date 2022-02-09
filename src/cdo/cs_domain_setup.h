@@ -142,7 +142,7 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
  * \brief  First setup stage of the cs_domain_t structure
  *         Define extra domain boundaries
  *         Setup predefined equations
- *         Create fields
+ *         Create fields (already done in the FV part)
  *         Define cs_sles_t structures for variable fields
  *
  * \param[in, out]  domain            pointer to a cs_domain_t struct.

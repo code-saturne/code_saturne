@@ -277,7 +277,7 @@ typedef struct {
   cs_matrix_assembler_t          *matrix_assembler;
   cs_matrix_structure_t          *matrix_structure;
 
-} cs_cdo_system_xblock_t;       /*  */
+} cs_cdo_system_xblock_t;
 
 
 /*! \struct cs_cdo_system_block_t

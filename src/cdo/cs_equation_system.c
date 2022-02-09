@@ -471,7 +471,7 @@ cs_equation_system_init_sharing(const cs_mesh_t             *mesh,
 
     case CS_SPACE_SCHEME_CDOVB:
       if (sysp->block_var_dim == 1)
-        cs_cdovb_scalsys_init_sharing(mesh, connect, quant, time_step); /*  */
+        cs_cdovb_scalsys_init_sharing(mesh, connect, quant, time_step);
       else
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid block_var_dim (=%d) for system \"%s\".\n"
