@@ -2194,12 +2194,12 @@ cs_equation_set_functions(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a field structure related to all cs_equation_t structures
+ * \brief  Create a field structure related to all user-defined equations
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_create_fields(void)
+cs_equation_user_create_fields(void)
 {
   for (int eq_id = 0; eq_id < _n_equations; eq_id++) {
 

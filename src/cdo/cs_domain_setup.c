@@ -539,7 +539,7 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
      * what is requested */
 
     if (cs_thermal_system_needs_navsto())
-      cs_navsto_system_update_model(true);
+      cs_navsto_system_update_model(true); /* true = with thermal */
 
     cs_navsto_system_init_setup();
 

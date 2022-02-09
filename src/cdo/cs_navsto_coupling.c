@@ -129,11 +129,13 @@ cs_navsto_ac_create_context(cs_param_bc_type_t    bc,
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
 
   /* Space scheme settings (default) */
+
   cs_equation_param_set(mom_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
   cs_equation_param_set(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
   /* Set the default solver settings */
-  if (nsp->model ==  CS_NAVSTO_MODEL_STOKES)
+
+  if (nsp->model == CS_NAVSTO_MODEL_STOKES)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "cg");
   else
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "gcr");
@@ -187,19 +189,23 @@ cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
 
   /* Navier-Stokes parameters induce numerical settings for the related
      equations */
+
   cs_navsto_param_transfer(nsp, mom_eqp);
 
   /* Link the time property to the momentum equation */
+
   if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, nsp->mass_density);
 
   /* Add advection term in case of CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
    * CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
    * user via cs_navsto_add_oseen_field() */
+
   if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
     cs_equation_add_advection(mom_eqp, adv_field);
 
   /* All considered models needs a viscous term */
+
   cs_equation_add_diffusion(mom_eqp, nsp->tot_viscosity);
 }
 
@@ -222,10 +228,12 @@ cs_navsto_ac_last_setup(const cs_navsto_param_t     *nsp,
   assert(nsp != NULL && nsc != NULL);
 
   /* Avoid no definition of the zeta coefficient */
+
   if (nsc->zeta->n_definitions == 0)
     cs_property_def_iso_by_value(nsc->zeta, NULL, nsp->gd_scale_coef);
 
   /* Set the quadrature level for BCs, if needed */
+
   const cs_equation_param_t *eqp = cs_equation_get_param(nsc->momentum);
 
   for (short int i = 0; i < eqp->n_bc_defs; i++) {
@@ -280,6 +288,7 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
   BFT_MALLOC(nsc, 1, cs_navsto_monolithic_t);
 
   /* Add an equation for the momentum conservation */
+
   nsc->momentum = cs_equation_add("momentum",
                                   "velocity",
                                   CS_EQUATION_TYPE_NAVSTO,
@@ -289,11 +298,13 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
 
   /* Space scheme settings (default) */
+
   cs_equation_param_set(mom_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
   cs_equation_param_set(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
   /* Solver settings: Only the linear algebra settings related to the momentum
   *  equation.  The strategy is set in _navsto_param_sles_create() */
+
   if (nsp->model ==  CS_NAVSTO_MODEL_STOKES) {
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "cg");
   }
@@ -347,23 +358,28 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
   assert(nsp != NULL && nsc != NULL);
 
   /* Handle the momentum equation */
+
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
 
   /* Navier-Stokes parameters induce numerical settings for the related
      equations */
+
   cs_navsto_param_transfer(nsp, mom_eqp);
 
   /* Link the time property to the momentum equation */
+
   if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, nsp->mass_density);
 
   /* Add advection term in case of CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
    * CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
    * user via cs_navsto_add_oseen_field() */
+
   if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
     cs_equation_add_advection(mom_eqp, adv_field);
 
   /* All considered models needs a viscous term */
+
   cs_equation_add_diffusion(mom_eqp, nsp->tot_viscosity);
 }
 
@@ -387,6 +403,7 @@ cs_navsto_monolithic_last_setup(const cs_navsto_param_t     *nsp,
   assert(nsp != NULL && nsc != NULL);
 
   /* Set the quadrature level for BCs, if needed */
+
   const cs_equation_param_t *eqp = cs_equation_get_param(nsc->momentum);
 
   for (short int i = 0; i < eqp->n_bc_defs; i++) {
@@ -452,10 +469,12 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->prediction);
 
     /* Space scheme settings (default) */
+
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
     /* Solver settings */
+
     if (nsp->model == CS_NAVSTO_MODEL_STOKES)
       cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
     else
@@ -464,6 +483,7 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
 
   /* The default boundary condition on the pressure field is always a
      homogeneous Neumann */
+
   nsc->correction = cs_equation_add("pressure_correction",
                                     "phi",
                                     CS_EQUATION_TYPE_NAVSTO,
@@ -475,10 +495,12 @@ cs_navsto_projection_create_context(cs_param_bc_type_t    bc,
     cs_equation_param_t  *eqp = cs_equation_get_param(nsc->correction);
 
     /* Space scheme settings (default) */
+
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
     /* Solver settings */
+
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
   }
@@ -539,23 +561,28 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
   assert(nsp != NULL && nsc != NULL);
 
   /* Prediction step: Approximate the velocity */
+
   cs_equation_param_t *u_eqp = cs_equation_get_param(nsc->prediction);
 
   cs_navsto_param_transfer(nsp, u_eqp);
 
   /* There is always a time derivative with projection algorithm */
+
   cs_equation_add_time(u_eqp, nsp->mass_density);
 
   /* All considered models needs a viscous term */
+
   cs_equation_add_diffusion(u_eqp, nsp->tot_viscosity);
 
   /* Add advection term in case of CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
    * CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
    * user via cs_navsto_add_oseen_field() */
+
   if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
     cs_equation_add_advection(u_eqp, adv_field);
 
   /* Correction step: Approximate the pressure */
+
   cs_equation_param_t *p_eqp = cs_equation_get_param(nsc->correction);
 
   cs_navsto_param_transfer(nsp, p_eqp);
@@ -563,6 +590,7 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
   cs_equation_add_diffusion(p_eqp, cs_property_by_name("time_step"));
 
   /* Add the predicted velocity field */
+
   nsc->predicted_velocity = cs_field_create("predicted_velocity",
                                             CS_FIELD_INTENSIVE,
                                             loc_id,
@@ -593,6 +621,7 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
 
   /* Source term in the correction step stems from the divergence of the
      predicted velocity */
+
   BFT_MALLOC(nsc->div_st, quant->n_cells, cs_real_t);
   memset(nsc->div_st, 0, quant->n_cells*sizeof(cs_real_t));
 
@@ -606,6 +635,7 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
                                        NULL);     /* no index */
 
   /* Defined BC for the pressure increment in the correction step */
+
   BFT_MALLOC(nsc->bdy_pressure_incr, quant->n_b_faces, cs_real_t);
   memset(nsc->bdy_pressure_incr, 0, quant->n_b_faces*sizeof(cs_real_t));
 

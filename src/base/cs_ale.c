@@ -827,18 +827,22 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
   const cs_mesh_t  *m = domain->mesh;
 
   /* Build and solve equation on the mesh velocity */
-  cs_equation_t *eq = cs_equation_by_name("mesh_velocity");
+
+  cs_equation_t  *eq = cs_equation_by_name("mesh_velocity");
 
   /* Update the values of boundary mesh vertices */
+
   _update_bcs_free_surface(domain);
 
   /* Compute the Poisson equation on the original mesh */
+
   cs_real_3_t *vtx_coord = (cs_real_3_t *)m->vtx_coord;
   cs_real_3_t *vtx_coord0 = (cs_real_3_t *)(cs_field_by_name("vtx_coord0")->val);
   const cs_lnum_t n_vertices = m->n_vertices;
   cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
   /* Back to original mesh */
+
   for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
     for (cs_lnum_t idim = 0; idim < 3; idim++) {
       vtx_coord[v_id][idim] = vtx_coord0[v_id][idim];
@@ -848,15 +852,18 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
   cs_ale_update_mesh_quantities(&(mq->min_vol), &(mq->max_vol), &(mq->tot_vol));
 
   /* Solve the algebraic system */
+
   cs_equation_solve_steady_state(m, eq);
 
   /* Retrieving fields */
+
   cs_field_t  *f_displ = cs_field_by_name("mesh_displacement");
   cs_real_3_t *disale = (cs_real_3_t *)(f_displ->val);
   cs_real_3_t *disala = (cs_real_3_t *)(f_displ->val_pre);
   cs_real_3_t *m_vel = (cs_real_3_t *)(cs_field_by_name("mesh_velocity")->val);
 
   /* Back to mesh at time n */
+
   for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
     for (cs_lnum_t idim = 0; idim < 3; idim++) {
       vtx_coord[v_id][idim] = vtx_coord0[v_id][idim] + disale[v_id][idim];
@@ -864,7 +871,6 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
   }
 
   cs_ale_update_mesh_quantities(&(mq->min_vol), &(mq->max_vol), &(mq->tot_vol));
-
 
   for (cs_lnum_t v = 0; v < m->n_vertices; v++) {
     if (impale[v] == 0) {
@@ -1399,6 +1405,7 @@ cs_ale_update_mesh(const int           itrale)
   cs_time_step_t *ts = cs_get_glob_time_step();
 
   /* Initialization */
+
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(CS_F_(mesh_u), key_cal_opt_id, &var_cal_opt);
 
@@ -1409,12 +1416,14 @@ cs_ale_update_mesh(const int           itrale)
                "  =================\n\n");
 
   /* Retrieving fields */
+
   cs_field_t  *f_displ = cs_field_by_name("mesh_displacement");
   cs_real_3_t *disale = (cs_real_3_t *)(f_displ->val);
   cs_real_3_t *disala = (cs_real_3_t *)(f_displ->val_pre);
   cs_real_3_t *xyzno0 = (cs_real_3_t *)(cs_field_by_name("vtx_coord0")->val);
 
   /* Update geometry */
+
   for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
     for (cs_lnum_t idim = 0; idim < ndim; idim++) {
       vtx_coord[v_id][idim] = xyzno0[v_id][idim] + disale[v_id][idim];
@@ -1425,11 +1434,13 @@ cs_ale_update_mesh(const int           itrale)
   cs_ale_update_mesh_quantities(&(mq->min_vol), &(mq->max_vol), &(mq->tot_vol));
 
   /* Abort at the end of the current time-step if there is a negative volume */
+
   if (mq->min_vol <= 0.)
     ts->nt_max = ts->nt_cur;
 
   /* The mesh velocity is reverted to its initial value if the current time step
      is the initialization time step */
+
   if (itrale == 0) {
 
     cs_field_t *f = cs_field_by_name("mesh_velocity");
@@ -1449,7 +1460,6 @@ cs_ale_update_mesh(const int           itrale)
     } /* Field located at cells */
 
   } /* itrale == 0 */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1513,26 +1523,28 @@ cs_ale_activate(void)
 
   cs_domain_set_cdo_mode(cs_glob_domain, CS_DOMAIN_CDO_MODE_WITH_FV);
 
-  cs_equation_t  *eq
-    = cs_equation_add("mesh_velocity", /* equation name */
-                      "mesh_velocity", /* associated variable field name */
-                      CS_EQUATION_TYPE_PREDEFINED,
-                      3,                        /* dimension of the unknown */
-                      CS_PARAM_BC_HMG_NEUMANN); /* default boundary */
+  cs_equation_t  *eq =
+    cs_equation_add("mesh_velocity", /* equation name */
+                    "mesh_velocity", /* associated variable field name */
+                    CS_EQUATION_TYPE_PREDEFINED,
+                    3,                        /* dimension of the unknown */
+                    CS_PARAM_BC_HMG_NEUMANN); /* default boundary */
 
   cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
-  /* System to solve is SPD by construction */
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
-  cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "jacobi");
+  /* Predefined settings */
 
   cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
 
-  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "filtered");
-
   /* BC settings */
+
   cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
 
+  /* System to solve is SPD by construction */
+
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+  cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "jacobi");
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "filtered");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1567,11 +1579,15 @@ cs_ale_init_setup(cs_domain_t   *domain)
 
   /* Mesh viscosity (iso or ortho)
    * TODO declare it before: add in activate, def here...  */
+
   int dim = cs_field_by_name("mesh_viscosity")->dim;
 
   cs_property_t  *mesh_visc = cs_property_by_name("mesh_viscosity");
+
   if (mesh_visc == NULL)  {      /* Not already added */
+
     cs_property_type_t  type = 0;
+
     if (dim == 1)
       type = CS_PROPERTY_ISO;
     else if (dim == 3)
@@ -1586,6 +1602,7 @@ cs_ale_init_setup(cs_domain_t   *domain)
                 __func__, dim);
 
     /* Add and define this property */
+
     mesh_visc = cs_property_add("mesh_viscosity", type);
     cs_property_def_by_field(mesh_visc, cs_field_by_name("mesh_viscosity"));
 

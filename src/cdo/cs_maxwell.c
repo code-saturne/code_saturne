@@ -61,7 +61,6 @@ BEGIN_C_DECLS
 
   \brief Structure and functions handling the Maxwell module dedicated to
          the resolution of electro-magnetic equations
-
 */
 
 /*=============================================================================
@@ -85,6 +84,7 @@ struct _maxwell_t {
                            * of the Maxwell module */
 
   /* Properties associated to this module */
+
   cs_real_t       e_perm_ref;      /* Reference value of the electric
                                     * permeability */
   cs_property_t  *e_permeability;  /* Electric permeability oftenly denoted
@@ -99,6 +99,7 @@ struct _maxwell_t {
                                     * by sigma */
 
   /* Fields associated to this module */
+
   cs_field_t   *scal_pot;        /* Scalar potential at vertices called
                                     "electric_potential" */
 
@@ -112,16 +113,16 @@ struct _maxwell_t {
   cs_real_t    *d_field_array;   /* D: Electric induction field across dual
                                     faces */
 
-  cs_field_t   *h_field;        /* H = Magnetic field (faces) */
-  cs_real_t    *h_field_array;  /* H along dual edges */
+  cs_field_t   *h_field;         /* H = Magnetic field (faces) */
+  cs_real_t    *h_field_array;   /* H along dual edges */
 
-  cs_field_t   *b_field;        /* B = Magnetic induction field */
-  cs_real_t    *b_field_array;  /* B across faces */
+  cs_field_t   *b_field;         /* B = Magnetic induction field */
+  cs_real_t    *b_field_array;   /* B across faces */
 
-  cs_field_t   *j_field;        /* J = density flux field */
-  cs_real_t    *j_field_array;  /* J across dual faces */
+  cs_field_t   *j_field;         /* J = density flux field */
+  cs_real_t    *j_field_array;   /* J across dual faces */
 
-  cs_field_t   *joule_effect;   /* Joule effect power (W.m^-3) */
+  cs_field_t   *joule_effect;    /* Joule effect power (W.m^-3) */
 };
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -138,9 +139,11 @@ static const char _err_empty_maxwell[] =
 static cs_maxwell_t  *cs_maxwell_structure = NULL;
 
 /* Vacuum magnetic permeability constant (H/m) */
+
 static const cs_real_t  cs_maxwell_vacuum_m_permeability = 1.25663706143591e-6;
 
 /* Vacuum permittivity constant (F/m) */
+
 static const cs_real_t  cs_maxwell_vacuum_e_permittivity = 8.85418782e-12;
 
 /*============================================================================
@@ -203,7 +206,6 @@ _build_edge_based_vector_fields(const cs_cdo_quantities_t   *quant,
     }
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -263,7 +265,6 @@ _build_face_based_vector_fields(const cs_cdo_quantities_t   *quant,
     }
 
   } /* Loop on cells */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -282,11 +283,13 @@ _maxwell_create(void)
   BFT_MALLOC(mxl, 1, cs_maxwell_t);
 
   /* Default initialization */
+
   mxl->model = 0;
   mxl->options = 0;
   mxl->post_flag = 0;
 
   /* Properties */
+
   mxl->e_perm_ref = cs_maxwell_vacuum_e_permittivity;
   mxl->e_permeability = NULL;
 
@@ -296,6 +299,7 @@ _maxwell_create(void)
   mxl->conductivity = NULL;
 
   /* Fields and related arrays */
+
   mxl->scal_pot = NULL;
 
   mxl->vect_pot = NULL;
@@ -316,6 +320,7 @@ _maxwell_create(void)
   mxl->j_field_array = NULL;    /* different location that j_field */
 
   /* Additional quantities (source terms for instance) */
+
   mxl->joule_effect = NULL;
 
   return mxl;
@@ -362,9 +367,11 @@ cs_maxwell_activate(cs_flag_t     model,
               " %s: Invalid modelling. Model = %d\n", __func__, model);
 
   /* Allocate an empty structure */
+
   cs_maxwell_t  *mxl = _maxwell_create();
 
   /* Set members of the structure according to the given settings */
+
   mxl->model = model;
   mxl->options = options;
 
@@ -381,11 +388,13 @@ cs_maxwell_activate(cs_flag_t     model,
                                           CS_PROPERTY_ISO);
 
     /* By default, set the reference permeability */
+
     cs_property_def_iso_by_value(mxl->e_permeability, NULL, mxl->e_perm_ref);
 
     cs_equation_add_diffusion(eqp, mxl->e_permeability);
 
     /* Should be symmetric */
+
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "bubble");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "frac23");
@@ -411,12 +420,14 @@ cs_maxwell_activate(cs_flag_t     model,
                                           CS_PROPERTY_ISO);
 
     /* By default, set the reference permeability */
+
     cs_property_def_iso_by_value(mxl->m_permittivity, NULL, mxl->m_perm_ref);
 
     cs_equation_add_curlcurl(eqp, mxl->m_permittivity,
                              1); /* Inverse of the property is requested */
 
     /* Should be symmetric */
+
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_eb");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
@@ -475,7 +486,6 @@ cs_maxwell_init_setup(void)
 {
   cs_maxwell_t  *mxl = cs_maxwell_structure;
 
-  /* Sanity checks */
   if (mxl == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_maxwell));
 
   const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_CDO;
@@ -527,6 +537,7 @@ cs_maxwell_init_setup(void)
   }
 
   /* Optional settings */
+
   if (mxl->options & CS_MAXWELL_JOULE_EFFECT) {
 
     mxl->joule_effect = cs_field_create(CS_MAXWELL_JEFFECT_NAME,
@@ -540,6 +551,7 @@ cs_maxwell_init_setup(void)
   }
 
   /* Add default post-processing related to the Maxwell module */
+
   cs_post_add_time_mesh_dep_output(cs_maxwell_extra_post, mxl);
 }
 
@@ -558,7 +570,6 @@ cs_maxwell_finalize_setup(const cs_cdo_connect_t       *connect,
 {
   cs_maxwell_t  *mxl = cs_maxwell_structure;
 
-  /* Sanity checks */
   if (mxl == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_maxwell));
 
   if (mxl->model & CS_MAXWELL_MODEL_ELECTROSTATIC) {
@@ -569,10 +580,12 @@ cs_maxwell_finalize_setup(const cs_cdo_connect_t       *connect,
     mxl->scal_pot = cs_equation_get_field(es_eq);
 
     /* Electric field array along edges */
+
     BFT_MALLOC(mxl->e_field_array, quant->n_edges, cs_real_t);
     memset(mxl->e_field_array, 0, quant->n_edges*sizeof(cs_real_t));
 
     /* Electric induction (flux density) across dual faces */
+
     const cs_adjacency_t  *c2e = connect->c2e;
     const cs_lnum_t  array_size = c2e->idx[quant->n_cells];
     BFT_MALLOC(mxl->d_field_array, array_size, cs_real_t);
@@ -588,17 +601,18 @@ cs_maxwell_finalize_setup(const cs_cdo_connect_t       *connect,
     mxl->vect_pot = cs_equation_get_field(ms_eq);
 
     /* Magnetic field array along dual edges */
+
     const cs_adjacency_t  *c2f = connect->c2f;
     const cs_lnum_t  array_size = c2f->idx[quant->n_cells];
     BFT_MALLOC(mxl->h_field_array, array_size, cs_real_t);
     memset(mxl->h_field_array, 0, array_size*sizeof(cs_real_t));
 
     /* Magnetic induction (flux density) across primal faces */
+
     BFT_MALLOC(mxl->b_field_array, quant->n_faces, cs_real_t);
     memset(mxl->b_field_array, 0, quant->n_faces*sizeof(cs_real_t));
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -627,7 +641,6 @@ cs_maxwell_log_setup(void)
 
   if (mxl->options & CS_MAXWELL_JOULE_EFFECT)
     cs_log_printf(CS_LOG_SETUP, "  * Maxwell | Joule effect\n");
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -650,17 +663,14 @@ cs_maxwell_compute_steady_state(const cs_mesh_t              *mesh,
 {
   cs_maxwell_t  *mxl = cs_maxwell_structure;
 
-  /* Sanity checks */
   if (mxl == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_maxwell));
 
   if (mxl->model & CS_MAXWELL_MODEL_ELECTROSTATIC) {
 
     cs_equation_t  *es_eq = cs_equation_by_name(CS_MAXWELL_ESTATIC_EQNAME);
 
-    /* Sanity checks */
     assert(es_eq != NULL);
     assert(cs_equation_uses_new_mechanism(es_eq));
-
     cs_equation_solve_steady_state(mesh, es_eq);
 
   }
@@ -669,15 +679,14 @@ cs_maxwell_compute_steady_state(const cs_mesh_t              *mesh,
 
     cs_equation_t  *ms_eq = cs_equation_by_name(CS_MAXWELL_MSTATIC_EQNAME);
 
-    /* Sanity checks */
     assert(ms_eq != NULL);
     assert(cs_equation_uses_new_mechanism(ms_eq));
-
     cs_equation_solve_steady_state(mesh, ms_eq);
 
   }
 
   /* Update fields and properties which are related to solved variables */
+
   cs_maxwell_update(mesh, connect, quant, time_step,
                     true); /* operate current to previous ? */
 }
@@ -701,12 +710,12 @@ cs_maxwell_compute(const cs_mesh_t              *mesh,
 {
   cs_maxwell_t  *mxl = cs_maxwell_structure;
 
-  /* Sanity checks */
   if (mxl == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_maxwell));
 
   /* Add equations to be solved at each time step */
 
   /* Update fields and properties which are related to solved variables */
+
   cs_maxwell_update(mesh, connect, quant, time_step,
                     true); /* operate current to previous ? */
 }
@@ -734,7 +743,6 @@ cs_maxwell_update(const cs_mesh_t             *mesh,
 
   cs_maxwell_t  *mxl = cs_maxwell_structure;
 
-  /* Sanity checks */
   if (mxl == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_maxwell));
 
   if (mxl->model & CS_MAXWELL_MODEL_ELECTROSTATIC) {
@@ -742,9 +750,11 @@ cs_maxwell_update(const cs_mesh_t             *mesh,
     cs_equation_t  *es_eq = cs_equation_by_name(CS_MAXWELL_ESTATIC_EQNAME);
 
     /* Retrieve the scalar electric potential */
+
     const cs_real_t  *pot = cs_equation_get_vertex_values(es_eq, false);
 
     /* Compute the electric field: E = -grad(scal_pot) */
+
     const cs_adjacency_t  *e2v = connect->e2v;
     for (cs_lnum_t e = 0; e < quant->n_edges; e++) {
 
@@ -761,6 +771,7 @@ cs_maxwell_update(const cs_mesh_t             *mesh,
                                            mxl->d_field_array);
 
     /* Update related vector-valued fields at cell centers */
+
     if (cur2prev) {
       cs_field_current_to_previous(mxl->e_field);
       cs_field_current_to_previous(mxl->d_field);
@@ -781,20 +792,23 @@ cs_maxwell_update(const cs_mesh_t             *mesh,
     cs_equation_param_t  *ms_eqp = cs_equation_get_param(ms_eq);
 
     /* Retrieve the scalar electric potential */
+
     const cs_real_t  *pot = cs_equation_get_edge_values(ms_eq, false);
 
     /* Compute the magnetic induction field: B = curl(vect_pot) */
+
     cs_cdo_connect_discrete_curl(connect, pot, &(mxl->b_field_array));
 
     /* Compute the magnetic field using Hodge operator */
+
     cs_hodge_circulation_from_flux(connect, quant, ts->t_cur,
                                    ms_eqp->curlcurl_hodgep,
                                    ms_eqp->curlcurl_property,
                                    mxl->b_field_array,
                                    mxl->h_field_array);
 
-
     /* Update related vector-valued fields at cell centers */
+
     if (cur2prev) {
       cs_field_current_to_previous(mxl->b_field);
       cs_field_current_to_previous(mxl->h_field);
@@ -808,7 +822,6 @@ cs_maxwell_update(const cs_mesh_t             *mesh,
                                     mxl->h_field->val);
 
   } /* Magnetostatic updates */
-
 }
 
 /*----------------------------------------------------------------------------*/
