@@ -2344,7 +2344,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 
     if (eqp->n_ic_defs > 0)
       if (cs_param_space_scheme_is_face_based(eqp->space_scheme))
-        if (connect->face_ifs == NULL)
+        if (cs_glob_n_ranks > 1 && connect->face_ifs == NULL)
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Interface set structure at faces not allocated.\n",
                     __func__);
