@@ -116,16 +116,18 @@ typedef struct {
                                     for add_vals() function */
 
   const cs_real_t    *val;       /* Row values */
-  cs_real_t          *expval;    /* Expanded row values */
+  cs_real_t          *expval;    /* Expanded row values (when unrolling non
+                                    scalar-valued block) */
 
 } cs_cdo_assembly_row_t;
 
 struct _cs_cdo_assembly_t {
 
-  int         ddim;         /* Number of real values related to each diagonal
-                               entry */
-  int         edim;         /* Number of real values related to each
-                               extra-diagonal entry */
+  int      n_cw_dofs;   /* Number of DoFs in a cell */
+  int      ddim;        /* Number of real values related to each diagonal
+                            entry */
+  int      edim;        /* Number of real values related to each
+                           extra-diagonal entry */
 
   /* When working with matrix build by scalar-valued blocks, one may need to
      shift the row and/or the column local ids */
@@ -635,31 +637,47 @@ _assemble_row_scal_ds(cs_matrix_assembler_values_t       *mav,
 /*!
  * \brief  Allocate and initialize a cs_cdo_assembly_t structure
  *
- * \param[in]      max_ddim        max. dim of the diagonal entries
- * \param[in]      max_edim        max. dim of the extra-diagonal entries
- * \param[in]      n_max_cw_dofs   max. number of DoF to be handled
- * \param[in, out] p_asb           double pointer to an assembly structure
+ * \param[in]      ddim         dim of the diagonal entries
+ * \param[in]      edim         dim of the extra-diagonal entries
+ * \param[in]      n_cw_dofs    number of DoF to be handled
+ * \param[in, out] p_asb        double pointer to an assembly structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_assembly_struct(int                   max_ddim,
-                      int                   max_edim,
-                      int                   n_max_cw_dofs,
+_init_assembly_struct(int                   ddim,
+                      int                   edim,
+                      int                   n_cw_dofs,
                       cs_cdo_assembly_t   **p_asb)
 {
   cs_cdo_assembly_t  *asb = *p_asb;
-  bool  update_only = true;
+  bool  update_only = true, reallocate = false;
 
   if (asb == NULL) {
+
     BFT_MALLOC(asb, 1, cs_cdo_assembly_t);
     update_only = false;
+
+    /* Diagonal and extra-diagonal max. number of entries */
+
+    asb->n_cw_dofs = n_cw_dofs;
+    asb->ddim = ddim;
+    asb->edim = edim;
+
   }
+  else { /* Already allocated */
 
-  /* Diagonal and extra-diagonal max. number of entries */
+    if (asb->n_cw_dofs < n_cw_dofs)
+      asb->n_cw_dofs = n_cw_dofs, reallocate = true;
 
-  asb->ddim = max_ddim;
-  asb->edim = max_edim;
+    /* Diagonal and extra-diagonal max. number of entries */
+
+    if (asb->ddim < ddim)
+      asb->ddim = ddim, reallocate = true;
+    if (asb->edim < edim)
+      asb->edim = edim, reallocate = true;
+
+  }
 
   /* When working with matrix build by scalar-valued blocks, one may need to
      shift the row and/or the column local ids */
@@ -667,7 +685,7 @@ _init_assembly_struct(int                   max_ddim,
   asb->l_row_shift = 0;
   asb->l_col_shift = 0;
 
-  if (update_only) {
+  if (update_only && reallocate) {
 
     cs_cdo_assembly_row_t  *row = asb->row;
     assert(row != NULL);
@@ -675,20 +693,22 @@ _init_assembly_struct(int                   max_ddim,
     /* Re-allocate the row structure given the new sizes */
 
 
-    if (max_ddim < 2) {
+    if (asb->ddim < 2) {
 
-      BFT_REALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
-      BFT_REALLOC(row->col_idx, n_max_cw_dofs, int);
+      BFT_REALLOC(row->col_g_id, asb->n_cw_dofs, cs_gnum_t);
+      BFT_REALLOC(row->col_idx, asb->n_cw_dofs, int);
+      assert(row->expval == NULL);
 
     }
     else {
 
-      n_max_cw_dofs *= max_ddim; /* Temporary (until the global matrix is not
-                                    defined by block) */
+      /* Temporary (until the global matrix is not defined by block) */
 
-      BFT_REALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
-      BFT_REALLOC(row->col_idx, n_max_cw_dofs, int);
-      BFT_REALLOC(row->expval, max_ddim*n_max_cw_dofs, cs_real_t);
+      int _size = asb->n_cw_dofs * asb->ddim;
+
+      BFT_REALLOC(row->col_g_id, _size, cs_gnum_t);
+      BFT_REALLOC(row->col_idx, _size, int);
+      BFT_REALLOC(row->expval, asb->ddim * _size, cs_real_t);
 
     }
 
@@ -697,30 +717,30 @@ _init_assembly_struct(int                   max_ddim,
 
     /* Allocate the row structure used in the assembly process */
 
-    cs_cdo_assembly_row_t  *row = NULL;
+    BFT_MALLOC(asb->row, 1, cs_cdo_assembly_row_t);
 
-    BFT_MALLOC(row, 1, cs_cdo_assembly_row_t);
+    cs_cdo_assembly_row_t  *row = asb->row;
 
-    if (max_ddim < 2) {
+    if (asb->ddim < 2) {
 
-      BFT_MALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
-      BFT_MALLOC(row->col_idx, n_max_cw_dofs, int);
+      BFT_MALLOC(row->col_g_id, asb->n_cw_dofs, cs_gnum_t);
+      BFT_MALLOC(row->col_idx, asb->n_cw_dofs, int);
+      row->expval = NULL;
 
     }
     else {
 
-      n_max_cw_dofs *= max_ddim; /* Temporary (until the global matrix is not
-                                    defined by block) */
+      /* Temporary (until the global matrix is not defined by block) */
 
-      BFT_MALLOC(row->col_g_id, n_max_cw_dofs, cs_gnum_t);
-      BFT_MALLOC(row->col_idx, n_max_cw_dofs, int);
-      BFT_MALLOC(row->expval, max_ddim*n_max_cw_dofs, cs_real_t);
+      int _size = asb->n_cw_dofs * asb->ddim;
+
+      BFT_MALLOC(row->col_g_id, _size, cs_gnum_t);
+      BFT_MALLOC(row->col_idx, _size, int);
+      BFT_MALLOC(row->expval, asb->ddim*_size, cs_real_t);
 
     }
 
-    asb->row = row;
-
-  }
+  } /* Creation */
 
   /* Return the pointer */
 

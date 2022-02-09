@@ -221,41 +221,34 @@ _set_block_assembly_func(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the assembly function according to the metadata
+ * \brief Set the assembly function associated to a block according to the
+ *        the metadata of the block. Case of an assembly designed by coupled
+ *        systems of equations
  *
- * \param[in, out] sh        system_helper structure to update
- * \param[in]      bi        block info structure to consider
+ * \param[in] bi         block info structure to consider
  *
- * \return a pointer to a function
+ * \return a pointer to a function or NULL if useless
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_cdo_assembly_func_t *
 _assign_slave_assembly_func(const cs_cdo_system_block_info_t   bi)
 {
-  if (bi.stride == 1) /* Assemble a cell system with 1 DoF by element */
-    return _set_scalar_slave_assembly_func();
-  else {
-#if CS_CDO_SYSTEM_DBG > 0
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
-#else
-    cs_base_warn(__FILE__, __LINE__);
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "%s: Assembly function for system of equations not set.\n",
-                  __func__);
-#endif
-  }
+  CS_UNUSED(bi);
 
-  return NULL;
+  /* Up to now, ther is no choice */
+
+  return _set_scalar_slave_assembly_func();
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the assembly function according to the metadata
+ * \brief Set the assembly function associated to a block according to the
+ *        metadata of the block
  *
- * \param[in]      bi        block info structure to consider
+ * \param[in] bi         block info structure to consider
  *
- * \return a pointer to a function
+ * \return a pointer to a function or NULL if useless
  */
 /*----------------------------------------------------------------------------*/
 
@@ -266,12 +259,8 @@ _assign_assembly_func(const cs_cdo_system_block_info_t   bi)
     return _set_scalar_assembly_func();
   else if (bi.stride == 3)
     return _set_block33_assembly_func();
-  else if (bi.stride > 3)
-    return _set_block_assembly_func();
   else
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid choice", __func__);
-
-  return NULL;
+    return _set_block_assembly_func();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -616,7 +605,7 @@ _build_no_interlaced_ma(int                      stride,
      *   |-------|-------|-------|-------|
      *   | A_n0  | A_n1  |  ...  | A_nn  |
      *
-     *  Each block A_.. is n_vertices * n_vertices
+     *  Each block A_.. is n_x * n_x
      */
 
     for (cs_lnum_t row_id = 0; row_id < n_x; row_id++) {
@@ -1153,6 +1142,10 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t   *sh,
     db->assembly_func = _assign_assembly_func(b->info);
     db->slave_assembly_func = _assign_slave_assembly_func(b->info);
 
+    if (db->assembly_func == NULL && db->slave_assembly_func == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: No assembly function set.\n", __func__);
+
     /* The following structures can be shared if the same block configuration
        is requested */
 
@@ -1273,6 +1266,10 @@ cs_cdo_system_add_sblock(cs_cdo_system_helper_t   *sh,
 
     sb->assembly_func = _assign_assembly_func(b_tmp->info);
     sb->slave_assembly_func = _assign_slave_assembly_func(b_tmp->info);
+
+    if (sb->assembly_func == NULL && sb->slave_assembly_func == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: No assembly function set.\n", __func__);
 
     BFT_FREE(b_tmp);
 

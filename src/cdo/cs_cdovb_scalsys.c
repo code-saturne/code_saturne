@@ -84,6 +84,27 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Generic function pointer to perform the assembly step.
+ *        Add the block attached to the block (row_id, col_id) in the full
+ *        (coupled) system
+ *
+ * \param[in]      row_id     id of the row in the coupled system
+ * \param[in]      csys       pointer to a cellwise view of the system
+ * \param[in, out] sh         pointer to the system helper of the coupled sys.
+ * \param[in, out] eqc        context for this kind of discretization
+ * \param[in, out] asb        pointer to a cs_cdo_assembly_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdovb_scalsys_asb_t)(int                           row_id,
+                         const cs_cell_sys_t          *csys,
+                         cs_cdo_system_helper_t       *sh,
+                         cs_equation_builder_t        *eqb,
+                         cs_cdo_assembly_t            *asb);
+
 /* Algebraic system for CDO vertex-based discretization */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -117,35 +138,32 @@ static const cs_time_step_t         *cs_shared_time_step;
 /*----------------------------------------------------------------------------*/
 
 static void
-_svb_sys_assemble(int                           row_id,
-                  const cs_cell_sys_t          *csys,
-                  cs_cdo_system_helper_t       *sh,
-                  cs_equation_builder_t        *eqb,
-                  cs_cdo_assembly_t            *asb)
+_svb_one_dblock_assemble(int                           row_id,
+                         const cs_cell_sys_t          *csys,
+                         cs_cdo_system_helper_t       *sh,
+                         cs_equation_builder_t        *eqb,
+                         cs_cdo_assembly_t            *asb)
 {
+  CS_UNUSED(eqb);
+
   /* Members of the coupled system helper structure */
 
   assert(sh->n_blocks == 1);
   cs_cdo_system_block_t  *block = sh->blocks[0];
   assert(block->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
   cs_cdo_system_dblock_t  *db = block->block_pointer;
+  cs_cdo_system_block_info_t  bi = block->info;
+  assert(bi.stride > row_id);
+  assert(bi.interlaced == false);
 
-  /* Members of the (sub) system helper structure */
+  /* Matrix assembly for the cellwise system inside the full system */
 
-  cs_cdo_system_helper_t  *sub_sh = eqb->system_helper;
-  assert(sub_sh->n_blocks == 1);
-  cs_cdo_system_block_t  *sub_block = sub_sh->blocks[0];
-  assert(sub_block->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
-  cs_cdo_system_dblock_t  *sub_db = sub_block->block_pointer;
-
-  /* Matrix assembly for the sub-system inside the full system */
-
-  sub_db->slave_assembly_func(csys->mat, csys->dof_ids, db->range_set,
-                              asb, db->mav);
+  db->slave_assembly_func(csys->mat, csys->dof_ids, db->range_set,
+                          asb, db->mav);
 
   /* RHS assembly */
 
-  cs_real_t  *rhs = sh->rhs_array[row_id];
+  cs_real_t  *rhs = sh->rhs + bi.n_elements * row_id;
 
 #if CS_CDO_OMP_SYNC_SECTIONS > 0
 # pragma omp critical
@@ -583,6 +601,25 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
   cs_cdo_system_helper_init_system(sh, &rhs);
 
+  /* Set the function to perform the assembly */
+
+  cs_cdovb_scalsys_asb_t  *assemble_func = NULL;
+
+  switch (sysp->sles_strategy) {
+
+  case CS_EQUATION_SYSTEM_SLES_MUMPS:
+    assemble_func = _svb_one_dblock_assemble;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy to solve the system.\n",
+              __func__);
+
+  } /* End of switch */
+
+  assert(assemble_func != NULL);
+
   /* ------------------------- */
   /* Main OpenMP block on cell */
   /* ------------------------- */
@@ -648,7 +685,7 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
           /* Assembly process
            * ================ */
 
-          _svb_sys_assemble(i_eq, csys, sh, eqb, asb);
+          assemble_func(i_eq, csys, sh, eqb, asb);
 
         } /* Main loop on cells */
 
