@@ -3036,9 +3036,9 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
   cs_solidification_t  *solid = cs_solidification_structure;
   cs_solidification_binary_alloy_t  *alloy
     = (cs_solidification_binary_alloy_t *)solid->model_context;
+  cs_equation_t  *c_eq = alloy->solute_equation;
 
   const size_t  csize = quant->n_cells*sizeof(cs_real_t);
-  const cs_equation_t  *c_eq = alloy->solute_equation;
   const cs_equation_t  *t_eq = solid->thermal_sys->thermal_eq;
   const cs_real_t  rho0 = solid->mass_density->ref_value;
 

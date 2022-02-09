@@ -655,6 +655,7 @@ cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
   CS_NO_WARN_IF_UNUSED(c);
   CS_NO_WARN_IF_UNUSED(name);
   CS_NO_WARN_IF_UNUSED(dim);
+  CS_NO_WARN_IF_UNUSED(field_nature);
   CS_NO_WARN_IF_UNUSED(space_discr);
   CS_NO_WARN_IF_UNUSED(time_discr);
 
@@ -764,6 +765,7 @@ cs_paramedmem_def_coupled_field_from_cs_field(cs_paramedmem_coupling_t *c,
 
   CS_NO_WARN_IF_UNUSED(c);
   CS_NO_WARN_IF_UNUSED(f);
+  CS_NO_WARN_IF_UNUSED(fn);
   CS_NO_WARN_IF_UNUSED(td);
 
   bft_error(__FILE__, __LINE__, 0,
