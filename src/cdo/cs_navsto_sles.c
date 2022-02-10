@@ -65,7 +65,6 @@ BEGIN_C_DECLS
 
    \brief  Functions to handle SLES structures used during the resolution of
            the Navier-Stokes system of equations
-
  */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -271,6 +270,7 @@ cs_navsto_sles_amg_block_hook(void     *context,
     KSPSetType(ksp, KSPFGMRES);
 
   /* Set KSP tolerances */
+
   PetscReal rtol, abstol, dtol;
   PetscInt  maxit;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
@@ -300,6 +300,7 @@ cs_navsto_sles_amg_block_hook(void     *context,
   PCFieldSplitSetType(pc, PC_COMPOSITE_MULTIPLICATIVE);
 
   /* Apply modifications to the KSP structure */
+
   PetscInt  id, n_split;
   KSP  *uvw_subksp;
 
@@ -399,12 +400,14 @@ cs_navsto_sles_amg_block_hook(void     *context,
   }
 
   /* User function for additional settings */
+
   cs_user_sles_petsc_hook(context, ksp);
 
   KSPSetFromOptions(ksp);
   KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
+
   if (!slesp->setup_done) {
 
     cs_sles_petsc_log_setup(ksp);

@@ -156,12 +156,14 @@ static bool
 _cvg_test(cs_iter_algo_t       *ia)
 {
   /* Increment the number of algo. iterations */
+
   ia->n_algo_iter += 1;
 
   const cs_real_t  prev_res = ia->res;
   const double  epsilon = fmax(ia->param.rtol * ia->res0, ia->param.atol);
 
   /* Set the convergence status */
+
   if (ia->res < epsilon)
     ia->cvg = CS_SLES_CONVERGED;
 
@@ -277,6 +279,7 @@ _dot_product(cs_saddle_system_t   *ssys,
   cs_real_t  *y1 = y, *y2 = y + ssys->max_x1_size;
 
   /* First part x1 and y1 whose DoFs are shared among processes */
+
   if (rset != NULL) {
 
     cs_range_set_gather(rset,
@@ -293,6 +296,7 @@ _dot_product(cs_saddle_system_t   *ssys,
     dp_value = cs_dot(rset->n_elts[0], x1, y1);
 
     /* Move back to a scatter view */
+
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE,
                          1,
@@ -338,6 +342,7 @@ _norm(cs_saddle_system_t   *ssys,
   const cs_range_set_t  *rset = ssys->rset;
 
   /* Norm for the x1 DoFs (those shared among processes) */
+
   double  _nx1_square = 0;
 
   if (rset != NULL) {
@@ -348,6 +353,7 @@ _norm(cs_saddle_system_t   *ssys,
                         x1);         /* out: size = n_sles_gather_elts */
 
     /* n_elts[0] corresponds to the number of element in the gather view */
+
     _nx1_square = cs_dot_xx(rset->n_elts[0], x1);
 
     cs_range_set_scatter(rset,
@@ -361,6 +367,7 @@ _norm(cs_saddle_system_t   *ssys,
 
   /* Norm for the x2 DoFs (not shared so that there is no need to
      synchronize) */
+
   double  _nx2_square = cs_dot_xx(ssys->x2_size, x2);
 
   n_square_value = _nx1_square + _nx2_square;
@@ -410,7 +417,6 @@ _m12_vector_multiply(cs_saddle_system_t   *ssys,
     } /* Loop on x1 elements associated to a given x2 element */
 
   } /* Loop on x2 elements */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -444,7 +450,6 @@ _m21_vector_multiply(cs_saddle_system_t   *ssys,
     m21x1[i2] = _m21x1;
 
   } /* Loop on x2 elements */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -482,6 +487,7 @@ _compute_residual_3(cs_saddle_system_t   *ssys,
    * a) rhs1 - M11.x1 -M12.x2
    * b) rhs2 - M21.x1
    */
+
   cs_real_t  *m12x2 = NULL;
   BFT_MALLOC(m12x2, ssys->x1_size, cs_real_t);
   memset(m12x2, 0, ssys->x1_size*sizeof(cs_real_t));
@@ -529,7 +535,6 @@ _compute_residual_3(cs_saddle_system_t   *ssys,
   for (cs_lnum_t i1 = 0; i1 < ssys->x1_size; i1++)
     res1[i1] = ssys->rhs1[i1] - res1[i1] - m12x2[i1];
 
-  /* Free memory */
   BFT_FREE(m12x2);
 }
 
@@ -552,7 +557,6 @@ _matvec_product(cs_saddle_system_t   *ssys,
                 cs_real_t            *vec,
                 cs_real_t            *matvec)
 {
-  /* Sanity checks */
   assert(vec != NULL && matvec != NULL && ssys != NULL);
   assert(ssys->m21_stride == 3);
   assert(ssys->n_m11_matrices == 1);
@@ -568,6 +572,7 @@ _matvec_product(cs_saddle_system_t   *ssys,
    */
 
   /* 1) M12.v2 and M21.v1 */
+
   const cs_adjacency_t  *adj = ssys->m21_adjacency;
 
   cs_real_t  *m12v2 = NULL;
@@ -614,7 +619,6 @@ _matvec_product(cs_saddle_system_t   *ssys,
   for (cs_lnum_t i1 = 0; i1 < ssys->x1_size; i1++)
     mv1[i1] += m12v2[i1];
 
-  /* Free temporary memory */
   BFT_FREE(m12v2);
 }
 
@@ -646,17 +650,20 @@ _solve_m11_approximation(cs_saddle_system_t          *ssys,
 
   /* Handle parallelism: scatter --> gather transformation
    * No gather op. for z since we initialize with zero */
+
   cs_range_set_gather(rset, CS_REAL_TYPE, 1, /* stride = as if scalar-valued */
                       r,                     /* in:  size=x1_size */
                       r);                    /* out: size=rset->n_elts[0] */
 
   /* Compute the norm of the rhs */
+
   cs_lnum_t  n_x1_elts = (rset != NULL) ? rset->n_elts[0] : ssys->x1_size;
   double  r_norm = cs_dot_xx(n_x1_elts, r);
   cs_parall_sum(1, CS_DOUBLE, &r_norm);
   r_norm = sqrt(fabs(r_norm));
 
   /* Solve the linear solver */
+
   memset(z, 0, sizeof(cs_real_t)*n_x1_elts);
 
   cs_solving_info_t  m11_info =
@@ -666,6 +673,7 @@ _solve_m11_approximation(cs_saddle_system_t          *ssys,
   assert(m11_slesp != NULL);
 
   /* A gather view is used inside the following step */
+
   cs_sles_convergence_state_t  code = cs_sles_solve(sbp->m11_sles,
                                                     m11,
                                                     m11_slesp->eps,
@@ -678,6 +686,7 @@ _solve_m11_approximation(cs_saddle_system_t          *ssys,
                                                     NULL);  /* aux. buffers */
 
   /* Output information about the convergence of the resolution */
+
   if (m11_slesp->verbosity > 1)
     cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d> "
                   "n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
@@ -685,6 +694,7 @@ _solve_m11_approximation(cs_saddle_system_t          *ssys,
                   m11_info.n_it, m11_info.res_norm, m11_info.rhs_norm);
 
   /* Move back: gather --> scatter view */
+
   if (scatter_z)
     cs_range_set_scatter(rset, CS_REAL_TYPE, 1, /* type and stride */
                          z, z);
@@ -736,6 +746,7 @@ _solve_schur_approximation(cs_saddle_system_t          *ssys,
 
     /* Norm for the x2 DoFs (not shared so that there is no need to
        synchronize) */
+
     double r_norm = cs_dot_xx(ssys->x2_size, r_schur);
     cs_parall_sum(1, CS_DOUBLE, &r_norm);
     r_norm = sqrt(fabs(r_norm));
@@ -791,7 +802,6 @@ _elman_schur_approximation(cs_saddle_system_t          *ssys,
   if (z_schur == NULL)
     return 0;
 
-  /* Sanity checks */
   assert(ssys != NULL && sbp != NULL);
   assert(r_schur != NULL);
 
@@ -814,6 +824,7 @@ _elman_schur_approximation(cs_saddle_system_t          *ssys,
   memset(m12z2, 0, ssys->x1_size*sizeof(cs_real_t));
 
   /* Update += of m12z2 inside the following function */
+
   _m12_vector_multiply(ssys, z_schur, m12z2);
 
   if (rset->ifs != NULL)
@@ -826,6 +837,7 @@ _elman_schur_approximation(cs_saddle_system_t          *ssys,
      ============================ */
 
   /* scatter view to gather view */
+
   cs_range_set_gather(rset, CS_REAL_TYPE, 1, /* stride */
                       m12z2,  /* in:  size=x1_size */
                       m12z2); /* out: size=rset->n_elts[0] */
@@ -836,6 +848,7 @@ _elman_schur_approximation(cs_saddle_system_t          *ssys,
   cs_matrix_vector_multiply(m11, m12z2, mmz);
 
   /* gather to scatter view (i.e. algebraic to mesh view) */
+
   cs_range_set_scatter(rset, CS_REAL_TYPE, 1, /* type and stride */
                        mmz, mmz);
 
@@ -881,7 +894,6 @@ _diag_schur_pc_apply(cs_saddle_system_t          *ssys,
   if (z == NULL)
     return 0;
 
-  /* Sanity checks */
   assert(ssys != NULL && sbp != NULL);
   assert(ssys->n_m11_matrices == 1);
   assert(r != NULL);
@@ -935,7 +947,6 @@ _lower_schur_pc_apply(cs_saddle_system_t          *ssys,
   if (z == NULL)
     return 0;
 
-  /* Sanity checks */
   assert(ssys != NULL && sbp != NULL);
   assert(ssys->n_m11_matrices == 1);
   assert(r != NULL);
@@ -1002,7 +1013,6 @@ _upper_schur_pc_apply(cs_saddle_system_t          *ssys,
 
   int  n_iter = 0;
 
-  /* Sanity checks */
   assert(ssys != NULL && sbp != NULL);
   assert(ssys->n_m11_matrices == 1);
   assert(r != NULL);
@@ -1046,6 +1056,7 @@ _upper_schur_pc_apply(cs_saddle_system_t          *ssys,
      ========================== */
 
   /* No need to scatter the r1_tilda array since it is not used anymore */
+
   n_iter += _solve_m11_approximation(ssys, sbp,
                                      r1_tilda, false, /* no scatter */
                                      z, true);        /* scatter z at exit */
@@ -1078,7 +1089,6 @@ _sgs_schur_pc_apply(cs_saddle_system_t          *ssys,
   if (z == NULL)
     return 0;
 
-  /* Sanity checks */
   assert(ssys != NULL && sbp != NULL);
   assert(ssys->n_m11_matrices == 1);
   assert(r != NULL);
@@ -1130,6 +1140,7 @@ _sgs_schur_pc_apply(cs_saddle_system_t          *ssys,
   cs_real_t  *r1_tilda = r2_hat; /* x1_size */
 
   /* scatter view to gather view */
+
   cs_range_set_gather(rset, CS_REAL_TYPE, 1, /* stride */
                       z1_hat,   /* in:  size=n_sles_scatter_elts */
                       z1_hat);  /* out: size=n_sles_gather_elts */
@@ -1137,10 +1148,12 @@ _sgs_schur_pc_apply(cs_saddle_system_t          *ssys,
   cs_matrix_vector_multiply(m11, z1_hat, r1_tilda);
 
   /* gather to scatter view (i.e. algebraic to mesh view) */
+
   cs_range_set_scatter(rset, CS_REAL_TYPE, 1, /* type and stride */
                        r1_tilda, r1_tilda);
 
   /* Update += of r1_tilda inside the following function */
+
   _m12_vector_multiply(ssys, z2, r1_tilda);
 
   /* 5. Solve M11.z1 = r1_tilda
@@ -1151,11 +1164,13 @@ _sgs_schur_pc_apply(cs_saddle_system_t          *ssys,
                                      z, false);       /* = no scatter z */
 
   /* Last update z1 = -z1 + 2 z1_hat (still in gather wiew for both arrays) */
+
 # pragma omp parallel for if (rset->n_elts[0] > CS_THR_MIN)
   for (cs_lnum_t i1 = 0; i1 < rset->n_elts[0]; i1++)
     z[i1] = 2*z1_hat[i1] - z[i1];
 
   /* Move back: gather --> scatter view */
+
   cs_range_set_scatter(rset, CS_REAL_TYPE, 1, /* type and stride */
                        z, z);
 
@@ -1187,7 +1202,6 @@ _uza_schur_pc_apply(cs_saddle_system_t          *ssys,
   if (z == NULL)
     return 0;
 
-  /* Sanity checks */
   assert(ssys != NULL && sbp != NULL);
   assert(ssys->n_m11_matrices == 1);
   assert(r != NULL);
@@ -1324,6 +1338,7 @@ _set_pc(const cs_saddle_system_t          *ssys,
         cs_real_t                        **p_wsp)
 {
   /* Initialization */
+
   *wsp_size = 0;
   *p_wsp = NULL;
 
@@ -1777,6 +1792,7 @@ cs_saddle_gcr(int                          restart,
               cs_iter_algo_t              *ia)
 {
   /* Workspace: Specific buffers for this algorithm */
+
   const int  triangular_size = (restart*(restart+1))/2;
   double  *gamma = NULL;
   BFT_MALLOC(gamma, triangular_size, double);
@@ -1934,8 +1950,6 @@ cs_saddle_gcr(int                          restart,
                   __func__, _beta, ia->n_algo_iter);
   }
 
-  /* Free temporary workspace */
-
   BFT_FREE(gamma);
   BFT_FREE(alpha);
   BFT_FREE(wsp);
@@ -1974,6 +1988,7 @@ cs_matrix_vector_multiply_gs_allocated(const cs_range_set_t      *rset,
    */
 
   /* scatter view to gather view for the input vector */
+
   cs_range_set_gather(rset,
                       CS_REAL_TYPE, 1, /* type and stride */
                       vec,             /* in:  size=n_sles_scatter_elts */
@@ -1986,6 +2001,7 @@ cs_matrix_vector_multiply_gs_allocated(const cs_range_set_t      *rset,
   cs_matrix_vector_multiply(mat, vec, matvec);
 
   /* gather view to scatter view (i.e. algebraic to mesh view) */
+
   cs_range_set_scatter(rset,
                        CS_REAL_TYPE, 1, /* type and stride */
                        vec, vec);
@@ -2028,6 +2044,7 @@ cs_matrix_vector_multiply_gs(const cs_range_set_t      *rset,
   /* Handle the input array
    * n_rows = n_gather_elts <= n_scatter_elts = n_dofs (mesh view) <= n_cols
    */
+
   cs_real_t  *vecx = NULL;
   if (n_cols > vec_len) {
     BFT_MALLOC(vecx, n_cols, cs_real_t);
@@ -2037,6 +2054,7 @@ cs_matrix_vector_multiply_gs(const cs_range_set_t      *rset,
     vecx = vec;
 
   /* scatter view to gather view */
+
   if (rset != NULL)
     cs_range_set_gather(rset,
                         CS_REAL_TYPE,  /* type */
@@ -2045,12 +2063,14 @@ cs_matrix_vector_multiply_gs(const cs_range_set_t      *rset,
                         vecx);         /* out: size=n_sles_gather_elts */
 
   /* Handle the output array */
+
   cs_real_t  *matvec = NULL;
   BFT_MALLOC(matvec, n_cols, cs_real_t);
 
   cs_matrix_vector_multiply(mat, vecx, matvec);
 
   /* gather to scatter view (i.e. algebraic to mesh view) */
+
   if (rset != NULL) {
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, /* type and stride */
@@ -2061,12 +2081,14 @@ cs_matrix_vector_multiply_gs(const cs_range_set_t      *rset,
   }
 
   /* Free allocated memory if needed */
+
   if (vecx != vec) {
     assert(n_cols > vec_len);
     BFT_FREE(vecx);
   }
 
   /* return the resulting array */
+
   *p_matvec = matvec;
 }
 

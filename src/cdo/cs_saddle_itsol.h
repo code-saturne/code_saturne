@@ -84,11 +84,13 @@ typedef struct {
   int              m21_stride;
 
   /* Indexed list used to scan the unassembled m21 operator */
+
   const cs_adjacency_t  *m21_adjacency;
 
   /* Structure used for synchronisation (parallel or periodic). Enable to
      switch from a scatter view (the mesh view) to a gather view (the algebraic
      view). This structure is shared. */
+
   const cs_range_set_t  *rset;
 
 } cs_saddle_system_t;
@@ -98,24 +100,29 @@ typedef struct {
 typedef struct {
 
   /* Parameters */
+
   cs_param_precond_block_t     block_type;
   cs_param_schur_approx_t      schur_type;
 
   /* Block 11 settings (mandatory) */
+
   cs_param_sles_t   *m11_slesp;
   cs_sles_t         *m11_sles;
 
   /* Schur complement settings (optional) */
+
   cs_matrix_t       *schur_matrix;
   cs_param_sles_t   *schur_slesp;
   cs_sles_t         *schur_sles;
   double             schur_scaling;
 
   /* Native arrays for the Schur matrix (optional) */
+
   cs_real_t         *schur_diag;
   cs_real_t         *schur_xtra;
 
   /* Diagonal approximations of block matrices (optional) */
+
   cs_real_t         *m11_inv_diag;
   cs_real_t         *mass22_diag;
 

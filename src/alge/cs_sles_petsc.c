@@ -558,10 +558,9 @@ cs_sles_petsc_define(int                          f_id,
                      cs_sles_petsc_setup_hook_t  *setup_hook,
                      void                        *context)
 {
-  cs_sles_petsc_t *
-    c = cs_sles_petsc_create(matrix_type,
-                             setup_hook,
-                             context);
+  cs_sles_petsc_t * c = cs_sles_petsc_create(matrix_type,
+                                             setup_hook,
+                                             context);
 
   cs_sles_t *sc = cs_sles_define(f_id,
                                  name,

@@ -61,6 +61,7 @@ BEGIN_C_DECLS
 struct _cs_cdoeb_t {
 
   /* Ids related to the variable field and to the boundary flux field */
+
   int          var_field_id;
   int          bflux_field_id;
 
@@ -68,22 +69,27 @@ struct _cs_cdoeb_t {
   cs_lnum_t    n_dofs;
 
   /* Array storing the computed values */
+
   cs_real_t   *edge_values;
   cs_real_t   *edge_values_pre;
 
   /* Array storing the value arising from the contribution of all source
      terms */
+
   cs_real_t   *source_terms;
 
   /* Boundary conditions */
+
   cs_flag_t                *edge_bc_flag;
   cs_cdo_enforce_bc_t      *enforce_essential_bc;
 
   /* Pointer of function to build the diffusion term */
+
   cs_hodge_t              **curlcurl_hodge;  /* one structure by thread */
   cs_hodge_compute_t       *get_curlcurl;
 
   /* Mass matrix settings (useful for the unsteady and reaction terms) */
+
   cs_hodge_param_t          mass_hodgep;
   cs_hodge_t              **mass_hodge;      /* one structure by thread */
   cs_hodge_compute_t       *get_mass;
