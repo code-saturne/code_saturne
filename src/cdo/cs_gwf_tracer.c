@@ -1062,14 +1062,14 @@ _integrate_tracer(const cs_cdo_connect_t                  *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialization by default for a "standard" tracer
+ * \brief Create and initialize the context by default for a "standard" tracer
  *
  * \param[in, out]  tracer   pointer to a cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_default_tracer_init(cs_gwf_tracer_t    *tracer)
+_create_default_tracer_context(cs_gwf_tracer_t    *tracer)
 {
   if (tracer == NULL)
     return;
@@ -1203,16 +1203,14 @@ _create_tracer(cs_gwf_tracer_model_t    tr_model,
   cs_equation_param_set(tr_eqp, CS_EQKEY_PRECOND, "poly1");
   cs_equation_param_set(tr_eqp, CS_EQKEY_ADV_SCHEME, "sg");
 
-  /* Other members */
+  /* Function pointers */
 
   tracer->update_diff_tensor = NULL;
   tracer->update_precipitation = NULL;
-
   tracer->context = NULL;
   tracer->free_context = NULL;
-
-  tracer->setup = NULL;
-  tracer->add_terms = NULL;
+  tracer->init_setup = NULL;
+  tracer->finalize_setup = NULL;
 
   return tracer;
 }
@@ -1267,26 +1265,26 @@ cs_gwf_tracer_by_name(const char   *eq_name)
  *         by the resolution of the Richards equation.
  *         Diffusion/reaction parameters result from a physical modelling.
  *
- * \param[in]   tr_model    model related to this tracer
- * \param[in]   gwf_model   main model for the GWF module
- * \param[in]   eq_name     name of the tracer equation
- * \param[in]   var_name    name of the related variable
- * \param[in]   adv_field   pointer to a cs_adv_field_t structure
- * \param[in]   setup       function pointer (predefined prototype)
- * \param[in]   add_terms   function pointer (predefined prototype)
+ * \param[in]   tr_model        model related to this tracer
+ * \param[in]   gwf_model       main model for the GWF module
+ * \param[in]   eq_name         name of the tracer equation
+ * \param[in]   var_name        name of the related variable
+ * \param[in]   adv_field       pointer to a cs_adv_field_t structure
+ * \param[in]   init_setup      function pointer (predefined prototype)
+ * \param[in]   finalize_setup  function pointer (predefined prototype)
  *
  * \return a pointer to the new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tracer_t *
-cs_gwf_tracer_add(cs_gwf_tracer_model_t        tr_model,
-                  cs_gwf_model_type_t          gwf_model,
-                  const char                  *eq_name,
-                  const char                  *var_name,
-                  cs_adv_field_t              *adv_field,
-                  cs_gwf_tracer_setup_t       *setup,
-                  cs_gwf_tracer_add_terms_t   *add_terms)
+cs_gwf_tracer_add(cs_gwf_tracer_model_t            tr_model,
+                  cs_gwf_model_type_t              gwf_model,
+                  const char                      *eq_name,
+                  const char                      *var_name,
+                  cs_adv_field_t                  *adv_field,
+                  cs_gwf_tracer_init_setup_t      *init_setup,
+                  cs_gwf_tracer_finalize_setup_t  *finalize_setup)
 {
   int  tr_id = _n_tracers;
 
@@ -1298,11 +1296,11 @@ cs_gwf_tracer_add(cs_gwf_tracer_model_t        tr_model,
 
   assert(tracer != NULL);
 
-  tracer->setup = setup;
-  tracer->add_terms = add_terms;
+  tracer->init_setup = init_setup;
+  tracer->finalize_setup = finalize_setup;
 
   if ((tracer->model & CS_GWF_TRACER_USER) == 0)
-    _default_tracer_init(tracer);
+    _create_default_tracer_context(tracer);
 
   /* Update the array storing all tracers */
 
@@ -1504,6 +1502,42 @@ cs_gwf_tracer_set_precip_param(cs_gwf_tracer_t   *tracer,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Initial setup step for tracer equations. Soils and equation
+ *        parameters are defined at this stage.
+ *        Create new cs_field_t structures according to the setting.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tracer_init_setup(void)
+{
+  if (_n_tracers == 0)
+    return;
+  assert(_tracers != NULL);
+
+  /* Loop on tracer equations */
+
+  for (int i = 0; i < _n_tracers; i++) {
+
+    cs_gwf_tracer_t  *tracer = _tracers[i];
+
+    if (tracer == NULL)
+      continue;
+
+    cs_equation_t  *eq = tracer->equation;
+
+    if (tracer->init_setup != NULL)
+      tracer->init_setup(tracer);
+
+    /* Add the variable field (One assumes an unsteady behavior) */
+
+    cs_equation_predefined_create_field(1, eq); /* Keep two states */
+
+  } /* Loop on tracers */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Finalize the tracer setup
  *
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
@@ -1512,12 +1546,11 @@ cs_gwf_tracer_set_precip_param(cs_gwf_tracer_t   *tracer,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_setup_all(const cs_cdo_connect_t      *connect,
-                        const cs_cdo_quantities_t   *quant)
+cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant)
 {
   if (_n_tracers == 0)
     return;
-
   assert(_tracers != NULL);
 
   /* Loop on tracer equations */
@@ -1541,40 +1574,10 @@ cs_gwf_tracer_setup_all(const cs_cdo_connect_t      *connect,
 
     }
 
-    if (tracer->setup != NULL)
-      tracer->setup(connect, quant, eqp->adv_field, fval, tracer);
+    if (tracer->finalize_setup != NULL)
+      tracer->finalize_setup(connect, quant, eqp->adv_field, fval, tracer);
 
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add new terms if needed (such as diffusion or reaction) to tracer
- *         equations according to the settings
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_tracer_add_terms(void)
-{
-  if (_n_tracers == 0)
-    return;
-
-  assert(_tracers != NULL);
-
-  /* Loop on tracer equations */
-
-  for (int i = 0; i < _n_tracers; i++) {
-
-    cs_gwf_tracer_t  *tracer = _tracers[i];
-
-    if (tracer == NULL)
-      continue;
-
-    if (tracer->add_terms != NULL)
-      tracer->add_terms(tracer);
-
-  }
+  } /* Loop on tracers */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1611,7 +1614,7 @@ cs_gwf_tracer_update_diff_tensor(cs_real_t                    t_eval,
     if (tracer->update_diff_tensor != NULL)
       tracer->update_diff_tensor(tracer, t_eval, mesh, connect, quant);
 
-  }
+  } /* Loop on tracers */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1663,7 +1666,7 @@ cs_gwf_tracer_log_all(void)
 
     }
 
-  }
+  } /* Loop on tracers */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1779,7 +1782,7 @@ cs_gwf_tracer_compute_all(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_add_default_terms(cs_gwf_tracer_t     *tracer)
+cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer)
 {
   if (tracer == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -1892,11 +1895,11 @@ cs_gwf_tracer_add_default_terms(cs_gwf_tracer_t     *tracer)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_saturated_setup(const cs_cdo_connect_t      *connect,
-                              const cs_cdo_quantities_t   *quant,
-                              const cs_adv_field_t        *adv,
-                              const cs_real_t             *l_saturation,
-                              cs_gwf_tracer_t             *tracer)
+cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t     *connect,
+                                 const cs_cdo_quantities_t  *quant,
+                                 const cs_adv_field_t       *adv,
+                                 const cs_real_t            *l_saturation,
+                                 cs_gwf_tracer_t            *tracer)
 {
   if (tracer == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -1988,11 +1991,11 @@ cs_gwf_tracer_saturated_setup(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_unsaturated_setup(const cs_cdo_connect_t      *connect,
-                                const cs_cdo_quantities_t   *quant,
-                                const cs_adv_field_t        *adv,
-                                const cs_real_t             *l_saturation,
-                                cs_gwf_tracer_t             *tracer)
+cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
+                                   const cs_cdo_quantities_t   *quant,
+                                   const cs_adv_field_t        *adv,
+                                   const cs_real_t             *l_saturation,
+                                   cs_gwf_tracer_t             *tracer)
 {
   if (tracer == NULL)
     bft_error(__FILE__, __LINE__, 0,

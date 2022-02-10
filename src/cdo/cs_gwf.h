@@ -233,20 +233,20 @@ cs_gwf_add_tracer(cs_gwf_tracer_model_t     tr_model,
  *         modelling. Terms are activated according to predefined settings.
  *         Modelling of the tracer parameters are left to the user
  *
- * \param[in]   eq_name     name of the tracer equation
- * \param[in]   var_name    name of the related variable
- * \param[in]   setup       function pointer (predefined prototype)
- * \param[in]   add_terms   function pointer (predefined prototype)
+ * \param[in] eq_name         name of the tracer equation
+ * \param[in] var_name        name of the related variable
+ * \param[in] init_setup      function pointer (predefined prototype)
+ * \param[in] finalize_setup  function pointer (predefined prototype)
  *
  * \return a pointer to the new cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tracer_t *
-cs_gwf_add_user_tracer(const char                  *eq_name,
-                       const char                  *var_name,
-                       cs_gwf_tracer_setup_t       *setup,
-                       cs_gwf_tracer_add_terms_t   *add_terms);
+cs_gwf_add_user_tracer(const char                       *eq_name,
+                       const char                       *var_name,
+                       cs_gwf_tracer_init_setup_t       *init_setup,
+                       cs_gwf_tracer_finalize_setup_t   *finalize_setup);
 
 /*----------------------------------------------------------------------------*/
 /*!

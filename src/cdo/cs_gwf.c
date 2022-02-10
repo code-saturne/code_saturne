@@ -2347,22 +2347,24 @@ cs_gwf_add_tracer(cs_gwf_tracer_model_t     tr_model,
 
   /* Set the function pointers */
 
-  cs_gwf_tracer_setup_t  *setup = NULL;
+  cs_gwf_tracer_init_setup_t  *init_setup = cs_gwf_tracer_default_init_setup;
+  cs_gwf_tracer_finalize_setup_t  *finalize_setup = NULL;
 
   if (gw->model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
-    setup = cs_gwf_tracer_saturated_setup;
+    finalize_setup = cs_gwf_tracer_sat_finalize_setup;
   else
-    setup = cs_gwf_tracer_unsaturated_setup;
+    finalize_setup = cs_gwf_tracer_unsat_finalize_setup;
 
   /* Call the main function to add a new tracer */
 
+  assert(finalize_setup != NULL);
   cs_gwf_tracer_t  *tracer = cs_gwf_tracer_add(tr_model,
                                                gw->model,
                                                eq_name,
                                                var_name,
                                                adv,
-                                               setup,
-                                               cs_gwf_tracer_add_default_terms);
+                                               init_setup,
+                                               finalize_setup);
 
   return tracer;
 }
@@ -2377,20 +2379,20 @@ cs_gwf_add_tracer(cs_gwf_tracer_model_t     tr_model,
  *         modelling. Terms are activated according to predefined settings.
  *         Modelling of the tracer parameters are left to the user
  *
- * \param[in]   eq_name     name of the tracer equation
- * \param[in]   var_name    name of the related variable
- * \param[in]   setup       function pointer (predefined prototype)
- * \param[in]   add_terms   function pointer (predefined prototype)
+ * \param[in] eq_name         name of the tracer equation
+ * \param[in] var_name        name of the related variable
+ * \param[in] init_setup      function pointer (predefined prototype)
+ * \param[in] finalize_setup  function pointer (predefined prototype)
  *
  * \return a pointer to the new cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tracer_t *
-cs_gwf_add_user_tracer(const char                  *eq_name,
-                       const char                  *var_name,
-                       cs_gwf_tracer_setup_t       *setup,
-                       cs_gwf_tracer_add_terms_t   *add_terms)
+cs_gwf_add_user_tracer(const char                       *eq_name,
+                       const char                       *var_name,
+                       cs_gwf_tracer_init_setup_t       *init_setup,
+                       cs_gwf_tracer_finalize_setup_t   *finalize_setup)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
@@ -2407,8 +2409,8 @@ cs_gwf_add_user_tracer(const char                  *eq_name,
                                                eq_name,
                                                var_name,
                                                adv,
-                                               setup,
-                                               add_terms);
+                                               init_setup,
+                                               finalize_setup);
 
   return tracer;
 }
@@ -2464,6 +2466,10 @@ cs_gwf_init_setup(void)
               " %s: Invalid model type for the GroundWater Flow module.\n",
               __func__);
   }
+
+  /* Same step for the tracer equations associated to the GWF module */
+
+  cs_gwf_tracer_init_setup();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2516,7 +2522,7 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
 
   /* Finalize the tracer setup */
 
-  cs_gwf_tracer_setup_all(connect, quant);
+  cs_gwf_tracer_finalize_setup(connect, quant);
 }
 
 /*----------------------------------------------------------------------------*/

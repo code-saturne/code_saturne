@@ -689,17 +689,6 @@ cs_domain_finalize_user_setup(cs_domain_t         *domain)
   if (domain->cdo_context == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_cdo_context);
 
-  /* Groundwater flow module */
-
-  if (cs_gwf_is_activated()) {
-
-    /* Add if needed new terms (as diffusion or reaction) to tracer equations
-       according to the settings */
-
-    cs_gwf_tracer_add_terms();
-
-  }
-
   /* Allocate all fields created during the setup stage */
 
   cs_field_allocate_or_map_all();

@@ -53,7 +53,21 @@ typedef struct _gwf_tracer_t  cs_gwf_tracer_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Generic function to set the parameters related to a tracer equation
+ * \brief Generic function to update the first setup stage (the one done before
+ *        building mesh and its related quantities) for a tracer equation
+ *
+ * \param[in, out] tracer       pointer to a cs_gwf_tracer_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_gwf_tracer_init_setup_t) (cs_gwf_tracer_t             *tracer);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Generic function to finalize the setup of parameters related to a
+ *        tracer equation. At this stage, mesh and its related quantities have
+ *        been built.
  *
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
@@ -64,23 +78,11 @@ typedef struct _gwf_tracer_t  cs_gwf_tracer_t;
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_gwf_tracer_setup_t) (const cs_cdo_connect_t      *connect,
-                         const cs_cdo_quantities_t   *quant,
-                         const cs_adv_field_t        *adv,
-                         const cs_real_t             *l_saturation,
-                         cs_gwf_tracer_t             *tracer);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Generic function to update the terms to build in the algebraic
- *         system for a tracer equation according to the settings
- *
- * \param[in, out] tracer       pointer to a cs_gwf_tracer_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_gwf_tracer_add_terms_t) (cs_gwf_tracer_t             *tracer);
+(cs_gwf_tracer_finalize_setup_t) (const cs_cdo_connect_t      *connect,
+                                  const cs_cdo_quantities_t   *quant,
+                                  const cs_adv_field_t        *adv,
+                                  const cs_real_t             *l_saturation,
+                                  cs_gwf_tracer_t             *tracer);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -199,37 +201,49 @@ struct _gwf_tracer_t{
                                                build in the tracer equation */
   int                          reaction_id; /* id related to the reaction
                                                term in the tracer equation */
-  /* Pointers to functions */
-
-  cs_gwf_tracer_update_t         *update_diff_tensor;
-  cs_gwf_tracer_update_t         *update_precipitation;
-  cs_gwf_tracer_free_context_t   *free_context;
-
-  /* Pointer to a context structure according to the model */
-
-  void                           *context;
-
-  /*! \var setup
-   * This is a function pointer to finalize the setup of a tracer
-   * equation. There is a function pointer by default but this can be
-   * overloaded by a user-defined function in the case of a user-defined
-   * tracer.
-   *
-   * \var add_terms
-   * This is a function pointer to add non-standard terms in a tracer
-   * equation. There is a function pointer by default but this can be
-   * overloaded by a user-defined function in the case of a user-defined
-   * tracer.
-   */
-
-  cs_gwf_tracer_setup_t          *setup;
-  cs_gwf_tracer_add_terms_t      *add_terms;
 
   /*! \var eq
    *  \brief pointer to the related equation structure
    */
 
   cs_equation_t                  *equation;
+
+  /* Pointer to a context structure according to the model */
+
+  void                           *context;
+
+  /* Pointers to functions */
+
+  /*!
+   * \var update_diff_tensor
+   *      Function used to update the diffusion tensor (dispersion + diffusion)
+   *
+   * \var update_precipitation
+   *      Function used to update the quantities related to the precipitation
+   * model
+   *
+   * \var finalize_setup
+   *       This is a function pointer to finalize the setup of a tracer
+   * equation. There is a function pointer by default but this can be
+   * overloaded by a user-defined function in the case of a user-defined
+   * tracer.
+   *
+   * \var init_setup
+   *      This is a function pointer to initialize the setup (adding terms in
+   * an equation). At this stage, the mesh has not been loaded.  There is a
+   * function pointer by default but this can be overloaded by a user-defined
+   * function in the case of a user-defined tracer.
+   *
+   * \var free_context
+   *      Function to free quantities or structure associated to the context
+   * structure of a tracer.
+   */
+
+  cs_gwf_tracer_update_t           *update_diff_tensor;
+  cs_gwf_tracer_update_t           *update_precipitation;
+  cs_gwf_tracer_finalize_setup_t   *finalize_setup;
+  cs_gwf_tracer_init_setup_t       *init_setup;
+  cs_gwf_tracer_free_context_t     *free_context;
 
 };
 
@@ -261,26 +275,26 @@ cs_gwf_tracer_by_name(const char   *eq_name);
  *         by the resolution of the Richards equation.
  *         Diffusion/reaction parameters result from a physical modelling.
  *
- * \param[in]   tr_model    model related to this tracer
- * \param[in]   gwf_model   main model for the GWF module
- * \param[in]   eq_name     name of the tracer equation
- * \param[in]   var_name    name of the related variable
- * \param[in]   adv_field   pointer to a cs_adv_field_t structure
- * \param[in]   setup       function pointer (predefined prototype)
- * \param[in]   add_terms   function pointer (predefined prototype)
+ * \param[in]   tr_model        model related to this tracer
+ * \param[in]   gwf_model       main model for the GWF module
+ * \param[in]   eq_name         name of the tracer equation
+ * \param[in]   var_name        name of the related variable
+ * \param[in]   adv_field       pointer to a cs_adv_field_t structure
+ * \param[in]   init_setup      function pointer (predefined prototype)
+ * \param[in]   finalize_setup  function pointer (predefined prototype)
  *
  * \return a pointer to the new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tracer_t *
-cs_gwf_tracer_add(cs_gwf_tracer_model_t        tr_model,
-                  cs_gwf_model_type_t          gwf_model,
-                  const char                  *eq_name,
-                  const char                  *var_name,
-                  cs_adv_field_t              *adv_field,
-                  cs_gwf_tracer_setup_t       *setup,
-                  cs_gwf_tracer_add_terms_t   *add_terms);
+cs_gwf_tracer_add(cs_gwf_tracer_model_t            tr_model,
+                  cs_gwf_model_type_t              gwf_model,
+                  const char                      *eq_name,
+                  const char                      *var_name,
+                  cs_adv_field_t                  *adv_field,
+                  cs_gwf_tracer_init_setup_t      *init_setup,
+                  cs_gwf_tracer_finalize_setup_t  *finalize_setup);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -350,6 +364,17 @@ cs_gwf_tracer_set_precip_param(cs_gwf_tracer_t   *tracer,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Initial setup step for tracer equations. Soils and equation
+ *        parameters are defined at this stage.
+ *        Create new cs_field_t structures according to the setting.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_tracer_init_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Finalize the tracer setup
  *
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
@@ -358,18 +383,8 @@ cs_gwf_tracer_set_precip_param(cs_gwf_tracer_t   *tracer,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_setup_all(const cs_cdo_connect_t      *connect,
-                        const cs_cdo_quantities_t   *quant);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Add new terms if needed (such as diffusion or reaction) to tracer
- *         equations according to the settings
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_tracer_add_terms(void);
+cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -445,7 +460,7 @@ cs_gwf_tracer_compute_all(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_add_default_terms(cs_gwf_tracer_t     *tracer);
+cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -461,11 +476,11 @@ cs_gwf_tracer_add_default_terms(cs_gwf_tracer_t     *tracer);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_saturated_setup(const cs_cdo_connect_t      *connect,
-                              const cs_cdo_quantities_t   *quant,
-                              const cs_adv_field_t        *adv,
-                              const cs_real_t             *l_saturation,
-                              cs_gwf_tracer_t             *tracer);
+cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t      *connect,
+                                 const cs_cdo_quantities_t   *quant,
+                                 const cs_adv_field_t        *adv,
+                                 const cs_real_t             *l_saturation,
+                                 cs_gwf_tracer_t             *tracer);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -481,11 +496,11 @@ cs_gwf_tracer_saturated_setup(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_tracer_unsaturated_setup(const cs_cdo_connect_t      *connect,
-                                const cs_cdo_quantities_t   *quant,
-                                const cs_adv_field_t        *adv,
-                                const cs_real_t             *l_saturation,
-                                cs_gwf_tracer_t             *tracer);
+cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
+                                   const cs_cdo_quantities_t   *quant,
+                                   const cs_adv_field_t        *adv,
+                                   const cs_real_t             *l_saturation,
+                                   cs_gwf_tracer_t             *tracer);
 
 /*----------------------------------------------------------------------------*/
 /*!
