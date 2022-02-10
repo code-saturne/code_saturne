@@ -1987,5 +1987,93 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of turbulent viscosity for
+ *        the non-linear quadratic K-epsilon from
+ *        Baglietto et al. (2005)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_ke_q_mu_t(void)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  cs_real_t *visct =  CS_F_(mu_t)->val;
+
+  /* Initialization
+   * ============== */
+
+  /* Map field arrays */
+
+  const cs_real_t *viscl =  CS_F_(mu)->val;
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *cvar_k = CS_F_(k)->val;
+  const cs_real_t *cvar_ep = CS_F_(eps)->val;
+
+  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
+
+  cs_real_t *s2;
+  BFT_MALLOC(s2, n_cells_ext, cs_real_t);
+
+  /* Calculation of velocity gradient and of
+   *   S2 = S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
+   * ==================================================== */
+
+  cs_real_33_t *gradv;
+  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
+  cs_field_gradient_vector(CS_F_(vel),
+                           false,     // no use_previous_t
+                           1,         // inc
+                           gradv);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_real_t s11 = gradv[c_id][0][0];
+    const cs_real_t s22 = gradv[c_id][1][1];
+    const cs_real_t s33 = gradv[c_id][2][2];
+    const cs_real_t dudy = gradv[c_id][0][1];
+    const cs_real_t dudz = gradv[c_id][0][2];
+    const cs_real_t dvdx = gradv[c_id][1][0];
+    const cs_real_t dvdz = gradv[c_id][1][2];
+    const cs_real_t dwdx = gradv[c_id][2][0];
+    const cs_real_t dwdy = gradv[c_id][2][1];
+
+    s2[c_id] =   cs_math_pow2(s11) + cs_math_pow2(s22) + cs_math_pow2(s33)
+               + 0.5*cs_math_pow2(dudy+dvdx)
+               + 0.5*cs_math_pow2(dudz+dwdx)
+               + 0.5*cs_math_pow2(dvdz+dwdy);
+  }
+
+  BFT_FREE(gradv);
+
+  /* Compute turbulent viscosity
+   * =========================== */
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    const cs_real_t xk = cvar_k[c_id];
+    const cs_real_t xe = cvar_ep[c_id];
+    const cs_real_t xrom = crom[c_id];
+    const cs_real_t xmu = viscl[c_id];
+    const cs_real_t xdist = fmax(w_dist[c_id], 1.e-10);
+
+    const cs_real_t xmut = xrom*cs_math_pow2(xk)/xe;
+    const cs_real_t xrey = xdist*sqrt(xk)*xrom/xmu;
+    const cs_real_t xttke = xk/xe;
+    const cs_real_t xss = xttke*sqrt(0.5*s2[c_id]);
+
+    const cs_real_t xfmu = 1.0 - exp(- 2.9e-2*sqrt(xrey)
+                                     - 1.1e-4*cs_math_pow2(xrey));
+    const cs_real_t xcmu = 2.0 / 3.0 / (3.90 + xss);
+
+    visct[c_id] = xcmu*xfmu*xmut;
+  }
+
+  BFT_FREE(s2);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

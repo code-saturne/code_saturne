@@ -70,6 +70,17 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                  cs_real_t       *prdv2f);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of turbulent viscosity for
+ *        the non-linear quadratic K-epsilon from
+ *        Baglietto et al. (2005)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_ke_q_mu_t(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

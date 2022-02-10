@@ -143,6 +143,12 @@ interface
     implicit none
   end subroutine cs_ht_convert_h_to_t_cells_solid
 
+  subroutine cs_turbulence_ke_q_mu_t() &
+    bind(C, name='cs_turbulence_ke_q_mu_t')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_turbulence_ke_q_mu_t
+
 end interface
 
 !===============================================================================
@@ -335,7 +341,7 @@ elseif (itytur.eq.2) then
     ! Non-linear quadratic Baglietto
     ! ------------------------------
 
-    call visqke
+    call cs_turbulence_ke_q_mu_t
 
   else
 
