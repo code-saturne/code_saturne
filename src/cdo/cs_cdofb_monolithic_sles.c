@@ -4147,15 +4147,15 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
     break;
 
 #if defined(HAVE_PETSC)
-
   /* Strategies available before the 3.11 version of PETSc */
+
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
     cs_sles_petsc_init();
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
                          _additive_amg_hook,
-                         (void *)nsp);
+                         (void *)&phc);
     break;
 
   case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
