@@ -385,7 +385,7 @@ cs_atmo_hydrostatic_profiles_compute(void);
 
 cs_real_t
 cs_mo_phim(cs_real_t              z,
-	   cs_real_t              dlmo);
+           cs_real_t              dlmo);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -399,7 +399,7 @@ cs_mo_phim(cs_real_t              z,
 
 cs_real_t
 cs_mo_phih(cs_real_t              z,
-	   cs_real_t              dlmo);
+           cs_real_t              dlmo);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -414,8 +414,8 @@ cs_mo_phih(cs_real_t              z,
 
 cs_real_t
 cs_mo_psim(cs_real_t              z,
-	   cs_real_t              z0,
-	   cs_real_t              dlmo);
+           cs_real_t              z0,
+           cs_real_t              dlmo);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -430,8 +430,8 @@ cs_mo_psim(cs_real_t              z,
 
 cs_real_t
 cs_mo_psih(cs_real_t              z,
-	   cs_real_t              z0,
-	   cs_real_t              dlmo);
+           cs_real_t              z0,
+           cs_real_t              dlmo);
 
 
 /*----------------------------------------------------------------------------*/
@@ -524,14 +524,14 @@ cs_atmo_declare_chem_from_spack(void);
 
 void
 cs_atmo_compute_solar_angles(cs_real_t xlat,
-			     cs_real_t xlong,
-			     cs_real_t jour,
-			     cs_real_t heurtu,
-			     int       imer,
-			     cs_real_t *albe,
-			     cs_real_t *muzero,
-			     cs_real_t *omega,
-			     cs_real_t *fo);
+                             cs_real_t xlong,
+                             cs_real_t jour,
+                             cs_real_t heurtu,
+                             int       imer,
+                             cs_real_t *albe,
+                             cs_real_t *muzero,
+                             cs_real_t *omega,
+                             cs_real_t *fo);
 
 /*----------------------------------------------------------------------------*/
 /*!
