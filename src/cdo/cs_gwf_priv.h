@@ -361,46 +361,46 @@ typedef struct {
    * @name Properties related to the model
    * @{
    *
-   * \var time_wl_eq_pty
+   * \var time_wl_pty
    * Property related to the unsteady term of the water conservation equation
    * w.r.t. the pressure in the liquid phase
    *
-   * \var diff_wl_eq_pty
+   * \var diff_wl_pty
    * Property related to the diffusion term of the water conservation equation
    * w.r.t. the pressure in the liquid phase
    *
-   * \var time_wg_eq_pty
+   * \var time_wg_pty
    * Property related to the unsteady term of the water conservation equation
    * w.r.t. the pressure in the gaseous phase
    *
-   * \var time_hg_eq_pty
+   * \var time_hg_pty
    * Property related to the unsteady term of the hydrogen conservation equation
    * w.r.t. the pressure in the gaseous phase.
    *
-   * \var diff_hg_eq_pty
+   * \var diff_hg_pty
    * Property related to the diffusion term of the hydrogen conservation
    * equation w.r.t. the pressure in the gaseous phase
    *
-   * \var time_hl_eq_pty
+   * \var time_hl_pty
    * Property related to the unsteady term of the hydrogen conservation equation
    * w.r.t. the pressure in the liquid phase.
    *
-   * \var diff_hl_eq_pty
+   * \var diff_hl_pty
    * Property related to the diffusion term of the hydrogen conservation
    * equation w.r.t. the pressure in the liquid phase
    *
    */
 
-  cs_property_t                *time_wl_eq_pty;
-  cs_property_t                *diff_wl_eq_pty;
+  cs_property_t                *time_wl_pty;
+  cs_property_t                *diff_wl_pty;
 
-  cs_property_t                *time_wg_eq_pty;
+  cs_property_t                *time_wg_pty;
 
-  cs_property_t                *time_hg_eq_pty;
-  cs_property_t                *diff_hg_eq_pty;
+  cs_property_t                *time_hg_pty;
+  cs_property_t                *diff_hg_pty;
 
-  cs_property_t                *time_hl_eq_pty;
-  cs_property_t                *diff_hl_eq_pty;
+  cs_property_t                *time_hl_pty;
+  cs_property_t                *diff_hl_pty;
 
   /*!
    * @}
@@ -435,45 +435,44 @@ typedef struct {
    * @name Additional arrays
    * @{
    *
-   * \var time_wl_eq_array
+   * \var time_wl_array
    *      Values in each cell of the coefficient appearing in front of the
    *      unsteady term in the water conservation equation for the liquid
-   *      phase. This array is linked to the \ref time_wl_eq_pty (size =
-   *      n_cells)
+   *      phase. This array is linked to the \ref time_wl_pty (size = n_cells)
    *
-   * \var diff_wl_eq_array
+   * \var diff_wl_array
    *      Values in each cell of the coefficient appearing in the diffusion
    *      term in the water conservation equation. This array is linked to the
-   *      \ref diff_wl_eq_pty (size = n_cells)
+   *      \ref diff_wl_pty (size = n_cells)
    *
-   * \var time_wg_eq_array
+   * \var time_wg_array
    *      Values in each cell of the coefficient appearing in front of the
    *      unsteady term in the water conservation equation w.r.t. the pressure
-   *      in the gaseous phase. This array is linked to the \ref time_wg_eq_pty
+   *      in the gaseous phase. This array is linked to the \ref time_wg_pty
    *      (size = n_cells)
    *
-   * \var time_hg_eq_array
+   * \var time_hg_array
    *      Values in each cell of the coefficient appearing in front of the
    *      unsteady term in the hydrogen conservation equation w.r.t. the
    *      pressure in the gaseous phase. This array is linked to the \ref
-   *      time_hg_eq_pty (size = n_cells)
+   *      time_hg_pty (size = n_cells)
    *
-   * \var diff_hg_eq_array
+   * \var diff_hg_array
    *      Values in each cell of the coefficient appearing in the diffusion
    *      term in the hydrogen conservation equation w.r.t. to the pressure in
-   *      the gaseous phase.  This array is linked to the \ref diff_hg_eq_pty
+   *      the gaseous phase.  This array is linked to the \ref diff_hg_pty
    *      (size = n_cells)
    *
-   * \var time_hl_eq_array
+   * \var time_hl_array
    *      Values in each cell of the coefficient appearing in front of the
    *      unsteady term in the hydrogen conservation equation w.r.t. the
    *      pressure in the liquid phase. This array is linked to the \ref
-   *      time_hl_eq_pty (size = n_cells)
+   *      time_hl_pty (size = n_cells)
    *
-   * \var diff_hl_eq_array
+   * \var diff_hl_array
    *      Values in each cell of the coefficient appearing in the diffusion
    *      term in the hydrogen conservation equation w.r.t. the pressure in the
-   *      liquid phase.  This array is linked to the \ref diff_hl_eq_pty (size
+   *      liquid phase.  This array is linked to the \ref diff_hl_pty (size
    *      = n_cells)
    *
    * \var l_rel_permeability
@@ -503,16 +502,16 @@ typedef struct {
    *      liquid and gaseous relative permeabilities or the liquid saturation.
    */
 
-  cs_real_t                    *time_wl_eq_array;
-  cs_real_t                    *diff_wl_eq_array;
+  cs_real_t                    *time_wl_array;
+  cs_real_t                    *diff_wl_array;
 
-  cs_real_t                    *time_wg_eq_array;
+  cs_real_t                    *time_wg_array;
 
-  cs_real_t                    *time_hg_eq_array;
-  cs_real_t                    *diff_hg_eq_array;
+  cs_real_t                    *time_hg_array;
+  cs_real_t                    *diff_hg_array;
 
-  cs_real_t                    *time_hl_eq_array;
-  cs_real_t                    *diff_hl_eq_array;
+  cs_real_t                    *time_hl_array;
+  cs_real_t                    *diff_hl_array;
 
   cs_real_t                    *l_rel_permeability;
   cs_real_t                    *g_rel_permeability;
@@ -535,6 +534,9 @@ typedef struct {
    * \var g_viscosity
    *      Viscosity in the gas phase (assumed to be constant) in Pa.s
    *
+   * \var l_diffusivity_h
+   *      Molecular diffusivity of the hydrogen in the liquid phase in m^2.s^-1
+   *
    * \var w_molar_mass
    *      Molar mass of the main component in the liquid phase (e.g. water) in
    *      kg.mol^-1
@@ -542,9 +544,6 @@ typedef struct {
    * \var h_molar_mass
    *      Molar mass of the main component in the gas phase (e.g. hydrogen) in
    *      kg.mol^-1
-   *
-   * \var l_diffusivity_h
-   *      Molecular diffusivity of the hydrogen in the liquid phase in m^2.s^-1
    *
    * \var ref_temperature
    *      Reference temperature used in the "perfect gas" law (this is used

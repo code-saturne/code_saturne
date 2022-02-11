@@ -1194,44 +1194,11 @@ _mtpf_init_context(void)
 
   BFT_MALLOC(mc, 1, cs_gwf_miscible_two_phase_t);
 
-  /* Arrays of property values associated to equation terms */
-
-  mc->time_wl_eq_array = NULL;
-  mc->diff_wl_eq_array = NULL;
-
-  mc->time_wg_eq_array = NULL;
-
-  mc->time_hg_eq_array = NULL;
-  mc->diff_hg_eq_array = NULL;
-
-  mc->time_hl_eq_array = NULL;
-  mc->diff_hl_eq_array = NULL;
-
-  /* Array of additional variable or property values */
-
-  mc->l_rel_permeability = NULL;
-  mc->g_rel_permeability = NULL;
-  mc->l_capacity = NULL;
-  mc->capillarity_cell_pressure = NULL;
-
-  /* Darcy flux (not used up to now) */
-
-  mc->l_darcy = NULL;
-  mc->g_darcy = NULL;
-
-  /* Parameters (default values) */
-
-  mc->l_mass_density = 1000;
-  mc->l_viscosity = 1e-3;
-  mc->g_viscosity = 2e-5;
-  mc->l_diffusivity_h = 0;      /* immiscible case or 1e-10 otherwise */
-  mc->w_molar_mass = 18e-3;
-  mc->h_molar_mass = 3e-3;
-  mc->ref_temperature = 280;    /* in Kelvin */
-  mc->henry_constant = 1e-20;   /* immiscible case */
+  /* Define the coupled system of equations */
+  /* -------------------------------------- */
 
   /* Create a new equation for the water conservation associated to the
-     pressure in the liquid phase */
+     pressure in the liquid phase. This will stand for the (0,0)-block */
 
   mc->wl_eq = cs_equation_add("w_conservation",   /* equation name */
                               "liquid_pressure",  /* variable name */
@@ -1240,7 +1207,7 @@ _mtpf_init_context(void)
                               CS_PARAM_BC_HMG_NEUMANN);
 
   /* Create a new equation for the hydrogen conservation associated to the
-     pressure in the gaseous phase */
+     pressure in the gaseous phase. This will stand for the (1,1)-block */
 
   mc->hg_eq = cs_equation_add("h_conservation", /* equation name */
                               "gas_pressure",   /* variable name */
@@ -1248,63 +1215,122 @@ _mtpf_init_context(void)
                               1,
                               CS_PARAM_BC_HMG_NEUMANN);
 
-  /* Add a 2x2 system of coupled equations and define each block */
-
-  mc->system = cs_equation_system_add("PorousTwoPhaseFlow",
-                                      2,   /* system size */
-                                      1);  /* scalar-valued block */
-
-  /* Set the (0,0)-block */
-
-  cs_equation_system_assign_equation(0, mc->wl_eq, mc->system);
-
-  /* Set the (1,1)-block */
-
-  cs_equation_system_assign_equation(1, mc->hg_eq, mc->system);
-
-  /* Create and set the (0,1)-block */
+  /* Create the (0,1)-block related to the water in the gas phase */
 
   mc->wg_eqp = cs_equation_param_create("water_gas_block",
                                         CS_EQUATION_TYPE_GROUNDWATER,
                                         1,
                                         CS_PARAM_BC_HMG_NEUMANN);
 
-  cs_equation_system_assign_param(0, 1, mc->wg_eqp, mc->system);
-
-  /* Create and set the (1,0)-block */
+  /* Create the (1,0)-block related to the hydrogen in the liquid phase */
 
   mc->hl_eqp = cs_equation_param_create("h_liquid_block",
                                         CS_EQUATION_TYPE_GROUNDWATER,
                                         1,
                                         CS_PARAM_BC_HMG_NEUMANN);
 
-  cs_equation_system_assign_param(1, 0, mc->hl_eqp, mc->system);
+  /* Add a 2x2 system of coupled equations and define each block */
 
-  /* Add properties:
-   * - unsteady term for wl_eq
-   * - unsteady term for hg_eq
+  mc->system = cs_equation_system_add("PorousTwoPhaseFlow",
+                                      2,   /* system size */
+                                      1);  /* scalar-valued block */
+
+  /* Set all the blocks in the coupled system */
+
+  cs_equation_system_assign_equation(0, mc->wl_eq, mc->system);  /* (0,0) */
+  cs_equation_system_assign_equation(1, mc->hg_eq, mc->system);  /* (1,1) */
+  cs_equation_system_assign_param(0, 1, mc->wg_eqp, mc->system); /* (0,1) */
+  cs_equation_system_assign_param(1, 0, mc->hl_eqp, mc->system); /* (1,0) */
+
+  /* Advection fields */
+  /* ---------------- */
+
+  /* Darcy flux (not used up to now) */
+
+  mc->l_darcy = NULL;
+  mc->g_darcy = NULL;
+
+  /* Properties */
+  /* ---------- */
+
+  /* Properties which will be associated to blocks
+   * - unsteady term for water eq. in the liquid phase      (0,0) block
+   * - diffusion term for water eq. in the liquid phase     (0,0)-block
+   * - unsteady term for water eq. in the gaseous phase     (0,1)-block
+   * - unsteady term for hydrogen eq. in the gaseous phase  (1,1)-block
+   * - diffusion term for hydrogen eq. in the gaseous phase (1,1)-block
+   * - unsteady term for hydrogen eq. in the liquid phase   (1,0)-block
+   * - diffusion term for hydrogen eq. in the liquid phase  (1,0)-block
+   *
+   * Adding the properties related to the permeability (diffusion) is postponed
+   * since one has to know which type of permeability is considered (iso, ortho,
+   * or anisotropic)
    */
 
-  mc->time_wl_eq_pty = cs_property_add("time_wl_eq_pty", CS_PROPERTY_ISO);
-  mc->time_wg_eq_pty = cs_property_add("time_wg_eq_pty", CS_PROPERTY_ISO);
-  mc->time_hg_eq_pty = cs_property_add("time_hg_eq_pty", CS_PROPERTY_ISO);
-  mc->time_hl_eq_pty = cs_property_add("time_hl_eq_pty", CS_PROPERTY_ISO);
+  mc->time_wl_pty = cs_property_add("time_wl_pty", CS_PROPERTY_ISO);
+  mc->diff_wl_pty = NULL;
+  mc->time_wg_pty = cs_property_add("time_wg_pty", CS_PROPERTY_ISO);
+  mc->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
+  mc->diff_hg_pty = NULL;
+  mc->time_hl_pty = cs_property_add("time_hl_pty", CS_PROPERTY_ISO);
+  mc->diff_hl_pty = NULL;
 
   /* Associate properties related to the unsteady term with equations to define
      the unsteady terms in these equations */
 
   cs_equation_param_t  *wl_eqp = cs_equation_get_param(mc->wl_eq);
 
-  cs_equation_add_time(wl_eqp, mc->time_wl_eq_pty);
+  cs_equation_add_time(wl_eqp, mc->time_wl_pty);
 
   cs_equation_param_t  *hg_eqp = cs_equation_get_param(mc->hg_eq);
 
-  cs_equation_add_time(hg_eqp, mc->time_hg_eq_pty);
+  cs_equation_add_time(hg_eqp, mc->time_hg_pty);
 
   /* Cross terms */
 
-  cs_equation_add_time(mc->wg_eqp, mc->time_wg_eq_pty);
-  cs_equation_add_time(mc->hl_eqp, mc->time_hl_eq_pty);
+  cs_equation_add_time(mc->wg_eqp, mc->time_wg_pty);
+  cs_equation_add_time(mc->hl_eqp, mc->time_hl_pty);
+
+  /* Fields */
+  /* ------ */
+
+  mc->l_saturation = NULL;
+  mc->c_pressure = NULL;
+  mc->l_pressure = NULL;
+  mc->g_pressure = NULL;
+
+  /* Arrays */
+  /* ------ */
+
+  /* The properties will be defined using arrays.
+   * Store these arrays of property values associated to equation terms */
+
+  mc->time_wl_array = NULL;
+  mc->diff_wl_array = NULL;
+  mc->time_wg_array = NULL;
+  mc->time_hg_array = NULL;
+  mc->diff_hg_array = NULL;
+  mc->time_hl_array = NULL;
+  mc->diff_hl_array = NULL;
+
+  /* Array of additional variable or property values */
+
+  mc->l_rel_permeability = NULL;
+  mc->g_rel_permeability = NULL;
+  mc->l_capacity = NULL;
+  mc->capillarity_cell_pressure = NULL;
+
+  /* Model parameters (default values) */
+  /* ---------------- */
+
+  mc->l_mass_density = 1000;
+  mc->l_viscosity = 1e-3;
+  mc->g_viscosity = 2e-5;
+  mc->l_diffusivity_h = 1e-20;   /* nearly immiscible case */
+  mc->w_molar_mass = 18e-3;
+  mc->h_molar_mass = 3e-3;
+  mc->ref_temperature = 280;    /* in Kelvin */
+  mc->henry_constant = 1e-20;   /* immiscible case */
 
   return mc;
 }
@@ -1334,16 +1360,13 @@ _mtpf_free_context(cs_gwf_miscible_two_phase_t  **p_mc)
   cs_gwf_darcy_flux_free(&(mc->l_darcy));
   cs_gwf_darcy_flux_free(&(mc->g_darcy));
 
-  BFT_FREE(mc->time_wl_eq_array);
-  BFT_FREE(mc->diff_wl_eq_array);
-
-  BFT_FREE(mc->time_wg_eq_array);
-
-  BFT_FREE(mc->time_hg_eq_array);
-  BFT_FREE(mc->diff_hg_eq_array);
-
-  BFT_FREE(mc->time_hl_eq_array);
-  BFT_FREE(mc->diff_hl_eq_array);
+  BFT_FREE(mc->time_wl_array);
+  BFT_FREE(mc->diff_wl_array);
+  BFT_FREE(mc->time_wg_array);
+  BFT_FREE(mc->time_hg_array);
+  BFT_FREE(mc->diff_hg_array);
+  BFT_FREE(mc->time_hl_array);
+  BFT_FREE(mc->diff_hl_array);
 
   BFT_FREE(mc->l_rel_permeability);
   BFT_FREE(mc->g_rel_permeability);
@@ -1413,34 +1436,35 @@ _mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc,
   assert(cs_equation_is_steady(mc->wl_eq) == false);
   assert(cs_equation_is_steady(mc->hg_eq) == false);
 
-  /* Add properties:
-   * - diffusion term for water conservation eq.
-   * - diffusion term for hydrogen conservation eq.
+  /* Add properties which will be associated to blocks
+   * - diffusion term for water eq. in the liquid phase     (0,0)-block
+   * - diffusion term for hydrogen eq. in the gaseous phase (1,1)-block
+   * - diffusion term for hydrogen eq. in the liquid phase  (1,0)-block
    */
 
-  mc->diff_wl_eq_pty = cs_property_add("diff_wl_eq_pty", perm_type);
-  mc->diff_hg_eq_pty = cs_property_add("diff_hg_eq_pty", perm_type);
-  mc->diff_hl_eq_pty = cs_property_add("diff_hl_eq_pty", perm_type);
+  mc->diff_wl_pty = cs_property_add("diff_wl_pty", perm_type);
+  mc->diff_hg_pty = cs_property_add("diff_hg_pty", perm_type);
+  mc->diff_hl_pty = cs_property_add("diff_hl_pty", perm_type);
 
   /* Associate the diffusion properties with the equation parameter structure
    * to define new terms in these equations */
 
   cs_equation_param_t  *wl_eqp = cs_equation_get_param(mc->wl_eq);
 
-  cs_equation_add_diffusion(wl_eqp, mc->diff_wl_eq_pty);
+  cs_equation_add_diffusion(wl_eqp, mc->diff_wl_pty);
 
   cs_equation_param_t  *hg_eqp = cs_equation_get_param(mc->hg_eq);
 
-  cs_equation_add_diffusion(hg_eqp, mc->diff_hg_eq_pty);
+  cs_equation_add_diffusion(hg_eqp, mc->diff_hg_pty);
+
+  /* Cross-terms */
+
+  cs_equation_add_diffusion(mc->hl_eqp, mc->diff_hl_pty);
 
   /* Add the variable fields (Keep always the previous state) */
 
   cs_equation_predefined_create_field(1, mc->wl_eq);
   cs_equation_predefined_create_field(1, mc->hg_eq);
-
-  /* Cross-terms */
-
-  cs_equation_add_diffusion(mc->hl_eqp, mc->diff_hl_eq_pty);
 
   /* Set fields related to variables */
 
@@ -1539,72 +1563,72 @@ _mtpf_finalize_setup(const cs_cdo_connect_t          *connect,
 
   /* Define the array storing the time property for the water eq. */
 
-  BFT_MALLOC(mc->time_wl_eq_array, n_cells, cs_real_t);
-  memset(mc->time_wl_eq_array, 0, csize);
+  BFT_MALLOC(mc->time_wl_array, n_cells, cs_real_t);
+  memset(mc->time_wl_array, 0, csize);
 
-  cs_property_def_by_array(mc->time_wl_eq_pty,
+  cs_property_def_by_array(mc->time_wl_pty,
                            cs_flag_primal_cell,  /* where data are located */
-                           mc->time_wl_eq_array,
+                           mc->time_wl_array,
                            false,                /* not owner of the array */
                            NULL);                /* no index */
 
-  BFT_MALLOC(mc->time_wg_eq_array, n_cells, cs_real_t);
-  memset(mc->time_wg_eq_array, 0, csize);
+  BFT_MALLOC(mc->time_wg_array, n_cells, cs_real_t);
+  memset(mc->time_wg_array, 0, csize);
 
-  cs_property_def_by_array(mc->time_wg_eq_pty,
+  cs_property_def_by_array(mc->time_wg_pty,
                            cs_flag_primal_cell,  /* where data are located */
-                           mc->time_wg_eq_array,
+                           mc->time_wg_array,
                            false,                /* not owner of the array */
                            NULL);                /* no index */
 
   /* Define the array storing the diffusion property for the water eq. */
 
-  BFT_MALLOC(mc->diff_wl_eq_array, n_cells, cs_real_t);
-  memset(mc->diff_wl_eq_array, 0, csize);
+  BFT_MALLOC(mc->diff_wl_array, n_cells, cs_real_t);
+  memset(mc->diff_wl_array, 0, csize);
 
-  cs_property_def_by_array(mc->diff_wl_eq_pty,
+  cs_property_def_by_array(mc->diff_wl_pty,
                            cs_flag_primal_cell,  /* where data are located */
-                           mc->diff_wl_eq_array,
+                           mc->diff_wl_array,
                            false,                /* not owner of the array */
                            NULL);                /* no index */
 
   /* Define the array storing the time property for the hydrogen eq. */
 
-  BFT_MALLOC(mc->time_hg_eq_array, n_cells, cs_real_t);
-  memset(mc->time_hg_eq_array, 0, csize);
+  BFT_MALLOC(mc->time_hg_array, n_cells, cs_real_t);
+  memset(mc->time_hg_array, 0, csize);
 
-  cs_property_def_by_array(mc->time_hg_eq_pty,
+  cs_property_def_by_array(mc->time_hg_pty,
                            cs_flag_primal_cell,  /* where data are located */
-                           mc->time_hg_eq_array,
+                           mc->time_hg_array,
                            false,                /* not owner of the array */
                            NULL);                /* no index */
 
-  BFT_MALLOC(mc->time_hl_eq_array, n_cells, cs_real_t);
-  memset(mc->time_hl_eq_array, 0, csize);
+  BFT_MALLOC(mc->time_hl_array, n_cells, cs_real_t);
+  memset(mc->time_hl_array, 0, csize);
 
-  cs_property_def_by_array(mc->time_hl_eq_pty,
+  cs_property_def_by_array(mc->time_hl_pty,
                            cs_flag_primal_cell,  /* where data are located */
-                           mc->time_hl_eq_array,
+                           mc->time_hl_array,
                            false,                /* not owner of the array */
                            NULL);                /* no index */
 
   /* Define the array storing the diffusion property in the hydrogen eq. */
 
-  BFT_MALLOC(mc->diff_hg_eq_array, n_cells, cs_real_t);
-  memset(mc->diff_hg_eq_array, 0, csize);
+  BFT_MALLOC(mc->diff_hg_array, n_cells, cs_real_t);
+  memset(mc->diff_hg_array, 0, csize);
 
-  cs_property_def_by_array(mc->diff_hg_eq_pty,
+  cs_property_def_by_array(mc->diff_hg_pty,
                            cs_flag_primal_cell,  /* where data are located */
-                           mc->diff_hg_eq_array,
+                           mc->diff_hg_array,
                            false,                /* not owner of the array */
                            NULL);                /* no index */
 
-  BFT_MALLOC(mc->diff_hl_eq_array, n_cells, cs_real_t);
-  memset(mc->diff_hl_eq_array, 0, csize);
+  BFT_MALLOC(mc->diff_hl_array, n_cells, cs_real_t);
+  memset(mc->diff_hl_array, 0, csize);
 
-  cs_property_def_by_array(mc->diff_hl_eq_pty,
+  cs_property_def_by_array(mc->diff_hl_pty,
                            cs_flag_primal_cell,  /* where data are located */
-                           mc->diff_hl_eq_array,
+                           mc->diff_hl_array,
                            false,                /* not owner of the array */
                            NULL);                /* no index */
 }
@@ -1640,7 +1664,7 @@ _mtpf_updates(const cs_mesh_t                 *mesh,
   if (cur2prev)
     time_eval = _get_time_eval(ts, mc->wl_eq);
 
-  cs_param_space_scheme_t space_scheme =
+  cs_param_space_scheme_t  space_scheme =
     cs_equation_get_space_scheme(mc->wl_eq);
 
   /* New pressure values for the liquid and the gas have been computed */

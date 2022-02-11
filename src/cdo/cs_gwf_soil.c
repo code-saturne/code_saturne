@@ -998,26 +998,26 @@ cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t              *g_cell_pr,
       /* Water conservation equation. Updates arrays linked to properties which
          define computed terms */
 
-      mc->time_wg_eq_array[c_id] = w_time_coef * l_cap[c_id];
+      mc->time_wg_array[c_id] = w_time_coef * l_cap[c_id];
 
-      mc->time_wl_eq_array[c_id] = -mc->time_wg_eq_array[c_id];
+      mc->time_wl_array[c_id] = -mc->time_wg_array[c_id];
 
-      mc->diff_wl_eq_array[c_id] = mc->l_mass_density * l_diff_coef;
+      mc->diff_wl_array[c_id] = mc->l_mass_density * l_diff_coef;
 
       /* Hydrogen conservation equation. Updates arrays linked to properties
          which define computed terms */
 
-      mc->time_hg_eq_array[c_id] =
+      mc->time_hg_array[c_id] =
         h_time_coefa + h_time_coefb*(l_sat[c_id] + l_cap[c_id]*g_cell_pr[c_id]);
 
-      mc->diff_hg_eq_array[c_id] = mh_ov_rt * g_cell_pr[c_id] /* g_rho */
+      mc->diff_hg_array[c_id] = mh_ov_rt * g_cell_pr[c_id] /* g_rho */
         * mc->g_rel_permeability[c_id] * hg_diff_coef;
       if (h_diff_coef > 0) /* If not = immiscible case */
-        mc->diff_hg_eq_array[c_id] += h_diff_coef * l_sat[c_id];
+        mc->diff_hg_array[c_id] += h_diff_coef * l_sat[c_id];
 
-      mc->time_hl_eq_array[c_id] = h_time_coefb * g_cell_pr[c_id] * l_cap[c_id];
+      mc->time_hl_array[c_id] = h_time_coefb * g_cell_pr[c_id] * l_cap[c_id];
 
-      mc->diff_hl_eq_array[c_id] = hmh * l_diff_coef * g_cell_pr[c_id];
+      mc->diff_hl_array[c_id] = hmh * l_diff_coef * g_cell_pr[c_id];
 
     } /* Loop on cells of the zone (= soil) */
 
