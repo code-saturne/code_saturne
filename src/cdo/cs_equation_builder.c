@@ -184,6 +184,11 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
                                        eqp->bc_defs,
                                        mesh->n_b_faces);
 
+  /* User hook function */
+
+  eqb->user_hook_context = NULL;
+  eqb->user_hook_function = NULL;
+
   /* Monitoring */
 
   CS_TIMER_COUNTER_INIT(eqb->tcb); /* build system */

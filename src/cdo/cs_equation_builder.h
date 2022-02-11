@@ -155,6 +155,25 @@ struct _equation_builder_t {
 
   /*!
    * @}
+   * @name Boundary conditions
+   * @{
+   *
+   * \var face_bc
+   * face_bc should not change during the simulation.
+   * The case of a definition of the BCs which changes of type during the
+   * simulation is possible but not implemented.
+   * You just have to call the initialization step each time the type of BCs
+   * is modified to define an updated \ref cs_cdo_bc_face_t structure.
+   */
+
+  cs_cdo_bc_face_t   *face_bc;  /*!< Information about boundary conditions
+                                     applied to faces */
+
+  cs_real_t          *dir_values; /*!< Array storing the Dirichlet values at
+                                     DoFs */
+
+  /*!
+   * @}
    * @name User hook
    * @{
    *
@@ -175,25 +194,6 @@ struct _equation_builder_t {
 
   void                      *user_hook_context;
   cs_equation_user_hook_t   *user_hook_function;
-
-  /*!
-   * @}
-   * @name Boundary conditions
-   * @{
-   *
-   * \var face_bc
-   * face_bc should not change during the simulation.
-   * The case of a definition of the BCs which changes of type during the
-   * simulation is possible but not implemented.
-   * You just have to call the initialization step each time the type of BCs
-   * is modified to define an updated \ref cs_cdo_bc_face_t structure.
-   */
-
-  cs_cdo_bc_face_t   *face_bc;  /*!< Information about boundary conditions
-                                     applied to faces */
-
-  cs_real_t          *dir_values; /*!< Array storing the Dirichlet values at
-                                     DoFs */
 
   /*!
    * @}
