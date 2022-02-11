@@ -292,15 +292,16 @@ cs_matrix_wrapper_scalar_conv_diff(int               iconvp,
                                    cs_real_t         da[],
                                    cs_real_t         xa[],
                                    cs_real_t         da_conv[],
-                                   cs_real_t         xa_conv[],
-                                   cs_real_t         da_diff[],
-                                   cs_real_t         xa_diff[])
+                                   cs_real_t         da_diff[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  cs_real_t *xa_diff;
+  BFT_MALLOC(xa_diff, n_i_faces, cs_real_t);
 
   /* Diffusion matrix */
   cs_sym_matrix_scalar(m,
@@ -328,7 +329,7 @@ cs_matrix_wrapper_scalar_conv_diff(int               iconvp,
                    b_visc,
                    xcpp,
                    da_conv,
-                   (cs_real_2_t*)xa_conv);
+                   (cs_real_2_t *)xa);
 
   /* Global matrix */
 
@@ -347,9 +348,11 @@ cs_matrix_wrapper_scalar_conv_diff(int               iconvp,
 
 # pragma omp parallel for
   for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
-    xa[2*face_id]    = xa_diff[face_id] + xa_conv[2*face_id];
-    xa[2*face_id +1] = xa_diff[face_id] + xa_conv[2*face_id +1];
+    xa[2*face_id]    += xa_diff[face_id];
+    xa[2*face_id +1] += xa_diff[face_id];
   }
+
+  BFT_FREE(xa_diff);
 
   /* Penalization if non invertible matrix */
 

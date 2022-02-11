@@ -145,9 +145,7 @@ cs_matrix_wrapper_scalar_conv_diff(int               iconvp,
                                    cs_real_t         da[],
                                    cs_real_t         xa[],
                                    cs_real_t         da_conv[],
-                                   cs_real_t         xa_conv[],
-                                   cs_real_t         da_diff[],
-                                   cs_real_t         xa_diff[]);
+                                   cs_real_t         da_diff[]);
 
 /*----------------------------------------------------------------------------
  * Wrapper to cs_matrix_vector (or its counterpart for

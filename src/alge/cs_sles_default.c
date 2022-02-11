@@ -99,7 +99,7 @@ BEGIN_C_DECLS
 
 static int           _n_setups = 0;
 static cs_sles_t    *_sles_setup[CS_SLES_DEFAULT_N_SETUPS];
-static cs_matrix_t  *_matrix_setup[CS_SLES_DEFAULT_N_SETUPS][3];
+static cs_matrix_t  *_matrix_setup[CS_SLES_DEFAULT_N_SETUPS][2];
 
 static const int _poly_degree_default = 0;
 static const int _n_max_iter_default = 10000;
@@ -385,7 +385,6 @@ _sles_setup_matrix_native(int                  f_id,
 
   _matrix_setup[setup_id][0] = a;
   _matrix_setup[setup_id][1] = NULL;
-  _matrix_setup[setup_id][2] = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -596,9 +595,7 @@ cs_sles_default_get_verbosity(int          f_id,
  * \param[in]       da                     diagonal values (NULL if zero)
  * \param[in]       xa                     extradiagonal values (NULL if zero)
  * \param[in]       da_conv                diagonal values (NULL if zero)
- * \param[in]       xa_conv                extradiagonal values (NULL if zero)
  * \param[in]       da_diff                diagonal values (NULL if zero)
- * \param[in]       xa_diff                extradiagonal values (NULL if zero)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -610,11 +607,9 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                const cs_real_t     *da,
                                const cs_real_t     *xa,
                                const cs_real_t     *da_conv,
-                               const cs_real_t     *xa_conv,
-                               const cs_real_t     *da_diff,
-                               const cs_real_t     *xa_diff)
+                               const cs_real_t     *da_diff)
 {
-  cs_matrix_t *a = NULL, *a_conv = NULL, *a_diff = NULL;
+  cs_matrix_t *a = NULL;
 
   const cs_mesh_t *m = cs_glob_mesh;
 
@@ -659,52 +654,12 @@ cs_sles_setup_native_conv_diff(int                  f_id,
 
     }
 
-    if (a_conv == NULL) {
-
-      cs_matrix_t *a_ref = cs_matrix_default(false,
-                                             diag_block_size,
-                                             extra_diag_block_size);
-      a_conv = cs_matrix_create_by_copy(a_ref);
-
-      cs_matrix_set_coefficients(a_conv,
-                                 false,
-                                 diag_block_size,
-                                 extra_diag_block_size,
-                                 m->n_i_faces,
-                                 (const cs_lnum_2_t *)(m->i_face_cells),
-                                 da_conv,
-                                 xa_conv);
-
-    }
-
-    if (a_diff == NULL) {
-
-      cs_matrix_t *a_ref = cs_matrix_default(false,
-                                             diag_block_size,
-                                             extra_diag_block_size);
-      a_diff = cs_matrix_create_by_copy(a_ref);
-
-      cs_matrix_set_coefficients(a_diff,
-                                 false,
-                                 diag_block_size,
-                                 extra_diag_block_size,
-                                 m->n_i_faces,
-                                 (const cs_lnum_2_t *)(m->i_face_cells),
-                                 da_diff,
-                                 xa_diff);
-
-    }
-
     _sles_setup[setup_id] = sc;
     _matrix_setup[setup_id][0] = a;
-    _matrix_setup[setup_id][1] = a_conv;
-    _matrix_setup[setup_id][2] = a_diff;
 
   }
   else {
-    a      = _matrix_setup[setup_id][0];
-    a_conv = _matrix_setup[setup_id][1];
-    a_diff = _matrix_setup[setup_id][2];
+    a = _matrix_setup[setup_id][0];
   }
 
   cs_matrix_default_set_tuned(a);
@@ -719,7 +674,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
   int verbosity = cs_sles_get_verbosity(sc);
 
   cs_multigrid_t  *mg = cs_sles_get_context(sc);
-  cs_multigrid_setup_conv_diff(mg, name, a, a_conv, a_diff, verbosity);
+  cs_multigrid_setup_conv_diff(mg, name, a, da_conv, da_diff, verbosity);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -919,15 +874,14 @@ cs_sles_free_native(int          f_id,
     cs_sles_free(sc);
     if (_matrix_setup[setup_id][0] != NULL)
       cs_matrix_release_coefficients(_matrix_setup[setup_id][0]);
-    for (int i = 1; i < 3; i++) { /* Remove "copied" matrixes */
-      if (_matrix_setup[setup_id][i] != NULL)
-        cs_matrix_destroy(&(_matrix_setup[setup_id][i]));
-    }
+    /* Remove "copied" matrices */
+    if (_matrix_setup[setup_id][1] != NULL)
+      cs_matrix_destroy(&(_matrix_setup[setup_id][1]));
 
     _n_setups -= 1;
 
     if (setup_id < _n_setups) {
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 2; i++) {
         _matrix_setup[setup_id][i] = _matrix_setup[_n_setups][i];
       _sles_setup[setup_id] = _sles_setup[_n_setups];
       }

@@ -182,15 +182,12 @@ struct _cs_grid_t {
 
   const cs_real_t  *xa;             /* Extra-diagonal (shared) */
   cs_real_t        *_xa;            /* Extra-diagonal (private) */
-  const cs_real_t  *xa_conv;        /* Extra-diagonal (shared) */
-  cs_real_t        *_xa_conv;       /* Extra-diagonal (private) */
-  const cs_real_t  *xa_diff;        /* Extra-diagonal (shared) */
-  cs_real_t        *_xa_diff;       /* Extra-diagonal (private) */
+  cs_real_t        *xa_conv;        /* Extra-diagonal (except level 0) */
+  cs_real_t        *xa_diff;        /* Extra-diagonal (except level 0) */
 
   const cs_real_t  *xa0;            /* Symmetrized extra-diagonal (shared) */
   cs_real_t        *_xa0;           /* Symmetrized extra-diagonal (private) */
-  const cs_real_t  *xa0_diff;       /* Symmetrized extra-diagonal (shared) */
-  cs_real_t        *_xa0_diff;      /* Symmetrized extra-diagonal (private) */
+  cs_real_t        *xa0_diff;       /* Symmetrized extra-diagonal */
 
   cs_real_t        *xa0ij;
 
@@ -409,13 +406,10 @@ _create_grid(void)
   g->xa = NULL;
   g->_xa = NULL;
   g->xa_conv = NULL;
-  g->_xa_conv = NULL;
   g->xa_diff = NULL;
-  g->_xa_diff = NULL;
   g->xa0 = NULL;
   g->_xa0 = NULL;
   g->xa0_diff = NULL;
-  g->_xa0_diff = NULL;
 
   g->xa0ij = NULL;
 
@@ -4196,14 +4190,14 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   cs_real_t *c_face_normal = coarse_grid->_face_normal;
 
   cs_real_t *c_xa0 = coarse_grid->_xa0;
-  cs_real_t *c_xa0_diff = coarse_grid->_xa0_diff;
+  cs_real_t *c_xa0_diff = coarse_grid->xa0_diff;
   cs_real_t *c_xa0ij = coarse_grid->xa0ij;
   cs_real_t *c_da = coarse_grid->_da;
   cs_real_t *c_xa = coarse_grid->_xa;
   cs_real_t *c_da_conv = coarse_grid->_da_conv;
-  cs_real_t *c_xa_conv = coarse_grid->_xa_conv;
+  cs_real_t *c_xa_conv = coarse_grid->xa_conv;
   cs_real_t *c_da_diff = coarse_grid->_da_diff;
-  cs_real_t *c_xa_diff = coarse_grid->_xa_diff;
+  cs_real_t *c_xa_diff = coarse_grid->xa_diff;
 
   cs_real_t *w1 = NULL, *w1_conv = NULL, *w1_diff = NULL;
 
@@ -4215,6 +4209,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   const cs_real_t *f_face_normal = fine_grid->face_normal;
   const cs_real_t *f_xa0 = fine_grid->xa0;
   const cs_real_t *f_da = fine_grid->da;
+  const cs_real_t *f_xa = fine_grid->xa;
   const cs_real_t *f_da_conv = fine_grid->da_conv;
   const cs_real_t *f_xa_conv = fine_grid->xa_conv;
   const cs_real_t *f_xa0_diff = fine_grid->xa0_diff;
@@ -4252,8 +4247,6 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
       c_xa0[2*c_face]         += f_xa0[2*face_id];
       c_xa0[2*c_face +1]      += f_xa0[2*face_id +1];
-      c_xa_conv[2*c_face]     += f_xa_conv[2*face_id];
-      c_xa_conv[2*c_face +1]  += f_xa_conv[2*face_id +1];
       c_xa0_diff[c_face]      += f_xa0_diff[face_id];
       c_face_normal[3*c_face]    += f_face_normal[3*face_id];
       c_face_normal[3*c_face +1] += f_face_normal[3*face_id +1];
@@ -4267,8 +4260,6 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
       c_xa0[2*c_face]         += f_xa0[2*face_id +1];
       c_xa0[2*c_face +1]      += f_xa0[2*face_id];
-      c_xa_conv[2*c_face]     += f_xa_conv[2*face_id +1];
-      c_xa_conv[2*c_face +1]  += f_xa_conv[2*face_id];
       c_xa0_diff[c_face]      += f_xa0_diff[face_id];
       c_face_normal[3*c_face]    -= f_face_normal[3*face_id];
       c_face_normal[3*c_face +1] -= f_face_normal[3*face_id +1];
@@ -4322,29 +4313,82 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   for (ii = f_n_cells*db_size[3]; ii < f_n_cells_ext*db_size[3]; ii++)
     w1[ii] = 0.;
 
-  if (db_size[0] == 1) {
+  /* Finest grid: we need to separate convective and diffusive coefficients.
+     By construction, extra-diagonal coefficients are expected to be
+     negative, with symmetric diffusion and pure upwind convection
+     components. This allows separating both parts. */
+
+  if (fine_grid->level == 0) {
     for (face_id = 0; face_id < f_n_faces; face_id++) {
       ii = f_face_cell[face_id][0];
       jj = f_face_cell[face_id][1];
-      w1_conv[ii] += f_xa_conv[2*face_id];
-      w1_conv[jj] += f_xa_conv[2*face_id +1];
-      w1_diff[ii] += f_xa_diff[face_id];
-      w1_diff[jj] += f_xa_diff[face_id];
+      cs_real_t f_xa_conv_0, f_xa_conv_1, f_xa_diff_s;
+      if (f_xa[2*face_id] < f_xa[2*face_id+1]) {
+        f_xa_diff_s = f_xa[2*face_id+1];
+        f_xa_conv_0 = f_xa[2*face_id] - f_xa_diff_s;
+        f_xa_conv_1 = -0.;
+      }
+      else {
+        f_xa_diff_s = f_xa[2*face_id];
+        f_xa_conv_0 = -0;
+        f_xa_conv_1 = f_xa[2*face_id+1] - f_xa_diff_s;
+      }
+      if (db_size[0] == 1) {
+        w1_conv[ii] += f_xa_conv_0;
+        w1_conv[jj] += f_xa_conv_1;
+        w1_diff[ii] += f_xa_diff_s;
+        w1_diff[jj] += f_xa_diff_s;
+      }
+      else {
+        for (kk = 0; kk < db_size[0]; kk++) {
+          w1_conv[ii*db_size[3] + db_size[2]*kk + kk] += f_xa_conv_0;
+          w1_conv[jj*db_size[3] + db_size[2]*kk + kk] += f_xa_conv_1;
+          w1_diff[ii*db_size[3] + db_size[2]*kk + kk] += f_xa_diff_s;
+          w1_diff[jj*db_size[3] + db_size[2]*kk + kk] += f_xa_diff_s;
+        }
+      }
+      if (c_coarse_face[face_id] > 0 ) {
+        c_face = c_coarse_face[face_id] -1;
+        c_xa_conv[2*c_face]    += f_xa_conv_0;
+        c_xa_conv[2*c_face +1] += f_xa_conv_1;
+      }
+      else if (c_coarse_face[face_id] < 0) {
+        c_face = -c_coarse_face[face_id] -1;
+        c_xa_conv[2*c_face]    += f_xa_conv_1;
+        c_xa_conv[2*c_face +1] += f_xa_conv_0;
+      }
     }
   }
+
+  /* Coarser grids */
+
   else {
     for (face_id = 0; face_id < f_n_faces; face_id++) {
       ii = f_face_cell[face_id][0];
       jj = f_face_cell[face_id][1];
-      for (kk = 0; kk < db_size[0]; kk++) {
-        w1_conv[ii*db_size[3] + db_size[2]*kk + kk]
-          += f_xa_conv[2*face_id];
-        w1_conv[jj*db_size[3] + db_size[2]*kk + kk]
-          += f_xa_conv[2*face_id +1];
-        w1_diff[ii*db_size[3] + db_size[2]*kk + kk]
-          += f_xa_diff[face_id];
-        w1_diff[jj*db_size[3] + db_size[2]*kk + kk]
-          += f_xa_diff[face_id];
+      if (db_size[0] == 1) {
+        w1_conv[ii] += f_xa_conv[2*face_id];
+        w1_conv[jj] += f_xa_conv[2*face_id +1];
+        w1_diff[ii] += f_xa_diff[face_id];
+        w1_diff[jj] += f_xa_diff[face_id];
+      }
+      else {
+        for (kk = 0; kk < db_size[0]; kk++) {
+          w1_conv[ii*db_size[3] + db_size[2]*kk + kk] += f_xa_conv[2*face_id];
+          w1_conv[jj*db_size[3] + db_size[2]*kk + kk] += f_xa_conv[2*face_id +1];
+          w1_diff[ii*db_size[3] + db_size[2]*kk + kk] += f_xa_diff[face_id];
+          w1_diff[jj*db_size[3] + db_size[2]*kk + kk] += f_xa_diff[face_id];
+        }
+      }
+      if (c_coarse_face[face_id] > 0 ) {
+        c_face = c_coarse_face[face_id] -1;
+        c_xa_conv[2*c_face]    += f_xa_conv[2*face_id];
+        c_xa_conv[2*c_face +1] += f_xa_conv[2*face_id +1];
+      }
+      else if (c_coarse_face[face_id] < 0) {
+        c_face = -c_coarse_face[face_id] -1;
+        c_xa_conv[2*c_face]    += f_xa_conv[2*face_id +1];
+        c_xa_conv[2*c_face +1] += f_xa_conv[2*face_id];
       }
     }
   }
@@ -5003,8 +5047,8 @@ _prolong_row_int(const cs_grid_t  *c,
  *   cell_vol       <-- Cell volume (size: n_cells_ext)
  *   face_normal    <-- Internal face normals (size: 3.n_faces)
  *   a              <-- Associated matrix
- *   a_conv         <-- Associated matrix (convection)
- *   a_diff         <-- Associated matrix (diffusion)
+ *   da_conv        <-- Associated matrix diagonal (convection)
+ *   da_diff        <-- Associated matrix diagonal (diffusion)
  *
  * returns:
  *   base grid structure
@@ -5019,11 +5063,9 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
                            const cs_real_t       *cell_vol,
                            const cs_real_t       *face_normal,
                            const cs_matrix_t     *a,
-                           const cs_matrix_t     *a_conv,
-                           const cs_matrix_t     *a_diff)
+                           const cs_real_t       *da_conv,
+                           const cs_real_t       *da_diff)
 {
-  cs_lnum_t ii;
-
   cs_grid_t *g = NULL;
 
   /* Create empty structure and map base data */
@@ -5035,20 +5077,20 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   g->symmetric = cs_matrix_is_symmetric(a);
 
   if (db_size != NULL) {
-    for (ii = 0; ii < 4; ii++)
+    for (int ii = 0; ii < 4; ii++)
       g->db_size[ii] = db_size[ii];
   }
   else {
-    for (ii = 0; ii < 4; ii++)
+    for (int ii = 0; ii < 4; ii++)
       g->db_size[ii] = 1;
   }
 
   if (eb_size != NULL) {
-    for (ii = 0; ii < 4; ii++)
+    for (int ii = 0; ii < 4; ii++)
       g->eb_size[ii] = eb_size[ii];
   }
   else {
-    for (ii = 0; ii < 4; ii++)
+    for (int ii = 0; ii < 4; ii++)
       g->eb_size[ii] = 1;
   }
 
@@ -5083,12 +5125,12 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
     g->xa= cs_matrix_get_extra_diagonal(a);
   }
 
-  if (a_conv != NULL || a_diff != NULL) {
+  if (da_conv != NULL || da_diff != NULL) {
     g->conv_diff = true;
-    g->da_conv = cs_matrix_get_diagonal(a_conv);
-    g->da_diff = cs_matrix_get_diagonal(a_diff);
-    g->xa_conv = cs_matrix_get_extra_diagonal(a_conv);
-    g->xa_diff = cs_matrix_get_extra_diagonal(a_diff);
+    g->da_conv = da_conv;
+    g->da_diff = da_diff;
+    g->xa_conv = NULL;
+    g->xa_diff = NULL;
   }
 
   if (g->face_cell != NULL) {
@@ -5104,7 +5146,6 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
       g->xa0  = g->xa;
       g->_xa0 = NULL;
       g->xa0_diff = g->xa_diff;
-      g->_xa0_diff = NULL;
     }
     else {
       BFT_MALLOC(g->_xa0, n_faces, cs_real_t);
@@ -5118,8 +5159,26 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
     BFT_MALLOC(g->xa0ij, n_faces*3, cs_real_t);
 
     const cs_real_t *restrict g_xa0 = g->xa0;
-    if (g->conv_diff)
+
+    if (g->conv_diff) {
+      BFT_MALLOC(g->xa0_diff, n_faces, cs_real_t);
+
+      /* Finest grid: we need to separate convective and diffusive coefficients.
+         By construction, extra-diagonal coefficients are expected to be
+         negative, with symmetric diffusion and pure upwind convection
+         components. This allows separating both parts. */
+
+      for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
+        if (g->xa[2*face_id] < g->xa[2*face_id+1]) {
+          g->xa0_diff[face_id] = g->xa[2*face_id+1];
+        }
+        else {
+          g->xa0_diff[face_id] = g->xa[2*face_id];
+        }
+      }
+
       g_xa0 = g->xa0_diff;
+    }
 
 #   pragma omp parallel for  if(n_faces > CS_THR_MIN)
     for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
@@ -5290,10 +5349,10 @@ cs_grid_free_quantities(cs_grid_t  *g)
 
   BFT_FREE(g->_da_conv);
   BFT_FREE(g->_da_diff);
-  BFT_FREE(g->_xa_conv);
-  BFT_FREE(g->_xa_diff);
+  BFT_FREE(g->xa_conv);
+  BFT_FREE(g->xa_diff);
   BFT_FREE(g->_xa0);
-  BFT_FREE(g->_xa0_diff);
+  BFT_FREE(g->xa0_diff);
 
   BFT_FREE(g->xa0ij);
 }
@@ -5691,10 +5750,8 @@ cs_grid_coarsen(const cs_grid_t  *f,
       c->da_conv = c->_da_conv;
       BFT_MALLOC(c->_da_diff, c->n_cols_ext * c->db_size[3], cs_real_t);
       c->da_diff = c->_da_diff;
-      BFT_MALLOC(c->_xa_conv, c->n_faces*2, cs_real_t);
-      c->xa_conv = c->_xa_conv;
-      BFT_MALLOC(c->_xa_diff, c->n_faces, cs_real_t);
-      c->xa_diff = c->_xa_diff;
+      BFT_MALLOC(c->xa_conv, c->n_faces*2, cs_real_t);
+      BFT_MALLOC(c->xa_diff, c->n_faces, cs_real_t);
     }
 
     /* We could have xa0 point to xa if symmetric, but this would require
@@ -5704,8 +5761,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
     c->xa0 = c->_xa0;
 
     if (conv_diff) {
-      BFT_MALLOC(c->_xa0_diff, c->n_faces, cs_real_t);
-      c->xa0_diff = c->_xa0_diff;
+      BFT_MALLOC(c->xa0_diff, c->n_faces, cs_real_t);
     }
 
     BFT_MALLOC(c->xa0ij, c->n_faces*3, cs_real_t);

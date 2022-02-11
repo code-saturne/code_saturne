@@ -122,9 +122,7 @@ cs_sles_default_finalize(void);
  *   da                     diagonal values (NULL if zero)
  *   xa                     extradiagonal values (NULL if zero)
  *   da_conv                diagonal values (NULL if zero)
- *   xa_conv                extradiagonal values (NULL if zero)
  *   da_diff                diagonal values (NULL if zero)
- *   xa_diff                extradiagonal values (NULL if zero)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -136,9 +134,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                const cs_real_t     *da,
                                const cs_real_t     *xa,
                                const cs_real_t     *da_conv,
-                               const cs_real_t     *xa_conv,
-                               const cs_real_t     *da_diff,
-                               const cs_real_t     *xa_diff);
+                               const cs_real_t     *da_diff);
 
 /*----------------------------------------------------------------------------
  * Call sparse linear equation solver using native matrix arrays.

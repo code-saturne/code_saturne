@@ -269,8 +269,8 @@ cs_multigrid_setup(void               *context,
  *                 (actual type: cs_multigrid_t  *)
  *   name      <-- pointer to name of linear system
  *   a         <-- associated matrix
- *   a_conv    <-- associated matrix (convection)
- *   a_diff    <-- associated matrix (diffusion)
+ *   da_conv   <-- associated matrix diagonal (convection)
+ *   da_diff   <-- associated matrix diagonal (diffusion)
  *   verbosity <-- associated verbosity
  *----------------------------------------------------------------------------*/
 
@@ -278,8 +278,8 @@ void
 cs_multigrid_setup_conv_diff(void               *context,
                              const char         *name,
                              const cs_matrix_t  *a,
-                             const cs_matrix_t  *a_conv,
-                             const cs_matrix_t  *a_diff,
+                             const cs_real_t    *da_conv,
+                             const cs_real_t    *da_diff,
                              int                 verbosity);
 
 /*----------------------------------------------------------------------------

@@ -90,16 +90,16 @@ extern const char *cs_grid_coarsening_type_name[];
  * destroyed before those arrays.
  *
  * parameters:
- *   n_faces               <-- Local number of faces
- *   diag_block_size       <-- Block sizes for diagonal, or NULL
- *   extra_diag_block_size <-- Block sizes for extra diagonal, or NULL
- *   face_cell             <-- Face -> cells connectivity
- *   cell_cen              <-- Cell center (size: 3.n_cells_ext)
- *   cell_vol              <-- Cell volume (size: n_cells_ext)
- *   face_normal           <-- Internal face normals (size: 3.n_faces)
- *   a                     <-- Associated matrix
- *   a_conv                <-- Associated matrix (convection)
- *   a_diff                <-- Associated matrix (diffusion)
+ *   n_faces        <-- Local number of faces
+ *   db_size        <-- Block sizes for diagonal, or NULL
+ *   eb_size        <-- Block sizes for diagonal, or NULL
+ *   face_cell      <-- Face -> cells connectivity
+ *   cell_cen       <-- Cell center (size: 3.n_cells_ext)
+ *   cell_vol       <-- Cell volume (size: n_cells_ext)
+ *   face_normal    <-- Internal face normals (size: 3.n_faces)
+ *   a              <-- Associated matrix
+ *   da_conv        <-- Associated matrix diagonal (convection)
+ *   da_diff        <-- Associated matrix diagonal (diffusion)
  *
  * returns:
  *   base grid structure
@@ -107,15 +107,15 @@ extern const char *cs_grid_coarsening_type_name[];
 
 cs_grid_t *
 cs_grid_create_from_shared(cs_lnum_t              n_faces,
-                           const cs_lnum_t       *diag_block_size,
-                           const cs_lnum_t       *extra_diag_block_size,
+                           const cs_lnum_t       *db_size,
+                           const cs_lnum_t       *eb_size,
                            const cs_lnum_2_t     *face_cell,
                            const cs_real_t       *cell_cen,
                            const cs_real_t       *cell_vol,
                            const cs_real_t       *face_normal,
                            const cs_matrix_t     *a,
-                           const cs_matrix_t     *a_conv,
-                           const cs_matrix_t     *a_diff);
+                           const cs_real_t       *da_conv,
+                           const cs_real_t       *da_diff);
 
 /*----------------------------------------------------------------------------
  * Create base grid by mapping from parent (possibly shared) matrix.

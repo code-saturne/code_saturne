@@ -4143,8 +4143,8 @@ cs_multigrid_setup(void               *context,
  *                             (actual type: cs_multigrid_t  *)
  * \param[in]       name       pointer to name of linear system
  * \param[in]       a          associated matrix
- * \param[in]       a_conv     associated matrix (convection)
- * \param[in]       a_diff     associated matrix (diffusion)
+ * \param[in]       da_conv    associated matrix diagonal (convection)
+ * \param[in]       da_diff    associated matrix diagonal (diffusion)
  * \param[in]       verbosity  associated verbosity
  */
 /*----------------------------------------------------------------------------*/
@@ -4153,8 +4153,8 @@ void
 cs_multigrid_setup_conv_diff(void               *context,
                              const char         *name,
                              const cs_matrix_t  *a,
-                             const cs_matrix_t  *a_conv,
-                             const cs_matrix_t  *a_diff,
+                             const cs_real_t    *da_conv,
+                             const cs_real_t    *da_diff,
                              int                 verbosity)
 
 {
@@ -4198,8 +4198,8 @@ cs_multigrid_setup_conv_diff(void               *context,
                                  mq->cell_vol,
                                  mq->i_face_normal,
                                  a,
-                                 a_conv,
-                                 a_diff);
+                                 da_conv,
+                                 da_diff);
 
   cs_multigrid_level_info_t *mg_lv_info = mg->lv_info;
 

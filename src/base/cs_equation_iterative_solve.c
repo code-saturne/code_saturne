@@ -264,8 +264,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   int coupling_id = -1;
 
   cs_real_t *dam, *xam, *smbini;
-  cs_real_t *dam_conv = NULL, *xam_conv = NULL;
-  cs_real_t *dam_diff = NULL, *xam_diff = NULL;
+  cs_real_t *dam_conv = NULL;
+  cs_real_t *dam_diff = NULL;
 
   cs_real_t *w1 = NULL;
 
@@ -320,10 +320,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   bool symmetric = (isym == 1) ? true : false;
 
   BFT_MALLOC(xam, isym*n_i_faces, cs_real_t);
-  if (conv_diff_mg) {
-    BFT_MALLOC(xam_conv, 2*n_i_faces, cs_real_t);
-    BFT_MALLOC(xam_diff,   n_i_faces, cs_real_t);
-  }
 
   /* Matrix block size */
   ibsize = 1;
@@ -365,9 +361,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                        dam,
                                        xam,
                                        dam_conv,
-                                       xam_conv,
-                                       dam_diff,
-                                       xam_diff);
+                                       dam_diff);
   }
   else {
     cs_matrix_wrapper_scalar(iconvp,
@@ -635,9 +629,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                      dam,
                                      xam,
                                      dam_conv,
-                                     xam_conv,
-                                     dam_diff,
-                                     xam_diff);
+                                     dam_diff);
 
     cs_sles_solve_native(f_id,
                          var_name,
@@ -1028,9 +1020,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   BFT_FREE(xam);
   if (conv_diff_mg) {
     BFT_FREE(dam_conv);
-    BFT_FREE(xam_conv);
     BFT_FREE(dam_diff);
-    BFT_FREE(xam_diff);
   }
 
   BFT_FREE(smbini);
