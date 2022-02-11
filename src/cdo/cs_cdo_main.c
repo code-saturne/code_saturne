@@ -700,26 +700,17 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
 
   cs_domain_cdo_log(domain);
 
-  /* Add predefined properties */
+  /* A property can be called easily from everywhere:
+   * cs_property_by_name("time_step")
+   * This is useful when building linear system.
+   */
 
-  cs_property_t  *pty = cs_property_by_name("unity");
-  if (pty == NULL) {
-    pty = cs_property_add("unity", CS_PROPERTY_ISO);
-    cs_property_def_constant_value(pty, 1.0);
-  }
+  cs_dt_pty = cs_property_by_name("time_step");
 
-  /* Add a property related to the time step. A property can be called easily
-   * from everywhere: cs_property_by_name("time_step")
-   * This is useful when building linear system. */
+  /* Check that predefined properties have been created */
 
-  pty = cs_property_by_name("time_step");
-  if (pty == NULL) {
-
-    pty = cs_property_add("time_step", CS_PROPERTY_ISO);
-    cs_property_set_reference_value(pty, -1); /* Default=-1 => steady-state */
-
-  }
-  cs_dt_pty = pty;
+  assert(cs_property_by_name("unity") != NULL);
+  assert(cs_dt_pty != NULL);
 
   cs_timer_stats_start(_cdo_ts_id);
 

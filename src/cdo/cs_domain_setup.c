@@ -413,16 +413,14 @@ cs_domain_def_time_step_by_function(cs_domain_t        *domain,
   /* Set the property related to the time step if used for building a system */
 
   cs_property_t  *dt_pty = cs_property_by_name("time_step");
-  if (dt_pty == NULL)
-    dt_pty = cs_property_add("time_step", CS_PROPERTY_ISO);
+  assert(dt_pty != NULL);
 
   cs_property_set_reference_value(dt_pty, domain->time_step->t_max);
 
-  cs_xdef_t  *def =
-    cs_property_def_by_time_func(dt_pty,
-                                 NULL, /* all cells are selected */
-                                 func,
-                                 func_input);
+  cs_xdef_t  *def = cs_property_def_by_time_func(dt_pty,
+                                                 NULL, /* all cells */
+                                                 func,
+                                                 func_input);
 
   /* Default initialization.
      To be changed at first call to cs_domain_time_step_increment() */
@@ -469,11 +467,10 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
   /* Set the property related to the time step if used for building a system */
 
   cs_property_t  *dt_pty = cs_property_by_name("time_step");
-
-  if (dt_pty == NULL)
-    dt_pty = cs_property_add("time_step", CS_PROPERTY_ISO);
+  assert(dt_pty != NULL);
 
   cs_property_def_constant_value(dt_pty, dt);
+  cs_property_set_reference_value(dt_pty, dt);
 }
 
 /*----------------------------------------------------------------------------*/

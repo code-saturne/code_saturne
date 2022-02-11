@@ -55,6 +55,7 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
+#include "cs_property.h"
 #include "cs_prototypes.h"
 #include "cs_quadrature.h"
 #include "cs_restart.h"
@@ -173,6 +174,22 @@ cs_domain_create(void)
 
   cs_math_set_machine_epsilon(); /* Compute and set machine epsilon */
   cs_quadrature_setup();         /* Compute constant used in quadrature rules */
+
+  /* Add two predefined properties which can be called from everywhere:
+   *  1. the unity property
+   *  2. the time_step property
+   *
+   * Simply call cs_property_by_name("pty_name"); to retrieve the pointer to
+   * the related property structure
+   */
+
+  cs_property_t  *unity = cs_property_add("unity", CS_PROPERTY_ISO);
+  cs_property_def_constant_value(unity, 1.0);
+
+  cs_property_t  *dt_pty = cs_property_add("time_step", CS_PROPERTY_ISO);
+  cs_property_set_reference_value(dt_pty, -1); /* Default=-1 => steady-state */
+
+  /* Create the domain structure and proceed to a default initialization */
 
   BFT_MALLOC(domain, 1, cs_domain_t);
 
