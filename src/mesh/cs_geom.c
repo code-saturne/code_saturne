@@ -1,5 +1,5 @@
 /*============================================================================
- * Geometry utility functions.
+ * Geometric utility functions.
  *===========================================================================*/
 
 /*
@@ -192,7 +192,7 @@ cs_geom_closest_point(cs_lnum_t         n_points,
  *
  *                               |
  *      x------------------------|--------x D: end coordinates
- *   O: start coordiantes        |
+ *   O: start coordinates        |
  *                               x G: Face (Center of Gravity)
  *             x current         |
  *               cell center     |
@@ -211,11 +211,10 @@ cs_geom_closest_point(cs_lnum_t         n_points,
  * \param[in]      face_cog       coordinates of face center
  * \param[in]      sx0            segment start coordinates
  * \param[in]      sx1            segment end coordinates
- * \param[out]     n_inout        number sub_face crossings
- *                                 [0: in; 1: out]
- * \param[in, out] face_norm      local face unit normal of the crossed sub
- *                                 triangle (if entering with something
- *                                 different from NULL)
+ * \param[out]     n_inout        number of sub_face crossings with segment's
+ *                                half-line. [0: in; 1: out]
+ * \param[in, out] face_norm      optional local face unit normal of the
+ *                                crossed sub-triangle, or NULL if unused
  *
  * \return
  *   2 if the segment does not go through the face's plane, or minimum
@@ -398,7 +397,7 @@ cs_geom_segment_intersect_face(int               orient,
     double og_p = - cs_math_3_dot_product(vgo, pvec);
 
     /* This sign is absolute (ie same result is obtained if the face is seen from
-     * the other neighbouring cell.
+     * the other adjacent cell.
      */
     int sign_og_p = (og_p > 0 ? 1 : -1);
 

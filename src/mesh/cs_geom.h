@@ -83,7 +83,7 @@ cs_geom_closest_point(cs_lnum_t         n_points,
  *
  *                               |
  *      x------------------------|--------x D: end coordinates
- *   O: start coordiantes        |
+ *   O: start coordinates        |
  *                               x G: Face (Center of Gravity)
  *             x current         |
  *               cell center     |
@@ -102,11 +102,10 @@ cs_geom_closest_point(cs_lnum_t         n_points,
  * \param[in]      face_cog       coordinates of face center
  * \param[in]      sx0            segment start coordinates
  * \param[in]      sx1            segment end coordinates
- * \param[out]     n_crossings    number sub_face crossings
- *                                 [0: in; 1: out]
- * \param[in, out] face_norm      local face unit normal of the crossed sub
- *                                 triangle (if entering with something
- *                                 different from NULL)
+ * \param[out]     n_inout        number of sub_face crossings with segment's
+ *                                half-line. [0: in; 1: out]
+ * \param[in, out] face_norm      optional local face unit normal of the
+ *                                crossed sub-triangle, or NULL if unused
  *
  * \return
  *   2 if the segment does not go through the face's plane, or minimum
@@ -123,7 +122,7 @@ cs_geom_segment_intersect_face(int               orient,
                                const cs_real_t   face_cog[3],
                                const cs_real_t   sx0[3],
                                const cs_real_t   sx1[3],
-                               int               n_crossings[2],
+                               int               n_inout[2],
                                cs_real_t        *face_norm);
 
 /*---------------------------------------------------------------------------*/

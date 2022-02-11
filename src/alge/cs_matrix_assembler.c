@@ -3176,7 +3176,7 @@ cs_matrix_assembler_values_finalize(cs_matrix_assembler_values_t  **mav)
  * This function may be called by different threads, as long those threads
  * do not add contributions to the same rows (assuming caution is taken
  * in the case of external libraries so that their builder functions
- * have tht same property).
+ * have the same property).
  *
  * \param[in, out]  mav     pointer to matrix assembler values structure
  * \param[in]       n       number of entries
@@ -3286,7 +3286,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
  * This function may be called by different threads, as long those threads
  * do not add contributions to the same rows (assuming caution is taken
  * in the case of external libraries so that their builder functions
- * have tht same property).
+ * have the same property).
  *
  * \param[in, out]  mav       pointer to matrix assembler values structure
  * \param[in]       n         number of entries
