@@ -71,6 +71,7 @@ _test_sdm(FILE  *out)
   cs_real_t  eigen_ratio, eigen_max;
 
   /* Useful for a weak enforcement of the BC */
+
   cs_math_33_eigen((const cs_real_t (*)[3])mpty,
                    &eigen_ratio, &eigen_max);
 
@@ -93,6 +94,7 @@ _test_sdm(FILE  *out)
     cs_real_6_t  b = {1, 0, 0, 0, 0, 0};
 
     /* Compute the L.D.L^T decomposition and then solve */
+
     cs_real_6_t  sol, tmp;
     cs_real_t  facto[36];
 
@@ -188,6 +190,7 @@ _test_sdm(FILE  *out)
   }
 
   { /* Test symmetry */
+
     const int  max_size = 6;
     cs_sdm_t  *m = cs_sdm_square_create(max_size);
 
@@ -224,6 +227,7 @@ _test_sdm(FILE  *out)
     cs_sdm_t  *mb = cs_sdm_block_create(3, 3, bsize, bsize);
 
     /* Set values */
+
     cs_sdm_block_init(mb, 3, 3, bsize, bsize);
 
     cs_sdm_t  *b11 = cs_sdm_get_block(mb, 1, 1);
@@ -231,17 +235,21 @@ _test_sdm(FILE  *out)
     b11->val[3] = 2;
 
     /* 3 rows and 2 columns */
+
     cs_sdm_t  *b21 = cs_sdm_get_block(mb, 2, 1);
     b21->val[0] = 0.5, b21->val[1] = 0.25;
     b21->val[2] = 1, b21->val[3] = 0.75;
     b21->val[4] = 2, b21->val[5] = 0.1;
 
     cs_sdm_t  *b12 = cs_sdm_get_block(mb, 1, 2);
+
     /* 2 rows and 3 columns */
+
     b12->val[0] = 0.5, b12->val[1] = 0.25, b12->val[2] = 1;
     b12->val[3] = 0.75, b12->val[4] = 2, b12->val[5] = 0.1;
 
     /* cs_sdm_block_dump(0, mb); */
+
     fprintf(out, " Reference matrix\n");
     cs_sdm_block_fprintf(out, NULL, cs_math_zero_threshold, mb);
 
@@ -266,7 +274,6 @@ _test_sdm(FILE  *out)
     mb = cs_sdm_free(mb);
     cpy = cs_sdm_free(cpy);
   }
-
 }
 
 /*============================================================================

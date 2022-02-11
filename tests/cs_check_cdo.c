@@ -122,6 +122,7 @@ _unity(cs_real_t         time,
 /* Test function based on analytic definition
  * Fill array with [1, 1, 1]
  */
+
 static void
 _unity_vect(cs_real_t         time,
             cs_lnum_t         n_pts,
@@ -146,6 +147,7 @@ _unity_vect(cs_real_t         time,
 /* Test function based on analytic definition
  * Fill array with x+y+z
  */
+
 static void
 _linear_xyz(cs_real_t          time,
             cs_lnum_t          n_pts,
@@ -168,6 +170,7 @@ _linear_xyz(cs_real_t          time,
 /* Test function based on analytic definition
  * Fill array with [x, 2*y, 3*z]
  */
+
 static void
 _linear_xyz_vect(cs_real_t          time,
                  cs_lnum_t          n_pts,
@@ -186,12 +189,12 @@ _linear_xyz_vect(cs_real_t          time,
     for (int j = 0; j < 3; j++)
       retval[r+j] = (j+1) * xyz[p+j];
   }
-
 }
 
 /* Test function based on analytic definition
  * Fill array with x*x
  */
+
 static void
 _quadratic_x2(cs_real_t          time,
               cs_lnum_t          n_pts,
@@ -214,6 +217,7 @@ _quadratic_x2(cs_real_t          time,
 /* Test function based on analytic definition
  * Fill array with [x*x, x*x, x*x]
  */
+
 static void
 _quadratic_x2_vect(cs_real_t          time,
                    cs_lnum_t          n_pts,
@@ -233,12 +237,12 @@ _quadratic_x2_vect(cs_real_t          time,
     for (int j = 0; j < 3; j++)
       retval[r+j] = x2;
   }
-
 }
 
 /* Test function based on analytic definition
  * Fill array with x*x + y*y + z*z
  */
+
 static void
 _quadratic_xyz2(cs_real_t          time,
                 cs_lnum_t          n_pts,
@@ -256,13 +260,12 @@ _quadratic_xyz2(cs_real_t          time,
     const cs_lnum_t  r = dense_output ? i : p;
     retval[r] = cs_math_3_square_norm(xyz + 3*p);
   }
-
 }
-
 
 /* Test function based on analytic definition
  * Fill array with [x*x*x, y*y*y, z*z*z]
  */
+
 static void
 _cubic_xyz3_vect(cs_real_t          time,
                  cs_lnum_t          n_pts,
@@ -281,12 +284,12 @@ _cubic_xyz3_vect(cs_real_t          time,
     for (short int j = 0; j < 3; j++)
       retval[r+j] = cs_math_pow3(xyz[p+j]);
   }
-
 }
 
 /* Test function based on analytic definition
  * Fill array with [exp(x+y+z-1.5), exp(x+y+z-1.5), exp(x+y+z-1.5)]
  */
+
 static void
 _nonpoly_vect(cs_real_t          time,
               cs_lnum_t          n_pts,
@@ -306,7 +309,6 @@ _nonpoly_vect(cs_real_t          time,
     for (int j = 0; j < 3; j++)
       retval[r+j] = eval;
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -357,6 +359,7 @@ _define_cm_hexa_unif(double            a,
   cm->type = FVM_CELL_HEXA;
 
   /* Set all quantities */
+
   cm->flag = CS_FLAG_COMP_PV |CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
     CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
     CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE | CS_FLAG_COMP_SEF |
@@ -365,6 +368,8 @@ _define_cm_hexa_unif(double            a,
   cm->vol_c = a*a*a;
 
   /* VERTICES */
+  /* -------- */
+
   cm->n_vc = 8;
   for (int i = 0; i < cm->n_vc; i++) {
     cm->v_ids[i] = i;
@@ -372,6 +377,7 @@ _define_cm_hexa_unif(double            a,
   }
 
   /* Coordinates */
+
   _v = 0; /* V0 */
   cm->xv[3*_v] = 0, cm->xv[3*_v+1] = 0, cm->xv[3*_v+2] = 0;
   _v = 1; /* V1 */
@@ -390,15 +396,19 @@ _define_cm_hexa_unif(double            a,
   cm->xv[3*_v] = 0, cm->xv[3*_v+1] = a, cm->xv[3*_v+2] = a;
 
   /* EDGES */
+  /* ----- */
+
   cm->n_ec = 12;
 
   /* e0 */
+
   _e = 0, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 1, sgn[0] = -1;
   q->center[0] = ah, q->center[1] = 0, q->center[2] = 0;
   q->unitv[0] = 1.0, q->unitv[1] = 0.0, q->unitv[2] = 0.0;
 
   /* e1 */
+
   _e = 1, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -406,6 +416,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 0.0, q->center[2] = 0;
 
   /* e2 */
+
   _e = 2, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 4, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -413,6 +424,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 1.0, q->center[2] = ah;
 
   /* e3 */
+
   _e = 3, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 1, ids[1] = 2, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
@@ -420,6 +432,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 0.0, q->center[2] = 0;
 
   /* e4 */
+
   _e = 4, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 1, ids[1] = 5, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
@@ -427,6 +440,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 1.0, q->center[2] = ah;
 
   /* e5 */
+
   _e = 5, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 2, ids[1] = 6, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
@@ -434,6 +448,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 1.0, q->center[2] = ah;
 
   /* e6 */
+
   _e = 6, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 2, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] = -1.0, q->center[0] = ah;
@@ -441,6 +456,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = 0;
 
   /* e7 */
+
   _e = 7, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 4, ids[1] = 5, sgn[0] = -1;
   q->unitv[0] = 1.0, q->center[0] = ah;
@@ -448,6 +464,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 0.0, q->center[2] = a;
 
   /* e8 */
+
   _e = 8; ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 5, ids[1] = 6, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
@@ -455,6 +472,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 0.0, q->center[2] = a;
 
   /* e9 */
+
   _e = 9, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 6, ids[1] = 7, sgn[0] = -1;
   q->unitv[0] = -1.0, q->center[0] = ah;
@@ -462,6 +480,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = a;
 
   /* e10 */
+
   _e = 10; ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge +_e;
   ids[0] = 4, ids[1] = 7, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -469,6 +488,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 0.0, q->center[2] = a;
 
   /* e11 */
+
   _e = 11, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge +_e;
   ids[0] = 3, ids[1] = 7, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -486,12 +506,15 @@ _define_cm_hexa_unif(double            a,
     cm->pvol_e[e] = 1./12;
 
   /* FACES */
+  /* ----- */
+
   cm->n_fc = 6;
   cm->f2e_idx[0] = 0;
   for (short int f = 0; f < cm->n_fc; f++)
     cm->f2e_idx[f+1] = cm->f2e_idx[f] + 4;
 
   /* f0 */
+
   _f = 0, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 0, ids[1] = 3, ids[2] = 6, ids[3] = 1;
   q->unitv[0] =  0.0, q->center[0] = ah;
@@ -499,6 +522,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = -1.0, q->center[2] = 0;
 
   /* f1 */
+
   _f = 1, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 0, ids[1] = 4, ids[2] = 7, ids[3] = 2;
   q->unitv[0] =  0.0, q->center[0] = ah;
@@ -506,6 +530,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = ah;
 
   /* f2 */
+
   _f = 2, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 3, ids[1] = 5, ids[2] = 8, ids[3] = 4;
   q->unitv[0] =  1.0, q->center[0] = a;
@@ -513,6 +538,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = ah;
 
   /* f3 */
+
   _f = 3, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 6, ids[1] = 11, ids[2] = 9, ids[3] = 5;
   q->unitv[0] =  0.0, q->center[0] = ah;
@@ -520,6 +546,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = ah;
 
   /* f4 */
+
   _f = 4, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 1, ids[1] = 11, ids[2] = 10, ids[3] = 2;
   q->unitv[0] = -1.0, q->center[0] = 0;
@@ -527,6 +554,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = ah;
 
   /* f5 */
+
   _f = 5, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 7, ids[1] = 8, ids[2] = 9, ids[3] = 10;
   q->unitv[0] =  0.0, q->center[0] = ah;
@@ -577,6 +605,7 @@ _define_cm_tetra_ref(double            a,
   cm->type = FVM_CELL_TETRA;
 
   /* Set all quantities */
+
   cm->flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
     CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
     CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE |CS_FLAG_COMP_SEF  |
@@ -586,6 +615,8 @@ _define_cm_tetra_ref(double            a,
   cm->xc[0] = cm->xc[1] = cm->xc[2] = 0.25*a;
 
   /* VERTICES */
+  /* -------- */
+
   cm->n_vc = 4;
   for (int i = 0; i < cm->n_vc; i++) {
     cm->v_ids[i] = i;
@@ -593,6 +624,7 @@ _define_cm_tetra_ref(double            a,
   }
 
   /* Coordinates */
+
   _v = 0; /* V0 */
   cm->xv[3*_v] = 0, cm->xv[3*_v+1] = 0, cm->xv[3*_v+2] = 0;
   _v = 1; /* V1 */
@@ -603,10 +635,13 @@ _define_cm_tetra_ref(double            a,
   cm->xv[3*_v] = 0, cm->xv[3*_v+1] = 0, cm->xv[3*_v+2] = a;
 
   /* EDGES */
+  /* ----- */
+
   cm->n_ec = 6;
   for (short int e = 0; e < cm->n_ec; e++) cm->e_ids[e] = e;
 
   /* e0 */
+
   _e = 0, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 1, sgn[0] = -1;
   q->center[0] = ah, q->center[1] = 0, q->center[2] = 0;
@@ -614,6 +649,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a;
 
   /* e1 */
+
   _e = 1, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 2, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -622,6 +658,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a;
 
   /* e2 */
+
   _e = 2, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -630,6 +667,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a;
 
   /* e3 */
+
   _e = 3, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 1, ids[1] = 2, sgn[0] = -1;
   q->unitv[0] =-invsq2, q->center[0] = ah;
@@ -638,6 +676,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a * sq2;
 
   /* e4 */
+
   _e = 4, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 1, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] =-invsq2, q->center[0] = ah;
@@ -646,6 +685,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a * sq2;
 
   /* e5 */
+
   _e = 5, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 2, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] =    0.0, q->center[0] = 0;
@@ -654,6 +694,8 @@ _define_cm_tetra_ref(double            a,
   q->meas = a * sq2;
 
   /* FACES */
+  /* ----- */
+
   cm->n_fc = 4;
   for (short int f = 0; f < cm->n_fc; f++) {
     cm->f_ids[f] = f;
@@ -665,6 +707,7 @@ _define_cm_tetra_ref(double            a,
     cm->f2e_idx[f+1] = cm->f2e_idx[f] + 3;
 
   /* f0 */
+
   _f = 0, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 0, ids[1] = 3, ids[2] = 1;
   q->unitv[0] =  0.0, q->center[0] = a/3.;
@@ -673,6 +716,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a*ah;
 
   /* f1 */
+
   _f = 1, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 0, ids[1] = 4, ids[2] = 2;
   q->unitv[0] =  0.0, q->center[0] = a/3.;
@@ -681,6 +725,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a*ah;
 
   /* f2 */
+
   _f = 2, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 1, ids[1] = 5, ids[2] = 2;
   q->unitv[0] = -1.0, q->center[0] = 0;
@@ -689,6 +734,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a*ah;
 
   /* f3 */
+
   _f = 3, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 3, ids[1] = 5, ids[2] = 4;
   q->unitv[0] = 1/sqrt(3), q->center[0] = a/3.;
@@ -701,6 +747,7 @@ _define_cm_tetra_ref(double            a,
   /* Dual faces, wvc ? */
 
   /* Compute additional quantities */
+
   for (short int i = 0; i < 2*cm->n_ec; i++) cm->e2f_ids[i] = -1;
 
   for (short int f = 0; f < cm->n_fc; f++) {
@@ -708,15 +755,18 @@ _define_cm_tetra_ref(double            a,
     const cs_quant_t  pfq = cm->face[f];
 
     /* Compute dual edge quantities */
+
     cs_math_3_length_unitv(cm->xc, pfq.center,
                            &(cm->dedge[f].meas), cm->dedge[f].unitv);
 
     /* Compute height of the pyramid of basis f */
+
     cm->hfc[f] = cs_math_3_dot_product(pfq.unitv,
                                        cm->dedge[f].unitv)*cm->dedge[f].meas;
     assert(cm->hfc[f] > 0);
 
     /* Compute tef */
+
     for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       cs_real_3_t  cp_efc, xexf, xexc;
@@ -727,6 +777,7 @@ _define_cm_tetra_ref(double            a,
       cm->tef[i] = cs_compute_area_from_quant(peq, pfq.center);
 
       /* Compute the vectorial area for the triangle : xc, xf, xe */
+
       for (int k = 0; k < 3; k++) {
         xexf[k] = pfq.center[k] - peq.center[k];
         xexc[k] = cm->xc[k] - peq.center[k];
@@ -735,6 +786,7 @@ _define_cm_tetra_ref(double            a,
       cs_nvec3(cp_efc, cm->sefc + i);
 
       /* One should have (cp_efc, sefc) > 0 */
+
       cm->sefc[i].meas *= 0.5;
       if (_dp3(cm->sefc[i].unitv, peq.unitv) < 0) {
         for (int k = 0; k < 3; k++)
@@ -753,6 +805,7 @@ _define_cm_tetra_ref(double            a,
   } /* Loop on cell faces */
 
   /* Compute dual face quantities */
+
   cs_real_t  *df = NULL;
   BFT_MALLOC(df, 3*cm->n_ec, cs_real_t);
   memset(df, 0, 3*cm->n_ec*sizeof(cs_real_t));
@@ -780,6 +833,7 @@ _define_cm_tetra_ref(double            a,
   }
 
   /* Compute dual cell volume */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
@@ -799,6 +853,7 @@ _define_cm_tetra_ref(double            a,
   } /* Loop on cell faces */
 
   /* Reset diam */
+
   double  dbuf[10];
   short int  vtag[4];
   int  size = cm->n_vc*(cm->n_vc+1)/2;
@@ -820,9 +875,11 @@ _define_cm_tetra_ref(double            a,
   for (short int f = 0; f < cm->n_fc; ++f) {
 
     /* Reset vtag */
+
     for (short int v = 0; v < cm->n_vc; v++) vtag[v] = -1;
 
     /* Tag face vertices */
+
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const int  eshft = 2*cm->f2e_ids[i];
@@ -880,6 +937,7 @@ _locmat_dump(FILE               *fic,
     fprintf(fic, "%s\n", msg);
 
   /* List sub-entity ids */
+
   fprintf(fic, "%6s","ID");
   for (int i = 0; i < lm->n_rows; i++) fprintf(fic, " %11d", dof_ids[i]);
   fprintf(fic, "\n");
@@ -890,7 +948,6 @@ _locmat_dump(FILE               *fic,
       fprintf(fic, " % 6.4e", lm->val[i*lm->n_rows+j]);
     fprintf(fic, "\n");
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -915,6 +972,7 @@ _locsys_dump(FILE                 *fic,
     fprintf(fic, "%s\n", msg);
 
   /* List sub-entity ids */
+
   fprintf(fic, "%6s","ID");
   for (int i = 0; i < lm->n_rows; i++) fprintf(fic, " %11d", csys->dof_ids[i]);
   fprintf(fic, "%11s %11s %11s\n", "RHS", "SOURCE", "VAL_N");
@@ -925,7 +983,6 @@ _locsys_dump(FILE                 *fic,
     fprintf(fic, " % 6.4e % 6.4e % 6.4e\n",
             csys->rhs[i], csys->source[i], csys->val_n[i]);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -964,7 +1021,6 @@ _test_hodge_fb(FILE               *out,
   for (int i = 0; i < cm->n_fc + 1; i++)
     fprintf(out, "a[%d] = % -8.5e --> res[%d] = % -8.5e\n",
             i, a[i], i, res[i]);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1034,6 +1090,7 @@ _test_cdovb_schemes(FILE                *out,
                     cs_cell_builder_t   *cb)
 {
   /* Initialize a cell view of the algebraic system */
+
   csys->n_dofs = cm->n_vc;
   cs_sdm_square_init(csys->n_dofs, csys->mat);
   for (short int v = 0; v < cm->n_vc; v++)
@@ -1046,12 +1103,14 @@ _test_cdovb_schemes(FILE                *out,
   /* ===== */
 
   /* WBS Hodge operator */
+
   cs_hodge_param_t  hwbs_info = {.inv_pty = false,
                                  .type = CS_HODGE_TYPE_VPCD,
                                  .algo = CS_HODGE_ALGO_WBS,
                                  .coef = 1.0};
 
   /* If property is set to NULL then unity is used as default */
+
   hodge = cs_hodge_create(connect, NULL, &hwbs_info,
                           true, true); /* tensor, eigen */
 
@@ -1075,6 +1134,7 @@ _test_cdovb_schemes(FILE                *out,
   cs_hodge_free(&hodge);
 
   /* Voronoi Hodge operator */
+
   cs_hodge_param_t  hvor_info = {.inv_pty = false,
                                  .type = CS_HODGE_TYPE_VPCD,
                                  .algo = CS_HODGE_ALGO_VORONOI,
@@ -1098,6 +1158,7 @@ _test_cdovb_schemes(FILE                *out,
   eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
 
   /* Stiffness matrix arising from a Hodge EpFd built with COST algo. */
+
   eqp->diffusion_hodgep.inv_pty = false; /* inverse property ? */
   eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EPFD;
   eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
@@ -1115,6 +1176,7 @@ _test_cdovb_schemes(FILE                *out,
     cs_hodge_free(&hodge);
 
     /* Anisotropic case */
+
     hodge = cs_hodge_create(connect, property, &(eqp->diffusion_hodgep),
                             true, true); /* tensor, eigen */
     cs_hodge_vb_cost_get_stiffness(cm, hodge, cb);
@@ -1124,6 +1186,7 @@ _test_cdovb_schemes(FILE                *out,
     _test_stiffness_vb(out, cm, cb->loc);
 
     /* Enforce Dirichlet BC */
+
     cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
     cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; PENA.DGA.FLX.COST; PERMEABILITY.ANISO",
@@ -1132,6 +1195,7 @@ _test_cdovb_schemes(FILE                *out,
     for (int v = 0; v < cm->n_vc*cm->n_vc; v++) csys->mat->val[v] = 0.;
 
     /* Enforce Dirichlet BC */
+
     cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
     cs_cdo_diffusion_svb_ocs_weak_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WEAK.DGA.FLX.COST; PERMEABILITY.ANISO",
@@ -1141,6 +1205,7 @@ _test_cdovb_schemes(FILE                *out,
     for (int v = 0; v < cm->n_vc*cm->n_vc; v++) csys->mat->val[v] = 0.;
 
     /* Enforce Dirichlet BC */
+
     cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
     cs_cdo_diffusion_svb_ocs_wsym_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WSYM.DGA.FLX.COST; PERMEABILITY.ANISO",
@@ -1169,6 +1234,7 @@ _test_cdovb_schemes(FILE                *out,
     _test_stiffness_vb(out, cm, cb->loc);
 
     /* Enforce Dirichlet BC */
+
     cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
     cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out,
@@ -1208,6 +1274,7 @@ _test_cdovb_schemes(FILE                *out,
     _test_stiffness_vb(out, cm, cb->loc);
 
     /* Enforce Dirichlet BC */
+
     cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
     cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; PENA.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
@@ -1215,6 +1282,7 @@ _test_cdovb_schemes(FILE                *out,
     cs_sdm_square_init(cm->n_vc, csys->mat);
 
     /* Enforce Dirichlet BC */
+
     cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
     cs_cdo_diffusion_svb_wbs_weak_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WEAK.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
@@ -1222,6 +1290,7 @@ _test_cdovb_schemes(FILE                *out,
     cs_sdm_square_init(cm->n_vc, csys->mat);
 
     /* Enforce Dirichlet BC */
+
     cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
     cs_cdo_diffusion_svb_wbs_wsym_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WSYM.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
@@ -1237,21 +1306,20 @@ _test_cdovb_schemes(FILE                *out,
   cs_adv_field_t  *beta = cs_advection_field_add_user("Adv.Field");
 
   /* Numerical settings for the advection scheme */
+
   eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
   eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
 
   /* Constant advection field */
+
   cs_real_3_t  vector_field = {1., 0., 0.};
   cs_advection_field_def_by_value(beta, vector_field);
   eqp->adv_field = beta;
 
   /* Free memory */
+
   cs_advection_field_destroy_all();
   eqp = cs_equation_free_param(eqp);
-
-  /* ADVECTION: BOUNDARY FLUX OPERATOR */
-  /* ================================= */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1322,15 +1390,16 @@ _test_basis_functions(FILE               *out,
   default:
     bft_error(__FILE__, __LINE__, 0, " %s: Scheme order not handled yet.\n",
               __func__);
-
   }
 
   /* Test cell basis functions : (flag, order, dim) */
+
   cs_real_t  c_eval[30], c_eval_mono[30], c_dof[20], c_dof_mono[20];
   cs_real_t  g_eval[180], g_eval_mono[180];
   for (int i = 0; i < 180; i++) g_eval[i] = g_eval_mono[i] = -999.999;
 
   /* Inertial basis */
+
   cs_basis_func_t  *cbf = cs_basis_func_create(0, scheme_order, 3);
   cbf->setup(cbf, cm, 0, cm->xc, cb);
   cbf->eval_all_at_point(cbf, cm->xc, c_eval);
@@ -1340,17 +1409,20 @@ _test_basis_functions(FILE               *out,
   cbf->compute_factorization(cbf);
 
   /* Case of a unit constant */
+
   cbf->project(cbf, cbf->projector->val, c_dof);
   if (scheme_order > 0) /* Case of a (x -xc)/diam function (1st basis func.) */
     cbf->project(cbf, cbf->projector->val + cbf->size, c_dof + cbf->size);
 
   /* Output inertial basis functions */
+
   cbf->dump_projector(cbf);
   fprintf(out, "\n >> Inertial cell basis functions\n");
   cs_basis_func_fprintf(out, NULL, cbf);
   cs_sdm_fprintf(out, NULL, 1e-15, cbf->projector);
 
   /* Define the related gradient basis */
+
   cs_basis_func_t  *gbf = cs_basis_func_grad_create(cbf);
   cs_basis_func_copy_setup(cbf, gbf);
   const int bsize = 3*gbf->size;
@@ -1363,10 +1435,12 @@ _test_basis_functions(FILE               *out,
   gbf->eval_all_at_point(gbf, cm->xv + 3, g_eval + 2*bsize);
 
   /* Free basis structures */
+
   gbf = cs_basis_func_free(gbf);
   cbf = cs_basis_func_free(cbf);
 
   /* Monomial basis */
+
   cs_basis_func_t  *cbf_mono = cs_basis_func_create(CS_BASIS_FUNC_MONOMIAL,
                                                     scheme_order, 3);
   cbf_mono->setup(cbf_mono, cm, 0, cm->xc, cb);
@@ -1380,18 +1454,21 @@ _test_basis_functions(FILE               *out,
   cbf_mono->compute_factorization(cbf_mono);
 
   /* Case of a unit constant */
+
   cbf_mono->project(cbf_mono, cbf_mono->projector->val, c_dof_mono);
   if (scheme_order > 0) /* Case of a (x -xc)/diam function (1st basis func.) */
     cbf_mono->project(cbf_mono, cbf_mono->projector->val + cbf_mono->size,
                       c_dof_mono + cbf_mono->size);
 
   /* Output inertial basis functions */
+
   cbf_mono->dump_projector(cbf_mono);
   fprintf(out, "\n >> Monomial cell basis functions\n");
   cs_basis_func_fprintf(out, NULL, cbf_mono);
   cs_sdm_fprintf(out, NULL, 1e-15, cbf_mono->projector);
 
   /* Define the related gradient basis */
+
   cs_basis_func_t  *gbf_mono = cs_basis_func_grad_create(cbf_mono);
   cs_basis_func_copy_setup(cbf_mono, gbf_mono);
 
@@ -1404,10 +1481,12 @@ _test_basis_functions(FILE               *out,
   cs_basis_func_fprintf(out, NULL, gbf_mono);
 
   /* Free basis structures */
+
   gbf_mono = cs_basis_func_free(gbf_mono);
   cbf_mono = cs_basis_func_free(cbf_mono);
 
   /* Comparison between the two choices of building a basis function */
+
   printf( "\n Evaluation points for cell:\n xc = (%5.3e, %5.3e, %5.3e)"
           " xv1 = (%5.3e, %5.3e, %5.3e) xv2 = (%5.3e, %5.3e, %5.3e)\n",
           cm->xc[0], cm->xc[1], cm->xc[2], cm->xv[0], cm->xv[1], cm->xv[2],
@@ -1445,7 +1524,7 @@ _test_basis_functions(FILE               *out,
     for (int i = 0; i < 3; i++) {
       printf( " --> %s\n", cvv[i]);
       _dump_eval_cmp(stdout, 1, c_tags, c_eval + i, c_eval_mono + i);
-      _dump_eval_cmp(stdout, 12, g_tags, g_eval + i*bsize, g_eval_mono + i*bsize);
+      _dump_eval_cmp(stdout, 12, g_tags, g_eval+i*bsize, g_eval_mono+i*bsize);
     }
     break;
 
@@ -1457,7 +1536,7 @@ _test_basis_functions(FILE               *out,
     for (int i = 0; i < 3; i++) {
       printf( " --> %s\n", cvv[i]);
       _dump_eval_cmp(stdout, 4, c_tags, c_eval + 4*i, c_eval_mono + 4*i);
-      _dump_eval_cmp(stdout, 30, g_tags, g_eval + i*bsize, g_eval_mono + i*bsize);
+      _dump_eval_cmp(stdout, 30, g_tags, g_eval+i*bsize, g_eval_mono+i*bsize);
     }
     break;
 
@@ -1469,7 +1548,7 @@ _test_basis_functions(FILE               *out,
     for (int i = 0; i < 3; i++) {
       printf( " --> %s\n", cvv[i]);
       _dump_eval_cmp(stdout, 10, c_tags, c_eval + 10*i, c_eval_mono + 10*i);
-      _dump_eval_cmp(stdout, 60, g_tags, g_eval + i*bsize, g_eval_mono + i*bsize);
+      _dump_eval_cmp(stdout, 60, g_tags, g_eval+i*bsize, g_eval_mono+i*bsize);
     }
     break;
 
@@ -1478,6 +1557,7 @@ _test_basis_functions(FILE               *out,
   }
 
   /* Test face basis functions */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     short int v = cm->e2v_ids[2*cm->f2e_ids[cm->f2e_idx[f]]];
@@ -1494,6 +1574,7 @@ _test_basis_functions(FILE               *out,
     fbf->compute_factorization(fbf);
 
     /* Case of a unit constant */
+
     fbf->project(fbf, fbf->projector->val, f_dof);
     if (scheme_order > 0)
       /* Case of a (x - xf)/diam function (1st basis func.) */
@@ -1514,6 +1595,7 @@ _test_basis_functions(FILE               *out,
     fbf_mono->compute_factorization(fbf_mono);
 
     /* Case of a unit constant */
+
     fbf_mono->project(fbf_mono, fbf_mono->projector->val, f_dof_mono);
     if (scheme_order > 0)
       /* Case of a (x - xf)/diam function (1st basis func.) */
@@ -1528,6 +1610,7 @@ _test_basis_functions(FILE               *out,
             cm->xv[3], cm->xv[4], cm->xv[5]);
 
     /* Comparison between the two choices of building a basis function */
+
     const char  *fv[2] = {"xf", "xv"};
     const char  *f_tags[6] = {"0", "x", "y", "xx", "xy", "yy"};
     switch (scheme_order) {
@@ -1561,10 +1644,9 @@ _test_basis_functions(FILE               *out,
 
     default:
       break;
-    }
+    } /* End of switch */
 
-  }
-
+  } /* Loop on faces */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1680,8 +1762,10 @@ _test_hho_schemes(FILE                *out,
 
       /* cs_hho_builder_reduction_from_analytic(uni, cm, tcur,
                                                 cb, hhob, reduction_uni); */
+
       cs_hho_builder_reduction_from_analytic(lin, cm, tcur, cb, hhob,
                                              reduction_xyz);
+
       /* cs_hho_builder_reduction_from_analytic(x2 , cm, tcur,
                                                 cb, hhob, reduction_x2); */
 
@@ -1692,6 +1776,7 @@ _test_hho_schemes(FILE                *out,
                 reduction_uni[i], reduction_xyz[i], reduction_x2[i]);
 
       /* Evaluate projection at (0.25; 0.25; 0.25) and (1.0, 0.0, 0.0)*/
+
       cs_real_t  phi_eval[4];
       cs_real_3_t  coord[3] = {{0.25, 0.25, 0.25},
                                {1.00, 0.00, 0.00},
@@ -1758,7 +1843,6 @@ _test_hho_schemes(FILE                *out,
       cs_xdef_free(lin);
       cs_xdef_free(x2);
     }
-
     break;
 
   case 2:
@@ -1771,7 +1855,6 @@ _test_hho_schemes(FILE                *out,
   default:
     bft_error(__FILE__, __LINE__, 0, " %s: Scheme order not handled yet.\n",
               __func__);
-
   }
 
   BFT_FREE(diff_pty);
@@ -1808,6 +1891,7 @@ _main_hho_schemes(FILE             *out_hho,
     order = 1;
 
   /* Compute the cell tensor inertia */
+
   cs_real_33_t  inertia;
 
   cs_compute_inertia_tensor(cm, cm->xc, inertia);
@@ -1848,7 +1932,8 @@ _main_cdovb_schemes(FILE             *out,
   cs_cdovb_scaleq_init_sharing(quant, connect, time_step);
   cs_cdovb_scaleq_get(&csys, &cb);
 
-    /* Initialize a cell view of the BC */
+  /* Initialize a cell view of the BC */
+
   if (case_id == 0) {
 
     csys->has_dirichlet = true;
@@ -1912,7 +1997,6 @@ _compute_divergence(const cs_cell_mesh_t  *cm,
    * But, when integrating [[ p, q ]]_{P_c} = |c| p_c q_c
    * Thus, the volume in the divergence drops
    */
-  /* It is copied from cdfb_stokes */
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -1953,9 +2037,11 @@ _test_divergence(FILE                     *out,
   _compute_divergence(cm, div);
 
   /* No cell contribution */
+
   memset(div + 3* nf, 0, 3*sizeof(cs_real_t));
 
   /* Error valid only for a unitary cube */
+
   memset(red, 0, totdof*sizeof(cs_real_t));
 
   { /* Constant */
@@ -2079,6 +2165,7 @@ _main_cdofb_schemes(FILE             *out,
   cs_cdofb_scaleq_get(&csys, &cb);
 
   /* Initialize a cell view of the algebraic system */
+
   csys->n_dofs = cm->n_fc + 1;
   cs_sdm_square_init(csys->n_dofs, csys->mat);
   for (short int f = 0; f < cm->n_fc; f++)
@@ -2090,12 +2177,14 @@ _main_cdofb_schemes(FILE             *out,
   else                           fprintf(out, "** TETRA **\n");
 
   /* Test divergence / gradient */
+
   _test_divergence(out, cm, cb);
 
   /* HODGE */
   /* ===== */
 
   /* COST Hodge operator */
+
   cs_hodge_param_t  hcost_info = {.inv_pty = false,
                                   .type = CS_HODGE_TYPE_FB,
                                   .algo = CS_HODGE_ALGO_COST,
@@ -2167,6 +2256,7 @@ main(int    argc,
   /* quant, connect and time_step are declared as static */
 
   /* connectivity */
+
   BFT_MALLOC(connect, 1, cs_cdo_connect_t);
   connect->n_cells = 1;
   connect->n_max_vbyc = 8;
@@ -2179,12 +2269,14 @@ main(int    argc,
   /* Nothing to do for quant */
 
   /* Time step */
+
   BFT_MALLOC(time_step, 1, cs_time_step_t);
   time_step->t_cur = 0.; /* Useful when analytic function are called */
 
   cs_source_term_init_sharing(quant, connect);
 
   /* Allocate local structures */
+
   cs_cell_mesh_t  *cm = cs_cell_mesh_create(connect);
   cs_face_mesh_t  *fm = cs_face_mesh_create(connect->n_max_vbyf);
 
@@ -2195,15 +2287,19 @@ main(int    argc,
   _define_cm_hexa_unif(1., cm);
 
   /* Compute the face mesh for the face id 4 */
+
   cs_face_mesh_build_from_cell_mesh(cm, 4, fm);
 
   /* Operate several basic tests on CDO-Vb schemes */
+
   _main_cdovb_schemes(hexa, 0, cm, fm);
 
   /* Operate several basic tests on CDO-Fb schemes */
+
   _main_cdofb_schemes(hexa, cm);
 
   /* _main_hho_schemes(hexa_hho0, CS_FLAG_SCHEME_POLY0, cm, fm); */
+
   _main_hho_schemes(hexa_hho1, CS_FLAG_SCHEME_POLY1, cm, fm);
   /* _main_hho_schemes(hexa_hho2, CS_FLAG_SCHEME_POLY2, cm, fm); */
 
@@ -2214,11 +2310,13 @@ main(int    argc,
   _define_cm_tetra_ref(1., cm);
 
   /* Compute the face mesh for the face id 2 */
+
   cs_face_mesh_build_from_cell_mesh(cm, 2, fm);
 
   _main_cdovb_schemes(tetra, 1, cm, fm);
 
   /* Operate several basic tests on CDO-Fb schemes */
+
   _main_cdofb_schemes(tetra, cm);
 
   /* _main_hho_schemes(tetra_hho0, CS_FLAG_SCHEME_POLY0, cm, fm); */
@@ -2226,6 +2324,7 @@ main(int    argc,
   /* _main_hho_schemes(tetra_hho2, CS_FLAG_SCHEME_POLY2, cm, fm); */
 
   /* Free memory */
+
   cs_cell_mesh_free(&cm);
   cs_face_mesh_free(&fm);
 

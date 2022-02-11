@@ -1151,7 +1151,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
                            true,   /* interlaced */
                            true);  /* unrolled */
 
-  cs_cdo_system_build_block(sh, 0);
+  cs_cdo_system_build_block(sh, 0); /* block_id */
 
   eqb->system_helper = sh;
 

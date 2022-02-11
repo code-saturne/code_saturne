@@ -517,9 +517,11 @@ _run(void)
   cs_control_finalize();
 
   /* Free remapping/intersector related structures (stl or medcoupling) */
+
   cs_utilities_destroy_all_remapping();
 
   /* Free the checkpoint multiwriter structure */
+
   cs_restart_multiwriters_destroy_all();
 
   /* Print some mesh statistics */

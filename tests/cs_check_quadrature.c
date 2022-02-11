@@ -104,6 +104,7 @@ typedef enum {
 /* Test function based on analytic definition
  * Fill array with 1
  */
+
 static void
 _unity(cs_real_t         time,
        cs_lnum_t         n_pts,
@@ -127,6 +128,7 @@ _unity(cs_real_t         time,
 /* Test function based on analytic definition
  * Fill array with [1, 1, 1]
  */
+
 static void
 _unity_vect(cs_real_t         time,
             cs_lnum_t         n_pts,
@@ -151,6 +153,7 @@ _unity_vect(cs_real_t         time,
 /* Test function based on analytic definition
  * Fill array with [[1, 1, 1], [1, 1, 1], [1, 1, 1]]
  */
+
 static void
 _unity_tens(cs_real_t         time,
             cs_lnum_t         n_pts,
@@ -175,6 +178,7 @@ _unity_tens(cs_real_t         time,
 /* Test function based on analytic definition
  * Fill array with x+y+z
  */
+
 static void
 _linear_xyz(cs_real_t          time,
             cs_lnum_t          n_pts,
@@ -197,6 +201,7 @@ _linear_xyz(cs_real_t          time,
 /* Test function based on analytic definition
  * Fill array with [x, 2*y, 3*z]
  */
+
 static void
 _linear_xyz_vect(cs_real_t          time,
                  cs_lnum_t          n_pts,
@@ -215,7 +220,6 @@ _linear_xyz_vect(cs_real_t          time,
     for (int j = 0; j < 3; j++)
       retval[r+j] = (j+1) * xyz[p+j];
   }
-
 }
 
 /* Test function based on analytic definition
@@ -223,6 +227,7 @@ _linear_xyz_vect(cs_real_t          time,
  *                  [x+y+z, x+y+z, x+y+z],
  *                  [x+y+z, x+y+z, x+y+z]]
  */
+
 static void
 _linear_xyz_tens(cs_real_t          time,
                  cs_lnum_t          n_pts,
@@ -247,6 +252,7 @@ _linear_xyz_tens(cs_real_t          time,
 /* Test function based on analytic definition
  * Fill array with x*x
  */
+
 static void
 _quadratic_x2(cs_real_t          time,
               cs_lnum_t          n_pts,
@@ -269,6 +275,7 @@ _quadratic_x2(cs_real_t          time,
 /* Test function based on analytic definition
  * Fill array with [x*x, x*x, x*x]
  */
+
 static void
 _quadratic_x2_vect(cs_real_t          time,
                    cs_lnum_t          n_pts,
@@ -288,7 +295,6 @@ _quadratic_x2_vect(cs_real_t          time,
     for (int j = 0; j < 3; j++)
       retval[r+j] = x2;
   }
-
 }
 
 /* Test function based on analytic definition
@@ -296,6 +302,7 @@ _quadratic_x2_vect(cs_real_t          time,
                     [x*x, x*x, x*x],
                     [x*x, x*x, x*x]]
  */
+
 static void
 _quadratic_x2_tens(cs_real_t          time,
                    cs_lnum_t          n_pts,
@@ -315,7 +322,6 @@ _quadratic_x2_tens(cs_real_t          time,
     for (int j = 0; j < 9; j++)
       retval[r+j] = x2;
   }
-
 }
 
 /* Test function based on analytic definition
@@ -325,6 +331,7 @@ _quadratic_x2_tens(cs_real_t          time,
  *
  * I = int_(x=0 to 1) int_(y=0 to 1-x) int_(z=0 to 1-x-y) f
  */
+
 static void
 _nonpoly(cs_real_t         time,
          cs_lnum_t         n_pts,
@@ -347,6 +354,7 @@ _nonpoly(cs_real_t         time,
 /* Test function based on analytic definition
  * Fill array with [exp(x+y+z-1.5), exp(x+y+z-1.5), exp(x+y+z-1.5)]
  */
+
 static void
 _nonpoly_vect(cs_real_t          time,
               cs_lnum_t          n_pts,
@@ -366,7 +374,6 @@ _nonpoly_vect(cs_real_t          time,
     for (int j = 0; j < 3; j++)
       retval[r+j] = eval;
   }
-
 }
 
 /* Test function based on analytic definition
@@ -374,6 +381,7 @@ _nonpoly_vect(cs_real_t          time,
  *                  [exp(x+y+z-1.5), exp(x+y+z-1.5), exp(x+y+z-1.5)],
  *                  [exp(x+y+z-1.5), exp(x+y+z-1.5), exp(x+y+z-1.5)]]
  */
+
 static void
 _nonpoly_tens(cs_real_t          time,
               cs_lnum_t          n_pts,
@@ -393,7 +401,6 @@ _nonpoly_tens(cs_real_t          time,
     for (int j = 0; j < 9; j++)
       retval[r+j] = eval;
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -539,6 +546,7 @@ _define_cm_hexa_unif(double            a,
   cm->type = FVM_CELL_HEXA;
 
   /* Set all quantities */
+
   cm->flag = CS_FLAG_COMP_PV |CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
     CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
     CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE | CS_FLAG_COMP_SEF |
@@ -547,6 +555,8 @@ _define_cm_hexa_unif(double            a,
   cm->vol_c = a*a*a;
 
   /* VERTICES */
+  /* -------- */
+
   cm->n_vc = 8;
   for (int i = 0; i < cm->n_vc; i++) {
     cm->v_ids[i] = i;
@@ -554,6 +564,7 @@ _define_cm_hexa_unif(double            a,
   }
 
   /* Coordinates */
+
   _v = 0; /* V0 */
   cm->xv[3*_v] = 0, cm->xv[3*_v+1] = 0, cm->xv[3*_v+2] = 0;
   _v = 1; /* V1 */
@@ -572,15 +583,19 @@ _define_cm_hexa_unif(double            a,
   cm->xv[3*_v] = 0, cm->xv[3*_v+1] = a, cm->xv[3*_v+2] = a;
 
   /* EDGES */
+  /* ----- */
+
   cm->n_ec = 12;
 
   /* e0 */
+
   _e = 0, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 1, sgn[0] = -1;
   q->center[0] = ah, q->center[1] = 0, q->center[2] = 0;
   q->unitv[0] = 1.0, q->unitv[1] = 0.0, q->unitv[2] = 0.0;
 
   /* e1 */
+
   _e = 1, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -588,6 +603,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 0.0, q->center[2] = 0;
 
   /* e2 */
+
   _e = 2, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 4, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -595,6 +611,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 1.0, q->center[2] = ah;
 
   /* e3 */
+
   _e = 3, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 1, ids[1] = 2, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
@@ -602,6 +619,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 0.0, q->center[2] = 0;
 
   /* e4 */
+
   _e = 4, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 1, ids[1] = 5, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
@@ -609,6 +627,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 1.0, q->center[2] = ah;
 
   /* e5 */
+
   _e = 5, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 2, ids[1] = 6, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
@@ -616,6 +635,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 1.0, q->center[2] = ah;
 
   /* e6 */
+
   _e = 6, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 2, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] = -1.0, q->center[0] = ah;
@@ -623,6 +643,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = 0;
 
   /* e7 */
+
   _e = 7, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 4, ids[1] = 5, sgn[0] = -1;
   q->unitv[0] = 1.0, q->center[0] = ah;
@@ -630,6 +651,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 0.0, q->center[2] = a;
 
   /* e8 */
+
   _e = 8; ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 5, ids[1] = 6, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = a;
@@ -637,6 +659,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 0.0, q->center[2] = a;
 
   /* e9 */
+
   _e = 9, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 6, ids[1] = 7, sgn[0] = -1;
   q->unitv[0] = -1.0, q->center[0] = ah;
@@ -644,6 +667,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = a;
 
   /* e10 */
+
   _e = 10; ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge +_e;
   ids[0] = 4, ids[1] = 7, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -651,6 +675,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = 0.0, q->center[2] = a;
 
   /* e11 */
+
   _e = 11, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge +_e;
   ids[0] = 3, ids[1] = 7, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -665,12 +690,15 @@ _define_cm_hexa_unif(double            a,
   }
 
   /* FACES */
+  /* ----- */
+
   cm->n_fc = 6;
   cm->f2e_idx[0] = 0;
   for (short int f = 0; f < cm->n_fc; f++)
     cm->f2e_idx[f+1] = cm->f2e_idx[f] + 4;
 
   /* f0 */
+
   _f = 0, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 0, ids[1] = 3, ids[2] = 6, ids[3] = 1;
   q->unitv[0] =  0.0, q->center[0] = ah;
@@ -678,6 +706,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] = -1.0, q->center[2] = 0;
 
   /* f1 */
+
   _f = 1, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 0, ids[1] = 4, ids[2] = 7, ids[3] = 2;
   q->unitv[0] =  0.0, q->center[0] = ah;
@@ -685,6 +714,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = ah;
 
   /* f2 */
+
   _f = 2, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 3, ids[1] = 5, ids[2] = 8, ids[3] = 4;
   q->unitv[0] =  1.0, q->center[0] = a;
@@ -692,6 +722,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = ah;
 
   /* f3 */
+
   _f = 3, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 6, ids[1] = 11, ids[2] = 9, ids[3] = 5;
   q->unitv[0] =  0.0, q->center[0] = ah;
@@ -699,6 +730,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = ah;
 
   /* f4 */
+
   _f = 4, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 1, ids[1] = 11, ids[2] = 10, ids[3] = 2;
   q->unitv[0] = -1.0, q->center[0] = 0;
@@ -706,6 +738,7 @@ _define_cm_hexa_unif(double            a,
   q->unitv[2] =  0.0, q->center[2] = ah;
 
   /* f5 */
+
   _f = 5, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 7, ids[1] = 8, ids[2] = 9, ids[3] = 10;
   q->unitv[0] =  0.0, q->center[0] = ah;
@@ -755,6 +788,7 @@ _define_cm_tetra_ref(double            a,
   cm->type = FVM_CELL_TETRA;
 
   /* Set all quantities */
+
   cm->flag = CS_FLAG_COMP_PV |CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
     CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
     CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE | CS_FLAG_COMP_SEF |
@@ -764,6 +798,8 @@ _define_cm_tetra_ref(double            a,
   cm->xc[0] = cm->xc[1] = cm->xc[2] = 0.25*a;
 
   /* VERTICES */
+  /* -------- */
+
   cm->n_vc = 4;
   for (int i = 0; i < cm->n_vc; i++) {
     cm->v_ids[i] = i;
@@ -771,6 +807,7 @@ _define_cm_tetra_ref(double            a,
   }
 
   /* Coordinates */
+
   _v = 0; /* V0 */
   cm->xv[3*_v] = 0, cm->xv[3*_v+1] = 0, cm->xv[3*_v+2] = 0;
   _v = 1; /* V1 */
@@ -781,10 +818,13 @@ _define_cm_tetra_ref(double            a,
   cm->xv[3*_v] = 0, cm->xv[3*_v+1] = 0, cm->xv[3*_v+2] = a;
 
   /* EDGES */
+  /* ----- */
+
   cm->n_ec = 6;
   for (short int e = 0; e < cm->n_ec; e++) cm->e_ids[e] = e;
 
   /* e0 */
+
   _e = 0, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 1, sgn[0] = -1;
   q->center[0] = ah, q->center[1] = 0, q->center[2] = 0;
@@ -792,6 +832,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a;
 
   /* e1 */
+
   _e = 1, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 2, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -800,6 +841,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a;
 
   /* e2 */
+
   _e = 2, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 0, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] = 0.0, q->center[0] = 0;
@@ -808,6 +850,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a;
 
   /* e3 */
+
   _e = 3, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 1, ids[1] = 2, sgn[0] = -1;
   q->unitv[0] =-invsq2, q->center[0] = ah;
@@ -816,6 +859,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a * sq2;
 
   /* e4 */
+
   _e = 4, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 1, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] =-invsq2, q->center[0] = ah;
@@ -824,6 +868,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a * sq2;
 
   /* e5 */
+
   _e = 5, ids = cm->e2v_ids + 2*_e; sgn = cm->e2v_sgn + _e, q = cm->edge + _e;
   ids[0] = 2, ids[1] = 3, sgn[0] = -1;
   q->unitv[0] =    0.0, q->center[0] = 0;
@@ -832,6 +877,8 @@ _define_cm_tetra_ref(double            a,
   q->meas = a * sq2;
 
   /* FACES */
+  /* ----- */
+
   cm->n_fc = 4;
   for (short int f = 0; f < cm->n_fc; f++) {
     cm->f_ids[f] = f;
@@ -843,6 +890,7 @@ _define_cm_tetra_ref(double            a,
     cm->f2e_idx[f+1] = cm->f2e_idx[f] + 3;
 
   /* f0 */
+
   _f = 0, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 0, ids[1] = 3, ids[2] = 1;
   q->unitv[0] =  0.0, q->center[0] = a/3.;
@@ -851,6 +899,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a*ah;
 
   /* f1 */
+
   _f = 1, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 0, ids[1] = 4, ids[2] = 2;
   q->unitv[0] =  0.0, q->center[0] = a/3.;
@@ -859,6 +908,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a*ah;
 
   /* f2 */
+
   _f = 2, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 1, ids[1] = 5, ids[2] = 2;
   q->unitv[0] = -1.0, q->center[0] = 0;
@@ -867,6 +917,7 @@ _define_cm_tetra_ref(double            a,
   q->meas = a*ah;
 
   /* f3 */
+
   _f = 3, ids = cm->f2e_ids + cm->f2e_idx[_f], q = cm->face + _f;
   ids[0] = 3, ids[1] = 5, ids[2] = 4;
   q->unitv[0] = 1/sqrt(3), q->center[0] = a/3.;
@@ -879,6 +930,7 @@ _define_cm_tetra_ref(double            a,
   /* Dual faces, wvc ? */
 
   /* Compute additional quantities */
+
   for (short int i = 0; i < 2*cm->n_ec; i++) cm->e2f_ids[i] = -1;
 
   for (short int f = 0; f < cm->n_fc; f++) {
@@ -886,15 +938,18 @@ _define_cm_tetra_ref(double            a,
     const cs_quant_t  pfq = cm->face[f];
 
     /* Compute dual edge quantities */
+
     cs_math_3_length_unitv(cm->xc, pfq.center,
                            &(cm->dedge[f].meas), cm->dedge[f].unitv);
 
     /* Compute height of the pyramid of basis f */
+
     cm->hfc[f] = cs_math_3_dot_product(pfq.unitv,
                                        cm->dedge[f].unitv)*cm->dedge[f].meas;
     assert(cm->hfc[f] > 0);
 
     /* Compute tef */
+
     for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       cs_nvec3_t  sefc;
@@ -906,6 +961,7 @@ _define_cm_tetra_ref(double            a,
       cm->tef[i] = cs_compute_area_from_quant(peq, pfq.center);
 
       /* Compute the vectorial area for the triangle : xc, xf, xe */
+
       for (int k = 0; k < 3; k++) {
         xexf[k] = pfq.center[k] - peq.center[k];
         xexc[k] = cm->xc[k] - peq.center[k];
@@ -914,6 +970,7 @@ _define_cm_tetra_ref(double            a,
       cs_nvec3(cp_efc, &sefc);
 
       /* One should have (cp_efc, sefc) > 0 */
+
       short int  _sgn = 1;
       if (_dp3(sefc.unitv, peq.unitv) < 0) _sgn = -1;
 
@@ -936,6 +993,7 @@ _define_cm_tetra_ref(double            a,
   }  /* Loop on cell faces */
 
   /* Compute dual face quantities */
+
   cs_real_t  *df = NULL;
   BFT_MALLOC(df, 3*cm->n_ec, cs_real_t);
   memset(df, 0, 3*cm->n_ec*sizeof(cs_real_t));
@@ -958,6 +1016,7 @@ _define_cm_tetra_ref(double            a,
   BFT_FREE(df);
 
   /* Compute dual cell volume */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
@@ -977,6 +1036,7 @@ _define_cm_tetra_ref(double            a,
   }  /* Loop on cell faces */
 
   /* Reset diam */
+
   double  dbuf[10];
   short int  vtag[4];
   int  size = cm->n_vc*(cm->n_vc+1)/2;
@@ -998,9 +1058,11 @@ _define_cm_tetra_ref(double            a,
   for (short int f = 0; f < cm->n_fc; ++f) {
 
     /* Reset vtag */
+
     for (short int v = 0; v < cm->n_vc; v++) vtag[v] = -1;
 
     /* Tag face vertices */
+
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const int  eshft = 2*cm->f2e_ids[i];
@@ -1104,7 +1166,6 @@ _dump_quad_res(FILE                     *out,
 
 
   } /* Non polynomial function */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1155,6 +1216,7 @@ _test_cdofb_source(FILE                     *out,
   cs_real_t *const  c_st3 = st3 + dim*cm->n_fc;
 
   /* Evaluate the performance */
+
   cs_timer_t  t0, t1, t2, t3, t4;
   cs_timer_counter_t  tc0, tc1, tc2, tc3;
   CS_TIMER_COUNTER_INIT(tc0);
@@ -1165,6 +1227,7 @@ _test_cdofb_source(FILE                     *out,
   if (ftype == CONSTANT) { /* definition by value */
 
     /* Constant value equal to 1 */
+
     cs_real_t  ones[9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
     cs_xdef_t  *st =
       cs_xdef_volume_create(CS_XDEF_BY_VALUE, dim, 0,  /* z_id */
@@ -1172,9 +1235,11 @@ _test_cdofb_source(FILE                     *out,
                             ones);
 
     /* Loop on runs to evaluate the performance of each quadrature */
+
     for (int r = 0; r < n_runs; r++) {
 
       /* Reset cell values */
+
       memset(c_st0, 0, dim*sizeof(cs_real_t));
 
       switch (dim) {
@@ -1200,7 +1265,7 @@ _test_cdofb_source(FILE                     *out,
 
       cs_timer_counter_add_diff(&(tc0), &t0, &t1);
 
-    }
+    } /* Loop on runs */
 
     fprintf(out, "\nCDO.FB; SOURCE_TERM %s; DIM = %d\n",
             _get_ftype_name(ftype), dim);
@@ -1233,9 +1298,11 @@ _test_cdofb_source(FILE                     *out,
                                            &ac);
 
     /* Loop on runs to evaluate the performance of each quadrature */
+
     for (int r = 0; r < n_runs; r++) {
 
       /* Reset */
+
       memset(c_st0, 0, dim*sizeof(cs_real_t));
       memset(c_st1, 0, dim*sizeof(cs_real_t));
       memset(c_st2, 0, dim*sizeof(cs_real_t));
@@ -1353,6 +1420,7 @@ _test_cdovb_source(FILE                     *out,
   cs_cdovb_scaleq_get(&csys, &cb);
 
   /* Evaluate the performance */
+
   cs_timer_t  t0, t1, t2, t3, t4;
   cs_timer_counter_t  tc0, tc1, tc2, tc3;
   CS_TIMER_COUNTER_INIT(tc0);  /* build system */
@@ -1363,6 +1431,7 @@ _test_cdovb_source(FILE                     *out,
   if (ftype == CONSTANT) { /* definition by value */
 
     /* Constant value equal to 1 */
+
     cs_real_t  ones[9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
     cs_xdef_t  *st =
       cs_xdef_volume_create(CS_XDEF_BY_VALUE, dim, 0,  /* z_id */
@@ -1371,9 +1440,11 @@ _test_cdovb_source(FILE                     *out,
                             ones);
 
     /* Loop on runs to evaluate the performance of each quadrature */
+
     for (int r = 0; r < n_runs; r++) {
 
       /* Reset */
+
       for (int v = 0; v < cm->n_vc; v++)
         st0[v] = st1[v] = st2[v] = st3[v] = 0.0;
 
@@ -1421,9 +1492,11 @@ _test_cdovb_source(FILE                     *out,
                                            &ac);
 
     /* Loop on runs to evaluate the performance of each quadrature */
+
     for (int r = 0; r < n_runs; r++) {
 
       /* Reset */
+
       for (int v = 0; v < cm->n_vc; v++)
         st0[v] = st1[v] = st2[v] = st3[v] = 0.0;
 
@@ -1494,7 +1567,6 @@ _test_cdovb_source(FILE                     *out,
   fprintf(out, " %10.6e %10.6e %10.6e %10.6e\n",
           tc0.nsec*1e-9, tc1.nsec*1e-9,
           tc2.nsec*1e-9, tc3.nsec*1e-9);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1537,12 +1609,14 @@ _test_quadratures_misc(FILE                     *out,
             *const c_st2 = st2 + dim*nf;
 
   /* Evaluate the performance */
+
   cs_timer_counter_t  tc0, tc1, tc2;
   CS_TIMER_COUNTER_INIT(tc0);
   CS_TIMER_COUNTER_INIT(tc1);
   CS_TIMER_COUNTER_INIT(tc2);
 
   /* Set up quadrature related variables */
+
   cs_quadrature_tetra_integral_t
     *tet_bary = cs_quadrature_get_tetra_integral(dim, CS_QUADRATURE_BARY),
     *tet_i_er = cs_quadrature_get_tetra_integral(dim, CS_QUADRATURE_HIGHER),
@@ -1553,9 +1627,11 @@ _test_quadratures_misc(FILE                     *out,
     *tri_i_st = cs_quadrature_get_tria_integral(dim, CS_QUADRATURE_HIGHEST);
 
   /* Loop on runs to evaluate the performance of each quadrature */
+
   for (int r = 0; r < n_runs; r++) {
 
     /* Reset values */
+
     memset(st0, 0, totdof*sizeof(cs_real_t));
     memset(st1, 0, totdof*sizeof(cs_real_t));
     memset(st2, 0, totdof*sizeof(cs_real_t));
@@ -1586,6 +1662,7 @@ _test_quadratures_misc(FILE                     *out,
   }
 
   /* Dump performance and evaluations */
+
   _dump_quad_res(out, "CELL&FACE", cm, dim, ftype,
                  st0, st1, st2);
 
@@ -1642,6 +1719,7 @@ _test_quadratures_xdef(FILE                     *out,
             *const c_st2 = st2 + dim*nf;
 
   /* Evaluate the performance */
+
   cs_timer_counter_t  tc0, tc1, tc2;
   CS_TIMER_COUNTER_INIT(tc0);
   CS_TIMER_COUNTER_INIT(tc1);
@@ -1671,9 +1749,11 @@ _test_quadratures_xdef(FILE                     *out,
   } /* Switch */
 
   /* Loop on runs to evaluate the performance of each quadrature */
+
   for (int r = 0; r < n_runs; r++) {
 
     /* Reset values */
+
     memset(st0, 0, totdof*sizeof(cs_real_t));
     memset(st1, 0, totdof*sizeof(cs_real_t));
     memset(st2, 0, totdof*sizeof(cs_real_t));
@@ -1754,6 +1834,7 @@ _test_cdofb_quadatures_avg(FILE                   *out,
                                     .free_input = NULL };
 
   /* Reset values */
+
   memset(st0, 0, totdof*sizeof(cs_real_t));
   memset(st1, 0, totdof*sizeof(cs_real_t));
   memset(st2, 0, totdof*sizeof(cs_real_t));
@@ -1778,6 +1859,7 @@ _test_cdofb_quadatures_avg(FILE                   *out,
   compute(cm, teval, (void*)(&ac), CS_QUADRATURE_HIGHEST, st2);
 
   /* Dump performance and evaluations */
+
   _dump_quad_res(out, "RED AVG", cm, dim, ftype,
                  st0, st1, st2);
 
@@ -1811,18 +1893,21 @@ _main_quadratures(FILE             *out,
   /* Check computation of source terms */
   {
     /* Scalar-valued functions for CDO-Fb schemes */
+
     _test_cdofb_source(out, cm, 1, CONSTANT, n_runs);
     _test_cdofb_source(out, cm, 1, LINEAR, n_runs);
     _test_cdofb_source(out, cm, 1, QUADRATIC, n_runs);
     _test_cdofb_source(out, cm, 1, NON_POLYNOMIAL, n_runs);
 
     /* Vector-valued functions for CDO-Fb schemes */
+
     _test_cdofb_source(out, cm, 3, CONSTANT, n_runs);
     _test_cdofb_source(out, cm, 3, LINEAR, n_runs);
     _test_cdofb_source(out, cm, 3, QUADRATIC, n_runs);
     _test_cdofb_source(out, cm, 3, NON_POLYNOMIAL, n_runs);
 
     /* Scalar-valued functions for CDO-Vb schemes */
+
     _test_cdovb_source(out, cm, 1, CONSTANT, n_runs);
     _test_cdovb_source(out, cm, 1, LINEAR, n_runs);
     _test_cdovb_source(out, cm, 1, QUADRATIC, n_runs);
@@ -1832,18 +1917,21 @@ _main_quadratures(FILE             *out,
   /* Check the evaluation of integrals */
   {
     /* Scalar-valued functions */
+
     _test_quadratures_misc(out, cm, 1, CONSTANT, n_runs);
     _test_quadratures_misc(out, cm, 1, LINEAR, n_runs);
     _test_quadratures_misc(out, cm, 1, QUADRATIC, n_runs);
     _test_quadratures_misc(out, cm, 1, NON_POLYNOMIAL, n_runs);
 
     /* Vector-valued functions */
+
     _test_quadratures_misc(out, cm, 3, CONSTANT, n_runs);
     _test_quadratures_misc(out, cm, 3, LINEAR, n_runs);
     _test_quadratures_misc(out, cm, 3, QUADRATIC, n_runs);
     _test_quadratures_misc(out, cm, 3, NON_POLYNOMIAL, n_runs);
 
     /* Tensor-valued functions */
+
     _test_quadratures_misc(out, cm, 9, CONSTANT, n_runs);
     _test_quadratures_misc(out, cm, 9, LINEAR, n_runs);
     _test_quadratures_misc(out, cm, 9, QUADRATIC, n_runs);
@@ -1853,41 +1941,43 @@ _main_quadratures(FILE             *out,
   /* Check the evaluation of integrals with cs_xdef_t structure */
   {
     /* Scalar-valued functions */
+
     _test_quadratures_xdef(out, cm, 1, CONSTANT, n_runs);
     _test_quadratures_xdef(out, cm, 1, LINEAR, n_runs);
     _test_quadratures_xdef(out, cm, 1, QUADRATIC, n_runs);
     _test_quadratures_xdef(out, cm, 1, NON_POLYNOMIAL, n_runs);
 
     /* Vector-valued functions */
+
     _test_quadratures_xdef(out, cm, 3, CONSTANT, n_runs);
     _test_quadratures_xdef(out, cm, 3, LINEAR, n_runs);
     _test_quadratures_xdef(out, cm, 3, QUADRATIC, n_runs);
     _test_quadratures_xdef(out, cm, 3, NON_POLYNOMIAL, n_runs);
 
     /* Tensor-valued functions */
+
     _test_quadratures_xdef(out, cm, 9, CONSTANT, n_runs);
     _test_quadratures_xdef(out, cm, 9, LINEAR, n_runs);
     _test_quadratures_xdef(out, cm, 9, QUADRATIC, n_runs);
     _test_quadratures_xdef(out, cm, 9, NON_POLYNOMIAL, n_runs);
-
   }
 
   /* Test average reduction */
   {
     /* Scalar-valued functions */
+
     _test_cdofb_quadatures_avg(out, cm, 1, CONSTANT);
     _test_cdofb_quadatures_avg(out, cm, 1, LINEAR);
     _test_cdofb_quadatures_avg(out, cm, 1, QUADRATIC);
     _test_cdofb_quadatures_avg(out, cm, 1, NON_POLYNOMIAL);
 
-
     /* Vector-valued functions */
+
     _test_cdofb_quadatures_avg(out, cm, 3, CONSTANT);
     _test_cdofb_quadatures_avg(out, cm, 3, LINEAR);
     _test_cdofb_quadatures_avg(out, cm, 3, QUADRATIC);
     _test_cdofb_quadatures_avg(out, cm, 3, NON_POLYNOMIAL);
   }
-
 }
 
 /*============================================================================
@@ -1933,6 +2023,7 @@ main(int    argc,
   /* quant, connect and time_step are declared as static */
 
   /* connectivity */
+
   BFT_MALLOC(connect, 1, cs_cdo_connect_t);
   connect->n_max_vbyc = 8;
   connect->n_max_ebyc = 12;
@@ -1944,12 +2035,14 @@ main(int    argc,
   /* Nothing to do for quant (work cellwise) */
 
   /* Time step */
+
   BFT_MALLOC(time_step, 1, cs_time_step_t);
   time_step->t_cur = 0.; /* Useful when analytic function are called */
 
   cs_source_term_init_sharing(quant, connect);
 
   /* Allocate local structures */
+
   cs_cell_mesh_t  *cm = cs_cell_mesh_create(connect);
 
   cs_cdofb_scaleq_init_sharing(quant, connect, time_step);
@@ -1964,6 +2057,7 @@ main(int    argc,
   _define_cm_hexa_unif(1., cm);
 
   /* Test quadrature rules */
+
   _main_quadratures(quadrature, cm);
 
   /* ========== */
@@ -1973,9 +2067,11 @@ main(int    argc,
   _define_cm_tetra_ref(1., cm);
 
   /* Test quadrature rules */
+
   _main_quadratures(quadrature, cm);
 
   /* Free memory */
+
   cs_cdofb_scaleq_finalize_sharing();
   cs_cdofb_vecteq_finalize_sharing();
   cs_cdovb_scaleq_finalize_sharing();

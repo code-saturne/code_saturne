@@ -246,6 +246,7 @@ cs_domain_free(cs_domain_t   **p_domain)
 
   /* cs_mesh_t and cs_mesh_quantities_t structure are not freed since they
      are only shared */
+
   domain->mesh = NULL;
   domain->mesh_quantities = NULL;
 
@@ -255,6 +256,7 @@ cs_domain_free(cs_domain_t   **p_domain)
     BFT_FREE(domain->cdo_context);
 
   /* Free arrays related to the domain boundary */
+
   cs_boundary_free(&(domain->boundaries));
   cs_boundary_free(&(domain->ale_boundaries));
 
@@ -489,7 +491,7 @@ cs_domain_cdo_log(const cs_domain_t   *domain)
                   "\n -msg- CDO/HHO module is not activated\n");
     break;
 
-  }
+  } /* Switch on CDO mode */
 }
 
 /*----------------------------------------------------------------------------*/
