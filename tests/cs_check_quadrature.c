@@ -547,10 +547,10 @@ _define_cm_hexa_unif(double            a,
 
   /* Set all quantities */
 
-  cm->flag = CS_FLAG_COMP_PV |CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
-    CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
-    CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE | CS_FLAG_COMP_SEF |
-    CS_FLAG_COMP_DIAM;
+  cm->flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFC | CS_FLAG_COMP_PEC |
+    CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+    CS_FLAG_COMP_EV  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ |
+    CS_FLAG_COMP_FE  | CS_FLAG_COMP_SEF | CS_FLAG_COMP_DIAM;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = ah;
   cm->vol_c = a*a*a;
 
@@ -789,10 +789,10 @@ _define_cm_tetra_ref(double            a,
 
   /* Set all quantities */
 
-  cm->flag = CS_FLAG_COMP_PV |CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
-    CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
-    CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE | CS_FLAG_COMP_SEF |
-    CS_FLAG_COMP_DIAM;
+  cm->flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFC | CS_FLAG_COMP_PEC |
+    CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+    CS_FLAG_COMP_EV  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ |
+    CS_FLAG_COMP_FE  | CS_FLAG_COMP_SEF | CS_FLAG_COMP_DIAM;
 
   cm->vol_c = cs_math_1ov6*a*a*a;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = 0.25*a;
