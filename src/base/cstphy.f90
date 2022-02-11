@@ -64,11 +64,11 @@ module cstphy
 
   !> Boltzmann constant (\f$J.K^{-1}\f$)
   double precision kboltz
-  parameter(kboltz = 1.38d-23)
+  parameter(kboltz = 1.380649d-23)
 
   !> Ideal gas constant (\f$J.mol^{-1}.K^{-1}\f$)
   double precision cs_physical_constants_r
-  parameter(cs_physical_constants_r = 8.31446d0)
+  parameter(cs_physical_constants_r = 8.31446261815324d0)
 
   !> Gravity
   real(c_double), pointer, save :: gx, gy, gz
