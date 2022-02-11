@@ -296,7 +296,7 @@ cs_selector_get_i_face_list(const char  *criteria,
 
   *n_i_faces = 0;
 
-  if (cs_glob_mesh->select_b_faces != NULL) {
+  if (cs_glob_mesh->select_i_faces != NULL) {
 
     c_id = fvm_selector_get_list(cs_glob_mesh->select_i_faces,
                                  criteria,
