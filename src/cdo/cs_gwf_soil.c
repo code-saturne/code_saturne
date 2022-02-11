@@ -1015,7 +1015,7 @@ cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t              *g_cell_pr,
       if (h_diff_coef > 0) /* If not = immiscible case */
         mc->diff_hg_array[c_id] += h_diff_coef * l_sat[c_id];
 
-      mc->time_hl_array[c_id] = h_time_coefb * g_cell_pr[c_id] * l_cap[c_id];
+      mc->time_hl_array[c_id] = -h_time_coefb * g_cell_pr[c_id] * l_cap[c_id];
 
       mc->diff_hl_array[c_id] = hmh * l_diff_coef * g_cell_pr[c_id];
 
