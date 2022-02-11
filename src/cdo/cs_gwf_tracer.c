@@ -721,56 +721,6 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free the context related to a standard tracer equation
- *         Rely on the generic prototype cs_gwf_tracer_free_context_t
- *
- * \param[in, out] tracer     pointer to a structure cs_gwf_tracer_t
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_free_default_tracer_context(cs_gwf_tracer_t   *tracer)
-{
-  cs_gwf_tracer_default_context_t  *tc = tracer->context;
-
-  if (tc == NULL)
-    return;
-
-  BFT_FREE(tc->rho_kd);
-  BFT_FREE(tc->alpha_l);
-  BFT_FREE(tc->alpha_t);
-  BFT_FREE(tc->wmd);
-  BFT_FREE(tc->reaction_rate);
-
-  /* Sorption phenomena */
-
-  if (tracer->model & CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS ||
-      tracer->model & CS_GWF_TRACER_SORPTION_EK_5_PARAMETERS) {
-
-    BFT_FREE(tc->k0_plus);
-    BFT_FREE(tc->k0_minus);
-    BFT_FREE(tc->conc_site2);
-
-  }
-
-  /* Precipitation phenomena */
-
-  if (tracer->model & CS_GWF_TRACER_PRECIPITATION) {
-
-    BFT_FREE(tc->conc_w_star);
-    BFT_FREE(tc->conc_precip);
-    BFT_FREE(tc->conc_satura);
-
-  }
-
-  BFT_FREE(tc);
-  tracer->context = NULL;
-
-  /* All fields are freed thanks to another mechanism */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add quantities related to the precipitation model
  *
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
@@ -1058,6 +1008,58 @@ _integrate_tracer(const cs_cdo_connect_t                  *connect,
     cs_parall_sum(1, CS_REAL_TYPE, &int_value);
 
   return int_value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free the context related to a standard tracer equation
+ *         Rely on the generic prototype cs_gwf_tracer_free_context_t
+ *
+ * \param[in, out] tracer     pointer to a structure cs_gwf_tracer_t
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_free_default_tracer_context(cs_gwf_tracer_t   *tracer)
+{
+  cs_gwf_tracer_default_context_t  *tc = tracer->context;
+
+  if (tc == NULL)
+    return;
+
+  BFT_FREE(tc->rho_bulk);
+  BFT_FREE(tc->kd0);
+  BFT_FREE(tc->rho_kd);
+  BFT_FREE(tc->alpha_l);
+  BFT_FREE(tc->alpha_t);
+  BFT_FREE(tc->wmd);
+  BFT_FREE(tc->reaction_rate);
+
+  /* Sorption phenomena */
+
+  if (tracer->model & CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS ||
+      tracer->model & CS_GWF_TRACER_SORPTION_EK_5_PARAMETERS) {
+
+    BFT_FREE(tc->k0_plus);
+    BFT_FREE(tc->k0_minus);
+    BFT_FREE(tc->conc_site2);
+
+  }
+
+  /* Precipitation phenomena */
+
+  if (tracer->model & CS_GWF_TRACER_PRECIPITATION) {
+
+    BFT_FREE(tc->conc_w_star);
+    BFT_FREE(tc->conc_precip);
+    BFT_FREE(tc->conc_satura);
+
+  }
+
+  BFT_FREE(tc);
+  tracer->context = NULL;
+
+  /* All fields are freed thanks to another mechanism */
 }
 
 /*----------------------------------------------------------------------------*/

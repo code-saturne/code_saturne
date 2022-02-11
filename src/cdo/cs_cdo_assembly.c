@@ -651,12 +651,12 @@ _init_assembly_struct(int                   ddim,
                       cs_cdo_assembly_t   **p_asb)
 {
   cs_cdo_assembly_t  *asb = *p_asb;
-  bool  update_only = true, reallocate = false;
+  bool  create = false, reallocate = false;
 
   if (asb == NULL) {
 
     BFT_MALLOC(asb, 1, cs_cdo_assembly_t);
-    update_only = false;
+    create = true;
 
     /* Diagonal and extra-diagonal max. number of entries */
 
@@ -685,35 +685,7 @@ _init_assembly_struct(int                   ddim,
   asb->l_row_shift = 0;
   asb->l_col_shift = 0;
 
-  if (update_only && reallocate) {
-
-    cs_cdo_assembly_row_t  *row = asb->row;
-    assert(row != NULL);
-
-    /* Re-allocate the row structure given the new sizes */
-
-
-    if (asb->ddim < 2) {
-
-      BFT_REALLOC(row->col_g_id, asb->n_cw_dofs, cs_gnum_t);
-      BFT_REALLOC(row->col_idx, asb->n_cw_dofs, int);
-      assert(row->expval == NULL);
-
-    }
-    else {
-
-      /* Temporary (until the global matrix is not defined by block) */
-
-      int _size = asb->n_cw_dofs * asb->ddim;
-
-      BFT_REALLOC(row->col_g_id, _size, cs_gnum_t);
-      BFT_REALLOC(row->col_idx, _size, int);
-      BFT_REALLOC(row->expval, asb->ddim * _size, cs_real_t);
-
-    }
-
-  }
-  else {
+  if (create) {
 
     /* Allocate the row structure used in the assembly process */
 
@@ -740,7 +712,38 @@ _init_assembly_struct(int                   ddim,
 
     }
 
-  } /* Creation */
+  }
+  else { /* Update only */
+
+    if (reallocate) {
+
+      cs_cdo_assembly_row_t  *row = asb->row;
+      assert(row != NULL);
+
+      /* Re-allocate the row structure given the new sizes */
+
+      if (asb->ddim < 2) {
+
+        BFT_REALLOC(row->col_g_id, asb->n_cw_dofs, cs_gnum_t);
+        BFT_REALLOC(row->col_idx, asb->n_cw_dofs, int);
+        assert(row->expval == NULL);
+
+      }
+      else {
+
+        /* Temporary (until the global matrix is not defined by block) */
+
+        int _size = asb->n_cw_dofs * asb->ddim;
+
+        BFT_REALLOC(row->col_g_id, _size, cs_gnum_t);
+        BFT_REALLOC(row->col_idx, _size, int);
+        BFT_REALLOC(row->expval, asb->ddim * _size, cs_real_t);
+
+      }
+
+    } /* reallocate = true */
+
+  } /* update = true */
 
   /* Return the pointer */
 
@@ -756,7 +759,7 @@ _init_assembly_struct(int                   ddim,
 /*----------------------------------------------------------------------------*/
 
 static void
-_free_equation_assembler_struct(cs_cdo_assembly_t  **p_asb)
+_free_assembly_struct(cs_cdo_assembly_t  **p_asb)
 {
   if (*p_asb == NULL)
     return;
@@ -765,6 +768,7 @@ _free_equation_assembler_struct(cs_cdo_assembly_t  **p_asb)
 
   if (asb->ddim > 1)
     BFT_FREE(asb->row->expval);
+
   BFT_FREE(asb->row->col_g_id);
   BFT_FREE(asb->row->col_idx);
   BFT_FREE(asb->row);
@@ -852,17 +856,9 @@ cs_cdo_assembly_finalize(void)
 {
   /* Free shared buffers for the assembly process */
 
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-#pragma omp parallel
-  {
-    int  t_id = omp_get_thread_num();
-    cs_cdo_assembly_t  *asb = cs_cdo_assembly[t_id];
-    _free_equation_assembler_struct(&asb);
-  }
-#else
-  cs_cdo_assembly_t  *asb = cs_cdo_assembly[0];
-  _free_equation_assembler_struct(&asb);
-#endif
+  for (int t_id = 0; t_id < cs_glob_n_threads; t_id++)
+    _free_assembly_struct(&(cs_cdo_assembly[t_id]));
+
   BFT_FREE(cs_cdo_assembly);
 }
 
