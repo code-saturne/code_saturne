@@ -164,6 +164,10 @@ static char _no_exclude_diag_error_str[]
 
 #endif
 
+/* Tuning parameters */
+
+cs_lnum_t _base_assembler_thr_min = 128;
+
 /*============================================================================
  * Private function definitions
 - *============================================================================*/
@@ -1442,24 +1446,23 @@ _create_coeff_csr(void)
  * threading behavior should be consistent with SpMW in NUMA cases.
  *
  * parameters:
- *   matrix           <-> pointer to matrix structure
+ *   ms     <-> pointer to matrix structure
+ *   b_size <-> associated block size
+ *   val    <-- value
  *----------------------------------------------------------------------------*/
 
 static void
-_zero_coeffs_csr(cs_matrix_t  *matrix)
+_zero_coeffs_csr(const cs_matrix_struct_csr_t  *ms,
+                 const cs_lnum_t                eb_size[],
+                 cs_real_t                      val[])
 {
-  cs_matrix_coeff_csr_t  *mc = matrix->coeffs;
-
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
-
   const cs_lnum_t  n_rows = ms->n_rows;
-  const cs_lnum_t *eb_size = matrix->eb_size;
 
   if (eb_size[0] == 1) {
 #   pragma omp parallel for  if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
       const cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t  *m_row = mc->_val + ms->row_index[ii];
+      cs_real_t  *m_row = val + ms->row_index[ii];
       for (cs_lnum_t jj = 0; jj < n_cols; jj++)
         m_row[jj] = 0.0;
     }
@@ -1468,7 +1471,7 @@ _zero_coeffs_csr(cs_matrix_t  *matrix)
 #   pragma omp parallel for  if(n_rows*eb_size[0] > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
       const cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
-      cs_real_t  *m_row = mc->_val + ms->row_index[ii]*eb_size[3];
+      cs_real_t  *m_row = val + ms->row_index[ii]*eb_size[3];
       for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
         for (cs_lnum_t kk = 0; kk < eb_size[3]; kk++)
           m_row[jj*eb_size[3] + kk] = 0.0;
@@ -1654,7 +1657,7 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
   /* Initialize coefficients to zero if assembly is incremental */
 
   if (ms->direct_assembly == false || (n_edges > 0 && xa == NULL))
-    _zero_coeffs_csr(matrix);
+    _zero_coeffs_csr(ms, matrix->eb_size, mc->_val);
 
   /* Copy diagonal values */
 
@@ -1865,7 +1868,7 @@ _set_coeffs_csr_from_msr(cs_matrix_t       *matrix,
   }
 
   else
-    _zero_coeffs_csr(matrix);
+    _zero_coeffs_csr(ms, matrix->eb_size, mc->_val);
 
   /* Now free transferred arrays */
 
@@ -2045,11 +2048,16 @@ _csr_assembler_values_add(void             *matrix_p,
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
+  bool sub_threads = (n*stride > _base_assembler_thr_min) ? true : false;
+#if defined(_OPENMP)
+  if (omp_in_parallel()) sub_threads = false;
+#endif
+
   if (stride == 1) {
 
     /* Copy instead of test for OpenMP to avoid outlining for small sets */
 
-    if (n*stride <= CS_THR_MIN) {
+    if (sub_threads == false) {
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         if (row_id[ii] < 0)
           continue;
@@ -2061,12 +2069,13 @@ _csr_assembler_values_add(void             *matrix_p,
     }
 
     else {
-#     pragma omp parallel for  if(n*stride > CS_THR_MIN)
+#     pragma omp parallel for
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         if (row_id[ii] < 0)
           continue;
         else {
           cs_lnum_t r_id = row_id[ii];
+#         pragma omp atomic
           mc->_val[ms->row_index[r_id] + col_idx[ii]] += vals[ii];
         }
       }
@@ -2077,7 +2086,7 @@ _csr_assembler_values_add(void             *matrix_p,
 
     /* Copy instead of test for OpenMP to avoid outlining for small sets */
 
-    if (n*stride <= CS_THR_MIN) {
+    if (sub_threads == false) {
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         if (row_id[ii] < 0)
           continue;
@@ -2091,7 +2100,7 @@ _csr_assembler_values_add(void             *matrix_p,
     }
 
     else {
-#     pragma omp parallel for  if(n*stride > CS_THR_MIN)
+#     pragma omp parallel for
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         if (row_id[ii] < 0)
           continue;
@@ -2099,6 +2108,7 @@ _csr_assembler_values_add(void             *matrix_p,
           cs_lnum_t r_id = row_id[ii];
           cs_lnum_t displ = (ms->row_index[r_id] + col_idx[ii])*stride;
           for (cs_lnum_t jj = 0; jj < stride; jj++)
+#           pragma omp atomic
             mc->_val[displ + jj] += vals[ii*stride + jj];
         }
       }
@@ -2960,28 +2970,31 @@ _msr_assembler_values_add(void             *matrix_p,
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
+  bool sub_threads = (n*stride > _base_assembler_thr_min) ? true : false;
+#if defined(_OPENMP)
+  if (omp_in_parallel()) sub_threads = false;
+#endif
+
   if (stride == 1) {
 
     /* Copy instead of test for OpenMP to avoid outlining for small sets */
 
-    if (n*stride <= CS_THR_MIN) {
+    if (sub_threads == false) {
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         cs_lnum_t r_id = row_id[ii];
         if (r_id < 0)
           continue;
         if (col_idx[ii] < 0) {
-#         pragma omp atomic
           mc->_d_val[r_id] += vals[ii];
         }
         else {
-#         pragma omp atomic
           mc->_x_val[ms->row_index[r_id] + col_idx[ii]] += vals[ii];
         }
       }
     }
 
     else {
-#     pragma omp parallel for  if(n*stride > CS_THR_MIN)
+#     pragma omp parallel for
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         cs_lnum_t r_id = row_id[ii];
         if (r_id < 0)
@@ -3002,7 +3015,7 @@ _msr_assembler_values_add(void             *matrix_p,
 
     /* Copy instead of test for OpenMP to avoid outlining for small sets */
 
-    if (n*stride <= CS_THR_MIN) {
+    if (sub_threads == false) {
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         cs_lnum_t r_id = row_id[ii];
         if (r_id < 0)
@@ -3020,18 +3033,20 @@ _msr_assembler_values_add(void             *matrix_p,
     }
 
     else {
-#     pragma omp parallel for  if(n*stride > CS_THR_MIN)
+#     pragma omp parallel for
       for (cs_lnum_t ii = 0; ii < n; ii++) {
         cs_lnum_t r_id = row_id[ii];
         if (r_id < 0)
           continue;
         if (col_idx[ii] < 0) {
           for (cs_lnum_t jj = 0; jj < stride; jj++)
+#           pragma omp atomic
             mc->_d_val[r_id*stride + jj] += vals[ii*stride + jj];
         }
         else {
           cs_lnum_t displ = (ms->row_index[r_id] + col_idx[ii])*stride;
           for (cs_lnum_t jj = 0; jj < stride; jj++)
+#           pragma omp atomic
             mc->_x_val[displ + jj] += vals[ii*stride + jj];
         }
       }
