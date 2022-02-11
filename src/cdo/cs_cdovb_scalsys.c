@@ -577,19 +577,24 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
   for (int i_eq = 0; i_eq < n_equations; i_eq++) {
 
-    cs_equation_core_t  *block_ii = blocks[i_eq*n_equations + i_eq];
+    for (int j_eq = 0; j_eq < n_equations; j_eq++) {
 
-    const cs_equation_param_t  *eqp = block_ii->param;;
-    cs_equation_builder_t  *eqb = block_ii->builder;
-    cs_cdovb_scaleq_t  *eqc = block_ii->scheme_context;
+      int ij = i_eq*n_equations + j_eq;
+      cs_equation_core_t  *block_ij = blocks[ij];
 
-    cs_cdovb_scaleq_setup(ts->t_cur + ts->dt[0],
-                          mesh, eqp, eqb, eqc->vtx_bc_flag);
+      const cs_equation_param_t  *eqp = block_ij->param;;
+      cs_equation_builder_t  *eqb = block_ij->builder;
+      cs_cdovb_scaleq_t  *eqc = block_ij->scheme_context;
 
-    if (eqb->init_step)
-      eqb->init_step = false;
+      cs_cdovb_scaleq_setup(ts->t_cur + ts->dt[0],
+                            mesh, eqp, eqb, eqc->vtx_bc_flag);
 
-  } /* Loop on equations (diagonal blocks) */
+      if (eqb->init_step)
+        eqb->init_step = false;
+
+    } /* Loop on column blocks */
+
+  } /* Loop on row blocks */
 
   /* Initialize the algebraic structures
    * -----------------------------------
