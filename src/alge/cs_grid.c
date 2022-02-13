@@ -175,10 +175,6 @@ struct _cs_grid_t {
 
   const cs_real_t  *da;             /* Diagonal (shared) */
   cs_real_t        *_da;            /* Diagonal (private) */
-  const cs_real_t  *da_conv;        /* Diagonal (shared) */
-  cs_real_t        *_da_conv;       /* Diagonal (private) */
-  const cs_real_t  *da_diff;        /* Diagonal (shared) */
-  cs_real_t        *_da_diff;       /* Diagonal (private) */
 
   const cs_real_t  *xa;             /* Extra-diagonal (shared) */
   cs_real_t        *_xa;            /* Extra-diagonal (private) */
@@ -399,10 +395,6 @@ _create_grid(void)
 
   g->da = NULL;
   g->_da = NULL;
-  g->da_conv = NULL;
-  g->_da_conv = NULL;
-  g->da_diff = NULL;
-  g->_da_diff = NULL;
   g->xa = NULL;
   g->_xa = NULL;
   g->xa_conv = NULL;
@@ -4168,7 +4160,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
                                      cs_grid_t        *coarse_grid,
                                      int               verbosity)
 {
-  cs_lnum_t ic, jc, ii, jj, kk, c_face, face_id;
+  cs_lnum_t ic, jc, ii, jj, c_face, face_id;
 
   cs_real_t dsigjg, dsxaij, agij;
 
@@ -4194,12 +4186,10 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   cs_real_t *c_xa0ij = coarse_grid->xa0ij;
   cs_real_t *c_da = coarse_grid->_da;
   cs_real_t *c_xa = coarse_grid->_xa;
-  cs_real_t *c_da_conv = coarse_grid->_da_conv;
   cs_real_t *c_xa_conv = coarse_grid->xa_conv;
-  cs_real_t *c_da_diff = coarse_grid->_da_diff;
   cs_real_t *c_xa_diff = coarse_grid->xa_diff;
 
-  cs_real_t *w1 = NULL, *w1_conv = NULL, *w1_diff = NULL;
+  cs_real_t *w1 = NULL;
 
   const cs_lnum_t *db_size = fine_grid->db_size;
 
@@ -4210,15 +4200,11 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   const cs_real_t *f_xa0 = fine_grid->xa0;
   const cs_real_t *f_da = fine_grid->da;
   const cs_real_t *f_xa = fine_grid->xa;
-  const cs_real_t *f_da_conv = fine_grid->da_conv;
   const cs_real_t *f_xa_conv = fine_grid->xa_conv;
   const cs_real_t *f_xa0_diff = fine_grid->xa0_diff;
-  const cs_real_t *f_da_diff = fine_grid->da_diff;
   const cs_real_t *f_xa_diff = fine_grid->xa_diff;
 
-  BFT_MALLOC(w1,      2*f_n_cells_ext*db_size[3], cs_real_t);
-  BFT_MALLOC(w1_conv, 2*f_n_cells_ext*db_size[3], cs_real_t);
-  BFT_MALLOC(w1_diff, 2*f_n_cells_ext*db_size[3], cs_real_t);
+  BFT_MALLOC(w1, 2*f_n_cells_ext*db_size[3], cs_real_t);
 
   assert(fine_grid->symmetric == false);
 
@@ -4283,30 +4269,9 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
   /* Initialize non differential fine grid term saved in w1 */
 
-  if (db_size[0] == 1) {
-#   pragma omp parallel for if(f_n_cells > CS_THR_MIN)
-    for (ii = 0; ii < f_n_cells; ii++) {
-      w1_conv[ii] = f_da_conv[ii];
-      w1_diff[ii] = f_da_diff[ii];
-      w1[ii]      = f_da[ii] - f_da_conv[ii] - f_da_diff[ii];
-    }
-  }
-  else {
-#   pragma omp parallel for private(jj, kk) if(f_n_cells > CS_THR_MIN)
-    for (ii = 0; ii < f_n_cells; ii++) {
-      for (jj = 0; jj < db_size[0]; jj++) {
-        for (kk = 0; kk < db_size[0]; kk++) {
-          w1_conv[ii*db_size[3] + db_size[2]*jj + kk]
-            = f_da_conv[ii*db_size[3] + db_size[2]*jj + kk];
-          w1_diff[ii*db_size[3] + db_size[2]*jj + kk]
-            = f_da_diff[ii*db_size[3] + db_size[2]*jj + kk];
-          w1[ii*db_size[3] + db_size[2]*jj + kk]
-            = f_da[ii*db_size[3] + db_size[2]*jj + kk]
-              - f_da_conv[ii*db_size[3] + db_size[2]*jj + kk]
-              - f_da_diff[ii*db_size[3] + db_size[2]*jj + kk];
-        }
-      }
-    }
+# pragma omp parallel for if(f_n_cells > CS_THR_MIN)
+  for (ii = 0; ii < f_n_cells; ii++) {
+    w1[ii] = f_da[ii];
   }
 
 # pragma omp parallel for if(f_n_cells_ext - f_n_cells > CS_THR_MIN)
@@ -4333,20 +4298,8 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
         f_xa_conv_0 = -0;
         f_xa_conv_1 = f_xa[2*face_id+1] - f_xa_diff_s;
       }
-      if (db_size[0] == 1) {
-        w1_conv[ii] += f_xa_conv_0;
-        w1_conv[jj] += f_xa_conv_1;
-        w1_diff[ii] += f_xa_diff_s;
-        w1_diff[jj] += f_xa_diff_s;
-      }
-      else {
-        for (kk = 0; kk < db_size[0]; kk++) {
-          w1_conv[ii*db_size[3] + db_size[2]*kk + kk] += f_xa_conv_0;
-          w1_conv[jj*db_size[3] + db_size[2]*kk + kk] += f_xa_conv_1;
-          w1_diff[ii*db_size[3] + db_size[2]*kk + kk] += f_xa_diff_s;
-          w1_diff[jj*db_size[3] + db_size[2]*kk + kk] += f_xa_diff_s;
-        }
-      }
+      w1[ii] += f_xa_conv_0 + f_xa_diff_s;
+      w1[jj] += f_xa_conv_1 + f_xa_diff_s;
       if (c_coarse_face[face_id] > 0 ) {
         c_face = c_coarse_face[face_id] -1;
         c_xa_conv[2*c_face]    += f_xa_conv_0;
@@ -4366,20 +4319,8 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     for (face_id = 0; face_id < f_n_faces; face_id++) {
       ii = f_face_cell[face_id][0];
       jj = f_face_cell[face_id][1];
-      if (db_size[0] == 1) {
-        w1_conv[ii] += f_xa_conv[2*face_id];
-        w1_conv[jj] += f_xa_conv[2*face_id +1];
-        w1_diff[ii] += f_xa_diff[face_id];
-        w1_diff[jj] += f_xa_diff[face_id];
-      }
-      else {
-        for (kk = 0; kk < db_size[0]; kk++) {
-          w1_conv[ii*db_size[3] + db_size[2]*kk + kk] += f_xa_conv[2*face_id];
-          w1_conv[jj*db_size[3] + db_size[2]*kk + kk] += f_xa_conv[2*face_id +1];
-          w1_diff[ii*db_size[3] + db_size[2]*kk + kk] += f_xa_diff[face_id];
-          w1_diff[jj*db_size[3] + db_size[2]*kk + kk] += f_xa_diff[face_id];
-        }
-      }
+      w1[ii] += f_xa_conv[2*face_id]    + f_xa_diff[face_id];
+      w1[jj] += f_xa_conv[2*face_id +1] + f_xa_diff[face_id];
       if (c_coarse_face[face_id] > 0 ) {
         c_face = c_coarse_face[face_id] -1;
         c_xa_conv[2*c_face]    += f_xa_conv[2*face_id];
@@ -4397,9 +4338,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
 # pragma omp parallel for if(c_n_cells_ext > CS_THR_MIN)
   for (ic = 0; ic < c_n_cells_ext*db_size[3]; ic++) {
-    c_da[ic]      = 0.;
-    c_da_conv[ic] = 0.;
-    c_da_diff[ic] = 0.;
+    c_da[ic] = 0.;
   }
 
   /* Extradiagonal terms */
@@ -4463,34 +4402,16 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
 
   /* Diagonal term */
 
-  if (db_size[0] == 1) {
-    for (ii = 0; ii < f_n_cells; ii++) {
-      ic = c_coarse_row[ii];
-      c_da_conv[ic] += w1_conv[ii];
-      c_da_diff[ic] += w1_diff[ii];
-    }
-  }
-  else {
-    for (ii = 0; ii < f_n_cells; ii++) {
-      ic = c_coarse_row[ii];
-      for (jj = 0; jj < db_size[0]; jj++) {
-        for (kk = 0; kk < db_size[0]; kk++) {
-          c_da_conv[ic*db_size[3] + db_size[2]*jj + kk]
-            += w1_conv[ii*db_size[3] + db_size[2]*jj + kk];
-          c_da_diff[ic*db_size[3] + db_size[2]*jj + kk]
-            += w1_diff[ii*db_size[3] + db_size[2]*jj + kk];
-        }
-      }
-    }
+  for (ii = 0; ii < f_n_cells; ii++) {
+    ic = c_coarse_row[ii];
+    c_da[ic] += w1[ii];
   }
 
   for (c_face = 0; c_face < c_n_faces; c_face++) {
     ic = c_face_cell[c_face][0];
     jc = c_face_cell[c_face][1];
-    c_da_conv[ic] -= c_xa_conv[2*c_face];
-    c_da_conv[jc] -= c_xa_conv[2*c_face +1];
-    c_da_diff[ic] -= c_xa_diff[c_face];
-    c_da_diff[jc] -= c_xa_diff[c_face];
+    c_da[ic] -= c_xa_conv[2*c_face]    + c_xa_diff[c_face];
+    c_da[jc] -= c_xa_conv[2*c_face +1] + c_xa_diff[c_face];
   }
 
   /* Convection/diffusion matrix */
@@ -4500,29 +4421,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     c_xa[2*c_face +1] = c_xa_conv[2*c_face +1] + c_xa_diff[c_face];
   }
 
-  if (db_size[0] == 1) {
-    for (ii = 0; ii < f_n_cells; ii++) {
-      ic = c_coarse_row[ii];
-      c_da[ic] += w1[ii];
-    }
-  }
-  else {
-    for (ii = 0; ii < f_n_cells; ii++) {
-      ic = c_coarse_row[ii];
-      for (jj = 0; jj < db_size[0]; jj++) {
-        for (kk = 0; kk < db_size[0]; kk++)
-          c_da[ic*db_size[3] + db_size[2]*jj + kk]
-            += w1[ii*db_size[3] + db_size[2]*jj + kk];
-      }
-    }
-  }
-
-  for (ic = 0; ic < c_n_cells_ext; ic++)
-    c_da[ic] += c_da_conv[ic] + c_da_diff[ic];
-
   BFT_FREE(w1);
-  BFT_FREE(w1_conv);
-  BFT_FREE(w1_diff);
 
   /* Optional verification */
 
@@ -5047,8 +4946,7 @@ _prolong_row_int(const cs_grid_t  *c,
  *   cell_vol       <-- Cell volume (size: n_cells_ext)
  *   face_normal    <-- Internal face normals (size: 3.n_faces)
  *   a              <-- Associated matrix
- *   da_conv        <-- Associated matrix diagonal (convection)
- *   da_diff        <-- Associated matrix diagonal (diffusion)
+ *   conv_diff      <-- Convection-diffusion mode
  *
  * returns:
  *   base grid structure
@@ -5063,8 +4961,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
                            const cs_real_t       *cell_vol,
                            const cs_real_t       *face_normal,
                            const cs_matrix_t     *a,
-                           const cs_real_t       *da_conv,
-                           const cs_real_t       *da_diff)
+                           bool                   conv_diff)
 {
   cs_grid_t *g = NULL;
 
@@ -5073,7 +4970,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   g = _create_grid();
 
   g->level = 0;
-  g->conv_diff = false;
+  g->conv_diff = conv_diff;
   g->symmetric = cs_matrix_is_symmetric(a);
 
   if (db_size != NULL) {
@@ -5123,14 +5020,6 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   if (cs_matrix_is_mapped_from_native(a)) {
     g->da = cs_matrix_get_diagonal(a);
     g->xa= cs_matrix_get_extra_diagonal(a);
-  }
-
-  if (da_conv != NULL || da_diff != NULL) {
-    g->conv_diff = true;
-    g->da_conv = da_conv;
-    g->da_diff = da_diff;
-    g->xa_conv = NULL;
-    g->xa_diff = NULL;
   }
 
   if (g->face_cell != NULL) {
@@ -5347,8 +5236,6 @@ cs_grid_free_quantities(cs_grid_t  *g)
   BFT_FREE(g->_cell_vol);
   BFT_FREE(g->_face_normal);
 
-  BFT_FREE(g->_da_conv);
-  BFT_FREE(g->_da_diff);
   BFT_FREE(g->xa_conv);
   BFT_FREE(g->xa_diff);
   BFT_FREE(g->_xa0);
@@ -5746,10 +5633,6 @@ cs_grid_coarsen(const cs_grid_t  *f,
     c->face_normal = c->_face_normal;
 
     if (conv_diff) {
-      BFT_MALLOC(c->_da_conv, c->n_cols_ext * c->db_size[3], cs_real_t);
-      c->da_conv = c->_da_conv;
-      BFT_MALLOC(c->_da_diff, c->n_cols_ext * c->db_size[3], cs_real_t);
-      c->da_diff = c->_da_diff;
       BFT_MALLOC(c->xa_conv, c->n_faces*2, cs_real_t);
       BFT_MALLOC(c->xa_diff, c->n_faces, cs_real_t);
     }

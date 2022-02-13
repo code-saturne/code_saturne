@@ -125,29 +125,6 @@ cs_matrix_wrapper_scalar(int               iconvp,
                          cs_real_t         xa[]);
 
 /*----------------------------------------------------------------------------
- * Wrapper to cs_matrix_scalar for convection/diffusion multigrid
- *----------------------------------------------------------------------------*/
-
-void
-cs_matrix_wrapper_scalar_conv_diff(int               iconvp,
-                                   int               idiffp,
-                                   int               ndircp,
-                                   double            thetap,
-                                   int               imucpp,
-                                   const cs_real_t   coefbp[],
-                                   const cs_real_t   cofbfp[],
-                                   const cs_real_t   rovsdt[],
-                                   const cs_real_t   i_massflux[],
-                                   const cs_real_t   b_massflux[],
-                                   const cs_real_t   i_visc[],
-                                   const cs_real_t   b_visc[],
-                                   const cs_real_t   xcpp[],
-                                   cs_real_t         da[],
-                                   cs_real_t         xa[],
-                                   cs_real_t         da_conv[],
-                                   cs_real_t         da_diff[]);
-
-/*----------------------------------------------------------------------------
  * Wrapper to cs_matrix_vector (or its counterpart for
  * symmetric matrices)
  *----------------------------------------------------------------------------*/

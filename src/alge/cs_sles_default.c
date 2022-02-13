@@ -594,8 +594,7 @@ cs_sles_default_get_verbosity(int          f_id,
  *                                         or NULL
  * \param[in]       da                     diagonal values (NULL if zero)
  * \param[in]       xa                     extradiagonal values (NULL if zero)
- * \param[in]       da_conv                diagonal values (NULL if zero)
- * \param[in]       da_diff                diagonal values (NULL if zero)
+ * \param[in]       conv_diff              convection-diffusion mode
  */
 /*----------------------------------------------------------------------------*/
 
@@ -606,8 +605,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                const cs_lnum_t     *extra_diag_block_size,
                                const cs_real_t     *da,
                                const cs_real_t     *xa,
-                               const cs_real_t     *da_conv,
-                               const cs_real_t     *da_diff)
+                               bool                 conv_diff)
 {
   cs_matrix_t *a = NULL;
 
@@ -674,7 +672,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
   int verbosity = cs_sles_get_verbosity(sc);
 
   cs_multigrid_t  *mg = cs_sles_get_context(sc);
-  cs_multigrid_setup_conv_diff(mg, name, a, da_conv, da_diff, verbosity);
+  cs_multigrid_setup_conv_diff(mg, name, a, conv_diff, verbosity);
 }
 
 /*----------------------------------------------------------------------------*/

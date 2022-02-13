@@ -121,8 +121,7 @@ cs_sles_default_finalize(void);
  *   extra_diag_block_size  block sizes for extra diagonal, or NULL
  *   da                     diagonal values (NULL if zero)
  *   xa                     extradiagonal values (NULL if zero)
- *   da_conv                diagonal values (NULL if zero)
- *   da_diff                diagonal values (NULL if zero)
+ *   conv_diff              convection-diffusion mode
  */
 /*----------------------------------------------------------------------------*/
 
@@ -133,8 +132,7 @@ cs_sles_setup_native_conv_diff(int                  f_id,
                                const cs_lnum_t     *extra_diag_block_size,
                                const cs_real_t     *da,
                                const cs_real_t     *xa,
-                               const cs_real_t     *da_conv,
-                               const cs_real_t     *da_diff);
+                               bool                 conv_diff);
 
 /*----------------------------------------------------------------------------
  * Call sparse linear equation solver using native matrix arrays.

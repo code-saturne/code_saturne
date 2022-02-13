@@ -264,8 +264,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   int coupling_id = -1;
 
   cs_real_t *dam, *xam, *smbini;
-  cs_real_t *dam_conv = NULL;
-  cs_real_t *dam_diff = NULL;
 
   cs_real_t *w1 = NULL;
 
@@ -298,10 +296,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /* Allocate temporary arrays */
 
   BFT_MALLOC(dam, n_cells_ext, cs_real_t);
-  if (conv_diff_mg) {
-    BFT_MALLOC(dam_conv, n_cells_ext, cs_real_t);
-    BFT_MALLOC(dam_diff, n_cells_ext, cs_real_t);
-  }
   BFT_MALLOC(smbini, n_cells_ext, cs_real_t);
 
   cs_real_t *adxk = NULL, *adxkm1 = NULL, *dpvarm1 = NULL, *rhs0 = NULL;
@@ -344,43 +338,22 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    * 1.  Building of the "simplified" matrix
    *==========================================================================*/
 
-  if (conv_diff_mg) {
-    cs_matrix_wrapper_scalar_conv_diff(iconvp,
-                                       idiffp,
-                                       ndircp,
-                                       thetap,
-                                       imucpp,
-                                       coefbp,
-                                       cofbfp,
-                                       rovsdt,
-                                       i_massflux,
-                                       b_massflux,
-                                       i_viscm,
-                                       b_viscm,
-                                       xcpp,
-                                       dam,
-                                       xam,
-                                       dam_conv,
-                                       dam_diff);
-  }
-  else {
-    cs_matrix_wrapper_scalar(iconvp,
-                             idiffp,
-                             ndircp,
-                             isym,
-                             thetap,
-                             imucpp,
-                             coefbp,
-                             cofbfp,
-                             rovsdt,
-                             i_massflux,
-                             b_massflux,
-                             i_viscm,
-                             b_viscm,
-                             xcpp,
-                             dam,
-                             xam);
-  }
+  cs_matrix_wrapper_scalar(iconvp,
+                           idiffp,
+                           ndircp,
+                           isym,
+                           thetap,
+                           imucpp,
+                           coefbp,
+                           cofbfp,
+                           rovsdt,
+                           i_massflux,
+                           b_massflux,
+                           i_viscm,
+                           b_viscm,
+                           xcpp,
+                           dam,
+                           xam);
 
   /* For steady computations, the diagonal is relaxed */
   if (idtvar < 0) {
@@ -628,8 +601,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                      eb_size,
                                      dam,
                                      xam,
-                                     dam_conv,
-                                     dam_diff);
+                                     true);
 
     cs_sles_solve_native(f_id,
                          var_name,
@@ -1018,10 +990,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /*  Free memory */
   BFT_FREE(dam);
   BFT_FREE(xam);
-  if (conv_diff_mg) {
-    BFT_FREE(dam_conv);
-    BFT_FREE(dam_diff);
-  }
 
   BFT_FREE(smbini);
   if (iswdyp >= 1) {
