@@ -1165,6 +1165,7 @@ _scalar_gradient_clipping(cs_halo_type_t         halo_type,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-- structure associated with internal coupling, or NULL
+ *   w_stride       <-- stride for weighting coefficient
  *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   f_ext          <-- exterior force generating pressure
@@ -1180,6 +1181,7 @@ static void
 _initialize_scalar_gradient(const cs_mesh_t                *m,
                             const cs_mesh_quantities_t     *fvq,
                             const cs_internal_coupling_t   *cpl,
+                            int                             w_stride,
                             int                             hyd_p_flag,
                             cs_real_t                       inc,
                             const cs_real_3_t               f_ext[],
@@ -1272,11 +1274,32 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
           cs_lnum_t ii = i_face_cells[f_id][0];
           cs_lnum_t jj = i_face_cells[f_id][1];
 
-          cs_real_t ktpond = (c_weight == NULL) ?
-             weight[f_id] :              /* no cell weighting */
-             weight[f_id] * c_weight[ii] /* cell weighting active */
+          cs_real_t ktpond = weight[f_id]; /* no cell weighting */
+          /* if cell weighting is active */
+          if (w_stride == 1 && c_weight != NULL) {
+            ktpond = weight[f_id] * c_weight[ii]
                / (      weight[f_id] * c_weight[ii]
                  + (1.0-weight[f_id])* c_weight[jj]);
+          } else if (w_stride == 6 && c_weight != NULL) {
+
+            cs_real_6_t sum;
+            cs_real_6_t inv_sum;
+
+            cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+            for (cs_lnum_t kk = 0; kk < 6; kk++)
+              sum[kk] = weight[f_id]*_c_weight[ii][kk]
+                 +(1.0-weight[f_id])*_c_weight[jj][kk];
+
+            cs_math_sym_33_inv_cramer(sum, inv_sum);
+
+            ktpond = weight[f_id] / 3.0 *
+              (   inv_sum[0]*_c_weight[ii][0]
+                + inv_sum[1]*_c_weight[ii][1]
+                + inv_sum[2]*_c_weight[ii][2]
+                + 2.0*(inv_sum[3]*_c_weight[ii][3]
+                      +inv_sum[4]*_c_weight[ii][4]
+                      +inv_sum[5]*_c_weight[ii][5]));
+          }
 
           cs_real_2_t poro = {
             i_poro_duq_0[is_porous*f_id],
@@ -1382,11 +1405,32 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
           cs_lnum_t ii = i_face_cells[f_id][0];
           cs_lnum_t jj = i_face_cells[f_id][1];
 
-          cs_real_t ktpond = (c_weight == NULL) ?
-             weight[f_id] :              /* no cell weighting */
-             weight[f_id] * c_weight[ii] /* cell weighting active */
+          cs_real_t ktpond = weight[f_id]; /* no cell weighting */
+          /* if cell weighting is active */
+          if (w_stride == 1 && c_weight != NULL) {
+            ktpond = weight[f_id] * c_weight[ii]
                / (      weight[f_id] * c_weight[ii]
                  + (1.0-weight[f_id])* c_weight[jj]);
+          } else if (w_stride == 6 && c_weight != NULL) {
+
+            cs_real_6_t sum;
+            cs_real_6_t inv_sum;
+
+            cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+            for (cs_lnum_t kk = 0; kk < 6; kk++)
+              sum[kk] = weight[f_id]*_c_weight[ii][kk]
+                 +(1.0-weight[f_id])*_c_weight[jj][kk];
+
+            cs_math_sym_33_inv_cramer(sum, inv_sum);
+
+            ktpond = weight[f_id] / 3.0 *
+              (   inv_sum[0]*_c_weight[ii][0]
+                + inv_sum[1]*_c_weight[ii][1]
+                + inv_sum[2]*_c_weight[ii][2]
+                + 2.0*(inv_sum[3]*_c_weight[ii][3]
+                      +inv_sum[4]*_c_weight[ii][4]
+                      +inv_sum[5]*_c_weight[ii][5]));
+          }
 
           /*
              Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
@@ -1574,6 +1618,7 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
  *   m               <-- pointer to associated mesh structure
  *   fvq             <-- pointer to associated finite volume quantities
  *   cpl             <-- structure associated with internal coupling, or NULL
+ *   w_stride       <-- stride for weighting coefficient
  *   var_name        <-- variable name
  *   gradient_info   <-- pointer to performance logging structure, or NULL
  *   nswrgp          <-- number of sweeps for gradient reconstruction
@@ -1594,6 +1639,7 @@ static void
 _iterative_scalar_gradient(const cs_mesh_t                *m,
                            const cs_mesh_quantities_t     *fvq,
                            const cs_internal_coupling_t   *cpl,
+                           int                             w_stride,
                            const char                     *var_name,
                            cs_gradient_info_t             *gradient_info,
                            int                             nswrgp,
@@ -1737,11 +1783,32 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
             cs_lnum_t c_id1 = i_face_cells[f_id][0];
             cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-            cs_real_t ktpond = (c_weight == NULL) ?
-              weight[f_id] :                     // no cell weighting
-              weight[f_id]  * c_weight[c_id1] // cell weighting active
-                / (      weight[f_id]  * c_weight[c_id1]
-                  + (1.0-weight[f_id]) * c_weight[c_id2]);
+            cs_real_t ktpond = weight[f_id]; /* no cell weighting */
+            /* if cell weighting is active */
+            if (w_stride == 1 && c_weight != NULL) {
+              ktpond = weight[f_id] * c_weight[c_id1]
+                 / (      weight[f_id] * c_weight[c_id1]
+                   + (1.0-weight[f_id])* c_weight[c_id2]);
+            } else if (w_stride == 6 && c_weight != NULL) {
+
+              cs_real_6_t sum;
+              cs_real_6_t inv_sum;
+
+              cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+              for (cs_lnum_t ii = 0; ii < 6; ii++)
+                sum[ii] = weight[f_id]*_c_weight[c_id1][ii]
+                   +(1.0-weight[f_id])*_c_weight[c_id2][ii];
+
+              cs_math_sym_33_inv_cramer(sum, inv_sum);
+
+              ktpond = weight[f_id] / 3.0 *
+                (   inv_sum[0]*_c_weight[c_id1][0]
+                  + inv_sum[1]*_c_weight[c_id1][1]
+                  + inv_sum[2]*_c_weight[c_id1][2]
+                  + 2.0*(inv_sum[3]*_c_weight[c_id1][3]
+                        +inv_sum[4]*_c_weight[c_id1][4]
+                        +inv_sum[5]*_c_weight[c_id1][5]));
+            }
 
             cs_real_2_t poro = {
               i_poro_duq_0[is_porous*f_id],
@@ -1880,11 +1947,32 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                        + dofij[f_id][2] * (grad[c_id1][2]+grad[c_id2][2]));
             cs_real_t pfacj = pfaci;
 
-            cs_real_t ktpond = (c_weight == NULL) ?
-              weight[f_id] :                     // no cell weighting
-              weight[f_id]  * c_weight[c_id1] // cell weighting active
-                / (      weight[f_id]  * c_weight[c_id1]
-                  + (1.0-weight[f_id]) * c_weight[c_id2]);
+            cs_real_t ktpond = weight[f_id]; /* no cell weighting */
+            /* if cell weighting is active */
+            if (w_stride == 1 && c_weight != NULL) {
+              ktpond = weight[f_id] * c_weight[c_id1]
+                 / (      weight[f_id] * c_weight[c_id1]
+                   + (1.0-weight[f_id])* c_weight[c_id2]);
+            } else if (w_stride == 6 && c_weight != NULL) {
+
+              cs_real_6_t sum;
+              cs_real_6_t inv_sum;
+
+              cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+              for (cs_lnum_t ii = 0; ii < 6; ii++)
+                sum[ii] = weight[f_id]*_c_weight[c_id1][ii]
+                   +(1.0-weight[f_id])*_c_weight[c_id2][ii];
+
+              cs_math_sym_33_inv_cramer(sum, inv_sum);
+
+              ktpond = weight[f_id] / 3.0 *
+                (   inv_sum[0]*_c_weight[c_id1][0]
+                  + inv_sum[1]*_c_weight[c_id1][1]
+                  + inv_sum[2]*_c_weight[c_id1][2]
+                  + 2.0*(inv_sum[3]*_c_weight[c_id1][3]
+                        +inv_sum[4]*_c_weight[c_id1][4]
+                        +inv_sum[5]*_c_weight[c_id1][5]));
+            }
 
             pfaci += (1.0-ktpond) * (pvar[c_id2] - pvar[c_id1]);
             pfacj -=      ktpond  * (pvar[c_id2] - pvar[c_id1]);
@@ -2905,7 +2993,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-- structure associated with internal coupling, or NULL
- *   w_stride       <-- stride for weighting coefficient
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
@@ -3423,11 +3510,32 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
           cs_lnum_t c_id1 = i_face_cells[f_id][0];
           cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-          cs_real_t ktpond = (c_weight == NULL) ?
-             weight[f_id] :              /* no cell weighting */
-             weight[f_id] * c_weight[c_id1] /* cell weighting active */
+          cs_real_t ktpond = weight[f_id]; /* no cell weighting */
+          /* if cell weighting is active */
+          if (w_stride == 1 && c_weight != NULL) {
+            ktpond = weight[f_id] * c_weight[c_id1]
                / (      weight[f_id] * c_weight[c_id1]
                  + (1.0-weight[f_id])* c_weight[c_id2]);
+          } else if (w_stride == 6 && c_weight != NULL) {
+
+            cs_real_6_t sum;
+            cs_real_6_t inv_sum;
+
+            cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+            for (cs_lnum_t ii = 0; ii < 6; ii++)
+              sum[ii] = weight[f_id]*_c_weight[c_id1][ii]
+                 +(1.0-weight[f_id])*_c_weight[c_id2][ii];
+
+            cs_math_sym_33_inv_cramer(sum, inv_sum);
+
+            ktpond = weight[f_id] / 3.0 *
+              (   inv_sum[0]*_c_weight[c_id1][0]
+                + inv_sum[1]*_c_weight[c_id1][1]
+                + inv_sum[2]*_c_weight[c_id1][2]
+                + 2.0*(inv_sum[3]*_c_weight[c_id1][3]
+                      +inv_sum[4]*_c_weight[c_id1][4]
+                      +inv_sum[5]*_c_weight[c_id1][5]));
+          }
 
           /*
              Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
@@ -3899,6 +4007,7 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-- structure associated with internal coupling, or NULL
+ *   w_stride       <-- stride for weighting coefficient
  *   halo_type      <-- halo type (extended or not)
  *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   inc            <-- if 0, solve on increment; 1 otherwise
@@ -3915,6 +4024,7 @@ static void
 _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
                               const cs_mesh_quantities_t     *fvq,
                               const cs_internal_coupling_t   *cpl,
+                              int                             w_stride,
                               int                             hyd_p_flag,
                               cs_real_t                       inc,
                               const cs_real_3_t               f_ext[],
@@ -4102,11 +4212,32 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
           cs_lnum_t ii = i_face_cells[f_id][0];
           cs_lnum_t jj = i_face_cells[f_id][1];
 
-          cs_real_t ktpond = (c_weight == NULL) ?
-             weight[f_id] :              /* no cell weighting */
-             weight[f_id] * c_weight[ii] /* cell weighting active */
+          cs_real_t ktpond = weight[f_id]; /* no cell weighting */
+          /* if cell weighting is active */
+          if (w_stride == 1 && c_weight != NULL) {
+            ktpond = weight[f_id] * c_weight[ii]
                / (      weight[f_id] * c_weight[ii]
                  + (1.0-weight[f_id])* c_weight[jj]);
+          } else if (w_stride == 6 && c_weight != NULL) {
+
+            cs_real_6_t sum;
+            cs_real_6_t inv_sum;
+
+            cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+            for (cs_lnum_t kk = 0; kk < 6; kk++)
+              sum[kk] = weight[f_id]*_c_weight[ii][kk]
+                 +(1.0-weight[f_id])*_c_weight[jj][kk];
+
+            cs_math_sym_33_inv_cramer(sum, inv_sum);
+
+            ktpond = weight[f_id] / 3.0 *
+              (   inv_sum[0]*_c_weight[ii][0]
+                + inv_sum[1]*_c_weight[ii][1]
+                + inv_sum[2]*_c_weight[ii][2]
+                + 2.0*(inv_sum[3]*_c_weight[ii][3]
+                      +inv_sum[4]*_c_weight[ii][4]
+                      +inv_sum[5]*_c_weight[ii][5]));
+          }
 
           cs_real_2_t poro = {
             i_poro_duq_0[is_porous*f_id],
@@ -7346,6 +7477,7 @@ _gradient_scalar(const char                    *var_name,
     _initialize_scalar_gradient(mesh,
                                 fvq,
                                 cpl,
+                                w_stride,
                                 hyd_p_flag,
                                 inc,
                                 (const cs_real_3_t *)f_ext,
@@ -7358,6 +7490,7 @@ _gradient_scalar(const char                    *var_name,
     _iterative_scalar_gradient(mesh,
                                fvq,
                                cpl,
+                               w_stride,
                                var_name,
                                gradient_info,
                                n_r_sweeps,
@@ -7467,6 +7600,7 @@ _gradient_scalar(const char                    *var_name,
     _fv_vtx_based_scalar_gradient(mesh,
                                   fvq,
                                   cpl,
+                                  w_stride,
                                   hyd_p_flag,
                                   inc,
                                   (const cs_real_3_t *)f_ext,
