@@ -105,11 +105,9 @@
 #include "fvm/fvm_nodal_priv.h"
 #include "fvm/fvm_writer_priv.h"
 
-#include "base/cs_block_dist.h"
 #include "base/cs_file.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
-#include "base/cs_part_to_block.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1044,11 +1042,7 @@ _export_vertex_coords(const fvm_nodal_t        *mesh,
 
     for (i = 0; i < n_vertices; i++) {
       vtkIdType ii = g_vtx_num[i]-1;
-#if CS_PV_VERSION < 51
-      g_vtx_id->SetTupleValue(i, &ii);
-#else
       g_vtx_id->SetTypedTuple(i, &ii);
-#endif
     }
 
     vtk_mesh->GetPointData()->SetGlobalIds(g_vtx_id);

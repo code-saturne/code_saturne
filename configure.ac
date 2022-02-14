@@ -800,6 +800,7 @@ CS_AC_TEST_EOS
 CS_AC_TEST_COOLPROP
 CS_AC_TEST_ZLIB
 CS_AC_TEST_MEDCOUPLING
+CS_AC_TEST_CATALYST2
 CS_AC_TEST_CATALYST
 CS_AC_TEST_MELISSA
 CS_AC_TEST_MUMPS
@@ -1193,6 +1194,8 @@ if test "x$enable_shared" = "xyes" ; then
     # Test for different plugins here
     if test x$cs_have_plugin_medcoupling = xyes ; then
       cs_have_plugins=yes
+    elif test x$cs_have_plugin_catalyst2 = xyes ; then
+      cs_have_plugins=yes
     elif test x$cs_have_plugin_catalyst = xyes ; then
       cs_have_plugins=yes
     elif test x$cs_have_ccm = xyes ; then
@@ -1327,6 +1330,10 @@ if test x$cs_have_medcoupling = xyes ; then
   echo "   MEDLoader support: "$cs_have_medcoupling_loader""
   echo "   ParaMEDMEM support: "$cs_have_paramedmem""
   echo "   MEDCoupling as plugin: "$cs_have_plugin_medcoupling""
+fi
+echo " Catalyst-2 (co-processing) support: "$cs_have_catalyst2""
+if (test x$cs_have_catalyst2 = xyes) ; then
+  echo "   Catalyst-2 as plugin: "$cs_have_plugin_catalyst2""
 fi
 echo " Catalyst (ParaView co-processing) support: "$cs_have_catalyst""
 if (test x$cs_have_catalyst = xyes) ; then

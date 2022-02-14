@@ -77,6 +77,10 @@
 #include "fvm/fvm_to_catalyst.h"
 #endif
 
+#if defined(HAVE_CATALYST2) && !defined(HAVE_PLUGIN_CATALYST2)
+#include "fvm_to_catalyst2.h"
+#endif
+
 #if defined(HAVE_MELISSA) && !defined(HAVE_PLUGIN_MELISSA)
 #include "fvm/fvm_to_melissa.h"
 #endif
@@ -107,9 +111,9 @@ BEGIN_C_DECLS
 
 /* Number and status of defined formats */
 
-static const int _fvm_writer_n_formats = 10;
+static const int _fvm_writer_n_formats = 11;
 
-static fvm_writer_format_t _fvm_writer_format_list[10] = {
+static fvm_writer_format_t _fvm_writer_format_list[11] = {
 
   /* Built-in EnSight Gold writer */
   {
@@ -202,6 +206,53 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     nullptr,
     nullptr,
     nullptr
+#endif
+  },
+
+  /* Catalyst2 writer */
+  {
+    "Catalyst2",
+    "ParaView 5.11 +",
+    (  FVM_WRITER_FORMAT_USE_EXTERNAL
+     | FVM_WRITER_FORMAT_HAS_POLYGON
+     | FVM_WRITER_FORMAT_HAS_POLYHEDRON
+     | FVM_WRITER_FORMAT_NO_SEPARATE_MESHES),
+    FVM_WRITER_TRANSIENT_CONNECT,
+#if !defined(HAVE_CATALYST2) || defined(HAVE_PLUGIN_CATALYST2)
+    0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
+    NULL,                              /* dynamic library */
+#if defined(HAVE_CATALYST2)
+    "fvm_catalyst2",                   /* dynamic library name */
+    "fvm_to_catalyst2_",               /* dynamic library prefix */
+#else
+    NULL,
+    NULL,
+#endif
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+#else
+    0,                                 /* dynamic library count */
+    0,                                 /* dynamic library flags */
+    NULL,                              /* dynamic library */
+    NULL,                              /* dynamic library name */
+    NULL,                              /* dynamic library prefix */
+    fvm_to_catalyst2_n_version_strings, /* n_version_strings_func */
+    fvm_to_catalyst2_version_string,   /* version_string_func */
+    fvm_to_catalyst2_init_writer,      /* init_func */
+    fvm_to_catalyst2_finalize_writer,  /* finalize_func */
+    fvm_to_catalyst2_set_mesh_time,    /* set_mesh_time_func */
+    NULL,                              /* needs_tesselation_func */
+    fvm_to_catalyst2_export_nodal,     /* export_nodal_func */
+    fvm_to_catalyst2_export_field,     /* export_field_func */
+    fvm_to_catalyst2_flush             /* flush_func */
 #endif
   },
 
@@ -877,8 +928,21 @@ fvm_writer_get_format_id(const char  *format_name)
     strcpy(closest_name, "MED");
   else if (strncmp(tmp_name, "cgns", 4) == 0)
     strcpy(closest_name, "CGNS");
-  else if (strncmp(tmp_name, "catalyst", 8) == 0)
+  else if (strncmp(tmp_name, "catalyst", 8) == 0) {
     strcpy(closest_name, "Catalyst");
+
+    /* If both Catalyst2 is available, prefer if to the legacy implmentation
+       by default, and extend the use of the CATALYST_IMPLEMENTATION_NAME
+       environment logic to allow reverting to the legacy implementation. */
+#   if defined(HAVE_CATALYST2)
+    strcpy(closest_name, "Catalyst2");
+    const char *s = getenv("CATALYST_IMPLEMENTATION_NAME");
+    if (s != nullptr) {
+      if (strcmp(s, "legacy") == 0)
+        strcpy(closest_name, "Catalyst");
+    }
+#   endif
+  }
   else if (strncmp(tmp_name, "ccm", 3) == 0)
     strcpy(closest_name, "CCM-IO");
   else if (strncmp(tmp_name, "melissa", 7) == 0)

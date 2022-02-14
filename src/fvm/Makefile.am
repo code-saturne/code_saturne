@@ -79,6 +79,7 @@ fvm_to_ccm.h \
 fvm_to_cgns.h \
 fvm_to_med.h \
 fvm_to_catalyst.h \
+fvm_to_catalyst2.h \
 fvm_to_ensight.h \
 fvm_to_ensight_case.h \
 fvm_to_histogram.h \
@@ -186,6 +187,41 @@ local_libraries_add += fvm_medcoupling.${SHARED_LIB_EXT}
 else
 
 libfvm_filters_a_LIBADD += libfvm_medcoupling_a-fvm_to_medcoupling.$(OBJEXT)
+
+endif
+
+endif
+
+# Catalyst2 (plugin or linked)
+
+if HAVE_CATALYST2
+
+libfvm_catalyst2_a_CPPFLAGS = \
+-I$(top_srcdir)/src -I$(top_builddir)/src \
+$(CATALYST2_CPPFLAGS) $(MPI_CPPFLAGS)
+libfvm_catalyst2_a_CXXFLAGS = \
+$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
+$(CATALYST2_CXXFLAGS) $(CXXFLAGS_SHARED)
+libfvm_catalyst2_a_SOURCES = \
+fvm_to_catalyst2.cxx
+noinst_LIBRARIES += libfvm_catalyst2.a
+
+if HAVE_PLUGIN_CATALYST2
+
+LDADD_CATALYST2 = \
+$(CATALYST2_LDFLAGS) $(CATALYST2_LIBS)
+
+fvm_catalyst2.${SHARED_LIB_EXT}: libfvm_catalyst2.a
+	@echo "Building fvm_catalyst plugin..."
+	rm -f $@ ; \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CXX} -o $@ --whole-archive-start libfvm_catalyst2.a --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${LDADD_CATALYST2} $(AM_LIBS)
+
+local_libraries_add += fvm_catalyst2.${SHARED_LIB_EXT}
+
+else
+
+libfvm_filters_a_LIBADD += \
+libfvm_catalyst2_a-fvm_to_catalyst2.$(OBJEXT)
 
 endif
 

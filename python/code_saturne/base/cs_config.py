@@ -128,7 +128,8 @@ class config:
                         'ple',                          # PLE
                         'eos', 'coolprop',              # Equations of state
                         'ccm', 'cgns', 'med', 'hdf5',   # Mesh filters
-                        'catalyst', 'melissa',          # co-processing libraries
+                        'catalyst2', 'catalyst',        # co-processing libaries,
+                        'melissa',                      # in-situ statistics library
                         'medcoupling',                  # MED coupling
                         'mumps', 'cudss',               # Sparse direct solver
                         'amgx', 'hypre', 'petsc',       # Linear algebra
@@ -262,6 +263,7 @@ class config:
         self.libs['hdf5'] = prerequisite('HDF5', 'hdf5', config_dict)
         self.libs['med']  = prerequisite('MED', 'med', config_dict)
 
+        self.libs['catalyst2'] = prerequisite('CATALYST2', 'catalyst2', config_dict)
         self.libs['catalyst'] = prerequisite('CATALYST', 'catalyst', config_dict)
         self.libs['melissa']  = prerequisite('MELISSA', 'melissa', config_dict)
         self.libs['medcoupling'] = prerequisite('MEDCOUPLING',

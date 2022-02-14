@@ -1,17 +1,17 @@
-#ifndef __FVM_TO_CATALYST_H__
-#define __FVM_TO_CATALYST_H__
+#ifndef __FVM_TO_CATALYST2_H__
+#define __FVM_TO_CATALYST2_H__
 
-#if defined(HAVE_CATALYST)
+#if defined(HAVE_CATALYST2)
 
 /*============================================================================
  * Write a nodal representation associated with a mesh and associated
- * variables to Catalyst objects
+ * variables to Catalyst2 objects
  *============================================================================*/
 
 /*
-  This file is part of code_saturne, a general-purpose CFD tool.
+  This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2022 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -36,9 +36,9 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "fvm/fvm_defs.h"
-#include "fvm/fvm_nodal.h"
-#include "fvm/fvm_writer.h"
+#include "fvm_defs.h"
+#include "fvm_nodal.h"
+#include "fvm_writer.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -57,7 +57,49 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Initialize FVM to Catalyst object writer.
+ * Returns number of library version strings associated with Catalyst-2.
+ *
+ * The first associated version string should corresponds to Catalyst,
+ * The second to the Conduit library.
+ *
+ * returns:
+ *   number of library version strings associated with Catalyst output.
+ *----------------------------------------------------------------------------*/
+
+int
+fvm_to_catalyst2_n_version_strings(void);
+
+/*----------------------------------------------------------------------------
+ * Returns a library version string associated with the Catalyst-2 output.
+ *
+ * The first associated version string should correspond to Catalyst info,
+ * The second to conduit info.
+ *
+ * In certain cases, when using dynamic libraries, fvm may be compiled
+ * with one library version, and linked with another. If both run-time
+ * and compile-time version information is available, this function
+ * will return the run-time version string by default.
+ *
+ * Setting the compile_time flag to 1, the compile-time version string
+ * will be returned if this is different from the run-time version.
+ * If the version is the same, or only one of the 2 version strings are
+ * available, a NULL character string will be returned with this flag set.
+ *
+ * parameters:
+ *   string_index <-- index in format's version string list (0 to n-1)
+ *   compile_time <-- 0 by default, 1 if we want the compile-time version
+ *                    string, if different from the run-time version.
+ *
+ * returns:
+ *   pointer to constant string containing the library's version.
+ *----------------------------------------------------------------------------*/
+
+const char *
+fvm_to_catalyst2_version_string(int string_index,
+                                int compile_time_version);
+
+/*----------------------------------------------------------------------------
+ * Initialize FVM to Catalyst-2 object writer.
  *
  * Options are:
  *   private_comm        use private MPI communicator (default: false)
@@ -72,43 +114,40 @@ BEGIN_C_DECLS
  *   comm           <-- associated MPI communicator.
  *
  * returns:
- *   pointer to opaque Catalyst writer structure.
+ *   pointer to opaque writer structure.
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
-
 void *
-fvm_to_catalyst_init_writer(const char             *name,
-                            const char             *path,
-                            const char             *options,
-                            fvm_writer_time_dep_t   time_dependency,
-                            MPI_Comm                comm);
-
+fvm_to_catalyst2_init_writer(const char             *name,
+                             const char             *path,
+                             const char             *options,
+                             fvm_writer_time_dep_t   time_dependency,
+                             MPI_Comm                comm);
 #else
-
 void *
-fvm_to_catalyst_init_writer(const char             *name,
-                            const char             *path,
-                            const char             *options,
-                            fvm_writer_time_dep_t   time_dependency);
+fvm_to_catalyst2_init_writer(const char             *name,
+                             const char             *path,
+                             const char             *options,
+                             fvm_writer_time_dep_t   time_dependency);
 
 #endif
 
 /*----------------------------------------------------------------------------
- * Finalize FVM to Catalyst object writer.
+ * Finalize FVM to Catalyst-2 object writer.
  *
  * parameters:
- *   this_writer_p <-- pointer to opaque Catalyst writer structure.
+ *   this_writer_p <-- pointer to opaque writer structure.
  *
  * returns:
- *   null pointer.
+ *   NULL pointer
  *----------------------------------------------------------------------------*/
 
 void *
-fvm_to_catalyst_finalize_writer(void  *this_writer_p);
+fvm_to_catalyst2_finalize_writer(void  *this_writer_p);
 
 /*----------------------------------------------------------------------------
- * Associate new time step with a Catalyst geometry.
+ * Associate new time step with a Catalyst-2 geometry.
  *
  * parameters:
  *   this_writer_p <-- pointer to associated writer
@@ -117,12 +156,12 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p);
  *----------------------------------------------------------------------------*/
 
 void
-fvm_to_catalyst_set_mesh_time(void    *this_writer_p,
-                              int      time_step,
-                              double   time_value);
+fvm_to_catalyst2_set_mesh_time(void    *this_writer_p,
+                               int      time_step,
+                               double   time_value);
 
 /*----------------------------------------------------------------------------
- * Write nodal mesh to a a Catalyst object
+ * Write nodal mesh to a Catalyst-2 object
  *
  * parameters:
  *   this_writer_p <-- pointer to associated writer.
@@ -130,11 +169,11 @@ fvm_to_catalyst_set_mesh_time(void    *this_writer_p,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_to_catalyst_export_nodal(void               *this_writer_p,
-                             const fvm_nodal_t  *mesh);
+fvm_to_catalyst2_export_nodal(void               *this_writer_p,
+                              const fvm_nodal_t  *mesh);
 
 /*----------------------------------------------------------------------------
- * Write field associated with a nodal mesh to a Catalyst object.
+ * Write field associated with a nodal mesh to to a Catalyst-2 object.
  *
  * Assigning a negative value to the time step indicates a time-independent
  * field (in which case the time_value argument is unused).
@@ -159,18 +198,18 @@ fvm_to_catalyst_export_nodal(void               *this_writer_p,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_to_catalyst_export_field(void                  *this_writer_p,
-                             const fvm_nodal_t     *mesh,
-                             const char            *name,
-                             fvm_writer_var_loc_t   location,
-                             int                    dimension,
-                             cs_interlace_t         interlace,
-                             int                    n_parent_lists,
-                             const cs_lnum_t        parent_num_shift[],
-                             cs_datatype_t          datatype,
-                             int                    time_step,
-                             double                 time_value,
-                             const void      *const field_values[]);
+fvm_to_catalyst2_export_field(void                  *this_writer_p,
+                              const fvm_nodal_t     *mesh,
+                              const char            *name,
+                              fvm_writer_var_loc_t   location,
+                              int                    dimension,
+                              cs_interlace_t         interlace,
+                              int                    n_parent_lists,
+                              const cs_lnum_t        parent_num_shift[],
+                              cs_datatype_t          datatype,
+                              int                    time_step,
+                              double                 time_value,
+                              const void      *const field_values[]);
 
 /*----------------------------------------------------------------------------
  * Flush files associated with a given writer.
@@ -182,12 +221,12 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
  *----------------------------------------------------------------------------*/
 
 void
-fvm_to_catalyst_flush(void  *this_writer_p);
+fvm_to_catalyst2_flush(void  *this_writer_p);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* defined(HAVE_CATALYST) */
+#endif /* defined(HAVE_CATALYST2) */
 
-#endif /* __FVM_TO_CATALYST_H__ */
+#endif /* __FVM_TO_CATALYST2_H__ */
