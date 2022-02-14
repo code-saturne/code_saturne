@@ -952,8 +952,8 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t              *g_cell_pr,
-                                  cs_gwf_miscible_two_phase_t  *mc)
+cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t        *g_cell_pr,
+                                  cs_gwf_two_phase_t     *mc)
 {
   if (mc == NULL)
     return;
@@ -974,7 +974,7 @@ cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t              *g_cell_pr,
 
     cs_gwf_soil_t  *soil = _soils[soil_id];
     assert(soil != NULL);
-    assert(soil->hydraulic_model == CS_GWF_MODEL_TWO_PHASE);
+    assert(soil->hydraulic_model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE);
     assert(soil->abs_permeability_dim == 1);
 
     const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
@@ -1023,6 +1023,84 @@ cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t              *g_cell_pr,
 
   } /* Loop on soils */
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update arrays associated to the definition of terms involved in the
+ *         immiscible two-phase flow model.
+ *         Case of an isotropic absolute permeability.
+ *
+ * \param[in]      g_cell_pr     pressure in the gaseous phase at cell centers
+ * \param[in, out] mc            pointer to the model context to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_iso_update_itpf_terms(const cs_real_t        *g_cell_pr,
+                                  cs_gwf_two_phase_t     *mc)
+{
+  if (mc == NULL)
+    return;
+
+  const double  mh_ov_rt =
+    mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+
+  /* In the immiscible case, mc->l_diffusivity_h should be set to 0 */
+
+  const cs_real_t  *l_sat = mc->l_saturation->val;
+  const cs_real_t  *l_cap = mc->l_capacity;
+  const cs_real_t  *krl =  mc->l_rel_permeability;
+  const cs_real_t  *krg =  mc->g_rel_permeability;
+
+  for (int soil_id = 0; soil_id < _n_soils; soil_id++) {
+
+    cs_gwf_soil_t  *soil = _soils[soil_id];
+    assert(soil != NULL);
+    assert(soil->hydraulic_model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE);
+    assert(soil->abs_permeability_dim == 1);
+
+    const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
+    assert(zone != NULL);
+
+    const double  k_abs = soil->abs_permeability[0][0];
+    const double  phi = soil->porosity;
+    const double  phi_rhol = phi * mc->l_mass_density;
+
+    const double  wl_diff_coef = mc->l_mass_density* k_abs/mc->l_viscosity;
+    const double  hg_diff_coef = k_abs/mc->g_viscosity;
+
+    /* Main loop on cells belonging to this soil */
+
+    for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+      const cs_lnum_t  c_id = zone->elt_ids[i];
+
+      const double  rhog = mh_ov_rt * g_cell_pr[c_id];
+      const double  sl = l_sat[c_id];
+      const double  sg = 1 - sl;
+      const double  dsl_dpc = l_cap[c_id];
+
+      /* Water conservation equation. Updates arrays linked to properties which
+         define computed terms */
+
+      mc->time_wg_array[c_id] = phi_rhol * dsl_dpc;
+      mc->time_wl_array[c_id] = -mc->time_wg_array[c_id];
+
+      mc->diff_wl_array[c_id] = wl_diff_coef * krl[c_id];
+
+      /* Hydrogen conservation equation. Updates arrays linked to properties
+         which define computed terms */
+
+      mc->time_hg_array[c_id] = phi * (mh_ov_rt*sg  - rhog*dsl_dpc);
+      mc->time_hl_array[c_id] = phi * rhog*dsl_dpc;
+
+      mc->diff_hg_array[c_id] = rhog * hg_diff_coef * krg[c_id];
+
+    } /* Loop on cells of the zone (= soil) */
+
+  } /* Loop on soils */
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

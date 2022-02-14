@@ -111,14 +111,34 @@ cs_gwf_destroy_all(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_two_phase_model(cs_real_t       l_mass_density,
-                           cs_real_t       l_viscosity,
-                           cs_real_t       g_viscosity,
-                           cs_real_t       l_diffusivity_h,
-                           cs_real_t       w_molar_mass,
-                           cs_real_t       h_molar_mass,
-                           cs_real_t       ref_temperature,
-                           cs_real_t       henry_constant);
+cs_gwf_set_miscible_two_phase_model(cs_real_t       l_mass_density,
+                                    cs_real_t       l_viscosity,
+                                    cs_real_t       g_viscosity,
+                                    cs_real_t       l_diffusivity_h,
+                                    cs_real_t       w_molar_mass,
+                                    cs_real_t       h_molar_mass,
+                                    cs_real_t       ref_temperature,
+                                    cs_real_t       henry_constant);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the parameters defining the immiscible two-phase flow model.
+ *         Use SI unit if not prescribed otherwise.
+ *
+ * \param[in] l_mass_density   mass density of the main liquid component
+ * \param[in] l_viscosity      viscosity in the liquid phase (Pa.s)
+ * \param[in] g_viscosity      viscosity in the gas phase (Pa.s)
+ * \param[in] h_molar_mass     molar mass of the main gas component
+ * \param[in] ref_temperature  reference temperature in Kelvin
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_set_immiscible_two_phase_model(cs_real_t       l_mass_density,
+                                      cs_real_t       l_viscosity,
+                                      cs_real_t       g_viscosity,
+                                      cs_real_t       h_molar_mass,
+                                      cs_real_t       ref_temperature);
 
 /*----------------------------------------------------------------------------*/
 /*!

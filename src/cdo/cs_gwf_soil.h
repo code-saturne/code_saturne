@@ -498,8 +498,23 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t              *g_cell_pr,
-                                  cs_gwf_miscible_two_phase_t  *mc);
+cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t       *g_cell_pr,
+                                  cs_gwf_two_phase_t    *mc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update arrays associated to the definition of terms involved in the
+ *         immiscible two-phase flow model.
+ *         Case of an isotropic absolute permeability.
+ *
+ * \param[in]      g_cell_pr     pressure in the gaseous phase at cell centers
+ * \param[in, out] mc            pointer to the model context to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_iso_update_itpf_terms(const cs_real_t       *g_cell_pr,
+                                  cs_gwf_two_phase_t    *mc);
 
 /*----------------------------------------------------------------------------*/
 

@@ -119,16 +119,29 @@ typedef enum {
   CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE,
 
   /*!
-   * \brief Two phase flow modelling (gaseous and liquid phases) in porous
-   *        media.
+   * \brief Miscible two phase flow modelling (gaseous and liquid phases) in
+   *        porous media.
    *
    * A Richards-like equation is considered in each phase to take into account
    * the mass conservation of water and one other component. The component can
    * be disolved in the liquid phase. No water vapour is taken into
-   * account. Please refer to \ref cs_gwf_miscible_two_phase_t for more details.
+   * account. Please refer to \ref cs_gwf_two_phase_t for more details.
    */
 
-  CS_GWF_MODEL_TWO_PHASE,
+  CS_GWF_MODEL_MISCIBLE_TWO_PHASE,
+
+  /*!
+   * \brief Immiscible two phase flow modelling (gaseous and liquid phases) in
+   *        porous media.
+   *
+   * A Richards-like equation is considered in each phase to take into account
+   * the mass conservation of water in the liquid phase and the conservation of
+   * the other component in the gaseous phase. The model context is shared with
+   * the miscible two-phase flow model. Please refer to \ref cs_gwf_two_phase_t
+   * for more details.
+   */
+
+  CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE,
 
   CS_GWF_N_MODEL_TYPES     /*!< Number of predefined models (not a model) */
 

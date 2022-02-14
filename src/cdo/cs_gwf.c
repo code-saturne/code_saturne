@@ -103,7 +103,8 @@ static const char
 cs_gwf_model_name[CS_GWF_N_MODEL_TYPES][CS_BASE_STRING_LEN] =
   { N_("Saturated single-phase model"),
     N_("Unsaturated single-phase model"),
-    N_("Two-phase model (capillary/gas pressure)")
+    N_("Miscible two-phase model (capillary/gas pressure)"),
+    N_("Immiscible two-phase model (capillary/gas pressure)")
   };
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -205,9 +206,10 @@ _get_l_adv_field(const cs_gwf_t   *gw)
     }
     break;
 
-  case CS_GWF_MODEL_TWO_PHASE:
+  case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
+  case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
     {
-      cs_gwf_miscible_two_phase_t  *mc = gw->model_context;
+      cs_gwf_two_phase_t  *mc = gw->model_context;
 
       if (mc->l_darcy != NULL)
         return mc->l_darcy->adv_field;
@@ -1175,7 +1177,8 @@ _uspf_extra_op(const cs_cdo_connect_t                *connect,
 }
 
 /* ==========================================================================
- * Functions related to the model of two phase flows (TPF)
+ * Functions related to the model of two phase flows (TPF) miscible or
+ * immiscible
  * ========================================================================== */
 
 /*----------------------------------------------------------------------------*/
@@ -1183,16 +1186,16 @@ _uspf_extra_op(const cs_cdo_connect_t                *connect,
  * \brief  Allocate and initialize the modelling context for the model of
  *         (unsaturated) miscible two-phase flows
  *
- * \return a pointer to a new allocated cs_gwf_miscible_two_phase_t structure
+ * \return a pointer to a new allocated cs_gwf_two_phase_t structure
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_gwf_miscible_two_phase_t *
-_mtpf_init_context(void)
+static cs_gwf_two_phase_t *
+_tpf_init_context(void)
 {
-  cs_gwf_miscible_two_phase_t  *mc = NULL;
+  cs_gwf_two_phase_t  *mc = NULL;
 
-  BFT_MALLOC(mc, 1, cs_gwf_miscible_two_phase_t);
+  BFT_MALLOC(mc, 1, cs_gwf_two_phase_t);
 
   /* Define the coupled system of equations */
   /* -------------------------------------- */
@@ -1330,7 +1333,7 @@ _mtpf_init_context(void)
   mc->w_molar_mass = 18e-3;
   mc->h_molar_mass = 3e-3;
   mc->ref_temperature = 280;    /* in Kelvin */
-  mc->henry_constant = 1e-20;   /* immiscible case */
+  mc->henry_constant = 1e-20;   /* nearly immiscible case */
 
   return mc;
 }
@@ -1345,14 +1348,14 @@ _mtpf_init_context(void)
 /*----------------------------------------------------------------------------*/
 
 static void
-_mtpf_free_context(cs_gwf_miscible_two_phase_t  **p_mc)
+_tpf_free_context(cs_gwf_two_phase_t  **p_mc)
 {
   if (p_mc == NULL)
     return;
   if (*p_mc == NULL)
     return;
 
-  cs_gwf_miscible_two_phase_t  *mc = *p_mc;
+  cs_gwf_two_phase_t  *mc = *p_mc;
 
   /* System of equations are freed elsewhere (just after having freed
      cs_equation_t structures) */
@@ -1387,7 +1390,7 @@ _mtpf_free_context(cs_gwf_miscible_two_phase_t  **p_mc)
 /*----------------------------------------------------------------------------*/
 
 static void
-_mtpf_log_context(cs_gwf_miscible_two_phase_t   *mc)
+_mtpf_log_context(cs_gwf_two_phase_t   *mc)
 {
   if (mc == NULL)
     return;
@@ -1413,8 +1416,37 @@ _mtpf_log_context(cs_gwf_miscible_two_phase_t   *mc)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Perform the initial setup step in the case of a miscible two-phase
- *         flows model in porous media
+ * \brief Log the setup related to the modelling context of immiscible
+ *        two-phase flows
+ *
+ * \param[in] mc   pointer to the model context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_itpf_log_context(cs_gwf_two_phase_t   *mc)
+{
+  if (mc == NULL)
+    return;
+
+  cs_gwf_darcy_flux_log(mc->l_darcy);
+  cs_gwf_darcy_flux_log(mc->g_darcy);
+
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | Water mass density: %5.3e, viscosity: %5.3e\n",
+                mc->l_mass_density, mc->l_viscosity);
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | Gas component viscosity: %5.3e, molar mass: %5.3e\n",
+                mc->g_viscosity, mc->h_molar_mass);
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | Reference temperature: %5.2f K\n",
+                mc->ref_temperature);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Perform the initial setup step in the case of a miscible or
+ *        immiscible two-phase flows model in porous media
  *
  * \param[in, out]  mc         pointer to the casted model context
  * \param[in, out]  perm_type  type of permeability to handle
@@ -1422,8 +1454,8 @@ _mtpf_log_context(cs_gwf_miscible_two_phase_t   *mc)
 /*----------------------------------------------------------------------------*/
 
 static void
-_mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc,
-                 cs_property_type_t              perm_type)
+_tpf_init_setup(cs_gwf_two_phase_t     *mc,
+                cs_property_type_t      perm_type)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw != NULL && mc != NULL);
@@ -1444,7 +1476,6 @@ _mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc,
 
   mc->diff_wl_pty = cs_property_add("diff_wl_pty", perm_type);
   mc->diff_hg_pty = cs_property_add("diff_hg_pty", perm_type);
-  mc->diff_hl_pty = cs_property_add("diff_hl_pty", perm_type);
 
   /* Associate the diffusion properties with the equation parameter structure
    * to define new terms in these equations */
@@ -1459,7 +1490,12 @@ _mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc,
 
   /* Cross-terms */
 
-  cs_equation_add_diffusion(mc->hl_eqp, mc->diff_hl_pty);
+  if (gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE) {
+
+    mc->diff_hl_pty = cs_property_add("diff_hl_pty", perm_type);
+    cs_equation_add_diffusion(mc->hl_eqp, mc->diff_hl_pty);
+
+  }
 
   /* Add the variable fields (Keep always the previous state) */
 
@@ -1517,8 +1553,8 @@ _mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Perform the last setup step in the case of a (miscible) two-phase
- *        flow model in porous media
+ * \brief Perform the last setup step in the case of a two-phase flow model in
+ *        porous media (miscible or immiscible case)
  *
  * \param[in]       connect    pointer to a cs_cdo_connect_t structure
  * \param[in]       quant      pointer to a cs_cdo_quantities_t structure
@@ -1527,9 +1563,9 @@ _mtpf_init_setup(cs_gwf_miscible_two_phase_t    *mc,
 /*----------------------------------------------------------------------------*/
 
 static void
-_mtpf_finalize_setup(const cs_cdo_connect_t          *connect,
-                     const cs_cdo_quantities_t       *quant,
-                     cs_gwf_miscible_two_phase_t     *mc)
+_tpf_finalize_setup(const cs_cdo_connect_t        *connect,
+                    const cs_cdo_quantities_t     *quant,
+                    cs_gwf_two_phase_t            *mc)
 {
   CS_UNUSED(quant);
 
@@ -1623,20 +1659,24 @@ _mtpf_finalize_setup(const cs_cdo_connect_t          *connect,
                            false,                /* not owner of the array */
                            NULL);                /* no index */
 
-  BFT_MALLOC(mc->diff_hl_array, n_cells, cs_real_t);
-  memset(mc->diff_hl_array, 0, csize);
+  if (gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE) {
 
-  cs_property_def_by_array(mc->diff_hl_pty,
-                           cs_flag_primal_cell,  /* where data are located */
-                           mc->diff_hl_array,
-                           false,                /* not owner of the array */
-                           NULL);                /* no index */
+    BFT_MALLOC(mc->diff_hl_array, n_cells, cs_real_t);
+    memset(mc->diff_hl_array, 0, csize);
+
+    cs_property_def_by_array(mc->diff_hl_pty,
+                             cs_flag_primal_cell,  /* where data are located */
+                             mc->diff_hl_array,
+                             false,                /* not owner of the array */
+                             NULL);                /* no index */
+
+  } /* miscible case */
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Perform the update step in the case of a miscible two-phase flow
- *         model in porous media
+ * \brief Perform the update step in the case of a two-phase flow model in
+ *        porous media (miscible or immiscible)
  *
  * \param[in]       mesh        pointer to a cs_mesh_t structure
  * \param[in]       connect     pointer to a cs_cdo_connect_t structure
@@ -1650,12 +1690,12 @@ _mtpf_finalize_setup(const cs_cdo_connect_t          *connect,
 /*----------------------------------------------------------------------------*/
 
 static cs_real_t
-_mtpf_updates(const cs_mesh_t                 *mesh,
-              const cs_cdo_connect_t          *connect,
-              const cs_cdo_quantities_t       *quant,
-              const cs_time_step_t            *ts,
-              bool                             cur2prev,
-              cs_gwf_miscible_two_phase_t     *mc)
+_tpf_updates(const cs_mesh_t             *mesh,
+             const cs_cdo_connect_t      *connect,
+             const cs_cdo_quantities_t   *quant,
+             const cs_time_step_t        *ts,
+             bool                         cur2prev,
+             cs_gwf_two_phase_t          *mc)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw != NULL && mc != NULL);
@@ -1729,7 +1769,10 @@ _mtpf_updates(const cs_mesh_t                 *mesh,
   switch (dim) {
 
   case 1: /* Isotropic case */
-    cs_gwf_soil_iso_update_mtpf_terms(g_cell_pressure, mc);
+    if (gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE)
+      cs_gwf_soil_iso_update_mtpf_terms(g_cell_pressure, mc);
+    else
+      cs_gwf_soil_iso_update_itpf_terms(g_cell_pressure, mc);
     break;
 
   default:
@@ -1749,7 +1792,7 @@ _mtpf_updates(const cs_mesh_t                 *mesh,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Predefined extra-operations for the groundwater flow module in case
- *         of (unsaturated) miscible two-phase flows in porous media
+ *         of miscible or immiscible two-phase flows in porous media
  *
  * \param[in]       connect   pointer to a cs_cdo_connect_t structure
  * \param[in]       cdoq      pointer to a cs_cdo_quantities_t structure
@@ -1758,9 +1801,9 @@ _mtpf_updates(const cs_mesh_t                 *mesh,
 /*----------------------------------------------------------------------------*/
 
 static void
-_mtpf_extra_op(const cs_cdo_connect_t                *connect,
-               const cs_cdo_quantities_t             *cdoq,
-               cs_gwf_unsaturated_single_phase_t     *mc)
+_tpf_extra_op(const cs_cdo_connect_t                *connect,
+              const cs_cdo_quantities_t             *cdoq,
+              cs_gwf_unsaturated_single_phase_t     *mc)
 {
   CS_UNUSED(connect);
   CS_UNUSED(cdoq);
@@ -1777,7 +1820,7 @@ _mtpf_extra_op(const cs_cdo_connect_t                *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the new (unsteady) state for the groundwater flows module.
- *         Case of (miscible) two-phase flows in porous media.
+ *         Case of (miscible or immiscible) two-phase flows in porous media.
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      time_step  pointer to a cs_time_step_t structure
@@ -1788,16 +1831,17 @@ _mtpf_extra_op(const cs_cdo_connect_t                *connect,
 /*----------------------------------------------------------------------------*/
 
 static void
-_mtpf_compute(const cs_mesh_t                   *mesh,
-              const cs_time_step_t              *time_step,
-              const cs_cdo_connect_t            *connect,
-              const cs_cdo_quantities_t         *cdoq,
-              cs_gwf_miscible_two_phase_t       *mc)
+_tpf_compute(const cs_mesh_t              *mesh,
+             const cs_time_step_t         *time_step,
+             const cs_cdo_connect_t       *connect,
+             const cs_cdo_quantities_t    *cdoq,
+             cs_gwf_two_phase_t           *mc)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
   assert(gw != NULL && mc != NULL);
-  assert(gw->model == CS_GWF_MODEL_TWO_PHASE);
+  assert(gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE ||
+         gw->model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE);
 
   cs_equation_t  *wl_eq = mc->wl_eq;
   cs_equation_t  *hg_eq = mc->hg_eq;
@@ -1805,8 +1849,6 @@ _mtpf_compute(const cs_mesh_t                   *mesh,
   assert(wl_eq != NULL && hg_eq != NULL);
   assert(cs_equation_get_type(wl_eq) == CS_EQUATION_TYPE_GROUNDWATER);
   assert(cs_equation_get_type(hg_eq) == CS_EQUATION_TYPE_GROUNDWATER);
-
-  /* TODO */
 
   bool cur2prev = true;
 
@@ -1925,9 +1967,10 @@ cs_gwf_activate(cs_gwf_model_type_t      model,
     gw->model_context = _uspf_init_context();
     break;
 
-  case CS_GWF_MODEL_TWO_PHASE:
+  case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
+  case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
     gw->post_flag |= CS_GWF_POST_LIQUID_SATURATION;
-    gw->model_context = _mtpf_init_context();
+    gw->model_context = _tpf_init_context();
     break;
 
   default:
@@ -1979,11 +2022,12 @@ cs_gwf_destroy_all(void)
     }
     break;
 
-  case CS_GWF_MODEL_TWO_PHASE:
+  case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
+  case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
     {
-      cs_gwf_miscible_two_phase_t  *mc = gw->model_context;
+      cs_gwf_two_phase_t  *mc = gw->model_context;
 
-      _mtpf_free_context(&(mc));
+      _tpf_free_context(&(mc));
     }
     break;
 
@@ -2075,23 +2119,24 @@ cs_gwf_log_setup(void)
 
   /* Main options */
 
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | Model: **%s**\n", cs_gwf_model_name[gw->model]);
+
   switch(gw->model) {
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * GWF | Model: **%s**\n", cs_gwf_model_name[gw->model]);
     _sspf_log_context(gw->model_context);
     break;
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * GWF | Model: **%s**\n", cs_gwf_model_name[gw->model]);
     _uspf_log_context(gw->model_context);
     break;
 
-  case CS_GWF_MODEL_TWO_PHASE:
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * GWF | Model: **%s**\n", cs_gwf_model_name[gw->model]);
+  case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
+    _itpf_log_context(gw->model_context);
+    break;
+
+  case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
     _mtpf_log_context(gw->model_context);
     break;
 
@@ -2127,24 +2172,24 @@ cs_gwf_log_setup(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_set_two_phase_model(cs_real_t       l_mass_density,
-                           cs_real_t       l_viscosity,
-                           cs_real_t       g_viscosity,
-                           cs_real_t       l_diffusivity_h,
-                           cs_real_t       w_molar_mass,
-                           cs_real_t       h_molar_mass,
-                           cs_real_t       ref_temperature,
-                           cs_real_t       henry_constant)
+cs_gwf_set_miscible_two_phase_model(cs_real_t       l_mass_density,
+                                    cs_real_t       l_viscosity,
+                                    cs_real_t       g_viscosity,
+                                    cs_real_t       l_diffusivity_h,
+                                    cs_real_t       w_molar_mass,
+                                    cs_real_t       h_molar_mass,
+                                    cs_real_t       ref_temperature,
+                                    cs_real_t       henry_constant)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
-  if (gw->model != CS_GWF_MODEL_TWO_PHASE)
+  if (gw->model != CS_GWF_MODEL_MISCIBLE_TWO_PHASE)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid model. One expects a two-phase flow model.\n",
               __func__);
 
-  cs_gwf_miscible_two_phase_t  *mc = gw->model_context;
+  cs_gwf_two_phase_t  *mc = gw->model_context;
 
   assert(mc != NULL);
   assert(l_mass_density > 0);
@@ -2162,6 +2207,54 @@ cs_gwf_set_two_phase_model(cs_real_t       l_mass_density,
   mc->h_molar_mass = h_molar_mass;
   mc->ref_temperature = ref_temperature;
   mc->henry_constant = henry_constant;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the parameters defining the immiscible two-phase flow model.
+ *         Use SI unit if not prescribed otherwise.
+ *
+ * \param[in] l_mass_density   mass density of the main liquid component
+ * \param[in] l_viscosity      viscosity in the liquid phase (Pa.s)
+ * \param[in] g_viscosity      viscosity in the gas phase (Pa.s)
+ * \param[in] h_molar_mass     molar mass of the main gas component
+ * \param[in] ref_temperature  reference temperature in Kelvin
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_set_immiscible_two_phase_model(cs_real_t       l_mass_density,
+                                      cs_real_t       l_viscosity,
+                                      cs_real_t       g_viscosity,
+                                      cs_real_t       h_molar_mass,
+                                      cs_real_t       ref_temperature)
+{
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+  if (gw->model != CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid model. One expects a two-phase flow model.\n",
+              __func__);
+
+  cs_gwf_two_phase_t  *mc = gw->model_context;
+
+  assert(mc != NULL);
+  assert(l_mass_density > 0);
+  assert(ref_temperature > 0);  /* In Kelvin */
+  assert(h_molar_mass > 0);
+  assert(l_viscosity > 0 && g_viscosity > 0);
+
+  /* Set the parameters */
+
+  mc->l_mass_density = l_mass_density;
+  mc->l_viscosity = l_viscosity;
+  mc->g_viscosity = g_viscosity;
+  mc->l_diffusivity_h = 0;      /* immiscible case */
+  mc->w_molar_mass = 0;         /* immiscible case */
+  mc->h_molar_mass = h_molar_mass;
+  mc->ref_temperature = ref_temperature;
+  mc->henry_constant = 0;       /* immiscible case */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2192,10 +2285,10 @@ cs_gwf_set_post_options(cs_flag_t       post_flag,
     if (adv != NULL)
       adv->status |= CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES;
 
-    if (gw->model == CS_GWF_MODEL_TWO_PHASE) {
+    if (gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE ||
+        gw->model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE) {
 
-      cs_gwf_miscible_two_phase_t  *mc =
-        (cs_gwf_miscible_two_phase_t *)gw->model_context;
+      cs_gwf_two_phase_t  *mc = (cs_gwf_two_phase_t *)gw->model_context;
 
       if (mc->g_darcy != NULL) {
         adv = mc->g_darcy->adv_field;
@@ -2481,8 +2574,9 @@ cs_gwf_init_setup(void)
     _uspf_init_setup(gw->model_context, perm_type);
     break;
 
-  case CS_GWF_MODEL_TWO_PHASE:
-    _mtpf_init_setup(gw->model_context, perm_type);
+  case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
+  case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
+    _tpf_init_setup(gw->model_context, perm_type);
     break;
 
   default:
@@ -2529,8 +2623,9 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
     _uspf_finalize_setup(connect, quant, gw->model_context);
     break;
 
-  case CS_GWF_MODEL_TWO_PHASE:
-    _mtpf_finalize_setup(connect, quant, gw->model_context);
+  case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
+  case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
+    _tpf_finalize_setup(connect, quant, gw->model_context);
     break;
 
   default:
@@ -2588,9 +2683,10 @@ cs_gwf_update(const cs_mesh_t             *mesh,
                               gw->model_context);
     break;
 
-  case CS_GWF_MODEL_TWO_PHASE:
-    time_eval = _mtpf_updates(mesh, connect, quant, ts, cur2prev,
-                              gw->model_context);
+  case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
+  case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
+    time_eval = _tpf_updates(mesh, connect, quant, ts, cur2prev,
+                             gw->model_context);
     break;
 
   default:
@@ -2685,8 +2781,9 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
     }
     break;
 
-  case CS_GWF_MODEL_TWO_PHASE:
-    _mtpf_compute(mesh, time_step, connect, cdoq, gw->model_context);
+  case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
+  case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
+    _tpf_compute(mesh, time_step, connect, cdoq, gw->model_context);
     break;
 
   default:
@@ -2729,8 +2826,9 @@ cs_gwf_extra_op(const cs_cdo_connect_t      *connect,
     _uspf_extra_op(connect, cdoq, gw->model_context);
     break;
 
-  case CS_GWF_MODEL_TWO_PHASE:
-    _mtpf_extra_op(connect, cdoq, gw->model_context);
+  case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
+  case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
+    _tpf_extra_op(connect, cdoq, gw->model_context);
     break;
 
   default:
@@ -3013,8 +3111,7 @@ cs_gwf_extra_post_mtpf(void                      *input,
     return;
 
   const cs_gwf_t  *gw = (const cs_gwf_t *)input;
-  const cs_gwf_miscible_two_phase_t  *mc =
-    (const cs_gwf_miscible_two_phase_t  *)gw->model_context;
+  const cs_gwf_two_phase_t  *mc = gw->model_context;
 
   if (mesh_id == CS_POST_MESH_VOLUME) {
 

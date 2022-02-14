@@ -255,10 +255,10 @@ typedef struct {
 
 } cs_gwf_unsaturated_single_phase_t;
 
-/*! \struct cs_gwf_miscible_two_phase_t
+/*! \struct cs_gwf_two_phase_t
  *
- * \brief Structure to handle the modelling of miscible two-phase flows in a
- *        porous media.
+ * \brief Structure to handle the modelling of miscible or immiscible two-phase
+ *        flows in a porous media.
 
  * The model follows what is depicted in "Finite volume approximation of a
  * diffusion-dissolution model and application to nuclear waste storage"
@@ -569,7 +569,7 @@ typedef struct {
    * @}
    */
 
-} cs_gwf_miscible_two_phase_t;
+} cs_gwf_two_phase_t;
 
 
 /*! \struct cs_gwf_t
