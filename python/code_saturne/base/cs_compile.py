@@ -229,6 +229,10 @@ class cs_compile(object):
             flags.insert(0, "-I" + pkgincludedir)
             if self.pkg.config.libs['ple'].variant == "internal":
                 flags.insert(0, "-I" + self.pkg.get_dir("includedir"))
+            # In the case where it is neptune_cfd, add preprocessing flag
+            # to allow compatibility of user functions
+            if self.pkg.name == "neptune_cfd":
+                flags.append("-DUSE_NEPTUNE_CFD")
 
         elif flag == 'ldflags':
             flags.insert(0, "-L" + self.pkg.get_dir("libdir"))
