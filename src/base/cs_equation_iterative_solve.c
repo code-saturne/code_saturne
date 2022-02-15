@@ -253,18 +253,18 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   int isym, inc, isweep, niterf, iccocg, nswmod;
   int lvar, ibsize, iesize, imasac, key_sinfo_id;
-  double residu, rnorm, ressol, rnorm2;
-  double thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta;
+  double residu, rnorm, ressol;
+  double thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk;
+
+  double rnorm2 = 0, alph = 0, beta = 0;
 
   cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
 
-  cs_field_t *f = NULL;
   int coupling_id = -1;
-
-  cs_real_t *dam, *xam, *smbini;
-
+  cs_field_t *f = NULL;
+  cs_real_t *dam = NULL, *xam = NULL, *smbini = NULL;
   cs_real_t *w1 = NULL;
 
   bool conv_diff_mg = false;
@@ -1158,18 +1158,21 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   int isym, inc, isweep, niterf, nswmod, ibsize;
   int key_sinfo_id;
   int iesize, lvar, imasac;
-  double residu, rnorm, ressol, rnorm2, thetex, alph, beta;
+  double residu, rnorm, ressol, thetex;
   double paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax;
+
+  double alph = 0., beta = 0.;
 
   cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
 
-  cs_field_t *f;
+  cs_field_t *f = NULL;;
 
-  cs_real_t    *xam;
-  cs_real_33_t *dam;
-  cs_real_3_t  *dpvar, *smbini, *w1, *w2, *adxk, *adxkm1, *dpvarm1, *rhs0;
+  cs_real_t    *xam = NULL;
+  cs_real_33_t *dam = NULL;;
+  cs_real_3_t  *dpvar = NULL, *smbini = NULL, *w1 = NULL, *w2 = NULL;
+  cs_real_3_t  *adxk = NULL, *adxkm1 = NULL, *dpvarm1 = NULL, *rhs0 = NULL;
 
   /*============================================================================
    * 0.  Initialization
@@ -1488,7 +1491,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
         w1[cell_id][i] = 0.;
   }
 
-  rnorm2 = cs_gdot(3*n_cells, (cs_real_t *)w1, (cs_real_t *)w1);
+  double  rnorm2 = cs_gdot(3*n_cells, (cs_real_t *)w1, (cs_real_t *)w1);
   rnorm = sqrt(rnorm2);
   sinfo.rhs_norm = rnorm;
 
@@ -2014,18 +2017,21 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
   int isym, inc, isweep, niterf, nswmod, ibsize;
   int key_sinfo_id;
   int iesize, lvar, imasac;
-  double residu, rnorm, ressol, rnorm2, thetex, alph, beta;
+  double residu, rnorm, ressol, thetex;
   double paxkrk, nadxk, paxm1rk, nadxkm1, paxm1ax;
+
+  double rnorm2 = 0, alph = 0, beta = 0;
 
   cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
 
-  cs_field_t *f;
+  cs_field_t *f = NULL;
 
-  cs_real_t    *xam;
-  cs_real_66_t *dam;
-  cs_real_6_t  *dpvar, *smbini, *w1, *w2, *adxk, *adxkm1, *dpvarm1, *rhs0;
+  cs_real_t    *xam = NULL;
+  cs_real_66_t *dam = NULL;
+  cs_real_6_t  *dpvar = NULL, *smbini = NULL, *w1 = NULL, *w2 = NULL;
+  cs_real_6_t  *adxk = NULL, *adxkm1 = NULL, *dpvarm1 = NULL, *rhs0 = NULL;
 
   /*============================================================================
    * 0.  Initialization
