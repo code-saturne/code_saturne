@@ -72,7 +72,6 @@ typedef void
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      adv           pointer to an advection field structure
- * \param[in]      l_saturation  pointer to liquid saturation values or NULL
  * \param[in, out] tracer        pointer to a cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -81,7 +80,6 @@ typedef void
 (cs_gwf_tracer_finalize_setup_t) (const cs_cdo_connect_t      *connect,
                                   const cs_cdo_quantities_t   *quant,
                                   const cs_adv_field_t        *adv,
-                                  const cs_real_t             *l_saturation,
                                   cs_gwf_tracer_t             *tracer);
 
 /*----------------------------------------------------------------------------*/
@@ -177,11 +175,6 @@ typedef struct {
   /* Variables used for the update of physical properties (shared pointers) */
 
   const cs_field_t  *darcy_velocity_field;
-
-  /* liquid saturation also called the moisture content, denoted by \theta
-     (-) no unit */
-
-  const cs_real_t   *l_saturation;
 
 } cs_gwf_tracer_default_context_t;
 
@@ -470,7 +463,6 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer);
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      adv           pointer to an advection field structure
- * \param[in]      l_saturation  pointer to the liquid saturation values
  * \param[in, out] tracer        pointer to a cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -479,7 +471,6 @@ void
 cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t      *connect,
                                  const cs_cdo_quantities_t   *quant,
                                  const cs_adv_field_t        *adv,
-                                 const cs_real_t             *l_saturation,
                                  cs_gwf_tracer_t             *tracer);
 
 /*----------------------------------------------------------------------------*/
@@ -490,7 +481,6 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t      *connect,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      adv           pointer to an advection field structure
- * \param[in]      l_saturation  pointer to the liquid saturation values
  * \param[in, out] tracer        pointer to a cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -499,7 +489,6 @@ void
 cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
                                    const cs_cdo_quantities_t   *quant,
                                    const cs_adv_field_t        *adv,
-                                   const cs_real_t             *l_saturation,
                                    cs_gwf_tracer_t             *tracer);
 
 /*----------------------------------------------------------------------------*/

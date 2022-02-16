@@ -84,6 +84,12 @@ static const char _err_empty_tracer[] =
 static int  _n_tracers = 0;
 static cs_gwf_tracer_t  **_tracers = NULL;
 
+/* liquid saturation also called the moisture content, denoted by \theta (-) no
+   unit. This array is shared across all tracers. It may be allocated inside
+   this file or shared according to the type of hydraulic model. */
+
+static cs_real_t  *cs_shared_liquid_saturation = NULL;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -211,7 +217,7 @@ _get_time_pty4std_tracer(cs_lnum_t                    n_elts,
   const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
-  const cs_real_t  *theta = tc->l_saturation;
+  const cs_real_t  *theta = cs_shared_liquid_saturation;
   const short int  *c2s = cs_gwf_get_cell2soil();
 
   if (elt_ids == NULL)
@@ -254,7 +260,7 @@ _get_time_pty4std_tracer_cw(const cs_cell_mesh_t    *cm,
   const short int  *c2s = cs_gwf_get_cell2soil();
   assert(tc != NULL);
 
-  *result = tc->l_saturation[cm->c_id] + tc->rho_kd[c2s[cm->c_id]];
+  *result = cs_shared_liquid_saturation[cm->c_id] + tc->rho_kd[c2s[cm->c_id]];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -379,7 +385,7 @@ _get_reaction_pty4std_tracer(cs_lnum_t                    n_elts,
   const cs_gwf_tracer_default_context_t  *tc = context;
   assert(tc != NULL);
 
-  const cs_real_t  *theta = tc->l_saturation;
+  const cs_real_t  *theta = cs_shared_liquid_saturation;
   const short int  *c2s = cs_gwf_get_cell2soil();
 
   if (elt_ids == NULL) {
@@ -433,7 +439,8 @@ _get_reaction_pty4std_tracer_cw(const cs_cell_mesh_t     *cm,
   const short int  *c2s = cs_gwf_get_cell2soil();
   const int s = c2s[cm->c_id];
 
-  *result = (tc->l_saturation[cm->c_id] + tc->rho_kd[s]) * tc->reaction_rate[s];
+  *result =
+    (cs_shared_liquid_saturation[cm->c_id]+tc->rho_kd[s])*tc->reaction_rate[s];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -556,7 +563,7 @@ _update_diff_pty(cs_gwf_tracer_t             *tracer,
   cs_gwf_tracer_default_context_t  *tc = tracer->context;
   assert(tc != NULL);
 
-  const cs_real_t  *theta = tc->l_saturation;
+  const cs_real_t  *theta = cs_shared_liquid_saturation;
   const cs_real_t  *velocity = tc->darcy_velocity_field->val;
 
   const int  n_soils = cs_gwf_get_n_soils();
@@ -633,6 +640,7 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
   cs_gwf_tracer_default_context_t  *tc = tracer->context;
   assert(tc != NULL);
   assert(tc->conc_satura != NULL && tc->conc_precip != NULL);
+  assert(cs_shared_liquid_saturation != NULL);
 
   /* Retrieve the current values of the concentration of tracer in the liquid
      phase */
@@ -645,7 +653,7 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
   memcpy(c_w_save, c_w, quant->n_vertices*sizeof(cs_real_t));
 
   const cs_adjacency_t  *c2v = connect->c2v;
-  const cs_real_t  *theta = tc->l_saturation;
+  const cs_real_t  *theta = cs_shared_liquid_saturation;
 
   /* 2) Update c_w and c_p */
   /*    ------------------ */
@@ -656,6 +664,10 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
     cs_gwf_soil_t  *soil = cs_gwf_soil_by_id(soil_id);
 
     const cs_zone_t  *z = cs_volume_zone_by_id(soil->zone_id);
+
+    if (z->n_elts < 1)
+      continue;
+
     const double  rho = tc->rho_bulk[soil->id];
     const double  inv_rho = 1./rho;
 
@@ -814,7 +826,6 @@ _add_precipitation(const cs_cdo_connect_t      *connect,
                          false,         /* interlace (not useful here) */
                          CS_REAL_TYPE,
                          tc->conc_satura);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -937,7 +948,7 @@ _integrate_tracer(const cs_cdo_connect_t                  *connect,
                   const cs_zone_t                         *z)
 {
   const short int  *c2s = cs_gwf_get_cell2soil();
-  const cs_real_t  *moisture_val = tc->l_saturation;
+  const cs_real_t  *moisture_val = cs_shared_liquid_saturation;
 
   if (moisture_val == NULL)
     bft_error(__FILE__, __LINE__, 0, " %s: \"moisture_content\" not defined",
@@ -1096,7 +1107,6 @@ _create_default_tracer_context(cs_gwf_tracer_t    *tracer)
   BFT_MALLOC(context->reaction_rate, n_soils, double);
 
   context->darcy_velocity_field = NULL;
-  context->l_saturation = NULL;
 
   /* Sorption members */
 
@@ -1123,9 +1133,21 @@ _create_default_tracer_context(cs_gwf_tracer_t    *tracer)
 
     BFT_MALLOC(context->conc_w_star, n_soils, double);
 
-    tracer->update_precipitation = _update_precipitation_vb;
+    switch (tracer->hydraulic_model) {
 
-  }
+    case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
+    case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
+      tracer->update_precipitation = _update_precipitation_vb;
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Precipitation model not implemented in this case.\n",
+                __func__);
+
+    } /* Switch on hydraulic model */
+
+  } /* Precipitation */
 
   tracer->context = context;
 
@@ -1326,13 +1348,19 @@ cs_gwf_tracer_free_all(void)
 {
   if (_n_tracers == 0)
     return;
-
   assert(_tracers != NULL);
+
+  /* One assumes that all tracers share the same hydraulic model */
+
+  cs_gwf_tracer_t  *tracer = _tracers[0];
+
+  if (tracer->hydraulic_model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
+    BFT_FREE(cs_shared_liquid_saturation);
+  cs_shared_liquid_saturation = NULL; /* unset the pointer in all cases */
 
   for (int i = 0; i < _n_tracers; i++) {
 
-    cs_gwf_tracer_t  *tracer = _tracers[i];
-
+    tracer = _tracers[i];
     if (tracer == NULL)
       continue;
 
@@ -1555,6 +1583,53 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
     return;
   assert(_tracers != NULL);
 
+  /* One assumes that all tracers share the same hydraulic model */
+
+  cs_gwf_tracer_t  *tracer = _tracers[0];
+
+  /* Set the liquid saturation */
+
+  switch (tracer->hydraulic_model) {
+
+  case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
+    {
+      const char  mc_pty_name[] = "moisture_content";
+      cs_property_t  *mc = cs_property_by_name(mc_pty_name);
+      if (mc == NULL)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Expected property \"%s\" is not defined.\n",
+                  __func__, mc_pty_name);
+
+      BFT_MALLOC(cs_shared_liquid_saturation, quant->n_cells, cs_real_t);
+
+      /* For a saturated model there is no time evolution of the liquid
+         saturatino so that one can evaluate the moisture content (i.e. the
+         liquid saturation) once and for all */
+
+      cs_property_eval_at_cells(0, mc, cs_shared_liquid_saturation);
+    }
+    break;
+
+  case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
+  case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
+  case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
+    {
+      cs_field_t  *f = cs_field_by_name("liquid_saturation");
+      assert(f != NULL);
+      cs_shared_liquid_saturation = f->val;
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of hydraulic model.\n", __func__);
+
+  } /* End of switch */
+
+  if (cs_shared_liquid_saturation == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Liquid saturation/moisture content is not set.\n", __func__);
+
   /* Loop on tracer equations */
 
   for (int i = 0; i < _n_tracers; i++) {
@@ -1567,17 +1642,8 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
     cs_equation_param_t  *eqp = cs_equation_get_param(tracer->equation);
     assert(eqp != NULL);
 
-    cs_real_t  *fval = NULL;
-    if (tracer->hydraulic_model == CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE) {
-
-      cs_field_t  *f = cs_field_by_name("liquid_saturation");
-      assert(f != NULL);
-      fval = f->val;
-
-    }
-
     if (tracer->finalize_setup != NULL)
-      tracer->finalize_setup(connect, quant, eqp->adv_field, fval, tracer);
+      tracer->finalize_setup(connect, quant, eqp->adv_field, tracer);
 
   } /* Loop on tracers */
 }
@@ -1891,7 +1957,6 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t     *tracer)
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      adv           pointer to an advection field structure
- * \param[in]      l_saturation  pointer to the liquid saturation values
  * \param[in, out] tracer        pointer to a cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -1900,7 +1965,6 @@ void
 cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t     *connect,
                                  const cs_cdo_quantities_t  *quant,
                                  const cs_adv_field_t       *adv,
-                                 const cs_real_t            *l_saturation,
                                  cs_gwf_tracer_t            *tracer)
 {
   if (tracer == NULL)
@@ -1917,7 +1981,6 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t     *connect,
 
   tc->darcy_velocity_field =
     cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
-  tc->l_saturation = l_saturation;
 
   /* We assume that the unsteady term is always activated */
 
@@ -1987,7 +2050,6 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t     *connect,
  * \param[in]      connect       pointer to a cs_cdo_connect_t structure
  * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
  * \param[in]      adv           pointer to an advection field structure
- * \param[in]      l_saturation  pointer to the liquid saturation values
  * \param[in, out] tracer        pointer to a cs_gwf_tracer_t structure
  */
 /*----------------------------------------------------------------------------*/
@@ -1996,7 +2058,6 @@ void
 cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
                                    const cs_cdo_quantities_t   *quant,
                                    const cs_adv_field_t        *adv,
-                                   const cs_real_t             *l_saturation,
                                    cs_gwf_tracer_t             *tracer)
 {
   if (tracer == NULL)
@@ -2013,7 +2074,6 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t      *connect,
 
   tc->darcy_velocity_field =
     cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
-  tc->l_saturation = l_saturation;
 
   /* We assume that the unsteady term is always activated */
 
