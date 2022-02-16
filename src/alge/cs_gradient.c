@@ -1278,12 +1278,12 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
           /* if cell weighting is active */
           if (w_stride == 1 && c_weight != NULL) {
             ktpond = weight[f_id] * c_weight[ii]
-               / (      weight[f_id] * c_weight[ii]
-                 + (1.0-weight[f_id])* c_weight[jj]);
-          } else if (w_stride == 6 && c_weight != NULL) {
-
-            cs_real_6_t sum;
-            cs_real_6_t inv_sum;
+                      / (      weight[f_id] * c_weight[ii]
+                         + (1.0-weight[f_id])* c_weight[jj]);
+          }
+          else if (w_stride == 6 && c_weight != NULL) {
+            cs_real_t sum[6];
+            cs_real_t inv_sum[6];
 
             cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t kk = 0; kk < 6; kk++)
@@ -1292,13 +1292,13 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
             cs_math_sym_33_inv_cramer(sum, inv_sum);
 
-            ktpond = weight[f_id] / 3.0 *
-              (   inv_sum[0]*_c_weight[ii][0]
-                + inv_sum[1]*_c_weight[ii][1]
-                + inv_sum[2]*_c_weight[ii][2]
-                + 2.0*(inv_sum[3]*_c_weight[ii][3]
-                      +inv_sum[4]*_c_weight[ii][4]
-                      +inv_sum[5]*_c_weight[ii][5]));
+            ktpond = weight[f_id] / 3.0
+                     * (  inv_sum[0]*_c_weight[ii][0]
+                        + inv_sum[1]*_c_weight[ii][1]
+                        + inv_sum[2]*_c_weight[ii][2]
+                        + 2.0 * (  inv_sum[3]*_c_weight[ii][3]
+                                 + inv_sum[4]*_c_weight[ii][4]
+                                 + inv_sum[5]*_c_weight[ii][5]));
           }
 
           cs_real_2_t poro = {
@@ -1409,12 +1409,12 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
           /* if cell weighting is active */
           if (w_stride == 1 && c_weight != NULL) {
             ktpond = weight[f_id] * c_weight[ii]
-               / (      weight[f_id] * c_weight[ii]
-                 + (1.0-weight[f_id])* c_weight[jj]);
-          } else if (w_stride == 6 && c_weight != NULL) {
-
-            cs_real_6_t sum;
-            cs_real_6_t inv_sum;
+                      / (      weight[f_id] * c_weight[ii]
+                         + (1.0-weight[f_id])* c_weight[jj]);
+          }
+          else if (w_stride == 6 && c_weight != NULL) {
+            cs_real_t sum[6];
+            cs_real_t inv_sum[6];
 
             cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t kk = 0; kk < 6; kk++)
@@ -1423,13 +1423,13 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
             cs_math_sym_33_inv_cramer(sum, inv_sum);
 
-            ktpond = weight[f_id] / 3.0 *
-              (   inv_sum[0]*_c_weight[ii][0]
-                + inv_sum[1]*_c_weight[ii][1]
-                + inv_sum[2]*_c_weight[ii][2]
-                + 2.0*(inv_sum[3]*_c_weight[ii][3]
-                      +inv_sum[4]*_c_weight[ii][4]
-                      +inv_sum[5]*_c_weight[ii][5]));
+            ktpond =   weight[f_id] / 3.0
+                     * (  inv_sum[0]*_c_weight[ii][0]
+                        + inv_sum[1]*_c_weight[ii][1]
+                        + inv_sum[2]*_c_weight[ii][2]
+                        + 2.0*(  inv_sum[3]*_c_weight[ii][3]
+                               + inv_sum[4]*_c_weight[ii][4]
+                               + inv_sum[5]*_c_weight[ii][5]));
           }
 
           /*
@@ -1787,27 +1787,27 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
             /* if cell weighting is active */
             if (w_stride == 1 && c_weight != NULL) {
               ktpond = weight[f_id] * c_weight[c_id1]
-                 / (      weight[f_id] * c_weight[c_id1]
-                   + (1.0-weight[f_id])* c_weight[c_id2]);
-            } else if (w_stride == 6 && c_weight != NULL) {
-
-              cs_real_6_t sum;
-              cs_real_6_t inv_sum;
+                        / (       weight[f_id] * c_weight[c_id1]
+                           + (1.0-weight[f_id])* c_weight[c_id2]);
+            }
+            else if (w_stride == 6 && c_weight != NULL) {
+              cs_real_t sum[6];
+              cs_real_t inv_sum[6];
 
               cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
               for (cs_lnum_t ii = 0; ii < 6; ii++)
-                sum[ii] = weight[f_id]*_c_weight[c_id1][ii]
-                   +(1.0-weight[f_id])*_c_weight[c_id2][ii];
+                sum[ii] =        weight[f_id]*_c_weight[c_id1][ii]
+                          + (1.0-weight[f_id])*_c_weight[c_id2][ii];
 
               cs_math_sym_33_inv_cramer(sum, inv_sum);
 
-              ktpond = weight[f_id] / 3.0 *
-                (   inv_sum[0]*_c_weight[c_id1][0]
-                  + inv_sum[1]*_c_weight[c_id1][1]
-                  + inv_sum[2]*_c_weight[c_id1][2]
-                  + 2.0*(inv_sum[3]*_c_weight[c_id1][3]
-                        +inv_sum[4]*_c_weight[c_id1][4]
-                        +inv_sum[5]*_c_weight[c_id1][5]));
+              ktpond =   weight[f_id] / 3.0
+                       * (  inv_sum[0]*_c_weight[c_id1][0]
+                          + inv_sum[1]*_c_weight[c_id1][1]
+                          + inv_sum[2]*_c_weight[c_id1][2]
+                          + 2.0 * (  inv_sum[3]*_c_weight[c_id1][3]
+                                   + inv_sum[4]*_c_weight[c_id1][4]
+                                   + inv_sum[5]*_c_weight[c_id1][5]));
             }
 
             cs_real_2_t poro = {
@@ -1950,13 +1950,13 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
             cs_real_t ktpond = weight[f_id]; /* no cell weighting */
             /* if cell weighting is active */
             if (w_stride == 1 && c_weight != NULL) {
-              ktpond = weight[f_id] * c_weight[c_id1]
-                 / (      weight[f_id] * c_weight[c_id1]
-                   + (1.0-weight[f_id])* c_weight[c_id2]);
-            } else if (w_stride == 6 && c_weight != NULL) {
-
-              cs_real_6_t sum;
-              cs_real_6_t inv_sum;
+              ktpond =   weight[f_id] * c_weight[c_id1]
+                       / (       weight[f_id] * c_weight[c_id1]
+                          + (1.0-weight[f_id])* c_weight[c_id2]);
+            }
+            else if (w_stride == 6 && c_weight != NULL) {
+              cs_real_t sum[6];
+              cs_real_t inv_sum[6];
 
               cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
               for (cs_lnum_t ii = 0; ii < 6; ii++)
@@ -1965,13 +1965,13 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
               cs_math_sym_33_inv_cramer(sum, inv_sum);
 
-              ktpond = weight[f_id] / 3.0 *
-                (   inv_sum[0]*_c_weight[c_id1][0]
-                  + inv_sum[1]*_c_weight[c_id1][1]
-                  + inv_sum[2]*_c_weight[c_id1][2]
-                  + 2.0*(inv_sum[3]*_c_weight[c_id1][3]
-                        +inv_sum[4]*_c_weight[c_id1][4]
-                        +inv_sum[5]*_c_weight[c_id1][5]));
+              ktpond =   weight[f_id] / 3.0
+                       * (  inv_sum[0]*_c_weight[c_id1][0]
+                          + inv_sum[1]*_c_weight[c_id1][1]
+                          + inv_sum[2]*_c_weight[c_id1][2]
+                          + 2.0 * (  inv_sum[3]*_c_weight[c_id1][3]
+                                   + inv_sum[4]*_c_weight[c_id1][4]
+                                   + inv_sum[5]*_c_weight[c_id1][5]));
             }
 
             pfaci += (1.0-ktpond) * (pvar[c_id2] - pvar[c_id1]);
@@ -3357,13 +3357,12 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
           cs_real_t ktpond = weight[f_id]; /* no cell weighting */
           /* if cell weighting is active */
           if (w_stride == 1 && c_weight != NULL) {
-            ktpond = weight[f_id] * c_weight[c_id1]
-               / (      weight[f_id] * c_weight[c_id1]
-                 + (1.0-weight[f_id])* c_weight[c_id2]);
-          } else if (w_stride == 6 && c_weight != NULL) {
-
-            cs_real_6_t sum;
-            cs_real_6_t inv_sum;
+            ktpond =   weight[f_id] * c_weight[c_id1]
+                     / (       weight[f_id] * c_weight[c_id1]
+                        + (1.0-weight[f_id])* c_weight[c_id2]);
+          }
+          else if (w_stride == 6 && c_weight != NULL) {
+            cs_real_t sum[6], inv_sum[6];
 
             cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t ii = 0; ii < 6; ii++)
@@ -3372,13 +3371,13 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
             cs_math_sym_33_inv_cramer(sum, inv_sum);
 
-            ktpond = weight[f_id] / 3.0 *
-              (   inv_sum[0]*_c_weight[c_id1][0]
-                + inv_sum[1]*_c_weight[c_id1][1]
-                + inv_sum[2]*_c_weight[c_id1][2]
-                + 2.0*(inv_sum[3]*_c_weight[c_id1][3]
-                      +inv_sum[4]*_c_weight[c_id1][4]
-                      +inv_sum[5]*_c_weight[c_id1][5]));
+            ktpond =   weight[f_id] / 3.0
+                     * (  inv_sum[0]*_c_weight[c_id1][0]
+                        + inv_sum[1]*_c_weight[c_id1][1]
+                        + inv_sum[2]*_c_weight[c_id1][2]
+                        + 2.0 * (  inv_sum[3]*_c_weight[c_id1][3]
+                                 + inv_sum[4]*_c_weight[c_id1][4]
+                                 + inv_sum[5]*_c_weight[c_id1][5]));
           }
 
           cs_real_2_t poro = {
@@ -3513,28 +3512,27 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
           cs_real_t ktpond = weight[f_id]; /* no cell weighting */
           /* if cell weighting is active */
           if (w_stride == 1 && c_weight != NULL) {
-            ktpond = weight[f_id] * c_weight[c_id1]
-               / (      weight[f_id] * c_weight[c_id1]
-                 + (1.0-weight[f_id])* c_weight[c_id2]);
-          } else if (w_stride == 6 && c_weight != NULL) {
-
-            cs_real_6_t sum;
-            cs_real_6_t inv_sum;
+            ktpond =   weight[f_id] * c_weight[c_id1]
+                     / (      weight[f_id] * c_weight[c_id1]
+                        + (1.0-weight[f_id])* c_weight[c_id2]);
+          }
+          else if (w_stride == 6 && c_weight != NULL) {
+            cs_real_t sum[6], inv_sum[6];
 
             cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t ii = 0; ii < 6; ii++)
-              sum[ii] = weight[f_id]*_c_weight[c_id1][ii]
-                 +(1.0-weight[f_id])*_c_weight[c_id2][ii];
+              sum[ii] =        weight[f_id]*_c_weight[c_id1][ii]
+                        + (1.0-weight[f_id])*_c_weight[c_id2][ii];
 
             cs_math_sym_33_inv_cramer(sum, inv_sum);
 
-            ktpond = weight[f_id] / 3.0 *
-              (   inv_sum[0]*_c_weight[c_id1][0]
-                + inv_sum[1]*_c_weight[c_id1][1]
-                + inv_sum[2]*_c_weight[c_id1][2]
-                + 2.0*(inv_sum[3]*_c_weight[c_id1][3]
-                      +inv_sum[4]*_c_weight[c_id1][4]
-                      +inv_sum[5]*_c_weight[c_id1][5]));
+            ktpond =   weight[f_id] / 3.0
+                     * (   inv_sum[0]*_c_weight[c_id1][0]
+                        + inv_sum[1]*_c_weight[c_id1][1]
+                        + inv_sum[2]*_c_weight[c_id1][2]
+                        + 2.0 * (  inv_sum[3]*_c_weight[c_id1][3]
+                                 + inv_sum[4]*_c_weight[c_id1][4]
+                                 + inv_sum[5]*_c_weight[c_id1][5]));
           }
 
           /*
@@ -4215,28 +4213,27 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
           cs_real_t ktpond = weight[f_id]; /* no cell weighting */
           /* if cell weighting is active */
           if (w_stride == 1 && c_weight != NULL) {
-            ktpond = weight[f_id] * c_weight[ii]
-               / (      weight[f_id] * c_weight[ii]
-                 + (1.0-weight[f_id])* c_weight[jj]);
-          } else if (w_stride == 6 && c_weight != NULL) {
-
-            cs_real_6_t sum;
-            cs_real_6_t inv_sum;
+            ktpond =   weight[f_id] * c_weight[ii]
+                     / (       weight[f_id] * c_weight[ii]
+                        + (1.0-weight[f_id])* c_weight[jj]);
+          }
+          else if (w_stride == 6 && c_weight != NULL) {
+            cs_real_t sum[6], inv_sum[6];
 
             cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t kk = 0; kk < 6; kk++)
-              sum[kk] = weight[f_id]*_c_weight[ii][kk]
-                 +(1.0-weight[f_id])*_c_weight[jj][kk];
+              sum[kk] =        weight[f_id]*_c_weight[ii][kk]
+                        + (1.0-weight[f_id])*_c_weight[jj][kk];
 
             cs_math_sym_33_inv_cramer(sum, inv_sum);
 
-            ktpond = weight[f_id] / 3.0 *
-              (   inv_sum[0]*_c_weight[ii][0]
-                + inv_sum[1]*_c_weight[ii][1]
-                + inv_sum[2]*_c_weight[ii][2]
-                + 2.0*(inv_sum[3]*_c_weight[ii][3]
-                      +inv_sum[4]*_c_weight[ii][4]
-                      +inv_sum[5]*_c_weight[ii][5]));
+            ktpond =   weight[f_id] / 3.0
+                     * (   inv_sum[0]*_c_weight[ii][0]
+                        + inv_sum[1]*_c_weight[ii][1]
+                        + inv_sum[2]*_c_weight[ii][2]
+                        + 2.0 * (  inv_sum[3]*_c_weight[ii][3]
+                                 + inv_sum[4]*_c_weight[ii][4]
+                                 + inv_sum[5]*_c_weight[ii][5]));
           }
 
           cs_real_2_t poro = {
@@ -6426,12 +6423,11 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
   /* Contribution from coupled faces */
 
   if (cpl != NULL)
-    cs_internal_coupling_lsq_vector_gradient
-      (cpl,
-       c_weight,
-       1, /* w_stride */
-       pvar,
-       rhs);
+    cs_internal_coupling_lsq_vector_gradient(cpl,
+                                             c_weight,
+                                             1, /* w_stride */
+                                             pvar,
+                                             rhs);
 
   /* Contribution from boundary faces */
 
