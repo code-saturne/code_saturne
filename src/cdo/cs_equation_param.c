@@ -1894,7 +1894,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
   if (convection) {
 
     cs_log_printf(CS_LOG_SETUP, "\n### %s | Advection term settings\n", eqname);
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Field: %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Field: \"%s\"\n",
                   eqname, cs_advection_field_get_name(eqp->adv_field));
     if (eqp->adv_scaling_property != NULL)
       cs_log_printf(CS_LOG_SETUP, "  * %s | Scaling.Property: %s\n",

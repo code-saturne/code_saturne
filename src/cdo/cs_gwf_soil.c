@@ -689,7 +689,7 @@ cs_gwf_soil_log_setup(void)
       {
         const cs_gwf_soil_param_genuchten_t  *sp = soil->model_param;
 
-        cs_log_printf(CS_LOG_SETUP, "%s Model: **VanGenuchten-Mualen**\n", id);
+        cs_log_printf(CS_LOG_SETUP, "%s Model: *VanGenuchten-Mualen*\n", id);
         cs_log_printf(CS_LOG_SETUP, "%s Parameters:", id);
         cs_log_printf(CS_LOG_SETUP,
                       " residual_moisture %5.3e\n", sp->residual_moisture);
@@ -700,11 +700,11 @@ cs_gwf_soil_log_setup(void)
       break;
 
     case CS_GWF_SOIL_SATURATED:
-        cs_log_printf(CS_LOG_SETUP, "%s Model: **Saturated**\n", id);
+        cs_log_printf(CS_LOG_SETUP, "%s Model: *Saturated*\n", id);
       break;
 
     case CS_GWF_SOIL_USER:
-      cs_log_printf(CS_LOG_SETUP, "%s Model: **User-defined**\n", id);
+      cs_log_printf(CS_LOG_SETUP, "%s Model: *User-defined*\n", id);
       break;
 
     default:
