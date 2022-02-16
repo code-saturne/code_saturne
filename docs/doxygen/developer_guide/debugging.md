@@ -667,3 +667,20 @@ Debugging OpenMP data races is much more tricky.
     avoid false positives...
 
     - probably due to some optimizations in thread management.
+
+Miscellaneous tips
+==================
+
+When having or suspecting issues with loading or selection of shared libraries, use
+```
+export LD_DEBUG=libs
+```
+before running the code from a terminal. This will log many operations of
+the dynamic loader.
+
+To obtain more info on available options, use `LD_DEBUG=help` with any
+program, for example:
+```
+LD_DEBUG=help cat
+```
+
