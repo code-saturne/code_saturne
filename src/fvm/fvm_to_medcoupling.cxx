@@ -185,16 +185,10 @@ _add_medcoupling_mesh(fvm_to_medcoupling_t  *writer,
                       const fvm_nodal_t     *mesh)
 {
   int id;
-  int rank = 0;
 
   assert(writer != NULL);
 
   /* Add a new MEDCoupling mesh structure */
-
-#if defined(HAVE_MPI)
-  if (writer->comm != MPI_COMM_NULL)
-    MPI_Comm_rank(writer->comm, &rank);
-#endif
 
   MEDCouplingUMesh *m = NULL;
 

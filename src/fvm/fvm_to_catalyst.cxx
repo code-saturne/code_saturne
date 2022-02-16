@@ -120,7 +120,7 @@
 /* Macro for version test (tests are done on ParaView and not VTK version,
    as ParaView usually includes its own VTK, and ParaView 5.0 seems to
    indicate VTK 7.1 just like 5.1, but that version did not contain
-   SetTypedTuple or have SetTupleValue depecated for vtkTypedDataArray) */
+   SetTypedTuple or have SetTupleValue deprecated for vtkTypedDataArray) */
 
 #define CS_PV_VERSION  (PARAVIEW_VERSION_MAJOR*10 + PARAVIEW_VERSION_MINOR)
 
