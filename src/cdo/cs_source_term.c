@@ -553,6 +553,10 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
         case CS_XDEF_BY_ANALYTIC_FUNCTION:
 
           switch (st_def->qtype) {
+          case CS_QUADRATURE_NONE:
+            msh_flag |= CS_FLAG_COMP_PVQ;
+            compute_source[st_id] = cs_source_term_dcsd_none_by_analytic;
+            break;
 
           case CS_QUADRATURE_BARY:
             msh_flag |=
@@ -1166,6 +1170,56 @@ cs_source_term_dcsd_by_dof_func(const cs_xdef_t           *source,
   double  cell_eval;
   dc->func(1, &(cm->c_id), true,  /* compacted output ? */
            dc->input,
+           &cell_eval);
+
+  cell_eval *= cm->vol_c;
+  for (int v = 0; v < cm->n_vc; v++)
+    values[v] += cell_eval * cm->wvc[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it to the given array of values.
+ *         Case of a scalar density defined at dual cells by an analytic
+ *         function without any quadrature rule.
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcsd_none_by_analytic(const cs_xdef_t           *source,
+                                     const cs_cell_mesh_t      *cm,
+                                     cs_real_t                  time_eval,
+                                     cs_cell_builder_t         *cb,
+                                     void                      *input,
+                                     double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+
+  if (source == NULL)
+    return;
+
+  assert(values != NULL && cm != NULL);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
+
+  cs_xdef_analytic_context_t  *ac =
+    (cs_xdef_analytic_context_t *)source->context;
+
+  /* Call the DoF function to evaluate the function at xc */
+
+  double  cell_eval = 0.;
+
+  ac->func(time_eval, 1, NULL, (const cs_real_t *)cm->xc,
+           true, /* compacted output ? */
+           ac->input,
            &cell_eval);
 
   cell_eval *= cm->vol_c;
