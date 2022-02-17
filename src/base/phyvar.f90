@@ -80,6 +80,8 @@ use cavitation
 use vof
 use darcy_module
 use cs_c_bindings
+use cs_nz_condensation, only: nfbpcd, ifbpcd, ztpar, izzftcd, iztag1d
+use cs_nz_tagmr, only: ztpar0
 
 !===============================================================================
 
@@ -95,7 +97,7 @@ double precision dt(ncelet)
 character(len=80) :: chaine
 integer          ivar, iel, ifac, iscal, f_id
 integer          ii, jj, iok, iok1, iok2, iisct, idfm, iggafm, iebdfm
-integer          nn, isou
+integer          nn, isou, iz
 integer          mbrom, ifcvsl, iscacp
 integer          idftnp
 integer          iprev , inc, iccocg
@@ -121,6 +123,8 @@ double precision, dimension(:,:), pointer :: visten, vistes, cpro_visma_v
 double precision, dimension(:), pointer :: viscl, visct, cpro_vis
 double precision, dimension(:), pointer :: cvar_voidf
 double precision, dimension(:), pointer :: cpro_var, cpro_beta, cpro_visma_s
+integer, dimension(:), pointer :: ifpt1d
+double precision, dimension(:), pointer :: tppt1d
 double precision, allocatable, dimension(:) :: ttmp
 double precision, allocatable, dimension(:,:) :: grad
 double precision, dimension(:,:,:), allocatable :: gradv
@@ -1042,6 +1046,25 @@ if (f_id .ge. 0) then
       if (field_s_b(ifac) .le. -grand) then
         iel = ifabor(ifac)
         field_s_b(ifac) = t0
+      endif
+    enddo
+  endif
+  ! For wall condensation, initialize to user-prescribed value
+  if (icondb.ge.0) then
+    do ii = 1, nfbpcd
+      ifac = ifbpcd(ii)
+      if (iztag1d(izzftcd(ii)).eq.0) then
+        field_s_b(ifac) = ztpar(iz)
+      else if (iztag1d(izzftcd(ii)).eq.1) then
+        field_s_b(ifac) = ztpar0(iz)
+      else
+        call cs_1d_wall_thermal_get_faces(ifpt1d)
+        call cs_1d_wall_thermal_get_temp(tppt1d)
+        do jj = 1, nfpt1d
+          if (ifpt1d(jj) == ifac) then
+            field_s_b(ifac) = tppt1d(jj)
+          endif
+        enddo
       endif
     enddo
   endif

@@ -84,6 +84,7 @@ use pointe
 use field
 use radiat
 use cs_c_bindings
+use ppincl, only: icondb
 
 !===============================================================================
 
@@ -101,6 +102,7 @@ double precision rcodcl(nfabor,nvar,3)
 integer          ii , ivar
 integer          ifac
 integer          icldef
+logical          update_bnd_temp
 double precision, dimension(:), pointer :: b_temp
 
 integer, dimension(:), pointer :: ifpt1d
@@ -112,9 +114,11 @@ double precision, dimension(:), pointer :: tppt1d
 call cs_1d_wall_thermal_get_faces(ifpt1d)
 call cs_1d_wall_thermal_get_temp(tppt1d)
 
-! Update boundary temperature field for radiative transfer
+! Update boundary temperature field for radiative transfer or wall condensation
 
-if (iirayo.ge.1.and.nfpt1d.gt.0) then
+update_bnd_temp = ((iirayo.ge.1).or.(icondb.ge.0)).and.(nfpt1d.gt.0)
+
+if (update_bnd_temp) then
 
   call field_get_val_s(itempb, b_temp)
 

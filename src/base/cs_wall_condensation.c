@@ -72,6 +72,7 @@
 #include "cs_wall_condensation.h"
 #include "cs_wall_condensation_priv.h"
 #include "cs_wall_condensation_1d_thermal.h"
+#include "cs_1d_wall_thermal.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -129,6 +130,7 @@ static cs_wall_cond_t _wall_cond =
   .thermal_condensation_flux = NULL,
   .convective_htc = NULL,
   .condensation_htc = NULL,
+  .total_htc  = NULL,
   .flthr      = NULL,
   .dflthr     = NULL,
 
@@ -169,7 +171,6 @@ cs_f_wall_condensation_get_pointers(cs_lnum_t **ifbpcd, cs_lnum_t **itypcd,
                                     cs_lnum_t **izcophg, cs_lnum_t **iztag1d,
                                     cs_real_t **ztpar, cs_real_t **xrefcond,
                                     cs_real_t **projcond);
-
 
 void
 cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t model);
@@ -219,12 +220,17 @@ _get_wall_temperature(int izone_fortran,
     else {
       temperature = cs_glob_wall_cond_1d_thermal->ztmur[ieltcd_fortran -1];
     }
+    temperature += cs_physical_constants_celsius_to_kelvin;
+  }
+  else if (_wall_cond.iztag1d[izone_fortran-1] == 2) {
+    cs_lnum_t ifac = _wall_cond.ifbpcd[ieltcd_fortran-1]-1;
+    temperature = cs_field_by_name("boundary_temperature")->val[ifac];
   }
   else {
     temperature = _wall_cond.ztpar[izone_fortran-1];
+    temperature += cs_physical_constants_celsius_to_kelvin;
   }
 
-  temperature += cs_physical_constants_celsius_to_kelvin;
   return temperature;
 }
 
@@ -867,6 +873,7 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
   BFT_MALLOC(_wall_cond.thermal_condensation_flux, nfbpcd, cs_real_t);
   BFT_MALLOC(_wall_cond.convective_htc, nfbpcd, cs_real_t);
   BFT_MALLOC(_wall_cond.condensation_htc, nfbpcd, cs_real_t);
+  BFT_MALLOC(_wall_cond.total_htc, nfbpcd, cs_real_t);
   BFT_MALLOC(_wall_cond.flthr, nfbpcd, cs_real_t);
   BFT_MALLOC(_wall_cond.dflthr, nfbpcd, cs_real_t);
 
@@ -885,6 +892,7 @@ cs_wall_condensation_create(cs_lnum_t  nfbpcd,
     _wall_cond.thermal_condensation_flux[i] = 0.0;
     _wall_cond.convective_htc[i] = 0.0;
     _wall_cond.condensation_htc[i] = 0.0;
+    _wall_cond.total_htc[i] = 0.0;
     _wall_cond.flthr[i] = 0.0;
     _wall_cond.dflthr[i] = 0.0;
     if (_wall_cond.nzones <= 1) {
@@ -931,6 +939,7 @@ cs_wall_condensation_free(void)
   BFT_FREE(_wall_cond.thermal_condensation_flux);
   BFT_FREE(_wall_cond.convective_htc);
   BFT_FREE(_wall_cond.condensation_htc);
+  BFT_FREE(_wall_cond.total_htc);
   BFT_FREE(_wall_cond.flthr);
   BFT_FREE(_wall_cond.dflthr);
 
@@ -955,7 +964,7 @@ cs_wall_condensation_free(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_condensation_compute()
+cs_wall_condensation_compute(cs_real_t total_htc[])
 {
   cs_field_t *f = cs_field_by_name("pressure");
   const int var_id_key = cs_field_key_id("variable_id");
@@ -981,6 +990,8 @@ cs_wall_condensation_compute()
     cs_real_t flux = h_cond * (t_inf - t_wall) + h_conv * cpro_cp[iel_c] * (t_inf - t_wall);
     _wall_cond.convective_htc[ii] = h_conv * cpro_cp[iel_c];
     _wall_cond.condensation_htc[ii] = h_cond;
+    _wall_cond.total_htc[ii] = h_cond + h_conv * cpro_cp[iel_c];
+    total_htc[ii] = _wall_cond.total_htc[ii];
     _wall_cond.hpcond[ii] = h_conv;
     _wall_cond.thermal_condensation_flux[ii] = flux;
     _wall_cond.spcond[ipr * _wall_cond.nfbpcd + ii] -= h_cond * (t_inf - t_wall) / lcond;

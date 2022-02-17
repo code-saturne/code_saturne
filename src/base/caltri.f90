@@ -856,6 +856,8 @@ call dmtmps(titer1)
 
 call tridim(itrale, nvar, nscal, dt)
 
+if ((nfpt1d > 0).AND.(mod(ntcabs,ntlist).eq.0)) call cs_1d_wall_thermal_log()
+
 if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
 
   ! Solve CDO module(s) or user-defined equations using CDO schemes

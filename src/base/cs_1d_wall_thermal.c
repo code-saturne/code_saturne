@@ -44,6 +44,7 @@
 #include "bft_printf.h"
 
 #include "cs_base.h"
+#include "cs_math.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_lagr.h"
@@ -53,6 +54,7 @@
 #include "cs_physical_constants.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
+#include "cs_wall_condensation.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -501,6 +503,7 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
 
   /* Boundary conditions on the fluid side: flux conservation */
   /*   flux in the fluid = flux in the solid = f3 + h2*T1 */
+
   a1 = 1./hf + zz[0]/xlmbt1;
   h2 = -1./a1; // TAKE CARE TO THE MINUS !
   f3 = -h2*tf + qinc;
@@ -580,6 +583,7 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
 
   if (al != _al)
     BFT_FREE(al);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1219,6 +1223,47 @@ cs_1d_wall_thermal_t *
 cs_get_glob_1d_wall_thermal(void)
 {
   return &_1d_wall_thermal;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information about the 1d wall thermal computation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_log(void)
+{
+  // TODO separate min and max search per zone
+  cs_real_t Tp_f_min =  cs_math_big_r;
+  cs_real_t Tp_f_max = -cs_math_big_r;
+  cs_real_t Tp_ext_min =  cs_math_big_r;
+  cs_real_t Tp_ext_max = -cs_math_big_r;
+
+  for (cs_lnum_t ii = 0; ii < _1d_wall_thermal.nfpt1d; ii++) {
+    cs_real_t Tp_f = (_1d_wall_thermal.local_models[ii].t)[0];
+    cs_lnum_t nppt1d = _1d_wall_thermal.local_models[ii].nppt1d;
+    cs_real_t Tp_ext  = (_1d_wall_thermal.local_models[ii].t)[nppt1d-1];
+    Tp_f_min = cs_math_fmin(Tp_f_min, Tp_f);
+    Tp_f_max = cs_math_fmax(Tp_f_max, Tp_f);
+    Tp_ext_min = cs_math_fmin(Tp_ext_min, Tp_ext);
+    Tp_ext_max = cs_math_fmax(Tp_ext_max, Tp_ext);
+  }
+
+  if (cs_glob_rank_id >= 0) {
+    cs_parall_min(1, CS_DOUBLE, &Tp_f_min);
+    cs_parall_max(1, CS_DOUBLE, &Tp_f_max);
+    cs_parall_min(1, CS_DOUBLE, &Tp_ext_min);
+    cs_parall_max(1, CS_DOUBLE, &Tp_ext_max);
+  }
+
+  bft_printf("   ================================\n");
+  bft_printf("    1-D wall thermal resolution\n");
+  bft_printf("   ================================\n");
+  bft_printf("   Minmax temperature at fluid side    : %15.12e    %15.12e\n",
+      Tp_f_min, Tp_f_max);
+  bft_printf("   Minmax temperature at external side : %15.12e    %15.12e\n",
+      Tp_ext_min, Tp_ext_max);
 }
 
 /*----------------------------------------------------------------------------*/

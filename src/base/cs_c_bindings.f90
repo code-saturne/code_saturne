@@ -2333,14 +2333,11 @@ module cs_c_bindings
     !> \param[in]   nvar      Number of variables (?)
     !> \param[in]   izzftcd   Correspondance between faces and condensation zones
     !---------------------------------------------------------------------------
-    subroutine cs_wall_condensation_compute(nvar, nfbpcd, ifbpcd, &
-                                            izzftcd, spcond, hpcond)   &
+    subroutine cs_wall_condensation_compute(total_htc)   &
       bind(C, name='cs_wall_condensation_compute')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), intent(in), value :: nvar, nfbpcd
-      integer(kind=c_int), dimension(*), intent(in) :: ifbpcd, izzftcd
-      real(kind=c_double), dimension(*), intent(in) :: spcond, hpcond
+      real(kind=c_double), dimension(*), intent(out) :: total_htc
     end subroutine cs_wall_condensation_compute
 
     !---------------------------------------------------------------------------
@@ -2388,6 +2385,16 @@ module cs_c_bindings
       integer(c_int), value :: ii
       real(kind=c_double), value :: tf, hf
     end subroutine cs_1d_wall_thermal_solve
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Log information related to 1D wall thermal problem
+
+    subroutine cs_1d_wall_thermal_log()  &
+      bind(C, name='cs_1d_wall_thermal_log')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_1d_wall_thermal_log
 
     !---------------------------------------------------------------------------
 

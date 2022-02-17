@@ -77,6 +77,7 @@ typedef struct {
   cs_real_t            *thermal_condensation_flux;
   cs_real_t            *convective_htc;
   cs_real_t            *condensation_htc;
+  cs_real_t            *total_htc;
   cs_real_t            *flthr;
   cs_real_t            *dflthr;
 

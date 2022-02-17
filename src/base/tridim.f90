@@ -161,6 +161,8 @@ double precision, dimension(:), pointer :: i_mass_flux, b_mass_flux
 double precision, dimension(:), pointer :: coefap, cofafp, cofbfp
 double precision, dimension(:), pointer :: cpro_scal_st, cproa_scal_st
 
+double precision, dimension(:), pointer :: htot_cond
+
 type(gwf_soilwater_partition) :: sorption_scal
 
 type(var_cal_opt) :: vcopt, vcopt_u, vcopt_p
@@ -580,6 +582,7 @@ endif
 !-- change (gas phase to liquid phase)
 !------------------------------------------------------------------------
 
+htot_cond => null()
 if (nftcdt.gt.0) then
 
   iappel = 3
@@ -596,8 +599,8 @@ if (nftcdt.gt.0) then
   call cs_user_boundary_mass_source_terms(nvar, nscal, iappel)
 
   ! Use empiric correlations to compute heat and mass transfer due to wall condensation
-  call cs_wall_condensation_compute(nvar, nfbpcd, ifbpcd, izzftcd, &
-                                    spcond, hpcond)
+  allocate(htot_cond(nfbpcd))
+  call cs_wall_condensation_compute(htot_cond)
 
 endif
 
@@ -680,8 +683,6 @@ do f_id = 0, nfld - 1
     endif
   endif
 enddo
-
-
 
 if (ippmod(idarcy).eq.1) then
 
@@ -894,6 +895,9 @@ do while (iterns.le.nterup)
       ! to the heat transfer due to condensation.
       cofafp(ifac) = -hpcond(ii)*coefap(ifac)
       cofbfp(ifac) =  hpcond(ii)
+      if (iztag1d(izzftcd(ii)).eq.2) then
+        hbord(ifac) = htot_cond(ii)
+      endif
 
     enddo
 
@@ -941,7 +945,9 @@ do while (iterns.le.nterup)
     if (iscalt.gt.0 .and. nfpt1t.gt.0) then
       call cou1do(cvcst, hbord, theipb)
 
-      if (iirayo.ge.1) call cou1di(nfabor, iscalt, icodcl, rcodcl)
+      if ((iirayo.ge.1).or.(icondb.eq.0)) then
+        call cou1di(nfabor, iscalt, icodcl, rcodcl)
+      endif
 
     endif
 
@@ -1206,6 +1212,8 @@ do while (iterns.le.nterup)
   iterns = iterns + 1
 
 enddo
+
+if (associated(htot_cond)) deallocate(htot_cond)
 
 100 continue
 
