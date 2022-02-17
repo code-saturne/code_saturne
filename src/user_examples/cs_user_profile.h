@@ -1,7 +1,7 @@
 /*============================================================================
- * This file define functions and structure (header) needed for Calculate mean
- *profile (scalars or vectors) over the mesh Example in
- *cs_user_extra_operations_mean_profiles.c
+ * This file defines functions and structures (header) needed for the
+ * calculation of the mean profile (scalar- or vector-valued).
+ * See also the example in cs_user_extra_operations_mean_profiles.c
  *============================================================================*/
 
 /* VERS */
@@ -35,7 +35,8 @@
 #include "cs_stl.h"
 
 /* Set this define to 0 if OpenTunrs not linked to code saturne
-   szt this define to 1 if OpenTurns linked to CS (histogramp dump) */
+   set this define to 1 if OpenTurns linked to CS (histogramp dump) */
+
 #define HAVE_OT 0
 
 BEGIN_C_DECLS
