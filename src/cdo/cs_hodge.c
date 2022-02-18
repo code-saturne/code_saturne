@@ -65,7 +65,6 @@ BEGIN_C_DECLS
   \file cs_hodge.c
 
   \brief Build discrete Hodge operators
-
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -425,6 +424,7 @@ _define_vb_stiffness(const cs_cell_mesh_t   *cm,
                      cs_sdm_t               *sloc)
 {
   /* Initialize the local stiffness matrix */
+
   cs_sdm_square_init(cm->n_vc, sloc);
 
   for (int ei = 0; ei < cm->n_ec; ei++) { /* Loop on cell edges I */
@@ -438,6 +438,7 @@ _define_vb_stiffness(const cs_cell_mesh_t   *cm,
     double  *si2 = sloc->val + i2*sloc->n_rows;
 
     /* Diagonal value: consistency part has already been computed */
+
     const double  *hii = hmat->val + ei*(1 + cm->n_ec);
     const double  dval = hii[0];
 
@@ -446,6 +447,7 @@ _define_vb_stiffness(const cs_cell_mesh_t   *cm,
     si2[i2] += dval;
 
     /* Compute extra-diag entries */
+
     for (int _j = 1; _j < cm->n_ec-ei; _j++) { /* Loop on cell entities J */
 
       const short int  j1 = v_ids[2*_j], j2 = v_ids[2*_j+1];
@@ -456,6 +458,7 @@ _define_vb_stiffness(const cs_cell_mesh_t   *cm,
 
       /* Add contribution from the stabilization part for each sub-volume
          related to a primal entity */
+
       const double xval = hii[_j] * v_sgn[0]*v_sgn[_j];
 
       if (i2 < j1) {            /* i1 < i2 < j1 < j2 */
@@ -532,8 +535,8 @@ _define_vb_stiffness(const cs_cell_mesh_t   *cm,
   } /* End of loop on I entities */
 
   /* Stiffness matrix is symmetric by construction */
-  cs_sdm_symm_ur(sloc);
 
+  cs_sdm_symm_ur(sloc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -586,16 +589,17 @@ _compute_cost_quant_iso(const int               n_ent,
     for (int j = i+1; j < n_ent; j++) {
 
       /* Initialize the upper right part of hmat with the consistency part */
+
       mi[j] = invcvol * ptyval * _dp3(dq[j], dq[i]);
 
       /* Compute the alpha matrix (not symmetric) */
+
       alpha_i[j] = -invcvol * _dp3(pq[j], dq[i]);
       alpha[j*n_ent + i] = -invcvol * _dp3(pq[i], dq[j]);
 
     } /* Loop on entities (J) */
 
   } /* Loop on entities (I) */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -651,9 +655,11 @@ _compute_cost_quant(const int               n_ent,
     for (int j = i+1; j < n_ent; j++) {
 
       /* Initialize the upper right part of hmat with the consistency part */
+
       h_i[j] = ovc * _dp3(dq[j], mdq_i);
 
       /* Compute the alpha matrix (not symmetric) */
+
       alpha_i[j] = -ovc * _dp3(pq[j], dq[i]);
 
     }
@@ -663,7 +669,6 @@ _compute_cost_quant(const int               n_ent,
       alpha[j*n_ent + i] = _dp3(opq_i, dq[j]);
 
   } /* Loop on entities (I) */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -707,6 +712,7 @@ _compute_iso_hodge_ur(const int               n_ent,
 
   /* Initialize the upper right part of the discrete Hodge op and store useful
      quantities */
+
   for (int i = 0; i < n_ent; i++) {
 
     const double  dqi[3] = {dq[i][0], dq[i][1], dq[i][2]};
@@ -726,7 +732,8 @@ _compute_iso_hodge_ur(const int               n_ent,
 
   }
 
-  /* Build the upper right part of the discrete Hodge operator. */
+  /* Build the upper right part of the discrete Hodge operator */
+
   for (int i = 0; i < n_ent; i++) {
 
     const double  *dqi_pq = dq_pq + n_ent*i;
@@ -741,6 +748,7 @@ _compute_iso_hodge_ur(const int               n_ent,
     hi[i] += dbetac2 * stab[i];
 
     /* Compute the extra-diagonal terms */
+
     const double  kai = kappa[i];
     for (int j = i+1; j < n_ent; j++) {
       double  contrib = ovc * stab[j];
@@ -791,6 +799,7 @@ _compute_aniso_hodge_ur(const int               n_ent,
 
   /* Initialize the upper right part of the discrete Hodge op and store useful
      quantities */
+
   for (int i = 0; i < n_ent; i++) {
 
     const double  dqi[3] = {dq[i][0], dq[i][1], dq[i][2]};
@@ -816,7 +825,8 @@ _compute_aniso_hodge_ur(const int               n_ent,
 
   }
 
-  /* Build the upper right part of the discrete Hodge operator. */
+  /* Build the upper right part of the discrete Hodge operator */
+
   for (int i = 0; i < n_ent; i++) {
 
     const double  *dqi_pq = dq_pq + n_ent*i;
@@ -831,6 +841,7 @@ _compute_aniso_hodge_ur(const int               n_ent,
     hi[i] += dbetac2 * stab[i];
 
     /* Compute the extra-diagonal terms */
+
     const double  kai = kappa[i];
     for (int j = i+1; j < n_ent; j++) {
       double  contrib = ovc*stab[j];
@@ -874,6 +885,7 @@ _compute_iso_bubble_hodge_ur(const int               n_ent,
 
   /* Initialize the upper right part of the discrete Hodge op and store useful
      quantities */
+
   for (int i = 0; i < n_ent; i++) {
 
     const double  dqi[3] = {dq[i][0], dq[i][1], dq[i][2]};
@@ -890,6 +902,7 @@ _compute_iso_bubble_hodge_ur(const int               n_ent,
       dqi_pq[j] = _dp3(dqi, pq[j])*ovc;
 
     /* Consistent part */
+
     double  *hi = hmat->val + i*n_ent;
     hi[i] = dqi_m_dqi*ovc;
     const double  coef = ovc * pty_val;
@@ -901,15 +914,18 @@ _compute_iso_bubble_hodge_ur(const int               n_ent,
   /* Add the stabilization part */
 
   /* \int_{p_{ec}} \theta_e*\theta_e = 0.1*|p_{ec}| and d=3 */
+
   const double  stab_coef = 0.3*beta*beta;
 
-  /* Build the upper right part of the discrete Hodge operator. */
+  /* Build the upper right part of the discrete Hodge operator */
+
   for (int i = 0; i < n_ent; i++) {
 
     const double  *dqi_pq = dq_pq + n_ent*i;
     double  *hi = hmat->val + i*n_ent;
 
     /* Diagonal term */
+
     double stab = 0;
     for (int k = 0; k < n_ent; k++) {
       const double  a_ik = (i == k) ? 1 - dqi_pq[k] : -dqi_pq[k];
@@ -918,6 +934,7 @@ _compute_iso_bubble_hodge_ur(const int               n_ent,
     hi[i] += stab_coef * stab;
 
     /* Extra-diag term */
+
     for (int j = i+1; j < n_ent; j++) {
 
       const double  *dqj_pq = dq_pq + n_ent*j;
@@ -933,7 +950,6 @@ _compute_iso_bubble_hodge_ur(const int               n_ent,
     } /* Loop on row elements */
 
   } /* Loop on partition elements */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -968,6 +984,7 @@ _compute_aniso_bubble_hodge_ur(const int               n_ent,
 
   /* Initialize the upper right part of the discrete Hodge op and store useful
      quantities */
+
   for (int i = 0; i < n_ent; i++) {
 
     const double  dqi[3] = {dq[i][0], dq[i][1], dq[i][2]};
@@ -988,6 +1005,7 @@ _compute_aniso_bubble_hodge_ur(const int               n_ent,
       dqi_pq[j] = _dp3(dqi, pq[j])*ovc;
 
     /* Consistent part */
+
     double  *hi = hmat->val + i*n_ent;
     hi[i] = dqi_m_dqi*ovc;
     for (int j = i+1; j < n_ent; j++)
@@ -998,9 +1016,11 @@ _compute_aniso_bubble_hodge_ur(const int               n_ent,
   /* Add the stabilization part */
 
   /* \int_{p_{ec}} \theta_e*\theta_e = 0.1*|p_{ec}| and d=3 */
+
   const double  stab_coef = 0.3*beta*beta;
 
-  /* Build the upper right part of the discrete Hodge operator. */
+  /* Build the upper right part of the discrete Hodge operator */
+
   for (int i = 0; i < n_ent; i++) {
 
     const double  *dqi_pq = dq_pq + n_ent*i;
@@ -1015,6 +1035,7 @@ _compute_aniso_bubble_hodge_ur(const int               n_ent,
     hi[i] += stab_coef * stab;
 
     /* Extra-diag term */
+
     for (int j = i+1; j < n_ent; j++) {
 
       const double  *dqj_pq = dq_pq + n_ent*j;
@@ -1030,7 +1051,6 @@ _compute_aniso_bubble_hodge_ur(const int               n_ent,
     } /* Loop on row elements */
 
   } /* Loop on partition elements */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1060,6 +1080,7 @@ _compute_aniso_hepfd_ocs2_ur(const double            dbeta2,
   const int  n_ent = cm->n_ec;
 
   /* Store the consistent part of the reconstruction of the basis element */
+
   cs_real_3_t  *consist = cb->vectors;
   for (int i = 0; i < n_ent; i++) {
     const  double  fd_coef = ovc * cm->dface[i].meas;
@@ -1071,6 +1092,7 @@ _compute_aniso_hepfd_ocs2_ur(const double            dbeta2,
      quantities */
 
   /* Consistency part */
+
   for (int i = 0; i < n_ent; i++) {
 
     double  pty_fd_i[3] = {0, 0, 0};
@@ -1089,6 +1111,7 @@ _compute_aniso_hepfd_ocs2_ur(const double            dbeta2,
   }
 
   /* Compute the contribution part of each edge for the stabilization term */
+
   cs_real_t  *contrib_pe = cb->values;
   memset(contrib_pe, 0, n_ent*sizeof(cs_real_t));
 
@@ -1117,6 +1140,7 @@ _compute_aniso_hepfd_ocs2_ur(const double            dbeta2,
   } /* Loop on cell faces */
 
   /* Stabilization part */
+
   for (int k = 0; k < n_ent; k++) {
 
     const cs_real_t  contrib_pek = contrib_pe[k];
@@ -1144,7 +1168,6 @@ _compute_aniso_hepfd_ocs2_ur(const double            dbeta2,
     } /* i */
 
   } /* Loop on sub-volume k */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1177,6 +1200,7 @@ _compute_hodge_cost(const int       n_ent,
 
     /* Add contribution from the stabilization part for
        each sub-volume related to a primal entity */
+
     double  stab_part = 0;
     for (int k = 0; k < n_ent; k++) /* Loop over sub-volumes */
       stab_part += kappa[k] * alpha_i[k] * alpha_i[k];
@@ -1184,6 +1208,7 @@ _compute_hodge_cost(const int       n_ent,
     mi[i] += beta2 * stab_part; /* Consistency part has already been computed */
 
     /* Compute extra-diag entries */
+
     for (int j = i + 1; j < n_ent; j++) { /* Loop on cell entities J */
 
       const int  shift_j = j*n_ent;
@@ -1192,6 +1217,7 @@ _compute_hodge_cost(const int       n_ent,
 
       /* Add contribution from the stabilization part for
          each sub-volume related to a primal entity */
+
       stab_part = 0;
       for (int k = 0; k < n_ent; k++) /* Loop over sub-volumes */
         stab_part += kappa[k] * alpha_i[k] * alpha_j[k];
@@ -1202,7 +1228,6 @@ _compute_hodge_cost(const int       n_ent,
     } /* End of loop on J entities */
 
   } /* End of loop on I entities */
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1337,6 +1362,7 @@ cs_hodge_free(cs_hodge_t    **p_hodge)
     return;
 
   /* Other pointers are shared */
+
   hdg->matrix = cs_sdm_free(hdg->matrix);
 
   BFT_FREE(hdg->pty_data);
@@ -1739,7 +1765,6 @@ cs_hodge_set_property_value(const cs_lnum_t       c_id,
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1820,7 +1845,6 @@ cs_hodge_set_property_value_cw(const cs_cell_mesh_t   *cm,
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1846,11 +1870,13 @@ cs_hodge_fb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
                        CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Compute the local discrete Hodge operator */
+
   cs_hodge_edfp_cost_get_opt(cm, hodge, cb);
 
   const cs_sdm_t  *hmat = hodge->matrix;
 
   /* Initialize the local stiffness matrix */
+
   cs_sdm_t  *sloc = cb->loc;
   cs_sdm_square_init(cm->n_fc + 1, sloc);
 
@@ -1877,6 +1903,7 @@ cs_hodge_fb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
   }
 
   /* (c, c) diagonal entry */
+
   sval_crow[cm->n_fc] = full_sum;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
@@ -1903,16 +1930,17 @@ cs_hodge_fb_bubble_get_stiffness(const cs_cell_mesh_t    *cm,
                                  cs_hodge_t              *hodge,
                                  cs_cell_builder_t       *cb)
 {
-  /* Sanity checks */
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Compute the local discrete Hodge operator */
+
   cs_hodge_edfp_bubble_get(cm, hodge, cb);
 
   const cs_sdm_t  *hmat = hodge->matrix;
 
   /* Initialize the local stiffness matrix */
+
   cs_sdm_t  *sloc = cb->loc;
   cs_sdm_square_init(cm->n_fc + 1, sloc);
 
@@ -1939,6 +1967,7 @@ cs_hodge_fb_bubble_get_stiffness(const cs_cell_mesh_t    *cm,
   }
 
   /* (c, c) diagonal entry */
+
   sval_crow[cm->n_fc] = full_sum;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
@@ -1964,18 +1993,19 @@ cs_hodge_fb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
                                cs_hodge_t               *hodge,
                                cs_cell_builder_t        *cb)
 {
-  /* Sanity checks */
   assert(hodge->param->type == CS_HODGE_TYPE_EDFP);
   assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Compute the local discrete Hodge operator */
+
   cs_hodge_edfp_voro_get(cm, hodge, cb);
 
   const cs_sdm_t  *hmat = hodge->matrix;
 
   /* Initialize the local stiffness matrix */
+
   cs_sdm_t  *sloc = cb->loc;
   cs_sdm_square_init(cm->n_fc + 1, sloc);
 
@@ -1985,6 +2015,7 @@ cs_hodge_fb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
   for (int i = 0; i < hmat->n_rows; i++) {
 
     /* Hodge operator is diagonal */
+
     const double  *hval_i = hmat->val + i*hmat->n_rows;
     const double  row_sum = hval_i[i];
 
@@ -1998,6 +2029,7 @@ cs_hodge_fb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
   }
 
   /* (c, c) diagonal entry */
+
   sval_crow[cm->n_fc] = full_sum;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
@@ -2026,7 +2058,6 @@ cs_hodge_vb_cost_get_iso_stiffness(const cs_cell_mesh_t   *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity checks */
   assert(hodgep->type == CS_HODGE_TYPE_EPFD);
   assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag,
@@ -2034,6 +2065,7 @@ cs_hodge_vb_cost_get_iso_stiffness(const cs_cell_mesh_t   *cm,
                        CS_FLAG_COMP_EV));
 
   /* Set numbering and geometrical quantities Hodge builder */
+
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_ec;
 
@@ -2042,6 +2074,7 @@ cs_hodge_vb_cost_get_iso_stiffness(const cs_cell_mesh_t   *cm,
   /* Compute the upper right part of the local Hodge matrix
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
+
   cs_sdm_square_init(cm->n_ec, hodge->matrix);
 
   _compute_iso_hodge_ur(cm->n_ec,
@@ -2080,7 +2113,6 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity checks */
   assert(hodgep->type == CS_HODGE_TYPE_EPFD);
   assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag,
@@ -2088,6 +2120,7 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
                        CS_FLAG_COMP_EV));
 
   /* Set numbering and geometrical quantities Hodge builder */
+
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_ec;
 
@@ -2096,6 +2129,7 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
   /* Compute the upper right part of the local Hodge matrix
    * Remark: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    * or DUAL->PRIMAL space */
+
   cs_sdm_square_init(cm->n_ec, hodge->matrix);
 
   _compute_aniso_hodge_ur(cm->n_ec,
@@ -2134,7 +2168,6 @@ cs_hodge_vb_bubble_get_iso_stiffness(const cs_cell_mesh_t    *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity checks */
   assert(hodgep->type == CS_HODGE_TYPE_EPFD);
   assert(hodgep->algo == CS_HODGE_ALGO_BUBBLE);
   assert(cs_eflag_test(cm->flag,
@@ -2142,6 +2175,7 @@ cs_hodge_vb_bubble_get_iso_stiffness(const cs_cell_mesh_t    *cm,
                        CS_FLAG_COMP_EV));
 
   /* Set numbering and geometrical quantities Hodge builder */
+
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_ec;
 
@@ -2150,6 +2184,7 @@ cs_hodge_vb_bubble_get_iso_stiffness(const cs_cell_mesh_t    *cm,
   /* Compute the upper right part of the local Hodge matrix
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
+
   cs_sdm_square_init(cm->n_ec, hodge->matrix);
 
   _compute_iso_bubble_hodge_ur(cm->n_ec,
@@ -2188,7 +2223,6 @@ cs_hodge_vb_bubble_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity checks */
   assert(hodgep->type == CS_HODGE_TYPE_EPFD);
   assert(hodgep->algo == CS_HODGE_ALGO_BUBBLE);
   assert(cs_eflag_test(cm->flag,
@@ -2196,6 +2230,7 @@ cs_hodge_vb_bubble_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
                        CS_FLAG_COMP_EV));
 
   /* Set numbering and geometrical quantities Hodge builder */
+
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_ec;
 
@@ -2204,6 +2239,7 @@ cs_hodge_vb_bubble_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
   /* Compute the upper right part of the local Hodge matrix
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
+
   cs_sdm_square_init(cm->n_ec, hodge->matrix);
 
   _compute_aniso_bubble_hodge_ur(cm->n_ec,
@@ -2244,7 +2280,6 @@ cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_cell_mesh_t     *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity checks */
   assert(hodgep->type == CS_HODGE_TYPE_EPFD);
   assert(hodgep->algo == CS_HODGE_ALGO_OCS2);
   assert(cs_eflag_test(cm->flag,
@@ -2252,11 +2287,13 @@ cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_cell_mesh_t     *cm,
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_SEF));
 
   /* Initialize the hodge matrix */
+
   cs_sdm_square_init(cm->n_ec, hodge->matrix);
 
   /* Compute the upper right part of the local Hodge matrix
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
+
   _compute_aniso_hepfd_ocs2_ur(3*hodgep->coef*hodgep->coef, ptyd->tensor, cm,
                                cb, hodge->matrix);
 
@@ -2288,7 +2325,6 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity checks */
   assert(hodgep->type == CS_HODGE_TYPE_EPFD);
   assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag,
@@ -2296,6 +2332,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
                        CS_FLAG_COMP_EV));
 
   /* Set numbering and geometrical quantities Hodge builder */
+
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_ec;
 
@@ -2311,6 +2348,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
   double  *alpha = cb->values + cm->n_ec;
 
   /* Initialize the hodge matrix */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_ec, hmat);
 
@@ -2331,6 +2369,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
                         alpha, kappa, hmat);
 
   /* Initialize the local stiffness matrix */
+
   cs_sdm_t  *sloc = cb->loc;
   cs_sdm_square_init(cm->n_vc, sloc);
 
@@ -2350,11 +2389,13 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
 
     /* Add contribution from the stabilization part for each sub-volume
        related to a primal entity */
+
     double  stab_part = 0;
     for (int ek = 0; ek < cm->n_ec; ek++) /* Loop over sub-volumes */
       stab_part += kappa[ek] * alpha_i[ek] * alpha_i[ek];
 
     /* Diagonal value: consistency part has already been computed */
+
     const double  dval = hi[ei] + beta2 * stab_part;
 
     si1[i1] += dval;
@@ -2362,6 +2403,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
     si2[i2] += dval;
 
     /* Compute extra-diag entries */
+
     for (int ej = ei + 1; ej < cm->n_ec; ej++) { /* Loop on cell entities J */
 
       const int  shift_j = ej*cm->n_ec;
@@ -2377,11 +2419,13 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
 
       /* Add contribution from the stabilization part for each sub-volume
          related to a primal entity */
+
       stab_part = 0;
       for (int ek = 0; ek < cm->n_ec; ek++) /* Loop over sub-volumes */
         stab_part += kappa[ek] * alpha_i[ek] * alpha_j[ek];
 
       /* Extra-diagonal value */
+
       const double xval = (hi[ej] + beta2 * stab_part) * i1ei * j1ej;
 
       if (i2 < j1) {            /* i1 < i2 < j1 < j2 */
@@ -2459,6 +2503,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
   } /* End of loop on I entities */
 
   /* Stiffness matrix is symmetric by construction */
+
   for (int ei = 0; ei < sloc->n_rows; ei++) {
     double *si = sloc->val + ei*sloc->n_rows;
     for (int ej = 0; ej < ei; ej++)
@@ -2490,7 +2535,6 @@ cs_hodge_vb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
 {
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity checks */
   assert(hodge->param->type == CS_HODGE_TYPE_EPFD);
   assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag,
@@ -2498,6 +2542,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
                        CS_FLAG_COMP_EV));
 
   /* Initialize the local stiffness matrix */
+
   cs_sdm_t  *sloc = cb->loc;
   cs_sdm_square_init(cm->n_vc, sloc);
 
@@ -2508,6 +2553,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
       dpty_val = ptyd->value;
 
     /* Loop on cell edges */
+
     for (int ii = 0; ii < cm->n_ec; ii++) {
 
       cs_nvec3_t  dfq = cm->dface[ii];
@@ -2533,6 +2579,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
     cs_real_3_t  mv;
 
     /* Loop on cell edges */
+
     for (int ii = 0; ii < cm->n_ec; ii++) {
 
       cs_nvec3_t  dfq = cm->dface[ii];
@@ -2541,6 +2588,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
       cs_math_33_3_product((const cs_real_3_t *)ptyd->tensor, dfq.unitv, mv);
 
       /* Only a diagonal term */
+
       const double  dval = _dp3(mv, dfq.unitv) * dfq.meas/peq.meas;
       const short int  vi = cm->e2v_ids[2*ii];
       const short int  vj = cm->e2v_ids[2*ii+1];
@@ -2581,7 +2629,6 @@ cs_hodge_vb_wbs_get_stiffness(const cs_cell_mesh_t     *cm,
 {
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity checks */
   assert(ptyd->need_tensor);
   assert(hodge->param->type == CS_HODGE_TYPE_EPFD);
   assert(hodge->param->algo == CS_HODGE_ALGO_WBS);
@@ -2598,24 +2645,29 @@ cs_hodge_vb_wbs_get_stiffness(const cs_cell_mesh_t     *cm,
   cs_real_t  *wef = cb->values + 2*cm->n_vc;
 
   /* Initialize the local stiffness matrix */
+
   cs_sdm_t  *sloc = cb->loc;
   cs_sdm_square_init(cm->n_vc, sloc);
 
   /* Define the length and unit vector of the segment x_c --> x_v */
+
   for (short int v = 0; v < cm->n_vc; v++)
     cs_math_3_length_unitv(cm->xc, cm->xv + 3*v, lvc + v, uvc[v]);
 
   /* Loop on cell faces */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     const cs_nvec3_t  deq = cm->dedge[f];
 
     /* Compute the gradient of the lagrange function related to a cell
        in each p_{f,c} and the weights for each vertex related to this face */
+
     cs_compute_grdfc_cw(f, cm, grd_c);
     cs_compute_wef_wvf(f, cm, wvf, wef);
 
     /* Loop on face edges to scan p_{e,f,c} subvolumes */
+
     const short int  *f2e_idx = cm->f2e_idx + f;
     const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
     for (int i = 0; i < f2e_idx[1] - f2e_idx[0]; i++) {
@@ -2626,16 +2678,19 @@ cs_hodge_vb_wbs_get_stiffness(const cs_cell_mesh_t     *cm,
       const short int  v2 = cm->e2v_ids[ee+1];
 
       /* Gradient of the lagrange function related to v1 and v2 */
+
       cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])uvc, lvc,
                         grd_v1, grd_v2);
 
       /* Gradient of the lagrange function related to a face.
          This formula is a consequence of the Partition of the Unity */
+
       for (int k = 0; k < 3; k++)
         grd_f[k] = -(grd_c[k] + grd_v1[k] + grd_v2[k]);
 
       /* Compute the gradient of the conforming reconstruction functions for
          each vertex of the cell in this subvol (pefc) */
+
       for (int si = 0; si < sloc->n_rows; si++) {
 
         for (int k = 0; k < 3; k++)
@@ -2656,11 +2711,13 @@ cs_hodge_vb_wbs_get_stiffness(const cs_cell_mesh_t     *cm,
       } /* Loop on cell vertices */
 
       /* Build the upper right part */
+
       for (int si = 0; si < sloc->n_rows; si++) {
 
         cs_math_33_3_product(ptyd->tensor, glv[si], matg);
 
         /* Diagonal contribution */
+
         double  *mi = sloc->val + si*sloc->n_rows;
         mi[si] += subvol * _dp3(matg, glv[si]);
 
@@ -2675,6 +2732,7 @@ cs_hodge_vb_wbs_get_stiffness(const cs_cell_mesh_t     *cm,
   } /* Loop on cell faces */
 
   /* Matrix is symmetric by construction */
+
   cs_sdm_symm_ur(sloc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
@@ -2701,7 +2759,6 @@ cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
 {
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity checks */
   assert(ptyd->need_tensor);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
@@ -2717,6 +2774,7 @@ cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
 
 
   /* Initialize the local stiffness matrix */
+
   const int  nc_dofs = cm->n_vc + 1;
   /* index to the (cell,cell) entry */
   const int  cc = nc_dofs*cm->n_vc + cm->n_vc;
@@ -2725,10 +2783,12 @@ cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
   cs_sdm_square_init(nc_dofs, sloc);
 
   /* Define the length and unit vector of the segment x_c --> x_v */
+
   for (short int v = 0; v < cm->n_vc; v++)
     cs_math_3_length_unitv(cm->xc, cm->xv + 3*v, lvc + v, uvc[v]);
 
   /* Loop on cell faces */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     const cs_nvec3_t  deq = cm->dedge[f];
@@ -2736,16 +2796,18 @@ cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
     /* Compute for the current face:
        - the gradient of the Lagrange function related xc in p_{f,c}
        - weights related to vertices
-       - subvolume p_{ef,c} related to edges
-    */
+       - subvolume p_{ef,c} related to edges */
+
     cs_compute_grdfc_cw(f, cm, grd_c);
     cs_compute_wef_wvf(f, cm, wvf, wef);
 
     /* Compute the contribution to the entry A(c,c) */
+
     cs_math_33_3_product(ptyd->tensor, grd_c, matg_c);
     sloc->val[cc] += cm->pvol_f[f] * _dp3(grd_c, matg_c);
 
     /* Loop on face edges to scan p_{e,f,c} subvolumes */
+
     const short int  *f2e_idx = cm->f2e_idx + f;
     const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
     for (short int i = 0; i < f2e_idx[1] - f2e_idx[0]; i++) {
@@ -2756,16 +2818,19 @@ cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
       const short int  v2 = cm->e2v_ids[ee+1];
 
       /* Gradient of the lagrange function related to v1 and v2 */
+
       cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])uvc, lvc,
                         grd_v1, grd_v2);
 
       /* Gradient of the Lagrange function related to a face.
          This formula is a consequence of the Partition of the Unity */
+
       for (int k = 0; k < 3; k++)
         grd_f[k] = -(grd_c[k] + grd_v1[k] + grd_v2[k]);
 
       /* Compute the gradient of the conforming reconstruction functions for
          each vertex of the cell in this subvol (pefc) */
+
       for (int si = 0; si < cm->n_vc; si++) {
 
         for (int k = 0; k < 3; k++)
@@ -2787,17 +2852,21 @@ cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
 
       /* Build the upper right part (v-v and v-c)
          Be careful: sloc->n_rows = cm->n_vc + 1 */
+
       for (int si = 0; si < cm->n_vc; si++) {
 
         double  *mi = sloc->val + si*sloc->n_rows;
 
         /* Add v-c contribution */
+
         mi[cm->n_vc] += subvol * _dp3(matg_c, glv[si]);
 
         /* Add v-v contribution */
+
         cs_math_33_3_product(ptyd->tensor, glv[si], matg);
 
         /* Loop on vertices v_j (j >= i) */
+
         for (int sj = si; sj < cm->n_vc; sj++)
           mi[sj] += subvol * _dp3(matg, glv[sj]);
 
@@ -2808,6 +2877,7 @@ cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
   } /* Loop on cell faces */
 
   /* Matrix is symmetric by construction */
+
   cs_sdm_symm_ur(sloc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
@@ -2835,7 +2905,6 @@ cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
 {
   CS_UNUSED(cb);
 
-  /* Sanity check */
   assert(hodge != NULL);
   assert(hodge->param->type == CS_HODGE_TYPE_FB);
   assert(hodge->param->algo == CS_HODGE_ALGO_COST);
@@ -2846,13 +2915,16 @@ cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
   const cs_real_t  over_cell = 1./(cm->vol_c*cm->vol_c);
 
   /* Initialize the local matrix related to this discrete Hodge operator */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(n_cols, hmat);
 
   /* cell-cell entry (cell-face and face-cell block are null) */
+
   hmat->val[cm->n_fc*(n_cols + 1)] = cm->vol_c;
 
   /* Compute the inertia (useful for the face-face block) */
+
   cs_real_t  inertia_tensor[3][3];
   cs_compute_inertia_tensor(cm, cm->xc, inertia_tensor);
 
@@ -2862,6 +2934,7 @@ cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
     const short int  sgn_i = cm->f_sgn[fi];
 
     /* Diagonal entry (a bit more optimized) */
+
     cs_real_t dval = 0;
     for (int k = 0; k < 3; k++) {
       dval += pfq_i.unitv[k]*pfq_i.unitv[k]*inertia_tensor[k][k];
@@ -2872,6 +2945,7 @@ cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
     hmat->val[fi*(n_cols+1)] = over_cell * pfq_i.meas*pfq_i.meas * dval;
 
     /* Extra-diag entry */
+
     for (short int fj = fi + 1; fj < cm->n_fc; fj++) {
 
       const cs_quant_t  pfq_j = cm->face[fj];
@@ -2884,6 +2958,7 @@ cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
       eval *= over_cell * sgn_i*pfq_i.meas * cm->f_sgn[fj]*pfq_j.meas;
 
       /* Symmetric by construction */
+
       hmat->val[fi*n_cols+fj] = eval;
       hmat->val[fj*n_cols+fi] = eval;
 
@@ -2914,7 +2989,6 @@ cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
 
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(cm != NULL && hodge != NULL);
   assert(hodge->param->type == CS_HODGE_TYPE_VC);
   assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
@@ -2924,6 +2998,7 @@ cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
   cs_sdm_t  *hmat = hodge->matrix;
 
   /* Initialize the local matrix related to this discrete Hodge operator */
+
   cs_sdm_square_init(cm->n_vc + 1, hmat);
 
   const int  msize = cm->n_vc + 1;
@@ -2931,9 +3006,11 @@ cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
   if (ptyd->is_unity) {
 
     /* H(c,c) = 0.25*|c| */
+
     hmat->val[msize*cm->n_vc] = 0.25*cm->vol_c;
 
     /* H(c,c) = 0.75*|dcell(v) \cap c| */
+
     const double  vol_coef = 0.75*cm->vol_c;
     for (short int vi = 0; vi < cm->n_vc; vi++)
       hmat->val[msize*vi] = vol_coef*cm->wvc[vi];
@@ -2942,9 +3019,11 @@ cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
   else {
 
     /* H(c,c) = 0.25*|c| */
+
     hmat->val[msize*cm->n_vc] = ptyd->value*0.25*cm->vol_c;
 
     /* H(c,c) = 0.75*|dcell(v) \cap c| */
+
     const double  vol_coef = 0.75*cm->vol_c*ptyd->value;
     for (short int vi = 0; vi < cm->n_vc; vi++)
       hmat->val[msize*vi] = vol_coef*cm->wvc[vi];
@@ -2978,7 +3057,6 @@ cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
 {
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(cb != NULL && hodge != NULL);
   assert(hodge->param->type == CS_HODGE_TYPE_VC);
   assert(hodge->param->algo == CS_HODGE_ALGO_WBS);
@@ -2990,6 +3068,7 @@ cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
   cs_sdm_t  *hmat = hodge->matrix;
 
   /* Initialize the local matrix related to this discrete Hodge operator */
+
   cs_sdm_square_init(cm->n_vc + 1, hmat);
 
   double  *wvf = cb->values;
@@ -3000,10 +3079,12 @@ cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
   const double  c_coef2 = cs_hodge_vc_coef * cm->vol_c;
 
   /* H(c,c) = 0.1*|c| */
+
   hmat->val[msize*cm->n_vc + cm->n_vc] = 0.1*cm->vol_c;
 
   /* Initialize the upper part of the local Hodge matrix
      diagonal and cell column entries */
+
   for (short int vi = 0; vi < cm->n_vc; vi++) {
 
     double  *mi = hmat->val + vi*msize;
@@ -3016,9 +3097,11 @@ cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
   } /* Loop on cell vertices */
 
   /* Loop on each pef and add the contribution */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     /* Define useful quantities for WBS algo. */
+
     cs_compute_wef_wvf(f, cm, wvf, wef);
 
     const double f_coef = 0.3 * cm->pvol_f[f];
@@ -3027,18 +3110,21 @@ cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
     /* Add face contribution:
        Diagonal entry    H(i,i) += 0.3*wif*wif*pfc_vol
        Extra-diag. entry H(i,j) += 0.3*wjf*wif*pfc_vol */
+
     for (short int vi = 0; vi < cm->n_vc; vi++) {
 
       const double  coef_if = f_coef * wvf[vi];
       double  *mi = hmat->val + vi*msize;
 
       /* Diagonal and Extra-diagonal entries: Add face contribution */
+
       for (short int vj = vi; vj < cm->n_vc; vj++)
         mi[vj] += coef_if * wvf[vj];
 
     } /* Extra-diag entries */
 
     /* Add edge-face contribution (only extra-diag) = 0.05 * |p_{ef,c}| */
+
     const short int  *f2e_idx = cm->f2e_idx + f;
     const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
     for (short int i = 0; i < f2e_idx[1] - f2e_idx[0]; i++) {
@@ -3047,7 +3133,6 @@ cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
       const short int  v1 = cm->e2v_ids[ee];
       const short int  v2 = cm->e2v_ids[ee+1];
 
-      /* Sanity check */
       assert(v1 > -1 && v2 > -1);
       if (v1 < v2)
         hmat->val[v1*msize+v2] += ef_coef * wef[i];
@@ -3059,6 +3144,7 @@ cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
   } /* Loop on cell faces */
 
   /* Take into account the value of the associated property */
+
   if (!ptyd->is_unity) {
     for (short int vi = 0; vi < msize; vi++) {
       double  *mi = hmat->val + vi*msize;
@@ -3068,6 +3154,7 @@ cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
   }
 
   /* Local matrix is symmetric by construction. Set the lower part. */
+
   for (short int vj = 0; vj < msize; vj++) {
     double  *mj = hmat->val + vj*msize;
     for (short int vi = vj+1; vi < msize; vi++)
@@ -3102,7 +3189,6 @@ cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
 {
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity checks */
   assert(cb != NULL);
   assert(hodge->param->type == CS_HODGE_TYPE_VPCD);
   assert(hodge->param->algo == CS_HODGE_ALGO_WBS);
@@ -3120,6 +3206,7 @@ cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
   const double  c_coef = 0.1*cm->vol_c;
 
   /* Initialize the upper part of the local Hodge matrix */
+
   for (short int vi = 0; vi < cm->n_vc; vi++) {
 
     double  *mi = hmat->val + vi*cm->n_vc;
@@ -3133,9 +3220,11 @@ cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
   } /* Loop on cell vertices */
 
   /* Loop on each pef and add the contribution */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     /* Define useful quantities for WBS algo. */
+
     cs_compute_wef_wvf(f, cm, wvf, wef);
 
     const double  f_coef = 0.3 * cm->pvol_f[f];
@@ -3144,6 +3233,7 @@ cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
     /* Add face contribution:
        Diagonal entry    H(i,i) += 0.3*wif*wif*pfc_vol
        Extra-diag. entry H(i,j) += 0.3*wjf*wif*pfc_vol */
+
     for (short int vi = 0; vi < cm->n_vc; vi++) {
 
       double  *mi = hmat->val + vi*cm->n_vc;
@@ -3156,6 +3246,7 @@ cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
     } /* Face contribution */
 
     /* Add edge-face contribution (only extra-diag) = 0.05 * |p_{ef,c}| */
+
     const short int  *f2e_idx = cm->f2e_idx + f;
     const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
     for (short int i = 0; i < f2e_idx[1] - f2e_idx[0]; i++) {
@@ -3164,7 +3255,6 @@ cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
       const short int  v1 = cm->e2v_ids[ee];
       const short int  v2 = cm->e2v_ids[ee+1];
 
-      /* Sanity check */
       assert(v1 > -1 && v2 > -1);
       if (v1 < v2)
         hmat->val[v1*cm->n_vc+v2] += ef_coef * wef[i];
@@ -3176,6 +3266,7 @@ cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
   } /* Loop on cell faces */
 
   /* Take into account the value of the associated property */
+
   if (!ptyd->is_unity) {
     for (short int vi = 0; vi < cm->n_vc; vi++) {
       double  *mi = hmat->val + vi*cm->n_vc;
@@ -3185,6 +3276,7 @@ cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
   }
 
   /* Local matrix is symmetric by construction. Set the lower part. */
+
   for (short int vj = 0; vj < cm->n_vc; vj++) {
     double  *mj = hmat->val + vj*cm->n_vc;
     for (short int vi = vj+1; vi < cm->n_vc; vi++)
@@ -3221,7 +3313,6 @@ cs_hodge_vpcd_voro_get(const cs_cell_mesh_t     *cm,
 
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(hodge->param->type == CS_HODGE_TYPE_VPCD);
   assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
@@ -3274,17 +3365,18 @@ cs_hodge_epfd_voro_get(const cs_cell_mesh_t     *cm,
 
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(hodge->param->type == CS_HODGE_TYPE_EPFD);
   assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_SEF));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_ec, hmat);
 
   /* Set the diagonal entries */
+
   if (ptyd->is_iso) {
 
     for (short int e = 0; e < cm->n_ec; e++)
@@ -3338,17 +3430,18 @@ cs_hodge_epfd_cost_get(const cs_cell_mesh_t     *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(cb != NULL && hodgep != NULL);
   assert(hodgep->type == CS_HODGE_TYPE_EPFD);
   assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_ec, hmat);
 
   /* Set numbering and geometrical quantities Hodge builder */
+
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_ec;
 
@@ -3412,13 +3505,13 @@ cs_hodge_epfd_bubble_get(const cs_cell_mesh_t     *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(cb != NULL && hodgep != NULL && ptyd != NULL);
   assert(hodgep->type == CS_HODGE_TYPE_EPFD);
   assert(hodgep->algo == CS_HODGE_ALGO_BUBBLE);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ));
 
   /* Set numbering and geometrical quantities Hodge builder */
+
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_ec;
 
@@ -3427,6 +3520,7 @@ cs_hodge_epfd_bubble_get(const cs_cell_mesh_t     *cm,
   /* Compute the upper right part of the local Hodge matrix
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_ec, hmat);
 
@@ -3448,6 +3542,7 @@ cs_hodge_epfd_bubble_get(const cs_cell_mesh_t     *cm,
                                    cb, hmat);
 
   /* Hodge matrix is symmetric by construction */
+
   cs_sdm_symm_ur(hmat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
@@ -3480,7 +3575,6 @@ cs_hodge_epfd_ocs2_get(const cs_cell_mesh_t     *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(cb != NULL && hodgep != NULL);
   assert(hodgep->type == CS_HODGE_TYPE_EPFD);
   assert(hodgep->algo == CS_HODGE_ALGO_OCS2);
@@ -3489,14 +3583,17 @@ cs_hodge_epfd_ocs2_get(const cs_cell_mesh_t     *cm,
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_SEF));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_ec, hmat);
 
   /* Compute the upper right part of the local Hodge matrix */
+
   _compute_aniso_hepfd_ocs2_ur(3*hodgep->coef*hodgep->coef, ptyd->tensor,
                                cm, cb, hmat);
 
   /* Hodge operator leads to a symmetric matrix by construction */
+
   cs_sdm_symm_ur(hmat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
@@ -3529,13 +3626,13 @@ cs_hodge_fped_voro_get(const cs_cell_mesh_t     *cm,
 
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(ptyd != NULL);
   assert(hodge->param->type == CS_HODGE_TYPE_FPED);
   assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_fc, hmat);
 
@@ -3588,7 +3685,6 @@ cs_hodge_fped_cost_get(const cs_cell_mesh_t     *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(cb != NULL && hodgep != NULL && ptyd != NULL);
   assert(hodgep->type == CS_HODGE_TYPE_FPED);
   assert(hodgep->algo == CS_HODGE_ALGO_COST);
@@ -3598,6 +3694,7 @@ cs_hodge_fped_cost_get(const cs_cell_mesh_t     *cm,
   cs_real_3_t  *dq = cb->vectors + cm->n_fc;
 
   /* Initialize the geometrical quantities related to this Hodge operator */
+
   _init_fb_geom_quant(cm, pq, dq);
 
   /* Compute additional geometrical quantities:
@@ -3605,10 +3702,12 @@ cs_hodge_fped_cost_get(const cs_cell_mesh_t     *cm,
      constant over a cell.
      Switch arguments between discrete Hodge operator from PRIMAL->DUAL space
      and discrete Hodge operator from DUAL->PRIMAL space */
+
   double  *kappa = cb->values;
   double  *alpha = cb->values + cm->n_fc;
 
   /* Initialize the local matrix related to this discrete Hodge operator */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_fc, hmat);
 
@@ -3660,13 +3759,13 @@ cs_hodge_fped_bubble_get(const cs_cell_mesh_t     *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(cb != NULL && hodgep != NULL && ptyd != NULL);
   assert(hodgep->type == CS_HODGE_TYPE_EDFP);
   assert(hodgep->algo == CS_HODGE_ALGO_BUBBLE);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialize the geometrical quantities related to this Hodge operator */
+
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_fc;
 
@@ -3677,6 +3776,7 @@ cs_hodge_fped_bubble_get(const cs_cell_mesh_t     *cm,
      constant over a cell.
      Switch arguments between discrete Hodge operator from PRIMAL->DUAL space
      and discrete Hodge operator from DUAL->PRIMAL space */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_fc, hmat);
 
@@ -3698,6 +3798,7 @@ cs_hodge_fped_bubble_get(const cs_cell_mesh_t     *cm,
                                    cb, hmat);
 
   /* Hodge operator is symmetric */
+
   cs_sdm_symm_ur(hmat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
@@ -3729,13 +3830,13 @@ cs_hodge_edfp_voro_get(const cs_cell_mesh_t     *cm,
 
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(ptyd != NULL);
   assert(hodge->param->type == CS_HODGE_TYPE_EDFP);
   assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_fc, hmat);
 
@@ -3788,13 +3889,13 @@ cs_hodge_edfp_cost_get(const cs_cell_mesh_t     *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(cb != NULL && hodgep != NULL && ptyd != NULL);
   assert(hodgep->type == CS_HODGE_TYPE_EDFP);
   assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialize the geometrical quantities related to this Hodge operator */
+
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_fc;
 
@@ -3805,10 +3906,12 @@ cs_hodge_edfp_cost_get(const cs_cell_mesh_t     *cm,
      constant over a cell.
      Switch arguments between discrete Hodge operator from PRIMAL->DUAL space
      and discrete Hodge operator from DUAL->PRIMAL space */
+
   double  *kappa = cb->values;
   double  *alpha = cb->values + cm->n_fc;
 
   /* Initialize the local matrix related to this discrete Hodge operator */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_fc, hmat);
 
@@ -3859,13 +3962,13 @@ cs_hodge_edfp_cost_get_opt(const cs_cell_mesh_t     *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(cb != NULL && hodge != NULL && ptyd != NULL);
   assert(hodgep->type == CS_HODGE_TYPE_EDFP);
   assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialize the geometrical quantities related to this Hodge operator */
+
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_fc;
 
@@ -3876,6 +3979,7 @@ cs_hodge_edfp_cost_get_opt(const cs_cell_mesh_t     *cm,
      constant over a cell.
      Switch arguments between discrete Hodge operator from PRIMAL->DUAL space
      and discrete Hodge operator from DUAL->PRIMAL space */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_fc, hmat);
 
@@ -3897,6 +4001,7 @@ cs_hodge_edfp_cost_get_opt(const cs_cell_mesh_t     *cm,
                             cb, hmat);
 
   /* Hodge operator is symmetric */
+
   cs_sdm_symm_ur(hmat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
@@ -3927,13 +4032,13 @@ cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
 
-  /* Sanity check */
   assert(cb != NULL && hodgep != NULL && ptyd != NULL);
   assert(hodgep->type == CS_HODGE_TYPE_EDFP);
   assert(hodgep->algo == CS_HODGE_ALGO_BUBBLE);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialize the geometrical quantities related to this Hodge operator */
+
   cs_real_3_t  *pq = cb->vectors;
   cs_real_3_t  *dq = cb->vectors + cm->n_fc;
 
@@ -3944,6 +4049,7 @@ cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
      constant over a cell.
      Switch arguments between discrete Hodge operator from PRIMAL->DUAL space
      and discrete Hodge operator from DUAL->PRIMAL space */
+
   cs_sdm_t  *hmat = hodge->matrix;
   cs_sdm_square_init(cm->n_fc, hmat);
 
@@ -3965,6 +4071,7 @@ cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
                                    cb, hmat);
 
   /* Hodge operator is symmetric */
+
   cs_sdm_symm_ur(hmat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
@@ -4026,6 +4133,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
     double  *_in = NULL;
 
     /* Each thread has its own pointer to a cs_hodge_t structure */
+
     cs_hodge_t  *hodge = cs_hodge_create(connect, pty, &hodgep, true, false);
     cs_hodge_compute_t  *compute = cs_hodge_get_func(func_name, hodgep);
     bool  pty_uniform = cs_property_is_uniform(pty);
@@ -4127,16 +4235,20 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */
+
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
       /* Retrieve the value of the property inside the current cell */
+
       if (!pty_uniform)
         cs_hodge_set_property_value_cw(cm, t_eval, cell_flag, hodge);
 
       /* Build the local discrete Hodge operator */
+
       compute(cm, hodge, cb);
 
       /* Define a local vector to multiply for the current cell */
+
       switch (hodgep.type) {
 
       case CS_HODGE_TYPE_VPCD:
@@ -4144,9 +4256,11 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
           _in[v] = in_vals[cm->v_ids[v]];
 
         /* Local matrix-vector operation */
+
         cs_sdm_square_matvec(hodge->matrix, _in, cb->values);
 
         /* Assemble the resulting vector */
+
         for (short int v = 0; v < cm->n_vc; v++)
 #         pragma omp atomic
           result[cm->v_ids[v]] += cb->values[v];
@@ -4157,9 +4271,11 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
           _in[e] = in_vals[cm->e_ids[e]];
 
         /* Local matrix-vector operation */
+
         cs_sdm_square_matvec(hodge->matrix, _in, cb->values);
 
         /* Assemble the resulting vector */
+
         for (short int e = 0; e < cm->n_ec; e++)
 #         pragma omp atomic
           result[cm->e_ids[e]] += cb->values[e];
@@ -4170,9 +4286,11 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
           _in[f] = in_vals[cm->f_ids[f]];
 
         /* Local matrix-vector operation */
+
         cs_sdm_square_matvec(hodge->matrix, _in, cb->values);
 
         /* Assemble the resulting vector */
+
         for (short int f = 0; f < cm->n_fc; f++)
 #         pragma omp atomic
           result[cm->f_ids[f]] += cb->values[f];
@@ -4191,7 +4309,6 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
     cs_hodge_free(&hodge);
 
   } /* OpenMP Block */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4257,6 +4374,7 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
 
     /* Only this type of discrete Hodge operator makes sense for this
        operation */
+
     case CS_HODGE_TYPE_FPED:
 
       msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
@@ -4277,21 +4395,26 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the local mesh structure for the current cell */
+
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
       /* Retrieve the value of the property inside the current cell */
+
       if (!pty_uniform)
         cs_hodge_set_property_value_cw(cm, t_eval, cell_flag, hodge);
 
       /* Build the local discrete Hodge operator */
+
       compute(cm, hodge, cb);
 
       /* Define a local vector to multiply for the current cell */
+
       for (short int f = 0; f < cm->n_fc; f++)
         _fluxes[f] = flux[cm->f_ids[f]];
       cs_real_t  *_circ = circul + c2f->idx[c_id];
 
       /* Local matrix-vector operation */
+
       cs_sdm_square_matvec(hodge->matrix, _fluxes, _circ);
 
     } /* Main loop on cells */
@@ -4301,7 +4424,6 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
     cs_hodge_free(&hodge);
 
   } /* OpenMP Block */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4322,6 +4444,7 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
   assert(hf != NULL && fm != NULL);
 
   /* Reset values */
+
   cs_sdm_square_init(fm->n_vf, hf);
 
   for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
@@ -4329,16 +4452,19 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
     double  *hi = hf->val + vfi*hf->n_rows;
 
     /* Default contribution */
+
     const double  default_coef = 0.5 * fm->wvf[vfi] * fm->face.meas;
     for (short int vfj = 0; vfj < fm->n_vf; vfj++)
       hi[vfj] = default_coef * fm->wvf[vfj];
 
     /* Specific diagonal contribution */
+
     hi[vfi] += 2 * default_coef * cs_math_1ov3;
 
   } /* Loop on face vertices */
 
   /* Specific extra-diag contribution */
+
   for (short int e = 0; e < fm->n_ef; e++) {
 
     const short int  v1 = fm->e2v_ids[2*e];

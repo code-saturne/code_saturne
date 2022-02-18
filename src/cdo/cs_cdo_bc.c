@@ -88,17 +88,20 @@ _cdo_bc_face_create(bool       is_steady,
   bc->n_b_faces = n_b_faces;
 
   /* Default initialization */
+
   bc->flag = NULL;
   BFT_MALLOC(bc->flag, n_b_faces, cs_flag_t);
   memset(bc->flag, 0, n_b_faces*sizeof(cs_flag_t));
 
   /* Default initialization */
+
   bc->def_ids = NULL;
   BFT_MALLOC(bc->def_ids, n_b_faces, short int);
   for (cs_lnum_t i = 0; i < n_b_faces; i++)
     bc->def_ids[i] = CS_CDO_BC_DEFAULT_DEF;
 
   /* Other lists of faces */
+
   bc->n_hmg_dir_faces = 0;
   bc->hmg_dir_ids = NULL;
   bc->n_nhmg_dir_faces = 0;
@@ -153,6 +156,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
   CS_UNUSED(dim); /* Only in debug */
 
   /* Set the default flag */
+
   cs_flag_t  default_flag = cs_cdo_bc_get_flag(default_bc);
 
   if (!(default_flag & CS_CDO_BC_HMG_DIRICHLET) &&
@@ -168,6 +172,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
     return  bc;
 
   /* Loop on the definition of each boundary condition */
+
   for (int ii = 0; ii < n_defs; ii++) {
 
     const cs_xdef_t  *d = defs[ii];
@@ -191,13 +196,15 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
       bc->n_robin_faces += z->n_elts;
       break;
 
-      /* For vector-valued equations only */
+    /* For vector-valued equations only */
+
     case CS_CDO_BC_SLIDING:
       assert(dim > 1);
       bc->n_sliding_faces += z->n_elts;
       break;
 
-      /* For vector-valued equations only */
+    /* For vector-valued equations only */
+
     case CS_CDO_BC_TANGENTIAL_DIRICHLET:
       assert(dim > 1);
       bc->n_circulation_faces += z->n_elts;
@@ -223,6 +230,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
   } /* Loop on definitions of boundary conditions */
 
   /* Set the default flag for all remaining unset faces */
+
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
     if (bc->flag[i] == 0) { /* Not set yet --> apply the default settings */
 
@@ -243,6 +251,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
 
 #if defined(DEBUG) && !defined(NDEBUG)
   /* Sanity check (there is no multiple definition or faces whitout settings */
+
   cs_lnum_t n_set_faces =
     bc->n_hmg_neu_faces + bc->n_nhmg_neu_faces +
     bc->n_hmg_dir_faces + bc->n_nhmg_dir_faces +
@@ -255,6 +264,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
 #endif
 
   /* Allocate list of border faces by type of boundary conditions */
+
   BFT_MALLOC(bc->hmg_dir_ids, bc->n_hmg_dir_faces, cs_lnum_t);
   BFT_MALLOC(bc->nhmg_dir_ids, bc->n_nhmg_dir_faces, cs_lnum_t);
   BFT_MALLOC(bc->hmg_neu_ids, bc->n_hmg_neu_faces, cs_lnum_t);
@@ -264,11 +274,13 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
   BFT_MALLOC(bc->circulation_ids, bc->n_circulation_faces, cs_lnum_t);
 
   /* Fill the allocated lists */
+
   cs_lnum_t  shift[CS_PARAM_N_BC_TYPES];
   for (int ii = 0; ii < CS_PARAM_N_BC_TYPES; ii++)
     shift[ii] = 0;
 
   /* Loop on the border faces and append lists */
+
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
 
     switch (bc->flag[i]) {
@@ -296,13 +308,15 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
       shift[CS_PARAM_BC_ROBIN] += 1;
       break;
 
-      /* For vector-valued equations only */
+    /* For vector-valued equations only */
+
     case CS_CDO_BC_SLIDING:
       bc->sliding_ids[shift[CS_PARAM_BC_SLIDING]] = i;
       shift[CS_PARAM_BC_SLIDING] += 1;
       break;
 
-      /* For vector-valued equations only */
+    /* For vector-valued equations only */
+
     case CS_CDO_BC_TANGENTIAL_DIRICHLET:
       bc->circulation_ids[shift[CS_PARAM_BC_CIRCULATION]] = i;
       shift[CS_PARAM_BC_CIRCULATION] += 1;

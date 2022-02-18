@@ -390,7 +390,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
 
-    /* compute residue and prepare descent parameter */
+    /* Compute residue and prepare descent parameter */
 
     _dot_products_xx_xy(c, rk, gk, &residue, &rk_gk);
 
@@ -534,7 +534,7 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(a, vk, wk);
 
-    /* compute residue and prepare descent parameter */
+    /* Compute residue and prepare descent parameter */
 
     double alpha_k, beta_k, gamma_k, residue;
 
@@ -756,7 +756,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
 
-    /* compute residue and prepare descent parameter */
+    /* Compute residue and prepare descent parameter */
 
     _dot_products_xx_xy_yz(c, rk, gk, rkm1, &residue, &rk_gk, &rkm1_gk);
 
@@ -956,7 +956,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(a, gk, sk);  /* sk = A.gk */
 
-    /* compute residue and prepare descent parameter */
+    /* Compute residue and prepare descent parameter */
 
     _dot_products_xx_xy_yz(c, rk, gk, sk, &residue, &rk_gk, &gk_sk);
 
@@ -1134,7 +1134,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    /* compute residue and prepare descent parameter */
+    /* Compute residue and prepare descent parameter */
 
     _dot_products_xx_xy(c, rk, rk, &residue, &rk_rk);
 
@@ -1323,7 +1323,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(a, rk, sk);  /* sk = A.zk */
 
-    /* compute residue and prepare descent parameter */
+    /* Compute residue and prepare descent parameter */
 
     _dot_products_xx_xy(c, rk, sk, &residue, &rk_sk);
 
@@ -1519,7 +1519,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
       }
     }
 
-    /* compute residue */
+    /* Compute residue */
 
     residue = sqrt(_dot_product(c, rk, rk));
 
@@ -2835,11 +2835,11 @@ _gmres(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    /* compute  rk <- a*vx (vx = x0) */
+    /* Compute  rk <- a*vx (vx = x0) */
 
     cs_matrix_vector_multiply(a, vx, dk);
 
-    /* compute  rk <- rhs - rk (r0 = b-A*x0) */
+    /* Compute  rk <- rhs - rk (r0 = b-A*x0) */
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
@@ -2869,6 +2869,7 @@ _gmres(cs_sles_it_t              *c,
     for (cs_lnum_t ii = 0; ii < krylov_size - 1; ii++) {
 
       /* krk = k-ieth col of _krylov_vector = vi */
+
       krk = _krylov_vectors + ii*n_rows;
 
 #     pragma omp parallel for if(n_rows > CS_THR_MIN)
@@ -2877,17 +2878,18 @@ _gmres(cs_sles_it_t              *c,
 
       c->setup_data->pc_apply(c->setup_data->pc_context, krk, gk);
 
-      /* compute w = dk <- A*vj */
+      /* Compute w = dk <- A*vj */
 
       cs_matrix_vector_multiply(a, gk, dk);
 
       for (cs_lnum_t jj = 0; jj < ii + 1; jj++) {
 
-        /* compute h(k,i) = <w,vi> = <dk,vi> */
+        /* Compute h(k,i) = <w,vi> = <dk,vi> */
+
         _h_matrix[ii*krylov_size + jj]
           = _dot_product(c, dk, (_krylov_vectors + jj*n_rows));
 
-        /* compute w = dk <- w - h(i,k)*vi */
+        /* Compute w = dk <- w - h(i,k)*vi */
 
         cs_axpy(n_rows,
                 -_h_matrix[ii*krylov_size+jj],
@@ -2896,7 +2898,8 @@ _gmres(cs_sles_it_t              *c,
 
       }
 
-      /* compute h(i+1,i) = sqrt<w,w> */
+      /* Compute h(i+1,i) = sqrt<w,w> */
+
       dot_prod = sqrt(_dot_product(c, dk, dk));
       _h_matrix[ii*krylov_size + ii + 1] = dot_prod;
 
@@ -2917,7 +2920,8 @@ _gmres(cs_sles_it_t              *c,
 
         l_old_iter = l_iter + 1;
 
-        /* solve diag sup system */
+        /* Solve diag sup system */
+
         _solve_diag_sup_halo(_h_matrix, l_iter + 1, krylov_size, _beta, gk);
 
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
@@ -2935,7 +2939,7 @@ _gmres(cs_sles_it_t              *c,
 
         cs_matrix_vector_multiply(a, fk, bk);
 
-        /* compute residue = | Ax - b |_1 */
+        /* Compute residue = | Ax - b |_1 */
 
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (cs_lnum_t jj = 0; jj < n_rows; jj++)

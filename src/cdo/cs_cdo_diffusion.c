@@ -72,7 +72,6 @@ BEGIN_C_DECLS
 
   \brief  Build discrete stiffness matrices and handled boundary conditions for
           diffusion term in CDO vertex-based and vertex+cell schemes.
-
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -84,6 +83,7 @@ BEGIN_C_DECLS
 #define CS_CDO_DIFFUSION_DBG  0
 
 /* Redefined the name of functions from cs_math to get shorter names */
+
 #define _dp3  cs_math_3_dot_product
 
 /*=============================================================================
@@ -361,6 +361,7 @@ _vb_ocs_normal_flux_op(const short int           f,
   /* Compute the cellwise-constant gradient for each array of the canonical
    * basis of the potential DoFs (size = cm->n_vc)
    */
+
   _svb_cellwise_grd(cm, grd_cell);
 
   /* Loop on border face edges */
@@ -822,18 +823,19 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_enforce_bc_t. Hence the unused parameters */
-  CS_UNUSED(hodge);
-  CS_UNUSED(fm);
+  CS_UNUSED(hodge); /* Prototype common to cs_cdo_enforce_bc_t */
+  CS_UNUSED(fm);    /*  Hence the unused parameters */
   CS_UNUSED(cm);
   CS_UNUSED(cb);
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
   /* Penalize diagonal entry (and its rhs if needed) */
+
   for (short int i = 0; i < csys->n_dofs; i++) {
 
     if (csys->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET) {
@@ -845,7 +847,6 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
     }
 
   } /* Loop on degrees of freedom */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -873,14 +874,14 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_enforce_bc_t. Hence the unused parameters */
-  CS_UNUSED(hodge);
-  CS_UNUSED(fm);
+  CS_UNUSED(hodge);   /* Prototype common to cs_cdo_enforce_bc_t */
+  CS_UNUSED(fm);      /*  Hence the unused parameters */
   CS_UNUSED(cm);
   CS_UNUSED(cb);
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -889,6 +890,7 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
   assert(bd != NULL);
 
   /* Penalize diagonal entry (and its rhs if needed) */
+
   int  shift = 0;
   for (short int bi = 0; bi < bd->n_row_blocks; bi++) {
 
@@ -913,7 +915,6 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
     shift += mII->n_rows;
 
   } /* Block bi */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -949,14 +950,14 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_enforce_bc_t Hence the unused parameters */
-  CS_UNUSED(eqp);
-  CS_UNUSED(fm);
+  CS_UNUSED(eqp);   /* Prototype common to cs_cdo_enforce_bc_t */
+  CS_UNUSED(fm);    /* Hence the unused parameters */
   CS_UNUSED(cm);
   CS_UNUSED(hodge);
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -966,26 +967,33 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
   memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
 
   /* Build x_dir */
+
   for (short int i = 0; i < csys->n_dofs; i++)
     if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) /* Only non-homogeneous */
       x_dir[i] = csys->dir_values[i];
 
   /* Contribution of the Dirichlet conditions */
+
   cs_sdm_matvec(csys->mat, x_dir, ax_dir);
 
   /* Second pass: Replace the Dirichlet block by a diagonal block */
+
   for (short int i = 0; i < csys->n_dofs; i++) {
 
     if (cs_cdo_bc_is_dirichlet(csys->dof_flag[i])) { /* All Dirichlet:
                                                         homogeneous or not */
       /* Reset row i */
+
       memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
+
       /* Reset column i */
+
       for (short int j = 0; j < csys->n_dofs; j++)
         csys->mat->val[i + csys->n_dofs*j] = 0;
       csys->mat->val[i*(1 + csys->n_dofs)] = 1;
 
       /* Set the RHS */
+
       csys->rhs[i] = csys->dir_values[i];
 
     } /* DoF associated to a Dirichlet BC */
@@ -993,7 +1001,6 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
       csys->rhs[i] -= ax_dir[i];  /* Update RHS */
 
   } /* Loop on degrees of freedom */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1030,14 +1037,14 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys)
 {
-  /* Prototype common to cs_cdo_enforce_bc_t. Hence the unused parameters */
-  CS_UNUSED(eqp);
-  CS_UNUSED(fm);
+  CS_UNUSED(eqp);   /* Prototype common to cs_cdo_enforce_bc_t */
+  CS_UNUSED(fm);    /* Hence the unused parameters */
   CS_UNUSED(cm);
   CS_UNUSED(hodge);
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -1050,14 +1057,17 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
   memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
 
   /* Build x_dir */
+
   for (short int i = 0; i < csys->n_dofs; i++)
     if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) /* Only non-homogeneous */
       x_dir[i] = csys->dir_values[i];
 
   /* Contribution of the Dirichlet conditions */
+
   cs_sdm_block_matvec(csys->mat, x_dir, ax_dir);
 
   /* Second pass: Replace the Dirichlet block by a diagonal block */
+
   int  s = 0;
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
@@ -1068,6 +1078,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
     assert(mII->n_rows == mII->n_cols);
 
     /* Is the current block associated to a Dirichlet BC ? */
+
     int  n_dir = 0;
     for (int i = 0; i < mII->n_rows; i++)
       if (cs_cdo_bc_is_dirichlet(_flg[i]))
@@ -1080,6 +1091,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
                   "%s: Partial Dirichlet block not yet implemented", __func__);
 
       /* Reset block row bi and block colum bi */
+
       for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
         if (bj != bi) {
@@ -1115,7 +1127,6 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
     s += mII->n_rows;
 
   } /* Block bi */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1253,6 +1264,7 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -1264,23 +1276,28 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
+
   cs_real_3_t  *kappa_f = cb->vectors;
   _compute_kappa_f(pty, cm, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
+
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
   cs_sdm_t *bc_op = cb->loc;
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* First pass: build the bc_op matrix */
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
+
       _cdofb_normal_flux_reco(f, cm, hodge->param,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
@@ -1293,20 +1310,25 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
    * values. Avoid a truncation error if the arbitrary coefficient of the
    * Nitsche algorithm is large
    */
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* chi * \meas{f} / h_f  */
+
       const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
 
       /* Diagonal term */
+
       bc_op->val[f*(n_dofs + 1)] += pcoef;
 
       /* rhs */
+
       for (short int k = 0; k < 3; k++)
         csys->rhs[3*f + k] += pcoef * csys->dir_values[3*f + k];
 
@@ -1317,22 +1339,25 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
 
   /* Update the local system matrix */
+
   for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
     for (int bj = 0; bj < n_dofs; bj++) {
 
       /* Retrieve the 3x3 matrix */
+
       cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
       const cs_real_t  _val = bc_op->val[n_dofs*bi + bj];
+
       /* Update diagonal terms only */
+
       bij->val[0] += _val;
       bij->val[4] += _val;
       bij->val[8] += _val;
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1364,6 +1389,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -1375,6 +1401,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
+
   cs_real_3_t  *kappa_f = cb->vectors;
   _compute_kappa_f(pty, cm, kappa_f);
 
@@ -1383,14 +1410,17 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* First pass: build the bc_op matrix */
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
+
       _cdofb_normal_flux_reco(f, cm, hodge->param,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
@@ -1400,38 +1430,45 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   } /* Loop boundary faces */
 
   /* Symmetrize the Nitsche contribution */
+
   cs_real_t *dir_val = cb->values, *u0_trgradv = cb->values + n_dofs;
 
   /* Putting the face DoFs of the BC, into a face- and cell-DoFs array */
+
   memcpy(dir_val, csys->dir_values, n_f*sizeof(cs_real_t));
   dir_val[n_f] = 0.;
 
   /* Update bc_op = bc_op + transp and transp = transpose(bc_op) cb->loc
      plays the role of the flux operator */
+
   cs_sdm_square_add_transpose(bc_op, bc_op_t);
   cs_sdm_square_matvec(bc_op_t, dir_val, u0_trgradv);
 
-  /* Second pass: Update the cell system with the bc_op matrix and the Dirichlet
-     values. Avoid a truncation error if the arbitrary coefficient of the
-     Nitsche algorithm is large
-  */
+  /* Second pass: Update the cell system with the bc_op matrix and the
+   * Dirichlet values. Avoid a truncation error if the arbitrary coefficient of
+   * the Nitsche algorithm is large */
+
   for (short int i = 0; i < n_dofs; i++) /* Cell too! */
     csys->rhs[i] += u0_trgradv[i];
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* chi * \meas{f} / h_f  */
+
       const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
 
       /* Diagonal term */
+
       bc_op->val[f*(n_dofs + 1)] += pcoef;
 
       /* rhs */
+
       csys->rhs[f] += pcoef * csys->dir_values[f];
 
     } /* If Dirichlet */
@@ -1439,8 +1476,8 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   } /* Loop on boundary faces */
 
   /* Update the local system matrix */
-  cs_sdm_add(csys->mat, bc_op);
 
+  cs_sdm_add(csys->mat, bc_op);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1474,6 +1511,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -1485,23 +1523,28 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
+
   cs_real_3_t  *kappa_f = cb->vectors;
   _compute_kappa_f(pty, cm, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
+
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
   cs_sdm_t *bc_op = cb->loc, *bc_op_t = cb->aux;
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* First pass: build the bc_op matrix */
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
+
       _cdofb_normal_flux_reco(f, cm, hodge->param,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
@@ -1513,12 +1556,14 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   /* Second pass: add the bc_op matrix, add the BC */
 
   /* Update bc_op = bc_op + transp and bc_op_t = transpose(bc_op) */
+
   cs_sdm_square_add_transpose(bc_op, bc_op_t);
 
   /* Fill a face- and cell-DoFs array with the face DoFs values associated to
    * Dirichlet BC. These Dirichlet BC values are interlaced. One first
    * de-interlaces this array to perform the local matrix-vector product:
    * bc_op_t dir_val = u0_trgradv */
+
   cs_real_t *dir_val = cb->values, *u0_trgradv = cb->values + n_dofs;
 
   dir_val[cm->n_fc] = 0.;     /* cell DoF is not attached to a Dirichlet */
@@ -1526,6 +1571,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   for (int k = 0; k < 3; k++) {
 
     /* Build dir_val */
+
     for (short int f = 0; f < cm->n_fc; f++)
       dir_val[f] = csys->dir_values[3*f+k];
 
@@ -1537,23 +1583,27 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   } /* Loop on components */
 
   /* Third pass: Update the cell system with the bc_op matrix and the Dirichlet
-     values. Avoid a truncation error if the arbitrary coefficient of the
-     Nitsche algorithm is large
-  */
+   * values. Avoid a truncation error if the arbitrary coefficient of the
+   * Nitsche algorithm is large */
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* chi * \meas{f} / h_f  */
+
       const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
 
       /* Diagonal term */
+
       bc_op->val[f*(n_dofs + 1)] += pcoef;
 
       /* rhs */
+
       for (short int k = 0; k < 3; k++)
         csys->rhs[3*f + k] += pcoef * csys->dir_values[3*f + k];
 
@@ -1564,22 +1614,25 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
 
   /* Update the local system matrix */
+
   for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
     for (int bj = 0; bj < n_dofs; bj++) {
 
       /* Retrieve the 3x3 matrix */
+
       cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
       const cs_real_t  _val = bc_op->val[n_dofs*bi + bj];
+
       /* Update diagonal terms only */
+
       bij->val[0] += _val;
       bij->val[4] += _val;
       bij->val[8] += _val;
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1611,12 +1664,12 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
   assert(csys != NULL);
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_sliding == false)
     return;  /* Nothing to do */
 
   const cs_property_data_t  *pty = hodge->pty_data;
 
-  /* Sanity checks */
   assert(cm != NULL && cb != NULL);
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
 
@@ -1627,6 +1680,7 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
+
   cs_real_3_t  *kappa_f = cb->vectors;
   _compute_kappa_f(pty, cm, kappa_f);
 
@@ -1636,14 +1690,17 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* First pass: build the bc_op matrix */
+
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (csys->bf_flag[f] & CS_CDO_BC_SLIDING) {
 
       /* Compute \int_f du/dn v and update the matrix */
+
       _cdofb_normal_flux_reco(f, cm, hodge->param,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
@@ -1714,7 +1771,6 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
     } /* If sliding */
 
   } /* Loop boundary faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1814,28 +1870,31 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
 {
   CS_UNUSED(eqp);
   CS_UNUSED(hodge);
-
-  /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL);
 
   /* Enforcement of the Robin BCs */
+
   if (csys->has_robin == false)
     return;  /* Nothing to do */
 
   /* Robin BC expression: K du/dn + alpha*(u - u0) = beta */
+
   cs_sdm_t  *bc_op = cb->loc;
 
   /* Reset local operator */
+
   cs_sdm_square_init(cm->n_vc, bc_op);
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
 
       /* Compute the face-view of the mesh */
+
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       /* Robin BC expression: K du/dn + alpha*(u - u0) = beta */
@@ -1847,6 +1906,7 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
       const double  g = beta + alpha*u0;
 
       /* Update the RHS and the local system */
+
       for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
 
         const double  f_cap_dualv = fm->face.meas * fm->wvf[vfi];
@@ -1869,6 +1929,7 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
 #endif
 
   /* Add contribution to the linear system */
+
   cs_sdm_add(csys->mat, bc_op);
 }
 
@@ -1899,11 +1960,10 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
                                   cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(eqp);
-
-  /* Sanity checks */
   assert(csys != NULL);
 
   /* Enforcement of the Robin BCs */
+
   if (csys->has_robin == false)
     return;  /* Nothing to do */
 
@@ -1916,8 +1976,8 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
   assert(pty->need_tensor);
 
   /* Robin BC expression: K du/dn + alpha*(u - u0) = g
-   * Store x = u0 + g/alpha
-   */
+   * Store x = u0 + g/alpha */
+
   cs_real_t  *x = cb->values;
   cs_real_t  *ax = cb->values + cm->n_vc;
   cs_sdm_t  *bc_op = cb->loc;
@@ -1926,23 +1986,28 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
 
       /* Compute the face-view of the mesh */
+
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       /* Compute the product: matpty*face unit normal */
+
       cs_real_3_t  pty_nuf;
       cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
+
       _vb_cost_full_flux_op(f, cm, pty_nuf, hodgep->coef, cb, bc_op, ntrgrd_tr);
 
       /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
       /* ------------------------------------------------- */
+
       const double  alpha = csys->rob_values[3*f];
       const double  u0 = csys->rob_values[3*f+1];
       const double  g = csys->rob_values[3*f+2];
@@ -1960,6 +2025,7 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
       }
 
       /* Update the RHS */
+
       cs_sdm_square_matvec(ntrgrd_tr, x, ax);
       for (short int v = 0; v < fm->n_vf; v++) {
         const double  pcoef_v = pena_coef * fm->face.meas * fm->wvf[v];
@@ -1976,10 +2042,12 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
        */
 
       /* Step 1 */
+
       for (int ij = 0; ij < cm->n_vc*cm->n_vc; ij++)
         bc_op->val[ij] *= -epsilon*flux_coef;
 
       /* Step 2 */
+
       for (short int v = 0; v < fm->n_vf; v++) {
         const double  pcoef_v = pena_coef * fm->face.meas * fm->wvf[v];
         const short int  vi = fm->v_ids[v];
@@ -1987,6 +2055,7 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
       }
 
       /* Step 3 */
+
       cs_sdm_square_2symm(ntrgrd_tr); /* ntrgrd_tr is now a symmetric matrix */
       cs_sdm_add_mult(bc_op, -flux_coef, ntrgrd_tr);
 
@@ -1999,11 +2068,11 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
 #endif
 
       /* Add contribution to the linear system */
+
       cs_sdm_add(csys->mat, bc_op);
 
     }  /* Robin face */
   } /* Loop on boundary faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2034,6 +2103,7 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -2051,27 +2121,33 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
   cs_sdm_t  *ntrgrd = cb->loc;
 
   /* Initialize the local operator */
+
   cs_sdm_square_init(cm->n_vc, ntrgrd);
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
+
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       /* Compute the product: matpty*face unit normal */
+
       cs_real_3_t  pty_nuf;
       cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
+
       _vb_ocs_normal_flux_op(f, cm, pty_nuf, dbeta, cb, ntrgrd);
 
       /* Update the RHS and the local system matrix */
+
       _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 
     }  /* Dirichlet face */
@@ -2085,6 +2161,7 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 #endif
 
   /* Add contribution to the linear system */
+
   cs_sdm_add(csys->mat, ntrgrd);
 }
 
@@ -2117,6 +2194,7 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(csys != NULL);
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -2133,38 +2211,46 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
   cs_sdm_t  *ntrgrd = cb->loc;
 
   /* Initialize the local operator */
+
   cs_sdm_square_init(cm->n_vc, ntrgrd);
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
+
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       /* Compute the product: matpty*face unit normal */
+
       cs_real_3_t  pty_nuf;
       cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
+
       _vb_ocs_normal_flux_op(f, cm, pty_nuf, dbeta, cb, ntrgrd);
 
       /* Update the RHS and the local system matrix */
+
       const double  pcoef = chi/sqrt(cm->face[f].meas);
 
       for (short int v = 0; v < fm->n_vf; v++) {
 
         /* Set the penalty diagonal coefficient */
+
         const short int  vi = fm->v_ids[v];
         const double  pcoef_v = pcoef * fm->wvf[v];
 
         ntrgrd->val[vi*(1 + ntrgrd->n_rows)] += pcoef_v;
 
         /* Update the RHS */
+
         for (int k = 0; k < 3; k++)
           csys->rhs[3*vi+k] += pcoef_v * csys->dir_values[3*vi+k];
 
@@ -2181,24 +2267,27 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 #endif
 
   /* Add contribution to the linear system */
+
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
 
   for (int bvi = 0; bvi < cm->n_vc; bvi++) {
     for (int bvj = 0; bvj < cm->n_vc; bvj++) {
 
       /* Retrieve the 3x3 matrix */
+
       cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bvi, bvj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
       const cs_real_t  _val = ntrgrd->val[cm->n_vc*bvi + bvj];
+
       /* Update diagonal terms only */
+
       bij->val[0] += _val;
       bij->val[4] += _val;
       bij->val[8] += _val;
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2227,6 +2316,7 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
                                  cs_cell_sys_t                  *csys)
 {
   /* Enforcement of the sliding BCs */
+
   if (csys->has_sliding == false)
     return;  /* Nothing to do */
 
@@ -2235,22 +2325,24 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
     (hodgep->algo == CS_HODGE_ALGO_BUBBLE) ? hodgep->coef : 3*hodgep->coef;
   const cs_property_data_t  *pty = hodge->pty_data;
 
-  /* Sanity checks */
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
   /* Initialize the local operator (same as the scalar-valued one) */
+
   cs_sdm_square_init(cm->n_vc, ntrgrd);
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (csys->bf_flag[f] & CS_CDO_BC_SLIDING) {
 
       /* Compute the face-view of the mesh */
+
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       const cs_real_t  nf[3] = {fm->face.unitv[0],
@@ -2258,14 +2350,15 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
                                 fm->face.unitv[2]};
 
       /* Compute the product: matpty*face unit normal */
+
       cs_real_t  pty_nuf[3] = {pty->value * nf[0],
                                pty->value * nf[1],
                                pty->value * nf[2]};
 
       /* Compute the flux operator related to the trace on the current face
        * of the normal gradient
-       * cb->values (size = cm->n_vc) is used inside
-       */
+       * cb->values (size = cm->n_vc) is used inside */
+
       _vb_ocs_normal_flux_op(f, cm, pty_nuf, dbeta, cb, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
@@ -2276,6 +2369,7 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
 #endif
 
       /* Add contribution to the linear system of the penalized part */
+
       const double  pcoef = eqp->weak_pena_bc_coeff/sqrt(cm->face[f].meas);
 
       for (int vfi = 0; vfi < fm->n_vf; vfi++) {
@@ -2283,9 +2377,11 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
         const short int  bvi = fm->v_ids[vfi];
 
         /* Retrieve the diagonal 3x3 block matrix */
+
         cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, bvi, bvi);
 
         /* Penalized part (u.n)(v.n) and tangential flux part */
+
         const cs_real_t  vcoef = pcoef * fm->wvf[vfi];
         const cs_real_t  nii = ntrgrd->val[cm->n_vc*bvi + bvi];
         const cs_real_t  bval = vcoef + 2*nii;
@@ -2299,6 +2395,7 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
       } /* Loop on face vertices */
 
       /* Update the system matrix on the extra-diagonal blocks */
+
       for (int bvi = 0; bvi < cm->n_vc; bvi++) {
         for (int bvj = 0; bvj < cm->n_vc; bvj++) {
 
@@ -2306,6 +2403,7 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
             continue;
 
           /* Retrieve the 3x3 matrix */
+
           cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bvi, bvj);
           assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
@@ -2323,7 +2421,6 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
 
     }  /* Sliding face */
   } /* Loop on boundary faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2355,6 +2452,7 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -2372,37 +2470,46 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
+
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       /* Compute the product: matpty*face unit normal */
+
       cs_real_3_t  pty_nuf;
       cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Initialize the local operator */
+
       cs_sdm_square_init(cm->n_vc, ntrgrd);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
+
       _vb_ocs_normal_flux_op(f, cm, pty_nuf, hodgep->coef, cb, ntrgrd);
 
       /* Update ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) */
+
       cs_sdm_t  *ntrgrd_tr = cb->aux;
       cs_sdm_square_add_transpose(ntrgrd, ntrgrd_tr);
 
      /* Update RHS according to the add of ntrgrd_tr (cb->aux) */
+
       cs_sdm_square_matvec(ntrgrd_tr, csys->dir_values, cb->values);
       for (short int v = 0; v < csys->n_dofs; v++)
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
+
       _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 
       /* Add contribution to the linear system */
+
       cs_sdm_add(csys->mat, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
@@ -2414,7 +2521,6 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
 #endif
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2447,14 +2553,15 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Robin BCs */
+
   if (csys->has_robin == false)
     return;  /* Nothing to do */
 
   assert(cm != NULL && cb != NULL);
 
   /* Robin BC expression: K du/dn + alpha*(u - u0) = g
-   * Store x = alpha*u0 + g
-   */
+   * Store x = alpha*u0 + g */
+
   cs_real_t  *x = cb->values;
   cs_sdm_t  *bc_op = cb->loc;
   cs_sdm_t  *hloc = cb->aux; /* 2D Hodge operator on a boundary face */
@@ -2462,14 +2569,17 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
 
       /* Reset local operator */
+
       cs_sdm_square_init(csys->n_dofs, bc_op);
 
       /* Compute the face-view of the mesh */
+
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       cs_hodge_compute_wbs_surfacic(fm, hloc);  /* hloc is of size n_vf */
@@ -2488,6 +2598,7 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
       }
 
       /* Update the RHS and the local system */
+
       for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
 
         const short int  vi = fm->v_ids[vfi];
@@ -2513,11 +2624,11 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
 #endif
 
       /* Add contribution to the linear system */
+
       cs_sdm_add(csys->mat, bc_op);
 
     }  /* Robin face */
   } /* Loop on boundary faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2547,6 +2658,7 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -2563,22 +2675,27 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
+
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       /* Compute the product: matpty*face unit normal */
+
       cs_real_3_t  pty_nuf;
       cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
+
       _vb_wbs_normal_flux_op(fm, cm, pty_nuf, cb, ntrgrd);
 
       /* Update the RHS and the local system matrix */
+
 #if 1 /* Default choice */
       _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
@@ -2586,6 +2703,7 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
 #endif
 
       /* Add contribution to the linear system */
+
       cs_sdm_add(csys->mat, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
@@ -2597,7 +2715,6 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
 #endif
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2628,6 +2745,7 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -2644,35 +2762,43 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
+
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       /* Compute the product: matpty*face unit normal */
+
       cs_real_3_t  pty_nuf;
       cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Initialize the local operator */
+
       cs_sdm_square_init(cm->n_vc, ntrgrd);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
+
       _vb_wbs_normal_flux_op(fm, cm, pty_nuf, cb, ntrgrd);
 
       /* Update ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) cb->loc
          plays the role of the flux operator */
+
       cs_sdm_t  *ntrgrd_tr = cb->aux;
       cs_sdm_square_add_transpose(ntrgrd, ntrgrd_tr);
 
       /* Update RHS according to the add of ntrgrd_tr (cb->aux) */
+
       cs_sdm_square_matvec(ntrgrd_tr, csys->dir_values, cb->values);
       for (short int v = 0; v < csys->n_dofs; v++)
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
+
 #if 1 /* Default choice */
       _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
@@ -2680,6 +2806,7 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
 #endif
 
       /* Add contribution to the linear system */
+
       cs_sdm_add(csys->mat, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
@@ -2691,7 +2818,6 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
 #endif
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2721,6 +2847,7 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -2737,22 +2864,27 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
+
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       /* Compute the product: matpty*face unit normal */
+
       cs_real_3_t  pty_nuf;
       cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
+
       _vcb_wbs_normal_flux_op(fm, cm, pty_nuf, cb, ntrgrd);
 
       /* Update the RHS and the local system matrix */
+
 #if 1 /* Default choice */
       _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
@@ -2760,6 +2892,7 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
 #endif
 
       /* Add contribution to the linear system */
+
       cs_sdm_add(csys->mat, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
@@ -2771,7 +2904,6 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
 #endif
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2802,6 +2934,7 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
+
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
@@ -2818,32 +2951,39 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
+
     const short int  f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute the face-view of the mesh */
+
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
 
       /* Compute the product: matpty*face unit normal */
+
       cs_real_3_t  pty_nuf;
       cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
+
       _vcb_wbs_normal_flux_op(fm, cm, pty_nuf, cb, ntrgrd);
 
       /* Update ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) cb->loc
          plays the role of the flux operator */
+
       cs_sdm_t  *ntrgrd_tr = cb->aux;
       cs_sdm_square_add_transpose(ntrgrd, ntrgrd_tr);
 
       /* Update RHS according to the add of ntrgrd_tr (cb->aux) */
+
       cs_sdm_square_matvec(ntrgrd_tr, csys->dir_values, cb->values);
       for (short int v = 0; v < csys->n_dofs; v++)
         csys->rhs[v] += cb->values[v];
 
       /* Update the RHS and the local system matrix */
+
 #if 1 /* Default choice */
       _svb_nitsche(chi/sqrt(fm->face.meas), fm, ntrgrd, csys);
 #else  /* This option seems less robust w.r.t the linear algebra */
@@ -2851,6 +2991,7 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 #endif
 
       /* Add contribution to the linear system */
+
       cs_sdm_add(csys->mat, ntrgrd);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
@@ -2862,7 +3003,6 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 #endif
     }  /* Dirichlet face */
   } /* Loop on boundary faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2893,21 +3033,24 @@ cs_cdo_diffusion_svb_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
   if (flx == NULL)
     return;
 
-  /* Sanity checks */
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV));
 
   /* Cellwise DoFs related to the discrete gradient (size: n_ec) */
+
   double  *gec = cb->values;
   for (short int e = 0; e < cm->n_ec; e++) {
 
     const short int  *v = cm->e2v_ids + 2*e;
+
     /* sgn_v2 = -sgn_v1; flux = - HDG * GRAD(P) */
+
     gec[e] = cm->e2v_sgn[e]*(pot[v[1]] - pot[v[0]]);
 
   }  /* Loop on cell edges */
 
   /* Store the local fluxes. flux = -Hdg * grd_c(pdi_c)
    * hodge->matrix has been computed just before the call to this function */
+
   cs_sdm_square_matvec(hodge->matrix, gec, flx);
 }
 
@@ -2943,18 +3086,19 @@ cs_cdo_diffusion_svb_get_cell_flux(const cs_cell_mesh_t      *cm,
 
   const cs_property_data_t  *pty = hodge->pty_data;
 
-  /* Sanity checks */
   assert(pty->need_tensor);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_DFQ));
 
   cs_real_t  grd[3] = {0., 0., 0.};
 
   /* Cellwise DoFs related to the discrete gradient (size: n_ec) */
+
   for (short int e = 0; e < cm->n_ec; e++) {
 
     const short int  *v = cm->e2v_ids + 2*e;
 
     /* sgn_v1 = -sgn_v0; flux = - Kc * GRAD(P) */
+
     const double  ge = cm->e2v_sgn[e]*(pot[v[1]] - pot[v[0]]);
     const double  contrib = ge * cm->dface[e].meas;
     for (int k = 0; k < 3; k++)
@@ -3010,22 +3154,27 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
   const cs_quant_t  pfq = cm->face[f];
 
   /* Reset the fluxes */
+
   memset(flux, 0, cm->n_vc*sizeof(cs_real_t));
 
   /* Compute the product: matpty*face unit normal */
+
   cs_real_t  pty_nuf[3] = {0, 0, 0};;
   cs_math_33_3_product(pty->tensor, pfq.unitv, pty_nuf);
 
   /* Cellwise constant and consistent gradient */
+
   cs_real_t  grd_cc[3] = {0, 0, 0};
   cs_real_t  *g = cb->values;
 
   /* Cellwise DoFs related to the discrete gradient (size: n_ec) */
+
   for (short int e = 0; e < cm->n_ec; e++) {
 
     const short int  *v = cm->e2v_ids + 2*e;
 
     /* sgn_v1 = -sgn_v0; GRAD(P) */
+
     g[e] = cm->e2v_sgn[e]*(pot[v[0]] - pot[v[1]]);
 
     const double  ge_coef = g[e] * cm->dface[e].meas;
@@ -3039,6 +3188,7 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
 
   /* Add the stabilisation part which is constant on p_{e,c} --> t_ef if one
      restricts to the face f */
+
   for (int ie = cm->f2e_idx[f]; ie < cm->f2e_idx[f+1]; ie++) {
 
     cs_real_t  grd_tef[3] = {0, 0, 0};
@@ -3063,7 +3213,6 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
     flux[v[1]] += _flx;
 
   } /* Loop on face edges */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3091,6 +3240,7 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
                                     cs_real_t              *flx)
 {
   /* Temporary buffers */
+
   cs_real_3_t  *u_vc = cb->vectors;
   double  *l_vc = cb->values;
 
@@ -3098,20 +3248,22 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
   const double  p_c = pot[cm->n_vc];
   const cs_property_data_t  *pty = hodge->pty_data;
 
-  /* Sanity checks */
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_SEF));
   assert(pty->need_tensor);
 
   /* Reset local fluxes */
+
   for (short int e = 0; e < cm->n_ec; e++) flx[e] = 0.;
 
   /* Store segments xv --> xc for this cell */
+
   for (short int v = 0; v < cm->n_vc; v++)
     cs_math_3_length_unitv(cm->xc, cm->xv + 3*v, l_vc + v, u_vc[v]);
 
   /* Loop on cell faces */
+
   for (short int f = 0; f < cm->n_fc; f++) {
 
     cs_real_3_t  grd_c, grd_v1, grd_v2, grd_pef, mgrd;
@@ -3119,9 +3271,11 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
     /* Compute for the current face:
        - the area of each triangle defined by a base e and an apex f
        - the gradient of the Lagrange function related xc in p_{f,c} */
+
     cs_compute_grdfc_cw(f, cm, grd_c);
 
     /* Compute the reconstructed value of the potential at p_f */
+
     double  p_f = 0.;
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
@@ -3135,6 +3289,7 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
     const double  dp_cf = p_c - p_f;
 
     /* Loop on face edges to scan p_{ef,c} subvolumes */
+
     const cs_nvec3_t  deq = cm->dedge[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
@@ -3150,6 +3305,7 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
          grd_f = -(grd_c + grd_v1 + grd_v2)
          This formula is a consequence of the Partition of the Unity.
          This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
+
       const double  dp1f = p_v[v1] - p_f, dp2f = p_v[v2] - p_f;
       for (int k = 0; k < 3; k++)
         grd_pef[k] = dp_cf*grd_c[k]  + dp1f*grd_v1[k] + dp2f*grd_v2[k];
@@ -3161,7 +3317,6 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
     }  /* Loop on face edges */
 
   }  /* Loop on cell faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3190,7 +3345,6 @@ cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
 {
   const cs_property_data_t  *pty = hodge->pty_data;
 
-  /* Sanity checks */
   assert(pty->need_tensor);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
@@ -3199,6 +3353,7 @@ cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
   cs_real_t  cgrd[3] = {0, 0, 0};
 
   /* Compute the mean-value of the cell gradient */
+
   cs_reco_cw_cgrd_wbs_from_pvc(cm, pot, cb, cgrd);
 
   cs_math_33_3_product(pty->tensor, cgrd, flx);
@@ -3234,7 +3389,6 @@ cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
 
   const cs_property_data_t  *pty = hodge->pty_data;
 
-  /* Sanity checks */
   assert(pty->need_tensor);
   assert(hodge->param->algo == CS_HODGE_ALGO_WBS);
   assert(cs_eflag_test(cm->flag,
@@ -3242,13 +3396,16 @@ cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_FE));
 
   /* Reset the fluxes */
+
   memset(flux, 0, cm->n_vc*sizeof(cs_real_t));
 
   /* Compute the product: matpty*face unit normal */
+
   cs_real_t  mnuf[3] = {0, 0, 0};
   cs_math_33_3_product(pty->tensor, cm->face[f].unitv, mnuf);
 
   /* Compute xc --> xv length and unit vector for all face vertices */
+
   double  *l_vc = cb->values;
   cs_real_3_t  *u_vc = cb->vectors;
   for (int i = cm->f2v_idx[f]; i < cm->f2v_idx[f+1]; i++) {
@@ -3258,6 +3415,7 @@ cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
 
   /* Compute for the current face, the gradient of the Lagrange function
      related to xc in p_{f,c} */
+
   cs_real_t  grd_c[3], grd_pef[3], grd_v0[3], grd_v1[3];
   cs_compute_grdfc_cw(f, cm, grd_c);
 
@@ -3266,15 +3424,18 @@ cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
 
   /* Compute p_c - p_f (where p_c is the reconstructed values at the
      cell center */
+
   const double  dp_cf = pot[cm->n_vc] - p_f;
 
   /* Loop on face edges to scan p_{ef,c} subvolumes */
+
   for (int ie = cm->f2e_idx[f]; ie < cm->f2e_idx[f+1]; ie++) {
 
     const short int  *v = cm->e2v_ids + 2*cm->f2e_ids[ie];
 
     /* Compute the gradient of the Lagrange function related xv0, xv1
        in each p_{ef,c} for e in E_f */
+
     cs_compute_grd_ve(v[0], v[1], cm->dedge[f],
                       (const cs_real_t (*)[3])u_vc, l_vc,
                       grd_v0, grd_v1);
@@ -3283,19 +3444,20 @@ cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
        grd_f = -(grd_c + grd_v1 + grd_v2)
        This formula is a consequence of the Partition of the Unity.
        This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
+
     const double  dp_v0f = p_v[v[0]] - p_f;
     const double  dp_v1f = p_v[v[1]] - p_f;
     for (int k = 0; k < 3; k++)
       grd_pef[k] =  dp_cf*grd_c[k] + dp_v0f*grd_v0[k] + dp_v1f*grd_v1[k];
 
     /* tef: area of the triangle defined by the base e and the apex f */
+
     const double  _flx = -0.5*cm->tef[ie] * _dp3(mnuf, grd_pef);
 
     flux[v[0]] += _flx;
     flux[v[1]] += _flx;
 
   }  /* Loop on face edges */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3326,6 +3488,7 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
   double  f_flux = 0.;
 
   /* Retrieve temporary buffers */
+
   double  *l_vc = cb->values;
   cs_real_3_t  *u_vc = cb->vectors;
 
@@ -3333,18 +3496,22 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
                        mnuf);
 
   /* Compute xc --> xv length and unit vector for all face vertices */
+
   for (short int v = 0; v < fm->n_vf; v++)
     cs_math_3_length_unitv(fm->xc, fm->xv + 3*v, l_vc + v, u_vc[v]);
 
   /* Compute for the current face, the gradient of the Lagrange function
      related to xc in p_{f,c} */
+
   cs_compute_grdfc_fw(fm, grd_c);
 
   /* Compute p_c - p_f (where p_c is the reconstructed values at the
      cell center */
+
   const double  dp_cf = p_c - p_f;
 
   /* Loop on face edges to scan p_{ef,c} subvolumes */
+
   for (int e = 0; e < fm->n_ef; e++) {
 
     const short int  v1 = fm->e2v_ids[2*e];
@@ -3352,6 +3519,7 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
 
     /* Compute the gradient of the Lagrange function related xv1, xv2
        in each p_{ef,c} for e in E_f */
+
     cs_compute_grd_ve(v1, v2, fm->dedge, (const cs_real_t (*)[3])u_vc, l_vc,
                       grd_v1, grd_v2);
 
@@ -3359,11 +3527,13 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
        grd_f = -(grd_c + grd_v1 + grd_v2)
        This formula is a consequence of the Partition of the Unity.
        This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
+
     const double  dp1f = p_v[v1] - p_f, dp2f = p_v[v2] - p_f;
     for (int k = 0; k < 3; k++)
       grd_pef[k] = dp_cf*grd_c[k] + dp1f*grd_v1[k] + dp2f*grd_v2[k];
 
     /* Area of the triangle defined by the base e and the apex f */
+
     f_flux -= fm->tef[e] * _dp3(mnuf, grd_pef);
 
   }  /* Loop on face edges */
@@ -3400,7 +3570,6 @@ cs_cdo_diffusion_sfb_cost_flux(short int                   f,
 
   const cs_property_data_t  *pty = hodge->pty_data;
 
-  /* Sanity checks */
   assert(pty->need_tensor);
   assert(hodge->param->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
@@ -3409,6 +3578,7 @@ cs_cdo_diffusion_sfb_cost_flux(short int                   f,
   const cs_quant_t  pfq = cm->face[f];
 
   /* Compute the product: matpty*face unit normal */
+
   cs_real_t  pty_nuf[3] = {0, 0, 0};
   cs_math_33_3_product(pty->tensor, pfq.unitv, pty_nuf);
 
@@ -3419,21 +3589,24 @@ cs_cdo_diffusion_sfb_cost_flux(short int                   f,
   cs_real_t  *g = cb->values;
 
   /* Cellwise DoFs related to the discrete gradient (size: n_fc) */
+
   for (short int ff = 0; ff < cm->n_fc; ff++) {
 
     /* Delta of the potential along the dual edge (x_f - x_c) */
+
     g[ff] = cm->f_sgn[ff]*(pot[ff] - pot[cm->n_fc]);
 
     const double  gcoef = g[ff] * cm->face[ff].meas;
     for (int k = 0; k < 3; k++)
       grd_cc[k] += gcoef * cm->face[ff].unitv[k];
 
-  }  /* Loop on cell faces */
+  } /* Loop on cell faces */
 
   const double  invvol = 1/cm->vol_c;
   for (int k = 0; k < 3; k++) grd_cc[k] *= invvol;
 
   /* Add the stabilisation part which is constant on p_{f,c} */
+
   const cs_nvec3_t  *deq = cm->dedge + f;
   const cs_real_t  pfc_coef = 3*beta/(_dp3(pfq.unitv, deq->unitv));
   const cs_real_t  delta = g[f] - deq->meas*_dp3(deq->unitv, grd_cc);

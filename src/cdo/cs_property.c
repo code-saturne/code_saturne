@@ -76,6 +76,7 @@ static const char _err_empty_pty[] =
   " Please check your settings.\n";
 
 /* Pointer to shared structures (owned by a cs_domain_t structure) */
+
 static const cs_cdo_quantities_t  *cs_cdo_quant;
 static const cs_cdo_connect_t  *cs_cdo_connect;
 
@@ -340,11 +341,13 @@ _get_cell_tensor(cs_lnum_t               c_id,
                                   eval);
 
     /* Diag. values */
+
     tensor[0][0] = eval[0];
     tensor[1][1] = eval[1];
     tensor[2][2] = eval[2];
 
     /* Extra-diag. values */
+
     tensor[0][1] = tensor[1][0] = eval[3];
     tensor[0][2] = tensor[2][0] = eval[4];
     tensor[1][2] = tensor[2][1] = eval[5];
@@ -390,10 +393,12 @@ _get_cell_tensor_by_property_product(cs_lnum_t               c_id,
   cs_real_t  tensor_b[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
   /* Evaluates each property */
+
   _get_cell_tensor(c_id, t_eval, a, tensor_a);
   _get_cell_tensor(c_id, t_eval, b, tensor_b);
 
   /* Compute the product */
+
   if (pty->type & CS_PROPERTY_ISO) {
     /*  a and b are isotropic */
     tensor[0][0] = tensor[1][1] = tensor[2][2] = tensor_a[0][0]*tensor_b[0][0];
@@ -458,11 +463,13 @@ _tensor_in_cell(const cs_cell_mesh_t   *cm,
     pty->get_eval_at_cell_cw[def_id](cm, t_eval, def->context, eval);
 
     /* Diag. values */
+
     tensor[0][0] = eval[0];
     tensor[1][1] = eval[1];
     tensor[2][2] = eval[2];
 
     /* Extra-diag. values */
+
     tensor[0][1] = tensor[1][0] = eval[3];
     tensor[0][2] = tensor[2][0] = eval[4];
     tensor[1][2] = tensor[2][1] = eval[5];
@@ -505,12 +512,14 @@ _tensor_in_cell_by_property_product(const cs_cell_mesh_t   *cm,
   cs_real_t  tensor_b[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
   /* Evaluates each property */
+
   _tensor_in_cell(cm, a, t_eval, tensor_a);
   _tensor_in_cell(cm, b, t_eval, tensor_b);
 
   /* Compute the product */
+
   if (pty->type & CS_PROPERTY_ISO) {
-    /*  a and b are isotropic */
+    /* a and b are isotropic */
     tensor[0][0] = tensor[1][1] = tensor[2][2] = tensor_a[0][0]*tensor_b[0][0];
   }
   else if (pty->type & CS_PROPERTY_ORTHO) {
@@ -563,6 +572,7 @@ _define_pty_by_product(cs_property_t          *pty)
                                         NULL); /* no input */
 
   /* Set pointers */
+
   pty->defs[id] = d;
   pty->get_eval_at_cell[id] = NULL;
   pty->get_eval_at_cell_cw[id] = NULL;
@@ -585,8 +595,6 @@ _create_property(const char           *name,
                  int                   id,
                  cs_property_type_t    type)
 {
-  /* Check the sanity of type */
-
   int n_types = 0;
   const int flags[] = {CS_PROPERTY_ISO,
                        CS_PROPERTY_ORTHO,
@@ -642,7 +650,6 @@ _create_property(const char           *name,
   pty->process_flag = 0;
 
   pty->ref_value = 1.0;         /* default setting */
-
   pty->n_definitions = 0;
   pty->defs = NULL;
   pty->def_ids = NULL;
@@ -675,7 +682,6 @@ void
 cs_property_init_sharing(const cs_cdo_quantities_t    *quant,
                          const cs_cdo_connect_t       *connect)
 {
-  /* Assign static const pointers */
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
 }
@@ -763,6 +769,7 @@ cs_property_add_as_product(const char             *name,
     return NULL;
 
   /* Determine the type of the new property */
+
   cs_property_type_t  type = CS_PROPERTY_BY_PRODUCT;
 
   /* pty_b  |pty_a -> iso | ortho | aniso
@@ -881,9 +888,7 @@ cs_property_set_option(cs_property_t       *pty,
     break;
 
   } /* Switch on keys */
-
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -998,6 +1003,7 @@ cs_property_finalize_setup(void)
       } /* Loop on definitions */
 
       /* Check if the property is defined everywhere */
+
       for (cs_lnum_t j = 0; j < n_cells; j++)
         if (pty->def_ids[j] == -1)
           bft_error(__FILE__, __LINE__, 0,
@@ -1050,7 +1056,6 @@ cs_property_finalize_setup(void)
     } /* Only properties defined as a product */
 
   } /* Loop on properties */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1075,7 +1080,6 @@ cs_property_data_init(bool                     need_tensor,
     return;
 
   data->property = property;
-
   data->is_unity = false;
   data->is_iso = false;
 
@@ -1162,10 +1166,12 @@ cs_property_def_constant_value(cs_property_t    *pty,
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_scalar_by_val;
 
   /* Set the state flag */
+
   pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
   pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
   /* Set automatically the reference value if all cells are selected */
+
   cs_property_set_reference_value(pty, val);
 
   return d;
@@ -1214,11 +1220,13 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_scalar_by_val;
 
   /* Set the state flag */
+
   pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
   if (z_id == 0)
     pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
   /* Set automatically the reference value if all cells are selected */
+
   if (z_id == 0)
     cs_property_set_reference_value(pty, val);
 
@@ -1268,6 +1276,7 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_vector_by_val;
 
   /* Set the state flag */
+
   pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
   if (z_id == 0)
     pty->state_flag |= CS_FLAG_STATE_UNIFORM;
@@ -1302,6 +1311,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
               " Please check your settings.", pty->name);
 
   /* Check the symmetry */
+
   if (!_is_tensor_symmetric((const cs_real_t (*)[3])tens))
     bft_error(__FILE__, __LINE__, 0,
               _(" The definition of the tensor related to the"
@@ -1326,6 +1336,7 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_tensor_by_val;
 
   /* Set the state flag */
+
   pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
   if (z_id == 0)
     pty->state_flag |= CS_FLAG_STATE_UNIFORM;
@@ -1377,6 +1388,7 @@ cs_property_def_aniso_sym_by_value(cs_property_t    *pty,
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_symtens_by_val;
 
   /* Set the state flag */
+
   pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
   if (z_id == 0)
     pty->state_flag |= CS_FLAG_STATE_UNIFORM;
@@ -1417,6 +1429,7 @@ cs_property_def_by_time_func(cs_property_t      *pty,
                                        .free_input = NULL };
 
   /* Default initialization */
+
   pty->get_eval_at_cell[new_id] = NULL;
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_by_time_func;
 
@@ -1595,6 +1608,7 @@ cs_property_def_by_array(cs_property_t    *pty,
   cs_flag_t  meta_flag = 0;  /* metadata */
 
   /* z_id = 0 since all the support is selected in this case */
+
   cs_xdef_array_context_t  input = { .z_id = 0,
                                      .stride = dim,
                                      .loc = loc,
@@ -1610,6 +1624,7 @@ cs_property_def_by_array(cs_property_t    *pty,
                                         &input);
 
   /* Set pointers */
+
   pty->defs[id] = d;
 
   if (dim == 1)
@@ -1625,6 +1640,7 @@ cs_property_def_by_array(cs_property_t    *pty,
               " %s: case not available.\n", __func__);
 
   /* Set the state flag */
+
   if (cs_flag_test(loc, cs_flag_primal_cell))
     pty->state_flag |= CS_FLAG_STATE_CELLWISE;
 
@@ -1653,10 +1669,8 @@ cs_property_def_by_field(cs_property_t    *pty,
   int  id = _add_new_def(pty);
   int  dim = cs_property_get_dim(pty);
 
-  /* Sanity checks */
   assert(dim == field->dim);
-  assert(id == 0);
-  /* z_id = 0 since all the support is selected in this case */
+  assert(id == 0); /* z_id = 0 since all the support is selected in this case */
 
   const cs_zone_t  *z = cs_volume_zone_by_id(0);
   if (field->location_id != z->location_id)
@@ -1686,6 +1700,7 @@ cs_property_def_by_field(cs_property_t    *pty,
   pty->get_eval_at_cell_cw[id] = cs_xdef_cw_eval_by_field;
 
   /* Set the state flag */
+
   pty->state_flag |= CS_FLAG_STATE_CELLWISE;
 }
 
@@ -1736,6 +1751,7 @@ cs_property_iso_get_cell_values(cs_real_t               t_eval,
   }
 
   /* Return the pointer to values */
+
   *p_pty_vals = values;
 }
 
@@ -1772,6 +1788,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
       memset(val_a, 0, quant->n_cells*sizeof(cs_real_t));
 
       /* 1. Evaluates the property A */
+
       for (int i = 0; i < a->n_definitions; i++) {
 
         cs_xdef_t  *def = a->defs[i];
@@ -1790,6 +1807,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
       } /* Loop on definitions */
 
       /* 2. Evaluates the property B and operates the product */
+
       for (int i = 0; i < b->n_definitions; i++) {
 
         cs_xdef_t  *def = b->defs[i];
@@ -1822,6 +1840,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
         memset(val_a, 0, quant->n_cells*sizeof(cs_real_t));
 
         /* 1. Evaluates the property A */
+
         for (int i = 0; i < a->n_definitions; i++) {
 
           cs_xdef_t  *def = a->defs[i];
@@ -1842,6 +1861,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
         int  b_dim = cs_property_get_dim(b);
 
         /* 2. Evaluates the property B and operates the product */
+
         for (int i = 0; i < b->n_definitions; i++) {
 
           cs_xdef_t  *def = b->defs[i];
@@ -1876,6 +1896,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
         memset(val_b, 0, quant->n_cells*sizeof(cs_real_t));
 
         /* 1. Evaluates the property B */
+
         for (int i = 0; i < b->n_definitions; i++) {
 
           cs_xdef_t  *def = b->defs[i];
@@ -1896,6 +1917,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
         int  a_dim = cs_property_get_dim(a);
 
         /* 2. Evaluates the property A and operates the product */
+
         for (int i = 0; i < a->n_definitions; i++) {
 
           cs_xdef_t  *def = a->defs[i];
@@ -1987,6 +2009,7 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
     return;
 
   /* Initialize extra-diag. values of the tensor */
+
   tensor[0][1] = tensor[1][0] = tensor[2][0] = 0;
   tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
 
@@ -2077,6 +2100,7 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
     return;
 
   /* Initialize extra-diag. values of the tensor */
+
   tensor[0][1] = tensor[1][0] = tensor[2][0] = 0;
   tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
 
@@ -2187,6 +2211,7 @@ cs_property_get_fourier(const cs_property_t    *pty,
     cs_real_t  ptymat[3][3];
 
     /* Get the value of the material property at the first cell center */
+
     if (pty_uniform) {
       cs_property_get_cell_tensor(0, t_eval, pty, false, ptymat);
       cs_math_33_eigen((const cs_real_t (*)[3])ptymat, &eig_ratio, &eig_max);
@@ -2197,6 +2222,7 @@ cs_property_get_fourier(const cs_property_t    *pty,
       const cs_real_t  hc = cbrt(cdoq->cell_vol[c_id]);
 
       /* Get the value of the material property at the cell center */
+
       if (!pty_uniform) {
         cs_property_get_cell_tensor(c_id, t_eval, pty, false, ptymat);
         cs_math_33_eigen((const cs_real_t (*)[3])ptymat, &eig_ratio, &eig_max);
@@ -2207,7 +2233,6 @@ cs_property_get_fourier(const cs_property_t    *pty,
     }
 
   } /* Type of property */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2274,7 +2299,6 @@ cs_property_log_setup(void)
     }
 
   } /* Loop on properties */
-
 }
 
 /*----------------------------------------------------------------------------*/
