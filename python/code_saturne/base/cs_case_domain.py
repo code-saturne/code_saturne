@@ -141,6 +141,10 @@ class base_domain:
         self.exec_dir = None
         self.solver_path = None
 
+        # Is the case already staged ?
+
+        self.data_is_staged = False
+
         # Execution options
 
         self.n_procs = n_procs_weight
@@ -274,6 +278,8 @@ class base_domain:
         """
         Initialize staged data in the execution directory.
         """
+
+        self.data_is_staged = True
 
         return
 
@@ -497,7 +503,9 @@ class domain(base_domain):
 
     #---------------------------------------------------------------------------
 
-    def __set_case_parameters__(self, update_xml=False):
+    def __set_case_parameters__(self):
+
+        update_xml = (self.data_is_staged == False)
 
         # We may now import user python script functions if present.
 
@@ -757,7 +765,7 @@ class domain(base_domain):
 
         # Now set parameters
 
-        self.__set_case_parameters__(update_xml=True)
+        self.__set_case_parameters__()
 
     #---------------------------------------------------------------------------
 
@@ -766,9 +774,11 @@ class domain(base_domain):
         Initialize staged data in the execution directory.
         """
 
+        self.data_is_staged = True
+
         # Now set parameters
 
-        self.__set_case_parameters__(update_xml=False)
+        self.__set_case_parameters__()
 
         # Ensure correct executable is used.
 
@@ -1099,6 +1109,8 @@ class domain(base_domain):
                 os.symlink("run_solver.log", link_path)
             except Exception:
                 pass
+
+        self.data_is_staged = True
 
     #---------------------------------------------------------------------------
 

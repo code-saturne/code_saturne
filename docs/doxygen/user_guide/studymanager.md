@@ -987,7 +987,7 @@ if __name__ == '__main__':
 and add the following section in the `define_domain_parameters` function:
 
 ```{.py}
-    if domain.kw_args:
+    if domain.kw_args and domain.data_is_staged == False:
         options = process_cmd_line(domain.kw_args)
         prepro(options)
 ```

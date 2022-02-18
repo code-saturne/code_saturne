@@ -58,6 +58,15 @@ def define_domain_parameters(domain):
     in execution directory, and before compiling user-defined functions).
     """
 
+    # Note: when data is already staged
+    #----------------------------------
+
+    # When a case is prepared (staged) then run or submitted in a separate
+    # step (such as when using the `code_saturne submit` command
+    # or running under the Study Manager), this function is called again,
+    # As most settings are done in the first pass, the `domain.data_is_staged`
+    # attribute can be checked to avoid duplicating some operations.
+
     # Reusing output from previous runs
     #----------------------------------
 
