@@ -158,7 +158,7 @@ if test "x$GCC" = "xyes"; then
     cs_gcc=oneAPI
   elif test -n "`echo $cs_ac_cc_version | grep clang`" ; then
     cs_gcc=clang
-  elif test -n "`echo $cs_ac_cc_version | grep Cray`" ; then
+  elif test -n "`echo $cs_ac_cc_version | grep Cray | grep -v GCC`" ; then
     cs_gcc=cray
   elif test -n "`echo $cs_ac_cc_version | grep FCC`" ; then
     cs_gcc=fujitsu
@@ -586,7 +586,7 @@ if test "x$GXX" = "xyes"; then
     cs_gxx=oneAPI
   elif test -n "`echo $cs_ac_cxx_version | grep clang`" ; then
     cs_gxx=clang
-  elif test -n "`echo $cs_ac_cxx_version | grep Cray`" ; then
+  elif test -n "`echo $cs_ac_cxx_version | grep Cray | grep -v GCC`" ; then
     cs_gxx=cray
   elif test -n "`echo $cs_ac_cxx_version | grep FCC`" ; then
     cs_gxx=fujitsu
