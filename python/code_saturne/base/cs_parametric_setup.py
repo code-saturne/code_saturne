@@ -188,7 +188,10 @@ class case_setup_filter(object):
         """
 
         if self.timeStepModel == None:
-            from code_saturne.model.TimeStepModel import TimeStepModel
+            if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
+                from code_saturne.model.TimeStepModelNeptune import TimeStepModel
+            else:
+                from code_saturne.model.TimeStepModel import TimeStepModel
             self.timeStepModel = TimeStepModel(self.case)
 
     #---------------------------------------------------------------------------
@@ -543,7 +546,7 @@ class case_setup_filter(object):
         checkpoint = None
 
         # Loop on all checkpoint dumps looking for closest dump done with a time
-        # less or equal to the wished restart time
+        # less or equal to the desired restart time
         for p in spaths:
             ret = getRestartInfo(package=self.pkg, restart_path=p)
 
@@ -636,7 +639,6 @@ def update_case_model(case, options, pkg):
 
     if options.RestartRun:
         restart_path = os.path.join('RESU', options.RestartRun, 'checkpoint')
-
         xml_controller.setRestartPath(restart_path)
 
 #-------------------------------------------------------------------------------

@@ -350,6 +350,23 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         return value
 
 
+    @Variables.undoLocal
+    def setStopCriterion(self, type, val):
+        """
+        Compatibility method with classical code_saturne TimeStepModel,
+        for compatibility of scripts and parametric setup.
+        """
+
+        if type == 'iterations':
+            self.setTimeStepsNumber(val)
+        elif type == 'maximum_time':
+            self.setMaximumTime(val)
+        else:
+            msg = "neptune_cfd setStopCriterion does not accept " \
+                  + str(type) + " option"
+            raise ValueError(msg)
+
+
     def getTimeParametersNode(self):
 
         return self.__timeParameters
