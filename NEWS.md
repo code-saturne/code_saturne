@@ -1,8 +1,21 @@
 Release 2.0.4 (unreleased)
 ==========================
 
+Bug fixes:
+----------
+
+- Fix detection of GCC compiler with some Cray versions.
+
 Changes:
 --------
+
+- Extend `ple_coupling_mpi_set` features:
+  * Add `ple_coupling_mpi_set_compute_timestep` function to compute
+    a recommended time step for the current application based on
+    provided flags and values of applications in a set.
+  * Add `PLE_COUPLING_TS_FOLLOWER` and `PLE_COUPLING_TS_FOLLOWER`
+    synchronization flag defintitions for additional time step
+    update schemes.
 
 - Remove libtool from build system.
   This requires slightly more commplex rules in the Makefile.am's, but
@@ -144,4 +157,3 @@ Release 1.0.0 (July 28, 2011)
 - Initial release of the "Parallel Location end Exchange" library,
   based on the separation of the related functionality from the
   "Finite Volume Mesh" library.
-
