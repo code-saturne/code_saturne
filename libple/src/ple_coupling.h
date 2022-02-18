@@ -59,23 +59,57 @@ extern "C" {
 
 /* Command bits */
 
-#define PLE_COUPLING_INIT             (1 << 0)  /* Not yet synchronized */
+#define PLE_COUPLING_INIT             (1 << 0)  /*!< Not yet synchronized */
 
-#define PLE_COUPLING_NO_SYNC          (1 << 1)  /* Not synchronized */
-#define PLE_COUPLING_STOP             (1 << 2)  /* Will stop immediately */
-#define PLE_COUPLING_LAST             (1 << 3)  /* Last synchronization */
+#define PLE_COUPLING_NO_SYNC          (1 << 1)  /*!< Not synchronized */
+#define PLE_COUPLING_STOP             (1 << 2)  /*!< Will stop immediately */
+#define PLE_COUPLING_LAST             (1 << 3)  /*!< Last synchronization */
 
 /* Time stepping bits */
 
 #define PLE_COUPLING_NEW_ITERATION    (1 << 4)
 #define PLE_COUPLING_REDO_ITERATION   (1 << 5)
 
-/* Time step value handling bits */
+/*! Time step value handling bits
 
-#define PLE_COUPLING_TS_MIN           (1 << 6)  /* Use smallest time step */
-#define PLE_COUPLING_TS_LEADER        (1 << 7)  /* Prescribe time step for all
-                                                   members of group (only one
-                                                   member may set this flag) */
+  By default, no specific time step handling is done, though all members
+  of a set may observe the values used by other members.
+
+  If an application sets the PLE_COUPLING_TS_LEADER bit, this implies all
+  synchronized applications should use the same time step, unless they have
+  set the PLE_COUPLING_TS_INDEPENDENT bit.
+
+  This specific case is deprecated: it is recommended that all applications
+  following a time-step leader set the PLE_COUPLING_TS_FOLLOWER bit.
+  In the future, all application not marked explicitely as followers may
+  ignore the time-step of a leader.
+
+  If an application sets the PLE_COUPLING_TS_MIN bit, this implies it will
+  align its time step with the smallest value of all synchronized applications,
+  except those who also set the PLE_COUPLING_TS_FOLLOWER bit.
+
+  Note that PLE_COUPLING_TS_LEADER should have priority over PLE_COUPLING_TS_MIN
+  when both are set.
+
+  If an application uses (PLE_COUPLING_TS_MIN | PLE_COUPLING_TS_FOLLOWER),
+  this implies it will use the smallest time step of other non-"follower"
+  applications, but other applications should ignore it when determining
+  the minimum time step.
+
+  At most one one application may set PLE_COUPLING_TS_LEADER, and it should
+  not also set PLE_COUPLING_TS_FOLLOWER.
+*/
+
+#define PLE_COUPLING_TS_MIN           (1 << 6)  /*!< Use smallest time step */
+#define PLE_COUPLING_TS_LEADER        (1 << 7)  /*!< Prescribe time step for all
+                                                     members of group (only one
+                                                     member may set this flag) */
+#define PLE_COUPLING_TS_FOLLOWER      (1 << 15) /*!< Follow time step of other
+                                                     members only; other members
+                                                     should ignore this one */
+#define PLE_COUPLING_TS_INDEPENDENT   (1 << 16) /*!< Other members should ignore
+                                                     this one when checking for
+                                                     smallest time step */
 
 /* Calculation type or state information bits */
 
@@ -267,7 +301,7 @@ ple_coupling_mpi_set_get_status(const ple_coupling_mpi_set_t  *s);
  * Get time steps in a set.
  *
  * This function may be called after ple_coupling_mpi_set_synchronize()
- * to access the time step values of each synchronized application in the set.
+ * to query the time step values of each synchronized application in the set.
  *
  * parameters:
  *   s <-- pointer to PLE coupling MPI set info structure.
@@ -278,6 +312,23 @@ ple_coupling_mpi_set_get_status(const ple_coupling_mpi_set_t  *s);
 
 const double *
 ple_coupling_mpi_set_get_timestep(const ple_coupling_mpi_set_t  *s);
+
+/*----------------------------------------------------------------------------
+ * Compute recommended time step for the current application based on
+ * provided flags and values of applications in a set.
+ *
+ * The flags and values used to compute this recommended time step value
+ * are update at each call to ple_coupling_mpi_set_synchronize().
+ *
+ * parameters:
+ *   s <-- pointer to PLE coupling MPI set info structure.
+ *
+ * returns:
+ *   computed application time step
+ *----------------------------------------------------------------------------*/
+
+double
+ple_coupling_mpi_set_compute_timestep(const ple_coupling_mpi_set_t  *s);
 
 /*----------------------------------------------------------------------------
  * Create an intracommunicator from a local and distant communicator

@@ -411,6 +411,42 @@ pyple_coupling_mpi_set_get_timestep(PyObject *self, PyObject *args)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute recommended time step for the current application based on
+ * provided flags and values of applications in a set.
+ *
+ * The flags and values used to compute this recommended time step value
+ * are update at each call to ple_coupling_mpi_set_synchronize().
+ *
+ * \param[in] s  PLE coupling MPI set info structure.
+ *
+ * \return number of application in set's common communicator.
+ */
+/*----------------------------------------------------------------------------*/
+
+static PyObject *
+pyple_coupling_mpi_set_compute_timestep(PyObject *self, PyObject *args)
+{
+  int set_index = 0;
+
+  /* We verify that the correct arguments are provided.
+   * format is of the form "var1_typevar2_type..varn_type:function_name"
+   * function_name is used so that in case of a traceback error Python will
+   * know it failed here.
+   * If a CPython function returns NULL, it means it failed.
+   */
+  if (!PyArg_ParseTuple(args, "i:ple_coupling_mpi_set_compute_timestep",
+                        &set_index))
+    return NULL;
+
+  /* Call the C function */
+  double dt = ple_coupling_mpi_set_compute_timestep(_mpi_sets[set_index]);
+
+  /* Return a Python value */
+  return Py_BuildValue("d", dt);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Dump printout of an PLE coupling MPI set info structure.
  *
  * \param[in] index       index of the PLE coupling MPI set info structure.
@@ -603,6 +639,10 @@ pyple_coupling_methods[] = {
    (PyCFunction)pyple_coupling_mpi_set_get_timestep,
    METH_VARARGS,
    NULL},
+  {"coupling_mpi_set_compute_timestep",
+   (PyCFunction)pyple_coupling_mpi_set_compute_timestep,
+   METH_VARARGS,
+   NULL},
   {"coupling_mpi_set_dump",
    (PyCFunction)pyple_coupling_mpi_set_dump,
    METH_VARARGS,
@@ -660,6 +700,13 @@ static struct PyModuleDef libpyplecoupling_module = {
   NULL,                     /* m_clear */
   NULL                      /* m_free */
 };
+
+/* Prototype (to silence compiler warnings) */
+
+PyMODINIT_FUNC
+PyInit_libpyplecoupling(void);
+
+/* Function implementation */
 
 PyMODINIT_FUNC
 PyInit_libpyplecoupling(void)

@@ -859,7 +859,7 @@ ple_coupling_mpi_set_get_status(const ple_coupling_mpi_set_t  *s)
  * \brief Get time steps in a set.
  *
  * This function may be called after ple_coupling_mpi_set_synchronize()
- * to access the time step values of each synchronized application in the set.
+ * to query the time step values of each synchronized application in the set.
  *
  * \param[in] s pointer to PLE coupling MPI set info structure.
  *
@@ -876,6 +876,82 @@ ple_coupling_mpi_set_get_timestep(const ple_coupling_mpi_set_t  *s)
     retval = s->app_timestep;
   else
     retval = NULL;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute recommended time step for the current application based on
+ * provided flags and values of applications in a set.
+ *
+ * The flags and values used to compute this recommended time step value
+ * are update at each call to ple_coupling_mpi_set_synchronize().
+ *
+ * \param[in] s pointer to PLE coupling MPI set info structure.
+ *
+ * \return computed application time step
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+ple_coupling_mpi_set_compute_timestep(const ple_coupling_mpi_set_t  *s)
+{
+  if (s == NULL)
+    return -1;
+
+  double retval = s->app_timestep[s->app_id];
+  int self_status = s->app_status[s->app_id];
+
+  if (   (self_status & PLE_COUPLING_NO_SYNC)
+      || (self_status & PLE_COUPLING_TS_INDEPENDENT))
+    return retval;
+
+  int leader_id = -1;
+  double ts_min = -1.;
+
+  /* Check if we should use the smallest time step */
+
+  if (self_status & PLE_COUPLING_TS_MIN)
+    ts_min = s->app_timestep[s->app_id];
+
+  /* Check for leader and minimum time step */
+
+  for (int i = 0; i < s->n_apps; i++) {
+
+    if (s->app_status[i] & PLE_COUPLING_NO_SYNC)
+      continue;
+
+    /* Handle leader or minimum time step update */
+
+    if (s->app_status[i] & PLE_COUPLING_TS_LEADER) {
+      if (leader_id > -1) {
+        ple_coupling_mpi_set_info_t ai_prev
+          = ple_coupling_mpi_set_get_info(s, leader_id);
+         ple_coupling_mpi_set_info_t ai
+           = ple_coupling_mpi_set_get_info(s, i);
+        ple_error
+          (__FILE__, __LINE__, 0,
+           _("\nApplication \"%s\" (%s) tried to set the group time step, but\n"
+             "application \"%s\" (%s) has already done so."),
+           ai.app_name, ai.app_type, ai_prev.app_name, ai_prev.app_type);
+      }
+      else {
+        leader_id = i;
+        retval = s->app_timestep[i];
+      }
+    }
+
+    else if (s->app_status[i] & PLE_COUPLING_TS_MIN) {
+      if (ts_min > 0) {
+        if (s->app_timestep[i] < ts_min)
+          ts_min = s->app_timestep[i];
+      }
+    }
+  }
+
+  if (ts_min > 0)
+    retval = ts_min;
 
   return retval;
 }

@@ -115,7 +115,7 @@ if test "x$GCC" = "xyes"; then
     ple_gcc=oneAPI
   elif test -n "`echo $ple_ac_cc_version | grep clang`" ; then
     ple_gcc=clang
-  elif test -n "`echo $ple_ac_cc_version | grep Cray`" ; then
+  elif test -n "`echo $ple_ac_cc_version | grep Cray | grep -v GCC`" ; then
     ple_gcc=cray
   elif test -n "`echo $ple_ac_cc_version | grep FCC`" ; then
     ple_gcc=fujitsu
