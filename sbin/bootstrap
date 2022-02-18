@@ -15,7 +15,7 @@ done
 
 for f in `ls ./build-aux` ; do
   case $f in
-    *.py | catalyst | *.makefile | list_modules.sh) ;;
+    *.py | catalyst* | *.makefile | list_modules.sh) ;;
     *) rm -f ./build-aux/$f ;;
   esac
 done
