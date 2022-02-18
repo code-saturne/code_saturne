@@ -1,3 +1,10 @@
+Release 7.0.4 (not released yet)
+-------------------------------
+
+Bug fixes:
+
+- GUI: correct resetting of LMO in atmospheric page
+
 Release 7.0.3 (January 28 2022)
 -------------------------------
 

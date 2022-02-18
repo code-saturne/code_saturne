@@ -161,8 +161,9 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         if tmpVar >= 0:
             self.comboBoxUstarOrdLMO.setCurrentIndex(0)
         else:
-            self.comboBoxUstarOrdLMO.setCurrentIndex(1)
+            # Get value before overwritting it
             tmpVar = model.getMeteoDlmo()
+            self.comboBoxUstarOrdLMO.setCurrentIndex(1)
 
         self.lineEditUstarOrDlmo.setText(str(tmpVar))
 
@@ -170,8 +171,9 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         if tmpVar >= 0:
             self.comboBoxUrefOrdLMO.setCurrentIndex(0)
         else:
-            self.comboBoxUrefOrdLMO.setCurrentIndex(1)
+            # Get value before overwritting it
             tmpVar = model.getMeteoDlmo()
+            self.comboBoxUrefOrdLMO.setCurrentIndex(1)
 
         self.lineEditUrefOrDlmo.setText(str(tmpVar))
 
@@ -203,15 +205,15 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         val = from_qvariant(text, float)
         if indCurrent==0:
             self.labelDimRefVel.setText("m/s")
-            self.comboBoxUstarOrdLMO.model().item(1).setEnabled(True)
+            self.comboBoxUrefOrdLMO.model().item(1).setEnabled(True)
             self.__model.setMeteoUref(val)
             self.labelReferenceHeight.setEnabled(True)
             self.lineEditZref.setEnabled(True)
             self.labelDimZref.setEnabled(True)
         elif indCurrent==1:
             self.labelDimRefVel.setText("m<sup>-1</sup>")
-            self.comboBoxUstarOrdLMO.SelectedIndex = 0;
-            self.comboBoxUstarOrdLMO.model().item(1).setEnabled(False)
+            self.comboBoxUrefOrdLMO.SelectedIndex = 0;
+            self.comboBoxUrefOrdLMO.model().item(1).setEnabled(False)
             self.__model.setMeteoUref(-1.)
             self.__model.setMeteoDlmo(val)
             self.labelReferenceHeight.setEnabled(False)
@@ -224,12 +226,12 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         val = from_qvariant(text, float)
         if indCurrent==0:
             self.labelDimZRef.setText("m/s")
-            self.comboBoxUrefOrdLMO.model().item(1).setEnabled(True)
+            self.comboBoxUstarOrdLMO.model().item(1).setEnabled(True)
             self.__model.setMeteoUstar(val)
         elif indCurrent==1:
             self.labelDimZRef.setText("m<sup>-1</sup>")
-            self.comboBoxUrefOrdLMO.SelectedIndex = 0;
-            self.comboBoxUrefOrdLMO.model().item(1).setEnabled(False)
+            self.comboBoxUstarOrdLMO.SelectedIndex = 0;
+            self.comboBoxUstarOrdLMO.model().item(1).setEnabled(False)
             self.__model.setMeteoDlmo(val)
             self.__model.setMeteoUstar(-1.)
 
@@ -311,7 +313,6 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             val = from_qvariant(text, float)
             if self.comboBoxUstarOrdLMO.currentIndex() == 0:
                 self.__model.setMeteoUstar(val)
-                self.__model.setMeteoDlmo(0.)
             elif self.comboBoxUstarOrdLMO.currentIndex() == 1:
                 self.__model.setMeteoDlmo(val)
                 self.__model.setMeteoUstar(-1.)
@@ -322,7 +323,6 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             val = from_qvariant(text, float)
             if self.comboBoxUrefOrdLMO.currentIndex() == 0:
                 self.__model.setMeteoUref(val)
-                self.__model.setMeteoDlmo(0.)
             elif self.comboBoxUrefOrdLMO.currentIndex() == 1:
                 self.__model.setMeteoDlmo(val)
                 self.__model.setMeteoUref(-1.)
