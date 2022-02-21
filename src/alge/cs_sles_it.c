@@ -408,7 +408,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = rk_gk / rk_gkm1;
+    beta = (CS_ABS(rk_gkm1) > DBL_MIN) ? rk_gk / rk_gkm1 : 0.;
     rk_gkm1 = rk_gk;
 
 #   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
@@ -557,9 +557,9 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
 
     if (n_iter > 0) {
 
-      cs_real_t gk_rk1 = gamma_k / rho_km1;
-      cs_real_t rho_k = beta_k - gamma_k*gamma_k / rho_km1;
-      cs_real_t ak_rk = alpha_k / rho_k;
+      cs_real_t gk_rk1 = (CS_ABS(rho_km1) > DBL_MIN) ? gamma_k / rho_km1 : 0.;
+      cs_real_t rho_k = beta_k - gamma_k * gk_rk1;
+      cs_real_t ak_rk = (CS_ABS(rho_k) > DBL_MIN) ? alpha_k / rho_k : 0.;
 
 #     pragma omp parallel if(n_rows > CS_THR_MIN)
       {
@@ -581,7 +581,7 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
     else { /* n_iter == 0 */
 
       cs_real_t rho_k = beta_k;
-      cs_real_t ak_rk = alpha_k / rho_k;
+      cs_real_t ak_rk = (CS_ABS(rho_k) > DBL_MIN) ? alpha_k / rho_k : 0.;
 
 #     pragma omp parallel if(n_rows > CS_THR_MIN)
       {
@@ -774,7 +774,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = (rk_gk - rkm1_gk) / rk_gk_m1;
+    beta = (CS_ABS(rk_gk_m1) > DBL_MIN) ? (rk_gk - rkm1_gk) / rk_gk_m1 : 0.;
     rk_gk_m1 = rk_gk;
 
 #   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
@@ -974,7 +974,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = rk_gk / rk_gkm1;
+    beta = (CS_ABS(rk_gkm1) > DBL_MIN) ? rk_gk / rk_gkm1 : 0.;
     rk_gkm1 = rk_gk;
 
     ro_1 = gk_sk - beta*beta*ro_1;
@@ -1152,7 +1152,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = rk_rk / rk_rkm1;
+    beta = (CS_ABS(rk_rkm1) > DBL_MIN) ? rk_rk / rk_rkm1 : 0.;
     rk_rkm1 = rk_rk;
 
 #   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
@@ -1343,7 +1343,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = rk_rk / rk_rkm1;
+    beta = (CS_ABS(rk_rkm1) > DBL_MIN) ? rk_rk / rk_rkm1 : 0.;
     rk_rkm1 = rk_rk;
 
     ro_1 = rk_sk - beta*beta*ro_1;
