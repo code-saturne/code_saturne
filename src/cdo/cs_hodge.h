@@ -205,14 +205,19 @@ typedef struct {
  *         stiffmess matrix) for a given cell.
  *         The discrete Hodge operator is stored in hodge->matrix whereas the
  *         associated operator is stored in cb->loc
+ *         One checks if something has to be computed. One skips the
+ *         computation if the value of the associated property is equal to
+ *         zero.
  *
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] hodge     pointer to a cs_hodge_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
-typedef void
+typedef bool
 (cs_hodge_compute_t)(const cs_cell_mesh_t   *cm,
                      cs_hodge_t             *hodge,
                      cs_cell_builder_t      *cb);
@@ -437,10 +442,12 @@ cs_hodge_set_property_value_cw(const cs_cell_mesh_t   *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_fb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
                                cs_hodge_t               *hodge,
                                cs_cell_builder_t        *cb);
@@ -456,10 +463,12 @@ cs_hodge_fb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_fb_bubble_get_stiffness(const cs_cell_mesh_t    *cm,
                                  cs_hodge_t              *hodge,
                                  cs_cell_builder_t       *cb);
@@ -474,10 +483,12 @@ cs_hodge_fb_bubble_get_stiffness(const cs_cell_mesh_t    *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_fb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
                                cs_hodge_t               *hodge,
                                cs_cell_builder_t        *cb);
@@ -492,10 +503,12 @@ cs_hodge_fb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vb_cost_get_iso_stiffness(const cs_cell_mesh_t   *cm,
                                    cs_hodge_t             *hodge,
                                    cs_cell_builder_t      *cb);
@@ -510,10 +523,12 @@ cs_hodge_vb_cost_get_iso_stiffness(const cs_cell_mesh_t   *cm,
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge    pointer to a cs_hodge_t structure
  * \param[in, out] cb       pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vb_cost_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
                                      cs_hodge_t              *hodge,
                                      cs_cell_builder_t       *cb);
@@ -528,10 +543,12 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vb_bubble_get_iso_stiffness(const cs_cell_mesh_t    *cm,
                                      cs_hodge_t              *hodge,
                                      cs_cell_builder_t       *cb);
@@ -546,10 +563,12 @@ cs_hodge_vb_bubble_get_iso_stiffness(const cs_cell_mesh_t    *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vb_bubble_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
                                        cs_hodge_t              *hodge,
                                        cs_cell_builder_t       *cb);
@@ -566,10 +585,12 @@ cs_hodge_vb_bubble_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_cell_mesh_t     *cm,
                                      cs_hodge_t               *hodge,
                                      cs_cell_builder_t        *cb);
@@ -584,10 +605,12 @@ cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
                                cs_hodge_t               *hodge,
                                cs_cell_builder_t        *cb);
@@ -602,10 +625,12 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
                                cs_hodge_t               *hodge,
                                cs_cell_builder_t        *cb);
@@ -620,10 +645,12 @@ cs_hodge_vb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vb_wbs_get_stiffness(const cs_cell_mesh_t     *cm,
                               cs_hodge_t               *hodge,
                               cs_cell_builder_t        *cb);
@@ -637,10 +664,12 @@ cs_hodge_vb_wbs_get_stiffness(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
                            cs_hodge_t               *hodge,
                            cs_cell_builder_t        *cb);
@@ -655,10 +684,12 @@ cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
                 cs_hodge_t               *hodge,
                 cs_cell_builder_t        *cb);
@@ -673,10 +704,12 @@ cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
                       cs_hodge_t               *hodge,
                       cs_cell_builder_t        *cb);
@@ -690,10 +723,12 @@ cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
                      cs_hodge_t               *hodge,
                      cs_cell_builder_t        *cb);
@@ -708,10 +743,12 @@ cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
                       cs_hodge_t              *hodge,
                       cs_cell_builder_t       *cb);
@@ -726,10 +763,12 @@ cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_vpcd_voro_get(const cs_cell_mesh_t     *cm,
                        cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb);
@@ -744,10 +783,12 @@ cs_hodge_vpcd_voro_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_epfd_voro_get(const cs_cell_mesh_t     *cm,
                        cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb);
@@ -762,10 +803,12 @@ cs_hodge_epfd_voro_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_epfd_cost_get(const cs_cell_mesh_t     *cm,
                        cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb);
@@ -781,10 +824,12 @@ cs_hodge_epfd_cost_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_epfd_bubble_get(const cs_cell_mesh_t     *cm,
                          cs_hodge_t               *hodge,
                          cs_cell_builder_t        *cb);
@@ -801,10 +846,12 @@ cs_hodge_epfd_bubble_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_epfd_ocs2_get(const cs_cell_mesh_t     *cm,
                        cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb);
@@ -819,10 +866,12 @@ cs_hodge_epfd_ocs2_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_fped_voro_get(const cs_cell_mesh_t     *cm,
                        cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb);
@@ -837,10 +886,12 @@ cs_hodge_fped_voro_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_fped_cost_get(const cs_cell_mesh_t     *cm,
                        cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb);
@@ -855,10 +906,12 @@ cs_hodge_fped_cost_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_fped_bubble_get(const cs_cell_mesh_t     *cm,
                          cs_hodge_t               *hodge,
                          cs_cell_builder_t        *cb);
@@ -873,10 +926,12 @@ cs_hodge_fped_bubble_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_edfp_voro_get(const cs_cell_mesh_t     *cm,
                        cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb);
@@ -890,10 +945,12 @@ cs_hodge_edfp_voro_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] hodge     pointer to a cs_hodge_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_edfp_cost_get(const cs_cell_mesh_t     *cm,
                        cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb);
@@ -908,10 +965,12 @@ cs_hodge_edfp_cost_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
                          cs_hodge_t               *hodge,
                          cs_cell_builder_t        *cb);
@@ -925,10 +984,12 @@ cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
  * \param[in, out] hodge     pointer to a cs_hodge_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_edfp_cost_get_opt(const cs_cell_mesh_t     *cm,
                            cs_hodge_t               *hodge,
                            cs_cell_builder_t        *cb);
@@ -943,10 +1004,12 @@ cs_hodge_edfp_cost_get_opt(const cs_cell_mesh_t     *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
                          cs_hodge_t               *hodge,
                          cs_cell_builder_t        *cb);
