@@ -344,10 +344,12 @@ cs_equation_builder_log_performance(const cs_equation_param_t     *eqp,
  * \param[in]      eqb      pointer to a cs_equation_builder_t structure
  * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out] cb       pointer to a \ref cs_cell_builder_t structure
+ *
+ * \return true if the reaction property is not equal to zero
  */
 /*----------------------------------------------------------------------------*/
 
-void
+bool
 cs_equation_builder_set_reaction_pty_cw(const cs_equation_param_t     *eqp,
                                         const cs_equation_builder_t   *eqb,
                                         const cs_cell_mesh_t          *cm,

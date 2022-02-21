@@ -312,11 +312,12 @@ _svb_conv_diff_reac(const cs_equation_param_t     *eqp,
     /* Define the local stiffness matrix: local matrix owned by the cellwise
        builder (store in cb->loc) */
 
-    eqc->get_stiffness_matrix(cm, diff_hodge, cb);
+    bool  computed = eqc->get_stiffness_matrix(cm, diff_hodge, cb);
 
     /* Add the local diffusion operator to the local system */
 
-    cs_sdm_add(csys->mat, cb->loc);
+    if (computed)
+      cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -338,6 +339,7 @@ _svb_conv_diff_reac(const cs_equation_param_t     *eqp,
     eqc->get_advection_matrix(eqp, cm, diff_pty, fm, cb);
 
     /* Add it to the local system */
+
     if (eqp->adv_scaling_property == NULL)
       cs_sdm_add(csys->mat, cb->loc);
 
@@ -366,27 +368,32 @@ _svb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
     /* Update the value of the reaction property(ies) if needed */
 
-    cs_equation_builder_set_reaction_pty_cw(eqp, eqb, cm, cb);
+    bool  do_something  = cs_equation_builder_set_reaction_pty_cw(eqp, eqb, cm,
+                                                                  cb);
 
-    if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
+    if (do_something) { /* |rpty_val| > 0 */
 
-      /* |c|*wvc = |dual_cell(v) cap c| */
+      if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
 
-      assert(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
-      const double  ptyc = cb->rpty_val * cm->vol_c;
-      for (short int i = 0; i < cm->n_vc; i++)
-        csys->mat->val[i*(cm->n_vc + 1)] += cm->wvc[i] * ptyc;
+        /* |c|*wvc = |dual_cell(v) cap c| */
 
-    }
-    else {
+        assert(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+        const double  ptyc = cb->rpty_val * cm->vol_c;
+        for (short int i = 0; i < cm->n_vc; i++)
+          csys->mat->val[i*(cm->n_vc + 1)] += cm->wvc[i] * ptyc;
 
-      assert(cs_flag_test(eqb->sys_flag, CS_FLAG_SYS_MASS_MATRIX));
+      }
+      else {
 
-      /* Update local system matrix with the reaction term */
+        assert(cs_flag_test(eqb->sys_flag, CS_FLAG_SYS_MASS_MATRIX));
 
-      cs_sdm_add_mult(csys->mat, cb->rpty_val, mass_hodge->matrix);
+        /* Update local system matrix with the reaction term */
 
-    }
+        cs_sdm_add_mult(csys->mat, cb->rpty_val, mass_hodge->matrix);
+
+      }
+
+    } /* Do something */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1526,51 +1533,55 @@ cs_cdovb_scaleq_cw_build_implicit(int                           t_id,
     cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property,
                                              cb->t_pty_eval);
 
-  if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
+  if (fabs(cb->tpty_val) > 0) { /* Something to add in this cell */
 
-    /* |c|*wvc = |dual_cell(v) cap c| */
+    if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
-    CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
-    const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
+      /* |c|*wvc = |dual_cell(v) cap c| */
 
-    /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
-     *       >> Update the cellwise system with the time matrix */
+      CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+      const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
-    for (short int i = 0; i < cm->n_vc; i++) {
+      /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
+       *       >> Update the cellwise system with the time matrix */
 
-      const double  dval =  ptyc * cm->wvc[i];
+      for (short int i = 0; i < cm->n_vc; i++) {
 
-      /* Update the RHS with values at time t_n */
+        const double  dval =  ptyc * cm->wvc[i];
 
-      csys->rhs[i] += dval * csys->val_n[i];
+        /* Update the RHS with values at time t_n */
 
-      /* Add the diagonal contribution from time matrix */
+        csys->rhs[i] += dval * csys->val_n[i];
 
-      csys->mat->val[i*(cm->n_vc + 1)] += dval;
+        /* Add the diagonal contribution from time matrix */
+
+        csys->mat->val[i*(cm->n_vc + 1)] += dval;
+
+      }
+
+    }
+    else { /* Use the mass matrix */
+
+      const double  tpty_coef = cb->tpty_val * inv_dtcur;
+      const cs_sdm_t  *mass_mat = mass_hodge->matrix;
+
+      /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
+       *       >> Update the cellwise system with the time matrix */
+
+      /* Update rhs with csys->mat*p^n */
+
+      double  *time_pn = cb->values;
+      cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
+      for (short int i = 0; i < csys->n_dofs; i++)
+        csys->rhs[i] += tpty_coef*time_pn[i];
+
+      /* Update the cellwise system with the time matrix */
+
+      cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
 
     }
 
-  }
-  else { /* Use the mass matrix */
-
-    const double  tpty_coef = cb->tpty_val * inv_dtcur;
-    const cs_sdm_t  *mass_mat = mass_hodge->matrix;
-
-    /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
-     *       >> Update the cellwise system with the time matrix */
-
-    /* Update rhs with csys->mat*p^n */
-
-    double  *time_pn = cb->values;
-    cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
-    for (short int i = 0; i < csys->n_dofs; i++)
-      csys->rhs[i] += tpty_coef*time_pn[i];
-
-    /* Update the cellwise system with the time matrix */
-
-    cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
-
-  }
+  } /* Something to add related to the unsteady term */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
   if (cs_dbg_cw_test(eqp, cm, csys))
