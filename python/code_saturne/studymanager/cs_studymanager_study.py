@@ -1534,20 +1534,23 @@ class Studies(object):
         Compare the results for one computation and report
         """
         case.is_compare = "done"
-        diff_value, m_size_eq = case.runCompare(self,
-                                                repo, dest,
-                                                threshold, args,
-                                                reference=reference)
 
-        case.diff_value += diff_value
-        case.m_size_eq = case.m_size_eq and m_size_eq
+        if not case.disabled:
+            diff_value, m_size_eq = case.runCompare(self,
+                                                    repo, dest,
+                                                    threshold, args,
+                                                    reference=reference)
+            case.diff_value += diff_value
+            case.m_size_eq = case.m_size_eq and m_size_eq
 
         if args:
             s_args = 'with args: %s' % args
         else:
             s_args = 'default mode'
 
-        if not m_size_eq:
+        if case.disabled:
+            self.reporting('    - compare %s (%s) --> DISABLED' % (case.title, s_args))
+        elif not m_size_eq:
             self.reporting('    - compare %s (%s) --> DIFFERENT MESH SIZES FOUND' % (case.title, s_args))
         elif diff_value:
             self.reporting('    - compare %s (%s) --> DIFFERENCES FOUND' % (case.title, s_args))
@@ -1564,37 +1567,36 @@ class Studies(object):
         """
         if self.__compare:
             for case in self.graph.graph_dict:
-                if not case.disabled:
-                    self.reporting('  o Compare case: ' + case.title)
-                    # reference directory passed in studymanager command line
-                    # overwrites destination in all cases (even if compare is
-                    # defined by a compare markup with a non empty destination)
-                    ref = None
-                    if self.__ref:
-                        ref = os.path.join(self.__ref, case.study)
-                    if case.compare == 'on' and case.is_run != "KO":
-                        is_compare, nodes, repo, dest, t, args = \
-                                             self.__parser.getCompare(case.node)
-                        if is_compare:
-                            for i in range(len(nodes)):
-                                if is_compare[i]:
-                                    self.compare_case_and_report(case,
-                                                                 repo[i],
-                                                                 dest[i],
-                                                                 t[i],
-                                                                 args[i],
-                                                                 reference=ref)
-                        if not is_compare or case.is_compare != "done":
-                            repo = ""
-                            dest = ""
-                            t    = None
-                            args = None
-                            self.compare_case_and_report(case,
-                                                         repo,
-                                                         dest,
-                                                         t,
-                                                         args,
-                                                         reference=ref)
+                self.reporting('  o Compare case: ' + case.title)
+                # reference directory passed in studymanager command line
+                # overwrites destination in all cases (even if compare is
+                # defined by a compare markup with a non empty destination)
+                ref = None
+                if self.__ref:
+                    ref = os.path.join(self.__ref, case.study)
+                if case.compare == 'on' and case.is_run != "KO":
+                    is_compare, nodes, repo, dest, t, args = \
+                                         self.__parser.getCompare(case.node)
+                    if is_compare:
+                        for i in range(len(nodes)):
+                            if is_compare[i]:
+                                self.compare_case_and_report(case,
+                                                             repo[i],
+                                                             dest[i],
+                                                             t[i],
+                                                             args[i],
+                                                             reference=ref)
+                    if not is_compare or case.is_compare != "done":
+                        repo = ""
+                        dest = ""
+                        t    = None
+                        args = None
+                        self.compare_case_and_report(case,
+                                                     repo,
+                                                     dest,
+                                                     t,
+                                                     args,
+                                                     reference=ref)
 
         self.reporting('')
 
