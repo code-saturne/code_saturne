@@ -1861,9 +1861,18 @@ class Studies(object):
                 dd = ""
 
             if c_label:
-                ff = os.path.join(dd, s_label, c_label, 'RESU', d, f)
+                fd = os.path.join(dd, s_label, c_label, 'RESU')
             else:
-                ff = os.path.join(dd, s_label, 'POST', d, f)
+                fd = os.path.join(dd, s_label, 'POST')
+
+            if d == '':
+                ff = os.path.join(fd, f)
+                if not os.path.isfile(ff):
+                    l = os.listdir(fd)
+                    if len(l) == 1:
+                        ff = os.path.join(fd, l[0], f)
+            else:
+                ff = os.path.join(fd, d, f)
 
             if not os.path.isfile(ff):
                 print("\n\nWarning: this file does not exist: %s\n\n" % ff)
