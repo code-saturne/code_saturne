@@ -329,7 +329,7 @@ cs_user_1d_wall_thermal(int iappel,
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_mass_source_terms(int nvar,
+cs_user_wall_condensation(int nvar,
                                    int nscal,
                                    int iappel);
 

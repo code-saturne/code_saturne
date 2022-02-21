@@ -56,7 +56,7 @@ BEGIN_C_DECLS
  Function:
  ---------
 
-> \file cs_user_boundary_mass_source_terms.c
+> \file cs_user_wall_condensation.c
 >
 > \brief Source terms associated at the boundary faces and the neighboring
 > cells with surface condensation.
@@ -164,12 +164,9 @@ ______________________________________________________________________________!
 _______________________________________________________________________________
 */
 
-
-#pragma weak cs_user_boundary_mass_source_terms
+#pragma weak cs_user_wall_condensation
 void
-cs_user_boundary_mass_source_terms(int nvar,
-                                   int nscal,
-                                   int iappel)
+cs_user_wall_condensation(int nvar, int nscal, int iappel)
 {
   CS_UNUSED(nvar);
   CS_UNUSED(nscal);

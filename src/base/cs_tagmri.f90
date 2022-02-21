@@ -124,8 +124,8 @@ ivar = isca(isvtb)
 
 do ii = 1, nfbpcd
 
-  ifac = ifbpcd(ii)
-  iz = izzftcd(ii)
+  ifac = ifbpcd(ii) + 1
+  iz = izzftcd(ii) + 1
   if(iztag1d(iz).eq.1) then
     icodcl(ifac,ivar)   = 1
     rcodcl(ifac,ivar,1) = ztmur(ii,1)
@@ -154,7 +154,7 @@ endif
 
   do ii = 1, nfbpcd
 
-    ifac = ifbpcd(ii)
+    ifac = ifbpcd(ii) + 1
     iel = ifabor(ifac)
 
     temper = rcodcl(ifac,ivar,1)

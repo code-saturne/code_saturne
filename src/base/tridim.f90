@@ -583,6 +583,7 @@ endif
 !------------------------------------------------------------------------
 
 htot_cond => null()
+
 if (nftcdt.gt.0) then
 
   iappel = 3
@@ -596,7 +597,7 @@ if (nftcdt.gt.0) then
     enddo
   enddo
 
-  call cs_user_boundary_mass_source_terms(nvar, nscal, iappel)
+  call cs_user_wall_condensation(nvar, nscal, iappel)
 
   ! Use empiric correlations to compute heat and mass transfer due to wall condensation
   allocate(htot_cond(nfbpcd))
@@ -888,14 +889,14 @@ do while (iterns.le.nterup)
     ! at the wall due to condensation for the enthalpy scalar.
     do ii = 1, nfbpcd
 
-      ifac= ifbpcd(ii)
+      ifac= ifbpcd(ii) + 1
       iel = ifabor(ifac)
 
       ! Enthalpy Boundary condition associated
       ! to the heat transfer due to condensation.
       cofafp(ifac) = -hpcond(ii)*coefap(ifac)
       cofbfp(ifac) =  hpcond(ii)
-      if (iztag1d(izzftcd(ii)).eq.2) then
+      if (iztag1d(izzftcd(ii)+1).eq.2) then
         hbord(ifac) = htot_cond(ii)
       endif
 
@@ -1043,6 +1044,7 @@ do while (iterns.le.nterup)
     if (associated(hbord)) deallocate(hbord)
     if (associated(theipb)) deallocate(theipb)
     if (associated(visvdr)) deallocate(visvdr)
+    if (associated(htot_cond)) deallocate(htot_cond)
 
     if (nterup.gt.1) then
       deallocate(trava)
@@ -1254,6 +1256,7 @@ endif
 if (associated(hbord)) deallocate(hbord)
 if (associated(theipb)) deallocate(theipb)
 if (associated(visvdr)) deallocate(visvdr)
+if (associated(htot_cond)) deallocate(htot_cond)
 
 if (nterup.gt.1) then
   deallocate(trava)

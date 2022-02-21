@@ -732,7 +732,7 @@ if (nfbpcd.gt.0) then
 
   ! When treating the Temperature, the equation is multiplied by Cp
   do ii = 1, nfbpcd
-    ifac= ifbpcd(ii)
+    ifac= ifbpcd(ii) + 1 ! C numbering
     iel = ifabor(ifac)
 
     if (spcond(ii,ipr).lt.0.d0 .and.itypcd(ii,ivar).eq.1) then

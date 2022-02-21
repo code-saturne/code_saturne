@@ -178,7 +178,7 @@ endif
 ! the surface condensation modelling
 if (nfbpcd.gt.0) then
   do ipcd = 1, nfbpcd
-    ifac= ifbpcd(ipcd)
+    ifac= ifbpcd(ipcd) + 1 ! C numbering
     iel = ifabor(ifac)
     debtot = debtot + surfbn(ifac) * spcond(ipcd,ipr)
   enddo

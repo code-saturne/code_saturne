@@ -1413,7 +1413,7 @@ _pressure_correction_fv(int        iterns,
     cs_real_t *_spcond = spcond + (ipr-1)*nfbpcd;
 
     for (cs_lnum_t f_idx = 0; f_idx < nfbpcd; f_idx++) {
-      cs_lnum_t f_id = ifbpcd[f_idx] - 1;
+      cs_lnum_t f_id = ifbpcd[f_idx];
       cs_lnum_t c_id = b_face_cells[f_id];
       cpro_divu[c_id] -= b_face_surf[f_id] * _spcond[f_idx];
     }

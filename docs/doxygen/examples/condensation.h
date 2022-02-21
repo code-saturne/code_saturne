@@ -33,7 +33,7 @@
   on internal metal structures and at the
   boundaries can be set respectively through the subroutines
   \ref cs_user_metal_structures_source_terms and
-  \ref cs_user_boundary_mass_source_terms.
+  \ref cs_user_wall_condensation.
 
   \section condens_h_metal_structures Source terms for condensation on internal metal structures
 
@@ -82,7 +82,7 @@
 
   \snippet cs_user_parameters-base.c wall_condensation
 
-  The subroutine \ref cs_user_boundary_mass_source_terms is called three times.
+  The subroutine \ref cs_user_wall_condensation is called three times.
 
   The first call computes the number of boundary faces and the number of zones on which
   a boundary mass source term is imposed, based on the selection criteria prescribed
@@ -90,20 +90,20 @@
 
   In this example, all faces with tag "60" in the mesh are gathered in a single
   condensation zone.
-  \snippet cs_user_boundary_mass_source_terms.c zones_definition
+  \snippet cs_user_wall_condensation.c zones_definition
 
   At the second call, connectivity tables are built between the global mesh numbering
   and the one dedicated to wall condensation (see snippet above).
   In addition, parameters related to the condensation model are set.
 
-  \snippet cs_user_boundary_mass_source_terms.c model_settings
+  \snippet cs_user_wall_condensation.c model_settings
 
   At the third call, properties related to the solid wall are set.
 
-  \snippet cs_user_boundary_mass_source_terms.c solid_wall
+  \snippet cs_user_wall_condensation.c solid_wall
 
   Finally, the source terms associated with the condensation phenomenon are defined.
 
-  \snippet cs_user_boundary_mass_source_terms.c source_term_values
+  \snippet cs_user_wall_condensation.c source_term_values
 
 */

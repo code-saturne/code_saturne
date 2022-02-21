@@ -24,7 +24,7 @@
 !> Module for parameters options, numerical and physical properties of the
 !> thermal 1D model for each specific zone with condensation on the wall.
 !> The zones number is defined by the user with the subroutine :
-!> cs_user_boundary_mass_source_terms.
+!> cs_user_wall_condensation.
 
 module cs_nz_tagmr
 
@@ -235,7 +235,7 @@ contains
     nztag1d = 0
     do iz = 1, nzones
       do iiii = 1, nfbpcd
-        if (izzftcd(iiii).eq.iz.and.iztag1d(iz).eq.1.and.iiii.gt.0) then
+        if ((izzftcd(iiii)+1).eq.iz.and.iztag1d(iz).eq.1.and.iiii.gt.0) then
           nztag1d = max(iztag1d(iz), nztag1d)
         endif
       enddo

@@ -2004,12 +2004,12 @@ module cs_c_bindings
 
     ! Interface to C user function for boundary mass source terms (condensation)
 
-    subroutine cs_user_boundary_mass_source_terms(nvar, nscal, iappel)  &
-      bind(C, name='cs_user_boundary_mass_source_terms')
+    subroutine cs_user_wall_condensation(nvar, nscal, iappel)  &
+      bind(C, name='cs_user_wall_condensation')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(kind=c_int), intent(in), value :: nvar, nscal, iappel
-    end subroutine cs_user_boundary_mass_source_terms
+    end subroutine cs_user_wall_condensation
 
     !---------------------------------------------------------------------------
 
@@ -2330,8 +2330,7 @@ module cs_c_bindings
     !---------------------------------------------------------------------------
     !> \brief Compute wall condensation mass and energy source terms
     !
-    !> \param[in]   nvar      Number of variables (?)
-    !> \param[in]   izzftcd   Correspondance between faces and condensation zones
+    !> \param[in]   total_htc Total heat transfer coefficient
     !---------------------------------------------------------------------------
     subroutine cs_wall_condensation_compute(total_htc)   &
       bind(C, name='cs_wall_condensation_compute')

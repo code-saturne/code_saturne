@@ -728,8 +728,8 @@ if (icondb.eq.0) then
     nberro=nberro+ierror
 
     do ii = 1, nfbpcd
-      ifac = ifbpcd(ii)
-      iz  = izzftcd(ii)
+      ifac = ifbpcd(ii) + 1 ! C numbering
+      iz  = izzftcd(ii) + 1 ! C numbering
       do kk = 1, znmur(iz)
         ztmur(ii,kk) =  tmurbf(ifac,kk)
       enddo
@@ -749,8 +749,8 @@ if (icondb.eq.0) then
     nberro=nberro+ierror
 
     do ii = 1, nfbpcd
-      ifac= ifbpcd(ii)
-      iz  = izzftcd(ii)
+      ifac= ifbpcd(ii) + 1 ! C numbering
+      iz  = izzftcd(ii)+ 1 ! C numbering)
       do kk = 1, znmur(iz)
         ztpar(iz) =  tparbf(ifac)
       enddo

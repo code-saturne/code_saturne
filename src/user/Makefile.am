@@ -87,7 +87,7 @@ userfiles = \
 cs_user_1d_wall_thermal.c \
 cs_user_atmospheric_model.f90 \
 cs_user_boundary_conditions.c \
-cs_user_boundary_mass_source_terms.c \
+cs_user_wall_condensation.c \
 cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations.c \

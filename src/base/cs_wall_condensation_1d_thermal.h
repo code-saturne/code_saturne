@@ -42,16 +42,16 @@ typedef struct {
   int        znmurx;
   cs_real_t *ztheta;
   cs_real_t *zdxmin;
-  cs_lnum_t *znmur ;
+  cs_lnum_t *znmur;
   cs_real_t *zepais;
   cs_real_t *ztpar0;
 
-  cs_real_t *zhext ;
-  cs_real_t *ztext ;
-  cs_real_t *zrob  ;
+  cs_real_t *zhext;
+  cs_real_t *ztext;
+  cs_real_t *zrob;
   cs_real_t *zcondb;
-  cs_real_t *zcpb  ;
-  cs_real_t *ztpar ;
+  cs_real_t *zcpb;
+  cs_real_t *ztpar;
 
   cs_real_t *zdxp;
   cs_real_t *ztmur;
@@ -78,13 +78,10 @@ extern const cs_wall_cond_1d_thermal_t *cs_glob_wall_cond_1d_thermal;
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_wall_condensation_1d_thermal_create(int  nzones);
+void cs_wall_condensation_1d_thermal_create(int nzones);
 
 void
-cs_wall_condensation_1d_thermal_mesh_create(int  znmurx,
-    int nfbpcd,
-    int nzones);
+cs_wall_condensation_1d_thermal_mesh_create(int znmurx, int nfbpcd, int nzones);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -92,8 +89,7 @@ cs_wall_condensation_1d_thermal_mesh_create(int  znmurx,
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_wall_condensation_1d_thermal_free(void);
+void cs_wall_condensation_1d_thermal_free(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -103,8 +99,7 @@ cs_wall_condensation_1d_thermal_free(void);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_wall_cond_1d_thermal_t *
-cs_get_glob_wall_cond_1d_thermal(void);
+cs_wall_cond_1d_thermal_t *cs_get_glob_wall_cond_1d_thermal(void);
 
 /*----------------------------------------------------------------------------*/
 

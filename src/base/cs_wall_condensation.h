@@ -48,14 +48,13 @@ typedef enum {
   CS_WALL_COND_MODEL_DEHBI     = 3,
 } cs_wall_cond_natural_conv_model_t;
 
-
 typedef enum {
-  CS_WALL_COND_MODEL_WALL_LAW  = 0,
+  CS_WALL_COND_MODEL_WALL_LAW    = 0,
   CS_WALL_COND_MODEL_SCHLICHTING = 1
 } cs_wall_cond_forced_conv_model_t;
 
 typedef enum {
-  CS_WALL_COND_MIXED_MAX = 0,
+  CS_WALL_COND_MIXED_MAX       = 0,
   CS_WALL_COND_MIXED_INCROPERA = 1
 } cs_wall_cond_mixed_conv_model_t;
 
@@ -63,32 +62,32 @@ typedef struct {
   int icondb; // Switch used to activate wall condensation (0 : activated)
   // Model type
   cs_wall_cond_natural_conv_model_t natural_conv_model;
-  cs_wall_cond_forced_conv_model_t forced_conv_model;
-  cs_wall_cond_mixed_conv_model_t mixed_conv_model;
+  cs_wall_cond_forced_conv_model_t  forced_conv_model;
+  cs_wall_cond_mixed_conv_model_t   mixed_conv_model;
 
   // Mesh-related information
-  cs_lnum_t            nfbpcd;
-  cs_lnum_t            *ifbpcd;
-  cs_lnum_t            *itypcd;
-  cs_lnum_t            *izzftcd;
-  cs_real_t            *spcond;
-  cs_real_t            *hpcond;
-  cs_real_t            *twall_cond;
-  cs_real_t            *thermal_condensation_flux;
-  cs_real_t            *convective_htc;
-  cs_real_t            *condensation_htc;
-  cs_real_t            *total_htc;
-  cs_real_t            *flthr;
-  cs_real_t            *dflthr;
+  cs_lnum_t  nfbpcd;
+  cs_lnum_t *ifbpcd;
+  cs_lnum_t *itypcd;
+  cs_lnum_t *izzftcd;
+  cs_real_t *spcond;
+  cs_real_t *hpcond;
+  cs_real_t *twall_cond;
+  cs_real_t *thermal_condensation_flux;
+  cs_real_t *convective_htc;
+  cs_real_t *condensation_htc;
+  cs_real_t *total_htc;
+  cs_real_t *flthr;
+  cs_real_t *dflthr;
 
   // Zone related quantities
-  cs_lnum_t            nzones;
-  cs_lnum_t            *izcophc;
-  cs_lnum_t            *izcophg;
-  cs_lnum_t            *iztag1d;
-  cs_real_t            *ztpar;
-  cs_real_t            *zxrefcond;
-  cs_real_t            *zprojcond;
+  cs_lnum_t  nzones;
+  cs_lnum_t *izcophc;
+  cs_lnum_t *izcophg;
+  cs_lnum_t *iztag1d;
+  cs_real_t *ztpar;
+  cs_real_t *zxrefcond;
+  cs_real_t *zprojcond;
 } cs_wall_cond_t;
 
 /*============================================================================
@@ -96,7 +95,6 @@ typedef struct {
  *============================================================================*/
 
 /* Pointer to wall condensation descriptor structure */
-
 extern const cs_wall_cond_t *cs_glob_wall_cond;
 
 /*=============================================================================
@@ -110,9 +108,7 @@ extern const cs_wall_cond_t *cs_glob_wall_cond;
  * \param[in] model    integer corresponding to the desired model
  */
 /*----------------------------------------------------------------------------*/
-
-void
-cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t  model);
+void cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t model);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -121,9 +117,7 @@ cs_wall_condensation_set_model(cs_wall_cond_natural_conv_model_t  model);
  * \param[in] icondb integer corresponding to the onoff state (-1 : off, 0: on)
  */
 /*----------------------------------------------------------------------------*/
-
-void
-cs_wall_condensation_set_onoff_state(int  icondb);
+void cs_wall_condensation_set_onoff_state(int icondb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -134,38 +128,33 @@ cs_wall_condensation_set_onoff_state(int  icondb);
  * \param[in] nvar     number of variables (?)
  */
 /*----------------------------------------------------------------------------*/
-
 void
-cs_wall_condensation_create(cs_lnum_t  nfbpcd,
-                            cs_lnum_t  nzones,
-                            cs_lnum_t  nvar);
+cs_wall_condensation_create(cs_lnum_t nfbpcd, cs_lnum_t nzones, cs_lnum_t nvar);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Free all structures related to wall condensation models
  */
 /*----------------------------------------------------------------------------*/
-
-void
-cs_wall_condensation_free(void);
+void cs_wall_condensation_free(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the wall condensation source terms.
  *
- * \param[in] nvar     number of variables (?)
- * \param[in] izzftcd  pointer to the table connecting faces to their
- *                     condensation zone
+ * \return
+ */
+/*----------------------------------------------------------------------------*/
+void cs_wall_condensation_compute(cs_real_t total_htc[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Output statistics about wall condensation source terms (for user log)
  *
  * \return
  */
 /*----------------------------------------------------------------------------*/
-
-void
-cs_wall_condensation_compute();
-
-void
-cs_wall_condensation_log();
+void cs_wall_condensation_log(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -175,8 +164,7 @@ cs_wall_condensation_log();
  */
 /*----------------------------------------------------------------------------*/
 
-cs_wall_cond_t *
-cs_get_glob_wall_cond(void);
+cs_wall_cond_t *cs_get_glob_wall_cond(void);
 
 /*----------------------------------------------------------------------------*/
 

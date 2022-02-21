@@ -319,7 +319,7 @@ endif
 ! Condensation mass source terms
 ! ------------------------------
 
-call cs_user_boundary_mass_source_terms(nvar, nscal, iappel)
+call cs_user_wall_condensation(nvar, nscal, iappel)
 
 ! Total number of cells with condensation source term
 nftcdt = nfbpcd
@@ -525,7 +525,7 @@ if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
 endif
 
 !==============================================================================
-! On appelle cs_user_boundary_mass_source_terms lorqu'il y a sur un processeur
+! On appelle cs_user_wall_condensation lorqu'il y a sur un processeur
 ! au moins des cellules avec terme source de condensation.
 ! On ne fait que remplir le tableau d'indirection des cellules
 ! On appelle cependant cs_user_condensation avec tous les processeurs,
@@ -538,12 +538,11 @@ if (nftcdt.gt.0) then
 
   call init_nz_tagmr
 
-  call cs_user_boundary_mass_source_terms(nvar, nscal, iappel)
+  call cs_user_wall_condensation(nvar, nscal, iappel)
 
   call cs_wall_condensation_set_model(icondb_model)
-  call cs_wall_condensation_set_regime(icondb_regime)
 
-  call cs_user_boundary_mass_source_terms(nvar, nscal, iappel)
+  call cs_user_wall_condensation(nvar, nscal, iappel)
 
   call init_nz_mesh_tagmr
 
@@ -632,7 +631,7 @@ endif
 call inivar(nvar, nscal)
 
 if (icdo.ge.1) then ! CDO mode
-  call cs_f_initialize_cdo_systems
+  call cs_f_domain_initialize_cdo_systems
 endif
 
 iterns = -1

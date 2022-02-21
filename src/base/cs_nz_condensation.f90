@@ -51,19 +51,19 @@ module cs_nz_condensation
 
   !> \anchor nfbpcd
   !> number of faces in which a condensation source terms is imposed.
-  !> See \c ifbpcd and the user subroutine \ref cs_user_boundary_mass_source_terms
+  !> See \c ifbpcd and the user subroutine \ref cs_user_wall_condensation
   integer(c_int), pointer, save :: nfbpcd
 
   !> \anchor itypcd
   !> type of condensation source terms for each variable
   !> - 0 for an variable at ambient value,
   !> - 1 for an variable at imposed value.
-  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
+  !> See the user subroutine \ref cs_user_wall_condensation
   integer, dimension(:,:), pointer, save :: itypcd
 
   !> \anchor thermal_condensation_flux
   !> value of the thermal flux for the condensation model.
-  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
+  !> See the user subroutine \ref cs_user_wall_condensation
   double precision, dimension(:), pointer, save :: thermal_condensation_flux
 
   !> \anchor flthr
@@ -79,7 +79,7 @@ module cs_nz_condensation
   !> \anchor spcond
   !> value of the condensation source terms for pressure.
   !> For the other variables, eventual imposed specific value.
-  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
+  !> See the user subroutine \ref cs_user_wall_condensation
   double precision, dimension(:,:), pointer, save :: spcond
 
   !> \anchor twall_cond
@@ -87,18 +87,18 @@ module cs_nz_condensation
   double precision, dimension(:), pointer, save :: twall_cond
   !> value of the thermal exchange coefficient associated to
   !> the condensation model used.
-  !> See the user subroutine \ref cs_user_boundary_mass_source_terms
+  !> See the user subroutine \ref cs_user_wall_condensation
   double precision, dimension(:), pointer, save:: hpcond
 
   !> list on the nfbpcd faces in which a condensation source terms is imposed.
-  !> See \c ifbpcd and the user subroutine \ref cs_user_boundary_mass_source_terms
+  !> See \c ifbpcd and the user subroutine \ref cs_user_wall_condensation
   integer, dimension(:), pointer, save :: ifbpcd
 
   !> \anchor nzones
   !> number of the zones with a specific condensation source terms
   !> depending on the wall temperature and material properties.
   !> by default (nzones = 1) if the user does not specified different zones
-  !> in the user subroutine \ref cs_user_boundary_mass_source_terms.f90 .
+  !> in the user subroutine \ref cs_user_wall_condensation.f90 .
   integer(c_int), pointer, save :: nzones
 
   !> \anchor izzftcd
@@ -150,7 +150,7 @@ module cs_nz_condensation
   !> Constant value of the wall temperature given by the user when
   !> the thermal 1D model is not activated for the condensation model with
   !> different zones specified in the user subroutine
-  !> \ref cs_user_boundary_mass_source_terms.
+  !> \ref cs_user_wall_condensation.
   double precision, dimension(:), pointer, save :: ztpar
 
   !> \anchor zxref

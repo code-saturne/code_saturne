@@ -1051,15 +1051,16 @@ if (f_id .ge. 0) then
   endif
   ! For wall condensation, initialize to user-prescribed value
   if (icondb.ge.0) then
+    call cs_1d_wall_thermal_get_faces(ifpt1d)
+    call cs_1d_wall_thermal_get_temp(tppt1d)
     do ii = 1, nfbpcd
-      ifac = ifbpcd(ii)
-      if (iztag1d(izzftcd(ii)).eq.0) then
+      ifac = ifbpcd(ii) + 1 ! C numbering
+      iz  = izzftcd(ii) + 1 ! C numbering
+      if (iztag1d(iz).eq.0) then
         field_s_b(ifac) = ztpar(iz)
-      else if (iztag1d(izzftcd(ii)).eq.1) then
+      else if (iztag1d(iz).eq.1) then
         field_s_b(ifac) = ztpar0(iz)
       else
-        call cs_1d_wall_thermal_get_faces(ifpt1d)
-        call cs_1d_wall_thermal_get_temp(tppt1d)
         do jj = 1, nfpt1d
           if (ifpt1d(jj) == ifac) then
             field_s_b(ifac) = tppt1d(jj)

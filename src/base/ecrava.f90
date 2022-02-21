@@ -521,8 +521,8 @@ if (iecaux.eq.1) then
       nbval  = znmurx
 
       do ii = 1, nfbpcd
-        ifac= ifbpcd(ii)
-        iz  = izzftcd(ii)
+        ifac= ifbpcd(ii) + 1 ! C numbering
+        iz  = izzftcd(ii) + 1 ! C numbering
         do kk = 1, znmur(iz)
           tmurbf(ifac, kk) = ztmur(ii,kk)
         enddo
@@ -543,8 +543,8 @@ if (iecaux.eq.1) then
       nbval  = 1
 
       do ii = 1, nfbpcd
-        ifac= ifbpcd(ii)
-        iz  = izzftcd(ii)
+        ifac= ifbpcd(ii) + 1 ! C numbering
+        iz  = izzftcd(ii) + 1 ! C numbering
         tparbf(ifac) = ztpar(iz)
       enddo
       call restart_write_section_real_t(rp,rubriq,itysup,nbval,tparbf)

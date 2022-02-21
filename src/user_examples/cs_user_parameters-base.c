@@ -406,7 +406,7 @@ cs_user_model(void)
 
   /*! [gax_mix_activation] */
 
-  cs_gas_mix_type_t gas_mix_type = CS_GAS_MIX_AIR_HELIUM;
+  cs_gas_mix_type_t gas_mix_type          = CS_GAS_MIX_AIR_HELIUM;
   cs_glob_physical_model_flag[CS_GAS_MIX] = gas_mix_type;
 
   /*! [gax_mix_activation] */
@@ -414,15 +414,16 @@ cs_user_model(void)
   /*! [wall_condensation] */
 
   /* Activated wall condensation model for natural convection
-   *   CS_WALL_COND_MODEL_COPAIN : Legacy implementation of COPAIN correlation (default)
-   *   CS_WALL_COND_MODEL_COPAIN_BD : Update of COPAIN correlation from Benteboula and Dabbene
-   *   CS_WALL_COND_MODEL_UCHIDA : Correlation of Uchida
+   *   CS_WALL_COND_MODEL_COPAIN : Legacy implementation of COPAIN correlation
+   * (default) CS_WALL_COND_MODEL_COPAIN_BD : Update of COPAIN correlation from
+   * Benteboula and Dabbene CS_WALL_COND_MODEL_UCHIDA : Correlation of Uchida
    *   CS_WALL_COND_MODEL_DEHBI  : Correlation of Dehbi
    */
 
   cs_wall_cond_t *wall_cond = cs_get_glob_wall_cond();
-  wall_cond->icondb = 0; // activate wall codnensation
-  wall_cond->model = CS_WALL_COND_MODEL_DEHBI; // choose correlation
+  wall_cond->icondb         = 0; // activate wall codnensation
+  wall_cond->natural_conv_model
+    = CS_WALL_COND_MODEL_DEHBI; // choose correlation
 
   /*! [wall_condensation] */
 
@@ -966,23 +967,6 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_var_is_buoyant] */
 
-  /* Example: change the turbulent Schmidt for a transported chemistry
-   * scalars */
-
-  /*! [param_var_scmidt] */
-  {
-
-    /* Loop over all species */
-    for (int i = 0; i < cs_glob_atmo_chemistry->n_species; i++) {
-      const int f_id = cs_glob_atmo_chemistry->species_to_field_id[i];
-      cs_field_t *sca1 = cs_field_by_id(f_id);
-
-      cs_field_set_key_double(sca1, cs_field_key_id("drift_scalar_model"),
-                              0.7); /* Value of the turbulent Schmidts */
-    }
-  }
-  /*! [param_var_scmidt] */
-
   /* Example: Scalar with a drift (key work "drift_scalar_model">0)
               or without drift
      ((key work "drift_scalar_model"=0, default option) for each USER scalar.
@@ -1198,9 +1182,6 @@ cs_user_parameters(cs_domain_t *domain)
 
   vof_param->rho2 = 1.;
   vof_param->mu2 = 1.e-5;
-
-  /* Surface tension, in N/m */
-  vof_param->sigmaS = 0.0;
 
   /*! [phprop] */
 

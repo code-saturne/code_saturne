@@ -89,7 +89,7 @@ double precision epsi,delta,r0,r1,epai1
 
 do ii = 1, nfbpcd
 
-  iz  = izzftcd(ii)
+  iz  = izzftcd(ii) + 1
   if (zdxmin(iz).le.0.d0 .or. zdxmin(iz).gt.zepais(iz)/dble(znmur(iz)-1)) then
     !---------------------------------------------------------
     ! Generate a homegeneous 1-D mesh with constant space step
@@ -147,7 +147,7 @@ enddo
 
 if(isuite.eq.0) then
   do ii = 1, nfbpcd
-    iz = izzftcd(ii)
+    iz = izzftcd(ii) + 1
     do kk = 1, znmur(iz)
       ztmur(ii,kk) = ztpar0(iz)
     enddo

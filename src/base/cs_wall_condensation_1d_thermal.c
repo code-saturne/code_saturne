@@ -33,17 +33,17 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
 #include "bft_error.h"
+#include "bft_mem.h"
 #include "bft_printf.h"
 
 #include "cs_defs.h"
@@ -51,9 +51,9 @@
 #include "cs_field_pointer.h"
 #include "cs_log.h"
 #include "cs_map.h"
+#include "cs_mesh_location.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
-#include "cs_mesh_location.h"
 #include "cs_time_step.h"
 #include "cs_wall_functions.h"
 
@@ -61,10 +61,10 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_math.h"
 #include "cs_log_iteration.h"
-#include "cs_wall_condensation_1d_thermal.h"
+#include "cs_math.h"
 #include "cs_wall_condensation.h" // not great...
+#include "cs_wall_condensation_1d_thermal.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -91,31 +91,28 @@ BEGIN_C_DECLS
  *  (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
  * LES, v2f or \f$k-\omega\f$).
  */
-//const double cs_turb_xkappa = 0.42;
+// const double cs_turb_xkappa = 0.42;
 
 //
 // TODO : to remove when the general 1D thermal model replaces
 // the condensation-specific 1D thermal model
 
-static cs_wall_cond_1d_thermal_t _wall_cond_thermal =
-{
-  .nzones = 0,
-  .znmurx = 0,
-  .ztheta = NULL,
-  .zdxmin = NULL,
-  .znmur  = NULL,
-  .zepais = NULL,
-  .ztpar0 = NULL,
+static cs_wall_cond_1d_thermal_t _wall_cond_thermal = { .nzones = 0,
+                                                        .znmurx = 0,
+                                                        .ztheta = NULL,
+                                                        .zdxmin = NULL,
+                                                        .znmur  = NULL,
+                                                        .zepais = NULL,
+                                                        .ztpar0 = NULL,
 
-  .zhext  = NULL,
-  .ztext  = NULL,
-  .zrob   = NULL,
-  .zcondb = NULL,
-  .zcpb   = NULL,
+                                                        .zhext  = NULL,
+                                                        .ztext  = NULL,
+                                                        .zrob   = NULL,
+                                                        .zcondb = NULL,
+                                                        .zcpb   = NULL,
 
-  .zdxp = NULL,
-  .ztmur = NULL
-};
+                                                        .zdxp  = NULL,
+                                                        .ztmur = NULL };
 
 // TODO : to remove when the general 1D thermal model replaces
 // the condensation-specific 1D thermal model
@@ -127,23 +124,20 @@ const cs_wall_cond_1d_thermal_t *cs_glob_wall_cond_1d_thermal
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void
-cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur,
-                                               cs_real_t **ztheta,
-                                               cs_real_t **zdxmin,
-                                               cs_real_t **zepais,
-                                               cs_real_t **zrob,
-                                               cs_real_t **zcondb,
-                                               cs_real_t **zcpb,
-                                               cs_real_t **zhext,
-                                               cs_real_t **ztext,
-                                               cs_real_t **ztpar0);
+void cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur,
+                                                    cs_real_t **ztheta,
+                                                    cs_real_t **zdxmin,
+                                                    cs_real_t **zepais,
+                                                    cs_real_t **zrob,
+                                                    cs_real_t **zcondb,
+                                                    cs_real_t **zcpb,
+                                                    cs_real_t **zhext,
+                                                    cs_real_t **ztext,
+                                                    cs_real_t **ztpar0);
 
-void
-cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **znmurx,
-                                                    cs_real_t **zdxp,
-						    cs_real_t **ztmur);
-
+void cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **      znmurx,
+                                                         cs_real_t **zdxp,
+                                                         cs_real_t **ztmur);
 
 /*============================================================================
  * Private function definitions
@@ -177,14 +171,14 @@ cs_f_wall_condensation_1d_thermal_get_pointers(cs_lnum_t **znmur,
   *ztpar0 = _wall_cond_thermal.ztpar0;
 }
 
-
 void
-cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **znmurx,
+cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **      znmurx,
                                                     cs_real_t **zdxp,
-						    cs_real_t **ztmur) {
+                                                    cs_real_t **ztmur)
+{
   *znmurx = &(_wall_cond_thermal.znmurx);
-  *zdxp = _wall_cond_thermal.zdxp;
-  *ztmur = _wall_cond_thermal.ztmur;
+  *zdxp   = _wall_cond_thermal.zdxp;
+  *ztmur  = _wall_cond_thermal.ztmur;
 }
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -203,7 +197,7 @@ cs_f_wall_condensation_1d_thermal_get_mesh_pointers(int **znmurx,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_wall_condensation_1d_thermal_create(int  nzones)
+cs_wall_condensation_1d_thermal_create(int nzones)
 {
   _wall_cond_thermal.nzones = nzones;
 
@@ -218,7 +212,7 @@ cs_wall_condensation_1d_thermal_create(int  nzones)
   BFT_MALLOC(_wall_cond_thermal.ztext, nzones, cs_real_t);
   BFT_MALLOC(_wall_cond_thermal.ztpar0, nzones, cs_real_t);
 
-  for (cs_lnum_t iz = 0; iz<_wall_cond_thermal.nzones; iz++) {
+  for (cs_lnum_t iz = 0; iz < _wall_cond_thermal.nzones; iz++) {
     _wall_cond_thermal.znmur[iz]  = 0;
     _wall_cond_thermal.ztheta[iz] = 0.;
     _wall_cond_thermal.zdxmin[iz] = 0.;
@@ -233,21 +227,19 @@ cs_wall_condensation_1d_thermal_create(int  nzones)
 }
 
 void
-cs_wall_condensation_1d_thermal_mesh_create(int  znmurx, 
-    int nfbpcd,
-    int nzones)
+cs_wall_condensation_1d_thermal_mesh_create(int znmurx, int nfbpcd, int nzones)
 {
   _wall_cond_thermal.znmurx = znmurx;
 
-  BFT_MALLOC(_wall_cond_thermal.zdxp, nzones*znmurx, cs_real_t);
-  BFT_MALLOC(_wall_cond_thermal.ztmur, nfbpcd*znmurx, cs_real_t);
+  BFT_MALLOC(_wall_cond_thermal.zdxp, nzones * znmurx, cs_real_t);
+  BFT_MALLOC(_wall_cond_thermal.ztmur, nfbpcd * znmurx, cs_real_t);
 
-  for (int im = 0; im<znmurx; im++) {
-    for (cs_lnum_t ieltcd = 0; ieltcd<nfbpcd; ieltcd++) {
-      _wall_cond_thermal.ztmur[ieltcd*znmurx + im] = 0.0;
+  for (int im = 0; im < znmurx; im++) {
+    for (cs_lnum_t ieltcd = 0; ieltcd < nfbpcd; ieltcd++) {
+      _wall_cond_thermal.ztmur[ieltcd * znmurx + im] = 0.0;
     }
-    for (int iz = 0; iz<nzones; iz++) {
-      _wall_cond_thermal.zdxp[iz*znmurx + im] = 0.0;
+    for (int iz = 0; iz < nzones; iz++) {
+      _wall_cond_thermal.zdxp[iz * znmurx + im] = 0.0;
     }
   }
 }

@@ -101,10 +101,9 @@ double precision dxv, rocp
 
 do ii = 1, nfbpcd
 
-  ifac = ifbpcd(ii)
+  ifac = ifbpcd(ii) + 1 ! C numbering
+  iz   = izzftcd(ii) + 1 ! C numbering
   iel  = ifabor(ifac)
-
-  iz = izzftcd(ii)
 
   if(iztag1d(iz).eq.1) then
 
@@ -181,7 +180,7 @@ if (mod(ntcabs,ntlist).eq.0) then
   enddo
 
   do ii = 1, nfbpcd
-    iz = izzftcd(ii)
+    iz = izzftcd(ii) + 1
     if(iztag1d(iz).eq.1) then
       tpminf(iz) = min(tpminf(iz),ztmur(ii,1))
       tpmaxf(iz) = max(tpmaxf(iz),ztmur(ii,1))

@@ -107,7 +107,7 @@ if (icondb.eq.0) then
 
   !--- Compute the explicit term of the condensation model
   do ii = 1, nfbpcd
-    ifac= ifbpcd(ii)
+    ifac= ifbpcd(ii) + 1
     iel = ifabor(ifac)
     tsexp(iel) = tsexp(iel) - surfbn(ifac) * gam_s(ii) * pvara(iel)
     if (itypcd(ii).eq.1) then
@@ -118,7 +118,7 @@ if (icondb.eq.0) then
   !--- Compute the implicit term of the condensation model
   !--- here we just use actually a explicit form no implicit term
   do ii = 1, nfbpcd
-    ifac= ifbpcd(ii)
+    ifac= ifbpcd(ii) + 1
     iel = ifabor(ifac)
     if (gam_s(ii).gt.0.d0) then
       tsimp(iel) = tsimp(iel) + surfbn(ifac) *gam_s(ii)
