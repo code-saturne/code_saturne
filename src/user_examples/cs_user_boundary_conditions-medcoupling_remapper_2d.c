@@ -5,7 +5,7 @@
 /* VERS */
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -151,7 +151,7 @@ cs_user_boundary_conditions(int         nvar,
   /*! [remapper] */
 
   /* If the med data needs for a translation or rotation for the geometrical
-   * superposition with the target Code_Saturne mesh: */
+   * superposition with the target code_saturne mesh: */
 
   /*! [trans_rota] */
   if (false) {

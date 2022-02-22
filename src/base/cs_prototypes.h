@@ -6,7 +6,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -873,7 +873,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
                const cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
- * Define couplings with other instances of Code_Saturne.
+ * Define couplings with other instances of code_saturne.
  *----------------------------------------------------------------------------*/
 
 void

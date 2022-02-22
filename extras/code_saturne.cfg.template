@@ -1,9 +1,9 @@
-### This file configures various Code_Saturne options.
+### This file configures various code_saturne options.
 
 ### The commented-out examples below are intended to demonstrate
 ### how to use this file.
 
-### Section for Code_Saturne installation customizations.
+### Section for code_saturne installation customizations.
 ### -----------------------------------------------------
 
 [install]
@@ -41,7 +41,7 @@
 # cathare =
 
 ### Optional path to sourcable shell environment initialization file
-### (similar to .profile or .bashrc, specific to Code_Saturne).
+### (similar to .profile or .bashrc, specific to code_saturne).
 # rcfile =
 
 ### Information about remote installations.
@@ -54,7 +54,7 @@
 ### Syntax is <batch_system>_<cluster url or name>=<path>
 ### distant installation paths
 
-### Section for Code_Saturne run customizations.
+### Section for code_saturne run customizations.
 ### --------------------------------------------
 
 [run]

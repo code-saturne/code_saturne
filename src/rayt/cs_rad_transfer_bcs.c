@@ -2,7 +2,7 @@
  * Radiation solver boundary conditions treatment.
  *============================================================================*/
 
-/* This file is part of Code_Saturne, a general-purpose CFD tool.
+/* This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -1377,7 +1377,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
                || bc_type[face_id] == CS_ROUGHWALL) {
         cs_real_t twall = f_tempb->val[face_id] + xmtk;
         /* Remember: In case of the usage of the standard radiation
-           models of Code_Saturne, w_gg=1  */
+           models of code_saturne, w_gg=1  */
         cs_real_t pimp;
         if (bpro_eps != NULL)
           pimp = bpro_eps[face_id] * stephn * cs_math_pow4(twall)

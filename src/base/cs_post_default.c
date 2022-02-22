@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -170,7 +170,7 @@ _write_additional_vars(void                  *input,
   if (n_b_faces == 0)
     b_face_vals = NULL;
 
-  /* Add specific outputs for Code_Saturne */
+  /* Add specific outputs for code_saturne */
 
   cs_lnum_t *cell_num = NULL, *b_face_num = NULL;
 

@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------------------
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -22,7 +22,7 @@
 
 !> \file cscpfb.f90
 !> \brief Preparation of sending variables for coupling between two instances
-!> of Code_Saturne via boundary faces.
+!> of code_saturne via boundary faces.
 !> Received indformation will be transformed into boundary condition
 !> in subroutine \ref csc2cl.
 

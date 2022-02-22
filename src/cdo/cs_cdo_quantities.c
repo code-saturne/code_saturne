@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -875,7 +875,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)
 /*----------------------------------------------------------------------------
   Algorithm for computing mesh quantities : cell centers are computed as the
   vertex average over cell vertices. Other quantities are copied from those
-  computed by Code_Saturne (default algorithm)
+  computed by code_saturne (default algorithm)
   ----------------------------------------------------------------------------*/
 
 static void

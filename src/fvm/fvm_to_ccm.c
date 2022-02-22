@@ -4,7 +4,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -840,7 +840,7 @@ _write_restart_info(int                   time_step,
     /* Prepare solver name */
     char solver_info[128];
     sprintf(solver_info,
-            "Code_Saturne "VERSION" with libCCMIO %d",
+            "code_saturne "VERSION" with libCCMIO %d",
             kCCMIOVersion);
 
     /* Write node */

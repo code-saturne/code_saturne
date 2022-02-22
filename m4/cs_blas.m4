@@ -1,6 +1,6 @@
 dnl--------------------------------------------------------------------------------
 dnl
-dnl This file is part of Code_Saturne, a general-purpose CFD tool.
+dnl This file is part of code_saturne, a general-purpose CFD tool.
 dnl
 dnl Copyright (C) 1998-2022 EDF S.A.
 dnl
@@ -381,7 +381,7 @@ if test "x$with_blas" != "xno" ; then
 fi
 
 # ESSL requires Fortran to link, and MKL provides sparse matrix-vector
-# operations (so it may be used by the Code_Saturne solver)
+# operations (so it may be used by the code_saturne solver)
 AM_CONDITIONAL(HAVE_ESSL, test x$with_blas_type = xESSL)
 AM_CONDITIONAL(HAVE_MKL, test x$with_blas_type = xMKL)
 

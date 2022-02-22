@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  * \brief Sum values of a given datatype on all default communicator processes.
  *
  * \param[in]       n         number of values
- * \param[in]       datatype  matching Code_Saturne datatype
+ * \param[in]       datatype  matching code_saturne datatype
  * \param[in, out]  val       local sum in, global sum out (size: n)
  */
 
@@ -91,7 +91,7 @@ BEGIN_C_DECLS
  *        default communicator processes.
  *
  * \param[in]       n         number of values
- * \param[in]       datatype  matching Code_Saturne datatype
+ * \param[in]       datatype  matching code_saturne datatype
  * \param[in, out]  val       local maximum in, global maximum out (size: n)
  */
 
@@ -104,7 +104,7 @@ BEGIN_C_DECLS
  *        default communicator processes.
  *
  * \param[in]       n         number of values
- * \param[in]       datatype  matching Code_Saturne datatype
+ * \param[in]       datatype  matching code_saturne datatype
  * \param[in, out]  val       local minimum in, global minimum out (size: n)
  */
 
@@ -118,7 +118,7 @@ BEGIN_C_DECLS
  *
  * \param[in]       root_rank  rank from which to broadcast
  * \param[in]       n          number of values
- * \param[in]       datatype   matching Code_Saturne datatype
+ * \param[in]       datatype   matching code_saturne datatype
  * \param[in, out]  val        values to broadcast; input on root_rank,
  *                             output on others (size: n)
  */
@@ -280,12 +280,12 @@ _get_array_distribution(int     root_rank,
 #endif  /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------
- * Call MPI_Allreduce for a given Code_Saturne datatype and MPI
+ * Call MPI_Allreduce for a given code_saturne datatype and MPI
  * operation on all default communicator processes.
  *
  * parameters:
  *   n         <-- number of values
- *   datatype  <-- matching Code_Saturne datatype
+ *   datatype  <-- matching code_saturne datatype
  *   operation <-- MPI operation
  *   val       <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
@@ -679,7 +679,7 @@ cs_parall_counter_max(cs_lnum_t   cpt[],
  *
  * parameters:
  *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
+ *   datatype <-- matching code_saturne datatype
  *   val      <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
 
@@ -701,7 +701,7 @@ cs_parall_sum(int             n,
  *
  * parameters:
  *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
+ *   datatype <-- matching code_saturne datatype
  *   val      <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
 
@@ -723,7 +723,7 @@ cs_parall_max(int             n,
  *
  * parameters:
  *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
+ *   datatype <-- matching code_saturne datatype
  *   val      <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
 

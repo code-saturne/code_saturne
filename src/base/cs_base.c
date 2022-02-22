@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -970,7 +970,7 @@ _mpi_node_info(void)
  *
  * The application name is used to build subgroups of processes with
  * identical name from the MPI_COMM_WORLD communicator, thus separating
- * this instance of Code_Saturne from other coupled codes. It may be
+ * this instance of code_saturne from other coupled codes. It may be
  * defined using the --app-num argument, and is based on the working
  * directory's base name otherwise.
  *
@@ -1217,7 +1217,7 @@ cs_base_logfile_head(int    argc,
  *   argc  <-> number of command line arguments
  *   argv  <-> array of command line arguments
  *
- * Global variables `cs_glob_n_ranks' (number of Code_Saturne processes)
+ * Global variables `cs_glob_n_ranks' (number of code_saturne processes)
  * and `cs_glob_rank_id' (rank of local process) are set by this function.
  *----------------------------------------------------------------------------*/
 

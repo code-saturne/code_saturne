@@ -1,9 +1,9 @@
 /*============================================================================
- * Code_Saturne documentation page
+ * code_saturne documentation page
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -32,7 +32,7 @@
   C user functions for definition of model options and calculation parameters.
     These subroutines are called in all cases.
 
-  If the Code_Saturne GUI is used, this file is not required (but may be
+  If the code_saturne GUI is used, this file is not required (but may be
     used to override parameters entered through the GUI, and to set
     parameters not accessible through the GUI).
 
@@ -318,7 +318,7 @@
 
   \section cs_user_parameters_h_cs_user_linear_solvers  Linear solver related options
 
-  By default, Code_Saturne will use a multigrid algorithm for pressure
+  By default, code_saturne will use a multigrid algorithm for pressure
   and iterative solver for other variables. For a given case, checking
   the setup file resulting from a first calculation will provide
   more info.
@@ -517,7 +517,7 @@
 
   \section cs_user_parameters_h_cs_user_moments  Time moment related options
 
-  Code_Saturne allows the calculation of temporal means or variances,
+  code_saturne allows the calculation of temporal means or variances,
   either of expressions evaluated through a user function, or
   of expressions of the type \f$<f_1*f_2...*f_n>\f$. The variables
   may be fields or field components. This is done calling either
@@ -637,7 +637,7 @@
 
   \section cs_user_parameters_h_cs_user_fans  Fan modelling options
 
-  Code_Saturne allows modelling of some circular fans as volume
+  code_saturne allows modelling of some circular fans as volume
   regions, defined by simple geometric characteristics, and modeled
   as explicit momentum source terms in those regions.
 

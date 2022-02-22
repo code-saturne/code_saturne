@@ -6,7 +6,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -63,7 +63,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Define new SYRTHES coupling.
  *
- * In the case of a single Code_Saturne and single SYRTHES instance, the
+ * In the case of a single code_saturne and single SYRTHES instance, the
  * syrthes_name argument is ignored.
  *
  * In case of multiple couplings, a coupling will be matched with available

@@ -1,14 +1,14 @@
 /*============================================================================
- * Code couplings definition with SYRTHES and Code_Saturne.
+ * Code couplings definition with SYRTHES and code_saturne.
  *
  * 1) Define conjuguate heat transfer couplings with the SYRTHES code
- * 2) Define couplings with other instances of Code_Saturne
+ * 2) Define couplings with other instances of code_saturne
  *============================================================================*/
 
 /* VERS */
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -55,7 +55,7 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_coupling-saturne.c
  *
- * \brief Code couplings definition with SYRTHES and Code_Saturne.
+ * \brief Code couplings definition with SYRTHES and code_saturne.
  *
  * See \ref user_coupling for examples.
  */
@@ -67,7 +67,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define couplings with other instances of Code_Saturne.
+ * \brief Define couplings with other instances of code_saturne.
  *
  * This is done by calling the \ref cs_sat_coupling_define function for each
  * coupling to add.

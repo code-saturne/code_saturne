@@ -4,7 +4,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -209,7 +209,7 @@ _field_output(void           *context,
     }
 
     if (w->format == CS_PLOT_DAT) {
-      fprintf(w->f, "# Code_Saturne plot output\n#\n");
+      fprintf(w->f, "# code_saturne plot output\n#\n");
       if (w->nt < 0)
         fprintf(w->f, "# time independent\n");
       else {

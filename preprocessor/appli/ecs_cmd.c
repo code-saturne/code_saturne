@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -318,7 +318,7 @@ _print_preamble(int    argc,
   printf(_("\n\n"
            "  .------------------------------.\n"
            "  |                              |\n"
-           "  |   Code_Saturne Preprocessor  |\n"
+           "  |   code_saturne Preprocessor  |\n"
            "  |                              |\n"
            "  `------------------------------'\n"));
 

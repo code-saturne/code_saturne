@@ -439,7 +439,7 @@ AC_SUBST(ple_have_long_lnum)
 # Determine OpenMP support (not used in source code yet)
 #------------------------------------------------------------------------------
 
-# For consistency with the auto_flags mechanisme and with code_saturne,
+# For consistency with the auto_flags mechanisme and with Code_Saturne,
 # we do not use AC_OPENMP, our own method here, based on flags already set
 # by default or by the user.
 

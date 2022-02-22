@@ -6,7 +6,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -110,7 +110,7 @@ cs_parall_counter_max(cs_lnum_t   cpt[],
  *
  * parameters:
  *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
+ *   datatype <-- matching code_saturne datatype
  *   val      <-> local sum in, global sum out (array)
  *----------------------------------------------------------------------------*/
 
@@ -145,7 +145,7 @@ cs_parall_sum(int             n,
  *
  * parameters:
  *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
+ *   datatype <-- matching code_saturne datatype
  *   val      <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
 
@@ -180,7 +180,7 @@ cs_parall_max(int             n,
  *
  * parameters:
  *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
+ *   datatype <-- matching code_saturne datatype
  *   val      <-> local value  input, global value output (array)
  *----------------------------------------------------------------------------*/
 
@@ -217,7 +217,7 @@ cs_parall_min(int             n,
  * parameters:
  *   root_rank <-- rank from which to broadcast
  *   n         <-- number of values
- *   datatype  <-- matching Code_Saturne datatype
+ *   datatype  <-- matching code_saturne datatype
  *   val       <-- values to broadcast; input on root_rank,
  *                 output on others (size: n)
  *----------------------------------------------------------------------------*/

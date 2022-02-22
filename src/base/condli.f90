@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------------------
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -416,7 +416,7 @@ if (iale.ge.1) then
     impale(ii) = 0
   enddo
 
-  ! - Interface Code_Saturne
+  ! - Interface code_saturne
   !   ======================
 
   call uialcl(ibfixe, igliss, ivimpo, ifresf,   &
@@ -4948,7 +4948,7 @@ double precision, dimension(:,:), pointer :: xyzno0
 
 call precli(nvar, icodcl, rcodcl)
 
-!     - Interface Code_Saturne
+!     - Interface code_saturne
 !       ======================
 
 ! N.B. Zones de face de bord : on utilise provisoirement les zones des
@@ -4985,7 +4985,7 @@ if (iale.ge.1) then
     impale(ii) = 0
   enddo
 
-  ! - Interface Code_Saturne
+  ! - Interface code_saturne
   !   ======================
 
   call uialcl &

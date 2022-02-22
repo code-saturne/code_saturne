@@ -3,7 +3,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -394,7 +394,7 @@ class cs_math_parser:
     def rename_math_functions(self, expressions):
         """
         Rename mathematical functions using the internal functions of
-        Code_Saturne or standard math library.
+        code_saturne or standard math library.
         """
         _cs_math_internal_name = {'abs':'cs_math_fabs',
                                   'min':'cs_math_fmin',

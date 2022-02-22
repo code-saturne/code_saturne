@@ -1,9 +1,9 @@
 /*============================================================================
- * Code_Saturne documentation page
+ * code_saturne documentation page
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -57,7 +57,7 @@
   \section cs_user_coupling_h_cs_user_syrthes_coupling Code coupling with SYRTHES
 
   The \ref cs_user_syrthes_coupling subroutine defines a or multiple couplings
-  between Code_Saturne and SYRTHES by calling the \ref cs_syr_coupling_define
+  between code_saturne and SYRTHES by calling the \ref cs_syr_coupling_define
   function for each coupling to add.
 
   The following lines of code show different examples of coupling with SYRTHES.
@@ -74,10 +74,10 @@
 
   \snippet cs_user_coupling-syrthes.c coupling_syrthes_3
 
-  \section cs_user_coupling_h_cs_user_saturne_coupling Code coupling with other instances of Code_Saturne
+  \section cs_user_coupling_h_cs_user_saturne_coupling Code coupling with other instances of code_saturne
 
   The \ref cs_user_saturne_coupling allows one to couple different instances of
-  Code_Saturne by calling the \ref cs_sat_coupling_define function for each
+  code_saturne by calling the \ref cs_sat_coupling_define function for each
   coupling to add.
 
   Two examples are provided hereafter.

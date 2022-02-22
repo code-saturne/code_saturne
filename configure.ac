@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -28,7 +28,7 @@
 
 m4_define([cs_licence_c_comment],
 [/*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -767,7 +767,7 @@ AC_SUBST(CS_LD)
 AM_CONDITIONAL(HAVE_LINK_CXX, test x$cs_have_link_cxx = xyes)
 
 #------------------------------------------------------------------------------
-# Enables Code_Saturne front-end
+# Enables code_saturne front-end
 #------------------------------------------------------------------------------
 
 AC_ARG_ENABLE(frontend, [AS_HELP_STRING([--disable-frontend],
@@ -785,7 +785,7 @@ AM_CONDITIONAL(HAVE_FRONTEND, test x$cs_have_frontend = xyes)
 AC_SUBST(cs_have_frontend)
 
 #------------------------------------------------------------------------------
-# Enables Code_Saturne back-end
+# Enables code_saturne back-end
 #------------------------------------------------------------------------------
 
 AC_ARG_ENABLE(backend, [AS_HELP_STRING([--disable-backend],
@@ -803,7 +803,7 @@ AM_CONDITIONAL(HAVE_BACKEND, test x$cs_have_backend = xyes)
 AC_SUBST(cs_have_backend)
 
 #------------------------------------------------------------------------------
-# Enables Code_Saturne graphical user interface
+# Enables code_saturne graphical user interface
 #------------------------------------------------------------------------------
 
 AC_ARG_ENABLE(gui, [AS_HELP_STRING([--disable-gui],
@@ -1318,5 +1318,5 @@ echo "The package has been configured. Type:"
 echo " make"
 echo " make install"
 echo
-echo "To generate and install the Code_Saturne kernel"
+echo "To generate and install code_saturne."
 echo

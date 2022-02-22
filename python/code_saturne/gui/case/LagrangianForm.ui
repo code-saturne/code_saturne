@@ -539,7 +539,7 @@
         <item>
          <widget class="QComboBox" name="comboBoxNORDRE">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the order of time integration of the stochastic differential equations. The order can be either first or second. &lt;/p&gt;&lt;p&gt;(Code_Saturne key word: &lt;span style=&quot; font-weight:600;&quot;&gt;NORDRE&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select the order of time integration of the stochastic differential equations. The order can be either first or second. &lt;/p&gt;&lt;p&gt;(code_saturne key word: &lt;span style=&quot; font-weight:600;&quot;&gt;NORDRE&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
@@ -588,7 +588,7 @@
         <item>
          <widget class="QCheckBox" name="checkBoxMODCPL">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked the particles are assumed to be fluid-like tracer particles, otherwise they are material particles.&lt;/p&gt;&lt;p&gt;(Code_Saturne key word: &lt;span style=&quot; font-weight:600;&quot;&gt;MODCPL&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked the particles are assumed to be fluid-like tracer particles, otherwise they are material particles.&lt;/p&gt;&lt;p&gt;(code_saturne key word: &lt;span style=&quot; font-weight:600;&quot;&gt;MODCPL&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Fluid-like tracer particles</string>

@@ -5,7 +5,7 @@
 /* VERS */
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -93,7 +93,7 @@ BEGIN_C_DECLS
  *  defined through the GUI or defined by a model) before entering
  *  the function. It is generally not useful to reset them here.
  *
- *  For stability reasons, Code_Saturne will not add -st_imp directly to the
+ *  For stability reasons, code_saturne will not add -st_imp directly to the
  *  diagonal of the matrix, but Max(-st_imp,0). This way, the st_imp term is
  *  treated implicitely only if it strengthens the diagonal of the matrix.
  *  However, when using the second-order in time scheme, this limitation cannot

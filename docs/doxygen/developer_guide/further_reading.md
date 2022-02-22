@@ -1,5 +1,5 @@
 !--
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -783,14 +783,14 @@ Some ambiguous constructions lead to what is called _unspecified behavior_.
 
 - Example: incorrect character string usage
   ```{.c}
-char *p = "Code_Saturne"; // forbidden in C++11,
+char *p = "code_saturne"; // forbidden in C++11,
                           // obsolete in C++98/C++03
 p[0] = 'C'; // undefined behavior due to above
             // (but works with most compilers)
   ```
 - Correct character string usage
   ```{.c}
-char p[] = "Code_Saturne"; // array, not just pointer
+char p[] = "code_saturne"; // array, not just pointer
 p[0] = 'C'; // OK
   ```
 

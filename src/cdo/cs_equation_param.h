@@ -7,7 +7,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -1021,8 +1021,8 @@ typedef struct {
  * - "bjacobi_sgs"/"bjacobi_ssor": Block Jacobi with Symm. Gauss-Seidel in each
  *                             block. A block is the matrix associated to a
  *                             rank. (Only with PETSc)
- * - "poly1": Neumann polynomial of order 1 (only with Code_Saturne)
- * - "poly2": Neumann polynomial of order 2 (only with Code_Saturne)
+ * - "poly1": Neumann polynomial of order 1 (only with code_saturne)
+ * - "poly2": Neumann polynomial of order 2 (only with code_saturne)
  * - "ssor": symmetric successive over-relaxation (only with PETSC)
  * - "ilu0": incomplete LU factorization (only with PETSc)
  * - "icc0": incomplete Cholesky factorization (for symmetric matrices and

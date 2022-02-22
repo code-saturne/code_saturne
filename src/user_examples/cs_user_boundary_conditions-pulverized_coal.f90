@@ -2,7 +2,7 @@
 
 !VERS
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -303,7 +303,7 @@ do ilelt = 1, nlelt
     enddo
   enddo
 
-! Code_Saturne deals with NCHA different coals (component of blend)
+! code_saturne deals with NCHA different coals (component of blend)
 !       every coal is described by NCLPCH(icha) class of particles
 !       (each of them described by an inlet diameter)
 !

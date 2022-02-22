@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -804,7 +804,7 @@ _activate_if_listed(cs_post_writer_t      *w,
  * Convert cs_post_type_t datatype to cs_datatype_t.
  *
  * parameters:
- *   type_cs <-- Code_Saturne data type
+ *   type_cs <-- code_saturne data type
  *
  * returns
  *   corresponding FVM datatype

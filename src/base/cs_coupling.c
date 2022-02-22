@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -171,7 +171,7 @@ void CS_PROCF(cplact, CPLACT)
 /*!
  * \brief Discover other applications in the same MPI root communicator.
  *
- * \param[in]  app_name         name of this instance of Code_Saturne
+ * \param[in]  app_name         name of this instance of code_saturne
  * \param[in]  forced_app_type  name of app type, or NULL
  */
 /*----------------------------------------------------------------------------*/

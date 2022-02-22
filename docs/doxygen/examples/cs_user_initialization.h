@@ -1,9 +1,9 @@
 /*============================================================================
- * Code_Saturne documentation page
+ * code_saturne documentation page
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -354,12 +354,12 @@
   \section use_case Use Case
 
   When CFD results from another tool are available, they may be used to
-  initialize a \c Code_Saturne computation using the MEDCoupling remapper tools.
+  initialize a \c code_saturne computation using the MEDCoupling remapper tools.
   For more information on MEDCoupling features, see
   https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html#english-toc
 
   This requires that:
-  - \c Code_Saturne is installed with MEDCoupling
+  - \c code_saturne is installed with MEDCoupling
   - MEDCoupling is installed with MED file support (which is the default
     configuration).
   - The provided data is in MED format or at least in a format
@@ -390,7 +390,7 @@
 
   In this example, we also force the remapper option to
   PointLocator (see INTERP_KERNEL::PointLocator in MEDCoupling
-  documentation). By default, \c Code_Saturne uses
+  documentation). By default, \c code_saturne uses
   INTERP_KERNEL::Triangulation, which allows for better conservation
   of quantities, but is slower.
 

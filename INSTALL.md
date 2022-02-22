@@ -1,5 +1,5 @@
 <!--
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -1040,7 +1040,7 @@ $ cd ..
 $ mkdir dbg
 $ cd dbg
 $ ../../code_saturne/configure \
---prefix=/home/user/Code_Saturne/<version>/arch/dbg \
+--prefix=/home/user/code_saturne/<version>/arch/dbg \
 --with-med}=/home/user/opt/med-4.1 \
 --enable-debug \
 CC=/home/user/opt/mpich-3.3/bin/mpicc FC=gfortran

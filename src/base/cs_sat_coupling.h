@@ -6,7 +6,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -415,10 +415,10 @@ void CS_PROCF (mxicpl, MXICPL)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define new Code_Saturne coupling.
+ * \brief Define new code_saturne coupling.
  *
  * The arguments to \ref cs_sat_coupling_define are:
- * \param[in] saturne_name          matching Code_Saturne application name
+ * \param[in] saturne_name          matching code_saturne application name
  * \param[in] boundary_cpl_criteria boundary face selection criteria for coupled
  *                                  faces, or NULL
  * \param[in] volume_cpl_criteria   cell selection criteria for coupled cells, or
@@ -428,11 +428,11 @@ void CS_PROCF (mxicpl, MXICPL)
  * \param[in] volume_loc_criteria   cell selection criteria for location
  * \param[in] verbosity             verbosity level
  *
- * In the case of only 2 Code_Saturne instances, the 'saturne_name' argument
+ * In the case of only 2 code_saturne instances, the 'saturne_name' argument
  * is ignored, as there is only one matching possibility.
  *
  * In case of multiple couplings, a coupling will be matched with available
- * Code_Saturne instances based on the 'saturne_name' argument.
+ * code_saturne instances based on the 'saturne_name' argument.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -445,23 +445,23 @@ cs_sat_coupling_define(const char  *saturne_name,
                        int          verbosity);
 
 /*----------------------------------------------------------------------------
- * Get number of Code_Saturne couplings.
+ * Get number of code_saturne couplings.
  *
  * returns:
- *   number of Code_Saturne couplings
+ *   number of code_saturne couplings
  *----------------------------------------------------------------------------*/
 
 int
 cs_sat_coupling_n_couplings(void);
 
 /*----------------------------------------------------------------------------
- * Get pointer to Code_Saturne coupling.
+ * Get pointer to code_saturne coupling.
  *
  * parameters:
- *   coupling_id <-- Id (0 to n-1) of Code_Saturne coupling
+ *   coupling_id <-- Id (0 to n-1) of code_saturne coupling
  *
  * returns:
- *   pointer to Code_Saturne coupling structure
+ *   pointer to code_saturne coupling structure
  *----------------------------------------------------------------------------*/
 
 cs_sat_coupling_t *
@@ -474,7 +474,7 @@ cs_sat_coupling_by_id(int coupling_id);
  *   ref_axis           <-- reference axis
  *   face_sel_criterion <-- criterion for selection of boundary faces
  *   cell_sel_criterion <-- criterion for selection of cells
- *   sat_name           <-- Code_Saturne application name
+ *   sat_name           <-- code_saturne application name
  *   verbosity          <-- verbosity level
  *----------------------------------------------------------------------------*/
 
@@ -487,7 +487,7 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
                     int          verbosity);
 
 /*----------------------------------------------------------------------------
- * Create a new internal Code_Saturne coupling.
+ * Create a new internal code_saturne coupling.
  *
  * arguments:
  *   tag_func          <-- pointer to tagging function
@@ -509,7 +509,7 @@ cs_sat_coupling_add_internal(cs_sat_coupling_tag_t  *tag_func,
                              int                     verbosity);
 
 /*----------------------------------------------------------------------------
- * Initialize Code_Saturne couplings.
+ * Initialize code_saturne couplings.
  *
  * This function may be called once all couplings have been defined,
  * and it will match defined couplings with available applications.

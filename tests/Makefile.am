@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -116,7 +116,7 @@ bft_printf_test_SOURCES  = bft_printf_test.c
 bft_printf_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
 bft_printf_test_LDADD    = $(LDADD_BFT_TESTS)
 
-# Code_Saturne tests
+# code_saturne tests
 
 check_PROGRAMS += \
 cs_all_to_all_test \

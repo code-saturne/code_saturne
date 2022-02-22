@@ -4,7 +4,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -141,7 +141,7 @@ static const char  *_ensight_type_name[FVM_N_ELEMENT_TYPES] = {"bar2",
                                                                "hexa8",
                                                                "nfaced"};
 
-/* for symetric tensors, Code_Saturne assumes xx, yy, zz, xy, yz, xy,
+/* for symetric tensors, code_saturne assumes xx, yy, zz, xy, yz, xy,
    xhere EnSight assumes xx, yy, zz, xy, xy, yz, so permutation is required */
 
 static const int _ensight_c_order_6[6] = {0, 1, 2, 3, 5, 4};
@@ -305,7 +305,7 @@ _write_geom_headers(fvm_to_ensight_writer_t  *this_writer,
     _write_string(f, buf);
   }
   /* 2nd description line */
-  _write_string(f, "Output by Code_Saturne version "VERSION);
+  _write_string(f, "Output by code_saturne version "VERSION);
   _write_string(f, "node id assign");
   _write_string(f, "element id assign");
 }

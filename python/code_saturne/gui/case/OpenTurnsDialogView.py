@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -353,7 +353,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
             # Generating OpenTurns _exec function
             self.create_cs_exec_function()
 
-            # Load the Code_Saturne cas as Physical model and launch
+            # Load the code_saturne case as Physical model and launch
             # OpenTurns GUI
             cs_exec_script_name = os.path.join(self.mdl.otstudy_path, 'cs_execute_job.py')
             salome_ot.loadYacsPyStudy(cs_exec_script_name)
@@ -373,7 +373,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
 
     def addDistantBuilds(self, host_name):
         """
-        Search for the distant builds of Code_Saturne for the given distant
+        Search for the distant builds of code_saturne for the given distant
         host.
         """
 
@@ -422,7 +422,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         This function generates the _exec function needed by OpenTurns for a study
         using distant launching on clusters.
         Takes as input:
-            - Code_Saturne study path
+            - code_saturne study path
             - OT_params.cfg name
             - list of OTurns input variables
             - list of OTurns output variables
@@ -513,7 +513,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
 
 def __getListOfDistantBuilds__(host_name, search_path):
     """
-    This functions retrieve the list of Code_Saturne builds in a given
+    This functions retrieve the list of code_saturne builds in a given
     directory on a distant cluster.
     Returns None if no builds are found.
     """

@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -756,7 +756,7 @@ _lagr_map_fields_default(void)
       = cs_field_by_name_try("lagr_wall_friction_velocity");
   }
   else {
-    /* we use Code_Saturne */
+    /* we use code_saturne */
     _lagr_extra_module.vel         = cs_field_by_name_try("velocity");
     _lagr_extra_module.cvar_k      = cs_field_by_name_try("k");
     _lagr_extra_module.cvar_ep     = cs_field_by_name_try("epsilon");

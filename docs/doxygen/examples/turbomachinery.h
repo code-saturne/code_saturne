@@ -1,9 +1,9 @@
 /*============================================================================
- * Code_Saturne documentation page
+ * code_saturne documentation page
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -29,15 +29,15 @@
 
   \section tbm_intro Introduction
 
-  Two classical models are available in \c Code_Saturne for rotor/stator
+  Two classical models are available in \c code_saturne for rotor/stator
   interactions modelling in turbomachinery computations: the steady approach
   which is based on the so-called <I>Frozen Rotor</I> modelling and the
   <I>transient rotor/stator</I> approach which is based on a sliding mesh
   technique.
 
   \warning This page describes these functionalities based on a single
-  \c Code_Saturne computation. An alternative rotor/stator coupling based on the
-  code/code coupling of \c Code_Saturne with itself is still possible
+  \c code_saturne computation. An alternative rotor/stator coupling based on the
+  code/code coupling of \c code_saturne with itself is still possible
   (and briefly described in this page) but it is not recommended
   (will be highly modified soon).
 
@@ -130,7 +130,7 @@
 
   If the meshes on both sides of the interface are very different and can not
   be modified, the user should turn to a rotor/stator coupling based on the
-  code/code coupling of \c Code_Saturne with itself. This simply requires
+  code/code coupling of \c code_saturne with itself. This simply requires
   replacing the definition of a face joining for an interface (using the
   GUI or a call to \ref cs_turbomachinery_join_add by a call to
   \ref cs_turbomachinery_coupling_add.

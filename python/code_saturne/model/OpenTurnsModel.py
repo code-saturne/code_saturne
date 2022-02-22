@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 """
-This module is used to handle the OpenTurns Study capacity for Code_Saturne
+This module is used to handle the OpenTurns Study capacity for code_saturne
 - OpenTurnsModel
 """
 #-------------------------------------------------------------------------------

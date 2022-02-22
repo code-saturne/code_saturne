@@ -3,7 +3,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -24,7 +24,7 @@
 #-------------------------------------------------------------------------------
 
 """
-This module describes the script used to create a study/case for Code_Saturne.
+This module describes the script used to create a study/case for code_saturne.
 
 This module defines the following functions:
 - usage
@@ -306,7 +306,7 @@ class study:
             os.mkdir('MESH')
             os.mkdir('POST')
 
-        # Creating Code_Saturne cases
+        # Creating code_saturne cases
         repbase = os.getcwd()
         for c in self.cases:
             os.chdir(repbase)
@@ -467,7 +467,7 @@ class study:
 
     def create_case(self, casename):
         """
-        Create a case for a Code_Saturne study.
+        Create a case for a code_saturne study.
         """
 
         casedirname = casename

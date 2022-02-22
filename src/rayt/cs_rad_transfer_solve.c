@@ -2,7 +2,7 @@
  * Radiation solver main subroutine.
  *============================================================================*/
 
-/* This file is part of Code_Saturne, a general-purpose CFD tool.
+/* This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -1491,7 +1491,7 @@ cs_rad_transfer_solve(int               bc_type[],
 
   /* Solving the ETR.
      Loop over all gray gases. In case of the basic radiation models
-     of Code_Saturne, nwsgg=1 */
+     of code_saturne, nwsgg=1 */
 
   for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 

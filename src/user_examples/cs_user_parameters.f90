@@ -2,7 +2,7 @@
 
 !VERS
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -33,7 +33,7 @@
 !>
 !>  See \ref f_parameters for examples.
 !>
-!>   If the Code_Saturne GUI is used, this file is not required (but may be
+!>   If the code_saturne GUI is used, this file is not required (but may be
 !>   used to override parameters entered through the GUI, and to set
 !>   parameters not accessible through the GUI).
 !>

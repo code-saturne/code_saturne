@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------------------
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !> \file cscfbr.f90
-!> \brief Exchange of variables for coupling two Code_Saturne intances
+!> \brief Exchange of variables for coupling two code_saturne intances
 !> with boundary faces.
 !>
 !------------------------------------------------------------------------------
@@ -308,7 +308,7 @@ end subroutine
 
 !===============================================================================
 
-!> \brief Initialization for coupling two Code_Saturne intances
+!> \brief Initialization for coupling two code_saturne intances
 !>        with boundary faces.
 !>
 !------------------------------------------------------------------------------

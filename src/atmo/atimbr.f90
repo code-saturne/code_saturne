@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------------------
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -838,7 +838,7 @@ end subroutine find_next_line
 
 
 ! ----------------------------------------------------------------
-!> \brief Reads a meteo_file for Code_Saturne Atmospheric Physics option
+!> \brief Reads a meteo_file for code_saturne Atmospheric Physics option
 !>
 !> They contain an arbitrary number (>=1) of sections having the following
 !> structure.

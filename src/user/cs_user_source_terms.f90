@@ -10,7 +10,7 @@
 
 !VERS
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -388,7 +388,7 @@ end subroutine ustsvv
 !> The crvexp, crvimp arrays are already initialized to 0 before
 !> entering the routine. It is not needed to do it in the routine (waste of CPU time).
 !>
-!> For stability reasons, Code_Saturne will not add -crvimp directly to the
+!> For stability reasons, code_saturne will not add -crvimp directly to the
 !> diagonal of the matrix, but Max(-crvimp,0). This way, the crvimp term is
 !> treated implicitely only if it strengthens the diagonal of the matrix.
 !> However, when using the second-order in time scheme, this limitation cannot

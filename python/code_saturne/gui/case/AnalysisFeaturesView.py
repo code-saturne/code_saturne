@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -606,7 +606,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
             eval('self.radioButton'+checkCur+'.setChecked(True)')
 
-        else: # Both selected and previous models are Code_Saturne models.
+        else: # Both selected and previous models are code_saturne models.
 
             # setting of the previous model saturne to 'off'
             if self.checkPrev == 'SinglePhase':

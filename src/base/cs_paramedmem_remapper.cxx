@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -274,7 +274,7 @@ _cs_paramedmem_apply_transformations(MEDCouplingFieldDouble   *field,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Returns an array containing the ranks of Code_Saturne processes in
+ * \brief   Returns an array containing the ranks of code_saturne processes in
  *          MPI_COMM_WORLD.
  *
  * \return  array of ranks in MPI_COMM_WORLD

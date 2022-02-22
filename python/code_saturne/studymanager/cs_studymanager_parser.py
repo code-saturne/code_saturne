@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -642,7 +642,7 @@ class Parser(object):
                   if fileName in fs:
                       filePath = root
                       break
-            else: # for Code_Saturne exp data are supposed to be in POST
+            else: # for code_saturne exp data are supposed to be in POST
               for root, dirs, fs in os.walk(os.path.join(self.getRepository(), l, 'POST', filePath)):
                   if fileName in fs:
                       filePath = root

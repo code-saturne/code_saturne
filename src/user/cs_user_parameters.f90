@@ -2,7 +2,7 @@
 
 !VERS
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -31,7 +31,7 @@
 !>
 !>  See \ref f_parameters for examples.
 !>
-!>   If the Code_Saturne GUI is used, this file is not required (but may be
+!>   If the code_saturne GUI is used, this file is not required (but may be
 !>   used to override parameters entered through the GUI, and to set
 !>   parameters not accessible through the GUI).
 !>
@@ -145,10 +145,10 @@ integer iturb, itherm, iale
 !>    In this subroutine, only the parameters which already appear may
 !>    be set, to the exclusion of any other.
 !>
-!>    If we are not using the Code_Saturne GUI:
+!>    If we are not using the code_saturne GUI:
 !>    All the parameters which appear in this subroutine must be set.
 !>
-!>    If we are using the Code_Saturne GUI:
+!>    If we are using the code_saturne GUI:
 !>    parameters protected by a test of the form:
 !>
 !>      if (ixmlpu.eq.0) then

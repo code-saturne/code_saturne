@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -121,12 +121,12 @@ def process_cmd_line(argv, pkg):
 
 
 #-------------------------------------------------------------------------------
-# Print Code_Saturne version
+# Print code_saturne version
 #-------------------------------------------------------------------------------
 
 def print_version(pkg):
     """
-    Print Code_Saturne version.
+    Print code_saturne version.
     """
 
     print(pkg.code_name + " version: " + pkg.version_full)
@@ -137,7 +137,7 @@ def print_version(pkg):
 
 def print_modules(pkg):
     """
-    Print Code_Saturne environment modules info.
+    Print code_saturne environment modules info.
     """
 
     c = pkg.config

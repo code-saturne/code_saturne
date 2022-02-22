@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------------------
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -213,7 +213,7 @@ call cfnmtd(ficfpp, len(ficfpp))
 !     radiatifs tres tot de maniere a pouvoir reserver les variables
 !     necessaires dans certaines physiques particuliere
 
-!   - Interface Code_Saturne
+!   - Interface code_saturne
 !     ======================
 
 call cs_gui_radiative_transfer_parameters
@@ -258,7 +258,7 @@ endif
 !     Estimateurs (pas encore dans l'IHM)
 
 
-!   - Interface Code_Saturne
+!   - Interface code_saturne
 !     ======================
 
 call csidtv()
@@ -283,7 +283,7 @@ endif
 ! --- Constantes physiques (cstphy.h)
 
 
-!   - Interface Code_Saturne
+!   - Interface code_saturne
 !     ======================
 
 ! Restart, read auxiliary file, frozen velocity field

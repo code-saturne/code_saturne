@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -946,7 +946,7 @@ _echo_header(const char     *sec_name,
  * Partial echo of a section's contents.
  *
  * FVM datatypes must have been converted to the corresponding
- * Code_Saturne compatible datatype before calling this function:
+ * code_saturne compatible datatype before calling this function:
  *   CS_CHAR               -> char
  *   CS_INT32 / CS_INT64   -> cs_lnum_t
  *   CS_UINT32 / CS_UINT64 -> cs_gnum_t
@@ -1091,7 +1091,7 @@ _echo_data(size_t          echo,
  * Convert read data.
  *
  * dest_type must have been set to the corresponding
- * Code_Saturne compatible datatype before calling this function and
+ * code_saturne compatible datatype before calling this function and
  * conversion will be done accordingly:
  *   CS_INT32 / CS_INT64   -> cs_lnum_t
  *   CS_UINT32 / CS_UINT64 -> cs_gnum_t
@@ -3167,10 +3167,10 @@ cs_io_log_finalize(void)
     if (map_size > 0) {
       if (i == 0)
         cs_log_printf(CS_LOG_PERFORMANCE,
-                      _("\nCode_Saturne IO files read:\n\n"));
+                      _("\ncode_saturne IO files read:\n\n"));
       else
         cs_log_printf(CS_LOG_PERFORMANCE,
-                      _("\nCode_Saturne IO files written:\n\n"));
+                      _("\ncode_saturne IO files written:\n\n"));
     }
 
     for (j = 0; j < map_size; j++) {

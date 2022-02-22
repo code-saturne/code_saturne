@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------------------
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -152,7 +152,7 @@ call usstr1                                                       &
    aexxst , bexxst , cfopre ,                                     &
    xstp   , xpstr  , xstreq )
 
-! External structures: Code_Saturne / code_aster coupling
+! External structures: code_saturne / code_aster coupling
 
 call uiaste(idfstr, asddlf)
 call usaste(idfstr)

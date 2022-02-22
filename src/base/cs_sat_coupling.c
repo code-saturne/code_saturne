@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -78,7 +78,7 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *============================================================================*/
 
-/* Structure associated with Code_Saturne coupling */
+/* Structure associated with code_saturne coupling */
 
 typedef struct {
 
@@ -129,8 +129,8 @@ struct _cs_sat_coupling_t {
 
   MPI_Comm         comm;           /* Associated MPI communicator */
 
-  int              n_sat_ranks;    /* Number of associated Code_Saturne ranks */
-  int              sat_root_rank;  /* First associated Code_Saturne rank */
+  int              n_sat_ranks;    /* Number of associated code_saturne ranks */
+  int              sat_root_rank;  /* First associated code_saturne rank */
 
 #endif
 
@@ -197,7 +197,7 @@ _remove_matched_builder_entries(void)
 }
 
 /*----------------------------------------------------------------------------
- * Print information on yet unmatched Code_Saturne couplings.
+ * Print information on yet unmatched code_saturne couplings.
  *----------------------------------------------------------------------------*/
 
 static void
@@ -207,7 +207,7 @@ _print_all_unmatched_sat(void)
 
   const char empty_string[] = "";
 
-  /* Loop on defined Code_Saturne instances */
+  /* Loop on defined code_saturne instances */
 
   for (i = 0; i < _sat_coupling_builder_size; i++) {
 
@@ -220,7 +220,7 @@ _print_all_unmatched_sat(void)
       if (scb->app_name != NULL)
         local_name = scb->app_name;
 
-      bft_printf(_(" Code_Saturne coupling:\n"
+      bft_printf(_(" code_saturne coupling:\n"
                    "   coupling id:              %d\n"
                    "   local name:               \"%s\"\n\n"),
                  i, local_name);
@@ -231,10 +231,10 @@ _print_all_unmatched_sat(void)
 }
 
 /*----------------------------------------------------------------------------
- * Initialize communicator for Code_Saturne coupling
+ * Initialize communicator for code_saturne coupling
  *
  * parameters:
- *   sat_coupling  <-> Code_Saturne coupling structure
+ *   sat_coupling  <-> code_saturne coupling structure
  *   coupling_id   <-- id of this coupling (for log file message)
  *----------------------------------------------------------------------------*/
 
@@ -254,7 +254,7 @@ _init_comm(cs_sat_coupling_t *sat_coupling,
   if (mpi_flag == 0)
     return;
 
-  bft_printf(_(" Code_Saturne coupling %d: initializing MPI communication ... "),
+  bft_printf(_(" code_saturne coupling %d: initializing MPI communication ... "),
              coupling_id);
   bft_printf_flush();
 
@@ -280,12 +280,12 @@ _init_comm(cs_sat_coupling_t *sat_coupling,
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Add a Code_Saturne coupling using MPI.
+ * Add a code_saturne coupling using MPI.
  *
  * parameters:
- *   builder_id    <-- Code_Saturne application id in coupling builder
- *   sat_root_rank <-- root rank associated with Code_Saturne
- *   n_sat_ranks   <-- number of ranks associated with Code_Saturne
+ *   builder_id    <-- code_saturne application id in coupling builder
+ *   sat_root_rank <-- root rank associated with code_saturne
+ *   n_sat_ranks   <-- number of ranks associated with code_saturne
  *----------------------------------------------------------------------------*/
 
 static void
@@ -297,7 +297,7 @@ _sat_add_mpi(int builder_id,
   _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + builder_id;
 
   /* Similarly to SYRTHES, we might be able to add
-     Code_Saturne couplings directly (without resorting
+     code_saturne couplings directly (without resorting
      to a temporary builder), then match communications */
 
   cs_sat_coupling_add(scb->face_cpl_sel_c,
@@ -317,7 +317,7 @@ _sat_add_mpi(int builder_id,
 }
 
 /*----------------------------------------------------------------------------
- * Print information on identified Code_Saturne couplings using MPI.
+ * Print information on identified code_saturne couplings using MPI.
  *
  * This function requires coupling_builder information, and must thus
  * be called before removing matched builder entries.
@@ -331,7 +331,7 @@ _print_all_mpi_sat(void)
   const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
   const char empty_string[] = "";
 
-  /* Loop on defined Code_Saturne instances */
+  /* Loop on defined code_saturne instances */
 
   for (i = 0; i < _sat_coupling_builder_size; i++) {
 
@@ -350,7 +350,7 @@ _print_all_mpi_sat(void)
       if (ai.app_name != NULL)
         distant_name = ai.app_name;
 
-      bft_printf(_(" Code_Saturne coupling:\n"
+      bft_printf(_(" code_saturne coupling:\n"
                    "   coupling id:              %d\n"
                    "   local name:               \"%s\"\n"
                    "   distant application name: \"%s\"\n"
@@ -366,7 +366,7 @@ _print_all_mpi_sat(void)
 }
 
 /*----------------------------------------------------------------------------
- * Initialize MPI Code_Saturne couplings using MPI.
+ * Initialize MPI code_saturne couplings using MPI.
  *
  * This function may be called once all couplings have been defined,
  * and it will match defined couplings with available applications.
@@ -388,7 +388,7 @@ _init_all_mpi_sat(void)
 
   n_apps = ple_coupling_mpi_set_n_apps(mpi_apps);
 
-  /* First pass to count available Code_Saturne couplings */
+  /* First pass to count available code_saturne couplings */
 
   for (i = 0; i < n_apps; i++) {
     const ple_coupling_mpi_set_info_t
@@ -425,7 +425,7 @@ _init_all_mpi_sat(void)
 
     int *sat_appinfo = NULL;
 
-    /* First, build an array of matched/unmatched Code_Saturne applications,
+    /* First, build an array of matched/unmatched code_saturne applications,
        with 2 entries per instance: matched indicator, app_id */
 
     BFT_MALLOC(sat_appinfo, n_sat_apps*2, int);
@@ -441,13 +441,13 @@ _init_all_mpi_sat(void)
       }
     }
 
-    /* Loop on defined Code_Saturne instances */
+    /* Loop on defined code_saturne instances */
 
     for (i = 0; i < _sat_coupling_builder_size; i++) {
 
       _cs_sat_coupling_builder_t *scb = _sat_coupling_builder + i;
 
-      /* Loop on available Code_Saturne instances to match app_names */
+      /* Loop on available code_saturne instances to match app_names */
 
       if (scb->app_name != NULL) {
 
@@ -471,11 +471,11 @@ _init_all_mpi_sat(void)
 
       }
 
-    } /* End of loop on defined Code_Saturne instances */
+    } /* End of loop on defined code_saturne instances */
 
     BFT_FREE(sat_appinfo);
 
-  } /* End of test on single or multiple Code_Saturne matching algorithm */
+  } /* End of test on single or multiple code_saturne matching algorithm */
 
   /* Print matching info */
 
@@ -1864,10 +1864,10 @@ void CS_PROCF (mxicpl, MXICPL)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define new Code_Saturne coupling.
+ * \brief Define new code_saturne coupling.
  *
  * The arguments to \ref cs_sat_coupling_define are:
- * \param[in] saturne_name          matching Code_Saturne application name
+ * \param[in] saturne_name          matching code_saturne application name
  * \param[in] boundary_cpl_criteria boundary face selection criteria for coupled
  *                                  faces, or NULL
  * \param[in] volume_cpl_criteria   cell selection criteria for coupled cells, or
@@ -1877,11 +1877,11 @@ void CS_PROCF (mxicpl, MXICPL)
  * \param[in] volume_loc_criteria   cell selection criteria for location
  * \param[in] verbosity             verbosity level
  *
- * In the case of only 2 Code_Saturne instances, the 'saturne_name' argument
+ * In the case of only 2 code_saturne instances, the 'saturne_name' argument
  * is ignored, as there is only one matching possibility.
  *
  * In case of multiple couplings, a coupling will be matched with available
- * Code_Saturne instances based on the 'saturne_name' argument.
+ * code_saturne instances based on the 'saturne_name' argument.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1895,7 +1895,7 @@ cs_sat_coupling_define(const char  *saturne_name,
 {
   _cs_sat_coupling_builder_t *scb = NULL;
 
-  /* Add corresponding coupling to temporary Code_Saturne couplings array */
+  /* Add corresponding coupling to temporary code_saturne couplings array */
 
   BFT_REALLOC(_sat_coupling_builder,
               _sat_coupling_builder_size + 1,
@@ -1941,10 +1941,10 @@ cs_sat_coupling_define(const char  *saturne_name,
 }
 
 /*----------------------------------------------------------------------------
- * Get number of Code_Saturne couplings.
+ * Get number of code_saturne couplings.
  *
  * returns:
- *   number of Code_Saturne couplings
+ *   number of code_saturne couplings
  *----------------------------------------------------------------------------*/
 
 int
@@ -1954,13 +1954,13 @@ cs_sat_coupling_n_couplings(void)
 }
 
 /*----------------------------------------------------------------------------
- * Get pointer to Code_Saturne coupling.
+ * Get pointer to code_saturne coupling.
  *
  * parameters:
- *   coupling_id <-- Id (0 to n-1) of Code_Saturne coupling
+ *   coupling_id <-- Id (0 to n-1) of code_saturne coupling
  *
  * returns:
- *   pointer to Code_Saturne coupling structure
+ *   pointer to code_saturne coupling structure
  *----------------------------------------------------------------------------*/
 
 cs_sat_coupling_t *
@@ -1976,7 +1976,7 @@ cs_sat_coupling_by_id(int coupling_id)
 }
 
 /*----------------------------------------------------------------------------
- * Initialize Code_Saturne couplings.
+ * Initialize code_saturne couplings.
  *
  * This function may be called once all couplings have been defined,
  * and it will match defined couplings with available applications.
@@ -1998,14 +1998,14 @@ cs_sat_coupling_all_init(void)
 
   if (_sat_coupling_builder_size > 0) {
 
-    bft_printf("Unmatched Code_Saturne couplings:\n"
+    bft_printf("Unmatched code_saturne couplings:\n"
                "---------------------------------\n\n");
 
     _print_all_unmatched_sat();
 
     bft_error(__FILE__, __LINE__, 0,
-              _("At least 1 Code_Saturne coupling was defined for which\n"
-                "no communication with a Code_Saturne instance is possible."));
+              _("At least 1 code_saturne coupling was defined for which\n"
+                "no communication with a code_saturne instance is possible."));
   }
 }
 
@@ -2016,7 +2016,7 @@ cs_sat_coupling_all_init(void)
  *   ref_axis           <-- reference axis
  *   face_sel_criterion <-- criterion for selection of boundary faces
  *   cell_sel_criterion <-- criterion for selection of cells
- *   sat_name           <-- Code_Saturne application name
+ *   sat_name           <-- code_saturne application name
  *   verbosity          <-- verbosity level
  *----------------------------------------------------------------------------*/
 
@@ -2107,7 +2107,7 @@ cs_sat_coupling_add(const char  *face_cpl_sel_c,
 }
 
 /*----------------------------------------------------------------------------
- * Create a new internal Code_Saturne coupling.
+ * Create a new internal code_saturne coupling.
  *
  * arguments:
  *   tag_func          <-- pointer to tagging function

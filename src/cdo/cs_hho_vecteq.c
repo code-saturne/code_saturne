@@ -4,7 +4,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -1454,7 +1454,7 @@ cs_hho_vecteq_update_field(const cs_real_t            *solu,
       const short int  dofs_by_component = eqc->n_cell_dofs/3;
 
       /* Compute center values: DOFs are not interlaced, but the center values
-         we put them are interlaced so that Code_Saturne clients can use them */
+         we put them are interlaced so that code_saturne clients can use them */
       for (short int i = 0; i < dofs_by_component ; i++) {
         field_val[3*c_id  ] += cphi_eval[i] * c_vals[i];
         field_val[3*c_id+1] += cphi_eval[i] * c_vals[i+  dofs_by_component];

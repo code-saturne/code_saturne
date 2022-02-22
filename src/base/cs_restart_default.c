@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -746,7 +746,7 @@ _legacy_mass_flux_num(cs_restart_t      *r,
 {
   int retval = 1;
 
-  /* As of Code_Saturne 3.3, only scalars may have a different mass flux
+  /* As of code_saturne 3.3, only scalars may have a different mass flux
      from the "main" mass flux (in the case of scalars with drift), so for
      all others, reading the associated mass flux name is of no real use. */
 

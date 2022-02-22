@@ -1,6 +1,6 @@
 .\"-------------------------------------------------------------------------------
 .\"
-.\" This file is part of Code_Saturne, a general-purpose CFD tool.
+.\" This file is part of code_saturne, a general-purpose CFD tool.
 .\"
 .\" Copyright (C) 1998-2022 EDF S.A.
 .\"
@@ -20,9 +20,9 @@
 .\"
 .\"-------------------------------------------------------------------------------
 .\"
-.TH CODE_SATURNE 1 2013-07-15 "" "Code_Saturne commands"
+.TH CODE_SATURNE 1 2013-07-15 "" "code_saturne commands"
 .SH NAME
-code_saturne \- Main user script of Code_Saturne.
+code_saturne \- Main user script of code_saturne.
 .SH SYNOPSIS
 .B code_saturne
 .RI [-h|--help]
@@ -31,7 +31,7 @@ code_saturne \- Main user script of Code_Saturne.
 .SH DESCRIPTION
 The
 .B code_saturne
-script is the main user script of Code_Saturne.
+script is the main user script of code_saturne.
 .\"
 .\" Options description
 .SH OPTIONS
@@ -56,19 +56,19 @@ The
 .B "code_saturne compile"
 command can be used to generate the
 .B cs_solver
-executable needed for running a Code_Saturne study.
+executable needed for running a code_saturne study.
 
 .B
 .IP "config"
 The
 .B "code_saturne config"
-command provides information about the Code_Saturne build and installation.
+command provides information about the code_saturne build and installation.
 
 .B
 .IP "create"
 The
 .B "code_saturne create"
-command sets up a directory structure for a Code_Saturne study or
+command sets up a directory structure for a code_saturne study or
 case. The different directories created are MESH for meshes, POST for
 user post-processing and a case directory (or several) containing a
 DATA, SRC (to store user files), RESU (to store results) and SCRIPTS
@@ -78,26 +78,26 @@ directory.
 .IP "gui"
 The
 .B "code_saturne gui"
-command starts the Code_Saturne gui.
+command starts the code_saturne gui.
 
 .B
 .IP "info"
 The
 .B "code_saturne info"
-command is a wrapper for an easier look at Code_Saturne documentation.
+command is a wrapper for an easier look at code_saturne documentation.
 
 .B
 .IP "run"
 The
 .B "code_saturne run"
-starts a Code_Saturne case's preprocessing or computation execution.
+starts a code_saturne case's preprocessing or computation execution.
 
 .B
 .IP "salome"
 The
 .B "code_saturne salome"
 command starts SALOME, with the CFDSTUDY module enabled
-(assuming Code_Saturne is built with SALOME support).
+(assuming code_saturne is built with SALOME support).
 
 .\"
 .\" Environment variables
@@ -122,6 +122,6 @@ files.
 .\"
 .\" References
 .SH SEE ALSO
-The full documentation for Code_Saturne is accessible using the
+The full documentation for code_saturne is accessible using the
 .B code_saturne info
 command.

@@ -1,5 +1,5 @@
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -414,7 +414,7 @@ cs_atmo_aerosol_ssh_initialize(void)
   if (   cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
       || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE) {
 
-    /* This is used and saved: time in Code_Saturne starts at zero */
+    /* This is used and saved: time in code_saturne starts at zero */
     {
       _ssh_time_offset = _recv_double(_aerosol_so,
                                       "api_sshaerosol_get_initial_t_");
@@ -422,7 +422,7 @@ cs_atmo_aerosol_ssh_initialize(void)
         bft_printf(" Initial time from SSH-aerosol: %f\n", _ssh_time_offset);
     }
 
-    /* Grab initial time and time step from Code_Saturne */
+    /* Grab initial time and time step from code_saturne */
     /* FIXME: this is not the initial time read in the meteo / chemistry file */
     cs_real_t initial_time = cs_glob_time_step->t_cur + _ssh_time_offset;
     cs_real_t dt = (cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE) ?
@@ -755,7 +755,7 @@ cs_atmo_aerosol_ssh_time_advance(void)
 
     /* Set the pH */
     if (false) {
-      /* Atmospheric module of Code_Saturne does not provide pH yet */
+      /* Atmospheric module of code_saturne does not provide pH yet */
       double ph = 7;
       _send_double(_aerosol_so, "api_sshaerosol_set_ph_", ph);
     }

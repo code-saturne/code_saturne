@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -1225,7 +1225,7 @@ _ensure_conservativity(cs_syr_coupling_t   *syr_coupling,
   coupling_ent = syr_coupling->faces;
   assert(coupling_ent != NULL);
 
-  /* Compute Code_Saturne's global flux */
+  /* Compute code_saturne's global flux */
 
   for (ii = 0; ii < coupling_ent->n_elts; ii++) {
     face_id = coupl_face_ids[ii];
@@ -1599,7 +1599,7 @@ _syr_coupling_init_comm(cs_syr_coupling_t  *syr_coupling,
        _("========================================================\n"
          "   ** Incompatible SYRTHES coupling options:\n"
          "      ------------------------------------------------\n"
-         "      Code_Saturne options: \"%s\"\n"
+         "      code_saturne options: \"%s\"\n"
          "      SYRTHES options:      \"%s\"\n"
          "========================================================\n"),
        op_name_send, op_name_recv);
@@ -2086,7 +2086,7 @@ _mpi_syr_default_name(void)
  * \param[in] verbosity         verbosity level
  * \param[in] visualization     visualization output level (0 or 1)
  *
- * In the case of a single Code_Saturne and single SYRTHES instance, the
+ * In the case of a single code_saturne and single SYRTHES instance, the
  * 'syrthes_name' argument is ignored, as there is only one matching
  * possibility.
  *

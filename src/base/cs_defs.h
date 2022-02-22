@@ -6,7 +6,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -258,7 +258,7 @@ typedef unsigned long long uint64_t;
 #endif
 
 /*============================================================================
- * General types and macros used throughout Code_Saturne
+ * General types and macros used throughout code_saturne
  *============================================================================*/
 
 #ifdef __cplusplus
@@ -287,7 +287,7 @@ typedef enum {
 } cs_datatype_t;
 
 /*----------------------------------------------------------------------------
- * Basic types used by Code_Saturne
+ * Basic types used by code_saturne
  * They may be modified here to better map to a given library, with the
  * following constraints:
  *  - cs_lnum_t must be signed
@@ -412,7 +412,7 @@ typedef struct {
 
 #endif /* defined(HAVE_MPI) && !defined(CS_IGNORE_MPI) */
 
-/* Mappings to Code_Saturne datatypes */
+/* Mappings to code_saturne datatypes */
 /*------------------------------------*/
 
 #if defined(HAVE_LONG_GNUM)
@@ -548,7 +548,7 @@ extern const char     cs_empty_string[];
 extern const size_t   cs_datatype_size[];
 extern const char    *cs_datatype_name[];
 
-/* MPI Datatypes associated with Code_Saturne datatypes */
+/* MPI Datatypes associated with code_saturne datatypes */
 
 #if defined(HAVE_MPI) && !defined(CS_IGNORE_MPI)
 

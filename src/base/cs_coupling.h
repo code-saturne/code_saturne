@@ -6,7 +6,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -114,7 +114,7 @@ void CS_PROCF(cplact, CPLACT)
  * Discover other applications in the same MPI root communicator.
  *
  * parameters:
- *   app_name        <-- name of this instance of Code_Saturne.
+ *   app_name        <-- name of this instance of code_saturne.
  *   forced_app_type <-- name of app type, or NULL
  *----------------------------------------------------------------------------*/
 
@@ -163,7 +163,7 @@ cs_coupling_get_sync_flag(void);
  * It is defined by a mask, so for example flags f1, f2, and f3 may be
  * combined using the "f1 | f2 | f2" syntax.
  *
- * Note also that for Code_Saturne, in the case of a variable time step,
+ * Note also that for code_saturne, in the case of a variable time step,
  * the reference time step is synchronized at the beginning of each
  * iteration, but the actual time step is recomputed later.
  *

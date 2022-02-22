@@ -1,5 +1,5 @@
 /*============================================================================
- * Main PLE documentation page
+ * Main Code_Saturne documentation page
  *============================================================================*/
 
 /*
@@ -34,7 +34,7 @@
   \section intro Introduction
 
   PLE is a libary designed to simplify coupling of distributed parallel
-  computational codes. It is maintained as a part of code_saturne,
+  computational codes. It is maintained as a part of Code_Saturne,
   EDF's general purpose Computational Fluid Dynamics (CFD) software,
   but it may also be used with other tools, and is distributed under
   a more permissive licence (LGPL instead of GPL).

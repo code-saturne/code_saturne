@@ -2,7 +2,7 @@
  * Definition of the calculation mesh.
  *
  * Mesh-related user functions (called in this order):
- *   1) Manage the exchange of data between Code_Saturne and the pre-processor
+ *   1) Manage the exchange of data between code_saturne and the pre-processor
  *   2) Define (conforming or non-conforming) mesh joinings.
  *   3) Define (conforming or non-conforming) periodicity.
  *   4) Define thin walls.
@@ -13,7 +13,7 @@
 /* VERS */
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 

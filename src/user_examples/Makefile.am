@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -227,7 +227,7 @@ install-data-hook:
 	cd $(DESTDIR)$(exampledir) && \
 	f90_user_examples=`ls *.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
-	version1="\!                      Code_Saturne version $(cs_version_short)\n"; \
+	version1="\!                      code_saturne version $(cs_version_short)\n"; \
 	version2="\!                      ------------------------"; \
 	for file in $${f90_user_examples}; do \
 	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" > "$${file}.tmp" && \

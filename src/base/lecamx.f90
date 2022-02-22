@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------------------
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -1778,7 +1778,7 @@ return
 '@      ERROR WHEN READING THE INDICATOR OF THE ALE METHOD    ',/,&
 '@                                                            ',/,&
 '@    It is possible that the file read corresponds to an old ',/,&
-'@      version of Code_Saturne, without the ALE method.      ',/,&
+'@      version of code_saturne, without the ALE method.      ',/,&
 '@    The run will be executed with reinitialising all        ',/,&
 '@      ALE data.                                             ',/,&
 '@                                                            ',/,&
@@ -1796,7 +1796,7 @@ return
 '@      ERROR WHEN READING THE INDICATOR OF THE VOF MODEL     ',/,&
 '@                                                            ',/,&
 '@    It is possible that the file read corresponds to an old ',/,&
-'@      version of Code_Saturne, without the VOF model.       ',/,&
+'@      version of code_saturne, without the VOF model.       ',/,&
 '@    The run will be executed with reinitialising all        ',/,&
 '@      VOF model data.                                       ',/,&
 '@                                                            ',/,&

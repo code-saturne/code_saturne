@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -200,7 +200,7 @@ endif
 #pkglibexecdir = $(libexecdir)/$(PACKAGE)
 pkglibexec_PROGRAMS =
 
-# Code_Saturne IO utility program
+# code_saturne IO utility program
 
 if HAVE_FRONTEND
 pkglibexec_PROGRAMS += cs_io_dump
@@ -214,7 +214,7 @@ cs_solver$(EXEEXT): libcs_solver.la
 	$(top_srcdir)/src/apps/cs_solver.c
 endif
 
-# Code_Saturne IO utility (minimal dependencies)
+# code_saturne IO utility (minimal dependencies)
 
 if HAVE_FRONTEND
 cs_io_dump_CPPFLAGS = -DLOCALEDIR=\"'$(localedir)'\" -I$(top_srcdir)/src/base

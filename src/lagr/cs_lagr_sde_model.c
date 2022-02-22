@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -1270,7 +1270,7 @@ _lagich(const cs_real_t   tempct[],
     cs_real_t skglob;
     if (cs_physical_constants_r * shrink_diam > precis) {
 
-      /* Constant 2.53e-7 is explained in tome 5 of report on Code_Saturne
+      /* Constant 2.53e-7 is explained in tome 5 of report on code_saturne
          specific physics (HI-81/04/003/A) equation 80 */
       aux3 = sherw * 2.53e-07 * (pow (extra->temperature->val[cell_id], 0.75))
                               / shrink_diam;

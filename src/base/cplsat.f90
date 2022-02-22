@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------------------
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -39,7 +39,7 @@ module cplsat
   !> \addtogroup cplsat
   !> \{
 
-  !> number of couplings Code_Saturne / Code_Saturne
+  !> number of couplings code_saturne / code_saturne
   integer, save :: nbrcpl
   !> indicator coupling face / face only
   integer, save :: ifaccp

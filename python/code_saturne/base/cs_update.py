@@ -3,7 +3,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -24,7 +24,7 @@
 #-------------------------------------------------------------------------------
 
 """
-This module describes the script used to update a Code_Saturne case
+This module describes the script used to update a code_saturne case
 links and paths, as well as user functions examples.
 
 This module defines the following functions:

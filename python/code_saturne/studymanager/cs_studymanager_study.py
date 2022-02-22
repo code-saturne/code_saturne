@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -86,7 +86,7 @@ def create_base_xml_file(filepath, pkg):
               + filepath + " already exists.")
         sys.exit(1)
 
-    # using xml engine from Code_Saturne GUI
+    # using xml engine from code_saturne GUI
     smgr = XMLengine.Case(package=pkg, studymanager=True)
     smgr['xmlfile'] = filename
     pm = PathesModel(smgr)
@@ -128,7 +128,7 @@ def init_xml_file_with_study(smgr, studyp):
 #-------------------------------------------------------------------------------
 
 def isStudy(dirpath):
-    """Try to determine if dirpath is a Code_Saturne study directory.
+    """Try to determine if dirpath is a code_saturne study directory.
     """
 
     meshd = os.path.join(dirpath, 'MESH')
@@ -139,7 +139,7 @@ def isStudy(dirpath):
 #-------------------------------------------------------------------------------
 
 def isCase(dirpath):
-    """Try to determine if dirpath is a Code_Saturne case directory.
+    """Try to determine if dirpath is a code_saturne case directory.
     """
 
     # Verify that DATA folder exists with a xml file inside

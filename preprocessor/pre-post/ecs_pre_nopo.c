@@ -4,7 +4,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -854,7 +854,7 @@ ecs_loc_pre_nopo__lit_real(ecs_file_t     *fic_maillage,
                 _("This function has been compiled with a "
                   "\"float\" type of size other than 4.\n"
                   "(Porting error making conversion of single-precision\n"
-                  "NOPO coordinates to standard Code_Saturne Preprocessor\n"
+                  "NOPO coordinates to standard code_saturne Preprocessor\n"
                   "coordinates impossible)."));
 
     ECS_MALLOC(_tab, l_max + 1, float);
@@ -902,7 +902,7 @@ ecs_loc_pre_nopo__lit_real(ecs_file_t     *fic_maillage,
                 _("This function has been compiled with a "
                   "\"double\" type of size other than 8.\n"
                   "(Porting error making conversion of double-precision\n"
-                  "NOPO coordinates to standard Code_Saturne Preprocessor\n"
+                  "NOPO coordinates to standard code_saturne Preprocessor\n"
                   "coordinates impossible)."));
 
     ECS_MALLOC(_tab, l_max + 1, double);

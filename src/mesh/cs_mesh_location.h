@@ -6,25 +6,25 @@
  *============================================================================*/
 
 /*
-  This file is part of the Code_Saturne Kernel, element of the
-  Code_Saturne CFD tool.
+  This file is part of the code_saturne Kernel, element of the
+  code_saturne CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
-  The Code_Saturne Kernel is free software; you can redistribute it
+  The code_saturne Kernel is free software; you can redistribute it
   and/or modify it under the terms of the GNU General Public License
   as published by the Free Software Foundation; either version 2 of
   the License, or (at your option) any later version.
 
-  The Code_Saturne Kernel is distributed in the hope that it will be
+  The code_saturne Kernel is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with the Code_Saturne Kernel; if not, write to the
+  along with the code_saturne Kernel; if not, write to the
   Free Software Foundation, Inc.,
   51 Franklin St, Fifth Floor,
   Boston, MA  02110-1301  USA

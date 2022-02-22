@@ -270,7 +270,7 @@ Numerics and physical modeling:
 
 - Atmo: Major modification the scheme for Solar radiation done the PhD of
   L. Asmar.
-  In a previous version of the 1D solar radiation scheme of Code_Saturne, the
+  In a previous version of the 1D solar radiation scheme of code_saturne, the
   effect of aerosols has been introduced by making the approximation that
   aerosols are purely diffusive. The same approximation was taken for
   water vapor absorption in the UV-visible band (O3 band) but with
@@ -397,7 +397,7 @@ Numerics and physical modelling:
 - Amtospheric module: Major modification the scheme for Solar radiation based
   on the PhD of L. Asmar.
 
-  In a previous version of the 1D solar radiation scheme of Code_Saturne, the
+  In a previous version of the 1D solar radiation scheme of code_saturne, the
   effect of aerosols has been introduced by making the approximation that
   aerosols are purely diffusive. The same approximation was taken for
   water vapor absorption in the UV-visible band (O3 band) but with
@@ -2742,7 +2742,7 @@ Architectural changes:
   size than the main calculation communicator.
   These additions are part of a "Performance Tuning" group of user options.
 
-- First version of the Windows port of Code_Saturne.
+- First version of the Windows port of code_saturne.
   This brings up the following adaptations: the installation can now be relocated
   (also available on Unix systems), the scripts (SaturneGUI, runcase,
   run_solver.sh) are now generated on the fly and depend on the underlying
@@ -3658,7 +3658,7 @@ Architectural changes:
 - Migrate the FVM (Finite Volume Mesh) library to the Code_Saturne tree.
 
 - Replace the FVM coupling library by the new PLE one, which may be installed
-  either as part of Code_Saturne, or separately (Code_Saturne may use either
+  either as part of code_saturne, or separately (Code_Saturne may use either
   its internal PLE library or an external build).
 
 - Replace the SWIG dependency for the syntax checking in the graphical
@@ -3931,7 +3931,7 @@ Release 1.3.3 - November 27, 2008
   from SYRTHES 3.3 is not possible due to incompatible format.
 
 - Add a QUALITY_ASSURANCE file which precises if the current
-  version of Code_Saturne is validated under EDF quality
+  version of code_saturne is validated under EDF quality
   assurance.
 
 - Portability updates.
@@ -4025,7 +4025,7 @@ Release 1.3.0 - August 2, 2007
 Code_Saturne 1.3 is a major (fully validated) production release.
 Release 1.3.0 is the feature-freeze release, and versions 1.3.1
 and 1.3.2 are validation bug-fix versions. 1.3.3 is the first production
-version of Code_Saturne 1.3.
+version of code_saturne 1.3.
 
-This version of the code is also the first version of Code_Saturne distributed
+This version of the code is also the first version of code_saturne distributed
 under a free software (GPL + LGPL) licence.

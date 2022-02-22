@@ -2,7 +2,7 @@
 
 !VERS
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -240,22 +240,22 @@
 !> to another.
 !>
 !> The influence of mesh velocity on boundary conditions for fluid modeling is
-!> managed and modeled in Code_Saturne as follows:
+!> managed and modeled in code_saturne as follows:
 !>  - If \c ialtyb(ifac) = ibfixe: mesh velocity equals 0. (In case of 'fluid sliding
-!>  wall' modeling corresponding condition will be specified in Code_Saturne
+!>  wall' modeling corresponding condition will be specified in code_saturne
 !>  Interface or in cs_user_boundary_conditions.f90 subroutine.)
 !>  - If \c ialtyb(ifac) = ivimpo: tangential mesh velocity is modeled as a sliding
 !>  wall velocity in fluid boundary conditions unless a value for fluid sliding
-!>  wall velocity has been specified by USER in Code_Saturne Interface
+!>  wall velocity has been specified by USER in code_saturne Interface
 !>  or in cs_user_boundary_conditions.f90 subroutine.
 !>  - If \c ialtyb(ifac) = igliss: tangential mesh velocity is not taken into account
 !>  in fluid boundary conditions (In case of 'fluid sliding wall' modeling
-!>  corresponding condition will be specified in Code_Saturne Interface
+!>  corresponding condition will be specified in code_saturne Interface
 !>  or in cs_user_boundary_conditions.f90 subroutine.)
 !>  - If \c impale(inod) = 1 for all vertices of a boundary face: tangential mesh
 !>  velocity value that has been derived from nodes displacement is modeled as a
 !>  sliding wall velocity in fluid boundary conditions unless a value for fluid
-!>  sliding wall velocity has been specified by USER in Code_Saturne Interface or
+!>  sliding wall velocity has been specified by USER in code_saturne Interface or
 !>  in 'cs_user_boundary_conditions' subroutine.
 !>
 !> Note that mesh velocity has no influence on modeling of

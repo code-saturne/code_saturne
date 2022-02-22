@@ -4,10 +4,10 @@ in the project, and does not necessarily correspond to his or her
 present affiliation.
 
 
-Code_Saturne is copyright (C) 1998-2020 EDF S.A., France
+code_saturne is copyright (C) 1998-2022 EDF S.A., France
 
 
-Major contributions to Code_Saturne have been provided by
+Major contributions to code_saturne have been provided by
 
 Frédéric Archambeau      (EDF, Chatou, France)
 Bruno Audebert           (EDF, Chatou, France)
@@ -41,7 +41,7 @@ Carole Vit               (INCKA, Boulogne-Billancourt, France)
 Jean-François Wald       (EDF, Chatou, France)
 
 
-Other contributors to Code_Saturne include
+Other contributors to code_saturne include
 
 Pascal Borel             (EDF, Chatou, France)
 Pierre Cantin            (EDF, Chatou, France)
@@ -85,7 +85,7 @@ Juan Uribe               (University of Manchester, United Kingdom)
 Pascal Vezolle           (IBM, Montpellier, France)
 
 
-Code_Saturne may contain code by Wes Petersen
+code_saturne may contain code by Wes Petersen
 (ETHZ, Zurich, Switzerland) for random number generation
 (cs_random.c, adapted from Netlib's zufall functions)
 
@@ -99,7 +99,7 @@ from olivier.carton@liafa.jussieu.fr
 
 
 The following people should also be thanked for cooperating
-with the Code_Saturne development team by providing fresh
+with the code_saturne development team by providing fresh
 ideas on theoretical or programming topics or major feedback on
 the code.
 
@@ -139,7 +139,7 @@ Christelle Vurpillot     (EDF, Chatou, France)
 
 To the best of our knowledge, this list reflects the exact level of
 contribution of each among the many people who have approached
-Code_Saturne. It is made as objective and accurate as possible.
+code_saturne. It is made as objective and accurate as possible.
 However, if you feel you have been misplaced in the list, or completely
 forgotten, please contact saturne-support@edf.fr so we can update it.
 
@@ -147,14 +147,14 @@ forgotten, please contact saturne-support@edf.fr so we can update it.
 Preprocessor
 ============
 
-Major contributions to the Code_Saturne Preprocessor have been provided by
+Major contributions to the code_saturne Preprocessor have been provided by
 
 Frédéric Archambeau      (EDF, Chatou, France)
 Yvan Fournier            (EDF, Chatou, France)
 David Monfort            (EDF, Chatou, France)
 Didier Poizat            (CS-SI, Le Plessis Robinson, France)
 
-Other contributors to the Code_Saturne Preprocessor include
+Other contributors to the code_saturne Preprocessor include
 
 Éric Quemerais           (INCKA, Boulogne-Billancourt, France)
 
@@ -162,7 +162,7 @@ Other contributors to the Code_Saturne Preprocessor include
 Graphical user interface
 ========================
 
-Major contributions to the Code_Saturne GUI have been provided by
+Major contributions to the code_saturne GUI have been provided by
 
 Cyril Baudry             (EDF, Chatou, France)
 Sophie Bosse             (EDF, Chatou, France)
@@ -176,7 +176,7 @@ Nicole Picard            (EDF, Chatou, France)
 Jean-Luc Rousset         (EDF, Chatou, France)
 Michael Tartar           (INCKA, Boulogne-Billancourt, France)
 
-Other contributors to the Code_Saturne GUI include
+Other contributors to the code_saturne GUI include
 
 Erwan Le Coupanec        (EDF, Chatou, France)
 Carole Vit               (INCKA, Boulogne-Billancourt, France)

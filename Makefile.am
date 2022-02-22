@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -282,6 +282,13 @@ install-doc:
 	done
 
 # Update Copyright
+
+update-name:
+	lst=`find ${top_srcdir} -type d \( -name .git -o -name "build*" \) -prune -o \( -type f -a ! -name Makefile.in \) -print`; \
+	for f in $$lst; do \
+	  echo $$f && \
+	  $(SED) -i "s/code_saturne documentation page/code_saturne documentation page/" $$f; \
+	done
 
 update-copyright:
 	y=`date +%Y`; yold=$$(($$y-1)); \

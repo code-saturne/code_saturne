@@ -4,7 +4,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -411,7 +411,7 @@ ecs_post_ens__ecrit_fic_geo(ecs_post_ens_t  *cas_ens)
   strtok(nom_cas, ".");
 
   ecs_post_ens__ecr_chaine(cas_ens->fic_geo,
-                           "EnSight Gold output by Code_Saturne Preprocessor");
+                           "EnSight Gold output by code_saturne Preprocessor");
 
   strcpy(ligne_cas, "Case name: ");
   strncpy(ligne_cas + strlen(ligne_cas), nom_cas, 80 - strlen(ligne_cas));

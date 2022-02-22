@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -36,15 +36,11 @@
 #include <math.h>
 
 /*----------------------------------------------------------------------------
- * BFT library headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
 #include "bft_printf.h"
-
-/*----------------------------------------------------------------------------
- * Code_Saturne library headers
- *----------------------------------------------------------------------------*/
 
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"

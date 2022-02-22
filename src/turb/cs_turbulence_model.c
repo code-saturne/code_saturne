@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -231,7 +231,7 @@ BEGIN_C_DECLS
         LRR).\n It is not recommended to take these terms into account:
         they have an influence only near the walls, their expression is hardly
         justifiable according to some authors and, in the configurations
-        studied with Code_Saturne, they did not bring any improvement in the
+        studied with code_saturne, they did not bring any improvement in the
         results.\n
         In addition, their use induces an increase in the calculation time.\n
         The wall echo terms imply the calculation of the distance to the wall

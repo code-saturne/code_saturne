@@ -1,9 +1,9 @@
 /*============================================================================
- *  Dump of Kernel I/O file for Code_Saturne
+ *  Dump of Kernel I/O file for code_saturne
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -218,7 +218,7 @@ _usage(const char  *arg_0,
     (_("\n"
        "Usage: %s [options] <file_name>\n"
        "   or: %s -d [options] <file_name_1> <file_name_2>\n\n"
-       "Dump headers and optionnaly content of a Code_Saturne Preprocessor,\n"
+       "Dump headers and optionnaly content of a code_saturne Preprocessor,\n"
        "Partitioner, or restart file, or compare two such files.\n\n"
        "Options:\n\n"
        "  -d, --diff        diff mode.\n\n"
@@ -943,7 +943,7 @@ _read_args(int          argc,
   if (*mode != 1)
     printf(_("\n"
              "  .----------------------------.\n"
-             "  |   Code_Saturne file dump   |\n"
+             "  |   code_saturne file dump   |\n"
              "  `----------------------------'\n"));
 }
 

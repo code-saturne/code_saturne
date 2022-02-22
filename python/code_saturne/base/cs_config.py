@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -213,7 +213,7 @@ class config:
 
         self.libs = {}
 
-        # Setup Code_Saturne libraries
+        # Setup code_saturne libraries
         # Here, CPPFLAGS and LDFLAGS will be provided by a get_dir method
 
         self.libs['saturne'] = \
@@ -550,7 +550,7 @@ def main(argv, pkg):
         if opts.have in cfg.optfeatures: print(cfg.features[opts.have])
 
     if opts.cppflags is not None:
-        # Specific handling of Code_Saturne has pkgincludedir has to be
+        # Specific handling of code_saturne has pkgincludedir has to be
         # correctly expended. Likewise for PLE, if internal version is used
         if opts.cppflags == "saturne":
             print("-I" + pkg.get_dir("pkgincludedir"))
@@ -563,7 +563,7 @@ def main(argv, pkg):
             print(cfg.libs[opts.cppflags].flags['cppflags'])
 
     if opts.ldflags is not None:
-        # Specific handling of Code_Saturne has pkgincludedir has to be
+        # Specific handling of code_saturne has pkgincludedir has to be
         # correctly expended. Likewise for PLE, if internal version is used
         if opts.ldflags == "saturne":
             print("-L" + pkg.get_dir("libdir"))

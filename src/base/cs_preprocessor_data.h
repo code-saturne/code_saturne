@@ -2,11 +2,11 @@
 #define __CS_PRE_PROCESSOR_DATA_H__
 
 /*============================================================================
- * Exchange of data between Code_Saturne Kernel and Preprocessor
+ * Exchange of data between code_saturne Kernel and Preprocessor
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 

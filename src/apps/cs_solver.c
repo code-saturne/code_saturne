@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -156,7 +156,7 @@ static cs_opts_t  opts;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Main function for Code_Saturne run.
+ * Main function for code_saturne run.
  *
  * This function is called by main().
  *----------------------------------------------------------------------------*/

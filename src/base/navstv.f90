@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------------------
 
-! This file is part of Code_Saturne, a general-purpose CFD tool.
+! This file is part of code_saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2022 EDF S.A.
 !
@@ -331,7 +331,7 @@ if (nterup.gt.1) then
     if (irangp.ge.0) then
       call parsom (xnrmu0)
     endif
-    ! En cas de couplage entre deux instances de Code_Saturne, on calcule
+    ! En cas de couplage entre deux instances de code_saturne, on calcule
     ! la norme totale de la vitesse
     ! Necessaire pour que l'une des instances ne stoppe pas plus tot que les autres
     ! (il faudrait quand meme verifier les options numeriques, ...)

@@ -3,7 +3,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -1416,7 +1416,7 @@ _set_saturne_sles(bool                 use_field_id,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " %s; System: %s -- Invalid AMG type with Code_Saturne"
+                  " %s; System: %s -- Invalid AMG type with code_saturne"
                   " solvers.", __func__, slesp->name);
         break;
 
@@ -1710,7 +1710,7 @@ _set_petsc_hypre_sles(bool                 use_field_id,
 #else
   bft_error(__FILE__, __LINE__, 0,
             _(" %s: PETSC algorithms used to solve %s are not linked.\n"
-              " Please install Code_Saturne with PETSc."),
+              " Please install code_saturne with PETSc."),
             __func__, slesp->name);
 #endif /* HAVE_PETSC */
 }
@@ -1812,7 +1812,7 @@ cs_param_sles_log(cs_param_sles_t   *slesp)
                 slesp->name);
   cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Family:", slesp->name);
   if (slesp->solver_class == CS_PARAM_SLES_CLASS_CS)
-    cs_log_printf(CS_LOG_SETUP, "             Code_Saturne\n");
+    cs_log_printf(CS_LOG_SETUP, "             code_saturne\n");
   else if (slesp->solver_class == CS_PARAM_SLES_CLASS_MUMPS)
     cs_log_printf(CS_LOG_SETUP, "             MUMPS\n");
   else if (slesp->solver_class == CS_PARAM_SLES_CLASS_HYPRE)
@@ -1927,7 +1927,7 @@ cs_param_sles_set(bool                 use_field_id,
 
   switch (slesp->solver_class) {
 
-  case CS_PARAM_SLES_CLASS_CS: /* Code_Saturne's own solvers */
+  case CS_PARAM_SLES_CLASS_CS: /* code_saturne's own solvers */
     /* true = use field_id instead of slesp->name to set the sles */
     _set_saturne_sles(use_field_id, slesp);
     break;

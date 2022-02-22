@@ -3,7 +3,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -1461,7 +1461,7 @@ class syrthes_domain(base_domain):
         self.n_procs_ref = None
         self.n_procs_radiation = None
 
-        # Additional parameters for Code_Saturne/SYRTHES coupling
+        # Additional parameters for code_saturne/SYRTHES coupling
         # Directories, and files in case structure
 
         self.cmd_line = cmd_line

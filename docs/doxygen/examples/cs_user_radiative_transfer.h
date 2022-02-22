@@ -1,9 +1,9 @@
 /*============================================================================
- * Code_Saturne documentation page
+ * code_saturne documentation page
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -70,7 +70,7 @@ Therefore :
 = h_{fluid}  (T_{fluid} - T_{wall}) + epsp  (Q_{incid} - \sigma * T_{wall}) \f]
 
 
- \note In \c Code_Saturne the flux is positive when it is oriented from inside to outside.
+ \note In \c code_saturne the flux is positive when it is oriented from inside to outside.
 
 
   |  Body                        |     Emissivity    |

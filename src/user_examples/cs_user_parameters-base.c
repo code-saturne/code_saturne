@@ -5,7 +5,7 @@
 /* VERS */
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -136,7 +136,7 @@ cs_user_model(void)
   cs_glob_atmo_option->deposition_model = 1;
 
   /* Read the meteo file (1) or impose directly the input values to compute it
-   * in Code_Saturne (2) */
+   * in code_saturne (2) */
   cs_glob_atmo_option->meteo_profile = 2;
 
   /* Inverse LMO length (m^-1) */

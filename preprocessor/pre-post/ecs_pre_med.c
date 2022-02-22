@@ -4,7 +4,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -1021,7 +1021,7 @@ ecs_loc_pre_med__lit_maille(ecs_maillage_t   *maillage,
 
               /* On rajoute une seconde référence au premier sommet de
                  chaque face en fin de liste pour "fermer" cette face
-                 (convention polyèdre Enveloppe Code_Saturne pour repérer
+                 (convention polyèdre Enveloppe code_saturne pour repérer
                  les faces d'un polyèdre en connectivité nodale) */
 
               isom = index_f_med[ifac    ] - index_f_med[0];

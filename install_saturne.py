@@ -93,7 +93,7 @@ def check_directory():
         message = \
 """
 The '%(script_name)s' installer script should not be run from inside the
-'%(top_srcdir)s' Code_Saturne source directory,
+'%(top_srcdir)s' code_saturne source directory,
 but from a separate directory.
 
 We recommend running for example:
@@ -514,7 +514,7 @@ class Package:
             self.install_dir = None
 
 #-------------------------------------------------------------------------------
-# Class definition for Code_Saturne setup
+# Class definition for code_saturne setup
 #-------------------------------------------------------------------------------
 
 class Setup:
@@ -536,7 +536,7 @@ class Setup:
         # Download packages
         self.download = 'yes'
 
-        # Code_Saturne installation with debugging symbols
+        # code_saturne installation with debugging symbols
         self.debug = 'no'
 
         # Installation with shared libraries (not modifiable yet)
@@ -571,11 +571,11 @@ class Setup:
         # Packages definition
         self.packages = {}
 
-        # Code_Saturne
+        # code_saturne
 
         self.packages['code_saturne'] = \
             Package(name="Code_Saturne",
-                    description="Code_Saturne CFD tool",
+                    description="code_saturne CFD tool",
                     package="code_saturne",
                     version=None,
                     archive=None,
@@ -693,7 +693,7 @@ class Setup:
         p = self.packages['code_saturne']
         from os.path import expanduser
         home = expanduser("~")
-        self.prefix = os.path.join(home, 'Code_Saturne', p.version)
+        self.prefix = os.path.join(home, 'code_saturne', p.version)
 
     #---------------------------------------------------------------------------
 
@@ -709,7 +709,7 @@ class Setup:
 """
 
 Please edit the 'setup' file in the current directory
-to define your Code_Saturne setup options.
+to define your code_saturne setup options.
 
 You may then re-run '%(script_path)s'
 to start the installation.
@@ -960,7 +960,7 @@ Check the setup file and some utilities presence.
         ret = run_test("make")
         if ret != 0:
             sys.stderr.write("\n*** Aborting installation:\n"
-                             "\'make\' utility is mandatory for Code_Saturne "
+                             "\'make\' utility is mandatory for code_saturne "
                              "compilation.\n"
                              "Please install development tools.\n\n")
             sys.exit(1)
@@ -1137,7 +1137,7 @@ Check the setup file and some utilities presence.
 
         setupMain = \
 """#========================================================
-# Setup file for Code_Saturne installation
+# Setup file for code_saturne installation
 #========================================================
 #
 #--------------------------------------------------------
@@ -1146,7 +1146,7 @@ Check the setup file and some utilities presence.
 download  %(download)s
 #
 #--------------------------------------------------------
-# Install Code_Saturne with debugging symbols
+# Install code_saturne with debugging symbols
 #--------------------------------------------------------
 debug     %(debug)s
 #
@@ -1205,7 +1205,7 @@ disable_frontend  %(disable_frontend)s
 # This is the path for the main SALOME directory,
 # not the application directory.
 #
-# If Code_Saturne is built with SALOME support,
+# If code_saturne is built with SALOME support,
 # running "code_saturne salome" will launch the
 # associated application, containing the CFDSTUDY module.
 #--------------------------------------------------------
@@ -1234,7 +1234,7 @@ salome    %(salome)s
 #
 # Scotch and Pt-Scotch are available in some Linux
 # distributions, but may be built with options
-# incompatible with non-threaded Code_Saturne runs.
+# incompatible with non-threaded code_saturne runs.
 #
 #   To install CGNS or ParMetis, the CMake
 # configuration/installation tool is required
@@ -1304,7 +1304,7 @@ if __name__ == "__main__":
     # --------
     welcome = \
         """
-        Installation of Code_Saturne
+        Installation of code_saturne
         ____________________________
 
 The process will take several minutes.
@@ -1313,7 +1313,7 @@ You can have a look at the log file meanwhile.
 
     finalize = \
 """
-Before using Code_Saturne, please update your environment with:
+Before using code_saturne, please update your environment with:
 
   cspath=%(cspath)s
   alias code_saturne="$cspath/code_saturne"
@@ -1330,7 +1330,7 @@ installation documentation, available using:
 
     thanks = \
 """
-Thank you for choosing Code_Saturne!
+Thank you for choosing code_saturne!
 
 """
 

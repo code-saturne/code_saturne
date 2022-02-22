@@ -1,9 +1,9 @@
 /*============================================================================
- * Code_Saturne documentation page
+ * code_saturne documentation page
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -30,7 +30,7 @@
   \section cs_user_solver_h_intro Introduction
 
   C user functions for the setting of a user solver. The \ref cs_user_solver
-  function allows one to replace the Code_Saturne solver by a solver of his
+  function allows one to replace the code_saturne solver by a solver of his
   own.
 
   The following example shows the setting of a user solver which solves
@@ -38,7 +38,7 @@
 
   \section cs_user_solver_h_cs_user_solver_set Activating the user solver
 
-  If the function \ref cs_user_solver_set returns 1, the Code_Saturne
+  If the function \ref cs_user_solver_set returns 1, the code_saturne
   solver is replaced by the solver defined in \ref cs_user_solver .
 
   \snippet cs_user_solver-heat-equation.c set_solver
@@ -67,7 +67,7 @@
 
   \subsection cs_user_solver_h_restart Restart creation
 
-  One can define a restart computation, as for the real Code_Saturne solver.
+  One can define a restart computation, as for the real code_saturne solver.
 
   \snippet cs_user_solver-heat-equation.c restart
 

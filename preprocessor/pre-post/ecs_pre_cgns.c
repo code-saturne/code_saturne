@@ -4,7 +4,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -2048,7 +2048,7 @@ ecs_loc_pre_cgns__init_elt_type(ecs_cgns_elt_t elt_type[NofValidElementTypes])
 #endif
 
   /* Elements vertices in current CGNS versions have the same
-     local numbering as that of Code_Saturne. */
+     local numbering as that of code_saturne. */
 
   for (i = 0; i < NofValidElementTypes; i++) {
     int nbr_som = ecs_fic_elt_typ_liste_c[elt_type[i].ecs_type].nbr_som;

@@ -4,7 +4,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -4235,7 +4235,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
               " PETSc is required with this option.\n"
-              " Please use a version of Code_Saturne built with PETSc.",
+              " Please use a version of code_saturne built with PETSc.",
               __func__, mom_eqp->name);
     break;
 

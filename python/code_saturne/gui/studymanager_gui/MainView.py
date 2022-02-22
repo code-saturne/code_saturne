@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -388,7 +388,7 @@ class MainView(object):
         """
         Public slot.
 
-        create new Code_Saturne studymanager parameter file
+        create new code_saturne studymanager parameter file
         """
         if not hasattr(self, 'case'):
             self.case = XMLengine.Case(package=self.package, studymanager=True)
@@ -872,7 +872,7 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         """
         public slot
 
-        open the tutorial for Code_Saturne
+        open the tutorial for code_saturne
         """
         msg = "See " + self.package.url + " web site for tutorials."
         QMessageBox.about(self, self.package.code_name + ' study manager', msg)
@@ -898,7 +898,7 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         """
         public slot
 
-        open the quick reference card for Code_Saturne
+        open the quick reference card for code_saturne
         """
         self.displayManual(self.package, 'refcard')
 
@@ -907,7 +907,7 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         """
         public slot
 
-        open the quick doxygen for Code_Saturne
+        open the quick doxygen for code_saturne
         """
         self.displayManual(self.package, 'Doxygen')
 

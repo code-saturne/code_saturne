@@ -2,7 +2,7 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
 # Copyright (C) 1998-2022 EDF S.A.
 #
@@ -619,7 +619,7 @@ class MainView(object):
         """
         Public slot.
 
-        create new Code_Saturne case
+        create new code_saturne case
         """
         if not hasattr(self, 'case'):
             self.case = QtCase.QtCase(package=self.package)
@@ -643,7 +643,7 @@ class MainView(object):
         """
         Public slot.
 
-        create new Code_Saturne case
+        create new code_saturne case
         """
         path = str(QDir.currentPath())
         if hasattr(self, 'case') and self.case['xmlfile']:
@@ -772,7 +772,7 @@ class MainView(object):
             # Print warning message
             title = "Warning"
             msg = "Old XML format detected for external conjugate heat transfer coupling.\n\n"
-            msg += "This XML should still be valid to launch a Code_Saturne computation outside of the GUI," \
+            msg += "This XML should still be valid to launch a code_saturne computation outside of the GUI," \
                    "but is not maintained anymore.\n"
             msg += "Old definitions are removed from the XML file and are stored in the "
             msg += "DATA folder within the 'deprecated_syrthes_coupling_data.txt file'.\n"
@@ -1637,7 +1637,7 @@ class MainView(object):
         return QCoreApplication.translate('MainView', text)
 
 #-------------------------------------------------------------------------------
-# Main Window for Code_Saturne
+# Main Window for code_saturne
 #-------------------------------------------------------------------------------
 
 class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
@@ -1678,7 +1678,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.Browser = BrowserView(self)
         self.ui_initialize()
 
-        # Code_Saturne doc
+        # code_saturne doc
         self.displayCSManualAction.triggered.connect(self.displayCSManual)
         self.displayCSTutorialAction.triggered.connect(self.displayCSTutorial)
         self.displayCSTheoryAction.triggered.connect(self.displayCSTheory)
@@ -1696,7 +1696,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         docdir = self.package.get_dir('docdir')
 
-        # Code_Saturne doc
+        # code_saturne doc
         ddcs = os.path.join(docdir, '../code_saturne')
         if os.path.isdir(ddcs):
             liste = os.listdir(ddcs)
@@ -1778,7 +1778,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         public slot
 
-        open the tutorial for Code_Saturne
+        open the tutorial for code_saturne
         """
         msg = "See " + self.package.url + " web site for tutorials."
         QMessageBox.about(self, self.package.name, msg)
@@ -1816,7 +1816,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         public slot
 
-        open the quick reference card for Code_Saturne
+        open the quick reference card for code_saturne
         """
         if self.package.name == 'code_saturne':
             self.displayManual(self.package, 'refcard')
@@ -1830,7 +1830,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         """
         public slot
 
-        open the quick doxygen for Code_Saturne
+        open the quick doxygen for code_saturne
         """
         if self.package.name == 'code_saturne':
             self.displayManual(self.package, 'Doxygen')

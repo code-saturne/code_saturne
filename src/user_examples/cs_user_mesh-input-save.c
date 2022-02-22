@@ -2,13 +2,13 @@
  * Definition of the calculation mesh.
  *
  * Mesh-related user functions (called in this order):
- *   Manage the exchange of data between Code_Saturne and the pre-processor
+ *   Manage the exchange of data between code_saturne and the pre-processor
  *============================================================================*/
 
 /* VERS */
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 

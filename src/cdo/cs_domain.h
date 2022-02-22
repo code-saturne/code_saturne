@@ -7,7 +7,7 @@
  *============================================================================*/
 
 /*
-  This file is part of Code_Saturne, a general-purpose CFD tool.
+  This file is part of code_saturne, a general-purpose CFD tool.
 
   Copyright (C) 1998-2022 EDF S.A.
 
@@ -139,7 +139,7 @@ typedef struct {
 
 typedef struct {
 
-  /* Code_Saturne mesh and mesh quantities structures already computed */
+  /* code_saturne mesh and mesh quantities structures already computed */
 
   cs_mesh_t                *mesh;
   cs_mesh_quantities_t     *mesh_quantities;
