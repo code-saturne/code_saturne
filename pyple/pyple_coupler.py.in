@@ -21,7 +21,7 @@
 
 # ==============================================================================
 # Python utility module, facilitating the use of PLE for the coupling of
-# a python code with Code_Saturne.
+# a python code with code_saturne.
 # ==============================================================================
 
 mpi4pypath = '@mpi4pydir@'
@@ -239,7 +239,7 @@ class pyple_coupler():
     def init_coupling(self, app_name=None, app_type=None):
         """
         Start the coupling communicator based on the PLE coupling library
-        of Code_Saturne
+        of code_saturne
         """
 
         # Define app name and type to be used by PLE.
