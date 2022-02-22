@@ -732,7 +732,9 @@ CS_AC_TEST_DOCS
 
 cs_have_neptune_cfd=no
 if test -f ${srcdir}/neptune_cfd/configure; then
-  cs_have_neptune_cfd=yes
+  if test x$cs_have_mpi != xno; then
+    cs_have_neptune_cfd=yes
+  fi
 fi
 
 # Check if we need to force link with C++

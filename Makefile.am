@@ -22,10 +22,6 @@
 
 #-------------------------------------------------------------------------------
 
-if HAVE_GUI
-GUI = python 
-endif
-
 if HAVE_FRONTEND
 PREPRO = preprocessor
 DOCS = docs
@@ -39,7 +35,7 @@ if HAVE_INTERNAL_PLE
 PLE = libple
 endif
 
-SUBDIRS = . $(PLE) $(PREPRO) src $(DOCS) $(GUI) $(TSTS) $(NEPTUNE_CFD)
+SUBDIRS = . $(PLE) $(PREPRO) src python $(DOCS) $(TSTS) $(NEPTUNE_CFD)
 
 AUX_DIST =
 
