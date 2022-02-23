@@ -500,7 +500,9 @@ exec_popen(const char* cmd)
 
 void code_saturne::setResourceLocation(const char* fmiResourceLocation)
 {
-  logInfo(fmiResourceLocation);
+    char default_component[]="(component not yet set)";
+    log(default_component, id, fmi2OK, "logEvents", fmiResourceLocation,
+        nullptr);
 }
 
 /*----------------------------------------------------------------------------*/
