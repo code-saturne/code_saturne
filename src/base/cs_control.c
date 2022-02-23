@@ -1476,7 +1476,7 @@ _parse_control_buffer(const char         *name,
 #if defined(HAVE_SOCKET)
     if (control_comm != NULL) {
       char reply[5];
-      sprintf(reply, "%d", retcode);
+      snprintf(reply, 5, "%d", retcode);
       reply[4] = '\0';
       _comm_write_sock(control_comm, reply, 1, strlen(reply) + 1);
     }
