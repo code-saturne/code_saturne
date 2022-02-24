@@ -270,7 +270,7 @@ cs_rad_transfer_options(void)
          _("The quadrature type number"
            " (cs_glob_rad_transfer_params->i_quadrature)"),
          rt_params->i_quadrature,
-         1, 10);
+         1, 11);
     }
 
     /* --> NDIREC */
