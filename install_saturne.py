@@ -615,13 +615,14 @@ class Setup:
         p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
 
         # MED library
+        # Note: alternative address: ftp://ftp.cea.fr/pub/salome/prerequisites/med-4.1.1.tar.gz
 
         self.packages['med'] = \
             Package(name="MED",
                     description="Model for Exchange of Data",
                     package="med",
-                    version="4.1.0",
-                    archive="med-4.1.0.tar.gz",
+                    version="4.1.1",
+                    archive="med-4.1.1.tar.gz",
                     url="http://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
@@ -643,9 +644,9 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="6.1.1",
-                    archive="scotch_6.1.1.tar.gz",
-                    url="https://gitlab.inria.fr/scotch/scotch/-/archive/v6.1.1/%s")
+                    version="7.0.1",
+                    archive="scotch_7.0.1.tar.gz",
+                    url="https://gitlab.inria.fr/scotch/scotch/-/archive/v7.0.1/%s")
 
     #---------------------------------------------------------------------------
 
