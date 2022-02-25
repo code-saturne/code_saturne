@@ -13,6 +13,9 @@ Architectural changes:
 
 Bug fixes:
 
+- Probes and profiles: fix possible location error on hybrid meshes
+  depending on order of appearance of cell types.
+
 - Preprocessor: automatically detect CGNS file type (ADF or HDF5).
 
 - Preprocessor: fix crash when reading CGNS files with NGON (polyhedra)
