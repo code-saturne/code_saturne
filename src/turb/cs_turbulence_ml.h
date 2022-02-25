@@ -1,8 +1,8 @@
-#ifndef __CS_TURBULENCE_HEADERS_H__
-#define __CS_TURBULENCE_HEADERS_H__
+#ifndef __CS_TURBULENCE_ML_H__
+#define __CS_TURBULENCE_ML_H__
 
 /*============================================================================
- * Global code_saturne headers file for easier include
+ * Mixture-length turbulence model.
  *============================================================================*/
 
 /*
@@ -25,24 +25,36 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
+/*----------------------------------------------------------------------------*/
+
 /*----------------------------------------------------------------------------
- * Local headers
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_clip_ke.h"
-#include "cs_les_balance.h"
-#include "cs_les_filter.h"
-#include "cs_les_inflow.h"
-#include "cs_turbulence_bc.h"
-#include "cs_turbulence_inflow.h"
-#include "cs_turbulence_ke.h"
-#include "cs_turbulence_kw.h"
-#include "cs_turbulence_ml.h"
-#include "cs_turbulence_model.h"
-#include "cs_turbulence_rotation.h"
-#include "cs_turbulence_sa.h"
-#include "cs_turbulence_v2f.h"
+#include "cs_defs.h"
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_TURBULENCE_HEADERS_H__ */
+BEGIN_C_DECLS
+
+/*=============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Calculation of turbulent viscosity for
+ *         a model of length of simple mixture
+ *
+ * \f[ \mu_T = \rho (\kappa L)^2 \cdot \sqrt{2 S_{ij} S_{ij}} \f]
+ * \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
+ !*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_ml_mu_t(void);
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+#endif /* __CS_TURBULENCE_ML_H__ */

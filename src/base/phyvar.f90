@@ -155,6 +155,12 @@ interface
     implicit none
   end subroutine cs_turbulence_kw_mu_t
 
+  subroutine cs_turbulence_ml_mu_t() &
+    bind(C, name='cs_turbulence_ml_mu_t')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_turbulence_ml_mu_t
+
 end interface
 
 !===============================================================================
@@ -314,7 +320,7 @@ elseif (iturb.eq.10) then
 ! Mixing length model
 ! ===================
 
-  call vislmg
+  call cs_turbulence_ml_mu_t
 
 elseif (itytur.eq.2) then
 
