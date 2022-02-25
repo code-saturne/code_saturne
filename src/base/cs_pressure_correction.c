@@ -688,7 +688,7 @@ cs_pressure_correction(int        iterns,
   /* Implicit part of the cavitation source */
   if (i_vof_mass_transfer != 0 && cavitation_parameters->itscvi == 1) {
     cs_real_t *dgdpca = cs_get_cavitation_dgdp_st();
-    cs_real_t rho1 = vof_parameters->rho2;
+    cs_real_t rho1 = vof_parameters->rho1;
     cs_real_t rho2 = vof_parameters->rho2;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -1465,7 +1465,7 @@ cs_pressure_correction(int        iterns,
 
   if (i_vof_mass_transfer != 0) {
     cs_real_t *gamcav = cs_get_cavitation_gam();
-    cs_real_t rho1 = vof_parameters->rho2;
+    cs_real_t rho1 = vof_parameters->rho1;
     cs_real_t rho2 = vof_parameters->rho2;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
