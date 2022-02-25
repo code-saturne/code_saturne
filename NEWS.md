@@ -3,6 +3,9 @@ Release 7.0.4 (not released yet)
 
 Bug fixes:
 
+- Probes and profiles: fix possible location error on hybrid meshes
+  depending on order of appearance of cell types.
+
 - GUI: correct resetting of LMO in atmospheric page
 
 Release 7.0.3 (January 28 2022)
