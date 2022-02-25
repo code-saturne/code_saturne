@@ -3566,8 +3566,12 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
       /* Update arrays to return */
       located_vtx_num[p_id] = chosen_id + 1;
 
-      if (locate_on_parents && section->parent_element_num != NULL)
-        located_ent_num[p_id] = section->parent_element_num[elt_id];
+      if (locate_on_parents) {
+        if (section->parent_element_num != NULL)
+          located_ent_num[p_id] = section->parent_element_num[elt_id];
+        else
+          located_ent_num[p_id] = elt_id + 1;
+      }
 
     } /* num > -1 */
 

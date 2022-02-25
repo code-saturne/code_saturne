@@ -3,6 +3,9 @@ Release 6.0.8 (unreleased)
 
 Bug fixes:
 
+- Probes and profiles: fix possible location error on hybrid meshes
+  depending on order of appearance of cell types.
+
 - Fix spurious reset issue when restarting time moments defined by
   start time (not iteration).
 
