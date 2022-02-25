@@ -233,14 +233,16 @@ turbulence level in case of strong velocity gradients (stopping point).\\
 With LES, the wall functions are usually not greatly adapted. It is generally more advisable
 (if possible) to refine the mesh towards the wall so that the first cell is in the
 viscous sub-layer, where the boundary conditions are simple natural no-slip conditions.\\
-Concerning the LES model, the user may refer to the subroutine
-\texttt{ussmag} for complements about the dynamic model. Its usage
+Concerning the LES model, the user may refer to the
+\texttt{cs\_user\_physical\_properties\_smagorinsky\_c} function for complements
+about the dynamic model. Its usage
 and the interpretation of its results require particular attention.
 In addition, the user must pay further attention when using the dynamic
 model with the least squares method based on a partial extended
 neighbourhood ({\tt imrgra}=3). Indeed, the results may be degraded if the user
 does not implement his own way of averaging the dynamic constant in
-\texttt{ussmag} (\textit{i.e.} if the user keeps the local average based
+\texttt{cs\_user\_physical\_properties\_smagorinsky\_c}
+(\textit{i.e.} if the user keeps the local average based
 on the extended neighbourhood).\\
 
 For further details, please refer to the following \texttt{Doxygen} documentation

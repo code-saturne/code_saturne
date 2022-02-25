@@ -258,5 +258,55 @@ cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief User modification of the Smagorinsky constant for the
+ *        dynamic Smagorinsky model.
+ *
+ * CS = Mij.Lij / Mij.Mij
+ *
+ * The local averages of the numerator and denominator are done before calling
+ * this function, so
+ *
+ * CS = < Mij.Lij > / < Mij.Mij >
+ *
+ * In this subroutine, Mij.Lij and Mij.Mij are passed as arguments before
+ * the local average.
+ *
+ * \param[in, out]   domain      pointer to a cs_domain_t structure
+ * \param[in]        mijlij      mij.lij before the local averaging
+ * \param[in]        mijmij      mij.mij before the local averaging
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_physical_properties_smagorinsky_c(cs_domain_t      *domain,
+                                          const cs_real_t   mijlij[],
+                                          const cs_real_t   mijmij[])
+{
+  const cs_lnum_t n_cells = domain->mesh->n_cells;
+  const cs_real_t tot_vol = domain->mesh_quantities->tot_vol;
+  const cs_real_t *cell_vol = domain->mesh_quantities->cell_vol;
+
+  cs_real_t *cpro_smago
+    = cs_field_by_name("smagorinsky_constant^2")->val;
+
+  cs_real_t mijmijmoy = 0, mijlijmoy = 0;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    mijlijmoy += mijlij[c_id]*cell_vol[c_id];
+    mijmijmoy += mijmij[c_id]*cell_vol[c_id];
+  }
+
+  cs_parall_sum(1, CS_REAL_TYPE, &mijlijmoy);
+  cs_parall_sum(1, CS_REAL_TYPE, &mijmijmoy);
+
+  mijmijmoy /= tot_vol;
+  mijlijmoy /= tot_vol;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    cpro_smago[c_id] = mijlijmoy/mijmijmoy;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

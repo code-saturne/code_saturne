@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Replace `ussmag` Fortran user-defined subroutine with
+  `cs_user_physical_properties_smagorinsky_c` C function.
+
 - Remove legacy `cs_user_mass_source_terms` function.
 
 Architectural changes:

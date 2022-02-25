@@ -1618,7 +1618,8 @@ cs_parameters_check(void)
              "as it uses the same reduced neighborhood.\n"
              "Use fully extended neighborhood or directly "
              "define the averaging of the\n"
-             "dynamic Smagorinsky constant via the ussmag subroutine."));
+             "dynamic Smagorinsky constant via the\n"
+             "cs_user_physical_properties_smagorinsky_c function."));
         break;
       default:
         break;

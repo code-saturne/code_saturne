@@ -596,10 +596,7 @@ cs_user_source_terms_wrapper(int         f_id,
                              cs_real_t  *st_exp,
                              cs_real_t  *st_imp)
 {
-  cs_user_source_terms(cs_glob_domain,
-                       f_id,
-                       st_exp,
-                       st_imp);
+  cs_user_source_terms(cs_glob_domain, f_id, st_exp, st_imp);
 }
 
 void
@@ -637,7 +634,6 @@ cs_user_porosity_wrapper(void)
 {
   cs_user_porosity(cs_glob_domain);
 }
-
 
 /*----------------------------------------------------------------------------*/
 

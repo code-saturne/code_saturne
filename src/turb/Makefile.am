@@ -70,9 +70,10 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_clip_ke.h \
 cs_turbulence_rotation.h \
+cs_les_balance.h \
 cs_les_filter.h \
 cs_les_inflow.h \
-cs_les_balance.h \
+cs_les_mu_t.h \
 cs_turbulence_bc.h \
 cs_turbulence_inflow.h \
 cs_turbulence_ke.h \
@@ -88,9 +89,10 @@ cs_turbulence_headers.h
 noinst_LTLIBRARIES = libcsturb.la
 
 libcsturb_la_SOURCES = \
+cs_les_balance.c \
 cs_les_filter.c \
 cs_les_inflow.c \
-cs_les_balance.c \
+cs_les_mu_t.c \
 cs_turbulence_bc.c \
 cs_turbulence_inflow.c \
 cs_turbulence_ke.c \
@@ -114,10 +116,7 @@ resssg2.f90 \
 rijech.f90 \
 rijthe.f90 \
 rijthe2.f90 \
-turrij.f90 \
-visdyn.f90 \
-vissma.f90 \
-viswal.f90
+turrij.f90
 libcsturb_la_LDFLAGS = -no-undefined
 
 clean-local:

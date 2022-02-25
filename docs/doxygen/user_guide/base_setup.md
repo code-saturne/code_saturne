@@ -443,7 +443,8 @@ seriously distort the results.
 Modification of the variable C of the dynamic LES model
 -------------------------------------------------------
 
-The \ref ussmag user-defined subroutine can be used to modify the calculation
+The \ref cs_user_physical_properties_smagorinsky_c user-defined
+function can be used to modify the calculation
 of the variable *C* of the LES sub-grid scale dynamic model.
 
 It worth recalling that the LES approach introduces the notion of
@@ -510,9 +511,9 @@ filter). By default, the value calculated by the code is
 C=\frac{\widetilde{M_{ij}L{ij}}}{\widetilde{M_{kl}M_{kl}}}
 \f]
 
-The \ref ussmag subroutine (called at each time step,
-only when this model is active) allows to modify this value. It is for
-example possible to compute the local average after having computed the
+The \ref cs_user_physical_properties_smagorinsky_c function (called at each
+time step, only when this model is active) allows to modify this value. It is
+for example possible to compute the local average after having computed the
 \f[
 C=\widetilde{\left[\frac{M_{ij}L{ij}}{M_{kl}M_{kl}}\right]}
 \f]

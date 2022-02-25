@@ -101,11 +101,11 @@ integer          idftnp
 integer          iprev , inc, iccocg
 integer          kturt, turb_flux_model, turb_flux_model_type
 
-double precision xk, xe, xnu, xrom, vismax(nscamx), vismin(nscamx)
+double precision xk, xe, xrom, vismax(nscamx), vismin(nscamx)
 double precision xrij(3,3), xnal(3), xnoral
 double precision xfmu, xmu, xmut
 double precision nusa, xi3, fv1, cv13
-double precision varmn(4), varmx(4), tt, ttmin, ttke, visls_0
+double precision varmn(4), varmx(4), ttke, visls_0
 double precision xttkmg, xttdrb
 double precision trrij,rottke
 double precision alpha3, xrnn
@@ -113,7 +113,7 @@ double precision s, s11, s22, s33, delta, c_epsilon
 double precision dudy, dudz, dvdx, dvdz, dwdx, dwdy
 double precision, dimension(:), pointer :: field_s_v, field_s_b
 double precision, dimension(:), pointer :: brom, crom
-double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi, cvar_nusa
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_nusa
 double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: sval
@@ -142,6 +142,27 @@ interface
     use, intrinsic :: iso_c_binding
     implicit none
   end subroutine cs_ht_convert_h_to_t_cells_solid
+
+  subroutine cs_les_mu_t_smago_dyn(grad_v) &
+    bind(C, name='cs_les_mu_t_smago_dyn')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(kind=c_double), dimension(3,3,*), intent(inout) :: grad_v
+  end subroutine cs_les_mu_t_smago_dyn
+
+  subroutine cs_les_mu_t_smago_const(grad_v) &
+    bind(C, name='cs_les_mu_t_smago_const')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(kind=c_double), dimension(3,3,*), intent(inout) :: grad_v
+  end subroutine cs_les_mu_t_smago_const
+
+  subroutine cs_les_mu_t_wale(grad_v) &
+    bind(C, name='cs_les_mu_t_wale')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    real(kind=c_double), dimension(3,3,*), intent(inout) :: grad_v
+  end subroutine cs_les_mu_t_wale
 
   subroutine cs_turbulence_ke_q_mu_t() &
     bind(C, name='cs_turbulence_ke_q_mu_t')
@@ -454,35 +475,19 @@ elseif (itytur.eq.3) then
     deallocate(grad)
   end if
 
-elseif (iturb.eq.40) then
+elseif (itytur.eq.4) then
 
-! LES Smagorinsky
-! ===============
-
-  allocate(gradv(3, 3, ncelet))
-  call vissma (gradv)
-
-elseif (iturb.eq.41) then
-
-! LES dynamic
-! ===========
+  ! LES (Smagorinsky, dynamic Smagorinsky, or Wale)
 
   allocate(gradv(3, 3, ncelet))
 
-  call visdyn &
- ( nvar   , nscal  ,                                              &
-   ncepdc , ncetsm ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     ,                                                       &
-   ckupdc , smacel, gradv )
-
-elseif (iturb.eq.42) then
-
-! LES WALE
-! ========
-
-  allocate(gradv(3, 3, ncelet))
-  call viswal (gradv)
+  if (iturb.eq.40) then
+    call cs_les_mu_t_smago_const(gradv)
+  elseif (iturb.eq.41) then
+    call cs_les_mu_t_smago_dyn(gradv)
+  elseif (iturb.eq.42) then
+    call cs_les_mu_t_wale(gradv)
+  endif
 
 elseif (itytur.eq.5) then
 
