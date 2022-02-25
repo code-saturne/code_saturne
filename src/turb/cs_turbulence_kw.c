@@ -1617,5 +1617,124 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
 }
 
 /*----------------------------------------------------------------------------*/
+/*! \brief Calculation of turbulent viscosity for
+ *         the \f$ k - \omega \f$ SST model.
+ *
+ * \f[ \mu_T = \rho A1 \dfrac{k}{\max(A1 \omega; \; S f_2)} \f]
+ * with
+ * \f[ S = \sqrt{  2 S_{ij} S_{ij}} \f]
+ * \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
+ *
+ * and \f$ f_2 = \tanh(arg2^2) \f$
+ * \f[ arg2^2 = \max(2 \dfrac{\sqrt{k}}{C_\mu \omega y}; \;
+ *                   500 \dfrac{\nu}{\omega y^2}) \f]
+ * where \f$ y \f$ is the distance to the wall.
+ *
+ * \f$ \divs{\vect{u}} \f$ is calculated at the same time than \f$ S \f$
+ * for use in cs_turbulence_kw.
+ !*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_kw_mu_t(void)
+{
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t ntcabs = cs_glob_time_step->nt_cur;
+
+  /* Initialization
+     ============== */
+
+  cs_real_t *visct =  CS_F_(mu_t)->val;
+
+  const cs_real_t *viscl = CS_F_(mu)->val;
+  const cs_real_t *crom  = CS_F_(rho)->val;
+  const cs_real_t *cvar_k  = (const cs_real_t *)CS_F_(k)->val;
+  const cs_real_t *cvar_omg = (const cs_real_t *)CS_F_(omg)->val;
+
+  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
+
+  /* Compute the scalar s2kw rate SijSij and the trace of the velocity
+   * gradient
+   *   (Sij^D) (Sij^D)  is stored in    s2kw (deviatoric s2kw tensor rate)
+   *   tr(Grad u)       is stored in    divukw
+   * ======================================================================= */
+
+  cs_real_33_t *gradv;
+  BFT_MALLOC(gradv, mesh->n_cells_with_ghosts, cs_real_33_t);
+
+  cs_field_gradient_vector(CS_F_(vel),
+                           false,  // no use_previous_t
+                           1,      // inc
+                           gradv);
+
+  /* s2kw = Strain rate of the deviatoric part of the s2kw tensor
+   *      = 2 (Sij^D).(Sij^D)
+   * divukw   = trace of the velocity gradient
+   *          = dudx + dvdy + dwdz
+   * ============================================================== */
+
+  const cs_real_t d1s3 = 1./3.;
+  const cs_real_t d2s3 = 2./3.;
+
+  cs_real_t *cpro_s2kw = cs_field_by_name("s2")->val;
+  cs_real_t *cpro_divukw = cs_field_by_name("vel_gradient_trace")->val;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+   cpro_s2kw[c_id] = 2.0 *(  cs_math_pow2(  d2s3*gradv[c_id][0][0]
+                                          - d1s3*gradv[c_id][1][1]
+                                          - d1s3*gradv[c_id][2][2])
+                           + cs_math_pow2(- d1s3*gradv[c_id][0][0]
+                                          + d2s3*gradv[c_id][1][1]
+                                          - d1s3*gradv[c_id][2][2])
+                           + cs_math_pow2(- d1s3*gradv[c_id][0][0]
+                                          - d1s3*gradv[c_id][1][1]
+                                          + d2s3*gradv[c_id][2][2]))
+                     + cs_math_pow2(  gradv[c_id][0][1] + gradv[c_id][1][0])
+                     + cs_math_pow2(  gradv[c_id][0][2] + gradv[c_id][2][0])
+                     + cs_math_pow2(  gradv[c_id][1][2] + gradv[c_id][2][1]);
+
+   cpro_divukw[c_id] =   gradv[c_id][0][0]
+                       + gradv[c_id][1][1]
+                       + gradv[c_id][2][2];
+  }
+
+  BFT_FREE(gradv);
+
+  /* Calculation of viscosity
+   * ======================== */
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+    const cs_real_t xk = cvar_k[c_id];
+    const cs_real_t xw = cvar_omg[c_id];
+    const cs_real_t rom = crom[c_id];
+    const cs_real_t xmu = viscl[c_id];
+
+    // Wall distance
+    const cs_real_t xdist = fmax(w_dist[c_id], cs_math_epzero);
+
+    cs_real_t xf2;
+
+    // FIXME should be a check on xw...
+    if (xk > 0.0) {
+      // Wall distance has no value at the first time step, we consider it as infinite
+      if (ntcabs == 1) {
+        xf2 = 0.0;
+      }
+      else {
+        cs_real_t xarg2 = fmax(2.0 * sqrt(xk) / cs_turb_cmu / xw / xdist,
+                               500.0 * xmu / rom / xw / cs_math_pow2(xdist));
+        xf2 = tanh(cs_math_pow2(xarg2));
+      }
+      visct[c_id] =   rom*cs_turb_ckwa1*xk
+                    / fmax(cs_turb_ckwa1*xw, sqrt(cpro_s2kw[c_id])*xf2);
+    }
+    else {
+      visct[c_id] = 1.e-30;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

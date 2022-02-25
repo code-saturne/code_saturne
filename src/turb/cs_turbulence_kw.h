@@ -68,6 +68,28 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                  cs_real_t        smacel[]);
 
 /*----------------------------------------------------------------------------*/
+/*! \brief Calculation of turbulent viscosity for
+ *         the \f$ k - \omega \f$ SST model.
+ *
+ * \f[ \mu_T = \rho A1 \dfrac{k}{\max(A1 \omega; \; S f_2)} \f]
+ * with
+ * \f[ S = \sqrt{  2 S_{ij} S_{ij}} \f]
+ * \f[ S_{ij} = \dfrac{\der{u_i}{x_j} + \der{u_j}{x_i}}{2}\f]
+ *
+ * and \f$ f_2 = \tanh(arg2^2) \f$
+ * \f[ arg2^2 = \max(2 \dfrac{\sqrt{k}}{C_\mu \omega y}; \;
+ *                   500 \dfrac{\nu}{\omega y^2}) \f]
+ * where \f$ y \f$ is the distance to the wall.
+ *
+ * \f$ \divs{\vect{u}} \f$ is calculated at the same time than \f$ S \f$
+ * for use in cs_turbulence_kw.
+ !*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_kw_mu_t(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

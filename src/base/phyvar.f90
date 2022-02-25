@@ -149,6 +149,12 @@ interface
     implicit none
   end subroutine cs_turbulence_ke_q_mu_t
 
+  subroutine cs_turbulence_kw_mu_t() &
+    bind(C, name='cs_turbulence_kw_mu_t')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_turbulence_kw_mu_t
+
 end interface
 
 !===============================================================================
@@ -496,7 +502,7 @@ elseif (iturb.eq.60) then
 ! k-omega SST
 ! ===========
 
-  call vissst
+  call cs_turbulence_kw_mu_t
 
 elseif (iturb.eq.70) then
 

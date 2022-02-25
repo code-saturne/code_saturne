@@ -116,7 +116,6 @@ turrij.f90 \
 visdyn.f90 \
 vislmg.f90 \
 vissma.f90 \
-vissst.f90 \
 visv2f.f90 \
 viswal.f90
 libcsturb_la_LDFLAGS = -no-undefined
