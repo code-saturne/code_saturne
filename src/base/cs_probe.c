@@ -1612,7 +1612,11 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
     location_mesh = _location_mesh;
   }
 
-  /* Locate probes on this location mesh */
+  /* Locate probes on this location mesh;
+
+     Locate relative to the nodal mesh sections, as the
+     relation to the parent mesh will be established later,
+     in the call to fvm_point_location_closest_vertex. */
 
   float *distance;
 
