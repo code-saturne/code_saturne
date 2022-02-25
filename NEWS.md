@@ -3,6 +3,9 @@ Release 7.1.1 (not released yet)
 
 Bug fixes:
 
+- Probes and profiles: fix possible location error on hybrid meshes
+  depending on order of appearance of cell types.
+
 - GUI: avoid crash when user first defines a scalar of a given name
   then activates a physical model using a scalar of the same name.
 
