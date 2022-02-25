@@ -70,6 +70,24 @@ cs_turbulence_v2f(cs_lnum_t         ncesmp,
                   const cs_real_t   prdv2f[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of turbulent viscosity for the V2F-phi model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_v2f_phi_mu_t(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of turbulent viscosity for the V2F-BL model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_v2f_bl_v2k_mu_t(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

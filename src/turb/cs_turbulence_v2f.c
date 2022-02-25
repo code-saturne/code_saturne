@@ -1177,5 +1177,137 @@ cs_turbulence_v2f(cs_lnum_t         ncesmp,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of turbulent viscosity for the V2F-phi model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_v2f_phi_mu_t(void)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  cs_real_t *visct =  CS_F_(mu_t)->val;
+
+  const cs_real_t *viscl = CS_F_(mu)->val;
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *cvar_k = CS_F_(k)->val;
+  const cs_real_t *cvar_ep = CS_F_(eps)->val;
+  const cs_real_t *cvar_phi = CS_F_(phi)->val;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    const cs_real_t xk   = cvar_k[c_id];
+    const cs_real_t xe   = cvar_ep[c_id];
+    const cs_real_t xrom = crom[c_id];
+    const cs_real_t xnu  = viscl[c_id]/xrom;
+
+    const cs_real_t ttke = xk / xe;
+    const cs_real_t ttmin = cs_turb_cv2fct * sqrt(xnu/xe);
+    const cs_real_t tt = fmax(ttke, ttmin);
+
+    visct[c_id] = cs_turb_cmu*xrom*tt*cvar_phi[c_id]*xk;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of turbulent viscosity for the V2F-BL model.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_v2f_bl_v2k_mu_t(void)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  /* Initialization
+   * ============== */
+
+  /* Map field arrays */
+
+  cs_real_t *visct =  CS_F_(mu_t)->val;
+  const cs_real_t *viscl  =  (const cs_real_t *)CS_F_(mu)->val;
+  const cs_real_t *crom  = CS_F_(rho)->val;
+
+  const cs_real_t *cvar_k = CS_F_(k)->val;
+  const cs_real_t *cvar_ep = CS_F_(eps)->val;
+  const cs_real_t *cvar_phi = CS_F_(phi)->val;
+
+  /* Calculation of velocity gradient and of
+   *       S2 = S11^2+S22^2+S33^2+2*(S12^2+S13^2+S23^2)
+   * ================================================== */
+
+  cs_real_t *s2;
+  cs_real_33_t *gradv;
+
+  /* Allocate arrays */
+  BFT_MALLOC(s2, n_cells_ext, cs_real_t);
+  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
+  cs_field_gradient_vector(CS_F_(vel),
+                           false, // no use_previous_t
+                           1,    // inc
+                           gradv);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_real_t s11 = gradv[c_id][0][0];
+    const cs_real_t s22 = gradv[c_id][1][1];
+    const cs_real_t s33 = gradv[c_id][2][2];
+    const cs_real_t dudy = gradv[c_id][0][1];
+    const cs_real_t dudz = gradv[c_id][0][2];
+    const cs_real_t dvdx = gradv[c_id][1][0];
+    const cs_real_t dvdz = gradv[c_id][1][2];
+    const cs_real_t dwdx = gradv[c_id][2][0];
+    const cs_real_t dwdy = gradv[c_id][2][1];
+
+    s2[c_id] =  2.*(cs_math_pow2(s11)+cs_math_pow2(s22)+cs_math_pow2(s33))
+              + cs_math_pow2(dudy+dvdx)
+              + cs_math_pow2(dudz+dwdx)
+              + cs_math_pow2(dvdz+dwdy);
+    s2[c_id] = sqrt(fmax(s2[c_id], 1e-10));
+  }
+
+  /* Free memory */
+  BFT_FREE(gradv);
+
+  /* Calculation of viscosity
+   * ========================= */
+
+  const cs_real_t f1 = 0.6 / sqrt(3.) / cs_turb_cmu;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_real_t xk   = cvar_k[c_id];
+    const cs_real_t xe   = cvar_ep[c_id];
+    const cs_real_t xrom = crom[c_id];
+    const cs_real_t xnu  = viscl[c_id]/xrom;
+
+    const cs_real_t ttke = xk/xe;
+    const cs_real_t ttmin = cs_turb_cpalct*sqrt(xnu/xe);
+
+    /* We initially have:
+     * ttlim = 0.6/cvar_phi(iel)/sqrt(3)/cmu/s2(iel)
+     * tt = min(ttlim, sqrt(ttke^2 + ttmin^2))
+     * visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
+     *
+     * When tt = ttlim, tt in
+     *   visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
+     * cvar_phi appears in both numerator and denominator, and can be eliminated. */
+
+    const cs_real_t ft1 = f1/s2[c_id];
+    const cs_real_t ft2
+      = sqrt(cs_math_pow2(ttke) + cs_math_pow2(ttmin))*cvar_phi[c_id];
+
+    visct[c_id] = cs_turb_cmu*xrom*cvar_k[c_id]*fmin(ft1, ft2);
+
+  }
+
+  /* Free memory */
+  BFT_FREE(s2);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

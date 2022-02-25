@@ -161,6 +161,18 @@ interface
     implicit none
   end subroutine cs_turbulence_ml_mu_t
 
+  subroutine cs_turbulence_v2f_phi_mu_t() &
+    bind(C, name='cs_turbulence_v2f_phi_mu_t')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_turbulence_v2f_phi_mu_t
+
+  subroutine cs_turbulence_v2f_bl_v2k_mu_t() &
+    bind(C, name='cs_turbulence_v2f_bl_v2k_mu_t')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_turbulence_v2f_bl_v2k_mu_t
+
 end interface
 
 !===============================================================================
@@ -478,29 +490,9 @@ elseif (itytur.eq.5) then
 ! ===========================
 
   if (iturb.eq.50) then
-
-    call field_get_val_s(iviscl, viscl)
-    call field_get_val_s(ivisct, visct)
-    call field_get_val_s(icrom, crom)
-    call field_get_val_s(ivarfl(ik), cvar_k)
-    call field_get_val_s(ivarfl(iep), cvar_ep)
-    call field_get_val_s(ivarfl(iphi), cvar_phi)
-
-    do iel = 1, ncel
-      xk = cvar_k(iel)
-      xe = cvar_ep(iel)
-      xrom = crom(iel)
-      xnu = viscl(iel)/xrom
-      ttke = xk / xe
-      ttmin = cv2fct*sqrt(xnu/xe)
-      tt = max(ttke,ttmin)
-      visct(iel) = cmu*xrom*tt*cvar_phi(iel)*cvar_k(iel)
-    enddo
-
+    call cs_turbulence_v2f_phi_mu_t
   else if (iturb.eq.51) then
-
-    call visv2f
-
+    call cs_turbulence_v2f_bl_v2k_mu_t
   endif
 
 elseif (iturb.eq.60) then
