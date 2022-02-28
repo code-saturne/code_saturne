@@ -306,7 +306,7 @@ class NumericalParamEquatModel(Model):
             default = self.defaultValues()['solver_precision_enthal']
 
         value = node.xmlGetDouble('solver_precision')
-        if value == None:
+        if value is None:
             value = default
         return value
 
@@ -332,7 +332,7 @@ class NumericalParamEquatModel(Model):
         """
         node = self._getSchemeLabelNode(label)
         value = node.xmlGetInt('max_iter_number')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['max_iter_number']
         return value
 

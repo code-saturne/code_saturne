@@ -471,7 +471,7 @@ class FluidCharacteristicsModel(Variables, Model):
         Return the value of reference pressure.
         """
         value = self.node_fluid.xmlGetDouble('reference_pressure')
-        if value == None:
+        if value is None:
            p_str = 'reference_pressure'
            value = self.defaultFluidCharacteristicsValues()[p_str]
            self.setPressure(value)
@@ -494,7 +494,7 @@ class FluidCharacteristicsModel(Variables, Model):
         Get reference temperature.
         """
         value = self.node_fluid.xmlGetDouble('reference_temperature')
-        if value == None:
+        if value is None:
            t_str = 'reference_temperature'
            value = self.defaultFluidCharacteristicsValues()[t_str]
            self.setTemperature(value)
@@ -516,7 +516,7 @@ class FluidCharacteristicsModel(Variables, Model):
         Get reference temperaturefor Oxydant.
         """
         value = self.node_fluid.xmlGetDouble('reference_oxydant_temperature')
-        if value == None:
+        if value is None:
            ot_str = 'reference_oxydant_temperature'
            value = self.defaultFluidCharacteristicsValues()[ot_str]
            self.setTempOxydant(value)
@@ -538,7 +538,7 @@ class FluidCharacteristicsModel(Variables, Model):
         Get reference temperature.
         """
         value = self.node_fluid.xmlGetDouble('reference_fuel_temperature')
-        if value == None:
+        if value is None:
            ft_str = 'reference_fuel_temperature'
            value = self.defaultFluidCharacteristicsValues()[ft_str]
            self.setTempFuel(value)
@@ -560,7 +560,7 @@ class FluidCharacteristicsModel(Variables, Model):
         Get reference molar mass.
         """
         value = self.node_fluid.xmlGetDouble('reference_molar_mass')
-        if value == None:
+        if value is None:
            mm_str = 'reference_molar_mass'
            value = self.defaultFluidCharacteristicsValues()[mm_str]
            self.setMassemol(value)
@@ -603,7 +603,7 @@ class FluidCharacteristicsModel(Variables, Model):
         get the nature of materials
         """
         nodem = self.node_fluid.xmlGetNode('material')
-        if nodem == None:
+        if nodem is None:
             material = self.defaultFluidCharacteristicsValues()['material']
             self.setMaterials(material)
             nodem = self.node_fluid.xmlGetNode('material')
@@ -636,7 +636,7 @@ class FluidCharacteristicsModel(Variables, Model):
         get the method used to compute properties
         """
         nodem = self.node_fluid.xmlGetNode('method')
-        if nodem == None:
+        if nodem is None:
             method = self.updateMethod("")
             nodem = self.node_fluid.xmlGetNode('method')
         method = nodem['choice']
@@ -775,7 +775,7 @@ class FluidCharacteristicsModel(Variables, Model):
                             'volume_viscosity', 'dynamic_diffusion'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
         pp = node.xmlGetDouble('initial_value')
-        if pp == None:
+        if pp is None:
             pp = self.defaultFluidCharacteristicsValues()[tag]
             self.setInitialValue(tag, pp)
         return pp
@@ -790,7 +790,7 @@ class FluidCharacteristicsModel(Variables, Model):
         self.isInList(tag, ('density', 'molecular_viscosity'))
         node = self.node_fluid.xmlGetNode('property', name=tag)
         pp = node.xmlGetDouble('value' + '_' + str(f_id))
-        if pp == None:
+        if pp is None:
             pp = self.defaultFluidCharacteristicsValues()[tag+'_'+str(f_id)]
             self.setValue(f_id, tag, pp)
         return pp

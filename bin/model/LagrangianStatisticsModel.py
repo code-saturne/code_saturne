@@ -202,7 +202,7 @@ class LagrangianStatisticsModel(Model):
         Return the value of group of particles.
         """
         npart = self.node_stat.xmlGetInt('statistics_groups_of_particles')
-        if npart == None:
+        if npart is None:
             npart = self._defaultLagrangianStatisticsValues()['statistics_groups_of_particles']
             self.setGroupOfParticlesValue(npart)
         return npart
@@ -249,7 +249,7 @@ class LagrangianStatisticsModel(Model):
         Return the iteration value for start of volume statistics calculation.
         """
         value = self.node_stat.xmlGetInt('iteration_start')
-        if value == None:
+        if value is None:
             value = self._defaultLagrangianStatisticsValues()['iteration_start']
             self.setIterationStart(value)
         return value
@@ -271,7 +271,7 @@ class LagrangianStatisticsModel(Model):
         Return the iteration value for start of steady statistics calculation.
         """
         value = self.node_stat.xmlGetInt('iteration_steady_start')
-        if value == None:
+        if value is None:
             value = self._defaultLagrangianStatisticsValues()['iteration_steady_start']
             self.setIterSteadyStart(value)
         return value
@@ -293,7 +293,7 @@ class LagrangianStatisticsModel(Model):
         Return the limit statistical weight value.
         """
         value = self.node_stat.xmlGetDouble('threshold')
-        if value == None:
+        if value is None:
             value = self._defaultLagrangianStatisticsValues()['threshold']
             self.setThresholdValue(value)
         return value

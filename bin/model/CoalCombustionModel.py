@@ -961,7 +961,7 @@ class CoalCombustionModel(Variables, Model):
         oxidant = node_oxi.xmlGetNode('oxidant', ox_id = oxId)
         name = element + "_composition"
         value = oxidant.xmlGetDouble(name)
-        if value == None:
+        if value is None:
             defName = element + "_oxi"
             value = self.defaultValues()[defName]
             self.setElementComposition(oxId, element, value)
@@ -1149,7 +1149,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_refusal = solid_fuel.xmlGetNode('refusal', id = refusal_number)
         value = node_refusal.xmlGetDouble('diameter')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['diameter']
             self.setRefusalDiameter(fuelId, refusal_number, value)
         return value
@@ -1178,7 +1178,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_refusal = solid_fuel.xmlGetNode('refusal', id = refusal_number)
         value = node_refusal.xmlGetDouble('value')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['refusal_value']
             self.setRefusalValue(fuelId, refusal_number, value)
         return value
@@ -1218,7 +1218,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_class = solid_fuel.xmlGetNode('class')
         value = node_class.xmlGetDouble('diameter', class_id = class_number)
-        if value == None:
+        if value is None:
             value = self.defaultValues()['diameter']
             self.setDiameter(fuelId, class_number, value)
         return value
@@ -1245,7 +1245,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node_classe = solid_fuel.xmlGetNode('class')
         value = node_classe.xmlGetDouble('mass_percent', class_id = class_number)
-        if value == None:
+        if value is None:
             value = self.defaultValues()['mass_percent']
             self.setMassPercent(fuelId, class_number, value)
         return value
@@ -1271,7 +1271,7 @@ class CoalCombustionModel(Variables, Model):
         self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         label = solid_fuel['name']
-        if label == None:
+        if label is None:
             label = self.__getDefaultLabel()
             self.setFuelLabel(fuelId, label)
         return label
@@ -1309,7 +1309,7 @@ class CoalCombustionModel(Variables, Model):
         self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         fuel_type = solid_fuel['type']
-        if fuel_type == None:
+        if fuel_type is None:
             fuel_type = self.defaultValues()['fuel_type']
             self.setFuelType(fuelId, fuel_type)
         return fuel_type
@@ -1335,7 +1335,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         name = element + "_composition_on_dry"
         composition = solid_fuel.xmlGetDouble(name)
-        if composition == None:
+        if composition is None:
             defName = element + "_compo_dry"
             composition = self.defaultValues()[defName]
             self.setComposition(fuelId, element, composition)
@@ -1363,7 +1363,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         name = element + "_coke_composition_on_dry"
         composition = solid_fuel.xmlGetDouble(name)
-        if composition == None:
+        if composition is None:
             defName = element + "_coke_compo_dry"
             composition = self.defaultValues()[defName]
             self.setCokeComposition(fuelId, element, composition)
@@ -1391,7 +1391,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('Heating_model')
         value = node.xmlGetDouble('value')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['PCI']
             self.setPCIValue(fuelId, value)
         return value
@@ -1418,7 +1418,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('Heating_model')
         PCIChoice = node['choice']
-        if PCIChoice == None:
+        if PCIChoice is None:
             PCIChoice = self.defaultValues()['PCIChoice']
             self.setPCIChoice(fuelId, PCIChoice)
         return PCIChoice
@@ -1448,7 +1448,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('Heating_model')
         value = node.xmlGetString('type')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['PCIType']
             self.setPCIType(fuelId, value)
         return value
@@ -1474,7 +1474,7 @@ class CoalCombustionModel(Variables, Model):
         self.isInList(str(fuelId), self.getFuelIdList())
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         value = solid_fuel.xmlGetDouble(name)
-        if value == None:
+        if value is None:
             value = self.defaultValues()[name]
             self.setProperty(fuelId, name, value)
         return value
@@ -1501,7 +1501,7 @@ class CoalCombustionModel(Variables, Model):
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
         node = devolatilisation.xmlInitNode('stoichiometric_coefficient')
         choice = node['type']
-        if choice == None:
+        if choice is None:
             choice = self.defaultValues()['stoichiometric_coefficient']
             self.setY1Y2(fuelId, choice)
         return choice
@@ -1532,7 +1532,7 @@ class CoalCombustionModel(Variables, Model):
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
         node = devolatilisation.xmlInitNode('stoichiometric_coefficient')
         value = devolatilisation.xmlGetDouble('Y1')
-        if value == None:
+        if value is None:
             choice = self.getY1Y2(fuelId)
             if choice == 'automatic_formula':
                 value = self.__Y1AutomaticFormula(fuelId)
@@ -1567,7 +1567,7 @@ class CoalCombustionModel(Variables, Model):
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
         node = devolatilisation.xmlInitNode('stoichiometric_coefficient')
         value = devolatilisation.xmlGetDouble('Y2')
-        if value == None:
+        if value is None:
             choice = self.getY1Y2(fuelId)
             if choice == 'automatic_formula':
                 value = self.__Y2AutomaticFormula(fuelId)
@@ -1620,7 +1620,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
         value = devolatilisation.xmlGetDouble(param)
-        if value == None:
+        if value is None:
             value = self.defaultValues()[param]
             self.setHCNParameter(fuelId, param, value)
         return value
@@ -1646,7 +1646,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         devolatilisation = solid_fuel.xmlInitNode('devolatilisation_parameters')
         value = devolatilisation.xmlGetDouble(param)
-        if value == None:
+        if value is None:
             value = self.defaultValues()[param]
             self.setDevolatilisationParameter(fuelId, param, value)
         return value
@@ -1672,7 +1672,7 @@ class CoalCombustionModel(Variables, Model):
         char_comb = solid_fuel.xmlGetNode('char_combustion')
         specie_node = char_comb.xmlGetNode('specie', nature = specie)
         value = specie_node.xmlGetDouble('pre-exponential_constant')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['pre-exp_constant']
             self.setPreExponentialConstant(fuelId, specie, value)
         return value
@@ -1699,7 +1699,7 @@ class CoalCombustionModel(Variables, Model):
         char_comb = solid_fuel.xmlGetNode('char_combustion')
         specie_node = char_comb.xmlGetNode('specie', nature = specie)
         value = specie_node.xmlGetDouble('energy_of_activation')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['E_activation']
             self.setEnergyOfActivation(fuelId, specie, value)
         return value
@@ -1727,7 +1727,7 @@ class CoalCombustionModel(Variables, Model):
         specie_node = char_comb.xmlGetNode('specie', nature = specie)
         node = specie_node.xmlInitNode('order_of_reaction')
         choice = node['choice']
-        if choice == None:
+        if choice is None:
             choice = self.defaultValues()['order_reaction']
             self.setOrderOfReaction(fuelId, specie, choice)
         return choice
@@ -1754,7 +1754,7 @@ class CoalCombustionModel(Variables, Model):
         solid_fuel = self.node_fuel.xmlGetNode('solid_fuel', fuel_id = fuelId)
         node = solid_fuel.xmlInitNode('nox_formation')
         value = node.xmlGetDouble(parameter)
-        if value == None:
+        if value is None:
             value = self.defaultValues()[parameter]
             self.setNOxFormationParameter(fuelId, parameter, value)
         return value
@@ -1880,7 +1880,7 @@ class CoalCombustionModel(Variables, Model):
         fuelNode = self.node_fuel.xmlGetNode("solid_fuel", fuel_id = fuelId)
         node_nox = fuelNode.xmlGetNode("nox_formation")
         node = node_nox.xmlGetNode('improved_NOx_model')
-        if node == None:
+        if node is None:
             self.setNOxFormationFeature(fuelId, self.defaultValues()['improved_NOx_model'])
             node = node_nox.xmlGetNode('improved_NOx_model')
         status = node['status']

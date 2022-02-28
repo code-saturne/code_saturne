@@ -66,7 +66,7 @@ class DropletCondensationEvaporationModel(NonCondensableModel, Variables, Model)
         get Y+ status
         """
         ChildNode = self.XMLMassTrans.xmlGetNode('yplusmodel')
-        if ChildNode == None:
+        if ChildNode is None:
            model = self.defaultValues()['yplusmodel']
            self.setYPlusModel(model)
         model = self.XMLMassTrans.xmlGetNode('yplusmodel')['model']
@@ -93,7 +93,7 @@ class DropletCondensationEvaporationModel(NonCondensableModel, Variables, Model)
         get value for Y Plus
         """
         value = self.XMLMassTrans.xmlGetDouble('yplusvalue')
-        if value == None :
+        if value is None :
            value = self.defaultValues()['yplusvalue']
            self.setYPlusValue(value)
         return value

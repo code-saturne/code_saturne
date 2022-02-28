@@ -108,7 +108,7 @@ class XMLmodel(Variables):
             nodeList.append(nodeTurb.xmlGetNode('variable', name='nu_tilda'))
 
         for n in nodeList:
-            if n == None:
+            if n is None:
                 nodeList.remove(None)
 
         return nodeList

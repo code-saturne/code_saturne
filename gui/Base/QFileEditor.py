@@ -664,7 +664,7 @@ class Explorer():
 
         self._contextMenu = QMenu()
 
-        if (path2file == '' or path2file == None ) and self.root_dir:
+        if (path2file == '' or path2file is None ) and self.root_dir:
             path2file = self.root_dir
 
         if self.dir_type == 'SHARE':

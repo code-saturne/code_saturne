@@ -276,7 +276,7 @@ class FluidStructureInteractionModel(Model):
         """
         Get default value if value is none.
         """
-        if value == None or value == "":
+        if value is None or value == "":
             value = self.__defaults[name]
             setFunction(value)
         return value

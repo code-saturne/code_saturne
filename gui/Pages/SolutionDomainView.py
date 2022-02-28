@@ -771,7 +771,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         d = self.mdl.getMeshDir()
         study_path = os.path.split(self.case['case_path'])[0]
 
-        if d == None:
+        if d is None:
             d = os.path.join(study_path, 'MESH')
         elif not os.path.abspath(d):
             d = os.path.join(self.case['case_path'], d)
@@ -973,7 +973,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         title    = self.tr("Select input mesh file(s)")
 
         default = self.mesh_dirs[0]
-        if default == None:
+        if default is None:
             default  = os.path.split(self.case['case_path'])[0]
 
         if hasattr(QFileDialog, 'ReadOnly'):
@@ -1151,11 +1151,11 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.frameMeshImport.hide()
         self.frameMeshCartesian.hide()
 
-        if self.mesh_input == None:
+        if self.mesh_input is None:
             self.selectInputMesh()
 
         # If Dialog was canceled and no previous mesh_input was selected
-        if self.mesh_input == None:
+        if self.mesh_input is None:
             self.slotSetImportMesh()
         else:
             self.setMeshOriginChoice("mesh_input")
@@ -1202,7 +1202,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
     def slotSetCartesianParam(self, text, name):
 
         val = text
-        if val == None:
+        if val is None:
             # defaul values:
             if name in ("x_ncells", "y_ncells", "z_ncells"):
                 val = "1"

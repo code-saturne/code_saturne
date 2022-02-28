@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     retcode = cs.execute()
 
-    if retcode == None:
+    if retcode is None:
         retcode = 0
 
     sys.exit(retcode)

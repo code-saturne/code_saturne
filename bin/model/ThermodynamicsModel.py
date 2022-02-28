@@ -231,7 +231,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         node = self.get_field_node(fieldId)
         nodem = node.xmlGetNode('material')
-        if nodem == None :
+        if nodem is None :
             material = self.defaultValues(fieldId)['material']
             self.setMaterials(fieldId, material)
         material = node.xmlGetNode('material')['choice']
@@ -260,7 +260,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         node = self.get_field_node(fieldId)
         nodem = node.xmlGetNode('method')
-        if nodem == None :
+        if nodem is None :
             method = self.defaultValues(fieldId)['method']
             self.setMethod(fieldId, method)
         method = node.xmlGetNode('method')['choice']
@@ -367,7 +367,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.isInList(tag, lst)
         node = self.get_property_node(fieldId, tag)
         pp = node.xmlGetDouble('initial_value')
-        if pp == None:
+        if pp is None:
             pp = self.defaultValues(fieldId)[tag]
             self.setInitialValue(fieldId, tag, pp)
         return pp
@@ -513,7 +513,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.check_field_id(fieldId)
         node = self.get_field_node(fieldId)
         nodeh = node.xmlGetNode('particles_radiative_transfer')
-        if nodeh == None:
+        if nodeh is None:
             rad = self.defaultValues(fieldId)['radiative']
             self.setRadiativeTransferStatus(fieldId, rad)
         rad = node.xmlGetNode('particles_radiative_transfer')['status']
@@ -535,7 +535,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                 c = node['choice']
                 self.isInList(c, ('constant', 'user_law', 'table_law'))
 
-        if c == None:
+        if c is None:
             c = self.defaultValues(fieldId)['propertyChoice']
             if node:
                 self.setPropertyMode(fieldId, tag, c)
@@ -1100,7 +1100,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
                 c = node['choice']
                 self.isInList(c, self.available_modes)
 
-        if c == None:
+        if c is None:
             c = self.defaultValues()['propertyChoice']
             if node:
                 self.setPropertyMode(field_id_a, field_id_b, tag, c)
@@ -1139,7 +1139,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         self.isInList(tag, self.propertiesFormulaList())
         node = self.XMLNodeproperty.xmlGetNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
         pp = node.xmlGetDouble('initial_value')
-        if pp == None:
+        if pp is None:
             pp = self.defaultValues()[tag]
             self.setInitialValue(field_id_a, field_id_b, tag, pp)
         return pp
@@ -1178,7 +1178,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
 
         if str(zone) != "1":
             node = node.xmlGetChildNode("zone", zone_id=zone)
-            if node == None:
+            if node is None:
                 node = node.xmlInitChildNode("zone", zone_id=zone)
 
         if node:
@@ -1200,7 +1200,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
 
         if str(zone) != "1":
             node = node.xmlGetChildNode("zone", zone_id=zone)
-            if node == None:
+            if node is None:
                 node = node.xmlInitChildNode("zone", zone_id=zone)
 
         node.xmlSetData('formula', strg)

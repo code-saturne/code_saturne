@@ -363,7 +363,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.mdl = ScriptRunningModel(self.case)
         self.jmdl = self.case['job_model']
 
-        if self.jmdl == None:
+        if self.jmdl is None:
             if self.case['data_path']:
                 run_conf_path = os.path.join(self.case['data_path'], 'run.cfg')
             else:
@@ -767,7 +767,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         run_title = self.case.module_name()
 
-        if rm_type == None:
+        if rm_type is None:
             run_title += ' - Job Run'
             cmd += ' run'
         else:
@@ -931,7 +931,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         if self.job_class != None:
 
             # Only one pass here
-            if self.class_list == None:
+            if self.class_list is None:
                 self.class_list = self.jmdl.batch.get_class_list()
                 if len(self.class_list) > 0:
                     for c in self.class_list:
@@ -983,7 +983,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         """
         Layout of the second part of this page.
         """
-        if self.jmdl.batch.rm_type == None:
+        if self.jmdl.batch.rm_type is None:
             if self.have_mpi:
                 self.labelNProcs.show()
                 self.spinBoxNProcs.show()
@@ -1002,7 +1002,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.labelNThreads.hide()
             self.spinBoxNThreads.hide()
 
-        if self.jmdl.batch.rm_type == None:
+        if self.jmdl.batch.rm_type is None:
             if self.have_mpi:
                 n_procs_s = self.jmdl.job_dict['n_procs']
                 if n_procs_s:

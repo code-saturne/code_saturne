@@ -146,7 +146,7 @@ class base_domain:
         self.n_procs_min = max(1, n_procs_min)
         self.n_procs_max = n_procs_max
 
-        if self.n_procs == None:
+        if self.n_procs is None:
             self.n_procs = 1
         self.n_procs = max(self.n_procs, self.n_procs_min)
         if self.n_procs_max != None:
@@ -209,7 +209,7 @@ class base_domain:
         Otherwise, create subdirectory
         """
 
-        if given_dir == None:
+        if given_dir is None:
             self.result_dir = os.path.join(self.case_dir, 'RESU', name)
         else:
             self.result_dir = given_dir
@@ -632,7 +632,7 @@ class domain(base_domain):
 
     def for_domain_str(self):
 
-        if self.name == None:
+        if self.name is None:
             return ''
         else:
             return 'for domain ' + str(self.name)
@@ -644,7 +644,7 @@ class domain(base_domain):
         Parse the optional XML parameter file.
         """
 
-        if param == None:
+        if param is None:
             if os.path.isfile(os.path.join(self.data_dir, 'setup.xml')):
                 param = 'setup.xml'
 
@@ -762,12 +762,12 @@ class domain(base_domain):
         not possible
         """
 
-        if target == None and link == None:
+        if target is None and link is None:
             return
-        elif target == None:
+        elif target is None:
             err_str = 'No target for link: ' + link
             raise RunCaseError(err_str)
-        elif link == None:
+        elif link is None:
             if self.exec_dir != None:
                 link = os.path.join(self.exec_dir,
                                     os.path.basename(target))
@@ -1055,7 +1055,7 @@ class domain(base_domain):
 
         # If no mesh is provided return, since user can define mesh_input
         # using 'cs_user_mesh_input' user function.
-        if len(self.meshes) == 1 and self.meshes[0] == None:
+        if len(self.meshes) == 1 and self.meshes[0] is None:
             return
 
         # Study directory
@@ -1387,7 +1387,7 @@ class syrthes_domain(base_domain):
         self.param = param
 
         self.logfile = log_file
-        if self.logfile == None:
+        if self.logfile is None:
             self.logfile = 'syrthes.log'
 
         self.case_dir = None
@@ -1456,7 +1456,7 @@ class syrthes_domain(base_domain):
 
     def set_result_dir(self, name, given_dir = None):
 
-        if given_dir == None:
+        if given_dir is None:
             self.result_dir = os.path.join(self.result_dir,
                                            'RESU_' + self.name,
                                            name)
@@ -1576,7 +1576,7 @@ class syrthes_domain(base_domain):
         import syrthes
         self.syrthes_case = syrthes.process_cmd_line(args.split())
 
-        if self.syrthes_case.logfile == None:
+        if self.syrthes_case.logfile is None:
             self.syrthes_case.set_logfile(self.logfile)
         else:
             self.logfile = self.syrthes_case.logfile
@@ -1747,7 +1747,7 @@ class cathare_domain(domain):
                         adaptation)
 
         # If not provided, setup is automatically set to setup.xml
-        if self.param == None:
+        if self.param is None:
             self.param = "setup.xml"
 
         self.cathare_case_file = cathare_case_file
@@ -1924,7 +1924,7 @@ class python_domain(base_domain):
 
         self.cmd_line = cmd_line
         self.logfile  = log_file
-        if self.logfile == None:
+        if self.logfile is None:
             self.logfile = 'python.log'
 
         self.data_file = None
@@ -1963,7 +1963,7 @@ class python_domain(base_domain):
 
     def set_result_dir(self, name, given_dir = None):
 
-        if given_dir == None:
+        if given_dir is None:
             self.result_dir = os.path.join(self.result_dir,
                                            'RESU_' + self.name,
                                            name)

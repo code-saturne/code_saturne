@@ -245,7 +245,7 @@ class OutputVolumicVariablesModel(Variables, Model):
         for var in variables:
             self.isInList(var, authorized_variables)
             (name, comp) = dicoLabel2Name[var]
-            if comp == None:
+            if comp is None:
                 comp = -1
             node.xmlAddChild('var_prop', name=name, component=comp)
 
@@ -364,7 +364,7 @@ class OutputVolumicVariablesModel(Variables, Model):
             # For NCFD multiphase, use the field_id as a parent category
             if node['field_id']:
                 if node['field_id'] != 'none':
-                    if fields_node == None:
+                    if fields_node is None:
                         fields_node = self.node_models.xmlGetNode('fields')
                         for nf in fields_node.xmlGetNodeList('field'):
                             fields_list.append(nf['label'])

@@ -309,7 +309,7 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
         What to do when user clicks on 'OK'.
         """
 
-        if self.meg_to_c == None:
+        if self.meg_to_c is None:
             QDialog.accept(self)
             return
 

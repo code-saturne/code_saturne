@@ -286,7 +286,7 @@ class DefineUserScalarsModel(Variables, Model):
         node_list = []
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('atmospheric_flows', 'model')
-        if node == None:
+        if node is None:
             return
 
         model = node['model']
@@ -304,7 +304,7 @@ class DefineUserScalarsModel(Variables, Model):
         node_list = []
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('gas_combustion', 'model')
-        if node == None:
+        if node is None:
             return
 
         model = node['model']
@@ -322,7 +322,7 @@ class DefineUserScalarsModel(Variables, Model):
         node_list = []
         models = self.case.xmlGetNode('thermophysical_models')
         node = models.xmlGetNode('joule_effect', 'model')
-        if node == None:
+        if node is None:
             return
 
         model = node['model']
@@ -619,7 +619,7 @@ class DefineUserScalarsModel(Variables, Model):
         n = self.scalar_node.xmlGetNode('variable', name=scalar_name)
         n_diff = n.xmlInitChildNode('property')
         diffu = n_diff.xmlGetDouble('initial_value')
-        if diffu == None:
+        if diffu is None:
             diffu = self.defaultScalarValues()['diffusion_coefficient']
             self.setScalarDiffusivityInitialValue(scalar_name, diffu)
 

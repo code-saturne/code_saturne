@@ -99,14 +99,14 @@ class package:
         # Installation directories
         # ------------------------
 
-        if install_prefix == None:
+        if install_prefix is None:
             install_prefix = os.getenv('CS_ROOT_DIR')
 
         pythondir_rel = os.path.join('lib', 'python' + sys.version[:3],
                                      'site-packages')
 
         # Otherwise, assume that the standard tree structure is used
-        if install_prefix == None:
+        if install_prefix is None:
             install_prefix = os.path.dirname(os.path.realpath(__file__))
             i = install_prefix.find(pythondir_rel)
             if i > -1:

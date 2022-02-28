@@ -261,7 +261,7 @@ class StandardItemModelUserScalar(QStandardItemModel):
         row = self.rowCount()
 
         name = ""
-        if existing_scalar == None :
+        if existing_scalar is None :
             name = self.mdl.addScalar(row + 1)
         else :
             name = existing_scalar

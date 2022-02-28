@@ -237,7 +237,7 @@ class StandardItemModelThinWall(QStandardItemModel):
         row = self.rowCount()
 
         name = ""
-        if existing_tw == None :
+        if existing_tw is None :
             self.mdl.addThinWall()
             name = row
         else:
@@ -363,7 +363,7 @@ class StandardItemModelExtrude(QStandardItemModel):
         row = self.rowCount()
 
         name = ""
-        if existing_tw == None :
+        if existing_tw is None :
             self.mdl.addExtrude()
             name = row
         else:
@@ -697,7 +697,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
             txt = str(self.comboBoxPeriodicity.currentText())
             self.slotPeriodicityMode(txt)
 
-        if perio_id == None:
+        if perio_id is None:
 
             self.groupBoxMode.hide()
             self.groupBoxTranslation.hide()

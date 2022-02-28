@@ -144,7 +144,7 @@ class NumericalParamGlobalModel(Model):
         Return RELAXP value
         """
         value = self.node_np.xmlGetDouble('pressure_relaxation')
-        if value == None:
+        if value is None:
             value = self._defaultValues()['pressure_relaxation']
         return value
 
@@ -155,7 +155,7 @@ class NumericalParamGlobalModel(Model):
         Return SRROM value
         """
         value = self.node_np.xmlGetDouble('density_relaxation')
-        if value == None:
+        if value is None:
             value = self._defaultValues()['density_relaxation']
             self.setDensityRelaxation(value)
         return value

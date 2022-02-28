@@ -308,7 +308,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('drag_model')
-        if childNode == None :
+        if childNode is None :
             model = self.defaultValues()['gasdisperseddragmodel']
             if (self.getFieldNature(fieldaId) == "liquid") and (self.getFieldNature(fieldbId) == "solid"):
                 model = self.defaultValues()['liquidsoliddisperseddragmodel']
@@ -335,7 +335,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('added_mass')
-        if childNode == None :
+        if childNode is None :
             model = self.defaultValues()['addedmassmodel']
             self.setAddMassModel(fieldaId, fieldbId, model)
         model = node.xmlGetNode('added_mass')['model']
@@ -360,7 +360,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('lift_model')
-        if childNode == None :
+        if childNode is None :
             model = self.defaultValues()['liftmodel']
             self.setLiftModel(fieldaId, fieldbId, model)
         model = node.xmlGetNode('lift_model')['model']
@@ -385,7 +385,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('wall_force_model')
-        if childNode == None :
+        if childNode is None :
             if len(self.getAvailableWallForcesModelList(fieldaId, fieldbId)) > 1:
                 model = self.defaultValues()['wallforcemodel']
             else:
@@ -413,7 +413,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('turbulent_dispersion_model')
-        if childNode == None :
+        if childNode is None :
             model = self.defaultValues()['turbulent_dispersion_model']
             self.setTurbDispModel(fieldaId, fieldbId, model)
         model = node.xmlGetNode('turbulent_dispersion_model')['model']
@@ -470,7 +470,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
         # separate_phases model has been removed from the GUI!
         # Hence if the test leads to separate phases we set the model to none...
-        if ChildNode == None:
+        if ChildNode is None:
             model = self.defaultValuesContinuous()['continuousdragmodel']
             self.setContinuousCouplingModel(field_id_a, field_id_b, model)
             ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer', field_id_a=field_id_a,
@@ -481,7 +481,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
                                                            field_id_b=field_id_b)
 
         model = ChildNode['model']
-        if model == None:
+        if model is None:
             model = "none"
         return model
 
@@ -529,12 +529,12 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         node = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer',
                                                   field_id_a=field_id_a,
                                                   field_id_b=field_id_b)
-        if node == None:
+        if node is None:
             node = self.XMLInterForce.xmlInitChildNode('continuous_field_momentum_transfer',
                                                        field_id_a=field_id_a,
                                                        field_id_b=field_id_b)
         ChildNode = node.xmlGetChildNode('BubblesForLIM')
-        if ChildNode == None:
+        if ChildNode is None:
             status = self.defaultValuesContinuous()['BubblesForLIM']
             self.setBubblesForLIMStatus(field_id_a, field_id_b, status)
         status = node.xmlGetString('BubblesForLIM')
@@ -553,7 +553,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
                                                   field_id_a=field_id_a,
                                                   field_id_b=field_id_b)
         ChildNode = node.xmlGetChildNode('InterfaceSharpening')
-        if ChildNode == None:
+        if ChildNode is None:
             status = self.defaultValuesContinuous()['InterfaceSharpening']
             self.setInterfaceSharpeningModel(field_id_a, field_id_b, status)
         status = node.xmlGetString('InterfaceSharpening')
@@ -573,7 +573,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
                                                   field_id_a=field_id_a,
                                                   field_id_b=field_id_b)
         st_node = node.xmlGetChildNode('SurfaceTension')
-        if st_node == None:
+        if st_node is None:
             st_node = node.xmlInitChildNode('SurfaceTension')
             model = self.defaultValuesContinuous()['SurfaceTension']
             self.setSurfaceTensionModel(field_id_a, field_id_b, model)

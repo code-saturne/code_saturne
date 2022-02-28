@@ -152,7 +152,7 @@ class LagrangianBoundariesModel(Model):
         self.setCurrentBoundaryNode(nature, labelbc)
         if self.node_particles:
             val = self.node_particles['choice']
-            if val == None or val == "":
+            if val is None or val == "":
                 val = default[nature]
                 self.setBoundaryChoice(nature, labelbc, val)
         return val
@@ -224,7 +224,7 @@ class LagrangianBoundariesModel(Model):
         """
         node_list = self.node_particles.xmlGetChildNodeList('class')
         value = len(node_list)
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['n_is']
             self.setNumberOfSetsValue(value)
         return value
@@ -262,7 +262,7 @@ class LagrangianBoundariesModel(Model):
         Return the number of particles in a set.
         """
         value = self.node_set.xmlGetInt('number')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['number']
             self.setNumberOfParticulesInZoneValue(label, iset,value)
         return value
@@ -284,7 +284,7 @@ class LagrangianBoundariesModel(Model):
         Return the injection frequency.
         """
         value = self.node_set.xmlGetInt('frequency')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['frequency']
             self.setInjectionFrequencyValue(label, iset, value)
         return value
@@ -306,7 +306,7 @@ class LagrangianBoundariesModel(Model):
         Return the group number of the particle.
         """
         value = self.node_set.xmlGetInt('statistical_groups')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['statistical_groups']
             self.setParticleGroupNumberValue(label, iset, value)
         return value
@@ -328,7 +328,7 @@ class LagrangianBoundariesModel(Model):
         Return the mass flow rate value.
         """
         value = self.node_set.xmlGetDouble('mass_flow_rate')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['mass_flow_rate']
             self.setMassFlowRateValue(label, iset, value)
         return value
@@ -353,7 +353,7 @@ class LagrangianBoundariesModel(Model):
         node = self.node_set.xmlGetChildNode('statistical_weight', 'choice')
         if node:
             val = node['choice']
-        if val == None or val == "":
+        if val is None or val == "":
             val = self.defaultParticlesBoundaryValues()['statistical_weight_choice']
         return val
 
@@ -374,7 +374,7 @@ class LagrangianBoundariesModel(Model):
         Return the statistical weight value.
         """
         value = self.node_set.xmlGetDouble('statistical_weight')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['statistical_weight']
             self.setStatisticalWeightValue(label, iset, value)
         return value
@@ -396,7 +396,7 @@ class LagrangianBoundariesModel(Model):
         Return the density value.
         """
         value = self.node_set.xmlGetDouble('density')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['density']
             self.setDensityValue(label, iset, value)
         return value
@@ -417,7 +417,7 @@ class LagrangianBoundariesModel(Model):
         Return the fouling index value.
         """
         value = self.node_set.xmlGetDouble('fouling_index')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['fouling_index']
             self.setFoulingIndexValue(label, iset, value)
         return value
@@ -447,7 +447,7 @@ class LagrangianBoundariesModel(Model):
         node = self.node_set.xmlInitChildNode('velocity', 'choice')
         if node:
             val = node['choice']
-            if val == None:
+            if val is None:
                 val = self.defaultParticlesBoundaryValues()['velocity_choice']
                 self.setVelocityChoice(val)
         return val
@@ -473,7 +473,7 @@ class LagrangianBoundariesModel(Model):
         """
         node_velocity = self.node_set.xmlInitChildNode('velocity', choice="norm")
         value = node_velocity.xmlGetDouble('norm')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['velocity_norm']
             self.setVelocityNormValue(label, iset, value)
         return value
@@ -499,7 +499,7 @@ class LagrangianBoundariesModel(Model):
         """
         node_velocity = self.node_set.xmlInitChildNode('velocity', choice="components")
         value = self.node_set.xmlGetDouble('velocity_' + idir)
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['velocity_value']
             self.setVelocityDirectionValue(label, iset, idir, value)
         return value
@@ -524,7 +524,7 @@ class LagrangianBoundariesModel(Model):
         node = self.node_set.xmlGetChildNode('temperature', 'choice')
         if node:
             val = node['choice']
-        if val == None:
+        if val is None:
             val = self.defaultParticlesBoundaryValues()['temperature_choice']
         return val
 
@@ -545,7 +545,7 @@ class LagrangianBoundariesModel(Model):
         Return the temperature value.
         """
         value = self.node_set.xmlGetDouble('temperature')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['temperature']
             self.setTemperatureValue(label, iset, value)
         return value
@@ -567,7 +567,7 @@ class LagrangianBoundariesModel(Model):
         Return the specific heat value.
         """
         value = self.node_set.xmlGetDouble('specific_heat')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['specific_heat']
             self.setSpecificHeatValue(label, iset, value)
         return value
@@ -589,7 +589,7 @@ class LagrangianBoundariesModel(Model):
         Return the emissivity value.
         """
         value = self.node_set.xmlGetDouble('emissivity')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['emissivity']
             self.setEmissivityValue(label, iset, value)
         return value
@@ -611,7 +611,7 @@ class LagrangianBoundariesModel(Model):
         Return the particle diameter value.
         """
         value = self.node_set.xmlGetDouble('diameter')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['diameter']
             self.setDiameterValue(label, iset, value)
         return value
@@ -633,7 +633,7 @@ class LagrangianBoundariesModel(Model):
         Return the particle diameter variance value.
         """
         value = self.node_set.xmlGetDouble('diameter_standard_deviation')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['diameter_standard_deviation']
             self.setDiameterVarianceValue(label, iset, value)
         return value
@@ -655,7 +655,7 @@ class LagrangianBoundariesModel(Model):
         Return the coal number of the particle.
         """
         value = self.node_set.xmlGetInt('coal_number')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['coal_number']
             self.setCoalNumberValue(label, iset, value)
         return value
@@ -677,7 +677,7 @@ class LagrangianBoundariesModel(Model):
         Return the coal temperature.
         """
         value = self.node_set.xmlGetDouble('coal_temperature')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesBoundaryValues()['coal_temperature']
             self.setCoalTemperatureValue(label, iset, value)
         return value

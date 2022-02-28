@@ -213,7 +213,7 @@ class Plot(object):
         """
         load and parse data for Measurement uncertainty
         """
-        if errorbar == None and errorp == None:
+        if errorbar is None and errorp is None:
             return None
 
         elif errorbar:
@@ -727,7 +727,7 @@ class Plotter(object):
         if p.legstatus == "on":
             handles, labels = ax.get_legend_handles_labels()
 
-            if p.legpos == None:
+            if p.legpos is None:
                 ax.legend(handles,
                           labels,
                           bbox_to_anchor=(1.02, 1),

@@ -894,7 +894,7 @@ class Studies(object):
 
         filename = options.filename
         if self.__create_xml and is_study:
-            if filename == None:
+            if filename is None:
                 studyd = os.path.basename(studyp)
                 filename = "smgr.xml"
 
@@ -909,7 +909,7 @@ class Studies(object):
                   + "current directory is apparently not a study (no MESH directory).\n"
             sys.exit(msg)
 
-        if filename == None:
+        if filename is None:
             msg =    "A file of parameters must be specified or created " \
                    + "for studymanager to run.\n" \
                    + "See help message and use '--file' or '--create-xml' option.\n"
@@ -1096,7 +1096,7 @@ class Studies(object):
         @rtype: C{String}
         @return: destination directory of all studies.
         """
-        if self.__dest == None:
+        if self.__dest is None:
             msg=" cs_studymanager_study.py >> Studies.getDestination()"
             msg+=" >> self.__dest is not set"
             sys.exit(msg)
@@ -1109,7 +1109,7 @@ class Studies(object):
         @rtype: C{String}
         @return: repository directory of all studies.
         """
-        if self.__repo == None:
+        if self.__repo is None:
             msg=" cs_studymanager_study.py >> Studies.getRepository()"
             msg+=" >> self.__repo is not set"
             sys.exit(msg)

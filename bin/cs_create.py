@@ -208,7 +208,7 @@ def create_local_launcher(pkg, path=None):
 
     launcher_name = pkg.name
 
-    if wrapper_postfix == None:
+    if wrapper_postfix is None:
         cs_exec_environment.write_script_comment(fd,
                                                  'Ensure the correct command is found:\n')
         cs_exec_environment.write_prepend_path(fd, 'PATH',
