@@ -869,6 +869,36 @@ class case:
 
     #---------------------------------------------------------------------------
 
+    def generate_solver_mpmd_configfile_ccc_mprun(self,
+                                                  n_procs,
+                                                  mpi_env,
+                                                  tool_args=''):
+        """
+        Generate MPMD mpiexec config file for CCRT's ccc_mprun.
+        """
+
+        e_path = os.path.join(self.exec_dir, 'mpmd_configfile')
+
+        e = open(e_path, 'w')
+
+        app_id = 0
+
+        for d in (self.syr_domains + self.domains + self.py_domains):
+            s_args = d.solver_command()
+            cmd = str(d.n_procs)+' ' \
+                    + ' cd ' + os.path.basename(s_args[0]) + ' &&' \
+                    + ' ' + s_args[1] + s_args[2] + '"\n'
+#                    + ' bash -c "export OMP_NUM_THREADS=1  ;' \
+
+            e.write(cmd)
+            app_id += 1
+
+        e.close()
+
+        return e_path
+
+    #---------------------------------------------------------------------------
+
     def generate_solver_mpmd_script(self, n_procs,
                                     mpi_env,
                                     tool_args='',
@@ -1033,6 +1063,11 @@ class case:
                                                                        tool_args)
                     mpi_cmd += '--multi-prog ' + e_path
 
+                elif mpi_env.mpiexec == 'ccc_mprun':
+                    e_path = self.generate_solver_mpmd_configfile_ccc_mprun(n_procs,
+                                                                            mpi_env,
+                                                                            tool_args)
+                    mpi_cmd += '-f ' + e_path
                 else:
                     e_path = self.generate_solver_mpmd_configfile(n_procs,
                                                                   mpi_env,
