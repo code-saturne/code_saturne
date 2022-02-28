@@ -118,6 +118,35 @@ cs_mesh_intersect_polyline_cell_select(void        *input,
                                        cs_real_t  **seg_c_len);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map a polyline of segments to the local mesh.
+ *
+ * The caller is responsible for freeing the returned seg_cell* arrays.
+ *
+ * \param[in]   n_points           number of vertices in the polyline
+ * \param[in]   point_coords       pointer to segments starts and ends:
+ *                                 [x0, y0, z0, x1, y1, z1, ...]
+ * \param[in]   min_fraction       minimum fraction of each edge under which
+ *                                 fraction is ignored
+ * \param[out]  seg_cell_idx       index of start an end cell ids per segment
+ *                                 (size: n_points == n_segments-1)
+ * \param[out]  seg_cell           cells intersected by each segment i are given
+ *                                 by seg_cell[], with
+ *                                 seg_cell_idx[i] <= j < with seg_cell_idx[i+1]
+ * \param[out]  seg_cell_fraction  fraction of each segment in intersected
+ *                                 cells (same index as seg_cell)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_intersect_polyline_map(cs_lnum_t          n_points,
+                               const cs_real_t    point_coords[],
+                               cs_real_t          min_fraction,
+                               cs_lnum_t        **seg_cell_idx,
+                               cs_lnum_t        **seg_cell,
+                               cs_real_t        **seg_cell_fraction);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
