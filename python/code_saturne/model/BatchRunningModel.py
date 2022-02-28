@@ -53,7 +53,7 @@ class BatchRunningModel(object):
         """
 
         self.pkg = pkg
-        if self.pkg == None:
+        if self.pkg is None:
             from code_saturne.base.cs_package import package
             pkg = package()
 
@@ -177,7 +177,7 @@ class BatchRunningModel(object):
                               os.linesep.join(self.job_header_lines))
 
         for k in self.job_dict:
-            if self.job_dict[k] == None:
+            if self.job_dict[k] is None:
                 self.run_conf.set(self.resource_name, k, None)
             else:
                 self.run_conf.set(self.resource_name, k, str(self.job_dict[k]))
@@ -276,7 +276,7 @@ class BatchRunningModel(object):
             if compute_build in self.compute_builds:
                 pkg_compute = self.pkg.get_alternate_version(compute_build)
 
-        if pkg_compute == None:
+        if pkg_compute is None:
             pkg_compute = self.pkg
 
         config_features = pkg_compute.config.features

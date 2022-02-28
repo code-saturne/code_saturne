@@ -332,7 +332,7 @@ class XMLElement:
         Crash if the searched attribute does not exist and no default is provided.
         """
         if not self.el.hasAttribute(attr):
-            if default == None:
+            if default is None:
                 node = self.__str__()
                 msg = "ElementNode: \n\n" \
                       + node + "\n\nis missing attribute: \n\n" \
@@ -624,7 +624,7 @@ class XMLElement:
         If the elementNode 'node' has no TEXT_NODE as childNodes,
         it will be created.
         """
-        if newTextNode == "" or newTextNode == None : return
+        if newTextNode == "" or newTextNode is None : return
 
         if type(newTextNode) != str: newTextNode = str(newTextNode)
 

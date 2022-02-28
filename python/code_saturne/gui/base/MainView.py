@@ -262,10 +262,10 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
         """
         Method called when user clicks 'OK'
         """
-        if self.caseName == None or self.caseName == "":
+        if self.caseName is None or self.caseName == "":
             msg = "case name not defined"
             sys.stderr.write(msg + '\n')
-        elif self.copyFrom == True and self.copyFromName == None:
+        elif self.copyFrom == True and self.copyFromName is None:
             msg = "copy from case not defined"
             sys.stderr.write(msg + '\n')
         else:
@@ -1482,7 +1482,7 @@ class MainView(object):
             self.scrollArea.setWidget(self.page)
 
         else:
-            log.debug("displayNewPage() self.page == None")
+            log.debug("displayNewPage() self.page is None")
             raise
 
         # Auto expand nodes in the Browser view when clicked

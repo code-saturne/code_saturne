@@ -137,7 +137,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         cte_field_1 = InterfacialForcesModel(self.case).getContinuousFieldList()[0]
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
-        if node == None :
+        if node is None :
             model = self.defaultValues()['areamodel']
             if int(fieldId) == int(cte_field_1):
                 model = 'constant'
@@ -181,7 +181,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('source_term')
-        if noden == None :
+        if noden is None :
             model = ""
             if self.getFieldNature(fieldId) == "gas" :
                model = self.defaultValues()['sourcetermgas']

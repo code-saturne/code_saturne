@@ -433,7 +433,7 @@ class NumericalParamEquationModel(Model):
         if self._isPressure(node):
             return None
         value = node.xmlGetDouble('blending_factor')
-        if value == None:
+        if value is None:
             value = self._defaultValues(name)['blending_factor']
         return value
 
@@ -466,7 +466,7 @@ class NumericalParamEquationModel(Model):
         """ Return value of RHS reconstruction for variable labelled name """
         node = self._getSchemeNameNode(name)
         value = node.xmlGetDouble('rhs_reconstruction')
-        if value == None:
+        if value is None:
             value = self._defaultValues(name)['rhs_reconstruction']
         return value
 
@@ -615,7 +615,7 @@ class NumericalParamEquationModel(Model):
             default = self._defaultValues()['solver_precision']
 
         value = node.xmlGetDouble('solver_precision')
-        if value == None:
+        if value is None:
             value = default
         return value
 
@@ -664,7 +664,7 @@ class NumericalParamEquationModel(Model):
         if self.isScalar(name):
             node = self._getSolverNameNode(name)
             value = node.xmlGetDouble('time_step_factor')
-            if value == None:
+            if value is None:
                 value = self._defaultValues()['time_step_factor']
             return value
         else:
@@ -690,7 +690,7 @@ class NumericalParamEquationModel(Model):
         """ Return value of verbosity for variable labelled name """
         node = self._getSolverNameNode(name)
         value = node.xmlGetInt('verbosity')
-        if value == None:
+        if value is None:
             value = self._defaultValues()['verbosity']
         return value
 
@@ -712,7 +712,7 @@ class NumericalParamEquationModel(Model):
         self.isInList(name, self.getClippingList())
         node = self._getClippingNameNode(name)
         min_val = node.xmlGetChildDouble('min_value')
-        if min_val == None:
+        if min_val is None:
             min_val = self._defaultValues(name)['min_value']
             self.setMinValue(name, min_val)
 
@@ -737,7 +737,7 @@ class NumericalParamEquationModel(Model):
         self.isInList(name, self.getClippingList())
         node = self._getClippingNameNode(name)
         max_val = node.xmlGetDouble('max_value')
-        if max_val == None:
+        if max_val is None:
             max_val = self._defaultValues(name)['max_value']
             self.setMaxValue(name, max_val)
         return max_val

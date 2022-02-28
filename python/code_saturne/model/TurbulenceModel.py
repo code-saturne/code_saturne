@@ -345,7 +345,7 @@ class TurbulenceModel(Variables, Model):
         Return XLOMLG.
         """
         l_scale = self.node_turb.xmlGetDouble('mixing_length_scale')
-        if l_scale == None:
+        if l_scale is None:
             l_scale = self.defaultTurbulenceValues()['length_scale']
             self.setLengthScale(l_scale)
         return l_scale
@@ -366,7 +366,7 @@ class TurbulenceModel(Variables, Model):
         Return the value of reference velocity.
         """
         value = self.node_turb.xmlGetDouble('reference_velocity')
-        if value == None:
+        if value is None:
             value = self.defaultTurbulenceValues()['reference_velocity']
             self.setVelocity(value)
 
@@ -393,7 +393,7 @@ class TurbulenceModel(Variables, Model):
         """
         node_init = self.node_turb.xmlInitNode('reference_length')
         choice = node_init['choice']
-        if choice == None:
+        if choice is None:
             choice = self.defaultTurbulenceValues()['reference_length_choice']
             self.setLengthChoice(choice)
         return choice
@@ -414,7 +414,7 @@ class TurbulenceModel(Variables, Model):
         Return the value of reference length.
         """
         value = self.node_turb.xmlGetDouble('reference_length')
-        if value == None:
+        if value is None:
             value = self.defaultTurbulenceValues()['reference_length']
             self.setLength(value)
 
@@ -428,7 +428,7 @@ class TurbulenceModel(Variables, Model):
         """
         wall_function = self.node_turb.xmlGetInt('wall_function')
         model_turb    = self.getTurbulenceModel()
-        if wall_function == None:
+        if wall_function is None:
             wall_function = -1 # for next test
         if model_turb == 'Rij-EBRSM' :
           if wall_function not in (0,7) :

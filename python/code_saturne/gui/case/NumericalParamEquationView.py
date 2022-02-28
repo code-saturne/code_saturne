@@ -380,7 +380,7 @@ class StandardItemModelScheme(QStandardItemModel):
         dico = self.dataScheme[row]
         key = self.keys[column]
 
-        if dico[key] == None:
+        if dico[key] is None:
             return None
 
         if role == Qt.ToolTipRole:

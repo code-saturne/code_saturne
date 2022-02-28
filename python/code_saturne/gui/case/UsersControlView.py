@@ -299,7 +299,7 @@ class StandardItemModelUsersControl(QStandardItemModel):
         """
         row = self.rowCount()
 
-        if name == None:
+        if name is None:
             name = self.mdl.addUser("User_" + str(row + 1))
         location = self.mdl.getUsersLocation(name)
         dim      = self.mdl.getUsersDim(name)

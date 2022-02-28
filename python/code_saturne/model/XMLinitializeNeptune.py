@@ -216,14 +216,14 @@ class XMLinitNeptune(BaseXmlInit):
         idTA = 0
         for Node in self.case.xmlGetNodeList('time_average'):
             idTA = idTA + 1
-            if Node['name'] == None:
+            if Node['name'] is None:
                 Node['name'] = "TimeAverage_" + str(idTA)
 
         # Profiles
         for node in self.case.xmlGetNodeList('profile'):
             if node:
                 n = node.xmlGetNode("output_type")
-                if n == None:
+                if n is None:
                     freq = node.xmlGetInt("output_frequency")
                     if freq == -1:
                         node.xmlSetData('output_type', "end")
@@ -236,7 +236,7 @@ class XMLinitNeptune(BaseXmlInit):
             nodeList = nodeInit.xmlGetNodeList('variable')
             for i in range(len(nodeList)):
                 varNode = nodeList[i]
-                if varNode['support'] == None:
+                if varNode['support'] is None:
                     varNode['support'] = "cells"
 
         # <enthalpy_model field_id="2" model="user_function"/>
@@ -250,7 +250,7 @@ class XMLinitNeptune(BaseXmlInit):
             nh = nfield1.xmlGetNode('hresolution')
             if nh['status'] == "off":
                 nodeSurf = self.case.xmlGetNode('property', name='surface_tension')
-                if nodeSurf == None:
+                if nodeSurf is None:
                     XMLNodethermo   = self.case.xmlGetNode('thermophysical_models')
                     XMLNodeproperty = XMLNodethermo.xmlInitNode('properties')
                     Variables(self.case).setNewVariableProperty("property", "constant", XMLNodeproperty, "none", "surface_tension", "Surf_tens")
@@ -286,7 +286,7 @@ class XMLinitNeptune(BaseXmlInit):
         Change XML in order to ensure backward compatibility from 2.2 to 2.4-alpha.
         """
         for node in self.case.xmlGetNodeList('hresolution'):
-            if node['model'] == None:
+            if node['model'] is None:
                 if node['status'] == 'off':
                     node['model'] = 'off'
                 else:
@@ -343,7 +343,7 @@ class XMLinitNeptune(BaseXmlInit):
         if tnode != None:
             tvn   = tnode.xmlGetNode('variables')
             for node in tnode.xmlGetNodeList('field'):
-                if node['turb_flux'] == None:
+                if node['turb_flux'] is None:
                     node['turb_flux'] = 'sgdh'
 
             # Check for missing alpha in the EBRSM model
@@ -351,7 +351,7 @@ class XMLinitNeptune(BaseXmlInit):
                 if node['model'] == 'rij-epsilon_ebrsm':
                     fid = node['field_id']
                     na = tvn.xmlGetNode('variable',name='alpha', field_id=fid)
-                    if na == None:
+                    if na is None:
                         Variables(self.case).setNewVariableProperty("variable", "",
                                                                     tvn,
                                                                     fid,
@@ -662,7 +662,7 @@ class XMLinitNeptune(BaseXmlInit):
 
         if XMLOutput.xmlGetNodeList('probe') != None:
             for node in XMLOutput.xmlGetNodeList('probe'):
-                if node['id'] == None:
+                if node['id'] is None:
                     node['id'] = node['name']
 
     def __backwardCompatibilityFrom_6_3(self):
@@ -743,7 +743,7 @@ class XMLinitNeptune(BaseXmlInit):
         mass_transfer_node = self.case.xmlGetNode("mass_transfer_model")
         if mass_transfer_node != None:
             walltm_node = mass_transfer_node.xmlGetNode("wall_transfer_type")
-            if (walltm_node == None) and (heat_mass_transfer_status == "on"):
+            if (walltm_node is None) and (heat_mass_transfer_status == "on"):
                 if flow_choice in ["free_surface", "boiling_flow", "multiregime"]:
                     walltm = "nucleate_boiling"
                     NucleateBoilingModel(self.case).resetToDefaultValues()

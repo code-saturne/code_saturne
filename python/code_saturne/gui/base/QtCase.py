@@ -88,7 +88,7 @@ class QtCase(Case, QObject):
                 # control if function have same arguments
                 # last argument is value
                 same = True
-                if self.record_argument_prev == None:
+                if self.record_argument_prev is None:
                     same = False
                 elif (len(c) == len(self.record_argument_prev) and len(c) >= 2):
                     for i in range(0, len(c)-1):
@@ -115,7 +115,7 @@ class QtCase(Case, QObject):
                 # control if function have same arguments
                 # last argument is value
                 same = True
-                if self.record_argument_prev == None:
+                if self.record_argument_prev is None:
                     same = False
                 elif (len(c) == len(self.record_argument_prev) and len(c) >= 2):
                     for i in range(0, len(c)-1):

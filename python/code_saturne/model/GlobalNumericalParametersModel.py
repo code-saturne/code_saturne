@@ -245,7 +245,7 @@ class GlobalNumericalParametersModel(Model):
         Get alpha pressure cycles
         """
         value = self._numericalNode.xmlGetInt('alpha-pressure_cycles')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['alpha-pressure_cycles']
         return value
 
@@ -271,7 +271,7 @@ class GlobalNumericalParametersModel(Model):
         """
 
         value = self._numericalNode.xmlGetDouble('sum_alpha')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['sum_alpha']
         return value
 
@@ -294,7 +294,7 @@ class GlobalNumericalParametersModel(Model):
         Get max number of restart
         """
         value = self._restartTimeStep.xmlGetInt('max_number_restart')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['max_number_restart']
         return value
 
@@ -318,7 +318,7 @@ class GlobalNumericalParametersModel(Model):
         Get Time Step Splitting
         """
         value = self._restartTimeStep.xmlGetDouble('time_step_splitting')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['time_step_splitting']
         return value
 
@@ -342,7 +342,7 @@ class GlobalNumericalParametersModel(Model):
         Get pressure relaxation
         """
         value = self._restartTimeStep.xmlGetDouble('pressure_relaxation')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['pressure_relaxation']
         return value
 
@@ -391,7 +391,7 @@ class GlobalNumericalParametersModel(Model):
         Get Min Pressure for clipping
         """
         value = self._numericalNode.xmlGetDouble('MinPressure')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['MinPressure']
         return value
 
@@ -415,7 +415,7 @@ class GlobalNumericalParametersModel(Model):
         Get Max Pressure for clipping
         """
         value = self._numericalNode.xmlGetDouble('MaxPressure')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['MaxPressure']
         return value
 
@@ -488,7 +488,7 @@ class GlobalNumericalParametersModel(Model):
         from code_saturne.model.MainFieldsModel import MainFieldsModel
 
         node = self._numericalNode.xmlGetNode('velocity_predictor_algorithm')
-        if node == None:
+        if node is None:
             model = ""
             if (MainFieldsModel(self.case).getPredefinedFlow() == "boiling_flow") :
                 model = self.defaultValues()['velocity_predictor_algorithm_bubble']

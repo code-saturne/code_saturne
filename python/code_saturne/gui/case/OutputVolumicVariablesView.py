@@ -161,7 +161,7 @@ class TreeItem(object):
         return 5
 
     def data(self, column, role):
-        if self.item == None:
+        if self.item is None:
             if column == 0:
                 return self.header
             else:

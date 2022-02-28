@@ -247,7 +247,7 @@ class StartRestartModel(Model):
         Return frequency for restart checkpoints from advanced options.
         """
         val = self.node_start.xmlGetInt('restart_rescue')
-        if val == None or val == 0:
+        if val is None or val == 0:
             period = self._defaultStartRestartValues()['period_rescue']
             val = self._defaultStartRestartValues()['restart_rescue']
             self.setRestartRescue(val)

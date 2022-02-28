@@ -1119,7 +1119,7 @@ class LabelDelegate(QItemDelegate):
 
         # Regex
         rx = accepted_regex
-        if rx == None:
+        if rx is None:
             rx = "[ -~]*"
 #            "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
         self.regExp = QRegExp(rx)

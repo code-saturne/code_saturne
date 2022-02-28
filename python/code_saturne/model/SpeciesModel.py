@@ -315,7 +315,7 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
         self.isInList(name, self.getScalarNameList())
         node = self.XMLScalar.xmlGetNode('variable', name = name)
         ChildNode = node.xmlGetChildNode('diffusion_coefficient')
-        if ChildNode == None:
+        if ChildNode is None:
             value = self.defaultValues()['diffusion_coefficient']
             self.setDiffusionCoef(scalarId, value)
         value = node.xmlGetDouble('diffusion_coefficient')
@@ -345,7 +345,7 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
         self.isInList(name, self.getScalarNameList())
         node = self.XMLScalar.xmlGetNode('variable', name = name)
         ChildNode = node.xmlGetChildNode('schmidt')
-        if ChildNode == None:
+        if ChildNode is None:
             value = self.defaultValues()['schmidt']
             self.setSchmidt(scalarId, value)
         value = node.xmlGetDouble('schmidt')
@@ -375,7 +375,7 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
         self.isInList(name, self.getScalarNameList())
         node = self.XMLScalar.xmlGetNode('variable', name = name)
         ChildNode = node.xmlGetChildNode('minValue')
-        if ChildNode == None:
+        if ChildNode is None:
             value = self.defaultValues()['minValue']
             self.setMinValue(scalarId, value)
         value = node.xmlGetDouble('minValue')
@@ -405,7 +405,7 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
         self.isInList(name, self.getScalarNameList())
         node = self.XMLScalar.xmlGetNode('variable', name = name)
         ChildNode = node.xmlGetChildNode('maxValue')
-        if ChildNode == None:
+        if ChildNode is None:
             value = self.defaultValues()['maxValue']
             self.setMaxValue(scalarId, value)
         value = node.xmlGetDouble('maxValue')
@@ -433,7 +433,7 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
         self.isInList(name, self.getScalarNameList())
         node = self.XMLScalar.xmlGetNode('variable', name = name)
         ChildNode = node.xmlGetChildNode('timeDependStatus')
-        if ChildNode == None:
+        if ChildNode is None:
            status = self.defaultValues()['timeDependStatus']
            self.setTimeDependStatus(scalarId, status)
         status = node.xmlGetString('timeDependStatus')
@@ -461,7 +461,7 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
         self.isInList(name, self.getScalarNameList())
         node = self.XMLScalar.xmlGetNode('variable', name = name)
         ChildNode = node.xmlGetChildNode('diffusionStatus')
-        if ChildNode == None:
+        if ChildNode is None:
            status = self.defaultValues()['diffusionStatus']
            self.setDiffusionStatus(scalarId, status)
         status = node.xmlGetString('diffusionStatus')

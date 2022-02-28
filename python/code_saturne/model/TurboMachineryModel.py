@@ -242,7 +242,7 @@ class TurboMachineryModel(Variables, Model):
         Get model for turbo machinery
         """
         model = self.node_turbo['model']
-        if model == None :
+        if model is None :
             model = self.defaultValues()['model']
             self.setTurboMachineryModel(model)
 

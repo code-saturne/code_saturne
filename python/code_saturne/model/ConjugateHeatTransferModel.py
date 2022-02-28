@@ -145,13 +145,13 @@ class ConjugateHeatTransferModel(Variables, Model):
             return
 
         node_instance = self.__node_inst.xmlGetChildNode('instance', name=syrthes_name)
-        if node_instance == None:
+        if node_instance is None:
             raise ValueError("SYRTHES instance not found : ", syrthes_name)
         node_zone = node_instance.xmlInitChildNode('coupled_boundary', label=boundary_label)
 
     def getBoundaryLabelList(self, syrthes_name):
         node_instance = self.__node_inst.xmlGetChildNode('instance', name=syrthes_name)
-        if node_instance == None:
+        if node_instance is None:
             raise ValueError("SYRTHES instance not found : ", syrthes_name)
         return [n.xmlGetAttribute("label") for n in node_instance.xmlGetChildNodeList("coupled_boundary")]
 

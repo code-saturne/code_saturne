@@ -229,7 +229,7 @@ class ThermalRadiationModel(Variables, Model):
     def getQuadrature(self):
         """ Return value of the quadrature """
         nb = self.node_ray.xmlGetInt('quadrature')
-        if nb == None:
+        if nb is None:
             nb = self._defaultValues()['quadrature']
             self.setQuadrature(nb)
         return nb
@@ -247,7 +247,7 @@ class ThermalRadiationModel(Variables, Model):
     def getNbDir(self):
         """ Return value of number of directions """
         nb = self.node_ray.xmlGetInt('directions_number')
-        if nb == None:
+        if nb is None:
             nb = self._defaultValues()['directions_number']
             self.setNbDir(nb)
         return nb
@@ -314,7 +314,7 @@ class ThermalRadiationModel(Variables, Model):
         """
         self.getTypeCoeff()
         val = self.node_ray.xmlGetDouble('absorption_coefficient')
-        if val == None:
+        if val is None:
             val = self._defaultValues()['value_coef']
             self.setAbsorCoeff(val)
         return val
@@ -334,7 +334,7 @@ class ThermalRadiationModel(Variables, Model):
     def getFrequency(self):
         """ Return value of frequency for advanced options """
         freq = self.node_ray.xmlGetInt('frequency')
-        if freq == None:
+        if freq is None:
             freq = self._defaultValues()['frequency']
             self.setFrequency(freq)
         return freq
@@ -351,7 +351,7 @@ class ThermalRadiationModel(Variables, Model):
     def getIntensityResolution(self):
         """ Return value of IIMLUM for advanced options """
         intens = self.node_ray.xmlGetInt('intensity_resolution_listing_printing')
-        if intens == None:
+        if intens is None:
             intens = self._defaultValues()['intensity']
             self.setIntensityResolution(intens)
         return intens
@@ -368,7 +368,7 @@ class ThermalRadiationModel(Variables, Model):
     def getTemperatureListing(self):
         """ Return value of IIMPAR for advanced options """
         tp = self.node_ray.xmlGetInt('temperature_listing_printing')
-        if tp == None:
+        if tp is None:
             tp = self._defaultValues()['tempP']
             self.setTemperatureListing(tp)
         return tp
@@ -385,7 +385,7 @@ class ThermalRadiationModel(Variables, Model):
     def getTrs(self):
         """ Return value of IDIVER for advanced options """
         idiver = self.node_ray.xmlGetInt('thermal_radiative_source_term')
-        if idiver == None:
+        if idiver is None:
             idiver = self._defaultValues()['idiver']
             self.setTrs(idiver)
         return idiver

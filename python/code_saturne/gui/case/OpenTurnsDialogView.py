@@ -133,7 +133,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
                 self.addDistantBuilds(host_name)
 
                 dh_not_found = False
-                if self.distant_host_builds[host_name] == None:
+                if self.distant_host_builds[host_name] is None:
                     self.distant_host_builds[host_name] = ['none found']
                     dh_not_found = True
 
@@ -535,7 +535,7 @@ def __getListOfDistantBuilds__(host_name, search_path):
     vr = ssh_cmd.stdout.readlines()
     ve = ssh_cmd.stderr.readlines()
 
-    if vr == [] or vr == None or 'Could not resolve hostname' in ve:
+    if vr == [] or vr is None or 'Could not resolve hostname' in ve:
         dist_versions = None
     else:
         vr.sort()

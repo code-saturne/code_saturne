@@ -140,7 +140,7 @@ class GroundwaterLawModel(Variables, Model):
         node = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
 
         mdl = node['model']
-        if mdl == None:
+        if mdl is None:
             mdl = self.__defaultValues()['choice']
             self.setGroundwaterLawModel(zoneid, mdl)
         return mdl
@@ -199,7 +199,7 @@ class GroundwaterLawModel(Variables, Model):
 
         value = node.xmlGetDouble(variable)
 
-        if value == None:
+        if value is None:
             value = self.__defaultValues()[variable]
             self.setValue(zoneid, variable, value)
         return value
@@ -233,7 +233,7 @@ class GroundwaterLawModel(Variables, Model):
 
         value = node.xmlGetDouble(variable)
 
-        if value == None:
+        if value is None:
             value = self.__defaultValues()[variable]
             self.setDispersionCoefficient(zoneid, variable, value)
         return value
@@ -262,7 +262,7 @@ class GroundwaterLawModel(Variables, Model):
         nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
         value = nodeZone.xmlGetDouble('soil_density')
 
-        if value == None:
+        if value is None:
             value = self.__defaultValues()['soil_density']
             self.setSoilDensity(zoneid, value)
         return value
@@ -325,7 +325,7 @@ permeability=1.;"""
         """
 
         exp = self.getGroundwaterLawFormula(zoneid)
-        if exp == None:
+        if exp is None:
             exp = self.getDefaultGroundwaterLawFormula()
 
         if GroundwaterModel(self.case).getPermeabilityType() == 'anisotropic':
@@ -370,7 +370,7 @@ permeability=1.;"""
         nodeScalar = nodeZone.xmlInitChildNode('scalar', name=scalar_name)
         value = nodeScalar.xmlGetDouble(prop)
 
-        if value == None:
+        if value is None:
             value = self.__defaultValues()[prop]
             self.setGroundWaterScalarPropertyByZone(scalar_name, zoneid, prop, value)
         return value

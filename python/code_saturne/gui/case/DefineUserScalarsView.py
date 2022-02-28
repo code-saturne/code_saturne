@@ -503,7 +503,7 @@ class StandardItemModelVariance(QStandardItemModel):
             QMessageBox.warning(self.parent, title, msg)
             return
         row = self.rowCount()
-        if existing_name == None:
+        if existing_name is None:
             name = self.mdl.addVariance()
         else:
             name = self.mdl.addVariance(existing_name)

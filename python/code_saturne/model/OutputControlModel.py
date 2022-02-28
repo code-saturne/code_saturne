@@ -85,7 +85,7 @@ class OutputControlModel(Model):
         Private method: return coordinate 'coord' for probe number 'num'
         """
         val = self.node_out.xmlGetNode('probe', id = num).xmlGetDouble(coord)
-        if val == None:
+        if val is None:
             val = self.defaultInitialValues()['coordinate']
             self.__setCoordinates(name, coord, val)
         return val
@@ -104,7 +104,7 @@ class OutputControlModel(Model):
         Return the frequency for printing listing
         """
         f = self.node_out.xmlGetInt('listing_printing_frequency')
-        if f == None:
+        if f is None:
             f = self.defaultInitialValues()['listing_printing_frequency']
             self.setListingFrequency(f)
         return f
@@ -127,7 +127,7 @@ class OutputControlModel(Model):
         node_lagr = self.case.root().xmlInitNode('lagrangian', 'model')
         node_out_lag = node_lagr.xmlInitChildNode('output')
         f = node_out_lag.xmlGetInt('listing_printing_frequency')
-        if f == None:
+        if f is None:
             f = self.defaultInitialValues()['listing_printing_frequency']
             self.setListingFrequencyLagrangian(f)
         return f
@@ -237,7 +237,7 @@ class OutputControlModel(Model):
         Input new lagrangian writer
         """
         node = self.node_out.xmlGetNode('writer', 'label', id = "-3")
-        if node == None:
+        if node is None:
             nodeL = self.node_out.xmlInitNode('writer', id = "-3", label = 'particles')
             nodeL.xmlInitNode('frequency', period = 'none')
             nodeL.xmlInitNode('output_at_end', status = 'on')
@@ -246,7 +246,7 @@ class OutputControlModel(Model):
             nodeL.xmlInitNode('time_dependency', choice = 'transient_connectivity')
 
         node = self.node_out.xmlGetNode('writer', 'label', id = "-4")
-        if node == None:
+        if node is None:
             nodeT = self.node_out.xmlInitNode('writer', id = "-4", label = 'trajectories')
             nodeT.xmlInitNode('frequency', period = 'none')
             nodeT.xmlInitNode('output_at_end', status = 'on')
@@ -336,7 +336,7 @@ class OutputControlModel(Model):
         self.isInList(writer_id, self.getWriterIdList())
         n = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
         label = n['label']
-        if label == None:
+        if label is None:
             label = __defaultWriterLabelAndId(id=writer_id)
             self.setWriterLabel(writer_id, label)
         return label
@@ -361,7 +361,7 @@ class OutputControlModel(Model):
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
         n = node.xmlInitNode('frequency')
         frequency_choice = n['period']
-        if frequency_choice == None:
+        if frequency_choice is None:
             frequency_choice = self.defaultWriterValues()['frequency_choice']
             self.setWriterFrequencyChoice(writer_id, frequency_choice)
         return frequency_choice
@@ -420,7 +420,7 @@ class OutputControlModel(Model):
         status = None
         if n:
             status = n['status']
-        if status == None:
+        if status is None:
             status = self.defaultWriterValues()['output_at_start']
         return status
 
@@ -451,7 +451,7 @@ class OutputControlModel(Model):
         status = None
         if n:
             status = n['status']
-        if status == None:
+        if status is None:
             status = self.defaultWriterValues()['output_at_end']
         return status
 
@@ -480,7 +480,7 @@ class OutputControlModel(Model):
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
         n = node.xmlInitNode('format')
         format = n['name']
-        if format == None:
+        if format is None:
             format = self.defaultWriterValues()['format']
             self.setWriterFormat(writer_id, format)
         return format
@@ -506,7 +506,7 @@ class OutputControlModel(Model):
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
         n = node.xmlInitNode('directory')
         directory = n['name']
-        if directory == None:
+        if directory is None:
             directory = self.defaultWriterValues()['directory']
             self.setWriterDirectory(writer_id, directory)
         return directory
@@ -532,7 +532,7 @@ class OutputControlModel(Model):
         node = self.node_out.xmlGetNode('writer', 'label', id = writer_id)
         n = node.xmlInitNode('format')
         options = n['options']
-        if options == None:
+        if options is None:
             options = self.defaultWriterValues()['options']
             self.setWriterOptions(writer_id, options)
         return options
@@ -559,7 +559,7 @@ class OutputControlModel(Model):
 
         n = node.xmlInitNode('time_dependency')
         choice = n['choice']
-        if choice == None:
+        if choice is None:
             choice = self.defaultWriterValues()['time_dependency']
             self.setWriterTimeDependency(writer_id, choice)
         return choice
@@ -763,7 +763,7 @@ class OutputControlModel(Model):
         self.isInList(mesh_id, self.getMeshIdList())
         n = self.node_out.xmlGetNode('mesh', id = mesh_id)
         label = n['label']
-        if label == None:
+        if label is None:
             label = __defaultMeshLabelAndId(id=mesh_id)
             self.setMeshLabel(mesh_id, label)
         return label
@@ -787,7 +787,7 @@ class OutputControlModel(Model):
         self.isInList(mesh_id, self.getMeshIdList())
         n = self.node_out.xmlGetNode('mesh', id = mesh_id)
         mesh_type = n['type']
-        if mesh_type == None:
+        if mesh_type is None:
             mesh_type = self.defaultMeshValues()['type']
             self.setMeshType(mesh_id, mesh_type)
         return mesh_type
@@ -816,7 +816,7 @@ class OutputControlModel(Model):
         self.isInList(mesh_id, self.getMeshIdList())
         n = self.node_out.xmlGetNode('mesh', id = mesh_id)
         mesh_type = n['type']
-        if mesh_type == None:
+        if mesh_type is None:
             mesh_type = self.defaultMeshValues()['particles_type']
             self.setLagrangianMeshType(mesh_id, mesh_type)
         return mesh_type
@@ -842,7 +842,7 @@ class OutputControlModel(Model):
         node = self.node_out.xmlGetNode('mesh', id = mesh_id)
         n = node.xmlInitNode('all_variables')
         status = n['status']
-        if status == None:
+        if status is None:
             status = self.defaultMeshValues()['all_variables']
             self.setMeshAllVariablesStatus(mesh_id, status)
         return status
@@ -1059,7 +1059,7 @@ class OutputControlModel(Model):
         Return the frequency for recording probes
         """
         f = self.node_out.xmlGetInt('probe_recording_frequency')
-        if f == None:
+        if f is None:
             f = self.defaultInitialValues()['probe_recording_frequency']
             self.setMonitoringPointFrequency(f)
         return f
@@ -1080,7 +1080,7 @@ class OutputControlModel(Model):
         Return the frequency for recording probes
         """
         f = self.node_out.xmlGetDouble('probe_recording_frequency_time')
-        if f == None:
+        if f is None:
             f = self.defaultInitialValues()['probe_recording_frequency_time']
             self.setMonitoringPointFrequencyTime(f)
         return f
@@ -1342,7 +1342,7 @@ class OutputControlModel(Model):
         self.isGreater(int(num), 0.0)
         self.isLowerOrEqual(int(num), self.getNumberOfMonitoringPoints())
         val = self.node_out.xmlGetNode('probe', id=num)['name']
-        if val == None:
+        if val is None:
             val = str(num)
             self.setMonitoringPointName(self, num, val)
 

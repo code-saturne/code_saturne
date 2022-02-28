@@ -266,7 +266,7 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         for node in self.XMLNodeNonCondensable.xmlGetNodeList('variable'):
             if node['name'] == name :
                childNode = node.xmlGetNode('Type')
-               if childNode == None :
+               if childNode is None :
                    type = self.defaultValues()['typeNonCond']
                    self.setNonCondType(name, type)
                type = node.xmlGetNode('Type')['choice']
@@ -326,7 +326,7 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         for node in self.XMLNodeNonCondensable.xmlGetNodeList('variable'):
             if node['name'] == name :
                massmol = node.xmlGetDouble('MolarMass')
-               if massmol == None :
+               if massmol is None :
                    massmol = self.defaultValues()['MolarMass']
                    self.setNonCondMassMol(name, massmol)
                return massmol
@@ -354,7 +354,7 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         for node in self.XMLNodeNonCondensable.xmlGetNodeList('variable'):
             if node['name'] == name :
                cobin1 = node.xmlGetDouble('Cobin1')
-               if cobin1 == None :
+               if cobin1 is None :
                    cobin1 = self.defaultValues()['Cobin1']
                    self.setNonCondCobin1(name, cobin1)
                return cobin1
@@ -382,7 +382,7 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         for node in self.XMLNodeNonCondensable.xmlGetNodeList('variable'):
             if node['name'] == name :
                cobin2 = node.xmlGetDouble('Cobin2')
-               if cobin2 == None :
+               if cobin2 is None :
                    cobin2 = self.defaultValues()['Cobin2']
                    self.setNonCondCobin2(name, cobin2)
                return cobin2

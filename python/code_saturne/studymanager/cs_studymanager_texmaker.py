@@ -102,7 +102,7 @@ class TexWriter(object):
                 columns[i] = "\\textcolor{green}{OK}"
             elif columns[i] == "KO":
                 columns[i] = "\\textcolor{red}{KO}"
-            elif columns[i] == None:
+            elif columns[i] is None:
                 columns[i] = "\\textit{default}"
 
             if i != len(columns)-1:

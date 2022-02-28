@@ -375,7 +375,7 @@ class LagrangianModel(Model):
         node_model = self.__nodeParticlesModel()
         node_coal = node_model.xmlInitChildNode('coal_fouling', 'status')
         value = node_coal.xmlGetDouble('threshold_temperature', coal=icoal)
-        if value == None:
+        if value is None:
             value = self.defaultParticlesValues()['threshold_temperature']
             self.setThresholdTemperatureOfFouling(icoal, value)
         return value
@@ -402,7 +402,7 @@ class LagrangianModel(Model):
         node_model = self.__nodeParticlesModel()
         node_coal = node_model.xmlInitChildNode('coal_fouling', 'status')
         value = node_coal.xmlGetDouble('critical_viscosity', coal=icoal)
-        if value == None:
+        if value is None:
             value = self.defaultParticlesValues()['critical_viscosity']
             self.setCriticalViscosityOfFouling(icoal, value)
         return value
@@ -428,7 +428,7 @@ class LagrangianModel(Model):
         node_model = self.__nodeParticlesModel()
         node_coal = node_model.xmlInitChildNode('coal_fouling', 'status')
         value = node_coal.xmlGetDouble('fouling_coefficient_1', coal=icoal)
-        if value == None:
+        if value is None:
             value = self.defaultParticlesValues()['fouling_coefficient_1']
             self.setCoef1OfFouling(icoal, value)
         return value
@@ -454,7 +454,7 @@ class LagrangianModel(Model):
         node_model = self.__nodeParticlesModel()
         node_coal = node_model.xmlInitChildNode('coal_fouling', 'status')
         value = node_coal.xmlGetDouble('fouling_coefficient_2', coal=icoal)
-        if value == None:
+        if value is None:
             value = self.defaultParticlesValues()['fouling_coefficient_2']
             self.setCoef2OfFouling(icoal, value)
         return value
@@ -476,7 +476,7 @@ class LagrangianModel(Model):
         """
         node_2way = self.node_lagr.xmlInitChildNode('two_way_coupling')
         niter = node_2way.xmlGetInt('iteration_start')
-        if niter == None:
+        if niter is None:
             niter = self.defaultParticlesValues()['iteration_start']
             self.set2WayCouplingStartIteration(niter)
         return niter
@@ -598,7 +598,7 @@ class LagrangianModel(Model):
         Return value for regular particles
         """
         value = self.node_lagr.xmlGetInt('regular_particles')
-        if value == None:
+        if value is None:
             value = self.defaultParticlesValues()['regular_particles']
             self.setRegularParticles(value)
         return value

@@ -110,10 +110,10 @@ class MainFieldsModel(Variables, Model):
 
         pressure_node = self.XMLNodethermo.xmlGetNode('variable',
                                                       name='pressure')
-        if pressure_node == None:
+        if pressure_node is None:
             pressure_node = self.XMLNodethermo.xmlGetNode('variable',
                                                           name='Pressure')
-        if pressure_node == None:
+        if pressure_node is None:
             Variables(self.case).setNewVariableProperty("variable",
                                                         "",
                                                         self.XMLNodeVariable,
@@ -123,7 +123,7 @@ class MainFieldsModel(Variables, Model):
                                                         post = True)
         porosity_node = self.XMLNodethermo.xmlGetNode('property',
                                                       name='porosity')
-        if porosity_node == None:
+        if porosity_node is None:
             Variables(self.case).setNewVariableProperty("property",
                                                         "",
                                                         self.XMLNodeproperty,
@@ -213,7 +213,7 @@ class MainFieldsModel(Variables, Model):
 
         # Check that the field does not already exist
         nf = self.__XMLNodefields.xmlGetNode('field', field_id=fieldId)
-        if nf == None:
+        if nf is None:
             self.__XMLNodefields.xmlInitChildNode('field', field_id=fieldId, label=label)
         else:
             # TODO : addField method should not modify existing fields. At least add a warning...
@@ -519,7 +519,7 @@ class MainFieldsModel(Variables, Model):
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         nodet = node.xmlGetNode('type')
-        if nodet == None :
+        if nodet is None :
             type = self.defaultValues()['typeChoice']
             self.setCriterion(fieldId,type)
         type = node.xmlGetNode('type')['choice']
@@ -562,7 +562,7 @@ class MainFieldsModel(Variables, Model):
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         nodep = node.xmlGetNode('phase')
-        if nodep == None :
+        if nodep is None :
             phase = self.defaultValues()['phase']
             self.setFieldNature(fieldId,phase)
         phase = node.xmlGetNode('phase')['choice']
@@ -602,7 +602,7 @@ class MainFieldsModel(Variables, Model):
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         nodeh= node.xmlGetNode('hresolution')
-        if nodeh == None :
+        if nodeh is None :
             hres = self.defaultValues()['enthalpyResolutionStatus']
             self.setEnergyResolution(fieldId,hres)
         hres= node.xmlGetNode('hresolution')['status']
@@ -636,7 +636,7 @@ class MainFieldsModel(Variables, Model):
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         nodeh= node.xmlGetNode('hresolution')
-        if nodeh == None :
+        if nodeh is None :
             self.getEnergyResolution(fieldId)
             hmdl = self.defaultValues()['enthalpyResolutionModel']
             self.setEnergyModel(fieldId,hmdl)
@@ -677,7 +677,7 @@ class MainFieldsModel(Variables, Model):
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         nodec = node.xmlGetNode('compressible')
-        if nodec == None :
+        if nodec is None :
             compress = self.defaultValues()['compressibleStatus']
             self.setCompressibleStatus(fieldId,compress)
         compress = node.xmlGetNode('compressible')['status']
@@ -699,7 +699,7 @@ class MainFieldsModel(Variables, Model):
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         nodec =  node.xmlGetNode('carrier_field')
-        if nodec == None :
+        if nodec is None :
             carrier = self.defaultValues()['carrierField']
             self.setCarrierField(fieldId,carrier)
         carrier =  node.xmlGetNode('carrier_field')['field_id']
@@ -1031,7 +1031,7 @@ class MainFieldsModel(Variables, Model):
         """
         """
         node = self.XMLNodethermo.xmlGetNode('predefined_flow')
-        if node == None:
+        if node is None:
             node = self.setPredefinedFlow(self.defaultValues()['defaultPredefinedFlow'])
 
         return node['choice']
@@ -1050,7 +1050,7 @@ class MainFieldsModel(Variables, Model):
     @Variables.noUndo
     def getHeatMassTransferStatus(self):
         node = self.XMLNodethermo.xmlGetNode('heat_mass_transfer')
-        if node == None:
+        if node is None:
             self.setHeatMassTransferStatus(self.defaultValues()['heatMassTransfer'])
             node = self.XMLNodethermo.xmlGetNode('heat_mass_transfer')
         return node["status"]

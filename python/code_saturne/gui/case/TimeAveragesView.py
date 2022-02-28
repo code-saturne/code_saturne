@@ -348,7 +348,7 @@ class StandardItemModelAverage(QStandardItemModel):
         """
         imom = row
 
-        if ttdmom == None:
+        if ttdmom is None:
             ttdmom = -1
 
         if ttdmom < 0:

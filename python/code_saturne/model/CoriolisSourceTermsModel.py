@@ -81,7 +81,7 @@ class CoriolisSourceTermsModel(Model):
         """
         self.isInList(var, self.nodes)
         omega = self.node_omega.xmlGetDouble(var)
-        if omega == None:
+        if omega is None:
             omega = self.defaultCoriolisSourceTermsValues()['omega']
             self.setOmega(var, omega)
 

@@ -144,7 +144,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         # Initialize pair of fields
         predefined_flow = self.mdl.getPredefinedFlow()
         if predefined_flow == "None":
-            if self.mdl.getEnthalpyCoupleFieldId() == None:
+            if self.mdl.getEnthalpyCoupleFieldId() is None:
                 self.modelLiquidVaporFields.setItem(str_model="none")
             else:
                 field_id_a, field_id_b = self.mdl.getEnthalpyCoupleFieldId()
@@ -229,7 +229,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
             self.mdl.deleteLiquidVaporEnthalpyTransfer()
             return
         fieldaId, fieldbId = selection.split("_")
-        if self.mdl.getEnthalpyCoupleFieldId() == None:
+        if self.mdl.getEnthalpyCoupleFieldId() is None:
             self.mdl.addLiquidVaporEnthalpyTransfer(fieldaId, fieldbId)
         self.mdl.setEnthalpyCoupleFieldId(fieldaId, fieldbId)
         self.updateLiquidVaporModel()
@@ -252,7 +252,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.fillLiquidVaporModels(fieldIda, fieldIdb)
 
         model = self.mdl.getFieldModel(fieldIda)
-        if model == None:
+        if model is None:
             model = "no_source_term"
         self.modelFieldaModel.setItem(str_model=model)
 

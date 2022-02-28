@@ -304,7 +304,7 @@ class ElectricalModel(Variables, Model):
         Return the number of gas for electric model (read in file)
         """
         nb = self.node_joule.xmlGetInt('gasNumber')
-        if nb == None:
+        if nb is None:
             nb = self.defaultElectricalValues()['gasNumber']
             self.setGasNumber(nb)
         return nb
@@ -325,7 +325,7 @@ class ElectricalModel(Variables, Model):
         Return the imposed power in watt
         """
         value = self.node_joule.xmlGetDouble('imposed_power')
-        if value == None:
+        if value is None:
             value = self.defaultElectricalValues()['power']
             self.setPower(value)
         return value
@@ -346,7 +346,7 @@ class ElectricalModel(Variables, Model):
         Return the imposed current intensity
         """
         value = self.node_joule.xmlGetDouble('imposed_current')
-        if value == None:
+        if value is None:
             value = self.defaultElectricalValues()['power']
             self.setCurrent(value)
         return value
@@ -442,7 +442,7 @@ class ElectricalModel(Variables, Model):
         node = self.node_joule.xmlGetNode('recal_model')
         n = node.xmlInitNode('plane_definition')
         value = n.xmlGetDouble(coord)
-        if value == None:
+        if value is None:
             if coord == "epsilon":
                 value = self.defaultElectricalValues()['epsilon']
             else:

@@ -81,7 +81,7 @@ class TreeItem:
         self.itemType = typename
         self.itemIcon = None
         self.childItems = []
-        if parent == None:
+        if parent is None:
             self.n_parents = 0
         else:
             self.n_parents = parent.n_parents + 1

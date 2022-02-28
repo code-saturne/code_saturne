@@ -78,7 +78,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get heat transfer model
         """
         model = self.XMLnucleate['model']
-        if model == None :
+        if model is None :
             model = self.defaultValues()['heatmodel']
             self.setHeatTransferModel(model)
         return model
@@ -102,7 +102,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get wall function model
         """
         model = self.XMLnucleate['wallfunction']
-        if model == None :
+        if model is None :
             model = self.defaultValues()['wallfunction']
             self.setWallFunctionModel(model)
         return model
@@ -123,7 +123,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get Y+ status
         """
         ChildNode = self.XMLMassTrans.xmlGetNode('yplusmodel')
-        if ChildNode == None:
+        if ChildNode is None:
            model = self.defaultValues()['yplusmodel']
            self.setYPlusModel(model)
         model = self.XMLMassTrans.xmlGetNode('yplusmodel')['model']
@@ -150,7 +150,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get value for Y Plus
         """
         value = self.XMLMassTrans.xmlGetDouble('yplusvalue')
-        if value == None :
+        if value is None :
            value = self.defaultValues()['yplusvalue']
            self.setYPlusValue(value)
         return value
@@ -171,7 +171,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get value for maximal cavity radius
         """
         value = self.XMLnucleate.xmlGetDouble('cavities_radius')
-        if value == None :
+        if value is None :
            value = self.defaultValues()['cavities_radius']
            self.setMaxRadius(value)
         return value
@@ -192,7 +192,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get value for maximal bubble diameter
         """
         value = self.XMLnucleate.xmlGetDouble('bubbles_diameter')
-        if value == None :
+        if value is None :
            value = self.defaultValues()['bubbles_diameter']
            self.setMaxDiameter(value)
         return value
@@ -213,7 +213,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get value for maximal over-saturation temperature
         """
         value = self.XMLnucleate.xmlGetDouble('oversaturate_temperature')
-        if value == None :
+        if value is None :
            value = self.defaultValues()['oversaturate_temperature']
            self.setMaxOverSaturation(value)
         return value
@@ -234,7 +234,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get value for conductivity
         """
         value = self.XMLnucleate.xmlGetDouble('thermal_cond')
-        if value == None :
+        if value is None :
            value = self.defaultValues()['thermal_cond']
            self.setThermalConductivity(value)
         return value
@@ -255,7 +255,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get value for density
         """
         value = self.XMLnucleate.xmlGetDouble('density')
-        if value == None :
+        if value is None :
            value = self.defaultValues()['density']
            self.setDensity(value)
         return value
@@ -276,7 +276,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get value for specific heat
         """
         value = self.XMLnucleate.xmlGetDouble('cp')
-        if value == None :
+        if value is None :
            value = self.defaultValues()['cp']
            self.setSpecificHeat(value)
         return value
@@ -297,7 +297,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get thickness status
         """
         ChildNode = self.XMLnucleate.xmlGetChildNode('thicknessmodel')
-        if ChildNode == None:
+        if ChildNode is None:
            status = self.defaultValues()['thicknessmodel']
            self.setThicknessStatus(status)
         status = self.XMLnucleate.xmlGetString('thicknessmodel')
@@ -321,7 +321,7 @@ class NucleateBoilingModel(NonCondensableModel, Variables, Model):
         get value for Thickness
         """
         value = self.XMLnucleate.xmlGetDouble('thicknessvalue')
-        if value == None :
+        if value is None :
            value = self.defaultValues()['thicknessvalue']
            self.setThicknessValue(value)
         return value

@@ -115,7 +115,7 @@ class ImmersedBoundariesModel(Variables, Model):
     def getOnOff(self):
 
         state = self.__node_ibm.xmlGetString('ibm_state')
-        if state == None or state == '':
+        if state is None or state == '':
             state = self.defaultValues()['OnOff']
 
         return state
@@ -130,7 +130,7 @@ class ImmersedBoundariesModel(Variables, Model):
     def getMethod(self):
 
         method = self.__node_ibm.xmlGetString('ibm_method')
-        if method == None or method == '':
+        if method is None or method == '':
             method = self.defaultValues()['method']
 
         return method
@@ -163,7 +163,7 @@ class ImmersedBoundariesModel(Variables, Model):
         """
         Get default value if value is none.
         """
-        if value == None or value == "":
+        if value is None or value == "":
             value = self.defaultValues()[name]
             setFunction(index+1, value)
         return value
@@ -290,7 +290,7 @@ class ImmersedBoundariesModel(Variables, Model):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node_eq = node.xmlGetChildNode('equilibrium_position')
 
-        if node_eq == None:
+        if node_eq is None:
             self.setObjectEqPosition(num,
                                      self.defaultValues()['object_init'],
                                      self.defaultValues()['object_init'],
@@ -324,7 +324,7 @@ class ImmersedBoundariesModel(Variables, Model):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node_ini = node.xmlGetChildNode('initial_position')
 
-        if node_ini == None:
+        if node_ini is None:
             self.setObjectInitPosition(num,
                                        self.defaultValues()['object_init'],
                                        self.defaultValues()['object_init'],
@@ -357,7 +357,7 @@ class ImmersedBoundariesModel(Variables, Model):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node_vel = node.xmlGetChildNode('initial_velocity')
 
-        if node_vel == None:
+        if node_vel is None:
             self.setObjectInitVel(num,
                                   self.defaultValues()['object_init'],
                                   self.defaultValues()['object_init'],
@@ -390,7 +390,7 @@ class ImmersedBoundariesModel(Variables, Model):
         node = self.__node_ibm.xmlGetNodeList('ibm_object')[num-1]
         node_vel = node.xmlGetChildNode('initial_acceleration')
 
-        if node_vel == None:
+        if node_vel is None:
             self.setObjectInitAcc(num,
                                   self.defaultValues()['object_init'],
                                   self.defaultValues()['object_init'],

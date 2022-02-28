@@ -148,9 +148,9 @@ class StandardItemModelCathare(QStandardItemModel):
                 bc_type = zone.getNature()
                 break
 
-        if bc_zone == None:
+        if bc_zone is None:
             bc_zone = "off"
-        if bc_type == None:
+        if bc_type is None:
             bc_type = "off"
         self.__model.setNeptuneBc(num, self.dataCathare[row][3])
         self.__model.setNeptune2dZone(num, bc_zone)

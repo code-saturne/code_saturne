@@ -84,7 +84,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('friction')
-        if noden == None :
+        if noden is None :
             model = self.defaultValues()['friction']
             self.setFrictionModel(fieldId, model)
         model = node.xmlGetNode('friction')['model']
@@ -116,7 +116,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('granular')
-        if noden == None :
+        if noden is None :
             model = self.defaultValues()['granular']
             self.setGranularModel(fieldId, model)
         model = node.xmlGetNode('granular')['model']
@@ -148,7 +148,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('kinetic')
-        if noden == None :
+        if noden is None :
             model = self.defaultValues()['kinetic']
             self.setKineticModel(fieldId, model)
         model = node.xmlGetNode('kinetic')['model']
@@ -174,7 +174,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         put values for compaction.
         """
         value = self.XMLThermo.xmlGetDouble('solid_compaction')
-        if value == None :
+        if value is None :
            value = self.defaultValues()['compaction']
            self.setCompaction(value)
         return value
@@ -202,7 +202,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
 
         ChildNode = node.xmlGetChildNode('polydispersed')
-        if ChildNode == None:
+        if ChildNode is None:
            status = self.defaultValues()['polydispersed']
            self.setCouplingStatus(fieldId, status)
         status = node.xmlGetString('polydispersed')

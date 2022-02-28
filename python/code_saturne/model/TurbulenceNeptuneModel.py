@@ -144,7 +144,7 @@ class TurbulenceModel(MainFieldsModel):
         if node != None:
             oldmodel = self.defaultValues()['model']
 
-        if node == None:
+        if node is None:
             if criterion == "continuous":
                 self.XMLturbulence.xmlInitChildNode('field', field_id = fieldId,
                                                     model = model,
@@ -214,7 +214,7 @@ class TurbulenceModel(MainFieldsModel):
         criterion = self.getCriterion(fieldId)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
-        if node == None:
+        if node is None:
             model = ""
             if criterion == "continuous":
                model = TurbulenceModelsDescription.continuousTurbulenceModels[0]
@@ -236,7 +236,7 @@ class TurbulenceModel(MainFieldsModel):
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
 
         critrerion =  self.getCriterion(fieldId)
-        if node == None:
+        if node is None:
             if criterion == "continuous":
                 self.XMLturbulence.xmlInitChildNode('field',
                                                     field_id = fieldId,
@@ -259,7 +259,7 @@ class TurbulenceModel(MainFieldsModel):
         self.isInList(str(fieldId),self.getFieldIdList())
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
-        if node == None:
+        if node is None:
             if self.getEnergyResolution(fieldId) == 'on':
                 self.setThermalTurbulentFlux(fieldId,
                                              self.defaultValues()['turb_flux'])
@@ -285,7 +285,7 @@ class TurbulenceModel(MainFieldsModel):
         self.isInList(model, TurbulenceModelsDescription.dispersedCouplingModels)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
-        if node == None:
+        if node is None:
             node = self.XMLturbulence.xmlInitChildNode('field', field_id=fieldId,
                                                        model=self.defaultValues()['model'],
                                                        two_way_coupling=model)
@@ -300,7 +300,7 @@ class TurbulenceModel(MainFieldsModel):
         self.isInList(str(fieldId),self.getFieldIdList())
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
-        if node == None:
+        if node is None:
             self.setTwoWayCouplingModel(fieldId, self.defaultValues()['two_way_coupling'])
             node = self.XMLturbulence.xmlGetNode('field', field_id=fieldId)
         model = node['two_way_coupling']
@@ -316,7 +316,7 @@ class TurbulenceModel(MainFieldsModel):
         self.isInList(model, TurbulenceModelsDescription.continuousCouplingModels)
 
         node = self.XMLturbulence.xmlGetNode('continuous_field_coupling')
-        if node == None:
+        if node is None:
             node = self.XMLturbulence.xmlInitChildNode('continuous_field_coupling')
         node['model'] = model
 
@@ -327,7 +327,7 @@ class TurbulenceModel(MainFieldsModel):
         get two way coupling for continuous fields
         """
         node = self.XMLturbulence.xmlGetNode('continuous_field_coupling')
-        if node == None:
+        if node is None:
             self.setContinuousCouplingModel(self.defaultValues()['two_way_coupling'])
             node = self.XMLturbulence.xmlGetNode('continuous_field_coupling')
         model = node['model']
@@ -357,7 +357,7 @@ class TurbulenceModel(MainFieldsModel):
         fieldNode = self.XMLturbulence.xmlGetNode('field', field_id = str(fieldId))
         lengthNode = fieldNode.xmlGetNode('length_scale')
 
-        if lengthNode == None:
+        if lengthNode is None:
             value = self.defaultValues()['length_scale']
             self.setMixingLength(fieldId, value)
             lengthNode = fieldNode.xmlGetNode('length_scale')

@@ -560,11 +560,11 @@ class SolutionDomainModel(MeshModel, Model):
     def setCartesianParam(self, d, p, val):
 
         node = self.node_ecs.xmlGetNode('mesh_cartesian')
-        if node == None:
+        if node is None:
             node = self.node_ecs.xmlInitNode('mesh_cartesian')
 
         n = node.xmlGetChildNode(d)
-        if n == None:
+        if n is None:
             n = node.xmlInitNode(d)
 
         n[p] = val
@@ -773,7 +773,7 @@ class SolutionDomainModel(MeshModel, Model):
         """
         node = self._getMeshNode(mesh)
         grp = node[group]
-        if grp == None:
+        if grp is None:
             grp = 'off'
         return grp
 
@@ -882,7 +882,7 @@ class SolutionDomainModel(MeshModel, Model):
         get '--cut_warped_faces' parameters.
         """
         angle = self.node_cut.xmlGetDouble('warp_angle_max')
-        if angle == None:
+        if angle is None:
             angle = self.defaultValues()['angle']
         return angle
 
@@ -927,7 +927,7 @@ class SolutionDomainModel(MeshModel, Model):
         get '--mesh_smoothing' parameters.
         """
         angle = self.node_smooth.xmlGetDouble('smooth_angle')
-        if angle == None:
+        if angle is None:
             angle = self.defaultValues()['smooth_angle']
         return angle
 
