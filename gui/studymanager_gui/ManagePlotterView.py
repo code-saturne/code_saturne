@@ -411,7 +411,7 @@ class StandardItemModelSubplot(QStandardItemModel):
         dico = self.dataSubplot[row]
         key = self.keys[column]
 
-        if dico[key] == None:
+        if dico[key] is None:
             return None
 
         if role == Qt.DisplayRole and column != 4:
@@ -558,7 +558,7 @@ class StandardItemModelFigure(QStandardItemModel):
         dico = self.dataFigure[row]
         key = self.keys[column]
 
-        if dico[key] == None:
+        if dico[key] is None:
             return None
 
         if role == Qt.DisplayRole:
@@ -670,7 +670,7 @@ class TreeItem(object):
 
 
     def data(self, column, role):
-        if self.item == None:
+        if self.item is None:
             if column == 0:
                 return self.header
             else:

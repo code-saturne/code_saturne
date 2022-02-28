@@ -160,7 +160,7 @@ class AtmosphericFlowsModel(Model):
         Return the name of the meteo data file.
         """
         f = self.__node_atmos.xmlGetDouble('longitude')
-        if f == None:
+        if f is None:
             f = self.__default['longitude']
             self.setLongitude(f)
         return f
@@ -175,7 +175,7 @@ class AtmosphericFlowsModel(Model):
         Return the name of the meteo data file.
         """
         f = self.__node_atmos.xmlGetDouble('latitude')
-        if f == None:
+        if f is None:
             f = self.__default['latitude']
             self.setLatitude(f)
         return f
@@ -191,7 +191,7 @@ class AtmosphericFlowsModel(Model):
         Return the name of the meteo data file.
         """
         f = self.__node_atmos.xmlGetInt('domain_orientation')
-        if f == None:
+        if f is None:
             f = self.__default['domain_orientation']
             self.setDomainOrientation(f)
         return f
@@ -209,7 +209,7 @@ class AtmosphericFlowsModel(Model):
         Return the name of the meteo data file.
         """
         f = self.__node_atmos.xmlGetDouble('meteo_z0')
-        if f == None:
+        if f is None:
             f = self.__default['meteo_z0']
             self.setMeteoZ0(f)
         return f
@@ -221,7 +221,7 @@ class AtmosphericFlowsModel(Model):
     @Variables.noUndo
     def getMeteoPsea(self):
         f = self.__node_atmos.xmlGetDouble('meteo_psea')
-        if f == None:
+        if f is None:
             f = self.__default['meteo_psea']
             self.setMeteoPsea(f)
         return f
@@ -233,7 +233,7 @@ class AtmosphericFlowsModel(Model):
     @Variables.noUndo
     def getMeteoT0(self):
         f = self.__node_atmos.xmlGetDouble('meteo_t0')
-        if f == None:
+        if f is None:
             f = self.__default['meteo_t0']
             self.setMeteoT0(f)
         return f
@@ -245,7 +245,7 @@ class AtmosphericFlowsModel(Model):
     @Variables.noUndo
     def getWindDir(self):
         f = self.__node_atmos.xmlGetInt('wind_direction')
-        if f == None:
+        if f is None:
             f = self.__default['wind_direction']
             self.setWindDir(f)
         return f
@@ -257,7 +257,7 @@ class AtmosphericFlowsModel(Model):
     @Variables.noUndo
     def getMeteoUref(self):
         f = self.__node_atmos.xmlGetDouble('meteo_uref')
-        if f == None:
+        if f is None:
             f = self.__default['meteo_uref']
             self.setMeteoUref(f)
         return f
@@ -269,7 +269,7 @@ class AtmosphericFlowsModel(Model):
     @Variables.noUndo
     def getMeteoUstar(self):
         f = self.__node_atmos.xmlGetDouble('meteo_ustar')
-        if f == None:
+        if f is None:
             f = self.__default['meteo_ustar']
             self.setMeteoUstar(f)
         return f
@@ -281,7 +281,7 @@ class AtmosphericFlowsModel(Model):
     @Variables.noUndo
     def getMeteoDlmo(self):
         f = self.__node_atmos.xmlGetDouble('meteo_dlmo')
-        if f == None:
+        if f is None:
             f = self.__default['meteo_dlmo']
             self.setMeteoDlmo(f)
         return f
@@ -293,7 +293,7 @@ class AtmosphericFlowsModel(Model):
     @Variables.noUndo
     def getMeteoZref(self):
         f = self.__node_atmos.xmlGetDouble('meteo_zref')
-        if f == None:
+        if f is None:
             f = self.__default['meteo_zref']
             self.setMeteoZref(f)
         return f
@@ -311,8 +311,8 @@ class AtmosphericFlowsModel(Model):
         startMin = self.__node_atmos.xmlGetInt('start_min')
         startSec = self.__node_atmos.xmlGetInt('start_sec')
         dateTime = datetime.now()
-        if (startYear == None) or (startDay == None) or (startHour == None) \
-            or (startMin == None) or (startSec == None):
+        if (startYear is None) or (startDay is None) or (startHour is None) \
+            or (startMin is None) or (startSec is None):
             self.setStartTime(dateTime)
         else:
             #FIXME after startDay.rjust(3,'0')
@@ -399,7 +399,7 @@ class AtmosphericFlowsModel(Model):
         Return the name of the meteo data file.
         """
         f = self.__node_atmos.xmlGetString('meteo_data')
-        if f == None:
+        if f is None:
             f = self.__default['meteo_data']
             self.setMeteoDataFileName(f)
         return f

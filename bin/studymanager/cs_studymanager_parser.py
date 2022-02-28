@@ -187,7 +187,7 @@ class Parser(object):
         @rtype: C{String}
         @return: repository directory of all studies.
         """
-        if self.__repo == None:
+        if self.__repo is None:
             self.__repo = self.getDataFromNode(self.root, "repository")
 
         return self.__repo;
@@ -210,7 +210,7 @@ class Parser(object):
         @rtype: C{String}
         @return: destination directory of all studies.
         """
-        if self.__dest == None:
+        if self.__dest is None:
             self.__dest = self.getDataFromNode(self.root, "destination")
 
         return self.__dest
@@ -711,7 +711,7 @@ class Parser(object):
         if k in node.attributes.keys():
             return node.attributes[k].value
         else:
-            if default == None:
+            if default is None:
                 raise ValueError("Error: attribute %s is mandatory!" % k)
             else:
                 return default
@@ -726,7 +726,7 @@ class Parser(object):
             n = node.attributes[k].value
             return tuple(float(s) for s in n[1:-1].split(','))
         else:
-            if default == None:
+            if default is None:
                 raise ValueError("Error: attribute %s is mandatory!" % k)
             else:
                 return default

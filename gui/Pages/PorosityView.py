@@ -163,7 +163,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
 
         exp, req, sca, sym = self.model.getPorosityFormulaComponents(zone_id)
 
-        if exp == None:
+        if exp is None:
             exp = self.getDefaultPorosityFormula(choice)
 
         exa = """#example: \n""" + self.model.getDefaultPorosityFormula(choice)

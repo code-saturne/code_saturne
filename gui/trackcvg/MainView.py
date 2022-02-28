@@ -147,7 +147,7 @@ class TreeItem(object):
 
 
     def data(self, column, role):
-        if self.item == None:
+        if self.item is None:
             if column == 0:
                 self.header
             else:
@@ -633,7 +633,7 @@ class MainView(object):
                     app.setFont(font)
 
         # Init
-        if self.caseName == None:
+        if self.caseName is None:
             self.toolButtonDir.setStyleSheet("background-color: red")
         else:
             self.openCase(self.caseName)

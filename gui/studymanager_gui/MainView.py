@@ -695,7 +695,7 @@ class MainView(object):
             self.scrollArea.setWidget(self.page)
 
         else:
-            log.debug("displayNewPage() self.page == None")
+            log.debug("displayNewPage() self.page is None")
             raise
 
 

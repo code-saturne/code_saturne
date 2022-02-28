@@ -695,7 +695,7 @@ class InletBoundary(Boundary):
         XMLTurbulenceNode = self.boundNode.xmlInitNode('turbulence')
         Model().isInList(XMLTurbulenceNode['choice'],  self.__turbulenceChoices)
         value = XMLTurbulenceNode.xmlGetDouble('hydraulic_diameter')
-        if value == None:
+        if value is None:
             value = self.__defaultValues()['hydraulic_diameter']
             self.setHydraulicDiameter(value)
         return value
@@ -791,7 +791,7 @@ omega = 0.;"""
         XMLTurbulenceNode = self.boundNode.xmlInitNode('turbulence')
         Model().isInList(XMLTurbulenceNode['choice'], ('turbulent_intensity',))
         value = XMLTurbulenceNode.xmlGetDouble('turbulent_intensity')
-        if value == None:
+        if value is None:
             value = self.__defaultValues()['turbulent_intensity']
             self.setTurbulentIntensity(value)
 
@@ -864,7 +864,7 @@ omega = 0.;"""
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         value = scalarNode.xmlGetChildDouble(choice)
-        if value == None:
+        if value is None:
             value = self.__defaultValues()['scalar']
             self.setScalarValue(scalarName, choice, value)
         return value
@@ -940,7 +940,7 @@ omega = 0.;"""
         node = self.boundNode.xmlGetNode('velocity_pressure')
         n = node.xmlInitNode('compressible_type')
         type = n['choice']
-        if type == None:
+        if type is None:
             type = self.__defaultValues()['compressible_type']
             self.setInletType(type)
         return type
@@ -1000,7 +1000,7 @@ omega = 0.;"""
         """
         n = self.boundNode.xmlGetNode('velocity_pressure')
         value = n.xmlGetChildDouble(var, 'status')
-        if value == None:
+        if value is None:
             value = self.__defaultValues()[var]
             self.setThermoValue(var, value)
 
@@ -1085,7 +1085,7 @@ omega = 0.;"""
         n = node.xmlInitNode('gas_type')
         type = n['choice']
 
-        if type == None:
+        if type is None:
             type = self.__defaultValues()['gas_type']
             self.setInletGasCombustionType(type)
 
@@ -1111,7 +1111,7 @@ omega = 0.;"""
         """
         n = self.boundNode.xmlGetNode('velocity_pressure')
         temperature = n.xmlGetChildDouble('temperature')
-        if temperature == None:
+        if temperature is None:
             temperature = self.__defaultValues()['temperatureGas']
             self.setGasCombustionTemperature(temperature)
 
@@ -1134,7 +1134,7 @@ omega = 0.;"""
         """
         n = self.boundNode.xmlGetNode('velocity_pressure')
         fraction = n.xmlGetChildDouble('fraction')
-        if fraction == None:
+        if fraction is None:
             fraction = self.__defaultValues()['fraction']
             self.setMeanMixtureFraction(fraction)
         return fraction
@@ -1166,7 +1166,7 @@ omega = 0.;"""
         Return value of the hydraulic head
         """
         hydraulic_head = self.boundNode.xmlGetDouble('dirichlet', name='hydraulic_head')
-        if hydraulic_head == None:
+        if hydraulic_head is None:
             hydraulic_head = self.__defaultValues()['hydraulic_head']
             self.setHydraulicHeadValue(hydraulic_head)
 
@@ -1189,7 +1189,7 @@ omega = 0.;"""
         Return value of the Hydraulic head flux
         """
         hydraulic_head = self.boundNode.xmlGetDouble('neumann', name='hydraulic_head')
-        if hydraulic_head == None:
+        if hydraulic_head is None:
             hydraulic_head = self.__defaultValues()['hydraulic_head_flux']
             self.setHydraulicHeadFlux(hydraulic_head)
 
@@ -1332,7 +1332,7 @@ omega = 0.;"""
         n = self.boundNode.xmlInitNode('mapped_inlet', status='on')
         if n:
             value = n.xmlGetChildDouble(component)
-        if value == None:
+        if value is None:
             value = 0.0
         return value
 
@@ -1382,7 +1382,7 @@ class MeteoBoundary(Boundary) :
         Return if one reads the meteorological data.
         """
         node = self.boundNode.xmlInitNode('velocity_pressure').xmlInitNode('meteo_data')
-        if node['status'] == None:
+        if node['status'] is None:
             self.setMeteoDataStatus (self.__defaultValues()['meteo_data'])
         return node['status']
 
@@ -1405,7 +1405,7 @@ class MeteoBoundary(Boundary) :
         The boundary could be set to an inlet or an outlet automaticaly.
         """
         node = self.boundNode.xmlInitNode('velocity_pressure').xmlInitNode('meteo_automatic')
-        if node['status'] == None:
+        if node['status'] is None:
             self.setAutomaticNatureStatus(self.__defaultValues()['meteo_automatic'])
         return node['status']
 
@@ -1574,7 +1574,7 @@ class JouleBoundary(Boundary) :
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         value = scalarNode.xmlGetChildDouble(choice)
-        if value == None :
+        if value is None :
             value = self.__defaultValues()['scalar']
             self.setElecScalarValue(scalarName, choice, value)
         return value
@@ -1702,7 +1702,7 @@ class ImposedPressureOutletBoundary(Boundary) :
         Return value of the pressure
         """
         pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
-        if pressure == None:
+        if pressure is None:
             pressure = self.__defaultValues()['pressure']
             self.setPressureValue(pressure)
 
@@ -1868,7 +1868,7 @@ class CoalInletBoundary(InletBoundary) :
         num = '%2.2i' % (coal_idx+1)
         n2 = n.xmlInitNode('coal', name = "coal"+num)
         flow = n2.xmlGetDouble('flow1')
-        if flow == None:
+        if flow is None:
             flow = self.__defaultValues()['flow']
             self.setCoalFlow(flow, coal_idx)
 
@@ -1895,7 +1895,7 @@ class CoalInletBoundary(InletBoundary) :
         """
         n = self.boundNode.xmlGetNode('velocity_pressure')
         temperature = n.xmlGetChildDouble('temperature')
-        if temperature == None:
+        if temperature is None:
             temperature = self.__defaultValues()['temperature']
             self.setOxydantTemperature(temperature)
 
@@ -1918,7 +1918,7 @@ class CoalInletBoundary(InletBoundary) :
         """
         n = self.boundNode.xmlGetNode('velocity_pressure')
         oxydant = n.xmlGetInt('oxydant')
-        if oxydant == None:
+        if oxydant is None:
             oxydant = self.__defaultValues()['oxydant']
             self.setOxydantNumber(oxydant)
 
@@ -1945,7 +1945,7 @@ class CoalInletBoundary(InletBoundary) :
         num = '%2.2i' % (coal+1)
         nt = n.xmlInitNode('coal', name="coal"+ num)
         temperature = nt.xmlGetChildDouble('temperature')
-        if temperature == None:
+        if temperature is None:
             temperature = self.__defaultValues()['temperature']
             self.setCoalTemperature(temperature, coal)
 
@@ -2112,7 +2112,7 @@ class CompressibleOutletBoundary(Boundary) :
         """
         node = self.boundNode.xmlInitNode('compressible_type')
         type = node['choice']
-        if type == None:
+        if type is None:
             type = self.__defaultValues()['compressible_type']
             self.setOutletType(type)
         return type
@@ -2137,7 +2137,7 @@ class CompressibleOutletBoundary(Boundary) :
         Return value of the pressure
         """
         pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
-        if pressure == None:
+        if pressure is None:
             pressure = self.__defaultValues()['pressure']
             self.setPressureValue(pressure)
 
@@ -2295,7 +2295,7 @@ class OutletBoundary(Boundary) :
         choice = self.getScalarChoice(name)
 
         value = scalarNode.xmlGetChildDouble(choice)
-        if value == None :
+        if value is None :
             value = self.__defaultValues()['scalar']
             self.setScalarValue(name, choice, value)
         return value
@@ -2385,7 +2385,7 @@ class OutletBoundary(Boundary) :
         if choice == 'off':
             self.setReferencePressure(self, 0.0)
         else:
-            if node.xmlGetDouble('dirichlet', name='pressure') == None:
+            if node.xmlGetDouble('dirichlet', name='pressure') is None:
                 self.setReferencePressure(self.__defaultValues()['pressure'])
 
 
@@ -2395,7 +2395,7 @@ class OutletBoundary(Boundary) :
         Get reference pressure
         """
         pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
-        if pressure == None:
+        if pressure is None:
             return 0
 
         return pressure
@@ -2421,7 +2421,7 @@ class OutletBoundary(Boundary) :
         Return value of the hydraulic head
         """
         hydraulic_head = self.boundNode.xmlGetDouble('dirichlet', name='hydraulic_head')
-        if hydraulic_head == None:
+        if hydraulic_head is None:
             hydraulic_head = self.__defaultValues()['hydraulic_head']
             self.setHydraulicHeadValue(hydraulic_head)
 
@@ -2444,7 +2444,7 @@ class OutletBoundary(Boundary) :
         Return value of the hydraulic head
         """
         hydraulic_head = self.boundNode.xmlGetDouble('neumann', name='hydraulic_head')
-        if hydraulic_head == None:
+        if hydraulic_head is None:
             hydraulic_head = self.__defaultValues()['hydraulic_head_flux']
             self.setHydraulicHeadFlux(hydraulic_head)
 
@@ -2616,7 +2616,7 @@ class GroundwaterBoundary(Boundary) :
         Return value of the hydraulic head
         """
         hydraulic_head = self.boundNode.xmlGetDouble('dirichlet', name='hydraulic_head')
-        if hydraulic_head == None:
+        if hydraulic_head is None:
             hydraulic_head = self.__defaultValues()['hydraulic_head']
             self.setHydraulicHeadValue(hydraulic_head)
 
@@ -2639,7 +2639,7 @@ class GroundwaterBoundary(Boundary) :
         Return value of the hydraulic head
         """
         hydraulic_head = self.boundNode.xmlGetDouble('neumann', name='hydraulic_head')
-        if hydraulic_head == None:
+        if hydraulic_head is None:
             hydraulic_head = self.__defaultValues()['hydraulic_head_flux']
             self.setHydraulicHeadFlux(hydraulic_head)
 
@@ -2796,7 +2796,7 @@ class GroundwaterBoundary(Boundary) :
         self.updateScalarTypeAndName(scalarNode, scalarName)
 
         value = scalarNode.xmlGetChildDouble(choice)
-        if value == None :
+        if value is None :
             value = self.__defaultValues()['scalar']
             self.setScalarValue(scalarName, choice, value)
         return value
@@ -3086,7 +3086,7 @@ class WallBoundary(Boundary) :
         if choice == 'off':
             self.setRoughness(0.0)
         else:
-            if node.xmlGetDouble('roughness') == None:
+            if node.xmlGetDouble('roughness') is None:
                 self.setRoughness(self.__defaultValues()['roughness'])
 
 
@@ -3098,7 +3098,7 @@ class WallBoundary(Boundary) :
         node = self.boundNode.xmlInitNode('velocity_pressure')
 
         val = node.xmlGetDouble('roughness')
-        if val == None:
+        if val is None:
             return 0
 
         return val
@@ -3128,7 +3128,7 @@ class WallBoundary(Boundary) :
     def getConjugateHeatTransferCoupling(self):
         # TODO output a dedicated cht model instead of individual properties
         node = self.boundNode.xmlGetNode("syrthes")
-        if node == None:
+        if node is None:
             return None
         return node.xmlGetAttribute("instance_name")
 
@@ -3204,7 +3204,7 @@ class WallBoundary(Boundary) :
         self.updateScalarTypeAndName(scalarNode, name)
 
         value = scalarNode.xmlGetChildDouble(choice)
-        if value == None :
+        if value is None :
             value = self.__defaultValues()['scalarValue']
             self.setScalarValue(name, choice, value)
         return value
@@ -3367,7 +3367,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('emissivity')
-        if val == None:
+        if val is None:
             val = self.__defaultValues()['emissivity']
             self.setEmissivity(val)
 
@@ -3393,7 +3393,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('wall_thermal_conductivity')
-        if val == None:
+        if val is None:
             val = self.__defaultValues()['wall_thermal_conductivity']
             self.setThermalConductivity(val)
 
@@ -3418,7 +3418,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('thickness')
-        if val == None:
+        if val is None:
             val = self.__defaultValues()['thickness']
             self.setThickness(val)
 
@@ -3443,7 +3443,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('external_temperature_profile')
-        if val == None:
+        if val is None:
             val = self.__defaultValues()['external_temperature_profile']
             self.setExternalTemperatureProfile(val)
 
@@ -3468,7 +3468,7 @@ class RadiativeWallBoundary(Boundary) :
         """
         nod_ray_cond = self.boundNode.xmlInitChildNode('radiative_data')
         val = nod_ray_cond.xmlGetChildDouble('internal_temperature_profile')
-        if val == None:
+        if val is None:
             val = self.__defaultValues()['internal_temperature_profile']
             self.setInternalTemperatureProfile(val)
 
@@ -3518,7 +3518,7 @@ class RadiativeWallBoundary(Boundary) :
             val = nod_ray_cond.xmlGetInt(rayvar)
         else:
             val = nod_ray_cond.xmlGetDouble(rayvar)
-        if val == None:
+        if val is None:
             val = self.__defaultValues()[rayvar]
             self.setValRay(val, rayvar)
 
@@ -3604,7 +3604,7 @@ class CouplingMobilBoundary(Boundary) :
         aleNode = self.boundNode.xmlGetNode('ale')
         node = aleNode.xmlInitChildNode(nodeName)
         value = node.xmlGetChildDouble(subNodeName)
-        if value == None:
+        if value is None:
             value = self._defaultValues[nodeName + '_' + subNodeName]
             setter(value)
         return value

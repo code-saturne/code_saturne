@@ -89,7 +89,7 @@ class CathareCouplingModel(Variables, Model):
     def getCathareActivationStatus(self):
 
         value = self.__node_nepcat.xmlGetInt('api_type')
-        if value == None:
+        if value is None:
             value = 0
 
         return value
@@ -102,7 +102,7 @@ class CathareCouplingModel(Variables, Model):
     def getCathareFile(self):
 
         value = self.__node_nepcat.xmlGetString('jdd_name')
-        if value == None or value == '':
+        if value is None or value == '':
             value = 'cathare_jdd.dat'
 
         return value
@@ -115,7 +115,7 @@ class CathareCouplingModel(Variables, Model):
     def getCplName(self):
 
         value = self.__node_nepcat.xmlGetString('coupling_name')
-        if value == None or value == '':
+        if value is None or value == '':
             value = 'NEPCAT_CPL'
 
         return value
@@ -128,7 +128,7 @@ class CathareCouplingModel(Variables, Model):
     def getCathareTime(self):
 
         value = self.__node_nepcat.xmlGetDouble('cathare_init_time')
-        if value == None:
+        if value is None:
             value = 0.0
 
         return value
@@ -142,7 +142,7 @@ class CathareCouplingModel(Variables, Model):
     def getCathareInstanceName(self):
 
         name = self.__node_nepcat.xmlGetString('cathare_instance_name')
-        if name == None:
+        if name is None:
             name = 'CATHARE'
 
         return name
@@ -156,7 +156,7 @@ class CathareCouplingModel(Variables, Model):
     def getNeptuneInstanceName(self):
 
         name = self.__node_nepcat.xmlGetString('neptune_instance_name')
-        if name == None:
+        if name is None:
             name = 'NEPTUNE'
 
         return name
@@ -170,7 +170,7 @@ class CathareCouplingModel(Variables, Model):
     def getCplTime(self):
 
         value = self.__node_nepcat.xmlGetDouble('coupling_run_time')
-        if value == None:
+        if value is None:
             value = 0.0
 
         return value
@@ -272,7 +272,7 @@ class CathareCouplingModel(Variables, Model):
         """
         Get default value if value is none.
         """
-        if value == None or value == "":
+        if value is None or value == "":
             value = self.defaultValues()[name]
             setFunction(index+1, value)
         return value

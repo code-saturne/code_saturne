@@ -242,7 +242,7 @@ class InletBoundary(Boundary):
             value = XMLVelocityNode.xmlGetChildDouble(choice)
         elif choice in ('norm_formula', 'flow1_formula'):
             value = XMLVelocityNode.xmlGetChildString(choice)
-        if value == None:
+        if value is None:
             value = self.__defaultValues(fieldId)[choice]
             self.setVelocity(fieldId, value)
 
@@ -280,7 +280,7 @@ class InletBoundary(Boundary):
         Model().isInList(component, ('direction_formula',))
         value = XMLVelocityNode.xmlGetChildString(component)
 
-        if value == None :
+        if value is None :
             value = self.__defaultValues(fieldId)[component]
             self.setDirection(fieldId, component, value)
         return value
@@ -409,7 +409,7 @@ class InletBoundary(Boundary):
         XMLTurbulenceNode = node.xmlInitNode('turbulence')
         Model().isInList(XMLTurbulenceNode['choice'],  self.__turbulenceChoices)
         value = XMLTurbulenceNode.xmlGetDouble('hydraulic_diameter')
-        if value == None :
+        if value is None :
             value = self.__defaultValues(fieldId)['hydraulic_diameter']
             self.setHydraulicDiameter(fieldId, value)
         return value
@@ -578,7 +578,7 @@ R12-23 = 5e-05;"""
         XMLTurbulenceNode = node.xmlInitNode('turbulence')
         Model().isInList(XMLTurbulenceNode['choice'], ('turbulent_intensity',))
         value = XMLTurbulenceNode.xmlGetDouble('turbulent_intensity')
-        if value == None :
+        if value is None :
             value = self.__defaultValues(fieldId)['turbulent_intensity']
             self.setTurbulentIntensity(fieldId, value)
 
@@ -648,7 +648,7 @@ R12-23 = 5e-05;"""
         Model().isInList(XMLEnergyNode['choice'], ['dirichlet','flux','timp_K'])
 
         Childnode = XMLEnergyNode.xmlGetChildNode('value')
-        if Childnode == None :
+        if Childnode is None :
             value = self.__defaultValues(fieldId)['enthalpy']
             self.setEnthalpy(fieldId, value)
 
@@ -679,7 +679,7 @@ R12-23 = 5e-05;"""
         XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='volume_fraction')
 
         Childnode = XMLFractionNode.xmlGetChildNode('value')
-        if Childnode == None :
+        if Childnode is None :
             value = self.__defaultValues(fieldId)['fraction']
             self.setFraction(fieldId, value)
 
@@ -712,7 +712,7 @@ R12-23 = 5e-05;"""
         XMLDiameterNode = node.xmlInitNode('variable', choice='dirichlet', name='diameter')
 
         Childnode = XMLDiameterNode.xmlGetChildNode('value')
-        if Childnode == None :
+        if Childnode is None :
             value = self.__defaultValues(fieldId)['diameter']
             self.setDiameter(fieldId, value)
 
@@ -743,7 +743,7 @@ R12-23 = 5e-05;"""
         XMLNonCondensableNode = node.xmlInitNode('variable', choice='dirichlet', name=NonCondensable)
 
         Childnode = XMLNonCondensableNode.xmlGetChildNode('value')
-        if Childnode == None :
+        if Childnode is None :
             value = self.__defaultValues(fieldId)['noncondensable']
             self.setNonCondensableValue(fieldId, NonCondensable, value)
 
@@ -807,7 +807,7 @@ R12-23 = 5e-05;"""
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
 
         Childnode = XMLScalarNode.xmlGetChildNode('value')
-        if Childnode == None :
+        if Childnode is None :
             value = self.__defaultValues(fieldId)['scalar']
             self.setScalarValue(fieldId, Scalar, value)
 
@@ -875,7 +875,7 @@ class OutletBoundary(Boundary) :
         Get reference pressure
         """
         pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
-        if pressure == None:
+        if pressure is None:
             pressure = self.__defaultValues()['reference_pressure']
             self.setReferencePressure(pressure)
 
@@ -940,7 +940,7 @@ class OutletBoundary(Boundary) :
         Model().isInList(XMLEnergyNode['choice'], ['dirichlet','flux','timp_K'])
 
         Childnode = XMLEnergyNode.xmlGetChildNode('value')
-        if Childnode == None :
+        if Childnode is None :
             value = self.__defaultValues()['enthalpy']
             self.setEnthalpy(fieldId, value)
 
@@ -1006,7 +1006,7 @@ class OutletBoundary(Boundary) :
         XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='volume_fraction')
 
         Childnode = XMLFractionNode.xmlGetChildNode('value')
-        if Childnode == None :
+        if Childnode is None :
             value = self.__defaultValues()['fraction']
             self.setFraction(fieldId, value)
 
@@ -1039,7 +1039,7 @@ class OutletBoundary(Boundary) :
         XMLNonCondensableNode = node.xmlInitNode('variable', choice='dirichlet', name=NonCondensable)
 
         Childnode = XMLNonCondensableNode.xmlGetChildNode('value')
-        if Childnode == None :
+        if Childnode is None :
             value = self.__defaultValues()['noncondensable']
             self.setNonCondensableValue(fieldId, NonCondensable, value)
 
@@ -1102,7 +1102,7 @@ class OutletBoundary(Boundary) :
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
 
         Childnode = XMLScalarNode.xmlGetChildNode('value')
-        if Childnode == None :
+        if Childnode is None :
             value = self.__defaultValues()['scalar']
             self.setScalarValue(fieldId, Scalar, value)
 
@@ -1216,7 +1216,7 @@ class WallBoundary(Boundary) :
         Model().isInList(XMLEnergyNode['choice'], ['temperature','flux','syrthes_coupling'])
 
         Childnode = XMLEnergyNode.xmlGetChildNode('value')
-        if Childnode == None :
+        if Childnode is None :
             value = self.__defaultValues()['flux']
             self.setEnthalpy(fieldId, value)
 
@@ -1284,7 +1284,7 @@ class WallBoundary(Boundary) :
                                                    name=Scalar)
 
         ChildNode = XMLScalarNode.xmlGetChildNode('value')
-        if ChildNode == None:
+        if ChildNode is None:
             value = self.__defaultValues()['scalar']
             self.setScalarValue(fieldId, Scalar, value)
 

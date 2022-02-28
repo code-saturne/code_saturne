@@ -2270,7 +2270,7 @@ class meg_to_c_interpreter:
             k_count = 0
             for key in self.funcs[func_type].keys():
                 w_block = self.write_block(func_type, key)
-                if w_block == None:
+                if w_block is None:
                     continue
                 zone_name, var_name = key.split('::')
                 var_name = var_name.replace("+", ", ")

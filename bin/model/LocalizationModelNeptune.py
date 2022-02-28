@@ -161,7 +161,7 @@ class LocalizationModel(object):
         """
         Add a new zone. Management of default values.
         """
-        if newZone == None:
+        if newZone is None:
             newZone = Zone(self._typeZone, case = self.case)
 
         zones = self.getZones()

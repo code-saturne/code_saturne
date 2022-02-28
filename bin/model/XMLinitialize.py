@@ -356,7 +356,7 @@ class XMLinit(BaseXmlInit):
         XMLSolutionDomainNode = self.case.xmlInitNode('solution_domain')
         self.__XMLVolumicConditionsNode = XMLSolutionDomainNode.xmlInitNode('volumic_conditions')
         for node in self.__XMLVolumicConditionsNode.xmlGetNodeList('zone'):
-            if node['id'] == None:
+            if node['id'] is None:
                 node['id'] = node['name']
 
         oldnode = self.case.xmlGetNode('calcul_management')
@@ -443,7 +443,7 @@ class XMLinit(BaseXmlInit):
         for node in self.case.xmlGetNodeList('profile'):
             if node:
                 n = node.xmlGetNode("output_type")
-                if n == None:
+                if n is None:
                     freq = node.xmlGetInt("output_frequency")
                     if freq == -1:
                         node.xmlSetData('output_type', "end")
@@ -953,9 +953,9 @@ class XMLinit(BaseXmlInit):
         for node in self.scalar_node.xmlGetNodeList('variable'):
             name = node['name']
             label = node['label']
-            if name == None:
+            if name is None:
                 node['name'] = label
-            if label == None:
+            if label is None:
                 node['label'] = name
             for n in XMLAnaControl.xmlGetNodeList('var_prop'):
                 if n['name'] == name:
@@ -972,9 +972,9 @@ class XMLinit(BaseXmlInit):
         for node in XMLBoundaryNode.xmlGetNodeList('scalar'):
             name = node['name']
             label = node['label']
-            if name == None:
+            if name is None:
                 node['name'] = label
-            if label == None:
+            if label is None:
                 node['label'] = name
 
         XMLThermoPhysicalModel = self.case.xmlGetNode('thermophysical_models')
@@ -1084,7 +1084,7 @@ class XMLinit(BaseXmlInit):
                 XMLAnaControl = self.case.xmlGetNode('analysis_control')
                 node_out = XMLAnaControl.xmlGetNode('output')
                 nn = node_out.xmlGetNode('writer', 'label', id = "-3")
-                if nn == None:
+                if nn is None:
                     nodeL = node_out.xmlInitNode('writer', id = "-3", label = 'particles')
                     nodeL.xmlInitNode('frequency', period = 'none')
                     nodeL.xmlInitNode('output_at_end', status = 'on')
@@ -1093,7 +1093,7 @@ class XMLinit(BaseXmlInit):
                     nodeL.xmlInitNode('time_dependency', choice = 'transient_connectivity')
 
                 nn = node_out.xmlGetNode('writer', 'label', id = "-4")
-                if nn == None:
+                if nn is None:
                     nodeT = node_out.xmlInitNode('writer', id = "-4", label = 'trajectories')
                     nodeT.xmlInitNode('frequency', period = 'none')
                     nodeT.xmlInitNode('output_at_end', status = 'on')
@@ -1102,7 +1102,7 @@ class XMLinit(BaseXmlInit):
                     nodeT.xmlInitNode('time_dependency', choice = 'fixed_mesh')
 
                 nn = node_out.xmlGetNode('mesh', id = "-3")
-                if nn == None:
+                if nn is None:
                     node1 = node_out.xmlInitNode('mesh', id = "-3",
                                                  label = 'particles',
                                                  type = 'particles')
@@ -1877,7 +1877,7 @@ class XMLinit(BaseXmlInit):
 
         if XMLOutput.xmlGetNodeList('probe') != None:
             for node in XMLOutput.xmlGetNodeList('probe'):
-                if node['id'] == None:
+                if node['id'] is None:
                     node['id'] = node['name']
 
         # Rename mesh viscosity for meg calls

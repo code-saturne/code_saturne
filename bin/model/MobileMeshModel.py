@@ -86,7 +86,7 @@ class MobileMeshModel(Model):
         """
 
         viscosity_type = visc_type
-        if viscosity_type == None:
+        if viscosity_type is None:
             viscosity_type = self.getViscosity()
 
         d = []

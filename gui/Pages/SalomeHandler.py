@@ -92,7 +92,7 @@ def BoundaryGroup():
     """
     Import groups of faces.
     """
-    if sMeshComponent == None and sGeomComponent == None:
+    if sMeshComponent is None and sGeomComponent is None:
         raise ValueError("Component SMESH and GEOM not found")
 
     local = ""
@@ -107,9 +107,9 @@ def BoundaryGroup():
 
                         # check for smesh group
                         aSmeshObject = anObjectDS._narrow(SMESH.SMESH_GroupBase)
-                        #if aSmeshObject == None:
+                        #if aSmeshObject is None:
                         #    aSmeshObject = anObjectDS._narrow(SMESH.SMESH_Group)
-                        #if aSmeshObject == None:
+                        #if aSmeshObject is None:
                         #    aSmeshObject = anObjectDS._narrow(SMESH.SMESH_GroupOnGeom)
                         if aSmeshObject != None and aSmeshObject.GetType() == SMESH.FACE:
                             if not local:
@@ -146,7 +146,7 @@ def VolumeGroup():
     """
     Import groups of solid.
     """
-    if sMeshComponent == None and sGeomComponent == None:
+    if sMeshComponent is None and sGeomComponent is None:
         raise ValueError("Component SMESH and GEOM not found")
 
     local = ""

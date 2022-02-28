@@ -93,7 +93,7 @@ def update_run_steps(s_c, run_conf, final=False):
                 s_c[k] = False
         # Special handling of stage defaults, as it is a substage
         # Of initialization
-        if stage_ini == None:
+        if stage_ini is None:
             if s_c['initialize'] == True:
                 s_c['stage'] = True
             else:
@@ -109,7 +109,7 @@ def update_run_steps(s_c, run_conf, final=False):
 
 class multi_append(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
-        if getattr(namespace, self.dest) == None:
+        if getattr(namespace, self.dest) is None:
             setattr(namespace, self.dest, list())
         for value in values:
             v_args = cs_exec_environment.separate_args(value)
@@ -123,7 +123,7 @@ class multi_append_kv(argparse.Action):
     Parse and append key-value pairs.
     """
     def __call__(self, parser, namespace, values, option_string=None):
-        if getattr(namespace, self.dest) == None:
+        if getattr(namespace, self.dest) is None:
             setattr(namespace, self.dest, dict())
         for value in values:
             key, value = value.split('=')
@@ -319,7 +319,7 @@ def process_options(options, pkg):
                                                 coupling=coupling,
                                                 id=run_id)
 
-    if casedir == None and staging_dir == None:
+    if casedir is None and staging_dir is None:
         cmd_line = sys.argv[0]
         for arg in sys.argv[1:]:
             cmd_line += ' ' + arg
@@ -387,7 +387,7 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
         if not kw in r_c:
             r_c[kw] = None
 
-    if run_conf == None:
+    if run_conf is None:
         if not os.path.isfile(run_config_path):
             print('Warning:', file = sys.stderr)
             print('  \'run.cfg\' not found in case directory; case update recommended.',
@@ -568,7 +568,7 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
         from code_saturne.cs_package import package
         pkg = package()
 
-    if run_args == None:
+    if run_args is None:
         options = parse_cmd_line(argv)
     else:
         options = run_args

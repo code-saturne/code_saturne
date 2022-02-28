@@ -991,7 +991,7 @@ class batch_info:
             self.job_id = os.getenv('LSB_BATCH_JID')
             self.queue = os.getenv('LSB_QUEUE')
 
-        if self.batch_type == None:
+        if self.batch_type is None:
             s = os.getenv('PBS_JOBID') # PBS
             if s != None:
                 self.batch_type = 'PBS'
@@ -1000,7 +1000,7 @@ class batch_info:
                 self.job_id = os.getenv('PBS_JOBID')
                 self.queue = os.getenv('PBS_QUEUE')
 
-        if self.batch_type == None:
+        if self.batch_type is None:
             s = os.getenv('OAR_JOBID') # OAR
             if s != None:
                 self.batch_type = 'OAR'
@@ -1008,7 +1008,7 @@ class batch_info:
                 self.job_name = os.getenv('OAR_JOBNAME')
                 self.job_id = os.getenv('OAR_JOBID')
 
-        if self.batch_type == None:
+        if self.batch_type is None:
             s = os.getenv('LOADL_JOB_NAME') # LoadLeveler
             if s != None:
                 self.batch_type = 'LOADL'
@@ -1018,7 +1018,7 @@ class batch_info:
                 self.job_id = os.getenv('LOADL_STEP_ID')
                 self.queue = os.getenv('LOADL_STEP_CLASS')
 
-        if self.batch_type == None:
+        if self.batch_type is None:
             s = os.getenv('SGE_TASK_ID') # Sun Grid Engine
             if s != None:
                 self.batch_type = 'SGE'
@@ -1027,7 +1027,7 @@ class batch_info:
                 self.job_id = os.getenv('JOB_ID')
                 self.queue = os.getenv('QUEUE')
 
-        if self.batch_type == None:
+        if self.batch_type is None:
             s = os.getenv('SLURM_JOBID') # SLURM
             if s != None:
                 self.batch_type = 'SLURM'
@@ -1086,7 +1086,7 @@ class resource_info(batch_info):
 
         # Pre-set the number of threads if OMP_NUM_THREADS given
 
-        if n_threads == None:
+        if n_threads is None:
             s = os.getenv('OMP_NUM_THREADS')
             if s != None:
                 n_threads = int(s)
@@ -1136,7 +1136,7 @@ class resource_info(batch_info):
 
         # Test for Platform LSF or OpenLava.
 
-        if self.manager == None and self.batch_type == 'LSF':
+        if self.manager is None and self.batch_type == 'LSF':
             self.manager = 'LSF'
             self.n_procs = 0
             self.n_nodes = 0
@@ -1154,7 +1154,7 @@ class resource_info(batch_info):
 
         # Test for IBM LoadLeveler.
 
-        if self.manager == None and self.batch_type == 'LOADL':
+        if self.manager is None and self.batch_type == 'LOADL':
             s = os.getenv('LOADL_TOTAL_TASKS')
             if s != None:
                 self.manager = 'LOADL'
@@ -1184,7 +1184,7 @@ class resource_info(batch_info):
 
         # Test for TORQUE or PBS Pro.
 
-        if self.manager == None and self.batch_type == 'PBS':
+        if self.manager is None and self.batch_type == 'PBS':
             s = os.getenv('PBS_NODEFILE')
             if s != None:
                 self.manager = 'PBS'
@@ -1198,7 +1198,7 @@ class resource_info(batch_info):
 
         # Test for OAR
 
-        if self.manager == None and self.batch_type == 'OAR':
+        if self.manager is None and self.batch_type == 'OAR':
             s = os.getenv('OAR_NODEFILE')
             if s != None:
                 self.manager = 'OAR'
@@ -1206,7 +1206,7 @@ class resource_info(batch_info):
 
         # Test for Sun (/Oracle/Whowever keeps this zombie going) Grid Engine
 
-        if self.manager == None and self.batch_type == 'SGE':
+        if self.manager is None and self.batch_type == 'SGE':
             s = os.getenv('NSLOTS')
             if s != None:
                 self.n_procs = int(s)
@@ -1239,7 +1239,7 @@ class resource_info(batch_info):
 
         # Determine number of processors from hosts file or list
 
-        if self.n_procs == None:
+        if self.n_procs is None:
             if self.hosts_file != None:
                 self.n_procs_from_hosts_file(self.hosts_file)
             elif self.hosts_list != None:
@@ -1262,7 +1262,7 @@ class resource_info(batch_info):
                                      + str(self.n_procs) + '.\n\n')
             self.n_procs = n_procs
 
-        if self.n_procs == None:
+        if self.n_procs is None:
             self.n_procs = n_procs_default
 
         # Check and possibly set number of threads
@@ -1392,7 +1392,7 @@ class resource_info(batch_info):
 
         hosts_file = self.hosts_file
 
-        if self.hosts_file == None:
+        if self.hosts_file is None:
 
             hosts_list = self.get_hosts_list()
 
@@ -1403,7 +1403,7 @@ class resource_info(batch_info):
                     hosts_file = 'hostsfile'
                 f = open(hosts_file, 'w')
                 # If number of procs not specified, determine it by list
-                if self.n_procs == None or self.n_procs < 1:
+                if self.n_procs is None or self.n_procs < 1:
                     n_procs = 0
                     for host in hosts_list:
                         f.write(host + '\n')
@@ -1718,7 +1718,7 @@ class mpi_environment:
                 if self.mpiexec != None:
                     break
 
-        if (self.mpiexec == None):
+        if (self.mpiexec is None):
             self.mpiexec = 'mpiexec'
 
         basename = os.path.basename(self.mpiexec)
@@ -1817,7 +1817,7 @@ class mpi_environment:
                 if self.mpiexec != None:
                     break
 
-        if (self.mpiexec == None):
+        if (self.mpiexec is None):
             self.mpiexec = 'mpiexec'
 
         if absname:
@@ -2019,7 +2019,7 @@ class exec_environment:
             self.user = 'unknown'
 
         self.wdir = wdir
-        if self.wdir == None:
+        if self.wdir is None:
             self.wdir = os.getcwd()
 
         self.resources = resource_info(n_procs, n_procs_default, n_threads)

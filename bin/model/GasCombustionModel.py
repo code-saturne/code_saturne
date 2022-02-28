@@ -184,7 +184,7 @@ class GasCombustionModel(Variables, Model):
         Return the current gas combustion option.
         """
         option = self.node_gas['option']
-        if option == None:
+        if option is None:
             option = self.defaultGasCombustionValues()['option']
             self.setGasCombustionOption(option)
 
@@ -456,7 +456,7 @@ class GasCombustionModel(Variables, Model):
         Return value of soot density
         """
         val = self.node_gas.xmlGetDouble('soot_density')
-        if val == None:
+        if val is None:
             val = self._defaultValues()['soot_density']
             self.setSootDensity(val)
         return val
@@ -478,7 +478,7 @@ class GasCombustionModel(Variables, Model):
         Return value of soot fraction
         """
         val = self.node_gas.xmlGetDouble('soot_fraction')
-        if val == None:
+        if val is None:
             val = self._defaultValues()['soot_fraction']
             self.setSootFraction(val)
         return val
@@ -659,7 +659,7 @@ class ThermochemistryData(Model):
         Return value of NbPointsTabu
         """
         NbPointsTabu = self.node_thermodata.xmlGetInt('NbPointsTabu')
-        if NbPointsTabu == None:
+        if NbPointsTabu is None:
             NbPointsTabu = self.defaultParamforTabu()['NbPointsTabu']
             self.setNbPointsTabu(NbPointsTabu)
 
@@ -681,7 +681,7 @@ class ThermochemistryData(Model):
         Return value of MaximumTemp
         """
         MaximumTemp = self.node_thermodata.xmlGetDouble('MaximumTemp')
-        if MaximumTemp == None:
+        if MaximumTemp is None:
             MaximumTemp = self.defaultParamforTabu()['MaximumTemp']
             self.setMaximumTemp(MaximumTemp)
 
@@ -703,7 +703,7 @@ class ThermochemistryData(Model):
         Return value of MinimumTemp
         """
         MinimumTemp = self.node_thermodata.xmlGetDouble('MinimumTemp')
-        if MinimumTemp == None:
+        if MinimumTemp is None:
             MinimumTemp = self.defaultParamforTabu()['MinimumTemp']
             self.setMinimumTemp(MinimumTemp)
 
@@ -767,7 +767,7 @@ class ThermochemistryData(Model):
         Return the value of VolPropO2
         """
         VolPropO2 = self.node_thermodata.xmlGetDouble('VolPropO2')
-        if VolPropO2 == None:
+        if VolPropO2 is None:
             VolPropO2 = self.defaultSpeciesProperties()['volPropO2']
             self.setVolPropO2(VolPropO2)
 
@@ -790,7 +790,7 @@ class ThermochemistryData(Model):
         Return the value of VolPropN2
         """
         VolPropN2 = self.node_thermodata.xmlGetDouble('VolPropN2')
-        if VolPropN2 == None:
+        if VolPropN2 is None:
             VolPropN2 = self.defaultSpeciesProperties()['volPropN2']
             self.setVolPropN2(VolPropN2)
 
@@ -813,7 +813,7 @@ class ThermochemistryData(Model):
         Return the value of COyield
         """
         COyield = self.node_thermodata.xmlGetDouble('COyield')
-        if COyield == None:
+        if COyield is None:
             COyield = self.defaultSpeciesProperties()['COyield']
             self.setCOyield(COyield)
 
@@ -836,7 +836,7 @@ class ThermochemistryData(Model):
         Return the value of CSyield
         """
         CSyield = self.node_thermodata.xmlGetDouble('CSyield')
-        if CSyield == None:
+        if CSyield is None:
             CSyield = self.defaultSpeciesProperties()['CSyield']
             self.setCSyield(CSyield)
 
@@ -969,7 +969,7 @@ class ThermochemistryData(Model):
         """
         n = self.case.xmlGetNode('variable', label=l)
         val = n.xmlGetDouble('fuel_composition')
-        if val == None:
+        if val is None:
             val = self.defaultSpeciesProperties()['fuel_composition']
             self.setCompFuel(l, val)
 
@@ -992,7 +992,7 @@ class ThermochemistryData(Model):
         """
         n = self.case.xmlGetNode('variable', label=l)
         val = n.xmlGetDouble('oxi_composition')
-        if val == None:
+        if val is None:
             val = self.defaultSpeciesProperties()['oxi_composition']
             self.setCompOxi(l, val)
 
@@ -1015,7 +1015,7 @@ class ThermochemistryData(Model):
         """
         n = self.case.xmlGetNode('variable', label=l)
         val = n.xmlGetDouble('prod_composition')
-        if val == None:
+        if val is None:
             val = self.defaultSpeciesProperties()['prod_composition']
             self.setCompProd(l, val)
 
@@ -1038,7 +1038,7 @@ class ThermochemistryData(Model):
         """
         n = self.case.xmlGetNode('variable', label=l)
         val = n.xmlGetDouble('coeff_absorption')
-        if val == None:
+        if val is None:
             val = self.defaultSpeciesProperties()['coeff_absorption']
             self.setCoeffAbsorp(l, val)
 

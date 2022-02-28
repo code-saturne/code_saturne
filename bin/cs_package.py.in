@@ -139,7 +139,7 @@ class package:
             prefix = os.getenv('CS_ROOT_DIR')
 
         # Last, assume that the standard tree structure is used
-        if prefix == None:
+        if prefix is None:
             prefix = os.path.dirname(os.path.realpath(__file__))
             i = prefix.find(self.dirs['pythondir'][0])
             if i > -1:

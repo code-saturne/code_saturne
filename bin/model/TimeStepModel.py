@@ -130,7 +130,7 @@ class TimeStepModel(Model):
         """
         tag = 'time_passing'
         v = self.node_time.xmlGetInt(tag)
-        if v == None:
+        if v is None:
             v = self.defaultValues()[tag]
             self.setTimePassing(v)
 
@@ -228,7 +228,7 @@ class TimeStepModel(Model):
         """
         self.node_algo = self.node_np.xmlGetNode('velocity_pressure_algo')
         value = self.node_algo.xmlGetInt('piso_sweep_number')
-        if value == None:
+        if value is None:
             value = self.defaultValues()['piso_sweep_number']
             self.setVelocityPressureParamSweepNumber(value)
         return value
@@ -251,7 +251,7 @@ class TimeStepModel(Model):
         """
         tag = 'relaxation_coefficient'
         v = self.node_time.xmlGetDouble(tag)
-        if v == None:
+        if v is None:
             v = self.defaultValues()[tag]
             self.setRelaxCoefficient(v)
 
@@ -275,7 +275,7 @@ class TimeStepModel(Model):
         """
         tag = 'time_step_ref'
         v = self.node_time.xmlGetDouble(tag)
-        if v == None:
+        if v is None:
             v = self.defaultValues()[tag]
             self.setTimeStep(v)
 
@@ -435,7 +435,7 @@ class TimeStepModel(Model):
             raise ValueError(msg)
 
         v = self.node_time.xmlGetChildDouble(tag)
-        if v == None:
+        if v is None:
             v = self.defaultValues()[tag]
             self.setOptions(tag, v)
         return v

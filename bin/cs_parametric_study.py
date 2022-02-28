@@ -223,13 +223,13 @@ def main(args, pkg):
         cmd_mgr.generate_new_case(opts.case, opts.createFromRef)
 
         # Set default name if needed
-        if opts.case == None:
+        if opts.case is None:
             opts.case = "CASE1"
 
     # Sanity check of case or xml in input parameters
     # -----------------------------------------------
 
-    if opts.case == None and opts.param == None:
+    if opts.case is None and opts.param is None:
         print("No case name nor parameters file provided")
         sys.exit(1)
 

@@ -297,7 +297,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             if not os.path.isdir(d):
                 restart_dir = os.path.join(self.case['case_path'], 'RESU')
 
-            # isdir returns an error if restart_dir == None, hence the test
+            # isdir returns an error if restart_dir is None, hence the test
             if restart_dir:
                 if os.path.isdir(restart_dir):
                     restart_path = '*'

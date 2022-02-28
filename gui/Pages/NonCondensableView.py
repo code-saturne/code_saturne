@@ -365,7 +365,7 @@ class StandardItemModelNonCondensable(QStandardItemModel):
         row = self.rowCount()
 
         name = ""
-        if existing_noncond == None :
+        if existing_noncond is None :
            name = self.mdl.addNonCondensable()
         else :
            name = existing_noncond

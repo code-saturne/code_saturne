@@ -132,7 +132,7 @@ class HeadLossesModel(Variables, Model):
         self.isInList(choice, self.choicevalue)
         node = self.node_hloss.xmlGetNode('head_loss', zone_id=zoneid)
         value = node.xmlGetString(choice)
-        if value == None:
+        if value is None:
             value = self.__defaultValues()[choice]
             self.setMatrixChoice(zoneid, choice, value)
         return value
@@ -160,7 +160,7 @@ class HeadLossesModel(Variables, Model):
 
         node = self.node_hloss.xmlGetNode('head_loss', zone_id=zoneid)
         value = node.xmlGetDouble(k)
-        if value == None:
+        if value is None:
             value = self.__defaultValues()[k]
             self.setCoefficient(zoneid, k, value)
 
@@ -220,7 +220,7 @@ class HeadLossesModel(Variables, Model):
 
         node = self.node_hloss.xmlGetNode('head_loss', zone_id=zoneid)
         value = node.xmlGetDouble(a)
-        if value == None:
+        if value is None:
             value = self.__defaultValues()[a]
             self.setMatrixComponent(zoneid, a, value)
 

@@ -2569,7 +2569,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             mesh_id = self.modelMesh.getItem(row)['id']
             lagrangian = 0
             associated_writer_id = self.mdl.addAssociatedWriter(mesh_id, lagrangian)
-            if associated_writer_id == None:
+            if associated_writer_id is None:
                 title = self.tr("Warning")
                 msg   = self.tr("Please create another writer\n"\
                                 "before adding a new associated writer.")
@@ -2615,7 +2615,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             mesh_id = self.modelLagrangianMesh.getItem(row)['id']
             lagrangian = 1
             associated_writer_id = self.mdl.addAssociatedWriter(mesh_id, lagrangian)
-            if associated_writer_id == None:
+            if associated_writer_id is None:
                 title = self.tr("Warning")
                 msg   = self.tr("Please create another writer\n"\
                                 "before adding a new associated writer.")

@@ -167,7 +167,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         """
         """
         value = self.__timeParameters.xmlGetDouble('reference_time_step')
-        if value == None :
+        if value is None :
             value = self.defaultValues()['reference_time_step']
             self.setTimeStep(value)
         return value
@@ -187,7 +187,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         """
         """
         value = self.__timeParameters.xmlGetInt('iterations')
-        if value == None :
+        if value is None :
             value = self.defaultValues()['iterations']
             self.setTimeStepsNumber(value)
         return value
@@ -207,7 +207,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         """
         """
         value = self.__timeParameters.xmlGetDouble('maximum_time')
-        if value == None :
+        if value is None :
             value = self.defaultValues()['maximum_time']
             self.setMaximumTime(value)
         return value
@@ -227,7 +227,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         """
         """
         value = self.__timeParameters.xmlGetDouble('dtdt0_min')
-        if value == None :
+        if value is None :
             value = self.defaultValues()['dtdt0_min']
             self.setMinDtDt0Variation(value)
         return value
@@ -247,7 +247,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         """
         """
         value = self.__timeParameters.xmlGetDouble('dtdt0_max')
-        if value == None :
+        if value is None :
             value = self.defaultValues()['dtdt0_max']
             self.setMaxDtDt0Variation(value)
         return value
@@ -267,7 +267,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         """
         """
         value = self.__timeParameters.xmlGetDouble('dt_max_increasing_variation')
-        if value == None :
+        if value is None :
             value = self.defaultValues()['dt_max_increasing_variation']
             self.setMaxDtVariationIncreasing(value)
         return value
@@ -287,7 +287,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         """
         """
         value = self.__timeParameters.xmlGetDouble('dt_max_decreasing_variation')
-        if value == None :
+        if value is None :
             value = self.defaultValues()['dt_max_decreasing_variation']
             self.setMaxDtVariationDecreasing(value)
         return value
@@ -310,7 +310,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         self.isInList(str(fieldId),self.getFieldIdList())
 
         value = self.__timeParameters.xmlGetDouble('max_courant_num',  field_id=fieldId)
-        if value == None :
+        if value is None :
             value = self.defaultValues()['max_courant_num']
             self.setMaxCourant(fieldId, value)
         return value
@@ -333,7 +333,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         self.isInList(str(fieldId),self.getFieldIdList())
 
         value = self.__timeParameters.xmlGetDouble('max_fourier_num',  field_id=fieldId)
-        if value == None :
+        if value is None :
             value = self.defaultValues()['max_fourier_num']
             self.setMaxFourier(fieldId, value)
         return value

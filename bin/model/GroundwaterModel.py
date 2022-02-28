@@ -171,7 +171,7 @@ class GroundwaterModel(Variables, Model):
         """
         node = self.node_darcy.xmlInitChildNode('permeability')
         mdl = node['model']
-        if mdl == None:
+        if mdl is None:
             mdl = self.__defaultValues()['permeability']
             self.setPermeabilityType(mdl)
         return mdl
@@ -199,7 +199,7 @@ class GroundwaterModel(Variables, Model):
         """
         node = self.node_darcy.xmlInitChildNode('dispersion')
         mdl = node['model']
-        if mdl == None:
+        if mdl is None:
             mdl = self.__defaultValues()['dispersion']
             self.setDispersionType(mdl)
         return mdl
@@ -239,7 +239,7 @@ class GroundwaterModel(Variables, Model):
         """
         node = self.node_darcy.xmlInitChildNode('flowType')
         mdl = node['model']
-        if mdl == None:
+        if mdl is None:
             mdl = self.__defaultValues()['flow']
             self.setFlowType(mdl)
         return mdl
@@ -262,7 +262,7 @@ class GroundwaterModel(Variables, Model):
         """
         node = self.node_darcy.xmlInitChildNode('unsaturatedZone')
         mdl = node['model']
-        if mdl == None:
+        if mdl is None:
             mdl = self.__defaultValues()['unsaturated']
             self.setUnsaturatedZone(mdl)
         return mdl
@@ -314,7 +314,7 @@ class GroundwaterModel(Variables, Model):
         nodeScalar = self.node_darcy.xmlInitChildNode('scalar', name=scalar_name)
         value = nodeScalar.xmlGetDouble(prop)
 
-        if value == None:
+        if value is None:
             value = self.__defaultValues()[prop]
             self.setDecayRate(scalar_name, value)
 
@@ -346,7 +346,7 @@ class GroundwaterModel(Variables, Model):
         nodeScalar = self.node_darcy.xmlInitChildNode('scalar', name=scalar_name)
         choice = nodeScalar['chemistry_model']
 
-        if choice == None:
+        if choice is None:
             choice = self.__defaultValues()[prop]
             self.setChemistryModel(scalar_name, choice)
 

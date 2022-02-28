@@ -303,7 +303,7 @@ class MainFieldsInitializationModel(MainFieldsModel, Variables, Model):
             raise ValueError(msg)
 
         nodem = node.xmlGetChildNode('initial_type', zone_id=zone)
-        if nodem == None:
+        if nodem is None:
             model = self.defaultValues()['enthalpyModel']
             if ThermodynamicsModel(self.case).getMaterials(fieldId) == 'user_material' :
                 model = 'enthalpy'
