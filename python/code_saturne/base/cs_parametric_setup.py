@@ -132,7 +132,7 @@ class case_setup_filter(object):
         Initialize the SolutionDomainModel
         """
 
-        if self.meshModel == None:
+        if self.meshModel is None:
             from code_saturne.model.SolutionDomainModel import SolutionDomainModel
             self.meshModel = SolutionDomainModel(self.case)
 
@@ -143,7 +143,7 @@ class case_setup_filter(object):
         Method to initialize the outputModel data structure which handles
         output parameters including monitoring points
         """
-        if self.outputModel == None:
+        if self.outputModel is None:
             from code_saturne.model.OutputControlModel import OutputControlModel
             self.outputModel = OutputControlModel(self.case)
 
@@ -154,7 +154,7 @@ class case_setup_filter(object):
         Initialize the BC model
         """
 
-        if self.bcModel == None:
+        if self.bcModel is None:
             from code_saturne.model.LocalizationModel import LocalizationModel
             self.bcModel = LocalizationModel("BoundaryZone", self.case)
 
@@ -165,7 +165,7 @@ class case_setup_filter(object):
         Initialize the boundary model.
         """
 
-        if self.bndModel == None:
+        if self.bndModel is None:
             from code_saturne.model.Boundary import Boundary
             self.bndModel = Boundary
 
@@ -176,7 +176,7 @@ class case_setup_filter(object):
         Initialize the restart model
         """
 
-        if self.restartModel == None:
+        if self.restartModel is None:
             from code_saturne.model.StartRestartModel import StartRestartModel
             self.restartModel = StartRestartModel(self.case)
 
@@ -187,7 +187,7 @@ class case_setup_filter(object):
         Initialize the time step model.
         """
 
-        if self.timeStepModel == None:
+        if self.timeStepModel is None:
             if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI" :
                 from code_saturne.model.TimeStepModelNeptune import TimeStepModel
             else:
@@ -201,7 +201,7 @@ class case_setup_filter(object):
         Initialize the notebook model.
         """
 
-        if self.notebookModel == None:
+        if self.notebookModel is None:
             from code_saturne.model.NotebookModel import NotebookModel
             self.notebookModel = NotebookModel(self.case)
 
@@ -211,7 +211,7 @@ class case_setup_filter(object):
         """
         Initialize the numerical parameters model
         """
-        if self.numParamModel == None:
+        if self.numParamModel is None:
             from code_saturne.model.NumericalParamGlobalModel import NumericalParamGlobalModel
             self.numParamModel = NumericalParamGlobalModel(self.case)
 
@@ -221,7 +221,7 @@ class case_setup_filter(object):
         """
         Initialize the numerical parameters equation model
         """
-        if self.numParamEquationModel == None:
+        if self.numParamEquationModel is None:
             from code_saturne.model.NumericalParamEquationModel import NumericalParamEquationModel
             self.numParamEquationModel = NumericalParamEquationModel(self.case)
 

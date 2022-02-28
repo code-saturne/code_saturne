@@ -194,7 +194,7 @@ class runcase(object):
 
         append_script_comment(self.lines, 'Run command:' + os.linesep)
 
-        if wrapper_postfix == None:
+        if wrapper_postfix is None:
             exec_path = os.path.join(self.package.get_dir("bindir"), self.package.name)
         else:
             exec_path = '\\' + self.package.name + wrapper_postfix

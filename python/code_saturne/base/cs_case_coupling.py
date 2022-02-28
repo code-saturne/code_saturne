@@ -57,7 +57,7 @@ def coupling(package,
     config = configparser.ConfigParser()
     config.read(package.get_global_configfile())
 
-    if package_compute == None:
+    if package_compute is None:
         package_compute = package
 
     # Initialize code domains
@@ -67,7 +67,7 @@ def coupling(package,
     cat_domains = []
     py_domains = []
 
-    if domains == None:
+    if domains is None:
         raise RunCaseError('No domains defined.')
 
     for d in domains:
@@ -77,7 +77,7 @@ def coupling(package,
         script_s = None
         param_s = None
 
-        if (domain_s == None):
+        if (domain_s is None):
             msg = 'Check your coupling definition.\n'
             msg += 'domain key is missing.'
             raise RunCaseError(msg)
@@ -105,7 +105,7 @@ def coupling(package,
             if not s_dir:
                 s_dir = os.getcwd()
 
-            if param == None:
+            if param is None:
                 run_conf_path = os.path.join(s_dir,
                                              domain_s,
                                              'DATA',
@@ -157,10 +157,10 @@ def coupling(package,
         elif solver_s == 'syrthes':
 
             param_s = d.get('param')
-            if param_s == None:
+            if param_s is None:
                 param_s = d.get('script') # older name
 
-            if (param_s == None):
+            if (param_s is None):
                 msg = 'Check your coupling definition.\n'
                 msg += 'parameters file selection is missing for domain: '
                 msg += domain_s + '.\n'
@@ -206,7 +206,7 @@ def coupling(package,
         elif solver_s == 'python_code':
 
             script_s = d.get('script')
-            if (script_s == None):
+            if (script_s is None):
                 msg = 'Check your coupling definition.\n'
                 msg += 'Python script file selection is missing for domain: '
                 msg += domain_s + '.\n'

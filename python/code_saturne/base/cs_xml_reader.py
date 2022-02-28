@@ -54,13 +54,13 @@ def getChildNode(node, tag, required=False):
     for child in node.childNodes:
         if child.nodeType == node.ELEMENT_NODE:
             if child.nodeName == tag:
-                if childNode == None:
+                if childNode is None:
                     childNode = child
                 else:
                     errStr = "Multiple instance of " + tag + "nodes"
                     raise XMLError(errStr)
 
-    if childNode == None and required:
+    if childNode is None and required:
         errStr = tag + " node not found under " + node.tagName
         raise XMLError(errStr)
 
@@ -120,7 +120,7 @@ class Parser:
             self.doc = doc
 
         else:
-            if fileName == None:
+            if fileName is None:
                 return
 
             if not os.path.isfile(fileName):
@@ -215,7 +215,7 @@ class Parser:
         # Search for appropriate node.
 
         sol_domain_node = getChildNode(self.root, 'solution_domain')
-        if sol_domain_node == None:
+        if sol_domain_node is None:
             return
 
         # Check whether additionnal preprocessing is done upn restart

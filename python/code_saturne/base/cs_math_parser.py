@@ -776,7 +776,7 @@ class cs_math_parser:
             if tk in req:
                 if func_type == 'vol':
                     fid, fcomp, fdim = get_req_field_info(req_fields, tk)
-                    if fid == None:
+                    if fid is None:
                         raise Exception("Uknown field: %s" %(tk))
 
                     if fcomp < 0:

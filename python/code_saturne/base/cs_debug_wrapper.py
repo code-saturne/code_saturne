@@ -629,7 +629,7 @@ def run_vgdb_debug(path,
 
     vgdb_pid = None
 
-    while p0.poll() == None:
+    while p0.poll() is None:
         output = p0.stderr.readline()
         if not cmd:
             idx = output.find("target remote")
@@ -658,7 +658,7 @@ def run_vgdb_debug(path,
     if p1:
         if p1.returncode != None: # Debugger has finished/exited
             p0.poll()
-            if p0.returncode == None:
+            if p0.returncode is None:
                 if vgdb_pid:
                     # make sure vgdb is from the same path as Valgrind
                     if os.path.isabs(valgrind):

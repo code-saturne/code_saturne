@@ -258,7 +258,7 @@ class case:
             err_str = 'In case of multiple domains (i.e. code coupling), ' \
                 + 'each domain must have a name.\n'
             for d in self.domains:
-                if d.name == None:
+                if d.name is None:
                     raise RunCaseError(err_str)
 
         # Names, directories, and files in case structure:
@@ -405,7 +405,7 @@ class case:
 
         # If no process count is given or everything fits:
 
-        if n_procs == None or n_procs == n_procs_tot:
+        if n_procs is None or n_procs == n_procs_tot:
             return n_procs_tot
 
         # If process count is given and not sufficient, abort.
@@ -436,7 +436,7 @@ class case:
             n_procs_tot = 0
 
             for np in np_list:
-                if np[2] == None:
+                if np[2] is None:
                     np[2] = n_procs
                 if np[2] != 0: # marked as fixed here
                     np[0] = int(np[0]*mult)
@@ -627,7 +627,7 @@ class case:
         for t in t_uname:
             s_uname = s_uname + t + ' '
         n_procs = r.n_procs
-        if n_procs == None:
+        if n_procs is None:
             n_procs = 1
 
         dhline = '========================================================\n'
@@ -654,7 +654,7 @@ class case:
         s.write(hline)
         s.write('  Machine        : ' + s_uname  + '\n')
         s.write('  N Procs        : ' + str(n_procs)  + '\n')
-        if r.manager == None and r.hosts_list != None:
+        if r.manager is None and r.hosts_list != None:
             s.write('  Hosts          :')
             for p in r.hosts_list:
                 s.write(' ' + p)
@@ -1109,7 +1109,7 @@ class case:
         n_procs = exec_env.resources.n_procs
         mpi_env = exec_env.mpi_env
 
-        if n_procs == None:
+        if n_procs is None:
             n_procs = 0
             for d in self.domains:
                 n_procs += d.n_procs
@@ -1336,7 +1336,7 @@ class case:
         try:
             if dest != None:
                 dest_tmp_name = base_path + dest
-                if src_tmp_name == None:
+                if src_tmp_name is None:
                     scripts_tmp = open(dest_tmp_name, 'w')
                     if not caption:
                         caption = self.case_dir
@@ -1407,7 +1407,7 @@ class case:
 
         # When id not assigned, choose an id not already present
 
-        if self.run_id == None:
+        if self.run_id is None:
             self.run_id = self.suggest_id()
             self.define_result_dir()
             j = 1
@@ -1825,10 +1825,10 @@ class case:
         # Define scratch directory
         # priority: argument, environment variable, preference setting.
 
-        if scratchdir == None:
+        if scratchdir is None:
             scratchdir = os.getenv('CS_SCRATCHDIR')
 
-        if scratchdir == None:
+        if scratchdir is None:
 
             # Read the possible config files
 
@@ -1851,7 +1851,7 @@ class case:
         # Define MPI execution options
         # priority: argument, environment variable, preference setting, defaults.
 
-        if mpiexec_options == None:
+        if mpiexec_options is None:
             mpiexec_options = os.getenv('CS_MPIEXEC_OPTIONS')
 
         # Set working directory
@@ -1918,7 +1918,7 @@ class case:
             for d in self.domains:
                 if not hasattr(d, "notebook"):
                     continue
-                if d.notebook == None:
+                if d.notebook is None:
                     d.notebook = notebook_args
                 else:
                     err_str = 'domain: + ' + str(d.name) \
@@ -1929,7 +1929,7 @@ class case:
             for d in self.domains:
                 if not hasattr(d, "parametric_args"):
                     continue
-                if d.parametric_args == None:
+                if d.parametric_args is None:
                     d.parametric_args = parametric_args
                 else:
                     err_str = 'domain: + ' + str(d.name) \
@@ -1938,7 +1938,7 @@ class case:
 
         if kw_args:
             for d in self.domains:
-                if d.kw_args == None:
+                if d.kw_args is None:
                     d.kw_args = kw_args
                 else:
                     err_str = 'domain: + ' + str(d.name) \

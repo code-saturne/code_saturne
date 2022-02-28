@@ -122,7 +122,7 @@ class cs_debug_symbol_translator:
         self.pkg    = pkg
         self.path   = path
         self.solver = solver
-        if self.solver == None:
+        if self.solver is None:
             self.solver = pkg.solver
 
     #---------------------------------------------------------------------------
@@ -183,7 +183,7 @@ class cs_debug_symbol_translator:
 
         out = get_command_output(cmd)
 
-        if out == None or out == "":
+        if out is None or out == "":
             sys.exit(1)
 
         return out
