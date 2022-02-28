@@ -886,9 +886,9 @@ class case:
         for d in (self.syr_domains + self.domains + self.py_domains):
             s_args = d.solver_command()
             cmd = str(d.n_procs)+' ' \
+                    + ' bash -c "' \
                     + ' cd ' + os.path.basename(s_args[0]) + ' &&' \
                     + ' ' + s_args[1] + s_args[2] + '"\n'
-#                    + ' bash -c "export OMP_NUM_THREADS=1  ;' \
 
             e.write(cmd)
             app_id += 1
