@@ -883,9 +883,9 @@ class case:
 
         app_id = 0
 
-        for d in (self.syr_domains + self.domains + self.py_domains):
+        for d in self.domains:
             s_args = d.solver_command()
-            cmd = str(d.n_procs)+' ' \
+            cmd = str(d.n_procs) +' ' \
                     + ' bash -c "' \
                     + ' cd ' + os.path.basename(s_args[0]) + ' &&' \
                     + ' ' + s_args[1] + s_args[2] + '"\n'
