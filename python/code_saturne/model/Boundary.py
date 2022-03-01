@@ -2946,7 +2946,10 @@ class WallBoundary(Boundary) :
 
         if node_syr:
             syr_inst = node_syr['instance_name']
-            self._syrthesModel.deleteSyrthesCoupling(syr_inst, self._label)
+            if hasattr(self, '_syrthesModel'):
+                self._syrthesModel.deleteSyrthesCoupling(syr_inst, self._label)
+            else:
+                ConjugateHeatTransferModel(self.case).deleteSyrthesCoupling(syr_inst, self._label)
             self.boundNode.xmlRemoveChild("syrthes")
 
     def __defaultValues(self):
@@ -3186,7 +3189,7 @@ class WallBoundary(Boundary) :
             value = self.getScalarValue(name, choice)
             self.__deleteScalarNodes(name, choice)
 
-        if choice != "syrthes_coupling":
+        if scalarNode['type'] == 'thermal' and choice != "syrthes_coupling":
             self.__deleteSyrthesNodes()
 
 
