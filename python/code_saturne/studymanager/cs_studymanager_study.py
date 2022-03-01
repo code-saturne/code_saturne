@@ -1796,8 +1796,8 @@ class Studies(object):
         if not content:
             os.system("rm -f " + self.__log_post_name)
         else:
-            self.reporting(" /!\ ERROR during post. See %s\n",
-                           self.__log_post_name, stdout=True, report=True)
+            self.reporting(" /!\ ERROR during post. See %s\n" \
+                           %self.__log_post_name, stdout=True, report=True)
 
         self.reporting('')
 
