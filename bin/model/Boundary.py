@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2021 EDF S.A.
+# Copyright (C) 1998-2022 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -2946,7 +2946,10 @@ class WallBoundary(Boundary) :
 
         if node_syr:
             syr_inst = node_syr['instance_name']
-            self._syrthesModel.deleteSyrthesCoupling(syr_inst, self._label)
+            if hasattr(self, '_syrthesModel'):
+                self._syrthesModel.deleteSyrthesCoupling(syr_inst, self._label)
+            else:
+                ConjugateHeatTransferModel(self.case).deleteSyrthesCoupling(syr_inst, self._label)
             self.boundNode.xmlRemoveChild("syrthes")
 
     def __defaultValues(self):
@@ -3186,7 +3189,7 @@ class WallBoundary(Boundary) :
             value = self.getScalarValue(name, choice)
             self.__deleteScalarNodes(name, choice)
 
-        if choice != "syrthes_coupling":
+        if scalarNode['type'] == 'thermal' and choice != "syrthes_coupling":
             self.__deleteSyrthesNodes()
 
 

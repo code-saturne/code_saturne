@@ -3,6 +3,9 @@ Release 7.1.1 (not released yet)
 
 Bug fixes:
 
+- GUI and scripts: fix crash for Syrthes coupling when at least one
+  user scalar (specie, variance) is defined.
+
 - Probes and profiles: fix possible location error on hybrid meshes
   depending on order of appearance of cell types.
 
