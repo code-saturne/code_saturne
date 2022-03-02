@@ -260,12 +260,9 @@ contains
 
   ! Initialize auxiliary arrays
 
-  subroutine init_aux_arrays &
-
-( ncelet , nfabor )
+  subroutine init_aux_arrays(ncelet, nfabor)
 
     use paramx
-    use numvar, only: ipr, iu, ivarfl
     use parall
     use period
     use optcal
@@ -283,8 +280,6 @@ contains
     integer, intent(in) :: ncelet, nfabor
 
     ! Local variables
-
-    type(var_cal_opt) :: vcopt
 
     ! Boundary-face related arrays
 
