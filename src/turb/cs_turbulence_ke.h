@@ -71,6 +71,20 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Clipping of the turbulent kinetic energy and turbulent dissipation.
+ *
+ * \param[in]     n_cells  number of cells
+ * \param[in]     iclip    indicator = 0 if viscl0 is used
+ *                         otherwise viscl is used.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_ke_clip(cs_lnum_t  n_cells,
+                      int        iclip);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Calculation of turbulent viscosity for
  *        the non-linear quadratic K-epsilon from
  *        Baglietto et al. (2005)

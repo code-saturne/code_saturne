@@ -3428,7 +3428,7 @@ module cs_c_bindings
     ! and the turbulent dissipation.
 
     subroutine clipke(ncel, iclip)   &
-      bind(C, name='cs_clip_ke')
+      bind(C, name='cs_turbulence_ke_clip')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), intent(in), value :: ncel, iclip

@@ -29,10 +29,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_clip_ke.h"
 #include "cs_les_balance.h"
 #include "cs_les_filter.h"
 #include "cs_les_inflow.h"
+#include "cs_les_mu_t.h"
 #include "cs_turbulence_bc.h"
 #include "cs_turbulence_inflow.h"
 #include "cs_turbulence_ke.h"
