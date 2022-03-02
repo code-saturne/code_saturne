@@ -1382,80 +1382,27 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def prepro(self, case):
+    def check_prepro(self, case):
         """
         Launch external additional scripts with arguments.
         """
         pre, label, nodes, args = self.__parser.getPrepro(case.node)
-        if self.__debug:
-            self.reporting(" prepro:" + pre, report=False)
-            self.reporting(" label:" + label, report=False)
-            self.reporting(" nodes:" + nodes, report=False)
-            self.reporting(" args:" + args, report=False)
+        iko = 0
         for i in range(len(label)):
             if pre[i]:
-                # search if the script is in the MESH directory
-                # if not, the script is searched in the directories
-                # of the current case
-                cmd = os.path.join(self.__dest, case.study, "MESH", label[i])
-                if self.__debug:
-                    self.reporting(" Path to prepro script:" + cmd,
-                                   report=False)
-                if not os.path.isfile(cmd):
-                    filePath = ""
-                    for root, dirs, fs in os.walk(os.path.join(self.__dest,
-                                                               case.study,
-                                                               case.label)):
-                        if label[i] in fs:
-                            filePath = root
-                            break
+                cmd = os.path.basename(label[i])
+                self.reporting('    - script %s --> FAILED (%s)' % (cmd),
+                               stdout=True, report=False)
+                self.reporting('    - script %s --> FAILED (%s)' % (cmd),
+                               stdout=False, report=True)
+                iko += 1
 
-                    cmd = os.path.join(filePath, label[i])
-
-                if os.path.isfile(cmd):
-                    sc_name = os.path.basename(cmd)
-                    # ensure script is executable
-                    set_executable(cmd)
-
-                    cmd += " " + args[i]
-                    cmd += " -c " + os.path.join(self.__dest, case.study,
-                                                 case.label)
-                    repbase = os.getcwd()
-                    os.chdir(os.path.join(self.__dest, case.study, "MESH"))
-
-                    # Prepro external script often need install python directory
-                    # and package python directory: code_saturne or neptune_cfd
-                    p_dir = case.pkg.get_dir('pythondir')
-                    pkg_dir = case.pkg.get_dir('pkgpythondir')
-                    p_dirs = p_dir + ":" + pkg_dir
-
-                    # if package is neptune_cfd, prepro script often needs
-                    # code_saturne package python directory
-                    cs_pkg_dir = None
-                    if case.pkg.name == 'neptune_cfd':
-                        cs_pkg_dir = os.path.join(pkg_dir, '../code_saturne')
-                        cs_pkg_dir = os.path.normpath(cs_pkg_dir)
-                        p_dirs = p_dirs + ":" + cs_pkg_dir
-
-                    # append run_case.log in run_dir
-                    file_name = os.path.join(case.run_dir, "run_case.log")
-                    log_run = open(file_name, mode='a')
-
-                    retcode, t = run_studymanager_command(cmd, log_run,
-                                                          pythondir = p_dirs)
-                    stat = "FAILED" if retcode != 0 else "OK"
-
-                    os.chdir(repbase)
-
-                    self.reporting('    - script %s --> %s (%s s)' % (stat, sc_name, t),
-                                   stdout=True, report=False)
-
-                    self.reporting('    - script %s --> %s (%s s)' % (stat, cmd, t),
-                                   stdout=False, report=True)
-
-                else:
-                    self.reporting('    - script %s not found' % cmd)
-
+        if iko:
+            self.reporting('  Error: "prepro" tag present for %s case(s).\n'
+                           %iko, report=False, exit=False)
+            self.reporting('        "prepro" must be updated to one of\n' +
+                           '           "notebook_args", "parametric_args", or "kw_args"\n',
+                           report = False, exit=False)
 
     #---------------------------------------------------------------------------
 
@@ -1471,7 +1418,7 @@ class Studies(object):
         self.reporting("  o Run all cases")
 
         for case in self.graph.graph_dict:
-            self.prepro(case)
+            self.check_prepro(case)
             if self.__running:
                 if case.compute == 'on' and case.is_compiled != "KO":
 
