@@ -449,13 +449,13 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.toolButtonDuplicate.clicked.connect(self.slotDuplicateCase)
         self.treeViewCases.clicked.connect(self.slotChangeSelection)
 
-        self.checkBoxPrepro.clicked.connect(self.slotPreproStatus)
         self.checkBoxPost.clicked.connect(self.slotPostStatus)
         self.checkBoxCompare.clicked.connect(self.slotCompareStatus)
-        self.pushButtonPrepro.clicked.connect(self.slotPreproFile)
         self.pushButtonPost.clicked.connect(self.slotPostFile)
         self.pushButtonInput.clicked.connect(self.slotInputFile)
-        self.lineEditPreproArgs.textChanged[str].connect(self.slotPreproArgs)
+        self.lineEditNotebookArgs.textChanged[str].connect(self.slotNotebookArgs)
+        self.lineEditParametricArgs.textChanged[str].connect(self.slotParametricArgs)
+        self.lineEditKwArgs.textChanged[str].connect(self.slotKwArgs)
         self.lineEditPostArgs.textChanged[str].connect(self.slotPostArgs)
         self.lineEditCompareArgs.textChanged[str].connect(self.slotCompareArgs)
 
@@ -464,7 +464,6 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.groupBoxInput.hide()
         self.groupBoxCompare.hide()
 
-        self.lineEditPrepro.setEnabled(False)
         self.lineEditInput.setEnabled(False)
         self.lineEditPost.setEnabled(False)
         self.pushButtonDelete.setEnabled(False)
@@ -686,24 +685,12 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             study = current.parent().internalPointer().item.name
 
             # prepro
-            status = self.mdl.getPreproScriptStatus(study, idx)
-            if status == "on":
-                self.checkBoxPrepro.setChecked(True)
-            else:
-                self.checkBoxPrepro.setChecked(False)
-
-            script_name = self.mdl.getPreproScriptName(study, idx)
-            self.lineEditPrepro.setText(str(script_name))
-            if status == "on":
-                if script_name != "":
-                    self.pushButtonPrepro.setStyleSheet("background-color: green")
-                else:
-                    self.pushButtonPrepro.setStyleSheet("background-color: red")
-            else:
-                self.pushButtonPrepro.setStyleSheet("background-color: None")
-
-            script_args = self.mdl.getPreproScriptArgs(study, idx)
-            self.lineEditPreproArgs.setText(str(script_args))
+            notebook_args = self.mdl.getNotebookArgs(study, idx)
+            self.lineEditNotebookArgs.setText(str(notebook_args))
+            parametric_args = self.mdl.getParametricArgs(study, idx)
+            self.lineEditParametricArgs.setText(str(parametric_args))
+            kw_args = self.mdl.getKwArgs(study, idx)
+            self.lineEditKwArgs.setText(str(kw_args))
 
             # post
             status = self.mdl.getPostScriptStatus(study, idx)
@@ -740,24 +727,6 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
                 self.checkBoxCompare.setChecked(False)
             compare_args = self.mdl.getCompareArgs(study, idx)
             self.lineEditCompareArgs.setText(str(compare_args))
-
-
-    @pyqtSlot()
-    def slotPreproStatus(self):
-        """
-        """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
-        study = current.parent().internalPointer().item.name
-        if self.checkBoxPrepro.isChecked():
-            self.mdl.setPreproScriptStatus(study, idx, "on")
-            if self.mdl.getPreproScriptName(study, idx) != "":
-                self.pushButtonPrepro.setStyleSheet("background-color: green")
-            else:
-                self.pushButtonPrepro.setStyleSheet("background-color: red")
-        else:
-            self.mdl.setPreproScriptStatus(study, idx, "off")
-            self.pushButtonPrepro.setStyleSheet("background-color: None")
 
 
     @pyqtSlot()
@@ -804,14 +773,36 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
 
 
     @pyqtSlot(str)
-    def slotPreproArgs(self, text):
+    def slotNotebookArgs(self, text):
         """
         """
         current = self.treeViewCases.currentIndex()
         idx = current.row()
         study = current.parent().internalPointer().item.name
         args = str(text)
-        self.mdl.setPreproScriptArgs(study, idx, args)
+        self.mdl.setNotebookArgs(study, idx, args)
+
+
+    @pyqtSlot(str)
+    def slotParametricArgs(self, text):
+        """
+        """
+        current = self.treeViewCases.currentIndex()
+        idx = current.row()
+        study = current.parent().internalPointer().item.name
+        args = str(text)
+        self.mdl.setParametricArgs(study, idx, args)
+
+
+    @pyqtSlot(str)
+    def slotKwArgs(self, text):
+        """
+        """
+        current = self.treeViewCases.currentIndex()
+        idx = current.row()
+        study = current.parent().internalPointer().item.name
+        args = str(text)
+        self.mdl.setKwArgs(study, idx, args)
 
 
     @pyqtSlot(str)
@@ -838,39 +829,6 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         else:
             study = current.parent().internalPointer().item.name
             self.mdl.setPostScriptArgs(study, idx, args)
-
-
-    def slotPreproFile(self):
-        """
-        Select a prepro script
-        """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
-        study = current.parent().internalPointer().item.name
-
-        cur_path = os.getcwd()
-        base_dir = os.path.abspath(os.path.join(self.mdl.repo, study))
-        rep = os.path.abspath(os.path.join(base_dir, "MESH"))
-        if not os.path.isdir(rep):
-            rep = os.path.abspath(os.path.join(os.path.split(base_dir)[0], "MESH"))
-        if not os.path.isdir(rep):
-            rep = base_dir
-        title = self.tr("preprocess script")
-        filetypes = self.tr("(*py*);;All Files (*)")
-        file = QFileDialog.getOpenFileName(self, title, rep, filetypes)[0]
-        file = str(file)
-
-        if not file:
-            return
-        file = os.path.basename(file)
-
-        if file not in os.listdir(rep):
-            title = self.tr("WARNING")
-            msg   = self.tr("This selected file is not in the MESH directory of te study")
-            QMessageBox.information(self, title, msg)
-        else:
-            self.lineEditPrepro.setText(str(file))
-            self.mdl.setPreproScriptName(study, idx, file)
 
 
     def slotPostFile(self):

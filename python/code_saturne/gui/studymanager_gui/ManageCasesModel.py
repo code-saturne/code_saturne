@@ -317,36 +317,6 @@ class ManageCasesModel(Model):
         node['run_id'] = run_id
 
 
-    def getPreproScriptStatus(self, study_name, idx):
-        """
-        Get prepro script status from node with index
-        """
-        self.isInt(idx)
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
-        nn = node.xmlGetNode("prepro")
-        if nn:
-            status = nn['status']
-            if not status:
-                status = self._defaultValues()['prepro_status']
-                self.setPreproScriptStatus(study_name, idx, status)
-        else:
-            status = "off"
-        return status
-
-
-    def setPreproScriptStatus(self, study_name, idx, status):
-        """
-        Put prepro script status from node with index
-        """
-        self.isInt(idx)
-        self.isOnOff(status)
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
-        nn = node.xmlInitChildNode("prepro")
-        nn['status'] = status
-
-
     def getPostScriptStatus(self, study_name, idx):
         """
         Get post script status from node with index
@@ -433,54 +403,79 @@ class ManageCasesModel(Model):
         nn['status'] = status
 
 
-    def getPreproScriptArgs(self, study_name, idx):
+    def getNotebookArgs(self, study_name, idx):
         """
-        Get prepro script status from node with index
+        Get notebook arguments from node with index
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNode("case", id = idx)
-        nn = node.xmlGetNode("prepro")
+        nn = node.xmlGetNode("notebook")
         args = ""
         if nn:
             args = nn['args']
         return args
 
 
-    def setPreproScriptArgs(self, study_name, idx, args):
+    def setNotebookArgs(self, study_name, idx, args):
         """
-        Put prepro script status from node with index
+        Put notebook arguments from node with index
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNode("case", id = idx)
-        nn = node.xmlInitChildNode("prepro")
+        nn = node.xmlInitChildNode("notebook")
         nn['args'] = args
 
 
-    def getPreproScriptName(self, study_name, idx):
+    def getParametricArgs(self, study_name, idx):
         """
-        Get prepro script status from node with index
+        Get notebook arguments from node with index
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNode("case", id = idx)
-        nn = node.xmlGetNode("prepro")
-        name = ""
+        nn = node.xmlGetNode("parametric")
+        args = ""
         if nn:
-            name = nn['label']
-        return name
+            args = nn['args']
+        return args
 
 
-    def setPreproScriptName(self, study_name, idx, name):
+    def setParametricArgs(self, study_name, idx, args):
         """
-        Put prepro script status from node with index
+        Put notebook arguments from node with index
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNode("case", id = idx)
-        nn = node.xmlInitChildNode("prepro")
-        nn['label'] = name
+        nn = node.xmlInitChildNode("parametric")
+        nn['args'] = args
+
+
+    def getKwArgs(self, study_name, idx):
+        """
+        Get notebook arguments from node with index
+        """
+        self.isInt(idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        node = study_node.xmlGetNode("case", id = idx)
+        nn = node.xmlGetNode("kw")
+        args = ""
+        if nn:
+            args = nn['args']
+        return args
+
+
+    def setKwArgs(self, study_name, idx, args):
+        """
+        Put notebook arguments from node with index
+        """
+        self.isInt(idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        node = study_node.xmlGetNode("case", id = idx)
+        nn = node.xmlInitChildNode("kw")
+        nn['args'] = args
 
 
     def getPostScriptArgs(self, study_name, idx):
