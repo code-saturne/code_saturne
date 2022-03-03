@@ -184,12 +184,17 @@ Studies and cases attibutes
 -------------------------
 
 ```{.xml}
-    <study label="MyStudy1" status="on">
+    <study label="MyStudy1" status="on" tags="coarse, test">
 ```
 
 The attributes for the studies are:
 - `label`: the name of the study;
-- `status`: must be `on` or `off` to activate or desactivate the study
+- `status`: must be `on` or `off` to activate or desactivate the study;
+- `tags`: possible tags distinguishing runs from the others in the same SMGR
+  parameter file (ex.: `tags="fine,high-reynolds"`). These tags will be applied
+  to all cases in the study.
+
+Only the attributes `label` and `status` are mandatory.
 
 ```{.xml}
         <case label="Grid1" run_id="Grid1" status="on" compute="on" post="off" tags="coarse"/>
@@ -206,7 +211,8 @@ The attributes for the cases are:
 - `post: must be `on` or `off` to activate or deactivate the post-processing of
   the case;
 - `tags`: possible tags distinguishing the run from the others in the same SMGR
-  parameter file (ex.: `tags="fine,high-reynolds"`).
+  parameter file (ex.: `tags="fine,high-reynolds"`). They are added to the study
+  tags if they exist.
 
 Only the attributes `label`, `status`, `compute`, and `post` are mandatory.
 

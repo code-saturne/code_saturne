@@ -281,6 +281,32 @@ class Parser(object):
 
     #---------------------------------------------------------------------------
 
+    def getStudyTags(self, studyNode):
+        """
+        Read:
+            <study label='STUDY' status='on' tags='coarse, test'>
+                <case label='CASE' status='on' compute="on" post="on"/>
+            </study>
+
+        @type studyNode: C{DOM Element}
+        @param studyNode: node of the current study
+        @rtype: C{List} of C{String}
+        @return: list of the tags of a study
+        """
+        if str(studyNode.attributes["status"].value) != "on":
+            raise ValueError("Error: the getStudyTags method is used with the "\
+                             "study %s turned off " % l)
+
+        try:
+            text = str(studyNode.attributes["tags"].value)
+            tags = [tag.strip() for tag in re.split(',', text)]
+        except:
+            tags = []
+
+        return tags
+
+    #---------------------------------------------------------------------------
+
     def getStatusOnCasesLabels(self, l, attr=None):
         """
         Read:
@@ -359,10 +385,15 @@ class Parser(object):
                 except:
                     d['n_procs'] = None
 
+                # tags defined for the case
                 try:
                     tags = str(node.attributes["tags"].value)
                     d['tags'] = [tag.strip() for tag in re.split(',', tags)]
                 except:
+                    d['tags'] = []
+                # add tags defined for the study
+                d['tags'] += self.getStudyTags(self.getStudyNode(l))
+                if len(d['tags']) == 0:
                     d['tags'] = None
 
                 try:
