@@ -62,25 +62,29 @@ log.setLevel(GuiParam.DEBUG)
 #-------------------------------------------------------------------------------
 # item class
 #-------------------------------------------------------------------------------
+
 class item_class(object):
     '''
     custom data object
     '''
-    def __init__(self, idx, name, compute, post, status, run_id):
+    def __init__(self, idx, name, compute, post, status, run_id, tags):
         self.index   = idx
         self.name    = name
         self.compute = compute
         self.post    = post
         self.status  = status
         self.run_id  = run_id
+        self.tags    = tags
 
     def __repr__(self):
-        return "case : %s // compute : %s // post %s // status %s // run_id %s"\
-               % (self.name, self.compute, self.post, self.status, self.run_id)
+        return "case : %s // compute : %s // post %s // status %s // run_id %s // tags %s"\
+            % (self.name, self.compute, self.post, self.status, self.run_id,
+               self.tags)
 
 #-------------------------------------------------------------------------------
 # Treeitem class
 #-------------------------------------------------------------------------------
+
 class TreeItem(object):
     '''
     a python object used to return row/column data, and keep note of
@@ -106,7 +110,7 @@ class TreeItem(object):
 
 
     def columnCount(self):
-        return 5
+        return 6
 
 
     def data(self, column, role):
@@ -138,6 +142,8 @@ class TreeItem(object):
                     return Qt.Unchecked
             elif column == 4 and role == Qt.DisplayRole:
                 return self.item.run_id
+            elif column == 5 and role == Qt.DisplayRole:
+                return self.item.tags
         return None
 
 
@@ -158,10 +164,9 @@ class TreeItem(object):
 class LabelDelegate(QItemDelegate):
     """
     """
-    def __init__(self, parent=None, xml_model=None):
+    def __init__(self, parent=None):
         super(LabelDelegate, self).__init__(parent)
         self.parent = parent
-        self.mdl = xml_model
 
 
     def createEditor(self, parent, option, index):
@@ -186,6 +191,24 @@ class LabelDelegate(QItemDelegate):
         if editor.validator().state == QValidator.Acceptable:
             p_value = str(editor.text())
             model.setData(index, p_value, Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+
+class TagsDelegate(LabelDelegate):
+    """
+    """
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        return editor
+
+    def setModelData(self, editor, model, index):
+        if not editor.isModified():
+            return
+        p_value = str(editor.text())
+        model.setData(index, p_value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -219,7 +242,7 @@ class CaseStandardItemModel(QAbstractItemModel):
         if parent and parent.isValid():
             return parent.internalPointer().columnCount()
         else:
-            return 5
+            return 6
 
 
     def data(self, index, role):
@@ -244,6 +267,8 @@ class CaseStandardItemModel(QAbstractItemModel):
                 return self.tr("Post-processing")
             elif index.column() == 4:
                 return self.tr("Run_id")
+            elif index.column() == 5:
+                return self.tr("Tags")
 
         # Display
         if role == Qt.DisplayRole:
@@ -283,6 +308,8 @@ class CaseStandardItemModel(QAbstractItemModel):
                 return self.tr("Post-\nprocessing")
             elif section == 4:
                 return self.tr("run_id")
+            elif section == 5:
+                return self.tr("Tags")
         return None
 
 
@@ -336,7 +363,8 @@ class CaseStandardItemModel(QAbstractItemModel):
         for name in self.prtlist:
             row = self.rowCount()
             status  = self.mdl.getStudyStatus(name)
-            item = item_class(-1, name, "off", "off", status, "")
+            tags    = self.mdl.getStudyTags(name)
+            item = item_class(-1, name, "off", "off", status, "", tags)
             newparent = TreeItem(item, name, self.rootItem)
             self.rootItem.appendChild(newparent)
             self.noderoot[name] = newparent
@@ -352,7 +380,8 @@ class CaseStandardItemModel(QAbstractItemModel):
                 post    = self.mdl.getPostStatus(name, idx)
                 status  = self.mdl.getStatus(name, idx)
                 run_id  = self.mdl.getRunId(name, idx)
-                item = item_class(idx, cname, compute, post, status, run_id)
+                tags    = self.mdl.getTags(name, idx)
+                item = item_class(idx, cname, compute, post, status, run_id, tags)
                 new_item = TreeItem(item, "", parentItem)
                 parentItem.appendChild(new_item)
 
@@ -399,6 +428,22 @@ class CaseStandardItemModel(QAbstractItemModel):
                 itm = item.parentItem
                 self.mdl.setRunId(itm.item.name, item.item.index, item.item.run_id)
 
+        elif index.column() == 5:
+            tags = str(from_qvariant(value, to_text_string))
+            atags = str(tags).replace(",", " ").split()
+            if len(atags) > 1:
+                tags = ",".join(atags)
+            elif len(atags) > 1:
+                tags = atags[0]
+            else:
+                tags = ""
+            item.item.tags = tags
+            if item not in self.noderoot.values():
+                itm = item.parentItem
+                self.mdl.setTags(itm.item.name, item.item.index, item.item.tags)
+            else:
+                self.mdl.setStudyTags(item.item.name, item.item.tags)
+
         self.dataChanged.emit(QModelIndex(), QModelIndex())
 
         return True
@@ -437,8 +482,11 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.treeViewCases.setDragEnabled(False)
 
-        runidDelegate = LabelDelegate(self.treeViewCases, self.mdl)
+        runidDelegate = LabelDelegate(self.treeViewCases)
         self.treeViewCases.setItemDelegateForColumn(4, runidDelegate)
+
+        tagsDelegate = TagsDelegate(self.treeViewCases)
+        self.treeViewCases.setItemDelegateForColumn(5, tagsDelegate)
 
         self.treeViewCases.resizeColumnToContents(0)
 

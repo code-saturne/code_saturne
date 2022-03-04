@@ -71,6 +71,7 @@ class ManageCasesModel(Model):
         default['post']           = "on"
         default['status']         = "on"
         default['run_id']         = ""
+        default['tags']           = ""
         default['prepro_status']  = "off"
         default['post_status']    = "off"
         default['compare_status'] = "off"
@@ -184,6 +185,10 @@ class ManageCasesModel(Model):
         if run_id:
             new_node['run_id'] = run_id
 
+        tags  = node['tags']
+        if tags:
+            new_node['tags'] = tags
+
         self.list_case = self.case.xmlGetNodeList("case")
 
 
@@ -216,6 +221,27 @@ class ManageCasesModel(Model):
         self.isOnOff(status)
         study_node = self.case.xmlGetNode('study', label = study_name)
         study_node['status'] = status
+
+
+    def getStudyTags(self, study_name):
+        """
+        Get study tags from node with index
+        """
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        tags = study_node['tags']
+        if not tags:
+            tags = self._defaultValues()['tags']
+        return tags
+
+
+    def setStudyTags(self, study_name, tags):
+        """
+        Put study tags from node with index
+        """
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        study_node['tags'] = tags
+        if tags == "":
+            del(study_node['tags'])
 
 
     def getComputeStatus(self, study_name, idx):
@@ -315,6 +341,31 @@ class ManageCasesModel(Model):
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNode("case", id = idx)
         node['run_id'] = run_id
+
+
+    def getTags(self, study_name, idx):
+        """
+        Get tags from node with index
+        """
+        self.isInt(idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        node = study_node.xmlGetNode("case", id = idx)
+        tags = node['tags']
+        if not tags:
+            tags = self._defaultValues()['tags']
+        return tags
+
+
+    def setTags(self, study_name, idx, tags):
+        """
+        Put tags from node with index
+        """
+        self.isInt(idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        node = study_node.xmlGetNode("case", id = idx)
+        node['tags'] = tags
+        if tags == "":
+            del(node['tags'])
 
 
     def getPostScriptStatus(self, study_name, idx):
