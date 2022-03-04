@@ -535,26 +535,42 @@ class ManageCasesModel(Model):
         self.isInt(case_idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNode("case", id = case_idx)
-        name = ""
+        inputs = []
         lst = node.xmlGetNodeList("input")
         if lst:
-            if len(lst) == 1:
-                nn = lst[0]
-                name = nn['file']
-            elif len(lst) >= 1:
-                name = '<multiple inputs>'
-        return name
+            for n in lst:
+                inputs.append(n['file'])
+        return inputs
 
 
-    def setPostScriptInput(self, study_name, case_idx, name):
+    def addPostScriptInput(self, study_name, case_idx, name):
         """
         Put post script status from node with index
         """
         self.isInt(case_idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNode("case", id = case_idx)
-        nn = node.xmlInitChildNode("input")
-        nn['file'] = name
+        lst = node.xmlGetNodeList("input")
+        if lst:
+            for n in lst:
+                if name == n['file']:
+                    return False
+        nn = node.xmlInitNode("input", file=name)
+        return True
+
+
+    def removePostScriptInput(self, study_name, case_idx, name):
+        """
+        Put post script status from node with index
+        """
+        self.isInt(case_idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        node = study_node.xmlGetNode("case", id = case_idx)
+        lst = node.xmlGetNodeList("input")
+        if lst:
+            for n in lst:
+                if name == n['file']:
+                    n.xmlRemoveNode()
 
 
     def getStudyPostScriptArgs(self, study_name):

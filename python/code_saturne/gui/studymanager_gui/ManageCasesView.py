@@ -452,25 +452,33 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.checkBoxPost.clicked.connect(self.slotPostStatus)
         self.checkBoxCompare.clicked.connect(self.slotCompareStatus)
         self.pushButtonPost.clicked.connect(self.slotPostFile)
-        self.pushButtonInput.clicked.connect(self.slotInputFile)
+        self.pushButtonAddInput.clicked.connect(self.slotAddInputFile)
+        self.pushButtonRemoveInput.clicked.connect(self.slotRemoveInputFile)
+        self.listInput.currentItemChanged.connect(self.slotSelectInputRow)
+        self.listInput.itemClicked.connect(self.slotClickInput)
         self.lineEditNotebookArgs.textChanged[str].connect(self.slotNotebookArgs)
         self.lineEditParametricArgs.textChanged[str].connect(self.slotParametricArgs)
         self.lineEditKwArgs.textChanged[str].connect(self.slotKwArgs)
         self.lineEditPostArgs.textChanged[str].connect(self.slotPostArgs)
         self.lineEditCompareArgs.textChanged[str].connect(self.slotCompareArgs)
 
+        self.listInput.setSelectionMode(QAbstractItemView.SingleSelection)
+
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.groupBoxCompare.hide()
 
-        self.lineEditInput.setEnabled(False)
         self.lineEditPost.setEnabled(False)
         self.pushButtonDelete.setEnabled(False)
         self.pushButtonDeleteStudy.setEnabled(False)
         self.toolButtonDuplicate.setEnabled(False)
         self.pushButtonAdd.setEnabled(False)
-    #TODO ajouter self.disabledItem.append((row, 3)) pour les noeuds study
+        self.pushButtonRemoveInput.setEnabled(False)
+
+        self.listInputClickOn = 0
+
+    #TODO add self.disabledItem.append((row, 3)) pour les noeuds study
 
 
     def add_case(self, study):
@@ -712,12 +720,11 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             script_args = self.mdl.getPostScriptArgs(study, idx)
             self.lineEditPostArgs.setText(str(script_args))
 
-            input_name = self.mdl.getPostScriptInput(study, idx)
-            self.lineEditInput.setText(str(input_name))
-            if input_name == '<multiple inputs>':
-                self.pushButtonInput.setEnabled(False)
-            else:
-                self.pushButtonInput.setEnabled(True)
+            input_names = self.mdl.getPostScriptInput(study, idx)
+            self.listInput.clear()
+            if input_names:
+                for name in input_names:
+                    self.listInput.addItem(str(name))
 
             # compare
             status = self.mdl.getCompareStatus(study, idx)
@@ -871,7 +878,32 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         return
 
 
-    def slotInputFile(self):
+    def slotClickInput(self):
+        """
+        public slot
+        """
+        idx = self.listInput.currentRow();
+        self.listInputClickOn -= 1
+        if self.listInputClickOn < 0:
+            self.listInputClickOn = 1
+        if idx > -1:
+            if self.listInputClickOn == 1:
+                self.listInput.setCurrentRow(-1)
+
+
+    def slotSelectInputRow(self, current, previous):
+        """
+        public slot
+        """
+        if self.listInput.currentRow() > -1:
+            self.pushButtonRemoveInput.setEnabled(True)
+            self.listInputClickOn = 3
+        else:
+            self.pushButtonRemoveInput.setEnabled(False)
+            self.listInputClickOn = 0
+
+
+    def slotAddInputFile(self):
         """
         public slot
         """
@@ -893,14 +925,35 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
 
         if not file:
             return
-        file = os.path.basename(file)
-        if file not in os.listdir(rep):
+
+        if rep != os.path.commonprefix([file, rep]):
             title = self.tr("WARNING")
-            msg   = self.tr("This selected file is not in the POST directory of the study")
+            msg   = self.tr("The selected file is not in the POST directory of the study")
             QMessageBox.information(self, title, msg)
         else:
-            self.lineEditInput.setText(str(file))
-            self.mdl.setPostScriptInput(study, idx, file)
+            file = os.path.relpath(file, rep)
+            if self.mdl.addPostScriptInput(study, idx, file):
+                self.listInput.addItem(str(file))
+
+
+    def slotRemoveInputFile(self):
+        """
+        public slot
+        """
+        current = self.treeViewCases.currentIndex()
+        idx = current.row()
+        study = current.parent().internalPointer().item.name
+        name = None
+
+        try:
+            l_idx = self.listInput.currentRow()
+            item = self.listInput.takeItem(l_idx)
+            name = str(item.text())
+        except Exception:
+            return
+
+        self.mdl.removePostScriptInput(study, idx, name)
+        self.listInput.setCurrentRow(-1)
 
 
 #-------------------------------------------------------------------------------
