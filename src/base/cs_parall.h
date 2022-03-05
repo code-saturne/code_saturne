@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2021 EDF S.A.
+  Copyright (C) 1998-2022 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -41,13 +41,14 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Sum values of a counter on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sum values of a counter on all default communicator processes.
  *
- * parameters:
- *   cpt <-> local counter in, global counter out (size: n)
- *   n   <-- number of values
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  cpt  local counter in, global counter out (size: n)
+ * \param[in]       n    number of values
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -73,13 +74,14 @@ cs_parall_counter(cs_gnum_t   cpt[],
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Maximum values of a counter on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Maximum values of a counter on all default communicator processes.
  *
- * parameters:
- *   cpt <-> local counter in, global counter out (size: n)
- *   n   <-> number of values
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  cpt  local counter in, global counter out (size: n)
+ * \param[in]       n    number of values
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -105,14 +107,15 @@ cs_parall_counter_max(cs_lnum_t   cpt[],
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Sum values of a given datatype on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sum values of a given datatype on all default communicator processes.
  *
- * parameters:
- *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
- *   val      <-> local sum in, global sum out (array)
- *----------------------------------------------------------------------------*/
+ * \param[in]       n        number of values
+ * \param[in]       datatype matching code_saturne datatype
+ * \param[in, out]  val      local value input, global value output (array)
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -140,14 +143,16 @@ cs_parall_sum(int             n,
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Maximum values of a given datatype on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Maximum values of a given datatype on all default
+ *        communicator processes.
  *
- * parameters:
- *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
- *   val      <-> local value  input, global value output (array)
- *----------------------------------------------------------------------------*/
+ * \param[in]       n        number of values
+ * \param[in]       datatype matching code_saturne datatype
+ * \param[in, out]  val      local value input, global value output (array)
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -175,14 +180,16 @@ cs_parall_max(int             n,
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Minimum values of a given datatype on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Minimum values of a given datatype on all default
+ *        communicator processes.
  *
- * parameters:
- *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
- *   val      <-> local value  input, global value output (array)
- *----------------------------------------------------------------------------*/
+ * \param[in]       n        number of values
+ * \param[in]       datatype matching code_saturne datatype
+ * \param[in, out]  val      local value input, global value output (array)
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -210,17 +217,18 @@ cs_parall_min(int             n,
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Broadcast values of a given datatype to all
- * default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Broadcast values of a given datatype to all
+ *        default communicator processes.
  *
- * parameters:
- *   root_rank <-- rank from which to broadcast
- *   n         <-- number of values
- *   datatype  <-- matching Code_Saturne datatype
- *   val       <-- values to broadcast; input on root_rank,
- *                 output on others (size: n)
- *----------------------------------------------------------------------------*/
+ * \param[in]       root_rank rank from which to broadcast
+ * \param[in]       n         number of values
+ * \param[in]       datatype  matching code_saturne datatype
+ * \param[in, out]  val       values to broadcast; input on root_rank,
+ *                            output on others (size: n)
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
 
@@ -241,8 +249,9 @@ cs_parall_bcast(int             root_rank,
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Build a global array from each local array in each domain.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a global array from each local array in each domain.
  *
  * Local arrays are appended in order of owning MPI rank.
  * The size of each local array may be different.
@@ -251,12 +260,12 @@ cs_parall_bcast(int             root_rank,
  * to user functions, as it may limit scalability (especially as regards
  * memory usage).
  *
- * parameters:
- *   n_elts   <-- size of the local array
- *   n_g_elts <-- size of the global array
- *   array    <-- local array (size: n_elts)
- *   g_array  --> global array  (size: n_g_elts)
- *----------------------------------------------------------------------------*/
+ * \param[in]   n_elts    size of the local array
+ * \param[in]   n_g_elts  size of the global array
+ * \param[in]   array     local array (size: n_elts)
+ * \param[out]  g_array   global array  (size: n_g_elts)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parall_allgather_r(int        n_elts,
@@ -264,8 +273,9 @@ cs_parall_allgather_r(int        n_elts,
                       cs_real_t  array[],
                       cs_real_t  g_array[]);
 
-/*----------------------------------------------------------------------------
- * Build an ordered global array from each local array in each domain.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build an ordered global array from each local array in each domain.
  *
  * Local array elements are ordered based on a given key value (usually
  * some form of coordinate, so the result should be independent of
@@ -276,14 +286,14 @@ cs_parall_allgather_r(int        n_elts,
  * to user functions, as it may limit scalability (especially as regards
  * memory usage).
  *
- * parameters:
- *   n_elts   <-- number of local elements
- *   n_g_elts <-- number of global elements
- *   stride   <-- number of values per element
- *   o_key    <-- ordering key (coordinate) value per element
- *   array    <-- local array (size: n_elts*stride)
- *   g_array  --> global array  (size: n_g_elts*stride)
- *----------------------------------------------------------------------------*/
+ * \param[in]   n_elts    number of local elements
+ * \param[in]   n_g_elts  number of global elements
+ * \param[in]   stride    number of values per element
+ * \param[in]   o_key     ordering key (coordinate) value per element
+ * \param[in]   array     local array (size: n_elts*stride)
+ * \param[out]  g_array   global array  (size: n_g_elts*stride)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parall_allgather_ordered_r(int        n_elts,
@@ -436,77 +446,83 @@ cs_parall_scatter_f(int           root_rank,
                     const float   g_array[],
                     float         array[]);
 
-/*----------------------------------------------------------------------------
- * Maximum value of a real and the value of related array on all
- * default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Maximum value of a real and the value of related array on all
+ *        default communicator processes.
  *
- * parameters:
- *   n            <-- size of the related array
- *   max          <-> local max in, global max out
- *   max_loc_vals <-> array values at location of local max in,
- *                    and at location of global max out
- *----------------------------------------------------------------------------*/
+ * \param[in]       n             size of the related array
+ * \param[in, out]  max           local max in, global max out
+ * \param[in, out]  max_loc_vals  array values at location of local max in,
+ *                                and at location of global max out
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parall_max_loc_vals(int         n,
                        cs_real_t  *max,
                        cs_real_t   max_loc_vals[]);
 
-/*----------------------------------------------------------------------------
- * Minimum value of a real and the value of related array on all
- * default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Minimum value of a real and the value of related array on all
+ *        default communicator processes.
  *
- * parameters:
- *   n            <-- size of the related array
- *   min          <-> local min in, global min out
- *   min_loc_vals <-> array values at location of local min in,
- *                    and at location of global min out
- *----------------------------------------------------------------------------*/
+ * \param[in]       n             size of the related array
+ * \param[in, out]  minx           local max in, global max out
+ * \param[in, out]  min_loc_vals  array values at location of local max in,
+ *                                and at location of global max out
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parall_min_loc_vals(int         n,
                        cs_real_t  *min,
                        cs_real_t   min_loc_vals[]);
 
-/*----------------------------------------------------------------------------
- * Given an (id, rank, value) tuple, return the local id and rank
- * corresponding to the global minimum value.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Given an (id, rank, value) tuple, return the local id and rank
+ *        corresponding to the global minimum value.
  *
- * parameters:
- *   elt_id  <-> element id for which the value is the smallest
- *               (local in, global out)
- *   rank_id <-> rank id for which the value is the smallest
- *               (local in, global out)
- *   val     <-- associated local minimum value
- *----------------------------------------------------------------------------*/
+ * \param[in, out]   elt_id   element id for which the value is the smallest
+ *                            (local in, global out)
+ * \param[in, out]   rank_id  rank id for which the value is the smallest
+ *                            (local in, global out)
+ * \param[in]        val      associated local minimum value
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parall_min_id_rank_r(cs_lnum_t  *elt_id,
                         int        *rank_id,
-                        cs_real_t   dis2mn);
+                        cs_real_t   val);
 
-/*----------------------------------------------------------------------------
- * Return minimum recommended scatter or gather buffer size.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return minimum recommended scatter or gather buffer size.
  *
  * This is used by some internal part to block or scatter/gather algorithms,
  * so as to allow I/O buffer size tuning.
  *
- * returns:
- *   minimum recommended part to block or gather buffer size (in bytes)
- *----------------------------------------------------------------------------*/
+ * \return  minimum recommended part to block or gather buffer size (in bytes)
+ */
+/*----------------------------------------------------------------------------*/
 
 size_t
 cs_parall_get_min_coll_buf_size(void);
 
-/*----------------------------------------------------------------------------
- * Define minimum recommended gather buffer size.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define minimum recommended scatter or gather buffer size.
  *
  * This is used by some internal part to block or scatter/gather algorithms,
  * so as to allow I/O buffer size tuning.
  *
- * parameters:
- *   minimum recommended part to block or gather buffer size (in bytes)
- *----------------------------------------------------------------------------*/
+ * \param[in]  buffer_size  minimum recommended part to block
+ *             or gather buffer size (in bytes)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_parall_set_min_coll_buf_size(size_t buffer_size);

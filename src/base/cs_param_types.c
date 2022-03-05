@@ -72,6 +72,8 @@ const char cs_sepline[80] =
 const char cs_med_sepline[50] =
   "# ========================================\n";
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*============================================================================
  * Global static variables
  *============================================================================*/
@@ -185,9 +187,6 @@ cs_param_dotprod_name[CS_PARAM_N_DOTPROD_TYPES][CS_BASE_STRING_LEN] =
   { N_("Classical Euclidean"),
     N_("Based on CDO quantities"),
   };
-
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Private function prototypes
