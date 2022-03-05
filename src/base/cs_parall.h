@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2021 EDF S.A.
+  Copyright (C) 1998-2022 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -41,13 +41,14 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Sum values of a counter on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sum values of a counter on all default communicator processes.
  *
- * parameters:
- *   cpt <-> local counter in, global counter out (size: n)
- *   n   <-- number of values
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  cpt  local counter in, global counter out (size: n)
+ * \param[in]       n    number of values
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -73,13 +74,14 @@ cs_parall_counter(cs_gnum_t   cpt[],
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Maximum values of a counter on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Maximum values of a counter on all default communicator processes.
  *
- * parameters:
- *   cpt <-> local counter in, global counter out (size: n)
- *   n   <-> number of values
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  cpt  local counter in, global counter out (size: n)
+ * \param[in]       n    number of values
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -105,14 +107,15 @@ cs_parall_counter_max(cs_lnum_t   cpt[],
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Sum values of a given datatype on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sum values of a given datatype on all default communicator processes.
  *
- * parameters:
- *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
- *   val      <-> local sum in, global sum out (array)
- *----------------------------------------------------------------------------*/
+ * \param[in]       n        number of values
+ * \param[in]       datatype matching code_saturne datatype
+ * \param[in, out]  val      local value input, global value output (array)
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -140,14 +143,16 @@ cs_parall_sum(int             n,
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Maximum values of a given datatype on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Maximum values of a given datatype on all default
+ *        communicator processes.
  *
- * parameters:
- *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
- *   val      <-> local value  input, global value output (array)
- *----------------------------------------------------------------------------*/
+ * \param[in]       n        number of values
+ * \param[in]       datatype matching code_saturne datatype
+ * \param[in, out]  val      local value input, global value output (array)
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -175,14 +180,16 @@ cs_parall_max(int             n,
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Minimum values of a given datatype on all default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Minimum values of a given datatype on all default
+ *        communicator processes.
  *
- * parameters:
- *   n        <-- number of values
- *   datatype <-- matching Code_Saturne datatype
- *   val      <-> local value  input, global value output (array)
- *----------------------------------------------------------------------------*/
+ * \param[in]       n        number of values
+ * \param[in]       datatype matching code_saturne datatype
+ * \param[in, out]  val      local value input, global value output (array)
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI_IN_PLACE)
 
@@ -210,17 +217,18 @@ cs_parall_min(int             n,
 
 #endif
 
-/*----------------------------------------------------------------------------
- * Broadcast values of a given datatype to all
- * default communicator processes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Broadcast values of a given datatype to all
+ *        default communicator processes.
  *
- * parameters:
- *   root_rank <-- rank from which to broadcast
- *   n         <-- number of values
- *   datatype  <-- matching Code_Saturne datatype
- *   val       <-- values to broadcast; input on root_rank,
- *                 output on others (size: n)
- *----------------------------------------------------------------------------*/
+ * \param[in]       root_rank rank from which to broadcast
+ * \param[in]       n         number of values
+ * \param[in]       datatype  matching code_saturne datatype
+ * \param[in, out]  val       values to broadcast; input on root_rank,
+ *                            output on others (size: n)
+ */
+/*----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
 

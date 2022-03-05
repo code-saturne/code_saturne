@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2021 EDF S.A.
+  Copyright (C) 1998-2022 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -71,6 +71,8 @@ const char cs_sepline[80] =
   "# =====================================================================\n";
 const char cs_med_sepline[50] =
   "# ========================================\n";
+
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Global static variables
@@ -149,8 +151,6 @@ cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
     N_("weak using a big penalization coefficient"),
     N_("weak using the Nitsche method"),
     N_("weak using the symmetrized Nitsche method") };
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
  * Private function prototypes
