@@ -2,9 +2,9 @@
 
 #-------------------------------------------------------------------------------
 
-# This file is part of Code_Saturne, a general-purpose CFD tool.
+# This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2021 EDF S.A.
+# Copyright (C) 1998-2022 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -81,7 +81,6 @@ from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
-
 
 #-------------------------------------------------------------------------------
 # log config
@@ -413,8 +412,8 @@ class MainView(object):
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
         # TODO
-        # faire le detect du nom study et charger tous les cases du repertoire par defaut
-        # peut etre chrge les nouveau cas lorsqu'on re-ouvre avec status a off
+        # Detect study name and load all cases dy default
+        # Maybe load new cases when reopening withc status=off
 
     def fileAlreadyLoaded(self, f):
         """
@@ -501,7 +500,8 @@ class MainView(object):
         # Instantiate a new case
 
         try:
-            self.case = XMLengine.Case(package=self.package, file_name=file_name, studymanager=True)
+            self.case = XMLengine.Case(package=self.package,
+                                       file_name=file_name, studymanager=True)
         except:
             msg = self.tr("This file is not in accordance with XML specifications.")
             self.loadingAborted(msg, fn)
@@ -540,7 +540,7 @@ class MainView(object):
 
         open an existing file
         """
-        msg = self.tr("Opening an existing case.")
+        msg = self.tr("Opening an existing studymanager file.")
         self.statusbar.showMessage(msg, 2000)
 
         title = self.tr("Open existing file.")
@@ -835,10 +835,6 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         self.Browser = BrowserView(self)
         self.ui_initialize()
 
-        self.displayCSManualAction.triggered.connect(self.displayCSManual)
-        self.displayCSTutorialAction.triggered.connect(self.displayCSTutorial)
-        self.displayCSTheoryAction.triggered.connect(self.displayCSTheory)
-        self.displayCSRefcardAction.triggered.connect(self.displayCSRefcard)
         self.displayCSDoxygenAction.triggered.connect(self.displayCSDoxygen)
 
         docdir = self.package.get_dir('docdir')
@@ -847,15 +843,8 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         else:
             liste = []
 
-        if 'user.pdf' not in liste:
-            self.displayCSManualAction.setEnabled(False)
-        if 'theory.pdf' not in liste:
-            self.displayCSTheoryAction.setEnabled(False)
-        if 'refcard.pdf' not in liste:
-            self.displayCSRefcardAction.setEnabled(False)
         if 'doxygen' not in liste:
             self.displayCSDoxygenAction.setEnabled(False)
-        self.displayNCManualAction.setVisible(False)
 
 
     def initCase(self):
@@ -863,51 +852,20 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         Initializes the new case with default xml nodes.
         If previous case, just check if all mandatory nodes exist.
         """
-        smgr_xml_init(self.case).initialize()
+        smgr_init = smgr_xml_init(self.case)
+        smgr_init.initialize()
 
+        n_prepro = smgr_init.countPreproNodes()
 
-    def displayCSManual(self):
-        """
-        public slot
-
-        open the user manual
-        """
-        self.displayManual(self.package, 'user')
-
-
-    def displayCSTutorial(self):
-        """
-        public slot
-
-        open the tutorial for Code_Saturne
-        """
-        msg = "See " + self.package.url + " web site for tutorials."
-        QMessageBox.about(self, self.package.code_name + ' study manager', msg)
-
-
-    def displayCSTheory(self):
-        """
-        public slot
-
-        open the theory and programmer's guide
-        """
-        self.displayManual(self.package, 'theory')
-
-    def displayCSSmgr(self):
-        """
-        public slot
-
-        open the studymanager guide
-        """
-        self.displayManual(self.package, 'studymanager')
-
-    def displayCSRefcard(self):
-        """
-        public slot
-
-        open the quick reference card for Code_Saturne
-        """
-        self.displayManual(self.package, 'refcard')
+        if n_prepro[0] > 0 or n_prepro[1] > 0:
+            msg = "Convert " + str(n_prepro[0]) + " active and " \
+                  + str(n_prepro[1]) + " inactive 'prepro' tags.\n" \
+                  + "to 'kw_args' tags ?"
+            r = QMessageBox.question(self,
+                                     self.package.name + ' study manager',
+                                     msg)
+            if r == QMessageBox.Yes:
+                smgr_init.convertPreproNodes()
 
 
     def displayCSDoxygen(self):

@@ -90,15 +90,6 @@ class PathesView(QWidget, Ui_PathesForm):
         self.dest_path = self.mdl.getDestinationPath()
         self.lineEditDestination.setText(self.dest_path)
 
-        if self.repo_path == "":
-            self.toolButtonRepository.setStyleSheet("background-color: red")
-        else:
-            self.toolButtonRepository.setStyleSheet("background-color: green")
-        if self.dest_path == "":
-            self.toolButtonDestination.setStyleSheet("background-color: red")
-        else:
-            self.toolButtonDestination.setStyleSheet("background-color: green")
-
 
     def searchDirRepo(self):
         """
@@ -159,7 +150,6 @@ class PathesView(QWidget, Ui_PathesForm):
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------
-
 
 if __name__ == "__main__":
     pass

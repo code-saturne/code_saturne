@@ -888,6 +888,19 @@ class XMLElement:
         else:
             return None
 
+    def xmlGetNodeByIdx(self, tag, idx, *attrList, **kwargs):
+        """
+        Return a single XMLElement node from the explored elementNode.
+        The returned element is the idx'th instance of the XMLElement class,
+        or None if no such element is present.
+        """
+        nodeList = self._nodeList(tag, *attrList, **kwargs)
+
+        if idx > -1 and len(nodeList) > idx:
+            return self._inst(nodeList[idx])
+        else:
+            return None
+
 
     def xmlGetChildNodeList(self, tag, *attrList, **kwargs):
         """
@@ -1021,6 +1034,26 @@ class XMLElement:
                 self._inst(self.el.appendChild(n.cloneNode(deep)))
 
         log.debug("xmlChildsCopy-> %s" % self.__xmlLog())
+
+
+    def xmlMergeNode(self, oldNode, deep=1000):
+        """
+        Merge all children of oldNode into node, then delete oldNode.
+        """
+        if oldNode.el.hasChildNodes():
+            for n in oldNode.el.childNodes:
+                duplicate = False
+                if self.el.hasChildNodes():
+                    for nr in self.el.childNodes:
+                        if n == nr:
+                            duplicate = True
+                            break
+                if not duplicate:
+                    self._inst(self.el.appendChild(n.cloneNode(deep)))
+
+        oldNode.xmlRemoveNode()
+
+        log.debug("xmlMergeNode -> %s" % self.__xmlLog())
 
 
     def xmlRemoveNode(self):

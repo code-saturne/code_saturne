@@ -62,25 +62,29 @@ log.setLevel(GuiParam.DEBUG)
 #-------------------------------------------------------------------------------
 # item class
 #-------------------------------------------------------------------------------
+
 class item_class(object):
     '''
     custom data object
     '''
-    def __init__(self, idx, name, compute, post, status, run_id):
+    def __init__(self, idx, name, compute, post, status, run_id, tags):
         self.index   = idx
         self.name    = name
         self.compute = compute
         self.post    = post
         self.status  = status
         self.run_id  = run_id
+        self.tags    = tags
 
     def __repr__(self):
-        return "case : %s // compute : %s // post %s // status %s // run_id %s"\
-               % (self.name, self.compute, self.post, self.status, self.run_id)
+        return "case : %s // compute : %s // post %s // status %s // run_id %s // tags %s"\
+            % (self.name, self.compute, self.post, self.status, self.run_id,
+               self.tags)
 
 #-------------------------------------------------------------------------------
 # Treeitem class
 #-------------------------------------------------------------------------------
+
 class TreeItem(object):
     '''
     a python object used to return row/column data, and keep note of
@@ -106,7 +110,7 @@ class TreeItem(object):
 
 
     def columnCount(self):
-        return 5
+        return 6
 
 
     def data(self, column, role):
@@ -138,6 +142,8 @@ class TreeItem(object):
                     return Qt.Unchecked
             elif column == 4 and role == Qt.DisplayRole:
                 return self.item.run_id
+            elif column == 5 and role == Qt.DisplayRole:
+                return self.item.tags
         return None
 
 
@@ -158,10 +164,9 @@ class TreeItem(object):
 class LabelDelegate(QItemDelegate):
     """
     """
-    def __init__(self, parent=None, xml_model=None):
+    def __init__(self, parent=None):
         super(LabelDelegate, self).__init__(parent)
         self.parent = parent
-        self.mdl = xml_model
 
 
     def createEditor(self, parent, option, index):
@@ -189,7 +194,57 @@ class LabelDelegate(QItemDelegate):
 
 
 #-------------------------------------------------------------------------------
-# StandarItemModelOutput class
+#
+#-------------------------------------------------------------------------------
+
+class TagsDelegate(LabelDelegate):
+    """
+    """
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        return editor
+
+    def setModelData(self, editor, model, index):
+        if not editor.isModified():
+            return
+        p_value = str(editor.text())
+        model.setData(index, p_value, Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+#
+#-------------------------------------------------------------------------------
+
+class TextDelegate(QItemDelegate):
+    """
+    """
+    def __init__(self, parent=None):
+        super(TextDelegate, self).__init__(parent)
+        self.parent = parent
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
+        v = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                          to_text_string)
+        self.p_value = str(v)
+        editor.setText(v)
+
+    def setModelData(self, editor, model, index):
+        if not editor.isModified():
+            return
+
+        p_value = str(editor.text())
+        model.setData(index, p_value, Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+# CaseStandarItemModel class
 #-------------------------------------------------------------------------------
 
 class CaseStandardItemModel(QAbstractItemModel):
@@ -219,7 +274,7 @@ class CaseStandardItemModel(QAbstractItemModel):
         if parent and parent.isValid():
             return parent.internalPointer().columnCount()
         else:
-            return 5
+            return 6
 
 
     def data(self, index, role):
@@ -244,6 +299,8 @@ class CaseStandardItemModel(QAbstractItemModel):
                 return self.tr("Post-processing")
             elif index.column() == 4:
                 return self.tr("Run_id")
+            elif index.column() == 5:
+                return self.tr("Tags")
 
         # Display
         if role == Qt.DisplayRole:
@@ -283,6 +340,8 @@ class CaseStandardItemModel(QAbstractItemModel):
                 return self.tr("Post-\nprocessing")
             elif section == 4:
                 return self.tr("run_id")
+            elif section == 5:
+                return self.tr("Tags")
         return None
 
 
@@ -336,13 +395,11 @@ class CaseStandardItemModel(QAbstractItemModel):
         for name in self.prtlist:
             row = self.rowCount()
             status  = self.mdl.getStudyStatus(name)
-            item = item_class(-1, name, "off", "off", status, "")
+            tags    = self.mdl.getStudyTags(name)
+            item = item_class(-1, name, "off", "off", status, "", tags)
             newparent = TreeItem(item, name, self.rootItem)
             self.rootItem.appendChild(newparent)
             self.noderoot[name] = newparent
-#            self.disabledItem.append((row, 2))
-#            self.disabledItem.append((row, 3))
-#            self.disabledItem.append((row, 4))
 
         for name in self.prtlist:
             for idx in self.mdl.getCaseList(name):
@@ -352,7 +409,9 @@ class CaseStandardItemModel(QAbstractItemModel):
                 post    = self.mdl.getPostStatus(name, idx)
                 status  = self.mdl.getStatus(name, idx)
                 run_id  = self.mdl.getRunId(name, idx)
-                item = item_class(idx, cname, compute, post, status, run_id)
+                tags    = self.mdl.getTags(name, idx)
+                item = item_class(idx, cname, compute, post, status,
+                                  run_id, tags)
                 new_item = TreeItem(item, "", parentItem)
                 parentItem.appendChild(new_item)
 
@@ -368,7 +427,8 @@ class CaseStandardItemModel(QAbstractItemModel):
                 item.item.status = "off"
             if item not in self.noderoot.values():
                 itm = item.parentItem
-                self.mdl.setStatus(itm.item.name, item.item.index, item.item.status)
+                self.mdl.setStatus(itm.item.name, item.item.index,
+                                   item.item.status)
             else:
                 self.mdl.setStudyStatus(item.item.name, item.item.status)
 
@@ -380,7 +440,8 @@ class CaseStandardItemModel(QAbstractItemModel):
                 item.item.compute = "off"
             if item not in self.noderoot.values():
                 itm = item.parentItem
-                self.mdl.setComputeStatus(itm.item.name, item.item.index, item.item.compute)
+                self.mdl.setComputeStatus(itm.item.name, item.item.index,
+                                          item.item.compute)
 
         elif index.column() == 3:
             v = from_qvariant(value, int)
@@ -390,18 +451,176 @@ class CaseStandardItemModel(QAbstractItemModel):
                 item.item.post = "off"
             if item not in self.noderoot.values():
                 itm = item.parentItem
-                self.mdl.setPostStatus(itm.item.name, item.item.index, item.item.post)
+                self.mdl.setPostStatus(itm.item.name, item.item.index,
+                                       item.item.post)
 
         elif index.column() == 4:
             run_id = str(from_qvariant(value, to_text_string))
             item.item.run_id = run_id
             if item not in self.noderoot.values():
                 itm = item.parentItem
-                self.mdl.setRunId(itm.item.name, item.item.index, item.item.run_id)
+                self.mdl.setRunId(itm.item.name, item.item.index,
+                                  item.item.run_id)
+
+        elif index.column() == 5:
+            tags = str(from_qvariant(value, to_text_string))
+            atags = str(tags).replace(",", " ").split()
+            if len(atags) > 1:
+                tags = ",".join(atags)
+            elif len(atags) > 1:
+                tags = atags[0]
+            else:
+                tags = ""
+            item.item.tags = tags
+            if item not in self.noderoot.values():
+                itm = item.parentItem
+                self.mdl.setTags(itm.item.name, item.item.index, item.item.tags)
+            else:
+                self.mdl.setStudyTags(item.item.name, item.item.tags)
 
         self.dataChanged.emit(QModelIndex(), QModelIndex())
 
         return True
+
+
+#-------------------------------------------------------------------------------
+# PostScriptItemModelOutput class
+#-------------------------------------------------------------------------------
+
+class PostScriptItemModel(QStandardItemModel):
+
+    def __init__(self, mdl, study_name, case_idx):
+        """
+        """
+        QStandardItemModel.__init__(self)
+
+        self.mdl = mdl
+        self.study_name = ''
+        self.case_idx = -1
+
+        self.scripts = []
+
+        self.populateModel(study_name, case_idx)
+
+        self.headers = [self.tr("Script"),
+                        self.tr("Arguments"),
+                        self.tr("Status")]
+
+        self.setColumnCount(len(self.headers))
+
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+
+        # ToolTips
+        if role == Qt.ToolTipRole:
+            col = index.column()
+            if index.column() == 0:
+                return self.tr("Script file, in study POST directory")
+            elif index.column() == 1:
+                return self.tr("Arguments passed to script")
+            elif index.column() == 2:
+                return self.tr("Call this script with given arguments "
+                               "when postprocessing")
+            return None
+
+        # StatusTips
+        if role == Qt.StatusTipRole:
+            if index.column() == 0:
+                return self.tr("Script")
+            elif index.column() == 1:
+                return self.tr("Arguments")
+            elif index.column() == 2:
+                return self.tr("Status")
+
+        # Display
+        if role == Qt.DisplayRole:
+            if index.column() in (0, 1):
+                return self.scripts[index.row()][index.column()]
+        elif role == Qt.CheckStateRole:
+            if index.column() == 2:
+                if self.scripts[index.row()][2] == 'off':
+                    return Qt.Unchecked
+                else:
+                    return Qt.Checked
+            else:
+                return None
+
+
+        return None
+
+
+    def flags(self, index):
+        if not index.isValid():
+            return Qt.ItemIsEnabled
+
+        col = index.column()
+        if col == 0:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        elif col == 1:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+
+
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.headers[section]
+        return None
+
+
+    def populateModel(self, study_name, case_idx):
+        self.scripts = self.mdl.getPostScripts(study_name,
+                                               case_idx)
+        self.study_name = study_name
+        self.case_idx = case_idx
+        self.setRowCount(len(self.scripts))
+
+
+    def setData(self, index, value, role=None):
+        row = index.row()
+        col = index.column()
+
+        if col == 1:
+            if value:
+                v = from_qvariant(value, to_text_string)
+            else:
+                v = ''
+            self.scripts[row][col] = v
+            self.mdl.setPostScriptArgs(self.study_name, self.case_idx, row,
+                                       self.scripts[row][col])
+
+        elif col == 2 and role == Qt.CheckStateRole:
+            state = from_qvariant(value, int)
+            if state == Qt.Unchecked:
+                self.scripts[row][col] = 'off'
+            else:
+                self.scripts[row][col] = 'on'
+            self.mdl.setPostScriptStatus(self.study_name, self.case_idx, row,
+                                         self.scripts[row][col])
+
+        return True
+
+
+    def addRow(self, name):
+        """
+        Add a row in the table.
+        """
+        item = [name, '', 'on']
+
+        self.scripts.append(item)
+
+        row = self.rowCount()
+        self.setRowCount(row+1)
+
+
+    def deleteRow(self, row):
+        """
+        Delete the row in the model
+        """
+        self.setRowCount(self.rowCount() - 1)
+        del self.scripts[row]
 
 
 #-------------------------------------------------------------------------------
@@ -430,15 +649,17 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
         self.treeViewCases.setAlternatingRowColors(True)
-        self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.treeViewCases.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.treeViewCases.setSelectionMode(QAbstractItemView.SingleSelection)
         self.treeViewCases.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.treeViewCases.expandAll()
         self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.treeViewCases.setDragEnabled(False)
 
-        runidDelegate = LabelDelegate(self.treeViewCases, self.mdl)
+        runidDelegate = LabelDelegate(self.treeViewCases)
         self.treeViewCases.setItemDelegateForColumn(4, runidDelegate)
+
+        tagsDelegate = TagsDelegate(self.treeViewCases)
+        self.treeViewCases.setItemDelegateForColumn(5, tagsDelegate)
 
         self.treeViewCases.resizeColumnToContents(0)
 
@@ -447,31 +668,69 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.pushButtonAddStudy.clicked.connect(self.slotAddStudy)
         self.pushButtonDeleteStudy.clicked.connect(self.slotDeleteStudy)
         self.toolButtonDuplicate.clicked.connect(self.slotDuplicateCase)
-        self.treeViewCases.clicked.connect(self.slotChangeSelection)
-
-        self.checkBoxPrepro.clicked.connect(self.slotPreproStatus)
-        self.checkBoxPost.clicked.connect(self.slotPostStatus)
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.checkBoxCompare.clicked.connect(self.slotCompareStatus)
-        self.pushButtonPrepro.clicked.connect(self.slotPreproFile)
-        self.pushButtonPost.clicked.connect(self.slotPostFile)
-        self.pushButtonInput.clicked.connect(self.slotInputFile)
-        self.lineEditPreproArgs.textChanged[str].connect(self.slotPreproArgs)
-        self.lineEditPostArgs.textChanged[str].connect(self.slotPostArgs)
+        self.pushButtonAddPostScript.clicked.connect(self.slotAddPostScriptFile)
+        self.pushButtonRemovePostScript.clicked.connect(self.slotRemovePostScriptFile)
+        self.pushButtonAddInput.clicked.connect(self.slotAddInputFile)
+        self.pushButtonRemoveInput.clicked.connect(self.slotRemoveInputFile)
+
+        self.listInput.currentItemChanged.connect(self.slotSelectInputRow)
+        self.listInput.itemClicked.connect(self.slotClickInput)
+        self.lineEditNotebookArgs.textChanged[str].connect(self.slotNotebookArgs)
+        self.lineEditParametricArgs.textChanged[str].connect(self.slotParametricArgs)
+        self.lineEditKwArgs.textChanged[str].connect(self.slotKwArgs)
         self.lineEditCompareArgs.textChanged[str].connect(self.slotCompareArgs)
+
+        self.modelPostScripts = PostScriptItemModel(self.mdl, '', -1)
+        self.tablePostScript.setModel(self.modelPostScripts)
+        self.tablePostScript.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tablePostScript.setGridStyle(Qt.NoPen)
+        self.tablePostScript.setAlternatingRowColors(True)
+
+        hh = self.tablePostScript.horizontalHeader()
+        hh.setSectionResizeMode(1, QHeaderView.Stretch)
+
+        argsDelegate = TextDelegate(self.tablePostScript)
+        self.tablePostScript.setItemDelegateForColumn(1, argsDelegate)
+
+        self.listInput.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.listInput.setAlternatingRowColors(True)
 
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.groupBoxCompare.hide()
 
-        self.lineEditPrepro.setEnabled(False)
-        self.lineEditInput.setEnabled(False)
-        self.lineEditPost.setEnabled(False)
         self.pushButtonDelete.setEnabled(False)
         self.pushButtonDeleteStudy.setEnabled(False)
         self.toolButtonDuplicate.setEnabled(False)
         self.pushButtonAdd.setEnabled(False)
-    #TODO ajouter self.disabledItem.append((row, 3)) pour les noeuds study
+        self.pushButtonRemoveInput.setEnabled(False)
+
+        self.listInputClickOn = 0
+
+    #TODO add self.disabledItem.append((row, 3)) for study nodes
+
+
+    def __get_study_and_case_idx__(self):
+        """
+        Get study name and case index based on current selection
+        """
+        current = self.treeViewCases.currentIndex()
+
+        if current == self.treeViewCases.rootIndex():
+            self.pushButtonAdd.setEnabled(False)
+            case_idx = -1
+            study = None
+        elif current.parent() == self.treeViewCases.rootIndex():
+            case_idx = -1
+            study = current.internalPointer().item.name
+        else:
+            case_idx = current.row()
+            study = current.parent().internalPointer().item.name
+
+        return study, case_idx
 
 
     def add_case(self, study):
@@ -482,7 +741,10 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
 
         cur_path = os.getcwd()
         path = os.path.abspath(os.path.join(self.mdl.repo, study))
-        os.chdir(path)
+        try:
+            os.chdir(path)
+        except Exception:
+            pass
 
         dialog = QFileDialog()
         dialog.setWindowTitle(title)
@@ -493,13 +755,13 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
 
             s = dialog.selectedFiles()
             dir_path = str(s[0])
-            dir_path = os.path.relpath(dir_path)
-            if dir_path not in os.listdir(path):
+            study_path, case_name = os.path.split(dir_path)
+            if study != os.path.split(study_path)[1]:
                 title = self.tr("WARNING")
                 msg   = self.tr("This selected case is not in the directory of the study")
                 QMessageBox.information(self, title, msg)
             else:
-                self.mdl.addCase(study, dir_path)
+                self.mdl.addCase(study, case_name)
 
             log.debug("add_case -> %s" % dir_path)
         os.chdir(cur_path)
@@ -556,11 +818,12 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.add_study()
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
-        self.slotChangeSelection()
+        self.changeSelection()
 
 
     def slotDeleteStudy(self):
@@ -573,11 +836,12 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.mdl.deleteStudy(study)
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
-        self.slotChangeSelection()
+        self.changeSelection()
 
 
     def slotAddCase(self):
@@ -594,11 +858,12 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.add_case(study)
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
-        self.slotChangeSelection()
+        self.changeSelection()
 
 
     def slotDeleteCase(self):
@@ -611,11 +876,12 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.mdl.deleteCase(study, idx)
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
-        self.slotChangeSelection()
+        self.changeSelection()
 
 
     def slotDuplicateCase(self):
@@ -628,14 +894,22 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.mdl.duplicateCase(study, idx)
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
-        self.slotChangeSelection()
+        self.changeSelection()
 
 
-    def slotChangeSelection(self):
+    def slotChangeSelection(self, new, old):
+        """
+        slot for change of selection
+        """
+        self.changeSelection()
+
+
+    def changeSelection(self):
         """
         """
         self.pushButtonDelete.setEnabled(False)
@@ -647,34 +921,18 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.groupBoxInput.hide()
         self.groupBoxCompare.hide()
 
+        study = None
         current = self.treeViewCases.currentIndex()
         idx = current.row()
+
         if current == self.treeViewCases.rootIndex():
             self.pushButtonAdd.setEnabled(False)
         elif current.parent() == self.treeViewCases.rootIndex():
+            idx = -1
+            study = current.internalPointer().item.name
             # study
             self.pushButtonDeleteStudy.setEnabled(True)
-            self.groupBoxPost.show()
-            study = current.internalPointer().item.name
-
-            status = self.mdl.getStudyPostScriptStatus(study)
-            if status == "on":
-                self.checkBoxPost.setChecked(True)
-            else:
-                self.checkBoxPost.setChecked(False)
-
-            script_name = self.mdl.getStudyPostScriptName(study)
-            self.lineEditPost.setText(str(script_name))
-            if status == "on":
-                if script_name != "":
-                    self.pushButtonPost.setStyleSheet("background-color: green")
-                else:
-                    self.pushButtonPost.setStyleSheet("background-color: red")
-            else:
-                self.pushButtonPost.setStyleSheet("background-color: None")
-
-            script_args = self.mdl.getStudyPostScriptArgs(study)
-            self.lineEditPostArgs.setText(str(script_args))
+            idx = -1
         else:
             # case
             self.pushButtonDelete.setEnabled(True)
@@ -686,51 +944,12 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             study = current.parent().internalPointer().item.name
 
             # prepro
-            status = self.mdl.getPreproScriptStatus(study, idx)
-            if status == "on":
-                self.checkBoxPrepro.setChecked(True)
-            else:
-                self.checkBoxPrepro.setChecked(False)
-
-            script_name = self.mdl.getPreproScriptName(study, idx)
-            self.lineEditPrepro.setText(str(script_name))
-            if status == "on":
-                if script_name != "":
-                    self.pushButtonPrepro.setStyleSheet("background-color: green")
-                else:
-                    self.pushButtonPrepro.setStyleSheet("background-color: red")
-            else:
-                self.pushButtonPrepro.setStyleSheet("background-color: None")
-
-            script_args = self.mdl.getPreproScriptArgs(study, idx)
-            self.lineEditPreproArgs.setText(str(script_args))
-
-            # post
-            status = self.mdl.getPostScriptStatus(study, idx)
-            if status == "on":
-                self.checkBoxPost.setChecked(True)
-            else:
-                self.checkBoxPost.setChecked(False)
-
-            script_name = self.mdl.getPostScriptName(study, idx)
-            self.lineEditPost.setText(str(script_name))
-            if status == "on":
-                if script_name != "":
-                    self.pushButtonPost.setStyleSheet("background-color: green")
-                else:
-                    self.pushButtonPost.setStyleSheet("background-color: red")
-            else:
-                self.pushButtonPost.setStyleSheet("background-color: None")
-
-            script_args = self.mdl.getPostScriptArgs(study, idx)
-            self.lineEditPostArgs.setText(str(script_args))
-
-            input_name = self.mdl.getPostScriptInput(study, idx)
-            self.lineEditInput.setText(str(input_name))
-            if input_name == '<multiple inputs>':
-                self.pushButtonInput.setEnabled(False)
-            else:
-                self.pushButtonInput.setEnabled(True)
+            notebook_args = self.mdl.getNotebookArgs(study, idx)
+            self.lineEditNotebookArgs.setText(str(notebook_args))
+            parametric_args = self.mdl.getParametricArgs(study, idx)
+            self.lineEditParametricArgs.setText(str(parametric_args))
+            kw_args = self.mdl.getKwArgs(study, idx)
+            self.lineEditKwArgs.setText(str(kw_args))
 
             # compare
             status = self.mdl.getCompareStatus(study, idx)
@@ -741,23 +960,18 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             compare_args = self.mdl.getCompareArgs(study, idx)
             self.lineEditCompareArgs.setText(str(compare_args))
 
+        if study is not None: # Study or case, not root
+            self.groupBoxPost.show()
+            self.groupBoxInput.show()
 
-    @pyqtSlot()
-    def slotPreproStatus(self):
-        """
-        """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
-        study = current.parent().internalPointer().item.name
-        if self.checkBoxPrepro.isChecked():
-            self.mdl.setPreproScriptStatus(study, idx, "on")
-            if self.mdl.getPreproScriptName(study, idx) != "":
-                self.pushButtonPrepro.setStyleSheet("background-color: green")
-            else:
-                self.pushButtonPrepro.setStyleSheet("background-color: red")
-        else:
-            self.mdl.setPreproScriptStatus(study, idx, "off")
-            self.pushButtonPrepro.setStyleSheet("background-color: None")
+            self.modelPostScripts.populateModel(study, idx)
+            self.tablePostScript.setModel(self.modelPostScripts)
+
+            input_names = self.mdl.getPostInput(study, idx)
+            self.listInput.clear()
+            if input_names:
+                for name in input_names:
+                    self.listInput.addItem(str(name))
 
 
     @pyqtSlot()
@@ -773,45 +987,37 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             self.mdl.setCompareStatus(study, idx, "off")
 
 
-    @pyqtSlot()
-    def slotPostStatus(self):
-        """
-        """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
-        if current.parent() == self.treeViewCases.rootIndex():
-            study = current.internalPointer().item.name
-            if self.checkBoxPost.isChecked():
-                self.mdl.setStudyPostScriptStatus(study, "on")
-                if self.mdl.getStudyPostScriptName(study) != "":
-                    self.pushButtonPost.setStyleSheet("background-color: green")
-                else:
-                    self.pushButtonPost.setStyleSheet("background-color: red")
-            else:
-                self.mdl.setStudyPostScriptStatus(study, "off")
-                self.pushButtonPost.setStyleSheet("background-color: None")
-        else:
-            study = current.parent().internalPointer().item.name
-            if self.checkBoxPost.isChecked():
-                self.mdl.setPostScriptStatus(study, idx, "on")
-                if self.mdl.getPostScriptName(study, idx) != "":
-                    self.pushButtonPost.setStyleSheet("background-color: green")
-                else:
-                    self.pushButtonPost.setStyleSheet("background-color: red")
-            else:
-                self.mdl.setPostScriptStatus(study, idx, "off")
-                self.pushButtonPost.setStyleSheet("background-color: None")
-
-
     @pyqtSlot(str)
-    def slotPreproArgs(self, text):
+    def slotNotebookArgs(self, text):
         """
         """
         current = self.treeViewCases.currentIndex()
         idx = current.row()
         study = current.parent().internalPointer().item.name
         args = str(text)
-        self.mdl.setPreproScriptArgs(study, idx, args)
+        self.mdl.setNotebookArgs(study, idx, args)
+
+
+    @pyqtSlot(str)
+    def slotParametricArgs(self, text):
+        """
+        """
+        current = self.treeViewCases.currentIndex()
+        idx = current.row()
+        study = current.parent().internalPointer().item.name
+        args = str(text)
+        self.mdl.setParametricArgs(study, idx, args)
+
+
+    @pyqtSlot(str)
+    def slotKwArgs(self, text):
+        """
+        """
+        current = self.treeViewCases.currentIndex()
+        idx = current.row()
+        study = current.parent().internalPointer().item.name
+        args = str(text)
+        self.mdl.setKwArgs(study, idx, args)
 
 
     @pyqtSlot(str)
@@ -829,61 +1035,17 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
     def slotPostArgs(self, text):
         """
         """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
+        study, idx = self.__get_study_and_case_idx__()
+
         args = str(text)
-        if current.parent() == self.treeViewCases.rootIndex():
-            study = current.internalPointer().item.name
-            self.mdl.setStudyPostScriptArgs(study, args)
-        else:
-            study = current.parent().internalPointer().item.name
-            self.mdl.setPostScriptArgs(study, idx, args)
-
-
-    def slotPreproFile(self):
-        """
-        Select a prepro script
-        """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
-        study = current.parent().internalPointer().item.name
-
-        cur_path = os.getcwd()
-        base_dir = os.path.abspath(os.path.join(self.mdl.repo, study))
-        rep = os.path.abspath(os.path.join(base_dir, "MESH"))
-        if not os.path.isdir(rep):
-            rep = os.path.abspath(os.path.join(os.path.split(base_dir)[0], "MESH"))
-        if not os.path.isdir(rep):
-            rep = base_dir
-        title = self.tr("preprocess script")
-        filetypes = self.tr("(*py*);;All Files (*)")
-        file = QFileDialog.getOpenFileName(self, title, rep, filetypes)[0]
-        file = str(file)
-
-        if not file:
-            return
-        file = os.path.basename(file)
-
-        if file not in os.listdir(rep):
-            title = self.tr("WARNING")
-            msg   = self.tr("This selected file is not in the MESH directory of te study")
-            QMessageBox.information(self, title, msg)
-        else:
-            self.lineEditPrepro.setText(str(file))
-            self.mdl.setPreproScriptName(study, idx, file)
+        self.mdl.setPostScriptArgs(study, idx, args)
 
 
     def slotPostFile(self):
         """
         public slot
         """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
-        study = ""
-        if current.parent() == self.treeViewCases.rootIndex():
-            study = current.internalPointer().item.name
-        else:
-            study = current.parent().internalPointer().item.name
+        study, idx = self.__get_study_and_case_idx__()
 
         cur_path = os.getcwd()
         base_dir = os.path.abspath(os.path.join(self.mdl.repo, study))
@@ -905,21 +1067,15 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             msg   = self.tr("This selected file is not in the POST directory of the study")
             QMessageBox.information(self, title, msg)
         else:
-            self.lineEditPost.setText(str(file))
-            if current.parent() == self.treeViewCases.rootIndex():
-                self.mdl.setStudyPostScriptName(study, file)
-            else:
-                self.mdl.setPostScriptName(study, idx, file)
+            self.mdl.setPostScriptName(study, idx, file)
         return
 
 
-    def slotInputFile(self):
+    def slotAddPostScriptFile(self):
         """
         public slot
         """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
-        study = current.parent().internalPointer().item.name
+        study, idx = self.__get_study_and_case_idx__()
 
         cur_path = os.getcwd()
         base_dir = os.path.abspath(os.path.join(self.mdl.repo, study))
@@ -930,19 +1086,121 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             rep = base_dir
         title = self.tr("input file for postprocess script")
         filetypes = self.tr("All Files (*)")
-        file = QFileDialog.getOpenFileName(self, title, rep, filetypes)[0]
-        file = str(file)
+        fname = QFileDialog.getOpenFileName(self, title, rep, filetypes)[0]
+        fname = str(fname)
 
-        if not file:
+        if not fname:
             return
-        file = os.path.basename(file)
-        if file not in os.listdir(rep):
+
+        if rep != os.path.commonprefix([fname, rep]):
             title = self.tr("WARNING")
-            msg   = self.tr("This selected file is not in the POST directory of the study")
+            msg   = self.tr("The selected file is not in the POST directory of the study")
             QMessageBox.information(self, title, msg)
         else:
-            self.lineEditInput.setText(str(file))
-            self.mdl.setPostScriptInput(study, idx, file)
+            fname = os.path.relpath(fname, rep)
+            self.mdl.addPostScript(study, idx, fname)
+            self.modelPostScripts.populateModel(study, idx)
+            self.tablePostScript.setModel(self.modelPostScripts)
+
+
+    def slotRemovePostScriptFile(self):
+        """
+        public slot
+        """
+        study, idx = self.__get_study_and_case_idx__()
+        name = None
+
+        selectionModel = self.tablePostScript.selectionModel()
+
+        # Allow handling of multiple selections. Remove last selected
+        # elements first to avoid changing index of next elements to
+        # remove.
+
+        l = []
+        for index in selectionModel.selectedRows():
+            l.append(index.row())
+        l.reverse()
+        for s_idx in l:
+            self.mdl.removePostScript(study, idx, s_idx)
+
+        selectionModel.clearSelection()
+
+        self.modelPostScripts.populateModel(study, idx)
+        self.tablePostScript.setModel(self.modelPostScripts)
+
+
+    def slotClickInput(self):
+        """
+        public slot
+        """
+        idx = self.listInput.currentRow();
+        self.listInputClickOn -= 1
+        if self.listInputClickOn < 0:
+            self.listInputClickOn = 1
+        if idx > -1:
+            if self.listInputClickOn == 1:
+                self.listInput.setCurrentRow(-1)
+
+
+    def slotSelectInputRow(self, current, previous):
+        """
+        public slot
+        """
+        if self.listInput.currentRow() > -1:
+            self.pushButtonRemoveInput.setEnabled(True)
+            self.listInputClickOn = 3
+        else:
+            self.pushButtonRemoveInput.setEnabled(False)
+            self.listInputClickOn = 0
+
+
+    def slotAddInputFile(self):
+        """
+        public slot
+        """
+        study, idx = self.__get_study_and_case_idx__()
+
+        cur_path = os.getcwd()
+        base_dir = os.path.abspath(os.path.join(self.mdl.repo, study))
+        rep = os.path.abspath(os.path.join(base_dir, "POST"))
+        if not os.path.isdir(rep):
+            rep = os.path.abspath(os.path.join(os.path.split(base_dir)[0], "POST"))
+        if not os.path.isdir(rep):
+            rep = base_dir
+        title = self.tr("input file for postprocess script")
+        filetypes = self.tr("All Files (*)")
+        fname = QFileDialog.getOpenFileName(self, title, rep, filetypes)[0]
+        fname = str(fname)
+
+        if not fname:
+            return
+
+        if rep != os.path.commonprefix([fname, rep]):
+            title = self.tr("WARNING")
+            msg   = self.tr("The selected file is not in the POST directory of the study")
+            QMessageBox.information(self, title, msg)
+        else:
+            fname = os.path.relpath(fname, rep)
+            if self.mdl.addPostInput(study, idx, fname):
+                self.listInput.addItem(str(fname))
+
+
+    def slotRemoveInputFile(self):
+        """
+        public slot
+        """
+        study, idx = self.__get_study_and_case_idx__()
+        name = None
+
+        try:
+            l_idx = self.listInput.currentRow()
+            item = self.listInput.takeItem(l_idx)
+            name = str(item.text())
+        except Exception:
+            return
+
+        self.mdl.removePostInput(study, idx, name)
+        self.listInput.setCurrentRow(-1)
 
 
 #-------------------------------------------------------------------------------

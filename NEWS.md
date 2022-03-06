@@ -13,6 +13,11 @@ Bug fixes:
 
 - GUI: correct resetting of LMO in atmospheric page
 
+User changes:
+
+- Major changes to the studymanager GUI tool, which is now more complete
+  and especially more robust.
+
 Release 7.0.3 (January 28 2022)
 -------------------------------
 

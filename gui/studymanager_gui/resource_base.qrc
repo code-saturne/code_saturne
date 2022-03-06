@@ -1,5 +1,7 @@
 <RCC>
-  <qresource prefix="/" >
+  <qresource prefix="/">
+    <file>icons/22x22/add.png</file>
+    <file>icons/22x22/remove.png</file>
     <file>icons/22x22/document-new.png</file>
     <file>icons/22x22/document-open.png</file>
     <file>icons/22x22/document-properties.png</file>
@@ -16,6 +18,5 @@
     <file>icons/22x22/application-certificate.png</file>
     <file>icons/22x22/x-office-address-book.png</file>
     <file>icons/22x22/help-browser.png</file>
-    <file>icons/22x22/logo_salome_cfd.png</file>
   </qresource>
 </RCC>

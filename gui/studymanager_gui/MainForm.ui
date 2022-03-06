@@ -38,7 +38,7 @@
      <x>0</x>
      <y>0</y>
      <width>527</width>
-     <height>28</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_Help">
@@ -53,11 +53,6 @@
       <iconset resource="resource_base.qrc">
        <normaloff>:/icons/22x22/x-office-address-book.png</normaloff>:/icons/22x22/x-office-address-book.png</iconset>
      </property>
-     <addaction name="displayCSManualAction"/>
-     <addaction name="displayNCManualAction"/>
-     <addaction name="displayCSTutorialAction"/>
-     <addaction name="displayCSTheoryAction"/>
-     <addaction name="displayCSRefcardAction"/>
      <addaction name="displayCSDoxygenAction"/>
     </widget>
     <addaction name="displayAboutAction"/>
@@ -117,7 +112,6 @@
    <addaction name="fileOpenAction"/>
    <addaction name="fileSaveAction"/>
    <addaction name="fileCloseAction"/>
-   <addaction name="fileQuitAction"/>
   </widget>
   <widget class="QToolBar" name="toolBar_4">
    <property name="windowTitle">
@@ -184,18 +178,6 @@
     <string>Ctrl+S</string>
    </property>
   </action>
-  <action name="filePythonAction">
-   <property name="icon">
-    <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/document-save.png</normaloff>:/icons/22x22/document-save.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Dump python</string>
-   </property>
-   <property name="statusTip">
-    <string>Dump python file.</string>
-   </property>
-  </action>
   <action name="fileSaveAsAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
@@ -238,51 +220,6 @@
     <string>Ctrl+T</string>
    </property>
   </action>
-  <action name="displayCaseAction">
-   <property name="icon">
-    <iconset resource="resource_base.qrc">
-     <normaloff>:/icons/22x22/document-properties.png</normaloff>:/icons/22x22/document-properties.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Show current case</string>
-   </property>
-   <property name="statusTip">
-    <string>Show current case.</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+P</string>
-   </property>
-  </action>
-  <action name="reload_modulesAction">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/icons/22x22/view-refresh.png</normaloff>:/icons/22x22/view-refresh.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Reload all loaded modules</string>
-   </property>
-   <property name="statusTip">
-    <string>Reload all loaded modules.</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+A</string>
-   </property>
-  </action>
-  <action name="reload_pageAction">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/icons/22x22/view-refresh.png</normaloff>:/icons/22x22/view-refresh.png</iconset>
-   </property>
-   <property name="text">
-    <string>R&amp;eload the loaded page</string>
-   </property>
-   <property name="statusTip">
-    <string>Reload the loaded page.</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+R</string>
-   </property>
-  </action>
   <action name="displayAboutAction">
    <property name="icon">
     <iconset resource="resource_base.qrc">
@@ -307,58 +244,6 @@
     <string>Licence.</string>
    </property>
   </action>
-  <action name="displayCSManualAction">
-   <property name="text">
-    <string>&amp;code_saturne</string>
-   </property>
-   <property name="statusTip">
-    <string>code_saturne user manual.</string>
-   </property>
-   <property name="shortcut">
-    <string>F1</string>
-   </property>
-  </action>
-  <action name="displayNCManualAction">
-   <property name="text">
-    <string>&amp;NEPTUNE_CFD</string>
-   </property>
-   <property name="statusTip">
-    <string>NEPTUNE_CFD user manual.</string>
-   </property>
-  </action>
-  <action name="displayCSTutorialAction">
-   <property name="text">
-    <string>&amp;code_saturne tutorial</string>
-   </property>
-   <property name="statusTip">
-    <string>code_saturne tutorial.</string>
-   </property>
-   <property name="shortcut">
-    <string>F2</string>
-   </property>
-  </action>
-  <action name="displayCSTheoryAction">
-   <property name="text">
-    <string>&amp;code_saturne theory</string>
-   </property>
-   <property name="statusTip">
-    <string>code_saturne theory guide.</string>
-   </property>
-   <property name="shortcut">
-    <string>F3</string>
-   </property>
-  </action>
-  <action name="displayCSRefcardAction">
-   <property name="text">
-    <string>&amp;code_saturne reference card</string>
-   </property>
-   <property name="statusTip">
-    <string>code_saturne quick reference card.</string>
-   </property>
-   <property name="shortcut">
-    <string>F5</string>
-   </property>
-  </action>
   <action name="displayCSDoxygenAction">
    <property name="text">
     <string>&amp;code_saturne doxygen</string>
@@ -370,41 +255,10 @@
     <string>F6</string>
    </property>
   </action>
-  <action name="IdentityAction">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Identity</string>
-   </property>
-   <property name="statusTip">
-    <string>Show/Hide the identity window.</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+I</string>
-   </property>
-  </action>
-  <action name="BrowserAction">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>&amp;Browser</string>
-   </property>
-   <property name="statusTip">
-    <string>Show/Hide the browser window.</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+B</string>
-   </property>
-  </action>
   <action name="fileQuitAction">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="icon">
     <iconset resource="resource_base.qrc">
      <normaloff>:/icons/22x22/system-log-out.png</normaloff>:/icons/22x22/system-log-out.png</iconset>
@@ -485,6 +339,38 @@
   <action name="RestoreStyleDefaults">
    <property name="text">
     <string>Restore Defaults</string>
+   </property>
+  </action>
+  <action name="BrowserAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Browser</string>
+   </property>
+   <property name="statusTip">
+    <string>Show/Hide the browser window.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+B</string>
+   </property>
+  </action>
+  <action name="displayCaseAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/document-properties.png</normaloff>:/icons/22x22/document-properties.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Show current case</string>
+   </property>
+   <property name="statusTip">
+    <string>Show current case.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>
