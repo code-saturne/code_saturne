@@ -537,7 +537,10 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
 
         cur_path = os.getcwd()
         path = os.path.abspath(os.path.join(self.mdl.repo, study))
-        os.chdir(path)
+        try:
+            os.chdir(path)
+        except Exception:
+            pass
 
         dialog = QFileDialog()
         dialog.setWindowTitle(title)
@@ -548,13 +551,13 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
 
             s = dialog.selectedFiles()
             dir_path = str(s[0])
-            dir_path = os.path.relpath(dir_path)
-            if dir_path not in os.listdir(path):
+            study_path, case_name = os.path.split(dir_path)
+            if study != os.path.split(study_path)[1]:
                 title = self.tr("WARNING")
                 msg   = self.tr("This selected case is not in the directory of the study")
                 QMessageBox.information(self, title, msg)
             else:
-                self.mdl.addCase(study, dir_path)
+                self.mdl.addCase(study, case_name)
 
             log.debug("add_case -> %s" % dir_path)
         os.chdir(cur_path)
