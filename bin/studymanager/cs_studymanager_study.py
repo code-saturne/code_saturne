@@ -932,7 +932,7 @@ class Studies(object):
             smgr['xmlfile'] = filename
 
             # minimal modification of xml for now
-            smgr_xml_init(smgr).initialize(reinit_indices = False)
+            smgr_xml_init(smgr).initialize()
             if self.__update_smgr:
                 smgr.xmlSaveDocument(prettyString=False)
                 print(" Smgr file was updated")

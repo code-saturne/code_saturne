@@ -50,7 +50,7 @@ class smgr_xml_init(BaseXmlInit):
     This class initializes the content of a smgr xml parameter file.
     """
 
-    def initialize(self, reinit_indices = True):
+    def initialize(self):
         """
         Verify that all Headings exist only once in the XMLDocument and
         create the missing heading.
@@ -60,9 +60,6 @@ class smgr_xml_init(BaseXmlInit):
             return msg
 
         self._backwardCompatibility()
-
-        if reinit_indices:
-            self.__reinitIndices()
 
         return msg
 
@@ -89,64 +86,6 @@ class smgr_xml_init(BaseXmlInit):
                       + "\n\nThe application will finish."
 
         return msg
-
-
-    def __reinitIndices(self):
-        """
-        Insert indices to make xml compatible with GUI
-        and reinitialize all indices.
-        """
-        for nn in self.case.xmlGetNodeList('study'):
-            idx = 0
-            for node in nn.xmlGetNodeList("case"):
-                if not node['id']:
-                    node['id'] = idx
-                idx = idx + 1
-
-        # ensure id for subplot 0 to n
-        for nn in self.case.xmlGetNodeList('study'):
-            idx = 0
-            dico = {}
-            idlst = []
-
-            for node in nn.xmlGetNodeList("subplot"):
-                dico[node['id']] = idx
-                idlst.append(node['id'])
-                node['id'] = idx
-                idx = idx + 1
-
-            idxx = 0
-            for node in nn.xmlGetNodeList("figure"):
-                lst = node['idlist']
-                new_lst = ''
-                if lst:
-                    for idl in lst.split(" "):
-                        if idl != " ":
-                            if idl in idlst:
-                                if new_lst != "":
-                                    new_lst = new_lst + " " + str(dico[idl])
-                                else:
-                                    new_lst = str(dico[idl])
-                    node['idlist'] = new_lst
-                    if not node['id']:
-                        node['id'] = idxx
-                    idxx = idxx + 1
-
-            idxx = 0
-            for node in nn.xmlGetNodeList("plot"):
-                lst = node['spids']
-                new_lst = ''
-                if lst:
-                    for idl in lst.split(" "):
-                        if idl != " ":
-                            if new_lst != "":
-                                new_lst = new_lst + " " + str(dico[idl])
-                            else:
-                                new_lst = str(dico[idl])
-                    node['spids'] = new_lst
-                    if not node['id']:
-                        node['id'] = idxx
-                    idxx = idxx + 1
 
 
     def _backwardCompatibilityOldVersion(self, from_vers):
@@ -177,6 +116,54 @@ class smgr_xml_init(BaseXmlInit):
                     node.xmlSetAttribute(yscale = val)
                 elif o_attr == "fig":
                     node.xmlSetAttribute(spids = val)
+
+        # Remove ids previously added by GUI.
+
+        for nn in self.case.xmlGetNodeList('study'):
+            for node in nn.xmlGetNodeList("case"):
+                try:
+                    if node['id'] != None:
+                        del(node['id'])
+                except Exception:
+                    pass
+
+
+    def countPreproNodes(self):
+        """
+        Check if XML has old "prepro" type nodes.
+        """
+        n_prepro_nodes = [0, 0]
+
+        for node in self.case.xmlGetNodeList('prepro', 'label'):
+            if node['status'] == 'on':
+                n_prepro_nodes[0] += 1
+            else:
+                n_prepro_nodes[1] += 1
+
+        return n_prepro_nodes
+
+
+    def convertPreproNodes(self):
+        """
+        Convert old XML old "prepro" type nodes to "kw_args".
+        """
+        for sn in self.case.xmlGetNodeList('study'):
+            for cn in sn.xmlGetNodeList("case"):
+                for pn in cn.xmlGetNodeList('prepro', 'label'):
+                    s = ' --prepro-script=' + pn['label'] + ' '
+                    s += pn['args']
+                    if pn['status'] == 'off':
+                        s = ' --status=off'
+                    lst = cn.xmlGetNodeList('kw_args')
+                    if lst:
+                        for i, n in enumerate(lst):
+                            s += ' ' + n['args']
+                            n.xmlRemoveNode()
+                    kn = cn.xmlInitChildNode('kw_args', 'args')
+                    s_new = kn['args'] + s
+                    kn['args'] = s_new.strip()
+                    pn.xmlRemoveNode()
+
 
 #-------------------------------------------------------------------------------
 # End of XMLinit
