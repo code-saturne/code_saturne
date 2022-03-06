@@ -895,6 +895,19 @@ class XMLElement:
         else:
             return None
 
+    def xmlGetNodeByIdx(self, tag, idx, *attrList, **kwargs):
+        """
+        Return a single XMLElement node from the explored elementNode.
+        The returned element is the idx'th instance of the XMLElement class,
+        or None if no such element is present.
+        """
+        nodeList = self._nodeList(tag, *attrList, **kwargs)
+
+        if idx > -1 and len(nodeList) > idx:
+            return self._inst(nodeList[idx])
+        else:
+            return None
+
 
     def xmlGetChildNodeList(self, tag, *attrList, **kwargs):
         """

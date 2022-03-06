@@ -123,8 +123,8 @@ class ManagePlotterModel(Model):
         """
         study_node = self.case.xmlGetNode("study", label = study)
         lst = []
-        for nn in study_node.xmlGetNodeList("case"):
-            lst.append(int(nn['id']))
+        for id, nn in enumerate(study_node.xmlGetNodeList("case")):
+            lst.append(id)
         return lst
 
 
@@ -866,7 +866,7 @@ class ManagePlotterModel(Model):
         """
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        nn = study_node.xmlGetNode("case", id = idx)
+        nn = study_node.xmlGetNodeByIdx("case", idx)
         return nn['label']
 
 
@@ -874,7 +874,7 @@ class ManagePlotterModel(Model):
         """
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        nn = study_node.xmlGetNode("case", id = idx)
+        nn = study_node.xmlGetNodeByIdx("case", idx)
         lst = []
         for n in nn.xmlGetNodeList("data"):
             lst.append(n['file'])
@@ -885,7 +885,7 @@ class ManagePlotterModel(Model):
         """
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        nn = study_node.xmlGetNode("case", id = case_idx)
+        nn = study_node.xmlGetNodeByIdx("case", case_idx)
         nn.xmlInitChildNode("data", dest="", file=name)
 
 
@@ -893,7 +893,7 @@ class ManagePlotterModel(Model):
         """
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        nn = study_node.xmlGetNode("case", id = case_idx)
+        nn = study_node.xmlGetNodeByIdx("case", case_idx)
         lst = nn.xmlGetNodeList("data")
         node = lst[idx]
         node.xmlRemoveNode()
@@ -903,7 +903,7 @@ class ManagePlotterModel(Model):
         """
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        nn = study_node.xmlGetNode("case", id = case_idx)
+        nn = study_node.xmlGetNodeByIdx("case", case_idx)
         node = nn.xmlGetNodeList("data")[data_idx]
         idx = len(study_node.xmlGetNodeList("plot"))
         node.xmlInitChildNode("plot", id = idx)
@@ -914,7 +914,7 @@ class ManagePlotterModel(Model):
         """
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        nn = study_node.xmlGetNode("case", id = case_idx)
+        nn = study_node.xmlGetNodeByIdx("case", case_idx)
         node = nn.xmlGetNodeList("data")[data_idx]
         lst = node.xmlGetNodeList("plot")
         n = lst[idx]
@@ -930,7 +930,7 @@ class ManagePlotterModel(Model):
         """
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        case = study_node.xmlGetNode("case", id = idx)
+        case = study_node.xmlGetNodeByIdx("case", idx)
         node = case.xmlGetNodeList("data")[data_idx]
         lst = []
         for n in node.xmlGetNodeList("plot"):
@@ -1241,7 +1241,7 @@ class ManagePlotterModel(Model):
         Return subplot id list for a case
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        case = study_node.xmlGetNode("case", id = case_idx)
+        case = study_node.xmlGetNodeByIdx("case", case_idx)
         node = case.xmlGetNodeList("data")[data_idx]
         n = node.xmlGetNodeList("plot")[idx]
         return n['id']
@@ -1252,7 +1252,7 @@ class ManagePlotterModel(Model):
         Return subplot id list for a case
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        case = study_node.xmlGetNode("case", id = case_idx)
+        case = study_node.xmlGetNodeByIdx("case", case_idx)
         node = case.xmlGetNodeList("data")[data_idx]
         n = node.xmlGetNode("plot", id = plot_id)
         lst = n['spids']
@@ -1266,7 +1266,7 @@ class ManagePlotterModel(Model):
         Set subplot id list for a figure
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        case = study_node.xmlGetNode("case", id = case_idx)
+        case = study_node.xmlGetNodeByIdx("case", case_idx)
         node = case.xmlGetNodeList("data")[data_idx]
         plot = node.xmlGetNode("plot", id = plot_id)
         plot['spids'] = idlist

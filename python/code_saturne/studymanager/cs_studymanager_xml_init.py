@@ -93,15 +93,8 @@ class smgr_xml_init(BaseXmlInit):
 
     def __reinitIndices(self):
         """
-        Insert indices to make xml compatible with GUI
-        and reinitialize all indices.
+        Reinitialize all indices.
         """
-        for nn in self.case.xmlGetNodeList('study'):
-            idx = 0
-            for node in nn.xmlGetNodeList("case"):
-                if not node['id']:
-                    node['id'] = idx
-                idx = idx + 1
 
         # ensure id for subplot 0 to n
         for nn in self.case.xmlGetNodeList('study'):
@@ -177,6 +170,17 @@ class smgr_xml_init(BaseXmlInit):
                     node.xmlSetAttribute(yscale = val)
                 elif o_attr == "fig":
                     node.xmlSetAttribute(spids = val)
+
+        # Remove ids previously added by GUI.
+
+        for nn in self.case.xmlGetNodeList('study'):
+            for node in nn.xmlGetNodeList("case"):
+                try:
+                    if node['id'] != None:
+                        del(node['id'])
+                except Exception:
+                    pass
+
 
 #-------------------------------------------------------------------------------
 # End of XMLinit

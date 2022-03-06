@@ -85,8 +85,8 @@ class ManageCasesModel(Model):
         """
         node = self.case.xmlGetNode('study', label = name)
         lst = []
-        for nn in node.xmlGetNodeList("case"):
-            lst.append(int(nn['id']))
+        for id, nn in enumerate(node.xmlGetNodeList("case")):
+            lst.append(id)
         return lst
 
 
@@ -96,7 +96,8 @@ class ManageCasesModel(Model):
         """
         study_node = self.case.xmlGetNode('study', label = study)
         idx = len(study_node.xmlGetNodeList("case"))
-        node = study_node.xmlInitChildNode("case", id = idx, label = name)
+        node = study_node.xmlInitChildNode("case", id_tmp = 'new', label = name)
+        del(node['id_tmp'])
         self.list_case.append(node)
 
 
@@ -147,15 +148,9 @@ class ManageCasesModel(Model):
         delete case name from node with index
         """
         study_node = self.case.xmlGetNode('study', label = study)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         node.xmlRemoveNode()
 
-        for node in study_node.xmlGetNodeList('case'):
-            try:
-                if int(node['id']) > idx:
-                    node['id'] = str(int(node['id']) - 1)
-            except:
-                pass
         self.list_case = self.case.xmlGetNodeList("case")
 
 
@@ -165,7 +160,7 @@ class ManageCasesModel(Model):
         """
         study_node = self.case.xmlGetNode('study', label = study)
         ii = len(study_node.xmlGetNodeList("case"))
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         name = node['label']
         new_node = study_node.xmlInitChildNode("case", id = ii, label = name)
 
@@ -198,7 +193,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         return node['label']
 
 
@@ -250,7 +245,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         status = node['compute']
         if not status:
             status = self._defaultValues()['compute']
@@ -265,7 +260,7 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         self.isOnOff(status)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         node['compute'] = status
 
 
@@ -275,7 +270,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         status = node['post']
         if not status:
             status = self._defaultValues()['post']
@@ -290,7 +285,7 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         self.isOnOff(status)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         node['post'] = status
 
 
@@ -300,7 +295,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         status = node['status']
         if not status:
             status = self._defaultValues()['status']
@@ -315,7 +310,7 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         self.isOnOff(status)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         node['status'] = status
 
 
@@ -325,7 +320,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         runid = node['run_id']
         if not runid:
             runid = self._defaultValues()['run_id']
@@ -339,7 +334,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         node['run_id'] = run_id
 
 
@@ -349,7 +344,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         tags = node['tags']
         if not tags:
             tags = self._defaultValues()['tags']
@@ -362,7 +357,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         node['tags'] = tags
         if tags == "":
             del(node['tags'])
@@ -374,7 +369,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlGetNode("script")
         if nn:
             status = nn['status']
@@ -393,7 +388,7 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         self.isOnOff(status)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlInitChildNode("script")
         nn['status'] = status
 
@@ -430,7 +425,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlGetNode("compare")
         if nn:
             status = nn['status']
@@ -449,7 +444,7 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         self.isOnOff(status)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlInitChildNode("compare")
         nn['status'] = status
 
@@ -460,7 +455,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlGetNode("notebook")
         args = ""
         if nn:
@@ -474,7 +469,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlInitChildNode("notebook")
         nn['args'] = args
 
@@ -485,7 +480,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlGetNode("parametric")
         args = ""
         if nn:
@@ -499,7 +494,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlInitChildNode("parametric")
         nn['args'] = args
 
@@ -510,7 +505,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlGetNode("kw")
         args = ""
         if nn:
@@ -524,7 +519,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlInitChildNode("kw")
         nn['args'] = args
 
@@ -535,7 +530,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlGetNode("script")
         args = ""
         if nn:
@@ -549,7 +544,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlInitChildNode("post")
         nn['args'] = args
 
@@ -560,7 +555,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlGetNode("script")
         name = ""
         if nn:
@@ -574,7 +569,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlInitChildNode("script")
         nn['label'] = name
 
@@ -585,7 +580,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(case_idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = case_idx)
+        node = study_node.xmlGetNodeByIdx("case", case_idx)
         inputs = []
         lst = node.xmlGetNodeList("input")
         if lst:
@@ -600,7 +595,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(case_idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = case_idx)
+        node = study_node.xmlGetNodeByIdx("case", case_idx)
         lst = node.xmlGetNodeList("input")
         if lst:
             for n in lst:
@@ -616,7 +611,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(case_idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = case_idx)
+        node = study_node.xmlGetNodeByIdx("case", case_idx)
         lst = node.xmlGetNodeList("input")
         if lst:
             for n in lst:
@@ -672,7 +667,7 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlGetNode("compare")
         args = ""
         if nn:
@@ -686,6 +681,6 @@ class ManageCasesModel(Model):
         """
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNode("case", id = idx)
+        node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlInitChildNode("compare")
         nn['args'] = args
