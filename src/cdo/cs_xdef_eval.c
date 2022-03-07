@@ -621,6 +621,53 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Evaluate a quantity defined at interior faces using an analytic
+ *         function.
+ *         This function complies with the generic function type defined as
+ *         cs_xdef_eval_t
+ *
+ * \param[in]      n_elts        number of elements to consider
+ * \param[in]      elt_ids       list of element ids
+ * \param[in]      dense_output  perform an indirection for output (true/false)
+ * \param[in]      mesh          pointer to a cs_mesh_t structure
+ * \param[in]      connect       pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant         pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_eval     physical time at which one evaluates the term
+ * \param[in]      context       NULL or pointer to a context structure
+ * \param[in, out] eval          array storing the result (must be allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_eval_at_i_faces_by_analytic(cs_lnum_t                    n_elts,
+                                    const cs_lnum_t             *elt_ids,
+                                    bool                         dense_output,
+                                    const cs_mesh_t             *mesh,
+                                    const cs_cdo_connect_t      *connect,
+                                    const cs_cdo_quantities_t   *quant,
+                                    cs_real_t                    time_eval,
+                                    void                        *context,
+                                    cs_real_t                   *eval)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+
+  if (n_elts == 0)
+    return;
+
+  const cs_real_t *if_centers = (quant != NULL) ? quant->i_face_center : NULL;
+
+  cs_xdef_analytic_context_t  *cx = (cs_xdef_analytic_context_t *)context;
+  assert(cx != NULL && eval != NULL);
+
+  /* Evaluate the function for this time at the center of interior faces */
+
+  cx->func(time_eval, n_elts, elt_ids, if_centers, dense_output, cx->input,
+           eval);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate a quantity defined at border faces using an analytic
  *         function
  *         This function complies with the generic function type defined as
@@ -652,10 +699,13 @@ cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
   CS_UNUSED(mesh);
   CS_UNUSED(connect);
 
+  if (n_elts == 0)
+    return;
+
   const cs_real_t *bf_centers = (quant != NULL) ? quant->b_face_center : NULL;
 
   cs_xdef_analytic_context_t  *cx = (cs_xdef_analytic_context_t *)context;
-  assert(cx != NULL);
+  assert(cx != NULL && eval != NULL);
 
   /* Evaluate the function for this time at the center of border faces */
 
