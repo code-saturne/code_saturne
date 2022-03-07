@@ -65,6 +65,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Redefined the name of functions from cs_math to get shorter names */
+
 #define _dp3  cs_math_3_dot_product
 
 /*=============================================================================
@@ -267,6 +268,7 @@ cs_xdef_cw_eval_fc_int_by_analytic(const cs_cell_mesh_t             *cm,
   const short int  nf = cm->n_fc;
 
   /* Switch on the cell-type: optimised version for tetra */
+
   switch (cm->type) {
 
   case FVM_CELL_TETRA:
@@ -392,6 +394,7 @@ cs_xdef_cw_eval_scalar_face_avg_by_analytic(const cs_cell_mesh_t   *cm,
                                     ac->func, ac->input, qfunc, eval);
 
   /* Average */
+
   eval[0] /= cm->face[f].meas;
 }
 
@@ -434,6 +437,7 @@ cs_xdef_cw_eval_vector_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
                                     ac->func, ac->input, qfunc, eval);
 
   /* Average */
+
   const double _oversurf = 1./cm->face[f].meas;
   for (short int xyz = 0; xyz < 3; xyz++)
     eval[xyz] *= _oversurf;
@@ -478,6 +482,7 @@ cs_xdef_cw_eval_tensor_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
                                     ac->func, ac->input, qfunc, eval);
 
   /* Average */
+
   const double _oversurf = 1./cm->face[f].meas;
   for (short int i = 0; i < 9; i++)
     eval[i] *= _oversurf;
@@ -522,6 +527,7 @@ cs_xdef_cw_eval_scalar_avg_by_analytic(const cs_cell_mesh_t     *cm,
                                     eval);
 
   /* Average */
+
   eval[0] /= cm->vol_c;
 }
 
@@ -565,6 +571,7 @@ cs_xdef_cw_eval_vector_avg_by_analytic(const cs_cell_mesh_t     *cm,
                                     qfunc, eval);
 
   /* Average */
+
   const double _overvol = 1./cm->vol_c;
   for (short int xyz = 0; xyz < 3; xyz++)
     eval[xyz] *= _overvol;
@@ -610,6 +617,7 @@ cs_xdef_cw_eval_tensor_avg_by_analytic(const cs_cell_mesh_t     *cm,
                                     eval);
 
   /* Average */
+
   const double _overvol = 1./cm->vol_c;
   for (short int xyz = 0; xyz < 9; xyz++)
     eval[xyz] *= _overvol;
@@ -661,6 +669,7 @@ cs_xdef_cw_eval_by_analytic(const cs_cell_mesh_t       *cm,
   cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   /* Evaluate the function for this time at the cell center */
+
   ac->func(time_eval,
            1, NULL, cm->xc, true, /* compacted output ? */
            ac->input,
@@ -692,7 +701,8 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
 
   const int  stride = ac->stride;
 
-  /* array is assumed to be interlaced */
+  /* Array is assumed to be interlaced */
+
   if (cs_flag_test(ac->loc, cs_flag_primal_cell)) {
 
     for (int k = 0; k < stride; k++)
@@ -701,14 +711,13 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
   }
   else if (cs_flag_test(ac->loc, cs_flag_primal_vtx)) {
 
-    /* Sanity checks */
     assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
     /* Reconstruct (or interpolate) value at the current cell center */
-    for (short int v = 0; v < cm->n_vc; v++) {
+
+    for (short int v = 0; v < cm->n_vc; v++)
       for (int k = 0; k < stride; k++)
         eval[k] += cm->wvc[v] * ac->values[stride*cm->v_ids[v] + k];
-    }
 
   }
   else if (cs_flag_test(ac->loc, cs_flag_dual_face_byc)) {
@@ -716,6 +725,7 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
     assert(ac->index != NULL);
 
     /* Reconstruct (or interpolate) value at the current cell center */
+
     cs_reco_dfbyc_in_cell(cm,
                           ac->values + ac->index[cm->c_id],
                           eval);
@@ -724,7 +734,6 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
   else
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid support for the input array", __func__);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -761,11 +770,11 @@ cs_xdef_cw_eval_by_field(const cs_cell_mesh_t      *cm,
   }
   else if (field->location_id == v_ml_id) {
 
-    /* Sanity checks */
     assert(field->dim == 1);
     assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
     /* Reconstruct (or interpolate) value at the current cell center */
+
     for (short int v = 0; v < cm->n_vc; v++)
       eval[0] += cm->wvc[v] * values[cm->v_ids[v]];
 
@@ -774,7 +783,6 @@ cs_xdef_cw_eval_by_field(const cs_cell_mesh_t      *cm,
   else
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid support for the input array", __func__);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -805,6 +813,7 @@ cs_xdef_cw_eval_at_xyz_by_analytic(const cs_cell_mesh_t       *cm,
   cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
   /* Evaluate the function for this time at the given coordinates */
+
   ac->func(time_eval,
            n_points, NULL, xyz, true, /* compacted output ? */
            ac->input,
@@ -842,7 +851,8 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t     *cm,
 
   const int  stride = ac->stride;
 
-  /* array is assumed to be interlaced */
+  /* Array is assumed to be interlaced */
+
   if (cs_flag_test(ac->loc, cs_flag_primal_cell)) {
 
     assert(stride == 3);
@@ -858,15 +868,14 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t     *cm,
   }
   else if (cs_flag_test(ac->loc, cs_flag_primal_vtx)) {
 
-    /* Sanity checks */
     assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
     assert(stride == 3);
 
     /* Reconstruct (or interpolate) value at the current cell center */
-    for (int k = 0; k < stride; k++) {
+
+    for (int k = 0; k < stride; k++)
       for (short int v = 0; v < cm->n_vc; v++)
         eval[k] += cm->wvc[v] * ac->values[stride*cm->v_ids[v] + k];
-    }
 
   }
   else if (cs_flag_test(ac->loc, cs_flag_dual_face_byc)) {
@@ -874,6 +883,7 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t     *cm,
     assert(ac->index != NULL);
 
     /* Reconstruct (or interpolate) value at the current cell center */
+
     cs_real_3_t  cell_vector;
     cs_reco_dfbyc_in_cell(cm,
                           ac->values + ac->index[cm->c_id],
@@ -889,7 +899,6 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t     *cm,
   else
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid support for the input array", __func__);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -928,12 +937,13 @@ cs_xdef_cw_eval_vector_at_xyz_by_field(const cs_cell_mesh_t    *cm,
   const int  c_ml_id = cs_mesh_location_get_id_by_name(N_("cells"));
   const int  v_ml_id = cs_mesh_location_get_id_by_name(N_("vertices"));
 
-  /* array is assumed to be interlaced */
+  /* Array is assumed to be interlaced */
   if (field->location_id == c_ml_id) {
 
     cs_real_3_t  cell_vector;
     for (int k = 0; k < 3; k++)
       cell_vector[k] = values[3*cm->c_id + k];
+
     for (int i = 0; i < n_points; i++) { /* No interpolation */
       eval[3*i    ] = cell_vector[0];
       eval[3*i + 1] = cell_vector[1];
@@ -943,10 +953,10 @@ cs_xdef_cw_eval_vector_at_xyz_by_field(const cs_cell_mesh_t    *cm,
   }
   else if (field->location_id == v_ml_id) {
 
-    /* Sanity check */
     assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
     /* Reconstruct (or interpolate) value at the current cell center */
+
     for (int k = 0; k < 3; k++)
       for (short int v = 0; v < cm->n_vc; v++)
         eval[k] += cm->wvc[v] * values[3*cm->v_ids[v] + k];
@@ -955,7 +965,6 @@ cs_xdef_cw_eval_vector_at_xyz_by_field(const cs_cell_mesh_t    *cm,
   else
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid support for the input array", __func__);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -988,6 +997,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
   if (cs_eflag_test(cm->flag, CS_FLAG_COMP_FEQ)) {
 
     /* Loop on face edges */
+
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const double  _flx = 0.5 * cm->tef[i] * _dp3(flux, cm->face[f].unitv);
@@ -1002,6 +1012,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
   else {
 
     /* Loop on face edges */
+
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const short int  e = cm->f2e_ids[i];
@@ -1015,7 +1026,6 @@ cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1055,12 +1065,14 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
     {
       cs_real_3_t  flux_xf = {0, 0, 0};
 
-      /* Evaluate the function for this time at the given coordinates */
+      /* Evaluate the function for this time at the face center */
+
       ac->func(time_eval, 1, NULL, fq.center, true, /* compacted output ? */
                ac->input,
                flux_xf);
 
       /* Plug into the evaluation by value now */
+
       cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, time_eval, flux_xf, eval);
     }
     break;
@@ -1073,6 +1085,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
       if (cs_flag_test(cm->flag, CS_FLAG_COMP_FEQ)) {
 
         /* Loop on face edges */
+
         for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
           const short int  e = cm->f2e_ids[i];
@@ -1086,6 +1099,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
           }
 
           /* Evaluate the function for this time at the given coordinates */
+
           ac->func(time_eval, 2, NULL,
                    (const cs_real_t *)_xyz, true, /* compacted output ? */
                    ac->input,
@@ -1100,6 +1114,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
       else {
 
         /* Loop on face edges */
+
         for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
           const short int  e = cm->f2e_ids[i];
@@ -1113,6 +1128,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
           }
 
           /* Evaluate the function for this time at the given coordinates */
+
           ac->func(time_eval, 2, NULL,
                    (const cs_real_t *)_xyz, true, /* compacted output ? */
                    ac->input,
@@ -1139,12 +1155,14 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
        * The flux returns by the analytic function is a vector. So the size
        * of _val is 24 = 8*3
        */
+
       cs_real_t _val[24], w[8];
       cs_real_3_t  gpts[8];
 
       if (cs_flag_test(cm->flag, CS_FLAG_COMP_FEQ)) { /* tef is pre-computed */
 
         /* Loop on face edges */
+
         for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
           const short int  e = cm->f2e_ids[i];
@@ -1154,6 +1172,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           /* Two triangles composing the portion of face related to a vertex
              Evaluate the field at the four quadrature points */
+
           cs_quadrature_tria_4pts(cm->edge[e].center, fq.center, cm->xv + 3*v1,
                                   svef,
                                   gpts, w);
@@ -1163,6 +1182,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
                                   gpts + 4, w + 4);
 
           /* Evaluate the function for this time at the given coordinates */
+
           ac->func(time_eval, 8, NULL,
                    (const cs_real_t *)gpts, true, /* compacted output ? */
                    ac->input,
@@ -1183,6 +1203,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
       else {
 
         /* Loop on face edges */
+
         for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
           const short int  e = cm->f2e_ids[i];
@@ -1193,6 +1214,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           /* Two triangles composing the portion of face related to a vertex
              Evaluate the field at the four quadrature points */
+
           cs_quadrature_tria_4pts(cm->edge[e].center, fq.center, cm->xv + 3*v1,
                                   svef,
                                   gpts, w);
@@ -1202,6 +1224,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
                                   gpts + 4, w + 4);
 
           /* Evaluate the function for this time at the given coordinates */
+
           ac->func(time_eval, 8, NULL,
                    (const cs_real_t *)gpts, true, /* compacted output ? */
                    ac->input,
@@ -1232,12 +1255,14 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
        * The flux returns by the analytic function is a vector. So the size
        * of _val is 42 = 14*3
        */
+
       cs_real_t _val[42], w[14];
       cs_real_3_t  gpts[14];
 
       if (cs_flag_test(cm->flag, CS_FLAG_COMP_FEQ)) { /* tef is pre-computed */
 
         /* Loop on face edges */
+
         for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
           const short int  e = cm->f2e_ids[i];
@@ -1247,6 +1272,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           /* Two triangles composing the portion of face related to a vertex
              Evaluate the field at the seven quadrature points */
+
           cs_quadrature_tria_7pts(cm->edge[e].center, fq.center, cm->xv + 3*v1,
                                   svef,
                                   gpts, w);
@@ -1256,6 +1282,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
                                   gpts + 7, w + 7);
 
           /* Evaluate the function for this time at the given coordinates */
+
           ac->func(time_eval, 14, NULL,
                    (const cs_real_t *)gpts, true, /* compacted output ? */
                    ac->input,
@@ -1276,6 +1303,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
       else {
 
         /* Loop on face edges */
+
         for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
           const short int  e = cm->f2e_ids[i];
@@ -1286,6 +1314,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
           /* Two triangles composing the portion of face related to a vertex
              Evaluate the field at the seven quadrature points */
+
           cs_quadrature_tria_7pts(cm->edge[e].center, fq.center, cm->xv + 3*v1,
                                   svef,
                                   gpts, w);
@@ -1295,6 +1324,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
                                   gpts + 7, w + 7);
 
           /* Evaluate the function for this time at the given coordinates */
+
           ac->func(time_eval, 14, NULL,
                    (const cs_real_t *)gpts, true, /* compacted output ? */
                    ac->input,
@@ -1322,7 +1352,6 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
     break;
 
   }  /* switch type of quadrature */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1357,13 +1386,15 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
     {
       cs_real_3_t  flux_xf = {0, 0, 0};
 
-      /* Evaluate the function for this time at the given coordinates */
+      /* Evaluate the function for this time at the face center */
+
       ac->func(time_eval, 1, NULL, cm->face[f].center,
                true, /* compacted output ? */
                ac->input,
                flux_xf);
 
       /* Plug into the evaluation by value now */
+
       cs_xdef_cw_eval_flux_by_val(cm, f, time_eval, flux_xf, eval);
     }
     break;
@@ -1380,6 +1411,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
       eval[f] = 0.; /* Reset value */
 
       /* Loop on face edges */
+
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
         const short int  e = cm->f2e_ids[i];
@@ -1391,6 +1423,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
             (fq.center[k] + cm->xv[3*v1+k] + cm->xv[3*v2+k]);
 
         /* Evaluate the function for this time at the given coordinates */
+
         ac->func(time_eval, 1, NULL,
                  (const cs_real_t *)_xyz, true, /* compacted output ? */
                  ac->input,
@@ -1411,6 +1444,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
       /* Four values by triangle --> 4 Gauss points
        * The flux returns by the analytic function is a vector. So the
        * size of _val is 12=4*3 */
+
       cs_real_t  w[4], _val[12];
       cs_real_3_t  gpts[4];
 
@@ -1419,6 +1453,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
       eval[f] = 0.; /* Reset value */
 
       /* Loop on face edges */
+
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
         const short int  e = cm->f2e_ids[i];
@@ -1431,6 +1466,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                 gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
+
         ac->func(time_eval, 4, NULL,
                  (const cs_real_t *)gpts, true,  /* compacted output ? */
                  ac->input,
@@ -1456,6 +1492,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
        * The flux returns by the analytic function is a vector. So the
        * size of _val is 21=7*3
        */
+
       cs_real_t  w[7], _val[21];
       cs_real_3_t  gpts[7];
 
@@ -1464,6 +1501,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
       eval[f] = 0.; /* Reset value */
 
       /* Loop on face edges */
+
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
         const short int  e = cm->f2e_ids[i];
@@ -1471,11 +1509,13 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
         const short int v2 = cm->e2v_ids[2*e+1];
 
         /* Evaluate the field at the three quadrature points */
+
         cs_quadrature_tria_7pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
                                 cm->tef[i],
                                 gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
+
         ac->func(time_eval, 7, NULL,
                  (const cs_real_t *)gpts, true,  /* compacted output ? */
                  ac->input,
@@ -1498,7 +1538,6 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
     break;
 
   }  /* Switch type of quadrature */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1534,12 +1573,14 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
     {
       cs_real_33_t  flux_xc = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
-      /* Evaluate the function for this time at the given coordinates */
+      /* Evaluate the function for this time at the cell center */
+
       ac->func(time_eval, 1, NULL, cm->xc, true,  /* compacted output ? */
                ac->input,
                (cs_real_t *)flux_xc);
 
       /* Plug into the evaluation by value now */
+
       cs_xdef_cw_eval_tensor_flux_by_val(cm, f, time_eval, flux_xc, eval);
     }
     break;
@@ -1558,6 +1599,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
         eval[3*f+k] = 0.; /* Reset value */
 
       /* Loop on face edges */
+
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
         const short int  _2e = cm->f2e_ids[i];
@@ -1569,6 +1611,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
             (fq.center[k] + cm->xv[3*v1+k] + cm->xv[3*v2+k]);
 
         /* Evaluate the function for this time at the given coordinates */
+
         ac->func(time_eval, 1, NULL,
                  (const cs_real_t *)_xyz, true,  /* compacted output ? */
                  ac->input,
@@ -1590,6 +1633,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
       /* Four values by triangle --> 4 Gauss points
        * The flux returns by the analytic function is a 3x3 tensor. */
+
       cs_real_t  w[4];
       cs_real_3_t  gpts[4], _val;
       cs_real_33_t  _eval[4];
@@ -1600,6 +1644,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
         eval[3*f+k] = 0.; /* Reset value */
 
       /* Loop on face edges */
+
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
         const short int  e = cm->f2e_ids[i];
@@ -1607,11 +1652,13 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
         const short int v2 = cm->e2v_ids[2*e+1];
 
         /* Evaluate the field at the three quadrature points */
+
         cs_quadrature_tria_4pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
                                 cm->tef[i],
                                 gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
+
         ac->func(time_eval, 4, NULL,
                  (const cs_real_t *)gpts, true,  /* compacted output ? */
                  ac->input,
@@ -1636,6 +1683,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
       /* Seven values by triangle --> 7 Gauss points
        * The flux returns by the analytic function is a 3x3 tensor. */
+
       cs_real_t  w[7];
       cs_real_3_t  gpts[7], _val;
       cs_real_33_t  _eval[7];
@@ -1646,6 +1694,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
         eval[3*f+k] = 0.; /* Reset value */
 
       /* Loop on face edges */
+
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
         const short int  e = cm->f2e_ids[i];
@@ -1653,11 +1702,13 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
         const short int v2 = cm->e2v_ids[2*e+1];
 
         /* Evaluate the field at the three quadrature points */
+
         cs_quadrature_tria_7pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
                                 cm->tef[i],
                                 gpts, w);
 
         /* Evaluate the function for this time at the given coordinates */
+
         ac->func(time_eval, 7, NULL,
                  (const cs_real_t *)gpts, true,  /* compacted output ? */
                  ac->input,
@@ -1681,7 +1732,6 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
     break;
 
   }  /* Switch type of quadrature */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1733,6 +1783,7 @@ cs_xdef_cw_eval_scal_avg_reduction_by_analytic(const cs_cell_mesh_t    *cm,
                                      c_eval, eval);
 
   /* Compute the averages */
+
   for (short int f = 0; f < nf; f++)
     eval[f] /= cm->face[f].meas;
   eval[nf] /= cm->vol_c;
@@ -1787,6 +1838,7 @@ cs_xdef_cw_eval_vect_avg_reduction_by_analytic(const cs_cell_mesh_t    *cm,
                                      c_eval, eval);
 
   /* Compute the averages */
+
   for (short int f = 0; f < nf; f++) {
     const cs_real_t _os = 1. / cm->face[f].meas;
     cs_real_t *f_eval = eval + dim*f;

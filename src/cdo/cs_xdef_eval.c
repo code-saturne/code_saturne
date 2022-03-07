@@ -63,6 +63,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Redefined the name of functions from cs_math to get shorter names */
+
 #define _dp3  cs_math_3_dot_product
 
 /*============================================================================
@@ -169,7 +170,6 @@ cs_xdef_eval_vector_by_val(cs_lnum_t                    n_elts,
 
   const cs_real_t  *constant_val = (cs_real_t *)context;
 
-  /* Sanity checks */
   assert(eval != NULL && constant_val != NULL);
 
   if (elt_ids != NULL && !dense_output) {
@@ -242,7 +242,6 @@ cs_xdef_eval_symtens_by_val(cs_lnum_t                    n_elts,
 
   const cs_real_t  *constant_val = (const cs_real_t *)context;
 
-  /* Sanity checks */
   assert(eval != NULL && constant_val != NULL);
 
   if (elt_ids != NULL && !dense_output) {
@@ -310,7 +309,6 @@ cs_xdef_eval_tensor_by_val(cs_lnum_t                    n_elts,
 
   const cs_real_3_t  *constant_val = (const cs_real_3_t *)context;
 
-  /* Sanity checks */
   assert(eval != NULL && constant_val != NULL);
 
   if (elt_ids != NULL && !dense_output) {
@@ -376,11 +374,10 @@ cs_xdef_eval_scalar_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(connect);
 
   cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
-
-  /* Sanity checks */
   assert(tfc != NULL);
 
   /* Evaluate the quantity only once */
+
   cs_real_t  _eval;
   tfc->func(time_eval, tfc->input, &_eval);
 
@@ -434,11 +431,10 @@ cs_xdef_eval_vector_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(connect);
 
   cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
-
-  /* Sanity checks */
   assert(tfc != NULL);
 
   /* Evaluate the quantity */
+
   cs_real_t  _eval[3];
   tfc->func(time_eval, tfc->input, _eval);
 
@@ -495,11 +491,10 @@ cs_xdef_eval_symtens_at_cells_by_time_func(cs_lnum_t                  n_elts,
   CS_UNUSED(connect);
 
   cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
-
-  /* Sanity checks */
   assert(tfc != NULL);
 
   /* Evaluate the quantity */
+
   cs_real_t  _eval[6];
   tfc->func(time_eval, tfc->input, _eval);
 
@@ -556,11 +551,10 @@ cs_xdef_eval_tensor_at_cells_by_time_func(cs_lnum_t                   n_elts,
   CS_UNUSED(connect);
 
   cs_xdef_time_func_context_t  *tfc = (cs_xdef_time_func_context_t *)context;
-
-  /* Sanity checks */
   assert(tfc != NULL);
 
   /* Evaluate the quantity */
+
   cs_real_t  _eval[9];
   tfc->func(time_eval, tfc->input, _eval);
 
@@ -617,11 +611,10 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
   const cs_real_t *cell_centers = (quant != NULL) ? quant->cell_centers : NULL;
 
   cs_xdef_analytic_context_t  *cx = (cs_xdef_analytic_context_t *)context;
-
-  /* Sanity checks */
   assert(cx != NULL);
 
-  /* Evaluate the function for this time at the cell center */
+  /* Evaluate the function for this time at cell centers */
+
   cx->func(time_eval, n_elts, elt_ids, cell_centers, dense_output, cx->input,
            eval);
 }
@@ -662,11 +655,10 @@ cs_xdef_eval_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
   const cs_real_t *bf_centers = (quant != NULL) ? quant->b_face_center : NULL;
 
   cs_xdef_analytic_context_t  *cx = (cs_xdef_analytic_context_t *)context;
-
-  /* Sanity checks */
   assert(cx != NULL);
 
-  /* Evaluate the function for this time at the border face center */
+  /* Evaluate the function for this time at the center of border faces */
+
   cx->func(time_eval, n_elts, elt_ids, bf_centers, dense_output, cx->input,
            eval);
 }
@@ -706,8 +698,6 @@ cs_xdef_eval_at_vertices_by_analytic(cs_lnum_t                    n_elts,
     return;
 
   cs_xdef_analytic_context_t  *cx = (cs_xdef_analytic_context_t *)context;
-
-  /* Sanity checks */
   assert(eval != NULL || cx != NULL);
 
   const cs_real_t  *v_coords;
@@ -721,7 +711,8 @@ cs_xdef_eval_at_vertices_by_analytic(cs_lnum_t                    n_elts,
               __func__);
   }
 
-  /* Evaluate the function for this time at the cell center */
+  /* Evaluate the function for this time at vertices */
+
   cx->func(time_eval, n_elts, elt_ids, v_coords, dense_output, cx->input,
            eval);
 }
@@ -762,10 +753,10 @@ cs_xdef_eval_at_cells_by_dof_func(cs_lnum_t                    n_elts,
   CS_UNUSED(time_eval);
 
   cs_xdef_dof_context_t  *cx = (cs_xdef_dof_context_t *)context;
-
   assert(cx != NULL);
 
   /* Values of the function are defined at the cells */
+
   if (cs_flag_test(cx->loc, cs_flag_primal_cell))
     cx->func(n_elts, elt_ids, dense_output, cx->input,
              eval);
