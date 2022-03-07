@@ -1,7 +1,7 @@
 <!--
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2021 EDF S.A.
+  Copyright (C) 1998-2022 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -135,13 +135,13 @@ Examples
   $ code_saturne smgr -f sample.xml -r -c -p -m "dt@moulinsart.be dd@moulinsart.be"
   ```
 - compare and plot results in the **destination** already computed
-   ```
-   $ code_saturne smgr -f sample.xml -c -p
-   ```
+  ```
+  $ code_saturne smgr -f sample.xml -c -p
+  ```
 - run cases tagged "coarse" (standing for coarse mesh for example)
   _and_ "hr" (standing for high Reynolds for example) only for 2 time
   iterations in destination directory of path `../RUNS/RIBS`
-  (`RIBS} will be created, `RUNS` already exists). The command is
+  (`RIBS`} will be created, `RUNS` already exists). The command is
   launched from inside the study directory, so the repository
   containing the original study is simply indicated by `..`
   ```
@@ -298,10 +298,54 @@ The case has to be repeated in the parameters file:
 </studymanager>
 ```
 
-If nothing is done, the case is repeated without modifications. In order to modify
-the setup between two runs of the same case, an external script has to be used to
-change the related setup (see [preprocessing](@ref sec_smgr_prepro)} and
-[tricks](@ref sec_smgr_tricks) sections).
+If nothing is done, the case is repeated without modifications. In order to
+modify the setup between two runs of the same case, `<notebook>`, `<parametric>`
+and `<kw_args>` nodes can be added as children of the considered case. All of
+them use the attribute `args` to pass additional arguments.
+
+```{.xml}
+<study label='STUDY' status='on'>
+    <case label='CASE1' status='on' compute="on" post="on">
+        <notebook args="u_inlet_1=0.1 u_inlet_2=0.2"/>
+        <parametric args="-m grid2.med --iter-dt 0.005"/>
+        <kw_args args="--my-gradient=lsq --my-restart-100-iter"/>
+    </case>
+</study>
+```
+
+These different nodes all apply a specific filter type during the __stage__
+(__initialize__) step of a case's execution (i.e. when copying data), just before
+the \ref define_domain_parameters (and \ref domain_copy_results_add) function in
+the \ref cs_user_scripts.py user scripts. They do not modify files in a case's
+`DATA` or `SRC` directory, only the copied files in the matching `RESU/<run_id>`.
+
+- `<notebook>` allows passing key-value pairs (with real-values) matching \ref
+  notebook variables already defined in the case, overriding the values in the
+  case's `setup.xml` with the provided values.
+  * They are passed to the underlying `code_saturne run` command using the
+   `--notebook-args` option.
+  * These pairs also appear as a Python dictionnary in the `domain.notebook`
+    member of the `domain` object passed to these functions.
+
+- `<parametric>` allows passing options handled by \ref cs_parametric_setup.py
+  filter to modify the case setup.
+  * They are passed to the underlying `code_saturne run` command using the
+   `--parametric-args` option.
+  * These options also appear as a Python list in the `domain.parametric_args`
+    member of the `domain` object passed to these functions.
+
+- `<kw_args>` allows passing additional user options to
+  \ref define_domain_parameters and \ref domain_copy_results_add in
+  \ref cs_user_scripts.py.
+  * They are passed to the underlying `code_saturne run` command using the
+   `--kw-args` option.
+  * These options appear as a Python list in the `domain.kw_args` member of the
+    `domain` object passed to these functions.
+  * When modifying mesh or restart file selections in these functions, the
+    matching `domain.meshes`, `domain.restart`, and similar members of the
+    `domain` argument should be modified directly, rather than modifying the
+    `setup.xml` file, as the matching values have already been read and assigned
+    to `domain` at this point.
 
 Compare checkpoint files
 ------------------------
@@ -652,20 +696,20 @@ In the parameters file, curves are defined with two markups:
   * `repo` or `dest`: id of the results directory either in the
     **repository** or in the **destination**;
     - If the id is not known already because the case has not yet run,
-      just leave the attribute empty, with `dest=""`, and the value
+      leave the attribute empty, with `dest=""`, and the value
       will be updated after the run step in the **destination**
       directory (see [output](@ref sec_smgr_restart) section).
     - If there is a single results directory in the `RESU` directory
       (either in the **repository** or in the **destination**)
-      of the case, the id can be ommitted: `repo=""` or `dest=""`,
+      of the case, the id can be omitted: `repo=""` or `dest=""`,
       and it will be completed automatically.
   The `file` attribute is mandatory, and either `repo` or
-  `dest` must be present (but not the both), even if they are empty.
+  `dest` must be present (but not both), even if they are empty.
 
 - `<plot>`: child of markup `<data>`, defines a single curve;
   the attributes are:
-  * `fig}` id of the subset of curves (i.e. markup `<subplot>`)
-    where the current curve should be plotted;
+  * `spids` ids of the subset of curves (i.e. markup `<subplot>`) where the current
+    curve should be plotted (whitespace-separated list);
   * `xcol`: number of the column in the file of data for the abscissa;
   * `ycol`: number of the column in the file of data for the ordinate;
   * `legend`: add a label to a curve;
@@ -673,10 +717,10 @@ In the parameters file, curves are defined with two markups:
     linestyle, for example `fmt="r--"` for a dashed red line;
   * `xplus`: real to add to all values of the column `xcol`;
   * `yplus`: real to add to all values of the column `ycol`;
-  * `xfois`: real to multiply to all values of the column `xcol`;
-  * `yfois`: real to multiply to all values of the column `ycol`;
-  * `xerr` or `xerrp`: draw horizontal error bar (see section
-    on [error bars](@ref sec_smgr_err));
+  * `xscale`: real to multiply to all values of the column `xcol`;
+  * `yscale`: real to multiply to all values of the column `ycol`;
+  * `xerr` or `xerrp`: draw horizontal error bar (see section on [error bars]
+    (@ref sec_smgr_err));
   * `yerr` or `yerrp`: draw vertical error bar (as above);
   * some standard options of 2D lines can be added, for example
     `markevery="2"` or `markersize="3.5"`. These options
@@ -707,11 +751,11 @@ In the parameters file, curves are defined with two markups:
 <tr><td> zorder <td> any number
 </table>
 
-The attributes `fig` and `ycol` are mandatory.
+The attributes `spids` and `ycol` are mandatory.
 
 In case a column should undergo a transformation specified by the attributes
-`xfois`,`yfois`,`xplus`,`yplus`, scale operations
-take precedence over translation operations.
+`xscale`,`yscale`,`xplus`,`yplus`, scale operations take precedence over
+translation operations.
 
 Details on 2D lines properties can be found in the
 [Matplotlib documentation](https://matplotlib.org/contents.html).
@@ -955,18 +999,16 @@ STUDYMANAGER produces several files in the **destination** directory:
 - `report.txt`: standard output of the script;
 - `auto_vnv.log`: log of the code and the `pdflatex` compilation;
 - `report_global.pdf`: summary of the compilation, run, comparison,
-   and plot steps;
-- `report_detailed.pdf`: details the comparison and display the
-   plot;
+  and plot steps;
+- `report_detailed.pdf`: details the comparison and display the plot;
 - `sample.xml`: udpated parameters file, useful for restart the
-   script if an error occurs.
+  script if an error occurs.
 
-After the computation of a case, if no error occurs, the attribute
-`compute` is set to `"off"` in the copy of the parameters file
-in the **destination**. It is allow a restart of STUDYMANAGER without
-re-run successful previous computations.
-In the same manner, all empty attributes `repo=""` and `dest=""`
-are completed in the updated parameters file.
+After the computation of a case, if no error occurs, the `compute` attribute is
+set to `"off"` in the copy of the parameters file in the **destination**. It
+enables a restart of SMGR for postprocessing without re-running computations.
+In the same manner, all empty attributes `repo=""` and `dest=""` are completed
+in the updated parameters file.
 
 Tricks {#sec_smgr_tricks}
 ======
