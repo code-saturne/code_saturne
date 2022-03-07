@@ -110,7 +110,7 @@ class Plot(object):
         self.f = open(file, 'r')
 
         # Read mandatory attributes
-        self.subplots = [int(s) for s in parser.getAttribute(node,"spids").split()]
+        self.subplots = [int(s) for s in parser.getAttribute(node, "spids").split()]
         ycol         = int(parser.getAttribute(node, "ycol"))
 
         # Read optional attributes
@@ -418,9 +418,14 @@ class Figure(object):
         # Store the list of subplot objects associated to the current figure
         self.subplots = []
         for id in [int(s) for s in node.attributes["idlist"].value.split()]:
+            found = False
             for p in subplots:
                 if p.id == id:
                     self.subplots.append(p)
+                    found = True
+            if not found:
+                print("    ERROR: figure '" + self.file_name + "': subplot " \
+                      + str(id) + " not defined.")
 
     #---------------------------------------------------------------------------
 
@@ -613,7 +618,8 @@ class Plotter(object):
                                 break
 
                     if not iok:
-                        print("\n\nThis file does not exist: %s\n (last call with path: %s)\n" % (file_name, f))
+                        print("\n\nThis file does not exist: %s\n"
+                              "(last call with path: %s)\n" % (file_name, f))
 
                     else:
                         for nn in plots:
@@ -632,7 +638,8 @@ class Plotter(object):
                     f = os.path.join(dd, study_label, "POST", file_name)
 
                     if not os.path.isfile(f):
-                        raise ValueError("\n\nThis file does not exist: %s\n (call with path: %s)\n" % (file_name, f))
+                        raise ValueError("\n\nThis file does not exist: %s\n"
+                                         " (call with path: %s)\n" % (file_name, f))
 
                     for nn in plots:
                         curve = Plot(nn, self.parser, f)
@@ -642,6 +649,19 @@ class Plotter(object):
         subplots = []
         for node in self.parser.getSubplots(study_label):
             subplots.append(Subplot(node, self.parser, self.curves))
+
+        subplot_ids = []
+        missing_sps = []
+        for sp in subplots:
+            subplot_ids.append(sp.id)
+        for c in self.curves:
+            for sp in c.subplots:
+                if not sp in subplot_ids:
+                    if not sp in missing_sps:
+                        missing_sps.append(sp)
+
+        for sp in missing_sps:
+            print("    ERROR: subplot " + str(sp) + " referenced but not defined.")
 
         # Build the list of figures to handle
         for node in self.parser.getFigures(study_label):

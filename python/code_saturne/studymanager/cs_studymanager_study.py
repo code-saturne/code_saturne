@@ -1056,7 +1056,7 @@ class Studies(object):
             self.__parser.setRepository(self.__repo)
             if options.debug:
                 msg = " Studies repository: " + self.__repo + "\n" \
-                  + " Studies destination: " + self.__dest 
+                  + " Studies destination: " + self.__dest
                 self.reporting(msg, report=False)
 
             # create studymanager log file
