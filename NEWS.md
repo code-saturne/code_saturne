@@ -39,6 +39,11 @@ CDO:
   manipulate block matrices and apply to it either external libraries or
   in-house algorithms to solve these systems.
 
+Physical modeling:
+
+- For VoF, add a surface tension force, accessible from the GUI. If null, one
+  recovers previous behaviour.
+
 Release 7.1.0 (December 21 2021)
 --------------------------------
 
