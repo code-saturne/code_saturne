@@ -533,7 +533,7 @@ class MainView(object):
 
         open an existing file
         """
-        msg = self.tr("Opening an existing case.")
+        msg = self.tr("Opening an existing studymanager file.")
         self.statusbar.showMessage(msg, 2000)
 
         title = self.tr("Open existing file.")

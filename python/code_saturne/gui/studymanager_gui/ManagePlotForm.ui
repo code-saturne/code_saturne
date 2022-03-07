@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>369</width>
-    <height>460</height>
+    <height>528</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,15 +22,53 @@
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
        <layout class="QGridLayout" name="gridLayout">
-        <item row="0" column="0">
-         <widget class="QLabel" name="label">
+        <item row="8" column="0">
+         <widget class="QLabel" name="label_y_shift">
           <property name="text">
-           <string>color</string>
+           <string>y shift</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="lineEditColor"/>
+        <item row="11" column="1">
+         <widget class="QLineEdit" name="lineEditXerrp">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percentage of uncertainety that should be applied to abscissa values.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QLineEdit" name="lineEditYScale"/>
+        </item>
+        <item row="3" column="1">
+         <widget class="QLineEdit" name="lineEditXcol">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Data column (0-based) in file where abscissa value is read.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>column for x value</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="QLineEdit" name="lineEditYShift"/>
+        </item>
+        <item row="12" column="0">
+         <widget class="QLabel" name="label_11">
+          <property name="text">
+           <string>y error percentage</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="1">
+         <widget class="QLineEdit" name="lineEditXerr">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Data column (0-based) in file where abscissa error bar value is read.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
         </item>
         <item row="1" column="0">
          <widget class="QLabel" name="label_2">
@@ -39,8 +77,29 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="lineEditFormat"/>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_y_scale">
+          <property name="text">
+           <string>y scale</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="lineEditColor"/>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="label_x_scale">
+          <property name="text">
+           <string>x scale</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="label_x_shift">
+          <property name="text">
+           <string>x shift</string>
+          </property>
+         </widget>
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_3">
@@ -49,88 +108,81 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="1">
-         <widget class="QLineEdit" name="lineEditLegend"/>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>abscisse number of the column</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QLineEdit" name="lineEditXcol"/>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="label_5">
-          <property name="text">
-           <string>ordinate number of the column</string>
-          </property>
-         </widget>
-        </item>
         <item row="4" column="1">
-         <widget class="QLineEdit" name="lineEditYcol"/>
-        </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="label_6">
-          <property name="text">
-           <string>linewidth</string>
+         <widget class="QLineEdit" name="lineEditYcol">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Data column (0-based) in file where ordinate value is read.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="1">
-         <widget class="QLineEdit" name="lineEditWidth"/>
-        </item>
-        <item row="6" column="0">
-         <widget class="QLabel" name="label_7">
-          <property name="text">
-           <string>markersize</string>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="lineEditFormat">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Format of the line, composed from a symbol, a color and a linestyle.&lt;/p&gt;&lt;p&gt;for example &lt;span style=&quot; font-family:'monospace';&quot;&gt;&amp;quot;r--&amp;quot;&lt;/span&gt; for a dashed red line;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
-        </item>
-        <item row="6" column="1">
-         <widget class="QLineEdit" name="lineEditMarker"/>
-        </item>
-        <item row="7" column="0">
-         <widget class="QLabel" name="label_8">
-          <property name="text">
-           <string>xerr</string>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="1">
-         <widget class="QLineEdit" name="lineEditXerr"/>
-        </item>
-        <item row="8" column="0">
-         <widget class="QLabel" name="label_9">
-          <property name="text">
-           <string>xerrp</string>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="1">
-         <widget class="QLineEdit" name="lineEditXerrp"/>
-        </item>
-        <item row="9" column="0">
-         <widget class="QLabel" name="label_10">
-          <property name="text">
-           <string>yerr</string>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="1">
-         <widget class="QLineEdit" name="lineEditYerr"/>
         </item>
         <item row="10" column="0">
-         <widget class="QLabel" name="label_11">
+         <widget class="QLabel" name="label_10">
           <property name="text">
-           <string>yerrp</string>
+           <string>column for y error bar</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0">
+         <widget class="QLabel" name="label_9">
+          <property name="text">
+           <string>x error percentage</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0">
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>column for x error bar</string>
           </property>
          </widget>
         </item>
         <item row="10" column="1">
-         <widget class="QLineEdit" name="lineEditYerrp"/>
+         <widget class="QLineEdit" name="lineEditYerr">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Data column (0-based) in file where ordinate error bar value is read.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QLineEdit" name="lineEditXShift"/>
+        </item>
+        <item row="5" column="1">
+         <widget class="QLineEdit" name="lineEditXScale"/>
+        </item>
+        <item row="2" column="1">
+         <widget class="QLineEdit" name="lineEditLegend">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>column for y value</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>color</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="1">
+         <widget class="QLineEdit" name="lineEditYerrp">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Percentage of uncertainety that should be applied to ordiante values.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>

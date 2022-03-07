@@ -50,7 +50,7 @@ class smgr_xml_init(BaseXmlInit):
     This class initializes the content of a smgr xml parameter file.
     """
 
-    def initialize(self, reinit_indices = True):
+    def initialize(self):
         """
         Verify that all Headings exist only once in the XMLDocument and
         create the missing heading.
@@ -60,9 +60,6 @@ class smgr_xml_init(BaseXmlInit):
             return msg
 
         self._backwardCompatibility()
-
-        if reinit_indices:
-            self.__reinitIndices()
 
         return msg
 
@@ -89,57 +86,6 @@ class smgr_xml_init(BaseXmlInit):
                       + "\n\nThe application will finish."
 
         return msg
-
-
-    def __reinitIndices(self):
-        """
-        Reinitialize all indices.
-        """
-
-        # ensure id for subplot 0 to n
-        for nn in self.case.xmlGetNodeList('study'):
-            idx = 0
-            dico = {}
-            idlst = []
-
-            for node in nn.xmlGetNodeList("subplot"):
-                dico[node['id']] = idx
-                idlst.append(node['id'])
-                node['id'] = idx
-                idx = idx + 1
-
-            idxx = 0
-            for node in nn.xmlGetNodeList("figure"):
-                lst = node['idlist']
-                new_lst = ''
-                if lst:
-                    for idl in lst.split(" "):
-                        if idl != " ":
-                            if idl in idlst:
-                                if new_lst != "":
-                                    new_lst = new_lst + " " + str(dico[idl])
-                                else:
-                                    new_lst = str(dico[idl])
-                    node['idlist'] = new_lst
-                    if not node['id']:
-                        node['id'] = idxx
-                    idxx = idxx + 1
-
-            idxx = 0
-            for node in nn.xmlGetNodeList("plot"):
-                lst = node['spids']
-                new_lst = ''
-                if lst:
-                    for idl in lst.split(" "):
-                        if idl != " ":
-                            if new_lst != "":
-                                new_lst = new_lst + " " + str(dico[idl])
-                            else:
-                                new_lst = str(dico[idl])
-                    node['spids'] = new_lst
-                    if not node['id']:
-                        node['id'] = idxx
-                    idxx = idxx + 1
 
 
     def _backwardCompatibilityOldVersion(self, from_vers):

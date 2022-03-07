@@ -163,14 +163,16 @@ class ManagePlotDialogView(QDialog, Ui_ManagePlotForm):
         self.default = default
         self.result  = self.default.copy()
 
-        # add les validator sur les lineEdit
+        # add validators on lineEdit
         self.lineEditColor.setText(self.default['color'])
         self.lineEditFormat.setText(self.default['format'])
         self.lineEditLegend.setText(self.default['legend'])
         self.lineEditXcol.setText(self.default['xcol'])
         self.lineEditYcol.setText(self.default['ycol'])
-        self.lineEditWidth.setText(self.default['width'])
-        self.lineEditMarker.setText(self.default['marker'])
+        self.lineEditXScale.setText(self.default['xscale'])
+        self.lineEditYScale.setText(self.default['yscale'])
+        self.lineEditXShift.setText(self.default['xplus'])
+        self.lineEditYShift.setText(self.default['yplus'])
         self.lineEditXerr.setText(self.default['xerr'])
         self.lineEditXerrp.setText(self.default['xerrp'])
         self.lineEditYerr.setText(self.default['yerr'])
@@ -193,8 +195,10 @@ class ManagePlotDialogView(QDialog, Ui_ManagePlotForm):
         self.result['legend'] = str(self.lineEditLegend.text())
         self.result['xcol']   = str(self.lineEditXcol.text())
         self.result['ycol']   = str(self.lineEditYcol.text())
-        self.result['width']  = str(self.lineEditWidth.text())
-        self.result['marker'] = str(self.lineEditMarker.text())
+        self.result['xscale'] = str(self.lineEditXScale.text())
+        self.result['yscale'] = str(self.lineEditYScale.text())
+        self.result['xplus']  = str(self.lineEditXShift.text())
+        self.result['yplus']  = str(self.lineEditYShift.text())
         self.result['xerr']   = str(self.lineEditXerr.text())
         self.result['xerrp']  = str(self.lineEditXerrp.text())
         self.result['yerr']   = str(self.lineEditYerr.text())
@@ -229,7 +233,8 @@ class FloatDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                              to_text_string)
         editor.setText(value)
 
 
@@ -271,6 +276,73 @@ class IntDelegate(QItemDelegate):
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
                     model.setData(idx, value)
+
+
+#-------------------------------------------------------------------------------
+# Line edit delegate for text
+#-------------------------------------------------------------------------------
+
+class TextDelegate(QItemDelegate):
+    def __init__(self, parent=None):
+        super(TextDelegate, self).__init__(parent)
+        self.parent = parent
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                              to_text_string)
+        editor.setText(value)
+
+
+    def setModelData(self, editor, model, index):
+        value = from_qvariant(editor.text(), str)
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, value)
+
+
+#-------------------------------------------------------------------------------
+# Line edit delegate for text
+#-------------------------------------------------------------------------------
+
+class FigSizeDelegate(QItemDelegate):
+    def __init__(self, parent=None):
+        super(FigSizeDelegate, self).__init__(parent)
+        self.parent = parent
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                              to_text_string)
+        editor.setText(value)
+
+
+    def setModelData(self, editor, model, index):
+        value = from_qvariant(editor.text(), str)
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                # Remove start and end (, )
+                t = value.strip()[1:-1].strip().split(",")
+                try:
+                    sx = int(t[0])
+                    sy = int(t[1])
+                    model.setData(idx, value)
+                except Exception:
+                    pass
 
 
 #-------------------------------------------------------------------------------
@@ -317,8 +389,40 @@ class FormatFigureDelegate(QItemDelegate):
 class LabelDelegate(QItemDelegate):
     """
     """
-    def __init__(self, parent=None, xml_model=None):
+    def __init__(self, parent=None):
         super(LabelDelegate, self).__init__(parent)
+        self.parent = parent
+
+
+    def createEditor(self, parent, option, index):
+        editor = QLineEdit(parent)
+        return editor
+
+
+    def setEditorData(self, editor, index):
+        editor.setAutoFillBackground(True)
+        v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        self.p_value = str(v)
+        editor.setText(v)
+
+
+    def setModelData(self, editor, model, index):
+        if not editor.isModified():
+            return
+
+        p_value = str(editor.text())
+        model.setData(index, p_value, Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+# Line edit delegate for sub-plot ids
+#-------------------------------------------------------------------------------
+
+class SpidDelegate(QItemDelegate):
+    """
+    """
+    def __init__(self, parent=None, xml_model=None):
+        super(SpidDelegate, self).__init__(parent)
         self.parent = parent
         self.mdl = xml_model
 
@@ -417,7 +521,6 @@ class StandardItemModelSubplot(QStandardItemModel):
         if role == Qt.DisplayRole and column != 4:
             return dico[key]
 
-
         elif role == Qt.TextAlignmentRole:
             return Qt.AlignCenter
 
@@ -434,8 +537,6 @@ class StandardItemModelSubplot(QStandardItemModel):
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
-        if index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
         if index.column() == 4:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
         else:
@@ -452,6 +553,13 @@ class StandardItemModelSubplot(QStandardItemModel):
         row = index.row()
         column = index.column()
         idx = self.dataSubplot[row]['id']
+
+        # set id
+        if column == 0:
+            old_idx = idx
+            new_idx = str(from_qvariant(value, to_text_string))
+            if self.mdl.setSubplotId(self.study, idx, new_idx):
+                self.dataSubplot[row]['id'] = new_idx
 
         # set title
         if column == 1:
@@ -510,14 +618,15 @@ class StandardItemModelFigure(QStandardItemModel):
         self.dataFigure = []
         self.populateModel()
 
-        self.headers = [self.tr("id"),
-                        self.tr("name"),
-                        self.tr("subplot\nid list"),
+        self.headers = [self.tr("name"),
+                        self.tr("subplot\nids"),
                         self.tr("title"),
-                        self.tr("row\n number"),
-                        self.tr("column\n number"),
+                        self.tr("rows"),
+                        self.tr("columns"),
+                        self.tr("size (in)"),
                         self.tr("format")]
-        self.keys = ['id', 'name', 'id_list', 'title', 'row', 'column', 'format']
+        self.keys = ['name', 'subplots', 'title', 'rows', 'columns',
+                     'size (in)', 'format']
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
@@ -536,18 +645,28 @@ class StandardItemModelFigure(QStandardItemModel):
 
     def addFigure(self, idx):
         dico            = {}
-        dico['id']      = idx
         dico['name']    = self.mdl.getFigureName(self.study, idx)
-        dico['id_list'] = self.mdl.getFigureIdList(self.study, idx)
+        dico['subplots'] = self.mdl.getFigureIdList(self.study, idx)
         dico['title']   = self.mdl.getFigureTitle(self.study, idx)
-        dico['row']     = self.mdl.getFigureRow(self.study, idx)
-        dico['column']  = self.mdl.getFigureColumn(self.study, idx)
+        dico['rows']    = self.mdl.getFigureRows(self.study, idx)
+        dico['columns'] = self.mdl.getFigureColumns(self.study, idx)
+        dico['figsize'] = self.mdl.getFigureSize(self.study, idx)
         dico['format']  = self.mdl.getFigureFormat(self.study, idx)
         self.dataFigure.append(dico)
         log.debug("populateModel-> dataFigure = %s" % dico)
         row = self.rowCount()
         self.setRowCount(row + 1)
-
+        self.tooltip = []
+        self.tooltip.append("name of output file")
+        self.tooltip.append("list of subplots to be displayed in the figure")
+        self.tooltip.append("figure title")
+        self.tooltip.append("number of rows for subplots layout")
+        self.tooltip.append("number of columns for subplots layout")
+        self.tooltip.append("(width x, height y) in inches; defaults to (4,4)")
+        self.tooltip.append("output file format: pdf (default) or png\n"
+                            "Other formats could be chosen (eps, ps, svg,...),\n"
+                            "but the pdf generation with pdflatex will\n"
+                            "not be possible in this case.")
 
     def data(self, index, role):
         if not index.isValid():
@@ -561,6 +680,9 @@ class StandardItemModelFigure(QStandardItemModel):
         if dico[key] is None:
             return None
 
+        if role == Qt.ToolTipRole:
+            return self.tooltip[index.column()]
+
         if role == Qt.DisplayRole:
             return dico[key]
 
@@ -573,10 +695,10 @@ class StandardItemModelFigure(QStandardItemModel):
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemIsEnabled
-        if index.column() == 0 or index.column() == 2:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        if index.column() == 1:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ToolTip
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ToolTip
 
 
     def headerData(self, section, orientation, role):
@@ -588,28 +710,34 @@ class StandardItemModelFigure(QStandardItemModel):
     def setData(self, index, value, role=None):
         row = index.row()
         column = index.column()
-        idx = self.dataFigure[row]['id']
+        idx = row
 
-        self.keys = ['id', 'name', 'id_list', 'title', 'row', 'column', 'format']
+        self.keys = ['name', 'subplots', 'title', 'rows', 'columns',
+                     'figsize', 'format']
         # set title
-        if column == 1:
+        if column == 0:
             self.dataFigure[row]['name'] = str(from_qvariant(value, to_text_string))
             self.mdl.setFigureName(self.study, idx, self.dataFigure[row]['name'])
 
         # set ylabel
-        elif column == 3:
+        elif column == 2:
             self.dataFigure[row]['title'] = str(from_qvariant(value, to_text_string))
             self.mdl.setFigureTitle(self.study, idx, self.dataFigure[row]['title'])
 
         # set ylabel
-        elif column == 4:
-            self.dataFigure[row]['row'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setFigureRow(self.study, idx, self.dataFigure[row]['row'])
+        elif column == 3:
+            self.dataFigure[row]['rows'] = str(from_qvariant(value, to_text_string))
+            self.mdl.setFigureRows(self.study, idx, self.dataFigure[row]['rows'])
 
         # set ylabel
+        elif column == 4:
+            self.dataFigure[row]['columns'] = str(from_qvariant(value, to_text_string))
+            self.mdl.setFigureColumns(self.study, idx, self.dataFigure[row]['columns'])
+
+        # set size
         elif column == 5:
-            self.dataFigure[row]['column'] = str(from_qvariant(value, to_text_string))
-            self.mdl.setFigureColumn(self.study, idx, self.dataFigure[row]['column'])
+            self.dataFigure[row]['figsize'] = str(from_qvariant(value, to_text_string))
+            self.mdl.setFigureSize(self.study, idx, self.dataFigure[row]['figsize'])
 
         # set ylabel
         elif column == 6:
@@ -620,10 +748,10 @@ class StandardItemModelFigure(QStandardItemModel):
         return True
 
 
-
 #-------------------------------------------------------------------------------
 # item class
 #-------------------------------------------------------------------------------
+
 class item_class(object):
     '''
     custom data object
@@ -641,6 +769,7 @@ class item_class(object):
 #-------------------------------------------------------------------------------
 # Treeitem class
 #-------------------------------------------------------------------------------
+
 class TreeItem(object):
     '''
     a python object used to return row/column data, and keep note of
@@ -820,17 +949,18 @@ class StandardItemModelMeasurement(QAbstractItemModel):
             item = item_class(ms_file, "", "")
             newparent = TreeItem(item, name, self.rootItem)
             self.rootItem.appendChild(newparent)
-            self.noderoot[name] = newparent
+            self.noderoot[ms_file] = newparent
 
-        measurement_idx = 0
         for (name, path) in self.prtlist:
-            for idx in self.mdl.getMeasurementPlotList(self.study, name, path):
-                parentItem = self.noderoot[name]
-                idlist = self.mdl.getMeasurementIdList(self.study, measurement_idx, idx)
-                item = item_class("", str(idx), idlist)
+            ms_file = os.path.join(path, name)
+            m_node = self.mdl.getMeasurementNode(self.study, ms_file)
+            for idx, p_node in enumerate(self.mdl.getDataPlotList(m_node)):
+                parentItem = self.noderoot[ms_file]
+                spidlist = self.mdl.getDataIdList(m_node, idx)
+                item = item_class("", str(idx), spidlist)
                 new_item = TreeItem(item, "", parentItem)
                 parentItem.appendChild(new_item)
-            measurement_idx = measurement_idx + 1
+
 
     def setData(self, index, value, role=None):
         self.dataChanged.emit(QModelIndex(), QModelIndex())
@@ -840,6 +970,7 @@ class StandardItemModelMeasurement(QAbstractItemModel):
 #-------------------------------------------------------------------------------
 # QStandardItemModel for treeViewCases
 #-------------------------------------------------------------------------------
+
 class StandardItemModelCase(QAbstractItemModel):
     def __init__(self, mdl, study):
         """
@@ -878,9 +1009,9 @@ class StandardItemModelCase(QAbstractItemModel):
             if index.column() == 0:
                 return self.tr("type")
             elif index.column() == 1:
-                return self.tr("identification")
+                return self.tr("case")
             elif index.column() == 2:
-                return self.tr("subplot id list")
+                return self.tr("subplot ids")
 
         # Display
         if role == Qt.DisplayRole:
@@ -901,9 +1032,9 @@ class StandardItemModelCase(QAbstractItemModel):
             if section == 0:
                 return self.tr("type")
             elif section == 1:
-                return self.tr("identification")
+                return self.tr("case")
             elif section == 2:
-                return self.tr("subplot id list")
+                return self.tr("subplot ids")
         return None
 
 
@@ -962,7 +1093,6 @@ class StandardItemModelCase(QAbstractItemModel):
             self.noderoot[name] = newparent
 
             # data file for each case
-            data_idx = 0
             for data in self.mdl.getCaseDataList(self.study, idx):
                 item = item_class("data", data, "")
                 parentItem = self.noderoot[name]
@@ -970,13 +1100,12 @@ class StandardItemModelCase(QAbstractItemModel):
                 parentItem.appendChild(new_item)
 
                 # plot for each data file
-                for plot in self.mdl.getCasePlotList(self.study, idx, data_idx):
-                    id_list = self.mdl.getCaseIdList(self.study, idx, data_idx, plot)
-                    itm = item_class("plot", plot, id_list)
+                data_node = self.mdl.getCaseDataNode(self.study, name, data)
+                for p_idx in self.mdl.getDataPlotList(data_node):
+                    id_list = self.mdl.getDataIdList(data_node, p_idx)
+                    itm = item_class("plot", p_idx, id_list)
                     new_itm = TreeItem(itm, "", new_item)
                     new_item.appendChild(new_itm)
-
-                data_idx = data_idx + 1
 
 
     def setData(self, index, value, role=None):
@@ -1015,6 +1144,9 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.modelStudy.setItem(str_model = self.current_study)
 
         # Connections
+
+        self.tabWidget.currentChanged.connect(self.slotTabSelector)
+
         self.comboBoxStudy.activated[str].connect(self.slotStudy)
         self.pushButtonAddSubplot.clicked.connect(self.slotAddSubplot)
         self.pushButtonDeleteSubplot.clicked.connect(self.slotDeleteSubplot)
@@ -1077,7 +1209,9 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.tableViewSubplot.setItemDelegateForColumn(6, delegateFloat)
         self.tableViewSubplot.setItemDelegateForColumn(7, delegateFloat)
 
-        labelDelegate = LabelDelegate(self.tableViewSubplot, self.mdl)
+        spidDelegate = SpidDelegate(self.tableViewSubplot, self.mdl)
+        labelDelegate = LabelDelegate(self.tableViewSubplot)
+        self.tableViewSubplot.setItemDelegateForColumn(0, spidDelegate)
         self.tableViewSubplot.setItemDelegateForColumn(1, labelDelegate)
         self.tableViewSubplot.setItemDelegateForColumn(2, labelDelegate)
         self.tableViewSubplot.setItemDelegateForColumn(3, labelDelegate)
@@ -1096,17 +1230,22 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
             self.tableViewFigure.horizontalHeader().setResizeMode(QHeaderView.Stretch)
         elif QT_API == "PYQT5":
             self.tableViewFigure.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        delegateText = TextDelegate(self.tableViewFigure)
         delegateInt = IntDelegate(self.tableViewFigure)
-        self.tableViewFigure.setItemDelegateForColumn(4, delegateInt)
-        self.tableViewFigure.setItemDelegateForColumn(5, delegateInt)
-        delegate_format = FormatFigureDelegate(self.tableViewFigure)
-        self.tableViewFigure.setItemDelegateForColumn(6, delegate_format)
-        labelFDelegate = LabelDelegate(self.tableViewFigure, self.mdl)
+        labelFDelegate = LabelDelegate(self.tableViewFigure)
+        delegateSize = FigSizeDelegate(self.tableViewFigure)
+        delegateFormat = FormatFigureDelegate(self.tableViewFigure)
+        self.tableViewFigure.setItemDelegateForColumn(0, delegateText)
         self.tableViewFigure.setItemDelegateForColumn(1, labelFDelegate)
-        self.tableViewFigure.setItemDelegateForColumn(3, labelFDelegate)
+        self.tableViewFigure.setItemDelegateForColumn(2, labelFDelegate)
+        self.tableViewFigure.setItemDelegateForColumn(3, delegateInt)
+        self.tableViewFigure.setItemDelegateForColumn(4, delegateInt)
+        self.tableViewFigure.setItemDelegateForColumn(5, delegateSize)
+        self.tableViewFigure.setItemDelegateForColumn(6, delegateFormat)
 
         # model for treeViewMeasurement
-        self.modelMeasurement = StandardItemModelMeasurement(self.mdl, self.current_study)
+        self.modelMeasurement = StandardItemModelMeasurement(self.mdl,
+                                                             self.current_study)
         self.treeViewMeasurement.setModel(self.modelMeasurement)
         self.treeViewMeasurement.setAlternatingRowColors(True)
         self.treeViewMeasurement.setSelectionBehavior(QAbstractItemView.SelectItems)
@@ -1126,6 +1265,119 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.treeViewCases.expandAll()
         self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.treeViewCases.setDragEnabled(False)
+
+
+    def getMeasurementNode(self):
+        """
+        Get measurement node and associated plot position matching a given selection
+        """
+        current = self.treeViewMeasurement.currentIndex()
+        if current.parent() == self.treeViewMeasurement.rootIndex():
+            m_idx = current
+            p_idx = -1
+        else:
+            m_idx = current.parent()
+            p_idx = self.treeViewMeasurement.currentIndex().row()
+
+        m_name = self.treeViewMeasurement.model().data(m_idx,
+                                                       Qt.DisplayRole)
+
+        m_node = self.mdl.getMeasurementNode(self.current_study, m_name)
+
+        return m_node, p_idx
+
+
+    def getCaseNode(self):
+        """
+        Get case node matching a given selection
+        """
+        p_idx = self.treeViewCases.currentIndex()
+        d_idx = p_idx.parent()
+        c_idx = d_idx.parent()
+
+        if c_idx.parent() == self.treeViewCases.rootIndex():
+            c_idx = d_idx
+            d_idx = p_idx
+            p_idx = None
+
+        if d_idx.parent() == self.treeViewCases.rootIndex():
+            c_idx = d_idx
+            d_idx = None
+            p_idx = None
+
+        c_idx = c_idx.siblingAtColumn(1)
+        c_name = self.treeViewCases.model().data(c_idx,
+                                                 Qt.DisplayRole)
+        if d_idx is not None:
+            d_idx = d_idx.siblingAtColumn(1)
+
+        c_node = self.mdl.getCaseNode(self.current_study, c_name)
+
+        p_idx_r = -1
+        d_idx_r = -1
+        if p_idx is not None:
+            p_idx_r = p_idx.row()
+        if d_idx is not None:
+            d_idx_r = d_idx.row()
+
+        return c_node, d_idx_r, p_idx_r
+
+
+    def getCaseDataNode(self):
+        """
+        Get case and data node matching a given selection
+        """
+
+        p_idx = self.treeViewCases.currentIndex()
+        d_idx = p_idx.parent()
+        c_idx = d_idx.parent()
+
+        if c_idx == self.treeViewCases.rootIndex():
+            c_idx = d_idx
+            d_idx = p_idx
+            p_idx = None
+
+        c_idx = c_idx.siblingAtColumn(1)
+        d_idx = d_idx.siblingAtColumn(1)
+        c_name = self.treeViewCases.model().data(c_idx,
+                                                 Qt.DisplayRole)
+        d_name = self.treeViewCases.model().data(d_idx,
+                                                 Qt.DisplayRole)
+
+        d_node = self.mdl.getCaseDataNode(self.current_study, c_name, d_name)
+
+        p_idx_r = -1
+        if p_idx is not None:
+            p_idx_r = p_idx.row()
+
+        return d_node, p_idx_r
+
+
+    @pyqtSlot(int)
+    def slotTabSelector(self, selected_index):
+        """
+        Update when tab selection changed, in case sub-plot ids have
+        benn removed or renamed.
+        """
+
+        if selected_index == 1:
+            self.modelFigure = StandardItemModelFigure(self.mdl,
+                                                       self.current_study)
+            self.tableViewFigure.setModel(self.modelFigure)
+
+        elif selected_index == 2:
+            self.modelMeasurement = StandardItemModelMeasurement(self.mdl,
+                                                                 self.current_study)
+            self.tableViewFigure.setModel(self.modelFigure)
+            self.treeViewMeasurement.setModel(self.modelMeasurement)
+            self.treeViewMeasurement.expandAll()
+            self.treeViewMeasurement.clearSelection()
+
+        elif selected_index == 3:
+            self.modelCase = StandardItemModelCase(self.mdl, self.current_study)
+            self.treeViewCases.setModel(self.modelCase)
+            self.treeViewCases.expandAll()
+            self.treeViewCases.clearSelection()
 
 
     @pyqtSlot(str)
@@ -1156,6 +1408,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.pushButtonAssociatedMeasurementSubplot.setEnabled(False)
         current = self.treeViewMeasurement.currentIndex()
         idx = current.row()
+
         if current == self.treeViewMeasurement.rootIndex():
             self.pushButtonDeleteFile.setEnabled(False)
             self.pushButtonAddPlot.setEnabled(False)
@@ -1228,13 +1481,27 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         """
         public slot
         """
-        idx = self.tableViewSubplot.currentIndex().row()
+        r_idx = self.tableViewSubplot.currentIndex().row()
+        idx = self.mdl.getSubplotIdByIdx(self.current_study, r_idx)
         self.mdl.delSubplot(self.current_study, idx)
 
         self.tableViewSubplot.clearSelection()
 
         self.modelSubplot = StandardItemModelSubplot(self.mdl, self.current_study)
         self.tableViewSubplot.setModel(self.modelSubplot)
+
+        # Also may need to update measurements and figures referencing subplots.
+
+        self.modelMeasurement = StandardItemModelMeasurement(self.mdl,
+                                                             self.current_study)
+        self.treeViewMeasurement.setModel(self.modelMeasurement)
+        self.treeViewMeasurement.expandAll()
+        self.treeViewMeasurement.clearSelection()
+
+        self.modelCase = StandardItemModelCase(self.mdl, self.current_study)
+        self.treeViewCases.setModel(self.modelCase)
+        self.treeViewCases.expandAll()
+        self.treeViewCases.clearSelection()
 
 
     def slotAddFigure(self):
@@ -1270,7 +1537,8 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         default['idlist'] = self.mdl.getFigureIdList(self.current_study, idx)
         log.debug("slotAssociatedFiguresSubplot -> %s" % str(default))
 
-        dialog = ManageSubplotDialogView(self, self.case, self.mdl, self.current_study, default)
+        dialog = ManageSubplotDialogView(self, self.case, self.mdl,
+                                         self.current_study, default)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotAssociatedFiguresSubplot -> %s" % str(result))
@@ -1286,20 +1554,22 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         Private slot.
         Ask one popup for advanced specifications
         """
-        idx = self.treeViewMeasurement.currentIndex().row()
-        measurement_idx = self.treeViewMeasurement.currentIndex().parent().row()
+        m_node, idx = self.getMeasurementNode()
 
         default = {}
-        default['idlist'] = self.mdl.getMeasurementIdList(self.current_study, measurement_idx, idx)
+        default['idlist'] = self.mdl.getDataIdList(m_node, idx)
         log.debug("slotAssociatedMeasurementSubplot -> %s" % str(default))
 
-        dialog = ManageSubplotDialogView(self, self.case, self.mdl, self.current_study, default)
+        dialog = ManageSubplotDialogView(self, self.case, self.mdl,
+                                         self.current_study,
+                                         default)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotAssociatedMeasurementSubplot -> %s" % str(result))
-            self.mdl.setMeasurementIdList(self.current_study, measurement_idx, idx, result['idlist'])
+            self.mdl.setDataIdList(m_node, idx, result['idlist'])
 
-        self.modelMeasurement = StandardItemModelMeasurement(self.mdl, self.current_study)
+        self.modelMeasurement = StandardItemModelMeasurement(self.mdl,
+                                                             self.current_study)
         self.treeViewMeasurement.setModel(self.modelMeasurement)
         self.treeViewMeasurement.clearSelection()
         self.treeViewMeasurement.expandAll()
@@ -1325,7 +1595,8 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         file = os.path.basename(file)
 
         self.mdl.addMeasurementFile(self.current_study, file)
-        self.modelMeasurement = StandardItemModelMeasurement(self.mdl, self.current_study)
+        self.modelMeasurement = StandardItemModelMeasurement(self.mdl,
+                                                             self.current_study)
         self.treeViewMeasurement.setModel(self.modelMeasurement)
         self.treeViewMeasurement.clearSelection()
         self.treeViewMeasurement.expandAll()
@@ -1336,10 +1607,11 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         """
         public slot
         """
-        idx = self.treeViewMeasurement.currentIndex().row()
-        self.mdl.delMeasurementFile(self.current_study, idx)
+        m_node, idx = self.getMeasurementNode()
+        self.mdl.delMeasurementFile(m_node)
 
-        self.modelMeasurement = StandardItemModelMeasurement(self.mdl, self.current_study)
+        self.modelMeasurement = StandardItemModelMeasurement(self.mdl,
+                                                             self.current_study)
         self.treeViewMeasurement.setModel(self.modelMeasurement)
         self.treeViewMeasurement.clearSelection()
         self.treeViewMeasurement.expandAll()
@@ -1350,72 +1622,40 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         """
         public slot
         """
-        current = self.treeViewMeasurement.currentIndex()
-        measurement_idx = 0
-        if current.parent() == self.treeViewMeasurement.rootIndex():
-            measurement_idx = current.row()
-        else:
-            measurement_idx = current.parent().row()
+        m_node, p_idx = self.getMeasurementNode()
 
-        idx = self.mdl.addMeasurementPlot(self.current_study, measurement_idx)
+        default = self.mdl.dataDictDefaults()
 
-        default = {}
-        default['color'] = self.mdl.getMeasurementColor(self.current_study, measurement_idx, idx)
-        default['format'] = self.mdl.getMeasurementFormat(self.current_study, measurement_idx, idx)
-        default['legend'] = self.mdl.getMeasurementLegend(self.current_study, measurement_idx, idx)
-        default['xcol'] = self.mdl.getMeasurementXcol(self.current_study, measurement_idx, idx)
-        default['ycol'] = self.mdl.getMeasurementYcol(self.current_study, measurement_idx, idx)
-        default['width'] = self.mdl.getMeasurementWidth(self.current_study, measurement_idx, idx)
-        default['marker'] = self.mdl.getMeasurementMarker(self.current_study, measurement_idx, idx)
-        default['xerr'] = self.mdl.getMeasurementXerr(self.current_study, measurement_idx, idx)
-        default['xerrp'] = self.mdl.getMeasurementXerrp(self.current_study, measurement_idx, idx)
-        default['yerr'] = self.mdl.getMeasurementYerr(self.current_study, measurement_idx, idx)
-        default['yerrp'] = self.mdl.getMeasurementYerrp(self.current_study, measurement_idx, idx)
         log.debug("slotAssociatedMeasurementSubplot -> %s" % str(default))
 
-        dialog = ManagePlotDialogView(self, self.case, self.mdl, self.current_study, default)
+        dialog = ManagePlotDialogView(self, self.case, self.mdl,
+                                      self.current_study, default)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotAssociatedMeasurementSubplot -> %s" % str(result))
-            if result['color'] != "":
-                self.mdl.setMeasurementColor(self.current_study, measurement_idx, idx, result['color'])
-            if result['format'] != "":
-                self.mdl.setMeasurementFormat(self.current_study, measurement_idx, idx, result['format'])
-            if result['legend'] != "":
-                self.mdl.setMeasurementLegend(self.current_study, measurement_idx, idx, result['legend'])
-            if result['xcol'] != "":
-                self.mdl.setMeasurementXcol(self.current_study, measurement_idx, idx, result['xcol'])
-            if result['ycol'] != "":
-                self.mdl.setMeasurementYcol(self.current_study, measurement_idx, idx, result['ycol'])
-            if result['width'] != "":
-                self.mdl.setMeasurementWidth(self.current_study, measurement_idx, idx, result['width'])
-            if result['marker'] != "":
-                self.mdl.setMeasurementMarker(self.current_study, measurement_idx, idx, result['marker'])
-            if result['xerr'] != "":
-                self.mdl.setMeasurementXerr(self.current_study, measurement_idx, idx, result['xerr'])
-            if result['xerrp'] != "":
-                self.mdl.setMeasurementXerrp(self.current_study, measurement_idx, idx, result['xerrp'])
-            if result['yerr'] != "":
-                self.mdl.setMeasurementYerr(self.current_study, measurement_idx, idx, result['yerr'])
-            if result['yerrp'] != "":
-                self.mdl.setMeasurementYerrp(self.current_study, measurement_idx, idx, result['yerrp'])
 
-        self.modelMeasurement = StandardItemModelMeasurement(self.mdl, self.current_study)
-        self.treeViewMeasurement.setModel(self.modelMeasurement)
-        self.treeViewMeasurement.clearSelection()
-        self.treeViewMeasurement.expandAll()
-        self.slotChangeSelectionMeasurement()
+            p_idx = self.mdl.addDataPlot(m_node)
+
+            self.mdl.setDataDict(m_node, p_idx, result)
+
+            self.modelMeasurement = StandardItemModelMeasurement(self.mdl,
+                                                                 self.current_study)
+            self.treeViewMeasurement.setModel(self.modelMeasurement)
+            self.treeViewMeasurement.clearSelection()
+            self.treeViewMeasurement.expandAll()
+            self.slotChangeSelectionMeasurement()
 
 
     def slotMeasurementDeletePlot(self):
         """
         public slot
         """
-        idx = self.treeViewMeasurement.currentIndex().row()
-        measurement_idx = self.treeViewMeasurement.currentIndex().parent().row()
-        self.mdl.deleteMeasurementPlot(self.current_study, measurement_idx, idx)
+        m_node, idx = self.getMeasurementNode()
 
-        self.modelMeasurement = StandardItemModelMeasurement(self.mdl, self.current_study)
+        self.mdl.deleteDataPlot(m_node, idx)
+
+        self.modelMeasurement = StandardItemModelMeasurement(self.mdl,
+                                                             self.current_study)
         self.treeViewMeasurement.setModel(self.modelMeasurement)
         self.treeViewMeasurement.clearSelection()
         self.treeViewMeasurement.expandAll()
@@ -1428,130 +1668,37 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         Private slot.
         Ask one popup for advanced specifications
         """
-        idx = self.treeViewMeasurement.currentIndex().row()
-        measurement_idx = self.treeViewMeasurement.currentIndex().parent().row()
+        m_node, p_idx = self.getMeasurementNode()
 
-        default = {}
-        default['color'] = self.mdl.getMeasurementColor(self.current_study, measurement_idx, idx)
-        default['format'] = self.mdl.getMeasurementFormat(self.current_study, measurement_idx, idx)
-        default['legend'] = self.mdl.getMeasurementLegend(self.current_study, measurement_idx, idx)
-        default['xcol'] = self.mdl.getMeasurementXcol(self.current_study, measurement_idx, idx)
-        default['ycol'] = self.mdl.getMeasurementYcol(self.current_study, measurement_idx, idx)
-        default['width'] = self.mdl.getMeasurementWidth(self.current_study, measurement_idx, idx)
-        default['marker'] = self.mdl.getMeasurementMarker(self.current_study, measurement_idx, idx)
-        default['xerr'] = self.mdl.getMeasurementXerr(self.current_study, measurement_idx, idx)
-        default['xerrp'] = self.mdl.getMeasurementXerrp(self.current_study, measurement_idx, idx)
-        default['yerr'] = self.mdl.getMeasurementYerr(self.current_study, measurement_idx, idx)
-        default['yerrp'] = self.mdl.getMeasurementYerrp(self.current_study, measurement_idx, idx)
+        default = self.mdl.getDataDict(m_node, p_idx)
+
         log.debug("slotAssociatedMeasurementSubplot -> %s" % str(default))
 
-        dialog = ManagePlotDialogView(self, self.case, self.mdl, self.current_study, default)
+        dialog = ManagePlotDialogView(self, self.case, self.mdl,
+                                      self.current_study, default)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotAssociatedMeasurementSubplot -> %s" % str(result))
-            if result['color'] != "":
-                self.mdl.setMeasurementColor(self.current_study, measurement_idx, idx, result['color'])
-            if result['format'] != "":
-                self.mdl.setMeasurementFormat(self.current_study, measurement_idx, idx, result['format'])
-            if result['legend'] != "":
-                self.mdl.setMeasurementLegend(self.current_study, measurement_idx, idx, result['legend'])
-            if result['xcol'] != "":
-                self.mdl.setMeasurementXcol(self.current_study, measurement_idx, idx, result['xcol'])
-            if result['ycol'] != "":
-                self.mdl.setMeasurementYcol(self.current_study, measurement_idx, idx, result['ycol'])
-            if result['width'] != "":
-                self.mdl.setMeasurementWidth(self.current_study, measurement_idx, idx, result['width'])
-            if result['marker'] != "":
-                self.mdl.setMeasurementMarker(self.current_study, measurement_idx, idx, result['marker'])
-            if result['xerr'] != "":
-                self.mdl.setMeasurementXerr(self.current_study, measurement_idx, idx, result['xerr'])
-            if result['xerrp'] != "":
-                self.mdl.setMeasurementXerrp(self.current_study, measurement_idx, idx, result['xerrp'])
-            if result['yerr'] != "":
-                self.mdl.setMeasurementYerr(self.current_study, measurement_idx, idx, result['yerr'])
-            if result['yerrp'] != "":
-                self.mdl.setMeasurementYerrp(self.current_study, measurement_idx, idx, result['yerrp'])
+            self.mdl.setDataDict(m_node, p_idx, result)
 
-        self.modelMeasurement = StandardItemModelMeasurement(self.mdl, self.current_study)
-        self.treeViewMeasurement.setModel(self.modelMeasurement)
-        self.treeViewMeasurement.expandAll()
-        self.treeViewMeasurement.clearSelection()
-        self.slotChangeSelectionMeasurement()
-
-
-    @pyqtSlot()
-    def slotCasePlot(self):
-        """
-        Private slot.
-        Ask one popup for advanced specifications
-        """
-        idx = self.treeViewCases.currentIndex().row()
-        data_idx = self.treeViewCases.currentIndex().parent().row()
-        case_idx = self.treeViewCases.currentIndex().parent().parent().row()
-        plot_idx = self.mdl.getCasePlotId(self.current_study, case_idx, data_idx, idx)
-
-        default = {}
-        default['color'] = self.mdl.getAssociatedCaseColor(self.current_study, case_idx, data_idx, plot_idx)
-        default['format'] = self.mdl.getAssociatedCaseFormat(self.current_study, case_idx, data_idx, plot_idx)
-        default['legend'] = self.mdl.getAssociatedCaseLegend(self.current_study, case_idx, data_idx, plot_idx)
-        default['xcol'] = self.mdl.getAssociatedCaseXcol(self.current_study, case_idx, data_idx, plot_idx)
-        default['ycol'] = self.mdl.getAssociatedCaseYcol(self.current_study, case_idx, data_idx, plot_idx)
-        default['width'] = self.mdl.getAssociatedCaseWidth(self.current_study, case_idx, data_idx, plot_idx)
-        default['marker'] = self.mdl.getAssociatedCaseMarker(self.current_study, case_idx, data_idx, plot_idx)
-        default['xerr'] = self.mdl.getAssociatedCaseXerr(self.current_study, case_idx, data_idx, plot_idx)
-        default['xerrp'] = self.mdl.getAssociatedCaseXerrp(self.current_study, case_idx, data_idx, plot_idx)
-        default['yerr'] = self.mdl.getAssociatedCaseYerr(self.current_study, case_idx, data_idx, plot_idx)
-        default['yerrp'] = self.mdl.getAssociatedCaseYerrp(self.current_study, case_idx, data_idx, plot_idx)
-        log.debug("slotAssociatedCaseSubplot -> %s" % str(default))
-
-        dialog = ManagePlotDialogView(self, self.case, self.mdl, self.current_study, default)
-        if dialog.exec_():
-            result = dialog.get_result()
-            log.debug("slotAssociatedCaseSubplot -> %s" % str(result))
-            if result['color'] != "":
-                self.mdl.setAssociatedCaseColor(self.current_study, case_idx, data_idx, plot_idx, result['color'])
-            if result['format'] != "":
-                self.mdl.setAssociatedCaseFormat(self.current_study, case_idx, data_idx, plot_idx, result['format'])
-            if result['legend'] != "":
-                self.mdl.setAssociatedCaseLegend(self.current_study, case_idx, data_idx, plot_idx, result['legend'])
-            if result['xcol'] != "":
-                self.mdl.setAssociatedCaseXcol(self.current_study, case_idx, data_idx, plot_idx, result['xcol'])
-            if result['ycol'] != "":
-                self.mdl.setAssociatedCaseYcol(self.current_study, case_idx, data_idx, plot_idx, result['ycol'])
-            if result['width'] != "":
-                self.mdl.setAssociatedCaseWidth(self.current_study, case_idx, data_idx, plot_idx, result['width'])
-            if result['marker'] != "":
-                self.mdl.setAssociatedCaseMarker(self.current_study, case_idx, data_idx, plot_idx, result['marker'])
-            if result['xerr'] != "":
-                self.mdl.setAssociatedCaseXerr(self.current_study, case_idx, data_idx, plot_idx, result['xerr'])
-            if result['xerrp'] != "":
-                self.mdl.setAssociatedCaseXerrp(self.current_study, case_idx, data_idx, plot_idx, result['xerrp'])
-            if result['yerr'] != "":
-                self.mdl.setAssociatedCaseYerr(self.current_study, case_idx, data_idx, plot_idx, result['yerr'])
-            if result['yerrp'] != "":
-                self.mdl.setAssociatedCaseYerrp(self.current_study, case_idx, data_idx, plot_idx, result['yerrp'])
-
-        self.modelCase = StandardItemModelCase(self.mdl, self.current_study)
-        self.treeViewCases.setModel(self.modelCase)
-        self.treeViewCases.expandAll()
-        self.treeViewCases.clearSelection()
-        self.slotChangeSelectionCases()
+            self.modelMeasurement = StandardItemModelMeasurement(self.mdl,
+                                                                 self.current_study)
+            self.treeViewMeasurement.setModel(self.modelMeasurement)
+            self.treeViewMeasurement.expandAll()
+            self.treeViewMeasurement.clearSelection()
+            self.slotChangeSelectionMeasurement()
 
 
     @pyqtSlot()
     def slotCaseAddData(self):
         """
         """
-        current = self.treeViewCases.currentIndex()
-        if current.parent() == self.treeViewCases.rootIndex():
-            case_idx = current.row()
-        else:
-            case_idx = current.parent().row()
+        c_node, d_idx, p_idx = self.getCaseNode()
 
         title = self.tr("File name")
         label = self.tr("post processing file name")
         name = QInputDialog.getText(self, title, label, QLineEdit.Normal)[0]
-        self.mdl.addCaseDataFile(self.current_study, case_idx, name)
+        self.mdl.addCaseDataFile(c_node, name)
 
         self.modelCase = StandardItemModelCase(self.mdl, self.current_study)
         self.treeViewCases.setModel(self.modelCase)
@@ -1579,72 +1726,36 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
     def slotCaseAddPlot(self):
         """
         """
-        current = self.treeViewCases.currentIndex()
-        if current.parent().parent() == self.treeViewCases.rootIndex():
-            case_idx = current.parent().row()
-            data_idx = current.row()
-        else:
-            case_idx = current.parent().parent().row()
-            data_idx = current.parent().row()
+        d_node, p_idx = self.getCaseDataNode()
 
-        idx = self.mdl.addAssociatedCasePlot(self.current_study, case_idx, data_idx)
+        default = self.mdl.dataDictDefaults()
 
-        default = {}
-        default['color'] = self.mdl.getAssociatedCaseColor(self.current_study, case_idx, data_idx, idx)
-        default['format'] = self.mdl.getAssociatedCaseFormat(self.current_study, case_idx, data_idx, idx)
-        default['legend'] = self.mdl.getAssociatedCaseLegend(self.current_study, case_idx, data_idx, idx)
-        default['xcol'] = self.mdl.getAssociatedCaseXcol(self.current_study, case_idx, data_idx, idx)
-        default['ycol'] = self.mdl.getAssociatedCaseYcol(self.current_study, case_idx, data_idx, idx)
-        default['width'] = self.mdl.getAssociatedCaseWidth(self.current_study, case_idx, data_idx, idx)
-        default['marker'] = self.mdl.getAssociatedCaseMarker(self.current_study, case_idx, data_idx, idx)
-        default['xerr'] = self.mdl.getAssociatedCaseXerr(self.current_study, case_idx, data_idx, idx)
-        default['xerrp'] = self.mdl.getAssociatedCaseXerrp(self.current_study, case_idx, data_idx, idx)
-        default['yerr'] = self.mdl.getAssociatedCaseYerr(self.current_study, case_idx, data_idx, idx)
-        default['yerrp'] = self.mdl.getAssociatedCaseYerrp(self.current_study, case_idx, data_idx, idx)
         log.debug("slotAssociatedCaseSubplot -> %s" % str(default))
 
-        dialog = ManagePlotDialogView(self, self.case, self.mdl, self.current_study, default)
+        dialog = ManagePlotDialogView(self, self.case, self.mdl,
+                                      self.current_study, default)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotAssociatedCaseSubplot -> %s" % str(result))
-            if result['color'] != "":
-                self.mdl.setAssociatedCaseColor(self.current_study, case_idx, data_idx, idx, result['color'])
-            if result['format'] != "":
-                self.mdl.setAssociatedCaseFormat(self.current_study, case_idx, data_idx, idx, result['format'])
-            if result['legend'] != "":
-                self.mdl.setAssociatedCaseLegend(self.current_study, case_idx, data_idx, idx, result['legend'])
-            if result['xcol'] != "":
-                self.mdl.setAssociatedCaseXcol(self.current_study, case_idx, data_idx, idx, result['xcol'])
-            if result['ycol'] != "":
-                self.mdl.setAssociatedCaseYcol(self.current_study, case_idx, data_idx, idx, result['ycol'])
-            if result['width'] != "":
-                self.mdl.setAssociatedCaseWidth(self.current_study, case_idx, data_idx, idx, result['width'])
-            if result['marker'] != "":
-                self.mdl.setAssociatedCaseMarker(self.current_study, case_idx, data_idx, idx, result['marker'])
-            if result['xerr'] != "":
-                self.mdl.setAssociatedCaseXerr(self.current_study, case_idx, data_idx, idx, result['xerr'])
-            if result['xerrp'] != "":
-                self.mdl.setAssociatedCaseXerrp(self.current_study, case_idx, data_idx, idx, result['xerrp'])
-            if result['yerr'] != "":
-                self.mdl.setAssociatedCaseYerr(self.current_study, case_idx, data_idx, idx, result['yerr'])
-            if result['yerrp'] != "":
-                self.mdl.setAssociatedCaseYerrp(self.current_study, case_idx, data_idx, idx, result['yerrp'])
 
-        self.modelCase = StandardItemModelCase(self.mdl, self.current_study)
-        self.treeViewCases.setModel(self.modelCase)
-        self.treeViewCases.expandAll()
-        self.treeViewCases.clearSelection()
-        self.slotChangeSelectionCases()
+            p_idx = self.mdl.addDataPlot(d_node)
+
+            self.mdl.setDataDict(d_node, p_idx, result)
+
+            self.modelCase = StandardItemModelCase(self.mdl, self.current_study)
+            self.treeViewCases.setModel(self.modelCase)
+            self.treeViewCases.expandAll()
+            self.treeViewCases.clearSelection()
+            self.slotChangeSelectionCases()
 
 
     @pyqtSlot()
     def slotCaseDeletePlot(self):
         """
         """
-        idx = self.treeViewCases.currentIndex().row()
-        data_idx = self.treeViewCases.currentIndex().parent().row()
-        case_idx = self.treeViewCases.currentIndex().parent().parent().row()
-        self.mdl.delAssociatedCasePlot(self.current_study, case_idx, data_idx, idx)
+        d_node, p_idx = self.getCaseDataNode()
+
+        self.mdl.deleteDataPlot(d_node, p_idx)
 
         self.modelCase = StandardItemModelCase(self.mdl, self.current_study)
         self.treeViewCases.setModel(self.modelCase)
@@ -1654,23 +1765,47 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
 
 
     @pyqtSlot()
-    def slotCaseAssociatedSubplot(self):
+    def slotCasePlot(self):
         """
+        Private slot.
+        Ask one popup for advanced specifications
         """
-        idx = self.treeViewCases.currentIndex().row()
-        data_idx = self.treeViewCases.currentIndex().parent().row()
-        case_idx = self.treeViewCases.currentIndex().parent().parent().row()
-        plot_idx = self.mdl.getCasePlotId(self.current_study, case_idx, data_idx, idx)
+        d_node, p_idx = self.getCaseDataNode()
 
-        default = {}
-        default['idlist'] = self.mdl.getCaseIdList(self.current_study, case_idx, data_idx, plot_idx)
+        default = self.mdl.getDataDict(d_node, p_idx)
+
         log.debug("slotAssociatedCaseSubplot -> %s" % str(default))
 
-        dialog = ManageSubplotDialogView(self, self.case, self.mdl, self.current_study, default)
+        dialog = ManagePlotDialogView(self, self.case, self.mdl,
+                                      self.current_study, default)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotAssociatedCaseSubplot -> %s" % str(result))
-            self.mdl.setCaseIdList(self.current_study, case_idx, data_idx, plot_idx, result['idlist'])
+            self.mdl.setDataDict(d_node, p_idx, result)
+
+            self.modelCase = StandardItemModelCase(self.mdl, self.current_study)
+            self.treeViewCases.setModel(self.modelCase)
+            self.treeViewCases.expandAll()
+            self.treeViewCases.clearSelection()
+            self.slotChangeSelectionCases()
+
+
+    @pyqtSlot()
+    def slotCaseAssociatedSubplot(self):
+        """
+        """
+        d_node, p_idx = self.getCaseDataNode()
+
+        default = {}
+        default['idlist'] = self.mdl.getDataIdList(d_node, p_idx)
+        log.debug("slotAssociatedCaseSubplot -> %s" % str(default))
+
+        dialog = ManageSubplotDialogView(self, self.case, self.mdl,
+                                         self.current_study, default)
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotAssociatedCaseSubplot -> %s" % str(result))
+            self.mdl.setDataIdList(d_node, p_idx, result['idlist'])
 
         self.modelCase = StandardItemModelCase(self.mdl, self.current_study)
         self.treeViewCases.setModel(self.modelCase)
@@ -1682,7 +1817,6 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------
-
 
 if __name__ == "__main__":
     pass

@@ -33,7 +33,7 @@ This module defines the following classes:
 # Library modules import
 #-------------------------------------------------------------------------------
 
-import sys, unittest
+import sys, os.path, unittest
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -57,6 +57,10 @@ class ManagePlotterModel(Model):
         self.case = case
         self.repo = self.case.xmlGetNode("studymanager").xmlGetString('repository')
 
+        self.plot_keys = ('color', 'format', 'legend',
+                          'xcol', 'ycol', 'xscale', 'yscale', 'xplus', 'yplus',
+                          'xerr', 'xerrp', 'yerr', 'yerrp')
+
 
     def defaultInitialValues(self):
         """
@@ -69,6 +73,7 @@ class ManagePlotterModel(Model):
         default['figure_title']      = ""
         default['figure_fmt']        = "pdf"
         default['color']             = "bedf"
+        default['ycol']              = "0"
 
         return default
 
@@ -88,7 +93,7 @@ class ManagePlotterModel(Model):
         """
         Return list of subplots for a study
         """
-        study_node = self.case.xmlGetNode("study", label = study)
+        study_node = self.case.xmlGetNode("study", label=study)
         lst = []
         for node in study_node.xmlGetNodeList("subplot"):
             lst.append(node['id'])
@@ -99,10 +104,10 @@ class ManagePlotterModel(Model):
         """
         Return list of figures for a study
         """
-        study_node = self.case.xmlGetNode("study", label = study)
+        study_node = self.case.xmlGetNode("study", label=study)
         lst = []
-        for node in study_node.xmlGetNodeList("figure"):
-            lst.append(node['id'])
+        for idx, node in enumerate(study_node.xmlGetNodeList("figure")):
+            lst.append(idx)
         return lst
 
 
@@ -110,7 +115,7 @@ class ManagePlotterModel(Model):
         """
         Return list of measurements for a study
         """
-        study_node = self.case.xmlGetNode("study", label = study)
+        study_node = self.case.xmlGetNode("study", label=study)
         lst = []
         for node in study_node.xmlGetNodeList("measurement"):
             lst.append((node['file'], node['path']))
@@ -119,12 +124,12 @@ class ManagePlotterModel(Model):
 
     def getCaseList(self, study):
         """
-        Return list of case for a study
+        Return list of cases for a study
         """
-        study_node = self.case.xmlGetNode("study", label = study)
+        study_node = self.case.xmlGetNode("study", label=study)
         lst = []
-        for id, nn in enumerate(study_node.xmlGetNodeList("case")):
-            lst.append(id)
+        for idx, nn in enumerate(study_node.xmlGetNodeList("case")):
+            lst.append(idx)
         return lst
 
 
@@ -132,63 +137,108 @@ class ManagePlotterModel(Model):
         """
         add a subplot for a study
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        idx = len(study_node.xmlGetNodeList("subplot"))
-        study_node.xmlInitChildNode("subplot", id = idx)
-        return idx
+        study_node = self.case.xmlGetNode("study", label=study)
+        id_max = -1
+        for nn in study_node.xmlGetNodeList("subplot"):
+            idx = nn['id']
+            if id_max < idx:
+                id_max = idx
+        id_max = id_max+1
+        study_node.xmlInitChildNode("subplot", id=id_max)
+        return id_max
 
 
     def delSubplot(self, study, idx):
         """
         suppress a subplot for a study
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        node = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        node = study_node.xmlGetNode("subplot", id=idx)
         node.xmlRemoveNode()
-        for nn in study_node.xmlGetNodeList("subplot"):
-            try:
-                if int(nn['id']) > idx:
-                    nn['id'] = str(int(nn['id']) - 1)
-            except:
-                pass
 
         for nn in study_node.xmlGetNodeList("figure"):
             lst = nn['idlist']
             new_lst = ''
             if lst:
-                for idl in lst:
-                    if idl != " ":
-                        new_idl = idl
-                        if int(idl) > idx:
-                            new_idl = str(int(idl) - 1)
-                        if new_lst != "":
-                            new_lst = new_lst + " " + str(new_idl)
-                        else:
-                            new_lst = str(new_idl)
-                    nn['idlist'] = new_lst
+                for idl in lst.split():
+                    if idl != idx:
+                        new_lst += idl + " "
+            nn['idlist'] = new_lst.strip()
 
         for nn in study_node.xmlGetNodeList("plot"):
             lst = nn['spids']
             new_lst = ''
+            new_lst = ''
             if lst:
-                for idl in lst:
-                    if idl != " ":
-                        new_idl = idl
-                        if int(idl) > idx:
-                            new_idl = str(int(idl) - 1)
-                        if new_lst != "":
-                            new_lst = new_lst + " " + str(new_idl)
-                        else:
-                            new_lst = str(new_idl)
-                    nn['spids'] = new_lst
+                for idl in lst.split():
+                    if idl != idx:
+                        new_lst += idl + " "
+            nn['spids'] = new_lst.strip()
+
+
+    def getSubplotIdByIdx(self, study, idx):
+        """
+        Return id for a subplot, based on tis position in list
+        Returns id after set (which may be the same as before if
+        the requested id is already used).
+        """
+
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNodeByIdx("subplot", idx)
+        return subplot['id']
+
+
+    def setSubplotId(self, study, old_idx, new_idx):
+        """
+        Set id for a subplot
+        Returns id after set (which may be the same as before if
+        the requested id is already used).
+        """
+
+        if new_idx == old_idx:
+            return False
+
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=old_idx)
+        if new_idx != "" and new_idx not in self.getSubplotList(study):
+            subplot['id'] = new_idx
+        else:
+            return False
+
+        # Renumber references
+
+        for nn in study_node.xmlGetNodeList("figure"):
+            lst = nn['idlist']
+            new_lst = ''
+            if lst:
+                for idl in lst.split():
+                    if idl != old_idx:
+                        new_lst += idl + " "
+                    else:
+                        new_lst += new_idx + " "
+            nn['idlist'] = new_lst.strip()
+
+        for nn in study_node.xmlGetNodeList("plot"):
+            lst = nn['spids']
+            new_lst = ''
+            new_lst = ''
+            if lst:
+                for idl in lst.split():
+                    if idl != old_idx:
+                        new_lst += idl + " "
+                    else:
+                        new_lst += new_idx + " "
+            nn['spids'] = new_lst
+
+        return True
 
 
     def getSubplotTitle(self, study, idx):
         """
         Return title for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         name = subplot['title']
         if not name:
             name = self.defaultInitialValues()['subplot_name']
@@ -199,8 +249,8 @@ class ManagePlotterModel(Model):
         """
         Set title for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         if title != "":
             subplot['title'] = title
 
@@ -209,8 +259,8 @@ class ManagePlotterModel(Model):
         """
         Return X label for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         name = subplot['xlabel']
         if not name:
             name = ""
@@ -221,8 +271,8 @@ class ManagePlotterModel(Model):
         """
         Set X label for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         subplot['xlabel'] = title
 
 
@@ -230,8 +280,8 @@ class ManagePlotterModel(Model):
         """
         Return Y label for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         name = subplot['ylabel']
         if not name:
             name = ""
@@ -242,8 +292,8 @@ class ManagePlotterModel(Model):
         """
         Set Y label for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         subplot['ylabel'] = title
 
 
@@ -251,8 +301,8 @@ class ManagePlotterModel(Model):
         """
         Return legend position for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         name = subplot['legpos']
         if not name:
             name = ""
@@ -263,8 +313,8 @@ class ManagePlotterModel(Model):
         """
         Set legend position for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         subplot['legpos'] = title
 
 
@@ -272,8 +322,8 @@ class ManagePlotterModel(Model):
         """
         Return legend status for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         status = subplot['legstatus']
         if not status:
             status = self.defaultInitialValues()['subplot_legstatus']
@@ -285,8 +335,8 @@ class ManagePlotterModel(Model):
         """
         Set legend status for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         subplot['legstatus'] = status
 
 
@@ -294,8 +344,8 @@ class ManagePlotterModel(Model):
         """
         Return X limit for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         status = subplot['xlim']
         if not status:
             status = ""
@@ -306,8 +356,8 @@ class ManagePlotterModel(Model):
         """
         Set X limit for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         if pos != "":
             subplot['xlim'] = pos
 
@@ -316,8 +366,8 @@ class ManagePlotterModel(Model):
         """
         Return Y limit for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         status = subplot['ylim']
         if not status:
             status = ""
@@ -328,8 +378,8 @@ class ManagePlotterModel(Model):
         """
         Set Y limit for a subplot
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("subplot", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        subplot = study_node.xmlGetNode("subplot", id=idx)
         if pos != "":
             subplot['ylim'] = pos
 
@@ -337,38 +387,38 @@ class ManagePlotterModel(Model):
 #-------------------------------------------------------------------------------
 # Figure
 #-------------------------------------------------------------------------------
+
     def addFigure(self, study):
         """
-        add a subplot for a study
+        add a fiure for a study
         """
-        study_node = self.case.xmlGetNode("study", label = study)
+        study_node = self.case.xmlGetNode("study", label=study)
         idx = len(study_node.xmlGetNodeList("figure"))
-        study_node.xmlInitChildNode("figure", id = idx)
-        return idx
+        nn = study_node.xmlInitChildNode("figure", idx=-1)
+        del(nn['idx'])
+        for idx, n in enumerate(study_node.xmlGetNodeList("figure")):
+            if nn == nx:
+                return idx
+
+        return -1  # Should not reach here
 
 
     def delFigure(self, study, idx):
         """
         suppress a subplot for a study
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        node = study_node.xmlGetNode("figure", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        node = study_node.xmlGetNodeByIdx("figure", idx)
         node.xmlRemoveNode()
-        for nn in study_node.xmlGetNodeList("figure"):
-            try:
-                if int(nn['id']) > idx:
-                    nn['id'] = str(int(nn['id']) - 1)
-            except:
-                pass
 
 
     def getFigureName(self, study, idx):
         """
         Return name for a figure
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
-        name = subplot['name']
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
+        name = figure['name']
         if not name:
             name = self.defaultInitialValues()['figure_name']
             self.setFigureName(study, idx, name)
@@ -379,18 +429,18 @@ class ManagePlotterModel(Model):
         """
         Set name for a figure
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
-        subplot['name'] = name
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
+        figure['name'] = name
 
 
     def getFigureTitle(self, study, idx):
         """
         Return title for a figure
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
-        name = subplot['title']
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
+        name = figure['title']
         if not name:
             name = self.defaultInitialValues()['figure_title']
             self.setFigureTitle(study, idx, name)
@@ -401,65 +451,87 @@ class ManagePlotterModel(Model):
         """
         Set title for a figure
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
         if name != "":
-            subplot['title'] = name
-        elif subplot['title']:
-            subplot['title'] = name
+            figure['title'] = name
+        elif figure['title']:
+            figure['title'] = name
 
 
-    def getFigureRow(self, study, idx):
+    def getFigureRows(self, study, idx):
         """
         Return number of row for a figure
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
-        row = subplot['nbrow']
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
+        row = figure['nbrow']
         if not row:
             row = ""
         return row
 
 
-    def setFigureRow(self, study, idx, row):
+    def setFigureRows(self, study, idx, row):
         """
         Set number of row for a figure
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
         if row != "":
-            subplot['nbrow'] = row
+            figure['nbrow'] = row
 
 
-    def getFigureColumn(self, study, idx):
+    def getFigureColumns(self, study, idx):
         """
         Return number of column for a figure
         """
         study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
-        col = subplot['nbcol']
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
+        col = figure['nbcol']
         if not col:
             col = ""
         return col
 
 
-    def setFigureColumn(self, study, idx, col):
+    def setFigureColumns(self, study, idx, col):
         """
         Set number of column for a figure
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
         if col != "":
-            subplot['nbcol'] = col
+            figure['nbcol'] = col
+
+
+    def getFigureSize(self, study, idx):
+        """
+        Return size for a figure
+        """
+        study_node = self.case.xmlGetNode("study", label = study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
+        col = figure['figsize']
+        if not col:
+            col = ""
+        return col
+
+
+    def setFigureSize(self, study, idx, col):
+        """
+        Set number of column for a figure
+        """
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
+        if col != "":
+            figure['figsize'] = col
 
 
     def getFigureFormat(self, study, idx):
         """
         Return format for a figure
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
-        name = subplot['format']
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
+        name = figure['format']
         if not name:
             name = self.defaultInitialValues()['figure_fmt']
             self.setFigureFormat(study, idx, name)
@@ -471,18 +543,18 @@ class ManagePlotterModel(Model):
         Set format for a figure
         """
         self.isInList(fmt, ("png", "pdf"))
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
-        subplot['format'] = fmt
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
+        figure['format'] = fmt
 
 
     def getFigureIdList(self, study, idx):
         """
-        Return subplot id list for a figure
+        Return figure id list for a figure
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
-        lst = subplot['idlist']
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
+        lst = figure['idlist']
         if not lst:
             lst = ""
         return lst
@@ -490,384 +562,205 @@ class ManagePlotterModel(Model):
 
     def setFigureIdList(self, study, idx, idlist):
         """
-        Set subplot id list for a figure
+        Set figure id list for a figure
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        subplot = study_node.xmlGetNode("figure", id = idx)
-        subplot['idlist'] = idlist
+        study_node = self.case.xmlGetNode("study", label=study)
+        figure = study_node.xmlGetNodeByIdx("figure", idx)
+        figure['idlist'] = idlist
 
 
 #-------------------------------------------------------------------------------
-# Measurement
+# Measurement or Case Data
 #-------------------------------------------------------------------------------
-    def addMeasurementFile(self, study, fle):
+
+    def dataKeys(self):
         """
-        add a measurement file for a study
+        Return list of keys used for plot definitions.
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        study_node.xmlInitChildNode("measurement", file=fle)
+        return ('color', 'format', 'legend', 'xcol', 'ycol', 'xscale', 'yscale',
+                'xplus', 'yplus', 'xerr', 'xerrp', 'yerr', 'yerrp')
 
 
-    def delMeasurementFile(self, study, idx):
+    def dataDictDefaults(self):
         """
-        suppress a measurement file for a study
+        Return dictionnary default with key/value definitions.
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[idx]
-        node.xmlRemoveNode()
+
+        defaults = self.defaultInitialValues()
+        d = {}
+        for k in self.plot_keys:
+            d[k] = ''
+            if k in defaults:
+                d[k] = defaults[k]
+
+        return d
 
 
-    def addMeasurementPlot(self, study, measurement_idx):
+    def addDataPlot(self, data):
         """
-        add a plot for a measurement file
+        add a plot for a data file
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        lst2 = study_node.xmlGetNodeList("plot")
-        idx = len(lst2)
-        node.xmlInitChildNode("plot", id = idx)
-        return idx
+        nn = data.xmlInitChildNode("plot", idx=-1)
+        del(nn['idx'])
+
+        lst = data.xmlGetNodeList("plot")
+        for idx, n in enumerate(lst):
+            if n == nn:
+                return idx
+
+        a = 1/0
+        return -1 # should not arrive here
 
 
-    def deleteMeasurementPlot(self, study, measurement_idx, idx):
+    def deleteDataPlot(self, data, idx):
         """
         suppress a plot for a measurement file
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        nn = node.xmlGetNode("plot", id = idx)
-        nn.xmlRemoveNode()
-
-        idx = 0
-        for n in study_node.xmlGetNodeList("plot"):
-            n['id'] = idx
-            idx = idx + 1
+        nn = data.xmlGetNodeByIdx("plot", idx)
+        if nn:
+            nn.xmlRemoveNode()
 
 
-    def getMeasurementPlotList(self, study, name, path):
+    def getDataPlotList(self, data):
         """
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        measurement_node = study_node.xmlGetNode("measurement", file=name, path=path)
         lst = []
-        for node in measurement_node.xmlGetNodeList("plot"):
-            lst.append(node['id'])
+        for idx, n in enumerate(data.xmlGetNodeList("plot")):
+            lst.append(idx)
         return lst
 
 
-    def getMeasurementColor(self, study, measurement_idx, idx):
+    def getDataDict(self, data, idx):
         """
-        Return plot color
+        Return dictionnary with key/value definitions.
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        color = plot['color']
-        if not color:
-            color = self.defaultInitialValues()['color']
-            self.setMeasurementColor(study, measurement_idx, idx, color)
-        return color
+        plot = data.xmlGetNodeByIdx("plot", idx)
+
+        d = {}
+        for k in self.plot_keys:
+            d[k] = plot[k]
+
+        return d
 
 
-    def setMeasurementColor(self, study, measurement_idx, idx, color):
+    def setDataDict(self, data, idx, values):
         """
-        Set plot color
+        Return dictionnary with key/value definitions.
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        plot['color'] = color
+        plot = data.xmlGetNodeByIdx("plot", idx)
+
+        d = {}
+        for k in self.plot_keys:
+            if k in values:
+                plot[k] = values[k]
+                if plot[k] == '':
+                    del(plot[k])
 
 
-    def getMeasurementFormat(self, study, measurement_idx, idx):
+    def getDataIdList(self, data, idx):
         """
-        Return plot format
+        Return subplot id list for a plot of a data
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        fmt = plot['fmt']
-        if not fmt:
-            fmt = ""
-        return fmt
-
-
-    def setMeasurementFormat(self, study, measurement_idx, idx, fmt):
-        """
-        Set plot format
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        plot['fmt'] = fmt
-
-
-    def getMeasurementLegend(self, study, measurement_idx, idx):
-        """
-        Return plot color
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        legend = plot['legend']
-        if not legend:
-            legend = ""
-        return legend
-
-
-    def setMeasurementLegend(self, study, measurement_idx, idx, legend):
-        """
-        Set plot color
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        plot['legend'] = legend
-
-
-    def getMeasurementXcol(self, study, measurement_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        val = plot['xcol']
-        if not val:
-            val = ""
-        return val
-
-
-    def setMeasurementXcol(self, study, measurement_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        plot['xcol'] = val
-
-
-    def getMeasurementYcol(self, study, measurement_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        val = plot['ycol']
-        if not val:
-            val = ""
-        return val
-
-
-    def setMeasurementYcol(self, study, measurement_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        plot['ycol'] = val
-
-
-    def getMeasurementWidth(self, study, measurement_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        val = plot['linewidth']
-        if not val:
-            val = ""
-        return val
-
-
-    def setMeasurementWidth(self, study, measurement_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        plot['linewidth'] = val
-
-
-    def getMeasurementMarker(self, study, measurement_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        val = plot['markersize']
-        if not val:
-            val = ""
-        return val
-
-
-    def setMeasurementMarker(self, study, measurement_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        plot['markersize'] = val
-
-
-    def getMeasurementXerr(self, study, measurement_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        val = plot['xerr']
-        if not val:
-            val = ""
-        return val
-
-
-    def setMeasurementXerr(self, study, measurement_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        plot['xerr'] = val
-
-
-    def getMeasurementXerrp(self, study, measurement_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        val = plot['xerrp']
-        if not val:
-            val = ""
-        return val
-
-
-    def setMeasurementXerrp(self, study, measurement_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        plot['xerrp'] = val
-
-
-    def getMeasurementYerr(self, study, measurement_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        val = plot['yerr']
-        if not val:
-            val = ""
-        return val
-
-
-    def setMeasurementYerr(self, study, measurement_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        plot['yerr'] = val
-
-
-    def getMeasurementYerrp(self, study, measurement_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        val = plot['yerrp']
-        if not val:
-            val = ""
-        return val
-
-
-    def setMeasurementYerrp(self, study, measurement_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
-        plot['yerrp'] = val
-
-
-    def getMeasurementIdList(self, study, measurement_idx, idx):
-        """
-        Return subplot id list for a plot of a measurement
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
+        plot = data.xmlGetNodeByIdx("plot", idx)
         lst = plot['spids']
         if not lst:
             lst = ""
         return lst
 
 
-    def setMeasurementIdList(self, study, measurement_idx, idx, idlist):
+    def setDataIdList(self, data, idx, idlist):
         """
-        Set subplot id list for a plot of a measurement
+        Set subplot id list for a plot of a data
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("measurement")
-        node = lst[measurement_idx]
-        plot = node.xmlGetNode("plot", id = idx)
+        plot = data.xmlGetNodeByIdx("plot", idx)
         plot['spids'] = idlist
+
+
+#-------------------------------------------------------------------------------
+# Measurement
+#-------------------------------------------------------------------------------
+
+    def addMeasurementFile(self, study, fle):
+        """
+        add a measurement file for a study
+        """
+        study_node = self.case.xmlGetNode("study", label=study)
+        study_node.xmlInitChildNode("measurement", file=fle)
+
+
+    def delMeasurementFile(self, measurement):
+        """
+        suppress a measurement file for a study
+        """
+        measurement.xmlRemoveNode()
+
+
+    def getMeasurementNode(self, study, name):
+        """
+        """
+        study_node = self.case.xmlGetNode("study", label=study)
+        mp, mf = os.path.split(name)
+        measurement_node = study_node.xmlInitNode("measurement", file=mf, path=mp)
+        return measurement_node
+
+
+    def getMeasurementPlotList(self, measurement):
+        """
+        """
+        lst = []
+        for idx, node in enumerate(measurement.xmlGetNodeList("plot")):
+            lst.append(idx)
+        return lst
 
 
 #-------------------------------------------------------------------------------
 # Case
 #-------------------------------------------------------------------------------
+
     def getCaseName(self, study, idx):
         """
         """
         study_node = self.case.xmlGetNode("study", label = study)
         nn = study_node.xmlGetNodeByIdx("case", idx)
-        return nn['label']
+        name = nn['label']
+        run_id = nn['run_id']
+        if run_id != '':
+            name += '/' + run_id
+        return name
+
+
+    def getCaseNode(self, study, case):
+        """
+        """
+        study_node = self.case.xmlGetNode("study", label=study)
+
+        case_name, run_id = os.path.split(case)
+
+        case_node = None
+        if case_name != '':
+            case_node = study_node.xmlGetNode("case",
+                                              label=case_name,
+                                              run_id=run_id)
+        else:
+            case_name = run_id
+            case_node = study_node.xmlGetNode("case",
+                                              label=case_name,
+                                              run_id='')
+            if case_node is None:
+                case_node = study_node.xmlGetNode("case",
+                                                  label=case_name)
+
+        return case_node
+
+
+    def getCaseDataNode(self, study, case, name):
+        """
+        """
+        case_node = self.getCaseNode(study, case)
+
+        data_node = case_node.xmlGetNode("data",
+                                         file=name)
+        return data_node
 
 
     def getCaseDataList(self, study, idx):
@@ -881,12 +774,11 @@ class ManagePlotterModel(Model):
         return lst
 
 
-    def addCaseDataFile(self, study, case_idx, name):
+    def addCaseDataFile(self, case_node, name):
         """
         """
-        study_node = self.case.xmlGetNode("study", label = study)
-        nn = study_node.xmlGetNodeByIdx("case", case_idx)
-        nn.xmlInitChildNode("data", dest="", file=name)
+        nn = case_node.xmlInitChildNode("data", dest="", file=name, idx=-1)
+        del(nn['idx'])
 
 
     def delCaseDataFile(self, study, case_idx, idx):
@@ -898,378 +790,6 @@ class ManagePlotterModel(Model):
         node = lst[idx]
         node.xmlRemoveNode()
 
-
-    def addAssociatedCasePlot(self, study, case_idx, data_idx):
-        """
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        nn = study_node.xmlGetNodeByIdx("case", case_idx)
-        node = nn.xmlGetNodeList("data")[data_idx]
-        idx = len(study_node.xmlGetNodeList("plot"))
-        node.xmlInitChildNode("plot", id = idx)
-        return idx
-
-
-    def delAssociatedCasePlot(self, study, case_idx, data_idx, idx):
-        """
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        nn = study_node.xmlGetNodeByIdx("case", case_idx)
-        node = nn.xmlGetNodeList("data")[data_idx]
-        lst = node.xmlGetNodeList("plot")
-        n = lst[idx]
-        n.xmlRemoveNode()
-
-        idx = 0
-        for n in study_node.xmlGetNodeList("plot"):
-            n['id'] = idx
-            idx = idx + 1
-
-
-    def getCasePlotList(self, study, idx, data_idx):
-        """
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        case = study_node.xmlGetNodeByIdx("case", idx)
-        node = case.xmlGetNodeList("data")[data_idx]
-        lst = []
-        for n in node.xmlGetNodeList("plot"):
-            lst.append(n['id'])
-        return lst
-
-
-    def getAssociatedCaseColor(self, study, case_idx, data_idx, idx):
-        """
-        Return plot color
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        color = plot['color']
-        if not color:
-            color = self.defaultInitialValues()['color']
-            self.setAssociatedCaseColor(study, case_idx, data_idx, idx, color)
-        return color
-
-
-    def setAssociatedCaseColor(self, study, case_idx, data_idx, idx, color):
-        """
-        Set plot color
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        plot['color'] = color
-
-
-    def getAssociatedCaseFormat(self, study, case_idx, data_idx, idx):
-        """
-        Return plot format
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        fmt = plot['fmt']
-        if not fmt:
-            fmt = ""
-        return fmt
-
-
-    def setAssociatedCaseFormat(self, study, case_idx, data_idx, idx, fmt):
-        """
-        Set plot format
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        plot['fmt'] = fmt
-
-
-    def getAssociatedCaseLegend(self, study, case_idx, data_idx, idx):
-        """
-        Return plot color
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        legend = plot['legend']
-        if not legend:
-            legend = ""
-        return legend
-
-
-    def setAssociatedCaseLegend(self, study, case_idx, data_idx, idx, legend):
-        """
-        Set plot color
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        plot['legend'] = legend
-
-
-    def getAssociatedCaseXcol(self, study, case_idx, data_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        val = plot['xcol']
-        if not val:
-            val = ""
-        return val
-
-
-    def setAssociatedCaseXcol(self, study, case_idx, data_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        plot['xcol'] = val
-
-
-    def getAssociatedCaseYcol(self, study, case_idx, data_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        val = plot['ycol']
-        if not val:
-            val = ""
-        return val
-
-
-    def setAssociatedCaseYcol(self, study, case_idx, data_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        plot['ycol'] = val
-
-
-    def getAssociatedCaseWidth(self, study, case_idx, data_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        val = plot['linewidth']
-        if not val:
-            val = ""
-        return val
-
-
-    def setAssociatedCaseWidth(self, study, case_idx, data_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        plot['linewidth'] = val
-
-
-    def getAssociatedCaseMarker(self, study, case_idx, data_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        val = plot['markersize']
-        if not val:
-            val = ""
-        return val
-
-
-    def setAssociatedCaseMarker(self, study, case_idx, data_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        plot['markersize'] = val
-
-
-    def getAssociatedCaseXerr(self, study, case_idx, data_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        val = plot['xerr']
-        if not val:
-            val = ""
-        return val
-
-
-    def setAssociatedCaseXerr(self, study, case_idx, data_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        plot['xerr'] = val
-
-
-    def getAssociatedCaseXerrp(self, study, case_idx, data_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        val = plot['xerrp']
-        if not val:
-            val = ""
-        return val
-
-
-    def setAssociatedCaseXerrp(self, study, case_idx, data_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        plot['xerrp'] = val
-
-
-    def getAssociatedCaseYerr(self, study, case_idx, data_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        val = plot['yerr']
-        if not val:
-            val = ""
-        return val
-
-
-    def setAssociatedCaseYerr(self, study, case_idx, data_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        plot['yerr'] = val
-
-
-    def getAssociatedCaseYerrp(self, study, case_idx, data_idx, idx):
-        """
-        Return plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        val = plot['yerrp']
-        if not val:
-            val = ""
-        return val
-
-
-    def setAssociatedCaseYerrp(self, study, case_idx, data_idx, idx, val):
-        """
-        Set plot val
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        lst = study_node.xmlGetNodeList("case")
-        node = lst[case_idx]
-        n = node.xmlGetNodeList("data")[data_idx]
-        plot = n.xmlGetNode("plot", id = idx)
-        plot['yerrp'] = val
-
-
-    def getCasePlotId(self, study, case_idx, data_idx, idx):
-        """
-        Return subplot id list for a case
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        case = study_node.xmlGetNodeByIdx("case", case_idx)
-        node = case.xmlGetNodeList("data")[data_idx]
-        n = node.xmlGetNodeList("plot")[idx]
-        return n['id']
-
-
-    def getCaseIdList(self, study, case_idx, data_idx, plot_id):
-        """
-        Return subplot id list for a case
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        case = study_node.xmlGetNodeByIdx("case", case_idx)
-        node = case.xmlGetNodeList("data")[data_idx]
-        n = node.xmlGetNode("plot", id = plot_id)
-        lst = n['spids']
-        if not lst:
-            lst = ""
-        return lst
-
-
-    def setCaseIdList(self, study, case_idx, data_idx, plot_id, idlist):
-        """
-        Set subplot id list for a figure
-        """
-        study_node = self.case.xmlGetNode("study", label = study)
-        case = study_node.xmlGetNodeByIdx("case", case_idx)
-        node = case.xmlGetNodeList("data")[data_idx]
-        plot = node.xmlGetNode("plot", id = plot_id)
-        plot['spids'] = idlist
 
 #-------------------------------------------------------------------------------
 # End
