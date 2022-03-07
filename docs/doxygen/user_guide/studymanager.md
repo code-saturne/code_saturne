@@ -1,7 +1,7 @@
 <!--
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2021 EDF S.A.
+  Copyright (C) 1998-2022 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -46,9 +46,9 @@ For all these steps, SMGR generates two reports:
   and the previous ones in the repository, and displays
  the defined plots.
 
-In the **repository**, previous results of computations are required only
-for checkpoint files comparison purposes. They can be also useful, if the
-user needs to run specific scripts.
+In the **repository**, previous results of computations are required only for
+checkpoint files comparison purposes. They can be also useful, if the user needs
+to run specific scripts.
 
 Prerequisites
 -------------
@@ -79,8 +79,8 @@ Majors command-line options are detailed here:
   **repository**
 - `-x, --update-setup`: update all code_saturne setup.xml files in the
   **repository**
-- `-t, --test-compile`: compile all cases
-- `-r, --run`: run all cases
+- `-t, --test-compile`: compile all cases in the **repository**
+- `-r, --run`: create and run all cases in **destination**
 - `-n N_ITER, --n-iterations=N_ITER`: maximum number of iterations for cases of
   the study
 - `-c, --compare`: compare results files between **repository** and
@@ -126,21 +126,22 @@ Examples
   $ code_saturne smgr -f sample.xml -r -c -p -m "dt@moulinsart.be dd@moulinsart.be"
   ```
 - compare and plot results in the **destination** already computed
-   ```
-   $ code_saturne smgr -f sample.xml -c -p
-   ```
+  ```
+  $ code_saturne smgr -f sample.xml -c -p
+  ```
 - run cases tagged "coarse" (standing for coarse mesh for example) _and_ "hr"
   (standing for high Reynolds for example) only for 2 time iterations in
   destination directory of path `../RUNS/RIBS` (`RIBS} will be created, `RUNS`
   already exists). The command is launched from inside the study directory, so
   the repository containing the original study is simply indicated by `..`
   ```
-  $ code_saturne smgr -f smgr_ribs.xml -r -n 2 --with-tags=coarse,hr --dest=../RUNS/RIBS --repo=..
+  $ code_saturne smgr -f smgr_ribs.xml -r -n 2 --with-tags=coarse,hr
+  --dest=../RUNS/RIBS --repo=..
   ```
 ### Note
 
-The detailed report is generated only if the options `-c, --compare`
-or `-p, --post` is present in the command line.
+`report_figures.pdf` is generated only if the option `-p, --post` is present in
+the command line.
 
 SMGR parameter file
 ===================
@@ -183,12 +184,17 @@ Studies and cases attibutes
 -------------------------
 
 ```{.xml}
-    <study label="MyStudy1" status="on">
+    <study label="MyStudy1" status="on" tags="coarse, test">
 ```
 
 The attributes for the studies are:
 - `label`: the name of the study;
-- `status`: must be `on` or `off` to activate or desactivate the study
+- `status`: must be `on` or `off` to activate or desactivate the study;
+- `tags`: possible tags distinguishing runs from the others in the same SMGR
+  parameter file (ex.: `tags="fine,high-reynolds"`). These tags will be applied
+  to all cases in the study.
+
+Only the attributes `label` and `status` are mandatory.
 
 ```{.xml}
         <case label="Grid1" run_id="Grid1" status="on" compute="on" post="off" tags="coarse"/>
@@ -200,13 +206,14 @@ The attributes for the cases are:
   result is stored. This attribute is optional. If it is not set (or if set to
   `run_id=""`), an automatic value will be proposed by the code (usually based
   on current date and time);
-- `status`: must be `on` or `off` to activate or desactivate the case;
+- `status`: must be `on` or `off` to activate or deactivate the case;
 - `compute`: must be `on` or `off` to activate or deactivate the computation of
   the case;
 - `post: must be `on` or `off` to activate or deactivate the post-processing of
   the case;
 - `tags`: possible tags distinguishing the run from the others in the same SMGR
-  parameter file (ex.: `tags="fine,high-reynolds"`).
+  parameter file (ex.: `tags="fine,high-reynolds"`). They are added to the study
+  tags if they exist.
 
 Only the attributes `label`, `status`, `compute`, and `post` are mandatory.
 
@@ -259,7 +266,7 @@ them use the attribute `args` to pass additional arguments.
 ```
 
 These different nodes all apply a specific filter type during the __stage__
-(__initialize__) step of a case's execution (i.e. when copying data, just before
+(__initialize__) step of a case's execution (i.e. when copying data), just before
 the \ref define_domain_parameters (and \ref domain_copy_results_add) function in
 the \ref cs_user_scripts.py user scripts. They do not modify files in a case's
 `DATA` or `SRC` directory, only the copied files in the matching `RESU/<run_id>`.
@@ -536,15 +543,15 @@ In the parameters file, curves are defined with two markups:
       sec_smgr_restart) section).
     - If there is a single results directory in the `RESU` directory (either in
       the **repository** or in the **destination**) of the case, the id can be
-      ommitted: `repo=""` or `dest=""`, and it will be completed automatically.
+      omitted: `repo=""` or `dest=""`, and it will be completed automatically.
 
 The `file` attribute is mandatory, and either `repo` or `dest` must be present
 (but not the both), even if they are empty.
 
 - `<plot>`: child of markup `<data>`, defines a single curve;
   the attributes are:
-  * `fig` id of the subset of curves (i.e. markup `<subplot>`) where the current
-    curve should be plotted;
+  * `spids` ids of the subset of curves (i.e. markup `<subplot>`) where the current
+    curve should be plotted (whitespace-separated list);
   * `xcol`: number of the column in the file of data for the abscissa;
   * `ycol`: number of the column in the file of data for the ordinate;
   * `legend`: add a label to a curve;
@@ -552,8 +559,8 @@ The `file` attribute is mandatory, and either `repo` or `dest` must be present
     for example `fmt="r--"` for a dashed red line;
   * `xplus`: real to add to all values of the column `xcol`;
   * `yplus`: real to add to all values of the column `ycol`;
-  * `xfois`: real to multiply to all values of the column `xcol`;
-  * `yfois`: real to multiply to all values of the column `ycol`;
+  * `xscale`: real to multiply to all values of the column `xcol`;
+  * `yscale`: real to multiply to all values of the column `ycol`;
   * `xerr` or `xerrp`: draw horizontal error bar (see section on [error bars]
     (@ref sec_smgr_err));
   * `yerr` or `yerrp`: draw vertical error bar (as above);
@@ -585,10 +592,10 @@ The `file` attribute is mandatory, and either `repo` or `dest` must be present
 <tr><td> zorder <td> any number
 </table>
 
-The attributes `fig` and `ycol` are mandatory.
+The attributes `spids` and `ycol` are mandatory.
 
 In case a column should undergo a transformation specified by the attributes
-`xfois`,`yfois`,`xplus`,`yplus`, scale operations take precedence over
+`xscale`,`yscale`,`xplus`,`yplus`, scale operations take precedence over
 translation operations.
 
 Details on 2D lines properties can be found in the [Matplotlib documentation]
@@ -716,7 +723,7 @@ should be used as a child of a markup `<case>` as illustrated below:
 
 The attributes are:
 - `file`: name of the file to be read on the disk;
-- `fig`: id of the subset of curves (i.e. markup `<subplot>`)
+- `spids`: id of the subset of curves (i.e. markup `<subplot>`)
    where the current curve should be plotted;
 - `dest`: id of the results directory in the **destination**:
   * If the id is not known already because the case has not yet run, just leave
@@ -730,7 +737,7 @@ The attributes are:
     `RESU` directory of the case, the id can be omitted: with `dest=""`, the id
     will be completed automatically.
 
-The `file`, `fig` and `dest` attributes are mandatory.
+The `file`, `spids` and `dest` attributes are mandatory.
 
 ### Matplotlib raw commands {#sec_smgr_raw}
 The parameters file allows executing additional Matplotlib commands (i.e Python
@@ -826,9 +833,9 @@ SMGR produces several files in the **destination** directory:
   error occurs.
 
 After the computation of a case, if no error occurs, the attribute `compute` is
-set to `"off"` in the copy of the parameters file in the **destination**. It is
-allow a restart of SMGR without re-run successful previous computations. In the
-same manner, all empty attributes `repo=""` and `dest=""` are completed in the
+set to `"off"` in the copy of the parameters file in the **destination**. It
+enables a restart of SMGR for postprocessing without re-running
+computations. In the same manner, all empty attributes `repo=""` and `dest=""` are completed in the
 updated parameters file.
 
 Tricks {#sec_smgr_tricks}
