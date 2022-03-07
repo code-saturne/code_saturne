@@ -33,8 +33,7 @@ SMGR is a small framework to automate the launch of code_saturne computations
 and do some operations on new results.
 
 The script needs a source directory of code_saturne cases, called the
-**repository**, which will be duplicated into a **destination**
-directory, from which computations will be run.
+**repository**, which will be run in a **destination** directory.
 
 The **destination** directory structure only contains the required files for
 SMGR functionalities. Thus, only `POST` and `<CASE>` directories will be found
@@ -42,9 +41,9 @@ in duplicated studies. In the same way, only `RESU/<run_id>` directories will be
 found in `<CASE>`.
 
 For each duplicated case, SMGR can run the case, compare the obtained checkpoint
-file with the previous one from the repository, and plot curves in order to
-illustrate the computations. All generated figures are batched in
-`report_figures.pdf`.
+file with the previous one from a reference destination repository,
+and plot curves in order to illustrate the computations. All generated figures are
+batched in`report_figures.pdf`.
 
 In the **repository**, previous results of computations are required only for
 checkpoint files comparison purposes. They can be also useful, if the user needs
@@ -205,10 +204,10 @@ The attributes for the cases are:
 - `run_id`: name of the run directory (sub-directory of `RESU`) in which the
   result is stored. This attribute is optional. If it is not set (or if set to
   `run_id=""`), an automatic value will be proposed (`run1`);
-- `status`: must be `on` or `off` to activate or desactivate the case;
+- `status`: must be `on` or `off` to activate or deactivate the case;
 - `compute`: must be `on` or `off` to activate or deactivate the computation of
   the case;
-- `post: must be `on` or `off` to activate or deactivate the post-processing of
+- `post`: must be `on` or `off` to activate or deactivate the post-processing of
   the case;
 - `tags`: possible tags distinguishing the run from the others in the same SMGR
   parameter file (ex.: `tags="fine,high-reynolds"`). They are added to the study
