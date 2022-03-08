@@ -548,8 +548,8 @@ The `file` attribute is mandatory, and either `repo` or `dest` must be present
 
 - `<plot>`: child of markup `<data>`, defines a single curve;
   the attributes are:
-  * `fig` id of the subset of curves (i.e. markup `<subplot>`) where the current
-    curve should be plotted;
+  * `spids` ids of the subset of curves (i.e. markup `<subplot>`) where the current
+    curve should be plotted (whitespace-separated list);
   * `xcol`: number of the column in the file of data for the abscissa;
   * `ycol`: number of the column in the file of data for the ordinate;
   * `legend`: add a label to a curve;
@@ -557,8 +557,8 @@ The `file` attribute is mandatory, and either `repo` or `dest` must be present
     for example `fmt="r--"` for a dashed red line;
   * `xplus`: real to add to all values of the column `xcol`;
   * `yplus`: real to add to all values of the column `ycol`;
-  * `xfois`: real to multiply to all values of the column `xcol`;
-  * `yfois`: real to multiply to all values of the column `ycol`;
+  * `xscale`: real to multiply to all values of the column `xcol`;
+  * `yscale`: real to multiply to all values of the column `ycol`;
   * `xerr` or `xerrp`: draw horizontal error bar (see section on [error bars]
     (@ref sec_smgr_err));
   * `yerr` or `yerrp`: draw vertical error bar (as above);
@@ -590,10 +590,10 @@ The `file` attribute is mandatory, and either `repo` or `dest` must be present
 <tr><td> zorder <td> any number
 </table>
 
-The attributes `fig` and `ycol` are mandatory.
+The attributes `spids` and `ycol` are mandatory.
 
 In case a column should undergo a transformation specified by the attributes
-`xfois`,`yfois`,`xplus`,`yplus`, scale operations take precedence over
+`xscale`,`yscale`,`xplus`,`yplus`, scale operations take precedence over
 translation operations.
 
 Details on 2D lines properties can be found in the [Matplotlib documentation]
@@ -721,7 +721,7 @@ should be used as a child of a markup `<case>` as illustrated below:
 
 The attributes are:
 - `file`: name of the file to be read on the disk;
-- `fig`: id of the subset of curves (i.e. markup `<subplot>`)
+- `spids`: id of the subset of curves (i.e. markup `<subplot>`)
    where the current curve should be plotted;
 - `dest`: id of the results directory in the **destination**:
   * If the id is not known already because the case has not yet run, just leave
@@ -735,7 +735,7 @@ The attributes are:
     `RESU` directory of the case, the id can be omitted: with `dest=""`, the id
     will be completed automatically.
 
-The `file`, `fig` and `dest` attributes are mandatory.
+The `file`, `spids` and `dest` attributes are mandatory.
 
 ### Matplotlib raw commands {#sec_smgr_raw}
 The parameters file allows executing additional Matplotlib commands (i.e Python
