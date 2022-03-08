@@ -699,7 +699,15 @@ class ManagePlotterModel(Model):
         """
         study_node = self.case.xmlGetNode("study", label=study)
         mp, mf = os.path.split(name)
-        measurement_node = study_node.xmlInitNode("measurement", file=mf, path=mp)
+        m_nodes = study_node.xmlGetNodeList("measurement", file=mf, path=mp)
+        l = len(m_nodes)
+        if l > 0:
+            measurement_node = m_nodes[0]
+            for i in range(1, l):
+                measurement_node.xmlMergeNode(m_nodes[i])
+        else:
+            measurement_node = study_node.xmlInitNode("measurement",
+                                                      file=mf, path=mp)
         return measurement_node
 
 
@@ -757,8 +765,15 @@ class ManagePlotterModel(Model):
         """
         case_node = self.getCaseNode(study, case)
 
-        data_node = case_node.xmlGetNode("data",
-                                         file=name)
+        d_nodes = case_node.xmlGetNodeList("data", file=name)
+        l = len(d_nodes)
+        if l > 0:
+            data_node = d_nodes[0]
+            for i in range(1, l):
+                data_node.xmlMergeNode(d_nodes[i])
+        else:
+            data_node = case_node.xmlInitNode("data",
+                                              file=name)
         return data_node
 
 

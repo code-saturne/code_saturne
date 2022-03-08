@@ -1043,6 +1043,26 @@ class XMLElement:
         log.debug("xmlChildsCopy-> %s" % self.__xmlLog())
 
 
+    def xmlMergeNode(self, oldNode, deep=1000):
+        """
+        Merge all children of oldNode into node, then delete oldNode.
+        """
+        if oldNode.el.hasChildNodes():
+            for n in oldNode.el.childNodes:
+                duplicate = False
+                if self.el.hasChildNodes():
+                    for nr in self.el.childNodes:
+                        if n == nr:
+                            duplicate = True
+                            break
+                if not duplicate:
+                    self._inst(self.el.appendChild(n.cloneNode(deep)))
+
+        oldNode.xmlRemoveNode()
+
+        log.debug("xmlMergeNode -> %s" % self.__xmlLog())
+
+
     def xmlRemoveNode(self):
         """
         Destroy a single node.
