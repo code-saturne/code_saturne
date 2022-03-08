@@ -82,6 +82,7 @@ temp = t0
 dens = ro0
 press = dens*rair*temp ! ideal gas law
 hspec = 0.0d0
+met_qv_id = -1
 
 if (imeteo.ge.2) then
   call field_get_val_s_by_name('meteo_temperature', cpro_met_temp)
