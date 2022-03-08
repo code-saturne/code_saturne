@@ -120,12 +120,14 @@ class ManageSubplotDialogView(QDialog, Ui_ManagePlotterSubplotForm):
         """
         self.result['idlist'] = ''
 
+        subplot_list = self.mdl.getSubplotList(self.study)
         for itm in range(len(self.item_list)):
             if self.item_list[itm].checkState():
+                spn = str(subplot_list[itm])
                 if self.result['idlist'] != '':
-                    self.result['idlist'] = self.result['idlist'] + ' ' + str(itm)
+                    self.result['idlist'] = self.result['idlist'] + ' ' + spn
                 else:
-                    self.result['idlist'] = str(itm)
+                    self.result['idlist'] = spn
 
         QDialog.accept(self)
 

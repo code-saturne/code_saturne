@@ -397,7 +397,7 @@ class ManagePlotterModel(Model):
         nn = study_node.xmlInitChildNode("figure", idx=-1)
         del(nn['idx'])
         for idx, n in enumerate(study_node.xmlGetNodeList("figure")):
-            if nn == nx:
+            if nn == n:
                 return idx
 
         return -1  # Should not reach here
@@ -608,7 +608,6 @@ class ManagePlotterModel(Model):
             if n == nn:
                 return idx
 
-        a = 1/0
         return -1 # should not arrive here
 
 
@@ -724,7 +723,7 @@ class ManagePlotterModel(Model):
         nn = study_node.xmlGetNodeByIdx("case", idx)
         name = nn['label']
         run_id = nn['run_id']
-        if run_id != '':
+        if run_id is not None and run_id != '':
             name += '/' + run_id
         return name
 
