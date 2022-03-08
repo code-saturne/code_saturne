@@ -3,6 +3,8 @@ Release 7.0.4 (not released yet)
 
 Bug fixes:
 
+- Atmo: fix bug in chemistry.
+
 - GUI and scripts: fix crash for Syrthes coupling when at least one
   user scalar (specie, variance) is defined.
 
