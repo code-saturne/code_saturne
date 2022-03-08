@@ -951,6 +951,23 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_var_is_buoyant] */
 
+  /* Example: change the turbulent Schmidt for a transported chemistry
+   * scalars */
+
+  /*! [param_var_scmidt] */
+  {
+
+    /* Loop over all species */
+    for (int i = 0; i < cs_glob_atmo_chemistry->n_species; i++) {
+      const int f_id = cs_glob_atmo_chemistry->species_to_field_id[i];
+      cs_field_t *sca1 = cs_field_by_id(f_id);
+
+      cs_field_set_key_double(sca1, cs_field_key_id("drift_scalar_model"),
+                              0.7); /* Value of the turbulent Schmidts */
+    }
+  }
+  /*! [param_var_scmidt] */
+
   /* Example: Scalar with a drift (key work "drift_scalar_model">0)
               or without drift
      ((key work "drift_scalar_model"=0, default option) for each USER scalar.
