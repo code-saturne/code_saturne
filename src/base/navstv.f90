@@ -932,7 +932,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
             cpro_wgrec_v(ii,iel) = dttens(ii,iel) / crom(iel)
           enddo
         enddo
-        call syntin(cpro_wgrec_v)
+        call syntis(cpro_wgrec_v)
       endif
     endif
 
