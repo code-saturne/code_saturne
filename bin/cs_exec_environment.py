@@ -1714,10 +1714,13 @@ class mpi_environment:
         # 'gforker', and 'remshell' are defined by the standard MPICH
         # install and determine the associated launcher.
 
+        # Caution: if srun is used, it is probably not in the same
+        # path as MPI executables.
+
         pm = ''
         absname = ''
 
-        if self.mpiexec != None:
+        if self.mpiexec != None and self.mpiexec != 'srun':
             absname = self.__get_mpiexec_absname__(p)
             pm = self.__get_mpich2_3_default_pm__(absname)
 
@@ -1825,7 +1828,10 @@ class mpi_environment:
 
         # Determine base executable paths
 
-        if self.mpiexec != None:
+        # Caution: if srun is used, it is probably not in the same
+        # path as MPI executables.
+
+        if self.mpiexec != None and self.mpiexec != 'srun':
             absname = self.__get_mpiexec_absname__(p)
 
         else:
