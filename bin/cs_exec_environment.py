@@ -1832,10 +1832,13 @@ class mpi_environment:
 
         if not self.mpiexec_n:
             self.mpiexec_n = ' -n '
-        if resource_info != None and not self.mpiexec_n_per_node:
-            ppn = resource_info.n_procs_per_node()
-            if ppn:
-                self.mpiexec_n_per_node = ' --npernode ' + str(ppn)
+
+        # srun or ccc_mprun do not accept the "--npernode argument!
+        if launcher_base not in ("srun", "ccc_mprun"):
+            if resource_info != None and not self.mpiexec_n_per_node:
+                ppn = resource_info.n_procs_per_node()
+                if ppn:
+                    self.mpiexec_n_per_node = ' --npernode ' + str(ppn)
 
         if not self.mpmd:
             if launcher_base[:7] == 'mpiexec':
