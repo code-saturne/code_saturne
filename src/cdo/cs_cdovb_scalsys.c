@@ -570,33 +570,6 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
   }
 
-  /* Setup stage: Set useful arrays:
-   * -----------
-   * -> the Dirichlet values at vertices
-   * -> the translation of the enforcement values at vertices if needed
-   */
-
-  for (int i_eq = 0; i_eq < n_equations; i_eq++) {
-
-    for (int j_eq = 0; j_eq < n_equations; j_eq++) {
-
-      int ij = i_eq*n_equations + j_eq;
-      cs_equation_core_t  *block_ij = blocks[ij];
-
-      const cs_equation_param_t  *eqp = block_ij->param;;
-      cs_equation_builder_t  *eqb = block_ij->builder;
-      cs_cdovb_scaleq_t  *eqc = block_ij->scheme_context;
-
-      cs_cdovb_scaleq_setup(ts->t_cur + ts->dt[0],
-                            mesh, eqp, eqb, eqc->vtx_bc_flag);
-
-      if (eqb->init_step)
-        eqb->init_step = false;
-
-    } /* Loop on column blocks */
-
-  } /* Loop on row blocks */
-
   /* Initialize the algebraic structures
    * -----------------------------------
    * ->  Initialize the rhs, matrix and assembler values
@@ -630,46 +603,57 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
-  {
-    /* Set variables and structures inside the OMP section so that each thread
-       has its own value */
+  const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
+
+  /* Default initialization of properties associated to each block of the
+     system */
+
+  for (int i_eq = 0; i_eq < n_equations; i_eq++) {
+
+    for (int j_eq = 0; j_eq < n_equations; j_eq++) {
+
+      int ij = i_eq*n_equations + j_eq;
+
+      cs_equation_core_t  *block_ij = blocks[ij];
+
+      const cs_equation_param_t  *eqp = block_ij->param;
+      const cs_real_t  *f_val = fields[j_eq]->val;
+
+      cs_equation_builder_t  *eqb = block_ij->builder;
+      cs_cdovb_scaleq_t  *eqc = block_ij->scheme_context;
+
+      /* Setup stage: Set useful arrays:
+       * -----------
+       * -> the Dirichlet values at vertices
+       * -> the translation of the enforcement values at vertices if needed
+       */
+
+      cs_cdovb_scaleq_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag);
+
+      if (eqb->init_step)
+        eqb->init_step = false;
+
+#     pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+      {
+        /* Set variables and structures inside the OMP section so that each
+           thread has its own value */
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
+        int  t_id = omp_get_thread_num();
 #else
-    int  t_id = 0;
+        int  t_id = 0;
 #endif
 
-    cs_cell_builder_t  *cb = NULL;
-    cs_cell_sys_t *csys = NULL;
+        cs_cell_builder_t  *cb = NULL;
+        cs_cell_sys_t *csys = NULL;
 
-    cs_cdovb_scaleq_get(&csys, &cb);
+        cs_cdovb_scaleq_get(&csys, &cb);
 
-    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
-
-    const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
-
-    /* Default initialization of properties associated to each block of the
-       system */
-
-    for (int i_eq = 0; i_eq < n_equations; i_eq++) {
-
-      for (int j_eq = 0; j_eq < n_equations; j_eq++) {
-
-        int ij = i_eq*n_equations + j_eq;
-
-        cs_equation_core_t  *block_ij = blocks[ij];
+        cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
 
         cs_cdo_assembly_set_shift(asb,
                                   i_eq * n_vertices,  /* row shift */
                                   j_eq * n_vertices); /* col shift */
-
-        const cs_equation_param_t  *eqp = block_ij->param;
-        const cs_real_t  *f_val = fields[j_eq]->val;
-
-        cs_equation_builder_t  *eqb = block_ij->builder;
-        cs_cdovb_scaleq_t  *eqc = block_ij->scheme_context;
 
         cs_cdovb_scaleq_init_properties(t_id, time_eval, eqp, eqb, eqc);
 
@@ -695,10 +679,10 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
         } /* Main loop on cells */
 
-      } /* j_eq */
-    } /* i_eq */
+      } /* OPENMP Block */
 
-  } /* OPENMP Block */
+    } /* j_eq */
+  } /* i_eq */
 
   cs_cdo_system_helper_finalize_assembly(sh);
 

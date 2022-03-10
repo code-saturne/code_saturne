@@ -614,21 +614,20 @@ _build_no_interlaced_ma(int                      stride,
       const cs_lnum_t  end = x2x->idx[row_id+1];
       const int  n_entries = (end - start + 1) * stride * stride;
 
-      int shift = 0;
-
       for (int k = 0; k < stride; k++)
         g_r_ids[k] = rs->g_id[row_id + k*n_x];
 
       /* Diagonal term is excluded in this connectivity. Add it "manually" */
 
-      for (int dof_i = 0; dof_i < stride; dof_i++) {
+      int shift = 0;
+      for (int ki = 0; ki < stride; ki++) {
 
-        const cs_gnum_t  grow_id = g_r_ids[dof_i];
+        const cs_gnum_t  grow_id = g_r_ids[ki];
 
-        for (int dof_j = 0; dof_j < stride; dof_j++) {
+        for (int kj = 0; kj < stride; kj++) {
 
           grows[shift] = grow_id;
-          gcols[shift] = g_r_ids[dof_j];
+          gcols[shift] = g_r_ids[kj];
           shift++;
 
         }
