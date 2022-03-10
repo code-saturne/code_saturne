@@ -128,6 +128,43 @@ class smgr_xml_init(BaseXmlInit):
                     pass
 
 
+    def countPreproNodes(self):
+        """
+        Check if XML has old "prepro" type nodes.
+        """
+        n_prepro_nodes = [0, 0]
+
+        for node in self.case.xmlGetNodeList('prepro', 'label'):
+            if node['status'] == 'on':
+                n_prepro_nodes[0] += 1
+            else:
+                n_prepro_nodes[1] += 1
+
+        return n_prepro_nodes
+
+
+    def convertPreproNodes(self):
+        """
+        Convert old XML old "prepro" type nodes to "kw_args".
+        """
+        for sn in self.case.xmlGetNodeList('study'):
+            for cn in sn.xmlGetNodeList("case"):
+                for pn in cn.xmlGetNodeList('prepro', 'label'):
+                    s = ' --prepro-script=' + pn['label'] + ' '
+                    s += pn['args']
+                    if pn['status'] == 'off':
+                        s = ' --status=off'
+                    lst = cn.xmlGetNodeList('kw_args')
+                    if lst:
+                        for i, n in enumerate(lst):
+                            s += ' ' + n['args']
+                            n.xmlRemoveNode()
+                    kn = cn.xmlInitChildNode('kw_args', 'args')
+                    s_new = kn['args'] + s
+                    kn['args'] = s_new.strip()
+                    pn.xmlRemoveNode()
+
+
 #-------------------------------------------------------------------------------
 # End of XMLinit
 #-------------------------------------------------------------------------------

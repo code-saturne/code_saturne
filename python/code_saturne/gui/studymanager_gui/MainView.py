@@ -75,7 +75,6 @@ from code_saturne.gui.case.XMLEditorView import XMLEditorView
 from code_saturne.gui.base.QtPage import getexistingdirectory
 from code_saturne.gui.base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
 
-
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -406,8 +405,8 @@ class MainView(object):
         else:
             MainView(cmd_package=self.package, cmd_case="new case").show()
         # TODO
-        # faire le detect du nom study et charger tous les cases du repertoire par defaut
-        # peut etre chrge les nouveau cas lorsqu'on re-ouvre avec status a off
+        # Detect study name and load all cases dy default
+        # Maybe load new cases when reopening withc status=off
 
     def fileAlreadyLoaded(self, f):
         """
@@ -494,7 +493,8 @@ class MainView(object):
         # Instantiate a new case
 
         try:
-            self.case = XMLengine.Case(package=self.package, file_name=file_name, studymanager=True)
+            self.case = XMLengine.Case(package=self.package,
+                                       file_name=file_name, studymanager=True)
         except:
             msg = self.tr("This file is not in accordance with XML specifications.")
             self.loadingAborted(msg, fn)
@@ -856,7 +856,18 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         Initializes the new case with default xml nodes.
         If previous case, just check if all mandatory nodes exist.
         """
-        smgr_xml_init(self.case).initialize()
+        smgr_init = smgr_xml_init(self.case)
+        smgr_init.initialize()
+
+        n_prepro = smgr_init.countPreproNodes()
+
+        if n_prepro[0] > 0 or n_prepro[1] > 0:
+            msg = str(n_prepro[0]) + " active and " \
+                  + str(n_prepro[1]) + " inactive 'prepro' tags.\n" \
+                  + "were converted to 'kw_args' tags."
+            QMessageBox.warning(self, self.package.name + ' study manager',
+                                msg)
+            smgr_init.convertPreproNodes()
 
 
     def displayCSManual(self):
