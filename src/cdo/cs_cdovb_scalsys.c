@@ -303,6 +303,7 @@ _solve_mumps(int                                 n_eqs,
   }
 
   BFT_FREE(dof_vals);
+  cs_sles_free(sles);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
