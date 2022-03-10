@@ -377,7 +377,7 @@ class ManageCasesModel(Model):
                 status = self._defaultValues()['post_status']
                 self.setPostScriptStatus(study_name, idx, status)
         else:
-            status = "off"
+                status = self._defaultValues()['post_status']
         return status
 
 
@@ -456,10 +456,13 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNodeByIdx("case", idx)
-        nn = node.xmlGetNode("notebook")
         args = ""
-        if nn:
-            args = nn['args']
+        lst = node.xmlGetNodeList("notebook")
+        if lst:
+            for n in lst:
+                if n['args']:
+                    args += " " + n['args']
+            args = args.strip()
         return args
 
 
@@ -470,6 +473,11 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNodeByIdx("case", idx)
+        lst = node.xmlGetNodeList("notebook")
+        if lst:
+            for i, n in enumerate(lst):
+                if i > 0:
+                    n.xmlRemoveNode()
         nn = node.xmlInitChildNode("notebook")
         nn['args'] = args
 
@@ -481,10 +489,13 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNodeByIdx("case", idx)
-        nn = node.xmlGetNode("parametric")
         args = ""
-        if nn:
-            args = nn['args']
+        lst = node.xmlGetNodeList("parametric")
+        if lst:
+            for n in lst:
+                if n['args']:
+                    args += " " + n['args']
+            args = args.strip()
         return args
 
 
@@ -495,6 +506,11 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNodeByIdx("case", idx)
+        lst = node.xmlGetNodeList("parametric")
+        if lst:
+            for i, n in enumerate(lst):
+                if i > 0:
+                    n.xmlRemoveNode()
         nn = node.xmlInitChildNode("parametric")
         nn['args'] = args
 
@@ -506,10 +522,13 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNodeByIdx("case", idx)
-        nn = node.xmlGetNode("kw")
         args = ""
-        if nn:
-            args = nn['args']
+        lst = node.xmlGetNodeList("kw_args")
+        if lst:
+            for n in lst:
+                if n['args']:
+                    args += " " + n['args']
+            args = args.strip()
         return args
 
 
@@ -520,7 +539,13 @@ class ManageCasesModel(Model):
         self.isInt(idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNodeByIdx("case", idx)
-        nn = node.xmlInitChildNode("kw")
+        # Remove extra nodes if data spread over multiple nodes.
+        lst = node.xmlGetNodeList("kw_args")
+        if lst:
+            for i, n in enumerate(lst):
+                if i > 0:
+                    n.xmlRemoveNode()
+        nn = node.xmlInitChildNode("kw_args")
         nn['args'] = args
 
 
@@ -532,9 +557,11 @@ class ManageCasesModel(Model):
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNodeByIdx("case", idx)
         nn = node.xmlGetNode("script")
-        args = ""
+        args = None
         if nn:
             args = nn['args']
+        if args == None:
+            args = ''
         return args
 
 
