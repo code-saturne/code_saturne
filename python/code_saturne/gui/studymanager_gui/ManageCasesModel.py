@@ -79,6 +79,34 @@ class ManageCasesModel(Model):
         return default
 
 
+    def __get_post_script_node__(self, study_name, case_idx, init=False):
+        """
+        Get postprocessing script node.
+        """
+        # In case of multiple matching nodes, we only
+        # handle the first (this should be improved using
+        # an additional level, but the view needs to be adapted also).
+
+        self.isInt(case_idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        nn = None
+        if case_idx > -1:
+            node = study_node.xmlGetNodeByIdx("case", case_idx)
+            nl = node.xmlGetChildNodeList("script")
+            if len(nl) > 0:
+                nn = nl[0]
+            elif init:
+                nn = node.xmlInitChildNode("script")
+        else:
+            nl = study_node.xmlGetChildNodeList("postpro")
+            if len(nl) > 0:
+                nn = nl[0]
+            elif init:
+                nn = study_node.xmlInitChildNode("postpro")
+
+        return nn
+
+
     def getCaseList(self, name):
         """
         Get list of case name for a study
@@ -363,62 +391,6 @@ class ManageCasesModel(Model):
             del(node['tags'])
 
 
-    def getPostScriptStatus(self, study_name, idx):
-        """
-        Get post script status from node with index
-        """
-        self.isInt(idx)
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNodeByIdx("case", idx)
-        nn = node.xmlGetNode("script")
-        if nn:
-            status = nn['status']
-            if not status:
-                status = self._defaultValues()['post_status']
-                self.setPostScriptStatus(study_name, idx, status)
-        else:
-                status = self._defaultValues()['post_status']
-        return status
-
-
-    def setPostScriptStatus(self, study_name, idx, status):
-        """
-        Put post script status from node with index
-        """
-        self.isInt(idx)
-        self.isOnOff(status)
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNodeByIdx("case", idx)
-        nn = node.xmlInitChildNode("script")
-        nn['status'] = status
-
-
-    def getStudyPostScriptStatus(self, study_name):
-        """
-        Get post script status from node with index
-        """
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        nn = study_node.xmlGetNode("postpro")
-        if nn:
-            status = nn['status']
-            if not status:
-                status = self._defaultValues()['post_status']
-                self.setStudyPostScriptStatus(study_name, status)
-        else:
-            status = "off"
-        return status
-
-
-    def setStudyPostScriptStatus(self, study_name, status):
-        """
-        Put post script status from node with index
-        """
-        self.isOnOff(status)
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        nn = study_node.xmlInitChildNode("postpro")
-        nn['status'] = status
-
-
     def getCompareStatus(self, study_name, idx):
         """
         Get post script status from node with index
@@ -549,56 +521,74 @@ class ManageCasesModel(Model):
         nn['args'] = args
 
 
-    def getPostScriptArgs(self, study_name, idx):
+    def getPostScriptStatus(self, study_name, case_idx):
+        """
+        Get post script status from node with index.
+        """
+        nn = self.__get_post_script_node__(study_name, case_idx)
+        if nn is not None:
+            status = nn['status']
+            if not status:
+                status = self._defaultValues()['post_status']
+                self.setPostScriptStatus(study_name, case_idx, status)
+        else:
+                status = self._defaultValues()['post_status']
+        return status
+
+
+    def setPostScriptStatus(self, study_name, case_idx, status):
+        """
+        Put post script status from node with index
+        """
+        self.isOnOff(status)
+        init = status == 'on'
+        nn = self.__get_post_script_node__(study_name, case_idx, init=init)
+        if nn is not None:
+            nn['status'] = status
+
+
+    def getPostScriptArgs(self, study_name, case_idx):
         """
         Get post script status from node with index
         """
-        self.isInt(idx)
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNodeByIdx("case", idx)
-        nn = node.xmlGetNode("script")
+        nn = self.__get_post_script_node__(study_name, case_idx)
         args = None
-        if nn:
+        if nn is not None:
             args = nn['args']
         if args == None:
             args = ''
         return args
 
 
-    def setPostScriptArgs(self, study_name, idx, args):
+    def setPostScriptArgs(self, study_name, case_idx, args):
         """
         Put post script status from node with index
         """
-        self.isInt(idx)
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNodeByIdx("case", idx)
-        nn = node.xmlInitChildNode("post")
-        nn['args'] = args
+        init = args != ''
+        nn = self.__get_post_script_node__(study_name, case_idx, init=init)
+        if nn is not None:
+            nn['args'] = args
 
 
-    def getPostScriptName(self, study_name, idx):
+    def getPostScriptName(self, study_name, case_idx):
         """
         Get post script status from node with index
         """
-        self.isInt(idx)
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNodeByIdx("case", idx)
-        nn = node.xmlGetNode("script")
+        nn = self.__get_post_script_node__(study_name, case_idx)
         name = ""
-        if nn:
+        if nn is not None:
             name = nn['label']
         return name
 
 
-    def setPostScriptName(self, study_name, idx, name):
+    def setPostScriptName(self, study_name, case_idx, name):
         """
         Put post script status from node with index
         """
-        self.isInt(idx)
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNodeByIdx("case", idx)
-        nn = node.xmlInitChildNode("script")
-        nn['label'] = name
+        init = name != ''
+        nn = self.__get_post_script_node__(study_name, case_idx, init=init)
+        if nn is not None:
+            nn['label'] = name
 
 
     def getPostScriptInput(self, study_name, case_idx):
@@ -607,9 +597,12 @@ class ManageCasesModel(Model):
         """
         self.isInt(case_idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNodeByIdx("case", case_idx)
+        if case_idx > -1:
+            node = study_node.xmlGetNodeByIdx("case", case_idx)
+        else:
+            node = study_node
         inputs = []
-        lst = node.xmlGetNodeList("input")
+        lst = node.xmlGetChildNodeList("input")
         if lst:
             for n in lst:
                 inputs.append(n['file'])
@@ -622,8 +615,11 @@ class ManageCasesModel(Model):
         """
         self.isInt(case_idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNodeByIdx("case", case_idx)
-        lst = node.xmlGetNodeList("input")
+        if case_idx > -1:
+            node = study_node.xmlGetNodeByIdx("case", case_idx)
+        else:
+            node = study_node
+        lst = node.xmlGetChildNodeList("input")
         if lst:
             for n in lst:
                 if name == n['file']:
@@ -638,54 +634,15 @@ class ManageCasesModel(Model):
         """
         self.isInt(case_idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        node = study_node.xmlGetNodeByIdx("case", case_idx)
-        lst = node.xmlGetNodeList("input")
+        if case_idx > -1:
+            node = study_node.xmlGetNodeByIdx("case", case_idx)
+        else:
+            node = study_node
+        lst = node.xmlGetChildNodeList("input")
         if lst:
             for n in lst:
                 if name == n['file']:
                     n.xmlRemoveNode()
-
-
-    def getStudyPostScriptArgs(self, study_name):
-        """
-        Get post script status from node with index
-        """
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        nn = study_node.xmlGetNode("postpro")
-        args = ""
-        if nn:
-            args = nn['args']
-        return args
-
-
-    def setStudyPostScriptArgs(self, study_name, args):
-        """
-        Put post script status from node with index
-        """
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        nn = study_node.xmlInitChildNode("postpro")
-        nn['args'] = args
-
-
-    def getStudyPostScriptName(self, study_name):
-        """
-        Get post script status from node with index
-        """
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        nn = study_node.xmlGetNode("postpro")
-        name = ""
-        if nn:
-            name = nn['label']
-        return name
-
-
-    def setStudyPostScriptName(self, study_name, name):
-        """
-        Put post script status from node with index
-        """
-        study_node = self.case.xmlGetNode('study', label = study_name)
-        nn = study_node.xmlInitChildNode("postpro")
-        nn['label'] = name
 
 
     def getCompareArgs(self, study_name, idx):

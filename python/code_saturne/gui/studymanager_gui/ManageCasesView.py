@@ -527,6 +527,26 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
     #TODO add self.disabledItem.append((row, 3)) pour les noeuds study
 
 
+    def __get_study_and_case_idx__(self):
+        """
+        Get study name and case index based on current selection
+        """
+        current = self.treeViewCases.currentIndex()
+
+        if current == self.treeViewCases.rootIndex():
+            self.pushButtonAdd.setEnabled(False)
+            case_idx = -1
+            study = None
+        elif current.parent() == self.treeViewCases.rootIndex():
+            case_idx = -1
+            study = current.internalPointer().item.name
+        else:
+            case_idx = current.row()
+            study = current.parent().internalPointer().item.name
+
+        return study, case_idx
+
+
     def add_case(self, study):
         """
         public slot
@@ -715,34 +735,18 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.groupBoxInput.hide()
         self.groupBoxCompare.hide()
 
+        study = None
         current = self.treeViewCases.currentIndex()
         idx = current.row()
+
         if current == self.treeViewCases.rootIndex():
             self.pushButtonAdd.setEnabled(False)
         elif current.parent() == self.treeViewCases.rootIndex():
+            idx = -1
+            study = current.internalPointer().item.name
             # study
             self.pushButtonDeleteStudy.setEnabled(True)
-            self.groupBoxPost.show()
-            study = current.internalPointer().item.name
-
-            status = self.mdl.getStudyPostScriptStatus(study)
-            if status == "on":
-                self.checkBoxPost.setChecked(True)
-            else:
-                self.checkBoxPost.setChecked(False)
-
-            script_name = self.mdl.getStudyPostScriptName(study)
-            self.lineEditPost.setText(str(script_name))
-            if status == "on":
-                if script_name != "":
-                    self.pushButtonPost.setStyleSheet("background-color: green")
-                else:
-                    self.pushButtonPost.setStyleSheet("background-color: red")
-            else:
-                self.pushButtonPost.setStyleSheet("background-color: None")
-
-            script_args = self.mdl.getStudyPostScriptArgs(study)
-            self.lineEditPostArgs.setText(str(script_args))
+            idx = -1
         else:
             # case
             self.pushButtonDelete.setEnabled(True)
@@ -760,6 +764,19 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             self.lineEditParametricArgs.setText(str(parametric_args))
             kw_args = self.mdl.getKwArgs(study, idx)
             self.lineEditKwArgs.setText(str(kw_args))
+
+            # compare
+            status = self.mdl.getCompareStatus(study, idx)
+            if status == "on":
+                self.checkBoxCompare.setChecked(True)
+            else:
+                self.checkBoxCompare.setChecked(False)
+            compare_args = self.mdl.getCompareArgs(study, idx)
+            self.lineEditCompareArgs.setText(str(compare_args))
+
+        if study is not None: # Study or case, not root
+            self.groupBoxPost.show()
+            self.groupBoxInput.show()
 
             # post
             status = self.mdl.getPostScriptStatus(study, idx)
@@ -780,21 +797,16 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
 
             script_args = self.mdl.getPostScriptArgs(study, idx)
             self.lineEditPostArgs.setText(str(script_args))
+            if script_name != '':
+                self.lineEditPostArgs.setEnabled(True)
+            else:
+                self.lineEditPostArgs.setEnabled(False)
 
             input_names = self.mdl.getPostScriptInput(study, idx)
             self.listInput.clear()
             if input_names:
                 for name in input_names:
                     self.listInput.addItem(str(name))
-
-            # compare
-            status = self.mdl.getCompareStatus(study, idx)
-            if status == "on":
-                self.checkBoxCompare.setChecked(True)
-            else:
-                self.checkBoxCompare.setChecked(False)
-            compare_args = self.mdl.getCompareArgs(study, idx)
-            self.lineEditCompareArgs.setText(str(compare_args))
 
 
     @pyqtSlot()
@@ -815,29 +827,22 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         """
         """
         current = self.treeViewCases.currentIndex()
-        idx = current.row()
         if current.parent() == self.treeViewCases.rootIndex():
+            idx = -1
             study = current.internalPointer().item.name
-            if self.checkBoxPost.isChecked():
-                self.mdl.setStudyPostScriptStatus(study, "on")
-                if self.mdl.getStudyPostScriptName(study) != "":
-                    self.pushButtonPost.setStyleSheet("background-color: green")
-                else:
-                    self.pushButtonPost.setStyleSheet("background-color: red")
-            else:
-                self.mdl.setStudyPostScriptStatus(study, "off")
-                self.pushButtonPost.setStyleSheet("background-color: None")
         else:
+            idx = current.row()
             study = current.parent().internalPointer().item.name
-            if self.checkBoxPost.isChecked():
-                self.mdl.setPostScriptStatus(study, idx, "on")
-                if self.mdl.getPostScriptName(study, idx) != "":
-                    self.pushButtonPost.setStyleSheet("background-color: green")
-                else:
-                    self.pushButtonPost.setStyleSheet("background-color: red")
+
+        if self.checkBoxPost.isChecked():
+            self.mdl.setPostScriptStatus(study, idx, "on")
+            if self.mdl.getPostScriptName(study, idx) != "":
+                self.pushButtonPost.setStyleSheet("background-color: green")
             else:
-                self.mdl.setPostScriptStatus(study, idx, "off")
-                self.pushButtonPost.setStyleSheet("background-color: None")
+                self.pushButtonPost.setStyleSheet("background-color: red")
+        else:
+            self.mdl.setPostScriptStatus(study, idx, "off")
+            self.pushButtonPost.setStyleSheet("background-color: None")
 
 
     @pyqtSlot(str)
@@ -888,28 +893,17 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
     def slotPostArgs(self, text):
         """
         """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
+        study, idx = self.__get_study_and_case_idx__()
+
         args = str(text)
-        if current.parent() == self.treeViewCases.rootIndex():
-            study = current.internalPointer().item.name
-            self.mdl.setStudyPostScriptArgs(study, args)
-        else:
-            study = current.parent().internalPointer().item.name
-            self.mdl.setPostScriptArgs(study, idx, args)
+        self.mdl.setPostScriptArgs(study, idx, args)
 
 
     def slotPostFile(self):
         """
         public slot
         """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
-        study = ""
-        if current.parent() == self.treeViewCases.rootIndex():
-            study = current.internalPointer().item.name
-        else:
-            study = current.parent().internalPointer().item.name
+        study, idx = self.__get_study_and_case_idx__()
 
         cur_path = os.getcwd()
         base_dir = os.path.abspath(os.path.join(self.mdl.repo, study))
@@ -932,10 +926,8 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             QMessageBox.information(self, title, msg)
         else:
             self.lineEditPost.setText(str(file))
-            if current.parent() == self.treeViewCases.rootIndex():
-                self.mdl.setStudyPostScriptName(study, file)
-            else:
-                self.mdl.setPostScriptName(study, idx, file)
+            self.lineEditPostArgs.setEnabled(True)
+            self.mdl.setPostScriptName(study, idx, file)
         return
 
 
@@ -968,9 +960,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         """
         public slot
         """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
-        study = current.parent().internalPointer().item.name
+        study, idx = self.__get_study_and_case_idx__()
 
         cur_path = os.getcwd()
         base_dir = os.path.abspath(os.path.join(self.mdl.repo, study))
@@ -1001,9 +991,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         """
         public slot
         """
-        current = self.treeViewCases.currentIndex()
-        idx = current.row()
-        study = current.parent().internalPointer().item.name
+        study, idx = self.__get_study_and_case_idx__()
         name = None
 
         try:
