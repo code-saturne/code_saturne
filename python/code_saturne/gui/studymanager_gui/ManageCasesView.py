@@ -475,8 +475,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
         self.treeViewCases.setAlternatingRowColors(True)
-        self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectItems)
-        self.treeViewCases.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.treeViewCases.setSelectionMode(QAbstractItemView.SingleSelection)
         self.treeViewCases.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.treeViewCases.expandAll()
         self.treeViewCases.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -495,8 +494,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.pushButtonAddStudy.clicked.connect(self.slotAddStudy)
         self.pushButtonDeleteStudy.clicked.connect(self.slotDeleteStudy)
         self.toolButtonDuplicate.clicked.connect(self.slotDuplicateCase)
-        self.treeViewCases.clicked.connect(self.slotChangeSelection)
-
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.checkBoxPost.clicked.connect(self.slotPostStatus)
         self.checkBoxCompare.clicked.connect(self.slotCompareStatus)
         self.pushButtonPost.clicked.connect(self.slotPostFile)
@@ -614,11 +612,12 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.add_study()
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
-        self.slotChangeSelection()
+        self.changeSelection()
 
 
     def slotDeleteStudy(self):
@@ -631,11 +630,12 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.mdl.deleteStudy(study)
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
-        self.slotChangeSelection()
+        self.changeSelection()
 
 
     def slotAddCase(self):
@@ -652,11 +652,12 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.add_case(study)
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
-        self.slotChangeSelection()
+        self.changeSelection()
 
 
     def slotDeleteCase(self):
@@ -669,11 +670,12 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.mdl.deleteCase(study, idx)
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
-        self.slotChangeSelection()
+        self.changeSelection()
 
 
     def slotDuplicateCase(self):
@@ -686,14 +688,22 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.mdl.duplicateCase(study, idx)
         self.modelCases = CaseStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewCases.setModel(self.modelCases)
+        self.treeViewCases.selectionModel().selectionChanged.connect(self.slotChangeSelection)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
         self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
-        self.slotChangeSelection()
+        self.changeSelection()
 
 
-    def slotChangeSelection(self):
+    def slotChangeSelection(self, new, old):
+        """
+        slot for change of selection
+        """
+        self.changeSelection()
+
+
+    def changeSelection(self):
         """
         """
         self.pushButtonDelete.setEnabled(False)
