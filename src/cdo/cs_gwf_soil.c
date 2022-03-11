@@ -1069,6 +1069,25 @@ cs_gwf_soil_iso_update_itpf_terms(const cs_real_t        *g_cell_pr,
     const double  wl_diff_coef = mc->l_mass_density* k_abs/mc->l_viscosity;
     const double  hg_diff_coef = k_abs/mc->g_viscosity;
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SOIL_DBG > 0
+    cs_lnum_t c_min_id = 0, c_max_id = 0, c_mid_id = 0;
+
+    if (zone->n_elts > 0) {
+
+      cs_lnum_t c_min_id = zone->n_elts - 1, c_max_id = 0;
+      cs_lnum_t c_mid_id = zone->elt_ids[zone->n_elts/2];
+
+      for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+        const cs_lnum_t  c_id = zone->elt_ids[i];
+        if (c_id < c_min_id) c_min_id = c_id;
+        if (c_id > c_max_id) c_max_id = c_id;
+
+      }
+
+    } /* n_elts > 0 */
+#endif
+
     /* Main loop on cells belonging to this soil */
 
     for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
@@ -1096,6 +1115,31 @@ cs_gwf_soil_iso_update_itpf_terms(const cs_real_t        *g_cell_pr,
 
       mc->diff_hg_array[c_id] = rhog * hg_diff_coef * krg[c_id];
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SOIL_DBG > 0
+      if (c_id == c_min_id || c_id == c_mid_id || c_id == c_max_id) {
+
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "c_id%4d | wl block >> time_pty % 6.4e, diff_pty % 6.4e\n",
+                      c_id, mc->time_wl_array[c_id], mc->diff_wl_array[c_id]);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "         | wg block >> time_pty % 6.4e\n",
+                      mc->time_wg_array[c_id]);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "         | hl block >> time_pty % 6.4e\n",
+                      mc->time_hl_array[c_id]);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "         | hg block >> time_pty % 6.4e, diff_pty % 6.4e\n",
+                      mc->time_hg_array[c_id], mc->diff_hg_array[c_id]);
+#if CS_GWF_SOIL_DBG > 1
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "         | rhog %6.4e, Pg_cell % 6.4e\n",
+                      rhog, g_cell_pr[c_id]);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "         | sl=%6.4e, dsl_dpc=% 6.4e krl=%6.4e krg=%6.4e\n",
+                      sl, dsl_dpc, krl[c_id], krg[c_id]);
+#endif
+      }
+#endif
     } /* Loop on cells of the zone (= soil) */
 
   } /* Loop on soils */
