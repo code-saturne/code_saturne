@@ -666,11 +666,12 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
 
           /* Build the cellwise system */
 
-          rhs_norm += cs_cdovb_scaleq_cw_build_implicit(t_id, c_id, f_val,
-                                                        eqp,
-                                                        eqb,
-                                                        eqc,
-                                                        cb, csys);
+          rhs_norm += cs_cdovb_scaleq_build_block_implicit(t_id, c_id, f_val,
+                                                           i_eq, j_eq,
+                                                           eqp,
+                                                           eqb,
+                                                           eqc,
+                                                           cb, csys);
 
           /* Assembly process
            * ================ */

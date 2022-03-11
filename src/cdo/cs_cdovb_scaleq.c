@@ -1426,12 +1426,19 @@ cs_cdovb_scaleq_init_properties(int                           t_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Build the cell system for the given cell id.
+ * \brief  Build the cell system for the given cell id when the build occurs
+ *         in a coupled system -- block in (row_id, col_id)
  *         Case of scalar-valued CDO-Vb schemes.
+ *
+ *         Warning: Treatment of BCs differs from the "standard" case.
+ *         Up to now, one assumes a Dirichlet or a Neumann for all equations
+ *         (i.e. all blocks) and only an algebraic treatment is performed.
  *
  * \param[in]      t_id      thread id if openMP is used
  * \param[in]      c_id      cell id
  * \param[in]      f_val     current field values
+ * \param[in]      row_id    id related to the row block
+ * \param[in]      col_id    id related to the col block
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in, out] eqb       pointer to a cs_equation_builder_t structure
  * \param[in, out] context   pointer to a scheme context structure
@@ -1443,14 +1450,16 @@ cs_cdovb_scaleq_init_properties(int                           t_id,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdovb_scaleq_cw_build_implicit(int                           t_id,
-                                  cs_lnum_t                     c_id,
-                                  const cs_real_t               f_val[],
-                                  const cs_equation_param_t    *eqp,
-                                  cs_equation_builder_t        *eqb,
-                                  void                         *context,
-                                  cs_cell_builder_t            *cb,
-                                  cs_cell_sys_t                *csys)
+cs_cdovb_scaleq_build_block_implicit(int                           t_id,
+                                     cs_lnum_t                     c_id,
+                                     const cs_real_t               f_val[],
+                                     int                           row_id,
+                                     int                           col_id,
+                                     const cs_equation_param_t    *eqp,
+                                     cs_equation_builder_t        *eqb,
+                                     void                         *context,
+                                     cs_cell_builder_t            *cb,
+                                     cs_cell_sys_t                *csys)
 {
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -1522,10 +1531,6 @@ cs_cdovb_scaleq_cw_build_implicit(int                           t_id,
 
   } /* End of term source */
 
-  /* Apply boundary conditions (those which are weakly enforced) */
-
-  _svb_apply_weak_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
-
   /* Unsteady term + time scheme
    * =========================== */
 
@@ -1588,20 +1593,47 @@ cs_cdovb_scaleq_cw_build_implicit(int                           t_id,
     cs_cell_sys_dump("\n>> Cell system after time", csys);
 #endif
 
-  /* Enforce values if needed (internal or Dirichlet) */
-
-  _svb_enforce_values(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
-  if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
-#endif
-
-  /* Compute a norm of the RHS for the normalization of the residual
-     of the linear system to solve */
+  /* Compute a norm of the RHS for the normalization of the residual of the
+     linear system to solve. This is done before applying BCs to not take into
+     account it. */
 
   double  rhs_norm = _svb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
                                                cm, csys);
+
+  /* Algebraic enforcement of Dirichlet boundary values if needed */
+
+  if (cs_cell_has_boundary_elements(cb) && csys->has_dirichlet) {
+
+    /* csys is updated inside (matrix and rhs) */
+
+    if (row_id == col_id)     /* Diagonal block */
+      cs_cdo_diffusion_alge_dirichlet(eqp, cm, fm, diff_hodge, cb, csys);
+
+    else { /* Extra-diagonal block: reset rows with Dirichlet BCs */
+
+      for (short int i = 0; i < csys->n_dofs; i++) {
+
+        if (cs_cdo_bc_is_dirichlet(csys->dof_flag[i])) {
+
+          /* Reset row and column and then the RHS related to this DoF */
+
+          memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
+          for (short int j = 0; j < csys->n_dofs; j++)
+            csys->mat->val[i + csys->n_dofs*j] = 0;
+          csys->rhs[i] = 0.;
+
+        }
+
+      } /* Loop on DoFs */
+
+    } /* Extra-diagonal block */
+
+  } /* BC treatment */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    cs_cell_sys_dump(">> (END ScalVb) Cell system matrix", csys);
+#endif
 
   /* End build */
   /* --------- */
