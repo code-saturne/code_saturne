@@ -775,7 +775,7 @@ _svb_nitsche(const double              pcoef,
              cs_sdm_t                 *ntrgrd,
              cs_cell_sys_t            *csys)
 {
-  assert(pcoef > 0);
+  assert(pcoef >= 0);
   assert(csys->mat->n_rows == ntrgrd->n_rows);
 
   /* Update local RHS and system */
