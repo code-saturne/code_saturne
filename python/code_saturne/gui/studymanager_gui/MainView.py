@@ -828,10 +828,6 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         self.Browser = BrowserView(self)
         self.ui_initialize()
 
-        self.displayCSManualAction.triggered.connect(self.displayCSManual)
-        self.displayCSTutorialAction.triggered.connect(self.displayCSTutorial)
-        self.displayCSTheoryAction.triggered.connect(self.displayCSTheory)
-        self.displayCSRefcardAction.triggered.connect(self.displayCSRefcard)
         self.displayCSDoxygenAction.triggered.connect(self.displayCSDoxygen)
 
         docdir = self.package.get_dir('docdir')
@@ -840,15 +836,8 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         else:
             liste = []
 
-        if 'user.pdf' not in liste:
-            self.displayCSManualAction.setEnabled(False)
-        if 'theory.pdf' not in liste:
-            self.displayCSTheoryAction.setEnabled(False)
-        if 'refcard.pdf' not in liste:
-            self.displayCSRefcardAction.setEnabled(False)
         if 'doxygen' not in liste:
             self.displayCSDoxygenAction.setEnabled(False)
-        self.displayNCManualAction.setVisible(False)
 
 
     def initCase(self):
@@ -868,50 +857,6 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
             QMessageBox.warning(self, self.package.name + ' study manager',
                                 msg)
             smgr_init.convertPreproNodes()
-
-
-    def displayCSManual(self):
-        """
-        public slot
-
-        open the user manual
-        """
-        self.displayManual(self.package, 'user')
-
-
-    def displayCSTutorial(self):
-        """
-        public slot
-
-        open the tutorial for code_saturne
-        """
-        msg = "See " + self.package.url + " web site for tutorials."
-        QMessageBox.about(self, self.package.code_name + ' study manager', msg)
-
-
-    def displayCSTheory(self):
-        """
-        public slot
-
-        open the theory and programmer's guide
-        """
-        self.displayManual(self.package, 'theory')
-
-    def displayCSSmgr(self):
-        """
-        public slot
-
-        open the studymanager guide
-        """
-        self.displayManual(self.package, 'studymanager')
-
-    def displayCSRefcard(self):
-        """
-        public slot
-
-        open the quick reference card for code_saturne
-        """
-        self.displayManual(self.package, 'refcard')
 
 
     def displayCSDoxygen(self):
