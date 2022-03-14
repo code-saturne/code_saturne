@@ -155,7 +155,7 @@ _set_scalar_slave_assembly_func(void)
 /*----------------------------------------------------------------------------*/
 
 static inline cs_cdo_assembly_func_t *
-_set_block33_assembly_func(void)
+_set_eblock33_assembly_func(void)
 {
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {  /* Parallel */
@@ -174,6 +174,41 @@ _set_block33_assembly_func(void)
       return cs_cdo_assembly_eblock33_matrix_seqs;
     else                      /* With OpenMP */
       return cs_cdo_assembly_eblock33_matrix_seqt;
+
+  }
+
+  return NULL; /* Case not handled */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Choose which function will be used to perform the matrix assembly
+ *         Case of block 3x3 matrices.
+ *
+ * \return  a pointer to a function
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_cdo_assembly_func_t *
+_set_block33_assembly_func(void)
+{
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {  /* Parallel */
+
+    if (cs_glob_n_threads < 2) /* Without OpenMP */
+      return cs_cdo_assembly_block33_matrix_mpis;
+    else                      /* With OpenMP */
+      return cs_cdo_assembly_block33_matrix_mpit;
+
+  }
+#endif /* defined(HAVE_MPI) */
+
+  if (cs_glob_n_ranks <= 1) {  /* Sequential */
+
+    if (cs_glob_n_threads < 2) /* Without OpenMP */
+      return cs_cdo_assembly_block33_matrix_seqs;
+    else                      /* With OpenMP */
+      return cs_cdo_assembly_block33_matrix_seqt;
 
   }
 
@@ -257,8 +292,12 @@ _assign_assembly_func(const cs_cdo_system_block_info_t   bi)
 {
   if (bi.stride == 1)  /* Assemble a cell system with 1 DoF by element */
     return _set_scalar_assembly_func();
-  else if (bi.stride == 3)
-    return _set_block33_assembly_func();
+  else if (bi.stride == 3) {
+    if (bi.unrolled)
+      return _set_eblock33_assembly_func();
+    else
+      return _set_block33_assembly_func();
+  }
   else
     return _set_block_assembly_func();
 }
@@ -308,6 +347,13 @@ _assign_ifs_rset(bool                               forced,
 
           db->interface_set = NULL;
           db->range_set = NULL;
+
+        }
+
+        if (!bi.unrolled) {
+
+            db->interface_set = scal_ifs;
+            db->range_set = scal_rset;
 
         }
 
@@ -721,10 +767,17 @@ _assign_ma_ms(bool                           forced,
         /* Define the matrix assembler */
 
         cs_matrix_assembler_t  *ma = NULL;
-        if (bi.interlaced)
-          ma = _build_interlaced_ma(bi.stride, x2x, db->range_set);
+
+        if (bi.unrolled) {
+
+          if (bi.interlaced)
+            ma = _build_interlaced_ma(bi.stride, x2x, db->range_set);
+          else
+            ma = _build_no_interlaced_ma(bi.stride, x2x, db->range_set);
+
+        }
         else
-          ma = _build_no_interlaced_ma(bi.stride, x2x, db->range_set);
+          ma = _build_interlaced_ma(1, x2x, db->range_set);
 
         db->matrix_assembler = ma;
 
@@ -857,7 +910,7 @@ _free_block(cs_cdo_system_block_t   **p_block)
         cs_matrix_assembler_destroy(&(db->matrix_assembler));
         cs_matrix_structure_destroy(&(db->matrix_structure));
 
-        if (b->info.stride > 1) {
+        if (b->info.stride > 1 && b->info.unrolled) {
           cs_range_set_destroy(&(db->range_set));
           cs_interface_set_destroy(&(db->interface_set));
         }
@@ -1777,7 +1830,25 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
                     "%s: Matrix assembler values has not been finalized.\n",
                     __func__);
 
-        db->mav = cs_matrix_assembler_values_init(db->matrix, NULL, NULL);
+        cs_lnum_t db_size[4] = {1, 1, 1, 1};
+        cs_lnum_t eb_size[4] = {1, 1, 1, 1};
+
+        if (!b->info.unrolled) {
+
+          cs_lnum_t stride = b->info.stride;
+          db_size[0] = stride;
+          db_size[1] = stride;
+          db_size[2] = stride;
+          db_size[3] = stride*stride;
+
+          eb_size[0] = stride;
+          eb_size[1] = stride;
+          eb_size[2] = stride;
+          eb_size[3] = stride*stride;
+
+        }
+
+        db->mav = cs_matrix_assembler_values_init(db->matrix, db_size, eb_size);
       }
       break;
 

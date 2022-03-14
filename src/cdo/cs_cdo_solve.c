@@ -208,9 +208,13 @@ cs_cdo_solve_prepare_system(int                     stride,
        Other contributions from distant ranks may contribute to an element
        owned by the local rank */
 
+    /* TODO the system is presumed to have interlaced = true for vector
+     * equations. No difference for scalar equations. Maybe its value
+     * could be passed into by the caller of this function */
+
     if (rhs_redux && rset->ifs != NULL)
       cs_interface_set_sum(rset->ifs,
-                           n_scatter_elts, stride, false, CS_REAL_TYPE,
+                           n_scatter_elts, stride, true, CS_REAL_TYPE,
                            b);
 
     cs_range_set_gather(rset,
@@ -426,6 +430,109 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
 
   return (sinfo.n_it);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve a linear system arising from CDO schemes with vector-valued
+ *         degrees of freedom
+ *
+ * \param[in]  n_scatter_dofs local number of DoFs (may be != n_gather_elts)
+ * \param[in]  slesp          pointer to a cs_param_sles_t structure
+ * \param[in]  matrix         pointer to a cs_matrix_t structure
+ * \param[in]  rs             pointer to a cs_range_set_t structure
+ * \param[in]  normalization  value used for the residual normalization
+ * \param[in]  rhs_redux      do or not a parallel sum reduction on the RHS
+ * \param[in, out] sles       pointer to a cs_sles_t structure
+ * \param[in, out] x          solution of the linear system (in: initial guess)
+ * \param[in, out] b          right-hand side (scatter/gather if needed)
+ *
+ * \return the number of iterations of the linear solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
+                           const cs_param_sles_t        *slesp,
+                           const cs_matrix_t            *matrix,
+                           const cs_range_set_t         *rset,
+                           cs_real_t                     normalization,
+                           bool                          rhs_redux,
+                           cs_sles_t                    *sles,
+                           cs_real_t                    *x,
+                           cs_real_t                    *b)
+{
+  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(matrix);
+
+  /* Set xsol */
+
+  cs_real_t  *xsol = NULL;
+  if (n_cols > n_rows) {
+    assert(cs_glob_n_ranks > 1);
+    BFT_MALLOC(xsol, 3*n_cols, cs_real_t);
+    memcpy(xsol, x, n_scatter_dofs*sizeof(cs_real_t));
+  }
+  else
+    xsol = x;
+
+  /* Retrieve the solving info structure stored in the cs_field_t structure */
+
+  cs_field_t  *fld = cs_field_by_id(slesp->field_id);
+  cs_solving_info_t  sinfo;
+  cs_field_get_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  sinfo.n_it = 0;
+  sinfo.res_norm = DBL_MAX;
+  sinfo.rhs_norm = normalization;
+
+  /* Prepare solving (handle parallelism)
+   * stride = 3 for vector-valued */
+
+  cs_cdo_solve_prepare_system(3, n_scatter_dofs/3, matrix, rset, rhs_redux,
+                              xsol, b);
+
+  /* Solve the linear solver */
+
+  cs_sles_convergence_state_t  code = cs_sles_solve(sles,
+                                                    matrix,
+                                                    slesp->eps,
+                                                    sinfo.rhs_norm,
+                                                    &(sinfo.n_it),
+                                                    &(sinfo.res_norm),
+                                                    b,
+                                                    xsol,
+                                                    0,      /* aux. size */
+                                                    NULL);  /* aux. buffers */
+
+  /* Output information about the convergence of the resolution */
+
+  if (slesp->verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d>"
+                  " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
+                  slesp->name, code,
+                  sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
+
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE, 3, /* type and stride */
+                       xsol, x);
+  cs_range_set_scatter(rset,
+                       CS_REAL_TYPE, 3, /* type and stride */
+                       b, b);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_SOLVE_DBG > 1
+  cs_dbg_fprintf_system(slesp->name, cs_cdo_solve_dbg_counter++,
+                        slesp->verbosity,
+                        x, b, n_scatter_dofs);
+#endif
+
+  if (n_cols > n_rows)
+    BFT_FREE(xsol);
+
+  cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
+
+  return (sinfo.n_it);
+}
+
 
 /*----------------------------------------------------------------------------*/
 
