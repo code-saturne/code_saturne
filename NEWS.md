@@ -49,6 +49,11 @@ Bug fixes:
 - Fix logging of compilation messages, which appeared in the
   calling terminal instead of `compile.log`.
 
+User changes:
+
+- Major changes to the studymanager GUI tool, which is now more complete
+  and especially more robust.
+
 Release 7.1.0 (December 21 2021)
 --------------------------------
 
