@@ -297,12 +297,7 @@
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ivolf2), cvar_voidf) | CS_F_(void_f)->val  | Void fraction for Volume of Fluid model
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ik  ), cvar_k  )     | CS_F_(k)->val       | Turbulent kinetic energy \f$ k \f$
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref iep ), cvar_eps)     | CS_F_(eps)->val     | Turbulent dissipation \f$ \varepsilon \f$
-  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ir11), cvar_r11)     | CS_F_(r11)->val     | Reynolds stress component \f$ R_{xx} \f$
-  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ir22), cvar_r22)     | CS_F_(r22)->val     | Reynolds stress component \f$ R_{yy} \f$
-  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ir33), cvar_r33)     | CS_F_(r33)->val     | Reynolds stress component \f$ R_{zz} \f$
-  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ir12), cvar_r12)     | CS_F_(r12)->val     | Reynolds stress component \f$ R_{xy} \f$
-  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ir23), cvar_r23)     | CS_F_(r23)->val     | Reynolds stress component \f$ R_{yz} \f$
-  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ir13), cvar_r13)     | CS_F_(r13)->val     | Reynolds stress component \f$ R_{xz} \f$
+  call \ref field::field_get_val_v "field_get_val_v"(ivarfl(\ref irij), cvar_rij)     | CS_F_(rij)->val     | Reynolds stress tensor \f$ R \f$ (symmetric \f$ R_{ij} \f$ components, in the following order for each cell: xx, yy, zz, xy, yz, xz)
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref iphi), cvar_phi)     | CS_F_(phi)->val     | \f$ \phi \f$ for \f$ \phi-f_b \f$ model
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ifb ), cvar_fb )     | CS_F_(f_bar)->val   | \f$ f_b \f$ for \f$ \phi-f_b \f$ model
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ial ), cvar_al )     | CS_F_(alp_bl)->val  | \f$ \alpha \f$ for \f$ Bl-v^2-k \f$ \n or EBRSM model
