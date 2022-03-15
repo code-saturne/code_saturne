@@ -14,10 +14,6 @@
   <property name="windowTitle">
    <string>code_saturne</string>
   </property>
-  <property name="windowIcon">
-   <iconset resource="resource_base.qrc">
-    <normaloff>:/icons/22x22/logo_salome_cfd.png</normaloff>:/icons/22x22/logo_salome_cfd.png</iconset>
-  </property>
   <property name="dockOptions">
    <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks</set>
   </property>

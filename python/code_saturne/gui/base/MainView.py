@@ -862,6 +862,7 @@ class MainView(object):
         if hasattr(self, 'case'):
             module_name = self.case.module_name()
 
+        print(icondir+"logo_salome_cfd.png")
         icon = QIcon(QPixmap(icondir+"logo_salome_cfd.png"))
         self.setWindowIcon(icon)
         self.setWindowTitle(title)

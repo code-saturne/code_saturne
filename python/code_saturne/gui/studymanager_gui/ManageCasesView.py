@@ -1071,31 +1071,6 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         return
 
 
-    def slotClickPostScript(self):
-        """
-        public slot
-        """
-        idx = self.table.currentRow();
-        self.tableClickOn -= 1
-        if self.tableClickOn < 0:
-            self.tableClickOn = 1
-        if idx > -1:
-            if self.tableClickOn == 1:
-                self.table.setCurrentRow(-1)
-
-
-    def slotSelectPostScriptRow(self, current, previous):
-        """
-        public slot
-        """
-        if self.table.currentRow() > -1:
-            self.pushButtonRemovePostScript.setEnabled(True)
-            self.tableClickOn = 3
-        else:
-            self.pushButtonRemovePostScript.setEnabled(False)
-            self.tableClickOn = 0
-
-
     def slotAddPostScriptFile(self):
         """
         public slot

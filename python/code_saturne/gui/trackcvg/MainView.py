@@ -551,11 +551,11 @@ class MainView(object):
         MainView.Instances.add(self)
 
         iconpath = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
-        iconpath = os.path.join(iconpath, "Base", "logo_salome_cfd.png")
+        iconpath = os.path.join(iconpath, "base", "logo_salome_cfd.png")
         icon = QIcon(QPixmap(iconpath))
         self.setWindowIcon(icon)
 
-        self.setWindowTitle(self.package.code_name + " convergence plot" + " - " + self.package.version)
+        self.setWindowTitle(self.package.name + " convergence plot" + " - " + self.package.version)
 
         # Validator
         validator = DoubleValidator(self.lineEditTime, min=0.0)
@@ -745,7 +745,7 @@ class MainView(object):
          - version
          - contact
         """
-        msg = self.package.code_name + "\n"                 +\
+        msg = self.package.name + "\n"                      +\
               "version " + self.package.version + "\n\n"    +\
               "For information about this application "     +\
               "please contact:\n\n"                         +\
@@ -761,7 +761,7 @@ class MainView(object):
 
         GNU GPL license dialog window
         """
-        QMessageBox.about(self, self.package.code_name + ' convergence plot',
+        QMessageBox.about(self, self.package.name + ' convergence plot',
                           cs_info.licence_text)
 
 
@@ -771,7 +771,7 @@ class MainView(object):
 
         configuration information window
         """
-        QMessageBox.about(self, self.package.code_name + ' convergence plot',
+        QMessageBox.about(self, self.package.name + ' convergence plot',
                           "see config.py")
 
 

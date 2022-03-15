@@ -116,11 +116,12 @@ class MainView(object):
         MainView.Instances.add(self)
 
         iconpath = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
-        iconpath = os.path.join(iconpath, "Base", "logo_salome_cfd.png")
+        print(iconpath)
+        iconpath = os.path.join(iconpath, "base", "logo_salome_cfd.png")
         icon = QIcon(QPixmap(iconpath))
         self.setWindowIcon(icon)
 
-        self.setWindowTitle(self.package.code_name + " studymanager")
+        self.setWindowTitle(self.package.name + " studymanager")
 
         self.dockWidgetBrowser.setWidget(self.Browser)
 
@@ -395,7 +396,7 @@ class MainView(object):
             self.initCase()
 
             title = self.tr("New parameters set") + \
-                     " - " + self.tr(self.package.code_name) + self.tr(" studymanager")
+                     " - " + self.tr(self.package.name) + self.tr(" studymanager")
             self.setWindowTitle(title)
 
             self.Browser.configureTree(self.case)
@@ -517,7 +518,7 @@ class MainView(object):
 
         # Update the case and the StudyIdBar
         self.case['xmlfile'] = file_name
-        title = fn + " - " + self.tr(self.package.code_name) + self.tr(" STUDYMANAGER GUI") \
+        title = fn + " - " + self.tr(self.package.name) + self.tr(" STUDYMANAGER GUI") \
                    + " - " + self.package.version
         self.setWindowTitle(title)
 

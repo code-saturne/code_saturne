@@ -161,7 +161,8 @@ def main(argv, pkg):
     app = QApplication(sys.argv)
     app.setOrganizationName(pkg.code_name) # Defines the name of subdirectory under .config
     app.setOrganizationDomain(pkg.url)
-    app.setApplicationName("gui") # Defines the name of the configuration file
+    app.setApplicationName(pkg.name)
+    #app.setApplicationName("code_saturne") # Defines the name of the configuration file
     #app.setWindowIcon(QIcon(":/icon.png"))
     app.lastWindowClosed.connect(app.quit)
 
@@ -179,7 +180,7 @@ def main(argv, pkg):
         app.setOverrideCursor(QCursor(Qt.WaitCursor))
         pixmap = QPixmap('%s/splashscreen.png' % images_path)
         splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
-        splash.setMask(pixmap.mask()) # this is useful if the splashscreen is not a regular ractangle...
+        splash.setMask(pixmap.mask()) # this is useful if the splashscreen is not a regular rectangle...
         splash.show()
         if pkg.name == 'neptune_cfd':
             splash.showMessage("%(name)s %(vers)s starting..." \
