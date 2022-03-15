@@ -1144,12 +1144,15 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
                                    &col_block_size,  /* col_block_size */
                                    1);               /* n_blocks */
 
+  bool is_unrolled = (eqp->sles_param->solver_class
+                      == CS_PARAM_SLES_CLASS_CS) ? false:true;
+
   cs_cdo_system_add_dblock(sh, 0,  /* block_id */
                            cs_flag_primal_vtx,
                            n_vertices,
                            3,      /* stride */
                            true,   /* interlaced */
-                           true);  /* unrolled */
+                           is_unrolled);  /* unrolled */
 
   cs_cdo_system_build_block(sh, 0); /* block_id */
 
@@ -1512,15 +1515,31 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
   cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
 
-  cs_cdo_solve_scalar_system(eqc->n_dofs, /* 3*n_vertices */
-                             eqp->sles_param,
-                             matrix,
-                             range_set,
-                             rhs_norm,
-                             true, /* rhs_redux */
-                             sles,
-                             fld->val,
-                             rhs);
+  if (sh->blocks[0]->info.unrolled) {
+
+    cs_cdo_solve_scalar_system(eqc->n_dofs, /* 3*n_vertices */
+                               eqp->sles_param,
+                               matrix,
+                               range_set,
+                               rhs_norm,
+                               true, /* rhs_redux */
+                               sles,
+                               fld->val,
+                               rhs);
+  }
+  else {
+
+    cs_cdo_solve_vector_system(eqc->n_dofs, /* 3*n_vertices */
+                               eqp->sles_param,
+                               matrix,
+                               range_set,
+                               rhs_norm,
+                               true, /* rhs_redux */
+                               sles,
+                               fld->val,
+                               rhs);
+
+  }
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
