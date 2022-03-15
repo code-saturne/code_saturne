@@ -79,32 +79,22 @@ class ManageCasesModel(Model):
         return default
 
 
-    def __get_post_script_node__(self, study_name, case_idx, init=False):
+    def __get_post_script_node__(self, study_name, case_idx, script_idx):
         """
-        Get postprocessing script node.
+        Get post script node for a given script index.
+        This assumes we are sure the node ies present.
         """
-        # In case of multiple matching nodes, we only
-        # handle the first (this should be improved using
-        # an additional level, but the view needs to be adapted also).
 
         self.isInt(case_idx)
+        self.isInt(script_idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
-        nn = None
+        nl = None
         if case_idx > -1:
             node = study_node.xmlGetNodeByIdx("case", case_idx)
             nl = node.xmlGetChildNodeList("script")
-            if len(nl) > 0:
-                nn = nl[0]
-            elif init:
-                nn = node.xmlInitChildNode("script")
         else:
             nl = study_node.xmlGetChildNodeList("postpro")
-            if len(nl) > 0:
-                nn = nl[0]
-            elif init:
-                nn = study_node.xmlInitChildNode("postpro")
-
-        return nn
+        return nl[script_idx]
 
 
     def getCaseList(self, name):
@@ -521,77 +511,86 @@ class ManageCasesModel(Model):
         nn['args'] = args
 
 
-    def getPostScriptStatus(self, study_name, case_idx):
+    def getPostScripts(self, study_name, case_idx):
         """
-        Get post script status from node with index.
+        Get list of postprocessing scripts for a given study or case/run_id.
         """
-        nn = self.__get_post_script_node__(study_name, case_idx)
-        if nn is not None:
-            status = nn['status']
-            if not status:
-                status = self._defaultValues()['post_status']
-                self.setPostScriptStatus(study_name, case_idx, status)
+
+        ps_list = []
+        if study_name is None or study_name == '':
+            return ps_list
+
+        self.isInt(case_idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        nl = None
+        if case_idx > -1:
+            node = study_node.xmlGetNodeByIdx("case", case_idx)
+            nl = node.xmlGetChildNodeList("script")
         else:
-                status = self._defaultValues()['post_status']
-        return status
+            nl = study_node.xmlGetChildNodeList("postpro")
+        if nl:
+            for n in nl:
+                script = n['label']
+                args = n['args']
+                status = n['status']
+                if script == None:
+                    continue
+                if args == None:
+                    args =''
+                if status == None:
+                    status = 'on'
+                ps_list.append([script, args, status])
+
+        return ps_list
 
 
-    def setPostScriptStatus(self, study_name, case_idx, status):
+    def setPostScriptStatus(self, study_name, case_idx, script_idx, status):
         """
-        Put post script status from node with index
+        Set post script status from node with index
         """
         self.isOnOff(status)
-        init = status == 'on'
-        nn = self.__get_post_script_node__(study_name, case_idx, init=init)
-        if nn is not None:
-            nn['status'] = status
+
+        nn = self.__get_post_script_node__(study_name, case_idx, script_idx)
+        nn['status'] = status
 
 
-    def getPostScriptArgs(self, study_name, case_idx):
-        """
-        Get post script status from node with index
-        """
-        nn = self.__get_post_script_node__(study_name, case_idx)
-        args = None
-        if nn is not None:
-            args = nn['args']
-        if args == None:
-            args = ''
-        return args
-
-
-    def setPostScriptArgs(self, study_name, case_idx, args):
+    def setPostScriptArgs(self, study_name, case_idx, script_idx, args):
         """
         Put post script status from node with index
         """
-        init = args != ''
-        nn = self.__get_post_script_node__(study_name, case_idx, init=init)
-        if nn is not None:
-            nn['args'] = args
+
+        nn = self.__get_post_script_node__(study_name, case_idx, script_idx)
+        nn['args'] = args
 
 
-    def getPostScriptName(self, study_name, case_idx):
-        """
-        Get post script status from node with index
-        """
-        nn = self.__get_post_script_node__(study_name, case_idx)
-        name = ""
-        if nn is not None:
-            name = nn['label']
-        return name
-
-
-    def setPostScriptName(self, study_name, case_idx, name):
+    def addPostScript(self, study_name, case_idx, label):
         """
         Put post script status from node with index
         """
-        init = name != ''
-        nn = self.__get_post_script_node__(study_name, case_idx, init=init)
-        if nn is not None:
-            nn['label'] = name
+
+        self.isInt(case_idx)
+        study_node = self.case.xmlGetNode('study', label = study_name)
+        nl = None
+        if case_idx > -1:
+            node = study_node.xmlGetNodeByIdx("case", case_idx)
+            nn = node.xmlInitNode("script", label=label, args='',
+                                  status='on', idx=-1)
+        else:
+            nn = study_node.xmlInitNode("postpro", label=label, args='',
+                                        status='on', idx=-1)
+        del(nn['idx'])
 
 
-    def getPostScriptInput(self, study_name, case_idx):
+    def removePostScript(self, study_name, case_idx, script_idx):
+        """
+        Remove post script
+        """
+
+        nn = self.__get_post_script_node__(study_name, case_idx, script_idx)
+        nn.xmlRemoveNode()
+
+
+    def getPostInput(self, study_name, case_idx):
         """
         Get post script status from node with index
         """
@@ -609,7 +608,7 @@ class ManageCasesModel(Model):
         return inputs
 
 
-    def addPostScriptInput(self, study_name, case_idx, name):
+    def addPostInput(self, study_name, case_idx, name):
         """
         Put post script status from node with index
         """
@@ -628,7 +627,7 @@ class ManageCasesModel(Model):
         return True
 
 
-    def removePostScriptInput(self, study_name, case_idx, name):
+    def removePostInput(self, study_name, case_idx, name):
         """
         Put post script status from node with index
         """
