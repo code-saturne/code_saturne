@@ -130,7 +130,7 @@ Examples
   ```
 - run cases tagged "coarse" (standing for coarse mesh for example) _and_ "hr"
   (standing for high Reynolds for example) only for 2 time iterations in
-  destination directory of path `../RUNS/RIBS` (`RIBS} will be created, `RUNS`
+  destination directory of path `../RUNS/RIBS` (`RIBS`} will be created, `RUNS`
   already exists). The command is launched from inside the study directory, so
   the repository containing the original study is simply indicated by `..`
   ```
@@ -544,7 +544,7 @@ In the parameters file, curves are defined with two markups:
       omitted: `repo=""` or `dest=""`, and it will be completed automatically.
 
 The `file` attribute is mandatory, and either `repo` or `dest` must be present
-(but not the both), even if they are empty.
+(but not both), even if they are empty.
 
 - `<plot>`: child of markup `<data>`, defines a single curve;
   the attributes are:
@@ -813,7 +813,7 @@ The attributes of `<input>` are:
     omitted: with `repo=""` or `dest=""`, the id will be completed automatically.
 
 The `file` attribute is mandatory, and either `repo` or `dest` must be present
-(but not the both) even if it is empty.
+(but not both) even if it is empty.
 
 Output and restart {#sec_smgr_restart}
 ==================

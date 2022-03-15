@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Major changes to the studymanager GUI tool, which is now more complete
+  and especially more robust.
+
 - Replace `ussmag` Fortran user-defined subroutine with
   `cs_user_physical_properties_smagorinsky_c` C function.
 
