@@ -241,10 +241,13 @@ class Case(object):
         for fn in os.listdir(os.path.join(self.__repo, subdir, "DATA")):
             fp = os.path.join(self.__repo, subdir, "DATA", fn)
             if os.path.isfile(fp):
-                fd = os.open(fp , os.O_RDONLY)
-                f = os.fdopen(fd)
-                l = f.readline()
-                f.close()
+                try:
+                    fd = os.open(fp , os.O_RDONLY)
+                    f = os.fdopen(fd)
+                    l = f.readline()
+                    f.close()
+                except Exception:
+                    continue
                 xml_type = None
                 if l.startswith('''<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI'''):
                     xml_type = 'code_saturne'

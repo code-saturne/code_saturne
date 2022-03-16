@@ -3,6 +3,9 @@ Release 7.0.4 (not released yet)
 
 Bug fixes:
 
+- Studymanager: fix crash on XML updtate when case DATA folders contain
+  binary files.
+
 - GUI: fix crash on computation launch when a turbulence inlet formula
   was defined and the turbulence model was later switched to LES.
 
