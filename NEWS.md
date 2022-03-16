@@ -3,7 +3,11 @@ Release 7.0.4 (not released yet)
 
 Bug fixes:
 
-- Atmo: fix bug in chemistry.
+- Fix propagation of groups in some parallel mesh extrusion
+  configurations (when the extruded face and adjacent boundary face
+  carrying the mesh group info are not on the same rank).
+
+- Atmospheric module: fix bug in chemistry.
 
 - GUI and scripts: fix crash for Syrthes coupling when at least one
   user scalar (specie, variance) is defined.
@@ -11,7 +15,7 @@ Bug fixes:
 - Probes and profiles: fix possible location error on hybrid meshes
   depending on order of appearance of cell types.
 
-- GUI: correct resetting of LMO in atmospheric page
+- GUI: correct resetting of LMO in atmospheric page.
 
 User changes:
 
