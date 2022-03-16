@@ -3433,6 +3433,22 @@ module cs_c_bindings
       integer(c_int), intent(in), value :: ncel, iclip
     end subroutine clipke
 
+    !---------------------------------------------------------------------------
+
+    !> \brief Solving the equation on alpha in the framwork of the Rij-EBRSM model.
+    !>        Also called for alpha of scalars for EB-DFM.
+
+    !> \param[in]     f_id          field id of alpha variable
+    !> \param[in]     c_durbin_l    constant for the Durbin length
+
+    subroutine cs_turbulence_rij_alpha(f_id, c_durbin_l ) &
+      bind(C, name='cs_turbulence_rij_alpha')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: f_id
+      real(c_double), intent(in), value :: c_durbin_l
+    end subroutine cs_turbulence_rij_alpha
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

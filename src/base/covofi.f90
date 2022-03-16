@@ -1066,7 +1066,7 @@ if (vcopt%idiff.ge.1) then
       ! Index of the corresponding turbulent flux
       call field_get_id(trim(fname)//'_alpha', f_id)
 
-      call resalp(f_id, xclt)
+      call cs_turbulence_rij_alpha(f_id, xclt)
     endif
 
     call divrit &

@@ -1,5 +1,5 @@
-#ifndef __CS_TURBUBELNCE_KE_H__
-#define __CS_TURBUBELNCE_KE_H__
+#ifndef __CS_TURBULENCE_KE_H__
+#define __CS_TURBULENCE_KE_H__
 
 /*============================================================================
  * k-epsilon turbulence model.
@@ -98,4 +98,4 @@ cs_turbulence_ke_q_mu_t(void);
 
 END_C_DECLS
 
-#endif /* __CS_TURBUBELNCE_KE_H__ */
+#endif /* __CS_TURBULENCE_KE_H__ */

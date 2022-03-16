@@ -1337,7 +1337,7 @@ if (iccvfg.eq.0) then
     ! Compute Alpha for EBRSM
     if (iturb.eq.32) then
 
-      call resalp(ivarfl(ial), xcl)
+      call cs_turbulence_rij_alpha(ivarfl(ial), xcl)
 
     endif
 

@@ -79,6 +79,7 @@ cs_turbulence_ke.h \
 cs_turbulence_kw.h \
 cs_turbulence_ml.h \
 cs_turbulence_model.h \
+cs_turbulence_rij.h \
 cs_turbulence_sa.h \
 cs_turbulence_v2f.h \
 cs_turbulence_headers.h
@@ -98,14 +99,13 @@ cs_turbulence_ke.c \
 cs_turbulence_kw.c \
 cs_turbulence_ml.c \
 cs_turbulence_model.c \
+cs_turbulence_rij.c \
 cs_turbulence_rotation.c \
 cs_turbulence_sa.c \
 cs_turbulence_v2f.c \
-clpalp.f90 \
 clprij.f90 \
 cnlevm.f90 \
 divrit.f90 \
-resalp.f90 \
 reseps.f90 \
 resrij.f90 \
 resrij2.f90 \
