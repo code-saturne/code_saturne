@@ -1,3 +1,11 @@
+Release 7.1.2 (not released yet)
+--------------------------------
+
+Bug fixes:
+
+- Studymanager: fix crash on XML updtate when case DATA folders contain
+  binary files.
+
 Release 7.1.1 (March 16 2022)
 -----------------------------
 
