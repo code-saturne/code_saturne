@@ -3,6 +3,10 @@ Release 7.1.1 (not released yet)
 
 Bug fixes:
 
+- Fix propagation of groups in some parallel mesh extrusion
+  configurations (when the extruded face and adjacent boundary face
+  carrying the mesh group info are not on the same rank).
+
 - GUI and scripts: fix crash for Syrthes coupling when at least one
   user scalar (specie, variance) is defined.
 
