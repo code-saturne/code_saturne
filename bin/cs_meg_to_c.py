@@ -1538,23 +1538,27 @@ class meg_to_c_interpreter:
                         turb_model = tm.getTurbulenceModel()
                         sym = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
 
-                        for (name, val) in NotebookModel(self.case).getNotebookList():
-                            sym.append((name, 'value (notebook) = ' + str(val)))
+                        # Make sure the formula is "active" (i.e. is
+                        # required by the current turbulence model).
+                        name = None
+
+                        for (k, val) in NotebookModel(self.case).getNotebookList():
+                            sym.append((k, 'value (notebook) = ' + str(val)))
 
                         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
                             name = 'turbulence_ke'
                             req  = ['k', 'epsilon']
                         elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
                             name = 'turbulence_rije'
-                            # Careful! The order of rij components must be the same
-                            # as in the code (r23 before r13)
+                            # Careful! The order of rij components must be the
+                            # same as in the code (r23 before r13)
                             req  = ['r11', 'r22', 'r33',
                                     'r12', 'r23', 'r13',
                                     'epsilon']
                         elif turb_model == 'Rij-EBRSM':
                             name = 'turbulence_rij_ebrsm'
-                            # Careful! The order of rij components must be the same
-                            # as in the code (r23 before r13)
+                            # Careful! The order of rij components must be the
+                            # same as in the code (r23 before r13)
                             req  = ['r11', 'r22', 'r33',
                                     'r12', 'r23', 'r13',
                                     'epsilon', 'alpha']
@@ -1568,10 +1572,11 @@ class meg_to_c_interpreter:
                             name = 'turbulence_spalart'
                             req  = ['nu_tilda']
 
-                        exp = boundary.getTurbFormula()
-                        self.init_block('bnd', zone._label, name,
-                                        exp, req, sym,
-                                        [], condition=tc)
+                        if name is not None:
+                            exp = boundary.getTurbFormula()
+                            self.init_block('bnd', zone._label, name,
+                                            exp, req, sym,
+                                            [], condition=tc)
 
                 # Specific free_inlet_outlet head loss
                 if zone._nature == 'free_inlet_outlet':

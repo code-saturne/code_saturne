@@ -3,6 +3,9 @@ Release 7.0.4 (not released yet)
 
 Bug fixes:
 
+- GUI: fix crash on computation launch when a turbulence inlet formula
+  was defined and the turbulence model was later switched to LES.
+
 - Fix propagation of groups in some parallel mesh extrusion
   configurations (when the extruded face and adjacent boundary face
   carrying the mesh group info are not on the same rank).
