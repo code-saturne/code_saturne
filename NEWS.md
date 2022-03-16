@@ -3,6 +3,10 @@ Release 6.0.8 (unreleased)
 
 Bug fixes:
 
+- Fix propagation of groups in some parallel mesh extrusion
+  configurations (when the extruded face and adjacent boundary face
+  carrying the mesh group info are not on the same rank).
+
 - Probes and profiles: fix possible location error on hybrid meshes
   depending on order of appearance of cell types.
 

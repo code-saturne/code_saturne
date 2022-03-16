@@ -446,6 +446,11 @@ _build_face_edges(cs_mesh_t         *m,
      just outside the selection (to prolong those naturally),
      so the group class is added only for edges visited from
      faces which are not selected.
+
+     We initialize all edge group classes to -1 (impossible value)
+     so as to use cs_interface_set_max in parallel to ensure
+     synchronization of actually selection boundary group classes.
+     Values remaining at -1 after syncronization are assigned a default.
   */
 
   cs_lnum_2_t *e2v, *e2sf;
@@ -461,7 +466,7 @@ _build_face_edges(cs_mesh_t         *m,
     e2v[i][1] = -1;
     e2sf[i][0] = -1;
     e2sf[i][1] = -1;
-    e_gc[i] = default_family_id;
+    e_gc[i] = -1;
     e_nf[i] = 0;
   }
 
@@ -565,9 +570,15 @@ _build_face_edges(cs_mesh_t         *m,
       = (sizeof(int) == 8) ? CS_INT64 : CS_INT32;
 
     cs_interface_set_sum(e_if, _n_edges, 1, true, int_type, e_nf);
+    cs_interface_set_max(e_if, _n_edges, 1, true, int_type, e_gc);
 
     cs_interface_set_destroy(&e_if);
 
+  }
+
+  for (cs_lnum_t i = 0; i < _n_edges; i++) {
+    if (e_gc[i] == -1)
+      e_gc[i] = default_family_id;
   }
 
   /* Separate interior from boundary edges */
