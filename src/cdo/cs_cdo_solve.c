@@ -470,7 +470,7 @@ cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
   if (n_cols > n_rows) {
     assert(cs_glob_n_ranks > 1);
     BFT_MALLOC(xsol, 3*n_cols, cs_real_t);
-    memcpy(xsol, x, n_scatter_dofs*sizeof(cs_real_t));
+    memcpy(xsol, x, n_scatter_dofs/3*sizeof(cs_real_t));
   }
   else
     xsol = x;
