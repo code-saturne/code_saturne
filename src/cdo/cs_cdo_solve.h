@@ -81,8 +81,8 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
  *        in x and b (scatter/gather views).
  *
  * \param[in]      stride     stride to apply to the range set operations
+ * \param[in]      interlace  is data interlaced or not
  * \param[in]      x_size     size of the vector unknowns (scatter view)
- * \param[in]      matrix     pointer to a cs_matrix_t structure
  * \param[in]      rset       pointer to a range set structure
  * \param[in]      rhs_redux  do or not a parallel sum reduction on the RHS
  * \param[in, out] x          array of unknowns (in: initial guess)
@@ -92,8 +92,8 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
 
 void
 cs_cdo_solve_prepare_system(int                     stride,
+                            bool                    interlace,
                             cs_lnum_t               x_size,
-                            const cs_matrix_t      *matrix,
                             const cs_range_set_t   *rset,
                             bool                    rhs_redux,
                             cs_real_t              *x,
@@ -158,12 +158,14 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve a linear system arising from CDO schemes with vector-valued
- *         degrees of freedom
+ *         degrees of freedom (DoFs).
+ *         Number of DoFs is equal to 3*n_scatter_elts
  *
- * \param[in]  n_scatter_dofs local number of DoFs (may be != n_gather_elts)
+ * \param[in]  n_scatter_elts local number of elements (may be != n_gather_elts)
+ * \param[in]  interlace      way to arrange data (true/false)
  * \param[in]  slesp          pointer to a cs_param_sles_t structure
  * \param[in]  matrix         pointer to a cs_matrix_t structure
- * \param[in]  rs             pointer to a cs_range_set_t structure
+ * \param[in]  rset           pointer to a cs_range_set_t structure
  * \param[in]  normalization  value used for the residual normalization
  * \param[in]  rhs_redux      do or not a parallel sum reduction on the RHS
  * \param[in, out] sles       pointer to a cs_sles_t structure
@@ -175,7 +177,8 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
+cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_elts,
+                           bool                          interlace,
                            const cs_param_sles_t        *slesp,
                            const cs_matrix_t            *matrix,
                            const cs_range_set_t         *rset,
@@ -184,7 +187,6 @@ cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
                            cs_sles_t                    *sles,
                            cs_real_t                    *x,
                            cs_real_t                    *b);
-
 
 /*----------------------------------------------------------------------------*/
 

@@ -4371,8 +4371,8 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   /* Prepare solving (handle parallelism) */
 
   cs_cdo_solve_prepare_system(1,     /* stride */
+                              false, /* interlace (managed here) */
                               n_scatter_elts,
-                              matrix,
                               range_set,
                               true,  /* rhs_redux */
                               sol, b);

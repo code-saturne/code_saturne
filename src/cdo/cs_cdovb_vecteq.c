@@ -1529,7 +1529,8 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   }
   else {
 
-    cs_cdo_solve_vector_system(eqc->n_dofs/3, /*  = n_vertices */
+    cs_cdo_solve_vector_system(eqc->n_dofs/3, /* = n_vertices */
+                               true,          /* interlaced ? */
                                eqp->sles_param,
                                matrix,
                                range_set,

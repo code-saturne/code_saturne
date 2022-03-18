@@ -84,6 +84,64 @@ static int cs_cdo_solve_dbg_counter = 0;  /* Id number for debug */
  * Private function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if the solution has a correct size and if needed allocate and
+ *         initialize a new solution array before the solving step
+ *
+ *         - The scatter view corresponds to the (partitioned) mesh view
+ *         - The gather view is purely algebraic => matrix view.
+ *         - In parallel computation, n_cols > n_rows (there are elements to
+ *           consider through the parallel interfaces)
+ *
+ * \param[in]  stride         number of DoFs by element
+ * \param[in]  n_scatter_elts local number of elements (may be != n_gather_elts)
+ * \param[in]  x              current pointer to the solution array
+ * \param[in]  matrix         pointer to a cs_matrix_t structure
+ *
+ * \return the pointer to the solution array to use
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t  *
+_set_xsol(int                 stride,
+          cs_lnum_t           n_scatter_elts,
+          cs_real_t          *x,
+          const cs_matrix_t  *matrix)
+{
+  cs_real_t  *xsol = NULL;
+
+  /* The number of rows in the matrix is equal to the number of elements in the
+     "gather" view: n_rows = n_gather_elts */
+
+  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(matrix);
+
+  assert(n_cols >= n_rows);
+  assert(n_rows <= n_scatter_elts);
+
+  if (n_cols > n_scatter_elts) {
+
+    assert(cs_glob_n_ranks > 1);
+    BFT_MALLOC(xsol, stride*n_cols, cs_real_t);
+    memcpy(xsol, x, stride*n_scatter_elts*sizeof(cs_real_t));
+
+  }
+  else
+    xsol = x;
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_SOLVE_DBG > 0
+  bft_printf(" %s >> rank_id:%d\n"
+             " stride:           %d\n"
+             " n_scatter_elts:   %d\n"
+             " n_matrix_rows:    %d\n"
+             " n_matrix_columns: %d\n",
+             __func__, cs_glob_rank_id, stride, n_scatter_elts, n_rows, n_cols);
+#endif
+
+  return xsol;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -155,8 +213,8 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
  *        in x and b (scatter/gather views).
  *
  * \param[in]      stride     stride to apply to the range set operations
+ * \param[in]      interlace  is data interlaced or not
  * \param[in]      x_size     size of the vector unknowns (scatter view)
- * \param[in]      matrix     pointer to a cs_matrix_t structure
  * \param[in]      rset       pointer to a range set structure
  * \param[in]      rhs_redux  do or not a parallel sum reduction on the RHS
  * \param[in, out] x          array of unknowns (in: initial guess)
@@ -166,91 +224,63 @@ cs_cdo_solve_sync_rhs_norm(cs_param_resnorm_type_t    type,
 
 void
 cs_cdo_solve_prepare_system(int                     stride,
+                            bool                    interlace,
                             cs_lnum_t               x_size,
-                            const cs_matrix_t      *matrix,
                             const cs_range_set_t   *rset,
                             bool                    rhs_redux,
                             cs_real_t              *x,
                             cs_real_t              *b)
 {
-  const cs_lnum_t  n_scatter_elts = x_size; /* size of x and rhs */
+  if (rset == NULL)
+    return;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_SOLVE_DBG > 0
-  const cs_lnum_t  n_gather_elts = cs_matrix_get_n_rows(matrix);
-  assert(n_gather_elts <= n_scatter_elts);
-
-  if (rset != NULL)
-    bft_printf(" rank_id:          %d\n"
-               " rset->n_elts      %d %d %d\n"
-               " rset->l_range     %d %d\n"
-               " stride:           %d\n"
-               " n_scatter_elts:   %d\n"
-               " n_gather_elts:    %d\n"
-               " n_matrix_rows:    %d\n"
-               " n_matrix_columns: %d\n",
-               cs_glob_rank_id, rset->n_elts[0], rset->n_elts[1],
-               rset->n_elts[2], rset->l_range[0], rset->l_range[1],
-               stride, n_scatter_elts, n_gather_elts,
-               cs_matrix_get_n_rows(matrix), cs_matrix_get_n_columns(matrix));
-  else
-    bft_printf(" rank_id:          %d"
-               " stride:           %d\n"
-               " n_scatter_elts:   %d\n"
-               " n_gather_elts:    %d\n"
-               " n_matrix_rows:    %d\n"
-               " n_matrix_columns: %d\n",
-               cs_glob_rank_id, stride, n_scatter_elts, n_gather_elts,
-               cs_matrix_get_n_rows(matrix), cs_matrix_get_n_columns(matrix));
-#else
-  CS_UNUSED(matrix);
+  bft_printf(" %s >> rank_id:%d\n"
+             " stride:           %d\n"
+             " interlaced:       %s\n"
+             " rset->n_elts      %d %d %d\n"
+             " rset->l_range     %u %u\n",
+             __func__, cs_glob_rank_id, stride, cs_base_strtf(interlace),
+             rset->n_elts[0], rset->n_elts[1], rset->n_elts[2],
+             rset->l_range[0], rset->l_range[1]);
 #endif
 
-  if (rset != NULL) { /* Parallel or periodic mode
-                         ========================= */
+  /* x and b should be changed to have a "gathered" view through the range set
+     operation.  Their size is equal to n_sles_gather_elts <=
+     n_sles_scatter_elts */
 
-    /* x and b should be changed to have a "gathered" view through the range set
-       operation.  Their size is equal to n_sles_gather_elts <=
-       n_sles_scatter_elts */
-
-    /* Compact numbering to fit the algebraic decomposition */
-
-    cs_range_set_gather(rset,
-                        CS_REAL_TYPE, /* type */
-                        stride,       /* stride */
-                        x,            /* in: size = n_sles_scatter_elts */
-                        x);           /* out: size = n_sles_gather_elts */
-
-    /* The right-hand side stems from a cellwise building on this rank.
-       Other contributions from distant ranks may contribute to an element
-       owned by the local rank */
-
-    /* TODO the system is presumed to have interlaced = true for vector
-     * equations. No difference for scalar equations. Maybe its value
-     * could be passed into by the caller of this function */
-
-    if (rhs_redux && rset->ifs != NULL)
-      cs_interface_set_sum(rset->ifs,
-                           n_scatter_elts, stride, true, CS_REAL_TYPE,
-                           b);
-
-    cs_range_set_gather(rset,
-                        CS_REAL_TYPE,/* type */
-                        stride,      /* stride */
-                        b,           /* in: size = n_sles_scatter_elts */
-                        b);          /* out: size = n_sles_gather_elts */
-  }
+  /* Compact numbering to fit the algebraic decomposition */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_SOLVE_DBG > 2
-  const cs_lnum_t  *row_index, *col_id;
-  const cs_real_t  *d_val, *x_val;
-
-  cs_matrix_get_msr_arrays(matrix, &row_index, &col_id, &d_val, &x_val);
-
-  cs_dbg_dump_linear_system("Dump linear system",
-                            n_gather_elts, CS_CDO_SOLVE_DBG,
-                            x, b,
-                            row_index, col_id, x_val, d_val);
+  cs_dbg_darray_to_listing(" Initial guess (scatter view)",
+                           x_size*stride, x, 4*stride);
 #endif
+
+  cs_range_set_gather(rset,
+                      CS_REAL_TYPE, /* type */
+                      stride,       /* stride */
+                      x,            /* in: size = n_sles_scatter_elts */
+                      x);           /* out: size = n_sles_gather_elts */
+
+  /* The right-hand side stems from a cellwise building on this rank.
+     Other contributions from distant ranks may contribute to an element
+     owned by the local rank */
+
+  if (rhs_redux && rset->ifs != NULL)
+    cs_interface_set_sum(rset->ifs,
+                         x_size, stride, interlace, CS_REAL_TYPE,
+                         b);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_SOLVE_DBG > 2
+  cs_dbg_darray_to_listing(" RHS (scatter view)",
+                           x_size*stride, b, 4*stride);
+#endif
+
+  cs_range_set_gather(rset,
+                      CS_REAL_TYPE,/* type */
+                      stride,      /* stride */
+                      b,           /* in: size = n_sles_scatter_elts */
+                      b);          /* out: size = n_sles_gather_elts */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -376,20 +406,23 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                            cs_real_t                    *x,
                            cs_real_t                    *b)
 {
-  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+  /* Set xsol (manage allocation and initialization in case of parallelism) */
 
-  /* Set xsol */
+  cs_real_t  *xsol = _set_xsol(1, n_scatter_dofs, x, matrix);
 
-  cs_real_t  *xsol = NULL;
-  if (n_cols > n_scatter_dofs) {
-    assert(cs_glob_n_ranks > 1);
-    BFT_MALLOC(xsol, n_cols, cs_real_t);
-    memcpy(xsol, x, n_scatter_dofs*sizeof(cs_real_t));
-  }
-  else
-    xsol = x;
+  /* Prepare solving (handle parallelism) and switch to a "gather" view
+   * stride = 1 for scalar-valued */
 
-  /* Retrieve the solving info structure stored in the cs_field_t structure */
+  cs_cdo_solve_prepare_system(1, false, n_scatter_dofs, rset, rhs_redux,
+                              xsol, b);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_SOLVE_DBG > 2
+  if (slesp->verbosity > 2)
+    cs_dbg_dump_local_scalar_msr_matrix(slesp->name, matrix);
+#endif
+
+  /* Retrieve the solving info structure stored in the cs_field_t structure
+     and then solve the linear system */
 
   cs_field_t  *fld = cs_field_by_id(slesp->field_id);
   cs_solving_info_t  sinfo;
@@ -398,14 +431,6 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
   sinfo.n_it = 0;
   sinfo.res_norm = DBL_MAX;
   sinfo.rhs_norm = normalization;
-
-  /* Prepare solving (handle parallelism)
-   * stride = 1 for scalar-valued */
-
-  cs_cdo_solve_prepare_system(1, n_scatter_dofs, matrix, rset, rhs_redux,
-                              xsol, b);
-
-  /* Solve the linear solver */
 
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
@@ -425,6 +450,8 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                   " n_iter %3d | res.norm % -8.4e | rhs.norm % -8.4e\n",
                   slesp->name, code,
                   sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
+
+  /* Switch back from the "gather" view to the "scatter" view */
 
   cs_range_set_scatter(rset,
                        CS_REAL_TYPE, 1, /* type and stride */
@@ -439,7 +466,7 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                         x, b, n_scatter_dofs);
 #endif
 
-  if (n_cols > n_scatter_dofs)
+  if (xsol != x)
     BFT_FREE(xsol);
 
   cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
@@ -450,12 +477,14 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve a linear system arising from CDO schemes with vector-valued
- *         degrees of freedom
+ *         degrees of freedom (DoFs).
+ *         Number of DoFs is equal to 3*n_scatter_elts
  *
- * \param[in]  n_scatter_dofs local number of DoFs (may be != n_gather_elts)
+ * \param[in]  n_scatter_elts local number of elements (may be != n_gather_elts)
+ * \param[in]  interlace      way to arrange data (true/false)
  * \param[in]  slesp          pointer to a cs_param_sles_t structure
  * \param[in]  matrix         pointer to a cs_matrix_t structure
- * \param[in]  rs             pointer to a cs_range_set_t structure
+ * \param[in]  rset           pointer to a cs_range_set_t structure
  * \param[in]  normalization  value used for the residual normalization
  * \param[in]  rhs_redux      do or not a parallel sum reduction on the RHS
  * \param[in, out] sles       pointer to a cs_sles_t structure
@@ -467,7 +496,8 @@ cs_cdo_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
+cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_elts,
+                           bool                          interlace,
                            const cs_param_sles_t        *slesp,
                            const cs_matrix_t            *matrix,
                            const cs_range_set_t         *rset,
@@ -477,20 +507,17 @@ cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
                            cs_real_t                    *x,
                            cs_real_t                    *b)
 {
-  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+  /* Set xsol (manage allocation and initialization in case of parallelism) */
 
-  /* Set xsol */
+  cs_real_t  *xsol = _set_xsol(3, n_scatter_elts, x, matrix);
 
-  cs_real_t  *xsol = NULL;
-  if (n_cols > n_scatter_dofs) {
-    assert(cs_glob_n_ranks > 1);
-    BFT_MALLOC(xsol, 3*n_cols, cs_real_t);
-    memcpy(xsol, x, 3*n_scatter_dofs*sizeof(cs_real_t));
-  }
-  else
-    xsol = x;
+  /* Prepare solving (handle parallelism) and switch to a "gather" view */
 
-  /* Retrieve the solving info structure stored in the cs_field_t structure */
+  cs_cdo_solve_prepare_system(3, interlace, n_scatter_elts, rset, rhs_redux,
+                              xsol, b);
+
+  /* Retrieve the solving info structure stored in the cs_field_t structure
+     and then solve the linear system */
 
   cs_field_t  *fld = cs_field_by_id(slesp->field_id);
   cs_solving_info_t  sinfo;
@@ -499,14 +526,6 @@ cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
   sinfo.n_it = 0;
   sinfo.res_norm = DBL_MAX;
   sinfo.rhs_norm = normalization;
-
-  /* Prepare solving (handle parallelism)
-   * stride = 3 for vector-valued */
-
-  cs_cdo_solve_prepare_system(3, n_scatter_dofs, matrix, rset, rhs_redux,
-                              xsol, b);
-
-  /* Solve the linear solver */
 
   cs_sles_convergence_state_t  code = cs_sles_solve(sles,
                                                     matrix,
@@ -527,6 +546,8 @@ cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
                   slesp->name, code,
                   sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm);
 
+  /* Switch back from the "gather" view to the "scatter" view */
+
   cs_range_set_scatter(rset,
                        CS_REAL_TYPE, 3, /* type and stride */
                        xsol, x);
@@ -537,17 +558,16 @@ cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_SOLVE_DBG > 1
   cs_dbg_fprintf_system(slesp->name, cs_cdo_solve_dbg_counter++,
                         slesp->verbosity,
-                        x, b, 3*n_scatter_dofs);
+                        x, b, 3*n_scatter_elts);
 #endif
 
-  if (n_cols > n_scatter_dofs)
+  if (xsol != x)
     BFT_FREE(xsol);
 
   cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
 
   return (sinfo.n_it);
 }
-
 
 /*----------------------------------------------------------------------------*/
 
