@@ -478,15 +478,14 @@ cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
                            cs_real_t                    *b)
 {
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
-  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(matrix);
 
   /* Set xsol */
 
   cs_real_t  *xsol = NULL;
-  if (n_cols > n_rows) {
+  if (n_cols > n_scatter_dofs) {
     assert(cs_glob_n_ranks > 1);
     BFT_MALLOC(xsol, 3*n_cols, cs_real_t);
-    memcpy(xsol, x, n_scatter_dofs/3*sizeof(cs_real_t));
+    memcpy(xsol, x, 3*n_scatter_dofs*sizeof(cs_real_t));
   }
   else
     xsol = x;
@@ -504,7 +503,7 @@ cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
   /* Prepare solving (handle parallelism)
    * stride = 3 for vector-valued */
 
-  cs_cdo_solve_prepare_system(3, n_scatter_dofs/3, matrix, rset, rhs_redux,
+  cs_cdo_solve_prepare_system(3, n_scatter_dofs, matrix, rset, rhs_redux,
                               xsol, b);
 
   /* Solve the linear solver */
@@ -538,10 +537,10 @@ cs_cdo_solve_vector_system(cs_lnum_t                     n_scatter_dofs,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_SOLVE_DBG > 1
   cs_dbg_fprintf_system(slesp->name, cs_cdo_solve_dbg_counter++,
                         slesp->verbosity,
-                        x, b, n_scatter_dofs);
+                        x, b, 3*n_scatter_dofs);
 #endif
 
-  if (n_cols > n_rows)
+  if (n_cols > n_scatter_dofs)
     BFT_FREE(xsol);
 
   cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &sinfo);
