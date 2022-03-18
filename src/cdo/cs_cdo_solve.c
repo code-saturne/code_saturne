@@ -46,6 +46,7 @@
 #include "cs_parameters.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
+#include "bft_printf.h"
 #include "cs_dbg.h"
 #endif
 
@@ -178,13 +179,28 @@ cs_cdo_solve_prepare_system(int                     stride,
   const cs_lnum_t  n_gather_elts = cs_matrix_get_n_rows(matrix);
   assert(n_gather_elts <= n_scatter_elts);
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                " n_gather_elts:    %d\n"
-                " n_scatter_elts:   %d\n"
-                " n_matrix_rows:    %d\n"
-                " n_matrix_columns: %d\n",
-                n_gather_elts, n_scatter_elts, cs_matrix_get_n_rows(matrix),
-                cs_matrix_get_n_columns(matrix));
+  if (rset != NULL)
+    bft_printf(" rank_id:          %d\n"
+               " rset->n_elts      %d %d %d\n"
+               " rset->l_range     %d %d\n"
+               " stride:           %d\n"
+               " n_scatter_elts:   %d\n"
+               " n_gather_elts:    %d\n"
+               " n_matrix_rows:    %d\n"
+               " n_matrix_columns: %d\n",
+               cs_glob_rank_id, rset->n_elts[0], rset->n_elts[1],
+               rset->n_elts[2], rset->l_range[0], rset->l_range[1],
+               stride, n_scatter_elts, n_gather_elts,
+               cs_matrix_get_n_rows(matrix), cs_matrix_get_n_columns(matrix));
+  else
+    bft_printf(" rank_id:          %d"
+               " stride:           %d\n"
+               " n_scatter_elts:   %d\n"
+               " n_gather_elts:    %d\n"
+               " n_matrix_rows:    %d\n"
+               " n_matrix_columns: %d\n",
+               cs_glob_rank_id, stride, n_scatter_elts, n_gather_elts,
+               cs_matrix_get_n_rows(matrix), cs_matrix_get_n_columns(matrix));
 #else
   CS_UNUSED(matrix);
 #endif
