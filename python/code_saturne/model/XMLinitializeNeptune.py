@@ -50,17 +50,7 @@ from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
 from code_saturne.model.NeptuneWallTransferModel import NeptuneWallTransferModel
 from code_saturne.model.NucleateBoilingModel import NucleateBoilingModel
 
-# -------------------------------------------------------------------------------
-# Detection of EOS
-# -------------------------------------------------------------------------------
-
-EOS = 1
-try:
-    import eosAva
-except:
-    EOS = 0
-else :
-   import eosAva
+from code_saturne.model.EosWrapper import eosWrapper
 
 #-------------------------------------------------------------------------------
 # class XMLinitNeptune for neptune_cfd solver
@@ -131,7 +121,7 @@ class XMLinitNeptune(BaseXmlInit):
 
             # If EOS is not avalaible, check if EOS is needed by the current set up.
 
-            if EOS == 0:
+            if eosWrapper().isActive() == 0:
                 from code_saturne.model.MainFieldsModel import MainFieldsModel
                 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 

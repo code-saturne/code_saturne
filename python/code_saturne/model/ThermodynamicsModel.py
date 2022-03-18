@@ -41,18 +41,6 @@ logging.basicConfig()
 log = logging.getLogger("ThermodynamicsModel")
 log.setLevel(GuiParam.DEBUG)
 
-# -------------------------------------------------------------------------------
-# EOS
-# -------------------------------------------------------------------------------
-
-EOS = 1
-try:
-   import eosAva
-except:
-   EOS = 0
-else :
-   import eosAva
-
 #-------------------------------------------------------------------------------
 # Constructor
 #-------------------------------------------------------------------------------
@@ -83,7 +71,6 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.m_out = OutputFieldsModel(self.case)
         label = self.m_out.getVariableLabel("none", "pressure")
         self.list_scalars.append(('pressure', label))
-
 
     def defaultValues(self, field_id):
         default = {}
@@ -175,7 +162,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         """
         if self.getEnergyModel(field_id) == "off" or self.getEnergyResolution(field_id) == "off":
             return False
-        return {1: True, 0: False}[EOS]
+
+        return self.eos.isActive()
 
     @Variables.undoLocal
     def setMaterials(self, fieldId, material):
@@ -277,10 +265,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             _default_method = self.defaultValues(fieldId)['method']
             if material == self.defaultValues(fieldId)['material'] :
                self.setMethod(fieldId, _default_method)
-            elif EOS == 1 and material != "user_material":
-                self.ava = eosAva.EosAvailable()
-                self.ava.setMethods(material)
-                fls = self.ava.whichMethods()
+            elif self.eos.isActive() and material != "user_material":
+                fls = self.eos.getFluidMethods(material)
                 if _default_method in fls:
                     self.setMethod(fieldId, _default_method)
                 elif "Cathare" in fls:
@@ -320,28 +306,17 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             reference = material
         else :
             phase = self.getFieldNature(fieldId)
-            if EOS == 1 :
-                self.ava = eosAva.EosAvailable()
-                self.ava.setMethods(material)
-                self.ava.setReferences(material, self.getMethod(fieldId))
-                ref = self.ava.whichReferences()
-
-                # Reference for methods
-                liqidx = 0
-                gasidx = 1
-                # if Refprop, the list has an additional element at position 0
-                if self.getMethod(fieldId) == "Refprop":
-                    liqidx += 1
-                    gasidx += 1
+            if self.eos.isActive():
+                ref = self.eos.getFluidReferences(material, method)
 
                 if len(ref) == 1 :
                    # cas des gaz par exemple
                    reference = ref[0]
                 else :
                    if phase == "liquid" :
-                      reference = ref[liqidx]
+                      reference = self.eos.getLiquidReferences(material, method)[0]
                    elif phase == "gas" :
-                      reference = ref[gasidx]
+                      reference = self.eos.getVaporReferences(material, method)[0]
             else :
                 reference = material + phase
         # update XML

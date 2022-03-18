@@ -42,14 +42,7 @@ import logging
 # EOS
 #-------------------------------------------------------------------------------
 
-EOS = 1
-try:
-   import eosAva
-except:
-   EOS = 0
-else :
-   import eosAva
-
+from code_saturne.model.EosWrapper import eosWrapper
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -99,8 +92,7 @@ class MaterialsDelegate(QItemDelegate):
         self.mdl      = mdl
         self.dicoM2V  = dicoM2V
         self.dicoV2M  = dicoV2M
-        if EOS == 1 :
-            self.ava = eosAva.EosAvailable()
+        self.eos = eosWrapper()
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
@@ -110,7 +102,7 @@ class MaterialsDelegate(QItemDelegate):
         # suppress perfect gas
         tmp = ["Argon", "Nitrogen", "Hydrogen", "Oxygen", "Helium", "Air"]
         if self.mdl.getFieldNature(fieldId) != "solid" and self.mdl.checkEOSRequirements(fieldId):
-            fls = self.ava.whichFluids()
+            fls = self.eos.getListOfFluids()
             for fli in fls:
                 if fli not in tmp:
                     tmp.append(fli)
@@ -153,8 +145,7 @@ class MethodDelegate(QItemDelegate):
         self.mdl      = mdl
         self.dicoM2V  = dicoM2V
         self.dicoV2M  = dicoV2M
-        if EOS == 1 :
-            self.ava = eosAva.EosAvailable()
+        self.eos = eosWrapper()
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
@@ -164,13 +155,11 @@ class MethodDelegate(QItemDelegate):
         if self.mdl.getMaterials(fieldId) == "user_material" :
             self.modelCombo.addItem(self.tr(self.dicoM2V["user_properties"]), 'user_properties')
         else :
-            if EOS == 1 :
-                material = self.mdl.getMaterials(fieldId)
-                self.ava.setMethods(material)
-                fls = self.ava.whichMethods()
-                for fli in fls:
-                    if fli != "Ovap" and fli != "Flica4" and fli != "StiffenedGas":
-                        self.modelCombo.addItem(self.tr(fli),fli)
+            material = self.mdl.getMaterials(fieldId)
+            fls = self.eos.getFluidMethods(material)
+            for fli in fls:
+                if fli not in ("Ovap","Flica4","StiffenedGas"):
+                    self.modelCombo.addItem(self.tr(fli),fli)
 
         editor.setMinimumSize(editor.sizeHint())
         editor.installEventFilter(self)
@@ -441,6 +430,8 @@ temperature = enthalpy / 1000;
         self.zone_name = None
         self.zone_id   = None
 
+        self.eos = eosWrapper()
+
     def setup(self, case, zone_name):
         self.case = case
         for zone in LocalizationModel('VolumicZone', self.case).getZones():
@@ -468,16 +459,13 @@ temperature = enthalpy / 1000;
                 eos_used = True
                 break
         if eos_used:
-            self.ava = eosAva.EosAvailable()
-            fls = self.ava.whichFluids()
+            fls = self.eos.getListOfFluids()
             for fli in fls:
                 self.dicoM2V[fli] = fli
                 self.dicoV2M[fli] = fli
-                self.ava.setMethods(fli)
 
-                flls = self.ava.whichMethods()
-                for flli in flls:
-                    if flli != "Ovap" and flli != "Flica4" and flli != "StiffenedGas":
+                for flli in self.eos.getFluidMethods(fli):
+                    if flli not in ("Ovap","Flica4","StiffenedGas"):
                         self.dicoM2V[flli] = flli
                         self.dicoV2M[flli] = flli
 
@@ -592,7 +580,7 @@ temperature = enthalpy / 1000;
 
         # hide groupBoxConstantProperties
         self.groupBoxConstantProperties.hide()
-        if EOS == 1:
+        if self.eos.isActive():
             self.groupBoxEOS.show()
         else:
             self.groupBoxEOS.hide()
@@ -1011,7 +999,7 @@ temperature = enthalpy / 1000;
         """
         call EOS GUI
         """
-        if EOS == 1:
+        if self.eos.isActive():
             command = None
             try:
                 cfg = self.case.case['package'].config

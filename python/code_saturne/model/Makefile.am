@@ -44,6 +44,7 @@ dist_model_PYTHON = \
   DefineUserScalarsModel.py \
   DropletCondensationEvaporationModel.py \
   ElectricalModel.py \
+	EosWrapper.py \
   FansModel.py \
   FluidCharacteristicsModel.py \
   FluidStructureInteractionModel.py \

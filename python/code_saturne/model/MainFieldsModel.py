@@ -36,11 +36,7 @@ from code_saturne.model.GlobalNumericalParametersModel import GlobalNumericalPar
 # EOS
 #-------------------------------------------------------------------------------
 
-EOS = 1
-try:
-   import eosAva
-except:
-   EOS = 0
+from code_saturne.model.EosWrapper import eosWrapper
 
 class PredefinedFlowsModel:
     """
@@ -130,6 +126,9 @@ class MainFieldsModel(Variables, Model):
                                                         "none",
                                                         "porosity",
                                                         "porosity")
+
+        #EOS
+        self.eos = eosWrapper()
 
 
     def defaultValues(self):
@@ -927,11 +926,9 @@ class MainFieldsModel(Variables, Model):
 
     def _setFieldMaterial(self, fieldId, material):
         from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
-        eos = eosAva.EosAvailable()
-        eos.setMethods(material)
         self.case.undoStop()
         ThermodynamicsModel(self.case).setMaterials(fieldId, material)
-        fls = eos.whichMethods()
+        fls = self.eos.getFluidMethods(material)
         if "Cathare" in fls:
             ThermodynamicsModel(self.case).setMethod(fieldId, "Cathare")
         else:

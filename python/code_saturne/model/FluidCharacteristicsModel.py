@@ -53,12 +53,7 @@ from code_saturne.model.NotebookModel import NotebookModel
 # EOS
 #-------------------------------------------------------------------------------
 
-EOS = 0
-try:
-   import eosAva
-   EOS = 1
-except Exception:
-   pass
+from code_saturne.model.EosWrapper import eosWrapper
 
 # Perfect gases to exclude from EOS choices
 
@@ -236,11 +231,11 @@ class FluidCharacteristicsModel(Variables, Model):
         self.lib_properties = {}
         self.lib_properties['user_material'] = self.mask_builtin
 
-        if EOS == 1:
+        self.eos = eosWrapper()
+        if self.eos.isActive():
             self.tables += self.mask_EOS
-            self.ava = eosAva.EosAvailable()
             # suppress perfect gas
-            fls = self.ava.whichFluids()
+            fls = self.eos.getListOfFluids()
             for fli in fls:
                 if fli in eos_excl:
                     continue
@@ -410,8 +405,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
         if material_flags & self.mask_EOS:
             if material not in eos_excl:
-                self.ava.setMethods(material)
-                fls = self.ava.whichMethods()
+                fls = self.eos.getFluidMethods(material)
                 for fli in fls:
                     if fli != 'PerfectGas':
                         methods.append((fli, True))
@@ -705,8 +699,7 @@ class FluidCharacteristicsModel(Variables, Model):
             methods.append('user_properties')
 
         if material_flags & self.mask_EOS:
-            self.ava.setMethods(material)
-            fls = self.ava.whichMethods()
+            fls = self.eos.getFluidMethods(material)
             for fli in fls:
                 methods.append(fli)
 
@@ -731,13 +724,8 @@ class FluidCharacteristicsModel(Variables, Model):
         if method in ("user_properties", "freesteam", "CoolProp"):
             return None
 
-        references = []
+        references = self.eos.getFluidReferences(material, self.getMethod())
 
-        if EOS:
-            self.ava = eosAva.EosAvailable()
-            self.ava.setMethods(material)
-            self.ava.setReferences(material, self.getMethod())
-            references = self.ava.whichReferences()
         return references
 
 
@@ -755,11 +743,8 @@ class FluidCharacteristicsModel(Variables, Model):
         nodem = self.node_fluid.xmlGetChildNode('method')
         reference = nodem.xmlGetString('reference')
 
-        if not reference and self.lib_properties[material] & self.mask_EOS and EOS:
-            self.ava = eosAva.EosAvailable()
-            self.ava.setMethods(material)
-            self.ava.setReferences(material, self.getMethod())
-            ref = self.ava.whichReferences()
+        if not reference and self.lib_properties[material] & self.mask_EOS and self.eos.isActive():
+            ref = self.eos.getFluidReferences(material, self.getMethod())
             if ref:
                 reference = ref[0]
 
