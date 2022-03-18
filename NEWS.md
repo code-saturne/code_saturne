@@ -3,6 +3,8 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- Fix MPMD command generation when using ccc_mprun (CCRT)
+
 - Studymanager: fix crash on XML updtate when case DATA folders contain
   binary files.
 
