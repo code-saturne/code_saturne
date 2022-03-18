@@ -1,3 +1,10 @@
+Release 7.0.5 (Unreleased)
+--------------------------
+
+Bug fixes:
+
+- Fix mpmd command generation when using ccc_mprun (CCRT)
+
 Release 7.0.4 (March 16 2022)
 -----------------------------
 
