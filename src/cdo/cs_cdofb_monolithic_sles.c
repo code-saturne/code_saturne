@@ -4332,7 +4332,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   /* De-interlace the velocity array and the rhs for the face DoFs */
 
   cs_real_t  *sol = NULL;
-  BFT_MALLOC(sol, n_cols, cs_real_t);
+  BFT_MALLOC(sol, CS_MAX(n_cols, n_scatter_elts), cs_real_t);
 
   cs_real_t  *b = NULL;
   BFT_MALLOC(b, n_scatter_elts, cs_real_t);
