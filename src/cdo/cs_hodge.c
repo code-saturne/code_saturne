@@ -4287,7 +4287,7 @@ cs_hodge_edfp_cost_get_opt(const cs_cell_mesh_t     *cm,
   }
   else {
 
-    if (_tensor_norm_l1(ptyd) > 0)
+    if (_tensor_norm_l1(ptyd->tensor) > 0)
       _compute_aniso_hodge_ur(cm->n_fc,
                               3*hodgep->coef*hodgep->coef,
                               1./cm->vol_c,
