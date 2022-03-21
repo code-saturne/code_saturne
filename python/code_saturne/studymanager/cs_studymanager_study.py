@@ -398,7 +398,7 @@ class Case(object):
                         # mixed solver types when neptune_cfd is not available
                         # (will fail if really trying to run those cases)
                         msg = "Failed updating a neptune_cfd XML file as " \
-                            + "neptune_cfd is not available." 
+                            + "neptune_cfd is not available."
                         pass
 
                 case.xmlSaveDocument()
