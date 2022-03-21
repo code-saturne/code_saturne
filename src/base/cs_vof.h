@@ -36,7 +36,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
-#include "cs_domain.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -151,11 +152,13 @@ cs_get_glob_vof_parameters(void);
  *
  * A similar linear formula is followed on boundary using fluid volume fraction
  * value on the boundary.
+ *
+ * \param[in]  m  pointer to mesh structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_compute_linear_rho_mu(const cs_domain_t *domain);
+cs_vof_compute_linear_rho_mu(const cs_mesh_t  *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -186,22 +189,29 @@ cs_vof_compute_linear_rho_mu(const cs_domain_t *domain);
  *  &\text{ otherwise }.
  * \end{array} \right.
  * \f]
+ *
+ * \param[in]  m  pointer to mesh structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_update_phys_prop(const cs_domain_t *domain);
+cs_vof_update_phys_prop(const cs_mesh_t  *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the surface tension momentum source term following the CSF
  * model of Brackbill et al. (1992).
+ *
+ * \param[in]   m    pointer to mesh structure
+ * \param[in]   mq   pointer to mesh quantities structure
+ * \param[out]  stf  surface tension momentum source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_surface_tension(const cs_domain_t  *domain,
-                       cs_real_3_t         stf[]);
+cs_vof_surface_tension(const cs_mesh_t             *m,
+                       const cs_mesh_quantities_t  *mq,
+                       cs_real_3_t                  stf[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -212,11 +222,15 @@ cs_vof_surface_tension(const cs_domain_t  *domain,
  * \sum_{j\in\Face{\celli}}\left(\rho\vect{u}\vect{S}\right)_{ij}^n
  * \right).
  * \f]
+ *
+ * \param[in]  m   pointer to mesh structure
+ * \param[in]  mq  pointer to mesh quantities structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_log_mass_budget(const cs_domain_t *domain);
+cs_vof_log_mass_budget(const cs_mesh_t             *m,
+                       const cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -252,11 +266,15 @@ cs_vof_log_mass_budget(const cs_domain_t *domain);
  * \text{ and: }
  * \delta = 10^{-8} / \overline{\vol \celli} ^{1/3}
  * \f]
+ *
+ * \param[in]   m    pointer to mesh structure
+ * \param[in]   mq   pointer to mesh quantities structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_deshpande_drift_flux(const cs_domain_t *domain);
+cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
+                            const cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------*/
 /*!

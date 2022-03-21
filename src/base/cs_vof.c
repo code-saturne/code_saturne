@@ -35,39 +35,26 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
-#include "bft_printf.h"
 
 #include "cs_base.h"
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
-#include "cs_boundary_zone.h"
-#include "cs_cdo_quantities.h"
-#include "cs_cdo_connect.h"
-#include "cs_cdo_main.h"
 #include "cs_convection_diffusion.h"
-#include "cs_domain.h"
-#include "cs_domain_setup.h"
 #include "cs_equation.h"
-#include "cs_equation_iterative_solve.h"
 #include "cs_face_viscosity.h"
 #include "cs_divergence.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_field_operator.h"
-#include "cs_gui_mobile_mesh.h"
-#include "cs_interface.h"
 #include "cs_log.h"
 #include "cs_physical_constants.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
-#include "cs_mesh_bad_cells.h"
 #include "cs_parall.h"
-#include "cs_time_step.h"
 #include "cs_rotation.h"
 #include "cs_sles_default.h"
-#include "cs_sles_it.h"
 #include "cs_turbomachinery.h"
 
 /*----------------------------------------------------------------------------
@@ -357,31 +344,31 @@ cs_f_vof_get_pointers(unsigned **ivofmt,
 void
 cs_f_vof_compute_linear_rho_mu(void)
 {
-  cs_vof_compute_linear_rho_mu(cs_glob_domain);
+  cs_vof_compute_linear_rho_mu(cs_glob_mesh);
 }
 
 void
 cs_f_vof_update_phys_prop(void)
 {
-  cs_vof_update_phys_prop(cs_glob_domain);
+  cs_vof_update_phys_prop(cs_glob_mesh);
 }
 
 void
 cs_f_vof_surface_tension(cs_real_3_t stf[])
 {
-  cs_vof_surface_tension(cs_glob_domain, stf);
+  cs_vof_surface_tension(cs_glob_mesh, cs_glob_mesh_quantities, stf);
 }
 
 void
 cs_f_vof_log_mass_budget(void)
 {
-  cs_vof_log_mass_budget(cs_glob_domain);
+  cs_vof_log_mass_budget(cs_glob_mesh, cs_glob_mesh_quantities);
 }
 
 void
 cs_f_vof_deshpande_drift_flux(void)
 {
-  cs_vof_deshpande_drift_flux(cs_glob_domain);
+  cs_vof_deshpande_drift_flux(cs_glob_mesh, cs_glob_mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------
@@ -444,25 +431,24 @@ cs_get_glob_vof_parameters(void)
  * \brief Smoothing a variable after several double-projections
  * cells->faces->cells.
  *
- * \param[in]     domain        pointer to a \ref cs_domain_t structure
- * \param[in]     coefa         boundary condition array for the variable
- * \param[in]     coefb         boundary condition array for the variable
- * \param[in,out] pvar          diffused variable
+ * \param[in]     m        pointer to mesh structure
+ * \param[in]     mq       pointer to mesh quantities structure
+ * \param[in]     coefa    boundary condition array for the variable
+ * \param[in]     coefb    boundary condition array for the variable
+ * \param[in,out] pvar     diffused variable
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-cs_smooth(cs_domain_t  *domain,
-          cs_real_t *restrict coefa,
-          cs_real_t *restrict coefb,
-          cs_real_t *restrict pvar)
+_smoothe(const cs_mesh_t              *m,
+         const cs_mesh_quantities_t   *mq,
+         cs_real_t                    *restrict coefa,
+         cs_real_t                    *restrict coefb,
+         cs_real_t                    *restrict pvar)
 {
-  const cs_mesh_t *m = domain->mesh;
-  const cs_mesh_quantities_t *mq = domain->mesh_quantities;
-
-  int n_cells_ext   = m->n_cells_with_ghosts;
+  int n_cells_ext = m->n_cells_with_ghosts;
   int n_cells     = m->n_cells;
-  int n_i_faces     = m->n_i_faces;
+  int n_i_faces   = m->n_i_faces;
   int n_b_faces   = m->n_b_faces;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
@@ -476,7 +462,7 @@ cs_smooth(cs_domain_t  *domain,
   cs_real_3_t *restrict diipf  = (cs_real_3_t *restrict )mq->diipf;
   cs_real_3_t *restrict djjpf  = (cs_real_3_t *restrict )mq->djjpf;
 
-  double DTau = 0.1; /* Sharpening interface on 5 cells (0.1 for 3 cells) */
+  double d_tau = 0.1; /* Sharpening interface on 5 cells (0.1 for 3 cells) */
   /* User Intialization Triple line model */
   /*   alpha_p = 0 - Surface hydrophobe
        alpha_p = 1 - Surface hydrophile
@@ -537,8 +523,9 @@ cs_smooth(cs_domain_t  *domain,
     cs_lnum_t ii = i_face_cells[f_id][0];
     cs_lnum_t jj = i_face_cells[f_id][1];
 
-    cs_real_t taille = 0.5 * (pow(volume[ii], cs_math_1ov3) + pow(volume[jj], cs_math_1ov3));
-    cs_real_t visco = taille * taille * DTau;
+    cs_real_t taille = 0.5 * (  pow(volume[ii], cs_math_1ov3)
+                              + pow(volume[jj], cs_math_1ov3));
+    cs_real_t visco = taille * taille * d_tau;
 
     cs_real_3_t distxyz;
     for (int i = 0; i < 3; i++)
@@ -550,8 +537,9 @@ cs_smooth(cs_domain_t  *domain,
     cs_real_t *gradi = (cs_real_t *)grad + 3 * ii;
     cs_real_t *gradj = (cs_real_t *)grad + 3 * jj;
 
-    cs_real_t reconstr = viscf[f_id] * (  cs_math_3_dot_product(diipf[f_id], gradi)
-                                        - cs_math_3_dot_product(djjpf[f_id], gradj));
+    cs_real_t reconstr
+      = viscf[f_id] * (  cs_math_3_dot_product(diipf[f_id], gradi)
+                       - cs_math_3_dot_product(djjpf[f_id], gradj));
 
     smbdp[ii] -= reconstr;
     smbdp[jj] += reconstr;
@@ -590,7 +578,7 @@ cs_smooth(cs_domain_t  *domain,
   /* Linear system resolution options */
   cs_real_t precision = 1.e-5; /* Solver precision */
   int n_equiv_iter = 0;     /* Number of equivalent iterative solver iterations */
-  cs_real_t residue;           /* Residue */
+  cs_real_t residue;        /* Residue */
 
   /* Linear system resolution */
   /* Get the residue normalization */
@@ -655,13 +643,14 @@ cs_smooth(cs_domain_t  *domain,
  *
  * A similar linear formula is followed on boundary using fluid volume fraction
  * value on the boundary.
+ *
+ * \param[in]  m  pointer to mesh structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_compute_linear_rho_mu(const cs_domain_t *domain)
+cs_vof_compute_linear_rho_mu(const cs_mesh_t  *m)
 {
-  const cs_mesh_t *m = domain->mesh;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
@@ -733,16 +722,17 @@ cs_vof_compute_linear_rho_mu(const cs_domain_t *domain)
  *  &\text{ otherwise }.
  * \end{array} \right.
  * \f]
+ *
+ * \param[in]  m  pointer to mesh structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_update_phys_prop(const cs_domain_t *domain)
+cs_vof_update_phys_prop(const cs_mesh_t  *m)
 {
   /* update rho and mu with linear laws */
-  cs_vof_compute_linear_rho_mu(domain);
+  cs_vof_compute_linear_rho_mu(m);
 
-  const cs_mesh_t *m = domain->mesh;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
 
@@ -789,13 +779,16 @@ cs_vof_update_phys_prop(const cs_domain_t *domain)
  * \sum_{\cellj\in\Face{\celli}}\left(\rho\vect{u}\vect{S}\right)_{\ij}^n
  * \right).
  * \f]
+ *
+ * \param[in]  m   pointer to mesh structure
+ * \param[in]  mq  pointer to mesh quantities structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_log_mass_budget(const cs_domain_t *domain)
+cs_vof_log_mass_budget(const cs_mesh_t             *m,
+                       const cs_mesh_quantities_t  *mq)
 {
-  const cs_mesh_t *m = domain->mesh;
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_with_ghosts = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
@@ -804,7 +797,6 @@ cs_vof_log_mass_budget(const cs_domain_t *domain)
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)m->i_face_cells;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-  const cs_mesh_quantities_t *mq = domain->mesh_quantities;
   const cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)mq->i_face_cog;
@@ -925,8 +917,10 @@ cs_vof_log_mass_budget(const cs_domain_t *domain)
 
   cs_parall_sum(1, CS_DOUBLE, &glob_m_budget);
 
-  bft_printf(_("   ** VOF MODEL, MASS BALANCE at iteration %6i: %12.4e\n\n"),
-             cs_glob_time_step->nt_cur, glob_m_budget);
+  if (cs_log_default_is_active())
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("   ** VOF model, mass balance: %12.4e\n\n"),
+                  glob_m_budget);
 
   BFT_FREE(divro);
 }
@@ -935,16 +929,18 @@ cs_vof_log_mass_budget(const cs_domain_t *domain)
 /*!
  * \brief Compute the surface tension momentum source term following the CSF
  * model of Brackbill et al. (1992).
+ *
+ * \param[in]   m    pointer to mesh structure
+ * \param[in]   mq   pointer to mesh quantities structure
+ * \param[out]  stf  surface tension momentum source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_surface_tension(const cs_domain_t  *domain,
-                       cs_real_3_t        stf[])
+cs_vof_surface_tension(const cs_mesh_t             *m,
+                       const cs_mesh_quantities_t  *mq,
+                       cs_real_3_t                  stf[])
 {
-  const cs_mesh_t *m = domain->mesh;
-  const cs_mesh_quantities_t *mq = domain->mesh_quantities;
-
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = m->n_b_faces;
@@ -994,10 +990,7 @@ cs_vof_surface_tension(const cs_domain_t  *domain,
   /* Void fraction diffusion solving */
   int ncycles = 5;
   for (int i = 0; i < ncycles; i++)
-    cs_smooth(domain,
-              coefa,
-              coefb,
-              pvar);
+    _smoothe(m, mq, coefa, coefb, pvar);
 
   /* Compute the gradient of "diffused void fraction" */
   cs_real_3_t *surfxyz_unnormed;
@@ -1078,11 +1071,13 @@ cs_vof_surface_tension(const cs_domain_t  *domain,
     cs_real_3_t gradf;
 
     for (int k = 0; k < 3; k++)
-      gradf[k] = pond[face_id] * surfxyz_norm[ii][k] + (1. - pond[face_id]) * surfxyz_norm[jj][k];
+      gradf[k] =         pond[face_id]  * surfxyz_norm[ii][k]
+                 + (1. - pond[face_id]) * surfxyz_norm[jj][k];
 
     for (int k = 0; k < 3; k++)
       for (int l = 0; l < 3; l++)
-        gradf[k] += 0.5 * dofij[face_id][l] * (gradnxyz[ii][k][l] + gradnxyz[jj][k][l]);
+        gradf[k] += 0.5 * dofij[face_id][l]
+                        * (gradnxyz[ii][k][l] + gradnxyz[jj][k][l]);
 
     double flux = cs_math_3_dot_product(gradf, surfac[face_id]);
     curv[ii] += flux;
@@ -1139,15 +1134,16 @@ cs_vof_surface_tension(const cs_domain_t  *domain,
  * \text{ and: }
  * \delta = 10^{-8} / \overline{\vol \celli} ^{1/3}
  * \f]
+ *
+ * \param[in]   m    pointer to mesh structure
+ * \param[in]   mq   pointer to mesh quantities structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
+cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
+                            const cs_mesh_quantities_t  *mq)
 {
-  const cs_mesh_t *m = domain->mesh;
-  const cs_mesh_quantities_t *mq = domain->mesh_quantities;
-
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_gnum_t n_g_cells = m->n_g_cells;
   const cs_lnum_t n_cells_with_ghosts = m->n_cells_with_ghosts;
@@ -1298,7 +1294,7 @@ cs_vof_drift_term(int                        imrgra,
   if (_vof_parameters.idrift == 1) {
 
     // FIXME Handle boundary terms bdriftflux
-    cs_vof_deshpande_drift_flux(cs_glob_domain);
+    cs_vof_deshpande_drift_flux(cs_glob_mesh, cs_glob_mesh_quantities);
 
   } else {
 
