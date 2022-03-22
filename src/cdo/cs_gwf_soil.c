@@ -1039,6 +1039,12 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc)
   if (mc == NULL)
     return;
 
+  /* One assumes that there is no diffusion of the gas component in the liquid
+     phase --> This removes some terms w.r.t. the miscible model */
+
+  assert(mc->henry_constant < 1e15); /* Should be very low */
+
+  const double  hmh = mc->h_molar_mass * mc->henry_constant;
   const double  mh_ov_rt =
     mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
   const cs_real_t  *g_cell_pr = mc->g_cell_pressure;
@@ -1064,7 +1070,8 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc)
     const double  phi = soil->porosity;
     const double  phi_rhol = phi * mc->l_mass_density;
 
-    const double  wl_diff_coef = mc->l_mass_density* k_abs/mc->l_viscosity;
+    const double  l_diff_coef = k_abs/mc->l_viscosity;
+    const double  wl_diff_coef = mc->l_mass_density * l_diff_coef;
     const double  hg_diff_coef = k_abs/mc->g_viscosity;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SOIL_DBG > 0
@@ -1093,6 +1100,7 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc)
       const cs_lnum_t  c_id = zone->elt_ids[i];
 
       const double  rhog = mh_ov_rt * g_cell_pr[c_id];
+      const double  rho_hl = hmh *  g_cell_pr[c_id];
       const double  sl = l_sat[c_id];
       const double  sg = 1 - sl;
       const double  dsl_dpc = l_cap[c_id];
@@ -1108,10 +1116,12 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc)
       /* Hydrogen conservation equation. Updates arrays linked to properties
          which define computed terms */
 
-      mc->time_hg_array[c_id] = phi * (mh_ov_rt*sg  - rhog*dsl_dpc);
-      mc->time_hl_array[c_id] = phi * rhog*dsl_dpc;
+      mc->time_hg_array[c_id] = phi *
+        ( mh_ov_rt*sg  + (rho_hl - rhog)*dsl_dpc + hmh*sl );
+      mc->time_hl_array[c_id] = phi * (rhog - rho_hl) * dsl_dpc;
 
       mc->diff_hg_array[c_id] = rhog * hg_diff_coef * krg[c_id];
+      mc->diff_hl_array[c_id] = rho_hl * l_diff_coef * krl[c_id];
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SOIL_DBG > 0
       if (c_id == c_min_id || c_id == c_mid_id || c_id == c_max_id) {

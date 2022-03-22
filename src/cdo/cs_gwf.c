@@ -1330,7 +1330,7 @@ _tpf_init_context(void)
   mc->l_mass_density = 1000;
   mc->l_viscosity = 1e-3;
   mc->g_viscosity = 2e-5;
-  mc->l_diffusivity_h = 1e-20;   /* nearly immiscible case */
+  mc->l_diffusivity_h = 0;      /* immiscible case */
   mc->w_molar_mass = 18e-3;
   mc->h_molar_mass = 3e-3;
   mc->ref_temperature = 280;    /* in Kelvin */
@@ -1443,6 +1443,9 @@ _itpf_log_context(cs_gwf_two_phase_t   *mc)
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Reference temperature: %5.2f K\n",
                 mc->ref_temperature);
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | Henry constant: %5.3e (Should be very low)\n",
+                mc->henry_constant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1492,12 +1495,9 @@ _tpf_init_setup(cs_gwf_two_phase_t     *mc,
 
   /* Cross-terms */
 
-  if (gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE) {
+  mc->diff_hl_pty = cs_property_add("diff_hl_pty", perm_type);
 
-    mc->diff_hl_pty = cs_property_add("diff_hl_pty", perm_type);
-    cs_equation_add_diffusion(mc->hl_eqp, mc->diff_hl_pty);
-
-  }
+  cs_equation_add_diffusion(mc->hl_eqp, mc->diff_hl_pty);
 
   /* Add the variable fields (Keep always the previous state) */
 
@@ -1664,18 +1664,14 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                            false,                /* not owner of the array */
                            NULL);                /* no index */
 
-  if (gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE) {
+  BFT_MALLOC(mc->diff_hl_array, n_cells, cs_real_t);
+  memset(mc->diff_hl_array, 0, csize);
 
-    BFT_MALLOC(mc->diff_hl_array, n_cells, cs_real_t);
-    memset(mc->diff_hl_array, 0, csize);
-
-    cs_property_def_by_array(mc->diff_hl_pty,
-                             cs_flag_primal_cell,  /* where data are located */
-                             mc->diff_hl_array,
-                             false,                /* not owner of the array */
-                             NULL);                /* no index */
-
-  } /* miscible case */
+  cs_property_def_by_array(mc->diff_hl_pty,
+                           cs_flag_primal_cell,  /* where data are located */
+                           mc->diff_hl_array,
+                           false,                /* not owner of the array */
+                           NULL);                /* no index */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2261,7 +2257,7 @@ cs_gwf_set_immiscible_two_phase_model(cs_real_t       l_mass_density,
   mc->w_molar_mass = 0;         /* immiscible case */
   mc->h_molar_mass = h_molar_mass;
   mc->ref_temperature = ref_temperature;
-  mc->henry_constant = 0;       /* immiscible case */
+  mc->henry_constant = 1e-20;  /* immiscible case */
 }
 
 /*----------------------------------------------------------------------------*/
