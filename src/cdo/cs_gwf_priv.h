@@ -500,6 +500,12 @@ typedef struct {
    *      Values in each cell of the capillarity pressure. This quantity is the
    *      one used to update the variable related to a soil model such as the
    *      liquid and gaseous relative permeabilities or the liquid saturation.
+   *
+   * \var g_cell_pressure
+   *      Values in each cell of the gas pressure. This quantity is the one
+   *      used to update the unsteady/diffusion term coefficients in the
+   *      conservation equation for the gas component. This quantity can also
+   *      be useful for post-processing purposes.
    */
 
   cs_real_t                    *time_wl_array;
@@ -517,6 +523,7 @@ typedef struct {
   cs_real_t                    *g_rel_permeability;
   cs_real_t                    *l_capacity;
   cs_real_t                    *capillarity_cell_pressure;
+  cs_real_t                    *g_cell_pressure;
 
   /*!
    * @}

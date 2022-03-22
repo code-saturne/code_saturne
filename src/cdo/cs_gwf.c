@@ -1322,6 +1322,7 @@ _tpf_init_context(void)
   mc->g_rel_permeability = NULL;
   mc->l_capacity = NULL;
   mc->capillarity_cell_pressure = NULL;
+  mc->g_cell_pressure = NULL;
 
   /* Model parameters (default values) */
   /* ---------------- */
@@ -1375,6 +1376,7 @@ _tpf_free_context(cs_gwf_two_phase_t  **p_mc)
   BFT_FREE(mc->g_rel_permeability);
   BFT_FREE(mc->l_capacity);
   BFT_FREE(mc->capillarity_cell_pressure);
+  BFT_FREE(mc->g_cell_pressure);
 
   BFT_FREE(mc);
   *p_mc = NULL;
@@ -1597,6 +1599,9 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
   BFT_MALLOC(mc->capillarity_cell_pressure, n_cells, cs_real_t);
   memset(mc->capillarity_cell_pressure, 0, sizeof(cs_real_t)*n_cells);
 
+  BFT_MALLOC(mc->g_cell_pressure, n_cells, cs_real_t);
+  memset(mc->g_cell_pressure, 0, sizeof(cs_real_t)*n_cells);
+
   /* Define the array storing the time property for the water eq. */
 
   BFT_MALLOC(mc->time_wl_array, n_cells, cs_real_t);
@@ -1722,7 +1727,6 @@ _tpf_updates(const cs_mesh_t             *mesh,
   }
 
   cs_real_t  *c_pr = mc->c_pressure->val;
-  cs_real_t  *g_cell_pressure = NULL;
 
   switch (space_scheme) {
 
@@ -1741,10 +1745,8 @@ _tpf_updates(const cs_mesh_t             *mesh,
 
     /* Interpolate the pressure in the gaseous phase at cell centers */
 
-    BFT_MALLOC(g_cell_pressure, quant->n_cells, cs_real_t);
-
     cs_reco_pv_at_cell_centers(connect->c2v, quant, mc->g_pressure->val,
-                               g_cell_pressure);
+                               mc->g_cell_pressure);
     break;
 
   default:
@@ -1770,9 +1772,9 @@ _tpf_updates(const cs_mesh_t             *mesh,
 
   case 1: /* Isotropic case */
     if (gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE)
-      cs_gwf_soil_iso_update_mtpf_terms(g_cell_pressure, mc);
+      cs_gwf_soil_iso_update_mtpf_terms(mc);
     else
-      cs_gwf_soil_iso_update_itpf_terms(g_cell_pressure, mc);
+      cs_gwf_soil_iso_update_itpf_terms(mc);
     break;
 
   default:
@@ -1782,9 +1784,6 @@ _tpf_updates(const cs_mesh_t             *mesh,
     break;
 
   } /* Switch on the permeability type */
-
-  if (space_scheme == CS_SPACE_SCHEME_CDOVB)
-    BFT_FREE(g_cell_pressure);
 
   return time_eval;
 }

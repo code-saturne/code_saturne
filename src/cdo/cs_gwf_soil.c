@@ -946,14 +946,12 @@ cs_gwf_soil_update(cs_real_t                     time_eval,
  *         miscible two-phase flow model.
  *         Case of an isotropic absolute permeability.
  *
- * \param[in]      g_cell_pr     pressure in the gaseous phase at cell centers
  * \param[in, out] mc            pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t        *g_cell_pr,
-                                  cs_gwf_two_phase_t     *mc)
+cs_gwf_soil_iso_update_mtpf_terms(cs_gwf_two_phase_t     *mc)
 {
   if (mc == NULL)
     return;
@@ -961,6 +959,7 @@ cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t        *g_cell_pr,
   const double  hmh = mc->h_molar_mass * mc->henry_constant;
   const double  mh_ov_rt =
     mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+  const cs_real_t  *g_cell_pr = mc->g_cell_pressure;
 
   /* In the immiscible case, mc->l_diffusivity_h should be set to 0 */
 
@@ -1030,20 +1029,19 @@ cs_gwf_soil_iso_update_mtpf_terms(const cs_real_t        *g_cell_pr,
  *         immiscible two-phase flow model.
  *         Case of an isotropic absolute permeability.
  *
- * \param[in]      g_cell_pr     pressure in the gaseous phase at cell centers
  * \param[in, out] mc            pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_soil_iso_update_itpf_terms(const cs_real_t        *g_cell_pr,
-                                  cs_gwf_two_phase_t     *mc)
+cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc)
 {
   if (mc == NULL)
     return;
 
   const double  mh_ov_rt =
     mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+  const cs_real_t  *g_cell_pr = mc->g_cell_pressure;
 
   /* In the immiscible case, mc->l_diffusivity_h should be set to 0 */
 
