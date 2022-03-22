@@ -49,6 +49,12 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+typedef struct _cs_cdovb_scalsys_t  cs_cdovb_scalsys_t;
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 
@@ -84,10 +90,12 @@ cs_cdovb_scalsys_init_sharing(const cs_mesh_t              *mesh,
  * \param[in]      sysp             set of parameters to specify a system of eqs
  * \param[in, out] block_factories  array of the core members for an equation
  * \param[out]     sh               system helper structure to initialize
+ *
+ * \return a pointer to a new allocated system context structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+void *
 cs_cdovb_scalsys_init_structures(int                           n_eqs,
                                  const cs_equation_system_param_t  *sysp,
                                  cs_equation_core_t          **block_factories,
@@ -103,14 +111,16 @@ cs_cdovb_scalsys_init_structures(int                           n_eqs,
  *
  *        Case of scalar-valued CDO-Vb scheme in each block
  *
- * \param[in]      n_eqs    number of equations
- * \param[in, out] blocks   array of the core structures for an equation
+ * \param[in]      n_eqs        number of equations
+ * \param[in, out] blocks       array of the core structures for an equation
+ * \param[in, out] sys_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
-void
+void *
 cs_cdovb_scalsys_free_structures(int                        n_eqs,
-                                 cs_equation_core_t       **blocks);
+                                 cs_equation_core_t       **blocks,
+                                 void                      *sys_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -120,11 +130,12 @@ cs_cdovb_scalsys_free_structures(int                        n_eqs,
  *        to a scalar-valued unsteady convection/diffusion/reaction equation
  *        with a CDO-Vb scheme using an implicit time scheme.
  *
- * \param[in]      cur2prev  true="current to previous" operation is performed
- * \param[in]      n_eqs     number of equations
- * \param[in]      sysp      set of paremeters for the system of equations
- * \param[in, out] blocks    array of the core members for an equation
- * \param[in, out] sh        pointer to a system helper structure
+ * \param[in]      cur2prev     do a "current to previous" operation ?
+ * \param[in]      n_eqs        number of equations
+ * \param[in]      sysp         set of paremeters for the system of equations
+ * \param[in, out] blocks       array of the core members for an equation
+ * \param[in, out] sys_context  pointer to a structure cast on-the-fly
+ * \param[in, out] sh           pointer to a system helper structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -133,6 +144,7 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
                                 int                            n_equations,
                                 cs_equation_system_param_t    *sysp,
                                 cs_equation_core_t           **blocks,
+                                void                          *sys_context,
                                 cs_cdo_system_helper_t        *sh);
 
 /*----------------------------------------------------------------------------*/

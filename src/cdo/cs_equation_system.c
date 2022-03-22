@@ -234,7 +234,9 @@ _equation_system_free(cs_equation_system_t  **p_eqsys)
 
   /* Free all structures inside array of structures */
 
-  eqsys->free_structures(n_eqs, eqsys->block_factories);
+  eqsys->context = eqsys->free_structures(n_eqs,
+                                          eqsys->block_factories,
+                                          eqsys->context);
 
   cs_cdo_system_helper_free(&(eqsys->system_helper));
 
@@ -577,12 +579,15 @@ cs_equation_system_set_sles(void)
     if (eqsys == NULL)
       bft_error(__FILE__, __LINE__, 0, "%s: System not allocated.", __func__);
 
+    cs_equation_system_param_t  *sysp = eqsys->param;
+    assert(sysp != NULL);
+
     cs_timer_t  t1 = cs_timer_time();
     if (eqsys->timer_id > -1)
       cs_timer_stats_start(eqsys->timer_id);
 
     cs_equation_system_sles_init(eqsys->n_equations,
-                                 eqsys->param,
+                                 sysp,
                                  eqsys->block_factories);
 
     cs_timer_t  t2 = cs_timer_time();
@@ -610,7 +615,7 @@ cs_equation_system_initialize(void)
     if (eqsys == NULL)
       bft_error(__FILE__, __LINE__, 0, "%s: System not allocated.", __func__);
 
-    const int n_eqs = eqsys->n_equations;
+    const int  n_eqs = eqsys->n_equations;
     const cs_equation_system_param_t  *sysp = eqsys->param;
     assert(sysp != NULL);
 
@@ -631,8 +636,9 @@ cs_equation_system_initialize(void)
 
     } /* Loop on equations (Diagonal blocks) */
 
-    eqsys->init_structures(n_eqs, sysp, eqsys->block_factories,
-                           &eqsys->system_helper);
+    eqsys->context = eqsys->init_structures(n_eqs, sysp,
+                                            eqsys->block_factories,
+                                            &eqsys->system_helper);
 
     cs_timer_t  t2 = cs_timer_time();
     cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);
@@ -678,6 +684,7 @@ cs_equation_system_solve(bool                     cur2prev,
                       eqsys->n_equations,
                       eqsys->param,
                       eqsys->block_factories,
+                      eqsys->context,
                       eqsys->system_helper);
 
   cs_timer_t  t2 = cs_timer_time();

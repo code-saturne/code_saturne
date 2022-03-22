@@ -61,10 +61,12 @@ BEGIN_C_DECLS
  * \param[in]      sysp        set of parameters to specify a system of eqs
  * \param[in, out] core_array  array of the core structures for an equation
  * \param[out]     p_sh        double pointer to a system helper to define
+ *
+ * \return a pointer to a new allocated system context structure
  */
 /*----------------------------------------------------------------------------*/
 
-typedef void
+typedef void *
 (cs_equation_system_init_structures_t)(int                                n_eqs,
                                        const cs_equation_system_param_t  *sysp,
                                        cs_equation_core_t         **core_array,
@@ -80,24 +82,29 @@ typedef void
  *
  *        Generic prototype to define the function pointer.
  *
- * \param[in]      n_eqs       number of equations
- * \param[in, out] core_array  array of the core structures for an equation
+ * \param[in]      n_eqs        number of equations
+ * \param[in, out] core_array   array of the core structures for an equation
+ * \param[in, out] sys_context  pointer to a context structure cast on-the-fly
+ *
+ * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
-typedef void
+typedef void *
 (cs_equation_system_free_structures_t)(int                      n_eqs,
-                                       cs_equation_core_t     **core_array);
+                                       cs_equation_core_t     **core_array,
+                                       void                    *sys_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build and solve a linear system within the CDO framework
  *
- * \param[in]      c2p       Is a "current to previous" operation performed ?
- * \param[in]      n_eqs     number of equations in the system to solve
- * \param[in]      sysp      set of paremeters for the system of equations
- * \param[in, out] blocks    array of the core members for an equation
- * \param[in, out] sh        pointer to a system helper structure
+ * \param[in]      c2p         do a "current to previous" operation performed ?
+ * \param[in]      n_eqs       number of equations in the system to solve
+ * \param[in]      sysp        set of paremeters for the system of equations
+ * \param[in, out] blocks      array of the core members for an equation
+ * \param[in, out] sys_context pointer to a sructure cast on-the-fly ?
+ * \param[in, out] sh          pointer to a system helper structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -106,6 +113,7 @@ typedef void
                              int                            n_eqs,
                              cs_equation_system_param_t    *sysp,
                              cs_equation_core_t           **blocks,
+                             void                          *sys_context,
                              cs_cdo_system_helper_t        *sh);
 
 
@@ -136,9 +144,15 @@ typedef struct {
    * \var system_helper
    *      Set of structures to define the system of equations (rhs, matrix or
    *      matrices, range sets, interface sets, etc.)
+   *
+   * \var context
+   *      pointer to a structure cast on-the-fly which depends on the numerical
+   *      scheme
    */
 
   cs_cdo_system_helper_t       *system_helper;
+
+  void                         *context;
 
   /*!
    * @name Diagonal block (equations)

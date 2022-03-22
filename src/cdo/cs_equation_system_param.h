@@ -97,6 +97,7 @@ typedef struct {
   int                       block_var_dim;
 
   /*!
+   * @}
    * @name Linear algebra (SLES)
    * @{
    *

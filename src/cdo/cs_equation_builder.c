@@ -311,6 +311,7 @@ cs_equation_builder_reset(cs_equation_builder_t  *eqb)
   if (eqb == NULL)
     return;
 
+  eqb->init_step = true;
   BFT_FREE(eqb->enforced_values);
   BFT_FREE(eqb->dir_values);
 }

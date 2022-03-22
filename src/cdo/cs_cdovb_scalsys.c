@@ -86,6 +86,29 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Build the linear system of equations. The number of rows in
+ *        the system is equal to the number of equations. Thus there are
+ *        n_eqs*n_eqs blocks in the system. Each block corresponds potentially
+ *        to a scalar-valued unsteady convection/diffusion/reaction equation
+ *        with a CDO-Vb scheme.
+ *
+ * \param[in]      n_eqs        number of equations
+ * \param[in, out] blocks       array of the core members for an equation
+ * \param[in, out] scalsys      pointer to a cs_cdovb_scalsys_t structure
+ * \param[in, out] fields       array of pointers to the associated fields
+ * \param[in, out] sh           pointer to a system helper structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdovb_scalsys_build_t)(int                            n_equations,
+                           cs_equation_core_t           **blocks,
+                           cs_cdovb_scalsys_t            *scalsys,
+                           cs_field_t                   **fields,
+                           cs_cdo_system_helper_t        *sh);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Generic function pointer to perform the assembly step.
  *        Add the block attached to the block (row_id, col_id) in the full
  *        (coupled) system
@@ -105,7 +128,84 @@ typedef void
                          cs_equation_builder_t        *eqb,
                          cs_cdo_assembly_t            *asb);
 
-/* Algebraic system for CDO vertex-based discretization */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve a linear system arising for a system of equations relying on
+ *         scalar-valued CDO vertex-based schemes
+ *
+ * \param[in]      n_eqs     number of equations constituting the system
+ * \param[in]      n_dofs    local number of DoFs (may be != n_gather_elts)
+ * \param[in]      sysp      parameter settings
+ * \param[in, out] sh        pointer to the system helper structure
+ * \param[in, out] fields    array of field pointers (one for each eq.)
+ *
+ * \return the number of iterations of the linear solver
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef int
+(cs_cdovb_scalsys_solve_t)(int                                 n_eqs,
+                           cs_lnum_t                           n_dofs,
+                           const cs_equation_system_param_t   *sysp,
+                           cs_cdo_system_helper_t             *sh,
+                           cs_field_t                        **fields);
+
+/*=============================================================================
+ * Structure definitions
+ *============================================================================*/
+
+/* Structure related to system of equations for CDO vertex-based
+   discretization */
+
+struct _cs_cdovb_scalsys_t {
+
+  /* @name General information
+   * @{
+   *
+   * \var n_dofs
+   * Total number of degrees of freedom for this system
+   */
+
+  cs_lnum_t                      n_dofs;
+
+  /*!
+   * @}
+   * @name Build stage
+   * Additional members which corresponds to function pointers
+   * @{
+   */
+
+  cs_cdovb_scalsys_build_t          *build;
+
+  /*!
+   * @}
+   * @name Assembly stage
+   * Additional members which may be used to assemble the system
+   * @{
+   */
+
+  /* \var assemble
+   * Function pointer to manage the assembly process for the Navier-Stokes
+   * system of equation
+   */
+
+  cs_cdovb_scalsys_asb_t            *assemble;
+
+  /*!
+   * @}
+   * @name Solve stage
+   * Additional members which may be used to solve the system
+   * @{
+   *
+   * \var solve
+   * Function dedicated to the resolution of the linear system
+   */
+
+  cs_cdovb_scalsys_solve_t          *solve;
+
+  /*! @} */
+};
+
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -123,6 +223,88 @@ static const cs_time_step_t         *cs_shared_time_step;
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Fill the dof_val array with values collected from field values
+ *         If the array is not allocated then one allocates the array (one
+ *         takes into account the size needed for parallel synchronizations)
+ *
+ * \param[in]      n_eqs     number of equations constituting the system
+ * \param[in]      sh        pointer to the system helper structure
+ * \param[in]      fields    array of field pointers (one for each eq.)
+ * \param[in, out] p_dof_vals  double pointer to the array to fill
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_dof_vals(int                                 n_eqs,
+              const cs_cdo_system_helper_t       *sh,
+              cs_field_t                       **fields,
+              cs_real_t                        **p_dof_vals)
+{
+  assert(sh != NULL);
+  assert(sh->n_blocks == 1);
+  assert(sh->blocks[0]->type == CS_CDO_SYSTEM_BLOCK_DEFAULT);
+
+  const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
+
+  assert(n_vertices * n_eqs <= n_cols);
+
+  /* Initialize the solution array */
+
+  cs_real_t  *dof_vals = *p_dof_vals;
+
+  if (dof_vals == NULL)
+    BFT_MALLOC(dof_vals, n_cols, cs_real_t);
+
+  for (int i = 0; i < n_eqs; i++) {
+
+    const cs_field_t  *f = fields[i];
+    assert(f != NULL);
+    assert(f->val != NULL);
+
+    memcpy(dof_vals + i*n_vertices, f->val, sizeof(cs_real_t)*n_vertices);
+
+  }
+
+  *p_dof_vals = dof_vals;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Fill the dof_val array with values collected from field values
+ *         If the array is not allocated then one allocates the array (one
+ *         takes into account the size needed for parallel synchronizations)
+ *
+ * \param[in]      n_eqs     number of equations constituting the system
+ * \param[in]      dof_vals  pointer to the array with values to copy
+ * \param[in, out] fields    array of field pointers (one for each eq.) to fill
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_field_vals(int                                n_eqs,
+                const cs_real_t                   *dof_vals,
+                cs_field_t                       **fields)
+{
+  if (n_eqs < 1)
+    return;
+
+  assert(dof_vals != NULL && fields != NULL);
+
+  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
+
+  for (int i = 0; i < n_eqs; i++) {
+
+    cs_field_t  *f = fields[i];
+
+    memcpy(f->val, dof_vals + i*n_vertices, sizeof(cs_real_t)*n_vertices);
+
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -193,7 +375,7 @@ _svb_one_dblock_assemble(int                           row_id,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static int
 _solve_mumps(int                                 n_eqs,
              cs_lnum_t                           n_dofs,
              const cs_equation_system_param_t   *sysp,
@@ -207,7 +389,6 @@ _solve_mumps(int                                 n_eqs,
 
   const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
   const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
-  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
 
   /* n_cols could be greater than n_dofs = n_equations*n_vertices in case of a
@@ -218,17 +399,8 @@ _solve_mumps(int                                 n_eqs,
   /* Initialize the solution array */
 
   cs_real_t  *dof_vals = NULL;
-  BFT_MALLOC(dof_vals, n_cols, cs_real_t);
 
-  for (int i = 0; i < n_eqs; i++) {
-
-    cs_field_t  *f = fields[i];
-    assert(f != NULL);
-    assert(f->val != NULL);
-
-    memcpy(dof_vals + i*n_vertices, f->val, sizeof(cs_real_t)*n_vertices);
-
-  }
+  _set_dof_vals(n_eqs, sh, fields, &dof_vals);
 
   if (rset != NULL) { /* parallel/periodic operations */
 
@@ -294,16 +466,183 @@ _solve_mumps(int                                 n_eqs,
 
   /* dof_vals --> fields */
 
-  for (int i = 0; i < n_eqs; i++) {
-
-    cs_field_t  *f = fields[i];
-
-    memcpy(f->val, dof_vals + i*n_vertices, sizeof(cs_real_t)*n_vertices);
-
-  }
+  _set_field_vals(n_eqs, dof_vals, fields);
 
   BFT_FREE(dof_vals);
   cs_sles_free(sles);
+
+  return sinfo.n_it;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build the linear system of equations. The number of rows in
+ *        the system is equal to the number of equations. Thus there are
+ *        n_eqs*n_eqs blocks in the system. Each block corresponds potentially
+ *        to a scalar-valued unsteady convection/diffusion/reaction equation
+ *        with a CDO-Vb scheme.
+ *
+ * \param[in]      n_eqs     number of equations
+ * \param[in, out] blocks    array of the core members for an equation
+ * \param[in, out] scalsys   pointer to a structure cast on-the-fly
+ * \param[in, out] fields    array of pointers to the associated fields
+ * \param[in, out] sh        pointer to a system helper structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cdovb_scalsys_build_implicit(int                            n_equations,
+                              cs_equation_core_t           **blocks,
+                              cs_cdovb_scalsys_t            *scalsys,
+                              cs_field_t                   **fields,
+                              cs_cdo_system_helper_t        *sh)
+{
+  const cs_mesh_t  *mesh = cs_shared_mesh;
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
+
+  /* ------------------------- */
+  /* Main OpenMP block on cell */
+  /* ------------------------- */
+
+  const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
+
+  double  rhs_norm = 0.;
+
+  /* Default initialization of properties associated to each block of the
+     system */
+
+  for (int i_eq = 0; i_eq < n_equations; i_eq++) {
+
+    for (int j_eq = 0; j_eq < n_equations; j_eq++) {
+
+      int ij = i_eq*n_equations + j_eq;
+
+      cs_equation_core_t  *block_ij = blocks[ij];
+
+      const cs_equation_param_t  *eqp = block_ij->param;
+      const cs_real_t  *f_val = fields[j_eq]->val;
+
+      cs_equation_builder_t  *eqb = block_ij->builder;
+      cs_cdovb_scaleq_t  *eqc = block_ij->scheme_context;
+
+      /* Setup stage: Set useful arrays:
+       * -----------
+       * -> the Dirichlet values at vertices
+       * -> the translation of the enforcement values at vertices if needed
+       */
+
+      if (eqb->init_step) {
+
+        cs_cdovb_scaleq_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag);
+
+        eqb->init_step = false;
+
+      }
+
+#     pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+      {
+        /* Set variables and structures inside the OMP section so that each
+           thread has its own value */
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+        int  t_id = omp_get_thread_num();
+#else
+        int  t_id = 0;
+#endif
+
+        cs_cell_builder_t  *cb = NULL;
+        cs_cell_sys_t *csys = NULL;
+
+        cs_cdovb_scaleq_get(&csys, &cb);
+
+        cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
+
+        cs_cdo_assembly_set_shift(asb,
+                                  i_eq * n_vertices,  /* row shift */
+                                  j_eq * n_vertices); /* col shift */
+
+        cs_cdovb_scaleq_init_properties(t_id, time_eval, eqp, eqb, eqc);
+
+        /* --------------------------------------------- */
+        /* Main loop on cells to build the linear system */
+        /* --------------------------------------------- */
+
+#       pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
+        for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+          /* Build the cellwise system */
+
+          rhs_norm += cs_cdovb_scaleq_build_block_implicit(t_id, c_id, f_val,
+                                                           i_eq, j_eq,
+                                                           eqp,
+                                                           eqb,
+                                                           eqc,
+                                                           cb, csys);
+
+          /* Assembly process
+           * ================ */
+
+          scalsys->assemble(i_eq, csys, sh, eqb, asb);
+
+        } /* Main loop on cells */
+
+      } /* OPENMP Block */
+
+    } /* j_eq */
+  } /* i_eq */
+
+  cs_cdo_system_helper_finalize_assembly(sh);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create and initialize a cs_cdovb_scalsys_t structure
+ *
+ * \param[in]      n_eqs            number of equations
+ * \param[in]      sysp             set of parameters to specify a system of eqs
+ *
+ * \return a pointer to a new allocated system context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_cdovb_scalsys_t *
+_create_scalsys(int                                 n_eqs,
+                const cs_equation_system_param_t   *sysp)
+{
+  if (n_eqs == 0)
+    return NULL;
+
+  const cs_lnum_t  n_vertices = cs_shared_quant->n_vertices;
+
+  cs_cdovb_scalsys_t  *scalsys = NULL;
+
+  BFT_MALLOC(scalsys, 1, cs_cdovb_scalsys_t);
+
+  scalsys->n_dofs = n_vertices * n_eqs;
+
+  /* Set pointers to function */
+
+  scalsys->build = _cdovb_scalsys_build_implicit;
+  scalsys->assemble = NULL;
+  scalsys->solve = NULL;
+
+  switch (sysp->sles_strategy) {
+
+  case CS_EQUATION_SYSTEM_SLES_MUMPS:
+    scalsys->assemble = _svb_one_dblock_assemble;
+    scalsys->solve = _solve_mumps;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy to solve the system.\n",
+              __func__);
+
+  } /* End of switch */
+
+  return scalsys;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -352,17 +691,19 @@ cs_cdovb_scalsys_init_sharing(const cs_mesh_t              *mesh,
  * \param[in]      sysp             set of parameters to specify a system of eqs
  * \param[in, out] block_factories  array of the core members for an equation
  * \param[out]     sh               system helper structure to initialize
+ *
+ * \return a pointer to a new allocated system context structure
  */
 /*----------------------------------------------------------------------------*/
 
-void
+void *
 cs_cdovb_scalsys_init_structures(int                           n_eqs,
                                  const cs_equation_system_param_t  *sysp,
                                  cs_equation_core_t          **block_factories,
                                  cs_cdo_system_helper_t      **p_sh)
 {
   if (n_eqs == 0)
-    return;
+    return NULL;
 
   if (block_factories == NULL)
     bft_error(__FILE__, __LINE__, 0,
@@ -470,9 +811,15 @@ cs_cdovb_scalsys_init_structures(int                           n_eqs,
 
   } /* column j */
 
+  /* Create and initialize the context for the coupled system */
+
+  cs_cdovb_scalsys_t  *scalsys = _create_scalsys(n_eqs, sysp);
+
   /* Return the allocated and initialized system helper */
 
   *p_sh = sh;
+
+  return scalsys;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -485,20 +832,24 @@ cs_cdovb_scalsys_init_structures(int                           n_eqs,
  *
  *        Case of scalar-valued CDO-Vb scheme in each block
  *
- * \param[in]      n_eqs    number of equations
- * \param[in, out] blocks   array of the core structures for an equation
+ * \param[in]      n_eqs        number of equations
+ * \param[in, out] blocks       array of the core structures for an equation
+ * \param[in, out] sys_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
-void
+void *
 cs_cdovb_scalsys_free_structures(int                        n_eqs,
-                                 cs_equation_core_t       **blocks)
+                                 cs_equation_core_t       **blocks,
+                                 void                      *sys_context)
 {
   if (n_eqs == 0)
-    return;
+    return NULL;
 
   if (blocks == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: Structure not allocated\n", __func__);
+
+  cs_cdovb_scalsys_t  *scalsys = sys_context;
 
   /* Free the extra-diagonal cs_equation_param_t structures, builders and
      scheme context structures */
@@ -521,6 +872,13 @@ cs_cdovb_scalsys_free_structures(int                        n_eqs,
       }
     } /* Loop on equations (j) */
   } /* Loop on equations (i) */
+
+  /* Free the system context */
+  /* ----------------------- */
+
+  BFT_FREE(scalsys);
+
+  return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -531,11 +889,12 @@ cs_cdovb_scalsys_free_structures(int                        n_eqs,
  *        to a scalar-valued unsteady convection/diffusion/reaction equation
  *        with a CDO-Vb scheme using an implicit time scheme.
  *
- * \param[in]      cur2prev  true="current to previous" operation is performed
- * \param[in]      n_eqs     number of equations
- * \param[in]      sysp      set of paremeters for the system of equations
- * \param[in, out] blocks    array of the core members for an equation
- * \param[in, out] sh        pointer to a system helper structure
+ * \param[in]      cur2prev     do a "current to previous" operation ?
+ * \param[in]      n_eqs        number of equations
+ * \param[in]      sysp         set of paremeters for the system of equations
+ * \param[in, out] blocks       array of the core members for an equation
+ * \param[in, out] sys_context  pointer to a structure cast on-the-fly
+ * \param[in, out] sh           pointer to a system helper structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -544,17 +903,15 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
                                 int                            n_equations,
                                 cs_equation_system_param_t    *sysp,
                                 cs_equation_core_t           **blocks,
+                                void                          *sys_context,
                                 cs_cdo_system_helper_t        *sh)
 {
-  const cs_mesh_t  *mesh = cs_shared_mesh;
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_time_step_t  *ts = cs_shared_time_step;
-  const cs_lnum_t  n_vertices = quant->n_vertices;
-  const cs_lnum_t  n_dofs = n_equations * n_vertices;
-
   assert(sysp->space_scheme == CS_SPACE_SCHEME_CDOVB);
   assert(sysp->block_var_dim == 1);
+
+  cs_cdovb_scalsys_t  *scalsys = sys_context;
+
+  const cs_lnum_t  n_dofs = scalsys->n_dofs;
 
   /* Retrieve the field associated to each diagonal block */
 
@@ -571,124 +928,20 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
   }
 
   /* Initialize the algebraic structures
-   * -----------------------------------
-   * ->  Initialize the rhs, matrix and assembler values
-   */
+   * ->  rhs, matrix and assembler values */
 
-  double  rhs_norm = 0.;
   cs_real_t  *rhs = NULL;
 
   cs_cdo_system_helper_init_system(sh, &rhs);
 
-  /* Set the function to perform the assembly */
+  /* Build the coupled system of equations */
+  /* ------------------------------------- */
 
-  cs_cdovb_scalsys_asb_t  *assemble_func = NULL;
+  scalsys->build(n_equations, blocks, scalsys, fields, sh);
 
-  switch (sysp->sles_strategy) {
-
-  case CS_EQUATION_SYSTEM_SLES_MUMPS:
-    assemble_func = _svb_one_dblock_assemble;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy to solve the system.\n",
-              __func__);
-
-  } /* End of switch */
-
-  assert(assemble_func != NULL);
-
-  /* ------------------------- */
-  /* Main OpenMP block on cell */
-  /* ------------------------- */
-
-  const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
-
-  /* Default initialization of properties associated to each block of the
-     system */
+  /* Reset builder structures and operate a current to previous op. if needed */
 
   for (int i_eq = 0; i_eq < n_equations; i_eq++) {
-
-    for (int j_eq = 0; j_eq < n_equations; j_eq++) {
-
-      int ij = i_eq*n_equations + j_eq;
-
-      cs_equation_core_t  *block_ij = blocks[ij];
-
-      const cs_equation_param_t  *eqp = block_ij->param;
-      const cs_real_t  *f_val = fields[j_eq]->val;
-
-      cs_equation_builder_t  *eqb = block_ij->builder;
-      cs_cdovb_scaleq_t  *eqc = block_ij->scheme_context;
-
-      /* Setup stage: Set useful arrays:
-       * -----------
-       * -> the Dirichlet values at vertices
-       * -> the translation of the enforcement values at vertices if needed
-       */
-
-      cs_cdovb_scaleq_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag);
-
-      if (eqb->init_step)
-        eqb->init_step = false;
-
-#     pragma omp parallel if (quant->n_cells > CS_THR_MIN)
-      {
-        /* Set variables and structures inside the OMP section so that each
-           thread has its own value */
-
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-        int  t_id = omp_get_thread_num();
-#else
-        int  t_id = 0;
-#endif
-
-        cs_cell_builder_t  *cb = NULL;
-        cs_cell_sys_t *csys = NULL;
-
-        cs_cdovb_scaleq_get(&csys, &cb);
-
-        cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
-
-        cs_cdo_assembly_set_shift(asb,
-                                  i_eq * n_vertices,  /* row shift */
-                                  j_eq * n_vertices); /* col shift */
-
-        cs_cdovb_scaleq_init_properties(t_id, time_eval, eqp, eqb, eqc);
-
-        /* --------------------------------------------- */
-        /* Main loop on cells to build the linear system */
-        /* --------------------------------------------- */
-
-#       pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
-        for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-
-          /* Build the cellwise system */
-
-          rhs_norm += cs_cdovb_scaleq_build_block_implicit(t_id, c_id, f_val,
-                                                           i_eq, j_eq,
-                                                           eqp,
-                                                           eqb,
-                                                           eqc,
-                                                           cb, csys);
-
-          /* Assembly process
-           * ================ */
-
-          assemble_func(i_eq, csys, sh, eqb, asb);
-
-        } /* Main loop on cells */
-
-      } /* OPENMP Block */
-
-    } /* j_eq */
-  } /* i_eq */
-
-  cs_cdo_system_helper_finalize_assembly(sh);
-
-  for (int i_eq = 0; i_eq < n_equations; i_eq++) {
-
     for (int j_eq = 0; j_eq < n_equations; j_eq++) {
 
       cs_equation_core_t  *block_ij = blocks[i_eq*n_equations + j_eq];
@@ -696,29 +949,18 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
       cs_equation_builder_reset(block_ij->builder);
 
     } /* Loop on blocks corresponding to the column of the system  */
-
-    /* Copy current field values to previous values */
-
-    if (cur2prev)
-      cs_field_current_to_previous(fields[i_eq]);
-
   } /* Loop on blocks corresponding to the row of the system  */
 
+  /* Copy current field values to previous values */
+
+  if (cur2prev)
+    for (int i_eq = 0; i_eq < n_equations; i_eq++)
+      cs_field_current_to_previous(fields[i_eq]);
+
   /* Solve the linear system */
-  /* ======================= */
+  /* ----------------------- */
 
-  switch (sysp->sles_strategy) {
-
-  case CS_EQUATION_SYSTEM_SLES_MUMPS:
-    _solve_mumps(n_equations, n_dofs, sysp, sh, fields);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy to solve the system.\n",
-              __func__);
-
-  } /* End of switch */
+  scalsys->solve(n_equations, n_dofs, sysp, sh, fields);
 
   /* Free temporary buffers and structures */
 
