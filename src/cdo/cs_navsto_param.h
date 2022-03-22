@@ -539,8 +539,6 @@ typedef struct {
 
   cs_iter_algo_param_aa_t       anderson_param;
 
-  /*! @} */
-
   /*!
    * @}
    * @name Block preconditioning or Schur complement approximation
@@ -976,8 +974,7 @@ typedef struct {
  * term is resolved
  *
  * \var CS_NSKEY_NL_ALGO_DTOL
- * Divergence tolerance at which the non-linearity arising from the advection
- * term is detected
+ * Threshold at which the non-linear algorithm is set as diverged
  *
  * \var CS_NSKEY_NL_ALGO_RTOL
  * Relative tolerance at which the non-linearity arising from the advection

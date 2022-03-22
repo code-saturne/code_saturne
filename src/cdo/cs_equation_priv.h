@@ -75,7 +75,7 @@ typedef void *
 /*!
  * \brief  Destroy a scheme data structure
  *
- * \param[in, out]  scheme_context   pointer to a builder structure
+ * \param[in, out] scheme_context    pointer to a structure cast on-the-fly
  *
  * \return a NULL pointer
  */

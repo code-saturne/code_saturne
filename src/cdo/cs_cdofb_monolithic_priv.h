@@ -328,6 +328,9 @@ struct _cdofb_monolithic_t {
    * @name Solve stage
    * Additional members which may be used to solve the system
    * @{
+   *
+   * \var solve
+   * Function dedicated to the resolution of the linear system
    */
 
   cs_cdofb_monolithic_solve_t        *solve;
