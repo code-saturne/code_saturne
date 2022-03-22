@@ -526,6 +526,9 @@ typedef enum {
  * \enum cs_param_nl_algo_t
  * \brief Class of non-linear iterative algorithm
  *
+ * \var CS_PARAM_NL_ALGO_NONE
+ * No specific algorithm. This mean a linear technique.
+ *
  * \var CS_PARAM_NL_ALGO_PICARD
  * Picard (also called fixed point) algorithm
  *
@@ -537,6 +540,7 @@ typedef enum {
 
 typedef enum {
 
+  CS_PARAM_NL_ALGO_NONE,
   CS_PARAM_NL_ALGO_PICARD,
   CS_PARAM_NL_ALGO_ANDERSON,
   CS_PARAM_N_NL_ALGOS
