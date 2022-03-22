@@ -66,6 +66,13 @@ BEGIN_C_DECLS
  * \def CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY
  * \brief Define a field at boundary faces for the Darcy flux and activate the
  *        post-processing
+ *
+ * \def CS_GWF_POST_GAS_MASS_DENSITY
+
+ * \brief Compute the mass density of the gas component for a miscible or
+ *        immiscible two-phase flow model. One recalls that one assumes that
+ *        there is no water in the gas phase and that the mass density is a
+ *        function of the gas pressure through a perfect gas law.
  */
 
 #define CS_GWF_POST_SOIL_CAPACITY              (1 << 0)
@@ -74,6 +81,7 @@ BEGIN_C_DECLS
 #define CS_GWF_POST_DARCY_FLUX_BALANCE         (1 << 3)
 #define CS_GWF_POST_DARCY_FLUX_DIVERGENCE      (1 << 4)
 #define CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY     (1 << 5)
+#define CS_GWF_POST_GAS_MASS_DENSITY           (1 << 6)
 
 /*!
  * @}

@@ -2095,12 +2095,20 @@ cs_gwf_log_setup(void)
     (gw->post_flag & CS_GWF_POST_LIQUID_SATURATION) ? true : false;
   bool  post_permeability =
     (gw->post_flag & CS_GWF_POST_PERMEABILITY) ? true : false;
+  bool  post_gas_density =
+    (gw->post_flag & CS_GWF_POST_GAS_MASS_DENSITY) ? true : false;
 
   cs_log_printf(CS_LOG_SETUP, "  * GWF | Post:"
                 " Soil capacity %s Liquid saturation %s Permeability %s\n",
                 cs_base_strtf(post_capacity),
                 cs_base_strtf(post_liquid_saturation),
                 cs_base_strtf(post_permeability));
+
+  if (gw->model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE ||
+      gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE)
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Post:"
+                  " Gas mass density %s\n",
+                  cs_base_strtf(post_gas_density));
 
   bool  do_balance =
     (gw->post_flag & CS_GWF_POST_DARCY_FLUX_BALANCE) ? true : false;
@@ -3189,6 +3197,33 @@ cs_gwf_extra_post_mtpf(void                      *input,
       BFT_FREE(permeability);
 
     } /* Post-processing of the permeability field */
+
+    if (gw->post_flag & CS_GWF_POST_GAS_MASS_DENSITY) {
+
+      const double  mh_ov_rt =
+        mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+
+      cs_real_t  *gas_mass_density = NULL;
+      BFT_MALLOC(gas_mass_density, n_cells, cs_real_t);
+
+      for (cs_lnum_t c = 0; c < n_cells; c++)
+        gas_mass_density[c] = mh_ov_rt * mc->g_cell_pressure[c];
+
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_DEFAULT,
+                        "gas_mass_density",
+                        1,
+                        true,
+                        false,
+                        CS_POST_TYPE_cs_real_t,
+                        gas_mass_density,
+                        NULL,
+                        NULL,
+                        time_step);
+
+      BFT_FREE(gas_mass_density);
+
+    } /* Post-processing of the gas mass density */
 
   } /* volume mesh id */
 }
