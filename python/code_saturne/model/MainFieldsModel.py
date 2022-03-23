@@ -929,13 +929,12 @@ class MainFieldsModel(Variables, Model):
         self.case.undoStop()
         ThermodynamicsModel(self.case).setMaterials(fieldId, material)
         fls = self.eos.getFluidMethods(material)
-        if "Cathare" in fls:
+        if "Cathare2" in fls:
+            ThermodynamicsModel(self.case).setMethod(fieldId, "Cathare")
+        elif "Cathare" in fls:
             ThermodynamicsModel(self.case).setMethod(fieldId, "Cathare")
         else:
-            for fli in fls:
-                if fli != "Ovap" and fli != "Flica4" and fli != "StiffenedGas":
-                    ThermodynamicsModel(self.case).setMethod(fieldId, fli)
-                break
+            ThermodynamicsModel(self.case).setMethod(fieldId, fls[0])
 
     def _deleteFieldsProperties(self):
         Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationTemperature")

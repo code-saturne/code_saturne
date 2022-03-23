@@ -92,6 +92,15 @@ class eosWrapper(object):
 
         return retval
 
+    def getNumberOfFluidReferences(self, fluid, method):
+        """
+        Get number of available references for a fluid using a given method.
+        """
+
+        retval = len(self.getFluidReferences(fluid, method))
+
+        return retval
+
     def getLiquidReferences(self, fluid, method):
         """
         Get list of available reference methods in a given table/method

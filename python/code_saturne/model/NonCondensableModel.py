@@ -183,12 +183,16 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
 
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeNonCondensable, fieldId, name, label)
 
-        # for non condensable we need use cathare
+        # for non condensable we need use cathare2 or cathare tables
         from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
-        ThermodynamicsModel(self.case).setMaterials(1, "Water")
-        ThermodynamicsModel(self.case).setMethod(1, "Cathare")
-        ThermodynamicsModel(self.case).setMaterials(2, "Water")
-        ThermodynamicsModel(self.case).setMethod(2, "Cathare")
+        ref_material = "Water"
+        for m in ("Cathare2", "Cathare"):
+            if m in self.eos.getFluidMethods(ref_material):
+                for i in (1,2):
+                    ThermodynamicsModel(self.case).setMaterials(i, ref_material)
+                    ThermodynamicsModel(self.case).setMethod(i, m)
+
+                break
         del ThermodynamicsModel
 
         return name

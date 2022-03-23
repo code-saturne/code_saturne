@@ -70,6 +70,7 @@ from code_saturne.model.LocalizationModel import LocalizationModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
+from code_saturne.model.EosWrapper import eosWrapper
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -157,9 +158,14 @@ class MethodDelegate(QItemDelegate):
         else :
             material = self.mdl.getMaterials(fieldId)
             fls = self.eos.getFluidMethods(material)
+
+            # If non condensable-gases, filter the list, only Cathare and
+            # Cathare2 tables are allowed with EOS
+#            if len(self.parent.mdl.ncond.getNonCondensableByFieldId(fieldId)) > 0:
+#                fls = [fli for fli in fls if fli in ("Cathare", "Cathare2")]
+
             for fli in fls:
-                if fli not in ("Ovap","Flica4","StiffenedGas"):
-                    self.modelCombo.addItem(self.tr(fli),fli)
+                self.modelCombo.addItem(self.tr(fli),fli)
 
         editor.setMinimumSize(editor.sizeHint())
         editor.installEventFilter(self)
@@ -177,6 +183,68 @@ class MethodDelegate(QItemDelegate):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
         log.debug("MethodDelegate value = %s"%value)
+
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, self.modelCombo.dicoM2V[value], Qt.DisplayRole)
+
+
+#-------------------------------------------------------------------------------
+# Combo box delegate for the method
+#-------------------------------------------------------------------------------
+
+
+class ReferenceDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent, mdl, dicoM2V, dicoV2M):
+        super(ReferenceDelegate, self).__init__(parent)
+        self.parent   = parent
+        self.mdl      = mdl
+        self.dicoM2V  = dicoM2V
+        self.dicoV2M  = dicoV2M
+        self.eos = eosWrapper()
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        self.modelCombo = ComboModel(editor, 1, 1)
+
+        fieldId= index.row() + 1
+
+        material = self.mdl.getMaterials(fieldId)
+        method   = self.mdl.getMethod(fieldId)
+        if material == "user_material" :
+            self.modelCombo.addItem(self.tr(self.dicoM2V["user_material"]), 'user_material')
+        else :
+            if self.eos.isActive():
+                phase = self.mdl.getFieldNature(fieldId)
+
+                if phase == "liquid":
+                    ref = self.eos.getLiquidReferences(material, method)
+                elif phase == "gas":
+                    ref = self.eos.getVaporReferences(material, method)
+
+                for r in ref:
+                    self.modelCombo.addItem(self.tr(r), r)
+
+        editor.setMinimumSize(editor.sizeHint())
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        row = index.row()
+        col = index.column()
+        string = index.model().getData(index)[col]
+        self.modelCombo.setItem(str_view=string)
+
+
+    def setModelData(self, comboBox, model, index):
+        txt = str(comboBox.currentText())
+        value = self.modelCombo.dicoV2M[txt]
+        log.debug("ReferenceDelegate value = %s"%value)
 
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
@@ -236,12 +304,7 @@ class StandardItemModelProperty(QStandardItemModel):
             return Qt.NoItemFlags
         # Lock fields with non condensable gas
         field_id = index.row() + 1
-        if self.ncond.getNonCondensableByFieldId(field_id) != []:
-            return Qt.ItemIsSelectable
-        if index.column() == 0 or index.column() == 3:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -275,6 +338,12 @@ class StandardItemModelProperty(QStandardItemModel):
             self._data[row][col] = new_met
             self.mdl.setMethod(FieldId, self.dicoV2M[new_met])
 
+        # Reference
+        elif col == 3:
+            new_ref = value
+            self._data[row][col] = new_ref
+            self.mdl.setFluidReference(FieldId, new_ref)
+
         self.updateReference(row)
         if row < 2:
             self.updateTable(0)
@@ -291,7 +360,7 @@ class StandardItemModelProperty(QStandardItemModel):
         fieldId = row + 1
         self._data[row][1] = self.dicoM2V[str(self.mdl.getMaterials(fieldId))]
         self._data[row][2] = self.dicoM2V[str(self.mdl.getMethod(fieldId))]
-        self._data[row][3] = self.mdl.updateReference(fieldId)
+        self._data[row][3] = self.mdl.getFluidReference(fieldId)
 
 
     def updateReference(self, row):
@@ -465,9 +534,8 @@ temperature = enthalpy / 1000;
                 self.dicoV2M[fli] = fli
 
                 for flli in self.eos.getFluidMethods(fli):
-                    if flli not in ("Ovap","Flica4","StiffenedGas"):
-                        self.dicoM2V[flli] = flli
-                        self.dicoV2M[flli] = flli
+                    self.dicoM2V[flli] = flli
+                    self.dicoV2M[flli] = flli
 
         self.list_scalars = []
 
@@ -485,9 +553,14 @@ temperature = enthalpy / 1000;
 
         delegateMaterials = MaterialsDelegate(self.tableViewProperties, self.mdl, self.dicoM2V, self.dicoV2M)
         delegateMethod    = MethodDelegate(self.tableViewProperties, self.mdl, self.dicoM2V, self.dicoV2M)
+        delegateReference = ReferenceDelegate(self.tableViewProperties,
+                                              self.mdl,
+                                              self.dicoM2V,
+                                              self.dicoV2M)
 
         self.tableViewProperties.setItemDelegateForColumn(1, delegateMaterials)
         self.tableViewProperties.setItemDelegateForColumn(2, delegateMethod)
+        self.tableViewProperties.setItemDelegateForColumn(3, delegateReference)
 
         # Combo models
 

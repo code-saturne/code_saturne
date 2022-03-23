@@ -269,13 +269,12 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                 fls = self.eos.getFluidMethods(material)
                 if _default_method in fls:
                     self.setMethod(fieldId, _default_method)
+                elif "Cathare2" in fls:
+                    self.setMethod(fieldId, "Cathare2")
                 elif "Cathare" in fls:
                     self.setMethod(fieldId, "Cathare")
                 else:
-                    for fli in fls:
-                        if fli != "Ovap" and fli != "Flica4" and fli != "StiffenedGas":
-                            self.setMethod(fieldId, fli)
-                            break
+                    self.setMethod(fieldId, fls[0])
             else:
                 self.setMethod(fieldId, "user_properties")
 
@@ -307,16 +306,28 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         else :
             phase = self.getFieldNature(fieldId)
             if self.eos.isActive():
-                ref = self.eos.getFluidReferences(material, method)
 
-                if len(ref) == 1 :
+                ref_idx = 0
+                if self.eos.getNumberOfFluidReferences(material, method) == 1:
                    # cas des gaz par exemple
-                   reference = ref[0]
+                   ref = self.eos.getFluidReferences(material, method)
                 else :
                    if phase == "liquid" :
-                      reference = self.eos.getLiquidReferences(material, method)[0]
+                      ref = self.eos.getLiquidReferences(material, method)
+                      _s = "Liquid"
                    elif phase == "gas" :
-                      reference = self.eos.getVaporReferences(material, method)[0]
+                      ref = self.eos.getVaporReferences(material, method)
+                      _s = "Vapor"
+
+                    # For Cathare tables with water force IAPWS as default if
+                    # available
+                   if method in ("Cathare","Cathare2") and material == "Water":
+                       for _t in ("IAPWS", "Water"):
+                           if _t+_s in ref:
+                               ref_idx = ref.index(_t+_s)
+                               break
+
+                reference = ref[ref_idx]
             else :
                 reference = material + phase
         # update XML
@@ -324,6 +335,37 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         childNode.xmlSetAttribute(choice = reference)
 
         return reference
+
+
+    @Variables.undoGlobal
+    def setFluidReference(self, fieldId, choice):
+        """
+        Set new reference choice for the phase
+        """
+        self.check_field_id(fieldId)
+
+        node = self.get_field_node(fieldId)
+        childNode = node.xmlInitChildNode('reference')
+        childNode.xmlSetAttribute(choice = choice)
+
+
+    @Variables.noUndo
+    def getFluidReference(self, fieldId):
+        """
+        Get phase fluid reference
+        """
+        self.check_field_id(fieldId)
+
+        node = self.get_field_node(fieldId)
+        noder = node.xmlGetNode('reference')
+        if noder is None:
+            ref = self.updateReference(fieldId)
+            self.setFluidReference(fieldId, ref)
+
+        ref = node.xmlGetNode('reference')['choice']
+        return ref
+
+
 
     @Variables.noUndo
     def getInitialValue(self, fieldId, tag):
