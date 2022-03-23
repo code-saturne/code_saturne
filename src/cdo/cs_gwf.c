@@ -47,6 +47,7 @@
 #include <bft_mem.h>
 
 #include "cs_boundary_zone.h"
+#include "cs_cdo_blas.h"
 #include "cs_cdovb_scaleq.h"
 #include "cs_equation_bc.h"
 #include "cs_evaluate.h"
@@ -1336,6 +1337,24 @@ _tpf_init_context(void)
   mc->ref_temperature = 280;    /* in Kelvin */
   mc->henry_constant = 1e-20;   /* nearly immiscible case */
 
+  /* Numerical parameters */
+
+  mc->nl_algo_type = CS_PARAM_NL_ALGO_NONE;
+
+  mc->nl_algo_param.n_max_algo_iter = 50;
+  mc->nl_algo_param.rtol = 1e-5;
+  mc->nl_algo_param.atol = 1e-5;
+  mc->nl_algo_param.dtol = 1e3;
+  mc->nl_algo_param.verbosity = 1;
+
+  mc->anderson_param.n_max_dir = 5;
+  mc->anderson_param.starting_iter = 3;
+  mc->anderson_param.max_cond = -1; /* No test by default */
+  mc->anderson_param.beta = 1.0;    /* No damping by default */
+  mc->anderson_param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
+
+  mc->nl_algo = NULL;
+
   return mc;
 }
 
@@ -1378,6 +1397,17 @@ _tpf_free_context(cs_gwf_two_phase_t  **p_mc)
   BFT_FREE(mc->capillarity_cell_pressure);
   BFT_FREE(mc->g_cell_pressure);
 
+  if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
+
+    /* Non-linearity: If the context is not NULL, this means that an Anderson
+       algorithm has been activated otherwise nothing to do */
+
+    cs_iter_algo_aa_free(mc->nl_algo);
+
+    BFT_FREE(mc->nl_algo);
+
+  }
+
   BFT_FREE(mc);
   *p_mc = NULL;
 }
@@ -1397,23 +1427,16 @@ _mtpf_log_context(cs_gwf_two_phase_t   *mc)
   if (mc == NULL)
     return;
 
-  cs_gwf_darcy_flux_log(mc->l_darcy);
-  cs_gwf_darcy_flux_log(mc->g_darcy);
-
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Water mass density: %5.3e, viscosity: %5.3e,"
                 " molar mass: %5.3e\n", mc->l_mass_density, mc->l_viscosity,
                 mc->w_molar_mass);
   cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Main gas component: viscosity: %5.3e, diffusivity"
+                "  * GWF | Henry constant: %5.3e\n", mc->henry_constant);
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | Gas component: viscosity: %5.3e, diffusivity"
                 " in the liquid phase: %5.3e, molar mass: %5.3e\n",
                 mc->g_viscosity, mc->l_diffusivity_h, mc->h_molar_mass);
-  cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Reference temperature: %5.2f K\n",
-                mc->ref_temperature);
-  cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Henry constant: %5.3e\n",
-                mc->henry_constant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1431,21 +1454,63 @@ _itpf_log_context(cs_gwf_two_phase_t   *mc)
   if (mc == NULL)
     return;
 
-  cs_gwf_darcy_flux_log(mc->l_darcy);
-  cs_gwf_darcy_flux_log(mc->g_darcy);
-
   cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Water mass density: %5.3e, viscosity: %5.3e\n",
                 mc->l_mass_density, mc->l_viscosity);
   cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Gas component viscosity: %5.3e, molar mass: %5.3e\n",
-                mc->g_viscosity, mc->h_molar_mass);
-  cs_log_printf(CS_LOG_SETUP,
-                "  * GWF | Reference temperature: %5.2f K\n",
-                mc->ref_temperature);
-  cs_log_printf(CS_LOG_SETUP,
                 "  * GWF | Henry constant: %5.3e (Should be very low)\n",
                 mc->henry_constant);
+  cs_log_printf(CS_LOG_SETUP,
+                "  * GWF | Gas component viscosity: %5.3e, molar mass: %5.3e\n",
+                mc->g_viscosity, mc->h_molar_mass);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log the setup related to the modelling context of two-phase flows
+ *        Common to the different models relying on two-phase flows
+ *
+ * \param[in] mc   pointer to the model context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_tpf_log_context(cs_gwf_two_phase_t   *mc)
+{
+  if (mc == NULL)
+    return;
+
+  cs_log_printf(CS_LOG_SETUP, "  * GWF | Reference temperature: %5.2f K\n",
+                mc->ref_temperature);
+
+  cs_gwf_darcy_flux_log(mc->l_darcy);
+  cs_gwf_darcy_flux_log(mc->g_darcy);
+
+  if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
+
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Non-linear algo.: %s\n",
+                  cs_param_get_nl_algo_name(mc->nl_algo_type));
+
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Tolerances of non-linear algo:"
+                  " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
+                  mc->nl_algo_param.rtol, mc->nl_algo_param.atol,
+                  mc->nl_algo_param.dtol);
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Max of non-linear iterations: %d\n",
+                  mc->nl_algo_param.n_max_algo_iter);
+
+    if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+
+      const cs_iter_algo_param_aa_t  aap = mc->anderson_param;
+
+      cs_log_printf(CS_LOG_SETUP, "  * GWF | Anderson param: max. dir: %d; "
+                    " start: %d; drop. tol: %5.3e; relax: %5.3e\n",
+                    aap.n_max_dir, aap.starting_iter, aap.max_cond, aap.beta);
+      cs_log_printf(CS_LOG_SETUP, "  * GWF | Anderson param: Dot product: %s\n",
+                    cs_param_get_dotprod_type_name(aap.dp_type));
+
+    }
+
+  } /* There is a non-linear algorithm */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1672,6 +1737,24 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                            mc->diff_hl_array,
                            false,                /* not owner of the array */
                            NULL);                /* no index */
+
+  /* Creation of the structure managing the non-linear algorithm */
+
+  if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
+
+    mc->nl_algo = cs_iter_algo_create(mc->nl_algo_param);
+
+    if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+
+      /* The space scheme is a scalar-valued CDO vertex-based scheme for the
+         two equations */
+
+      mc->nl_algo->context =
+        cs_iter_algo_aa_create(mc->anderson_param, 2*connect->n_vertices);
+
+    } /* Anderson acceleration */
+
+  } /* There is a non-linear algo. */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1814,6 +1897,96 @@ _tpf_extra_op(const cs_cdo_connect_t                *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check the convergence of the non-linear algorithm in case of TPF
+ *         model
+ *
+ * \param[in]       nl_algo_type type of non-linear algorithm
+ * \param[in]       pg_pre_iter  previous iterate values for the gas pressure
+ * \param[in, out]  pg_cur_iter  current iterate values for the gas pressure
+ * \param[in]       pl_pre_iter  previous iterate values for the liquid pressure
+ * \param[in, out]  pl_cur_iter  current iterate values for the liquid pressure
+ * \param[in, out]  algo         pointer to a cs_iter_algo_t structure
+ *
+ * \return the convergence state
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_check_nl_tpf_cvg(cs_param_nl_algo_t        nl_algo_type,
+                  const cs_real_t          *pg_pre_iter,
+                  cs_real_t                *pg_cur_iter,
+                  const cs_real_t          *pl_pre_iter,
+                  cs_real_t                *pl_cur_iter,
+                  cs_iter_algo_t           *algo)
+{
+  assert(algo != NULL);
+
+  if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON && algo->n_algo_iter > 0) {
+
+    cs_iter_algo_param_aa_t  aap = cs_iter_algo_get_anderson_param(algo);
+
+    /* pg_* arrays gather pg and pl (this is done during the solve step) */
+
+    cs_iter_algo_aa_update(algo,
+                           pg_cur_iter,
+                           pg_pre_iter,
+                           cs_cdo_blas_dotprod_2pvsp,
+                           cs_cdo_blas_square_norm_2pvsp);
+
+  } /* Anderson acceleration */
+
+  algo->prev_res = algo->res;
+
+  double delta_pg = cs_cdo_blas_square_norm_pvsp_diff(pg_pre_iter, pg_cur_iter);
+  double delta_pl = cs_cdo_blas_square_norm_pvsp_diff(pl_pre_iter, pl_cur_iter);
+
+  algo->res = delta_pg + delta_pl;
+  assert(algo->res > -DBL_MIN);
+  algo->res = sqrt(algo->res);
+
+  if (algo->n_algo_iter < 1) /* Store the first residual to detect a
+                                possible divergence of the algorithm */
+    algo->res0 = algo->res;
+
+  /* Update the convergence members */
+
+  cs_iter_algo_update_cvg(algo);
+
+  if (algo->param.verbosity > 0) {
+
+    if (algo->n_algo_iter == 1) {
+
+      if (algo->param.verbosity > 1)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "### GWF.TPF %10s.It    Algo.Res   Tolerance"
+                      "  ||D_Pg||  ||D_Pl||\n",
+                      cs_param_get_nl_algo_label(nl_algo_type));
+      else
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "### GWF.TPF %10s.It    Algo.Res   Tolerance\n",
+                      cs_param_get_nl_algo_label(nl_algo_type));
+
+    }
+
+    if (algo->param.verbosity > 1)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "### GWF.TPF %10s.It%02d  %5.3e  %6.4e %5.3e %5.3e\n",
+                    cs_param_get_nl_algo_label(nl_algo_type),
+                    algo->n_algo_iter, algo->res, algo->tol,
+                    sqrt(delta_pg), sqrt(delta_pl));
+    else
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "### GWF.TPF %10s.It%02d  %5.3e  %6.4e\n",
+                    cs_param_get_nl_algo_label(nl_algo_type),
+                    algo->n_algo_iter, algo->res, algo->tol);
+
+  } /* verbosity > 0 */
+
+  return algo->cvg;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the new (unsteady) state for the groundwater flows module.
  *         Case of (miscible or immiscible) two-phase flows in porous media.
  *
@@ -1845,15 +2018,20 @@ _tpf_compute(const cs_mesh_t              *mesh,
   assert(cs_equation_get_type(wl_eq) == CS_EQUATION_TYPE_GROUNDWATER);
   assert(cs_equation_get_type(hg_eq) == CS_EQUATION_TYPE_GROUNDWATER);
 
+  if (cs_equation_is_steady(wl_eq) && cs_equation_is_steady(hg_eq)) {
+
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "Unsteady computation whereas all equations are steady.\n");
+
+  }
+
   bool cur2prev = true;
 
-  /* Build and solve the linear system related to the coupled system of
-     equations */
+  if (mc->nl_algo_type == CS_PARAM_NL_ALGO_NONE) { /* Linearized variant */
 
-  if (!cs_equation_is_steady(wl_eq) || !cs_equation_is_steady(hg_eq)) {
-
-    /* Solve the algebraic system. By default, a current to previous operation
-       is performed */
+    /* Build and solve the linear system related to the coupled system of
+       equations. By default, a current to previous operation is performed */
 
     cs_equation_system_solve(cur2prev, mc->system);
 
@@ -1862,6 +2040,94 @@ _tpf_compute(const cs_mesh_t              *mesh,
     cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
 
   }
+  else { /* Non-linear variant */
+
+    const size_t  vsize = cdoq->n_vertices*sizeof(cs_real_t);
+
+    cs_iter_algo_t  *algo = mc->nl_algo;
+
+    assert(algo != NULL);
+
+    /* Retrieve the current values for the gas and liquid pressures */
+
+    cs_real_t  *pg_kp1 = NULL, *pl_kp1 = NULL;  /* at ^{n+1,k+1} */
+    cs_real_t  *pg_k = NULL, *pl_k = NULL;      /* at ^{n+1,k} */
+
+    BFT_MALLOC(pg_k, 2*cdoq->n_vertices, cs_real_t);
+    pl_k = pg_k + cdoq->n_vertices;
+
+    if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+
+      /* One needs only one array */
+
+      BFT_MALLOC(pg_kp1, 2*cdoq->n_vertices, cs_real_t);
+      pl_kp1 = pg_kp1 + cdoq->n_vertices;
+
+      memcpy(pg_kp1, mc->g_pressure->val, vsize);
+      memcpy(pl_kp1, mc->l_pressure->val, vsize);
+
+    }
+    else {
+
+      pg_kp1 = mc->g_pressure->val;
+      pl_kp1 = mc->l_pressure->val;
+
+    }
+
+    /* Initialize the stopping criteria */
+
+    cs_iter_algo_reset(algo);
+
+    algo->normalization = cs_cdo_blas_square_norm_pvsp(pg_kp1);
+    algo->normalization += cs_cdo_blas_square_norm_pvsp(pl_kp1);
+    algo->normalization = sqrt(algo->normalization);
+    if (algo->normalization < cs_math_zero_threshold)
+      algo->normalization = 1.0;
+
+    do {
+
+      memcpy(pg_k, pg_kp1, vsize);
+      memcpy(pl_k, pl_kp1, vsize);
+
+      /* Build and solve the linear system related to the coupled system of
+         equations. First call: current --> previous and then no operation */
+
+      cs_equation_system_solve(cur2prev, mc->system);
+
+      if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+
+        memcpy(pg_kp1, mc->g_pressure->val, vsize);
+        memcpy(pl_kp1, mc->l_pressure->val, vsize);
+
+      }
+
+      /* Update the variables related to the groundwater flow system */
+
+      cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
+
+      cur2prev = false;
+
+    } /* Until convergence */
+    while (_check_nl_tpf_cvg(mc->nl_algo_type,
+                             pg_k, pg_kp1, pl_k, pl_kp1,
+                             algo) == CS_SLES_ITERATING);
+
+    cs_iter_algo_post_check(__func__,
+                            mc->system->param->name,
+                            cs_param_get_nl_algo_label(mc->nl_algo_type),
+                            algo);
+
+    /* Free temporary arrays and structures */
+
+    BFT_FREE(pg_k);
+    if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+
+      BFT_FREE(pg_kp1);
+      cs_iter_algo_aa_free_arrays(algo->context);
+
+    }
+
+  } /* Non-linear algo. is activated */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2102,8 +2368,7 @@ cs_gwf_log_setup(void)
 
   if (gw->model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE ||
       gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE)
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Post:"
-                  " Gas mass density %s\n",
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Post: Gas mass density %s\n",
                   cs_base_strtf(post_gas_density));
 
   bool  do_balance =
@@ -2137,16 +2402,18 @@ cs_gwf_log_setup(void)
 
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
     _itpf_log_context(gw->model_context);
+    _tpf_log_context(gw->model_context);
     break;
 
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
     _mtpf_log_context(gw->model_context);
+    _tpf_log_context(gw->model_context);
     break;
 
   default:
     break;
 
-  }
+  } /* Type of model */
 
   /* Soils */
 
@@ -2155,6 +2422,33 @@ cs_gwf_log_setup(void)
   /* Tracers */
 
   cs_gwf_tracer_log_all();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the main structure which manages a two-phase flow model
+ *
+ * \return a pointer to the structure cs_gwf_two_phase_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_two_phase_t *
+cs_gwf_get_two_phase_model(void)
+{
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  if (gw->model != CS_GWF_MODEL_MISCIBLE_TWO_PHASE &&
+      gw->model != CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid model. One expects a two-phase flow model.\n",
+              __func__);
+
+  cs_gwf_two_phase_t  *mc = gw->model_context;
+
+  assert(mc != NULL);
+  return mc;
 }
 
 /*----------------------------------------------------------------------------*/

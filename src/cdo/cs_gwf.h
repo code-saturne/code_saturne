@@ -95,6 +95,17 @@ cs_gwf_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the main structure which manages a two-phase flow model
+ *
+ * \return a pointer to the structure cs_gwf_two_phase_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gwf_two_phase_t *
+cs_gwf_get_two_phase_model(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the parameters defining the two-phase flow model.
  *         Use SI unit if not prescribed otherwise.
  *

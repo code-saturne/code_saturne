@@ -574,6 +574,31 @@ typedef struct {
 
   /*!
    * @}
+   * @name Numerical parameters
+   * @{
+   *
+   * \var nl_algo_type
+   *      Type of algorithm to solve the non-linearities
+   *
+   * \var nl_algo_param
+   *      Set of parameters to control the non-linear solver
+   *
+   * \var anderson_param
+   *      Set of parameters to drive the Anderson acceleration (useful if the
+   *      type of non-linear algorithm is set to the Anderson acceleration).
+   *
+   * \var nl_algo
+   *      Structure used to manage the non-linearities
+   */
+
+  cs_param_nl_algo_t             nl_algo_type;
+  cs_iter_algo_param_t           nl_algo_param;
+  cs_iter_algo_param_aa_t        anderson_param;
+
+  cs_iter_algo_t                *nl_algo;
+
+  /*!
+   * @}
    */
 
 } cs_gwf_two_phase_t;
