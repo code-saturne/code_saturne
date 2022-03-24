@@ -630,9 +630,10 @@ cs_equation_system_initialize(void)
       const cs_equation_t  *eq = eqsys->equations[i];
       assert(eq != NULL);
 
-      cs_equation_core_t  *block_ii = NULL;
+      cs_equation_core_t  *block_ii = eqsys->block_factories[ii];
+      assert(block_ii != NULL);
+
       cs_equation_define_core(eq, &block_ii);
-      eqsys->block_factories[ii] = block_ii;
 
     } /* Loop on equations (Diagonal blocks) */
 

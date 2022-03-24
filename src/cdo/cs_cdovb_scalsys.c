@@ -856,9 +856,10 @@ cs_cdovb_scalsys_free_structures(int                        n_eqs,
 
   for (int i = 0; i < n_eqs; i++) {
     for (int j = 0; j < n_eqs; j++) {
-      if (i != j) {
 
-        cs_equation_core_t  *block_ij = blocks[i*n_eqs+j];
+      cs_equation_core_t  *block_ij = blocks[i*n_eqs+j];
+
+      if (i != j) {
 
         block_ij->param = cs_equation_param_free(block_ij->param);
 
@@ -867,9 +868,10 @@ cs_cdovb_scalsys_free_structures(int                        n_eqs,
         block_ij->scheme_context =
           cs_cdovb_scaleq_free_context(block_ij->scheme_context);
 
-        BFT_FREE(block_ij);
-
       }
+
+      BFT_FREE(block_ij);
+
     } /* Loop on equations (j) */
   } /* Loop on equations (i) */
 
