@@ -349,32 +349,14 @@ _check_nl_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   if (algo->param.verbosity > 0) {
 
-    switch (nl_algo_type) {
-
-    case CS_PARAM_NL_ALGO_ANDERSON:
-      if (algo->n_algo_iter == 1)
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "### SOLIDIFICATION %12s.It      Algo.Res  Tolerance\n",
-                      "Anderson");
+    if (algo->n_algo_iter == 1)
       cs_log_printf(CS_LOG_DEFAULT,
-                    "### SOLIDIFICATION %12s.It%02d   %5.3e  %6.4e\n",
-                    "Anderson", algo->n_algo_iter, algo->res, algo->tol);
-      break;
-
-    case  CS_PARAM_NL_ALGO_PICARD:
-      if (algo->n_algo_iter == 1)
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "### SOLIDIFICATION %12s.It      Algo.Res  Tolerance\n",
-                      "Picard");
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "### SOLIDIFICATION %12s.It%02d   %5.3e  %6.4e\n",
-                    "Picard", algo->n_algo_iter, algo->res, algo->tol);
-      break;
-
-    default:
-      break;
-
-    }
+                    "### SOLIDIFICATION %12s.It      Algo.Res  Tolerance\n",
+                    cs_param_get_nl_algo_label(nl_algo_type));
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "### SOLIDIFICATION %12s.It%02d   %5.3e  %6.4e\n",
+                  cs_param_get_nl_algo_label(nl_algo_type),
+                  algo->n_algo_iter, algo->res, algo->tol);
 
   } /* verbosity > 0 */
 

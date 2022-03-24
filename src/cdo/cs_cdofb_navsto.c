@@ -109,44 +109,6 @@ BEGIN_C_DECLS
 static cs_cdofb_navsto_boussinesq_type_t  cs_cdofb_navsto_boussinesq_type =
   CS_CDOFB_NAVSTO_BOUSSINESQ_FACE_DOF;
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print header before dumping information
- *
- * \param[in]  algo_name     name of the algorithm
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_nl_algo_print_header(const char   *algo_name)
-{
-  assert(algo_name != NULL);
-  cs_log_printf(CS_LOG_DEFAULT,
-                "%12s.It    Algo.Res   Inner  Cumul  Tolerance\n",
-                algo_name);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print a new line in the iterative process
- *
- * \param[in]  algo_name     name of the algorithm
- * \param[in]  algo          pointer to cs_iter_algo_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_nl_algo_print_entry(const char                *algo_name,
-                     const cs_iter_algo_t      *algo)
-{
-  assert(algo_name != NULL);
-  cs_log_printf(CS_LOG_DEFAULT,
-                "%12s.It%02d   %5.3e  %5d  %5d  %6.4e\n",
-                algo_name, algo->n_algo_iter, algo->res, algo->last_inner_iter,
-                algo->n_inner_iter, algo->tol);
-  cs_log_printf_flush(CS_LOG_DEFAULT);
-}
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -1973,7 +1935,7 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
   algo->res = sqrt(algo->res);
 
   if (algo->n_algo_iter < 1) /* Store the first residual to detect a
-                                divergence */
+                                possible divergence of the algorithm */
     algo->res0 = algo->res;
 
   /* Update the convergence members */
@@ -1982,27 +1944,15 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   if (algo->param.verbosity > 0) {
 
-    switch (nl_algo_type) {
-
-    case CS_PARAM_NL_ALGO_ANDERSON:
-      if (algo->n_algo_iter == 1)
-        _nl_algo_print_header("## Anderson");
-      _nl_algo_print_entry("## Anderson", algo);
-      break;
-
-    case  CS_PARAM_NL_ALGO_PICARD:
-      if (algo->n_algo_iter == 1)
-        _nl_algo_print_header("## Picard");
-      _nl_algo_print_entry("## Picard", algo);
-      break;
-
-    default:
-      if (algo->n_algo_iter == 1)
-        _nl_algo_print_header("##       ");
-      _nl_algo_print_entry("##       ", algo);
-      break;
-
-    }
+    if (algo->n_algo_iter == 1)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "## %10s.It    Algo.Res   Inner  Cumul  Tolerance\n",
+                    cs_param_get_nl_algo_label(nl_algo_type));
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "## %10s.It%02d   %5.3e  %5d  %5d  %6.4e\n",
+                  cs_param_get_nl_algo_label(nl_algo_type),
+                  algo->n_algo_iter, algo->res, algo->last_inner_iter,
+                  algo->n_inner_iter, algo->tol);
 
   } /* verbosity > 0 */
 

@@ -156,7 +156,14 @@ static const char
 cs_param_nl_algo_name[CS_PARAM_N_NL_ALGOS][CS_BASE_STRING_LEN] =
   { N_("Linear algorithm"),
     N_("Picard (or fixed-point) algorithm"),
-    N_("Anderson acceleration algorithm"),
+    N_("Anderson acceleration algorithm")
+  };
+
+static const char
+cs_param_nl_algo_label[CS_PARAM_N_NL_ALGOS][CS_BASE_STRING_LEN] =
+  { N_("None"),
+    N_("Picard"),
+    N_("Anderson")
   };
 
 static const char
@@ -451,6 +458,30 @@ cs_param_get_nl_algo_name(cs_param_nl_algo_t   algo)
   case CS_PARAM_NL_ALGO_PICARD:
   case CS_PARAM_NL_ALGO_ANDERSON:
     return cs_param_nl_algo_name[algo];
+
+  default:
+    return NULL;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the label (short name) of the non-linear algorithm
+ *
+ * \param[in] algo     type of algorithm
+ *
+ * \return the associated algorithm label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_nl_algo_label(cs_param_nl_algo_t   algo)
+{
+  switch (algo) {
+  case CS_PARAM_NL_ALGO_NONE:
+  case CS_PARAM_NL_ALGO_PICARD:
+  case CS_PARAM_NL_ALGO_ANDERSON:
+    return cs_param_nl_algo_label[algo];
 
   default:
     return NULL;

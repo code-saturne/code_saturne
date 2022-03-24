@@ -1106,6 +1106,19 @@ cs_param_get_nl_algo_name(cs_param_nl_algo_t   algo);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Get the label (short name) of the non-linear algorithm
+ *
+ * \param[in] algo     type of algorithm
+ *
+ * \return the associated algorithm label
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_param_get_nl_algo_label(cs_param_nl_algo_t   algo);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Get the name of the type of dot product to apply
  *
  * \param[in] dp_type     type of dot product
