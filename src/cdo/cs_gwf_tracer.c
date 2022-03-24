@@ -1634,7 +1634,7 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t      *connect,
 
   for (int i = 0; i < _n_tracers; i++) {
 
-    cs_gwf_tracer_t  *tracer = _tracers[i];
+    tracer = _tracers[i];
 
     if (tracer == NULL)
       continue;
