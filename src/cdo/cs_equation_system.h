@@ -352,7 +352,8 @@ cs_equation_system_solve(bool                     cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign the given equation to the row block with id row_id
+ * \brief  Assign the given equation to the diagonal block located at
+ *         position (row_id, row_id) in the matrix of blocks
  *
  * \param[in]      row_id  position in the block matrix
  * \param[in]      eq      pointer to the equation to add

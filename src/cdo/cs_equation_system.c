@@ -695,7 +695,8 @@ cs_equation_system_solve(bool                     cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Assign the given equation to the row block with id row_id
+ * \brief  Assign the given equation to the diagonal block located at
+ *         position (row_id, row_id) in the matrix of blocks
  *
  * \param[in]      row_id  position in the block matrix
  * \param[in]      eq      pointer to the equation to add
@@ -724,7 +725,7 @@ cs_equation_system_assign_equation(int                       row_id,
 
   eqsys->equations[row_id] = eq;
 
-  /* Set what is already avaible as structure pointers */
+  /* Set what is already available as structure pointers */
 
   cs_equation_core_t  *block_ii = NULL;
   cs_equation_define_core(eq, &block_ii);

@@ -218,6 +218,7 @@ _c2x_scalar_sqnorm(const cs_lnum_t         size,
   } /* OpenMP block */
 
   /* Parallel treatment */
+
   cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
 
   return (cs_real_t)l2norm;
@@ -301,6 +302,7 @@ _c2x_vector_sqnorm(const cs_lnum_t         size,
   } /* OpenMP block */
 
   /* Parallel treatment */
+
   cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
 
   return (cs_real_t)l2norm;
@@ -326,6 +328,7 @@ cs_cdo_blas_init_sharing(const cs_cdo_quantities_t    *quant,
                          const cs_cdo_connect_t       *connect)
 {
   /* Assign static const pointers */
+
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
 }
@@ -891,6 +894,7 @@ cs_cdo_blas_dotprod_pfsf(const cs_real_t        *a,
   } /* OpenMP block */
 
   /* Parallel treatment */
+
   cs_parall_sum(1, CS_REAL_TYPE, &dp);
 
   return (cs_real_t)dp;
@@ -983,6 +987,7 @@ cs_cdo_blas_square_norm_pfsf(const cs_real_t        *array)
   } /* OpenMP block */
 
   /* Parallel treatment */
+
   cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
 
   return (cs_real_t)l2norm;
@@ -1077,6 +1082,7 @@ cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t        *a,
   } /* OpenMP block */
 
   /* Parallel treatment */
+
   cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
 
   return (cs_real_t)l2norm;

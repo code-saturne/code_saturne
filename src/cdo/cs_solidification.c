@@ -3475,6 +3475,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
       }
 
       /* Set the context */
+
       solid->model_context = (void *)v_model;
 
     }
@@ -3587,7 +3588,6 @@ cs_solidification_get_stefan_struct(void)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
 
-  /* Sanity checks */
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
   if (solid->model != CS_SOLIDIFICATION_MODEL_STEFAN)
@@ -3645,6 +3645,7 @@ cs_solidification_set_stefan_model(cs_real_t    t_change,
   cs_solidification_stefan_t  *s_model = cs_solidification_get_stefan_struct();
 
   /* Model parameters */
+
   s_model->t_change = t_change;
   solid->latent_heat = latent_heat;
 }
@@ -3662,7 +3663,6 @@ cs_solidification_get_voller_struct(void)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
 
-  /* Sanity checks */
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
   if (solid->model != CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87 &&
@@ -4659,6 +4659,7 @@ cs_solidification_log_setup(void)
                 module, solid->verbosity);
 
   /* Display options */
+
   cs_log_printf(CS_LOG_SETUP, "  * %s | Strategy:", module);
   switch (solid->strategy) {
 
@@ -4931,6 +4932,7 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
                                   _fb_solute_source_term); /* hook function */
 
         /* Store the pointer to the current face temperature values */
+
         alloy->temp_faces =
           cs_equation_get_face_values(solid->thermal_sys->thermal_eq, false);
 
