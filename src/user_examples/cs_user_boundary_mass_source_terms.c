@@ -458,7 +458,7 @@ cs_user_boundary_mass_source_terms(int nvar,
 
       // Source term for scalars
       for (int f_id = 0; f_id < n_fields; f_id++) {
-        cs_field_t  *f = cs_field_by_id(f_id);
+        f = cs_field_by_id(f_id);
         if (f->type & CS_FIELD_VARIABLE) {
           int iscal = cs_field_get_key_int(f, keysca);
           if (iscal > 0) {
