@@ -939,7 +939,6 @@ cs_mesh_quality_compute_warping(const cs_mesh_t    *mesh,
 
   const cs_lnum_t  dim = mesh->dim;
   const cs_lnum_t  *i_face_vtx_idx = mesh->i_face_vtx_idx;
-  const cs_lnum_t  *b_face_vtx_idx = mesh->b_face_vtx_idx;
 
   assert(dim == 3);
 
@@ -970,27 +969,46 @@ cs_mesh_quality_compute_warping(const cs_mesh_t    *mesh,
   /* Compute warping for border faces */
   /*----------------------------------*/
 
-  for (face_id = 0; face_id < mesh->n_b_faces; face_id++) {
+  cs_mesh_quality_compute_b_face_warping(mesh,
+                                         b_face_normal,
+                                         b_face_warping);
+}
 
-    /* Get face normal */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate face warping angle for boundary faces..
+ *
+ * \param[in]   mesh            pointer to a cs_mesh_t structure
+ * \param[in]   b_face_normal   boundary face normal
+ * \param[out]  b_face_warping  face warping angle for boundary faces
+ */
+/*----------------------------------------------------------------------------*/
 
-    for (i = 0; i < dim; i++)
-      this_face_normal[i] = b_face_normal[face_id*dim + i];
+void
+cs_mesh_quality_compute_b_face_warping(const cs_mesh_t  *mesh,
+                                       const cs_real_t   b_face_normal[],
+                                       cs_real_t         b_face_warping[])
+{
+  const cs_lnum_t  dim = mesh->dim;
+  const cs_lnum_t  *b_face_vtx_idx = mesh->b_face_vtx_idx;
+
+  assert(dim == 3);
+
+  for (cs_lnum_t face_id = 0; face_id < mesh->n_b_faces; face_id++) {
 
     /* Evaluate warping for each edge */
 
-    idx_start = b_face_vtx_idx[face_id];
-    idx_end = b_face_vtx_idx[face_id + 1];
+    cs_lnum_t idx_start = b_face_vtx_idx[face_id];
+    cs_lnum_t idx_end = b_face_vtx_idx[face_id + 1];
 
     _get_face_warping(idx_start,
                       idx_end,
-                      this_face_normal,
+                      b_face_normal + (3*face_id),
                       mesh->b_face_vtx_lst,
                       mesh->vtx_coord,
                       &(b_face_warping[face_id]));
 
-  } /* End of loop on border faces */
-
+  }
 }
 
 /*----------------------------------------------------------------------------

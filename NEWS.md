@@ -3,6 +3,8 @@ Master (not on release branches yet)
 
 User changes:
 
+- Subdivision of warped faces now only modifies boundary faces.
+
 - Major changes to the studymanager GUI tool, which is now more complete
   and especially more robust.
 

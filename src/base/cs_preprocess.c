@@ -329,7 +329,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
         cs_mesh_warping_cut_faces(m, cwf_threshold, cwf_post);
         t2 = cs_timer_wtime();
 
-        bft_printf(_("\n Cutting warped faces (%.3g s)\n"), t2-t1);
+        bft_printf(_("\n Cutting warped boundary faces (%.3g s)\n"), t2-t1);
 
       }
     }

@@ -1414,10 +1414,10 @@ periodic faces become interior faces.</string>
        <item row="4" column="0">
         <widget class="QGroupBox" name="groupBoxWarp">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Faces are cut with a Delaunay method if their warp angle is greater than a minimal angle in degrees. (Default angle value: 0.01)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Boundary faces are cut with a Delaunay method if their warp angle is greater than a minimal angle in degrees. (Default angle value: 0.01)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="title">
-          <string>Subdivide warped faces</string>
+          <string>Subdivide warped boundary faces</string>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -1458,7 +1458,7 @@ periodic faces become interior faces.</string>
                  <item>
                   <widget class="QLabel" name="label_9">
                    <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Faces are cut with a Delaunay method if their warp angle is greater than a minimal angle in degrees. (Default angle value: 0.01)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Boundary faces are cut with a Delaunay method if their warp angle is greater than a minimal angle in degrees. (Default angle value: 0.01)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                    <property name="statusTip">
                     <string/>
@@ -1490,7 +1490,7 @@ periodic faces become interior faces.</string>
                     </size>
                    </property>
                    <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Faces are cut with a Delaunay method if their warp angle is greater than a minimal angle in degrees. (Default angle value: 0.01)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Boundary faces are cut with a Delaunay method if their warp angle is greater than a minimal angle in degrees. (Default angle value: 0.01)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                   </widget>
                  </item>
