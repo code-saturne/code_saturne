@@ -67,6 +67,10 @@
 #include "cs_matrix_hypre.h"
 #endif
 
+#if defined(HAVE_PETSC)
+#include "cs_matrix_petsc.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -477,6 +481,23 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
+#endif /* defined(HAVE_HYPRE) */
+
+#if defined(HAVE_PETSC)
+
+    _variant_add("PETSc (MATAIJ)",
+                 "PETSC",
+                 CS_MATRIX_MSR,
+                 n_fill_types,
+                 fill_types,
+                 op_flag_a,
+                 "external",
+                 "external",
+                 "external",
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
 #endif /* defined(HAVE_MKL) */
 
   }
@@ -731,6 +752,12 @@ _matrix_check(int                          n_variants,
           int device_id = cs_get_device_id();
           int use_device = (device_id < 0) ? 0 : 1;
           cs_matrix_set_type_hypre(m, use_device);
+        }
+#endif
+
+#if defined(HAVE_HYPRE)
+        if (strcmp(v->external_type, "PETSc") == 0) {
+          cs_matrix_set_type_petsc(m, NULL);
         }
 #endif
 

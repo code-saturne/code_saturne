@@ -124,7 +124,10 @@ cs_sles_it_priv.h \
 cs_sles_pc.h
 
 if HAVE_PETSC
-pkginclude_HEADERS += cs_sles_petsc.h
+pkginclude_HEADERS += \
+cs_matrix_petsc.h \
+cs_matrix_petsc_priv.h \
+cs_sles_petsc.h
 endif
 
 if HAVE_MUMPS
@@ -195,6 +198,7 @@ if HAVE_PETSC
 noinst_LTLIBRARIES += libcsalge_petsc.la
 libcsalge_la_LIBADD += libcsalge_petsc.la
 libcsalge_petsc_la_SOURCES = \
+cs_matrix_petsc.c \
 cs_sles_petsc.c
 endif
 

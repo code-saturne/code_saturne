@@ -454,6 +454,19 @@ cs_matrix_assembler_get_n_rows(const cs_matrix_assembler_t  *ma);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return the global number of rows associated with a matrix assembler.
+ *
+ * \param[in]  ma  pointer to matrix assembler structure
+ *
+ * \return  number of rows associated with matrix assembler
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_matrix_assembler_get_n_g_rows(const cs_matrix_assembler_t  *ma);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return the number of columns associated with a matrix assembler.
  *
  * \param[in]  ma  pointer to matrix assembler structure

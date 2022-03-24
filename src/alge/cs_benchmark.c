@@ -88,6 +88,10 @@
 #include "cs_sles_hypre.h"
 #endif
 
+#if defined(HAVE_PETSC)
+#include "cs_matrix_petsc.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -797,7 +801,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
       cs_matrix_structure_t  *ms
         = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR, ma);
 
-      for (int m_type_idx = 0; m_type_idx < 2; m_type_idx++) {
+      for (int m_type_idx = 0; m_type_idx < 3; m_type_idx++) {
 
         cs_matrix_t  *m = cs_matrix_create(ms);
 
@@ -810,6 +814,15 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
             int device_id = cs_get_device_id();
             int use_device = (device_id < 0) ? 0 : 1;
             cs_matrix_set_type_hypre(m, use_device);
+          }
+#else
+          continue;
+#endif
+          break;
+        case 2:
+#if defined(HAVE_PETSC)
+          {
+            cs_matrix_set_type_petsc(m, 0);
           }
 #else
           continue;

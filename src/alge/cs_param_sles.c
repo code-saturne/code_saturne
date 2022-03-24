@@ -34,6 +34,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(HAVE_PETSC)
+#include <petsc.h>
+#include <petscconf.h>
+#include <petscversion.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/

@@ -57,6 +57,10 @@
 #include "cs_sles_hypre.h"
 #endif
 
+#if defined(HAVE_PETSC)
+#include "cs_sles_petsc.h"
+#endif
+
 #if defined(HAVE_AMGX)
 #include "cs_sles_amgx.h"
 #endif

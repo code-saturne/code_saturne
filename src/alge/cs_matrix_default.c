@@ -73,6 +73,10 @@
 #include "cs_matrix_hypre.h"
 #endif
 
+#if defined(HAVE_PETSC)
+#include "cs_matrix_petsc.h"
+#endif
+
 #include "cs_matrix_priv.h"
 #include "cs_matrix_tuning.h"
 
@@ -666,6 +670,34 @@ cs_matrix_external(const char  *type_name,
       use_device = 1;
 
     cs_matrix_set_type_hypre(m, use_device);
+
+    return m;
+  }
+#endif
+
+#if defined(HAVE_PETSC)
+  if (strncmp(type_name, "PETSc", 5) == 0) {
+    cs_matrix_t *m_r = NULL;
+
+    if (_matrix_struct[CS_MATRIX_MSR] != NULL) {
+      m_r = cs_matrix_msr(symmetric, diag_block_size, extra_diag_block_size);
+    }
+    else {
+      m_r = cs_matrix_native(symmetric, diag_block_size, extra_diag_block_size);
+    }
+
+    cs_matrix_t *m = cs_matrix_copy_to_external(m_r,
+                                                symmetric,
+                                                diag_block_size,
+                                                extra_diag_block_size);
+
+
+    const char *mat_type = NULL;
+    size_t l = strlen(type_name);
+    if (l > 7 && strncmp(type_name, "PETSc, ", 7) == 0)
+      mat_type = type_name + 7;
+
+    cs_matrix_set_type_petsc(m, mat_type);
 
     return m;
   }

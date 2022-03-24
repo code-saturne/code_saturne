@@ -3,6 +3,15 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add external matrix type for PETSc, handled in cs_matrix_petsc, so no additional
+  copy of coefficients is needed in code_saturne.
+  * Native matrices in the legacy code automatically switch to this mode,
+    while matrices can still be provided in MSR or CSR form, as assembly is
+    expected to be faster (though no copy is saved in this case).
+  * Some PETSc structures are cas as (void *) pointers to avoid propagating
+    compile warnings due to PETSc headers, which can now be included
+    more sparingly.
+
 - Drop support of AMD ACML (which is end-of-life) and IBM ESSL BLAS libraries,
   which were only used in unit tests comparisons.
 

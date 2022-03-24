@@ -71,6 +71,10 @@
 #include "cs_sles_hypre.h"
 #endif
 
+#if defined(HAVE_PETSC)
+#include "cs_sles_petsc.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -335,6 +339,21 @@ _sles_setup_matrix_native(int                  f_id,
       strncpy(external_type, "HYPRE_ParCSR, device", 31);
     else
       strncpy(external_type, "HYPRE_ParCSR", 31);
+    need_external = true;
+  }
+#endif
+
+#if defined(HAVE_PETSC)
+  else if (   strcmp(cs_sles_get_type(sc), "cs_sles_petsc_t") == 0
+           && m->have_rotation_perio == 0) {
+    void *c = cs_sles_get_context(sc);
+    const char *mat_type = cs_sles_petsc_get_mat_type(c);
+    if (mat_type == NULL)
+      strncpy(external_type, "PETSc", 31);
+    else {
+      snprintf(external_type, 31, "PETSc, %s", mat_type);
+      external_type[31] = '\0';
+    }
     need_external = true;
   }
 #endif

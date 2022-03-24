@@ -1,5 +1,5 @@
 /*============================================================================
- * Sparse Matrix Representation and Operations using HYPRE library.
+ * Sparse Matrix Representation and Operations using PETSc library.
  *============================================================================*/
 
 /*
@@ -42,7 +42,7 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * HYPRE headers
+ * PETSc headers
  *----------------------------------------------------------------------------*/
 
 /* Avoid warnings due to previous values */
@@ -53,14 +53,10 @@
 #undef PACKAGE_URL
 #undef PACKAGE_VERSION
 
-#include <HYPRE.h>
-#include <HYPRE_IJ_mv.h>
-#include <HYPRE_parcsr_mv.h>
-#include <HYPRE_utilities.h>
-
-#if !defined(HYPRE_RELEASE_NUMBER)
-#define HYPRE_RELEASE_NUMBER 0
-#endif
+#include <petscmat.h>
+#include <petscvec.h>
+#include <petscversion.h>
+#include <petscviewer.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -83,8 +79,8 @@
 #include "cs_matrix.h"
 #include "cs_base_accel.h"
 #include "cs_matrix_default.h"
-#include "cs_matrix_hypre.h"
-#include "cs_matrix_hypre_priv.h"
+#include "cs_matrix_petsc.h"
+#include "cs_matrix_petsc_priv.h"
 #include "cs_matrix_priv.h"
 
 /*----------------------------------------------------------------------------*/
@@ -92,10 +88,32 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_matrix_hypre.c
+/*! \file cs_matrix_petsc.c
  *
- * \brief Sparse Matrix Representation and Operations using HYPRE.
+ * \brief Sparse Matrix Representation and Operations using PETSc.
+ *
+ * Setting a matrix type to PETc directly allows avoidind duplicating values,
+ * and assigning them directly to PETSc.
+ *
+ * This should save memory, thoght performance might not be optimal,
+ * as the current implementation requires many calls to MatSetValues.
+ * MatSetValues can require at least one call per matrix block, as the
+ * values arrays passed to it assume a dense rectangular block.
+ * Block structures are not exploited yet.
+ *
+ * Performance could possibly be improved by assembling local arrays in a
+ * manner similar to code_saturne's CS_MATRIX_DIST matrix, but using
+ * PETSc types (to ensure sizes are the same), and assigning it to PETSc
+ * using MatCreateMPIAIJWithSplitArrays. Use of this function is not
+ * recommended by PETSc as it is considered cumbersome and inflexible.
+ * This would not be too much of an issue here (since we already have that
+ * capacity), but might not be compatible with all PETSc matrix formats.
+ * An alternative would be to use MatCreateMPIAIJWithArrays with a temporary
+ * copy, but would involve higher peak memory use. Finally, the
+ * MatSetValuesBatch function mighr be used in the future, if it is extended
+ * so as to allow multiple calls for a given matrix.
  */
+
 /*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -112,64 +130,17 @@ BEGIN_C_DECLS
  *  Global variables
  *============================================================================*/
 
-static const char _hypre_ij_type_name[] = "HYPRE_PARCSR";
-static const char _hypre_ij_type_fullname[] = "HYPRE IJ (HYPRE_ParCSR)";
+static const char _petsc_ij_type_name[] = "PETSc, MATAIJ";
+static const char _petsc_ij_type_fullname[] = "PETSc (MATAIJ series)";
 
-static int _device_is_setup = -1;
+static char _init_status = 0; /* 0 at start,  1 if initialized, 2 if finalized */
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Ensure GPU device is setup if needed.
- *
- * parameters:
- *   use_device  <-- 1 if device is used.
- *----------------------------------------------------------------------------*/
-
-static void
-_ensure_device_setup(int  use_device)
-{
-  if (_device_is_setup != use_device) {
-
-#if HYPRE_RELEASE_NUMBER >=  22100
-#if defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_GPU)
-
-    if (use_device == 1) {
-
-      HYPRE_SetMemoryLocation(HYPRE_MEMORY_DEVICE);
-      HYPRE_SetExecutionPolicy(HYPRE_EXEC_DEVICE); /* setup AMG on GPUs */
-      HYPRE_SetSpGemmUseCusparse(0);               /* use hypre's SpGEMM
-                                                      instead of cuSPARSE */
-      HYPRE_SetUseGpuRand(1);                      /* use GPU RNG */
-
-#     if defined(HYPRE_USING_CUDA) && defined(HYPRE_USING_DEVICE_POOL)
-#     if defined(HYPRE_USING_UMPIRE)
-      HYPRE_SetUmpireUMPoolName("HYPRE_UM_POOL_CODE_SATURNE");
-      HYPRE_SetUmpireDevicePoolName("HYPRE_DEVICE_POOL_CODE_SATURNE");
-      #else
-      /* HYPRE_SetGPUMemoryPoolSize(bin_growth,
-         min_bin, max_bin, max_bytes); */
-#     endif
-#     endif
-
-    }
-    else {
-      HYPRE_SetMemoryLocation(HYPRE_MEMORY_HOST);
-      HYPRE_SetExecutionPolicy(HYPRE_EXEC_HOST);
-    }
-
-#endif /* defined(HYPRE_USING_CUDA) || defined(HYPRE_USING_GPU) */
-#endif /* HYPRE_RELEASE_NUMBER >=  22100 */
-
-    _device_is_setup = use_device;
-
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Matrix.vector product y = A.x with HYPRE matrix
+ * Matrix.vector product y = A.x with PETSc matrix
  *
  * Note that since this function creates vectors, it may have significant
  * overhead. Since it is present for completednes, this should not be an issue.
@@ -185,62 +156,41 @@ _ensure_device_setup(int  use_device)
  *----------------------------------------------------------------------------*/
 
 static void
-_mat_vec_p_parcsr(const cs_matrix_t  *matrix,
-                  bool                exclude_diag,
-                  bool                sync,
-                  cs_real_t          *restrict x,
-                  cs_real_t          *restrict y)
+_mat_vec_p_aij(const cs_matrix_t  *matrix,
+               bool                exclude_diag,
+               bool                sync,
+               cs_real_t          *restrict x,
+               cs_real_t          *restrict y)
 {
   assert(exclude_diag == false);
 
-  const cs_lnum_t  n_rows = matrix->n_rows * matrix->db_size;
-  const cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  const PetscInt  n_rows = matrix->n_rows * matrix->db_size;
+  const cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
   /* Get pointers to structures through coefficients,
      and copy input values */
 
-  HYPRE_ParCSRMatrix p_a;
-  HYPRE_IJMatrixGetObject(coeffs->hm, (void **)&p_a);
+  PetscReal *_x = NULL;
 
-  HYPRE_Real *_t = NULL;
-
-  cs_alloc_mode_t  amode = CS_ALLOC_HOST;
-  if (coeffs->memory_location != HYPRE_MEMORY_HOST)
-    amode = CS_ALLOC_HOST_DEVICE_SHARED;
-
-  if (sizeof(cs_real_t) == sizeof(HYPRE_Real) && amode == CS_ALLOC_HOST) {
-    HYPRE_IJVectorSetValues(coeffs->hx, n_rows, NULL, x);
+  VecGetArray(coeffs->hx, &_x);
+  for (PetscInt ii = 0; ii < n_rows; ii++) {
+    _x[ii] = x[ii];;
   }
-  else {
-    CS_MALLOC_HD(_t, n_rows, HYPRE_Real, amode);
-    for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
-      _t[ii] = x[ii];;
-    }
-    HYPRE_IJVectorSetValues(coeffs->hx, n_rows, NULL, _t);
-  }
-  if (sync)
-    HYPRE_IJVectorAssemble(coeffs->hx);
-
-  HYPRE_ParVector p_x, p_y;
-  HYPRE_IJVectorGetObject(coeffs->hx, (void **)&p_x);
-  HYPRE_IJVectorGetObject(coeffs->hy, (void **)&p_y);
+  VecRestoreArray(coeffs->hx, &_x);
 
   /* SpMv operation */
 
-  HYPRE_ParCSRMatrixMatvec(1.0, p_a, p_x, 0, p_y);
+  MatMult(coeffs->hm, coeffs->hx, coeffs->hy);
 
   /* Copy data back */
 
-  if (_t == NULL) {
-    HYPRE_IJVectorGetValues(coeffs->hy, n_rows, NULL, y);
+  const PetscReal *_y = NULL;
+
+  VecGetArrayRead(coeffs->hy, &_y);
+  for (PetscInt ii = 0; ii < n_rows; ii++) {
+    y[ii] = _y[ii];;
   }
-  else {
-    HYPRE_IJVectorGetValues(coeffs->hy, n_rows, NULL, _t);
-    for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
-      y[ii] = _t[ii];
-    }
-    CS_FREE_HD(_t);
-  }
+  VecRestoreArrayRead(coeffs->hy, &_y);
 }
 
 /*----------------------------------------------------------------------------
@@ -257,8 +207,8 @@ _mat_vec_p_parcsr(const cs_matrix_t  *matrix,
 
 static void
 _compute_diag_sizes_assembler(const cs_matrix_assembler_t   *ma,
-                              HYPRE_Int                    **diag_sizes,
-                              HYPRE_Int                    **offdiag_sizes)
+                              PetscInt                    **diag_sizes,
+                              PetscInt                    **offdiag_sizes)
 {
   const cs_lnum_t n_rows = cs_matrix_assembler_get_n_rows(ma);
 
@@ -267,9 +217,9 @@ _compute_diag_sizes_assembler(const cs_matrix_assembler_t   *ma,
   const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
   const cs_lnum_t *col_ids = cs_matrix_assembler_get_col_ids(ma);
 
-  HYPRE_Int *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, n_rows, HYPRE_Int);
-  BFT_MALLOC(_offdiag_sizes, n_rows, HYPRE_Int);
+  PetscInt *_diag_sizes, *_offdiag_sizes;
+  BFT_MALLOC(_diag_sizes, n_rows, PetscInt);
+  BFT_MALLOC(_offdiag_sizes, n_rows, PetscInt);
 
   /* Separate local and distant loops for better first touch logic */
 
@@ -278,8 +228,8 @@ _compute_diag_sizes_assembler(const cs_matrix_assembler_t   *ma,
     cs_lnum_t s_id = row_index[i];
     cs_lnum_t e_id = row_index[i+1];
 
-    HYPRE_Int n_r_diag = 0;
-    HYPRE_Int n_cols = e_id - s_id;
+    PetscInt n_r_diag = 0;
+    PetscInt n_cols = e_id - s_id;
 
     for (cs_lnum_t j = s_id; j < e_id; j++) {
       if (col_ids[j] < n_rows)
@@ -313,8 +263,8 @@ _compute_diag_sizes_assembler(const cs_matrix_assembler_t   *ma,
 static void
 _compute_diag_sizes_assembler_db(const cs_matrix_assembler_t   *ma,
                                  cs_lnum_t                     db_size,
-                                 HYPRE_Int                    **diag_sizes,
-                                 HYPRE_Int                    **offdiag_sizes)
+                                 PetscInt                    **diag_sizes,
+                                 PetscInt                    **offdiag_sizes)
 {
   const cs_lnum_t n_rows = cs_matrix_assembler_get_n_rows(ma);
 
@@ -324,9 +274,9 @@ _compute_diag_sizes_assembler_db(const cs_matrix_assembler_t   *ma,
   const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
   const cs_lnum_t *col_ids = cs_matrix_assembler_get_col_ids(ma);
 
-  HYPRE_Int *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, n_rows*db_size, HYPRE_Int);
-  BFT_MALLOC(_offdiag_sizes, n_rows*db_size, HYPRE_Int);
+  PetscInt *_diag_sizes, *_offdiag_sizes;
+  BFT_MALLOC(_diag_sizes, n_rows*db_size, PetscInt);
+  BFT_MALLOC(_offdiag_sizes, n_rows*db_size, PetscInt);
 
   /* Separate local and distant loops for better first touch logic */
 
@@ -335,8 +285,8 @@ _compute_diag_sizes_assembler_db(const cs_matrix_assembler_t   *ma,
     cs_lnum_t s_id = row_index[i];
     cs_lnum_t e_id = row_index[i+1];
 
-    HYPRE_Int n_r_diag = 0;
-    HYPRE_Int n_cols = e_id - s_id;
+    PetscInt n_r_diag = 0;
+    PetscInt n_cols = e_id - s_id;
 
     for (cs_lnum_t j = s_id; j < e_id; j++) {
       if (col_ids[j] < n_rows) {
@@ -375,8 +325,8 @@ _compute_diag_sizes_assembler_db(const cs_matrix_assembler_t   *ma,
 static void
 _compute_diag_sizes_assembler_b(const cs_matrix_assembler_t   *ma,
                                 cs_lnum_t                      b_size,
-                                HYPRE_Int                    **diag_sizes,
-                                HYPRE_Int                    **offdiag_sizes)
+                                PetscInt                    **diag_sizes,
+                                PetscInt                    **offdiag_sizes)
 {
   const cs_lnum_t n_rows = cs_matrix_assembler_get_n_rows(ma);
 
@@ -386,9 +336,9 @@ _compute_diag_sizes_assembler_b(const cs_matrix_assembler_t   *ma,
   const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
   const cs_lnum_t *col_ids = cs_matrix_assembler_get_col_ids(ma);
 
-  HYPRE_Int *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, n_rows*b_size, HYPRE_Int);
-  BFT_MALLOC(_offdiag_sizes, n_rows*b_size, HYPRE_Int);
+  PetscInt *_diag_sizes, *_offdiag_sizes;
+  BFT_MALLOC(_diag_sizes, n_rows*b_size, PetscInt);
+  BFT_MALLOC(_offdiag_sizes, n_rows*b_size, PetscInt);
 
   /* Separate local and distant loops for better first touch logic */
 
@@ -397,8 +347,8 @@ _compute_diag_sizes_assembler_b(const cs_matrix_assembler_t   *ma,
     cs_lnum_t s_id = row_index[i];
     cs_lnum_t e_id = row_index[i+1];
 
-    HYPRE_Int n_r_diag = 0;
-    HYPRE_Int n_cols = e_id - s_id;
+    PetscInt n_r_diag = 0;
+    PetscInt n_cols = e_id - s_id;
 
     for (cs_lnum_t j = s_id; j < e_id; j++) {
       if (col_ids[j] < n_rows) {
@@ -442,8 +392,8 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
                            const cs_lnum_t     edges[restrict][2],
                            const cs_gnum_t     g_e_id[],
                            const cs_real_t     da[restrict],
-                           HYPRE_Int         **diag_sizes,
-                           HYPRE_Int         **offdiag_sizes)
+                           PetscInt         **diag_sizes,
+                           PetscInt         **offdiag_sizes)
 {
   cs_lnum_t  n_rows = matrix->n_rows;
   cs_lnum_t  b_size = matrix->db_size;
@@ -452,9 +402,9 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
 
   cs_lnum_t _n_rows = n_rows*b_size;
 
-  HYPRE_Int *_diag_sizes, *_offdiag_sizes;
-  BFT_MALLOC(_diag_sizes, _n_rows, HYPRE_Int);
-  BFT_MALLOC(_offdiag_sizes, _n_rows, HYPRE_Int);
+  PetscInt *_diag_sizes, *_offdiag_sizes;
+  BFT_MALLOC(_diag_sizes, _n_rows, PetscInt);
+  BFT_MALLOC(_offdiag_sizes, _n_rows, PetscInt);
 
   /* Case with b_size > e_size handled later */
   int n_diag = (have_diag && b_size == e_size) ? e_size : 0;
@@ -577,31 +527,27 @@ _compute_diag_sizes_native(cs_matrix_t        *matrix,
  * \brief Initialize coefficients context structure.
  *
  * \param[in, out]  matrix      pointer to matrix structure
- * \param[in]       use_device  -1 for automatic, 0 for host, 1 for device (GPU)
+ * \param[in]       type_name   string matching PETSc matrix type name,
+ *                              defaults to "MATAIJ" if NULL
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _setup_coeffs(cs_matrix_t  *matrix,
-              int           use_device)
+              const char   *type_name)
 {
-  if (use_device < 0)
-    use_device = (cs_get_device_id() < 0) ? 0 : 1;
-
-  _ensure_device_setup(use_device);  /* Setup on first pass or device change */
-
   if (matrix->coeffs == NULL) {
-    cs_matrix_coeffs_hypre_t  *coeffs;
-    BFT_MALLOC(coeffs, 1, cs_matrix_coeffs_hypre_t);
-    memset(coeffs, 0, sizeof(cs_matrix_coeffs_hypre_t));
+    cs_matrix_petsc_ensure_init();
+
+    cs_matrix_coeffs_petsc_t  *coeffs;
+    BFT_MALLOC(coeffs, 1, cs_matrix_coeffs_petsc_t);
+    memset(coeffs, 0, sizeof(cs_matrix_coeffs_petsc_t));
     coeffs->matrix_state = 0;
 
-    if (use_device == 1)
-      coeffs->memory_location = HYPRE_MEMORY_DEVICE;
-    else
-      coeffs->memory_location = HYPRE_MEMORY_HOST;
+    MatType matype = (type_name == NULL) ? MATAIJ : type_name;
 
-    coeffs->max_chunk_size = 0; /* Defined later */
+    PetscStrallocpy(matype, &coeffs->matype_r);
+    coeffs->matype = NULL;
 
     matrix->coeffs = coeffs;
   }
@@ -609,7 +555,7 @@ _setup_coeffs(cs_matrix_t  *matrix,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Function for initialization of HYPRE matrix coefficients using
+ * \brief Function for initialization of PETSc matrix coefficients using
  *        local row ids and column indexes.
  *
  * \warning  The matrix pointer must point to valid data when the selection
@@ -630,69 +576,51 @@ _assembler_values_init(void        *matrix_p,
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
-  if (matrix->coeffs == NULL)
-    _setup_coeffs(matrix, -1);
+  if (matrix->coeffs == NULL) {
+    assert(0);  /* Prefer to setup coeff earlier, to pass type */
+    _setup_coeffs(matrix, NULL);
+  }
 
   /* Associated matrix assembler */
 
   const cs_matrix_assembler_t  *ma = matrix->assembler;
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
-  /* Create HYPRE matrix */
+  /* Create PETSc matrix */
 
-  HYPRE_IJMatrix hm = coeffs->hm;
+  Mat hm = coeffs->hm;
 
   if (coeffs->matrix_state == 0) {
 
-    cs_alloc_mode_t  amode = CS_ALLOC_HOST;
-    if (coeffs->memory_location != HYPRE_MEMORY_HOST)
-      amode = CS_ALLOC_HOST_DEVICE_SHARED;
-
-    /* We seem to have memory issues when allocating by parts
-       on GPU, so prepare buffers to transfer in a single step
-       (we will also need to delay transfer of smaller pieces).
-       On CPU, use smaller array to avoid excess duplicate memory */
-
-    if (amode == CS_ALLOC_HOST) {
-      coeffs->max_chunk_size = 32768;
-    }
-    else {
-      const cs_lnum_t n_rows = cs_matrix_assembler_get_n_rows(ma);
-      const cs_lnum_t *row_index = cs_matrix_assembler_get_row_index(ma);
-      cs_lnum_t nnz =   row_index[n_rows] * eb_size*eb_size
-                      + n_rows * db_size*db_size;
-      coeffs->max_chunk_size = nnz;
-    }
-    CS_MALLOC_HD(coeffs->row_buf, coeffs->max_chunk_size, HYPRE_BigInt, amode);
-    CS_MALLOC_HD(coeffs->col_buf, coeffs->max_chunk_size, HYPRE_BigInt, amode);
-    CS_MALLOC_HD(coeffs->val_buf, coeffs->max_chunk_size, HYPRE_Real, amode);
-
-    MPI_Comm comm = cs_glob_mpi_comm;
-    if (comm == MPI_COMM_NULL)
-      comm = MPI_COMM_WORLD;
-
     const cs_gnum_t *l_range = cs_matrix_assembler_get_l_range(ma);
-
-    HYPRE_BigInt b_size = db_size;
-    HYPRE_BigInt ilower = b_size*l_range[0];
-    HYPRE_BigInt iupper = b_size*l_range[1] - 1;
-
-    HYPRE_IJMatrixCreate(comm,
-                         ilower,
-                         iupper,
-                         ilower,
-                         iupper,
-                         &hm);
+    const cs_gnum_t n_g_rows = cs_matrix_assembler_get_n_g_rows(ma);
 
     coeffs->l_range[0] = l_range[0];
     coeffs->l_range[1] = l_range[1];
 
+    MPI_Comm comm = cs_glob_mpi_comm;
+    if (comm == MPI_COMM_NULL)
+      comm = MPI_COMM_SELF;
+
+    MatCreate(comm, &hm);
+    MatSetType(hm, coeffs->matype_r);
+
+    PetscInt b_size = db_size;
+    PetscInt n_rows = b_size * (l_range[1] - l_range[0]);
+    PetscInt _n_g_rows = n_g_rows * b_size;
+
+    MatSetSizes(hm,
+                n_rows,      /* Number of local rows */
+                n_rows,      /* Number of local columns */
+                _n_g_rows,   /* Number of global rows */
+                _n_g_rows);  /* Number of global columns */
+
+    MatGetType(hm, &(coeffs->matype));
+
     coeffs->hm = hm;
 
-    HYPRE_IJMatrixSetObjectType(hm, HYPRE_PARCSR);
-
-    HYPRE_Int *diag_sizes = NULL, *offdiag_sizes = NULL;
+    PetscInt *diag_sizes = NULL, *offdiag_sizes = NULL;
 
     if (db_size == 1)
       _compute_diag_sizes_assembler(ma,
@@ -700,183 +628,124 @@ _assembler_values_init(void        *matrix_p,
                                     &offdiag_sizes);
     else if (eb_size == 1)
       _compute_diag_sizes_assembler_db(ma,
-                                      db_size,
-                                      &diag_sizes,
-                                      &offdiag_sizes);
+                                       db_size,
+                                       &diag_sizes,
+                                       &offdiag_sizes);
     else
       _compute_diag_sizes_assembler_b(ma,
                                       db_size,
                                       &diag_sizes,
                                       &offdiag_sizes);
 
-    HYPRE_IJMatrixSetDiagOffdSizes(hm, diag_sizes, offdiag_sizes);
-    HYPRE_IJMatrixSetMaxOffProcElmts(hm, 0);
+    MatSeqAIJSetPreallocation(coeffs->hm, 0, diag_sizes);
+    MatMPIAIJSetPreallocation(coeffs->hm, 0, diag_sizes, 0, offdiag_sizes);
 
     BFT_FREE(diag_sizes);
     BFT_FREE(offdiag_sizes);
-
-    HYPRE_IJMatrixSetOMPFlag(hm, 0);
-
-    HYPRE_IJMatrixInitialize_v2(hm, coeffs->memory_location);
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add HYPRE matrix coefficients using global row ids
+ * \brief Add PETSc matrix coefficients using global row ids
  *        and column indexes, using intermediate copy for indexes and values.
  *
- * \param[in, out]  coeffs    HYPRE Matrix coefficients handler
+ * \param[in, out]  coeffs    PETSc Matrix coefficients handler
  * \param[in]       n         number of values to add
- * \param[in]       b_size    associated data block size
+ * \param[in]       b_size    associated index block size
  * \param[in]       stride    associated data block size
  * \param[in]       row_g_id  associated global row ids
  * \param[in]       col_g_id  associated global column ids
  * \param[in]       vals      pointer to values (size: n*stride)
- *
- * \return  HYPRE error code
  */
 /*----------------------------------------------------------------------------*/
 
-static HYPRE_Int
-_assembler_values_add_block_cc(cs_matrix_coeffs_hypre_t  *coeffs,
-                               HYPRE_Int                  n,
-                               HYPRE_Int                  b_size,
-                               HYPRE_Int                  stride,
+static void
+_assembler_values_add_block_cc(cs_matrix_coeffs_petsc_t  *coeffs,
+                               PetscInt                   n,
+                               PetscInt                   b_size,
+                               PetscInt                   stride,
                                const cs_gnum_t            row_g_id[],
                                const cs_gnum_t            col_g_id[],
                                const cs_real_t            vals[])
 {
-  HYPRE_IJMatrix hm = coeffs->hm;
+  Mat hm = coeffs->hm;
   assert(hm != NULL);
 
-  HYPRE_BigInt h_b_size = b_size;
-  HYPRE_BigInt l_b = coeffs->l_range[0];
-  HYPRE_BigInt u_b = coeffs->l_range[1];
+  PetscInt h_b_size = b_size;
+  PetscInt l_b = coeffs->l_range[0];
+  PetscInt u_b = coeffs->l_range[1];
 
-  HYPRE_BigInt *rows = coeffs->row_buf;
-  HYPRE_BigInt *cols = coeffs->col_buf;
-  HYPRE_Real *values = coeffs->val_buf;
-
-  HYPRE_Int block_step = coeffs->max_chunk_size / stride;
-
-  for (HYPRE_Int s_id = 0; s_id < n; s_id += block_step) {
-
-    HYPRE_Int n_group = block_step;
-    if (s_id + n_group > n)
-      n_group = n - s_id;
-
-    HYPRE_Int l = 0;
-
-    for (HYPRE_Int i = 0; i < n_group; i++) {
-      HYPRE_Int r_g_id = row_g_id[s_id + i];
-      if (r_g_id >= l_b && r_g_id < u_b) {
-        for (cs_lnum_t j = 0; j < b_size; j++) {
-          for (cs_lnum_t k = 0; k < b_size; k++) {
-            rows[l*stride + j*b_size + k]
-              = row_g_id[s_id + i]*h_b_size + (HYPRE_BigInt)j;
-            cols[l*stride + j*b_size + k]
-              = col_g_id[s_id + i]*h_b_size + (HYPRE_BigInt)k;
-            values[l*stride + j*b_size + k]
-              = vals[(s_id + i)*stride + j*b_size + k];
-          }
+  for (PetscInt i = 0; i < n; i++) {
+    PetscInt r_g_id = row_g_id[i];
+    if (r_g_id >= l_b && r_g_id < u_b) {
+      for (cs_lnum_t j = 0; j < b_size; j++) {
+        for (cs_lnum_t k = 0; k < b_size; k++) {
+          PetscInt idxm[] = {row_g_id[i]*h_b_size + (PetscInt)j};
+          PetscInt idxn[] = {col_g_id[i]*h_b_size + (PetscInt)k};
+          PetscScalar v[] = {vals[i*stride + j*b_size + k]};
+          MatSetValues(hm, 1, idxm, 1, idxn, v, ADD_VALUES);
         }
-        l++;
       }
     }
-
-    HYPRE_Int hypre_ierr
-      = HYPRE_IJMatrixAddToValues(hm, l*stride,
-                                  NULL, rows, cols, values);
-
-    if (hypre_ierr != 0)
-      return hypre_ierr;
-
   }
-
-  return 0;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add extradiagonal HYPRE matrix coefficients using global row ids
+ * \brief Add extradiagonal PETSc matrix coefficients using global row ids
  *        and column indexes, for fill type CS_MATRIX_BLOCK_D,
  *        CS_MATRIX_BLOCK_D_66, CS_MATRIX_BLOCK_D_SYM.
  *
- * \param[in, out]  coeffs    HYPRE Matrix coefficients handler
+ * \param[in, out]  coeffs    PETSc Matrix coefficients handler
  * \param[in]       n         number of values to add
  * \param[in]       b_size    associated data block size
  * \param[in]       stride    associated data block size
  * \param[in]       row_g_id  associated global row ids
  * \param[in]       col_g_id  associated global column ids
  * \param[in]       vals      pointer to values (size: n*stride)
- *
- * \return  HYPRE error code
  */
 /*----------------------------------------------------------------------------*/
 
-static HYPRE_Int
-_assembler_values_add_block_d_e(cs_matrix_coeffs_hypre_t  *coeffs,
-                                HYPRE_Int                  n,
-                                HYPRE_Int                  b_size,
+static void
+_assembler_values_add_block_d_e(cs_matrix_coeffs_petsc_t  *coeffs,
+                                PetscInt                  n,
+                                PetscInt                  b_size,
                                 const cs_gnum_t            row_g_id[],
                                 const cs_gnum_t            col_g_id[],
                                 const cs_real_t            vals[])
 {
-  HYPRE_IJMatrix hm = coeffs->hm;
+  Mat hm = coeffs->hm;
   assert(hm != NULL);
 
-  HYPRE_BigInt h_b_size = b_size;
+  PetscInt h_b_size = b_size;
 
-  HYPRE_BigInt l_b = coeffs->l_range[0];
-  HYPRE_BigInt u_b = coeffs->l_range[1];
+  PetscInt l_b = coeffs->l_range[0];
+  PetscInt u_b = coeffs->l_range[1];
 
-  HYPRE_BigInt *rows = coeffs->row_buf;
-  HYPRE_BigInt *cols = coeffs->col_buf;
-  HYPRE_Real *values = coeffs->val_buf;
+  for (PetscInt i = 0; i < n; i++) {
 
-  HYPRE_Int block_step = coeffs->max_chunk_size / b_size;
-
-  for (HYPRE_Int s_id = 0; s_id < n; s_id += block_step) {
-
-    HYPRE_Int n_group = block_step;
-    if (s_id + n_group > n)
-      n_group = n - s_id;
-
-    HYPRE_Int l = 0;
-
-    for (HYPRE_Int i = 0; i < n_group; i++) {
-      HYPRE_Int r_g_id = row_g_id[s_id + i];
-      if (r_g_id >= l_b && r_g_id < u_b) {
-        for (cs_lnum_t j = 0; j < b_size; j++) {
-          rows[l*b_size + j] = row_g_id[s_id + i]*h_b_size + (HYPRE_BigInt)j;
-          cols[l*b_size + j] = col_g_id[s_id + i]*h_b_size + (HYPRE_BigInt)j;
-          values[l*b_size + j] = vals[s_id + i];
-        }
-        l++;
+    PetscInt r_g_id = row_g_id[ i];
+    if (r_g_id >= l_b && r_g_id < u_b) {
+      for (cs_lnum_t j = 0; j < b_size; j++) {
+        PetscInt idxm[] = {row_g_id[i]*h_b_size + (PetscInt)j};
+        PetscInt idxn[] = {col_g_id[i]*h_b_size + (PetscInt)j};
+        PetscScalar v[] = {vals[i]};
+        MatSetValues(hm, 1, idxm, 1, idxn, v, ADD_VALUES);
       }
     }
 
-    HYPRE_Int hypre_ierr
-      = HYPRE_IJMatrixAddToValues(hm, l*b_size,
-                                  NULL, rows, cols, values);
-
-    if (hypre_ierr != 0)
-      return hypre_ierr;
-
   }
-
-  return 0;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Function for addition to HYPRE matrix coefficients using
+ * \brief Function for addition to PETSc matrix coefficients using
  *        local row ids and column indexes.
  *
  * This function can be used in all cases, including when
- *  sizeof(HYPRE_BigInt) != sizeof(cs_gnum_t)
- *  sizeof(HYPRE_Real) != sizeof(cs_real_t)
+ *  sizeof(PetscInt) != sizeof(cs_gnum_t)
+ *  sizeof(PetscReal) != sizeof(cs_real_t)
  *
  * Values whose associated row index is negative should be ignored;
  * Values whose column index is -1 are assumed to be assigned to a
@@ -909,54 +778,30 @@ _assembler_values_add_g(void             *matrix_p,
                         const cs_real_t   vals[])
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
+  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
-
-  HYPRE_Int hypre_ierr = 0;
-  HYPRE_Int nrows = n;
-  HYPRE_Int b_size = matrix->db_size;
-
-  HYPRE_Int max_chunk_size = coeffs->max_chunk_size;
+  PetscInt nrows = n;
+  PetscInt b_size = matrix->db_size;
 
   /* Scalar matrix
      ------------- */
 
   if (b_size == 1) {
 
-    HYPRE_IJMatrix hm = coeffs->hm;
+    Mat hm = coeffs->hm;
     assert(hm != NULL);
 
-    HYPRE_BigInt l_b = coeffs->l_range[0];
-    HYPRE_BigInt u_b = coeffs->l_range[1];
+    PetscInt l_b = coeffs->l_range[0];
+    PetscInt u_b = coeffs->l_range[1];
 
-    HYPRE_BigInt *rows = coeffs->row_buf;
-    HYPRE_BigInt *cols = coeffs->col_buf;
-    HYPRE_Real *values = coeffs->val_buf;
-
-    for (HYPRE_Int s_id = 0; s_id < nrows; s_id += max_chunk_size) {
-
-        HYPRE_Int n_group = max_chunk_size;
-        if (s_id + n_group > n)
-          n_group = nrows - s_id;
-
-        HYPRE_Int l = 0;
-
-        for (HYPRE_Int i = 0; i < n_group; i++) {
-          HYPRE_Int r_g_id = row_g_id[s_id + i];
-          if (r_g_id >= l_b && r_g_id < u_b) {
-            rows[l] = row_g_id[s_id + i];
-            cols[l] = col_g_id[s_id + i];
-            values[l] = vals[s_id + i];
-            l++;
-          }
-        }
-
-        hypre_ierr
-          = HYPRE_IJMatrixAddToValues(hm, l, NULL, rows, cols, values);
-
-        if (hypre_ierr != 0)
-          break;
-
+    for (PetscInt i = 0; i < nrows; i++) {
+      PetscInt r_g_id = row_g_id[i];
+      if (r_g_id >= l_b && r_g_id < u_b) {
+        PetscInt idxm[] = {r_g_id};
+        PetscInt idxn[] = {col_g_id[i]};
+        PetscScalar v[] = {vals[i]};
+        MatSetValues(hm, 1, idxm, 1, idxn, v, ADD_VALUES);
+      }
     }
   }
 
@@ -969,33 +814,24 @@ _assembler_values_add_g(void             *matrix_p,
 
     if (   matrix->fill_type >= CS_MATRIX_BLOCK
         || row_g_id[0] == col_g_id[0])
-      hypre_ierr = _assembler_values_add_block_cc(coeffs,
-                                                  nrows,
-                                                  b_size,
-                                                  stride,
-                                                  row_g_id,
-                                                  col_g_id,
-                                                  vals);
+      _assembler_values_add_block_cc(coeffs,
+                                     nrows,
+                                     b_size,
+                                     stride,
+                                     row_g_id,
+                                     col_g_id,
+                                     vals);
 
     /* Diagonal bloc extra-diagonal terms only */
 
     else if (matrix->fill_type >= CS_MATRIX_BLOCK_D)
-      hypre_ierr = _assembler_values_add_block_d_e(coeffs,
-                                                   nrows,
-                                                   b_size,
-                                                   row_g_id,
-                                                   col_g_id,
-                                                   vals);
+      _assembler_values_add_block_d_e(coeffs,
+                                      nrows,
+                                      b_size,
+                                      row_g_id,
+                                      col_g_id,
+                                      vals);
 
-  }
-
-  if (hypre_ierr != 0) {
-    char err_desc_buffer[64];
-    HYPRE_DescribeError(hypre_ierr, err_desc_buffer);
-    err_desc_buffer[63] = '\0';
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: error in HYPRE matrix assembly:\n  %s"),
-              __func__, err_desc_buffer);
   }
 }
 
@@ -1015,13 +851,10 @@ _assembler_values_add_g(void             *matrix_p,
 static void
 _assembler_values_begin(void  *matrix_p)
 {
-  CS_UNUSED(matrix_p);
+  cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
+  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
-  /* Note: this function is called once all coefficients have
-   *       been added, and before assembly is finalized.
-   *       It could be used in a threading or tasking context to signify
-   *       assembly finalization can start, returning immediately
-   *       so the calling task can continue working during this finalization */
+  MatAssemblyBegin(coeffs->hm, MAT_FINAL_ASSEMBLY);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1042,40 +875,42 @@ static void
 _assembler_values_end(void  *matrix_p)
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
+  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
-  HYPRE_IJMatrix hm = coeffs->hm;
-
-  HYPRE_IJMatrixAssemble(hm);
+  MatAssemblyEnd(coeffs->hm, MAT_FINAL_ASSEMBLY);
 
   if (coeffs->matrix_state == 0) {
 
-    CS_FREE_HD(coeffs->row_buf);
-    CS_FREE_HD(coeffs->col_buf);
-
     MPI_Comm comm = cs_glob_mpi_comm;
-    if (comm == MPI_COMM_NULL)
-      comm = MPI_COMM_WORLD;
+    if (comm == MPI_COMM_NULL) {
+      comm = MPI_COMM_SELF;
+    }
 
     /* Create associated vectors here also to avoid repeated creation
        (and possible overhead) where used */
 
-    const HYPRE_Int  n_off_proc = matrix->n_cols_ext - matrix->n_rows;
-    const HYPRE_BigInt b_size = matrix->db_size;
+    const PetscInt b_size = matrix->db_size;
+    const PetscInt n_local = matrix->n_rows * b_size;
 
-    HYPRE_BigInt ilower = b_size*(coeffs->l_range[0]);
-    HYPRE_BigInt iupper = b_size*(coeffs->l_range[1]) - 1;
+    Vec hx, hy;
+    VecCreate(comm, &hx);
+    VecSetSizes(hx, n_local, PETSC_DECIDE);
+    VecSetBlockSize(hx, 1);
 
-    HYPRE_IJVectorCreate(comm, ilower, iupper, &(coeffs->hx));
-    HYPRE_IJVectorSetObjectType(coeffs->hx, HYPRE_PARCSR);
-    HYPRE_IJVectorSetMaxOffProcElmts(coeffs->hx, n_off_proc);
+    if (   strcmp(coeffs->matype, MATAIJCUSPARSE) == 0
+        || strcmp(coeffs->matype, MATSEQAIJCUSPARSE) == 0
+        || strcmp(coeffs->matype, MATMPIAIJCUSPARSE) == 0)
+      VecSetType(hx, VECCUDA);
+    else
+      VecSetType(hx, VECSTANDARD);
 
-    HYPRE_IJVectorCreate(comm, ilower, iupper, &(coeffs->hy));
-    HYPRE_IJVectorSetObjectType(coeffs->hy, HYPRE_PARCSR);
-    HYPRE_IJVectorSetMaxOffProcElmts(coeffs->hy, n_off_proc);
+    /* VecSetFromOptions(Vec v); */
 
-    HYPRE_IJVectorInitialize_v2(coeffs->hx, coeffs->memory_location);
-    HYPRE_IJVectorInitialize_v2(coeffs->hy, coeffs->memory_location);
+    VecDuplicate(hx, &hy);
+
+    coeffs->hx = hx;
+    coeffs->hy = hy;
+
   }
 
   /* Set stat flag */
@@ -1099,7 +934,7 @@ _assembler_values_end(void  *matrix_p)
 /*----------------------------------------------------------------------------*/
 
 static cs_matrix_assembler_values_t *
-_assembler_values_create_hypre(cs_matrix_t      *matrix,
+_assembler_values_create_petsc(cs_matrix_t      *matrix,
                                const cs_lnum_t   diag_block_size,
                                const cs_lnum_t   extra_diag_block_size)
 {
@@ -1119,7 +954,7 @@ _assembler_values_create_hypre(cs_matrix_t      *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Set HYPRE ParCSR matrix coefficients for block-diagonal cases.
+ * Set PETSc matrix coefficients for block-diagonal cases.
  *
  * parameters:
  *   matrix    <-- pointer to matrix structure
@@ -1138,8 +973,6 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
                   const cs_real_t     da[restrict],
                   const cs_real_t     xa[restrict])
 {
-  bool direct_assembly = false;
-
   const cs_lnum_t  n_rows = matrix->n_rows;
 
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(n_rows, matrix->halo);
@@ -1147,34 +980,26 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
 
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
-    comm = MPI_COMM_WORLD;
+    comm = MPI_COMM_SELF;
 
   assert(n_rows > 0);
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  InsertMode insert_mode = ADD_VALUES; /* INSERT_VALUES possible
+                                          with direct_assembly */
+
+  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
   /* Sizes and buffers */
 
-  HYPRE_IJMatrix hm = coeffs->hm;
-  HYPRE_BigInt h_b_size = matrix->db_size;
+  PetscInt h_b_size = matrix->db_size;
 
   cs_lnum_t b_size = matrix->db_size;
   cs_lnum_t b_stride = b_size * b_size;
-
-  assert(b_stride == b_size*b_size);
-
-  HYPRE_Int max_chunk_size = coeffs->max_chunk_size;
-
-  HYPRE_BigInt *rows = coeffs->row_buf;
-  HYPRE_BigInt *cols = coeffs->col_buf;
-  HYPRE_Real *aij = coeffs->val_buf;
 
   /* Diagonal part
      ------------- */
 
   if (have_diag) {
-
-    HYPRE_Int ic = 0;
 
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
 
@@ -1182,127 +1007,76 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
         for (cs_lnum_t k = 0; k < b_size; k++) {
           cs_real_t a = da[ii*b_stride + j*b_size + k];
           if (a < -0.0 || a > 0.0) {
-            rows[ic] = g_id[ii]*h_b_size + (HYPRE_BigInt)j;
-            cols[ic] = g_id[ii]*h_b_size + (HYPRE_BigInt)k;
-            aij[ic] = a;
-            ic++;
+            PetscInt idxm[] = {g_id[ii]*h_b_size + (PetscInt)j};
+            PetscInt idxn[] = {g_id[ii]*h_b_size + (PetscInt)k};
+            PetscScalar v[] = {a};
+            MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
           }
         }
       }
-      if (ic + b_stride > max_chunk_size) {
-        if (direct_assembly)
-          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
-        else
-          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
-        ic = 0;
-      }
 
-    }
-
-    if (ic > 0) {
-      if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
-      else
-        HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
     }
 
   }
 
   /* Extradiagonal part */
 
-  HYPRE_Int max_b_chunk_size = max_chunk_size / b_size / 2;
-
   if (symmetric) {
 
-    cs_lnum_t s_e_id = 0;
-
-    while (s_e_id < n_edges) {
-
-      HYPRE_Int ic = 0, ec = 0;
-
-      for (cs_lnum_t e_id = s_e_id;
-           e_id < n_edges && ic < max_b_chunk_size;
-           e_id++) {
-        cs_lnum_t ii = edges[e_id][0];
-        cs_lnum_t jj = edges[e_id][1];
-        cs_gnum_t g_ii = g_id[ii];
-        cs_gnum_t g_jj = g_id[jj];
-        if (ii < n_rows) {
-          for (cs_lnum_t k = 0; k < b_size; k++) {
-            rows[ic*b_size + k] = g_ii*h_b_size + (HYPRE_BigInt)k;
-            cols[ic*b_size + k] = g_jj*h_b_size + (HYPRE_BigInt)k;
-            aij[ic*b_size + k] = xa[e_id];
-          }
-          ic += 1;
+    for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
+      cs_lnum_t ii = edges[e_id][0];
+      cs_lnum_t jj = edges[e_id][1];
+      cs_gnum_t g_ii = g_id[ii];
+      cs_gnum_t g_jj = g_id[jj];
+      if (ii < n_rows) {
+        for (cs_lnum_t k = 0; k < b_size; k++) {
+          PetscInt idxm[] = {g_ii*h_b_size + (PetscInt)k};
+          PetscInt idxn[] = {g_jj*h_b_size + (PetscInt)k};
+          PetscScalar v[] = {xa[e_id]};
+          MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
-        if (jj < n_rows) {
-          for (cs_lnum_t k = 0; k < b_size; k++) {
-            rows[ic*b_size + k] = g_jj*h_b_size + (HYPRE_BigInt)k;
-            cols[ic*b_size + k] = g_ii*h_b_size + (HYPRE_BigInt)k;
-            aij[ic*b_size + k] = xa[e_id];
-          }
-          ic += 1;
-        }
-        ec++;
       }
-
-      s_e_id += ec;
-
-      if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic*b_size, NULL, rows, cols, aij);
-      else
-        HYPRE_IJMatrixAddToValues(hm, ic*b_size, NULL, rows, cols, aij);
+      if (jj < n_rows) {
+        for (cs_lnum_t k = 0; k < b_size; k++) {
+          PetscInt idxm[] = {g_jj*h_b_size + (PetscInt)k};
+          PetscInt idxn[] = {g_ii*h_b_size + (PetscInt)k};
+          PetscScalar v[] = {xa[e_id]};
+          MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
+        }
+      }
     }
 
   }
   else { /* non-symmetric variant */
 
-    cs_lnum_t s_e_id = 0;
-
-    while (s_e_id < n_edges) {
-
-      HYPRE_Int ic = 0, ec = 0;
-
-      for (cs_lnum_t e_id = s_e_id;
-           e_id < n_edges && ic < max_b_chunk_size;
-           e_id++) {
-        cs_lnum_t ii = edges[e_id][0];
-        cs_lnum_t jj = edges[e_id][1];
-        cs_gnum_t g_ii = g_id[ii];
-        cs_gnum_t g_jj = g_id[jj];
-        if (ii < n_rows) {
-          for (cs_lnum_t k = 0; k < b_size; k++) {
-            rows[ic*b_size + k] = g_ii*h_b_size + (HYPRE_BigInt)k;
-            cols[ic*b_size + k] = g_jj*h_b_size + (HYPRE_BigInt)k;
-            aij[ic*b_size + k] = xa[e_id*2];
-          }
-          ic++;
+    for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
+      cs_lnum_t ii = edges[e_id][0];
+      cs_lnum_t jj = edges[e_id][1];
+      cs_gnum_t g_ii = g_id[ii];
+      cs_gnum_t g_jj = g_id[jj];
+      if (ii < n_rows) {
+        for (cs_lnum_t k = 0; k < b_size; k++) {
+          PetscInt idxm[] = {g_ii*h_b_size + (PetscInt)k};
+          PetscInt idxn[] = {g_jj*h_b_size + (PetscInt)k};
+          PetscScalar v[] = {xa[e_id*2]};
+          MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
-        if (jj < n_rows) {
-          for (cs_lnum_t k = 0; k < b_size; k++) {
-            rows[ic*b_size + k] = g_jj*h_b_size + (HYPRE_BigInt)k;
-            cols[ic*b_size + k] = g_ii*h_b_size + (HYPRE_BigInt)k;
-            aij[ic*b_size + k] = xa[e_id*2+1];
-          }
-          ic++;
-        }
-        ec++;
       }
-
-      s_e_id += ec;
-
-      if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic*b_size, NULL, rows, cols, aij);
-      else
-        HYPRE_IJMatrixAddToValues(hm, ic*b_size, NULL, rows, cols, aij);
-
+      if (jj < n_rows) {
+        for (cs_lnum_t k = 0; k < b_size; k++) {
+          PetscInt idxm[] = {g_jj*h_b_size + (PetscInt)k};
+          PetscInt idxn[] = {g_ii*h_b_size + (PetscInt)k};
+          PetscScalar v[] = {xa[e_id*2+1]};
+          MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
+        }
+      }
     }
 
   }
 }
 
 /*----------------------------------------------------------------------------
- * Set HYPRE ParCSR matrix coefficients for full block cases.
+ * Set PETSc matrix coefficients for full block cases.
  *
  * parameters:
  *   matrix    <-- pointer to matrix structure
@@ -1321,8 +1095,6 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
                  const cs_real_t     da[restrict],
                  const cs_real_t     xa[restrict])
 {
-  bool direct_assembly = false;
-
   const cs_lnum_t  n_rows = matrix->n_rows;
 
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(n_rows, matrix->halo);
@@ -1330,162 +1102,108 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
 
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
-    comm = MPI_COMM_WORLD;
+    comm = MPI_COMM_SELF;
 
   assert(n_rows > 0);
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  InsertMode insert_mode = ADD_VALUES; /* INSERT_VALUES possible
+                                          with direct_assembly */
+
+  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
   /* Sizes and buffers */
 
-  HYPRE_IJMatrix hm = coeffs->hm;
-  HYPRE_BigInt h_b_size = matrix->db_size;
+  PetscInt h_b_size = matrix->db_size;
 
   cs_lnum_t b_size = matrix->db_size;
   cs_lnum_t b_stride = b_size * b_size;
 
-  assert(b_stride == b_size*b_size);
+  PetscInt idxm[9];
+  PetscInt idxn[9];
+  PetscScalar v[9*9];
 
-  HYPRE_Int max_chunk_size = coeffs->max_chunk_size;
-
-  HYPRE_BigInt *rows = coeffs->row_buf;
-  HYPRE_BigInt *cols = coeffs->col_buf;
-  HYPRE_Real *aij = coeffs->val_buf;
+  assert(b_size <= 9);
 
   /* Diagonal part
      ------------- */
 
   if (have_diag) {
 
-    cs_lnum_t s_id = 0;
-    HYPRE_Int max_b_chunk_size = max_chunk_size / b_stride;
-
-    while (s_id < n_rows) {
-
-      HYPRE_Int ic = 0;
-
-      for (cs_lnum_t ii = s_id;
-           ii < n_rows && ic < max_b_chunk_size;
-           ii++) {
-        for (cs_lnum_t j = 0; j < b_size; j++) {
-          for (cs_lnum_t k = 0; k < b_size; k++) {
-            rows[ic*b_stride + j*b_size + k]
-              = g_id[ii]*h_b_size + (HYPRE_BigInt)j;
-            cols[ic*b_stride + j*b_size + k]
-              = g_id[ii]*h_b_size + (HYPRE_BigInt)k;
-            aij[ic*b_stride + j*b_size + k] = da[ii*b_stride + j*b_size + k];
-          }
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+      for (cs_lnum_t j = 0; j < b_size; j++) {
+        idxm[j] = g_id[ii]*h_b_size + (PetscInt)j;
+        idxn[j] = g_id[ii]*h_b_size + (PetscInt)j;
+        for (cs_lnum_t k = 0; k < b_size; k++) {
+          v[j*b_size + k] = da[ii*b_stride + j*b_size + k];
         }
-        ic++;
       }
-
-      s_id += ic;
-
-      if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic*b_stride, NULL, rows, cols, aij);
-      else
-        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, NULL, rows, cols, aij);
+      MatSetValues(coeffs->hm, h_b_size, idxm, h_b_size, idxn, v, insert_mode);
     }
 
   }  /* End of diagonal block addition */
 
   /* Extradiagonal part */
 
-  HYPRE_Int max_b_chunk_size = max_chunk_size / b_stride / 2;
-
   if (symmetric) {
 
-    cs_lnum_t s_e_id = 0;
+    for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
 
-    while (s_e_id < n_edges) {
-
-      HYPRE_Int ic = 0, ec = 0;
-
-      for (cs_lnum_t e_id = s_e_id;
-           e_id < n_edges && ic < max_b_chunk_size;
-           e_id++) {
-        cs_lnum_t ii = edges[e_id][0];
-        cs_lnum_t jj = edges[e_id][1];
-        cs_gnum_t g_ii = g_id[ii];
-        cs_gnum_t g_jj = g_id[jj];
-        if (ii < n_rows) {
-          for (cs_lnum_t k = 0; k < b_size; k++) {
-            for (cs_lnum_t l = 0; l < b_size; l++) {
-              rows[ic*b_stride + k*b_size + l] = g_ii*h_b_size + (HYPRE_BigInt)k;
-              cols[ic*b_stride + k*b_size + l] = g_jj*h_b_size + (HYPRE_BigInt)l;
-              aij[ic*b_stride + k*b_size + l] = xa[e_id*b_stride + k*b_size + l];
-            }
+      cs_lnum_t ii = edges[e_id][0];
+      cs_lnum_t jj = edges[e_id][1];
+      cs_gnum_t g_ii = g_id[ii];
+      cs_gnum_t g_jj = g_id[jj];
+      if (ii < n_rows) {
+        for (cs_lnum_t k = 0; k < b_size; k++) {
+          idxm[k] = g_ii*h_b_size + (PetscInt)k;
+          idxn[k] = g_jj*h_b_size + (PetscInt)k;
+          for (cs_lnum_t l = 0; l < b_size; l++) {
+            v[k*b_size + l] = xa[e_id*b_stride + k*b_size + l];
           }
-          ic += 1;
         }
-        if (jj < n_rows) {
-          for (cs_lnum_t k = 0; k < b_size; k++) {
-            for (cs_lnum_t l = 0; l < b_size; l++) {
-              rows[ic*b_stride + k*b_size + l] = g_jj*h_b_size + (HYPRE_BigInt)k;
-              cols[ic*b_stride + k*b_size + l] = g_ii*h_b_size + (HYPRE_BigInt)l;
-              aij[ic*b_stride + k*b_size + l] = xa[e_id*b_stride + k*b_size + l];
-            }
+        MatSetValues(coeffs->hm, h_b_size, idxm, h_b_size, idxn, v, insert_mode);
+      }
+      if (jj < n_rows) {
+        for (cs_lnum_t k = 0; k < b_size; k++) {
+          idxm[k] = g_jj*h_b_size + (PetscInt)k;
+          idxn[k] = g_ii*h_b_size + (PetscInt)k;
+          for (cs_lnum_t l = 0; l < b_size; l++) {
+            v[k*b_size + l] = xa[e_id*b_stride + k*b_size + l];
           }
-          ic += 1;
         }
-        ec++;
+        MatSetValues(coeffs->hm, h_b_size, idxm, h_b_size, idxn, v, insert_mode);
       }
 
-      s_e_id += ec;
-
-      if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic*b_stride, NULL, rows, cols, aij);
-      else
-        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, NULL, rows, cols, aij);
     }
 
   }
   else { /* non-symmetric variant */
 
-    cs_lnum_t s_e_id = 0;
+    for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
 
-    while (s_e_id < n_edges) {
-
-      HYPRE_Int ic = 0, ec = 0;
-
-      for (cs_lnum_t e_id = s_e_id;
-           e_id < n_edges && ic < max_b_chunk_size;
-           e_id++) {
-        cs_lnum_t ii = edges[e_id][0];
-        cs_lnum_t jj = edges[e_id][1];
-        cs_gnum_t g_ii = g_id[ii];
-        cs_gnum_t g_jj = g_id[jj];
-        if (ii < n_rows) {
-          for (cs_lnum_t k = 0; k < b_size; k++) {
-            for (cs_lnum_t l = 0; l < b_size; l++) {
-              rows[ic*b_stride + k*b_size + l] = g_ii*h_b_size + (HYPRE_BigInt)k;
-              cols[ic*b_stride + k*b_size + l] = g_jj*h_b_size + (HYPRE_BigInt)l;
-              aij[ic*b_stride + k*b_size + l]
-                = xa[e_id*2*b_stride + k*b_size + l];
-            }
+      cs_lnum_t ii = edges[e_id][0];
+      cs_lnum_t jj = edges[e_id][1];
+      cs_gnum_t g_ii = g_id[ii];
+      cs_gnum_t g_jj = g_id[jj];
+      if (ii < n_rows) {
+        for (cs_lnum_t k = 0; k < b_size; k++) {
+          idxm[k] = g_ii*h_b_size + (PetscInt)k;
+          idxn[k] = g_jj*h_b_size + (PetscInt)k;
+          for (cs_lnum_t l = 0; l < b_size; l++) {
+            v[k*b_size + l] = xa[e_id*2*b_stride + k*b_size + l];
           }
-          ic += 1;
         }
-        if (jj < n_rows) {
-          for (cs_lnum_t k = 0; k < b_size; k++) {
-            for (cs_lnum_t l = 0; l < b_size; l++) {
-              rows[ic*b_stride + k*b_size + l] = g_jj*h_b_size + (HYPRE_BigInt)k;
-              cols[ic*b_stride + k*b_size + l] = g_ii*h_b_size + (HYPRE_BigInt)l;
-              aij[ic*b_stride + k*b_size + l]
-                = xa[(e_id*2+1)*b_stride + k*b_size + l];
-            }
-          }
-          ic += 1;
-        }
-        ec++;
+        MatSetValues(coeffs->hm, h_b_size, idxm, h_b_size, idxn, v, insert_mode);
       }
-
-      s_e_id += ec;
-
-      if (direct_assembly)
-        HYPRE_IJMatrixSetValues(hm, ic*b_stride, NULL, rows, cols, aij);
-      else
-        HYPRE_IJMatrixAddToValues(hm, ic*b_stride, NULL, rows, cols, aij);
+      if (jj < n_rows) {
+        for (cs_lnum_t k = 0; k < b_size; k++) {
+          idxm[k] = g_jj*h_b_size + (PetscInt)k;
+          idxn[k] = g_ii*h_b_size + (PetscInt)k;
+          for (cs_lnum_t l = 0; l < b_size; l++) {
+            v[k*b_size + l] = xa[(e_id*2+1)*b_stride + k*b_size + l];
+          }
+        }
+        MatSetValues(coeffs->hm, h_b_size, idxm, h_b_size, idxn, v, insert_mode);
+      }
 
     }
 
@@ -1493,7 +1211,7 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Set HYPRE ParCSR matrix coefficients.
+ * Set PETSc matrix coefficients.
  *
  * parameters:
  *   matrix    <-- pointer to matrix structure
@@ -1506,89 +1224,68 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_set_coeffs_ij(cs_matrix_t        *matrix,
-               bool                symmetric,
-               bool                copy,
-               cs_lnum_t           n_edges,
-               const cs_lnum_t     edges[restrict][2],
-               const cs_real_t     da[restrict],
-               const cs_real_t     xa[restrict])
+_set_coeffs(cs_matrix_t        *matrix,
+            bool                symmetric,
+            bool                copy,
+            cs_lnum_t           n_edges,
+            const cs_lnum_t     edges[restrict][2],
+            const cs_real_t     da[restrict],
+            const cs_real_t     xa[restrict])
 {
   CS_UNUSED(copy);
 
-  bool direct_assembly = false;
-
-  const cs_lnum_t  n_rows = matrix->n_rows;
+  cs_lnum_t  n_rows = matrix->n_rows;
+  cs_lnum_t  n_cols_ext = matrix->n_cols_ext;
 
   const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(n_rows, matrix->halo);
   const bool have_diag = (xa != NULL) ? true : false;
 
   MPI_Comm comm = cs_glob_mpi_comm;
   if (comm == MPI_COMM_NULL)
-    comm = MPI_COMM_WORLD;
+    comm = MPI_COMM_SELF;
 
   assert(n_rows > 0);
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  InsertMode insert_mode = ADD_VALUES; /* INSERT_VALUES possible
+                                          with direct_assembly */
 
-  /* Create HYPRE matrix */
+  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
-  HYPRE_IJMatrix hm = coeffs->hm;
+  /* Create PETSc matrix */
 
-  cs_gnum_t  l_range[2] = {0, 0};
+  Mat hm = coeffs->hm;
 
-  if (n_rows > 0) {
-    l_range[0] = g_id[0];
-    l_range[1] = g_id[n_rows-1] + 1;
-  }
-
-  cs_lnum_t b_size = matrix->db_size;
-  cs_lnum_t e_size = matrix->eb_size;
-  cs_lnum_t b_stride = b_size * b_size;
-  cs_lnum_t e_stride = e_size * e_size;
-
-  assert(b_stride == b_size*b_size);
+  PetscInt b_size = matrix->db_size;
+  PetscInt e_size = matrix->eb_size;
 
   if (coeffs->matrix_state == 0) {
 
-    cs_alloc_mode_t  amode = CS_ALLOC_HOST;
-    if (coeffs->memory_location != HYPRE_MEMORY_HOST)
-      amode = CS_ALLOC_HOST_DEVICE_SHARED;
-
-    /* We seem to have memory issues when allocating by parts
-       on GPU, so prepare buffers to transfer in a single step.
-       On CPU, use smaller array to avoid excess duplicate memory */
-
-    if (amode == CS_ALLOC_HOST) {
-      coeffs->max_chunk_size = 32768;
+    cs_gnum_t  l_range[2] = {0, 0};
+    if (n_rows > 0) {
+      l_range[0] = g_id[0];
+      l_range[1] = g_id[n_rows-1] + 1;
     }
-    else {
-      cs_lnum_t nnz = n_edges*2*e_stride + n_rows*b_stride;
-      coeffs->max_chunk_size = nnz;
-    }
-
-    CS_MALLOC_HD(coeffs->row_buf, coeffs->max_chunk_size, HYPRE_BigInt, amode);
-    CS_MALLOC_HD(coeffs->col_buf, coeffs->max_chunk_size, HYPRE_BigInt, amode);
-    CS_MALLOC_HD(coeffs->val_buf, coeffs->max_chunk_size, HYPRE_Real, amode);
-
-    HYPRE_BigInt ilower = b_size*l_range[0];
-    HYPRE_BigInt iupper = b_size*l_range[1] - 1;
 
     coeffs->l_range[0] = l_range[0];
     coeffs->l_range[1] = l_range[1];
 
-    HYPRE_IJMatrixCreate(comm,
-                         ilower,
-                         iupper,
-                         ilower,
-                         iupper,
-                         &hm);
+    n_rows *= b_size;
+    n_cols_ext *= b_size;
+
+    MatCreate(comm, &hm);
+    MatSetType(hm, coeffs->matype_r);
+
+    MatSetSizes(hm,
+                (PetscInt)n_rows,    /* Number of local rows */
+                (PetscInt)n_rows,    /* Number of local columns */
+                PETSC_DETERMINE,     /* Number of global rows */
+                PETSC_DETERMINE);    /* Number of global columns */
 
     coeffs->hm = hm;
 
-    HYPRE_IJMatrixSetObjectType(hm, HYPRE_PARCSR);
+    MatGetType(hm, &(coeffs->matype));
 
-    HYPRE_Int *diag_sizes = NULL, *offdiag_sizes = NULL;
+    PetscInt *diag_sizes = NULL, *offdiag_sizes = NULL;
 
     _compute_diag_sizes_native(matrix,
                                have_diag,
@@ -1599,22 +1296,12 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
                                &diag_sizes,
                                &offdiag_sizes);
 
-    HYPRE_IJMatrixSetDiagOffdSizes(hm, diag_sizes, offdiag_sizes);
-    HYPRE_IJMatrixSetMaxOffProcElmts(hm, 0);
+    MatSeqAIJSetPreallocation(coeffs->hm, 0, diag_sizes);
+    MatMPIAIJSetPreallocation(coeffs->hm, 0, diag_sizes, 0, offdiag_sizes);
 
     BFT_FREE(diag_sizes);
     BFT_FREE(offdiag_sizes);
-
-    HYPRE_IJMatrixSetOMPFlag(hm, 0);
-
-    HYPRE_IJMatrixInitialize_v2(hm, coeffs->memory_location);
   }
-
-  HYPRE_Int max_chunk_size = coeffs->max_chunk_size / 2;
-
-  HYPRE_BigInt *rows = coeffs->row_buf;
-  HYPRE_BigInt *cols = coeffs->col_buf;
-  HYPRE_Real *aij = coeffs->val_buf;
 
   /* Scalar case */
 
@@ -1622,107 +1309,56 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
 
     if (have_diag) {
 
-      cs_lnum_t s_id = 0;
-
-      while (s_id < n_rows) {
-        HYPRE_Int ic = 0;
-
-        for (cs_lnum_t ii = s_id;
-             ii < n_rows && ic < max_chunk_size;
-             ii++) {
-          rows[ic] = g_id[ii];
-          cols[ic] = g_id[ii];
-          aij[ic] = da[ii];
-          ic++;
-        }
-
-        s_id += ic;
-
-        if (direct_assembly)
-          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
-        else
-          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
+      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+        PetscInt idxm[] = {g_id[ii]};
+        PetscInt idxn[] = {g_id[ii]};
+        PetscScalar v[] = {da[ii]};
+        MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
       }
 
     }
 
     if (symmetric) {
 
-      cs_lnum_t s_e_id = 0;
-
-      while (s_e_id < n_edges) {
-
-        HYPRE_Int ic = 0, ec = 0;
-
-        for (cs_lnum_t e_id = s_e_id;
-             e_id < n_edges && ic < max_chunk_size;
-             e_id++) {
-          cs_lnum_t ii = edges[e_id][0];
-          cs_lnum_t jj = edges[e_id][1];
-          cs_gnum_t g_ii = g_id[ii];
-          cs_gnum_t g_jj = g_id[jj];
-          if (ii < n_rows) {
-            rows[ic] = g_ii;
-            cols[ic] = g_jj;
-            aij[ic] = xa[e_id];
-            ic++;
-          }
-          if (jj < n_rows) {
-            rows[ic] = g_jj;
-            cols[ic] = g_ii;
-            aij[ic] = xa[e_id];
-            ic++;
-          }
-          ec++;
+      for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
+        cs_lnum_t ii = edges[e_id][0];
+        cs_lnum_t jj = edges[e_id][1];
+        cs_gnum_t g_ii = g_id[ii];
+        cs_gnum_t g_jj = g_id[jj];
+        if (ii < n_rows) {
+          PetscInt idxm[] = {g_ii};
+          PetscInt idxn[] = {g_jj};
+          PetscScalar v[] = {xa[e_id]};
+          MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
-
-        s_e_id += ec;
-
-        if (direct_assembly)
-          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
-        else
-          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
+        if (jj < n_rows) {
+          PetscInt idxm[] = {g_jj};
+          PetscInt idxn[] = {g_ii};
+          PetscScalar v[] = {xa[e_id]};
+          MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
+        }
       }
 
     }
     else { /* non-symmetric variant */
 
-      cs_lnum_t s_e_id = 0;
-
-      while (s_e_id < n_edges) {
-
-        HYPRE_Int ic = 0, ec = 0;
-
-        for (cs_lnum_t e_id = s_e_id;
-             e_id < n_edges && ic < max_chunk_size;
-             e_id++) {
-          cs_lnum_t ii = edges[e_id][0];
-          cs_lnum_t jj = edges[e_id][1];
-          cs_gnum_t g_ii = g_id[ii];
-          cs_gnum_t g_jj = g_id[jj];
-
-          if (ii < n_rows) {
-            rows[ic] = g_ii;
-            cols[ic] = g_jj;
-            aij[ic] = xa[e_id*2];
-            ic++;
-          }
-          if (jj < n_rows) {
-            rows[ic] = g_jj;
-            cols[ic] = g_ii;
-            aij[ic] = xa[e_id*2+1];
-            ic++;
-          }
-          ec++;
+      for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
+        cs_lnum_t ii = edges[e_id][0];
+        cs_lnum_t jj = edges[e_id][1];
+        cs_gnum_t g_ii = g_id[ii];
+        cs_gnum_t g_jj = g_id[jj];
+        if (ii < n_rows) {
+          PetscInt idxm[] = {g_ii};
+          PetscInt idxn[] = {g_jj};
+          PetscScalar v[] = {xa[e_id*2]};
+          MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
         }
-
-        s_e_id += ec;
-
-        if (direct_assembly)
-          HYPRE_IJMatrixSetValues(hm, ic, NULL, rows, cols, aij);
-        else
-          HYPRE_IJMatrixAddToValues(hm, ic, NULL, rows, cols, aij);
-
+        if (jj < n_rows) {
+          PetscInt idxm[] = {g_jj};
+          PetscInt idxn[] = {g_ii};
+          PetscScalar v[] = {xa[e_id*2+1]};
+          MatSetValues(coeffs->hm, 1, idxm, 1, idxn, v, insert_mode);
+        }
       }
 
     }
@@ -1755,7 +1391,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Release HYPRE ParCSR matrix coefficients.
+ * Release PETSc matrix coefficients.
  *
  * Depending on current options and initialization, values will be copied
  * or simply mapped.
@@ -1771,29 +1407,28 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
  *----------------------------------------------------------------------------*/
 
 static void
-_release_coeffs_ij(cs_matrix_t  *matrix)
+_release_coeffs(cs_matrix_t  *matrix)
 {
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
   if (matrix->coeffs != NULL) {
 
     if (coeffs->matrix_state > 0) {
-      HYPRE_IJMatrixDestroy(coeffs->hm);
+      MatDestroy(&(coeffs->hm));
 
-      HYPRE_IJVectorDestroy(coeffs->hx);
-      HYPRE_IJVectorDestroy(coeffs->hy);
-
-      CS_FREE_HD(coeffs->row_buf); /* precaution; usually done earlier */
-      CS_FREE_HD(coeffs->col_buf); /* precaution; usually done earlier */
-      CS_FREE_HD(coeffs->val_buf); /* only done here */
+      VecDestroy(&(coeffs->hx));
+      VecDestroy(&(coeffs->hy));
 
       coeffs->matrix_state = 0;
     }
+
+    if (coeffs->matype_r != NULL)
+      PetscFree(coeffs->matype_r);
   }
 }
 
 /*----------------------------------------------------------------------------
- * Release HYPRE ParCSR matrix coefficients.
+ * Release PETSc matrix coefficients.
  *
  * Depending on current options and initialization, values will be copied
  * or simply mapped.
@@ -1809,16 +1444,16 @@ _release_coeffs_ij(cs_matrix_t  *matrix)
  *----------------------------------------------------------------------------*/
 
 static void
-_destroy_coeffs_ij(cs_matrix_t  *matrix)
+_destroy_coeffs(cs_matrix_t  *matrix)
 {
   if (matrix->coeffs != NULL) {
-    _release_coeffs_ij(matrix);
+    _release_coeffs(matrix);
     BFT_FREE(matrix->coeffs);
   }
 }
 
 /*----------------------------------------------------------------------------
- * Copy diagonal of HYPRE ParCSR matrix.
+ * Copy diagonal of PETSc matrix.
  *
  * parameters:
  *   matrix <-- pointer to matrix structure
@@ -1826,74 +1461,94 @@ _destroy_coeffs_ij(cs_matrix_t  *matrix)
  *----------------------------------------------------------------------------*/
 
 static void
-_copy_diagonal_ij(const cs_matrix_t  *matrix,
-                  cs_real_t          *restrict da)
+_copy_diagonal(const cs_matrix_t  *matrix,
+               cs_real_t          *restrict da)
 {
-  const cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
+  const cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
-  const HYPRE_BigInt b_size = matrix->db_size;
+  const PetscInt b_size = matrix->db_size;
 
-  HYPRE_BigInt ilower = b_size*(coeffs->l_range[0]);
+  const PetscInt n_rows = matrix->n_rows * b_size;
 
-  const HYPRE_BigInt n_rows = matrix->n_rows * b_size;
+  Vec hd;
+  VecDuplicate(coeffs->hx, &hd);
 
-  HYPRE_BigInt *rows, *cols;
-  HYPRE_Int *n_rcols;
-  HYPRE_Real *aij;
+  MatGetDiagonal(coeffs->hm, hd);
 
-  BFT_MALLOC(n_rcols, n_rows, HYPRE_Int);
-  BFT_MALLOC(rows, n_rows, HYPRE_BigInt);
-  BFT_MALLOC(cols, n_rows, HYPRE_BigInt);
+  const PetscReal *_d = NULL;
 
-  if (sizeof(HYPRE_Real) == sizeof(cs_real_t))
-    aij = da;
-  else
-    BFT_MALLOC(aij, n_rows, HYPRE_Real);
+  VecGetArrayRead(hd, &_d);
 
-# pragma omp parallel for  if(n_rows > CS_THR_MIN)
-  for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
-    n_rcols[ii] = 1;
-    rows[ii] = ilower + ii;;
-    cols[ii] = ilower + ii;;
+  for (PetscInt ii = 0; ii < n_rows; ii++) {
+    da[ii] = _d[ii];
   }
 
-  HYPRE_IJMatrixGetValues(coeffs->hm,
-                          matrix->n_rows,
-                          n_rcols,
-                          rows,
-                          cols,
-                          aij);
-
-  if (aij != da) {
-    for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
-      da[ii] = aij[ii];;
-    }
-    BFT_FREE(aij);
-  }
-
-  BFT_FREE(cols);
-  BFT_FREE(rows);
-  BFT_FREE(n_rcols);
+  VecRestoreArrayRead(hd, &_d);
+  VecDestroy(&hd);
 }
 
 /*============================================================================
  * Semi-private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Initialize PETSc if needed
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_petsc_ensure_init(void)
+{
+  if (_init_status > 0)
+    return;
+
+  /* Initialization must be called before setting options;
+     it does not need to be called before calling
+     cs_sles_petsc_define(), as this is handled automatically. */
+
+  PetscBool is_initialized;
+  PetscInitialized(&is_initialized);
+
+  if (is_initialized == PETSC_FALSE) {
+#if defined(HAVE_MPI)
+    if (cs_glob_mpi_comm != MPI_COMM_NULL)
+      PETSC_COMM_WORLD = cs_glob_mpi_comm;
+    else
+      PETSC_COMM_WORLD = MPI_COMM_SELF;
+#endif
+    PetscInitializeNoArguments();
+  }
+
+  PetscPushErrorHandler(PetscAbortErrorHandler, NULL);
+  _init_status = 1;
+}
+
+/*----------------------------------------------------------------------------
+ * Finalize PETSc
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_petsc_finalize(void)
+{
+  if (_init_status == 1) {
+    PetscFinalize();
+    _init_status = 2;
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief return coefficients structure associated with HYPRE matrix.
+ * \brief return coefficients structure associated with PETSc matrix.
  *
  * \param[in]  matrix  pointer to matrix structure
  *
- * \return  pointer to matrix coefficients handler structure for HYPRE matrix.
+ * \return  pointer to matrix coefficients handler structure for PETSc matrix.
  */
 /*----------------------------------------------------------------------------*/
 
-cs_matrix_coeffs_hypre_t *
-cs_matrix_hypre_get_coeffs(const cs_matrix_t  *matrix)
+cs_matrix_coeffs_petsc_t *
+cs_matrix_petsc_get_coeffs(const cs_matrix_t  *matrix)
 {
-  return (cs_matrix_coeffs_hypre_t *)(matrix->coeffs);
+  return (cs_matrix_coeffs_petsc_t *)(matrix->coeffs);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1904,58 +1559,55 @@ cs_matrix_hypre_get_coeffs(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Switch matrix type to HYPRE.
+ * \brief Switch matrix type to PETSc.
  *
  * This releases previous coefficients if present, so should be called
  * just after matrix creation, before assigning coefficients.
  *
  * \param[in, out]  matrix      pointer to matrix structure
- * \param[in]       use_device  0 for host, 1 for device (GPU)
+ * \param[in]       type_name   string matching PETSc matrix type name,
+ *                              defaults to "MATAIJ" if NULL
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
-                         int           use_device)
+cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
+                         const char   *type_name)
 {
-  _ensure_device_setup(use_device);  /* Setup on first pass */
-
   matrix->type = CS_MATRIX_N_BUILTIN_TYPES;
 
-  matrix->type_name = _hypre_ij_type_name;
-  matrix->type_fname = _hypre_ij_type_fullname;
+  matrix->type_name = _petsc_ij_type_name;
+  matrix->type_fname = _petsc_ij_type_fullname;
 
   /* Release previous coefficients if present */
 
   if (matrix->coeffs != NULL)
     matrix->destroy_coefficients(matrix);
 
-  _setup_coeffs(matrix, use_device);
+  _setup_coeffs(matrix, type_name);
 
-  cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
-
-  matrix->coeffs = coeffs;
+  cs_matrix_coeffs_petsc_t  *coeffs = matrix->coeffs;
 
   /* Set function pointers here */
 
-  matrix->set_coefficients = _set_coeffs_ij;
-  matrix->release_coefficients = _release_coeffs_ij;
-  matrix->destroy_coefficients = _destroy_coeffs_ij;
-  matrix->assembler_values_create = _assembler_values_create_hypre;
+  matrix->set_coefficients = _set_coeffs;
+  matrix->release_coefficients = _release_coeffs;
+  matrix->destroy_coefficients = _destroy_coeffs;
+  matrix->assembler_values_create = _assembler_values_create_petsc;
 
   matrix->get_diagonal = NULL;
 
   /* Remark: block values are transformed into scalar values, so SpMv products
-     should be possible, (and the function pointers updated). HYPRE also seems
-     to have support for block matrixes (hypre_ParCSRBlockMatrix)  but the
-     high-level documentation does not mention it. */
+     should be possible, (and the function pointers updated). PETSc also has
+     support for block matrixes, so we can exploit that in the future
+     (we will need to make sure the correct type is used in this case). */
 
   for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
-    matrix->vector_multiply[i][0] = _mat_vec_p_parcsr;
+    matrix->vector_multiply[i][0] = _mat_vec_p_aij;
     matrix->vector_multiply[i][1] = NULL;
   }
 
-  matrix->copy_diagonal = _copy_diagonal_ij;
+  matrix->copy_diagonal = _copy_diagonal;
 
   /* Force MPI initialization if not already done.
    * The main code_saturne communicator is not modifed, as

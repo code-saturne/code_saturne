@@ -247,8 +247,8 @@ _petsc_p_setup_hook_view(void        *context,
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_sles_petsc_hook(void               *context,
-                        KSP                 ksp)
+cs_user_sles_petsc_hook(void  *context,
+                        void  *ksp)
 {
   CS_UNUSED(ksp);
 
@@ -645,22 +645,22 @@ cs_user_linear_solvers(void)
     PetscOptionsSetValue(NULL, "-ksp_type", "cg");
     PetscOptionsSetValue(NULL, "-pc_type", "hypre");
     PetscOptionsSetValue(NULL, "-pc_hypre_type","boomeramg");
-    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_coarsen_type","HMIS");
-    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_interp_type","ext+i-cc");
+    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_coarsen_type", "HMIS");
+    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_interp_type", "ext+i-cc");
     PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_agg_nl","2");
     PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_P_max","4");
-    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_strong_threshold","0.5");
+    PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_strong_threshold", "0.5");
     PetscOptionsSetValue(NULL, "-pc_hypre_boomeramg_no_CF","");
 #else
     PetscOptionsSetValue("-ksp_type", "cg");
     PetscOptionsSetValue("-pc_type", "hypre");
-    PetscOptionsSetValue("-pc_hypre_type","boomeramg");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type","HMIS");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type","ext+i-cc");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl","2");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_P_max","4");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold","0.5");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF","");
+    PetscOptionsSetValue("-pc_hypre_type", "boomeramg");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type", "HMIS");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type", "ext+i-cc");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl", "2");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_P_max", "4");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold", "0.5");
+    PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF", "");
 #endif
   }
   /*! [sles_petsc_bamg_1] */

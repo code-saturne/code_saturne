@@ -45,9 +45,10 @@
  * PETSc headers
  *----------------------------------------------------------------------------*/
 
-#include <petscvec.h>
-#include <petscmat.h>
+#include <petscconf.h>
 #include <petscksp.h>
+#include <petscmat.h>
+#include <petscvec.h>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -63,6 +64,8 @@
 #include "cs_halo.h"
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
+#include "cs_matrix_petsc.h"
+#include "cs_matrix_petsc_priv.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -124,6 +127,9 @@ typedef struct _cs_sles_petsc_setup_t {
 
   Mat            a;                      /* Linear system matrix */
 
+  bool           share_a;                /* true if provided matrix already
+                                            of PETSc type, false otherwise */
+
   double         r_norm;                 /* residue normalization */
   void          *cctx;                   /* convergence context */
 
@@ -153,8 +159,8 @@ struct _cs_sles_petsc_t {
   void                        *hook_context;   /* Optional user context */
   cs_sles_petsc_setup_hook_t  *setup_hook;     /* Post setup function */
 
-  char                 *mat_type[2];       /* PETSc matrix type string
-                                              (requested, final) */
+  char     *matype_r;                      /* requested PETSc matrix type */
+  MatType   matype;                        /* actual PETSc matrix type */
 
   /* Setup data */
 
@@ -291,7 +297,8 @@ _shell_mat_mult(Mat  a,
                 Vec  y)
 {
   _mat_shell_t *sh;
-  PetscScalar *ax, *ay;
+  const PetscScalar *ax;
+  PetscScalar *ay;
 
   assert(sizeof(PetscScalar) == sizeof(cs_real_t));
 
@@ -482,12 +489,12 @@ _cs_ksp_converged(KSP                  ksp,
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
- *   ksp     <-> PETSc KSP context
+ *   ksp     <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_user_sles_petsc_hook(void               *context,
-                        KSP                 ksp)
+                        void               *ksp)
 {
   CS_UNUSED(context);
   CS_UNUSED(ksp);
@@ -498,25 +505,13 @@ cs_user_sles_petsc_hook(void               *context,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Initialize PETSc if needed
+ * Initialize PETSc if needed (calls cs_matrix_petsc_ensure_init).
  *----------------------------------------------------------------------------*/
 
 void
 cs_sles_petsc_init(void)
 {
-  /* Initialization must be called before setting options;
-     it does not need to be called before calling
-     cs_sles_petsc_define(), as this is handled automatically. */
-
-  PetscBool is_initialized;
-  PetscInitialized(&is_initialized);
-
-  if (is_initialized == PETSC_FALSE) {
-#if defined(HAVE_MPI)
-    PETSC_COMM_WORLD = cs_glob_mpi_comm;
-#endif
-    PetscInitializeNoArguments();
-  }
+  cs_matrix_petsc_ensure_init();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -554,7 +549,7 @@ cs_sles_petsc_init(void)
 cs_sles_petsc_t *
 cs_sles_petsc_define(int                          f_id,
                      const char                  *name,
-                     MatType                      matrix_type,
+                     const char                  *matrix_type,
                      cs_sles_petsc_setup_hook_t  *setup_hook,
                      void                        *context)
 {
@@ -597,7 +592,7 @@ cs_sles_petsc_define(int                          f_id,
 /*----------------------------------------------------------------------------*/
 
 cs_sles_petsc_t *
-cs_sles_petsc_create(MatType                      matrix_type,
+cs_sles_petsc_create(const char                  *matrix_type,
                      cs_sles_petsc_setup_hook_t  *setup_hook,
                      void                        *context)
 
@@ -648,8 +643,8 @@ cs_sles_petsc_create(MatType                      matrix_type,
 
   /* Setup data */
 
-  PetscStrallocpy(matrix_type, &c->mat_type[0]);
-  c->mat_type[1] = NULL;
+  PetscStrallocpy(matrix_type, &(c->matype_r));
+  c->matype = NULL;
 
   c->setup_data = NULL;
 
@@ -680,7 +675,7 @@ cs_sles_petsc_copy(const void  *context)
 
   if (context != NULL) {
     const cs_sles_petsc_t *c = context;
-    d = cs_sles_petsc_create(c->mat_type[0],
+    d = cs_sles_petsc_create(c->matype_r,
                              c->setup_hook,
                              c->hook_context);
   }
@@ -698,17 +693,17 @@ cs_sles_petsc_copy(const void  *context)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sles_petsc_destroy(void **context)
+cs_sles_petsc_destroy(void  **context)
 {
   cs_sles_petsc_t *c = (cs_sles_petsc_t *)(*context);
   if (c != NULL) {
 
     /* Free local strings */
 
-    if (c->mat_type[0] != NULL)
-      PetscFree(c->mat_type[0]);
-    if (c->mat_type[1] != NULL)
-      PetscFree(c->mat_type[1]);
+    if (c->matype_r != NULL)
+      PetscFree(c->matype_r);
+    if (c->matype != NULL)
+      PetscFree(c->matype);
 
     if (c->ksp_type != NULL)
       PetscFree(c->ksp_type);
@@ -725,7 +720,7 @@ cs_sles_petsc_destroy(void **context)
     if (_n_petsc_systems == 0) {
       PetscLogView(_viewer);
       PetscViewerDestroy(&_viewer);
-      PetscFinalize();
+      cs_matrix_petsc_finalize();
     }
 
   }
@@ -774,10 +769,21 @@ cs_sles_petsc_setup(void               *context,
       have_perio = true;
   }
 
+  sd->share_a = false;
+
+  /* Check if the matrix is already a PETSc matrix */
+
+  if (strncmp(cs_matrix_get_type_name(a), "PETSc", 5) == 0) {
+    cs_matrix_coeffs_petsc_t *coeffs = cs_matrix_petsc_get_coeffs(a);
+    sd->a = coeffs->hm;
+    sd->share_a = true;
+  }
+
   /* Shell matrix */
 
-  if (   strcmp(c->mat_type[0], MATSHELL) == 0
-      || (have_perio && n_rows > 1)) {
+  else if (   strcmp(c->matype_r, MATSHELL) == 0
+           || (have_perio && n_rows > 1)
+           || cs_mat_type == CS_MATRIX_NATIVE) {
 
     _mat_shell_t *sh;
 
@@ -806,8 +812,8 @@ cs_sles_petsc_setup(void               *context,
 
   }
   else if (   db_size == 1 && cs_mat_type == CS_MATRIX_CSR
-           && (   strcmp(c->mat_type[0], MATMPIAIJ) == 0
-               || (   strcmp(c->mat_type[0], MATAIJ) == 0
+           && (   strcmp(c->matype_r, MATMPIAIJ) == 0
+               || (   strcmp(c->matype_r, MATAIJ) == 0
                    && cs_glob_n_ranks > 1))) {
 
     const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(n_rows, halo);
@@ -864,8 +870,8 @@ cs_sles_petsc_setup(void               *context,
   }
   else if (   sizeof(PetscInt) == sizeof(cs_lnum_t)
            && db_size == 1 && cs_mat_type == CS_MATRIX_CSR
-           && (   strcmp(c->mat_type[0], MATSEQAIJ) == 0
-               || (   strcmp(c->mat_type[0], MATAIJ) == 0
+           && (   strcmp(c->matype_r, MATSEQAIJ) == 0
+               || (   strcmp(c->matype_r, MATAIJ) == 0
                    && cs_glob_n_ranks == 1))) {
 
     const cs_lnum_t *a_row_index, *a_col_id;
@@ -887,10 +893,12 @@ cs_sles_petsc_setup(void               *context,
 
   else {
 
+    assert(cs_mat_type != CS_MATRIX_NATIVE);
+
     const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(n_rows, halo);
 
     MatCreate(PETSC_COMM_WORLD, &(sd->a));
-    MatSetType(sd->a, c->mat_type[0]);
+    MatSetType(sd->a, c->matype_r);
     MatSetSizes(sd->a,
                 n_rows,            /* Number of local rows */
                 n_rows,            /* Number of local columns */
@@ -903,50 +911,7 @@ cs_sles_petsc_setup(void               *context,
     BFT_MALLOC(d_nnz, n_rows*db_size, PetscInt);
     BFT_MALLOC(o_nnz, n_rows*db_size, PetscInt);
 
-    if (cs_mat_type == CS_MATRIX_NATIVE) {
-
-      bool                symmetric;
-      cs_lnum_t           n_faces;
-      const cs_lnum_2_t  *face_cell;
-      const cs_real_t    *d_val, *x_val;
-
-      cs_matrix_get_native_arrays(a, &symmetric, &n_faces, &face_cell,
-                                  &d_val, &x_val);
-
-      for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
-        for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-          d_nnz[row_id*db_size + kk] = db_size;
-          o_nnz[row_id*db_size + kk] = 0;
-        }
-      }
-
-      for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
-        cs_lnum_t c_id_0 = face_cell[face_id][0];
-        cs_lnum_t c_id_1 = face_cell[face_id][1];
-        if (c_id_0 < n_rows) {
-          if (c_id_1 < n_rows) {
-            for (cs_lnum_t kk = 0; kk < db_size; kk++)
-              d_nnz[c_id_0*db_size + kk] += eb_size;
-          }
-          else {
-            for (cs_lnum_t kk = 0; kk < db_size; kk++)
-              o_nnz[c_id_0*db_size + kk] += eb_size;
-          }
-        }
-        if (c_id_1 < n_rows) {
-          if (c_id_0 < n_rows) {
-            for (cs_lnum_t kk = 0; kk < db_size; kk++)
-              d_nnz[c_id_1*db_size + kk] += eb_size;
-          }
-          else {
-            for (cs_lnum_t kk = 0; kk < db_size; kk++)
-              o_nnz[c_id_1*db_size + kk] += eb_size;
-          }
-        }
-      }
-
-    }
-    else if (cs_mat_type == CS_MATRIX_CSR || cs_mat_type == CS_MATRIX_MSR) {
+    if (cs_mat_type == CS_MATRIX_CSR || cs_mat_type == CS_MATRIX_MSR) {
 
       const cs_lnum_t *a_row_index, *a_col_id;
       const cs_real_t *a_val;
@@ -1009,158 +974,7 @@ cs_sles_petsc_setup(void               *context,
 
     /* Now set matrix values, depending on type */
 
-    if (cs_mat_type == CS_MATRIX_NATIVE) {
-
-      bool                symmetric;
-      cs_lnum_t           n_faces;
-      const cs_lnum_2_t  *face_cell;
-      const cs_real_t    *d_val, *x_val;
-
-      cs_lnum_t b_size = cs_matrix_get_diag_block_size(a);
-      cs_lnum_t b_size_2 = b_size * b_size;
-
-      cs_matrix_get_native_arrays(a, &symmetric, &n_faces, &face_cell,
-                                  &d_val, &x_val);
-
-      PetscInt m = 1, n = 1;
-
-      for (cs_lnum_t b_id = 0; b_id < n_rows; b_id++) {
-        for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-          for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-            PetscInt idxm[] = {grow_id[b_id*db_size + ii]};
-            PetscInt idxn[] = {grow_id[b_id*db_size + jj]};
-            PetscScalar v[] = {d_val[b_id*b_size_2 + ii*b_size + jj]};
-            MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
-          }
-        }
-      }
-
-      b_size = cs_matrix_get_extra_diag_block_size(a);
-      b_size_2 = b_size * b_size;
-
-      if (b_size == 1) {
-
-        if (symmetric) {
-
-          for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
-            cs_lnum_t c_id_0 = face_cell[face_id][0];
-            cs_lnum_t c_id_1 = face_cell[face_id][1];
-            if (c_id_0 < n_rows) {
-              for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-                PetscInt idxm[] = {grow_id[c_id_0*db_size + kk]};
-                PetscInt idxn[] = {grow_id[c_id_1*db_size + kk]};
-                PetscScalar v[] = {x_val[face_id]};
-                MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
-              }
-            }
-            if (c_id_1 < n_rows) {
-              for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-                PetscInt idxm[] = {grow_id[c_id_1*db_size + kk]};
-                PetscInt idxn[] = {grow_id[c_id_0*db_size + kk]};
-                PetscScalar v[] = {x_val[face_id]};
-                MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
-              }
-            }
-          }
-
-        }
-        else { /* non-symmetric */
-
-          for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
-            cs_lnum_t c_id_0 = face_cell[face_id][0];
-            cs_lnum_t c_id_1 = face_cell[face_id][1];
-            if (c_id_0 < n_rows) {
-              for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-                PetscInt idxm[] = {grow_id[c_id_0*db_size + kk]};
-                PetscInt idxn[] = {grow_id[c_id_1*db_size + kk]};
-                PetscScalar v[] = {x_val[2*face_id]};
-                MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
-              }
-            }
-            if (c_id_1 < n_rows) {
-              for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-                PetscInt idxm[] = {grow_id[c_id_1*db_size + kk]};
-                PetscInt idxn[] = {grow_id[c_id_0*db_size + kk]};
-                PetscScalar v[] = {x_val[2*face_id + 1]};
-                MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
-              }
-            }
-          }
-
-        }
-
-      }
-
-      else { /* if (b_size > 1) */
-
-        if (symmetric) {
-
-          for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
-            cs_lnum_t c_id_0 = face_cell[face_id][0];
-            cs_lnum_t c_id_1 = face_cell[face_id][1];
-            if (c_id_0 < n_rows) {
-              for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-                PetscInt idxm[] = {grow_id[c_id_0*db_size + ii]};
-                for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-                  PetscInt idxn[] = {grow_id[c_id_1*db_size + jj]};
-                  PetscScalar v[]
-                    = {x_val[face_id*b_size_2 + ii*b_size + jj]};
-                  MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
-                }
-              }
-            }
-            if (c_id_1 < n_rows) {
-              for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-                PetscInt idxm[] = {grow_id[c_id_1*db_size + ii]};
-                for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-                  PetscInt idxn[] = {grow_id[c_id_0*db_size + jj]};
-                  PetscScalar v[]
-                    = {x_val[face_id*b_size_2 + ii*b_size + jj]};
-                  MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
-                }
-              }
-            }
-
-          }
-
-        }
-        else { /* non-symmetric */
-
-          for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
-            cs_lnum_t c_id_0 = face_cell[face_id][0];
-            cs_lnum_t c_id_1 = face_cell[face_id][1];
-            if (c_id_0 < n_rows) {
-              for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-                PetscInt idxm[] = {grow_id[c_id_0*db_size + ii]};
-                for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-                  PetscInt idxn[] = {grow_id[c_id_1*db_size + jj]};
-                  PetscScalar v[]
-                    = {x_val[face_id*2*b_size_2 + ii*b_size + jj]};
-                  MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
-                }
-              }
-            }
-            if (c_id_1 < n_rows) {
-              for (cs_lnum_t ii = 0; ii < db_size; ii++) {
-                PetscInt idxm[] = {grow_id[c_id_1*db_size + ii]};
-                for (cs_lnum_t jj = 0; jj < db_size; jj++) {
-                  PetscInt idxn[] = {grow_id[c_id_0*db_size + jj]};
-                  PetscScalar v[]
-                    = {x_val[(face_id*2+1)*b_size_2 + ii*b_size + jj]};
-                  MatSetValues(sd->a, m, idxm, n, idxn, v, ADD_VALUES);
-                }
-              }
-            }
-
-          }
-
-        }
-
-      }
-
-
-    }
-    else if (cs_mat_type == CS_MATRIX_CSR || cs_mat_type == CS_MATRIX_MSR) {
+    if (cs_mat_type == CS_MATRIX_CSR || cs_mat_type == CS_MATRIX_MSR) {
 
       const cs_lnum_t *a_row_index, *a_col_id;
       const cs_real_t *a_val;
@@ -1264,10 +1078,10 @@ cs_sles_petsc_setup(void               *context,
   if (verbosity > 0)
     KSPView(sd->ksp, PETSC_VIEWER_STDOUT_WORLD);
 
-  if (c->mat_type[1] == NULL) {
-    MatType mattype;
-    MatGetType(sd->a, &mattype);
-    PetscStrallocpy(mattype, &c->mat_type[1]);
+  if (c->matype == NULL) {
+    MatType matype;
+    MatGetType(sd->a, &matype);
+    PetscStrallocpy(matype, &(c->matype));
   }
 
   if (c->ksp_type == NULL) {
@@ -1331,8 +1145,6 @@ cs_sles_petsc_solve(void                *context,
                     size_t               aux_size,
                     void                *aux_vectors)
 {
-
-
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
   cs_timer_t t0;
@@ -1365,50 +1177,79 @@ cs_sles_petsc_solve(void                *context,
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
 
-  if (cs_glob_n_ranks > 1) {
+  const PetscInt _n_rows = n_rows*db_size;
+  cs_matrix_coeffs_petsc_t *coeffs = NULL;
 
-    PetscInt nghost = (n_cols - n_rows)*db_size;
-    PetscInt *ghosts;
+  if (sd->share_a) {
 
-    BFT_MALLOC(ghosts, nghost, PetscInt);
+    coeffs = cs_matrix_petsc_get_coeffs(a);
 
-    for (PetscInt i = 0; i < nghost; i++)
-      ghosts[i] = n_rows*db_size + i;
+    x = coeffs->hx;
+    b = coeffs->hy;
 
-    /* Vector */
+    PetscReal *_x = NULL, *_b = NULL;
 
-    VecCreateGhostWithArray(PETSC_COMM_WORLD,
-                            n_rows*db_size,
-                            PETSC_DECIDE,
-                            nghost,
-                            ghosts,
-                            vx,
-                            &x);
+    VecGetArray(x, &_x);
+    VecGetArray(b, &_b);
 
-    VecCreateGhostWithArray(PETSC_COMM_WORLD,
-                            n_rows*db_size,
-                            PETSC_DECIDE,
-                            nghost,
-                            ghosts,
-                            rhs,
-                            &b);
+#   pragma omp parallel for if(_n_rows > CS_THR_MIN)
+    for (PetscInt i = 0; i < _n_rows; i++) {
+      _x[i] = vx[i];
+      _b[i] = rhs[i];
+    }
 
-    BFT_FREE(ghosts);
+    VecRestoreArray(x, &_x);
+    VecRestoreArray(b, &_b);
 
   }
   else {
 
-    VecCreateSeqWithArray(PETSC_COMM_SELF,
-                          1,
-                          n_rows*db_size,
-                          vx,
-                          &x);
+    if (cs_glob_n_ranks > 1) {
 
-    VecCreateSeqWithArray(PETSC_COMM_SELF,
-                          1,
-                          n_rows*db_size,
-                          rhs,
-                          &b);
+      PetscInt nghost = (n_cols - n_rows)*db_size;
+      PetscInt *ghosts;
+
+      BFT_MALLOC(ghosts, nghost, PetscInt);
+
+      for (PetscInt i = 0; i < nghost; i++)
+        ghosts[i] = n_rows*db_size + i;
+
+      /* Vector */
+
+      VecCreateGhostWithArray(PETSC_COMM_WORLD,
+                              n_rows*db_size,
+                              PETSC_DECIDE,
+                              nghost,
+                              ghosts,
+                              vx,
+                              &x);
+
+      VecCreateGhostWithArray(PETSC_COMM_WORLD,
+                              n_rows*db_size,
+                              PETSC_DECIDE,
+                              nghost,
+                              ghosts,
+                              rhs,
+                              &b);
+
+      BFT_FREE(ghosts);
+
+    }
+    else {
+
+      VecCreateSeqWithArray(PETSC_COMM_SELF,
+                            1,
+                            n_rows*db_size,
+                            vx,
+                            &x);
+
+      VecCreateSeqWithArray(PETSC_COMM_SELF,
+                            1,
+                            n_rows*db_size,
+                            rhs,
+                            &b);
+
+    }
 
   }
 
@@ -1423,8 +1264,25 @@ cs_sles_petsc_solve(void                *context,
   if (getenv("CS_PETSC_SYSTEM_VIEWER") != NULL)
     _export_petsc_system(name, sd->ksp, b);
 
-  VecDestroy(&x);
-  VecDestroy(&b);
+  if (sd->share_a) {
+
+    PetscReal *_x = NULL;
+    VecGetArrayRead(x, &_x);
+
+#   pragma omp parallel for if(_n_rows > CS_THR_MIN)
+    for (PetscInt i = 0; i < _n_rows; i++) {
+      _x[i] = vx[i];
+    }
+
+    VecRestoreArrayRead(x, &_x);
+
+  }
+  else {
+
+    VecDestroy(&x);
+    VecDestroy(&b);
+
+  }
 
   if (verbosity > 0)
     KSPView(sd->ksp, PETSC_VIEWER_STDOUT_WORLD);
@@ -1499,7 +1357,9 @@ cs_sles_petsc_free(void  *context)
     KSPGetNormType(sd->ksp, &(c->norm_type));
     KSPConvergedDefaultDestroy(sd->cctx);
     KSPDestroy(&(sd->ksp));
-    MatDestroy(&(sd->a));
+
+    if (sd->share_a == false)
+      MatDestroy(&(sd->a));
 
     PetscLogStagePop();
 
@@ -1578,7 +1438,7 @@ cs_sles_petsc_log(const void  *context,
   const char undef[] = N_("not instanciated");
   const char *s_type = (c->ksp_type != NULL) ? c->ksp_type : undef;
   const char *p_type = (c->pc_type != NULL) ? c->pc_type : undef;
-  const char *m_type = (c->mat_type[1] != NULL) ? c->mat_type[1] : undef;
+  const char *m_type = (c->matype != NULL) ? c->matype : undef;
   char norm_type_name[32];
 
   switch(c->norm_type) {
@@ -1639,6 +1499,49 @@ cs_sles_petsc_log(const void  *context,
                   c->t_solve.nsec*1e-9);
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * \brief Output the settings of a KSP structure
+ *
+ * \param[in]  ksp     Krylov SubSpace structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_petsc_log_setup(void  *ksp)
+{
+  PetscViewer  v;
+
+  PetscViewerCreate(PETSC_COMM_WORLD, &v);
+  PetscViewerSetType(v, PETSCVIEWERASCII);
+  PetscViewerFileSetMode(v, FILE_MODE_APPEND);
+  PetscViewerFileSetName(v, "petsc_setup.log");
+
+  KSPView(ksp, v);
+  PetscViewerDestroy(&v);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return matrix type associated with PETSc linear system solver
+ *        info and context.
+ *
+ * \param[in, out]  context  pointer to iterative solver info and context
+ *                           (actual type: cs_sles_petsc_t  **)
+ *
+ * \return  pointer to matrix type name
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_sles_petsc_get_mat_type(void  *context)
+{
+  const char *retval = NULL;
+  cs_sles_petsc_t *c = (cs_sles_petsc_t *)context;
+  if (c != NULL)
+    retval = c->matype_r;
+
+  return retval;
 }
 
 /*----------------------------------------------------------------------------*/
