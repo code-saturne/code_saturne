@@ -185,6 +185,24 @@ cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the norm ||b - a||**2
+ *         Case of two scalar-valued arrays a and b defined as a potential at
+ *         primal vertices. Thus, the weigth is the portion of dual cell in a
+ *         primal cell. The computed quantities are synchronized in parallel.
+ *
+ * \param[in]  a   first array
+ * \param[in]  b   second array
+ *
+ * \return the value  of ||b - a||**2
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t        *a,
+                                  const cs_real_t        *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the dot product of two arrays using the classical Euclidean
  *         dot product (without weight).
  *         Case of a scalar-valued arrays defined at primal faces.

@@ -618,6 +618,96 @@ cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the norm ||b - a||**2
+ *         Case of two scalar-valued arrays a and b defined as a potential at
+ *         primal vertices. Thus, the weigth is the portion of dual cell in a
+ *         primal cell. The computed quantities are synchronized in parallel.
+ *
+ * \param[in]  a   first array
+ * \param[in]  b   second array
+ *
+ * \return the value  of ||b - a||**2
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t        *a,
+                                  const cs_real_t        *b)
+{
+  const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
+  const cs_real_t  *w_c2v = cs_cdo_quant->dcell_vol;
+
+  _sanity_checks(__func__, c2v, w_c2v);
+
+  const cs_lnum_t  size = c2v->idx[cs_cdo_quant->n_cells];
+
+ /*
+  * The algorithm used is l3superblock60, based on the article:
+  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+  * 2008 Society for Industrial and Applied Mathematics
+  */
+
+  double  num = 0.;
+
+# pragma omp parallel reduction(+:num) if (size > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(size, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_lnum_t  *_ids = c2v->ids + s_id;
+    const cs_real_t  *_w = w_c2v + s_id;
+    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
+    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
+    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
+    const cs_lnum_t  blocks_in_sblocks =
+      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double s_num = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double _num = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+
+          const cs_lnum_t  id = _ids[j];
+          const cs_real_t  diff = b[id] - a[id];
+
+          _num += _w[j] * diff * diff;
+
+        }
+
+        s_num += _num;
+
+      } /* Loop on blocks */
+
+      num += s_num;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel treatment */
+
+  cs_parall_sum(1, CS_REAL_TYPE, &num);
+
+  return (cs_real_t)num;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the dot product of two arrays using the classical Euclidean
  *         dot product (without weight).
  *         Case of a scalar-valued arrays defined at primal faces.
