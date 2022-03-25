@@ -251,7 +251,7 @@ _add_scal_values_single(const cs_cdo_assembly_row_t    *row,
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
   cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+  const cs_matrix_struct_dist_t  *ms = matrix->structure;
 
   /* Update the diagonal value */
 
@@ -259,7 +259,7 @@ _add_scal_values_single(const cs_cdo_assembly_row_t    *row,
 
   /* Update the extra-diagonal values */
 
-  cs_real_t  *xvals = mc->_e_val + ms->row_index[row->l_id];
+  cs_real_t  *xvals = mc->_e_val + ms->e.row_index[row->l_id];
   for (int j = 0; j < row->i; j++) /* Lower part */
     xvals[row->col_idx[j]] += row->val[j];
   for (int j = row->i+1; j < row->n_cols; j++) /* Upper part */
@@ -296,7 +296,7 @@ _add_scal_values_atomic(const cs_cdo_assembly_row_t    *row,
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
   cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+  const cs_matrix_struct_dist_t  *ms = matrix->structure;
 
   /* Update the diagonal value */
 
@@ -305,7 +305,7 @@ _add_scal_values_atomic(const cs_cdo_assembly_row_t    *row,
 
   /* Update the extra-diagonal values */
 
-  cs_real_t  *xvals = mc->_e_val + ms->row_index[row->l_id];
+  cs_real_t  *xvals = mc->_e_val + ms->e.row_index[row->l_id];
   for (int j = 0; j < row->n_cols; j++) {
     if (j != row->i) {
 #     pragma omp atomic
@@ -344,7 +344,7 @@ _add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
   cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+  const cs_matrix_struct_dist_t  *ms = matrix->structure;
 
   /* Update the diagonal value */
 
@@ -354,7 +354,7 @@ _add_scal_values_critical(const cs_cdo_assembly_row_t    *row,
 
     /* Update the extra-diagonal values */
 
-    cs_real_t  *xvals = mc->_e_val + ms->row_index[row->l_id];
+    cs_real_t  *xvals = mc->_e_val + ms->e.row_index[row->l_id];
     for (int j = 0; j < row->n_cols; j++)
       if (j != row->i)
         xvals[row->col_idx[j]] += row->val[j];
@@ -659,7 +659,7 @@ _add_vect_values_single(const cs_cdo_assembly_row_t    *row,
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
   cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+  const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_lnum_t db_size = matrix->db_size;
   const cs_lnum_t eb_size = matrix->eb_size;
 
@@ -682,7 +682,7 @@ _add_vect_values_single(const cs_cdo_assembly_row_t    *row,
 
   stride = eb_size * eb_size;
 
-  cs_real_t  *xvals = mc->_e_val + stride*ms->row_index[row->l_id];
+  cs_real_t  *xvals = mc->_e_val + stride*ms->e.row_index[row->l_id];
   for (int j = 0; j < row->i; j++) /* Lower part */
     for (int k = 0; k < stride; k++)
       xvals[row->col_idx[j]*stride + k] += row->val[9*j + k];
@@ -722,7 +722,7 @@ _add_vect_values_atomic(const cs_cdo_assembly_row_t    *row,
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
   cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+  const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_lnum_t db_size = matrix->db_size;
   const cs_lnum_t eb_size = matrix->eb_size;
 
@@ -747,7 +747,7 @@ _add_vect_values_atomic(const cs_cdo_assembly_row_t    *row,
 
   stride = eb_size * eb_size;
 
-  cs_real_t  *xvals = mc->_e_val + stride*ms->row_index[row->l_id];
+  cs_real_t  *xvals = mc->_e_val + stride*ms->e.row_index[row->l_id];
   for (int j = 0; j < row->n_cols; j++) {
     if (j != row->i) {
       for (int k = 0; k < stride; k++) {
@@ -788,7 +788,7 @@ _add_vect_values_critical(const cs_cdo_assembly_row_t    *row,
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
   cs_matrix_coeff_dist_t  *mc = matrix->coeffs;
 
-  const cs_matrix_struct_csr_t  *ms = matrix->structure;
+  const cs_matrix_struct_dist_t  *ms = matrix->structure;
   const cs_lnum_t db_size = matrix->db_size;
   const cs_lnum_t eb_size = matrix->eb_size;
 
@@ -813,7 +813,7 @@ _add_vect_values_critical(const cs_cdo_assembly_row_t    *row,
 
     stride = eb_size*eb_size;
 
-    cs_real_t  *xvals = mc->_e_val + stride*ms->row_index[row->l_id];
+    cs_real_t  *xvals = mc->_e_val + stride*ms->e.row_index[row->l_id];
     for (int j = 0; j < row->n_cols; j++)
       if (j != row->i)
         for (int k = 0; k < stride; k++)
