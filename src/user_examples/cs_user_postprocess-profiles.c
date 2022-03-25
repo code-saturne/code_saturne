@@ -361,9 +361,21 @@ cs_user_postprocess_values(const char            *mesh_name,
 
       }
 
+      /* Reynolds stresses invariants:
+       * compute xsi and eta invariant of the Lumley triangle */
+
+      cs_real_2_t *inv = NULL;
+      BFT_MALLOC(inv, n_cells, cs_real_2_t);
+
+
+      cs_post_anisotropy_invariant(n_cells,
+                                   cell_list,
+                                   NULL, /* coords */
+                                   inv);
+
       /* Loop on columns */
 
-      for (int col = 0; col < 7; col++) {
+      for (int col = 0; col < 9; col++) {
 
         switch(col) {
 
@@ -434,6 +446,26 @@ cs_user_postprocess_values(const char            *mesh_name,
           }
           break;
 
+        case 7:
+          {
+            strncpy(var_name, "eta", 64);
+            for (cs_lnum_t i = 0; i < n_cells; i++) {
+              cs_lnum_t c_id = cell_list[i];
+              val[i] = inv[c_id][0];
+            }
+          }
+          break;
+
+        case 8:
+          {
+            strncpy(var_name, "xsi", 64);
+            for (cs_lnum_t i = 0; i < n_cells; i++) {
+              cs_lnum_t c_id = cell_list[i];
+              val[i] = inv[c_id][1];
+            }
+          }
+          break;
+
         }
 
         cs_post_write_probe_values
@@ -450,6 +482,7 @@ cs_user_postprocess_values(const char            *mesh_name,
 
       }
 
+      BFT_FREE(inv);
       BFT_FREE(rij);
       BFT_FREE(val);
 
