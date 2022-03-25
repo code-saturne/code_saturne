@@ -346,6 +346,10 @@ _sles_setup_matrix_native(int                  f_id,
       need_msr = true;
   }
 
+  /* MSR not supported yet for some solvers with full blocks */
+  if (eb_size > 1)
+    need_msr = false;
+
   if (need_msr)
     a = cs_matrix_msr(symmetric,
                       db_size,
