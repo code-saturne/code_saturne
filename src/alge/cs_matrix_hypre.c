@@ -1210,7 +1210,7 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
 
   /* Extradiagonal part */
 
-  HYPRE_Int max_b_chunk_size = max_chunk_size / b_size;
+  HYPRE_Int max_b_chunk_size = max_chunk_size / b_size / 2;
 
   if (symmetric) {
 
@@ -1391,7 +1391,7 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
 
   /* Extradiagonal part */
 
-  HYPRE_Int max_b_chunk_size = max_chunk_size / b_stride;
+  HYPRE_Int max_b_chunk_size = max_chunk_size / b_stride / 2;
 
   if (symmetric) {
 
@@ -1610,7 +1610,7 @@ _set_coeffs_ij(cs_matrix_t        *matrix,
     HYPRE_IJMatrixInitialize_v2(hm, coeffs->memory_location);
   }
 
-  HYPRE_Int max_chunk_size = coeffs->max_chunk_size;
+  HYPRE_Int max_chunk_size = coeffs->max_chunk_size / 2;
 
   HYPRE_BigInt *rows = coeffs->row_buf;
   HYPRE_BigInt *cols = coeffs->col_buf;
