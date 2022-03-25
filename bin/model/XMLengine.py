@@ -1523,8 +1523,9 @@ class Case(Dico, XMLDocument):
             file = open(self['pythonfile'], 'w')
             file.write("# automaticaly generated Python script\n\n")
             file.write('import os, sys\n')
-            file.write('sys.path.insert(0, "' + self['package'].dirs['pythondir'][1] + '")\n')
-            file.write('sys.path.insert(0, "' + os.path.join(self['package'].dirs['pythondir'][1], self['package'].name) + '")\n\n')
+            file.write('sys.path.insert(0, "' + self['package'].dirs['pythondir'] + '")\n')
+            file.write('sys.path.insert(0, "' + os.path.join(self['package'].dirs['pythondir'],
+                                                             self['package'].name) + '")\n\n')
 
             if self.module_name() == 'code_saturne':
                 file.write('from model.XMLinitialize import XMLinit\n')

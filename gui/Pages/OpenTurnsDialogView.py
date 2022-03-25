@@ -475,7 +475,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
 
         script_cmd += toffset + "import sys\n"
 
-        salome_pydir = os.path.join(self.case['package'].dirs['pythondir'][1],
+        salome_pydir = os.path.join(self.case['package'].dirs['pythondir'],
                                     'salome')
         script_cmd += toffset
         script_cmd += "sys.path.insert(-1, '%s')\n\n" % salome_pydir

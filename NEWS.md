@@ -3,6 +3,8 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- GUI: fix launch of trackcvg tool from GUI and Python dump.
+
 - Fix MPMD command generation when using ccc_mprun (CCRT)
 
 - Studymanager: fix crash on XML updtate when case DATA folders contain
