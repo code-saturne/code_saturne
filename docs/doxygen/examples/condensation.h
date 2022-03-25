@@ -74,58 +74,36 @@
 
   \snippet cs_user_metal_structures_source_terms-condensation.f90 source_terms_values
 
+
   \section condens_h_boundary Boundary source terms for condensation
 
-  The following variables need to be declared:
+  The condensation of steam on surfaces can be activated by adding the following lines
+  in function \ref cs_user_model of file \ref cs_user_parameters.c :
 
-  \snippet cs_user_boundary_mass_source_terms-nzones_condensation.f90 loc_var_dec
-
-  Necessary species physical properties can be retrieved as follows:
-
-  \snippet cs_user_boundary_mass_source_terms-nzones_condensation.f90 init
+  \snippet cs_user_parameters-base.c wall_condensation
 
   The subroutine \ref cs_user_boundary_mass_source_terms is called three times.
 
-  At the first call the number of boundary faces and number of zones on which a
-  boundary mass source term is imposed is computed according to the selection
-  criteria prescribed by the user.
+  The first call computes the number of boundary faces and the number of zones on which
+  a boundary mass source term is imposed, based on the selection criteria prescribed
+  by the user.
 
-  \snippet cs_user_boundary_mass_source_terms-nzones_condensation.f90 zones_definition
+  In this example, all faces with tag "60" in the mesh are gathered in a single
+  condensation zone.
+  \snippet cs_user_boundary_mass_source_terms.c zones_definition
 
-  The above part of the subroutine is also executed at the second call. In addition, at
-  the second call, condensation models are chosen.
+  At the second call, connectivity tables are built between the global mesh numbering
+  and the one dedicated to wall condensation (see snippet above).
+  In addition, parameters related to the condensation model are set.
 
-  \snippet cs_user_boundary_mass_source_terms-nzones_condensation.f90 model_settings
+  \snippet cs_user_boundary_mass_source_terms.c model_settings
 
-  Finally at the third call, the source term types and values have to be set.
+  At the third call, properties related to the solid wall are set.
 
-  \snippet cs_user_boundary_mass_source_terms-nzones_condensation.f90 source_terms_values
+  \snippet cs_user_boundary_mass_source_terms.c solid_wall
 
-  \section boundary_mass_source-condens Boundary source terms for condensation
+  Finally, the source terms associated with the condensation phenomenon are defined.
 
-  The following variables need to be declared:
-
-  \snippet cs_user_boundary_mass_source_terms-condensation.f90 loc_var_dec
-
-  Necessary species physical properties can be retrieved as follows:
-
-  \snippet cs_user_boundary_mass_source_terms-condensation.f90 init
-
-  The subroutine \ref cs_user_boundary_mass_source_terms is called three times.
-
-  At the first call the number of boundary faces and number of zones on which a
-  boundary mass source term is imposed is computed according to the selection
-  criteria prescribed by the user.
-
-  \snippet cs_user_boundary_mass_source_terms-condensation.f90 zones_definition
-
-  The above part of the subroutine is also executed at the second call. In addition, at
-  the second call, condensation models are chosen.
-
-  \snippet cs_user_boundary_mass_source_terms-condensation.f90 model_settings
-
-  Finally at the third call, the source term types and values have to be set.
-
-  \snippet cs_user_boundary_mass_source_terms-condensation.f90 source_terms_values
+  \snippet cs_user_boundary_mass_source_terms.c source_term_values
 
 */

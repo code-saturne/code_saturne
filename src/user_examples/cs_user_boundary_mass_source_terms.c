@@ -200,6 +200,7 @@ cs_user_boundary_mass_source_terms(int nvar,
        can potentially become a condensation  source term.
   ===========================================================================*/
 
+/*! < [zones_definition] */
   if (iappel == 1 || iappel == 2) {
 
     // WARNING : list of face ids from 1 to n (for Fortran use)
@@ -221,7 +222,11 @@ cs_user_boundary_mass_source_terms(int nvar,
     wall_cond->nzones = izone;
   }
 
+/*! < [zones_definition] */
+
   int iz = 0; // Monozone
+
+  /*! [model_settings] */
 
   /*
   ===============================================================================
@@ -232,6 +237,7 @@ cs_user_boundary_mass_source_terms(int nvar,
    (at iappel=3 tpar=ztpar0(iz) in this case).
   ===============================================================================
   */
+
   if (iappel == 2) {
     if (wall_cond->icondb == 0) {
 
@@ -310,6 +316,8 @@ cs_user_boundary_mass_source_terms(int nvar,
       }
     }
   }
+  /*! [model_settings] */
+
 
 /*
   ===============================================================================
@@ -323,6 +331,8 @@ cs_user_boundary_mass_source_terms(int nvar,
 */
 
   else if (iappel == 3) {
+
+    /*! [solid_wall] */
 
     // Fill in parameters for wall thermal mode
     // TODO : move to iappel == 2 ?
@@ -374,6 +384,7 @@ cs_user_boundary_mass_source_terms(int nvar,
         wall_cond->ztpar[iz] = 26.57;
       }
     }
+    /*! [solid_wall] */
 
 /*
  * From here on to the end : fill in
@@ -426,6 +437,7 @@ cs_user_boundary_mass_source_terms(int nvar,
     const int keysca = cs_field_key_id("scalar_id");
     const int n_fields = cs_field_n_fields();
 
+/*! [source_term_values] */
     const int nfbpcd = wall_cond->nfbpcd;
     for (ieltcd = 0; ieltcd < nfbpcd; ieltcd++) {
 
@@ -473,10 +485,12 @@ cs_user_boundary_mass_source_terms(int nvar,
           }
         }
       }
+/*! [source_term_values] */
 
     }
 
   }
+
 
   BFT_FREE(lstelt);
 };
