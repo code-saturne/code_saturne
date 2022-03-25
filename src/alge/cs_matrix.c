@@ -3340,7 +3340,7 @@ _create_struct_dist(cs_alloc_mode_t     alloc_mode,
         ccount[jj*2] += 1;
       }
       else {
-        ms->h._col_id[ms->h._row_index[jj] + ccount[jj*1+1]] = ii;
+        ms->h._col_id[ms->h._row_index[jj] + ccount[jj*2+1]] = ii;
         ccount[jj*2+1] += 1;
       }
     }
