@@ -24,7 +24,7 @@
 !> Module for parameters options, numerical and physical properties of the
 !> thermal 1D model for each specific zone with condensation on the wall.
 !> The zones number is defined by the user with the subroutine :
-!> cs_f_user_boundary_mass_source_terms.
+!> cs_user_boundary_mass_source_terms.
 
 module cs_nz_tagmr
 

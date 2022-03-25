@@ -56,7 +56,7 @@ BEGIN_C_DECLS
  Function:
  ---------
 
-> \file cs_user_boundary_mass_source_terms.f90
+> \file cs_user_boundary_mass_source_terms.c
 >
 > \brief Source terms associated at the boundary faces and the neighboring
 > cells with surface condensation.

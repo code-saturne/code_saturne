@@ -319,7 +319,6 @@ endif
 ! Condensation mass source terms
 ! ------------------------------
 
-call cs_f_user_boundary_mass_source_terms(nvar, nscal, iappel)
 call cs_user_boundary_mass_source_terms(nvar, nscal, iappel)
 
 ! Total number of cells with condensation source term
@@ -526,7 +525,7 @@ if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
 endif
 
 !==============================================================================
-! On appelle cs_f_user_boundary_mass_source_terms lorqu'il y a sur un processeur
+! On appelle cs_user_boundary_mass_source_terms lorqu'il y a sur un processeur
 ! au moins des cellules avec terme source de condensation.
 ! On ne fait que remplir le tableau d'indirection des cellules
 ! On appelle cependant cs_user_condensation avec tous les processeurs,
@@ -538,10 +537,6 @@ if (nftcdt.gt.0) then
   iappel = 2
 
   call init_nz_tagmr
-
-  call cs_f_user_boundary_mass_source_terms &
-( nvar   , nscal  ,                                              &
-  iappel)
 
   call cs_user_boundary_mass_source_terms(nvar, nscal, iappel)
 
