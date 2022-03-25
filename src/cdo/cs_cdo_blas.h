@@ -169,6 +169,59 @@ cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the dot product of two arrays using the classical Euclidean
+ *         dot product (without weight).
+ *         Case of a scalar-valued arrays defined at primal vertices.
+ *         The computed quantity is synchronized in parallel.
+ *
+ * \param[in]  a   first array to analyze
+ * \param[in]  b   second array to analyze
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_blas_dotprod_vertex(const cs_real_t        *a,
+                           const cs_real_t        *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the square norm of an array using an Euclidean 2-norm.
+ *         Case of a scalar-valued array defined at primal vertices.
+ *         The computed quantities are synchronized in parallel.
+ *
+ * \param[in]  array   array to analyze
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_blas_square_norm_vertex(const cs_real_t        *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the dot product of two arrays using a weighted Euclidean dot
+ *         product relying on CDO quantities.
+ *         Case of a scalar-valued arrays defined as a potential at primal
+ *         vertices. Thus, the weigth is the portion of dual cell (associated
+ *         to a primal vertex) inside a primal cell.  The computed quantity is
+ *         synchronized in parallel.
+ *
+ * \param[in]  a   first array to analyze
+ * \param[in]  b   second array to analyze
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_blas_dotprod_pvsp(const cs_real_t        *a,
+                         const cs_real_t        *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the square norm of an array
  *         Case of a scalar-valued array defined as a potential at primal
  *         vertices. Thus, the weigth is the portion of dual cell inside each
@@ -200,6 +253,43 @@ cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array);
 cs_real_t
 cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t        *a,
                                   const cs_real_t        *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the square norm of an array
+ *         Case of a non-interlaced scalar-valued array of stride = 2 defined as
+ *         a potential at primal vertices. Thus, the weigth is the portion of
+ *         dual cell (associated to a primal vertex) inside a primal cell. The
+ *         computed quantity is synchronized in parallel.
+ *
+ * \param[in]  array   array to analyze
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_blas_square_norm_2pvsp(const cs_real_t        *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the dot product of two arrays using a weighted Euclidean dot
+ *         product relying on CDO quantities.
+ *         Case of non-interlaced scalar-valued arrays of stride = 2 defined as
+ *         a potential at primal vertices. Thus, the weigth is the portion of
+ *         dual cell (associated to a primal vertex) inside a primal cell. The
+ *         computed quantity is synchronized in parallel.
+ *
+ * \param[in]  a   first array to analyze
+ * \param[in]  b   second array to analyze
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_blas_dotprod_2pvsp(const cs_real_t        *a,
+                          const cs_real_t        *b);
 
 /*----------------------------------------------------------------------------*/
 /*!

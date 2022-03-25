@@ -145,20 +145,22 @@ _thread_range(cs_lnum_t    n,
  * \brief  Compute the weighted square norm of an array relying on a weight
  *         which is accessed by an index. Case of a scalar-valued array.
  *
- * \param[in]  size    size of the weight array
- * \param[in]  c2x     pointer to the adjacency used to access the weights
- * \param[in]  w_c2x   weight array
- * \param[in]  array   array to analyze
+ * \param[in]  size      size of the weight array
+ * \param[in]  c2x       pointer to the adjacency used to access the weights
+ * \param[in]  w_c2x     weight array
+ * \param[in]  array     array to analyze
+ * \param[in]  do_redux  perform the parallel reduction ?
  *
  * \return the square weighted L2-norm
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_real_t
+static double
 _c2x_scalar_sqnorm(const cs_lnum_t         size,
                    const cs_adjacency_t   *c2x,
                    const cs_real_t        *w_c2x,
-                   const cs_real_t        *array)
+                   const cs_real_t        *array,
+                   bool                    do_redux)
 {
  /*
   * The algorithm used is l3superblock60, based on the article:
@@ -219,9 +221,10 @@ _c2x_scalar_sqnorm(const cs_lnum_t         size,
 
   /* Parallel treatment */
 
-  cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
+  if (do_redux)
+    cs_parall_sum(1, CS_DOUBLE, &l2norm);
 
-  return (cs_real_t)l2norm;
+  return l2norm;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -596,6 +599,140 @@ cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t        *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the dot product of two arrays using the classical Euclidean
+ *         dot product (without weight).
+ *         Case of a scalar-valued arrays defined at primal vertices.
+ *         The computed quantity is synchronized in parallel.
+ *
+ * \param[in]  a   first array to analyze
+ * \param[in]  b   second array to analyze
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_blas_dotprod_vertex(const cs_real_t        *a,
+                           const cs_real_t        *b)
+{
+  return cs_gdot(cs_cdo_quant->n_vertices, a, b);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the square norm of an array using an Euclidean 2-norm.
+ *         Case of a scalar-valued array defined at primal vertices.
+ *         The computed quantities are synchronized in parallel.
+ *
+ * \param[in]  array   array to analyze
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_blas_square_norm_vertex(const cs_real_t        *array)
+{
+  double  retval = cs_dot_xx(cs_cdo_quant->n_vertices, array);
+
+  cs_parall_sum(1, CS_DOUBLE, &retval);
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the dot product of two arrays using a weighted Euclidean dot
+ *         product relying on CDO quantities.
+ *         Case of a scalar-valued arrays defined as a potential at primal
+ *         vertices. Thus, the weigth is the portion of dual cell (associated
+ *         to a primal vertex) inside a primal cell.  The computed quantity is
+ *         synchronized in parallel.
+ *
+ * \param[in]  a   first array to analyze
+ * \param[in]  b   second array to analyze
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_blas_dotprod_pvsp(const cs_real_t        *a,
+                         const cs_real_t        *b)
+{
+  const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
+  const cs_real_t  *w_c2v = cs_cdo_quant->dcell_vol;
+
+  _sanity_checks(__func__, c2v, w_c2v);
+
+  const cs_lnum_t  size = c2v->idx[cs_cdo_quant->n_cells];
+
+  /*
+   * The algorithm used is l3superblock60, based on the article:
+   * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+   * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+   * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+   * 2008 Society for Industrial and Applied Mathematics
+   */
+
+  double  dp = 0;
+
+# pragma omp parallel reduction(+:dp) if (size > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(size, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_lnum_t  *_ids = c2v->ids + s_id;
+    const cs_real_t  *_w = w_c2v + s_id;
+    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
+    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
+    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
+    const cs_lnum_t  blocks_in_sblocks =
+      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double  s_dp = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double  _dp = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+
+          const cs_lnum_t  id = _ids[j];
+
+          _dp += _w[j] * a[id]*b[id];
+
+        } /* Loop on block_size */
+
+        s_dp += _dp;
+
+      } /* Loop on blocks */
+
+      dp += s_dp;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel treatment */
+
+  cs_parall_sum(1, CS_REAL_TYPE, &dp);
+
+  return (cs_real_t)dp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the square norm of an array
  *         Case of a scalar-valued array defined as a potential at primal
  *         vertices. Thus, the weigth is the portion of dual cell inside each
@@ -616,7 +753,7 @@ cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array)
   _sanity_checks(__func__, c2v, w_c2v);
 
   return _c2x_scalar_sqnorm(c2v->idx[cs_cdo_quant->n_cells], c2v, w_c2v,
-                            array);
+                            array, true); /* do parallel sum */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -711,6 +848,138 @@ cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t        *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the square norm of an array
+ *         Case of a non-interlaced scalar-valued array of stride = 2 defined as
+ *         a potential at primal vertices. Thus, the weigth is the portion of
+ *         dual cell (associated to a primal vertex) inside a primal cell. The
+ *         computed quantity is synchronized in parallel.
+ *
+ * \param[in]  array   array to analyze
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_blas_square_norm_2pvsp(const cs_real_t        *array)
+{
+  const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
+  const cs_real_t  *w_c2v = cs_cdo_quant->dcell_vol;
+
+  _sanity_checks(__func__, c2v, w_c2v);
+
+  double res = 0;
+
+  /* Avoid two parallel sums --> parameter is equal to "false" */
+
+  res = _c2x_scalar_sqnorm(c2v->idx[cs_cdo_quant->n_cells], c2v, w_c2v,
+                           array, false); /* do not parallel sum */
+
+  res += _c2x_scalar_sqnorm(c2v->idx[cs_cdo_quant->n_cells], c2v, w_c2v,
+                            array + cs_cdo_quant->n_vertices, false);
+
+  cs_parall_sum(1, CS_REAL_TYPE, &res);
+
+  return res;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the dot product of two arrays using a weighted Euclidean dot
+ *         product relying on CDO quantities.
+ *         Case of non-interlaced scalar-valued arrays of stride = 2 defined as
+ *         a potential at primal vertices. Thus, the weigth is the portion of
+ *         dual cell (associated to a primal vertex) inside a primal cell. The
+ *         computed quantity is synchronized in parallel.
+ *
+ * \param[in]  a   first array to analyze
+ * \param[in]  b   second array to analyze
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_cdo_blas_dotprod_2pvsp(const cs_real_t        *a,
+                          const cs_real_t        *b)
+{
+  const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
+  const cs_real_t  *w_c2v = cs_cdo_quant->dcell_vol;
+
+  _sanity_checks(__func__, c2v, w_c2v);
+
+  const cs_lnum_t  n_vertices = cs_cdo_quant->n_vertices;
+  const cs_lnum_t  size = c2v->idx[cs_cdo_quant->n_cells];
+
+  const cs_real_t  *a1 = a, *a2 = a1 + n_vertices;
+  const cs_real_t  *b1 = b, *b2 = b1 + n_vertices;
+
+  /*
+   * The algorithm used is l3superblock60, based on the article:
+   * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+   * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+   * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+   * 2008 Society for Industrial and Applied Mathematics
+   */
+
+  double  dp = 0;
+
+# pragma omp parallel reduction(+:dp) if (size > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(size, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_lnum_t  *_ids = c2v->ids + s_id;
+    const cs_real_t  *_w = w_c2v + s_id;
+    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
+    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
+    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
+    const cs_lnum_t  blocks_in_sblocks =
+      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double  s_dp = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double  _dp = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+
+          const cs_lnum_t  id = _ids[j];
+
+          _dp += _w[j] * (a1[id]*b1[id] + a2[id]*b2[id]);
+
+        } /* Loop on block_size */
+
+        s_dp += _dp;
+
+      } /* Loop on blocks */
+
+      dp += s_dp;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel treatment */
+
+  cs_parall_sum(1, CS_DOUBLE, &dp);
+
+  return dp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the dot product of two arrays using the classical Euclidean
  *         dot product (without weight).
  *         Case of a scalar-valued arrays defined at primal faces.
@@ -775,7 +1044,7 @@ cs_cdo_blas_square_norm_pfsp(const cs_real_t        *array)
   _sanity_checks(__func__, c2f, w_c2f);
 
   return _c2x_scalar_sqnorm(c2f->idx[cs_cdo_quant->n_cells], c2f, w_c2f,
-                            array);
+                            array, true); /* do parallel sum */
 }
 
 /*----------------------------------------------------------------------------*/
