@@ -3951,8 +3951,8 @@ _set_e_coeffs_dist_increment_block(cs_matrix_t        *matrix,
   const cs_lnum_t *restrict edges_p
     = (const cs_lnum_t *restrict)(edges);
 
-  const cs_lnum_t xa_stride = (symmetric) ? 1 : 2;
-  const cs_lnum_t xa_sj = (symmetric) ? b_size_2 : 0;
+  const cs_lnum_t xa_stride = (symmetric) ? b_size_2 : 2*b_size_2;
+  const cs_lnum_t xa_sj = (symmetric) ? 0 : b_size_2;
 
   for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
     cs_lnum_t ii = *edges_p++;

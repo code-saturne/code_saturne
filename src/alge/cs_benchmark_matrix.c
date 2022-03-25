@@ -483,7 +483,7 @@ _variant_build_list(int                             n_fill_types,
 
   if (type_filter[CS_MATRIX_DIST]) {
 
-    _variant_add("distributed",
+    _variant_add("Distributed",
                  NULL,
                  CS_MATRIX_DIST,
                  n_fill_types,
@@ -498,7 +498,7 @@ _variant_build_list(int                             n_fill_types,
 
 #if defined(HAVE_MKL)
 
-    _variant_add("distributed, with MKL",
+    _variant_add("Distributed, with MKL",
                  NULL,
                  CS_MATRIX_DIST,
                  n_fill_types,
@@ -513,7 +513,7 @@ _variant_build_list(int                             n_fill_types,
 
 #endif /* defined(HAVE_MKL) */
 
-    _variant_add("distributed, OpenMP scheduling",
+    _variant_add("Distributed, OpenMP scheduling",
                  NULL,
                  CS_MATRIX_DIST,
                  n_fill_types,
