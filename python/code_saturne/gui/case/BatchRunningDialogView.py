@@ -309,7 +309,7 @@ class ListingDialogView(CommandMgrDialogView):
         """
         Private slot. Running convergence tracking tool
         """
-        cmd = [os.path.join(self.case['package'].dirs['bindir'][1],
+        cmd = [os.path.join(self.case['package'].dirs['bindir'],
                             self.case['package'].name)]
         cmd.append("trackcvg")
         if self.scratch_dir:
