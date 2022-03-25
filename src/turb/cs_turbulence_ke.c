@@ -2001,11 +2001,10 @@ cs_turbulence_ke_clip(cs_lnum_t  n_cells,
   cs_real_t *cvar_ep = (cs_real_t *)CS_F_(eps)->val;
   cs_real_t *viscl   =  (cs_real_t *)CS_F_(mu)->val;
 
-  cs_var_cal_opt_t vcopt;
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &vcopt);
+  const cs_equation_param_t *eqp
+    = cs_field_get_equation_param_const(CS_F_(k));
 
-  int iwarnk = vcopt.verbosity;
+  int iwarnk = eqp->verbosity;
 
   /* Small value to avoid exactly zero values */
 

@@ -103,7 +103,6 @@ cs_turbulence_rij.c \
 cs_turbulence_rotation.c \
 cs_turbulence_sa.c \
 cs_turbulence_v2f.c \
-clprij.f90 \
 divrit.f90 \
 reseps.f90 \
 resrij.f90 \

@@ -3459,6 +3459,34 @@ module cs_c_bindings
       real(c_double), intent(in), value :: c_durbin_l
     end subroutine cs_turbulence_rij_alpha
 
+    !---------------------------------------------------------------------------
+    !> \brief Clipping of the turbulent Reynods stress tensor and the turbulent
+    !> dissipation.
+    !>
+    !> \param[in]     ncel          number of cells
+
+    subroutine cs_turbulence_rij_clip(ncel) &
+      bind(C, name='cs_turbulence_rij_clip')
+     use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: ncel
+    end subroutine cs_turbulence_rij_clip
+
+    !---------------------------------------------------------------------------
+    !> \brief Clipping of the turbulent Reynods stress tensor and the turbulent
+    !> dissipation (segregated version).
+    !>
+    !> \param[in]     ncel          number of cells
+    !> \param[in]     iclip         indicator = 0 if viscl0 is used
+    !>                              otherwise viscl is used.
+
+    subroutine cs_turbulence_rij_clip_sg(ncel, iclip) &
+      bind(C, name='cs_turbulence_rij_clip_sg')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: ncel, iclip
+    end subroutine cs_turbulence_rij_clip_sg
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------

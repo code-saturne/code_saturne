@@ -56,6 +56,32 @@ cs_turbulence_rij_alpha(int        f_id,
                         cs_real_t  c_durbin_l);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Clip the turbulent Reynods stress tensor and the turbulent
+ *        dissipation (coupled components version).
+ *
+ * \param[in]  n_cells  number of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_clip(cs_lnum_t  n_cells);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Clip the turbulent Reynods stress tensor and the turbulent
+ *        dissipation (segregated version)
+ *
+ * \param[in]  n_cells  number of cells
+ * \param[in]  iclip    if 0, viscl0 is used; otherwise viscl is used.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_clip_sg(cs_lnum_t  n_cells,
+                          int        iclip);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

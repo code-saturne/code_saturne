@@ -94,6 +94,25 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief returns the value of A with the sign of B.
+ *
+ *  \param[in]  a  real A
+ *  \param[in]  b  real B
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_sign(cs_real_t  a,
+      cs_real_t  b)
+
+{
+  cs_real_t sgn = (b <  0) ? - 1 : 1;
+
+  return (sgn * cs_math_fabs(a));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Clipping of alpha in the framwork of the Rij-EBRSM model.
  *
  *  \param[in]  f_id          field id of alpha variable
@@ -158,6 +177,62 @@ _clip_alpha(const int          f_id,
                                   iclpmx[0],
                                   vmin, vmax,
                                   iclpmn, iclpmx);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute (rank-local) minima and maxima of Rij and epsilon.
+ *
+ * \param[in]   n_cells   number of cells
+ * \param[in]   cvar_rij  Rij values
+ * \param[in]   cvar_ep   epsilon values
+ * \param[out]  vmin      local minima for Rij (0-5) and epsilon (6)
+ * \param[out]  vmax      local maxima for Rij (0-5) and epsilon (6)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rij_min_max(cs_lnum_t        n_cells,
+             const cs_real_t  cvar_rij[][6],
+             const cs_real_t  cvar_ep[],
+             cs_real_t        vmin[7],
+             cs_real_t        vmax[7])
+{
+  for (int ii = 0; ii < 7; ii++) {
+    vmin[ii] = cs_math_big_r;
+    vmax[ii] = -cs_math_big_r;
+  }
+
+# pragma omp parallel if(n_cells > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n_cells, sizeof(cs_real_t), &s_id, &e_id);
+
+    cs_real_t t_vmin[7], t_vmax[7];
+    for (int ii = 0; ii < 7; ii++) {
+      t_vmin[ii] = cs_math_big_r;
+      t_vmax[ii] = -cs_math_big_r;
+    }
+
+    for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++) {
+      for (cs_lnum_t ii = 0; ii < 6; ii++) {
+        t_vmin[ii] = cs_math_fmin(t_vmin[ii], cvar_rij[c_id][ii]);
+        t_vmax[ii] = cs_math_fmax(t_vmax[ii], cvar_rij[c_id][ii]);
+      }
+    }
+    for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++) {
+      t_vmin[6] = cs_math_fmin(t_vmin[6], cvar_ep[c_id]);
+      t_vmax[6] = cs_math_fmax(t_vmax[6], cvar_ep[c_id]);
+    }
+
+    #pragma omp critical
+    {
+      for (int ii = 0; ii < 7; ii++) {
+        vmin[ii] = cs_math_fmin(vmax[ii], t_vmin[ii]);
+        vmax[ii] = cs_math_fmax(vmax[ii], t_vmax[ii]);
+      }
+    }
+  }
 }
 
 /*=============================================================================
@@ -402,6 +477,342 @@ cs_turbulence_rij_alpha(int        f_id,
   BFT_FREE(rovsdt);
   BFT_FREE(viscf);
   BFT_FREE(viscb);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Clip the turbulent Reynods stress tensor and the turbulent
+ *        dissipation (coupled components version).
+ *
+ * \param[in]  n_cells  number of cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_clip(cs_lnum_t  n_cells)
+{
+  cs_real_t *cvar_ep = (cs_real_t *)CS_F_(eps)->val;
+  cs_real_6_t *cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
+  const cs_real_t *cvara_ep = (const cs_real_t *)CS_F_(eps)->val_pre;
+
+  int kclipp = cs_field_key_id("clipping_id");
+
+  /* Post-process clippings ? */
+
+  cs_real_t *cpro_eps_clipped = NULL;
+  cs_real_6_t *cpro_rij_clipped = NULL;
+  int clip_e_id = cs_field_get_key_int(CS_F_(eps), kclipp);
+  if (clip_e_id > -1) {
+    cpro_eps_clipped = cs_field_by_id(clip_e_id)->val;
+    cs_array_set_value_real(n_cells, 1, 0, cpro_eps_clipped);
+  }
+  int clip_r_id = cs_field_get_key_int(CS_F_(rij), kclipp);
+  if (clip_r_id > -1) {
+    cpro_rij_clipped = (cs_real_6_t *)cs_field_by_id(clip_r_id)->val;
+    cs_array_set_value_real(n_cells,
+                            CS_F_(rij)->dim, 0,
+                            (cs_real_t *)cpro_rij_clipped);
+  }
+
+  /* Compute and store Min Max values for the log. */
+
+  cs_real_t vmin[7], vmax[7];
+  _rij_min_max(n_cells, cvar_rij, cvar_ep, vmin, vmax);
+
+  /* Clipping (modified to avoid exactly zero values) */
+
+  const cs_real_t varrel = 1.1;
+  const cs_real_t eigen_tol = 1.e-4;
+  const cs_real_t epz2 = cs_math_pow2(cs_math_epzero);
+
+  cs_lnum_t icltot = 0;
+  cs_lnum_t iclrij[6] = {0, 0, 0, 0, 0, 0};
+  cs_lnum_t iclep[1] = {0};
+
+  /* Compute the maximal value of each of the diagonal components over the
+   * entire domain. A reference value "rijref", used to determine if a value is
+   * small is then calculated as: rijref = (r11max + r22max + r33max)/3.
+   * New test is rii < epzero*rijref  */
+
+  cs_real_t rijmax[3] = {0, 0, 0};
+  for (cs_lnum_t ii = 0; ii < 3; ii++) {
+    if (vmax[ii] > rijmax[ii])
+      rijmax[ii] = vmax[ii];
+  }
+
+  cs_parall_max(3, CS_REAL_TYPE, rijmax);
+
+  const cs_real_t trref = rijmax[0] + rijmax[1] + rijmax[2];
+  const cs_real_t rijref = cs_math_fmax(trref/3, cs_math_epzero);
+
+# pragma omp parallel if(n_cells > CS_THR_MIN)
+  {
+    cs_lnum_t t_icltot = 0;
+    cs_lnum_t t_iclrij[6] = {0, 0, 0, 0, 0, 0};
+    cs_lnum_t t_iclep[1] = {0};
+
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n_cells, sizeof(cs_real_t), &s_id, &e_id);
+
+    for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++) {
+
+      int is_clipped = 0;
+
+      /* Check if R is positive and ill-conditionned (since the former
+       * will induce the latter after clipping ...*/
+
+      const cs_real_t trrij = cs_math_6_trace(cvar_rij[c_id]);
+
+      if (trrij <= cs_math_epzero*trref) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++) {
+          if (cpro_rij_clipped != NULL) {
+            cpro_rij_clipped[c_id][ii]
+              = cvar_rij[c_id][ii] - cs_math_epzero*rijref;
+            cpro_rij_clipped[c_id][ii+3] = cvar_rij[c_id][ii+3];
+          }
+
+          cvar_rij[c_id][ii] = cs_math_epzero*rijref;
+          cvar_rij[c_id][ii+3] = 0.0;
+
+          t_iclrij[ii]++;
+          t_iclrij[ii+3]++;
+        }
+
+        is_clipped = 1;
+      }
+      else {
+        cs_real_t tensor[6];
+        for (int ii = 0; ii < 6; ii++)
+          tensor[ii] = cvar_rij[c_id][ii]/trrij;
+
+        cs_real_t eigen_vals[3];
+        cs_math_sym_33_eigen(tensor, eigen_vals);
+
+        cs_real_t eigen_min = eigen_vals[0];
+        cs_real_t eigen_max = eigen_vals[0];
+        for (int i = 1; i < 3; i++) {
+          eigen_min = cs_math_fmin(eigen_min, eigen_vals[i]);
+          eigen_max = cs_math_fmax(eigen_max, eigen_vals[i]);
+        }
+
+        /* If negative eigenvalue, return to isotropy */
+
+        if (   (eigen_min <= eigen_tol*eigen_max)
+            || (eigen_min < cs_math_epzero)) {
+
+          is_clipped = 1;
+
+          eigen_min = cs_math_fmin(eigen_min, -eigen_tol);
+          cs_real_t eigen_offset
+            = cs_math_fmin(-eigen_min/(1.0/3-eigen_min)+0.1, 1.0);
+
+          for (cs_lnum_t ii = 0; ii < 6; ii++) {
+            cvar_rij[c_id][ii] = (1.0-eigen_offset)*cvar_rij[c_id][ii];
+
+            if (ii < 3)
+              cvar_rij[c_id][ii] += trrij*(eigen_offset+eigen_tol)/3;
+
+            if (cpro_rij_clipped != NULL)
+              cpro_rij_clipped[c_id][ii] = eigen_offset*cvar_rij[c_id][ii];
+
+            t_iclrij[ii]++;
+          }
+        }
+      }
+
+      /* Epsilon */
+
+      if (cs_math_fabs(cvar_ep[c_id]) < epz2) {
+        t_iclep[0]++;
+        if (cpro_eps_clipped != NULL)
+          cpro_eps_clipped[c_id] = cs_math_fabs(cvar_ep[c_id]-epz2);
+        cvar_ep[c_id] = cs_math_fmax(cvar_ep[c_id],epz2);
+      }
+      else if (cvar_ep[c_id] <= 0) {
+        t_iclep[0]++;
+        if (cpro_eps_clipped != NULL)
+          cpro_eps_clipped[c_id] = 2*cs_math_fabs(cvar_ep[c_id]);
+        cvar_ep[c_id] = cs_math_fmin(cs_math_fabs(cvar_ep[c_id]),
+                                     varrel*cs_math_fabs(cvara_ep[c_id]));
+      }
+
+      /* Enforce Cauchy Schwarz inequality (only for x, y, z directions) */
+
+      cs_real_t cvar_var1, cvar_var2;
+      for (cs_lnum_t ii = 3; ii < 6; ii++) {
+        if (ii == 3) {
+          cvar_var1 = cvar_rij[c_id][0];
+          cvar_var2 = cvar_rij[c_id][1];
+        }
+        else if (ii == 4) {
+          cvar_var1 = cvar_rij[c_id][0];
+          cvar_var2 = cvar_rij[c_id][2];
+        }
+        else if (ii == 5) {
+          cvar_var1 = cvar_rij[c_id][1];
+          cvar_var2 = cvar_rij[c_id][2];
+        }
+
+        const cs_real_t rijmin = sqrt(cvar_var1*cvar_var2);
+        if (rijmin < cs_math_fabs(cvar_rij[c_id][ii])) {
+          is_clipped = 1;
+          if (cpro_rij_clipped != NULL)
+            cpro_rij_clipped[c_id][ii] = cvar_rij[c_id][ii];
+          cvar_rij[c_id][ii] =   _sign(1., cvar_rij[c_id][ii])
+                               * rijmin/(1.+cs_math_epzero);
+          t_iclrij[ii]++;
+        }
+      }
+      t_icltot += is_clipped;
+
+    }  /* End of loop on cells */
+
+    /* Sum over threads */
+
+    for (int i = 0; i < 6; i++) {
+      #pragma omp atomic
+      iclrij[i] += t_iclrij[i];
+    }
+
+    #pragma omp atomic
+    iclep[0] += t_iclep[0];
+
+    #pragma omp atomic
+    icltot += t_icltot;
+  }
+
+  /* Store number of clippings for logging */
+
+  cs_lnum_t iclrij_max[6] = {0, 0, 0, 0, 0, 0}, iclep_max[1] = {0};
+
+  cs_log_iteration_clipping_field(CS_F_(rij)->id, icltot, 0,
+                                  vmin, vmax, iclrij, iclrij_max);
+
+  cs_log_iteration_clipping_field(CS_F_(eps)->id, iclep[0], 0,
+                                  vmin+6, vmax+6, iclep, iclep_max);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Clip the turbulent Reynods stress tensor and the turbulent
+ *        dissipation (segregated version)
+ *
+ * \param[in]  n_cells  number of cells
+ * \param[in]  iclip    if 0, viscl0 is used; otherwise viscl is used.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_clip_sg(cs_lnum_t  n_cells,
+                          int        iclip)
+{
+  cs_real_t *cvar_ep = (cs_real_t *)CS_F_(eps)->val;
+  cs_real_6_t *cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
+
+  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)CS_F_(rij)->val_pre;
+  const cs_real_t *cvara_ep = (const cs_real_t *)CS_F_(eps)->val_pre;
+
+  /* Store Min and Max for logging. */
+
+  cs_real_t vmin[7], vmax[7];
+  _rij_min_max(n_cells, cvar_rij, cvar_ep, vmin, vmax);
+
+  /* Clipping (modified to avoid exactly zero values). */
+
+  const cs_real_t epz2 = cs_math_pow2(cs_math_epzero);
+
+  cs_lnum_t iclrij[6] = {0, 0, 0, 0, 0, 0};
+  cs_lnum_t iclep[1] = {0};
+
+  if (iclip == 1) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (int ii = 0; ii < 3; ii++) {
+        if (cvar_rij[c_id][ii] <= epz2) {
+          iclrij[ii]++;
+          cvar_rij[c_id][ii] = epz2;
+        }
+      }
+    }
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      if (cs_math_fabs(cvar_ep[c_id]) <= epz2) {
+        iclep[0]++;
+        cvar_ep[c_id] = cs_math_fmax(cvar_ep[c_id], epz2);
+      }
+      else if (cvar_ep[c_id] <= 0.0) {
+        iclep[0]++;
+        cvar_ep[c_id] = cs_math_fabs(cvar_ep[c_id]);
+      }
+    }
+  }
+  else {
+    const cs_real_t varrel = 1.1;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        if (cs_math_fabs(cvar_rij[c_id][ii]) <= epz2) {
+          iclrij[ii]++;
+          cvar_rij[c_id][ii] = cs_math_fmax(cvar_rij[c_id][ii], epz2);
+        }
+        else if (cvar_rij[c_id][ii] <= 0) {
+          iclrij[ii]++;
+          cvar_rij[c_id][ii] = cs_math_fmin(cs_math_fabs(cvar_rij[c_id][ii]),
+                                            varrel*fabs(cvara_rij[c_id][ii]));
+        }
+      }
+    }
+
+    iclep[0] = 0;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      if (cs_math_fabs(cvar_ep[c_id]) < epz2) {
+        iclep[0]++;
+        cvar_ep[c_id] = cs_math_fmax(cvar_ep[c_id], epz2);
+      }
+      else if(cvar_ep[c_id] <= 0) {
+        iclep[0]++;
+        cvar_ep[c_id] = cs_math_fmin(cs_math_fabs(cvar_ep[c_id]),
+                                     varrel*cs_math_fabs(cvara_ep[c_id]));
+      }
+    }
+  }
+
+  /* Enforce Cauchy Schwarz inequality (only for x, y, z directions) */
+  for (cs_lnum_t ii = 3; ii < 6; ii++) {
+    cs_lnum_t ii1, ii2;
+    if (ii == 3) {
+      ii1 = 0;
+      ii2 = 1;
+    }
+    else if (ii == 4) {
+      ii1 = 1;
+      ii2 = 2;
+    }
+    else if (ii == 5) {
+      ii1 = 0;
+      ii2 = 2;
+    }
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t rijmin = sqrt(cvar_rij[c_id][ii1]*cvar_rij[c_id][ii2]);
+      if (rijmin < cs_math_fabs(cvar_rij[c_id][ii])) {
+        cvar_rij[c_id][ii] = _sign(1., cvar_rij[c_id][ii])*rijmin;
+        iclrij[ii]++;
+      }
+    }
+  }
+
+  /* Store number of clippings for logging */
+
+  cs_lnum_t icltot = 0;
+  for (int ii = 0; ii < 6; ii++) {
+    icltot += iclrij[ii];
+  }
+
+  cs_lnum_t iclrij_max[6] = {0, 0, 0, 0, 0, 0}, iclep_max[1] = {0};
+
+  cs_log_iteration_clipping_field(CS_F_(rij)->id, icltot, 0,
+                                  vmin, vmax, iclrij, iclrij_max);
+
+  cs_log_iteration_clipping_field(CS_F_(eps)->id, iclep[0], 0,
+                                  vmin+6, vmax+6, iclep, iclep_max);
 }
 
 /*----------------------------------------------------------------------------*/

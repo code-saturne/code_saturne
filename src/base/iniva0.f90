@@ -412,9 +412,9 @@ elseif (itytur.eq.3) then
      enddo
      iclip = 1
      if (irijco.eq.1) then
-        call clprij2(ncel)
+       call cs_turbulence_rij_clip(ncel)
      else
-        call clprij(ncel, iclip)
+       call cs_turbulence_rij_clip_sg(ncel, iclip)
      end if
 
   else
