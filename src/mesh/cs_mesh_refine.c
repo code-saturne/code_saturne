@@ -4285,7 +4285,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
     cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
     for (cs_lnum_t i = s_id; i < e_id; i++) {
-      char v_r_gen = m->vtx_r_gen[i];
+      char v_r_gen = m->vtx_r_gen[m->b_face_vtx_lst[i]];
       if (v_r_gen > r_gen)
         r_gen = v_r_gen;
       b_face_r_gen[f_id] = r_gen;
