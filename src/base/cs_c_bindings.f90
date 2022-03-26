@@ -1140,8 +1140,7 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
       logical(c_bool), value :: symmetric
-      integer(c_int), dimension(4), intent(in) :: db_size, eb_size
-      integer(c_int), value :: f_id
+      integer(c_int), value :: db_size, eb_size, f_id
       real(kind=c_double), dimension(*), intent(in) :: dam, xam, vx
       real(kind=c_double), dimension(*), intent(out) :: vy
     end subroutine cs_matrix_vector_native_multiply
@@ -3562,7 +3561,7 @@ contains
 
     ! Local variables
 
-    integer(c_int), dimension(4) :: c_db_size, c_eb_size
+    integer(c_int) :: c_db_size, c_eb_size
     logical(c_bool) :: c_symmetric
 
     if (isym.eq.1) then
@@ -3571,15 +3570,8 @@ contains
       c_symmetric = .false.
     endif
 
-    c_db_size(0+1) = ibsize;
-    c_db_size(1+1) = ibsize;
-    c_db_size(2+1) = ibsize;
-    c_db_size(3+1) = ibsize*ibsize;
-
-    c_eb_size(0+1) = iesize;
-    c_eb_size(1+1) = iesize;
-    c_eb_size(2+1) = iesize;
-    c_eb_size(3+1) = iesize*iesize;
+    c_db_size = ibsize;
+    c_eb_size = iesize;
 
     call cs_matrix_vector_native_multiply(c_symmetric, c_db_size, c_eb_size, &
                                           f_id, dam, xam, vx, vy)
