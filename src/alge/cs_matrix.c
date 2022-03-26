@@ -1097,10 +1097,40 @@ _create_struct_csr(cs_alloc_mode_t     alloc_mode,
 }
 
 /*----------------------------------------------------------------------------
- * Create a CSR matrix structure from an index and an array related
+ * Initialize a CSR structure.
+ *
+ * parameters:
+ *   ms          <-> pointer to csr structure
+ *   n_rows      <-- number of local rows
+ *   n_cols_ext  <-- number of local + ghost columns
+ *----------------------------------------------------------------------------*/
+
+static void
+_init_struct_csr(cs_matrix_struct_csr_t  *ms,
+                 cs_lnum_t                n_rows,
+                 cs_lnum_t                n_cols_ext)
+{
+  ms->n_rows = n_rows;
+  ms->n_cols_ext = n_cols_ext;
+
+  ms->direct_assembly = true;
+  ms->have_diag = false;
+
+  /* Count number of nonzero elements per row */
+
+  ms->row_index = NULL;
+  ms->col_id = NULL;
+
+  ms->_row_index = NULL;
+  ms->_col_id = NULL;
+}
+
+/*----------------------------------------------------------------------------
+ * Initialize a CSR matrix structure from an index and an array related
  * to column id
  *
  * parameters:
+ *   ms         <-- matrix structure to initialize
  *   have_diag  <-- indicates if the diagonal structure contains nonzeroes
  *   transfer   <-- transfer property of row_index and col_id
  *                  if true, map them otherwise
@@ -1114,23 +1144,20 @@ _create_struct_csr(cs_alloc_mode_t     alloc_mode,
  *    a pointer to a created CSR matrix structure
  *----------------------------------------------------------------------------*/
 
-static cs_matrix_struct_csr_t *
-_create_struct_csr_from_csr(bool         have_diag,
-                            bool         transfer,
-                            bool         ordered,
-                            cs_lnum_t    n_rows,
-                            cs_lnum_t    n_cols_ext,
-                            cs_lnum_t  **row_index,
-                            cs_lnum_t  **col_id)
+static void
+_init_struct_csr_from_csr(cs_matrix_struct_csr_t  *ms,
+                          bool                     have_diag,
+                          bool                     transfer,
+                          bool                     ordered,
+                          cs_lnum_t                n_rows,
+                          cs_lnum_t                n_cols_ext,
+                          cs_lnum_t             **row_index,
+                          cs_lnum_t             **col_id)
 {
-  cs_matrix_struct_csr_t  *ms = NULL;
-
   cs_lnum_t  *_row_index = *row_index;
   cs_lnum_t  *_col_id = *col_id;
 
   /* Allocate and map */
-
-  BFT_MALLOC(ms, 1, cs_matrix_struct_csr_t);
 
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
@@ -1160,6 +1187,47 @@ _create_struct_csr_from_csr(bool         have_diag,
                       ms->_col_id);
 
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Create a CSR matrix structure from an index and an array related
+ * to column id
+ *
+ * parameters:
+ *   have_diag  <-- indicates if the diagonal structure contains nonzeroes
+ *   transfer   <-- transfer property of row_index and col_id
+ *                  if true, map them otherwise
+ *   ordered    <-- indicates if row entries are already ordered
+ *   n_rows     <-- local number of rows
+ *   n_cols_ext <-- local number of columns + ghosts
+ *   row_index  <-- pointer to index on rows
+ *   col_id     <-> pointer to array of colum ids related to the row index
+ *
+ * returns:
+ *    a pointer to a created CSR matrix structure
+ *----------------------------------------------------------------------------*/
+
+static cs_matrix_struct_csr_t *
+_create_struct_csr_from_csr(bool         have_diag,
+                            bool         transfer,
+                            bool         ordered,
+                            cs_lnum_t    n_rows,
+                            cs_lnum_t    n_cols_ext,
+                            cs_lnum_t  **row_index,
+                            cs_lnum_t  **col_id)
+{
+  cs_matrix_struct_csr_t  *ms = NULL;
+
+  BFT_MALLOC(ms, 1, cs_matrix_struct_csr_t);
+
+  _init_struct_csr_from_csr(ms,
+                            have_diag,
+                            transfer,
+                            ordered,
+                            n_rows,
+                            n_cols_ext,
+                            row_index,
+                            col_id);
 
   return ms;
 }
@@ -3167,35 +3235,6 @@ _variant_add(const char                *name,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize a distributed structure's CSR sub-structure.
- *
- * parameters:
- *   ms          <-> pointer to csr structure
- *   n_rows      <-- number of local rows
- *   n_cols_ext  <-- number of local + ghost columns
- *----------------------------------------------------------------------------*/
-
-static void
-_init_struct_dist_csr(cs_matrix_struct_csr_t  *ms,
-                      cs_lnum_t                n_rows,
-                      cs_lnum_t                n_cols_ext)
-{
-  ms->n_rows = n_rows;
-  ms->n_cols_ext = n_cols_ext;
-
-  ms->direct_assembly = true;
-  ms->have_diag = false;
-
-  /* Count number of nonzero elements per row */
-
-  ms->row_index = NULL;
-  ms->col_id = NULL;
-
-  ms->_row_index = NULL;
-  ms->_col_id = NULL;
-}
-
-/*----------------------------------------------------------------------------
  * Create a distributed matrix structure from a native matrix stucture.
  *
  * Note that the structure created maps global cell numbers to the given
@@ -3254,8 +3293,8 @@ _create_struct_dist(cs_alloc_mode_t     alloc_mode,
     n_cols_ext = 0;
   }
 
-  _init_struct_dist_csr(&(ms->e), n_rows, n_rows);
-  _init_struct_dist_csr(&(ms->h), n_rows, n_cols_ext);
+  _init_struct_csr(&(ms->e), n_rows, n_rows);
+  _init_struct_csr(&(ms->h), n_rows, n_cols_ext);
 
   ms->h_row_id = NULL;
 
@@ -3395,8 +3434,8 @@ _create_struct_msr(cs_alloc_mode_t     alloc_mode,
     n_cols_ext = 0;
   }
 
-  _init_struct_dist_csr(&(ms->e), n_rows, n_cols_ext);
-  _init_struct_dist_csr(&(ms->h), 0, 0);
+  _init_struct_csr(&(ms->e), n_rows, n_cols_ext);
+  _init_struct_csr(&(ms->h), 0, 0);
 
   ms->h_row_id = NULL;
 
@@ -3464,7 +3503,7 @@ _create_struct_msr(cs_alloc_mode_t     alloc_mode,
 }
 
 /*----------------------------------------------------------------------------
- * Create a CSR matrix structure from an index and an array related
+ * Create an MSR matrix structure from an index and an array related
  * to column id
  *
  * parameters:
@@ -3495,11 +3534,8 @@ _create_struct_msr_from_shared(bool              direct_assembly,
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
 
-  ms->n_rows = n_rows;
-  ms->n_cols_ext = n_cols_ext;
-
-  _init_struct_dist_csr(&(ms->e), n_rows, n_cols_ext);
-  _init_struct_dist_csr(&(ms->h), 0, 0);
+  _init_struct_csr(&(ms->e), n_rows, n_cols_ext);
+  _init_struct_csr(&(ms->h), 0, 0);
 
   ms->e.row_index = row_index;
   ms->e.col_id = col_id;
@@ -3508,6 +3544,56 @@ _create_struct_msr_from_shared(bool              direct_assembly,
   ms->e._col_id = NULL;
 
   ms->e.direct_assembly = direct_assembly;
+
+  ms->h_row_id = NULL;
+
+  return ms;
+}
+
+/*----------------------------------------------------------------------------
+ * Create a CSR matrix structure from an index and an array related
+ * to column id
+ *
+ * parameters:
+ *   transfer   <-- transfer property of row_index and col_id
+ *                  if true, map them otherwise
+ *   ordered    <-- indicates if row entries are already ordered
+ *   n_rows     <-- local number of rows
+ *   n_cols_ext <-- local number of columns + ghosts
+ *   row_index  <-- pointer to index on rows
+ *   col_id     <-> pointer to array of colum ids related to the row index
+ *
+ * returns:
+ *    a pointer to a created CSR matrix structure
+ *----------------------------------------------------------------------------*/
+
+static cs_matrix_struct_dist_t *
+_create_struct_msr_from_msr(bool         transfer,
+                            bool         ordered,
+                            cs_lnum_t    n_rows,
+                            cs_lnum_t    n_cols_ext,
+                            cs_lnum_t  **row_index,
+                            cs_lnum_t  **col_id)
+{
+  cs_matrix_struct_dist_t  *ms = NULL;
+
+  /* Allocate and map */
+
+  BFT_MALLOC(ms, 1, cs_matrix_struct_dist_t);
+
+  ms->n_rows = n_rows;
+  ms->n_cols_ext = n_cols_ext;
+
+  _init_struct_csr_from_csr(&(ms->e),
+                            false,
+                            transfer,
+                            ordered,
+                            n_rows,
+                            n_cols_ext,
+                            row_index,
+                            col_id);
+
+  _init_struct_csr(&(ms->h), 0, 0);
 
   ms->h_row_id = NULL;
 
@@ -3549,8 +3635,8 @@ _create_struct_msr_from_csr(bool              direct_assembly,
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
 
-  _init_struct_dist_csr(&(ms->e), n_rows, n_cols_ext);
-  _init_struct_dist_csr(&(ms->h), 0, 0);
+  _init_struct_csr(&(ms->e), n_rows, n_cols_ext);
+  _init_struct_csr(&(ms->h), 0, 0);
 
   cs_lnum_t *_row_index, *_col_id;
   CS_MALLOC_HD(_row_index, n_rows + 1, cs_lnum_t, alloc_mode);
@@ -3616,8 +3702,8 @@ _create_struct_dist_from_csr(bool              direct_assembly,
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
 
-  _init_struct_dist_csr(&(ms->e), n_rows, n_rows);
-  _init_struct_dist_csr(&(ms->h), n_rows, n_cols_ext);
+  _init_struct_csr(&(ms->e), n_rows, n_rows);
+  _init_struct_csr(&(ms->h), n_rows, n_cols_ext);
 
   cs_lnum_t *_e_row_index, *_e_col_id, *_h_row_index, *_h_col_id;
   CS_MALLOC_HD(_e_row_index, n_rows + 1, cs_lnum_t, alloc_mode);
@@ -3707,8 +3793,8 @@ _create_struct_dist_from_msr(bool              direct_assembly,
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
 
-  _init_struct_dist_csr(&(ms->e), n_rows, n_rows);
-  _init_struct_dist_csr(&(ms->h), n_rows, n_cols_ext);
+  _init_struct_csr(&(ms->e), n_rows, n_rows);
+  _init_struct_csr(&(ms->h), n_rows, n_cols_ext);
 
   cs_lnum_t *_e_row_index, *_e_col_id, *_h_row_index, *_h_col_id;
   CS_MALLOC_HD(_e_row_index, n_rows + 1, cs_lnum_t, alloc_mode);
@@ -4603,8 +4689,7 @@ cs_matrix_structure_create_msr(cs_matrix_type_t        type,
                                                 col_id);
     break;
   case CS_MATRIX_MSR:
-    ms->structure = _create_struct_csr_from_csr(false,
-                                                transfer,
+    ms->structure = _create_struct_msr_from_msr(transfer,
                                                 false,
                                                 n_rows,
                                                 n_cols_ext,
