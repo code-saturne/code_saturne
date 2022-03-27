@@ -658,8 +658,8 @@ The list of third-party software usable with code_saturne is provided here:
   test to compare the cost of operations such as vector sums and dot products with
   those provided by the code and compiler. If no third-party BLAS is provided,
   code_saturne reverts to its own implementation of BLAS routines, so no
-  functionality is lost here. Optimized BLAS libraries such as Atlas, MKL,
-  ESSL, or ACML may be very fast for BLAS3 (dense matrix/matrix operations),
+  functionality is lost here. Optimized BLAS libraries such as Atlas or MKL
+  may be very fast for BLAS3 (dense matrix/matrix operations),
   but the advantage is usually much less significant for BLAS 1 (vector/vector)
   operations, which are almost the only ones code_saturne has the opportunity of
   using. code_saturne uses its own dot product implementation (using a superblock

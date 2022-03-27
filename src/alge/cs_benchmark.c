@@ -51,15 +51,9 @@
 #include <mpi.h>
 #endif
 
-#if defined(HAVE_ESSL_H)
-#include <essl.h>
-
-#elif defined(HAVE_MKL)
+#if defined(HAVE_MKL)
 #include <mkl_cblas.h>
 #include <mkl_spblas.h>
-
-#elif defined(HAVE_ACML)
-#include <acml.h>
 
 #elif defined(HAVE_CBLAS)
 #include <cblas.h>
@@ -111,8 +105,7 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-#if    defined(HAVE_CBLAS) || defined(HAVE_ESSL) \
-    || defined (HAVE_MKL)  || defined (HAVE_ACML)
+#if defined(HAVE_CBLAS) || defined (HAVE_MKL)
 #define HAVE_BLAS 1
 #endif
 

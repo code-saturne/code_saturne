@@ -31,22 +31,11 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-/* For the IBM ESSL library, function prototypes are defined in essl.h,
-   with legacy blas names <name> mapped to esv<name>;
-   for the AMD ACML library, prototypes are defined in acml.h.
-   In both cases, purely input array arguments are not defined as const,
-   so a cast must be used.
-   For the Intel MKL library, function prototypes are defined in mkl_cblas.h,
+/* For the Intel MKL library, function prototypes are defined in mkl_cblas.h,
    with standard legacy C BLAS names */
-
-#if defined(HAVE_ESSL)
-#include <essl.h>
 
 #elif defined(HAVE_MKL)
 #include <mkl_cblas.h>
-
-#elif defined(HAVE_ACML)
-#include <acml.h>
 
 #elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS)
 #include <cblas.h>
@@ -74,12 +63,8 @@
 /* Block size for superblock algorithm */
 #define CS_SBLOCK_BLOCK_SIZE 60
 
-#if defined(HAVE_ACML)
-const char ext_blas_type[] = "ACML";
-#elif defined(HAVE_ATLAS)
+#if defined(HAVE_ATLAS)
 const char ext_blas_type[] = "ATLAS";
-#elif defined(HAVE_ESSL)
-const char ext_blas_type[] = "ESSL";
 #elif defined(HAVE_MKL)
 const char ext_blas_type[] = "MKL";
 #elif defined(HAVE_BLAS)
@@ -538,8 +523,7 @@ _dot_product_1(double   t_measure,
 
     /* First simple local x.x version */
 
-#if   defined(HAVE_ESSL) || defined(HAVE_ACML) \
-   || defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
+#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
 
     for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -572,9 +556,7 @@ _dot_product_1(double   t_measure,
       while (run_id < n_runs) {
         double test_sum_mult = 1.0/n_runs;
         while (run_id < n_runs) {
-#if defined(HAVE_ESSL) || defined(HAVE_ACML)
-          double s1 = ddot(n, (double *)x, 1, (double *)y, 1);
-#elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
+#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
           double s1 = cblas_ddot(n, x, 1, y, 1);
 #endif
 #if defined(HAVE_MPI)
@@ -727,8 +709,7 @@ _dot_product_2(double  t_measure)
 
   /* First simple local x.x version */
 
-#if   defined(HAVE_ESSL) || defined(HAVE_ACML) \
-   || defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
+#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -758,10 +739,7 @@ _dot_product_2(double  t_measure)
     while (run_id < n_runs) {
       double test_sum_mult = 1.0/n_runs;
       while (run_id < n_runs) {
-#if defined(HAVE_ESSL) || defined(HAVE_ACML)
-        double s1 = ddot(n, (double *)x, 1, (double *)x, 1);
-        double s2 = ddot(n, (double *)x, 1, (double *)y, 1);
-#elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
+#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
         double s1 = cblas_ddot(n, x, 1, x, 1);
         double s2 = cblas_ddot(n, x, 1, y, 1);
 #endif
@@ -977,8 +955,7 @@ _axpy_test(double  t_measure)
 
   /* First simple local x.x version */
 
-#if   defined(HAVE_ESSL) || defined(HAVE_ACML) \
-   || defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
+#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) ||defined(HAVE_MKL)
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -1008,9 +985,7 @@ _axpy_test(double  t_measure)
     while (run_id < n_runs) {
       double test_sum_mult = 1.0/n_runs;
       while (run_id < n_runs) {
-#if defined(HAVE_ACML) || defined(HAVE_ESSL)
-        daxpy(n, test_sum_mult, (double *)x, 1, (double *)y, 1);
-#elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
+#if defined(HAVE_ATLAS) || defined(HAVE_CBLAS) || defined(HAVE_MKL)
         cblas_daxpy(n, test_sum_mult, x, 1, y, 1);
 #endif
         test_sum += test_sum_mult*y[run_id%n];
@@ -1623,63 +1598,6 @@ _ad_x_test(double  t_measure)
   }
 
 #endif /* defined(HAVE_MKL) */
-
-#if defined(HAVE_ESSL)
-
-  for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
-
-    n = _n_elts[sub_id];
-    n_ops = n;
-
-    /* Realloc and initialize arrays for each test, as
-       first touch may affect memory locality on some systems */
-
-    BFT_MALLOC(da, n, cs_real_t);
-    BFT_MALLOC(x, n, cs_real_t);
-    BFT_MALLOC(y, n, cs_real_t);
-
-#   pragma omp parallel for
-    for (ii = 0; ii < n; ii++) {
-      da[ii] = 1.0 + ii%3;
-      x[ii] = 2.0 + ii%3;
-    }
-
-    test_sum = test_sum - floor(test_sum);
-
-    wt0 = cs_timer_wtime(), wt1 = wt0;
-
-    if (t_measure > 0)
-      n_runs = 8;
-    else
-      n_runs = 1;
-    run_id = 0;
-    while (run_id < n_runs) {
-      double test_sum_mult = 1.0/n_runs;
-      while (run_id < n_runs) {
-        dndot(n, 1, y, 1, 1, da, 1, 1, x, 1, 1);
-        test_sum += test_sum_mult*y[run_id%n];
-        run_id++;
-      }
-      wt1 = cs_timer_wtime();
-      if (wt1 - wt0 < t_measure)
-        n_runs *= 2;
-    }
-
-    bft_printf("\n"
-               "Y <- DX with ESSL dndot (%d elts.)\n"
-               "-----------------------\n", (int)n);
-
-    bft_printf("  (calls: %d)\n", n_runs);
-
-    _print_stats(n_runs, n_ops, 0, wt1 - wt0);
-
-    BFT_FREE(y);
-    BFT_FREE(x);
-    BFT_FREE(da);
-
-  }
-
-#endif /* defined(HAVE_ESSL) */
 
   for (sub_id = 0; sub_id < _n_sizes; sub_id++) {
 
@@ -2969,15 +2887,7 @@ main (int argc, char *argv[])
                  reduce_name[j], (int)n, ref_s - s);
     }
 
-#if defined(HAVE_ESSL)
-    s = ddot(n, (double *)x, 1, (double *)y, 1);
-    bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
-               "ESSL", (int)n, ref_s - s);
-#elif defined(HAVE_ACML)
-    s = ddot(n, (double *)x, 1, (double *)y, 1);
-    bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
-               "ACML", (int)n, ref_s - s);
-#elif defined(HAVE_MKL)
+#if defined(HAVE_MKL)
     s = cblas_ddot(n, x, 1, y, 1);
     bft_printf("  %-22s dot product error for n = %7d: %12.5e\n",
                "MKL", (int)n, ref_s - s);

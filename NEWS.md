@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Drop support of AMD ACML (which is end-of-life) and IBM ESSL BLAS libraries,
+  which were only used in unit tests comparisons.
+
 - Subdivision of warped faces now only modifies boundary faces.
 
 - Major changes to the studymanager GUI tool, which is now more complete

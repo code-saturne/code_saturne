@@ -67,7 +67,7 @@ AC_ARG_WITH(blas-lib,
 
 AC_ARG_WITH(blas-type,
             [AS_HELP_STRING([--with-blas-type=NAME],
-                            [force ATLAS, ESSL, MKL, ...])])
+                            [force ATLAS, MKL, ...])])
 
 AC_ARG_WITH(blas-libs,
             [AS_HELP_STRING([--with-blas-libs=LIBS],
@@ -79,74 +79,6 @@ if test "x$with_blas" != "xno" ; then
   saved_CPPFLAGS="$CPPFLAGS"
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
-
-  # Add known paths and libraries for Blue Gene/Q if not given
-
-  # Test for IBM ESSL BLAS
-
-  if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xESSL" ; then
-
-    # Test compilation/header separately from link, as linking may require
-    # Fortran libraries, and header is for C. Test library (link) first,
-    # as header is only useful if library is present.
-
-    # First, check for header
-
-    CPPFLAGS="${CPPFLAGS} ${BLAS_CPPFLAGS}"
-
-    AC_MSG_CHECKING([for ESSL BLAS headers])
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <essl.h>]],
-                      [[ ddot(0, 0, 0, 0, 0); ]])],
-                      [cs_have_essl_h=yes],
-                      [cs_have_essl_h=no])
-    AC_MSG_RESULT($cs_have_essl_h)
-
-    if test "$cs_have_essl_h" = "yes"; then
-
-      AC_LANG_PUSH([Fortran])
-
-      if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
-
-        BLAS_LIBS="-lesslsmp"
-
-        LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-        LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
-
-        AC_MSG_CHECKING([for smp ESSL BLAS])
-        AC_LINK_IFELSE([AC_LANG_PROGRAM([],
-                       [[      call ddot(0, 0, 0, 0, 0) ]])],
-                       [ AC_DEFINE([HAVE_ESSL], 1, [ESSL BLAS support])
-                         cs_have_blas=yes; with_blas_type=ESSL ],
-                       [cs_have_blas=no])
-        AC_MSG_RESULT($cs_have_blas)
-      fi
-
-      if test "$cs_have_blas" = "no" ; then # Test for non-threaded version
-                                            # or explicitely specified libs
-
-        if test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xESSL"; then
-          BLAS_LIBS="$with_blas_libs"
-        else
-          BLAS_LIBS="-lessl"
-        fi
-
-        LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-        LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
-
-        AC_MSG_CHECKING([for ESSL BLAS])
-        AC_LINK_IFELSE([AC_LANG_PROGRAM([],
-                       [[      call ddot(0, 0, 0, 0, 0) ]])],
-                       [ AC_DEFINE([HAVE_ESSL], 1, [ESSL BLAS support])
-                         cs_have_blas=yes; with_blas_type=ESSL ],
-                       [cs_have_blas=no])
-        AC_MSG_RESULT($cs_have_blas)
-      fi
-
-      AC_LANG_POP([Fortran])
-
-    fi
-
-  fi
 
   # Test for Intel MKL libraries
 
@@ -287,50 +219,6 @@ if test "x$with_blas" != "xno" ; then
 
   fi
 
-  # Test for AMD ACML BLAS
-
-  if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xACML" ; then
-
-    if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
-
-      BLAS_LIBS="-lacml_mp"
-
-      CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
-      LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-      LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
-
-      AC_MSG_CHECKING([for threaded ACML BLAS])
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <acml.h>]],
-                     [[ ddot(0, 0, 0, 0, 0); ]])],
-                     [ AC_DEFINE([HAVE_ACML], 1, [ACML BLAS support])
-                       cs_have_blas=yes; with_blas_type=ACML ],
-                     [cs_have_blas=no])
-      AC_MSG_RESULT($cs_have_blas)
-    fi
-
-    if test "$cs_have_blas" = "no" ; then # Test for non-threaded version
-                                          # or explicitely specified libs second
-      if test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xACML"; then
-        BLAS_LIBS="$with_blas_libs"
-      else
-        BLAS_LIBS="-lacml"
-      fi
-
-      CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
-      LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
-      LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
-
-      AC_MSG_CHECKING([for ACML BLAS])
-      AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <acml.h>]],
-                     [[ ddot(0, 0, 0, 0, 0); ]])],
-                     [ AC_DEFINE([HAVE_ACML], 1, [ACML BLAS support])
-                       cs_have_blas=yes; with_blas_type=ACML ],
-                     [cs_have_blas=no])
-      AC_MSG_RESULT($cs_have_blas)
-    fi
-
-  fi
-
   # Test for generic C BLAS
 
   if test "x$with_blas_type" = "x" -o "x$with_blas_type" = "xBLAS" ; then
@@ -380,9 +268,8 @@ if test "x$with_blas" != "xno" ; then
 
 fi
 
-# ESSL requires Fortran to link, and MKL provides sparse matrix-vector
+# MKL provides sparse matrix-vector
 # operations (so it may be used by the code_saturne solver)
-AM_CONDITIONAL(HAVE_ESSL, test x$with_blas_type = xESSL)
 AM_CONDITIONAL(HAVE_MKL, test x$with_blas_type = xMKL)
 
 AC_SUBST(cs_have_blas)
