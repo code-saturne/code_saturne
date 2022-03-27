@@ -199,8 +199,11 @@ _create_1d_sample_(user_profile_t *profile_t,
                    cs_real_t      *weights,
                    int             layer_id)
 {
-  /* Profile shorter variables */
-  cs_lnum_t   n_layers = profile_t->n_layers;
+  /* Profile shorter variables:
+
+     Also available but not used here:
+       cs_lnum_t   n_layers = profile_t->n_layers;
+  */
   const char *field    = profile_t->field;
   const char *weighted = profile_t->weighted;
 
@@ -381,10 +384,13 @@ _fill_histogram_classes_u_bandwidth(user_histogram_t *histogram_t,
                                     cs_lnum_t         n_elts_sample,
                                     cs_real_t        *bandwidth)
 {
-  /* Histogram shorter variable */
+  /* Histogram shorter variables
+
+     Also available but not used here:
+       cs_real_t mu        = histogram_t->mean;
+       cs_real_t sigma     = histogram_t->sd;
+  */
   cs_lnum_t n_bin_max = histogram_t->n_bin_max;
-  cs_real_t mu        = histogram_t->mean;
-  cs_real_t sigma     = histogram_t->sd;
   cs_real_t min       = histogram_t->min;
   cs_real_t max       = histogram_t->max;
 
@@ -540,14 +546,14 @@ _compute_histogram(user_histogram_t  *histogram_t,
   histogram_t->Q2 = quantile[1][0];
   histogram_t->Q3 = quantile[2][0];
 
-  cs_lnum_t n_bin = n_bin_max;
-  cs_real_t min   = histogram_t->min;
-  cs_real_t max   = histogram_t->max;
+  cs_real_t bandwidth_update = 0.0;
+  cs_lnum_t n_bin            = n_bin_max;
+  cs_real_t min              = histogram_t->min;
+  cs_real_t max              = histogram_t->max;
 
   cs_real_t IQR              = histogram_t->Q3 - histogram_t->Q1;
   cs_real_t IQR_pre          = IQR;
   cs_real_t IQR_var          = 1.0;
-  cs_real_t bandwidth_update = 0.0;
 
   /*AMISE-optimal bandwith, known as Freedman and Diaconis rule [freedman1981]:
    * see OpenTurns*/
@@ -586,19 +592,15 @@ _compute_histogram(user_histogram_t  *histogram_t,
     histogram_t->Q2 = quantile[1][0];
     histogram_t->Q3 = quantile[2][0];
 
-    n_bin = n_bin_max;
-    min   = histogram_t->min;
-    max   = histogram_t->max;
-
     IQR_pre = IQR;
     IQR     = histogram_t->Q3 - histogram_t->Q1;
 
     bandwidth_update = IQR / (2 * 0.75)
                        * pow(24.0 * pow(3.14, 0.5) / n_gelts_sample, 1.0 / 3.0);
 
-    cs_lnum_t n_bin = n_bin_max;
-    cs_real_t min   = histogram_t->min;
-    cs_real_t max   = histogram_t->max;
+    n_bin = n_bin_max;
+    min   = histogram_t->min;
+    max   = histogram_t->max;
 
     if (bandwidth_update > DBL_EPSILON) {
       n_bin = (cs_lnum_t)((max - min) / (bandwidth_update));
@@ -719,22 +721,17 @@ static void
 _calculate_min_max_dir(user_profile_t *profile_t)
 {
   // Get mesh quantities
-  const cs_real_t            *cell_vol = cs_glob_mesh_quantities->cell_vol;
-  const cs_mesh_quantities_t *mq       = cs_glob_mesh_quantities;
-  const cs_real_t            *cell_cen = mq->cell_cen;
-  const cs_lnum_t             n_cells  = cs_glob_mesh->n_cells;
-  const cs_lnum_t  n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
-  const cs_lnum_t  n_i_faces           = cs_glob_mesh->n_i_faces;
-  const cs_lnum_t  n_b_faces           = cs_glob_mesh->n_b_faces;
+  const cs_mesh_t            *m        = cs_glob_mesh;
   const cs_lnum_t  n_vertices          = cs_glob_mesh->n_vertices;
   const cs_real_t *vtx_coord           = cs_glob_mesh->vtx_coord;
+  // const cs_mesh_quantities_t *mq    = cs_glob_mesh_quantities;
 
   // Define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
   cs_lnum_t *selected_cells   = NULL;
 
   // Allocate memory for the cells list which will be populated by cs_selector
-  BFT_MALLOC(selected_cells, cs_glob_mesh->n_cells_with_ghosts, cs_lnum_t);
+  BFT_MALLOC(selected_cells, m->n_cells, cs_lnum_t);
 
   cs_selector_get_cell_list(profile_t->criteria,
                             &n_selected_cells,
@@ -865,7 +862,6 @@ _compute_layer_thickness(user_profile_t *profile_t)
   cs_real_t   dist_max    = profile_t->max_dir;
   cs_real_t   len_p       = dist_max - dist_min;
 
-  int test_law = 3;
   if (strcmp(law, "CONSTANT") == 0) {
     profile_t->progression = 1.0;
     for (int l_id = 0; l_id < n_layers; l_id++)
@@ -1045,14 +1041,8 @@ _set_stl_layers_seeds(user_profile_t *profile_t, cs_lnum_t layer_id)
   cs_real_t j_translate = (profile_t->max_j + profile_t->min_j) / 2.0;
 
   // Get mesh quantities
-  const cs_real_t            *cell_vol   = cs_glob_mesh_quantities->cell_vol;
   const cs_mesh_quantities_t *mq         = cs_glob_mesh_quantities;
   const cs_real_t            *cell_cen   = mq->cell_cen;
-  const cs_lnum_t             n_cells    = cs_glob_mesh->n_cells;
-  const cs_lnum_t             n_i_faces  = cs_glob_mesh->n_i_faces;
-  const cs_lnum_t             n_b_faces  = cs_glob_mesh->n_b_faces;
-  const cs_lnum_t             n_vertices = cs_glob_mesh->n_vertices;
-  const cs_real_t            *vtx_coord  = cs_glob_mesh->vtx_coord;
 
   // define pointer and variable for cs_selector
   cs_lnum_t  n_selected_cells = 0;
@@ -1171,16 +1161,6 @@ static void
 _set_layers_stl_mesh(user_profile_t  *profile_t,
                      cs_lnum_t        layer_id)
 {
-  // Get mesh quantities
-  const cs_real_t            *cell_vol   = cs_glob_mesh_quantities->cell_vol;
-  const cs_mesh_quantities_t *mq         = cs_glob_mesh_quantities;
-  const cs_real_t            *cell_cen   = mq->cell_cen;
-  const cs_lnum_t             n_cells    = cs_glob_mesh->n_cells;
-  const cs_lnum_t             n_i_faces  = cs_glob_mesh->n_i_faces;
-  const cs_lnum_t             n_b_faces  = cs_glob_mesh->n_b_faces;
-  const cs_lnum_t             n_vertices = cs_glob_mesh->n_vertices;
-  const cs_real_t            *vtx_coord  = cs_glob_mesh->vtx_coord;
-
   cs_stl_mesh_t *stl_mesh = profile_t->mesh_list[layer_id];
   char           name[10];
   sprintf(name, "%s_%d", "layer", layer_id);
@@ -1202,7 +1182,6 @@ _set_layers_stl_mesh(user_profile_t  *profile_t,
   cs_real_t *j_v = profile_t->j_v;
 
   cs_real_t dist_min = profile_t->min_dir;
-  cs_real_t dist_max = profile_t->max_dir;
 
   cs_real_t layer_thickness = profile_t->l_thick[layer_id];
   cs_real_t l_center_nCoord = profile_t->pos[layer_id];
@@ -1243,9 +1222,8 @@ _set_layers_stl_mesh(user_profile_t  *profile_t,
                            - j_v[k] * plane_size / 2.0;
 
   // Get points planes (4 points per plane), 2 triangles
-  cs_real_3_t plane_vtx_coords[6];
-  cs_real_t   O_plane_coord[3];
-  cs_lnum_t   n_faces_square = 0;
+  cs_real_t plane_vtx_coords[6][3];
+  cs_lnum_t n_faces_square = 0;
 
   cs_real_t n_v_plane[3];
 
@@ -1493,7 +1471,7 @@ _set_med_layer_mesh(user_profile_t  *profile_t,
 
   kv_plane_norm = cs_math_3_norm(kv_plane_vec);
 
-  if (CS_ABS(kv_plane_norm > DBL_EPSILON)) {
+  if (kv_plane_norm > DBL_EPSILON) {
     cos_rot_angle = kv_plane_vec[2] / kv_plane_norm;
     sin_rot_angle = kv_plane_vec[0] / kv_plane_norm;
     rot_angle     = acos(cos_rot_angle);
@@ -1542,7 +1520,7 @@ _set_med_layer_mesh(user_profile_t  *profile_t,
 
   kv_plane_norm = cs_math_3_norm(kv_plane_vec);
 
-  if (CS_ABS(kv_plane_norm > DBL_EPSILON)) {
+  if (kv_plane_norm > DBL_EPSILON) {
     cos_rot_angle = kv_plane_vec[2] / kv_plane_norm;
     sin_rot_angle = kv_plane_vec[1] / kv_plane_norm;
     rot_angle     = acos(cos_rot_angle);
@@ -1590,7 +1568,7 @@ _set_med_layer_mesh(user_profile_t  *profile_t,
 
   kv_plane_norm = cs_math_3_norm(kv_plane_vec);
 
-  if (CS_ABS(kv_plane_norm > DBL_EPSILON)) {
+  if (kv_plane_norm > DBL_EPSILON) {
     cos_rot_angle = kv_plane_vec[0] / kv_plane_norm;
     sin_rot_angle = kv_plane_vec[1] / kv_plane_norm;
     rot_angle     = acos(cos_rot_angle);
@@ -1642,7 +1620,6 @@ static void
 _compute_cell_volume_per_layer_basic(user_profile_t  *profile_t)
 {
   // Get mesh quantities
-  const cs_real_t            *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_mesh_quantities_t *mq       = cs_glob_mesh_quantities;
   const cs_real_t            *cell_cen = mq->cell_cen;
   const cs_lnum_t             n_cells  = cs_glob_mesh->n_cells;
@@ -1650,8 +1627,6 @@ _compute_cell_volume_per_layer_basic(user_profile_t  *profile_t)
 
   // Profile shorter variables
   cs_lnum_t n_layers = profile_t->n_layers;
-  cs_real_t min_dir  = profile_t->min_dir;
-  cs_real_t max_dir  = profile_t->max_dir;
 
   // Vector profile quantities
   cs_real_t dir_norm;
@@ -1888,9 +1863,9 @@ _compute_cell_vol_per_layer_med(user_profile_t *profile_t)
       cells_l_id_vol[c_id] = 0.0;
 
     user_profile_med_t *med_t = profile_t->med_mesh_struct;
-    /*Compute cells intersection*/
+    /* Compute cells intersection */
     _compute_intersection_volume_med(med_t, cells_l_id_vol, s_id);
-    /*update intersection for profile*/
+    /* Update intersection for profile */
     for (cs_lnum_t ii = 0; ii < n_selected_cells; ii++) {
       cs_lnum_t c_id = selected_cells[ii];
       profile_t->cells_layer_vol[s_id][c_id]
@@ -2333,15 +2308,8 @@ user_create_profile(const char  *name,
               user_profile_t *);
 
   // Get mesh quantities
-  const cs_real_t            *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_mesh_quantities_t *mq       = cs_glob_mesh_quantities;
-  const cs_real_t            *cell_cen = mq->cell_cen;
   const cs_lnum_t             n_cells  = cs_glob_mesh->n_cells;
-  const cs_lnum_t  n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
-  const cs_lnum_t  n_i_faces           = cs_glob_mesh->n_i_faces;
-  const cs_lnum_t  n_b_faces           = cs_glob_mesh->n_b_faces;
-  const cs_lnum_t  n_vertices          = cs_glob_mesh->n_vertices;
-  const cs_real_t *vtx_coord           = cs_glob_mesh->vtx_coord;
 
   // Initialize and allocate memory for profile
   BFT_MALLOC(profile_t, 1, user_profile_t);
@@ -2396,17 +2364,17 @@ user_create_profile(const char  *name,
   for (int layer_id = 0; layer_id < n_layers; layer_id++)
     BFT_MALLOC(profile_t->mesh_list[layer_id], 1, cs_stl_mesh_t);
 
-  /*allocate mesh med struct*/
+  /* Allocate mesh med struct*/
   if (test_med == 0)
     profile_t->med_mesh_struct = _allocate_med_mesh_struct(n_layers);
 
-  /*Allocate array of histogram */
+  /* Allocate array of histogram */
   BFT_MALLOC(profile_t->histogram_list, n_layers, user_histogram_t *);
   for (int layer_id = 0; layer_id < n_layers; layer_id++) {
-    char name[100];
-    sprintf(name, "layer_%d", layer_id);
+    char pname[100];
+    sprintf(pname, "layer_%d", layer_id);
     user_histogram_t *histogram_t
-      = user_create_histogram(name, profile_t->field, 300); /*n_bin_max*/
+      = user_create_histogram(pname, profile_t->field, 300); /* n_bin_max */
 
     profile_t->histogram_list[layer_id] = histogram_t;
   }

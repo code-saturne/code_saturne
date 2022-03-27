@@ -107,7 +107,7 @@ integer          ntrela
 integer          icmst
 integer          st_id
 
-integer          isvhb, iz
+integer          isvhb
 integer          ii
 integer          iterns, inslst, icvrge
 integer          italim, itrfin, itrfup, ineefl
