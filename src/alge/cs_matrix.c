@@ -3429,13 +3429,17 @@ _create_struct_msr(cs_alloc_mode_t     alloc_mode,
   ms->n_rows = n_rows;
   ms->n_cols_ext = n_cols_ext;
 
-  if (n_edges == 0 || edges == NULL) {
-    n_rows = 0;
-    n_cols_ext = 0;
-  }
-
   _init_struct_csr(&(ms->e), n_rows, n_cols_ext);
   _init_struct_csr(&(ms->h), 0, 0);
+
+  cs_lnum_t index_size = n_rows+1;
+
+  CS_MALLOC_HD(ms->e._row_index, index_size, cs_lnum_t, alloc_mode);
+
+  for (cs_lnum_t ii = 0; ii < index_size; ii++)
+    ms->e._row_index[ii] = 0;
+
+  ms->e.row_index = ms->e._row_index;
 
   ms->h_row_id = NULL;
 
@@ -3445,13 +3449,6 @@ _create_struct_msr(cs_alloc_mode_t     alloc_mode,
   /* Count number of nonzero elements per row */
 
   const cs_lnum_t *restrict edges_p = (const cs_lnum_t *restrict)edges;
-
-  cs_lnum_t index_size = n_rows+1;
-
-  CS_MALLOC_HD(ms->e._row_index, n_rows+1, cs_lnum_t, alloc_mode);
-
-  for (cs_lnum_t ii = 0; ii < index_size; ii++)
-    ms->e._row_index[ii] = 0;
 
   for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
     cs_lnum_t ii = *edges_p++;
