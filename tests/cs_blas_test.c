@@ -34,7 +34,7 @@
 /* For the Intel MKL library, function prototypes are defined in mkl_cblas.h,
    with standard legacy C BLAS names */
 
-#elif defined(HAVE_MKL)
+#if defined(HAVE_MKL)
 #include <mkl_cblas.h>
 
 #elif defined(HAVE_ATLAS) || defined(HAVE_CBLAS)
