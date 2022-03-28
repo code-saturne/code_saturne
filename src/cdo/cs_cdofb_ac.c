@@ -1338,6 +1338,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
   cs_cdo_system_helper_t  *mom_sh = mom_eqb->system_helper;
   cs_iter_algo_t  *nl_algo = sc->nl_algo;
+  cs_param_nl_algo_t  nl_algo_type = nsp->sles_param->nl_algo_type;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START
@@ -1401,7 +1402,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   cs_timer_t  t_solve_start = cs_timer_time();
 
-  cs_iter_algo_reset(nl_algo);
+  cs_iter_algo_reset_nl(nl_algo_type, nl_algo);
 
   /* Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
@@ -1459,7 +1460,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   /* Check the convergence status and update the nl_algo structure related
    * to the convergence monitoring */
 
-  while (cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo_type,
+  while (cs_cdofb_navsto_nl_algo_cvg(nl_algo_type,
                                      sc->mass_flux_array_pre,
                                      sc->mass_flux_array,
                                      nl_algo) == CS_SLES_ITERATING) {
@@ -1535,18 +1536,13 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   }
 
-  if (nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_algo);
+  cs_iter_algo_post_check(__func__,
+                          mom_eqp->name,
+                          cs_param_get_nl_algo_label(nl_algo_type),
+                          nl_algo);
 
-  else {
-
-    assert(nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON);
-
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_algo);
-
+  if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
     cs_iter_algo_aa_free_arrays(nl_algo->context);
-
-  }
 
   /* Update pressure and the cell velocity */
 

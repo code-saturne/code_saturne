@@ -2915,7 +2915,7 @@ _voller_non_linearities(const cs_mesh_t              *mesh,
 
   /* Initialize the stopping criteria */
 
-  cs_iter_algo_reset(algo);
+  cs_iter_algo_reset_nl(v_model->nl_algo_type, algo);
 
   algo->normalization = sqrt(cs_cdo_blas_square_norm_pcsp(hkp1));
   if (algo->normalization < cs_math_zero_threshold)

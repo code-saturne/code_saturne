@@ -2076,7 +2076,7 @@ _tpf_compute(const cs_mesh_t              *mesh,
 
     /* Initialize the stopping criteria */
 
-    cs_iter_algo_reset(algo);
+    cs_iter_algo_reset_nl(mc->nl_algo_type, algo);
 
     algo->normalization = cs_cdo_blas_square_norm_pvsp(pg_kp1);
     algo->normalization += cs_cdo_blas_square_norm_pvsp(pl_kp1);

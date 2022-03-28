@@ -2561,6 +2561,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
   cs_iter_algo_t  *nl_algo = sc->nl_algo;
+  cs_param_nl_algo_t  nl_algo_type = nsp->sles_param->nl_algo_type;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START
@@ -2606,7 +2607,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   cs_timer_t  t_solve_start = cs_timer_time();
 
-  cs_iter_algo_reset(nl_algo);
+  cs_iter_algo_reset_nl(nl_algo_type, nl_algo);
 
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
@@ -2645,7 +2646,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /* Check the convergence status and update the nl_algo structure related
    * to the convergence monitoring */
 
-  while (cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo_type,
+  while (cs_cdofb_navsto_nl_algo_cvg(nl_algo_type,
                                      sc->mass_flux_array_pre,
                                      sc->mass_flux_array,
                                      nl_algo) == CS_SLES_ITERATING) {
@@ -2708,16 +2709,13 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   }
 
-  if (nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_algo);
+  cs_iter_algo_post_check(__func__,
+                          mom_eqp->name,
+                          cs_param_get_nl_algo_label(nl_algo_type),
+                          nl_algo);
 
-  else {
-
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_algo);
-
+  if (nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
     cs_iter_algo_aa_free_arrays(nl_algo->context);
-
-  }
 
   /* Now compute/update the velocity and pressure fields */
 
@@ -2884,6 +2882,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
   cs_iter_algo_t  *nl_algo = sc->nl_algo;
+  cs_param_nl_algo_t  nl_algo_type = nsp->sles_param->nl_algo_type;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START
@@ -2933,7 +2932,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   msles->u_f = mom_eqc->face_values; /* velocity DoFs at faces */
   msles->p_c = sc->pressure->val;    /* pressure DoFs at cells */
 
-  cs_iter_algo_reset(nl_algo);
+  cs_iter_algo_reset_nl(nl_algo_type, nl_algo);
 
   /* Solve the new system:
    * Update the value of mom_eqc->face_values and sc->pressure->val */
@@ -2967,7 +2966,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *   sc->mass_flux_array_pre -> flux at t^n= t^n,0 (= t^(n-1)
    *   sc->mass_flux_array     -> flux at t^n,1 (call to .._navsto_mass_flux */
 
-  cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo_type,
+  cs_cdofb_navsto_nl_algo_cvg(nl_algo_type,
                               sc->mass_flux_array_pre,
                               sc->mass_flux_array,
                               nl_algo);
@@ -3026,7 +3025,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     /* Check the convergence status and update the nl_algo structure related
      * to the convergence monitoring */
 
-    cs_cdofb_navsto_nl_algo_cvg(nsp->sles_param->nl_algo_type,
+    cs_cdofb_navsto_nl_algo_cvg(nl_algo_type,
                                 mass_flux_array_k,
                                 mass_flux_array_kp1,
                                 nl_algo);
@@ -3045,16 +3044,13 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   }
 
-  if (nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_PICARD)
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Picard", nl_algo);
+  cs_iter_algo_post_check(__func__,
+                          mom_eqp->name,
+                          cs_param_get_nl_algo_label(nl_algo_type),
+                          nl_algo);
 
-  else {
-
-    cs_iter_algo_post_check(__func__, mom_eqp->name, "Anderson", nl_algo);
-
+  if (nsp->sles_param->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
     cs_iter_algo_aa_free_arrays(nl_algo->context);
-
-  }
 
   /* Now compute/update the velocity and pressure fields */
 

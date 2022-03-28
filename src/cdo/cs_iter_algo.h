@@ -286,6 +286,19 @@ cs_iter_algo_update_cvg(cs_iter_algo_t         *ia);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reset a cs_iter_algo_t structure in case of a non-linear algorothm
+ *
+ * \param[in]       type   type of non-linear algorithm
+ * \param[in, out]  algo   pointer to a cs_iter_algo_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_iter_algo_reset_nl(cs_param_nl_algo_t   nl_algo_type,
+                      cs_iter_algo_t      *algo);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create a new cs_iter_algo_aa_t structure
  *
  * \param[in] aap             set of parameters for the Anderson acceleration
