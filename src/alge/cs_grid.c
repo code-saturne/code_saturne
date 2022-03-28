@@ -4444,6 +4444,9 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   const cs_lnum_t db_size = fine_grid->db_size;
   const cs_lnum_t db_stride = db_size*db_size;
 
+  const cs_lnum_t eb_size = fine_grid->eb_size;
+  const cs_lnum_t eb_stride = eb_size*eb_size;
+
   const cs_lnum_t f_n_rows = fine_grid->n_rows;
 
   const cs_lnum_t c_n_rows = coarse_grid->n_rows;
@@ -4583,7 +4586,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
 
   cs_lnum_t c_size = c_row_index[c_n_rows];
 
-  BFT_MALLOC(c_x_val, c_size, cs_real_t);
+  BFT_MALLOC(c_x_val, c_size*eb_stride, cs_real_t);
   BFT_MALLOC(c_col_id, c_size, cs_lnum_t);
 
   /* Assignment pass */
@@ -4643,7 +4646,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
   /* Values assignment pass */
 
   {
-    for (cs_lnum_t i = 0; i < c_size; i++)
+    for (cs_lnum_t i = 0; i < c_size*eb_stride; i++)
       c_x_val[i] = 0;
 
     for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
@@ -4667,13 +4670,16 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
               cs_lnum_t n_cols = c_row_index[i+1] - s_id;
               /* ids are sorted, so binary search possible */
               cs_lnum_t k = _l_id_binary_search(n_cols, j, c_col_id + s_id);
-              c_x_val[k + s_id] += f_x_val[jj_ind];
+              for (cs_lnum_t l = 0; l < eb_stride; l++)
+                c_x_val[(k + s_id)*eb_stride + l]
+                  += f_x_val[jj_ind*eb_stride + l];
             }
             else { /* i == j */
               for (cs_lnum_t kk = 0; kk < db_size; kk++) {
                 /* diagonal terms only */
+                /* Extra-diag block being isotropic, first entry suffices */
                 c_d_val[i*db_stride + db_size*kk + kk]
-                  += f_x_val[jj_ind];
+                  += f_x_val[jj_ind*eb_stride];
               }
             }
 
