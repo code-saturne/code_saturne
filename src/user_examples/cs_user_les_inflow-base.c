@@ -169,7 +169,7 @@ cs_user_les_inflow_update(const cs_zone_t  *zone,
  *
  * \param[in]       zone    pointer to associated boundary zone
  * \param[in, out]  vel_l   velocity a zone faces
- * \param[in, out]  rij_l   reynods stresses at zone faces
+ * \param[in, out]  rij_l   Reynolds stresses at zone faces
  * \param[in, out]  eps_l   reference turbulent dissipation
  */
 /*----------------------------------------------------------------------------*/
