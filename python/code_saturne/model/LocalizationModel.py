@@ -96,7 +96,8 @@ class Zone(object):
         if nature:
             if typeZone == 'VolumicZone' and type(nature) == str:
                 self._nature = self.defaultValues()['nature'].copy()
-                self._nature[nature] = "on"
+                for n in nature.split(':'):
+                    self._nature[n] = "on"
             else:
                 self._nature = nature
         else:
