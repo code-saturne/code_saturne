@@ -803,16 +803,18 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
       for (int m_type_idx = 0; m_type_idx < 3; m_type_idx++) {
 
-        cs_matrix_t  *m = cs_matrix_create(ms);
+        cs_matrix_t  *m = NULL;
 
         switch (m_type_idx) {
         case 0:
+          m = cs_matrix_create(ms);
           break;
         case 1:
 #if defined(HAVE_HYPRE)
           {
             int device_id = cs_get_device_id();
             int use_device = (device_id < 0) ? 0 : 1;
+            m = cs_matrix_create(ms);
             cs_matrix_set_type_hypre(m, use_device);
           }
 #else
@@ -822,6 +824,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
         case 2:
 #if defined(HAVE_PETSC)
           {
+            m = cs_matrix_create(ms);
             cs_matrix_set_type_petsc(m, 0);
           }
 #else
