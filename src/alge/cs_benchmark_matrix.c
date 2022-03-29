@@ -755,7 +755,7 @@ _matrix_check(int                          n_variants,
         }
 #endif
 
-#if defined(HAVE_HYPRE)
+#if defined(HAVE_PETSC)
         if (strcmp(v->external_type, "PETSc") == 0) {
           cs_matrix_set_type_petsc(m, NULL);
         }
