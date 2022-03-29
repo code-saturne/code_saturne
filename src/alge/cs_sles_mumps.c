@@ -359,7 +359,7 @@ _parall_msr_dmumps(int                   verbosity,
 
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
   const cs_halo_t  *halo = cs_matrix_get_halo(a);
-  const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(n_rows, halo);
+  const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(a);
 
   bool  have_perio = _have_perio(halo);
   CS_UNUSED(have_perio);
@@ -536,7 +536,7 @@ _parall_native_dmumps(int                   verbosity,
 
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
   const cs_halo_t  *halo = cs_matrix_get_halo(a);
-  const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(n_rows, halo);
+  const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(a);
 
   bool  have_perio = _have_perio(halo);
   CS_UNUSED(have_perio);
@@ -731,7 +731,7 @@ _parall_msr_sym_dmumps(int                   verbosity,
 
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
   const cs_halo_t  *halo = cs_matrix_get_halo(a);
-  const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(n_rows, halo);
+  const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(a);
 
   bool  have_perio = _have_perio(halo);
   CS_UNUSED(have_perio);        /* TODO */
@@ -1087,7 +1087,7 @@ _parall_msr_smumps(int                   verbosity,
 
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
   const cs_halo_t  *halo = cs_matrix_get_halo(a);
-  const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(n_rows, halo);
+  const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(a);
 
   bool  have_perio = _have_perio(halo);
   CS_UNUSED(have_perio);
@@ -1343,7 +1343,7 @@ _parall_msr_sym_smumps(int                   verbosity,
 
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
   const cs_halo_t  *halo = cs_matrix_get_halo(a);
-  const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(n_rows, halo);
+  const cs_gnum_t  *row_g_id = cs_matrix_get_block_row_g_id(a);
 
   bool  have_perio = _have_perio(halo);
   CS_UNUSED(have_perio);        /* TODO */

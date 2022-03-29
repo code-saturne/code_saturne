@@ -816,7 +816,7 @@ cs_sles_petsc_setup(void               *context,
                || (   strcmp(c->matype_r, MATAIJ) == 0
                    && cs_glob_n_ranks > 1))) {
 
-    const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(n_rows, halo);
+    const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(a);
 
     PetscInt *col_gid;
     const cs_lnum_t *a_row_index, *a_col_id;
@@ -895,7 +895,7 @@ cs_sles_petsc_setup(void               *context,
 
     assert(cs_mat_type != CS_MATRIX_NATIVE);
 
-    const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(n_rows, halo);
+    const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(a);
 
     MatCreate(PETSC_COMM_WORLD, &(sd->a));
     MatSetType(sd->a, c->matype_r);

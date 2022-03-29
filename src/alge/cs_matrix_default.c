@@ -136,6 +136,9 @@ static double _t_measure = 0.5;
 
 static cs_lnum_t  _row_num_size = 0;
 static cs_gnum_t  *_global_row_id = NULL;
+static const cs_gnum_t  *_global_row_id_l_range = NULL;
+static const cs_halo_t  *_global_row_id_halo = NULL;
+
 static cs_gnum_t  _l_range[2] = {0, 0};
 
 /* Pointer to default matrix structures
@@ -173,32 +176,51 @@ _initialize_api(void)
  * Build a global block row numbering.
  *
  * parameters:
- *   n_rows <-- associated number of local rows
- *   halo   <-- associated halo, or NULL
+ *   n_rows  <-- associated number of local rows
+ *   l_range <-- associated local range
+ *   halo    <-- associated halo, or NULL
  *----------------------------------------------------------------------------*/
 
 static void
-_build_block_row_g_id(cs_lnum_t         n_rows,
-                      const cs_halo_t  *halo)
+_update_block_row_g_id(cs_lnum_t         n_rows,
+                       const cs_gnum_t  *l_range,
+                       const cs_halo_t  *halo)
 {
-  cs_lnum_t _n_rows = n_rows;
+  cs_lnum_t _n_cols_ext = n_rows;
 
-  _row_num_size = n_rows;
   if (halo != NULL) {
     assert(n_rows == halo->n_local_elts);
-    _n_rows += halo->n_elts[CS_HALO_EXTENDED];
+    _n_cols_ext += halo->n_elts[CS_HALO_EXTENDED];
   }
 
-  BFT_REALLOC(_global_row_id, _n_rows, cs_gnum_t);
+  if (_n_cols_ext > _row_num_size) {
+    BFT_FREE(_global_row_id);
+    BFT_MALLOC(_global_row_id, _n_cols_ext, cs_gnum_t);
+    _row_num_size = _n_cols_ext;
+  }
 
-  cs_range_set_define(NULL,
-                      halo,
-                      n_rows,
-                      false,
-                      0, /* tr_ignore */
-                      0, /* g_id_base */
-                      _l_range,
-                      _global_row_id);
+  if (l_range == NULL) {
+    cs_range_set_define(NULL,
+                        halo,
+                        n_rows,
+                        false,
+                        0, /* tr_ignore */
+                        0, /* g_id_base */
+                        _l_range,
+                        _global_row_id);
+  }
+  else {
+    cs_gnum_t _n_rows = n_rows;
+    for (cs_gnum_t j = 0; j < _n_rows; j++)
+      _global_row_id[j] = l_range[0] + j;
+    cs_halo_sync_untyped(halo,
+                         CS_HALO_STANDARD,
+                         sizeof(cs_gnum_t),
+                         _global_row_id);
+  }
+
+  _global_row_id_l_range = l_range;
+  _global_row_id_halo = halo;
 }
 
 /*----------------------------------------------------------------------------
@@ -303,7 +325,7 @@ _create_assembler(int  coupling_id)
   /* Global cell ids, based on range/scan */
 
   if (_global_row_id == NULL)
-    _build_block_row_g_id(n_rows, m->halo);
+    _update_block_row_g_id(n_rows, NULL, m->halo);
 
   const cs_gnum_t *r_g_id = _global_row_id;
   cs_gnum_t l_range[2] = {_l_range[0], _l_range[1]};
@@ -506,7 +528,7 @@ cs_matrix_update_mesh(void)
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   if (_global_row_id != NULL)
-    _build_block_row_g_id(mesh->n_cells, mesh->halo);
+    _update_block_row_g_id(mesh->n_cells, NULL, mesh->halo);
 
   for (cs_matrix_type_t t = 0; t < CS_MATRIX_N_TYPES; t++) {
 
@@ -857,30 +879,36 @@ cs_matrix_default_set_type(cs_matrix_fill_type_t  fill_type,
   _default_type[fill_type] = type;
 }
 
-/*----------------------------------------------------------------------------
- * Return a (0-based) global block row numbering.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a (0-based) global block row numbering for a given matrix.
  *
- * The numbering is built if not previously present, and returned otherwise.
+ * The numbering is built or updated if not previously used, or if the
+ * previous call considered a differeent matrix, and is simply returned
+ * otherwise. In other words, this works as a matrix global numbering cache.
  *
- * Currently, the function only handles one n_rows/halo combination, and does
- * not check for consistency.
+ * \param[in]  m  associated matrix
  *
- * parameters:
- *   n_rows <-- associated number of local rows
- *   halo   <-- associated halo, or NULL
- *
- * returns:
- *   pointer to requested global numbering
- *----------------------------------------------------------------------------*/
+ * \return  pointer to requested global numbering
+ */
+/*----------------------------------------------------------------------------*/
 
 const cs_gnum_t *
-cs_matrix_get_block_row_g_id(cs_lnum_t         n_rows,
-                             const cs_halo_t  *halo)
+cs_matrix_get_block_row_g_id(cs_matrix_t  *m)
 {
+  const cs_lnum_t  n_rows = m->n_rows;
+  const cs_lnum_t  n_cols_ext = m->n_cols_ext;
+  const cs_halo_t  *halo = m->halo;
+  const cs_gnum_t *l_range = NULL;
+
+  if (m->assembler != NULL)
+    l_range = cs_matrix_assembler_get_l_range(m->assembler);
+
   const cs_gnum_t  *g_row_num = _global_row_id;
 
-  if (_global_row_id == NULL || n_rows > _row_num_size) {
-    _build_block_row_g_id(n_rows, halo);
+  if (   _global_row_id == NULL || n_cols_ext > _row_num_size
+      || l_range != _global_row_id_l_range || halo != _global_row_id_halo) {
+    _update_block_row_g_id(n_rows, l_range, halo);
     g_row_num = _global_row_id;
   }
 

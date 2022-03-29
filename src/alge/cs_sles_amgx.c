@@ -557,28 +557,12 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
   cs_lnum_t nnz = row_index[n_rows];
   CS_MALLOC_HD(col_gid, nnz, cs_gnum_t, amode);
 
-  const cs_gnum_t *grow_id = NULL;
-  cs_gnum_t *_grow_id = NULL;
-
-  const cs_gnum_t *l_range = cs_matrix_get_l_range(a);
-  if (l_range != NULL) {
-    const int n_cols_ext = cs_matrix_get_n_columns(a);
-    const cs_gnum_t _n_rows = n_rows;
-    BFT_MALLOC(_grow_id, n_cols_ext, cs_gnum_t);
-    for (cs_gnum_t j = 0; j < _n_rows; j++)
-      _grow_id[j] = l_range[0] + j;
-    cs_halo_sync_untyped(halo, CS_HALO_STANDARD, sizeof(cs_gnum_t), _grow_id);
-    grow_id = _grow_id;
-  }
-  else
-    grow_id = cs_matrix_get_block_row_g_id(n_rows, halo);
+  const cs_gnum_t *grow_id = cs_matrix_get_block_row_g_id(a);
 
   for (cs_lnum_t j = 0; j < n_rows; j++) {
     for (cs_lnum_t i = a_row_index[j]; i < a_row_index[j+1]; ++i)
       col_gid[i] = grow_id[a_col_id[i]];
   }
-
-  BFT_FREE(_grow_id);
 
   /* Matrix */
 

@@ -975,7 +975,7 @@ _set_coeffs_ij_db(cs_matrix_t        *matrix,
 {
   const cs_lnum_t  n_rows = matrix->n_rows;
 
-  const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(n_rows, matrix->halo);
+  const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
   const bool have_diag = (xa != NULL) ? true : false;
 
   MPI_Comm comm = cs_glob_mpi_comm;
@@ -1097,7 +1097,7 @@ _set_coeffs_ij_b(cs_matrix_t        *matrix,
 {
   const cs_lnum_t  n_rows = matrix->n_rows;
 
-  const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(n_rows, matrix->halo);
+  const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
   const bool have_diag = (xa != NULL) ? true : false;
 
   MPI_Comm comm = cs_glob_mpi_comm;
@@ -1237,7 +1237,7 @@ _set_coeffs(cs_matrix_t        *matrix,
   cs_lnum_t  n_rows = matrix->n_rows;
   cs_lnum_t  n_cols_ext = matrix->n_cols_ext;
 
-  const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(n_rows, matrix->halo);
+  const cs_gnum_t *g_id = cs_matrix_get_block_row_g_id(matrix);
   const bool have_diag = (xa != NULL) ? true : false;
 
   MPI_Comm comm = cs_glob_mpi_comm;

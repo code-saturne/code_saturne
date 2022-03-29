@@ -261,25 +261,22 @@ void
 cs_matrix_default_set_type(cs_matrix_fill_type_t  fill_type,
                            cs_matrix_type_t       type);
 
-/*----------------------------------------------------------------------------
- * Return a (0-based) global block row numbering.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a (0-based) global block row numbering for a given matrix.
  *
- * The numbering is built if not previously present, and returned otherwise.
+ * The numbering is built or updated if not previously used, or if the
+ * previous call considered a differeent matrix, and is simply returned
+ * otherwise. In other words, this works as a matrix global numbering cache.
  *
- * Currently, the function only handles one n_rows/halo combination, and does
- * not check for consistency.
+ * \param[in]  m  associated matrix
  *
- * parameters:
- *   n_rows <-- associated number of local rows
- *   halo   <-- associated halo, or NULL
- *
- * returns:
- *   pointer to requested global numbering
- *----------------------------------------------------------------------------*/
+ * \return  pointer to requested global numbering
+ */
+/*----------------------------------------------------------------------------*/
 
 const cs_gnum_t *
-cs_matrix_get_block_row_g_id(cs_lnum_t         n_rows,
-                             const cs_halo_t  *halo);
+cs_matrix_get_block_row_g_id(cs_matrix_t  *m);
 
 /*----------------------------------------------------------------------------*/
 /*!
