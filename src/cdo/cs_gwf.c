@@ -1824,7 +1824,7 @@ _tpf_updates(const cs_mesh_t             *mesh,
 
     /* Interpolate the pressure in the gaseous phase at cell centers */
 
-    cs_reco_pv_at_cell_centers(connect->c2v, quant, mc->g_pressure->val,
+    cs_reco_pv_at_cell_centers(connect->c2v, quant, g_pr,
                                mc->g_cell_pressure);
     break;
 
@@ -1923,12 +1923,10 @@ _check_nl_tpf_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON && algo->n_algo_iter > 0) {
 
-    cs_iter_algo_param_aa_t  aap = cs_iter_algo_get_anderson_param(algo);
-
     /* pg_* arrays gather pg and pl (this is done during the solve step) */
 
     cs_iter_algo_aa_update(algo,
-                           pg_cur_iter,
+                           pg_cur_iter, /* updated during the process */
                            pg_pre_iter,
                            cs_cdo_blas_dotprod_2pvsp,
                            cs_cdo_blas_square_norm_2pvsp);
@@ -1988,6 +1986,211 @@ _check_nl_tpf_cvg(cs_param_nl_algo_t        nl_algo_type,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the new (unsteady) state for the groundwater flows module.
+ *         Case of (miscible or immiscible) two-phase flows in porous media
+ *         with a non-linear resolution relying on the Picard algorithm
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ * \param[in, out] mc         pointer to the casted model context
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_tpf_picard_compute(const cs_mesh_t              *mesh,
+                    const cs_cdo_connect_t       *connect,
+                    const cs_cdo_quantities_t    *cdoq,
+                    const cs_time_step_t         *time_step,
+                    cs_gwf_two_phase_t           *mc)
+{
+  bool cur2prev = false;
+  cs_iter_algo_t  *algo = mc->nl_algo;
+  assert(algo != NULL);
+
+  cs_iter_algo_reset_nl(mc->nl_algo_type, algo);
+
+  /* A first resolution has been done followed by an update */
+
+  cs_real_t  *pg_kp1 = NULL, *pl_kp1 = NULL;  /* at ^{n+1,k+1} */
+  cs_real_t  *pg_k = NULL, *pl_k = NULL;      /* at ^{n+1,k} */
+
+  const size_t  vsize = cdoq->n_vertices*sizeof(cs_real_t);
+
+  BFT_MALLOC(pg_k, 2*cdoq->n_vertices, cs_real_t);
+  pl_k = pg_k + cdoq->n_vertices;
+
+  memcpy(pg_k, mc->g_pressure->val_pre, vsize);
+  memcpy(pl_k, mc->l_pressure->val_pre, vsize);
+
+  pg_kp1 = mc->g_pressure->val;
+  pl_kp1 = mc->l_pressure->val;
+
+  /* Set the normalization factor */
+
+  algo->normalization = cs_cdo_blas_square_norm_pvsp(pg_k);
+  algo->normalization += cs_cdo_blas_square_norm_pvsp(pl_k);
+  algo->normalization = sqrt(algo->normalization);
+  if (algo->normalization < cs_math_zero_threshold)
+    algo->normalization = 1.0;
+
+  cs_log_printf(CS_LOG_DEFAULT, "%s: normalization=%6.4e\n",
+                __func__, algo->normalization);
+
+  /* Main non-linear loop */
+
+  while (_check_nl_tpf_cvg(mc->nl_algo_type,
+                           pg_k, pg_kp1, pl_k, pl_kp1,
+                           algo) == CS_SLES_ITERATING) {
+
+
+    memcpy(pg_k, pg_kp1, vsize);
+    memcpy(pl_k, pl_kp1, vsize);
+
+    /* Build and solve the linear system related to the coupled system of
+       equations. First call: current --> previous and then no operation */
+
+    cs_equation_system_solve(cur2prev, mc->system);
+
+    /* Get the soil state up to date with the last compute values for the
+       liquid and gas pressures */
+
+    /* relaxation */
+
+    const double  relax = 0.;
+    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++) {
+
+      pg_kp1[i] = (1 - relax)*pg_kp1[i] + relax*pg_k[i];
+      pl_kp1[i] = (1 - relax)*pl_kp1[i] + relax*pl_k[i];
+
+    }
+
+    cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
+
+  } /* Until convergence */
+
+  /* If something wrong happens, write a message in the listing */
+
+  cs_iter_algo_post_check(__func__,
+                          mc->system->param->name,
+                          cs_param_get_nl_algo_label(mc->nl_algo_type),
+                          algo);
+
+  /* Free temporary arrays and structures */
+
+  BFT_FREE(pg_k);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the new (unsteady) state for the groundwater flows module.
+ *         Case of (miscible or immiscible) two-phase flows in porous media
+ *         with a non-linear resolution relying on the Picard algorithm
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ * \param[in, out] mc         pointer to the casted model context
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_tpf_anderson_compute(const cs_mesh_t              *mesh,
+                      const cs_cdo_connect_t       *connect,
+                      const cs_cdo_quantities_t    *cdoq,
+                      const cs_time_step_t         *time_step,
+                      cs_gwf_two_phase_t           *mc)
+{
+  bool  cur2prev = false;
+  cs_iter_algo_t  *algo = mc->nl_algo;
+  assert(algo != NULL);
+
+  cs_iter_algo_reset_nl(mc->nl_algo_type, algo);
+
+  /* A first resolution has been done followed by an update */
+
+  cs_real_t  *pg_kp1 = NULL, *pl_kp1 = NULL;  /* at ^{n+1,k+1} */
+  cs_real_t  *pg_k = NULL, *pl_k = NULL;      /* at ^{n+1,k} */
+
+  const size_t  vsize = cdoq->n_vertices*sizeof(cs_real_t);
+
+  BFT_MALLOC(pg_k, 2*cdoq->n_vertices, cs_real_t);
+  pl_k = pg_k + cdoq->n_vertices;
+
+  memcpy(pg_k, mc->g_pressure->val_pre, vsize);
+  memcpy(pl_k, mc->l_pressure->val_pre, vsize);
+
+  /* One needs only one array gathering the liquid and gas pressures */
+
+  BFT_MALLOC(pg_kp1, 2*cdoq->n_vertices, cs_real_t);
+  pl_kp1 = pg_kp1 + cdoq->n_vertices;
+
+  memcpy(pg_kp1, mc->g_pressure->val, vsize);
+  memcpy(pl_kp1, mc->l_pressure->val, vsize);
+
+  /* Set the normalization factor */
+
+  algo->normalization = cs_cdo_blas_square_norm_pvsp(pg_k);
+  algo->normalization += cs_cdo_blas_square_norm_pvsp(pl_k);
+  algo->normalization = sqrt(algo->normalization);
+  if (algo->normalization < cs_math_zero_threshold)
+    algo->normalization = 1.0;
+
+  /* Main non-linear loop */
+
+  while (_check_nl_tpf_cvg(mc->nl_algo_type,
+                           pg_k, pg_kp1, pl_k, pl_kp1,
+                           algo) == CS_SLES_ITERATING) {
+
+    memcpy(pg_k, pg_kp1, vsize);
+    memcpy(pl_k, pl_kp1, vsize);
+
+    /* Update the variables related to the groundwater flow system.
+     * In case of an Anderson acceleration, pg_kp1 and pl_kp1 may be
+     * updated */
+
+    if (algo->n_algo_iter >= mc->anderson_param.starting_iter) {
+
+      memcpy(mc->g_pressure->val, pg_kp1, vsize);
+      memcpy(mc->l_pressure->val, pl_kp1, vsize);
+
+    }
+
+    cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
+
+    /* Build and solve the linear system related to the coupled system of
+       equations. First call: current --> previous and then no operation */
+
+    cs_equation_system_solve(cur2prev, mc->system);
+
+    memcpy(pg_kp1, mc->g_pressure->val, vsize);
+    memcpy(pl_kp1, mc->l_pressure->val, vsize);
+
+  } /* Until convergence */
+
+  /* Get the soil state up to date with the last compute values for the
+     liquid and gas pressures */
+
+  cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
+
+  /* If something wrong happens, write a message in the listing */
+
+  cs_iter_algo_post_check(__func__,
+                          mc->system->param->name,
+                          cs_param_get_nl_algo_label(mc->nl_algo_type),
+                          algo);
+
+  /* Free temporary arrays and structures */
+
+  BFT_FREE(pg_k);
+  BFT_FREE(pg_kp1);
+  cs_iter_algo_aa_free_arrays(algo->context);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the new (unsteady) state for the groundwater flows module.
  *         Case of (miscible or immiscible) two-phase flows in porous media.
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
@@ -2028,106 +2231,30 @@ _tpf_compute(const cs_mesh_t              *mesh,
 
   bool cur2prev = true;
 
-  if (mc->nl_algo_type == CS_PARAM_NL_ALGO_NONE) { /* Linearized variant */
+  /* Build and solve the linear system related to the coupled system of
+   * equations. By default, a current to previous operation is performed so
+   * that prev <-- n and cur <-- n+1,k=1 (the first guess for the next time
+   * step) */
 
-    /* Build and solve the linear system related to the coupled system of
-       equations. By default, a current to previous operation is performed */
+  cs_equation_system_solve(cur2prev, mc->system);
 
-    cs_equation_system_solve(cur2prev, mc->system);
+  /* Update the variables related to the groundwater flow system */
 
-    /* Update the variables related to the groundwater flow system */
+  cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
 
-    cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
+  switch (mc->nl_algo_type) {
 
+  case CS_PARAM_NL_ALGO_PICARD:
+    _tpf_picard_compute(mesh, connect, cdoq, time_step, mc);
+    break;
+
+  case CS_PARAM_NL_ALGO_ANDERSON:
+    _tpf_anderson_compute(mesh, connect, cdoq, time_step, mc);
+    break;
+
+  default:
+    break; /* Nothing else to do */
   }
-  else { /* Non-linear variant */
-
-    const size_t  vsize = cdoq->n_vertices*sizeof(cs_real_t);
-
-    cs_iter_algo_t  *algo = mc->nl_algo;
-
-    assert(algo != NULL);
-
-    /* Retrieve the current values for the gas and liquid pressures */
-
-    cs_real_t  *pg_kp1 = NULL, *pl_kp1 = NULL;  /* at ^{n+1,k+1} */
-    cs_real_t  *pg_k = NULL, *pl_k = NULL;      /* at ^{n+1,k} */
-
-    BFT_MALLOC(pg_k, 2*cdoq->n_vertices, cs_real_t);
-    pl_k = pg_k + cdoq->n_vertices;
-
-    if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
-
-      /* One needs only one array */
-
-      BFT_MALLOC(pg_kp1, 2*cdoq->n_vertices, cs_real_t);
-      pl_kp1 = pg_kp1 + cdoq->n_vertices;
-
-      memcpy(pg_kp1, mc->g_pressure->val, vsize);
-      memcpy(pl_kp1, mc->l_pressure->val, vsize);
-
-    }
-    else {
-
-      pg_kp1 = mc->g_pressure->val;
-      pl_kp1 = mc->l_pressure->val;
-
-    }
-
-    /* Initialize the stopping criteria */
-
-    cs_iter_algo_reset_nl(mc->nl_algo_type, algo);
-
-    algo->normalization = cs_cdo_blas_square_norm_pvsp(pg_kp1);
-    algo->normalization += cs_cdo_blas_square_norm_pvsp(pl_kp1);
-    algo->normalization = sqrt(algo->normalization);
-    if (algo->normalization < cs_math_zero_threshold)
-      algo->normalization = 1.0;
-
-    do {
-
-      memcpy(pg_k, pg_kp1, vsize);
-      memcpy(pl_k, pl_kp1, vsize);
-
-      /* Build and solve the linear system related to the coupled system of
-         equations. First call: current --> previous and then no operation */
-
-      cs_equation_system_solve(cur2prev, mc->system);
-
-      if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
-
-        memcpy(pg_kp1, mc->g_pressure->val, vsize);
-        memcpy(pl_kp1, mc->l_pressure->val, vsize);
-
-      }
-
-      /* Update the variables related to the groundwater flow system */
-
-      cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
-
-      cur2prev = false;
-
-    } /* Until convergence */
-    while (_check_nl_tpf_cvg(mc->nl_algo_type,
-                             pg_k, pg_kp1, pl_k, pl_kp1,
-                             algo) == CS_SLES_ITERATING);
-
-    cs_iter_algo_post_check(__func__,
-                            mc->system->param->name,
-                            cs_param_get_nl_algo_label(mc->nl_algo_type),
-                            algo);
-
-    /* Free temporary arrays and structures */
-
-    BFT_FREE(pg_k);
-    if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
-
-      BFT_FREE(pg_kp1);
-      cs_iter_algo_aa_free_arrays(algo->context);
-
-    }
-
-  } /* Non-linear algo. is activated */
 }
 
 /*----------------------------------------------------------------------------*/

@@ -92,6 +92,7 @@ BEGIN_C_DECLS
  *        to a scalar-valued unsteady convection/diffusion/reaction equation
  *        with a CDO-Vb scheme.
  *
+ * \param[in]      cur2prev     do a "current to previous" operation ?
  * \param[in]      n_eqs        number of equations
  * \param[in, out] blocks       array of the core members for an equation
  * \param[in, out] scalsys      pointer to a cs_cdovb_scalsys_t structure
@@ -101,7 +102,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_cdovb_scalsys_build_t)(int                            n_equations,
+(cs_cdovb_scalsys_build_t)(bool                           cur2prev,
+                           int                            n_equations,
                            cs_equation_core_t           **blocks,
                            cs_cdovb_scalsys_t            *scalsys,
                            cs_field_t                   **fields,
@@ -482,6 +484,7 @@ _solve_mumps(int                                 n_eqs,
  *        to a scalar-valued unsteady convection/diffusion/reaction equation
  *        with a CDO-Vb scheme.
  *
+ * \param[in]      cur2prev  do a "current to previous" operation ?
  * \param[in]      n_eqs     number of equations
  * \param[in, out] blocks    array of the core members for an equation
  * \param[in, out] scalsys   pointer to a structure cast on-the-fly
@@ -491,7 +494,8 @@ _solve_mumps(int                                 n_eqs,
 /*----------------------------------------------------------------------------*/
 
 static void
-_cdovb_scalsys_build_implicit(int                            n_equations,
+_cdovb_scalsys_build_implicit(bool                           cur2prev,
+                              int                            n_equations,
                               cs_equation_core_t           **blocks,
                               cs_cdovb_scalsys_t            *scalsys,
                               cs_field_t                   **fields,
@@ -522,7 +526,8 @@ _cdovb_scalsys_build_implicit(int                            n_equations,
       cs_equation_core_t  *block_ij = blocks[ij];
 
       const cs_equation_param_t  *eqp = block_ij->param;
-      const cs_real_t  *f_val = fields[j_eq]->val;
+      const cs_real_t  *f_val =
+        cur2prev ? fields[j_eq]->val : fields[j_eq]->val_pre;
 
       cs_equation_builder_t  *eqb = block_ij->builder;
       cs_cdovb_scaleq_t  *eqc = block_ij->scheme_context;
@@ -939,7 +944,7 @@ cs_cdovb_scalsys_solve_implicit(bool                           cur2prev,
   /* Build the coupled system of equations */
   /* ------------------------------------- */
 
-  scalsys->build(n_equations, blocks, scalsys, fields, sh);
+  scalsys->build(cur2prev, n_equations, blocks, scalsys, fields, sh);
 
   /* Reset builder structures and operate a current to previous op. if needed */
 
