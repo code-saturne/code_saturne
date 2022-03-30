@@ -1270,7 +1270,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
   BFT_FREE(mb->vertex_coords);
 
   if (mesh->have_r_gen)
-    mesh->vtx_r_gen = cs_all_to_all_copy_array(d,
+    mesh->vtx_r_gen = cs_all_to_all_copy_array(dv,
                                                CS_CHAR,
                                                1,
                                                true,  /* reverse */

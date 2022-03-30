@@ -51,7 +51,6 @@
 #include "bft_printf.h"
 
 #include "fvm_io_num.h"
-#include "fvm_triangulate.h"
 
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -96,6 +95,7 @@ typedef struct {
 
   cs_lnum_t    *face_vertices;     /* current triangle vertices list */
   cs_lnum_2_t  *e2v;               /* edge to vertices */
+  cs_lnum_t    *e2f;               /* edge to face (first face) */
 
   cs_lnum_t     n_edges;           /* number of edges */
   cs_lnum_t     n_edges_max;       /* Maximum number of edges */
@@ -599,12 +599,14 @@ _merge_cells(cs_mesh_t       *m,
 /*!
  * \brief Create face merge state structure.
  *
+ * \param[in]  need_e2f  true if edge to faces array is needed.
+ *
  * \return  face merge helper state structure
  */
 /*----------------------------------------------------------------------------*/
 
 static  cs_mesh_face_merge_state_t *
-_face_merge_state_create(void)
+_face_merge_state_create(bool need_e2f)
 {
   cs_mesh_face_merge_state_t *s;
   BFT_MALLOC(s, 1, cs_mesh_face_merge_state_t);
@@ -616,6 +618,10 @@ _face_merge_state_create(void)
 
   BFT_MALLOC(s->face_vertices, s->n_vertices_max, cs_lnum_t);
   BFT_MALLOC(s->e2v, s->n_edges_max, cs_lnum_2_t);
+  if (need_e2f)
+    BFT_MALLOC(s->e2f, s->n_edges_max, cs_lnum_t);
+  else
+    s->e2f = NULL;
 
   return s;
 }
@@ -636,6 +642,7 @@ _face_merge_state_destroy(cs_mesh_face_merge_state_t  **s)
 
     BFT_FREE(_s->face_vertices);
     BFT_FREE(_s->e2v);
+    BFT_FREE(_s->e2f);
 
     BFT_FREE(*s);
   }
@@ -662,6 +669,32 @@ _face_merge_state_remove_edge(cs_mesh_face_merge_state_t  *s,
 
   s->e2v[edge_id][0] = s->e2v[i][0];
   s->e2v[edge_id][1] = s->e2v[i][1];
+
+  s->n_edges -= 1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Remove edge from face merge state structure with edge to face info.
+ *
+ * \param[in, out]  s        face merge state structure
+ * \param[in, out]  edge_id  if of edge to remove
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_face_merge_state_remove_edge_e2f(cs_mesh_face_merge_state_t  *s,
+                                  cs_lnum_t                    edge_id)
+{
+  assert(edge_id < s->n_edges);
+
+  /* Swap with last */
+
+  cs_lnum_t i = s->n_edges - 1;
+
+  s->e2v[edge_id][0] = s->e2v[i][0];
+  s->e2v[edge_id][1] = s->e2v[i][1];
+  s->e2f[edge_id] = s->e2f[i];
 
   s->n_edges -= 1;
 }
@@ -764,6 +797,7 @@ _build_merged_face(cs_lnum_t                    n_faces,
     _face_merge_state_remove_edge(s, 0);
 
     while (s->n_edges > 0) {
+      bool matched = false;
       for (cs_lnum_t i = 0; i < s->n_edges; i++) {
         if (s->e2v[i][0] == s->face_vertices[s->n_vertices-1]) {
           s->n_vertices += 1;
@@ -773,9 +807,14 @@ _build_merged_face(cs_lnum_t                    n_faces,
           }
           s->face_vertices[s->n_vertices - 1] = s->e2v[i][1];
           _face_merge_state_remove_edge(s, i);
+          matched = true;
           break;
         }
       }
+      if (matched == false)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("%s: %d edges do not constitute a closed contour."),
+                  __func__, (int)n_faces);
     }
 
   }
@@ -921,7 +960,7 @@ _merge_i_faces(cs_mesh_t       *m,
 
   i_face_vtx_idx[0] = 0;
 
-  cs_mesh_face_merge_state_t *s = _face_merge_state_create();
+  cs_mesh_face_merge_state_t *s = _face_merge_state_create(false);
 
   cs_lnum_t n_s_f_max = 0;
   short int *f_orient = NULL;
@@ -1053,6 +1092,655 @@ _merge_i_faces(cs_mesh_t       *m,
   BFT_FREE(n2o);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Filter equivalence info for boundary faces.
+ *
+ * Boundary faces of a same cell can only be merged if joined by an edge
+ * of maximum vertex level for that face. Thi topological criterion allows
+ * avoiding merging sub-faces from different original faces.
+ *
+ * \param[in]       n_faces      number of faces to filter
+ * \param[in]       face_ids     ids of faces to filter
+ * \param[in]       f2v_idx      face->vertices index
+ * \param[in]       f2v_lst      face->vertices connectivity
+ * \param[in]       vtx_lv       vertex level
+ * \param[in, out]  face_equiv   face equivalence info (face ids in,
+ *                               lowest merged face id out)
+ * \param[in, out]  s            face merge state helper structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_filter_b_face_equiv(cs_lnum_t                    n_faces,
+                     cs_lnum_t                    face_ids[],
+                     cs_lnum_t                    f2v_idx[],
+                     cs_lnum_t                    f2v_lst[],
+                     char                         vtx_lv[],
+                     cs_lnum_t                    face_equiv[],
+                     cs_mesh_face_merge_state_t  *s)
+{
+  s->n_edges = 0;
+  s->n_vertices = 0;
+
+  /* Determine reference level from adjacent vertex with
+     highest generation */
+
+  char lv_min = 127;
+  char lv_max = 0;
+
+  for (cs_lnum_t f_i = 0; f_i < n_faces; f_i++) {
+    cs_lnum_t f_id = face_ids[f_i];
+    cs_lnum_t s_id = f2v_idx[f_id];
+    cs_lnum_t e_id = f2v_idx[f_id+1];
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+      char lv = vtx_lv[f2v_lst[i]];
+      if (lv > lv_max)
+        lv_max = lv;
+      else if (lv < lv_min)
+        lv_min = lv;
+    }
+  }
+
+  if (lv_min == lv_max)
+    return;
+
+  /* Loop over cell's faces */
+
+  for (cs_lnum_t f_i = 0; f_i < n_faces; f_i++) {
+
+    cs_lnum_t f_id = face_ids[f_i];
+
+    cs_lnum_t s_id = f2v_idx[f_id];
+    cs_lnum_t e_id = f2v_idx[f_id+1];
+    cs_lnum_t n_f_vtx = e_id - s_id;
+
+    cs_lnum_t e_vtx[2];
+
+    /* Check if one of the face's edges can be merged */
+
+    for (cs_lnum_t i = 0; i < n_f_vtx; i++) {
+
+      e_vtx[0] = f2v_lst[s_id + i];
+      e_vtx[1] = f2v_lst[s_id + (i+1)%n_f_vtx];
+
+      /* If edge is not of maximum level, it cannot join
+         2 sub-faces */
+
+      if (vtx_lv[e_vtx[0]] != lv_max || vtx_lv[e_vtx[1]] != lv_max)
+        continue;
+
+      /* Compare to edges list: add if not present, cancel if present */
+
+      bool insert = true;
+
+      for (cs_lnum_t j = 0; j < s->n_edges; j++) {
+        /* If present, must be in opposite direction */
+        if (e_vtx[1] == s->e2v[j][0] && e_vtx[0] == s->e2v[j][1]) {
+          cs_lnum_t f_id_eq = s->e2f[j];
+          cs_lnum_t eq_0 = face_equiv[f_id_eq];
+          cs_lnum_t eq_1 = face_equiv[f_id];
+          cs_lnum_t eq_lo = CS_MIN(eq_0, eq_1);
+          for (cs_lnum_t k = 0; k < n_faces; k++) {
+            cs_lnum_t l = face_ids[k];
+            if (face_equiv[l] == eq_0 || face_equiv[l] == eq_1)
+              face_equiv[l] = eq_lo;
+          }
+          //_propagate_equiv(f_id, f_id_eq, face_equiv);
+          /* Remove from queue */
+          insert = false;
+          _face_merge_state_remove_edge_e2f(s, j);
+          break;
+        }
+      }
+
+      if (insert) {
+        if (s->n_edges >= s->n_edges_max) {
+          s->n_edges_max *= 2;
+          BFT_REALLOC(s->e2v, s->n_edges_max, cs_lnum_2_t);
+          BFT_REALLOC(s->e2f, s->n_edges_max, cs_lnum_t);
+        }
+        cs_lnum_t j = s->n_edges;
+        s->e2v[j][0] = e_vtx[0];
+        s->e2v[j][1] = e_vtx[1];
+        s->e2f[j] = f_id;
+        s->n_edges += 1;
+      }
+
+    }
+
+  }
+
+  s->n_edges = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build boundary faces equivalence array.
+ *
+ * The caller is reqponsible for freeing the b_f_o2n array.
+ *
+ * \param[in, out]  m        mesh
+ * \param[in]       c_flag   0 fur unchanged cells, > 0 for coarsened ones
+ * \param[out]      b_f_o2n  face old to new renumbering
+ *
+ * return  number of new interior faces
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t
+_b_faces_equiv(cs_mesh_t  *m,
+               const int   c_flag[],
+               cs_lnum_t  *b_f_o2n[])
+{
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  /* Initialize arrays */
+
+  cs_lnum_t  *_b_f_o2n;
+  BFT_MALLOC(_b_f_o2n, n_b_faces, cs_lnum_t);
+
+# pragma omp for
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
+    _b_f_o2n[f_id] = f_id;
+
+  /* Build cell->faces connectivity to group associated faces */
+
+  cs_adjacency_t *c2f = cs_mesh_adjacency_c2f_boundary(m);
+
+  cs_mesh_face_merge_state_t *s = _face_merge_state_create(true);
+
+  /* Now filter build faces equivalence */
+
+  for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
+
+    cs_lnum_t s_id = c2f->idx[c_id];
+    cs_lnum_t e_id = c2f->idx[c_id+1];
+
+    if ((c_flag[c_id] > 0) && (e_id - s_id > 1))
+      _filter_b_face_equiv(e_id - s_id,
+                           c2f->ids + s_id,
+                           m->b_face_vtx_idx,
+                           m->b_face_vtx_lst,
+                           m->vtx_r_gen,
+                           _b_f_o2n,
+                           s);
+
+  }
+
+  _face_merge_state_destroy(&s);
+
+  cs_adjacency_destroy(&c2f);
+
+  /* Now compact renumbering array */
+
+  cs_lnum_t n_b_f_new = 0;
+  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+    if (_b_f_o2n[i] == i) {
+      _b_f_o2n[i] = n_b_f_new;
+      n_b_f_new += 1;
+    }
+    else {
+      assert(_b_f_o2n[i] < i);
+      _b_f_o2n[i] = _b_f_o2n[_b_f_o2n[i]];
+    }
+  }
+
+  *b_f_o2n = _b_f_o2n;
+
+  return n_b_f_new;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Merge boundary faces based on renumbering array.
+ *
+ * \param[in, out]  m      mesh
+ * \param[in]       n_new  new number of faces
+ * \param[in]       f_o2n  face old to new renumbering
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_merge_b_faces(cs_mesh_t       *m,
+               cs_lnum_t        n_new,
+               const cs_lnum_t  f_o2n[])
+{
+  const cs_lnum_t n_old = m->n_b_faces;
+
+  cs_lnum_t *n2o_idx = NULL, *n2o = NULL;
+  _build_n2o_indexed(n_old, n_new, f_o2n, &n2o_idx, &n2o);
+
+  cs_lnum_t *b_face_vtx_idx, *b_face_vtx;
+  BFT_MALLOC(b_face_vtx_idx, n_new+1, cs_lnum_t);
+  BFT_MALLOC(b_face_vtx, m->b_face_vtx_idx[n_old], cs_lnum_t);
+
+  b_face_vtx_idx[0] = 0;
+
+  cs_mesh_face_merge_state_t *s = _face_merge_state_create(false);
+
+  cs_lnum_t n_s_f_max = 0;
+  short int *f_orient = NULL;
+
+  for (cs_lnum_t i_n = 0; i_n < n_new; i_n++) {
+
+    cs_lnum_t s_id = n2o_idx[i_n], e_id = n2o_idx[i_n+1];
+    cs_lnum_t n_s_faces = e_id - s_id;
+
+    /* If face does not need to be merged, simply copy it */
+
+    if (n_s_faces == 1) {
+
+      cs_lnum_t f_id = n2o[s_id];
+
+      cs_lnum_t v_s_id_src = m->b_face_vtx_idx[f_id];
+      cs_lnum_t n_f_vtx = m->b_face_vtx_idx[f_id+1] - v_s_id_src;
+
+      cs_lnum_t v_s_id_dst = b_face_vtx_idx[i_n];
+
+      b_face_vtx_idx[i_n + 1] = v_s_id_dst + n_f_vtx;
+      for (cs_lnum_t i = 0; i < n_f_vtx; i++)
+        b_face_vtx[v_s_id_dst + i] = m->b_face_vtx_lst[v_s_id_src + i];
+
+    }
+
+    else {
+
+      /* Build orientation array (boundary faces always outwards oriented) */
+
+      if (n_s_faces > n_s_f_max) {
+        n_s_f_max = n_s_faces;
+        BFT_REALLOC(f_orient, n_s_f_max, short int);
+        for (cs_lnum_t i = 0; i < n_s_f_max; i++)
+          f_orient[i] = 1;
+      }
+
+      _build_merged_face(n_s_faces,
+                         n2o + s_id,
+                         f_orient,
+                         m->b_face_vtx_idx,
+                         m->b_face_vtx_lst,
+                         s);
+
+      cs_lnum_t v_s_id_dst = b_face_vtx_idx[i_n];
+      b_face_vtx_idx[i_n + 1] = v_s_id_dst + s->n_vertices;
+
+      for (cs_lnum_t i = 0; i < s->n_vertices; i++)
+        b_face_vtx[v_s_id_dst + i] = s->face_vertices[i];
+
+    }
+
+  }
+
+  BFT_FREE(f_orient);
+
+  m->b_face_vtx_connect_size = b_face_vtx_idx[n_new];
+
+  _face_merge_state_destroy(&s);
+
+  BFT_REALLOC(b_face_vtx, b_face_vtx_idx[n_new], cs_lnum_t);
+
+  BFT_FREE(m->b_face_vtx_idx);
+  BFT_FREE(m->b_face_vtx_lst);
+
+  m->b_face_vtx_idx = b_face_vtx_idx;
+  m->b_face_vtx_lst = b_face_vtx;
+
+  b_face_vtx_idx = NULL;
+  b_face_vtx = NULL;
+
+  /* Transform indexed new->old array to simple array */
+
+  for (cs_lnum_t i = 0; i < n_new; i++) {
+    cs_lnum_t j = n2o_idx[i];
+    assert(j >= i);
+    n2o[i] = n2o[j];
+  }
+
+  BFT_FREE(n2o_idx);
+
+  /* Now update related arrays */
+
+  cs_lnum_t  *b_face_cells;
+  int  *b_face_family;
+  BFT_MALLOC(b_face_family, n_new, int);
+  BFT_MALLOC(b_face_cells, n_new, cs_lnum_t);
+
+  for (cs_lnum_t i = 0; i < n_new; i++) {
+    cs_lnum_t j = n2o[i];
+    b_face_cells[i] = m->b_face_cells[j];
+    b_face_family[i] = m->b_face_family[j];
+  }
+
+  BFT_FREE(m->b_face_cells);
+  m->b_face_cells = b_face_cells;
+  b_face_cells = NULL;
+
+  BFT_FREE(m->b_face_family);
+  m->b_face_family = b_face_family;
+  b_face_family = NULL;
+
+  /* Update global numbering */
+
+  m->n_g_b_faces
+    = _n2o_update_global_num(n_new, n2o, &(m->global_b_face_num));
+
+  m->n_b_faces = n_new;
+
+  BFT_FREE(n2o);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Flag vertices belonging to coarsed cells.
+ *
+ * The caller is reqponsible for freeing the allocated array.
+ *
+ * \param[in, out]  m        mesh
+ * \param[in]       c_flag   cell coarsening flag
+ *
+ * return  flag for vertices belonging to coarsened cells.
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_lnum_t *
+_flag_vertices(cs_mesh_t  *m,
+               const int   c_flag[])
+{
+  const cs_lnum_t n_vtx = m->n_vertices;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_cells = m->n_cells;
+
+  cs_lnum_t  *v_flag;
+  BFT_MALLOC(v_flag, m->n_vertices, cs_lnum_t);
+
+  for (cs_lnum_t v_id = 0; v_id < n_vtx; v_id++)
+    v_flag[v_id] = 0;
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    cs_lnum_t c_id_0 = m->i_face_cells[f_id][0];
+    cs_lnum_t c_id_1 = m->i_face_cells[f_id][1];
+    bool c_face = false;
+    if (c_id_0 < n_cells) {
+      if (c_flag[c_id_0] > 0)
+        c_face = true;
+    }
+    if (c_id_1 < n_cells) {
+      if (c_flag[c_id_1] > 0)
+        c_face = true;
+    }
+    if (c_face) {
+      cs_lnum_t s_id = m->i_face_vtx_idx[f_id];
+      cs_lnum_t e_id = m->i_face_vtx_idx[f_id + 1];
+      for (cs_lnum_t i = s_id; i < e_id; i++)
+        v_flag[m->i_face_vtx_lst[i]] = 1;
+    }
+  }
+
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    cs_lnum_t c_id = m->b_face_cells[f_id];
+    if (c_flag[c_id] > 0) {
+      cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
+      cs_lnum_t e_id = m->b_face_vtx_idx[f_id + 1];
+      for (cs_lnum_t i = s_id; i < e_id; i++)
+        v_flag[m->b_face_vtx_lst[i]] = 1;
+    }
+  }
+
+  cs_interface_set_t  *ifs = m->vtx_interfaces;
+  if (ifs != NULL)
+    cs_interface_set_max(ifs, m->n_vertices, 1, true, CS_LNUM_TYPE, v_flag);
+
+  return v_flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update vertex arrays.
+ *
+ * Adjencent elemtn connectivity is already handled at this stage, and most
+ * auxiliary data not present here.
+ *
+ * \param[in, out]  m          mesh
+ * \param[in]       n_vtx_new  number of new vertices
+ * \param[in]       v_o2n      vertex old to new mapping
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_vertices(cs_mesh_t  *m,
+                 cs_lnum_t   n_vtx_new,
+                 cs_lnum_t   v_o2n[])
+{
+  if (n_vtx_new < m->n_vertices) {
+
+    /* Update vertex connectivity and global numbering */
+
+    for (cs_lnum_t i = 0; i < m->n_vertices; i++) {
+      const cs_lnum_t j = v_o2n[i];
+      if (j != -1) {
+        for (cs_lnum_t l = 0; l < 3; l++)
+          m->vtx_coord[j*3 + l] = m->vtx_coord[i*3 + l];
+        if (m->global_vtx_num != NULL)
+          m->global_vtx_num[j] = m->global_vtx_num[i];
+      }
+    }
+
+    /* Update mesh structure */
+
+    m->n_vertices = n_vtx_new;
+
+    BFT_REALLOC(m->vtx_coord, n_vtx_new*3, cs_real_t);
+
+    if (m->global_vtx_num != NULL)
+      BFT_REALLOC(m->global_vtx_num, n_vtx_new, cs_gnum_t);
+  }
+
+  if (m->vtx_interfaces != NULL)
+    cs_interface_set_renumber(m->vtx_interfaces, v_o2n);
+
+  /* Build an I/O numbering to compact the global numbering */
+
+  if (cs_glob_n_ranks > 1) {
+
+    fvm_io_num_t *tmp_num = fvm_io_num_create(NULL,
+                                              m->global_vtx_num,
+                                              m->n_vertices,
+                                              0);
+
+    if (m->n_vertices > 0)
+      memcpy(m->global_vtx_num,
+             fvm_io_num_get_global_num(tmp_num),
+             m->n_vertices*sizeof(cs_gnum_t));
+
+    m->n_g_vertices = fvm_io_num_get_global_count(tmp_num);
+
+    assert(fvm_io_num_get_local_count(tmp_num) == (cs_lnum_t)m->n_vertices);
+
+    tmp_num = fvm_io_num_destroy(tmp_num);
+
+  }
+
+  else { /* if (cs_glob_ranks == 1) */
+
+    m->n_g_vertices = m->n_vertices;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Filter vertices belonging to coarsed cells.
+ *
+ * \param[in, out]  m      mesh
+ * \param[in, out]  v_o2n  vertex coarsening flag in, old to new out
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_filter_vertices(cs_mesh_t  *m,
+                 cs_lnum_t   v_o2n[])
+{
+  /* Build vertices to vertices (edges) graph */
+
+  cs_adjacency_t *v2v = cs_mesh_adjacency_v2v(m);
+  const cs_lnum_t n_vertices = v2v->n_elts;
+
+  /* Graph is symmetric (upper trianglular form), so we compute
+      neighbor counts for all vertices. */
+
+  int *v_n_count;
+  BFT_MALLOC(v_n_count, n_vertices, int);
+
+  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+    v_n_count[v_id] = 0;
+
+  /* For a single domain, simply count connections */
+
+  if (m->n_domains == 1) {
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+      cs_lnum_t s_id = v2v->idx[v_id];
+      cs_lnum_t e_id = v2v->idx[v_id+1];
+      v_n_count[v_id] += e_id - s_id;
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+        assert(v2v->ids[i] > v_id);
+        v_n_count[v2v->ids[i]] += 1;
+      }
+    }
+  }
+
+  /* In parallel, this is more tricky, as some edges may connect to other
+     domains. If a vertex has at most 2 or more neighbors, no rank should
+     have a connection to it from a vertex whose id is neither the minimum
+     or maximum adjacent neighbor, though. So we can exploit this property
+     to check if the number of neighbors is more than 2 or not (the actual
+     count is unimportant, only the fact that a vertex with only 2 neighbors
+     is in the middle of an edge, which can be simplified, and vertices
+     with less neighbors are isolated (1 neighbor is not expected). */
+
+  else {
+    cs_interface_set_t  *ifs = m->vtx_interfaces;
+
+    cs_gnum_t *v_adj_min, *v_adj_max;
+    BFT_MALLOC(v_adj_min, n_vertices, cs_gnum_t);
+    BFT_MALLOC(v_adj_max, n_vertices, cs_gnum_t);
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+      v_adj_min[v_id] = m->n_g_vertices + 2;
+      v_adj_max[v_id] = 0;
+    }
+
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+      cs_lnum_t s_id = v2v->idx[v_id];
+      cs_lnum_t e_id = v2v->idx[v_id+1];
+      cs_gnum_t g_v_id = m->global_vtx_num[v_id];
+      v_n_count[v_id] += e_id - s_id;
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+        cs_lnum_t v_id_1 = v2v->ids[i];
+        cs_gnum_t g_v_id_1 = m->global_vtx_num[v_id_1];
+        v_adj_min[v_id] = CS_MIN(v_adj_min[v_id], g_v_id_1);
+        v_adj_min[v_id_1] = CS_MIN(v_adj_min[v_id_1], g_v_id);
+        v_adj_max[v_id] = CS_MAX(v_adj_max[v_id], g_v_id_1);
+        v_adj_max[v_id_1] = CS_MAX(v_adj_max[v_id_1], g_v_id);
+        v_n_count[v_id_1] += 1;
+      }
+    }
+
+    cs_interface_set_max(ifs, n_vertices, 1, true, CS_INT_TYPE, v_n_count);
+    cs_interface_set_max(ifs, n_vertices, 1, true, CS_GNUM_TYPE, v_adj_max);
+    cs_interface_set_min(ifs, n_vertices, 1, true, CS_GNUM_TYPE, v_adj_min);
+
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+      cs_lnum_t s_id = v2v->idx[v_id];
+      cs_lnum_t e_id = v2v->idx[v_id+1];
+      cs_gnum_t g_v_id = m->global_vtx_num[v_id];
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+        cs_lnum_t v_id_1 = v2v->ids[i];
+        cs_gnum_t g_v_id_1 = m->global_vtx_num[v_id_1];
+        if (g_v_id_1 != v_adj_min[v_id] && g_v_id_1 != v_adj_max[v_id])
+          v_n_count[v_id] = 1000;  /* arbitrary, articifial value, > 2 */
+        if (g_v_id != v_adj_min[v_id_1] && g_v_id != v_adj_max[v_id_1])
+          v_n_count[v_id] = 1000;
+      }
+    }
+
+    cs_interface_set_max(ifs, n_vertices, 1, true, CS_INT_TYPE, v_n_count);
+
+    BFT_FREE(v_adj_min);
+    BFT_FREE(v_adj_max);
+  }
+
+  cs_adjacency_destroy(&v2v);
+
+  /* Vertices already flagged as potentially removed and having
+     2 neighbors at most (edge centers) will be removed */
+
+  cs_lnum_t n_vtx_new = 0;
+
+  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+    if (v_o2n[v_id] > 0 && v_n_count[v_id] < 3) {
+      v_o2n[v_id] = -1;
+    }
+    else {
+      v_o2n[v_id] = n_vtx_new;
+      n_vtx_new++;
+    }
+  }
+
+  BFT_FREE(v_n_count);
+
+  /* Now remove flagged vertices from face->vertex adjacencies */
+
+  {
+    const cs_lnum_t n_i_faces = m->n_i_faces;
+    cs_lnum_t n = 0;
+    cs_lnum_t s_id = 0;
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+      cs_lnum_t e_id = m->i_face_vtx_idx[f_id + 1];
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+        cs_lnum_t vtx_id_n = v_o2n[m->i_face_vtx_lst[i]];
+        if (vtx_id_n > -1) {
+          m->i_face_vtx_lst[n] = vtx_id_n;
+          //m->i_face_vtx_lst[n] = m->i_face_vtx_lst[i];
+          n++;
+        }
+      }
+      s_id = e_id;
+      m->i_face_vtx_idx[f_id + 1] = n;
+    }
+
+    m->i_face_vtx_connect_size = n;
+    BFT_REALLOC(m->i_face_vtx_lst, n, cs_lnum_t);
+  }
+
+  {
+    const cs_lnum_t n_b_faces = m->n_b_faces;
+    cs_lnum_t n = 0;
+    cs_lnum_t s_id = 0;
+    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+      cs_lnum_t e_id = m->b_face_vtx_idx[f_id + 1];
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+        cs_lnum_t vtx_id_n = v_o2n[m->b_face_vtx_lst[i]];
+        if (vtx_id_n > -1) {
+          m->b_face_vtx_lst[n] = vtx_id_n;
+          //m->b_face_vtx_lst[n] = m->b_face_vtx_lst[i];
+          n++;
+        }
+      }
+      s_id = e_id;
+      m->b_face_vtx_idx[f_id + 1] = n;
+    }
+
+    m->b_face_vtx_connect_size = n;
+    BFT_REALLOC(m->b_face_vtx_lst, n, cs_lnum_t);
+  }
+
+  /* Update other vertex info */
+
+  _update_vertices(m, n_vtx_new, v_o2n);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1109,10 +1797,11 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
     _print_mesh_counts(cs_glob_mesh, _("Mesh before coarsening"));
   }
 
-  cs_lnum_t n_v_ini = m->n_vertices;
-  cs_lnum_t n_f_ini = m->n_b_faces + m->n_i_faces;
+  cs_lnum_t n_c_ini = m->n_cells;
 
-  cs_lnum_t n_b_f_ini = m->n_b_faces;
+  // cs_lnum_t n_v_ini = m->n_vertices;
+  // cs_lnum_t n_f_ini = m->n_b_faces + m->n_i_faces;
+  // cs_lnum_t n_b_f_ini = m->n_b_faces;
 
   cs_timer_t t0 = cs_timer_time();
 
@@ -1120,12 +1809,25 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   cs_timer_counter_add_diff(&(timers[0]), &t0, &t2);
 
-  /* Determine cells that should be merged */
+  /* Determine cells that should be merged and flag associated vertices */
 
   cs_lnum_t  *c_o2n = NULL;
   cs_lnum_t  n_c_new = _cell_equiv(m, cell_flag, &c_o2n);
+  cs_lnum_t *vtx_flag = _flag_vertices(m, cell_flag);
 
   _merge_cells(m, n_c_new, c_o2n);
+
+  /* Flag merged cells (> 0 for merged cells) */
+
+  int *c_flag_n = NULL;
+  BFT_MALLOC(c_flag_n, n_c_new, int);
+
+  for (cs_lnum_t i = 0; i < n_c_new; i++)
+    c_flag_n[i] = -1;
+  for (cs_lnum_t i = 0; i < n_c_ini; i++)
+    c_flag_n[c_o2n[i]] += 1;
+
+  /* Now merge interior faces */
 
   cs_lnum_t  *i_f_o2n = NULL;
   cs_lnum_t  n_i_f_new = _i_faces_equiv(m, &i_f_o2n);
@@ -1134,6 +1836,26 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   BFT_FREE(i_f_o2n);
   BFT_FREE(c_o2n);
+
+  /* Then merge boundary faces */
+
+  cs_lnum_t  *b_f_o2n = NULL;
+  cs_lnum_t  n_b_f_new = _b_faces_equiv(m, c_flag_n, &b_f_o2n);
+
+  _merge_b_faces(m, n_b_f_new, b_f_o2n);
+
+  BFT_FREE(b_f_o2n);
+
+  BFT_FREE(c_flag_n);
+
+  /* Finally remove excess vertices */
+
+  cs_lnum_t *vtx_o2n = vtx_flag;   /* Rename for clarity as role changes */
+  vtx_flag = NULL;
+
+  _filter_vertices(m, vtx_o2n);
+
+  BFT_FREE(vtx_o2n);
 
   m->modified |= (CS_MESH_MODIFIED | CS_MESH_MODIFIED_BALANCE);
 

@@ -658,8 +658,8 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
                char);
 
     cs_part_to_block_copy_array(d,
-                                real_type,
                                 CS_CHAR,
+                                1,
                                 mesh->vtx_r_gen,
                                 mb->vtx_r_gen);
 
@@ -685,7 +685,7 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
                                mb->vertex_bi.gnum_range[1],
                                3, /* location_id, */
                                0, /* index id */
-                               2, /* n_location_vals */
+                               1, /* n_location_vals */
                                CS_CHAR,
                                mb->vtx_r_gen,
                                pp_out);
@@ -1150,22 +1150,22 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
         cs_io_write_block("vtx_r_gen",
                           mesh->n_g_vertices,
                           1,
-                          mesh->n_vertices + 1,
+                          mesh->n_vertices,
                           3, /* location_id, */
                           0, /* index id */
-                          3, /* n_location_vals */
-                          real_type,
+                          1, /* n_location_vals */
+                          CS_CHAR,
                           mb->vtx_r_gen,
                           pp_out);
       else
         cs_io_write_block_buffer("vtx_r_gen",
                                  mesh->n_g_vertices,
                                  1,
-                                 mesh->n_vertices + 1,
+                                 mesh->n_vertices,
                                  3, /* location_id, */
                                  0, /* index id */
-                                 3, /* n_location_vals */
-                                 real_type,
+                                 1, /* n_location_vals */
+                                 CS_CHAR,
                                  mb->vtx_r_gen,
                                  pp_out);
     }

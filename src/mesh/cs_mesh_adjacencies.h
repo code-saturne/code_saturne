@@ -428,6 +428,21 @@ cs_mesh_adjacency_c2f_lower(const cs_mesh_t  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Build a cells to boundary faces adjacency structure.
+ *
+ * By construction, face ids adjacent to each cell are ordered.
+ *
+ * \param[in]  m  pointer to a cs_mesh_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_mesh_adjacency_c2f_boundary(const cs_mesh_t  *m);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and define a cs_adjacency_t structure related to the
  *        connectivity vertex to vertices through edges.
  *

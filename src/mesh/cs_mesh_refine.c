@@ -4653,6 +4653,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   BFT_FREE(c_r_flag);
   BFT_FREE(f_r_flag);
 
+  m->have_r_gen = true;
   m->modified |= (CS_MESH_MODIFIED | CS_MESH_MODIFIED_BALANCE);
 
   /* Rebuild ghosts */

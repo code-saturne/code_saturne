@@ -1711,6 +1711,64 @@ cs_mesh_adjacency_c2f_lower(const cs_mesh_t  *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Build a cells to boundary faces adjacency structure.
+ *
+ * By construction, face ids adjacent to each cell are ordered.
+ *
+ * \param[in]  m  pointer to a cs_mesh_t structure
+ *
+ * \return a pointer to a new allocated cs_adjacency_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adjacency_t *
+cs_mesh_adjacency_c2f_boundary(const cs_mesh_t  *m)
+{
+  cs_lnum_t  *cell_shift = NULL;
+  cs_adjacency_t  *c2f = NULL;
+
+  const cs_lnum_t  n_cells = m->n_cells;
+  const cs_lnum_t  n_b_faces = m->n_b_faces;
+
+  c2f = cs_adjacency_create(0,          /* flag */
+                            -1,         /* indexed, no stride */
+                            n_cells);
+
+  /* Update index count */
+
+  for (cs_lnum_t i = 0; i < n_b_faces; i++)
+    c2f->idx[m->b_face_cells[i]+1] += 1;
+
+  /* Build index */
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    c2f->idx[i+1] += c2f->idx[i];
+
+  const cs_lnum_t  idx_size = c2f->idx[n_cells];
+
+  /* Fill arrays */
+  BFT_MALLOC(c2f->ids, idx_size, cs_lnum_t);
+
+  BFT_MALLOC(cell_shift, n_cells, cs_lnum_t);
+  memset(cell_shift, 0, n_cells*sizeof(cs_lnum_t));
+
+  for (cs_lnum_t  f_id = 0; f_id < n_b_faces; f_id++) {
+
+    const cs_lnum_t  c_id = m->b_face_cells[f_id];
+    const cs_lnum_t  shift = c2f->idx[c_id] + cell_shift[c_id];
+
+    c2f->ids[shift] = f_id;
+    cell_shift[c_id] += 1;
+
+  } /* End of loop on border faces */
+
+  /* Free memory */
+  BFT_FREE(cell_shift);
+
+  return c2f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and define a cs_adjacency_t structure related to the
  *        connectivity vertex to vertices through edges.
  *
