@@ -105,7 +105,7 @@ double precision det, det1, det2, det3, epsdet
 !     Critere de nullite du determinant
 epsdet = 1.d-12
 
-!     Ceofficients des equations
+!     Coefficients des equations
 a0 = 1.d0/betnmk/dt**2
 a1 = (1.d0+alpnmk)*gamnmk/betnmk/dt
 a2 = 1.d0/betnmk/dt

@@ -724,7 +724,7 @@ if (muzero.gt.epzero) then
 
   ! In that case we have to solve multiple diffusion. This is achieved by means
   ! of the adding method following Lacis et Hansen, 1974
-  ! calculation of reflexivity and tarnsmissivity for each vertical layer
+  ! calculation of reflexivity and transmissivity for each vertical layer
 
   do n = 1, 8
     do l = k1p1, kmray

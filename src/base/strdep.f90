@@ -156,7 +156,7 @@ call field_get_coefb_s(ivarfl(ipr), coefbp)
 call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
 
 !===============================================================================
-! 2. Computue forces on the structures
+! 2. Compute forces on the structures
 !===============================================================================
 
 do istr = 1, nbstru
@@ -223,7 +223,7 @@ if (nbstru.gt.0) then
 
 endif
 
-! If the fluid is initailizing, we do read structures
+! If the fluid is initializing, we do read structures
 if (itrale.le.nalinf) then
   itrfin = -1
   return
