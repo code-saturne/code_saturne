@@ -92,6 +92,20 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Gravity terms for terms
+ *        For \f$R_{ij}\f$
+ *
+ * \param[in]   gradro    work array for \f$ \grad{\rho} \f$
+ * \param[out]  buoyancy  buoyancy term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_grav_st(const cs_real_t  gradro[][3],
+                          cs_real_t        buoyancy[][6]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Clip the turbulent Reynods stress tensor and the turbulent
  *        dissipation (coupled components version).
  *

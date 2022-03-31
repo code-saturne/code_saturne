@@ -460,7 +460,7 @@ if (igrari.eq.1) then
     cpro_buoyancy => buoyancy
   endif
 
-  call rijthe2(gradro, cpro_buoyancy)
+  call cs_turbulence_rij_grav_st(gradro, cpro_buoyancy)
 
   ! If we extrapolate the source terms: previous ST
   if (st_prv_id.ge.0) then

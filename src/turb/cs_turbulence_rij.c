@@ -997,6 +997,65 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Gravity terms for terms
+ *        For \f$R_{ij}\f$
+ *
+ * \param[in]   gradro    work array for \f$ \grad{\rho} \f$
+ * \param[out]  buoyancy  buoyancy term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_grav_st(const cs_real_t  gradro[][3],
+                          cs_real_t        buoyancy[][6])
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  const cs_real_t *cvara_ep = (const cs_real_t *)CS_F_(eps)->val_pre;
+  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)CS_F_(rij)->val_pre;
+
+  cs_real_t cons = -1.5*cs_turb_cmu;
+  const cs_real_t uns3 = 1./3;
+
+  const cs_field_t *tf = cs_thermal_model_field();
+  if (tf != NULL) {
+    const int ksigmas = cs_field_key_id("turbulent_schmidt");
+    const cs_real_t turb_schmidt = cs_field_get_key_double(tf, ksigmas);
+    cons = -1.5*cs_turb_cmu/turb_schmidt;
+  }
+
+  const cs_real_t *grav = cs_glob_physical_constants->gravity;
+  const cs_real_t o_m_crij3 = (1. - cs_turb_crij3);
+
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    cs_real_t rit[3];
+    cs_math_sym_33_3_product(cvara_rij[c_id], gradro[c_id], rit);
+
+     const cs_real_t kseps =   cs_math_6_trace(cvara_rij[c_id])
+                             / (2*cvara_ep[c_id]);
+
+     cs_real_t gij[3][3];
+     for (cs_lnum_t i = 0; i < 3; i++) {
+       for (cs_lnum_t j = 0; j < 3; j++)
+         gij[i][j] = cons*kseps* (rit[i]*grav[j] + rit[j]*grav[i]);
+     }
+
+     const cs_real_t gkks3 = uns3*(gij[0][0] + gij[1][1] + gij[2][2]);
+
+     buoyancy[c_id][0] = gij[0][0] * o_m_crij3 + cs_turb_crij3*gkks3;
+     buoyancy[c_id][1] = gij[1][1] * o_m_crij3 + cs_turb_crij3*gkks3;
+     buoyancy[c_id][2] = gij[2][2] * o_m_crij3 + cs_turb_crij3*gkks3;
+     buoyancy[c_id][3] = gij[0][1] * o_m_crij3;
+     buoyancy[c_id][4] = gij[1][2] * o_m_crij3;
+     buoyancy[c_id][5] = gij[0][2] * o_m_crij3;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Clip the turbulent Reynods stress tensor and the turbulent
  *        dissipation (coupled components version).
  *

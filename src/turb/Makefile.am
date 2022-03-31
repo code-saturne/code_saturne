@@ -109,7 +109,6 @@ resrij2.f90 \
 resrit.f90 \
 resssg2.f90 \
 rijech.f90 \
-rijthe2.f90 \
 turrij.f90
 
 clean-local:
