@@ -541,6 +541,7 @@ _do_monitoring(const cs_cdo_quantities_t   *quant)
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context to cast for this discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] context     pointer to a context structure
  * \param[in, out] mass_hodge  pointer to a cs_hodge_t structure (mass matrix)
  * \param[in, out] diff_hodge  pointer to a cs_hodge_t structure (diffusion)
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -553,11 +554,13 @@ _fb_solute_source_term(const cs_equation_param_t     *eqp,
                        const cs_equation_builder_t   *eqb,
                        const void                    *eq_context,
                        const cs_cell_mesh_t          *cm,
+                       void                          *context,
                        cs_hodge_t                    *mass_hodge,
                        cs_hodge_t                    *diff_hodge,
                        cs_cell_sys_t                 *csys,
                        cs_cell_builder_t             *cb)
 {
+  CS_UNUSED(context);
   CS_UNUSED(mass_hodge);
   CS_UNUSED(eqb);
 

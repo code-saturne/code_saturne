@@ -64,6 +64,7 @@ typedef struct _equation_builder_t  cs_equation_builder_t;
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context to cast for this discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] context     pointer to a context structure
  * \param[in, out] mass_hodge  pointer to a cs_hodge_t structure (mass matrix)
  * \param[in, out] diff_hodge  pointer to a cs_hodge_t structure (diffusion)
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -76,6 +77,7 @@ typedef void
                           const cs_equation_builder_t   *eqb,
                           const void                    *eqc,
                           const cs_cell_mesh_t          *cm,
+                          void                          *context,
                           cs_hodge_t                    *mass_hodge,
                           cs_hodge_t                    *diff_hodge,
                           cs_cell_sys_t                 *csys,

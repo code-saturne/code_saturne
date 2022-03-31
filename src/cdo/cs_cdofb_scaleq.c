@@ -392,7 +392,9 @@ _sfb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
   if (cs_equation_param_has_user_hook(eqp)) {
 
-    eqb->user_hook_function(eqp, eqb, eqc, cm, mass_hodge, diff_hodge,
+    eqb->user_hook_function(eqp, eqb, eqc, cm,
+                            eqb->user_hook_context,
+                            mass_hodge, diff_hodge,
                             csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
