@@ -1507,8 +1507,9 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
         c_st_k_p[c_id]   += w4[c_id];
         c_st_eps_p[c_id] += w5[c_id];
       }
-      /* Otherwise we put it directly in smbr */
     }
+
+    /* Otherwise we put it directly in smbr */
     else {
 #     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {

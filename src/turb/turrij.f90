@@ -160,6 +160,33 @@ type(c_ptr) :: c_k_value
 !===============================================================================
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_turbulence_rij_solve_eps(ncesmp, icetsm, itypsm,    &
+                                         gradv, produc, gradro,     &
+                                         smacel,                    &
+                                         viscf, viscb,              &
+                                         smbr, rovsdt)              &
+    bind(C, name='cs_turbulence_rij_solve_eps')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: ncesmp
+    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
+
+    real(kind=c_double), dimension(6, *) :: produc
+    real(kind=c_double), dimension(3, *) :: gradro
+    real(kind=c_double), dimension(*) :: smacel
+    real(kind=c_double), dimension(*) :: viscf, viscb
+    real(kind=c_double), dimension(*) :: smbr, rovsdt
+    real(kind=c_double), dimension(3, 3, *) :: gradv
+  end subroutine cs_turbulence_rij_solve_eps
+
+end interface
+
+!===============================================================================
 ! 1. Initialization
 !===============================================================================
 
@@ -726,10 +753,10 @@ call cs_equation_iterative_solve_tensor(idtvar, ivarfl(ivar), c_null_char,     &
 ! 5. Solve Epsilon
 !===============================================================================
 
-call reseps(nvar, ncesmp, icetsm, itypsm,                    &
-            dt, cpro_gradv, cpro_produc, gradro,                  &
-            smacel, viscf, viscb,                            &
-            smbr, rovsdt)
+call cs_turbulence_rij_solve_eps(ncesmp, icetsm, itypsm,         &
+                                 gradv, cpro_produc, gradro,     &
+                                 smacel, viscf, viscb,           &
+                                 smbr, rovsdt)
 
 !===============================================================================
 ! 6. Clipping

@@ -47,19 +47,24 @@
 
 #include "cs_array.h"
 #include "cs_base.h"
+#include "cs_domain.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_equation_param.h"
 #include "cs_face_viscosity.h"
 #include "cs_field.h"
 #include "cs_field_default.h"
 #include "cs_field_pointer.h"
+#include "cs_lagr.h"
 #include "cs_log_iteration.h"
+#include "cs_mass_source_terms.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
+#include "cs_prototypes.h"
+#include "cs_thermal_model.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_bc.h"
 #include "cs_turbulence_model.h"
@@ -139,7 +144,7 @@ _clip_alpha(const int          f_id,
     cs_array_set_value_real(n_cells, 1, 0, cpro_a_clipped);
   }
 
-  /* Store Min and Max for logging */
+  /* Store local min and max for logging */
   cs_real_t vmin[1] = {cs_math_big_r};
   cs_real_t vmax[1] = {-cs_math_big_r};
 
@@ -148,9 +153,6 @@ _clip_alpha(const int          f_id,
     vmin[0] = cs_math_fmin(vmin[0], var);
     vmax[0] = cs_math_fmax(vmax[0], var);
   }
-
-  cs_parall_min(1, CS_REAL_TYPE, vmin);
-  cs_parall_max(1, CS_REAL_TYPE, vmax);
 
   /* Clipping (edit to avoid exactly zero values) */
 
@@ -168,8 +170,6 @@ _clip_alpha(const int          f_id,
       cvar_al[c_id] = 1.0;
     }
   }
-
-  cs_parall_counter(nclp, 2);
 
   cs_lnum_t iclpmn[1] = {nclp[0]}, iclpmx[1] = {nclp[1]};
   cs_log_iteration_clipping_field(f_id,
@@ -235,9 +235,465 @@ _rij_min_max(cs_lnum_t        n_cells,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Gravity terms for \f$\epsilon\f$.
+ *
+ *  Terms for epsilon:
+ *      rom*volumr*deps/dt =
+ *                     ... + CEPS1*(EPS/K)*Max(0,(Gkk/2))*volume
+ *            With Gij = -(1.5 cmu/PrT) (k/eps) (Rit Gj + Rjt Gi)
+ *                 Rit = Rik drom/dxk (sum on k)
+ *            We simplify (eps/k) by noting
+ *                GijP = -(1.5 cmu/PrT)         (Rit Gj + Rjt Gi)
+ *      rom*volume*deps/dt =
+ *                     ... + CEPS1*        Max(0,(GkkP/2))*volume
+ *
+ * \param[in]       gradro      density gradient \f$ \grad{\rho} \f$
+ * \param[in]       cell_f_vol  cell fluid volume
+ * \param[in, out]  rhs         work array for right-hand side
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_gravity_st_epsilon(const cs_real_t  gradro[][3],
+                    const cs_real_t  cell_f_vol[],
+                    cs_real_t        rhs[])
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)CS_F_(rij)->val_pre;
+
+  cs_real_t cons = -1.5*cs_turb_cmu;
+
+  const cs_field_t *tf = cs_thermal_model_field();
+  if (tf != NULL) {
+    const int ksigmas = cs_field_key_id("turbulent_schmidt");
+    const cs_real_t turb_schmidt = cs_field_get_key_double(tf, ksigmas);
+    cons = -1.5*cs_turb_cmu/turb_schmidt;
+  }
+
+  const cs_real_t *g = cs_glob_physical_constants->gravity;
+
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_real_t g_rij_gradro
+      = cs_math_3_sym_33_3_dot_product(g, cvara_rij[c_id], gradro[c_id]);
+
+    // FIXME for EB-DFM and EBRSM
+
+    const cs_real_t aa = 0.0;
+    const cs_real_t bb = cons * g_rij_gradro;
+
+    rhs[c_id] += cs_turb_ce1 * cs_math_fmax(aa, bb) * cell_f_vol[c_id];
+  }
+}
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve of epsilon for \f$ R_{ij} - \varepsilon \f$ RANS
+ *        turbulence model.
+ *
+ * \param[in]     ncesmp      number of cells with mass source term
+ * \param[in]     icetsm      index of cells with mass source term
+ * \param[in]     itypsm      type of mass source term for each variable
+ * \param[in]     gradv       work array for the term grad
+ *                            of velocity only for iturb=31
+ * \param[in]     produc      work array for production (without
+ *                            rho volume) only for iturb=30
+ * \param[in]     gradro      work array for \f$ \grad{rom} \f$
+ * \param[in]     smacel      value associated to each variable in the mass
+ *                            source terms or mass rate
+ * \param[in]     viscf       visc*surface/dist at internal faces
+ * \param[in]     viscb       visc*surface/dist at edge faces
+ * \param[in]     smbr        working array
+ * \param[in]     rovsdt      working array
+ !*/
+/*-------------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
+                            cs_lnum_t            icetsm[],
+                            int                  itypsm[],
+                            const cs_real_33_t   gradv[],
+                            const cs_real_6_t    produc[],
+                            const cs_real_3_t    gradro[],
+                            cs_real_t            smacel[],
+                            cs_real_t            viscf[],
+                            cs_real_t            viscb[],
+                            cs_real_t            smbr[],
+                            cs_real_t            rovsdt[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+
+  const cs_real_t *dt = CS_F_(dt)->val;
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *viscl = CS_F_(mu)->val;
+  const cs_real_t *visct = CS_F_(mu_t)->val;
+  const cs_real_t *cvara_ep = CS_F_(eps)->val_pre;
+  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)CS_F_(rij)->val_pre;
+
+  const cs_real_t *cvar_al = NULL;
+  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+    cvar_al = (const cs_real_t *)(CS_F_(alp_bl)->val);
+
+  cs_real_t *cvar_ep = CS_F_(eps)->val;
+
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  int iflmas =  cs_field_get_key_int(CS_F_(vel), kimasf);
+  int iflmab =  cs_field_get_key_int(CS_F_(vel), kbmasf);
+
+  const cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
+  const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+
+  const int ksigmas = cs_field_key_id("turbulent_schmidt");
+  const cs_real_t sigmae = cs_field_get_key_double(CS_F_(eps), ksigmas);
+
+  const cs_equation_param_t *eqp
+    = cs_field_get_equation_param(CS_F_(eps));
+
+  if (eqp->iwarni >= 1) {
+    bft_printf(" Solving the variable%s \n ",
+               cs_field_get_label(CS_F_(eps)));
+  }
+
+  int kstprv = cs_field_key_id("source_term_prev_id");
+  int st_prv_id = cs_field_get_key_int(CS_F_(eps), kstprv);
+  cs_real_t *c_st_prv = NULL, *cromo = NULL;
+  if (st_prv_id > -1)
+    c_st_prv = cs_field_by_id(st_prv_id)->val;
+
+  int key_t_ext_id = cs_field_key_id("time_extrapolated");
+  int iroext = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
+  if ((iroext > 0) && (st_prv_id > -1))
+    cromo = CS_F_(rho)->val_pre;
+  else
+    cromo = CS_F_(rho)->val;
+
+  /* S as Source, V as Variable */
+  const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
+  const cs_real_t thets = time_scheme->thetst;
+  const cs_real_t thetv = eqp->thetav;
+
+  cs_array_set_value_real(n_cells, 1, 0, smbr);
+  cs_array_set_value_real(n_cells, 1, 0, rovsdt);
+
+  /* Work arrays */
+  cs_real_t *w1;
+  BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+
+  /* Mass source term
+   * ================ */
+
+  if (ncesmp > 0) {
+
+    const int var_key_id = cs_field_key_id("variable_id");
+    const int ivar_eps = cs_field_get_key_int(CS_F_(eps), var_key_id)-1;
+    const int ivar_pr = cs_field_get_key_int(CS_F_(p), var_key_id)-1;
+
+    /* We increment smbr with -Gamma.var_prev. and rovsdt with Gamma */
+
+    cs_mass_source_terms(1, /* iterns*/
+                         1, /* dim */
+                         ncesmp,
+                         icetsm,
+                         itypsm + ncesmp*ivar_eps,
+                         cell_f_vol,
+                         cvara_ep,
+                         smacel + ncesmp*ivar_eps,
+                         smacel + ncesmp*ivar_pr,
+                         smbr,
+                         rovsdt,
+                         w1);
+
+    /* If we extrapolate the source terms, we put Gamma Pinj in c_st_prv */
+    if (st_prv_id > -1) {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        c_st_prv[c_id] += w1[c_id];
+    }
+
+    /* Otherwise we put it directly in smbr */
+    else {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        smbr[c_id] += w1[c_id];
+    }
+  }
+
+  /* Unsteady term
+   * ============== */
+
+  if (eqp->istat == 1) {
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      rovsdt[c_id] += (crom[c_id] / dt[c_id]) * cell_f_vol[c_id];
+    }
+  }
+
+  /* Production (rho * Ce1 * epsilon / k * P)
+   *    Dissipation (rho*Ce2.epsilon/k*epsilon)
+   *================================================ */
+
+  cs_real_t thetap = (st_prv_id > -1) ? thetv : 1.;
+
+  cs_real_t ceps2;
+  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
+    ceps2 = cs_turb_ce2;
+  }
+  else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG) {
+    ceps2 = cs_turb_cssge2;
+  }
+  else {
+    ceps2 = cs_turb_cebme2;
+  }
+
+  cs_real_t *cprod;
+  BFT_MALLOC(cprod, n_cells_ext, cs_real_t);
+
+  /* Calculation the production trace, depending we are in standard
+   * Rij or in SSG (use of produc or grdvit) */
+
+  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      cprod[c_id] = 0.5*(produc[c_id][0] + produc[c_id][1] + produc[c_id][2]);
+  }
+  else {
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      cprod[c_id] = -(  cvara_rij[c_id][0] * gradv[c_id][0][0]
+                      + cvara_rij[c_id][3] * gradv[c_id][0][1]
+                      + cvara_rij[c_id][5] * gradv[c_id][0][2]
+                      + cvara_rij[c_id][3] * gradv[c_id][1][0]
+                      + cvara_rij[c_id][1] * gradv[c_id][1][1]
+                      + cvara_rij[c_id][4] * gradv[c_id][1][2]
+                      + cvara_rij[c_id][5] * gradv[c_id][2][0]
+                      + cvara_rij[c_id][4] * gradv[c_id][2][1]
+                      + cvara_rij[c_id][2] * gradv[c_id][2][2]);
+  }
+
+  /* EBRSM */
+  if (cs_glob_turb_model->iturb ==  CS_TURB_RIJ_EPSILON_EBRSM) {
+
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      /* Half-traces */
+      const cs_real_t trprod = cprod[c_id];
+      const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
+
+      /* Calculation of the Durbin time scale */
+      const cs_real_t xttke = trrij / cvara_ep[c_id];
+      const cs_real_t xttkmg
+        = cs_turb_xct*sqrt(viscl[c_id] / crom[c_id] / cvara_ep[c_id]);
+      const cs_real_t xttdrb = cs_math_fmax(xttke, xttkmg);
+
+      const cs_real_t prdeps = trprod / cvara_ep[c_id];
+      const cs_real_t alpha3 = cs_math_pow3(cvar_al[c_id]);
+
+      /* Production (explicit) */
+      /* Compute of C_eps_1' */
+      w1[c_id] =   cromo[c_id] * cell_f_vol[c_id] * cs_turb_ce1
+                 * (1+cs_turb_xa1*(1-alpha3)*prdeps) * trprod / xttdrb;
+
+      /* Dissipation (implicit) */
+      const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
+      smbr[c_id] -= crom_vol * ceps2 * cvara_ep[c_id] / xttdrb;
+      rovsdt[c_id] += ceps2 * crom_vol * thetap / xttdrb;
+    }
+
+  }
+
+  /* SSG and LRR */
+  else {
+
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      /* Half-traces */
+      const cs_real_t trprod = cprod[c_id];
+      const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
+      const cs_real_t xttke = trrij / cvara_ep[c_id];
+
+      /* Production (explicit, a part might be implicit) */
+      const cs_real_t cromo_vol = cromo[c_id] * cell_f_vol[c_id];
+      rovsdt[c_id]
+        += cs_math_fmax(- cromo_vol * cs_turb_ce1 * trprod / trrij,
+                        0.0);
+      w1[c_id] = cromo_vol * cs_turb_ce1 / xttke * trprod;
+
+      /* Dissipation (implicit) */
+      const cs_real_t crom_vol = crom[c_id] * cell_f_vol[c_id];
+      smbr[c_id]   -= crom_vol * ceps2 * cs_math_pow2(cvara_ep[c_id]) / trrij;
+      rovsdt[c_id] += ceps2 * crom_vol / xttke * thetap;
+    }
+
+  }
+
+  /* Extrapolation of source terms (2nd order in time) */
+  if (st_prv_id > -1) {
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      c_st_prv[c_id] += w1[c_id];
+  }
+  else {
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      smbr[c_id] += w1[c_id];
+  }
+
+  /* Buoyancy term
+   * ============= */
+
+  /* FIXME use beta ... WARNING */
+  if (cs_glob_turb_rans_model->igrari == 1) {
+
+    /* Extrapolation of source terms (2nd order in time) */
+    if (st_prv_id > -1)
+      _gravity_st_epsilon(gradro, cell_f_vol, c_st_prv);
+
+    else
+      _gravity_st_epsilon(gradro, cell_f_vol, smbr);
+
+  }
+
+  /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
+   *===================================================================== */
+
+  cs_real_t *weighb;
+  cs_real_6_t *viscce;
+  cs_real_2_t *weighf;
+
+  BFT_MALLOC(weighb, n_b_faces, cs_real_t);
+  BFT_MALLOC(weighf, n_i_faces, cs_real_2_t);
+  BFT_MALLOC(viscce, n_cells_ext, cs_real_6_t);
+
+  /* Symmetric tensor diffusivity (GGDH) */
+  if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {
+
+    const cs_field_t *f_a_t_visc
+      = cs_field_by_name("anisotropic_turbulent_viscosity");
+    const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
+
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        viscce[c_id][i] = visten[c_id][i] / sigmae + viscl[c_id];
+      for (cs_lnum_t i = 3; i < 6; i++)
+        viscce[c_id][i] = visten[c_id][i] / sigmae;
+    }
+
+    cs_face_anisotropic_viscosity_scalar(m,
+                                         fvq,
+                                         viscce,
+                                         eqp->iwarni,
+                                         weighf,
+                                         weighb,
+                                         viscf,
+                                         viscb);
+  /* Scalar diffusivity */
+  }
+  else {
+
+    if (eqp->idifft == 1) {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        w1[c_id] = viscl[c_id] + visct[c_id]/sigmae;
+    }
+    else
+      cs_array_copy_real(n_cells, 1, viscl, w1);
+
+    cs_face_viscosity(m,
+                      fvq,
+                      eqp->imvisf,
+                      w1,
+                      viscf,
+                      viscb);
+  }
+
+  /* Solving
+   * ======= */
+
+  if (st_prv_id > -1) {
+    const cs_real_t thetp1 = 1.+thets;
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+      smbr[c_id] += thetp1*c_st_prv[c_id];
+  }
+
+  /* Translate coefa into cofaf and coefb into cofbf */
+
+  cs_real_t *coefap = CS_F_(eps)->bc_coeffs->a;
+  cs_real_t *coefbp = CS_F_(eps)->bc_coeffs->b;
+  cs_real_t *cofafp = CS_F_(eps)->bc_coeffs->af;
+  cs_real_t *cofbfp = CS_F_(eps)->bc_coeffs->bf;
+
+  cs_equation_param_t eqp_loc = *eqp;
+
+  eqp_loc.istat  = -1;
+  eqp_loc.icoupl = -1;
+  eqp_loc.idifft = -1;
+  eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
+  eqp_loc.thetav = thetv;
+  eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
+
+  cs_real_t *dpvar;
+  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+
+  cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
+                                     1,   /* init */
+                                     CS_F_(eps)->id,
+                                     NULL,
+                                     0,   /* iescap */
+                                     0,   /* imucpp */
+                                     -1,  /* normp  */
+                                     &eqp_loc,
+                                     cvara_ep,
+                                     cvara_ep,
+                                     coefap,
+                                     coefbp,
+                                     cofafp,
+                                     cofbfp,
+                                     imasfl,
+                                     bmasfl,
+                                     viscf,
+                                     viscb,
+                                     viscf,
+                                     viscb,
+                                     viscce,
+                                     weighf,
+                                     weighb,
+                                     0,  /* boundary convective upwind flux */
+                                     NULL,
+                                     rovsdt,
+                                     smbr,
+                                     cvar_ep,
+                                     dpvar,
+                                     NULL,
+                                     NULL);
+
+  /* Free memory */
+
+  BFT_FREE(dpvar);
+  BFT_FREE(w1);
+  BFT_FREE(cprod);
+  BFT_FREE(viscce);
+  BFT_FREE(weighb);
+  BFT_FREE(weighf);
+}
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Solve the equation on alpha in the framework of the Rij-EBRSM model.
@@ -250,8 +706,8 @@ _rij_min_max(cs_lnum_t        n_cells,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_rij_alpha(int        f_id,
-                        cs_real_t  c_durbin_l)
+cs_turbulence_rij_solve_alpha(int        f_id,
+                              cs_real_t  c_durbin_l)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;

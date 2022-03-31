@@ -104,13 +104,11 @@ cs_turbulence_rotation.c \
 cs_turbulence_sa.c \
 cs_turbulence_v2f.c \
 divrit.f90 \
-reseps.f90 \
 resrij.f90 \
 resrij2.f90 \
 resrit.f90 \
 resssg2.f90 \
 rijech.f90 \
-rijthe.f90 \
 rijthe2.f90 \
 turrij.f90
 

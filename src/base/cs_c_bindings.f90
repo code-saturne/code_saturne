@@ -3451,13 +3451,13 @@ module cs_c_bindings
 
     ! Interface to C function solving the equation on alpha for Rij-EBRSM.
 
-    subroutine cs_turbulence_rij_alpha(f_id, c_durbin_l ) &
-      bind(C, name='cs_turbulence_rij_alpha')
+    subroutine cs_turbulence_rij_solve_alpha(f_id, c_durbin_l ) &
+      bind(C, name='cs_turbulence_rij_solve_alpha')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), intent(in), value :: f_id
       real(c_double), intent(in), value :: c_durbin_l
-    end subroutine cs_turbulence_rij_alpha
+    end subroutine cs_turbulence_rij_solve_alpha
 
     !---------------------------------------------------------------------------
     !> \brief Clipping of the turbulent Reynods stress tensor and the turbulent

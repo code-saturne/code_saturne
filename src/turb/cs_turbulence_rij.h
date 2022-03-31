@@ -42,6 +42,41 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve of epsilon for \f$ R_{ij} - \varepsilon \f$ RANS
+ *        turbulence model.
+ *
+ * \param[in]     ncesmp      number of cells with mass source term
+ * \param[in]     icetsm      index of cells with mass source term
+ * \param[in]     itypsm      type of mass source term for each variable
+ * \param[in]     gradv       work array for the term grad
+ *                            of velocity only for iturb=31
+ * \param[in]     produc      work array for production (without
+ *                            rho volume) only for iturb=30
+ * \param[in]     gradro      work array for \f$ \grad{rom} \f$
+ * \param[in]     smacel      value associated to each variable in the mass
+ *                            source terms or mass rate
+ * \param[in]     viscf       visc*surface/dist at internal faces
+ * \param[in]     viscb       visc*surface/dist at edge faces
+ * \param[in]     smbr        working array
+ * \param[in]     rovsdt      working array
+ !*/
+/*-------------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
+                            cs_lnum_t            icetsm[],
+                            int                  itypsm[],
+                            const cs_real_33_t   gradv[],
+                            const cs_real_6_t    produc[],
+                            const cs_real_3_t    gradro[],
+                            cs_real_t            smacel[],
+                            cs_real_t            viscf[],
+                            cs_real_t            viscb[],
+                            cs_real_t            smbr[],
+                            cs_real_t            rovsdt[]);
+
+/*----------------------------------------------------------------------------*/
 /*! \brief Solve the equation on alpha in the framework of the Rij-EBRSM model.
  *
  * Also called for alpha of scalars for EB-DFM.
@@ -52,8 +87,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_rij_alpha(int        f_id,
-                        cs_real_t  c_durbin_l);
+cs_turbulence_rij_solve_alpha(int        f_id,
+                              cs_real_t  c_durbin_l);
 
 /*----------------------------------------------------------------------------*/
 /*!
