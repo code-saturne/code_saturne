@@ -294,6 +294,8 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
     }
   }
 
+  int need_rebalance = (n_cells_new > 0) ? 0 : 1;
+
   /* Update global numbering */
 
   if (m->global_cell_num != NULL || cs_glob_n_ranks > 1) {
@@ -310,6 +312,8 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
 
     assert(m->n_g_cells == n_g_cells_new);
 
+    cs_parall_max(1, CS_INT_TYPE, &need_rebalance);
+
   }
   else
     m->n_g_cells = n_g_cells_new;
@@ -320,6 +324,8 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
   BFT_FREE(c_o2n);
 
   m->modified |= CS_MESH_MODIFIED;
+  if (need_rebalance)
+    m->modified |= CS_MESH_MODIFIED_BALANCE;
 
   /* Rebuild ghosts */
 
