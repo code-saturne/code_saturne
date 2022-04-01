@@ -46,45 +46,33 @@ implicit none
 
 ! Local variables
 
-
 !===============================================================================
 
-!===============================================================================
-! 1. INITIALISATION
-!===============================================================================
+! If almax < 0, recompute it
 
-
-!===============================================================================
-! 3. TABLEAUX DE cstphy.f90
-!===============================================================================
-
-!---> COMMON TURBUL
-
-! --- SI ALMAX < 0 , IL EST RECALCULE
-
-write(nfecra,1000)
+write(nfecra, 1000)
 
 if (almax.le.0.d0) then
   almax = voltot**(1.d0/3.d0)
-  write(nfecra,1100) almax
-  write(nfecra,1102)
-  if(itytur.eq.2.or.itytur.eq.3                   &
+  write(nfecra, 1100) almax
+  write(nfecra, 1102)
+  if (itytur.eq.2.or.itytur.eq.3                  &
        .or. itytur.eq.5 .or. iturb.eq.60          &
        .or. iturb.eq.70) then
-    write(nfecra,1101)
+    write(nfecra, 1101)
   endif
 endif
 
  1000 format('')
  1100 format(                                                           &
-'       ALMAX  = ', E14.5,    ' (Characteristic length       )'  )
+'       ALMAX  = ', e14.5, ' (Characteristic length)')
  1101 format(                                                           &
-'       ALMAX is the length used to initialize the turbulence.'  )
+'       ALMAX is the length used to initialize the turbulence.')
  1102 format(                                                           &
-'       ALMAX is the cubic root of the domain volume.'         ,/)
+'       ALMAX is the cubic root of the domain volume.',/)
 
 !===============================================================================
-! 4. FIN
+! End
 !===============================================================================
 
 return

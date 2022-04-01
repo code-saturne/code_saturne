@@ -194,7 +194,7 @@ cs_coupling_set_sync_flag(int flag);
 /*----------------------------------------------------------------------------
  * Return the time step multiplier for external couplings.
  *
- * See cs_coupling_get_ts_multiplier() for details.
+ * See cs_coupling_set_ts_multiplier() for details.
  *
  * returns:
  *   time step multiplier for external couplings
