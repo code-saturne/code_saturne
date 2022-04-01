@@ -2376,9 +2376,9 @@ cs_equation_set_functions(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create a field structure related to all predefined equations
- *         This includes equations associated to all modules and also
- *         wall distance or mesh deformation for instance
+ * \brief  Create a field structure related to the predefined equation given as
+ *         parameter. This includes an equation associated to all modules and
+ *         also wall distance or mesh deformation for instance
  *
  *         When an automatic behavior is asked then one checks the flag
  *         CS_EQUATION_UNSTEADY to decide. One can force the behavior when

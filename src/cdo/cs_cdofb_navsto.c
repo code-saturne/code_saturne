@@ -398,7 +398,6 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
       nsb->pressure_bc_val[i] = 0.;
 
   } /* Loop on boundary faces */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -577,12 +576,14 @@ cs_cdofb_navsto_add_grad_div(short int          n_fc,
   cs_sdm_t  *b = NULL;
 
   /* Avoid dealing with cell DoFs which are not impacted */
+
   for (short int bi = 0; bi < n_fc; bi++) {
 
     const cs_real_t  *divi = div + 3*bi;
     const cs_real_t  zt_di[3] = {zeta*divi[0], zeta*divi[1], zeta*divi[2]};
 
     /* Begin with the diagonal block */
+
     b = cs_sdm_get_block(mat, bi, bi);
     assert(b->n_rows == b->n_cols && b->n_rows == 3);
     for (short int l = 0; l < 3; l++) {
@@ -592,6 +593,7 @@ cs_cdofb_navsto_add_grad_div(short int          n_fc,
     }
 
     /* Continue with the extra-diag. blocks */
+
     for (short int bj = bi+1; bj < n_fc; bj++) {
 
       b = cs_sdm_get_block(mat, bi, bj);
@@ -606,11 +608,13 @@ cs_cdofb_navsto_add_grad_div(short int          n_fc,
       for (short int l = 0; l < 3; l++) {
 
         /* Diagonal: 3*l+l = 4*l */
+
         const cs_real_t  gd_coef_ll = zt_di[l]*divj[l];
         mij[4*l] += gd_coef_ll;
         mji[4*l] += gd_coef_ll;
 
         /* Extra-diagonal: Use the symmetry of the grad-div */
+
         for (short int m = l+1; m < 3; m++) {
           const short int  lm = 3*l+m, ml = 3*m+l;
           const cs_real_t  gd_coef_lm = zt_di[l]*divj[m];
@@ -624,7 +628,6 @@ cs_cdofb_navsto_add_grad_div(short int          n_fc,
 
     } /* Loop on column blocks: bj */
   } /* Loop on row blocks: bi */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -644,10 +647,10 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
                               const cs_time_step_t        *ts,
                               cs_field_t                  *pr)
 {
-  /* Sanity checks */
   assert(nsp != NULL);
 
   /* Initial conditions for the pressure */
+
   if (nsp->n_pressure_ic_defs == 0)
     return; /* Nothing to do */
 
@@ -661,13 +664,16 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
   for (int def_id = 0; def_id < nsp->n_pressure_ic_defs; def_id++) {
 
     /* Get and then set the definition of the initial condition */
+
     cs_xdef_t  *def = nsp->pressure_ic_defs[def_id];
 
     /* Initialize face-based array */
+
     switch (def->type) {
 
       /* Evaluating the integrals: the averages will be taken care of at the
        * end when ensuring zero-mean valuedness */
+
     case CS_XDEF_BY_VALUE:
       /* When constant mean-value or the value at cell center is the same */
       cs_evaluate_potential_at_cells_by_value(def, values);
@@ -1407,6 +1413,7 @@ cs_cdofb_block_dirichlet_alge(short int                       f,
   assert(bd->n_row_blocks == cm->n_fc || bd->n_row_blocks == cm->n_fc + 1);
 
   /* Build x_dir */
+
   bool  is_non_homogeneous = false; /* Assume homogeneous by default */
 
   memset(cb->values, 0, 6*sizeof(double));
@@ -1436,16 +1443,19 @@ cs_cdofb_block_dirichlet_alge(short int                       f,
   } /* Non-homogeneous Dirichlet BC */
 
   /* Set RHS to the Dirichlet value for the related face */
+
   for (int k = 0; k < 3; k++)
     csys->rhs[3*f+k] = x_dir[k];
 
   /* Second pass: Replace the Dirichlet block by a diagonal block and fill with
    * zero the remaining row and column */
+
   for (int bi = 0; bi < bd->n_row_blocks; bi++) {
 
     if (bi != f) {
 
       /* Reset block (I,F) which is a 3x3 block */
+
       cs_sdm_t  *mIF = cs_sdm_get_block(m, bi, f);
       memset(mIF->val, 0, 9*sizeof(double));
 
@@ -1453,6 +1463,7 @@ cs_cdofb_block_dirichlet_alge(short int                       f,
     else { /* bi == f */
 
       /* Reset block (I==F,J) which is a 3x3 block */
+
       for (int bj = 0; bj < bd->n_col_blocks; bj++) {
         cs_sdm_t  *mFJ = cs_sdm_get_block(m, f, bj);
         memset(mFJ->val, 0, 9*sizeof(double));
@@ -1515,6 +1526,7 @@ cs_cdofb_block_dirichlet_pena(short int                       f,
   }
 
   /* Penalize diagonal entry (and its rhs if needed) */
+
   cs_sdm_t  *mFF = cs_sdm_get_block(m, f, f);
   assert((mFF->n_rows == 3) &&  (mFF->n_cols == 3));
 
@@ -1562,7 +1574,6 @@ cs_cdofb_block_dirichlet_weak(short int                       fb,
                               cs_cell_builder_t              *cb,
                               cs_cell_sys_t                  *csys)
 {
-  /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL && pty != NULL);
   assert(pty->is_iso == true);
 
@@ -1579,11 +1590,13 @@ cs_cdofb_block_dirichlet_weak(short int                       fb,
   /* 1) Build the bc_op matrix (scalar-valued version) */
 
   /* Initialize the matrix related to the flux reconstruction operator */
+
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
   cs_sdm_t *bc_op = cb->loc;
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* Compute \int_f du/dn v and update the matrix */
+
   _normal_flux_reco(fb, eqp->diffusion_hodgep.coef, cm,
                     (const cs_real_t (*)[3])kappa_f,
                     bc_op);
@@ -1591,6 +1604,7 @@ cs_cdofb_block_dirichlet_weak(short int                       fb,
   /* 2) Update the bc_op matrix and the RHS with the Dirichlet values. */
 
   /* coeff * \meas{f} / h_f  */
+
   const cs_real_t  pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[fb].meas);
 
   bc_op->val[fb*(n_dofs + 1)] += pcoef; /* Diagonal term */
@@ -1604,18 +1618,20 @@ cs_cdofb_block_dirichlet_weak(short int                       fb,
     for (int bj = 0; bj < n_dofs; bj++) {
 
       /* Retrieve the 3x3 matrix */
+
       cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
       const cs_real_t  _val = bc_op->val[n_dofs*bi + bj];
+
       /* Update diagonal terms only */
+
       bij->val[0] += _val;
       bij->val[4] += _val;
       bij->val[8] += _val;
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1645,7 +1661,6 @@ cs_cdofb_block_dirichlet_wsym(short int                       fb,
                               cs_cell_builder_t              *cb,
                               cs_cell_sys_t                  *csys)
 {
-  /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL && pty != NULL);
   assert(cs_equation_param_has_diffusion(eqp));
   assert(pty->is_iso == true);
@@ -1663,12 +1678,14 @@ cs_cdofb_block_dirichlet_wsym(short int                       fb,
   /* 1) Build the bc_op matrix (scalar-valued version) */
 
   /* Initialize the matrix related to the flux reconstruction operator */
+
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
   cs_sdm_t *bc_op = cb->loc, *bc_op_t = cb->aux;
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* Compute \int_f du/dn v and update the matrix. Only the line associated to
      fb has non-zero values */
+
   _normal_flux_reco(fb, eqp->diffusion_hodgep.coef, cm,
                     (const cs_real_t (*)[3])kappa_f,
                     bc_op);
@@ -1677,13 +1694,16 @@ cs_cdofb_block_dirichlet_wsym(short int                       fb,
 
   /* Update bc_op = bc_op + transp and transp = transpose(bc_op)
      cb->loc plays the role of the flux operator */
+
   cs_sdm_square_add_transpose(bc_op, bc_op_t);
 
   /* Update the RHS with bc_op_t * dir_fb */
+
   for (int k = 0; k < 3; k++) {
 
     /* Only the fb column has non-zero values in bc_op_t
        One thus simplifies the matrix-vector operation */
+
     const cs_real_t  dir_fb = csys->dir_values[3*fb+k];
     for (short int i = 0; i < n_dofs; i++)
       csys->rhs[3*i+k] += bc_op_t->val[i*n_dofs+fb] * dir_fb;
@@ -1693,6 +1713,7 @@ cs_cdofb_block_dirichlet_wsym(short int                       fb,
   /* 3) Update the bc_op matrix and the RHS with the penalization */
 
   /* coeff * \meas{f} / h_f  \equiv coeff * h_f */
+
   const double  pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[fb].meas);
 
   bc_op->val[fb*(n_dofs + 1)] += pcoef; /* Diagonal term */
@@ -1706,18 +1727,20 @@ cs_cdofb_block_dirichlet_wsym(short int                       fb,
     for (int bj = 0; bj < n_dofs; bj++) {
 
       /* Retrieve the 3x3 matrix */
+
       cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
       const cs_real_t  _val = bc_op->val[n_dofs*bi + bj];
+
       /* Update diagonal terms only */
+
       bij->val[0] += _val;
       bij->val[4] += _val;
       bij->val[8] += _val;
 
     }
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1746,7 +1769,6 @@ cs_cdofb_symmetry(short int                       fb,
                   cs_cell_builder_t              *cb,
                   cs_cell_sys_t                  *csys)
 {
-  /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL && pty != NULL);
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
   assert(cs_equation_param_has_diffusion(eqp));
@@ -1764,12 +1786,15 @@ cs_cdofb_symmetry(short int                       fb,
   /* 1) Build the bc_op matrix (scalar-valued version) */
 
   /* Initialize the matrix related this flux reconstruction operator */
+
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
+
   cs_sdm_t *bc_op = cb->aux;
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* Compute \int_f du/dn v and update the matrix. Only the line associated to
      fb has non-zero values */
+
   _normal_flux_reco(fb, eqp->diffusion_hodgep.coef, cm,
                     (const cs_real_t (*)[3])kappa_f,
                     bc_op);
@@ -1785,9 +1810,11 @@ cs_cdofb_symmetry(short int                       fb,
                                 {nf[2]*nf[0], nf[2]*nf[1], nf[2]*nf[2]} };
 
   /* coeff * \meas{f} / h_f  \equiv coeff * h_f */
+
   const double  pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);
 
   /* Handle the diagonal block: Retrieve the 3x3 matrix */
+
   cs_sdm_t  *bFF = cs_sdm_get_block(csys->mat, fb, fb);
   assert(bFF->n_rows == bFF->n_cols && bFF->n_rows == 3);
 
@@ -1805,6 +1832,7 @@ cs_cdofb_symmetry(short int                       fb,
 
     /* It should be done both for face- and cell-defined DoFs */
     /* Retrieve the 3x3 matrix */
+
     cs_sdm_t  *bFJ = cs_sdm_get_block(csys->mat, fb, xj);
     assert(bFJ->n_rows == bFJ->n_cols && bFJ->n_rows == 3);
     cs_sdm_t  *bJF = cs_sdm_get_block(csys->mat, xj, fb);
@@ -1821,6 +1849,7 @@ cs_cdofb_symmetry(short int                       fb,
       bFJ->val[3*k+2] += nf_nf[2][k] * _val_fj_jf;
 
       /* nf_nf is symmetric */
+
       bJF->val[3*k  ] += nf_nf[0][k] * _val_fj_jf;
       bJF->val[3*k+1] += nf_nf[1][k] * _val_fj_jf;
       bJF->val[3*k+2] += nf_nf[2][k] * _val_fj_jf;
@@ -2155,7 +2184,6 @@ cs_cdofb_navsto_boussinesq_at_face(const cs_navsto_param_t           *nsp,
       csys->rhs[3*f+k] += rhs_coef * _div_f[k];
 
   } /* Loop on cell faces */
-
 }
 
 /*----------------------------------------------------------------------------*/

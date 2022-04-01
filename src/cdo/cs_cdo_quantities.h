@@ -233,8 +233,8 @@ typedef struct { /* Specific mesh quantities */
 
   cs_real_t        *dcell_vol;       /* Dual volume related to each vertex.
                                       * Scanned with the c2v adjacency.
-                                      * Not always allocated.
-                                      */
+                                      * Not always allocated. */
+
   const cs_real_t  *vtx_coord;       /* Shared with the cs_mesh_t structure */
 
 } cs_cdo_quantities_t;
