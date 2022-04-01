@@ -37,9 +37,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -61,29 +58,9 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-/*=============================================================================
- * User function definitions
+/*============================================================================
+ * Public function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set boundary conditions to be applied.
- *
- * This function is called just before \ref cs_user_finalize_setup, and
- * boundary conditions can be defined in either of those functions,
- * depending on whichever is considered more readable or practical for a
- * given use.
- *
- * \param[in, out]  domain  pointer to a cs_domain_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-#pragma weak cs_user_boundary_conditions_setup
-void
-cs_user_boundary_conditions_setup(cs_domain_t  *domain)
-{
-  CS_UNUSED(domain);
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -127,14 +104,39 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
  */
 /*----------------------------------------------------------------------------*/
 
-#pragma weak cs_user_boundary_conditions
 void
 cs_user_boundary_conditions(int         nvar,
                             int         bc_type[],
                             int         icodcl[],
                             cs_real_t   rcodcl[])
 {
+  /* Shorter aliases to global variables */
 
+  const cs_time_step_t *ts = cs_glob_time_step;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+  const cs_zone_t *z = cs_boundary_zone_by_name("Inlet");
+
+  /* Get access to boundary condition arrays for temperature field */
+
+  const cs_field_t *f = cs_field_by_name("temperature");
+  cs_lnum_t ivar
+    = cs_field_get_key_int(f, cs_field_key_id("variable_id")) - 1;
+
+  /* Prescribe temperature (Dirichlet) value based on time */
+
+  if (ts->t_cur < 3.8) {
+    for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+      cs_lnum_t face_id = z->elt_ids[i];
+      rcodcl[ivar*n_b_faces + face_id] = 20. + 100.*ts->t_cur;
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+      cs_lnum_t face_id = z->elt_ids[i];
+      rcodcl[ivar*n_b_faces + face_id] = 400.;
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

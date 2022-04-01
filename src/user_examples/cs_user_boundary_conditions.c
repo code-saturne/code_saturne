@@ -1,5 +1,5 @@
 /*============================================================================
- * User functions for input of calculation parameters.
+ * User definition of boundary conditions.
  *============================================================================*/
 
 /* VERS */
@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 
 #if defined(HAVE_MPI)
@@ -260,7 +261,7 @@ _w_flux_top(cs_lnum_t         n_elts,
 
   const cs_zone_t *z = cs_boundary_zone_by_name("wall_top");
 
-  /* Get the fluid mesure (i.e. surface) of the zone */
+  /* Get the fluid measure (i.e. surface) of the zone */
   cs_real_t flux = 1. / z->f_measure;
 
   /* Exchange coefficient first, Dirichlet values second. */
@@ -304,7 +305,7 @@ _w_flux_side(cs_lnum_t         n_elts,
 {
   const cs_zone_t *z = (const cs_zone_t *)input;
 
-  /* Get the fluid mesure (i.e. surface) of the zone */
+  /* Get the fluid measure (i.e. surface) of the zone */
   cs_real_t flux = 1. / z->f_measure;
 
   /* Exchange coefficient first, Dirichlet values second. */

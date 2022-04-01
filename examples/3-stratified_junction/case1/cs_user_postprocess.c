@@ -36,35 +36,10 @@
 #include "string.h"
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_geom.h"
-#include "cs_interpolate.h"
-#include "cs_mesh.h"
-#include "cs_selector.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_post_util.h"
-#include "cs_probe.h"
-#include "cs_time_plot.h"
-
-#include "cs_field_pointer.h"
-#include "cs_notebook.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_turbulence_model.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -157,7 +132,6 @@ cs_user_postprocess_writers(void)
                         true,                         /* output_at_end */
                         5,                            /* frequency_n */
                         -1);                          /* frequency_t */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -251,7 +225,6 @@ cs_user_postprocess_values(const char            *mesh_name,
                       NULL,                           /* b_face_vals */
                       ts);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -48,38 +48,10 @@
 #include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_base.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-#include "cs_field_operator.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_prototypes.h"
-#include "cs_rotation.h"
-#include "cs_time_moment.h"
-#include "cs_time_step.h"
-#include "cs_turbomachinery.h"
-#include "cs_selector.h"
-
-#include "cs_post.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -105,16 +77,20 @@ BEGIN_C_DECLS
  *
  * It has a very general purpose, although it is recommended to handle
  * mainly postprocessing or data-extraction type operations.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
-
-/* Global declaration of the moy.dat file that will be filled with Tav */
-static FILE *file = NULL;
 
 void
 cs_user_extra_operations(cs_domain_t     *domain)
 {
   /* Variables declaration */
+
+  /* Handle to the moy.dat file that will be filled with Tav;
+   declared as static so as to keep its value between calls. */
+  static FILE *file = NULL;
+
   /* Get pointers to the mesh and mesh quantities structures */
   const cs_mesh_t *m= cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -128,23 +104,21 @@ cs_user_extra_operations(cs_domain_t     *domain)
   /* Get the temperature field */
   const cs_field_t *temp = cs_field_by_name_try("temperature");
 
-  /* Cell volumes sum, Temp * volumes sum and Tavg */
-  cs_real_t voltot = 0., temptot =0., Tavg =0.;
+  /* Total domain volume */
+  cs_real_t voltot = fvq->tot_vol;
 
-  /* Compute the sum of the cell volumes */
-  for (int ii = 0 ; ii < n_cells ; ii++)
-    voltot += cell_vol[ii];
+  /* Temp * volumes sum and Tavg */
+  cs_real_t temptot =0., Tavg =0.;
 
   /* Compute the sum T*vol */
   for (int ii = 0 ; ii < n_cells ; ii++)
     temptot += temp->val[ii]*cell_vol[ii];
 
   /* Parallel sums */
-  cs_parall_sum(1, CS_DOUBLE, &voltot);
-  cs_parall_sum(1, CS_DOUBLE, &temptot);
+  cs_parall_sum(1, CS_REAL_TYPE, &temptot);
 
   /* Compute Tavg */
-  Tavg = temptot / voltot ;
+  Tavg = temptot / voltot;
 
   /* Open the file moy.dat at the first iteration
      and write the first comment line only on the
@@ -165,6 +139,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
    && cs_glob_rank_id <= 0)
     fclose(file);
 }
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
