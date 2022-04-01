@@ -983,7 +983,11 @@ _solidification_full_assembly(const cs_cell_sys_t            *csys,
 
   cs_solid_selection_t  *solid = cs_solid_selection_get();
 
-  if (solid->cell_is_solid[cm->c_id]) {
+  assert(solid != NULL);
+  if (solid->cell_is_solid == NULL) /* No solid cell in the whole domain */
+    return;
+
+  if (solid->cell_is_solid[cm->c_id]) { /* This cell is solid */
 
     cs_cdo_system_block_t  *b = sc->system_helper->blocks[0];
     assert(b->type == CS_CDO_SYSTEM_BLOCK_EXT);
