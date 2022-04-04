@@ -188,6 +188,12 @@ int diffusivity_id;
 */
 double diffusivity_ref;
 
+/*!
+  \var turbulent_flux_ctheta
+  Coefficient of GGDH and AFM turbulent flux models.
+*/
+double turbulent_flux_ctheta;
+
 /*!@}*/
 
 /*----------------------------------------------------------------------------*/

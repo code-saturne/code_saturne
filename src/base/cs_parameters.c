@@ -915,6 +915,9 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("turbulent_flux_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("alpha_turbulent_flux_id", -1, CS_FIELD_VARIABLE);
 
+  cs_field_define_key_double("turbulent_flux_ctheta",
+                             1., CS_FIELD_VARIABLE); /* ctheta(iscal) */
+
   cs_field_define_key_double("turbulent_schmidt",
                              1., CS_FIELD_VARIABLE); /* sigmas(iscal) */
   cs_field_define_key_int("turbulent_schmidt_id", -1, CS_FIELD_VARIABLE);

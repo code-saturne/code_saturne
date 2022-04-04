@@ -2315,7 +2315,7 @@ double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
 double precision turb_schmidt, exchange_coef, visls_0
 double precision mut_lm_dmut
-double precision rough_t
+double precision rough_t, ctheta
 
 character(len=80) :: fname
 
@@ -2368,6 +2368,7 @@ if (vcopt%idiff .eq. 0) then
 endif
 
 ! Get the turbulent flux model for the scalar
+call field_get_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
 turb_flux_model_type = turb_flux_model / 10
@@ -2620,9 +2621,9 @@ do ifac = 1, nfabor
         else
           cpscv = cpscv/cv0
         endif
-        temp = vcopt%idifft*cpscv*ctheta(iscal)/csrij
+        temp = vcopt%idifft*cpscv*ctheta/csrij
       else
-        temp = vcopt%idifft*cpp*ctheta(iscal)/csrij
+        temp = vcopt%idifft*cpp*ctheta/csrij
       endif
       visci(1,1) = temp*visten(1,iel) + rkl
       visci(2,2) = temp*visten(2,iel) + rkl
@@ -2905,14 +2906,14 @@ do ifac = 1, nfabor
       endif
 
       hintt(1) =   0.5d0*(visclc+rkl)/distbf                        &
-                 + visten(1,iel)*ctheta(iscal)/distbf/csrij
+                 + visten(1,iel)*ctheta/distbf/csrij
       hintt(2) =   0.5d0*(visclc+rkl)/distbf                        &
-                 + visten(2,iel)*ctheta(iscal)/distbf/csrij
+                 + visten(2,iel)*ctheta/distbf/csrij
       hintt(3) =   0.5d0*(visclc+rkl)/distbf                        &
-                 + visten(3,iel)*ctheta(iscal)/distbf/csrij
-      hintt(4) = visten(4,iel)*ctheta(iscal)/distbf/csrij
-      hintt(5) = visten(5,iel)*ctheta(iscal)/distbf/csrij
-      hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
+                 + visten(3,iel)*ctheta/distbf/csrij
+      hintt(4) = visten(4,iel)*ctheta/distbf/csrij
+      hintt(5) = visten(5,iel)*ctheta/distbf/csrij
+      hintt(6) = visten(6,iel)*ctheta/distbf/csrij
 
       ! Dirichlet Boundary Condition
       !-----------------------------

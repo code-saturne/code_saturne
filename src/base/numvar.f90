@@ -207,6 +207,9 @@ module numvar
   !> turbulent schmidt key for scalars
   integer, save :: ksigmas
 
+  !> turbulent flow models GGDH and AFM key for scalar
+  integer, save :: kctheta
+
   !> convective mass flux of the variables at the previous time-step
   integer, save :: ifluaa(nvarmx)
 

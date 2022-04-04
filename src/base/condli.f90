@@ -227,7 +227,7 @@ double precision visci(3,3), fikis, viscis, distfi
 double precision temp, exchange_coef
 double precision turb_schmidt
 double precision, allocatable, dimension(:) :: pimpts, hextts, qimpts, cflts
-double precision sigmae
+double precision sigmae, ctheta
 
 character(len=80) :: fname
 
@@ -2376,12 +2376,14 @@ if (nscal.ge.1) then
 
     call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
-    if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0.or.turb_flux_model_type.eq.3) then
+    if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0  &
+        .or.turb_flux_model_type.eq.3) then
       if (iturb.ne.32.or.turb_flux_model_type.eq.3) then
         call field_get_val_v(ivsten, visten)
       else ! EBRSM and (GGDH or AFM)
         call field_get_val_v(ivstes, visten)
       endif
+      call field_get_key_double(ivarfl(isca(ii)), kctheta, ctheta)
     endif
 
     call field_get_key_double(ivarfl(isca(ii)), ksigmas, turb_schmidt)
@@ -2447,8 +2449,7 @@ if (nscal.ge.1) then
 
         ! Symmetric tensor diffusivity
         elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-
-          temp = vcopt%idifft*cpp*ctheta(ii)/csrij
+          temp = vcopt%idifft*cpp*ctheta/csrij
           visci(1,1) = rkl + temp*visten(1,iel)
           visci(2,2) = rkl + temp*visten(2,iel)
           visci(3,3) = rkl + temp*visten(3,iel)
@@ -2659,14 +2660,14 @@ if (nscal.ge.1) then
             rkl = viscls(iel)/cpp
           endif
           hintt(1) = 0.5d0*(visclc+rkl)/distbf                        &
-                   + visten(1,iel)*ctheta(iscal)/distbf/csrij !FIXME ctheta (iscal)
+                   + visten(1,iel)*ctheta/distbf/csrij
           hintt(2) = 0.5d0*(visclc+rkl)/distbf                        &
-                   + visten(2,iel)*ctheta(iscal)/distbf/csrij
+                   + visten(2,iel)*ctheta/distbf/csrij
           hintt(3) = 0.5d0*(visclc+rkl)/distbf                        &
-                   + visten(3,iel)*ctheta(iscal)/distbf/csrij
-          hintt(4) = visten(4,iel)*ctheta(iscal)/distbf/csrij
-          hintt(5) = visten(5,iel)*ctheta(iscal)/distbf/csrij
-          hintt(6) = visten(6,iel)*ctheta(iscal)/distbf/csrij
+                   + visten(3,iel)*ctheta/distbf/csrij
+          hintt(4) = visten(4,iel)*ctheta/distbf/csrij
+          hintt(5) = visten(5,iel)*ctheta/distbf/csrij
+          hintt(6) = visten(6,iel)*ctheta/distbf/csrij
 
           ! Set pointer values of turbulent fluxes in icodcl
           call field_get_key_int(f_id, keyvar, iut)
@@ -2808,7 +2809,7 @@ if (nscal.ge.1) then
         ! Symmetric tensor diffusivity
         elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
-          temp = vcopt%idifft*cpp*ctheta(ii)/csrij
+          temp = vcopt%idifft*cpp*ctheta/csrij
           hintt(1) = (rkl + temp*visten(1,iel))/distbf
           hintt(2) = (rkl + temp*visten(2,iel))/distbf
           hintt(3) = (rkl + temp*visten(3,iel))/distbf

@@ -93,7 +93,7 @@ integer          ifcvsl
 integer          kturt, turb_flux_model, turb_flux_model_type
 integer          kclipp, clprit
 
-double precision epsrgp, climgp
+double precision epsrgp, climgp ,ctheta
 double precision xk, xe, xtt
 double precision grav(3),xrij(3,3), temp(3)
 double precision xnal(3), xnoral
@@ -218,6 +218,7 @@ endif
 !===============================================================================
 ! 2. Agebraic models AFM
 !===============================================================================
+
 if (turb_flux_model_type.ne.3) then
 
   call field_get_val_prev_s(ivarfl(iep), cvara_ep)
@@ -233,6 +234,8 @@ if (turb_flux_model_type.ne.3) then
   enddo
 
   if (itt.gt.0) call field_get_val_prev_s(ivarfl(isca(itt)), cvara_tt)
+
+  call field_get_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
 
   do iel = 1, ncel
     !Rij
@@ -307,9 +310,8 @@ if (turb_flux_model_type.ne.3) then
            *(xpk+xgk)/cvara_ep(iel))
       xxc3 = xxc2
 
-      ctheta(iscal) = (0.97d0*xR**0.5d0)/( alpha_theta * (4.15d0*0.5d0**0.5d0)  &
+      ctheta = (0.97d0*xR**0.5d0)/( alpha_theta * (4.15d0*0.5d0**0.5d0)  &
                    +(1.d0-alpha_theta)*(prdtl**0.5d0)*xxc2)
-
       gamma_ebggdh = (1.d0-alpha_theta)*(xxc1 + xxc2)
     ! Constants for EB-AFM
     elseif (turb_flux_model.eq.21) then
@@ -318,7 +320,7 @@ if (turb_flux_model_type.ne.3) then
            *(xpk+xgk)/cvara_ep(iel))
       xxc3 = xxc2
 
-      ctheta(iscal) = (0.97d0*xR**0.5d0)/( alpha_theta * (4.15d0*0.5d0**0.5d0)  &
+      ctheta = (0.97d0*xR**0.5d0)/( alpha_theta * (4.15d0*0.5d0**0.5d0)  &
                       +(1.d0-alpha_theta)*(prdtl**0.5d0)*xxc2)
       gamma_ebafm   = (1.d0-alpha_theta)*(xxc1 + xxc2)
       eta_ebafm     = 1.d0 - alpha_theta*0.6d0
@@ -326,7 +328,7 @@ if (turb_flux_model_type.ne.3) then
     end if
 
     ! Compute thermal flux u'T'
-
+    call field_get_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
     do ii = 1, 3
       temp(ii) = 0.d0
 
@@ -334,7 +336,7 @@ if (turb_flux_model_type.ne.3) then
       !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2)"
       if (turb_flux_model.eq.20) then
         if (itt.gt.0.and.ibeta.ge.0) then
-          temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
+          temp(ii) = temp(ii) - ctheta*xtt*                           &
                      etaafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
         endif
 
@@ -343,10 +345,10 @@ if (turb_flux_model_type.ne.3) then
           ! Only the i.ne.j  components are added.
           if (ii.ne.jj) then
             temp(ii) = temp(ii)                                              &
-                     - ctheta(iscal)*xtt*xiafm*xut(jj,iel)*gradv(jj,ii,iel)
+                     - ctheta*xtt*xiafm*xut(jj,iel)*gradv(jj,ii,iel)
           else
             temp(ii) = temp(ii)                                              &
-                     - min(ctheta(iscal)*xtt*xiafm*xut(jj,iel)*gradv(jj,ii,iel), 0.d0)
+                     - min(ctheta*xtt*xiafm*xut(jj,iel)*gradv(jj,ii,iel), 0.d0)
           endif
         enddo
       endif
@@ -355,7 +357,7 @@ if (turb_flux_model_type.ne.3) then
       !  "-C_theta*k/eps*( xi* uT'.Grad u + eta*beta*g_i*T'^2 + eps/k gamma uT' ni nj)"
       if(turb_flux_model.eq.21) then
         if (itt.gt.0.and.ibeta.ge.0) then
-          temp(ii) = temp(ii) - ctheta(iscal)*xtt*                           &
+          temp(ii) = temp(ii) - ctheta*xtt*                           &
                      eta_ebafm*cpro_beta(iel)*grav(ii)*cvara_tt(iel)
         endif
 
@@ -364,11 +366,11 @@ if (turb_flux_model_type.ne.3) then
           ! Only the i.ne.j  components are added.
           if (ii.ne.jj) then
             temp(ii) = temp(ii)                                                 &
-                     - ctheta(iscal)*xtt*xi_ebafm*gradv(jj,ii,iel)*xut(jj,iel)  &
-                     - ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(jj)*xut(jj,iel)
+                     - ctheta*xtt*xi_ebafm*gradv(jj,ii,iel)*xut(jj,iel)  &
+                     - ctheta*gamma_ebafm*xnal(ii)*xnal(jj)*xut(jj,iel)
           else
             temp(ii) = temp(ii)                                                 &
-                     - ctheta(iscal)                                            &
+                     - ctheta                                            &
                      * min(xtt*xi_ebafm*gradv(jj,ii,iel)*xut(jj,iel)            &
                           +gamma_ebafm*xnal(ii)*xnal(jj)*xut(jj,iel), 0.d0)
 
@@ -384,7 +386,7 @@ if (turb_flux_model_type.ne.3) then
           ! Only the i.ne.j  components are added.
           if (ii.ne.jj) then
             temp(ii) = temp(ii)                                                 &
-                     - ctheta(iscal)*gamma_ebggdh*xnal(ii)*xnal(jj)*xut(jj,iel)
+                     - ctheta*gamma_ebggdh*xnal(ii)*xnal(jj)*xut(jj,iel)
           endif
         enddo
       end if
@@ -396,7 +398,7 @@ if (turb_flux_model_type.ne.3) then
       !  "-C_theta*k/eps* R.grad T"
       ! The resulting XUT array is only use for post processing purpose in
       ! (EB)GGDH & (EB)AFM
-      xut(ii,iel) = temp(ii) - ctheta(iscal)*xtt*( xrij(ii,1)*gradt(1,iel)  &
+      xut(ii,iel) = temp(ii) - ctheta*xtt*( xrij(ii,1)*gradt(1,iel)  &
                                                  + xrij(ii,2)*gradt(2,iel)  &
                                                  + xrij(ii,3)*gradt(3,iel))
 
@@ -407,34 +409,34 @@ if (turb_flux_model_type.ne.3) then
       ! with Coeff_imp = C/(1+C*Y_ii)
       if (turb_flux_model.eq.20) then
         ! AFM
-        coeff_imp = 1.d0 + max(ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel), 0.d0)
+        coeff_imp = 1.d0 + max(ctheta*xtt*xiafm*gradv(ii,ii,iel), 0.d0)
 
         xut(ii,iel) = xut(ii,iel)/ coeff_imp
         temp(ii)    = temp(ii)   / coeff_imp
         ! Calculation of the diffusion tensor for the implicited part
         ! of the model computed in covofi.f90
-        vistet(ii,iel) = crom(iel)*ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+        vistet(ii,iel) = crom(iel)*ctheta*xtt*xrij(ii,ii)/coeff_imp
 
       else if(turb_flux_model.eq.21) then
         ! EB-AFM
-        coeff_imp = 1.d0 + max(ctheta(iscal)*xtt*xi_ebafm*gradv(ii,ii,iel) &
-                             + ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(ii), 0.d0)
+        coeff_imp = 1.d0 + max(ctheta*xtt*xi_ebafm*gradv(ii,ii,iel) &
+                             + ctheta*gamma_ebafm*xnal(ii)*xnal(ii), 0.d0)
 
         xut(ii,iel) = xut(ii,iel)/ coeff_imp
         temp(ii)    = temp(ii)   / coeff_imp
         ! Calculation of the diffusion tensor for the implicited part
         ! of the model computed in covofi.f90
-        vistet(ii,iel) = crom(iel)*ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+        vistet(ii,iel) = crom(iel)*ctheta*xtt*xrij(ii,ii)/coeff_imp
 
       else if(turb_flux_model.eq.11) then
         ! EB-GGDH
-        coeff_imp = 1.d0+ ctheta(iscal)*gamma_ebggdh*xnal(ii)*xnal(ii)
+        coeff_imp = 1.d0+ ctheta*gamma_ebggdh*xnal(ii)*xnal(ii)
 
         xut(ii,iel) = xut(ii,iel)/ coeff_imp
         temp(ii)    = temp(ii)   / coeff_imp
         ! Calculation of the diffusion tensor for the implicited part
         ! of the model computed in covofi.f90
-        vistet(ii,iel) = crom(iel)*ctheta(iscal)*xtt*xrij(ii,ii)/coeff_imp
+        vistet(ii,iel) = crom(iel)*ctheta*xtt*xrij(ii,ii)/coeff_imp
       endif
 
       ! In the next step, we compute the divergence of:
@@ -445,12 +447,17 @@ if (turb_flux_model_type.ne.3) then
 
     ! Extra diag part of the diffusion tensor for covofi
     if(turb_flux_model.eq.11.or.turb_flux_model.eq.20.or.turb_flux_model.eq.21) then
-      vistet(4,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(1,2)
-      vistet(5,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(2,3)
-      vistet(6,iel) = crom(iel) * ctheta(iscal)* xtt * xrij(1,3)
+      vistet(4,iel) = crom(iel) * ctheta* xtt * xrij(1,2)
+      vistet(5,iel) = crom(iel) * ctheta* xtt * xrij(2,3)
+      vistet(6,iel) = crom(iel) * ctheta* xtt * xrij(1,3)
     end if
 
   enddo ! End loop over ncel
+
+  ! FIXME the line below reproduces the previous behavior, which
+  ! is incorrect (see issue #387). Either we should consider
+  ! ctheta here purely local, or we must use an associated field to save it.
+  call field_set_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
 
   call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 

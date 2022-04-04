@@ -115,6 +115,8 @@ call field_get_key_id("source_term_id", kst)
 
 call field_get_key_id("turbulent_schmidt", ksigmas)
 
+call field_get_key_id("turbulent_flux_ctheta", kctheta)
+
 icrom = -1
 ibrom = -1
 

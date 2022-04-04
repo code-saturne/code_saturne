@@ -184,7 +184,7 @@ double precision xR, prdtl, alpha_theta
 double precision normp
 double precision l2norm, l2errork, dl2norm
 double precision dum
-double precision qliqmax
+double precision qliqmax, ctheta
 
 double precision rvoid(1)
 
@@ -309,6 +309,8 @@ if (vcopt%iwgrec.eq.1) then
     call field_get_val_s(iflwgr, cpro_wgrec_s)
   endif
 endif
+
+call field_get_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
 
 ! Allocate temporary arrays
 allocate(w1(ncelet))
@@ -1174,7 +1176,7 @@ if (vcopt%idiff.ge.1) then
       if (ifcvsl.lt.0) then
         do iel = 1, ncel
 
-          temp = vcopt%idifft*xcpp(iel)*ctheta(iscal)/csrij
+          temp = vcopt%idifft*xcpp(iel)*ctheta/csrij
           viscce(1,iel) = temp*visten(1,iel) + visls_0
           viscce(2,iel) = temp*visten(2,iel) + visls_0
           viscce(3,iel) = temp*visten(3,iel) + visls_0
@@ -1186,7 +1188,7 @@ if (vcopt%idiff.ge.1) then
       else
         do iel = 1, ncel
 
-          temp = vcopt%idifft*xcpp(iel)*ctheta(iscal)/csrij
+          temp = vcopt%idifft*xcpp(iel)*ctheta/csrij
           viscce(1,iel) = temp*visten(1,iel) + cpro_viscls(iel)
           viscce(2,iel) = temp*visten(2,iel) + cpro_viscls(iel)
           viscce(3,iel) = temp*visten(3,iel) + cpro_viscls(iel)

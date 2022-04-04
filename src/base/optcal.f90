@@ -1093,9 +1093,6 @@ module optcal
   !> \ref dimens::nscal "nscal" such as iscavr(iscal)>0
   double precision, save :: rvarfl(nscamx)
 
-  !> ctheta : coefficient des modeles de flux turbulents GGDH et AFM
-  double precision, save :: ctheta(nscamx)
-
   !> flag for computing the drift mass flux:
   !> (for coal classes for instance, only the first
   !>  scalar of a class compute the drift flux of the class

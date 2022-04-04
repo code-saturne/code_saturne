@@ -138,7 +138,7 @@ double precision sclnor
 double precision thetv , thets , thetap, thetp1
 double precision smbexp(3)
 double precision temp, idifftp
-double precision turb_schmidt, visls_0
+double precision turb_schmidt, visls_0, ctheta
 
 double precision rvoid(1)
 
@@ -202,11 +202,12 @@ call field_get_key_id("drift_scalar_model", keydri)
 call field_get_key_int(iflid, kimasf, iflmas) ! interior mass flux
 ! Pointer to the internal mass flux
 call field_get_val_s(iflmas, imasfl)
-
 ! Id of the mass flux
 call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
 ! Pointer to the Boundary mass flux
 call field_get_val_s(iflmab, bmasfl)
+
+call field_get_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
 
 call field_get_key_struct_var_cal_opt(iflid, vcopt)
 
@@ -486,7 +487,7 @@ if (vcopt%idiff.ge.1) then
     if (ifcvsl.lt.0) then
       do iel = 1, ncel
 
-        temp = vcopt%idifft*ctheta(iscal)/csrij
+        temp = vcopt%idifft*ctheta/csrij
         viscce(1,iel) = temp*visten(1,iel) + visls_0
         viscce(2,iel) = temp*visten(2,iel) + visls_0
         viscce(3,iel) = temp*visten(3,iel) + visls_0
@@ -498,7 +499,7 @@ if (vcopt%idiff.ge.1) then
     else
       do iel = 1, ncel
 
-        temp = vcopt%idifft*ctheta(iscal)/csrij
+        temp = vcopt%idifft*ctheta/csrij
         viscce(1,iel) = temp*visten(1,iel) + cpro_viscls(iel)
         viscce(2,iel) = temp*visten(2,iel) + cpro_viscls(iel)
         viscce(3,iel) = temp*visten(3,iel) + cpro_viscls(iel)

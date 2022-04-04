@@ -71,7 +71,7 @@ integer          iviext
 integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision relxsp, clvfmn, clvfmx, visls_0, visls_cmp
-double precision scminp
+double precision scminp, ctheta
 
 character(len=80) :: name
 
@@ -886,7 +886,7 @@ if (nscal.gt.0) then
     if (turb_flux_model_type.eq.1.or.turb_flux_model_type.eq.2) then
       call field_get_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
       vcopt%idften = ANISOTROPIC_RIGHT_DIFFUSION
-      ctheta(iscal) = cthafm
+      call field_set_key_double(ivarfl(isca(iscal)), kctheta, cthafm)
       call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
     ! DFM on the scalar
     elseif (turb_flux_model_type.eq.3) then
@@ -894,10 +894,10 @@ if (nscal.gt.0) then
       vcopt%idifft = 0
       vcopt%idften = ISOTROPIC_DIFFUSION
       if (turb_flux_model.eq.31) then
-        ctheta(iscal) = cthebdfm
+        call field_set_key_double(ivarfl(isca(iscal)), kctheta, cthebdfm)
         c2trit = 0.3d0
       else
-        ctheta(iscal) = cthdfm
+        call field_set_key_double(ivarfl(isca(iscal)), kctheta, cthdfm)
       end if
       call field_set_key_struct_var_cal_opt(ivarfl(isca(iscal)), vcopt)
       ! GGDH on the thermal fluxes is automatically done
@@ -907,12 +907,12 @@ if (nscal.gt.0) then
         if (iscavr(ii).eq.iscal) then
           call field_get_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
           vcopt%idften = ANISOTROPIC_RIGHT_DIFFUSION
-          ctheta(ii) = csrij
+          call field_set_key_double(ivarfl(isca(ii)), kctheta, csrij)
           call field_set_key_struct_var_cal_opt(ivarfl(isca(ii)), vcopt)
         endif
       enddo
     else
-      ctheta(iscal) = csrij
+      call field_set_key_double(ivarfl(isca(iscal)), kctheta, csrij)
     endif
   enddo
 endif
@@ -957,7 +957,7 @@ if (ippmod(idarcy).eq.1) then
   ! csrij = 1 and ctheta(iscal) = 1 for Darcy module
   csrij = 1.d0
   do iscal = 1, nscal
-    ctheta(iscal) = 1.d0
+    call field_set_key_double(ivarfl(isca(iscal)), kctheta, 1.d0)
   enddo
 
   ! reference values for pressure and density

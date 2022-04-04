@@ -113,7 +113,7 @@ double precision xrij(3,3),phiith(3), phiitw(3)
 double precision xnal(3), xnoral
 double precision alpha, xttdrbt, xttdrbw
 double precision pk, gk, xxc1, xxc2, xxc3, imp_term
-double precision rctse, visls_0
+double precision rctse, visls_0, ctheta
 
 double precision rvoid(1)
 
@@ -452,7 +452,7 @@ enddo
 if (iand(vcopt_ut%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
 
   call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
-
+  call field_get_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
   do iel = 1, ncel
 
     if (ifcvsl.ge.0) then
@@ -464,9 +464,9 @@ if (iand(vcopt_ut%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
     do isou = 1, 6
       if (isou.le.3) then
         viscce(isou,iel) = 0.5d0*(viscl(iel)*(1.d0+1.d0/prdtl))    &
-                         + vcopt%idifft*ctheta(iscal)*visten(isou,iel)/csrij
+                         + vcopt%idifft*ctheta*visten(isou,iel)/csrij
       else
-        viscce(isou,iel) = vcopt%idifft*ctheta(iscal)*visten(isou,iel)/csrij
+        viscce(isou,iel) = vcopt%idifft*ctheta*visten(isou,iel)/csrij
       endif
     enddo
   enddo
@@ -480,9 +480,9 @@ if (iand(vcopt_ut%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
 
 ! Scalar diffusivity
 else
-
+  call field_get_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
   do iel = 1, ncel
-    rctse = ctheta(iscal) * visct(iel) / cmu
+    rctse = ctheta * visct(iel) / cmu
     w1(iel) = viscl(iel) + vcopt%idifft*rctse
   enddo
 

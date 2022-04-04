@@ -661,7 +661,7 @@ double precision cpp, rkl, visclc, visls_0
 double precision distbf, srfbnf
 double precision rnx, rny, rnz
 double precision hintt(6)
-double precision hint, qimp
+double precision hint, qimp, ctheta
 
 character(len=80) :: fname
 
@@ -676,6 +676,7 @@ double precision, dimension(:), pointer :: viscl, viscls, cpro_cp
 !===============================================================================
 
 ! Get the turbulent flux model for the scalar
+call field_get_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
 call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_int(ivarfl(isca(iscal)), kturt, turb_flux_model)
 turb_flux_model_type = turb_flux_model / 10
@@ -779,9 +780,9 @@ do ifac = 1, nfabor
     do isou = 1, 6
       if (isou.le.3) then
         hintt(isou) = (0.5d0*(visclc + rkl)    &
-          + ctheta(iscal)*visten(isou,iel)/csrij) / distbf
+          + ctheta*visten(isou,iel)/csrij) / distbf
       else
-        hintt(isou) = ctheta(iscal)*visten(isou,iel) / csrij / distbf
+        hintt(isou) = ctheta*visten(isou,iel) / csrij / distbf
       endif
     enddo
 
@@ -924,7 +925,7 @@ double precision rkl, visclc, visls_0
 double precision distbf, srfbnf
 double precision rnx, rny, rnz, temp
 double precision hintt(6)
-double precision turb_schmidt
+double precision turb_schmidt, ctheta
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: coefav, cofafv
@@ -964,7 +965,7 @@ call field_get_key_int (f_id, kivisl, ifcvsl)
 if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
 endif
-
+call field_get_key_double(ivarfl(isca(iscal)), kctheta, ctheta)
 ! retrieve turbulent Schmidt value for current scalar
 call field_get_key_double(ivarfl(ivar), ksigmas, turb_schmidt)
 
@@ -1005,7 +1006,7 @@ do ifac = 1, nfabor
       hintt(6) = 0.d0
     ! Symmetric tensor diffusivity
     elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
-      temp = vcopt%idifft*ctheta(iscal)/csrij
+      temp = vcopt%idifft*ctheta/csrij
       hintt(1) = (temp*visten(1,iel) + rkl)/distbf
       hintt(2) = (temp*visten(2,iel) + rkl)/distbf
       hintt(3) = (temp*visten(3,iel) + rkl)/distbf
