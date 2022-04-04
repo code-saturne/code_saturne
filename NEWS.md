@@ -1,3 +1,10 @@
+Release 6.0.9 (Unreleased)
+--------------------------
+
+Bug fixes:
+
+- Fix mpmd command generation and launch when using ccc_mprun (CCRT)
+
 Release 6.0.8 (March 16 2022)
 -----------------------------
 
