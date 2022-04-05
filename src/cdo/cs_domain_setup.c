@@ -852,11 +852,10 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
   /* Set the initial state for the groundwater flow module */
 
   if (cs_gwf_is_activated())
-    cs_gwf_update(domain->mesh,
-                  domain->connect,
-                  domain->cdo_quantities,
-                  domain->time_step,
-                  false); /* operate current to previous ? */
+    cs_gwf_initialize(domain->mesh,
+                      domain->connect,
+                      domain->cdo_quantities,
+                      domain->time_step);
 
   /* Last word for the user function */
 

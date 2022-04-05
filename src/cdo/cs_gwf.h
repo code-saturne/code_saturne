@@ -307,6 +307,25 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize the GWF module (done after all the setup phase and after
+ *         the initialization of all equations)
+ *         All quantities related to this module are given an initial value.
+ *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_initialize(const cs_mesh_t             *mesh,
+                  const cs_cdo_connect_t      *connect,
+                  const cs_cdo_quantities_t   *quant,
+                  const cs_time_step_t        *ts);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update the groundwater system (pressure head, head in law, moisture
  *         content, darcian velocity, soil capacity or permeability if needed)
  *

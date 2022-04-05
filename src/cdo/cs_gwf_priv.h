@@ -381,6 +381,10 @@ typedef struct {
    * Property related to the diffusion term of the hydrogen conservation
    * equation w.r.t. the pressure in the gaseous phase
    *
+   * \var reac_hg_pty
+   * Property related to the reaction term of the hydrogen conservation
+   * equation w.r.t. the pressure in the gaseous phase
+   *
    * \var time_hl_pty
    * Property related to the unsteady term of the hydrogen conservation equation
    * w.r.t. the pressure in the liquid phase.
@@ -398,6 +402,7 @@ typedef struct {
 
   cs_property_t                *time_hg_pty;
   cs_property_t                *diff_hg_pty;
+  cs_property_t                *reac_hg_pty;
 
   cs_property_t                *time_hl_pty;
   cs_property_t                *diff_hl_pty;
@@ -445,6 +450,10 @@ typedef struct {
    *      term in the water conservation equation. This array is linked to the
    *      \ref diff_wl_pty (size = n_cells)
    *
+   * \var srct_wl_array
+   *      Values in each cell of the source term corresponding to a quantity
+   *      proportional to the time evolution of the liquid saturation
+   *
    * \var time_wg_array
    *      Values in each cell of the coefficient appearing in front of the
    *      unsteady term in the water conservation equation w.r.t. the pressure
@@ -461,6 +470,12 @@ typedef struct {
    *      Values in each cell of the coefficient appearing in the diffusion
    *      term in the hydrogen conservation equation w.r.t. to the pressure in
    *      the gaseous phase.  This array is linked to the \ref diff_hg_pty
+   *      (size = n_cells)
+   *
+   * \var reac_hg_array
+   *      Values in each cell of the coefficient appearing in the reaction
+   *      term in the hydrogen conservation equation w.r.t. to the pressure in
+   *      the gaseous phase.  This array is linked to the \ref reac_hg_pty
    *      (size = n_cells)
    *
    * \var time_hl_array
@@ -510,11 +525,13 @@ typedef struct {
 
   cs_real_t                    *time_wl_array;
   cs_real_t                    *diff_wl_array;
+  cs_real_t                    *srct_wl_array;
 
   cs_real_t                    *time_wg_array;
 
   cs_real_t                    *time_hg_array;
   cs_real_t                    *diff_hg_array;
+  cs_real_t                    *reac_hg_array;
 
   cs_real_t                    *time_hl_array;
   cs_real_t                    *diff_hl_array;

@@ -513,6 +513,21 @@ void
 cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update arrays associated to the definition of terms involved in the
+ *         immiscible two-phase flow model.
+ *         Case of an isotropic absolute permeability and an incremental solve
+ *
+ * \param[in]      ts          pointer to a cs_time_step_t structure
+ * \param[in, out] mc          pointer to the model context to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
+                                       cs_gwf_two_phase_t      *mc);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

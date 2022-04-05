@@ -1042,7 +1042,7 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc)
   /* One assumes that there is no diffusion of the gas component in the liquid
      phase --> This removes some terms w.r.t. the miscible model */
 
-  assert(mc->henry_constant < 1e15); /* Should be very low */
+  assert(mc->henry_constant < 1e-15); /* Should be very low */
 
   const double  hmh = mc->h_molar_mass * mc->henry_constant;
   const double  mh_ov_rt =
@@ -1147,6 +1147,133 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc)
                       "         >> sl=%6.4e,"
                       " dsl_dpc=% 6.4e, krl=%6.4e, krg=%6.4e\n",
                       sl, dsl_dpc, krl[c_id], krg[c_id]);
+#endif
+      }
+#endif
+    } /* Loop on cells of the zone (= soil) */
+
+  } /* Loop on soils */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update arrays associated to the definition of terms involved in the
+ *         immiscible two-phase flow model.
+ *         Case of an isotropic absolute permeability and an incremental solve
+ *
+ * \param[in]      ts          pointer to a cs_time_step_t structure
+ * \param[in, out] mc          pointer to the model context to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
+                                       cs_gwf_two_phase_t      *mc)
+{
+  if (mc == NULL)
+    return;
+
+  /* One assumes that there is no diffusion of the gas component in the liquid
+     phase --> This removes some terms w.r.t. the miscible model */
+
+  assert(mc->henry_constant < 1e-15); /* Should be very low */
+
+  const cs_real_t  inv_dtcur = 1./ts->dt[0];
+  const double  hmh = mc->h_molar_mass * mc->henry_constant;
+  const double  mh_ov_rt =
+    mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+  const cs_real_t  *g_cell_pr = mc->g_cell_pressure;
+
+  /* In the immiscible case, mc->l_diffusivity_h is set to 0 */
+
+  const cs_real_t  *l_sat = mc->l_saturation->val;
+  const cs_real_t  *l_sat_pre = mc->l_saturation->val_pre;
+  const cs_real_t  *krl =  mc->l_rel_permeability;
+  const cs_real_t  *krg =  mc->g_rel_permeability;
+
+  for (int soil_id = 0; soil_id < _n_soils; soil_id++) {
+
+    cs_gwf_soil_t  *soil = _soils[soil_id];
+    assert(soil != NULL);
+    assert(soil->hydraulic_model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE);
+    assert(soil->abs_permeability_dim == 1);
+
+    const cs_zone_t  *zone = cs_volume_zone_by_id(soil->zone_id);
+    assert(zone != NULL);
+
+    const double  k_abs = soil->abs_permeability[0][0];
+    const double  phi = soil->porosity;
+    const double  phi_rhol = phi * mc->l_mass_density;
+
+    const double  l_diff_coef = k_abs/mc->l_viscosity;
+    const double  wl_diff_coef = mc->l_mass_density * l_diff_coef;
+    const double  hg_diff_coef = k_abs/mc->g_viscosity;
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SOIL_DBG > 0
+    cs_lnum_t c_min_id = 0, c_max_id = 0, c_mid_id = 0;
+
+    if (zone->n_elts > 0) {
+
+      c_min_id = zone->n_elts - 1, c_max_id = 0;
+      c_mid_id = zone->elt_ids[zone->n_elts/2];
+
+      for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+        const cs_lnum_t  c_id = zone->elt_ids[i];
+        if (c_id < c_min_id) c_min_id = c_id;
+        if (c_id > c_max_id) c_max_id = c_id;
+
+      }
+
+    } /* n_elts > 0 */
+#endif
+
+    /* Main loop on cells belonging to this soil */
+
+    for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
+
+      const cs_lnum_t  c_id = zone->elt_ids[i];
+
+      const double  rhog = mh_ov_rt * g_cell_pr[c_id];
+      const double  rho_hl = hmh *  g_cell_pr[c_id];
+      const double  sl = l_sat[c_id];         /* last (k,n+1) computed value */
+      const double  sl_pre = l_sat_pre[c_id]; /* previous (n) computed value */
+      const double  sg = 1 - sl;
+      const double  dsl_dt = (sl - sl_pre) * inv_dtcur;
+
+      /* Water conservation equation. Updates arrays linked to properties which
+         define computed terms */
+
+      mc->diff_wl_array[c_id] = wl_diff_coef * krl[c_id];
+      mc->srct_wl_array[c_id] = -phi_rhol * dsl_dt;
+
+      /* Hydrogen conservation equation. Updates arrays linked to properties
+         which define computed terms */
+
+      mc->time_hg_array[c_id] = phi * ( mh_ov_rt*sg  + hmh*sl );
+      mc->diff_hg_array[c_id] = rhog * hg_diff_coef * krg[c_id];
+      mc->reac_hg_array[c_id] = phi * (hmh - mh_ov_rt) * dsl_dt;
+      mc->diff_hl_array[c_id] = rho_hl * l_diff_coef * krl[c_id];
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SOIL_DBG > 0
+      if (c_id == c_min_id || c_id == c_mid_id || c_id == c_max_id) {
+
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "c_id%4d |wl block| diff_pty % 6.4e\n",
+                      c_id, mc->diff_wl_array[c_id]);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "         |hg block| time_pty % 6.4e, diff_pty % 6.4e,"
+                      " reac_pty % 6.4e\n",
+                      mc->time_hg_array[c_id], mc->diff_hg_array[c_id],
+                      mc->reac_hg_array[c_id]);
+#if CS_GWF_SOIL_DBG > 1
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "c_id%4d >> rhog %6.4e, Pg_cell % 6.4e, Pc_cell %6.4e\n",
+                      c_id, rhog, g_cell_pr[c_id],
+                      mc->capillarity_cell_pressure[c_id]);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "         >> sl=%6.4e, sl_pre=%6.4e, krl=%6.4e,"
+                      " krg=%6.4e\n", sl, sl_pre, krl[c_id], krg[c_id]);
 #endif
       }
 #endif
