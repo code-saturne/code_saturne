@@ -1766,7 +1766,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                         const cs_real_t  *dt)
 {
   static int ipass = 0;
-  cs_time_step_t *ts = cs_get_glob_time_step();
+  const cs_time_step_t *ts = cs_glob_time_step;
+  const cs_mesh_t *mesh = cs_glob_mesh;
 
   int  mode;
 
@@ -1775,9 +1776,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
   cs_lagr_particle_counter_t *part_c = cs_lagr_get_particle_counter();
 
-  cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  cs_lnum_t n_b_faces = mesh->n_b_faces;
 
-  cs_lnum_t *ifabor = cs_glob_mesh->b_face_cells;
+  cs_lnum_t *ifabor = mesh->b_face_cells;
   cs_real_t *surfbo = cs_glob_mesh_quantities->b_face_surf;
   cs_real_t *surfbn = cs_glob_mesh_quantities->b_face_normal;
 
@@ -1787,7 +1788,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
   if (   lagr_model->clogging == 1
       || lagr_model->roughness == 1
       || lagr_model->dlvo == 1)
-    BFT_MALLOC(tempp, cs_glob_mesh->n_cells, cs_real_t);
+    BFT_MALLOC(tempp, mesh->n_cells, cs_real_t);
 
   ipass ++;
 
@@ -1937,13 +1938,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
     if (extra->temperature != NULL) {
 
       if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
-        for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
+        for (cs_lnum_t iel = 0; iel < mesh->n_cells; iel++) {
           tempp[iel] =    extra->temperature->val[iel]
                         + cs_physical_constants_celsius_to_kelvin;
         }
       }
       else {
-        for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
+        for (cs_lnum_t iel = 0; iel < mesh->n_cells; iel++)
           tempp[iel] =    extra->temperature->val[iel];
       }
 
@@ -1951,13 +1952,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     else {
       if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS) {
-        for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
+        for (cs_lnum_t iel = 0; iel < mesh->n_cells; iel++) {
           tempp[iel] =    cs_glob_fluid_properties->t0
                         + cs_physical_constants_celsius_to_kelvin;
         }
       }
       else {
-        for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
+        for (cs_lnum_t iel = 0; iel < mesh->n_cells; iel++)
           tempp[iel] = cs_glob_fluid_properties->t0;
       }
     }
@@ -2097,6 +2098,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
       mode = 1;
       if (ts->nt_cur == 1)
         mode = 0;
+
+      if (mesh->time_dep >= CS_MESH_TRANSIENT_CONNECT) {
+        cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+        BFT_REALLOC(extra->grad_pr, n_cells_ext, cs_real_3_t);
+        if (extra->grad_vel != NULL)
+          BFT_REALLOC(extra->grad_vel, n_cells_ext, cs_real_33_t);
+      }
 
       cs_lagr_gradients(mode, extra->grad_pr, extra->grad_vel);
     }
