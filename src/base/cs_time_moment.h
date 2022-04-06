@@ -185,6 +185,7 @@ cs_time_moment_define_by_field_ids(const char                *name,
  *   name         <-- name of associated moment
  *   location_id  <-- id of associated mesh location
  *   dim          <-- dimension associated with element data
+ *   is_intensive <-- is the time moment intensive?
  *   data_func    <-- function used to define data values
  *   data_input   <-- pointer to optional (untyped) value or structure
  *                    to be used by data_func
@@ -205,6 +206,7 @@ int
 cs_time_moment_define_by_func(const char                *name,
                               int                        location_id,
                               int                        dim,
+                              bool                       is_intensive,
                               cs_time_moment_data_t     *data_func,
                               const void                *data_input,
                               cs_time_moment_data_t     *w_data_func,

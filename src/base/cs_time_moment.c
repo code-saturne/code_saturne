@@ -728,7 +728,8 @@ static int
 _find_or_add_sd(const char  *name,
                 int          n_fields,
                 const int    f_id[],
-                const int    c_id[])
+                const int    c_id[],
+                bool         *is_intensive)
 {
   char sd_desc[256];
 
@@ -741,10 +742,19 @@ _find_or_add_sd(const char  *name,
   /* Check if this definition has already been provided (assume field and
      component ids are given in same order; at worse, if this is not the case
      some data which could be shared will be duplicated, leading to slightly
-     higher memory usage and computational cost) */
+     higher memory usage and computational cost)
+
+     Also check if the time moment is a combination of intensive fields
+     and therefore is an intensive field
+     */
 
   for (sd_id = 0; sd_id < _n_moment_sd_defs; sd_id++) {
     bool is_different = false;
+    *is_intensive =  true;
+    for (int i = 0; i < n_fields; i++) {
+      const cs_field_t *f = cs_field_by_id(f_id[i]);
+      *is_intensive = (*is_intensive) && (f->type & CS_FIELD_INTENSIVE);
+    }
     const int *msd = _moment_sd_defs[sd_id];
     const int stride = 2 + msd[1];
     if (n_fields != msd[2])
@@ -1528,13 +1538,16 @@ cs_time_moment_define_by_field_ids(const char                *name,
                                    const char                *restart_name)
 {
   int m_id = -1;
-  int sd_id =_find_or_add_sd(name, n_fields, field_id, component_id);
+  bool is_intensive;
+  int sd_id =_find_or_add_sd(name, n_fields, field_id, component_id,
+                             &is_intensive);
 
   const int *msd = _moment_sd_defs[sd_id];
 
   m_id = cs_time_moment_define_by_func(name,
                                        msd[0],
                                        msd[1],
+                                       is_intensive,
                                        _sd_moment_data,
                                        msd,
                                        NULL,
@@ -1556,6 +1569,7 @@ cs_time_moment_define_by_field_ids(const char                *name,
  * \param[in]  name           name of associated moment
  * \param[in]  location_id    id of associated mesh location
  * \param[in]  dim            dimension associated with element data
+ * \param[in]  is_intensive   is the time moment intensive?
  * \param[in]  data_func      function used to define data values
  * \param[in]  data_input     pointer to optional (untyped) value or structure
  *                            to be used by data_func
@@ -1577,6 +1591,7 @@ int
 cs_time_moment_define_by_func(const char                *name,
                               int                        location_id,
                               int                        dim,
+                              bool                       is_intensive,
                               cs_time_moment_data_t     *data_func,
                               const void                *data_input,
                               cs_time_moment_data_t     *w_data_func,
@@ -1662,8 +1677,12 @@ cs_time_moment_define_by_func(const char                *name,
       }
     }
   } else { /* Build field matching moment */
+    int type_flag = CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR;
+    if (is_intensive)
+      type_flag |= CS_FIELD_INTENSIVE;
+
     f = cs_field_create(name,
-                        CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
+                        type_flag,
                         location_id,
                         moment_dim,
                         false);  /* no previous values */

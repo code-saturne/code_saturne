@@ -333,6 +333,7 @@ cs_user_time_moments(void)
       cs_time_moment_define_by_func(sum_comp_name[i],
                                     CS_MESH_LOCATION_CELLS,
                                     1,                      /* field dimension */
+                                    true,                   /* intensive*/
                                     _simple_data_sum,       /* data_func */
                                     NULL,                   /* data_input */
                                     NULL,                   /* w_data_func */
@@ -358,6 +359,7 @@ cs_user_time_moments(void)
       cs_time_moment_define_by_func(sum_comp_name[i],
                                     CS_MESH_LOCATION_BOUNDARY_FACES,
                                     1,                      /* field dimension */
+                                    true,                   /* intensive*/
                                     _boundary_thermal_flux, /* data_func */
                                     NULL,                   /* data_input */
                                     NULL,                   /* w_data_func */
@@ -386,6 +388,7 @@ cs_user_time_moments(void)
       cs_time_moment_define_by_func(vel_comp_name[comp_id],
                                     CS_MESH_LOCATION_CELLS,
                                     1,
+                                    true,                        /* intensive*/
                                     _velocity_moment_data,       /* data_func */
                                     &(vel_comp_input[comp_id]),  /* data_input */
                                     NULL,                        /* w_data_func */

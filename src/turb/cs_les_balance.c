@@ -1614,6 +1614,7 @@ _les_balance_time_moment_rij(void)
   cs_time_moment_define_by_func("pdjuisym_m",
                                 CS_MESH_LOCATION_CELLS,
                                 6,
+                                true, /* intensive*/
                                 _les_balance_compute_pdjuisym,
                                 NULL,
                                 NULL,
@@ -1628,6 +1629,7 @@ _les_balance_time_moment_rij(void)
   cs_time_moment_define_by_func("dkuidkuj_m",
                                 CS_MESH_LOCATION_CELLS,
                                 6,
+                                true, /* intensive*/
                                 _les_balance_compute_dkuidkuj,
                                 NULL,
                                 NULL,
@@ -1646,6 +1648,7 @@ _les_balance_time_moment_rij(void)
       cs_time_moment_define_by_func("smag_v",
                                     CS_MESH_LOCATION_CELLS,
                                     1,
+                                    true, /* intensive*/
                                     _les_balance_compute_smag,
                                     NULL,
                                     NULL,
@@ -1661,6 +1664,7 @@ _les_balance_time_moment_rij(void)
     cs_time_moment_define_by_func("uidktaujk_m",
                                   CS_MESH_LOCATION_CELLS,
                                   9,
+                                  true, /* intensive*/
                                   _les_balance_compute_uidktaujk,
                                   NULL,
                                   NULL,
@@ -1704,6 +1708,7 @@ _les_balance_time_moment_rij(void)
     cs_time_moment_define_by_func("nutdkuidkuj_m",
                                   CS_MESH_LOCATION_CELLS,
                                   6,
+                                  true, /* intensive*/
                                   _les_balance_compute_nutdkuidkuj,
                                   NULL,
                                   NULL,
@@ -1718,6 +1723,7 @@ _les_balance_time_moment_rij(void)
     cs_time_moment_define_by_func("dknutuidjuksym_m",
                                   CS_MESH_LOCATION_CELLS,
                                   6,
+                                  true, /* intensive*/
                                   _les_balance_compute_dknutuidjuksym,
                                   NULL,
                                   NULL,
@@ -1740,6 +1746,7 @@ _les_balance_time_moment_rij(void)
         cs_time_moment_define_by_func(name[k],
                                       CS_MESH_LOCATION_CELLS,
                                       6,
+                                      true, /* intensive*/
                                       _les_balance_compute_nutdkuiuj,
                                       &(index[k]),
                                       NULL,
@@ -1756,6 +1763,7 @@ _les_balance_time_moment_rij(void)
     cs_time_moment_define_by_func("dknutdiuk_m",
                                   CS_MESH_LOCATION_CELLS,
                                   3,
+                                  true, /* intensive*/
                                   _les_balance_compute_dknutdiuk,
                                   NULL,
                                   NULL,
@@ -1770,6 +1778,7 @@ _les_balance_time_moment_rij(void)
       cs_time_moment_define_by_func("uidjnut_m",
                                     CS_MESH_LOCATION_CELLS,
                                     9,
+                                    true, /* intensive*/
                                     _les_balance_compute_uidjnut,
                                     NULL,
                                     NULL,
@@ -1800,6 +1809,7 @@ _les_balance_time_moment_tui(void)
     cs_time_moment_define_by_func("djnutdiuj_m",
                                   CS_MESH_LOCATION_CELLS,
                                   3,
+                                  true, /* intensive*/
                                   _les_balance_compute_djnutdiuj,
                                   NULL,
                                   NULL,
@@ -1923,6 +1933,7 @@ _les_balance_time_moment_tui(void)
       cs_time_moment_define_by_func(buffer,
                                     CS_MESH_LOCATION_CELLS,
                                     3,
+                                    true, /* intensive*/
                                     _les_balance_compute_djtdjui,
                                     f,
                                     NULL,
@@ -1937,6 +1948,7 @@ _les_balance_time_moment_tui(void)
       cs_time_moment_define_by_func(buffer,
                                     CS_MESH_LOCATION_CELLS,
                                     6,
+                                    true, /* intensive*/
                                     _les_balance_compute_tuiuj,
                                     f,
                                     NULL,
@@ -1986,6 +1998,7 @@ _les_balance_time_moment_tui(void)
         cs_time_moment_define_by_func(buffer,
                                       CS_MESH_LOCATION_CELLS,
                                       9,
+                                      true, /* intensive*/
                                       _les_balance_compute_uidjt,
                                       f,
                                       NULL,
@@ -2002,6 +2015,7 @@ _les_balance_time_moment_tui(void)
       cs_time_moment_define_by_func(buffer,
                                     CS_MESH_LOCATION_CELLS,
                                     1,
+                                    true, /* intensive*/
                                     _les_balance_compute_ditdit,
                                     f,
                                     NULL,
@@ -2034,6 +2048,7 @@ _les_balance_time_moment_tui(void)
         cs_time_moment_define_by_func(buffer,
                                       CS_MESH_LOCATION_CELLS,
                                       3,
+                                      true, /* intensive*/
                                       _les_balance_compute_tdjtauij,
                                       f,
                                       NULL,
@@ -2049,6 +2064,7 @@ _les_balance_time_moment_tui(void)
         cs_time_moment_define_by_func(buffer,
                                       CS_MESH_LOCATION_CELLS,
                                       3,
+                                      true, /* intensive*/
                                       _les_balance_compute_uidivturflux,
                                       f,
                                       NULL,
@@ -2064,6 +2080,7 @@ _les_balance_time_moment_tui(void)
         cs_time_moment_define_by_func(buffer,
                                       CS_MESH_LOCATION_CELLS,
                                       1,
+                                      true, /* intensive*/
                                       _les_balance_compute_tdivturflux,
                                       f,
                                       NULL,
@@ -2098,6 +2115,7 @@ _les_balance_time_moment_tui(void)
         cs_time_moment_define_by_func(buffer,
                                       CS_MESH_LOCATION_CELLS,
                                       1,
+                                      true, /* intensive*/
                                       _les_balance_compute_nutditdit,
                                       f,
                                       NULL,
@@ -2131,6 +2149,7 @@ _les_balance_time_moment_tui(void)
           cs_time_moment_define_by_func(buffer,
                                         CS_MESH_LOCATION_CELLS,
                                         9,
+                                        true, /* intensive*/
                                         _les_balance_compute_nutuidjt,
                                         f,
                                         NULL,
@@ -2147,6 +2166,7 @@ _les_balance_time_moment_tui(void)
         cs_time_moment_define_by_func(buffer,
                                       CS_MESH_LOCATION_CELLS,
                                       3,
+                                      true, /* intensive*/
                                       _les_balance_compute_nutdjuidjt,
                                       f,
                                       NULL,
@@ -2213,6 +2233,7 @@ _les_balance_time_moment_tui(void)
         cs_time_moment_define_by_func(buffer,
                                       CS_MESH_LOCATION_CELLS,
                                       3,
+                                      true, /* intensive*/
                                       _les_balance_compute_djnuttdiuj,
                                       f,
                                       NULL,
