@@ -81,7 +81,13 @@ def preprocessorFile(parent, initdir):
 
         j=-1
         for i in range(len(lines)):
+            # Legacy captitalization
             index = lines[i].rfind("Code_Saturne")
+            if index != -1:
+                j = i
+                break
+            # Current captitalization
+            index = lines[i].rfind("code_saturne")
             if index != -1:
                 j = i
                 break
