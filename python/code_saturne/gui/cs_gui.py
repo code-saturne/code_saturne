@@ -148,8 +148,9 @@ def main(argv, pkg):
             eospath = ''
 
         if sys.platform.startswith('win'):
+            python_version = "%d.%d" % (sys.version_info.major, sys.version_info.minor)
             eospath = os.path.join(eosprefix,
-                          'lib', 'python' + sys.version[:3], 'site-packages',
+                          'lib', 'python' + python_version, 'site-packages',
                           'eos')
 
         if eospath:

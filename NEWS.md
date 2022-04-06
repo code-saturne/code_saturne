@@ -3,8 +3,10 @@ Master (not on release branches yet)
 
 User changes:
 
-- Add external matrix type for PETSc, handled in cs_matrix_petsc, so no additional
-  copy of coefficients is needed in code_saturne.
+- Fixes errors with Python >= 3.10 due to non-robust version tests.
+
+- Add external matrix type for PETSc, handled in cs_matrix_petsc, so no
+  additional copy of coefficients is needed in code_saturne.
   * Native matrices in the legacy code automatically switch to this mode,
     while matrices can still be provided in MSR or CSR form, as assembly is
     expected to be faster (though no copy is saved in this case).

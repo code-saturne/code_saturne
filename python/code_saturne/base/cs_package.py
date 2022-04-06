@@ -102,7 +102,8 @@ class package:
         if install_prefix is None:
             install_prefix = os.getenv('CS_ROOT_DIR')
 
-        pythondir_rel = os.path.join('lib', 'python' + sys.version[:3],
+        python_version = "%d.%d" % (sys.version_info.major, sys.version_info.minor)
+        pythondir_rel = os.path.join('lib', 'python' + python_version,
                                      'site-packages')
 
         # Otherwise, assume that the standard tree structure is used

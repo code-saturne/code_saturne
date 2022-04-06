@@ -49,10 +49,11 @@ else:
 # installation: lib/pythonX.Y/site-packages/code_saturne). We also assume
 # that the main script still lies in the bin directory.
 if relocatable == 'yes':
+    python_version = "%d.%d" % (sys.version_info.major, sys.version_info.minor)
     bindir = os.path.dirname(rootdir)
     prefix = os.path.dirname(bindir)
     sitedir = os.path.join(prefix,
-                           'lib', 'python' + sys.version[:3], 'site-packages')
+                           'lib', 'python' + python_version, 'site-packages')
     cspath = os.path.join(sitedir, 'code_saturne')
     cslibdir = os.path.join(prefix, 'lib')
 
