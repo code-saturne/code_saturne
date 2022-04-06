@@ -41,6 +41,7 @@ import os.path
 
 from code_saturne.gui.base.QtCore import *
 from code_saturne.gui.base.QtGui  import *
+from code_saturne.gui.base.QtWidgets import QMessageBox
 
 #-------------------------------------------------------------------------------
 # Application modules import
