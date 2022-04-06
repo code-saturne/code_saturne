@@ -434,6 +434,7 @@ _copy_mesh(const cs_mesh_t  *mesh,
   mesh_copy->dim        = mesh->dim;
   mesh_copy->domain_num = mesh->domain_num;
   mesh_copy->n_domains  = mesh->n_domains;
+  mesh_copy->time_dep   = mesh->time_dep;
 
   /* Local dimensions */
 
@@ -1311,9 +1312,10 @@ cs_turbomachinery_join_add(const char  *sel_criteria,
   /* Set mesh modification type */
 
   if (_turbomachinery != NULL) {
-    if (   _turbomachinery->model == CS_TURBOMACHINERY_TRANSIENT
-        && cs_glob_mesh->time_dep < CS_MESH_TRANSIENT_CONNECT)
+    if (_turbomachinery->model == CS_TURBOMACHINERY_TRANSIENT) {
       cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_CONNECT;
+      _turbomachinery->reference_mesh->time_dep = CS_MESH_TRANSIENT_CONNECT;
+    }
   }
 
   return cs_glob_n_joinings;
