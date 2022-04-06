@@ -1147,7 +1147,7 @@ cs_parameters_check(void)
 
     cs_parameters_is_equal_int(CS_ABORT_DELAYED,
                                _("The steady algorithm is not compatible "
-                                 "with the lagrangian module which is "
+                                 "with the Lagrangian module which is "
                                  "time-dependant by nature"),
                                "cs_glob_lagr_time_scheme->iilagr",
                                cs_glob_lagr_time_scheme->iilagr,
@@ -1359,12 +1359,12 @@ cs_parameters_check(void)
 
   }
 
-  /* In lagrangian with two-way coupling, k-omega SST is forbidden (not
+  /* In Lagrangian with two-way coupling, k-omega SST is forbidden (not
      properly implemented) */
   if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
     cs_parameters_is_not_equal_int(CS_ABORT_DELAYED,
                                    _("while reading input data,\n"
-                                     "two way coupling in lagrangian modelling "
+                                     "two way coupling in Lagrangian modelling "
                                      "is not compatible with k-omega SST "
                                      "turbulence model"),
                                    "cs_glob_turb_model->iturb",
@@ -2114,9 +2114,9 @@ cs_parameters_check(void)
     if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_NONE) {
       cs_parameters_is_not_equal_int(CS_ABORT_DELAYED,
                                    _("while reading input data,\n"
-                                     "the lagrangian checkpoint cannot "
+                                     "the Lagrangian checkpoint cannot "
                                      "be used\n"
-                                     "without having the lagrangian module "
+                                     "without having the Lagrangian module "
                                      "enabled."),
                                      "restart_file",
                                      r_id,
