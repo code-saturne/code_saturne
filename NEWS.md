@@ -3,6 +3,8 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- Fixes errors with Python >= 3.10 due to non-robust version tests.
+
 - GUI: fix launch of trackcvg tool from GUI and Python dump.
 
 - Fix MPMD command generation when using ccc_mprun (CCRT)

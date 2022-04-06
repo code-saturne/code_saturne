@@ -32,8 +32,6 @@ import sys
 import platform
 import tempfile
 
-python_version = sys.version[:3]
-
 try:
     from code_saturne import cs_batch
 except Exception:
