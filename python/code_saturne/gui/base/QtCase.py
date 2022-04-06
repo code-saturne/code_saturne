@@ -80,10 +80,7 @@ class QtCase(Case, QObject):
 
     def undoGlobal(self, f, c):
         if self['current_page'] != '' and self.record_local == False and self.record_global == True:
-            if sys.version[0] == '2':
-                self['dump_python'].append([f.__module__, f.func_name, c])
-            else:
-                self['dump_python'].append([f.__module__, f.__name__, c])
+            self['dump_python'].append([f.__module__, f.__name__, c])
             if self.xml_prev != self.toString() or self.xml_prev == "":
                 # control if function have same arguments
                 # last argument is value
@@ -107,10 +104,7 @@ class QtCase(Case, QObject):
 
     def undo(self, f, c):
         if self['current_page'] != '' and self.record_local == False and self.record_global == True:
-            if sys.version[0] == '2':
-                self['dump_python'].append([f.__module__, f.func_name, c])
-            else:
-                self['dump_python'].append([f.__module__, f.__name__, c])
+            self['dump_python'].append([f.__module__, f.__name__, c])
             if self.xml_prev != self.toString():
                 # control if function have same arguments
                 # last argument is value

@@ -164,28 +164,6 @@ class Dico:
 # Lightweight XML constructor and reader
 #-------------------------------------------------------------------------------
 
-if sys.version[0] == '2':
-
-    from types import UnicodeType
-
-    def _encode(v):
-        """
-        return a byte string. This function handles the Unicode encoding.
-        minidom handles only byte strings, see: http://evanjones.ca/python-utf8.html
-        """
-        if isinstance(v, UnicodeType):
-            v = v.encode("utf-8")
-        return v
-
-else:
-
-    def _encode(v):
-        """
-        return an utf-8 byte string. In Python 3, this is a No-op.
-        """
-        return v
-
-
 class XMLElement:
     """
     XML element base class
@@ -205,83 +183,46 @@ class XMLElement:
         raise ValueError("XML ERROR:\n" + msg)
 
 
-    if sys.version[0] == '2':
-        def toString(self):
-            """
-            Print the XMLElement node to a simple string (without \n and \t).
-            Unicode characters are encoded.
-            """
-            return self.el.toxml("utf-8")
-    else:
-        def toString(self):
-            """
-            Print the XMLElement node to a simple string (without \n and \t).
-            Unicode characters are encoded.
-            """
+    def toString(self):
+        """
+        Print the XMLElement node to a simple string (without \n and \t).
+        Unicode characters are encoded.
+        """
+        # self.el.toxml() would be enough, except for the root node,
+        # where the encoding type is written only where specified.
+        return self.el.toxml("utf-8").decode()
+
+
+    def toUnicodeString(self):
+        """
+        Print the XMLElement node to an unicode string (without \n and \t).
+        Unicode string are decoded if it's possible by the standard output,
+        if not unicode characters are replaced by '?' character.
+        Warning: do not use this method for comparison purposes!
+        """
+        try:
             # self.el.toxml() would be enough, except for the root node,
             # where the encoding type is written only where specified.
             return self.el.toxml("utf-8").decode()
+        except:
+            unicode_obj = self.toxml(encoding=sys.stdout.encoding)
+            return unicode_obj.decode()
 
 
-    if sys.version[0] == '2':
-        def toUnicodeString(self):
-            """
-            Print the XMLElement node to an unicode string (without \n and \t).
-            Unicode string are decoded if it's possible by the standard output,
-            if not unicode characters are replaced by '?' character.
-            Warning: do not use this method for comparison purposes!
-            """
-            unicode_obj = self.el.toxml()
-            try:
-                return unicode_obj.encode("utf-8", 'replace')
-            except:
-                return unicode_obj.encode(sys.stdout.encoding, 'replace')
-    else:
-        def toUnicodeString(self):
-            """
-            Print the XMLElement node to an unicode string (without \n and \t).
-            Unicode string are decoded if it's possible by the standard output,
-            if not unicode characters are replaced by '?' character.
-            Warning: do not use this method for comparison purposes!
-            """
-            try:
-                # self.el.toxml() would be enough, except for the root node,
-                # where the encoding type is written only where specified.
-                return self.el.toxml("utf-8").decode()
-            except:
-                unicode_obj = self.toxml(encoding=sys.stdout.encoding)
-                return unicode_obj.decode()
-
-
-    if sys.version[0] == '2':
-        def __str__(self):
-            """
-            Print the XMLElement node with \n and \t.
-            Unicode string are decoded if it's possible by the standard output,
-            if not unicode characters are replaced by '?' character.
-            Warning: do not use this method for comparison purpose!
-            """
-            unicode_obj = self.el.toprettyxml(indent='  ')
-            try:
-                return unicode_obj.encode("utf-8", 'replace')
-            except:
-                return unicode_obj.encode(sys.stdout.encoding, 'replace')
-
-    else:
-        def __str__(self):
-            """
-            Print the XMLElement node with \n and \t.
-            Unicode string are decoded if it's possible by the standard output,
-            if not unicode characters are replaced by '?' character.
-            Warning: do not use this method for comparison purpose!
-            """
-            try:
-                # self.el.toprettyxml() would be enough, except for the root,
-                # where the encoding type is written only where specified.
-                return self.el.toprettyxml(encoding="utf-8", indent='  ').decode()
-            except:
-                unicode_obj = self.el.toprettyxml(encoding=sys.stdout.encoding, indent='  ')
-                return unicode_obj.decode()
+    def __str__(self):
+        """
+        Print the XMLElement node with \n and \t.
+        Unicode string are decoded if it's possible by the standard output,
+        if not unicode characters are replaced by '?' character.
+        Warning: do not use this method for comparison purpose!
+        """
+        try:
+            # self.el.toprettyxml() would be enough, except for the root,
+            # where the encoding type is written only where specified.
+            return self.el.toprettyxml(encoding="utf-8", indent='  ').decode()
+        except:
+            unicode_obj = self.el.toprettyxml(encoding=sys.stdout.encoding, indent='  ')
+            return unicode_obj.decode()
 
 
     def __xmlLog(self):
@@ -306,7 +247,7 @@ class XMLElement:
         """
         for attr, value in list(kwargs.items()):
             if not self.el.hasAttribute(attr):
-                self.el.setAttribute(attr, _encode(str(value)))
+                self.el.setAttribute(attr, str(value))
 
         log.debug("xmlCreateAttribute-> %s" % self.__xmlLog())
 
@@ -342,7 +283,7 @@ class XMLElement:
 
         else:
             a = self.el.getAttributeNode(attr)
-            return _encode(a.value)
+            return a.value
 
 
     def xmlSetAttribute(self, **kwargs):
@@ -350,7 +291,7 @@ class XMLElement:
         Set several attribute (key=value) to a node
         """
         for attr, value in list(kwargs.items()):
-            self.el.setAttribute(attr, _encode(str(value)))
+            self.el.setAttribute(attr, str(value))
 
         log.debug("xmlSetAttribute-> %s" % self.__xmlLog())
 
@@ -373,7 +314,7 @@ class XMLElement:
         """
         a = self.el.getAttributeNode(attr)
         if a:
-            return _encode(a.value)
+            return a.value
         return None
 
 
@@ -382,7 +323,7 @@ class XMLElement:
         Set a XMLElement attribute an its value
         with a dictionary syntax: node['attr'] = value
         """
-        self.el.setAttribute(attr, _encode(str(value)))
+        self.el.setAttribute(attr, str(value))
 
         log.debug("__setitem__-> %s" % self.__xmlLog())
 
@@ -453,24 +394,24 @@ class XMLElement:
         return 0
 
 
-    if sys.version[0] > '2':
-        def __eq__(self, other):
-            """
-            Compare two XMLDocument nodes equivalence.
-            """
-            if self.__cmp__(other) == 1:
-                return False
-            else:
-                return True
+    def __eq__(self, other):
+        """
+        Compare two XMLDocument nodes equivalence.
+        """
+        if self.__cmp__(other) == 1:
+            return False
+        else:
+            return True
 
-        def __ne__(self, other):
-            """
-            Compare two XMLDocument nodes equivalence.
-            """
-            if self.__cmp__(other) == 1:
-                return True
-            else:
-                return False
+
+    def __ne__(self, other):
+        """
+        Compare two XMLDocument nodes equivalence.
+        """
+        if self.__cmp__(other) == 1:
+            return True
+        else:
+            return False
 
 
     def _nodeWithAttrList(self, node, *attrList, **kwargs):
@@ -585,7 +526,7 @@ class XMLElement:
         for k in attrList:
             el.setAttribute(k, "")
         for k, v in list(kwargs.items()):
-            el.setAttribute(k, _encode(str(v)))
+            el.setAttribute(k, str(v))
 
         nn = None
         for n in self.el.childNodes:
@@ -631,11 +572,11 @@ class XMLElement:
         if self.el.hasChildNodes():
             for n in self.el.childNodes:
                 if n.nodeType == Node.TEXT_NODE:
-                    n.data = _encode(newTextNode)
+                    n.data = newTextNode
         else:
             self._inst(
                 self.el.appendChild(
-                    self.doc.createTextNode(_encode(newTextNode))))
+                    self.doc.createTextNode(newTextNode)))
 
         log.debug("xmlSetTextNode-> %s" % self.__xmlLog())
 
@@ -688,7 +629,7 @@ class XMLElement:
             for node in self.el.childNodes:
                 if node.nodeType == node.TEXT_NODE:
                     rc.append(node.data)
-            return _encode(sep.join(rc))
+            return sep.join(rc)
         else:
             return None
 
@@ -953,7 +894,7 @@ class XMLElement:
         if not nodeList:
             child = self.xmlAddChild(tag, *attrList, **kwargs)
             for k in attrList: child.el.setAttribute(k, "")
-            for k, v in list(kwargs.items()): child.el.setAttribute(k, _encode(str(v)))
+            for k, v in list(kwargs.items()): child.el.setAttribute(k, str(v))
             nodeList.append(child)
         else:
             l = []
@@ -973,7 +914,7 @@ class XMLElement:
         if not nodeList:
             child = self.xmlAddChild(tag, *attrList, **kwargs)
             for k in attrList: child.el.setAttribute(k, "")
-            for k, v in list(kwargs.items()): child.el.setAttribute(k, _encode(str(v)))
+            for k, v in list(kwargs.items()): child.el.setAttribute(k, str(v))
             nodeList.append(child)
         else:
             l = []
@@ -994,7 +935,7 @@ class XMLElement:
         if not nodeList:
             child = self.xmlAddChild(tag, *attrList, **kwargs)
             for k in attrList: child.el.setAttribute(k, "")
-            for k, v in list(kwargs.items()): child.el.setAttribute(k, _encode(str(v)))
+            for k, v in list(kwargs.items()): child.el.setAttribute(k, str(v))
         else:
             if len(nodeList) > 1:
                 msg = "There is an error with the use of the xmlInitNode method. "\
@@ -1018,7 +959,7 @@ class XMLElement:
         if not nodeList:
             child = self.xmlAddChild(tag, *attrList, **kwargs)
             for k in attrList: child.el.setAttribute(k, "")
-            for k, v in list(kwargs.items()): child.el.setAttribute(k, _encode(str(v)))
+            for k, v in list(kwargs.items()): child.el.setAttribute(k, str(v))
         else:
             if len(nodeList) > 1:
                 msg = "There is an error in with the use of the xmlInitChildNode method. "\
@@ -1131,51 +1072,27 @@ class XMLDocument(XMLElement):
         return self._inst(self.doc.documentElement)
 
 
-    if sys.version[0] == '2':
-        def toPrettyString(self):
-            """
-            Return the XMLDocument to a byte string with \n and \t.
-            Unicode characters are encoded.
-            """
-            return self.doc.toprettyxml(encoding="utf-8", indent='  ')
-    else:
-        def toPrettyString(self):
-            """
-            Return the XMLDocument to a string with \n and \t.
-            """
-            return self.doc.toprettyxml(encoding="utf-8", indent='  ').decode()
+    def toPrettyString(self):
+        """
+        Return the XMLDocument to a string with \n and \t.
+        """
+        return self.doc.toprettyxml(encoding="utf-8", indent='  ').decode()
 
 
-    if sys.version[0] == '2':
-        def toPrettyUnicodeString(self):
-            """
-            Return the XMLDocument node to a byte string with \n and \t.
-            Unicode string are decoded if it's possible by the standard output,
-            if not unicode characters are replaced by '?' character.
-            Warning: the returned XMLDocument do not show the encoding in the
-            header, because it is already encoded!
-            Warning: do not use this method for comparison purpose!
-            """
-            unicode_obj = self.el.toprettyxml(indent='  ')
-            try:
-                return unicode_obj.encode("utf-8",'replace')
-            except:
-                return unicode_obj.encode(sys.stdout.encoding,'replace')
-    else:
-        def toPrettyUnicodeString(self):
-            """
-            Return the XMLDocument node to a byte string with \n and \t.
-            Unicode string are decoded if it's possible by the standard output,
-            if not unicode characters are replaced by '?' character.
-            Warning: the returned XMLDocument do not show the encoding in the
-            header, because it is already encoded!
-            Warning: do not use this method for comparison purposes!
-            """
-            try:
-                return self.el.toprettyxml(encoding="utf-8", indent='  ').decode()
-            except:
-                unicode_obj = self.el.toprettyxml(encoding=sys.stdout.encoding, indent='  ')
-                return unicode_obj.decode()
+    def toPrettyUnicodeString(self):
+        """
+        Return the XMLDocument node to a byte string with \n and \t.
+        Unicode string are decoded if it's possible by the standard output,
+        if not unicode characters are replaced by '?' character.
+        Warning: the returned XMLDocument do not show the encoding in the
+        header, because it is already encoded!
+        Warning: do not use this method for comparison purposes!
+        """
+        try:
+            return self.el.toprettyxml(encoding="utf-8", indent='  ').decode()
+        except:
+            unicode_obj = self.el.toprettyxml(encoding=sys.stdout.encoding, indent='  ')
+            return unicode_obj.decode()
 
 
     def __str__(self):
@@ -1202,7 +1119,7 @@ class XMLDocument(XMLElement):
         """
         return a xml doc from a string
         """
-        self.doc = self.el = parseString(_encode(d))
+        self.doc = self.el = parseString(d)
         return self
 
 
@@ -1873,14 +1790,10 @@ class XMLengineTestCase(unittest.TestCase):
 
         t = u'<?xml version="1.0" encoding="utf-8"?>' \
             u'<fran\xe7ais> a=attach\xe9</fran\xe7ais>'
-        if sys.version[0] == '2':
-            t = t.encode("utf-8")
         assert d.toString() == t, 'Could not use the parseString method with utf-8 encoding'
 
         t = u'<?xml version="1.0" encoding="utf-8"?>\n' \
             u'<fran\xe7ais> a=attach\xe9</fran\xe7ais>\n'
-        if sys.version[0] == '2':
-            t = t.encode("utf-8")
         assert d.toPrettyString() == t, 'Could not use the parseString method with utf-8 encoding'
 
         t = self.xmlNodeFromString(u'<fran\xe7ais> a=attach\xe9</fran\xe7ais>')

@@ -41,10 +41,6 @@ import os
 import logging
 import locale
 
-Py2 = sys.version[0] == '2'
-Py3 = sys.version[0] == '3'
-
-
 #-------------------------------------------------------------------------------
 # Third-party modules
 #-------------------------------------------------------------------------------
@@ -74,10 +70,8 @@ log.setLevel(GuiParam.DEBUG)
 #==============================================================================
 # Data types
 #==============================================================================
-if Py2:
-    TEXT_TYPES = (str, unicode)
-else:
-    TEXT_TYPES = (str,)
+
+TEXT_TYPES = (str,)
 
 #==============================================================================
 # Classes used to handle ComboBox subsections (groups)
@@ -179,26 +173,17 @@ def is_text_string(obj):
               False if it is anything else,
                     like binary data (Python 3) or
                     QString (Python 2, PyQt API #1)"""
-    if Py2:
-        return isinstance(obj, basestring)
-    else:
-        return isinstance(obj, str)
+    return isinstance(obj, str)
 
 def to_text_string(obj, encoding=None):
     """Convert `obj` to (unicode) text string"""
-    if Py2:
-        if encoding is None:
-            return unicode(obj)
-        else:
-            return unicode(obj, encoding)
+    if encoding is None:
+        return str(obj)
+    elif isinstance(obj, str):
+        # In case this function is not used properly, this could happen
+        return obj
     else:
-        if encoding is None:
-            return str(obj)
-        elif isinstance(obj, str):
-            # In case this function is not used properly, this could happen
-            return obj
-        else:
-            return str(obj, encoding)
+        return str(obj, encoding)
 
 #==============================================================================
 # QVariant conversion utilities

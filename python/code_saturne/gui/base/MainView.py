@@ -1099,9 +1099,6 @@ class MainView(object):
                 warnings = ''
                 for line in errors:
                     warnings += line
-                if sys.version_info[0] < 3:
-                    warnings = warnings.decode('utf-8').replace(u"\u2018", "'")
-                    warnings = warnings.replace(u"\u2019", "'")
                 box.setDetailedText(warnings)
 
             box.exec_()

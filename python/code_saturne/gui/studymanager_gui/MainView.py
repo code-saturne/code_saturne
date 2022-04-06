@@ -574,7 +574,7 @@ class MainView(object):
 
         update the XML file name
         """
-        file_name = XMLengine._encode(self.case['xmlfile'])
+        file_name = self.case['xmlfile']
 
 
     def fileSave(self):

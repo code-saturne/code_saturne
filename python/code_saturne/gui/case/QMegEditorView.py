@@ -330,9 +330,6 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
                 check, err_msg, n_erros = self.meg_to_c.check_meg_code_syntax(func_type)
 
         if check != 0:
-            if sys.version_info[0] < 3:
-                err_msg = err_msg.decode('utf-8').replace(u"\u2018", "'")
-                err_msg = err_msg.replace(u"\u2019", "'")
             log.debug(err_msg)
             QMessageBox.critical(self, self.tr('Expression Editor'), err_msg)
             self.textEditExpression.textChanged.connect(self.slotClearBackground)

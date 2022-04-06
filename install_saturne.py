@@ -233,17 +233,8 @@ class Package:
 
     def download(self):
 
-        if sys.version_info[0] < (3):
-            import urllib2
-            u = urllib2.urlopen(self.url)
-            data = u.read()
-            f = open(self.archive, 'wb')
-            f.write(data)
-            f.close()
-
-        else:
-            import urllib.request
-            urllib.request.urlretrieve(self.url, self.archive)
+        import urllib.request
+        urllib.request.urlretrieve(self.url, self.archive)
 
     #---------------------------------------------------------------------------
 
