@@ -1512,8 +1512,10 @@ cs_matrix_petsc_ensure_init(void)
 #if defined(HAVE_MPI)
     if (cs_glob_mpi_comm != MPI_COMM_NULL)
       PETSC_COMM_WORLD = cs_glob_mpi_comm;
-    else
+    else {
       PETSC_COMM_WORLD = MPI_COMM_SELF;
+      MPI_Init(NULL, NULL);
+    }
 #endif
     PetscInitializeNoArguments();
   }
