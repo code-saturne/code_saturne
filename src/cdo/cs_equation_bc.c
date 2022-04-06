@@ -1460,5 +1460,50 @@ cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the boundary conditions to fullfill the constraint when
+ *         an incremental solve is set
+ *
+ * \param[in, out] csys     pointer to the cell system structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_update_for_increment(cs_cell_sys_t  *csys)
+{
+  if (csys == NULL)
+    return;
+
+  if (csys->has_dirichlet) {    /* Switch to homogeneous Dirichlet BCs */
+
+    memset(csys->dir_values, 0, csys->n_dofs*sizeof(double));
+
+    for (int i = 0; i < csys->n_dofs; i++) {
+      if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) {
+        csys->dof_flag[i] -= CS_CDO_BC_DIRICHLET;
+        csys->dof_flag[i] |= CS_CDO_BC_HMG_DIRICHLET;
+      }
+    }
+
+  } /* Dirichlet */
+
+  if (csys->has_nhmg_neumann) { /* Switch to homogeneous Neumann BCs */
+
+    memset(csys->neu_values, 0, csys->n_dofs*sizeof(double));
+
+    for (int i = 0; i < csys->n_dofs; i++) {
+      if (csys->dof_flag[i] & CS_CDO_BC_NEUMANN) {
+        csys->dof_flag[i] -= CS_CDO_BC_NEUMANN;
+        csys->dof_flag[i] |= CS_CDO_BC_HMG_NEUMANN;
+      }
+    }
+
+  } /* Neumann */
+
+  if (csys->has_robin)
+    bft_error(__FILE__, __LINE__, 0, "%s: Case not handled.\n", __func__);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

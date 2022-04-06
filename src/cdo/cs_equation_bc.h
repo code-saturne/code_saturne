@@ -363,6 +363,18 @@ cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
                                    cs_real_t                   *values);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the boundary conditions to fullfill the constraint when
+ *         an incremental solve is set
+ *
+ * \param[in, out] csys     pointer to the cell system structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_update_for_increment(cs_cell_sys_t  *csys);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

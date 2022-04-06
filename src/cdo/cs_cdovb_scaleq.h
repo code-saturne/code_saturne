@@ -266,6 +266,34 @@ cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build and solve the linear system arising from a scalar steady-state
+ *         convection/diffusion/reaction equation with a CDO-Vb scheme
+ *         One works cellwise and then process to the assembly.
+ *
+ *         Variant with an incremental approach. The system is modified to fit
+ *         the incremental form (unknows are the increments and rhs corresponds
+ *         to a residual). This is useful when the resolution is embedded into
+ *         a non-linear process.
+ *
+ * \param[in]      cur2prev   Not used. Should be done before if needed.
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      field_id   id of the variable field related to this equation
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_solve_steady_state_incr(bool                        cur2prev,
+                                        const cs_mesh_t            *mesh,
+                                        const int                   field_id,
+                                        const cs_equation_param_t  *eqp,
+                                        cs_equation_builder_t      *eqb,
+                                        void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build and solve the linear system arising from a scalar unsteady
  *         convection/diffusion/reaction equation with a CDO-Vb scheme
  *         Implicit time scheme is used to progress in time.
@@ -287,6 +315,35 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
                                const cs_equation_param_t  *eqp,
                                cs_equation_builder_t      *eqb,
                                void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve the linear system arising from a scalar unsteady
+ *         convection/diffusion/reaction equation with a CDO-Vb scheme
+ *         Implicit time scheme is used to progress in time.
+ *         One works cellwise and then process to the assembly
+ *
+ *         Variant with an incremental approach. The system is modified to fit
+ *         the incremental form (unknows are the increments and rhs corresponds
+ *         to a residual). This is useful when the resolution is embedded into
+ *         a non-linear process.
+ *
+ * \param[in]      cur2prev   Not used. Should be done before if needed.
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      field_id   id of the variable field related to this equation
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
+                                    const cs_mesh_t            *mesh,
+                                    const int                   field_id,
+                                    const cs_equation_param_t  *eqp,
+                                    cs_equation_builder_t      *eqb,
+                                    void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!

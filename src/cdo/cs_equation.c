@@ -1940,25 +1940,51 @@ cs_equation_set_functions(void)
 
         /* New mechanism */
 
-        eq->solve_steady_state = cs_cdovb_scaleq_solve_steady_state;
-        switch (eqp->time_scheme) {
-        case CS_TIME_SCHEME_STEADY:
-          eq->solve = eq->solve_steady_state;
-          break;
-        case CS_TIME_SCHEME_EULER_IMPLICIT:
-          eq->solve = cs_cdovb_scaleq_solve_implicit;
-          break;
-        case CS_TIME_SCHEME_THETA:
-        case CS_TIME_SCHEME_CRANKNICO:
-          eq->solve = cs_cdovb_scaleq_solve_theta;
-          break;
+        if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
-        case CS_TIME_SCHEME_BDF2:
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Eq. %s. This time scheme is not yet implemented",
-                    __func__, eqp->name);
+          eq->solve_steady_state = cs_cdovb_scaleq_solve_steady_state_incr;
+
+          switch (eqp->time_scheme) {
+          case CS_TIME_SCHEME_STEADY:
+            eq->solve = eq->solve_steady_state;
+            break;
+          case CS_TIME_SCHEME_EULER_IMPLICIT:
+            eq->solve = cs_cdovb_scaleq_solve_implicit_incr;
+            break;
+          case CS_TIME_SCHEME_THETA:
+          case CS_TIME_SCHEME_CRANKNICO:
+          case CS_TIME_SCHEME_BDF2:
+          default:
+            bft_error(__FILE__, __LINE__, 0,
+                      "%s: Eq. %s. This time scheme is not yet implemented",
+                      __func__, eqp->name);
+          }
+
         }
+        else {
+
+          eq->solve_steady_state = cs_cdovb_scaleq_solve_steady_state;
+
+          switch (eqp->time_scheme) {
+          case CS_TIME_SCHEME_STEADY:
+            eq->solve = eq->solve_steady_state;
+            break;
+          case CS_TIME_SCHEME_EULER_IMPLICIT:
+            eq->solve = cs_cdovb_scaleq_solve_implicit;
+            break;
+          case CS_TIME_SCHEME_THETA:
+          case CS_TIME_SCHEME_CRANKNICO:
+            eq->solve = cs_cdovb_scaleq_solve_theta;
+            break;
+
+          case CS_TIME_SCHEME_BDF2:
+          default:
+            bft_error(__FILE__, __LINE__, 0,
+                      "%s: Eq. %s. This time scheme is not yet implemented",
+                      __func__, eqp->name);
+          }
+
+        } /* Incremental solve or not */
 
         eq->compute_balance = cs_cdovb_scaleq_balance;
         eq->postprocess = cs_cdovb_scaleq_extra_post;
@@ -1991,6 +2017,11 @@ cs_equation_set_functions(void)
         eq->update_field = NULL;
 
         /* New mechanism */
+
+        if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. Incremental form is not available.\n",
+                    __func__, eqp->name);
 
         eq->solve_steady_state = cs_cdovb_vecteq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2043,6 +2074,11 @@ cs_equation_set_functions(void)
         eq->update_field = NULL;
 
         /* New mechanism */
+
+        if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. Incremental form is not available.\n",
+                    __func__, eqp->name);
 
         eq->solve_steady_state = cs_cdovcb_scaleq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2103,6 +2139,11 @@ cs_equation_set_functions(void)
 
         /* New mechanism */
 
+        if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. Incremental form is not available.\n",
+                    __func__, eqp->name);
+
         eq->solve_steady_state = cs_cdofb_scaleq_solve_steady_state;
         switch (eqp->time_scheme) {
         case CS_TIME_SCHEME_STEADY:
@@ -2156,6 +2197,11 @@ cs_equation_set_functions(void)
         eq->update_field = NULL;
 
         /* New mechanism */
+
+        if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. Incremental form is not available.\n",
+                    __func__, eqp->name);
 
         eq->solve_steady_state = cs_cdofb_vecteq_solve_steady_state;
         switch (eqp->time_scheme) {
@@ -2224,6 +2270,11 @@ cs_equation_set_functions(void)
 
         /* New mechanism */
 
+        if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Eq. %s. Incremental form is not available.\n",
+                    __func__, eqp->name);
+
         eq->solve_steady_state = cs_cdoeb_vecteq_solve_steady_state;
         switch (eqp->time_scheme) {
         case CS_TIME_SCHEME_STEADY:
@@ -2258,6 +2309,11 @@ cs_equation_set_functions(void)
       break;
 
     case CS_SPACE_SCHEME_HHO_P0:
+      if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Eq. %s. Incremental form is not available.\n",
+                  __func__, eqp->name);
+
       if (eqp->dim == 1) /* Set pointers of function */
         _set_scal_hho_function_pointers(eq);
       else
@@ -2266,6 +2322,11 @@ cs_equation_set_functions(void)
       break;
 
     case CS_SPACE_SCHEME_HHO_P1:
+      if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Eq. %s. Incremental form is not available.\n",
+                  __func__, eqp->name);
+
       if (eqp->dim == 1) /* Set pointers of function */
         _set_scal_hho_function_pointers(eq);
 
@@ -2278,6 +2339,11 @@ cs_equation_set_functions(void)
       break;
 
     case CS_SPACE_SCHEME_HHO_P2:
+      if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Eq. %s. Incremental form is not available.\n",
+                  __func__, eqp->name);
+
       if (eqp->dim == 1) /* Set pointers of function */
         _set_scal_hho_function_pointers(eq);
 

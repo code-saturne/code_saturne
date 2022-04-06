@@ -33,6 +33,7 @@
 #include "cs_advection_field.h"
 #include "cs_enforcement.h"
 #include "cs_hodge.h"
+#include "cs_iter_algo.h"
 #include "cs_param_cdo.h"
 #include "cs_param_sles.h"
 #include "cs_property.h"
@@ -747,9 +748,24 @@ typedef struct {
    *  - iterative solver
    *  - preconditioner
    *  - tolerance...
+   *
+   * \var incremental_algo_type
+   * Type of algorithm used to handle a (non-linear) incremental resolution
+   *
+   * \var incremental_algo_param
+   * Set of parameters to manage an iterative algorithm
+   *
+   * \var incremental_anderson_param
+   * Set of parameters dedicated to the driving of the Anderson acceleration.
+   * This is only useful if the incremental_algo_type is set to the Anderson
+   * acceleration.
    */
 
   cs_param_sles_t            *sles_param;
+
+  cs_param_nl_algo_t          incremental_algo_type;
+  cs_iter_algo_param_t        incremental_algo_param;
+  cs_iter_algo_param_aa_t     incremental_anderson_param;
 
   /*!
    * @}

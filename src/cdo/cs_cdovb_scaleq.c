@@ -171,11 +171,14 @@ _svb_create_cell_builder(const cs_cdo_connect_t   *connect)
  * \brief  Initialize the local structure for the current cell
  *         Case of scalar-valued CDO-Vb schemes
  *
+ * If field_tnm1 is set to NULL, this is ignored.
+ *
  * \param[in]      cm           pointer to a cellwise view of the mesh
  * \param[in]      eqp          pointer to a cs_equation_param_t structure
  * \param[in]      eqb          pointer to a cs_equation_builder_t structure
  * \param[in]      vtx_bc_flag  flag related to BC associated to each vertex
  * \param[in]      field_tn     values of the field at the last computed time
+ * \param[in]      field_tnm1   values of the field at the previous time step
  * \param[in, out] csys         pointer to a cellwise view of the system
  * \param[in, out] cb           pointer to a cellwise builder
  */
@@ -187,6 +190,7 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
                       const cs_equation_builder_t   *eqb,
                       const cs_flag_t                vtx_bc_flag[],
                       const cs_real_t                field_tn[],
+                      const cs_real_t                field_tnm1[],
                       cs_cell_sys_t                 *csys,
                       cs_cell_builder_t             *cb)
 {
@@ -201,10 +205,26 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
 
   cs_sdm_square_init(cm->n_vc, csys->mat);
 
-  for (short int v = 0; v < cm->n_vc; v++) {
-    csys->dof_ids[v] = cm->v_ids[v];
-    csys->val_n[v] = field_tn[cm->v_ids[v]];
+  if (field_tnm1 == NULL) {
+
+    for (short int v = 0; v < cm->n_vc; v++) {
+      csys->dof_ids[v] = cm->v_ids[v];
+      csys->val_n[v] = field_tn[cm->v_ids[v]];
+    }
+
   }
+  else {
+
+    for (short int v = 0; v < cm->n_vc; v++) {
+      const cs_lnum_t  v_id = cm->v_ids[v];
+      csys->dof_ids[v] = v_id;
+      csys->val_n[v] = field_tn[v_id];
+      csys->val_nm1[v] = field_tnm1[v_id];
+    }
+
+  }
+
+
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
@@ -1275,6 +1295,10 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   eqc->get_mass_matrix = cs_hodge_get_func(__func__, eqc->mass_hodgep);
 
+  if (eqp->incremental_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
+    eqb->incremental_algo->context =
+      cs_iter_algo_aa_create(eqp->incremental_anderson_param, n_vertices);
+
   /* Helper structures (range set, interface set, matrix structure and all the
      assembly process) */
 
@@ -1497,7 +1521,7 @@ cs_cdovb_scaleq_build_block_implicit(int                           t_id,
 
   /* Set the local (i.e. cellwise) structures for the current cell */
 
-  _svb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, f_val, csys, cb);
+  _svb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, f_val, NULL, csys, cb);
 
   /* Build and add the diffusion/advection/reaction term to the local
      system. A mass matrix is also built if needed */
@@ -1866,7 +1890,7 @@ cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _svb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, fld->val,
+      _svb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, fld->val, NULL,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction terms into the local
@@ -1970,6 +1994,262 @@ cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
                              sles,
                              fld->val,
                              rhs);
+
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
+
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
+  cs_sles_free(sles);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve the linear system arising from a scalar steady-state
+ *         convection/diffusion/reaction equation with a CDO-Vb scheme
+ *         One works cellwise and then process to the assembly.
+ *
+ *         Variant with an incremental approach. The system is modified to fit
+ *         the incremental form (unknows are the increments and rhs corresponds
+ *         to a residual). This is useful when the resolution is embedded into
+ *         a non-linear process.
+ *
+ * \param[in]      cur2prev   Not used. Should be done before if needed.
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      field_id   id of the variable field related to this equation
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_solve_steady_state_incr(bool                        cur2prev,
+                                        const cs_mesh_t            *mesh,
+                                        const int                   field_id,
+                                        const cs_equation_param_t  *eqp,
+                                        cs_equation_builder_t      *eqb,
+                                        void                       *context)
+{
+  CS_UNUSED(cur2prev);
+  cs_timer_t  t0 = cs_timer_time();
+
+  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
+  cs_field_t  *fld = cs_field_by_id(field_id);
+
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
+
+  if (eqp->incremental_algo_type == CS_PARAM_NL_ALGO_NONE)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Settings for Eq.: \"%s\" is not consistent.\n"
+              "%s: One expects an incremental solving but this is not set.",
+              __func__, eqp->name, __func__);
+
+  /* Build an array storing the Dirichlet values at vertices
+   * First argument is set to t_cur even if this is a steady computation since
+   * one can call this function to compute a steady-state solution at each time
+   * step of an unsteady computation.
+   */
+
+  cs_cdovb_scaleq_setup(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag);
+
+  if (eqb->init_step)
+    eqb->init_step = false;
+
+  /* Initialize the local system: rhs, matrix and assembler values */
+
+  double  rhs_norm = 0.;
+  cs_real_t  *rhs = NULL;
+
+  cs_cdo_system_helper_init_system(sh, &rhs);
+
+  /* ------------------------- */
+  /* Main OpenMP block on cell */
+  /* ------------------------- */
+
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+  {
+    /* Set variables and structures inside the OMP section so that each thread
+       has its own value */
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    /* Each thread get back its related structures:
+       Get the cell-wise view of the mesh and the algebraic system */
+
+    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_sys_t  *csys = _svb_cell_system[t_id];
+    cs_cell_builder_t  *cb = _svb_cell_builder[t_id];
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
+    cs_hodge_t  *diff_hodge =
+      (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
+    cs_hodge_t  *mass_hodge =
+      (eqc->mass_hodge == NULL) ? NULL : eqc->mass_hodge[t_id];
+
+    /* Set times at which one evaluates quantities when needed */
+
+    cb->t_pty_eval = time_eval; /* Dummy parameter if really steady */
+    cb->t_bc_eval = time_eval;  /* Dummy parameter if really steady */
+    cb->t_st_eval = time_eval;  /* Dummy parameter if really steady */
+
+    /* Initialization of the values of properties */
+
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
+
+    /* --------------------------------------------- */
+    /* Main loop on cells to build the linear system */
+    /* --------------------------------------------- */
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      /* Set the current cell flag */
+
+      cb->cell_flag = connect->cell_flag[c_id];
+
+      /* Set the local mesh structure for the current cell */
+
+      cs_cell_mesh_build(c_id,
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
+                         connect, quant, cm);
+
+      /* Set the local (i.e. cellwise) structures for the current cell */
+
+      _svb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, fld->val, NULL,
+                            csys, cb);
+
+      cs_equation_bc_update_for_increment(csys);
+
+      /* Build and add the diffusion/advection/reaction terms into the local
+       * system.
+       * A mass matrix is also built if needed (stored in mass_hodge->matrix)
+       */
+
+      _svb_conv_diff_reac(eqp, eqb, eqc, cm,
+                          fm, mass_hodge, diff_hodge, csys, cb);
+
+      /* Incremental solving (a current to previous operation should have been
+       * done before calling for the first time this function so that val_n
+       * contains values from field->val which are val^{n+1,k} when one
+       * computes val^{n+1,k+1}.
+       *
+       * fld->val should be the parameter in _svb_init_cell_system()
+       */
+
+      double  *mat_pk = cb->values;
+      cs_sdm_square_matvec(csys->mat, csys->val_n, mat_pk);
+      for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
+        csys->rhs[i] -= mat_pk[i];
+
+      if (cs_equation_param_has_sourceterm(eqp)) { /* SOURCE TERM
+                                                    * =========== */
+
+        /* Reset the local contribution */
+
+        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+
+        /* Source term contribution to the algebraic system */
+
+        cs_source_term_compute_cellwise(eqp->n_source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
+                                        cm,
+                                        eqb->source_mask,
+                                        eqb->compute_source,
+                                        cb->t_st_eval,
+                                        mass_hodge,
+                                        cb,
+                                        csys->source);
+
+        /* Update the RHS */
+
+        for (short int v = 0; v < cm->n_vc; v++)
+          csys->rhs[v] += csys->source[v];
+
+      } /* End of term source */
+
+      /* Apply boundary conditions (those which are weakly enforced) */
+
+      _svb_apply_weak_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+
+      /* Enforce values if needed (internal or Dirichlet) */
+
+      _svb_enforce_values(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+#endif
+
+      /* Compute a cellwise norm of the RHS for the normalization of the
+         residual during the resolution of the linear system */
+
+      rhs_norm += _svb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
+                                            cm, csys);
+
+      /* Assembly process
+       * ================ */
+
+      _svb_assemble(csys, sh->blocks[0], rhs, eqc, asb);
+
+    } /* Main loop on cells */
+
+  } /* OPENMP Block */
+
+  /* Free temporary buffers and structures */
+
+  cs_cdo_system_helper_finalize_assembly(sh);
+  cs_equation_builder_reset(eqb);
+
+  /* End of the system building */
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
+
+  /* No current to previous operation. This should be done before calling for
+     the first time the current function */
+
+  /* Solve the linear system */
+  /* ======================= */
+
+  /* Last step in the computation of the renormalization coefficient */
+
+  cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
+                             quant->vol_tot,
+                             eqc->n_dofs,
+                             rhs,
+                             &rhs_norm);
+
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
+
+  if (eqb->increment == NULL)
+    BFT_MALLOC(eqb->increment, eqc->n_dofs, cs_real_t);
+  memset(eqb->increment, 0, eqc->n_dofs*sizeof(cs_real_t));
+
+  cs_cdo_solve_scalar_system(eqc->n_dofs,
+                             eqp->sles_param,
+                             matrix,
+                             range_set,
+                             rhs_norm,
+                             true, /* rhs_redux */
+                             sles,
+                             eqb->increment,
+                             rhs);
+
+  /* p^{n+1,k+1} = p^{n+1,k} + inc_kp1
+   * since inc_kp1 represents p^{n+1,k+1} - p^{n+1,k} */
+
+  for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
+    fld->val[i] += eqb->increment[i];
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
@@ -2091,7 +2371,7 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _svb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, fld->val,
+      _svb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, fld->val, NULL,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -2263,6 +2543,330 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
 /*!
  * \brief  Build and solve the linear system arising from a scalar unsteady
  *         convection/diffusion/reaction equation with a CDO-Vb scheme
+ *         Implicit time scheme is used to progress in time.
+ *         One works cellwise and then process to the assembly
+ *
+ *         Variant with an incremental approach. The system is modified to fit
+ *         the incremental form (unknows are the increments and rhs corresponds
+ *         to a residual). This is useful when the resolution is embedded into
+ *         a non-linear process.
+ *
+ * \param[in]      cur2prev   Not used. Should be done before if needed.
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      field_id   id of the variable field related to this equation
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
+                                    const cs_mesh_t            *mesh,
+                                    const int                   field_id,
+                                    const cs_equation_param_t  *eqp,
+                                    cs_equation_builder_t      *eqb,
+                                    void                       *context)
+{
+  CS_UNUSED(cur2prev);
+  cs_timer_t  t0 = cs_timer_time();
+
+  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
+  cs_cdo_system_helper_t  *sh = eqb->system_helper;
+  cs_field_t  *fld = cs_field_by_id(field_id);
+
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+
+  assert(cs_equation_param_has_time(eqp) == true);
+  assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
+
+  /* Build an array storing the Dirichlet values at vertices and another one
+     to detect vertices with an enforcement */
+
+  cs_cdovb_scaleq_setup(ts->t_cur + ts->dt[0],
+                        mesh, eqp, eqb, eqc->vtx_bc_flag);
+
+  if (eqb->init_step)
+    eqb->init_step = false;
+
+  /* Initialize the local system: rhs, matrix and assembler values */
+
+  double  rhs_norm = 0.;
+  cs_real_t  *rhs = NULL;
+
+  cs_cdo_system_helper_init_system(sh, &rhs);
+
+  /* ------------------------- */
+  /* Main OpenMP block on cell */
+  /* ------------------------- */
+
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+  {
+    /* Set variables and structures inside the OMP section so that each thread
+       has its own value */
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    /* Each thread get back its related structures:
+       Get the cell-wise view of the mesh and the algebraic system */
+
+    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_sys_t  *csys = _svb_cell_system[t_id];
+    cs_cell_builder_t  *cb = _svb_cell_builder[t_id];
+    cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
+    cs_hodge_t  *diff_hodge =
+      (eqc->diffusion_hodge == NULL) ? NULL : eqc->diffusion_hodge[t_id];
+    cs_hodge_t  *mass_hodge =
+      (eqc->mass_hodge == NULL) ? NULL : eqc->mass_hodge[t_id];
+
+    const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
+    const cs_real_t  inv_dtcur = 1./ts->dt[0];
+
+    /* Set times at which one evaluates quantities if needed */
+
+    cb->t_pty_eval = time_eval;
+    cb->t_bc_eval = time_eval;
+    cb->t_st_eval = time_eval;
+
+    /* Initialization of the values of properties */
+
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
+
+    /* --------------------------------------------- */
+    /* Main loop on cells to build the linear system */
+    /* --------------------------------------------- */
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      /* Set the current cell flag */
+
+      cb->cell_flag = connect->cell_flag[c_id];
+
+      /* Set the local mesh structure for the current cell */
+
+      cs_cell_mesh_build(c_id,
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
+                         connect, quant, cm);
+
+      /* Set the local (i.e. cellwise) structures for the current cell */
+
+      _svb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag,
+                            fld->val, fld->val_pre,
+                            csys, cb);
+
+      cs_equation_bc_update_for_increment(csys);
+
+      /* Build and add the diffusion/advection/reaction terms into the local
+       * system.
+       * A mass matrix is also built if needed (stored in mass_hodge->matrix)
+       */
+
+      _svb_conv_diff_reac(eqp, eqb, eqc, cm,
+                          fm, mass_hodge, diff_hodge, csys, cb);
+
+      /* Incremental solving (a current to previous operation should have been
+       * done before calling for the first time this function so that val_n
+       * contains values from field->val which are val^{n+1,k} when one
+       * computes val^{n+1,k+1}.
+       *
+       * fld->val should be the parameter in _svb_init_cell_system()
+       */
+
+      double  *mat_pk = cb->values;
+      cs_sdm_square_matvec(csys->mat, csys->val_n, mat_pk);
+      for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
+        csys->rhs[i] -= mat_pk[i];
+
+      if (cs_equation_param_has_sourceterm(eqp)) { /* SOURCE TERM
+                                                    * =========== */
+
+        /* Reset the local contribution */
+
+        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+
+        /* Source term contribution to the algebraic system
+           If the equation is steady, the source term has already been computed
+           and is added to the right-hand side during its initialization. */
+
+        cs_source_term_compute_cellwise(eqp->n_source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
+                                        cm,
+                                        eqb->source_mask,
+                                        eqb->compute_source,
+                                        cb->t_st_eval,
+                                        mass_hodge,
+                                        cb,
+                                        csys->source);
+
+        for (short int v = 0; v < cm->n_vc; v++)
+          csys->rhs[v] += csys->source[v];
+
+      } /* End of term source */
+
+      /* Apply boundary conditions (those which are weakly enforced) */
+
+      _svb_apply_weak_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
+
+      /* Unsteady term + time scheme
+       * =========================== */
+
+      if (!(eqb->time_pty_uniform))
+        cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property,
+                                                 cb->t_pty_eval);
+
+      if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
+
+        /* |c|*wvc = |dual_cell(v) cap c| */
+
+        CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+        const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
+
+        /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
+         *       >> Update the cellwise system with the time matrix */
+
+        for (short int i = 0; i < cm->n_vc; i++) {
+
+          const double  dval =  ptyc * cm->wvc[i];
+
+          /* Update the RHS with values at time t_n (stored in field->val_pre
+           * in case of an incremental solve)
+           *
+           * p^{k+1,n+1} = p^{k,n+1} + delta_p^{k+1,n+1}
+           *
+           * The unsteady term is equal to p^{k+1,n+1} - p^{n} so that
+           * p^{k+1,n+1} - p^{n} = delta_p^{k+1,n+1} + p^{k,n+1} - p^{n}
+           */
+
+          csys->rhs[i] += dval * (csys->val_nm1[i] - csys->val_n[i]);
+
+          /* Add the diagonal contribution from time matrix */
+
+          csys->mat->val[i*(cm->n_vc + 1)] += dval;
+
+        }
+
+      }
+      else { /* Use the mass matrix */
+
+        const double  tpty_coef = cb->tpty_val * inv_dtcur;
+        const cs_sdm_t  *mass_mat = mass_hodge->matrix;
+
+        /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
+         *       >> Update the cellwise system with the time matrix */
+
+        /* Update the rhs with csys->mat*(p^n - p^{k,n+1}) */
+
+        double  *vec = cb->values;
+        double  *matvec = cb->values + csys->n_dofs;
+
+        for (short int i = 0; i < csys->n_dofs; i++)
+          vec[i] = csys->val_nm1[i] - csys->val_n[i];
+
+        cs_sdm_square_matvec(mass_mat, vec, matvec);
+
+        for (short int i = 0; i < csys->n_dofs; i++)
+          csys->rhs[i] += tpty_coef*matvec[i];
+
+        /* Update the cellwise system with the time matrix */
+
+        cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
+
+      }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump("\n>> Cell system after time", csys);
+#endif
+
+      /* Enforce values if needed (internal or Dirichlet) */
+
+      _svb_enforce_values(eqp, eqb, eqc, cm, fm, diff_hodge, csys, cb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+#endif
+
+      /* Compute a norm of the RHS for the normalization of the residual
+         of the linear system to solve */
+
+      rhs_norm += _svb_cw_rhs_normalization(eqp->sles_param->resnorm_type,
+                                            cm, csys);
+
+      /* Assembly process
+       * ================ */
+
+      _svb_assemble(csys, sh->blocks[0], rhs, eqc, asb);
+
+    } /* Main loop on cells */
+
+  } /* OPENMP Block */
+
+  /* Free temporary buffers and structures */
+
+  cs_cdo_system_helper_finalize_assembly(sh);
+  cs_equation_builder_reset(eqb);
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
+
+  /* No current to previous operation. This should be done before calling for
+     the first time the current function */
+
+  /* Solve the linear system */
+  /* ======================= */
+
+  /* Last step in the computation of the renormalization coefficient */
+
+  cs_cdo_solve_sync_rhs_norm(eqp->sles_param->resnorm_type,
+                             quant->vol_tot,
+                             eqc->n_dofs,
+                             rhs,
+                             &rhs_norm);
+
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param->field_id, NULL);
+  cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
+
+  if (eqb->increment == NULL)
+    BFT_MALLOC(eqb->increment, eqc->n_dofs, cs_real_t);
+  memset(eqb->increment, 0, eqc->n_dofs*sizeof(cs_real_t));
+
+  cs_cdo_solve_scalar_system(eqc->n_dofs,
+                             eqp->sles_param,
+                             matrix,
+                             range_set,
+                             rhs_norm,
+                             true, /* rhs_redux */
+                             sles,
+                             eqb->increment,
+                             rhs);
+
+  /* p^{n+1,k+1} = p^{n+1,k} + inc_kp1
+   * since inc_kp1 represents p^{n+1,k+1} - p^{n+1,k} */
+
+  for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
+    fld->val[i] += eqb->increment[i];
+
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
+
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
+  cs_sles_free(sles);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve the linear system arising from a scalar unsteady
+ *         convection/diffusion/reaction equation with a CDO-Vb scheme
  *         Theta time scheme is used to progress in time.
  *         One works cellwise and then process to the assembly
  *
@@ -2411,7 +3015,7 @@ cs_cdovb_scaleq_solve_theta(bool                        cur2prev,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
 
-      _svb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, fld->val,
+      _svb_init_cell_system(cm, eqp, eqb, eqc->vtx_bc_flag, fld->val, NULL,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local

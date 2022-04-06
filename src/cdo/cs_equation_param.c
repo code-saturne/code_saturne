@@ -1244,6 +1244,23 @@ cs_equation_param_create(const char            *name,
 
   eqp->sles_param = cs_param_sles_create(-1, name); /* field_id, system_name */
 
+  /* By default, there is no incremental solving */
+
+  eqp->incremental_algo_type = CS_PARAM_NL_ALGO_NONE;
+  eqp->incremental_algo_param = (cs_iter_algo_param_t) {
+    .verbosity = 0,         /* level of display to output */
+    .n_max_algo_iter = 15,  /* n_max iter. */
+    .atol = 1e-6,           /* absolute tolerance */
+    .rtol = 1e-2,           /* relative tolerance */
+    .dtol = 1e3 };          /* divergence tolerance */
+
+  eqp->incremental_anderson_param = (cs_iter_algo_param_aa_t) {
+    .n_max_dir = 6,
+    .starting_iter = 3,
+    .max_cond = -1, /* No test by default */
+    .beta = 1.0,    /* No damping by default */
+    .dp_type = CS_PARAM_DOTPROD_EUCLIDEAN };
+
   /* Settings for the OpenMP strategy */
 
   eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL;
@@ -1963,6 +1980,37 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
       cs_enforcement_param_log(eqname, eqp->enforcement_params[i]);
 
   }
+
+  /* Incremental process: Log parameters */
+
+  if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE) {
+
+    cs_log_printf(CS_LOG_SETUP, "### %s | Incremental algo: %s\n",
+                  eqname,
+                  cs_param_get_nl_algo_name(eqp->incremental_algo_type));
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Tolerances of the incremental algo:"
+                  " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
+                  eqname, eqp->incremental_algo_param.rtol,
+                  eqp->incremental_algo_param.atol,
+                  eqp->incremental_algo_param.dtol);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Max of non-linear iterations: %d\n",
+                  eqname, eqp->incremental_algo_param.n_max_algo_iter);
+
+    if (eqp->incremental_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+
+      const cs_iter_algo_param_aa_t  aap = eqp->incremental_anderson_param;
+
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Anderson param: max. dir: %d; "
+                    " start: %d; drop. tol: %5.3e; relax: %5.3e\n",
+                    eqname, aap.n_max_dir, aap.starting_iter, aap.max_cond,
+                    aap.beta);
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | Anderson param: Dot product type: %s\n",
+                    eqname, cs_param_get_dotprod_type_name(aap.dp_type));
+
+    }
+
+  } /* There is an incremental resolution */
 
   /* Iterative solver information */
 

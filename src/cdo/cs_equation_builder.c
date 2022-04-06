@@ -171,6 +171,16 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
 
   eqb->enforced_values = NULL;
 
+  /* Incremental algorithm (if a context associated has to be define for the
+     incremental algo then this done during the initialization of the equation
+     context) */
+
+  eqb->increment = NULL;
+  if (eqp->incremental_algo_type != CS_PARAM_NL_ALGO_NONE)
+    eqb->incremental_algo = cs_iter_algo_create(eqp->incremental_algo_param);
+  else
+    eqb->incremental_algo = NULL;
+
   /* Set members and structures related to the management of the BCs
      Translate user-defined information about BC into a structure well-suited
      for computation. We make the distinction between homogeneous and
@@ -287,6 +297,17 @@ cs_equation_builder_free(cs_equation_builder_t  **p_builder)
     BFT_FREE(eqb->source_mask);
 
   cs_cdo_system_helper_free(&eqb->system_helper);
+
+  /* Quantities related to the incremental resolution (may be NULL) */
+
+  BFT_FREE(eqb->increment);
+
+  /* If the context is not NULL, this means that an Anderson algorithm has been
+     activated otherwise nothing to do */
+
+  cs_iter_algo_aa_free(eqb->incremental_algo);
+
+  BFT_FREE(eqb->incremental_algo);
 
   /* Free BC structure */
 

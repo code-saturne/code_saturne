@@ -157,6 +157,22 @@ struct _equation_builder_t {
 
   /*!
    * @}
+   * @name Incremental solving
+   * @{
+   *
+   * \var increment
+   * array of values for the last computed increment. Only allocated if an
+   * incremental solving has been requested.
+   *
+   * \var incremental_algo
+   * Structure which handles the incremental algorithm
+   */
+
+  cs_real_t              *increment;
+  cs_iter_algo_t         *incremental_algo;
+
+  /*!
+   * @}
    * @name Boundary conditions
    * @{
    *
