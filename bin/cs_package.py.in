@@ -71,6 +71,9 @@ class package:
 
         # Installation directories
 
+        python_version = "%d.%d" % (sys.version_info.major,
+                                    sys.version_info.minor)
+
         self.dirs = {'prefix': ("", "@prefix@"),
                      'exec_prefix': ("", "@exec_prefix@"),
                      'bindir': ("bin", "@bindir@"),
@@ -82,11 +85,11 @@ class package:
                      'pkglibexecdir': (os.path.join("libexec", self.name),
                                        "@pkglibexecdir@"),
                      'pythondir': (os.path.join("lib",
-                                                "python" + sys.version[:3],
+                                                "python" + python_version,
                                                 "site-packages"),
                                    "@pythondir@"),
                      'pkgpythondir': (os.path.join("lib",
-                                                   "python" + sys.version[:3],
+                                                   "python" + python_version,
                                                    "site-packages",
                                                    self.name),
                                       "@pkgpythondir@"),

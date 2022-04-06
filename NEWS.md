@@ -3,7 +3,9 @@ Release 6.0.9 (Unreleased)
 
 Bug fixes:
 
-- Fix mpmd command generation and launch when using ccc_mprun (CCRT)
+- Fix errors with Python >= 3.10 due to non-robust version tests.
+
+- Fix mpmd command generation and launch when using ccc_mprun (CCRT).
 
 Release 6.0.8 (March 16 2022)
 -----------------------------
