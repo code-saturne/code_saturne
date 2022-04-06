@@ -1074,13 +1074,13 @@ class BufferSpinBoxWidget(QSpinBox):
         tv = v
         suffix = ''
         if v >= 1073741824 and v % 1073741824 == 0:
-            tv = v / 1073741824
+            tv = v // 1073741824
             suffix = ' GiB'
         elif v >= 1048576 and v % 1048576 == 0:
-            tv = v / 1048576
+            tv = v // 1048576
             suffix = ' MiB'
         elif v >= 1024 and v % 1024 == 0:
-            tv = v / 1024
+            tv = v // 1024
             suffix = ' KiB'
         elif v > 0:
             tv = v
