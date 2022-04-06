@@ -1,9 +1,11 @@
-Release 7.0.5 (Unreleased)
---------------------------
+Release 7.0.5 (not released yet)
+--------------------------------
 
 Bug fixes:
 
-- Fix mpmd command generation when using ccc_mprun (CCRT)
+- Fixes errors with Python >= 3.10 due to non-robust version tests.
+
+- Fix mpmd command generation when using ccc_mprun (CCRT).
 
 Release 7.0.4 (March 16 2022)
 -----------------------------

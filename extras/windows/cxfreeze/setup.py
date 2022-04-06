@@ -31,7 +31,8 @@ from cx_Freeze import setup, Executable
 # ---------------------
 
 # Module search path
-path = sys.path + ["bin", "lib/python" + sys.version[:3] + "/site-packages/code_saturne", "lib/python" + sys.version[:3] + "/site-packages"]
+python_version = "%d.%d" % (sys.version_info.major, sys.version_info.minor)
+path = sys.path + ["bin", "lib/python" + python_version + "/site-packages/code_saturne", "lib/python" + python_version + "/site-packages"]
 path += [sys.prefix + "/Lib/site-packages"]
 
 # Specific modules to be included
