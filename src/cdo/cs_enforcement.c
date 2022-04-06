@@ -155,6 +155,66 @@ cs_enforcement_param_create(cs_enforcement_selection_t    sel_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reset an existing cs_enforcement_param_t structure
+ *
+ * \param[in, out] efp        pointer to a cs_enforcement_param_t structure
+ * \param[in]      sel_type   type of elements which have been selected
+ * \param[in]      type       way to set values for the selected elements
+ * \param[in]      stride     number of values to enforce by element
+ * \param[in]      n_elts     number of selected elements locally
+ * \param[in]      elt_ids    list of element ids
+ * \param[in]      values     array of values to enforce
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_enforcement_param_reset(cs_enforcement_param_t       *efp,
+                           cs_enforcement_selection_t    sel_type,
+                           cs_enforcement_type_t         type,
+                           int                           stride,
+                           cs_lnum_t                     n_elts,
+                           const cs_lnum_t              *elt_ids,
+                           const cs_real_t              *values)
+{
+  if (efp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Enforcement param not allocated.\n",
+              __func__);
+  assert(efp->stride == stride);
+
+  efp->selection_type = sel_type;
+  efp->type = type;
+  efp->n_elts = n_elts;
+
+  if (n_elts > 0 && values == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: No value for the enforcement\n", __func__);
+
+  BFT_REALLOC(efp->elt_ids, n_elts, cs_lnum_t);
+  memcpy(efp->elt_ids, elt_ids, n_elts*sizeof(cs_lnum_t));
+
+  switch (type) {
+
+  case CS_ENFORCEMENT_BY_CONSTANT:
+    assert(efp->values != NULL);
+    for (int k = 0; k < stride; k++)
+      efp->values[k] = values[k];
+    break;
+
+  case CS_ENFORCEMENT_BY_DOF_VALUES:
+    BFT_REALLOC(efp->values, stride*n_elts, cs_real_t);
+    memcpy(efp->values, values, stride*n_elts*sizeof(cs_real_t));
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Undefined way to enforce values for interior DoFs\n",
+              __func__);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Copy a cs_enforcement_param_t structure
  *
  * \param[in] ref    reference structure to copy

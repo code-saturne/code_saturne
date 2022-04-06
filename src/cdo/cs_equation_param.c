@@ -3673,5 +3673,84 @@ cs_equation_add_cell_enforcement(cs_equation_param_t   *eqp,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new enforcement if enforcement_id does not exist or replace it
+ *         otherwise. Enforcement of the value related to the degrees of freedom
+ *         associated to the list of selected cells.
+ *
+ *         One assumes that values are interlaced if eqp->dim > 1
+ *         ref_value or elt_values has to be defined. If both parameters are
+ *         defined, one keeps the definition in elt_values
+ *
+ * \param[in, out] eqp             pointer to a cs_equation_param_t structure
+ * \param[in]      enforcement_id  id of the enforcement to handle
+ * \param[in]      n_cells         number of selected cells
+ * \param[in]      cell_ids        list of cell ids
+ * \param[in]      ref_value       ignored if NULL
+ * \param[in]      cell_values     list of associated values, ignored if NULL
+ *
+ * \return a pointer to a cs_enforcement_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_enforcement_param_t *
+cs_equation_add_or_replace_cell_enforcement(cs_equation_param_t *eqp,
+                                            int                  enforcement_id,
+                                            cs_lnum_t            n_cells,
+                                            const cs_lnum_t      cell_ids[],
+                                            const cs_real_t      ref_value[],
+                                            const cs_real_t      cell_values[])
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  if (ref_value == NULL && cell_values == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq: %s: No enforcement value.\n", __func__, eqp->name);
+
+  cs_enforcement_param_t  *efp = NULL;
+
+  if (enforcement_id > eqp->n_enforcements)
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid enforcement id.\n",
+              __func__);
+
+  if (enforcement_id == eqp->n_enforcements) { /* Add a new enforcement */
+
+    efp = cs_equation_add_cell_enforcement(eqp,
+                                           n_cells, cell_ids,
+                                           ref_value, cell_values);
+
+  }
+  else { /* Replace an existing parameter structure */
+
+    assert(enforcement_id < eqp->n_enforcements);
+    efp = eqp->enforcement_params[enforcement_id];
+
+    if (cell_values == NULL) {
+
+      assert(ref_value != NULL);
+      cs_enforcement_param_reset(efp,
+                                 CS_ENFORCEMENT_SELECTION_CELLS,
+                                 CS_ENFORCEMENT_BY_CONSTANT,
+                                 eqp->dim,
+                                 n_cells,
+                                 cell_ids,
+                                 ref_value);
+
+    }
+    else
+      cs_enforcement_param_reset(efp,
+                                 CS_ENFORCEMENT_SELECTION_CELLS,
+                                 CS_ENFORCEMENT_BY_DOF_VALUES,
+                                 eqp->dim,
+                                 n_cells,
+                                 cell_ids,
+                                 cell_values);
+
+  } /* Reset an existant enforcement parameter */
+
+  return efp;
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

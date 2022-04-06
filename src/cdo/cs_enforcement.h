@@ -127,6 +127,29 @@ cs_enforcement_param_create(cs_enforcement_selection_t    sel_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reset an existing cs_enforcement_param_t structure
+ *
+ * \param[in, out] efp        pointer to a cs_enforcement_param_t structure
+ * \param[in]      sel_type   type of elements which have been selected
+ * \param[in]      type       way to set values for the selected elements
+ * \param[in]      stride     number of values to enforce by element
+ * \param[in]      n_elts     number of selected elements locally
+ * \param[in]      elt_ids    list of element ids
+ * \param[in]      values     array of values to enforce
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_enforcement_param_reset(cs_enforcement_param_t       *efp,
+                           cs_enforcement_selection_t    sel_type,
+                           cs_enforcement_type_t         type,
+                           int                           stride,
+                           cs_lnum_t                     n_elts,
+                           const cs_lnum_t              *elt_ids,
+                           const cs_real_t              *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Copy a cs_enforcement_param_t structure
  *
  * \param[in] ref    reference structure to copy

@@ -102,6 +102,7 @@ static const char _err_empty_ns[] =
 static const char _err_invalid_coupling[] =
   " %s: Invalid case for the coupling algorithm.\n";
 
+static int  cs_navsto_system_solid_enforcement_id = -1;
 static cs_navsto_system_t  *cs_navsto_system = NULL;
 
 /*============================================================================
@@ -1338,7 +1339,7 @@ cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  cs_navsto_param_t *nsp = ns->param;
+  cs_navsto_param_t  *nsp = ns->param;
   assert(nsp != NULL);
 
   /* Do not exit the function if n_elts = 0 since there is a parallel
@@ -1351,11 +1352,14 @@ cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
   cs_real_t  zero_velocity[3] = {0, 0, 0};
 
-  cs_equation_add_cell_enforcement(mom_eqp,
-                                   n_solid_cells,
-                                   solid_cell_ids,
-                                   zero_velocity,
-                                   NULL);
+  if (cs_navsto_system_solid_enforcement_id < 0)
+    cs_navsto_system_solid_enforcement_id = mom_eqp->n_enforcements;
+  cs_equation_add_or_replace_cell_enforcement(mom_eqp,
+                      cs_navsto_system_solid_enforcement_id,
+                                              n_solid_cells,
+                                              solid_cell_ids,
+                                              zero_velocity,
+                                              NULL);
 }
 
 /*----------------------------------------------------------------------------*/
