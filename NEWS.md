@@ -3,6 +3,8 @@ Release 7.0.5 (not released yet)
 
 Bug fixes:
 
+- Fix crash in Lagrangian module combined with transient turbomachinery mesh.
+
 - Fix GUI bug related to the preprocessor.log reader
 
 - Fixes errors with Python >= 3.10 due to non-robust version tests.
