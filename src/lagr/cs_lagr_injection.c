@@ -1335,8 +1335,6 @@ cs_lagr_injection(int        time_id,
   cs_lagr_zone_data_t  *zda[2] = {cs_lagr_get_boundary_conditions(),
                                   cs_lagr_get_volume_conditions()};
 
-  cs_lagr_get_internal_conditions();
-
   /* Boundary conditions */
 
   {

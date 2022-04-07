@@ -1546,14 +1546,21 @@ cs_get_lagr_brownian(void)
 /*!
  * \brief Return pointer to the main internal conditions structure.
  *
- * \return
- *   pointer to current internal_contditions or NULL
+ * The structure is allocated on demand, when this function is first called.
+ *
+ * \return pointer to current internal_conditions structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_lagr_internal_condition_t  *
 cs_lagr_get_internal_conditions(void)
 {
+  if (cs_glob_mesh->time_dep >= CS_MESH_TRANSIENT_CONNECT) {
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Lagrangian internal conditions are not currenty\n"
+              "compatible with a transient (time-varying) mesh.", __func__);
+  }
+
   /* Define a structure with default parameters if not done yet */
 
   if (cs_glob_lagr_internal_conditions == NULL)
@@ -1663,6 +1670,7 @@ void cs_lagr_finalize_internal_cond(void)
 {
   cs_lagr_internal_condition_t  *internal_cond
     = cs_glob_lagr_internal_conditions;
+
   if (internal_cond != NULL) {
     BFT_FREE(internal_cond->i_face_zone_id);
     BFT_FREE(internal_cond);
