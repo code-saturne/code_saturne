@@ -80,7 +80,8 @@ log.setLevel(GuiParam.DEBUG)
 # Popup help for debug tools
 #-------------------------------------------------------------------------------
 
-class BatchRunningDebugOptionsHelpDialogView(QDialog, Ui_BatchRunningDebugOptionsHelpDialogForm):
+class BatchRunningDebugOptionsHelpDialogView(QDialog,
+                                             Ui_BatchRunningDebugOptionsHelpDialogForm):
     """
     Help dialog
     """
@@ -115,7 +116,8 @@ class BatchRunningDebugOptionsHelpDialogView(QDialog, Ui_BatchRunningDebugOption
 # Popup window class: stop the computation at a iteration
 #-------------------------------------------------------------------------------
 
-class BatchRunningStopByIterationDialogView(QDialog, Ui_BatchRunningStopByIterationDialogForm):
+class BatchRunningStopByIterationDialogView(QDialog,
+                                            Ui_BatchRunningStopByIterationDialogForm):
     """
     Advanced dialog to stop the computation at a given iteration
     """
@@ -183,7 +185,12 @@ class ListingDialogView(CommandMgrDialogView):
     def __init__(self, parent, case, title, cmd):
         self.case = case
 
-        CommandMgrDialogView.__init__(self, parent, title, cmd, self.case['data_path'], self.case['salome'])
+        CommandMgrDialogView.__init__(self,
+                                      parent,
+                                      title,
+                                      cmd,
+                                      self.case['data_path'],
+                                      self.case['salome'])
 
         self.pushButtonStop.clicked.connect(self.__slotStop)
         self.pushButtonStopAt.clicked.connect(self.__slotStopAt)
@@ -350,6 +357,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Ui_BatchRunningDialogForm.__init__(self)
         self.setupUi(self)
 
+
         self.case = case
         self.parent = parent
 
@@ -373,10 +381,21 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         self.jmdl.load()
 
+        # Remark: if the view was closed without settings being applied,
+        # the job model batch dictionnary may have beed updated for display
+        # purposes but not have been applied to the job header lines.
+        # The batch object (and its dictionnary) could be moved from the
+        # job model to the current object.
+
+        if self.jmdl.job_header_lines != None:
+            self.jmdl.batch.parse_lines(self.jmdl.job_header_lines)
+            self.job_header_lines = self.jmdl.job_header_lines.copy()
+        else:
+            self.job_header_lines = None
+
         self.run_dict = {}
         for k in self.jmdl.run_dict:
             self.run_dict[k] = self.jmdl.run_dict[k]
-
         self.job_dict = {}
         for k in self.jmdl.job_dict:
             self.job_dict[k] = self.jmdl.job_dict[k]
@@ -384,15 +403,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.have_mpi = self.jmdl.have_mpi
         self.have_openmp = self.jmdl.have_openmp
 
-        self.job_name = self.jmdl.batch.params['job_name']
-        self.job_nodes = self.jmdl.batch.params['job_nodes']
-        self.job_ppn  = self.jmdl.batch.params['job_ppn']
-        self.job_procs = self.jmdl.batch.params['job_procs']
-        self.job_threads = self.jmdl.batch.params['job_threads']
-        self.job_walltime = self.jmdl.batch.params['job_walltime']
-        self.job_class  = self.jmdl.batch.params['job_class']
-        self.job_account  = self.jmdl.batch.params['job_account']
-        self.job_wckey  = self.jmdl.batch.params['job_wckey']
 
         # Batch info
 
@@ -464,10 +474,9 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         self.pushButtonCancel.clicked.connect(self.slotCancel)
         self.pushButtonApply.clicked.connect(self.slotApply)
-
         self.pushButtonRunSubmit.clicked.connect(self.slotBatchRunning)
-        self.lineEditRunId.textChanged[str].connect(self.slotJobRunId)
 
+        self.lineEditRunId.textChanged[str].connect(self.slotJobRunId)
         self.lineEdit_tool.textChanged[str].connect(self.slotDebug)
         self.toolButton_2.clicked.connect(self.slotDebugHelp)
 
@@ -475,6 +484,12 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         self.checkBoxTrace.stateChanged.connect(self.slotTrace)
         self.checkBoxLogParallel.stateChanged.connect(self.slotLogParallel)
+
+        self.tabWidgetJob.setHidden(True)
+        self.haveAdvparam = False
+
+        self.pushButtonAdvparam.setCheckable(True)
+        self.pushButtonAdvparam.pressed.connect(self.switchBox)
 
         if not self.case['data_path']:
             self.pushButtonRunSubmit.setEnabled(False)
@@ -539,7 +554,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         if self.lineEditJobName.validator().state == QValidator.Acceptable:
-            self.job_name = str(v)
+            self.jmdl.batch.params['job_name'] = str(v)
 
 
     @pyqtSlot(int)
@@ -548,9 +563,9 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         n = int(self.spinBoxNodes.text())
-        self.job_nodes = str(self.spinBoxNodes.text())
-        if self.job_ppn:
-            ppn = int(self.job_ppn)
+        self.jmdl.batch.params['job_nodes'] = str(self.spinBoxNodes.text())
+        if self.jmdl.batch.params['job_ppn']:
+            ppn = int(self.jmdl.batch.params['job_ppn'])
             tot_ranks = n*ppn
             self.lineEditTotMPI.setText(str(tot_ranks))
 
@@ -561,13 +576,13 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         ppn = int(self.spinBoxPpn.text())
-        self.job_ppn  = str(ppn)
-        if self.job_nodes:
-            n = int(self.job_nodes)
+        self.jmdl.batch.params['job_ppn']  = str(ppn)
+        if self.jmdl.batch.params['job_nodes']:
+            n = int(self.jmdl.batch.params['job_nodes'])
             tot_ranks = n*ppn
             self.lineEditTotMPI.setText(str(tot_ranks))
-        if self.job_threads:
-            n_threads = int(self.job_threads)
+        if self.jmdl.batch.params['job_threads']:
+            n_threads = int(self.jmdl.batch.params['job_threads'])
             node_threads = n_threads*ppn
             self.lineEditThreadsPerNode.setText(str(node_threads))
 
@@ -586,9 +601,9 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         n_threads = int(self.spinBoxThreads.text())
-        self.job_threads  = str(n_threads)
-        if self.job_ppn:
-            ppn = int(self.job_ppn)
+        self.jmdl.batch.params['job_threads'] = str(n_threads)
+        if self.jmdl.batch.params['job_ppn']:
+            ppn = int(self.jmdl.batch.params['job_ppn'])
             node_threads = n_threads*ppn
             self.lineEditThreadsPerNode.setText(str(node_threads))
 
@@ -693,6 +708,31 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         QDialog.accept(self)
 
 
+    @pyqtSlot()
+    def switchBox(self):
+        if not self.pushButtonAdvparam.isChecked():
+            self.textEditJob.clear()
+
+            self.jmdl.batch.update_lines(self.job_header_lines)
+
+            for k in self.job_header_lines:
+                self.textEditJob.append(k)
+
+            self.tabWidgetJob.setVisible(True)
+            self.haveAdvparam = True
+            self.frameJob.setHidden(True)
+
+        else:
+            self.job_header_lines = self.textEditJob.toPlainText().split(os.linesep)
+            self.jmdl.batch.parse_lines(self.job_header_lines)
+
+            self.displayBatchInfo()
+
+            self.tabWidgetJob.setHidden(True)
+            self.haveAdvparam = False
+            self.frameJob.setVisible(True)
+
+
     def Apply(self):
         """
         Apply changes
@@ -702,21 +742,18 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.mdl.setLogParallel(self.log_parallel)
 
         # Apply state
+        if self.jmdl.job_header_lines != None:
+            if self.pushButtonAdvparam.isChecked():
+                self.job_header_lines = self.textEditJob.toPlainText().split(os.linesep)
+            else:
+                self.jmdl.batch.update_lines(self.job_header_lines)
+
+            self.jmdl.job_header_lines = self.job_header_lines.copy()
 
         for k in self.jmdl.run_dict:
             self.jmdl.run_dict[k] = self.run_dict[k]
         for k in self.jmdl.job_dict:
             self.jmdl.job_dict[k] = self.job_dict[k]
-
-        self.jmdl.batch.params['job_name'] = self.job_name
-        self.jmdl.batch.params['job_nodes'] = self.job_nodes
-        self.jmdl.batch.params['job_ppn'] = self.job_ppn
-        self.jmdl.batch.params['job_procs'] = self.job_procs
-        self.jmdl.batch.params['job_threads'] = self.job_threads
-        self.jmdl.batch.params['job_walltime'] = self.job_walltime
-        self.jmdl.batch.params['job_class'] = self.job_class
-        self.jmdl.batch.params['job_account'] = self.job_account
-        self.jmdl.batch.params['job_wckey'] = self.job_wckey
 
         self.jmdl.updateComputeBuildInfo(compute_build=self.jmdl.run_dict['compute_build'])
 
@@ -871,43 +908,53 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Layout of the second part of this page.
         """
 
-        if self.job_name != None:
+        job_name = self.jmdl.batch.params['job_name']
+        job_nodes = self.jmdl.batch.params['job_nodes']
+        job_ppn = self.jmdl.batch.params['job_ppn']
+        job_procs = self.jmdl.batch.params['job_procs']
+        job_threads = self.jmdl.batch.params['job_threads']
+        job_walltime = self.jmdl.batch.params['job_walltime']
+        job_class  = self.jmdl.batch.params['job_class']
+        job_account  = self.jmdl.batch.params['job_account']
+        job_wckey  = self.jmdl.batch.params['job_wckey']
+
+        if job_name != None:
             self.labelJobName.show()
-            self.lineEditJobName.setText(str(self.job_name))
+            self.lineEditJobName.setText(str(job_name))
             self.lineEditJobName.show()
 
-        if self.job_nodes != None:
+        if job_nodes != None:
             self.labelNodes.show()
-            self.spinBoxNodes.setValue(int(self.job_nodes))
+            self.spinBoxNodes.setValue(int(job_nodes))
             self.spinBoxNodes.show()
 
-        if self.job_ppn != None:
+        if job_ppn != None:
             self.labelPpn.show()
-            self.spinBoxPpn.setValue(int(self.job_ppn))
+            self.spinBoxPpn.setValue(int(job_ppn))
             self.spinBoxPpn.show()
 
-        if self.job_procs != None:
+        if job_procs != None:
             self.labelProcs.show()
-            self.spinBoxProcs.setValue(int(self.job_procs))
+            self.spinBoxProcs.setValue(int(job_procs))
             self.spinBoxProcs.show()
-        elif self.job_nodes != None and self.job_ppn != None:
+        elif job_nodes != None and job_ppn != None:
             self.labelTotMPI.show()
             self.lineEditTotMPI.show()
-            tot_ranks = int(self.job_nodes)*int(self.job_ppn)
+            tot_ranks = int(job_nodes)*int(job_ppn)
             self.lineEditTotMPI.setText(str(tot_ranks))
 
-        if self.job_threads != None:
+        if job_threads != None:
             self.labelThreads.show()
-            self.spinBoxThreads.setValue(int(self.job_threads))
+            self.spinBoxThreads.setValue(int(job_threads))
             self.spinBoxThreads.show()
-            if self.job_ppn != None:
+            if self.jmdl.batch.params['job_ppn'] != None:
                 self.labelThreadsPerNode.show()
                 self.lineEditThreadsPerNode.show()
-                th_per_node = int(self.job_threads)*int(self.job_ppn)
+                th_per_node = int(job_threads)*int(job_ppn)
                 self.lineEditThreadsPerNode.setText(str(th_per_node))
 
-        if self.job_walltime != None:
-            seconds = self.job_walltime
+        if job_walltime != None:
+            seconds = job_walltime
             minutes = seconds / 60
             hours = minutes / 60
             days = hours / 24
@@ -928,7 +975,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.spinBoxSeconds.show()
             self.labelSeconds.show()
 
-        if self.job_class != None:
+        if job_class != None:
 
             # Only one pass here
             if self.class_list is None:
@@ -937,30 +984,31 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
                     for c in self.class_list:
                         self.comboBoxClass.addItem(self.tr(c), c)
                 else:
-                    c = self.job_class
+                    c = job_class
                     self.comboBoxClass.addItem(self.tr(c), c)
 
             # All passes
             try:
-                index = self.class_list.index(self.job_class)
+                index = self.class_list.index(job_class)
                 self.comboBoxClass.setCurrentIndex(index)
             except Exception:
                 if len(self.class_list) > 0:
-                    self.job_class = self.class_list[0]
+                    job_class = self.class_list[0]
             self.labelClass.show()
             self.comboBoxClass.show()
 
             # update job info
-            self.job_class = str(self.comboBoxClass.currentText())
+            job_class = str(self.comboBoxClass.currentText())
+            self.jmdl.batch.params['job_class'] = job_class
 
-        if self.job_account != None:
+        if job_account != None:
             self.labelJobAccount.show()
-            self.lineEditJobAccount.setText(str(self.job_account))
+            self.lineEditJobAccount.setText(str(job_account))
             self.lineEditJobAccount.show()
 
-        if self.job_wckey != None:
+        if job_wckey != None:
             self.labelJobWCKey.show()
-            self.lineEditJobWCKey.setText(str(self.job_wckey))
+            self.lineEditJobWCKey.setText(str(job_wckey))
             self.lineEditJobWCKey.show()
 
         # Show Job management box
