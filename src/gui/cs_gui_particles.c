@@ -505,7 +505,6 @@ cs_gui_particles_bcs(void)
 {
   cs_lnum_t iphyla = cs_glob_lagr_model->physical_model;
   cs_lagr_zone_data_t *bdy_cond = cs_lagr_get_boundary_conditions();
-  cs_lagr_get_internal_conditions();
 
   /* zone 0 for "all", following zones defined by GUI */
 

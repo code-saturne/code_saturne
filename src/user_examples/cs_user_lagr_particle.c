@@ -305,7 +305,6 @@ cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
                             cs_real_t        dt,
                             cs_real_t        disp[3])
 {
-
   /* Angular velocity */
   cs_real_t omega = 1.0;
 
