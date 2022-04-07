@@ -257,6 +257,18 @@ interface
 
   end subroutine cs_syr_coupling_volume_source_terms
 
+  subroutine cs_turbulence_rij_transport_div_tf(field_id, &
+                                                xcpp,     &
+                                                vistet,   &
+                                                smbrs)    &
+    bind(C, name='cs_turbulence_rij_transport_div_tf')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: field_id
+    real(kind=c_double), dimension(*) :: xcpp, smbrs
+    real(kind=c_double), dimension(6, *) :: vistet
+  end subroutine cs_turbulence_rij_transport_div_tf
+
  end interface
 
 !===============================================================================
@@ -1077,14 +1089,8 @@ if (vcopt%idiff.ge.1) then
       call cs_turbulence_rij_solve_alpha(f_id, xclt)
     endif
 
-    call divrit &
-    !==========
-    ( nscal  ,                                                       &
-      iscal  ,                                                       &
-      dt     ,                                                       &
-      xcpp   ,                                                       &
-      vistet ,                                                       &
-      smbrs  )
+    call cs_turbulence_rij_transport_div_tf(ivarfl(isca(iscal)), &
+                                            xcpp, vistet, smbrs)
 
   endif
 
