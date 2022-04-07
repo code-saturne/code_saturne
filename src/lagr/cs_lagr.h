@@ -1272,7 +1272,9 @@ cs_lagr_get_volume_conditions(void);
 /*!
  * \brief Return pointer to the main internal conditions structure.
  *
- * \return pointer to current internal conditions structure
+ * The structure is allocated on demand, when this function is first called.
+ *
+ * \return pointer to current internal_conditions structure
  */
 /*----------------------------------------------------------------------------*/
 

@@ -624,7 +624,8 @@ cs_lagr_log_iteration(void)
 
   /* TODO log for volume conditions and internal zone */
 #if 0
-  cs_lagr_internal_condition_t *internal_cond = cs_lagr_get_internal_conditions();
+  const cs_lagr_internal_condition_t *internal_cond
+    = cs_glob_lagr_internal_conditions;
 #endif
 
   int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
