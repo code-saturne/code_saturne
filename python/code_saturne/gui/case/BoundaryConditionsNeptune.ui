@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>251</width>
-    <height>516</height>
+    <width>319</width>
+    <height>780</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,16 +20,16 @@
       <string>Boundary conditions</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="3" column="0">
+      <item row="4" column="0">
        <widget class="BoundaryConditionsVelocityInletView" name="VelocityWidget" native="true"/>
       </item>
       <item row="1" column="0">
        <widget class="BoundaryConditionsPressureView" name="PressureWidget" native="true"/>
       </item>
-      <item row="2" column="0">
+      <item row="3" column="0">
        <widget class="BoundaryConditionsFractionView" name="FractionWidget" native="true"/>
       </item>
-      <item row="4" column="0">
+      <item row="5" column="0">
        <widget class="BoundaryConditionsTurbulenceInletView" name="TurbulenceWidget" native="true"/>
       </item>
       <item row="0" column="0">
@@ -48,39 +48,46 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="0">
+      <item row="6" column="0">
        <widget class="BoundaryConditionsEnergyView" name="EnergyWidget" native="true"/>
       </item>
-      <item row="6" column="0">
+      <item row="7" column="0">
        <widget class="BoundaryConditionsNonCondensableView" name="NonCondensableWidget" native="true"/>
       </item>
-      <item row="7" column="0">
+      <item row="8" column="0">
        <widget class="BoundaryConditionsInterfacialAreaView" name="InterfacialAreaWidget" native="true"/>
       </item>
-      <item row="8" column="0">
+      <item row="9" column="0">
        <widget class="BoundaryConditionsScalarView" name="ScalarWidget" native="true"/>
       </item>
-      <item row="9" column="0">
+      <item row="10" column="0">
        <widget class="BoundaryConditionsWallView" name="WallWidget" native="true"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="QGroupBox" name="BackflowSeparator" native="true">
+       <property name="title">
+        <string>Backflow conditions</string>
+       </property>
+       </widget>
       </item>
      </layout>
     </widget>
    </item>
+   <item row="1" column="0">
+    <widget class="LagrangianBoundaryView" name="particlesWidget" native="true"/>
+   </item>
    <item row="2" column="0">
-    <spacer>
+    <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>16</width>
-       <height>16</height>
+       <width>20</width>
+       <height>40</height>
       </size>
      </property>
     </spacer>
-   </item>
-   <item row="1" column="0">
-    <widget class="LagrangianBoundaryView" name="particlesWidget" native="true"/>
    </item>
   </layout>
  </widget>
