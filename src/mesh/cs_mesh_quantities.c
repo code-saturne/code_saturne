@@ -2284,20 +2284,32 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 {
   CS_FREE_HD(mq->cell_cen);
   BFT_FREE(mq->cell_vol);
+  mq->cell_f_vol = NULL;
+
   BFT_FREE(mq->i_face_normal);
   CS_FREE_HD(mq->b_face_normal);
+  mq->i_f_face_normal = NULL;
+  mq->b_f_face_normal = NULL;
+
   BFT_FREE(mq->i_face_cog);
   CS_FREE_HD(mq->b_face_cog);
   BFT_FREE(mq->i_face_surf);
   CS_FREE_HD(mq->b_face_surf);
+
+  mq->i_f_face_factor = NULL;
+  mq->b_f_face_factor = NULL;
+
   BFT_FREE(mq->i_dist);
   CS_FREE_HD(mq->b_dist);
+
   CS_FREE_HD(mq->weight);
+
   BFT_FREE(mq->dijpf);
   CS_FREE_HD(mq->diipb);
   BFT_FREE(mq->dofij);
   BFT_FREE(mq->diipf);
   BFT_FREE(mq->djjpf);
+
   BFT_FREE(mq->corr_grad_lin_det);
   BFT_FREE(mq->corr_grad_lin);
   BFT_FREE(mq->b_sym_flag);
