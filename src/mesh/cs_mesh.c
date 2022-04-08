@@ -2253,6 +2253,52 @@ cs_mesh_create(void)
 cs_mesh_t *
 cs_mesh_destroy(cs_mesh_t  *mesh)
 {
+  cs_mesh_reinit(mesh);
+
+  BFT_FREE(mesh);
+
+  return mesh;
+}
+
+/*----------------------------------------------------------------------------
+ * Reinitialize mesh structure.
+ *
+ * returns:
+ *   pointer to created mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_reinit(cs_mesh_t  *mesh)
+{
+  /* Local dimensions */
+
+  mesh->n_cells = 0;
+  mesh->n_i_faces = 0;
+  mesh->n_b_faces = 0;
+  mesh->n_vertices = 0;
+  mesh->i_face_vtx_connect_size = 0;
+  mesh->b_face_vtx_connect_size = 0;
+
+  /* Global dimensions */
+
+  mesh->n_g_cells = 0;
+  mesh->n_g_i_faces = 0;
+  mesh->n_g_b_faces = 0;
+  mesh->n_g_vertices = 0;
+
+  mesh->n_g_i_c_faces = 0;
+
+  /* Auxiliary structures */
+
+  cs_mesh_free_rebuildable(mesh, true);
+
+  /* Periodic structures */
+
+  if (mesh->n_init_perio > 0)
+    mesh->periodicity = fvm_periodicity_destroy(mesh->periodicity);
+
+  /* Local structures */
+
   BFT_FREE(mesh->vtx_coord);
   BFT_FREE(mesh->i_face_cells);
   BFT_FREE(mesh->b_face_cells);
@@ -2260,6 +2306,8 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
   BFT_FREE(mesh->b_face_vtx_idx);
   BFT_FREE(mesh->i_face_vtx_lst);
   BFT_FREE(mesh->b_face_vtx_lst);
+
+  /* Global numbering */
 
   BFT_FREE(mesh->global_cell_num);
   BFT_FREE(mesh->global_i_face_num);
@@ -2276,16 +2324,39 @@ cs_mesh_destroy(cs_mesh_t  *mesh)
 
   BFT_FREE(mesh->i_face_r_gen);
 
-  /* Free periodic structures */
+  /* Halo metadata */
 
-  if (mesh->n_init_perio > 0)
-    mesh->periodicity = fvm_periodicity_destroy(mesh->periodicity);
+  mesh->n_ghost_cells = 0;
+  mesh->n_cells_with_ghosts = 0;
 
-  cs_mesh_free_rebuildable(mesh, true);
+  /* Group and family features */
 
-  BFT_FREE(mesh);
+  mesh->n_groups = 0;
+  mesh->group_idx = NULL;
+  mesh->group = NULL;
 
-  return mesh;
+  mesh->n_max_family_items = 0;
+  mesh->n_families = 0;
+
+  mesh->family_item = NULL;
+  mesh->cell_family = NULL;
+  mesh->i_face_family = NULL;
+  mesh->b_face_family = NULL;
+
+  /* Refinement */
+
+  mesh->i_face_r_gen = NULL;
+
+  /* Status flags */
+
+  mesh->n_g_free_faces = 0;
+
+  mesh->n_g_b_faces_all = 0;
+  mesh->n_b_faces_all = 0;
+
+  mesh->verbosity = 1;
+  mesh->modified = 0;
+  mesh->save_if_modified = 1;
 }
 
 /*----------------------------------------------------------------------------

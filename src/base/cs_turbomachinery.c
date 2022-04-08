@@ -900,16 +900,14 @@ _update_mesh(bool     restart_mode,
 
   /* Destroy previous global mesh and related entities */
 
-  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
+  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
 
-  cs_mesh_destroy(cs_glob_mesh);
+  cs_mesh_reinit(cs_glob_mesh);
 
   /* Create new global mesh and related entities */
 
-  cs_glob_mesh = cs_mesh_create();
   cs_glob_mesh->verbosity = 0;
   cs_glob_mesh_builder = cs_mesh_builder_create();
-  cs_glob_mesh_quantities = cs_mesh_quantities_create();
 
   _update_angle(t_cur_mob);
 
