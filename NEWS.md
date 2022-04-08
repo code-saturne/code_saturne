@@ -3,6 +3,8 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- Fix crash when combining transient turbomachinery model and VoF.
+
 - Fix uninitialized rotation for Rij-LRR with icorio=1.
 
 - Fix crash in Lagrangian module combined with transient turbomachinery mesh.
