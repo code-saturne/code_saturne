@@ -384,6 +384,7 @@ do iel = 1, ncel
 
   ! Rotating frame of reference => "absolute" vorticity
   if (icorio.eq.1) then
+    call coriolis_t(rot_id, 1.d0, matrot)
     do ii = 1, 3
       do jj = 1, 3
         xrotac(ii,jj) = xrotac(ii,jj) + matrot(ii,jj)

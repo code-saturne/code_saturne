@@ -3,6 +3,8 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- Fix uninitialized rotation for Rij-LRR with icorio=1.
+
 - Fix crash in Lagrangian module combined with transient turbomachinery mesh.
 
 - Fix GUI bug related to the preprocessor.log reader
