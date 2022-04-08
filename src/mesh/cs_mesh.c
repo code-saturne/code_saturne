@@ -2285,9 +2285,7 @@ cs_mesh_reinit(cs_mesh_t  *mesh)
 
   /* Refinement */
 
-  mesh->have_r_gen = false;
   mesh->i_face_r_gen = NULL;
-  mesh->vtx_r_gen = NULL;
 
   /* Status flags */
 
