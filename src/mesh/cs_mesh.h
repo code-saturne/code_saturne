@@ -357,6 +357,16 @@ cs_mesh_t *
 cs_mesh_destroy(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
+ * Reinitialize mesh structure.
+ *
+ * returns:
+ *   pointer to created mesh structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_reinit(cs_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------
  * Update (compactify) an array of global numbers.
  *
  * parameters:
