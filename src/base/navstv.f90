@@ -766,6 +766,32 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
       ! Update local pointers on "cells" fields
 
       call field_get_val_s(icrom, crom)
+      call field_get_val_s(icrom, crom_eos)
+
+      if (irovar.eq.1.and.(idilat.gt.1.or.ivofmt.gt.0.or.ippmod(icompf).eq.3)) then
+        ! If iterns = 1: this is density at time n
+        call field_get_id("density_mass", f_id)
+        call field_get_val_s(f_id, cpro_rho_mass)
+
+        ! Time interpolated density
+        if (vcopt_u%thetav .lt. 1.d0 .and. itpcol .eq. 0) then
+
+          call field_get_val_prev_s(icrom, croma)
+
+          if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
+          allocate(cpro_rho_tc(ncelet))
+
+          do iel = 1, ncelet
+            cpro_rho_tc(iel) =  vcopt_u%thetav * cpro_rho_mass(iel) &
+                               + (1.d0 - vcopt_u%thetav) * croma(iel)
+          enddo
+
+          crom => cpro_rho_tc
+
+        else
+          crom => cpro_rho_mass
+        endif
+      endif
 
       call field_get_val_s(iviscl, viscl)
       call field_get_val_s(ivisct, visct)
