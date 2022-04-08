@@ -47,6 +47,7 @@
 
 #include "cs_array.h"
 #include "cs_base.h"
+#include "cs_blas.h"
 #include "cs_domain.h"
 #include "cs_equation_iterative_solve.h"
 #include "cs_equation_param.h"
@@ -65,8 +66,10 @@
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_prototypes.h"
+#include "cs_rotation.h"
 #include "cs_thermal_model.h"
 #include "cs_time_step.h"
+#include "cs_turbomachinery.h"
 #include "cs_turbulence_bc.h"
 #include "cs_turbulence_model.h"
 
@@ -93,6 +96,15 @@ BEGIN_C_DECLS
 /*============================================================================
  *  Global variables
  *============================================================================*/
+
+/* Tensor to vector (t2v) and vector to tensor (v2t) mask arrays */
+
+const cs_lnum_t _iv2t[6] = {0, 1, 2, 0, 1, 0};
+const cs_lnum_t _jv2t[6] = {0, 1, 2, 1, 2, 2};
+
+const cs_lnum_t _t2v[3][3] = {{0, 3, 5},
+                              {3, 1, 4},
+                              {5, 4, 2}};
 
 /*============================================================================
  * Private function definitions
@@ -238,6 +250,185 @@ _rij_min_max(cs_lnum_t        n_cells,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Terms of wall echo for \f$ R_{ij} \f$
+ *        \f$var  = R_{11} \: R_{22} \: R_{33} \: R_{12} \: R_{13} \: R_{23}\f$
+ *        \f$comp =  1 \:  2 \:  3 \:  4 \:  5 \:  6\f$
+ *
+ * \param[in]     produc  production
+ * \param[in,out] rhs     work array for right-hand-side
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_rij_echo(const cs_real_t  produc[][6],
+          cs_real_t        rhs[][6])
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+
+  const cs_real_t *cvara_ep = (const cs_real_t *)CS_F_(eps)->val_pre;
+  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)CS_F_(rij)->val_pre;
+
+  cs_real_t *cromo = NULL;
+  int key_t_ext_id = cs_field_key_id("time_extrapolated");
+  int iroext = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
+  if ((cs_glob_time_scheme->isto2t > 0) && (iroext > 0))
+    cromo = CS_F_(rho)->val_pre;
+  else
+    cromo = CS_F_(rho)->val;
+
+  const cs_real_t d2s3 = 2./3;
+  const cs_real_t cmu075 = pow(cs_turb_cmu, 0.75);
+
+  /* Calculation in the orthogonal straight cells in corresponding walls
+   * ------------------------------------------------------------------- */
+
+  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
+
+  cs_real_3_t *grad;
+  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+
+  cs_real_t *produk, *epsk;
+  BFT_MALLOC(epsk, n_cells_ext, cs_real_t);
+  BFT_MALLOC(produk, n_cells_ext, cs_real_t);
+
+  cs_real_6_t *w6;
+  BFT_MALLOC(w6, n_cells_ext, cs_real_6_t);
+
+  /* Current gradient */
+  cs_field_gradient_scalar(cs_field_by_name("wall_distance"),
+                           false,  /* use_previous_t */
+                           1,      /* inc */
+                           grad);
+
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_real_t norm2 = cs_math_3_square_norm(grad[c_id]);
+    const cs_real_t xnorm = cs_math_fmax(sqrt(norm2), cs_math_epzero);
+
+    /* Normalization (warning, the gradient may be sometimes equal to 0) */
+    for (cs_lnum_t i = 0; i < 3; i++)
+      grad[c_id][i] = -grad[c_id][i] / xnorm;
+
+    /* Production and k */
+    produk[c_id] = 0.5 * cs_math_6_trace(produc[c_id]);
+
+    const cs_real_t xk = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
+    epsk[c_id] = cvara_ep[c_id] / xk;
+  }
+
+  /* Tensor indexing */
+
+  const cs_lnum_t m_33_to_6[3][3] = {{0, 3, 5},
+                                     {3, 1, 4},
+                                     {5, 4, 2}};
+
+  const cs_lnum_t i_6_to_33[6] = {0, 1, 2, 0, 0, 1};
+  const cs_lnum_t j_6_to_33[6] = {0, 1, 2, 1, 2, 2};
+
+  const cs_real_t kr_33[3][3] = {{1., 0., 0.},
+                                 {0., 1., 0.},
+                                 {0., 0., 1.}};
+
+  const cs_real_t crijp1 = cs_turb_crijp1;
+  const cs_real_t crijp2 = cs_turb_crijp2;
+  const cs_real_t crij2 = cs_turb_crij2;
+
+  /* Calculation of work variables
+   * ----------------------------- */
+
+  cs_array_set_value_real(n_cells, 6, 0, (cs_real_t *)w6);
+
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    for (cs_lnum_t kk = 0; kk < 3; kk++) {
+
+      for (cs_lnum_t mm = 0; mm < 3; mm++) {
+
+        const cs_real_t vnk = grad[c_id][kk];
+        const cs_real_t vnm = grad[c_id][mm];
+
+        const cs_lnum_t i_km = m_33_to_6[kk][mm];
+        const cs_real_t deltkm = kr_33[kk][mm];
+
+        /* Terms with R km and Phi km;
+
+           vnk * vnm * deltij[jj] in original expression,
+           with deltij Kronecker delta so 1 for terms 0-2, 0 for terms 3-6.
+           (we only have diagonal contributions) */
+
+        const cs_real_t c_tr
+          = vnk * vnm
+            * (crijp1 * cvara_rij[c_id][i_km] * epsk[c_id]
+               - (  crijp2 * crij2
+                  * (produc[c_id][i_km] -d2s3 *produk[c_id] * deltkm)));
+
+        w6[c_id][0] += c_tr;
+        w6[c_id][1] += c_tr;
+        w6[c_id][2] += c_tr;
+
+      } /* End of loop on mm */
+
+      for (cs_lnum_t isub = 0; isub < 6; isub++) {
+
+        cs_lnum_t ii = i_6_to_33[isub];
+        cs_lnum_t jj = j_6_to_33[isub];
+
+        const cs_lnum_t i_ki = m_33_to_6[kk][ii];
+        const cs_lnum_t i_kj = m_33_to_6[kk][jj];
+
+        const cs_real_t deltki = kr_33[kk][ii];
+        const cs_real_t deltkj = kr_33[kk][jj];
+
+        const cs_real_t vnk = grad[c_id][kk];
+        const cs_real_t vni = grad[c_id][ii];
+        const cs_real_t vnj = grad[c_id][jj];
+
+        w6[c_id][isub] +=   1.5 * vnk
+                          * (- (  crijp1
+                                 * (  cvara_rij[c_id][i_ki]*vnj
+                                    + cvara_rij[c_id][i_kj]*vni)
+                                 * epsk[c_id])
+                             + (  crijp2 * crij2
+                                * (  ( produc[c_id][i_ki]
+                                      -d2s3 * produk[c_id] * deltki)*vnj
+                                   + ( produc[c_id][i_kj]
+                                      -d2s3 * produk[c_id] * deltkj)*vni)));
+
+      } /* End of loop on isub */
+
+    } /* End of loop on kk */
+
+  } /* End of loop on cells */
+
+  /* Distance to the wall and amortization function: W3
+   *   For each calculation mode: same code, test
+   *   Apart from the loop */
+
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    const cs_real_t distxn = cs_math_fmax(w_dist[c_id], cs_math_epzero); //FIXME
+    const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
+    cs_real_t bb =   cmu075 * pow(trrij, 1.5)
+                   / (cs_turb_xkappa * cvara_ep[c_id] * distxn);
+    bb = cs_math_fmin(bb, 1.0);
+
+    for (cs_lnum_t isub = 0; isub < 6; isub++)
+      rhs[c_id][isub] += cromo[c_id] * cell_f_vol[c_id] * w6[c_id][isub] * bb;
+  }
+
+  BFT_FREE(w6);
+  BFT_FREE(grad);
+  BFT_FREE(epsk);
+  BFT_FREE(produk);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Gravity terms for \f$\epsilon\f$.
  *
  *  Terms for epsilon:
@@ -297,7 +488,817 @@ _gravity_st_epsilon(const cs_real_t  gradro[][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Solve of epsilon for \f$ R_{ij} - \varepsilon \f$ RANS
+ * \brief Solve the coupled Reynolds stress components in the
+ *        \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
+ *
+ * \param[in]     field_id      index of current field
+ * \param[in]     gradv         work array for the velocity grad term
+ *                                 only for iturb=31
+ * \param[in]     produc        work array for production
+ * \param[in]     gradro        work array for grad rom
+ *                              (without rho volume) only for iturb=30
+ * \param[out]    viscf         visc*surface/dist at internal faces
+ * \param[out]    viscb         visc*surface/dist at edge faces
+ * \param[out]    viscce        Daly Harlow diffusion term
+ * \param[out]    rhs           working array
+ * \param[out]    rovsdt        working array
+ * \param[out]    weighf        working array
+ * \param[out]    weighb        working array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_solve_lrr(int              field_id,
+                            const cs_real_t  gradv[][3][3],
+                            const cs_real_t  produc[][6],
+                            const cs_real_t  gradro[][3],
+                            cs_real_t        viscf[],
+                            cs_real_t        viscb[],
+                            cs_real_t        viscce[][6],
+                            cs_real_t        rhs[][6],
+                            cs_real_t        rovsdt[][6][6],
+                            cs_real_t        weighf[][2],
+                            cs_real_t        weighb[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+
+  const cs_field_t *f = cs_field_by_id(field_id);
+
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *viscl = CS_F_(mu)->val;
+  const cs_real_t *cvara_ep = CS_F_(eps)->val_pre;
+  const cs_real_6_t*cvara_var = (const cs_real_6_t *)f->val_pre;
+
+  const cs_equation_param_t *eqp
+    = cs_field_get_equation_param_const(f);
+
+  if (eqp->iwarni >= 1) {
+    bft_printf(" Solving the variable %s\n",
+               cs_field_get_label(f));
+  }
+
+  cs_real_6_t *c_st_prv = NULL;
+  int kstprv = cs_field_key_id("source_term_prev_id");
+  int st_prv_id = cs_field_get_key_int(f, kstprv);
+  if (st_prv_id > -1)
+    c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
+
+  /* Time extrapolation? */
+  cs_real_t *cromo = NULL;
+  int key_t_ext_id = cs_field_key_id("time_extrapolated");
+  int iroext = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
+  if ((iroext > 0) && (st_prv_id > -1))
+    cromo = CS_F_(rho)->val_pre;
+  else
+    cromo = CS_F_(rho)->val;
+
+  /* Coefficient of the "Coriolis-type" term */
+  const int icorio = cs_glob_physical_constants->icorio;
+  const cs_turbomachinery_model_t tm_model = cs_turbomachinery_get_model();
+  cs_real_t ccorio = 0;
+  if (icorio == 1)
+    ccorio = 2; /* Relative velocity formulation */
+  else if (tm_model == CS_TURBOMACHINERY_TRANSIENT)
+     ccorio = 1;
+
+  const cs_real_t d1s2 = 0.5;
+  const cs_real_t d1s3 = 1./3;
+  const cs_real_t d2s3 = 2./3;
+
+  const cs_real_t crij1 = cs_turb_crij1;
+  const cs_real_t crij2 = cs_turb_crij2;
+
+  const cs_real_t deltij[6] = {1, 1, 1, 0, 0, 0};
+
+  /* Production, Pressure-Strain correlation, dissipation
+   * ---------------------------------------------------- */
+
+# pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    cs_real_t impl_lin_cst = 0, impl_id_cst = 0;
+
+    cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
+    cs_real_t trrij  = 0.5 * cs_math_6_trace(cvara_var[c_id]);
+
+    cs_real_t xaniso[3][3], xstrai[3][3], xrotac[3][3];
+
+    /* aij */
+    xaniso[0][0] = cvara_var[c_id][0] / trrij - d2s3;
+    xaniso[0][1] = cvara_var[c_id][3] / trrij;
+    xaniso[0][2] = cvara_var[c_id][5] / trrij;
+    xaniso[1][0] = xaniso[0][1];
+    xaniso[1][1] = cvara_var[c_id][1] / trrij - d2s3;
+    xaniso[1][2] = cvara_var[c_id][4] / trrij;
+    xaniso[2][0] = xaniso[0][2];
+    xaniso[2][1] = xaniso[1][2];
+    xaniso[2][2] = cvara_var[c_id][2] / trrij - d2s3;
+
+    /* Sij */
+    xstrai[0][0] = gradv[c_id][0][9];
+    xstrai[0][1] = d1s2 * (gradv[c_id][0][1] + gradv[c_id][1][0]);
+    xstrai[0][2] = d1s2 * (gradv[c_id][0][2] + gradv[c_id][2][0]);
+    xstrai[1][0] = xstrai[0][1];
+    xstrai[1][1] = gradv[c_id][1][1];
+    xstrai[1][2] = d1s2 * (gradv[c_id][1][2] + gradv[c_id][2][1]);
+    xstrai[2][0] = xstrai[0][2];
+    xstrai[2][1] = xstrai[1][2];
+    xstrai[2][2] = gradv[c_id][2][2];
+
+    /* omegaij */
+    xrotac[0][0] = 0;
+    xrotac[0][1] = -d1s2 * (gradv[c_id][0][1] - gradv[c_id][1][0]);
+    xrotac[0][2] = -d1s2 * (gradv[c_id][0][2] - gradv[c_id][2][0]);
+    xrotac[1][0] = -xrotac[0][1];
+    xrotac[1][1] = 0;
+    xrotac[1][2] = -d1s2 * (gradv[c_id][1][2] - gradv[c_id][2][1]);
+    xrotac[2][0] = -xrotac[0][2];
+    xrotac[2][1] = -xrotac[1][2];
+    xrotac[2][2] = 0;
+
+    /* aII = aijaij */
+    cs_real_t aii = 0;
+    cs_real_t aklskl = 0, aiksjk = 0;
+    cs_real_t aikrjk = 0, aikakj = 0;
+    for (cs_lnum_t jj = 0; jj < 3; jj++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        /* aii = aij.aij */
+        aii += cs_math_pow2(xaniso[jj][ii]);
+        /* aklskl = aij.Sij */
+        aklskl += xaniso[jj][ii] * xstrai[jj][ii];
+      }
+    }
+
+    /* Computation of implicit components */
+    cs_real_6_t sym_strain = {xstrai[0][0],
+                              xstrai[1][1],
+                              xstrai[2][2],
+                              xstrai[1][0],
+                              xstrai[2][1],
+                              xstrai[2][0]};
+
+    cs_real_t oo_matrn[6] = {0, 0, 0, 0, 0, 0};
+    cs_real_t matrn[6];
+    for (cs_lnum_t ii = 0; ii < 6; ii++)
+      matrn[ii] = cvara_var[c_id][ii] / trrij;
+
+    /* Inverse the local matrix */
+    cs_math_sym_33_inv_cramer(matrn, oo_matrn);
+    for (cs_lnum_t ii = 0; ii < 6; ii++)
+      oo_matrn[ii] /= trrij;
+
+    /* Compute the maximal eigenvalue (in terms of norm!) of S */
+    cs_real_t eigen_vals[3];
+    cs_math_sym_33_eigen(sym_strain, eigen_vals);
+    cs_real_t eigen_max = cs_math_fabs(eigen_vals[0]);
+    for (cs_lnum_t i = 1; i < 3; i++)
+      eigen_max = cs_math_fmax(cs_math_fabs(eigen_max),
+                               cs_math_fabs(eigen_vals[i]));
+
+    /* Constant for the dissipation */
+    cs_real_t ceps_impl = d1s3 * cvara_ep[c_id];
+
+    /* Identity constant */
+    impl_id_cst = -d1s3 * crij2 * cs_math_fmin(trprod, 0);
+
+    /* Linear constant */
+    impl_lin_cst = eigen_max * (1.0 - crij2); /* Production + Phi2 */
+
+    cs_real_t implmat2add[3][3];
+    for (cs_lnum_t jj = 0; jj < 3; jj++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        cs_lnum_t iii = _t2v[jj][ii];
+        implmat2add[jj][ii] =   (1.0 - crij2 )* xrotac[jj][ii]
+                              + impl_lin_cst * deltij[iii]
+                              + impl_id_cst * d1s2 * oo_matrn[iii]
+                              + ceps_impl * oo_matrn[iii];
+      }
+    }
+
+    cs_real_t impl_drsm[6][6];
+    for (cs_lnum_t ii = 0; ii < 6; ii++) {
+      for (cs_lnum_t jj = 0; jj < 6; jj++)
+        impl_drsm[ii][jj] = 0;
+    }
+    cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
+
+    /* Rotating frame of reference => "absolute" vorticity */
+    if (icorio == 1) {
+      cs_real_t matrot[3][3];
+      const cs_rotation_t *r = cs_glob_rotation + 1;
+      cs_rotation_add_coriolis_t(r, 1., matrot);
+      for (cs_lnum_t jj = 0; jj < 3; jj++) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          xrotac[jj][ii] += matrot[jj][ii];
+      }
+    }
+
+    for (cs_lnum_t ii = 0; ii < 6; ii++) {
+      cs_lnum_t iii = _iv2t[ii];
+      cs_lnum_t jjj = _jv2t[ii];
+      aiksjk = 0;
+      aikrjk = 0;
+      aikakj = 0;
+      for (cs_lnum_t kk = 0; kk < 3; kk++) {
+        /* aiksjk = aik.Sjk+ajk.Sik */
+        aiksjk +=   xaniso[kk][iii] * xstrai[kk][jjj]
+                  + xaniso[kk][jjj] * xstrai[kk][iii];
+        /* aikrjk = aik.Omega_jk + ajk.omega_ik */
+        aikrjk +=   xaniso[kk][iii] * xrotac[kk][jjj]
+                  + xaniso[kk][jjj] * xrotac[kk][iii];
+        /* aikakj = aik*akj */
+        aikakj += xaniso[kk][iii] * xaniso[jjj][kk];
+      }
+
+      /* Explicit terms */
+      cs_real_t pij = (1.-crij2) * produc[c_id][_t2v[jjj][iii]];
+      cs_real_t phiij1 = -cvara_ep[c_id]*crij1*xaniso[jjj][iii];
+      cs_real_t phiij2 = d2s3*crij2*trprod*deltij[ii];
+      cs_real_t epsij = -d2s3*cvara_ep[c_id]*deltij[ii];
+
+      if (st_prv_id > -1) {
+        c_st_prv[c_id][ii] +=   cromo[c_id] * cell_f_vol[c_id]
+                              * (pij + phiij1 + phiij2 + epsij);
+      }
+      else {
+        rhs[c_id][ii] +=   cromo[c_id] * cell_f_vol[c_id]
+                         * (pij + phiij1 + phiij2 + epsij);
+
+        /* Implicit terms */
+        rovsdt[c_id][ii][ii] +=   crom[c_id] * cell_f_vol[c_id] / trrij
+                                * (crij1 * cvara_ep[c_id]);
+
+        /* Careful ! Inversion of the order of the coefficients since
+         * rovsdt matrix is then used by a c function for the linear solving */
+        for (cs_lnum_t jj = 0; jj < 6; jj++)
+          rovsdt[c_id][ii][jj] +=   crom[c_id] * cell_f_vol[c_id]
+                                  * impl_drsm[jj][ii];
+      }
+    }
+
+  } /* end loop on cells */
+
+  /* Coriolis terms in the Phi1 and production
+   * ----------------------------------------- */
+
+  cs_real_6_t *w2;
+  BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+
+  if ((icorio == 1) || (tm_model == 1)) {
+
+    const int *irotce = cs_turbomachinery_get_cell_rotor_num();
+
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      int rot_id = icorio;
+      if (tm_model == 1) {
+        rot_id = irotce[c_id];
+        if (rot_id < 1)
+          continue;
+      }
+
+      cs_real_t matrot[3][3];
+      const cs_rotation_t *r = cs_glob_rotation + rot_id;
+      cs_rotation_coriolis_t(r, 1., matrot);
+
+      /* Compute Gij: (i,j) component of the Coriolis production */
+      for (cs_lnum_t iii = 0; iii < 6; iii++) {
+        cs_lnum_t ii = _iv2t[iii];
+        cs_lnum_t jj = _jv2t[iii];
+
+        w2[c_id][iii] = 0.;
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
+          w2[c_id][iii] -=   ccorio
+                           * (  matrot[kk][ii] * cvara_var[c_id][_t2v[kk][jj]]
+                              + matrot[kk][jj] * cvara_var[c_id][_t2v[kk][ii]]);
+      }
+
+      /* Coriolis contribution in the Phi1 term: (1-C2/2)Gij */
+      if (icorio == 1) {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          w2[c_id][ii] =   crom[c_id] * cell_f_vol[c_id]
+                         * (1.-0.5*crij2) * w2[c_id][ii];
+      }
+
+      /* If source terms are extrapolated */
+      if (st_prv_id > -1) {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          c_st_prv[c_id][ii] += w2[c_id][ii];
+      }
+      /* Otherwise, directly in rhs */
+      else {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          rhs[c_id][ii] += w2[c_id][ii];
+      }
+
+    } /* End of loop on cells */
+
+  } /* End for Coriolis */
+
+  /* Wall echo terms
+   * --------------- */
+
+  if (cs_glob_turb_rans_model->irijec == 1) { // todo
+
+    cs_array_set_value_real(n_cells, 6, 0, (cs_real_t*)w2);
+
+    _rij_echo(produc, w2);
+
+    /* If we extrapolate the source terms: c_st_prv */
+    if (st_prv_id > -1)
+      cs_axpy(n_cells*6, 1., (cs_real_t *)w2, (cs_real_t *)c_st_prv);
+
+    /* Otherwise rhs */
+    else
+      cs_axpy(n_cells*6, 1., (cs_real_t *)w2, (cs_real_t *)rhs);
+
+  }
+
+  BFT_FREE(w2);
+
+  /* Buoyancy source term
+   * -------------------- */
+
+  if (cs_glob_turb_rans_model->igrari == 1) {
+
+    cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
+
+    cs_field_t *f_buo = cs_field_by_name_try("rij_buoyancy");
+
+    if (f_buo != NULL) {
+      cpro_buoyancy = (cs_real_6_t*)f_buo->val;
+    }
+    else {
+      BFT_MALLOC(_buoyancy, n_cells_ext, cs_real_6_t);
+      cpro_buoyancy = _buoyancy;
+    }
+
+    cs_turbulence_rij_grav_st(gradro, cpro_buoyancy);
+
+    /* If we extrapolate the source terms: previous ST */
+    if (st_prv_id > -1) {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          c_st_prv[c_id][ii] += cpro_buoyancy[c_id][ii] * cell_f_vol[c_id];
+      }
+    }
+    /* Otherwise rhs */
+    else {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          rhs[c_id][ii] += cpro_buoyancy[c_id][ii] * cell_f_vol[c_id];
+      }
+    }
+
+    BFT_FREE(_buoyancy);
+  }
+
+  /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
+   * -------------------------------------------------------------------- */
+
+  /* Symmetric tensor diffusivity (GGDH) */
+  if (eqp->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
+
+    const cs_field_t *f_a_t_visc
+      = cs_field_by_name("anisotropic_turbulent_viscosity");
+    const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
+
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        viscce[c_id][i] = visten[c_id][i] + viscl[c_id];
+      for (cs_lnum_t i = 3; i < 6; i++)
+        viscce[c_id][i] = visten[c_id][i];
+    }
+
+    cs_face_anisotropic_viscosity_scalar(m,
+                                         fvq,
+                                         viscce,
+                                         eqp->iwarni,
+                                         weighf,
+                                         weighb,
+                                         viscf,
+                                         viscb);
+  }
+
+  /* Scalar diffusivity */
+  else {
+    cs_real_t *w1;
+    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+
+    if (eqp->idifft == 1) {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        const cs_real_t trrij = .5 * cs_math_6_trace(cvara_var[c_id]);
+
+        const cs_real_t rctse =   crom[c_id] * cs_turb_csrij
+                                * cs_math_pow2(trrij) / cvara_ep[c_id];
+
+        w1[c_id] = viscl[c_id] + rctse;
+      }
+    }
+    else
+      cs_array_copy_real(n_cells, 1, viscl, w1);
+
+    cs_face_viscosity(m,
+                      fvq,
+                      eqp->imvisf,
+                      w1,
+                      viscf,
+                      viscb);
+
+    BFT_FREE(w1);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!/
+ * \brief Solve the segregated Reynolds stress components in the
+ *        \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
+ *
+ * \param[in]     field_id      index of current field
+ *
+ * \param[in]     produc        work array for production
+ * \param[in]     gradro        work array for grad rom
+ *                              (without rho volume) only for iturb=30
+ * \param[out]    viscf         visc*surface/dist at internal faces
+ * \param[out]    viscb         visc*surface/dist at edge faces
+ * \param[out]    viscce        Daly Harlow diffusion term
+ * \param[out]    rhs           working array
+ * \param[out]    rovsdt        working array
+ * \param[out]    weighf        working array
+ * \param[out]    weighb        working array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_solve_lrr_sg(int              field_id,
+                               const cs_real_t  produc[][6],
+                               const cs_real_t  gradro[][3],
+                               cs_real_t        viscf[],
+                               cs_real_t        viscb[],
+                               cs_real_t        viscce[][6],
+                               cs_real_t        rhs[][6],
+                               cs_real_t        rovsdt[][6][6],
+                               cs_real_t        weighf[][2],
+                               cs_real_t        weighb[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+
+  const cs_field_t *f = cs_field_by_id(field_id);
+
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_t *viscl = CS_F_(mu)->val;
+  const cs_real_t *cvara_ep = CS_F_(eps)->val_pre;
+  const cs_real_6_t *cvara_var = (const cs_real_6_t *)f->val_pre;
+
+  const cs_equation_param_t *eqp
+    = cs_field_get_equation_param_const(f);
+
+  if (eqp->iwarni >= 1) {
+    bft_printf(" Solving the variable %s\n",
+               cs_field_get_label(f));
+  }
+
+  cs_real_6_t *c_st_prv = NULL;
+  int kstprv = cs_field_key_id("source_term_prev_id");
+  int st_prv_id = cs_field_get_key_int(f, kstprv);
+  if (st_prv_id > -1)
+    c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
+
+  /* Time extrapolation? */
+  cs_real_t  *cromo = NULL;
+  int key_t_ext_id = cs_field_key_id("time_extrapolated");
+  int iroext = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
+  if ((iroext > 0) && (st_prv_id > -1))
+    cromo = CS_F_(rho)->val_pre;
+  else
+    cromo = CS_F_(rho)->val;
+
+  const cs_real_t thetv = eqp->thetav;
+
+  /* Coefficient of the "Coriolis-type" term */
+  const int icorio = cs_glob_physical_constants->icorio;
+  const cs_turbomachinery_model_t tm_model = cs_turbomachinery_get_model();
+  cs_real_t ccorio = 0;
+  if (icorio) {
+    if (icorio == 1)
+      ccorio = 2; /* Relative velocity formulation */
+    else {
+      if (tm_model == CS_TURBOMACHINERY_FROZEN)
+        ccorio = 1; /* Mixed relative/absolute velocity formulation */
+    }
+  }
+
+  const cs_real_t d1s3 = 1./3;
+  const cs_real_t d2s3 = 2./3;
+
+  const cs_real_t crij1 = cs_turb_crij1;
+  const cs_real_t crij2 = cs_turb_crij2;
+
+  const cs_real_6_t deltij = {1, 1, 1, 0, 0, 0};
+
+  /* Production, Pressure-Strain correlation, dissipation
+   * ---------------------------------------------------- */
+
+  /* Source term:
+
+   *  (1-crij2) Pij (for all components of Rij)
+
+   *  deltaij*(2/3.crij2.p+2/3.crij1.epsilon)
+   *                (diagonal terms for R11, R22 et R33)
+
+   *  -deltaij*2/3*epsilon
+
+   * If we extrapolate the source terms
+   * We modify the implicit part:
+   * In phi1, we will only take rho crij1 epsilon/k and not
+   *                            rho crij1 epsilon/k (1-2/3 deltaij)
+   * It allows to keep  k^n instead of (R11^(n+1)+R22^n+R33^n)
+   * if we extrapolate the source terms. */
+
+  if (st_prv_id > -1) {
+
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      /* Half-traces of Prod and R */
+      const cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
+      const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_var[c_id]);
+
+      for (cs_lnum_t ii = 0; ii < 6; ii++) {
+        /* Calculation of Prod+Phi1+Phi2-Eps
+         *  = rhoPij - C1rho eps/k(Rij-2/3k dij)
+         *           - C2rho(Pij-1/3Pkk dij) -2/3rho eps dij
+         * In c_st_prv:
+         *  = rhoPij-C1rho eps/k(-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
+         *  = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij */
+        c_st_prv[c_id][ii] +=  cromo[c_id] * cell_f_vol[c_id]
+                              * (  deltij[ii]*d2s3
+                                 * (   crij2 * trprod
+                                    + (crij1-1.) * cvara_ep[c_id])
+                                 + (1.-crij2)*produc[c_id][ii]);
+
+        /*  In rhs = -C1rho eps/k(Rij) = rho {-C1eps/kRij} */
+        rhs[c_id][ii] +=   crom[c_id]*cell_f_vol[c_id]
+                         * (-crij1 * cvara_ep[c_id] / trrij
+                                   * cvara_var[c_id][ii]);
+
+        /* Calculation of the implicit part coming from Phil = C1rho eps/k(1) */
+        rovsdt[c_id][ii][ii] +=   crom[c_id] * cell_f_vol[c_id]
+                                * crij1 * cvara_ep[c_id] / trrij * thetv;
+      }
+
+      /* If we want to implicit a part of -C1rho eps/k(-2/3k dij)
+       * FIXME: check if we want to use this or if it should be removed;
+       *        previously "isoluc = 2", never called.
+       */
+
+      if (false) {
+        for (cs_lnum_t ii = 0; ii < 3; ii++) {
+          cs_real_t t1 = d1s3 * crij1 * cvara_ep[c_id] / trrij;
+
+          /*  We substract cromo = -C1rho eps/k(-1/3Rij dij) */
+          c_st_prv[c_id][ii] -=    cromo[c_id] * cell_f_vol[c_id]
+                                 * t1 * cvara_var[c_id][ii];
+
+          /* We add to rhs = -C1rho eps/k(-1/3Rij) */
+          rhs[c_id][ii] +=   crom[c_id] * cell_f_vol[c_id]
+                           * t1 * cvara_var[c_id][ii];
+
+          /* We add to rovsdt = C1rho eps/k(-1/3) */
+          rovsdt[c_id][ii][ii] += crom[c_id] * cell_f_vol[c_id] * t1;
+        }
+      }
+    }
+
+  }
+
+  /* If we do not extrapolate the source terms */
+  else {
+
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      /* Half-traces of Prod and R */
+      const cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
+      const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_var[c_id]);
+
+      for (cs_lnum_t ii = 0; ii < 6; ii++) {
+        /* Calculation of Prod+Phi1+Phi2-Eps
+         *  = rhoPij - C1rho eps/k(Rij-2/3k dij)
+         *           - C2rho(Pij-1/3Pkk dij) -2/3rho eps dij
+         *  = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij */
+        rhs[c_id][ii] +=  crom[c_id] * cell_f_vol[c_id]
+                        * (  deltij[ii] * d2s3
+                           * (   crij2 * trprod
+                              + (crij1-1.) * cvara_ep[c_id])
+                           + (1-cs_turb_crij2) * produc[c_id][ii]
+                           - crij1 * cvara_ep[c_id]/trrij * cvara_var[c_id][ii]);
+
+        /* Calculation of the implicit part coming from Phi1
+         *  = C1rho eps/k(1-1/3 dij) */
+        rovsdt[c_id][ii][ii] +=   crom[c_id] * cell_f_vol[c_id]
+                                * (1-d1s3 *deltij[ii]) * crij1
+                                * cvara_ep[c_id]/trrij;
+      }
+    }
+
+  }
+
+  /* Coriolis terms in the Phi1 and production
+   * -----------------------------------------*/
+
+  cs_real_6_t *w2;
+  BFT_MALLOC(w2, n_cells_ext, cs_real_6_t);
+
+  if (icorio == 1 || tm_model == CS_TURBOMACHINERY_FROZEN) {
+    const int *irotce = cs_turbomachinery_get_cell_rotor_num();
+
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      cs_real_t matrot[3][3];
+
+      int rot_id = icorio;
+      if (tm_model == CS_TURBOMACHINERY_FROZEN) {
+        rot_id = irotce[c_id];
+        if (rot_id < 1)
+          continue;
+      }
+
+      const cs_rotation_t *r = cs_glob_rotation + rot_id;
+      cs_rotation_coriolis_t(r, 1., matrot);
+
+      /* Compute Gij: (i,j) component of the Coriolis production */
+      for (cs_lnum_t iii = 0; iii < 6; iii++) {
+        cs_lnum_t ii = _iv2t[iii];
+        cs_lnum_t jj = _jv2t[iii];
+
+        w2[c_id][iii] = 0.;
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
+          w2[c_id][iii] -=   ccorio
+                           * (  matrot[kk][ii]*cvara_var[c_id][_t2v[kk][jj]]
+                              + matrot[kk][jj]*cvara_var[c_id][_t2v[kk][ii]]);
+      }
+
+      /* Coriolis contribution in the Phi1 term: (1-C2/2)Gij */
+      if (icorio == 1) {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          w2[c_id][ii] *= crom[c_id] * cell_f_vol[c_id ]* (1.-0.5*cs_turb_crij2);
+      }
+
+      /* If source terms are extrapolated */
+      if (st_prv_id > -1) {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          c_st_prv[c_id][ii] += w2[c_id][ii];
+      }
+      /* Otherwise, directly in RHS */
+      else {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          rhs[c_id][ii] += w2[c_id][ii];
+      }
+
+    } /* End of loop on cells */
+
+  }
+
+  /* Wall echo terms
+   * --------------- */
+
+  if (cs_glob_turb_rans_model->irijec == 1) { // todo
+
+    cs_array_set_value_real(n_cells, 6, 0, (cs_real_t*)w2);
+
+    _rij_echo(produc, w2);
+
+    /* If we extrapolate the source terms: c_st_prv */
+    if (st_prv_id > -1)
+      cs_axpy(n_cells*6, 1., (cs_real_t *)w2, (cs_real_t *)c_st_prv);
+
+    /* Otherwise rhs */
+    else
+      cs_axpy(n_cells*6, 1., (cs_real_t *)w2, (cs_real_t *)rhs);
+
+  }
+
+  BFT_FREE(w2);
+
+  /* Buoyancy source term
+   * -------------------- */
+
+  if (cs_glob_turb_rans_model->igrari == 1) {
+
+    cs_real_6_t *_buoyancy = NULL, *cpro_buoyancy = NULL;
+
+    cs_field_t *f_buo = cs_field_by_name_try("rij_buoyancy");
+    if (f_buo != NULL) {
+      cpro_buoyancy = (cs_real_6_t*)f_buo->val;
+    }
+    else {
+      BFT_MALLOC(_buoyancy, n_cells_ext, cs_real_6_t);
+      cpro_buoyancy = _buoyancy;
+    }
+
+    cs_turbulence_rij_grav_st(gradro, cpro_buoyancy);
+
+    /* If we extrapolate the source terms: previous ST */
+    if (st_prv_id > -1) {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          c_st_prv[c_id][ii] += cpro_buoyancy[c_id][ii] * cell_f_vol[c_id];
+      }
+    }
+    /* Otherwise RHS */
+    else {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          rhs[c_id][ii] += cpro_buoyancy[c_id][ii] * cell_f_vol[c_id];
+      }
+    }
+
+    BFT_FREE(_buoyancy);
+  }
+
+  /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
+   * -------------------------------------------------------------------- */
+
+  /* Symmetric tensor diffusivity (GGDH) */
+  if (eqp->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
+
+    const cs_field_t *f_a_t_visc
+      = cs_field_by_name("anisotropic_turbulent_viscosity");
+    const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
+
+#   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        viscce[c_id][i] = visten[c_id][i] + viscl[c_id];
+      for (cs_lnum_t i = 3; i < 6; i++)
+        viscce[c_id][i] = visten[c_id][i];
+    }
+
+    cs_face_anisotropic_viscosity_scalar(m,
+                                         fvq,
+                                         viscce,
+                                         eqp->iwarni,
+                                         weighf,
+                                         weighb,
+                                         viscf,
+                                         viscb);
+  }
+
+  /* Scalar diffusivity */
+  else {
+    cs_real_t *w1;
+    BFT_MALLOC(w1, n_cells_ext, cs_real_t);
+
+    if (eqp->idifft == 1) {
+#     pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        const cs_real_t trrij = .5 * cs_math_6_trace(cvara_var[c_id]);
+
+        const cs_real_t rctse =   crom[c_id] * cs_turb_csrij
+                                * cs_math_pow2(trrij) / cvara_ep[c_id];
+
+        w1[c_id] = viscl[c_id] + rctse;
+      }
+    }
+    else
+      cs_array_copy_real(n_cells, 1, viscl, w1);
+
+    cs_face_viscosity(m,
+                      fvq,
+                      eqp->imvisf,
+                      w1,
+                      viscf,
+                      viscb);
+
+    BFT_FREE(w1);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve epsilon for the \f$ R_{ij} - \varepsilon \f$ RANS
  *        turbulence model.
  *
  * \param[in]     ncesmp      number of cells with mass source term
@@ -318,17 +1319,17 @@ _gravity_st_epsilon(const cs_real_t  gradro[][3],
 /*-------------------------------------------------------------------------------*/
 
 void
-cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
-                            cs_lnum_t            icetsm[],
-                            int                  itypsm[],
-                            const cs_real_33_t   gradv[],
-                            const cs_real_6_t    produc[],
-                            const cs_real_3_t    gradro[],
-                            cs_real_t            smacel[],
-                            cs_real_t            viscf[],
-                            cs_real_t            viscb[],
-                            cs_real_t            rhs[],
-                            cs_real_t            rovsdt[])
+cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
+                            cs_lnum_t        icetsm[],
+                            int              itypsm[],
+                            const cs_real_t  gradv[][3][3],
+                            const cs_real_t  produc[][6],
+                            const cs_real_t  gradro[][3],
+                            cs_real_t        smacel[],
+                            cs_real_t        viscf[],
+                            cs_real_t        viscb[],
+                            cs_real_t        rhs[],
+                            cs_real_t        rovsdt[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -368,7 +1369,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t            ncesmp,
     = cs_field_get_equation_param(CS_F_(eps));
 
   if (eqp->iwarni >= 1) {
-    bft_printf(" Solving the variable%s \n ",
+    bft_printf(" Solving the variable %s\n",
                cs_field_get_label(CS_F_(eps)));
   }
 
@@ -1057,185 +2058,6 @@ cs_turbulence_rij_grav_st(const cs_real_t  gradro[][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Terms of wall echo for \f$ R_{ij} \f$
- *        \f$var  = R_{11} \: R_{22} \: R_{33} \: R_{12} \: R_{13} \: R_{23}\f$
- *        \f$comp =  1 \:  2 \:  3 \:  4 \:  5 \:  6\f$
- *
- * \param[in]     produc  production
- * \param[in,out] rhs     work array for right-hand-side
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_turbulence_rij_echo(const cs_real_t  produc[][6],
-                       cs_real_t        rhs[][6])
-{
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-
-  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
-
-  const cs_real_t *cvara_ep = (const cs_real_t *)CS_F_(eps)->val_pre;
-  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)CS_F_(rij)->val_pre;
-
-  cs_real_t *cromo = NULL;
-  int key_t_ext_id = cs_field_key_id("time_extrapolated");
-  int iroext = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
-  if ((cs_glob_time_scheme->isto2t > 0) && (iroext > 0))
-    cromo = CS_F_(rho)->val_pre;
-  else
-    cromo = CS_F_(rho)->val;
-
-  const cs_real_t d2s3 = 2./3;
-  const cs_real_t cmu075 = pow(cs_turb_cmu, 0.75);
-
-  /* Calculation in the orthogonal straight cells in corresponding walls
-   * ------------------------------------------------------------------- */
-
-  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
-
-  cs_real_3_t *grad;
-  BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
-
-  cs_real_t *produk, *epsk;
-  BFT_MALLOC(epsk, n_cells_ext, cs_real_t);
-  BFT_MALLOC(produk, n_cells_ext, cs_real_t);
-
-  cs_real_6_t *w6;
-  BFT_MALLOC(w6, n_cells_ext, cs_real_6_t);
-
-  /* Current gradient */
-  cs_field_gradient_scalar(cs_field_by_name("wall_distance"),
-                           false,  /* use_previous_t */
-                           1,      /* inc */
-                           grad);
-
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
-    const cs_real_t norm2 = cs_math_3_square_norm(grad[c_id]);
-    const cs_real_t xnorm = cs_math_fmax(sqrt(norm2), cs_math_epzero);
-
-    /* Normalization (warning, the gradient may be sometimes equal to 0) */
-    for (int i = 0; i < 3; i++)
-      grad[c_id][i] = -grad[c_id][i] / xnorm;
-
-    /* Production and k */
-    produk[c_id] = 0.5 * cs_math_6_trace(produc[c_id]);
-
-    const cs_real_t xk = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
-    epsk[c_id] = cvara_ep[c_id] / xk;
-  }
-
-  /* Tensor indexing */
-
-  const cs_lnum_t m_33_to_6[3][3] = {{0, 3, 5},
-                                     {3, 1, 4},
-                                     {5, 4, 2}};
-
-  const cs_lnum_t i_6_to_33[6] = {0, 1, 2, 0, 0, 1};
-  const cs_lnum_t j_6_to_33[6] = {0, 1, 2, 1, 2, 2};
-
-  const cs_real_t kr_33[3][3] = {{1., 0., 0.},
-                                 {0., 1., 0.},
-                                 {0., 0., 1.}};
-
-  const cs_real_t crijp1 = cs_turb_crijp1;
-  const cs_real_t crijp2 = cs_turb_crijp2;
-  const cs_real_t crij2 = cs_turb_crij2;
-
-  /* Calculation of work variables
-   *============================== */
-
-  cs_array_set_value_real(n_cells, 6, 0, (cs_real_t *)w6);
-
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
-    for (cs_lnum_t kk = 0; kk < 3; kk++) {
-
-      for (cs_lnum_t mm = 0; mm < 3; mm++) {
-
-        const cs_real_t vnk = grad[c_id][kk];
-        const cs_real_t vnm = grad[c_id][mm];
-
-        const cs_lnum_t i_km = m_33_to_6[kk][mm];
-        const cs_real_t deltkm = kr_33[kk][mm];
-
-        /* Terms with R km and Phi km;
-
-           vnk * vnm * deltij[jj] in original expression,
-           with deltij Kronecker delta so 1 for terms 0-2, 0 for terms 3-6.
-           (we only have diagonal contributions) */
-
-        const cs_real_t c_tr
-          = vnk * vnm
-            * (crijp1 * cvara_rij[c_id][i_km] * epsk[c_id]
-               - (  crijp2 * crij2
-                  * (produc[c_id][i_km] -d2s3 *produk[c_id] * deltkm)));
-
-        w6[c_id][0] += c_tr;
-        w6[c_id][1] += c_tr;
-        w6[c_id][2] += c_tr;
-
-      } /* End of loop on mm */
-
-      for (cs_lnum_t isub = 0; isub < 6; isub++) {
-
-        cs_lnum_t ii = i_6_to_33[isub];
-        cs_lnum_t jj = j_6_to_33[isub];
-
-        const cs_lnum_t i_ki = m_33_to_6[kk][ii];
-        const cs_lnum_t i_kj = m_33_to_6[kk][jj];
-
-        const cs_real_t deltki = kr_33[kk][ii];
-        const cs_real_t deltkj = kr_33[kk][jj];
-
-        const cs_real_t vnk = grad[c_id][kk];
-        const cs_real_t vni = grad[c_id][ii];
-        const cs_real_t vnj = grad[c_id][jj];
-
-        w6[c_id][isub] +=   1.5 * vnk
-                          * (- (  crijp1
-                                 * (  cvara_rij[c_id][i_ki]*vnj
-                                    + cvara_rij[c_id][i_kj]*vni)
-                                 * epsk[c_id])
-                             + (  crijp2 * crij2
-                                * (  ( produc[c_id][i_ki]
-                                      -d2s3 * produk[c_id] * deltki)*vnj
-                                   + ( produc[c_id][i_kj]
-                                      -d2s3 * produk[c_id] * deltkj)*vni)));
-
-      } /* End of loop on isub */
-
-    } /* End of loop on kk */
-
-  } /* End of loop on cells */
-
-  /* Distance to the wall and amortization function: W3
-   *   For each calculation mode: same code, test
-   *   Apart from the loop */
-
-# pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    const cs_real_t distxn = cs_math_fmax(w_dist[c_id], cs_math_epzero); //FIXME
-    const cs_real_t trrij = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
-    cs_real_t bb =   cmu075 * pow(trrij, 1.5)
-                   / (cs_turb_xkappa * cvara_ep[c_id] * distxn);
-    bb = cs_math_fmin(bb, 1.0);
-
-    for (cs_lnum_t isub = 0; isub < 6; isub++)
-      rhs[c_id][isub] += cromo[c_id] * cell_f_vol[c_id] * w6[c_id][isub] * bb;
-  }
-
-  BFT_FREE(w6);
-  BFT_FREE(grad);
-  BFT_FREE(epsk);
-  BFT_FREE(produk);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Clip the turbulent Reynods stress tensor and the turbulent
  *        dissipation (coupled components version).
  *
@@ -1337,7 +2159,7 @@ cs_turbulence_rij_clip(cs_lnum_t  n_cells)
       }
       else {
         cs_real_t tensor[6];
-        for (int ii = 0; ii < 6; ii++)
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
           tensor[ii] = cvar_rij[c_id][ii]/trrij;
 
         cs_real_t eigen_vals[3];
@@ -1345,7 +2167,7 @@ cs_turbulence_rij_clip(cs_lnum_t  n_cells)
 
         cs_real_t eigen_min = eigen_vals[0];
         cs_real_t eigen_max = eigen_vals[0];
-        for (int i = 1; i < 3; i++) {
+        for (cs_lnum_t i = 1; i < 3; i++) {
           eigen_min = cs_math_fmin(eigen_min, eigen_vals[i]);
           eigen_max = cs_math_fmax(eigen_max, eigen_vals[i]);
         }
@@ -1424,7 +2246,7 @@ cs_turbulence_rij_clip(cs_lnum_t  n_cells)
 
     /* Sum over threads */
 
-    for (int i = 0; i < 6; i++) {
+    for (cs_lnum_t i = 0; i < 6; i++) {
       #pragma omp atomic
       iclrij[i] += t_iclrij[i];
     }
@@ -1481,7 +2303,7 @@ cs_turbulence_rij_clip_sg(cs_lnum_t  n_cells,
 
   if (iclip == 1) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      for (int ii = 0; ii < 3; ii++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
         if (cvar_rij[c_id][ii] <= epz2) {
           iclrij[ii]++;
           cvar_rij[c_id][ii] = epz2;
@@ -1557,7 +2379,7 @@ cs_turbulence_rij_clip_sg(cs_lnum_t  n_cells,
   /* Store number of clippings for logging */
 
   cs_lnum_t icltot = 0;
-  for (int ii = 0; ii < 6; ii++) {
+  for (cs_lnum_t ii = 0; ii < 6; ii++) {
     icltot += iclrij[ii];
   }
 

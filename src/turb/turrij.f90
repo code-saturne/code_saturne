@@ -165,6 +165,37 @@ type(c_ptr) :: c_k_value
 
 interface
 
+  subroutine cs_turbulence_rij_solve_lrr(field_id,                      &
+                                         gradv, produc, gradro,         &
+                                         viscf, viscb, viscce,          &
+                                         smbr, rovsdt, weighf, weighb)  &
+    bind(C, name='cs_turbulence_rij_solve_lrr')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: field_id
+    real(kind=c_double), dimension(3,*) :: gradro
+    real(kind=c_double), dimension(2, *) :: weighf
+    real(kind=c_double), dimension(3, 3, *) :: gradv
+    real(kind=c_double), dimension(6, 6, *) :: rovsdt
+    real(kind=c_double), dimension(*) :: viscf, viscb, weighb
+    real(kind=c_double), dimension(6,*) :: produc, smbr, viscce
+  end subroutine cs_turbulence_rij_solve_lrr
+
+  subroutine cs_turbulence_rij_solve_lrr_sg(field_id,                      &
+                                            produc, gradro,                &
+                                            viscf, viscb, viscce,          &
+                                            smbr, rovsdt, weighf, weighb)  &
+    bind(C, name='cs_turbulence_rij_solve_lrr_sg')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: field_id
+    real(kind=c_double), dimension(3,*) :: gradro
+    real(kind=c_double), dimension(2, *) :: weighf
+    real(kind=c_double), dimension(6, 6, *) :: rovsdt
+    real(kind=c_double), dimension(*) :: viscf, viscb, weighb
+    real(kind=c_double), dimension(6,*) :: produc, smbr, viscce
+  end subroutine cs_turbulence_rij_solve_lrr_sg
+
   subroutine cs_turbulence_rij_solve_eps(ncesmp, icetsm, itypsm,    &
                                          gradv, produc, gradro,     &
                                          smacel,                    &
@@ -684,17 +715,17 @@ allocate(weighb(nfabor))
 if (iturb.eq.30) then
 
   if (irijco.eq.1) then
-    call resrij2(ivar,                                       &
-                 cpro_gradv, cpro_produc, gradro,                 &
-                 viscf, viscb, viscce,                       &
-                 smbrts, rovsdtts,                           &
-                 weighf, weighb)
+    call cs_turbulence_rij_solve_lrr(ivarfl(ivar),                     &
+                                     cpro_gradv, cpro_produc, gradro,  &
+                                     viscf, viscb, viscce,             &
+                                     smbrts, rovsdtts,                 &
+                                     weighf, weighb)
   else
-    call resrij(ivar,                                        &
-                cpro_produc, gradro,                         &
-                viscf, viscb, viscce,                        &
-                smbrts, rovsdtts,                            &
-                weighf, weighb)
+    call cs_turbulence_rij_solve_lrr_sg(ivarfl(ivar),                  &
+                                        cpro_produc, gradro,           &
+                                        viscf, viscb, viscce,          &
+                                        smbrts, rovsdtts,              &
+                                        weighf, weighb)
   endif
 
 ! Rij-epsilon SSG or EBRSM

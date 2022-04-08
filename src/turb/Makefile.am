@@ -105,8 +105,6 @@ cs_turbulence_rij_transport.c \
 cs_turbulence_rotation.c \
 cs_turbulence_sa.c \
 cs_turbulence_v2f.c \
-resrij.f90 \
-resrij2.f90 \
 resssg2.f90 \
 turrij.f90
 
