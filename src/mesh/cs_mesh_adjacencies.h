@@ -88,8 +88,8 @@ typedef struct {
 
   /* cells -> cells connectivity (standard) */
 
-  cs_lnum_t  *cell_cells_idx;          /*!< cells to cells indexes (shared) */
-  cs_lnum_t  *cell_cells;              /*!< cells to cells adjacency (shared) */
+  cs_lnum_t  *cell_cells_idx;          /*!< cells to cells indexes */
+  cs_lnum_t  *cell_cells;              /*!< cells to cells adjacency */
 
   /* cells -> cells connectivity (extended) */
 
