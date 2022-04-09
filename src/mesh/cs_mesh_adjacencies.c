@@ -248,21 +248,25 @@ _update_cell_i_faces(cs_mesh_adjacencies_t  *ma)
 
     cs_lnum_t s_id, e_id;
 
-    s_id = c2c_idx[i];
-    e_id = c2c_idx[i+1];
-    for (cs_lnum_t k = s_id; k < e_id; k++) {
-      if (c2c[k] == j) {
-        c2i[k] = face_id;
-        sgn[k] = 1;
+    if (i < n_cells) {
+      s_id = c2c_idx[i];
+      e_id = c2c_idx[i+1];
+      for (cs_lnum_t k = s_id; k < e_id; k++) {
+        if (c2c[k] == j) {
+          c2i[k] = face_id;
+          sgn[k] = 1;
+        }
       }
     }
 
-    s_id = c2c_idx[j];
-    e_id = c2c_idx[j+1];
-    for (cs_lnum_t k = s_id; k < e_id; k++) {
-      if (c2c[k] == i) {
-        c2i[k] = face_id;
-        sgn[k] = -1;
+    if (j < n_cells) {
+      s_id = c2c_idx[j];
+      e_id = c2c_idx[j+1];
+      for (cs_lnum_t k = s_id; k < e_id; k++) {
+        if (c2c[k] == i) {
+          c2i[k] = face_id;
+          sgn[k] = -1;
+        }
       }
     }
   }
