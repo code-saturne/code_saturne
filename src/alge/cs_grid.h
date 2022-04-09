@@ -94,9 +94,6 @@ extern const char *cs_grid_coarsening_type_name[];
  *   db_size        <-- Block sizes for diagonal
  *   eb_size        <-- Block sizes for extra-diagonal
  *   face_cell      <-- Face -> cells connectivity
- *   cell_cen       <-- Cell center (size: 3.n_cells_ext)
- *   cell_vol       <-- Cell volume (size: n_cells_ext)
- *   face_normal    <-- Internal face normals (size: 3.n_faces)
  *   a              <-- Associated matrix
  *   conv_diff      <-- Convection-diffusion mode
  *
@@ -109,9 +106,6 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
                            cs_lnum_t              db_size,
                            cs_lnum_t              eb_size,
                            const cs_lnum_2_t     *face_cell,
-                           const cs_real_t       *cell_cen,
-                           const cs_real_t       *cell_vol,
-                           const cs_real_t       *face_normal,
                            const cs_matrix_t     *a,
                            bool                   conv_diff);
 

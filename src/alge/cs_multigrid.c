@@ -4185,7 +4185,6 @@ cs_multigrid_setup_conv_diff(void               *context,
   cs_multigrid_t  *mg = context;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
 
   /* Destroy previous hierarchy if necessary */
 
@@ -4218,9 +4217,6 @@ cs_multigrid_setup_conv_diff(void               *context,
                                  diag_block_size,
                                  extra_diag_block_size,
                                  (const cs_lnum_2_t *)(mesh->i_face_cells),
-                                 mq->cell_cen,
-                                 mq->cell_vol,
-                                 mq->i_face_normal,
                                  a,
                                  conv_diff);
 

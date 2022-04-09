@@ -332,6 +332,20 @@ struct _cs_matrix_t {
 
   const cs_real_t       *xa;           /* Extra-diagonal terms */
 
+  /* Pointer to associated connectivity and geometric data needed by
+     multigrid smoothing. At least cell centers and volumes are needed for
+     relaxation, and face normals are needed for the "classical" option.
+     Cells and faces here do not need to be primary mesh elements,
+     but could be dual mesh elements of some sort */
+
+  const cs_lnum_t    *c2f_idx;         /* Cell to faces index (shared) */
+  const cs_lnum_t    *c2f;             /* Cell to faces adjacency (shared) */
+  const short int    *c2f_sgn;         /* Cell to faces orientation (shared) */
+
+  const cs_real_3_t  *cell_cen;        /* Cell center (shared) */
+  const cs_real_t    *cell_vol;        /* Cell volume (shared) */
+  const cs_real_3_t  *face_normal;     /* Face normal (shared) */
+
   /* Pointer to private data */
 
   void                  *coeffs;       /* Matrix coefficients */

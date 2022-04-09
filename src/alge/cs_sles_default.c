@@ -57,6 +57,8 @@
 #include "cs_internal_coupling.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
+#include "cs_mesh_quantities.h"
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
 #include "cs_matrix_util.h"
@@ -415,6 +417,17 @@ _sles_setup_matrix_native(int                  f_id,
                              da,
                              xa);
 
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_matrix_set_mesh_association(a,
+                                 ma->cell_cells_idx,
+                                 ma->cell_i_faces,
+                                 ma->cell_i_faces_sgn,
+                                 (const cs_real_3_t *)mq->cell_cen,
+                                 (const cs_real_t *)mq->cell_vol,
+                                 (const cs_real_3_t *)mq->i_face_normal);
+
   cs_matrix_default_set_tuned(a);
 
   _matrix_setup[setup_id][0] = a;
@@ -469,6 +482,17 @@ _sles_setup_matrix_by_assembler(int               f_id,
                                               eb_size,
                                               da,
                                               xa);
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_matrix_set_mesh_association(a,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 (const cs_real_3_t *)mq->cell_cen,
+                                 (const cs_real_t *)mq->cell_vol,
+                                 NULL);
+
   cs_matrix_default_set_tuned(a);
 
   _matrix_setup[setup_id][0] = a;

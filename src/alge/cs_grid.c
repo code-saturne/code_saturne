@@ -3852,7 +3852,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
                                   cs_grid_t        *coarse_grid,
                                   int               verbosity)
 {
-  cs_lnum_t ic, jc, ii, jj, kk, face_id;
+  cs_lnum_t ii, jj, kk, face_id;
 
   cs_real_t dsigjg, dsxaij, agij;
 
@@ -3963,29 +3963,67 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
       c_xa0ij[3*c_face +2] = 0.;
     }
 
-    for (face_id = 0; face_id < f_n_faces; face_id++) {
+    if (f_face_normal != NULL) {
 
-      if (c_coarse_face[face_id] > 0 ) {
-        cs_lnum_t c_face = c_coarse_face[face_id] -1;
+      for (face_id = 0; face_id < f_n_faces; face_id++) {
 
-        c_xa0[c_face] += f_xa0[face_id];
-        c_face_normal[3*c_face]    += f_face_normal[3*face_id];
-        c_face_normal[3*c_face +1] += f_face_normal[3*face_id +1];
-        c_face_normal[3*c_face +2] += f_face_normal[3*face_id +2];
-        c_xa0ij[3*c_face]    += f_xa0ij[3*face_id];
-        c_xa0ij[3*c_face +1] += f_xa0ij[3*face_id +1];
-        c_xa0ij[3*c_face +2] += f_xa0ij[3*face_id +2];
+        if (c_coarse_face[face_id] > 0 ) {
+          cs_lnum_t c_face = c_coarse_face[face_id] -1;
+
+          c_xa0[c_face] += f_xa0[face_id];
+          c_face_normal[3*c_face]    += f_face_normal[3*face_id];
+          c_face_normal[3*c_face +1] += f_face_normal[3*face_id +1];
+          c_face_normal[3*c_face +2] += f_face_normal[3*face_id +2];
+          c_xa0ij[3*c_face]    += f_xa0ij[3*face_id];
+          c_xa0ij[3*c_face +1] += f_xa0ij[3*face_id +1];
+          c_xa0ij[3*c_face +2] += f_xa0ij[3*face_id +2];
+        }
+        else if (c_coarse_face[face_id] < 0) {
+          cs_lnum_t c_face = -c_coarse_face[face_id] -1;
+
+          c_xa0[c_face] += f_xa0[face_id];
+          c_face_normal[3*c_face]    -= f_face_normal[3*face_id];
+          c_face_normal[3*c_face +1] -= f_face_normal[3*face_id +1];
+          c_face_normal[3*c_face +2] -= f_face_normal[3*face_id +2];
+          c_xa0ij[3*c_face]    -= f_xa0ij[3*face_id];
+          c_xa0ij[3*c_face +1] -= f_xa0ij[3*face_id +1];
+          c_xa0ij[3*c_face +2] -= f_xa0ij[3*face_id +2];
+        }
+
       }
-      else if (c_coarse_face[face_id] < 0) {
-        cs_lnum_t c_face = -c_coarse_face[face_id] -1;
 
-        c_xa0[c_face] += f_xa0[face_id];
-        c_face_normal[3*c_face]    -= f_face_normal[3*face_id];
-        c_face_normal[3*c_face +1] -= f_face_normal[3*face_id +1];
-        c_face_normal[3*c_face +2] -= f_face_normal[3*face_id +2];
-        c_xa0ij[3*c_face]    -= f_xa0ij[3*face_id];
-        c_xa0ij[3*c_face +1] -= f_xa0ij[3*face_id +1];
-        c_xa0ij[3*c_face +2] -= f_xa0ij[3*face_id +2];
+    }
+    else { /* f_face_normal = NULL */
+
+      for (face_id = 0; face_id < f_n_faces; face_id++) {
+
+        if (c_coarse_face[face_id] > 0 ) {
+          cs_lnum_t c_face = c_coarse_face[face_id] -1;
+          cs_lnum_t ic = c_face_cell[c_face][0];
+          cs_lnum_t jc = c_face_cell[c_face][1];
+
+          c_xa0[c_face] += f_xa0[face_id];
+          c_face_normal[3*c_face]    += c_cell_cen[3*jc]   - c_cell_cen[3*ic];
+          c_face_normal[3*c_face +1] += c_cell_cen[3*jc+1] - c_cell_cen[3*ic+1];
+          c_face_normal[3*c_face +2] += c_cell_cen[3*jc+2] - c_cell_cen[3*ic+2];
+          c_xa0ij[3*c_face]    += f_xa0ij[3*face_id];
+          c_xa0ij[3*c_face +1] += f_xa0ij[3*face_id +1];
+          c_xa0ij[3*c_face +2] += f_xa0ij[3*face_id +2];
+        }
+        else if (c_coarse_face[face_id] < 0) {
+          cs_lnum_t c_face = -c_coarse_face[face_id] -1;
+          cs_lnum_t ic = c_face_cell[c_face][0];
+          cs_lnum_t jc = c_face_cell[c_face][1];
+
+          c_xa0[c_face] += f_xa0[face_id];
+          c_face_normal[3*c_face]    -= c_cell_cen[3*jc]   - c_cell_cen[3*ic];
+          c_face_normal[3*c_face +1] -= c_cell_cen[3*jc+1] - c_cell_cen[3*ic+1];
+          c_face_normal[3*c_face +2] -= c_cell_cen[3*jc+2] - c_cell_cen[3*ic+2];
+          c_xa0ij[3*c_face]    -= f_xa0ij[3*face_id];
+          c_xa0ij[3*c_face +1] -= f_xa0ij[3*face_id +1];
+          c_xa0ij[3*c_face +2] -= f_xa0ij[3*face_id +2];
+        }
+
       }
 
     }
@@ -4007,8 +4045,8 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
 
     for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
 
-      ic = c_face_cell[c_face][0];
-      jc = c_face_cell[c_face][1];
+      cs_lnum_t ic = c_face_cell[c_face][0];
+      cs_lnum_t jc = c_face_cell[c_face][1];
 
       dsigjg =   (  c_cell_cen[3*jc]
                   - c_cell_cen[3*ic])    * c_face_normal[3*c_face]
@@ -4096,19 +4134,19 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   /* Diagonal term */
 
 # pragma omp parallel for if(c_n_cells_ext > CS_THR_MIN)
-  for (ic = 0; ic < c_n_cells_ext*db_stride; ic++)
+  for (cs_lnum_t ic = 0; ic < c_n_cells_ext*db_stride; ic++)
     c_da[ic] = 0.;
 
   if (db_size == 1) {
     for (ii = 0; ii < f_n_cells; ii++) {
-      ic = c_coarse_row[ii];
+      cs_lnum_t ic = c_coarse_row[ii];
       if (ic > -1)
         c_da[ic] += w1[ii];
     }
   }
   else {
     for (ii = 0; ii < f_n_cells; ii++) {
-      ic = c_coarse_row[ii];
+      cs_lnum_t ic = c_coarse_row[ii];
       if (ic > -1) {
         for (jj = 0; jj < db_size; jj++) {
           for (kk = 0; kk < db_size; kk++)
@@ -4120,8 +4158,8 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   }
 
   for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
-    ic = c_face_cell[c_face][0];
-    jc = c_face_cell[c_face][1];
+    cs_lnum_t ic = c_face_cell[c_face][0];
+    cs_lnum_t jc = c_face_cell[c_face][1];
     for (kk = 0; kk < db_size; kk++) {
       c_da[ic*db_stride + db_size*kk + kk] -= c_xa[c_face*isym];
       c_da[jc*db_stride + db_size*kk + kk] -= c_xa[(c_face +1)*isym -1];
@@ -4332,8 +4370,10 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
       ii = f_face_cell[face_id][0];
       jj = f_face_cell[face_id][1];
       for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-        w1[ii*db_stride + db_size*kk + kk] += f_xa_conv[2*face_id]    + f_xa_diff[face_id];
-        w1[jj*db_stride + db_size*kk + kk] += f_xa_conv[2*face_id +1] + f_xa_diff[face_id];
+        w1[ii*db_stride + db_size*kk + kk] +=   f_xa_conv[2*face_id]
+                                              + f_xa_diff[face_id];
+        w1[jj*db_stride + db_size*kk + kk] +=   f_xa_conv[2*face_id +1]
+                                              + f_xa_diff[face_id];
       }
       if (c_coarse_face[face_id] > 0 ) {
         c_face = c_coarse_face[face_id] -1;
@@ -4440,8 +4480,10 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     ic = c_face_cell[c_face][0];
     jc = c_face_cell[c_face][1];
     for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-      c_da[ic*db_stride + db_size*kk + kk] -= c_xa_conv[2*c_face]    + c_xa_diff[c_face];
-      c_da[jc*db_stride + db_size*kk + kk] -= c_xa_conv[2*c_face +1] + c_xa_diff[c_face];
+      c_da[ic*db_stride + db_size*kk + kk] -=   c_xa_conv[2*c_face]
+                                              + c_xa_diff[c_face];
+      c_da[jc*db_stride + db_size*kk + kk] -=   c_xa_conv[2*c_face +1]
+                                              + c_xa_diff[c_face];
     }
   }
 
@@ -4978,9 +5020,6 @@ _prolong_row_int(const cs_grid_t  *c,
  *   db_size        <-- Block sizes for diagonal
  *   eb_size        <-- Block sizes for diagonal
  *   face_cell      <-- Face -> cells connectivity
- *   cell_cen       <-- Cell center (size: 3.n_cells_ext)
- *   cell_vol       <-- Cell volume (size: n_cells_ext)
- *   face_normal    <-- Internal face normals (size: 3.n_faces)
  *   a              <-- Associated matrix
  *   conv_diff      <-- Convection-diffusion mode
  *
@@ -4993,9 +5032,6 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
                            cs_lnum_t              db_size,
                            cs_lnum_t              eb_size,
                            const cs_lnum_2_t     *face_cell,
-                           const cs_real_t       *cell_cen,
-                           const cs_real_t       *cell_vol,
-                           const cs_real_t       *face_normal,
                            const cs_matrix_t     *a,
                            bool                   conv_diff)
 {
@@ -5033,9 +5069,20 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
 
   g->relaxation = 0;
 
-  g->cell_cen = cell_cen;
-  g->cell_vol = cell_vol;
-  g->face_normal = face_normal;
+  const cs_real_t *cell_vol;
+  const cs_real_3_t *cell_cen, *face_normal;
+
+  cs_matrix_get_mesh_association(a,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 &cell_cen,
+                                 &cell_vol,
+                                 &face_normal);
+
+  g->cell_cen = (const cs_real_t *)cell_cen;
+  g->cell_vol = (const cs_real_t *)cell_vol;
+  g->face_normal = (const cs_real_t *)face_normal;
 
   g->halo = cs_matrix_get_halo(a);
 
@@ -5058,7 +5105,6 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
     else if (g->conv_diff) {
       g->xa0  = g->xa;
       g->_xa0 = NULL;
-      g->xa0_diff = g->xa_diff;
     }
     else {
       BFT_MALLOC(g->_xa0, n_faces, cs_real_t);
@@ -5081,6 +5127,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
          negative, with symmetric diffusion and pure upwind convection
          components. This allows separating both parts. */
 
+#     pragma omp parallel for  if(n_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
         if (g->xa[2*face_id] < g->xa[2*face_id+1]) {
           g->xa0_diff[face_id] = g->xa[2*face_id+1];
@@ -5099,8 +5146,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
       cs_lnum_t i1 = face_cell[face_id][1];
       for (cs_lnum_t kk = 0; kk < 3; kk++) {
         g->xa0ij[face_id*3 + kk] =   g_xa0[face_id]
-                                   * (  cell_cen[i1*3 + kk]
-                                      - cell_cen[i0*3 + kk]);
+                                   * (  cell_cen[i1][kk]
+                                      - cell_cen[i0][kk]);
       }
     }
 
@@ -5845,6 +5892,15 @@ cs_grid_coarsen(const cs_grid_t  *f,
     cs_grid_destroy(&c);
     c = cc;
   }
+
+  if (f->use_faces)
+    cs_matrix_set_mesh_association(c->matrix,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   (const cs_real_3_t *)c->cell_cen,
+                                   (const cs_real_t *)c->cell_vol,
+                                   (const cs_real_3_t *)c->_face_normal);
 
   /* Optional verification */
 

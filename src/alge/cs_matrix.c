@@ -4106,6 +4106,14 @@ _matrix_create(cs_matrix_type_t  type)
 
   m->xa = NULL;
 
+  m->c2f_idx = NULL;
+  m->c2f = NULL;
+  m->c2f_sgn = NULL;
+
+  m->cell_cen = NULL;
+  m->cell_vol = NULL;
+  m->face_normal = NULL;
+
   /* Mapping to external libraries */
 
   m->ext_lib_map = NULL;
@@ -4181,6 +4189,10 @@ _matrix_create(cs_matrix_type_t  type)
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Semi private function definitions
+ *============================================================================*/
 
 /*============================================================================
  * Public function definitions
@@ -5896,6 +5908,89 @@ cs_matrix_get_msr_arrays(const cs_matrix_t   *matrix,
       (__FILE__, __LINE__, 0,
        _("%s is not available for matrix using %s storage."),
        __func__, matrix->type_name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Associate mesh information with a matrix.
+ *
+ * This may be useful for multigrid smoothing.
+ *
+ * At least cell centers and volumes are needed for relaxation, and face
+ * adjacency and normals are needed for the "classical" option.
+ *
+ * Note that cells and faces here do not need to be primary mesh elements,
+ * but could be dual mesh elements of some sort.
+ *
+ * The arrays passed to the matrix are shared, so should have a lifetime
+ * at least as long as the matrix.
+ *
+ * \param[in, out]   matrix       pointer to matrix structure
+ * \param[in]        c2f_idx      cell to faces index, or NULL
+ * \param[in]        c2f          cell to faces adjacency, or NULL
+ * \param[in]        c2f_sgn      cell to faces adjacency sign, or NULL
+ * \param[in]        cell_cen     cell center coordinates
+ * \param[in]        cell_vol     cell volumes
+ * \param[in]        face_normal  face normal, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_set_mesh_association(cs_matrix_t         *matrix,
+                               const cs_lnum_t     *c2f_idx,
+                               const cs_lnum_t     *c2f,
+                               const short int     *c2f_sgn,
+                               const cs_real_3_t   *cell_cen,
+                               const cs_real_t     *cell_vol,
+                               const cs_real_3_t   *face_normal)
+{
+  matrix->c2f_idx = c2f_idx;
+  matrix->c2f = c2f;
+  matrix->c2f_sgn = c2f_sgn;
+
+  matrix->cell_cen = cell_cen;
+  matrix->cell_vol = cell_vol;
+  matrix->face_normal = face_normal;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query mesh information that me be associated with a matrix.
+ *
+ * This may be useful for multigrid smoothing.
+ *
+ * \param[in]   matrix       pointer to matrix structure
+ * \param[out]  c2f_idx      cell to faces index, or NULL
+ * \param[out]  c2f          cell to faces adjacency, or NULL
+ * \param[out]  c2f_sgn      cell to faces adjacency sign, or NULL
+ * \param[out]  cell_cen     cell center coordinates, or NULL
+ * \param[out]  cell_vol     cell volumes, or NULL
+ * \param[out]  face_normal  face normas, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_get_mesh_association(const cs_matrix_t   *matrix,
+                               const cs_lnum_t    **c2f_idx,
+                               const cs_lnum_t    **c2f,
+                               const short int    **c2f_sgn,
+                               const cs_real_3_t  **cell_cen,
+                               const cs_real_t    **cell_vol,
+                               const cs_real_3_t  **face_normal)
+{
+  if (c2f_idx != NULL)
+    *c2f_idx = matrix->c2f_idx;
+  if (c2f != NULL)
+    *c2f = matrix->c2f;
+  if (c2f_sgn != NULL)
+    *c2f_sgn = matrix->c2f_sgn;
+
+  if (cell_cen != NULL)
+    *cell_cen = matrix->cell_cen;
+  if (cell_vol != NULL)
+    *cell_vol = matrix->cell_vol;
+  if (face_normal != NULL)
+    *face_normal = matrix->face_normal;
 }
 
 /*----------------------------------------------------------------------------*/
