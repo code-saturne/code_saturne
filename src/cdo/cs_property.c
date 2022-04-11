@@ -1097,7 +1097,7 @@ cs_property_data_init(bool                     need_tensor,
         if (d->type == CS_XDEF_BY_VALUE) {
           double  *dval = (double *)d->context;
           if (fabs(dval[0] - 1) < FLT_MIN)
-            data->is_iso = true;
+            data->is_unity = true;
         }
       }
     }
