@@ -73,15 +73,15 @@ typedef struct _equation_builder_t  cs_equation_builder_t;
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_user_hook_t)(const cs_equation_param_t     *eqp,
-                          const cs_equation_builder_t   *eqb,
-                          const void                    *eqc,
-                          const cs_cell_mesh_t          *cm,
-                          void                          *context,
-                          cs_hodge_t                    *mass_hodge,
-                          cs_hodge_t                    *diff_hodge,
-                          cs_cell_sys_t                 *csys,
-                          cs_cell_builder_t             *cb);
+(cs_equation_build_hook_t)(const cs_equation_param_t     *eqp,
+                           const cs_equation_builder_t   *eqb,
+                           const void                    *eqc,
+                           const cs_cell_mesh_t          *cm,
+                           void                          *context,
+                           cs_hodge_t                    *mass_hodge,
+                           cs_hodge_t                    *diff_hodge,
+                           cs_cell_sys_t                 *csys,
+                           cs_cell_builder_t             *cb);
 
 /*! \struct cs_equation_builder_t
  *  \brief Store common elements used when building an algebraic system
@@ -195,23 +195,25 @@ struct _equation_builder_t {
    * @name User hook
    * @{
    *
-   * \var user_hook_context
+   * \var hook_context
    * Pointer to a shared structure (the lifecycle of this structure is not
    * managed by the current cs_equation_builder_t structure)
    *
-   * \var user_hook_function
+   * \var hook_function
    * Function pointer associated to a predefined prototype
-   * This function enables a user to modify the cellwise system (matrix and
-   * rhs) before applying the time scheme, the static condensation if needed or
-   * the strong/penalized enforcement of boundary conditions.
+   *
+   * This function allows one to modify the cellwise system (matrix and rhs)
+   * before applying the time scheme and the static condensation (if needed)
+   * and the strong/penalized enforcement of boundary conditions.
+   *
    * This is useful to add a term in the equation like an advanced source term
    * without the need to allocate an array and with an access to the local
-   * structure such as the local cell mesh, the cell builder and the high-level
+   * structure such as the local cell mesh, the cell builder and high-level
    * structures related to an equation
    */
 
-  void                      *user_hook_context;
-  cs_equation_user_hook_t   *user_hook_function;
+  void                        *hook_context;
+  cs_equation_build_hook_t    *hook_function;
 
   /*!
    * @}

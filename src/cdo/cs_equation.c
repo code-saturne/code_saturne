@@ -912,8 +912,8 @@ cs_equation_set_flag(cs_equation_t    *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add a user hook to enable an advanced user to get a fine control of
- *         the cellwise system building.
+ * \brief  Add a hook function to enable an advanced control during the
+ *         cellwise system building.
  *         Only for an advanced usage. The context may be set to NULL if there
  *         is no need to get additional information.
  *
@@ -924,9 +924,9 @@ cs_equation_set_flag(cs_equation_t    *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_add_user_hook(cs_equation_t              *eq,
-                          void                       *context,
-                          cs_equation_user_hook_t    *func)
+cs_equation_add_build_hook(cs_equation_t               *eq,
+                           void                        *context,
+                           cs_equation_build_hook_t    *func)
 {
   if (eq == NULL)
     return;
@@ -943,9 +943,9 @@ cs_equation_add_user_hook(cs_equation_t              *eq,
 
   cs_equation_builder_t   *eqb = eq->builder;
 
-  eqb->user_hook_context = context;
-  eqb->user_hook_function = func;
-  eqp->flag |= CS_EQUATION_USER_HOOK;
+  eqb->hook_context = context;
+  eqb->hook_function = func;
+  eqp->flag |= CS_EQUATION_BUILD_HOOK;
 
   /* Add an entry in the setup log file (this is done after the main setup
    * log but one needs to initialize equations before calling this function) */

@@ -80,10 +80,10 @@ BEGIN_C_DECLS
  * \def CS_EQUATION_INSIDE_SYSTEM
  * \brief The current equation settings belong to a system of equation
  *
- * \def CS_EQUATION_USER_HOOK
- * \brief Activate a user hook to get a fine control of the discretization
+ * \def CS_EQUATION_BUILD_HOOK
+ * \brief Activate a build hook to get a fine control of the discretization
  *        process during the cellwise building of the linear system
- *        Need to match the cs_equation_user_hook_t prototype
+ *        Need to match the cs_equation_build_hook_t prototype
  *
  * \def CS_EQUATION_USER_TRIGGERED
  * \brief The resolution of the current equation is driven by the user
@@ -100,7 +100,7 @@ BEGIN_C_DECLS
 #define CS_EQUATION_REACTION       (1 <<  6)  /*   64 */
 #define CS_EQUATION_FORCE_VALUES   (1 <<  7)  /*  128 */
 #define CS_EQUATION_INSIDE_SYSTEM  (1 <<  8)  /*  256 */
-#define CS_EQUATION_USER_HOOK      (1 <<  9)  /*  512 */
+#define CS_EQUATION_BUILD_HOOK     (1 <<  9)  /*  512 */
 #define CS_EQUATION_USER_TRIGGERED (1 << 10)  /* 1024 */
 
 
@@ -1368,7 +1368,7 @@ static inline bool
 cs_equation_param_has_user_hook(const cs_equation_param_t     *eqp)
 {
   assert(eqp != NULL);
-  if (eqp->flag & CS_EQUATION_USER_HOOK)
+  if (eqp->flag & CS_EQUATION_BUILD_HOOK)
     return true;
   else
     return false;

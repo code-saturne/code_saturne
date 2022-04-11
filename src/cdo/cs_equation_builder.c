@@ -196,8 +196,8 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
 
   /* User hook function */
 
-  eqb->user_hook_context = NULL;
-  eqb->user_hook_function = NULL;
+  eqb->hook_context = NULL;
+  eqb->hook_function = NULL;
 
   /* Monitoring */
 

@@ -534,7 +534,7 @@ _do_monitoring(const cs_cdo_quantities_t   *quant)
  *          use of the advective and diffusive operator
  *          Generic function prototype for a hook during the cellwise building
  *          of the linear system
- *          Fit the cs_equation_user_hook_t prototype. This function may be
+ *          Fit the cs_equation_build_hook_t prototype. This function may be
  *          called by different OpenMP threads
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
@@ -4912,9 +4912,9 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
                     " %s: Invalid space scheme for equation %s\n",
                     __func__, cs_equation_get_name(alloy->solute_equation));
 
-        cs_equation_add_user_hook(alloy->solute_equation,
-                                  NULL,                    /* hook context */
-                                  _fb_solute_source_term); /* hook function */
+        cs_equation_add_build_hook(alloy->solute_equation,
+                                   NULL,                    /* hook context */
+                                   _fb_solute_source_term); /* hook function */
 
         /* Store the pointer to the current face temperature values */
 
