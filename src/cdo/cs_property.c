@@ -1060,6 +1060,65 @@ cs_property_finalize_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a \ref cs_property_data_t structure (not a pointer to this
+ *         structure). If property is NULL then one considers that this is a
+ *         unitary property
+ *
+ * \param[in]   need_tensor  true if one needs a tensor-valued evaluation
+ * \param[in]   need_eigen   true if one needs an evaluation of eigen values
+ * \param[in]   property     pointer to the \ref cs_property_t structure
+ *
+ * \return an initialized structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_data_t
+cs_property_data_define(bool                     need_tensor,
+                        bool                     need_eigen,
+                        const cs_property_t     *property)
+{
+  cs_property_data_t  data = {
+    .property = property,
+    .is_unity = false,
+    .is_iso = false,
+    .need_eigen = need_eigen,
+    .need_tensor = need_tensor,
+    .eigen_ratio = 1.0
+  };
+
+  if (property == NULL)
+    data.is_iso = true, data.is_unity = true;
+
+  else {
+
+    if (property->type & CS_PROPERTY_ISO) {
+      data.is_iso = true;
+
+      if (property->n_definitions == 1) {
+        cs_xdef_t  *d = property->defs[0];
+        if (d->type == CS_XDEF_BY_VALUE) {
+          double  *dval = (double *)d->context;
+          if (fabs(dval[0] - 1) < FLT_MIN)
+            data.is_unity = true;
+        }
+      }
+    }
+
+  } /* property != NULL */
+
+  const cs_real_t  ref_val = (property == NULL) ? 1. : property->ref_value;
+
+  data.eigen_max = ref_val;
+  data.value = ref_val;
+  data.tensor[0][0] = ref_val, data.tensor[0][1] = 0, data.tensor[0][2] = 0;
+  data.tensor[1][0] = 0, data.tensor[1][1] = ref_val, data.tensor[1][2] = 0;
+  data.tensor[2][0] = 0, data.tensor[2][1] = 0, data.tensor[2][2] = ref_val;
+
+  return data;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize a \ref cs_property_data_t structure. If property is NULL
  *         then one considers that this is a unitary property
  *
