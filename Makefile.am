@@ -82,7 +82,7 @@ config/code_saturne_build.cfg.in.in
 # One adds several sub-directories with a dist-hook.
 # The reason for this trick is that
 # the number of extra files or patches can grow and change a lot.
-EXTRA_DIST += examples extras m4 patches
+EXTRA_DIST += extras m4 patches
 
 nodist_pkginclude_HEADERS = \
 cs_config.h \
