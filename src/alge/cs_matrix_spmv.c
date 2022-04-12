@@ -3161,7 +3161,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 #endif
       }
       else if (!strcmp(func_name, "cusparse")) {
-#if defined(HAVE_CUDA)
+#if defined(HAVE_CUSPARSE)
         _spmv[0] = (cs_matrix_vector_product_t *)
                      cs_matrix_spmv_cuda_p_l_csr_cusparse;
         _spmv[1] = (cs_matrix_vector_product_t *)

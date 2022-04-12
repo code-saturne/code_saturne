@@ -227,6 +227,43 @@ _mat_vect_p_l_csr_exdiag(cs_lnum_t         n_rows,
 }
 
 /*----------------------------------------------------------------------------*/
+/* \brief Substract local diagonal contribution with CSR matrix arrays.
+ *
+ * \param[in]   n_rows     number of local rows
+ * \param[in]   row_index  pointer to matrix rows index
+ * \param[in]   col_id     pointer to matrix column id
+ * \param[in]   val        pointer to matrix values
+ * \param[in]   x          multipliying vector values
+ * \param[out]  y          resulting vector
+ */
+/*----------------------------------------------------------------------------*/
+
+__global__ static void
+_mat_vect_p_l_csr_substract_diag(cs_lnum_t         n_rows,
+                                 const cs_lnum_t  *__restrict__ row_index,
+                                 const cs_lnum_t  *__restrict__ col_id,
+                                 const cs_real_t  *__restrict__ val,
+                                 const cs_real_t  *__restrict__ x,
+                                 cs_real_t        *__restrict__ y)
+{
+  cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (ii < n_rows) {
+    const cs_lnum_t *__restrict__ _col_id = col_id + row_index[ii];
+    const cs_real_t *__restrict__ m_row  = val + row_index[ii];
+    cs_lnum_t n_cols = row_index[ii + 1] - row_index[ii];
+#pragma unroll
+    for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
+      cs_lnum_t c_id = _col_id[jj];
+      if (c_id == ii) {
+        y[ii] -= m_row[jj] * x[ii];
+        break;
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 /* \brief Local matrix.vector product y = A.x with MSR matrix arrays.
  *
  * \param[in]   n_rows     number of local rows
@@ -799,11 +836,11 @@ cs_matrix_spmv_cuda_p_l_csr(const cs_matrix_t  *matrix,
   const cs_matrix_coeff_csr_t *mc
     = (const cs_matrix_coeff_csr_t  *)matrix->coeffs;
 
-  const cs_lnum_t *__restrict__ d_col_id
-    = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->col_id));
   const cs_lnum_t *__restrict__ d_row_index
     = (const cs_lnum_t *)cs_get_device_ptr
                            (const_cast<cs_lnum_t *>(ms->row_index));
+  const cs_lnum_t *__restrict__ d_col_id
+    = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->col_id));
   const cs_real_t *__restrict__ d_val
     = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->val));
 
@@ -827,14 +864,16 @@ cs_matrix_spmv_cuda_p_l_csr(const cs_matrix_t  *matrix,
 
   if (!exclude_diag)
     _mat_vect_p_l_csr<<<gridsize, blocksize>>>
-      (ms->n_rows, d_col_id, d_row_index, d_val, d_x, d_y);
+      (ms->n_rows, d_row_index, d_col_id, d_val, d_x, d_y);
   else
     _mat_vect_p_l_csr_exdiag<<<gridsize, blocksize>>>
-      (ms->n_rows, d_col_id, d_row_index, d_val, d_x, d_y);
+      (ms->n_rows, d_row_index, d_col_id, d_val, d_x, d_y);
 
-  // cudaDeviceSynchronize();
-  // CS_CUDA_CHECK(cudaGetLastError());
+  cudaDeviceSynchronize();
+  CS_CUDA_CHECK(cudaGetLastError());
 }
+
+#if defined(HAVE_CUSPARSE)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -899,43 +938,69 @@ cs_matrix_spmv_cuda_p_l_csr_cusparse(cs_matrix_t  *matrix,
 
 #if SIZEOF_DOUBLE == 8
 
-    cusparseDcsrmv(_handle,
-                   CUSPARSE_OPERATION_NON_TRANSPOSE,
-                   matrix->n_rows,
-                   matrix->n_cols_ext,
-                   csm->nnz,
-                   &alpha,
-                   csm->descrA,
-                   (const double *)csm->d_e_val,
-                   (const int *)csm->d_row_index,
-                   (const int *)csm->d_col_id,
-                   (const double *)d_x,
-                   &beta,
-                   (double *)d_y);
+  cusparseDcsrmv(_handle,
+                 CUSPARSE_OPERATION_NON_TRANSPOSE,
+                 matrix->n_rows,
+                 matrix->n_cols_ext,
+                 csm->nnz,
+                 &alpha,
+                 csm->descrA,
+                 (const double *)csm->d_e_val,
+                 (const int *)csm->d_row_index,
+                 (const int *)csm->d_col_id,
+                 (const double *)d_x,
+                 &beta,
+                 (double *)d_y);
 
 #elif SIZEOF_DOUBLE == 4
 
-    cusparseScsrmv(_handle,
-                   CUSPARSE_OPERATION_NON_TRANSPOSE,
-                   matrix->n_rows,
-                   matrix->n_cols_ext,
-                   csm->nnz,
+  cusparseScsrmv(_handle,
+                 CUSPARSE_OPERATION_NON_TRANSPOSE,
+                 matrix->n_rows,
+                 matrix->n_cols_ext,
+                 csm->nnz,
                    &alpha,
-                   csm->descrA,
-                   (const float *)csm->d_e_val,
-                   (const int *)csm->d_row_index,
-                   (const int *)csm->d_col_id,
-                   (const float *)d_x,
-                   &beta,
-                   (float *)d_y);
+                 csm->descrA,
+                 (const float *)csm->d_e_val,
+                 (const int *)csm->d_row_index,
+                 (const int *)csm->d_col_id,
+                 (const float *)d_x,
+                 &beta,
+                 (float *)d_y);
 
 #endif
 
 #endif
+
+  if (exclude_diag) {
+
+    const cs_matrix_struct_csr_t *ms
+      = (const cs_matrix_struct_csr_t *)matrix->structure;
+    const cs_matrix_coeff_csr_t *mc
+      = (const cs_matrix_coeff_csr_t  *)matrix->coeffs;
+    const cs_lnum_t *__restrict__ d_row_index
+      = (const cs_lnum_t *)cs_get_device_ptr
+                             (const_cast<cs_lnum_t *>(ms->row_index));
+    const cs_lnum_t *__restrict__ d_col_id
+      = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->col_id));
+    const cs_real_t *__restrict__ d_val
+      = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->val));
+
+    unsigned int blocksize = 256;
+    unsigned int gridsize
+      = (unsigned int)ceil((double)ms->n_rows / blocksize);
+
+    _mat_vect_p_l_csr_substract_diag<<<gridsize, blocksize>>>
+      (ms->n_rows, d_row_index, d_col_id, d_val,
+       (const cs_real_t *)d_x, (cs_real_t *)d_y);
+
+  }
 
   cudaDeviceSynchronize();
   CS_CUDA_CHECK(cudaGetLastError());
 }
+
+#endif /* defined(HAVE_CUSPARSE) */
 
 /*----------------------------------------------------------------------------*/
 

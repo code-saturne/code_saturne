@@ -426,7 +426,7 @@ _variant_build_list(int                             n_fill_types,
                  CS_MATRIX_CSR,
                  n_fill_types,
                  fill_types,
-                 op_flag_a,
+                 op_flag_ae,
                  "cuda",
                  NULL,
                  NULL,
@@ -434,12 +434,16 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
+#endif /* defined(HAVE_CUDA) */
+
+#if defined(HAVE_CUSPARSE)
+
     _variant_add("CSR, with cuSPARSE",
                  NULL,
                  CS_MATRIX_CSR,
                  n_fill_types,
                  fill_types,
-                 op_flag_a,
+                 op_flag_ae,
                  "cusparse",
                  NULL,
                  NULL,
@@ -447,7 +451,7 @@ _variant_build_list(int                             n_fill_types,
                  &n_variants_max,
                  m_variant);
 
-#endif /* defined(HAVE_CUDA) */
+#endif /* defined(HAVE_CUSPARSE) */
 
   }
 
@@ -813,6 +817,10 @@ _matrix_check(int                          n_variants,
         }
 
         if (vector_multiply != NULL) {
+          /* Set part of y to incorrect value (to check setting) */
+
+          for (cs_lnum_t ii = 0; ii < n_cols_ext && ii < 100; ii++)
+            y[ii] = -1;
 
           /* Check multiplication */
 
