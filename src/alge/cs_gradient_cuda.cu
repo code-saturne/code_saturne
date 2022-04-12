@@ -541,7 +541,6 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   cudaStream_t stream, stream1;
   cudaStreamCreate(&stream1);
   cudaStreamCreate(&stream);
-  stream = 0;
 
   cs_real_4_t *rhsv;
   CS_CUDA_CHECK(cudaMalloc(&rhsv, n_cells_ext * sizeof(cs_real_4_t)));
