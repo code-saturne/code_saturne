@@ -419,6 +419,36 @@ _variant_build_list(int                             n_fill_types,
 
 #endif /* defined(HAVE_MKL) */
 
+#if defined(HAVE_CUDA)
+
+    _variant_add("CSR, CUDA",
+                 NULL,
+                 CS_MATRIX_CSR,
+                 n_fill_types,
+                 fill_types,
+                 op_flag_a,
+                 "cuda",
+                 NULL,
+                 NULL,
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+    _variant_add("CSR, with cuSPARSE",
+                 NULL,
+                 CS_MATRIX_CSR,
+                 n_fill_types,
+                 fill_types,
+                 op_flag_a,
+                 "cusparse",
+                 NULL,
+                 NULL,
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+#endif /* defined(HAVE_CUDA) */
+
   }
 
   if (type_filter[CS_MATRIX_MSR]) {
@@ -620,7 +650,7 @@ _matrix_check(int                          n_variants,
 {
   bool print_subtitle = false;
   cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
-  cs_real_t  *yr0 = NULL, *yr1 = NULL;
+  cs_real_t  *yr0 = NULL;
   cs_matrix_structure_t *ms = NULL;
   cs_matrix_t *m = NULL;
   cs_lnum_t d_block_size = 3;
@@ -633,18 +663,9 @@ _matrix_check(int                          n_variants,
 
   /* Allocate and initialize  working arrays */
 
-  if (CS_MEM_ALIGN > 0) {
-    BFT_MEMALIGN(x, CS_MEM_ALIGN, n_cols_ext*d_block_size, cs_real_t);
-    BFT_MEMALIGN(y, CS_MEM_ALIGN, n_cols_ext*d_block_size, cs_real_t);
-    BFT_MEMALIGN(yr0, CS_MEM_ALIGN, n_cols_ext*d_block_size, cs_real_t);
-    BFT_MEMALIGN(yr1, CS_MEM_ALIGN, n_cols_ext*d_block_size, cs_real_t);
-  }
-  else {
-    BFT_MALLOC(x, n_cols_ext*d_block_size, cs_real_t);
-    BFT_MALLOC(y, n_cols_ext*d_block_size, cs_real_t);
-    BFT_MALLOC(yr0, n_cols_ext*d_block_size, cs_real_t);
-    BFT_MALLOC(yr1, n_cols_ext*d_block_size, cs_real_t);
-  }
+  CS_MALLOC_HD(x, n_cols_ext*d_block_size, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(y, n_cols_ext*d_block_size, cs_real_t, cs_alloc_mode);
+  BFT_MALLOC(yr0, n_cols_ext*d_block_size, cs_real_t);
 
   cs_lnum_t d_block_stride = d_block_size*d_block_size;
   cs_lnum_t e_block_stride = e_block_size*e_block_size;
@@ -826,7 +847,6 @@ _matrix_check(int                          n_variants,
 
   BFT_FREE(cell_gnum);
 
-  BFT_FREE(yr1);
   BFT_FREE(yr0);
 
   BFT_FREE(y);

@@ -336,6 +336,10 @@ struct _cs_matrix_t {
 
   void                  *coeffs;       /* Matrix coefficients */
 
+  void                  *ext_lib_map;  /* Mapping of structure and
+                                          coefficients to external
+                                          library, if needed */
+
   /* Function pointers */
 
   cs_matrix_set_coeffs_t               *set_coefficients;

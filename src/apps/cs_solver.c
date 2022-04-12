@@ -122,9 +122,6 @@
 #include "cs_volume_mass_injection.h"
 #include "cs_volume_zone.h"
 
-#if defined(HAVE_CUDA)
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS

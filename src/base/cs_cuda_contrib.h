@@ -57,8 +57,8 @@ __device__ __forceinline__ int warpReduceSum<int>(unsigned int mask,
 // Atomic double add for older GPUs.
 
 __device__  unsigned long long int atomicCAS(unsigned long long int *address,
-                                             unsigned long long int compare,
-                                             unsigned long long int val);
+                                             unsigned long long int  compare,
+                                             unsigned long long int  val);
 
 __device__ double atomicAddDouble(double *address, double val) {
   unsigned long long int *address_as_ull = (unsigned long long int *)address;

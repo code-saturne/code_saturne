@@ -24,30 +24,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-/*
- * Notes:
- *
- * The aim of these structures and associated functions is multiple:
- *
- * - Provide an "opaque" matrix object for linear solvers, allowing possible
- *   choice of the matrix type based on run-time tuning at code initialization
- *   (depending on matrix size, architecture, and compiler, the most efficient
- *   structure for matrix.vector products may vary).
- *
- * - Provide at least a CSR matrix structure in addition to the "native"
- *   matrix structure, as this may allow us to leverage existing librairies.
- *
- * - Provide a C interface, also so as to be able to interface more easily
- *   with external libraries.
- *
- * The structures used here could easily be extended to block matrixes,
- * using for example the same structure information with 3x3 blocks which
- * could arise from coupled velocity components. This would imply that the
- * corresponding vectors be interlaced (or an interlaced copy be used
- * for recurring operations such as sparse linear system resolution),
- * for better memory locality, and possible loop unrolling.
- */
-
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
@@ -83,8 +59,6 @@
 #include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_numbering.h"
-#include "cs_prototypes.h"
-#include "cs_sort.h"
 #include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -95,18 +69,18 @@
 #include "cs_matrix_priv.h"
 #include "cs_matrix_spmv.h"
 
+#if defined (HAVE_CUDA)
+#include "cs_matrix_spmv_cuda.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_matrix.c
+/*! \file cs_matrix_spmv.c
  *
- * \brief Sparse Matrix Representation and Operations.
- *
- * Please refer to the
- * <a href="../../theory.pdf#matrix"><b>matrix</b></a> section of the
- * theory guide for more informations.
+ * \brief Sparse Matrix SpMV kernels.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -601,7 +575,7 @@ _pre_vector_multiply_sync_x_end(const cs_matrix_t   *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
+ * Matrix.vector product y = A.x with native matrix.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -675,7 +649,7 @@ _mat_vec_p_l_native(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
+ * Matrix.vector product y = A.x with native matrix.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -754,7 +728,7 @@ _b_mat_vec_p_l_native(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
+ * Matrix.vector product y = A.x with native matrix.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -831,7 +805,7 @@ _bb_mat_vec_p_l_native(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
+ * Matrix.vector product y = A.x with native matrix.
  *
  * This variant uses a fixed 3x3 block, for better compiler optimization.
  *
@@ -913,7 +887,7 @@ _3_3_mat_vec_p_l_native(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
+ * Matrix.vector product y = A.x with native matrix.
  *
  * This variant uses a fixed 6x6 block, for better compiler optimization.
  *
@@ -995,7 +969,7 @@ _6_6_mat_vec_p_l_native(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix, blocked version.
+ * Matrix.vector product y = A.x with native matrix, blocked version.
  *
  * This variant uses fixed block size variants for common cases.
  *
@@ -1027,7 +1001,7 @@ _b_mat_vec_p_l_native_fixed(const cs_matrix_t  *matrix,
 #if defined(HAVE_OPENMP) /* OpenMP variants */
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
+ * Matrix.vector product y = A.x with native matrix.
  *
  * parameters:
  *   matrix       <-- Pointer to matrix structure
@@ -1120,7 +1094,7 @@ _mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix, blocked version
+ * Matrix.vector product y = A.x with native matrix, blocked version
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -1221,7 +1195,7 @@ _b_mat_vec_p_l_native_omp(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
+ * Matrix.vector product y = A.x with native matrix.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -1296,7 +1270,7 @@ _mat_vec_p_l_native_omp_atomic(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix, blocked version
+ * Matrix.vector product y = A.x with native matrix, blocked version
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -1381,7 +1355,7 @@ _b_mat_vec_p_l_native_omp_atomic(const cs_matrix_t  *matrix,
 #endif /* defined(HAVE_OPENMP) */
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with native matrix.
+ * Matrix.vector product y = A.x with native matrix.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -1469,7 +1443,7 @@ _mat_vec_p_l_native_vector(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with CSR matrix.
+ * Matrix.vector product y = A.x with CSR matrix.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -1581,7 +1555,7 @@ _mat_vec_p_l_csr_mkl(const cs_matrix_t  *matrix,
 #endif /* defined (HAVE_MKL) */
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix.
+ * Matrix.vector product y = A.x with MSR matrix.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -1657,7 +1631,7 @@ _mat_vec_p_l_msr(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix.
+ * Matrix.vector product y = A.x with MSR matrix.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -1782,7 +1756,7 @@ _mat_vec_p_l_msr_omp_sched(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -1867,7 +1841,7 @@ _b_mat_vec_p_l_msr_generic(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, 3x3 blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, 3x3 blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -1948,7 +1922,7 @@ _b_mat_vec_p_l_msr_3(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, 6x6 blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, 6x6 blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2029,7 +2003,7 @@ _b_mat_vec_p_l_msr_6(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * This variant uses fixed block size variants for common cases.
  *
@@ -2059,7 +2033,7 @@ _b_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2156,7 +2130,7 @@ _bb_mat_vec_p_l_msr_3(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2253,7 +2227,7 @@ _bb_mat_vec_p_l_msr_generic(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2278,7 +2252,7 @@ _bb_mat_vec_p_l_msr(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, using MKL
+ * Matrix.vector product y = A.x with MSR matrix, using MKL
  *
  * parameters:
  *   exclude_diag <-- exclude diagonal if true
@@ -2336,7 +2310,7 @@ _mat_vec_p_l_msr_mkl(const cs_matrix_t  *matrix,
 #endif /* defined (HAVE_MKL) */
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix.
+ * Matrix.vector product y = A.x with MSR matrix.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2403,7 +2377,7 @@ _mat_vec_p_l_dist(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix.
+ * Matrix.vector product y = A.x with MSR matrix.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2468,7 +2442,7 @@ _mat_vec_p_l_dist_omp_sched(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2537,7 +2511,7 @@ _b_mat_vec_p_l_dist_generic(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, 3x3 blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, 3x3 blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2602,7 +2576,7 @@ _b_mat_vec_p_l_dist_3(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, 6x6 blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, 6x6 blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2667,7 +2641,7 @@ _b_mat_vec_p_l_dist_6(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * This variant uses fixed block size variants for common cases.
  *
@@ -2697,7 +2671,7 @@ _b_mat_vec_p_l_dist(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2771,7 +2745,7 @@ _bb_mat_vec_p_l_dist_3(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2846,7 +2820,7 @@ _bb_mat_vec_p_l_dist_generic(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, blocked version.
+ * Matrix.vector product y = A.x with MSR matrix, blocked version.
  *
  * parameters:
  *   matrix       <-- pointer to matrix structure
@@ -2871,7 +2845,7 @@ _bb_mat_vec_p_l_dist(const cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------
- * Local matrix.vector product y = A.x with MSR matrix, using MKL
+ * Matrix.vector product y = A.x with MSR matrix, using MKL
  *
  * parameters:
  *   exclude_diag <-- exclude diagonal if true
@@ -2988,6 +2962,8 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     default
  *     mkl             (with MKL)
+ *     cuda            (CUDA-accelerated)
+ *     cusparse        (with cuSPARSE)
  *
  *   CS_MATRIX_MSR
  *     default
@@ -3030,6 +3006,9 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
     standard = 1;
 
   switch(m_type) {
+
+  /* Native
+     ------ */
 
   case CS_MATRIX_NATIVE:
 
@@ -3153,6 +3132,9 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 
     break;
 
+  /* CSR
+     --- */
+
   case CS_MATRIX_CSR:
 
     switch(fill_type) {
@@ -3170,12 +3152,33 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
         retcode = 2;
 #endif
       }
+      else if (!strcmp(func_name, "cuda")) {
+#if defined(HAVE_CUDA)
+        _spmv[0] = cs_matrix_spmv_cuda_p_l_csr;
+        _spmv[1] = cs_matrix_spmv_cuda_p_l_csr;
+#else
+        retcode = 2;
+#endif
+      }
+      else if (!strcmp(func_name, "cusparse")) {
+#if defined(HAVE_CUDA)
+        _spmv[0] = (cs_matrix_vector_product_t *)
+                     cs_matrix_spmv_cuda_p_l_csr_cusparse;
+        _spmv[1] = (cs_matrix_vector_product_t *)
+                     cs_matrix_spmv_cuda_p_l_csr_cusparse;
+#else
+        retcode = 2;
+#endif
+      }
       break;
     default:
       break;
     }
 
     break;
+
+  /* MSR
+     --- */
 
   case CS_MATRIX_MSR:
 
@@ -3230,6 +3233,9 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
     }
 
     break;
+
+  /* Distributed
+     ----------- */
 
   case CS_MATRIX_DIST:
 

@@ -473,6 +473,18 @@ const cs_gnum_t *
 cs_matrix_get_l_range(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------
+ * Set matrix allocation mode.
+ *
+ * parameters:
+ *   matrix       <-> pointer to matrix structure
+ *   alloc_mode   <-- indicates if matrix coefficients are symmetric
+ *----------------------------------------------------------------------------*/
+
+void
+cs_matrix_set_alloc_mode(cs_matrix_t       *matrix,
+                         cs_alloc_mode_t   alloc_mode);
+
+/*----------------------------------------------------------------------------
  * Get matrix fill type, depending on block sizes.
  *
  * parameters:

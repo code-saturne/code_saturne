@@ -1305,8 +1305,10 @@ _create_struct_csr_from_restrict_local(const cs_matrix_struct_csr_t  *src)
   ms->direct_assembly = src->direct_assembly;
   ms->have_diag = src->have_diag;
 
-  BFT_MALLOC(ms->_row_index, ms->n_rows+1, cs_lnum_t);
-  BFT_MALLOC(ms->_col_id, src->row_index[ms->n_rows], cs_lnum_t);
+  cs_alloc_mode_t amode = cs_check_device_ptr(src->row_index);
+
+  CS_MALLOC_HD(ms->_row_index, ms->n_rows+1, cs_lnum_t, amode);
+  CS_MALLOC_HD(ms->_col_id, src->row_index[ms->n_rows], cs_lnum_t, amode);
 
   ms->_row_index[0] = 0;
 
@@ -1328,7 +1330,7 @@ _create_struct_csr_from_restrict_local(const cs_matrix_struct_csr_t  *src)
     ms->_row_index[i+1] = k;
   }
 
-  BFT_REALLOC(ms->_col_id, ms->_row_index[n_rows], cs_lnum_t);
+  CS_REALLOC_HD(ms->_col_id, ms->_row_index[n_rows], cs_lnum_t, amode);
 
   ms->row_index = ms->_row_index;
   ms->col_id = ms->_col_id;
@@ -1598,7 +1600,8 @@ _set_coeffs_csr(cs_matrix_t      *matrix,
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
 
   if (mc->_val == NULL)
-    BFT_MALLOC(mc->_val, ms->row_index[ms->n_rows], cs_real_t);
+    CS_MALLOC_HD(mc->_val, ms->row_index[ms->n_rows], cs_real_t,
+                 matrix->alloc_mode);
   mc->val = mc->_val;
 
   /* Initialize coefficients to zero if assembly is incremental */
@@ -1704,7 +1707,8 @@ _set_coeffs_csr_from_msr(cs_matrix_t       *matrix,
   /* Allocate local array */
 
   if (mc->_val == NULL)
-    BFT_MALLOC(mc->_val, ms->row_index[ms->n_rows], cs_real_t);
+    CS_MALLOC_HD(mc->_val, ms->row_index[ms->n_rows], cs_real_t,
+                 matrix->alloc_mode);
 
   mc->val = mc->_val;
 
@@ -1896,7 +1900,7 @@ _get_diagonal_csr(const cs_matrix_t  *matrix)
   cs_matrix_coeff_csr_t *mc = matrix->coeffs;
   assert(matrix->db_size == 1);
   if (mc->_d_val == NULL)
-    BFT_MALLOC(mc->_d_val, matrix->n_rows, cs_real_t);
+    CS_MALLOC_HD(mc->_d_val, matrix->n_rows, cs_real_t, matrix->alloc_mode);
   if (mc->d_val == NULL) {
     cs_matrix_copy_diagonal(matrix, mc->_d_val);
     mc->d_val = mc->_d_val;
@@ -4267,8 +4271,8 @@ _structure_from_assembler(cs_matrix_type_t        type,
                                                  col_id);
     else {
       cs_lnum_t *_row_index, *_col_id;
-      BFT_MALLOC(_row_index, n_rows + 1, cs_lnum_t);
-      BFT_MALLOC(_col_id, row_index[n_rows] + n_rows, cs_lnum_t);
+      CS_MALLOC_HD(_row_index, n_rows + 1, cs_lnum_t, alloc_mode);
+      CS_MALLOC_HD(_col_id, row_index[n_rows] + n_rows, cs_lnum_t, alloc_mode);
       _row_index[0] = 0;
       for (cs_lnum_t i = 0; i < n_rows; i++) {
         cs_lnum_t n_cols = row_index[i+1] - row_index[i];
@@ -4416,7 +4420,7 @@ _matrix_create(cs_matrix_type_t  type)
   m->db_size = 0;
   m->eb_size = 0;
 
-  m->alloc_mode = CS_ALLOC_HOST;
+  m->alloc_mode = cs_alloc_mode;
   m->fill_type = CS_MATRIX_N_FILL_TYPES;
 
   m->structure = NULL;
@@ -4455,6 +4459,10 @@ _matrix_create(cs_matrix_type_t  type)
   }
 
   m->xa = NULL;
+
+  /* Mapping to external libraries */
+
+  m->ext_lib_map = NULL;
 
   /* Set function pointers here */
 
@@ -5029,7 +5037,8 @@ cs_matrix_create_by_local_restrict(const cs_matrix_t  *src)
       const cs_matrix_struct_csr_t *ms = m->structure;
       const cs_matrix_struct_csr_t *ms_src = src->structure;
       mc->d_val = mc_src->d_val;
-      BFT_MALLOC(mc->_e_val, eb_size_2*ms->row_index[n_rows], cs_real_t);
+      CS_MALLOC_HD(mc->_e_val, eb_size_2*ms->row_index[n_rows], cs_real_t,
+                   src->alloc_mode);
       mc->e_val = mc->_e_val;
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
         const cs_lnum_t  n_cols = ms->row_index[ii+1] - ms->row_index[ii];
@@ -5068,10 +5077,6 @@ cs_matrix_destroy(cs_matrix_t **matrix)
   if (matrix != NULL && *matrix != NULL) {
 
     cs_matrix_t *m = *matrix;
-
-    if (m->destroy_adaptor != NULL) {
-      m->destroy_adaptor(m);
-    }
 
     m->destroy_coefficients(m);
 
@@ -5308,6 +5313,22 @@ cs_matrix_get_l_range(const cs_matrix_t  *matrix)
   }
 
   return l_range;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *\brief Set matrix allocation mode.
+ *
+ * \param[in, out]  matrix      pointer to matrix structure
+ * \param[in]       alloc_mode  indicates if matrix coefficients are symmetric
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_set_alloc_mode(cs_matrix_t       *matrix,
+                         cs_alloc_mode_t   alloc_mode)
+{
+  matrix->alloc_mode = alloc_mode;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5577,6 +5598,10 @@ cs_matrix_release_coefficients(cs_matrix_t  *matrix)
   if (matrix == NULL)
     bft_error(__FILE__, __LINE__, 0,
               _("The matrix is not defined."));
+
+  if (matrix->destroy_adaptor != NULL) {
+    matrix->destroy_adaptor(matrix);
+  }
 
   if (matrix->release_coefficients != NULL) {
     matrix->xa = NULL;
@@ -6452,6 +6477,28 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
                  m_variant);
 
 #endif /* defined(HAVE_MKL) */
+
+#if defined(HAVE_CUDA)
+
+    _variant_add(_("CSR, CUDA"),
+                 m->type,
+                 m->fill_type,
+                 m->numbering,
+                 "cuda",
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+    _variant_add(_("CSR, with cuSPARSE"),
+                 m->type,
+                 m->fill_type,
+                 m->numbering,
+                 "cusparse",
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+#endif /* defined(HAVE_CUDA) */
 
   }
 

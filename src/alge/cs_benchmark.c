@@ -1,5 +1,5 @@
 /*============================================================================
- * Low-level operator benchmarking
+ * Low-level operator benchmarking.
  *============================================================================*/
 
 /*
@@ -98,6 +98,10 @@
 
 #include "cs_benchmark.h"
 #include "cs_benchmark_matrix.h"
+
+#if defined(HAVE_CUDA)
+#include "cs_benchmark_cuda.h"
+#endif
 
 /*----------------------------------------------------------------------------*/
 
@@ -479,6 +483,55 @@ _sub_matrix_vector_test(double               t_measure,
 
   _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
 
+  /* Matrix.vector product, CUDA variant*/
+
+#if (HAVE_CUDA)
+
+  cs_associate_device_ptr((void *)face_cell, n_faces*2, sizeof(cs_lnum_t));
+
+  const cs_lnum_2_t *__restrict__ d_face_cell
+    = (const cs_lnum_2_t *)cs_get_device_ptr((void *)face_cell);
+  const cs_real_t *__restrict__ d_xa
+    = (const cs_real_t *)cs_get_device_ptr((void *)xa);
+  const cs_real_t *__restrict__ d_x
+    = (const cs_real_t *)cs_get_device_ptr((void *)x);
+  cs_real_t *__restrict__ d_y
+    = (cs_real_t *)cs_get_device_ptr((void *)y);
+
+  test_sum = 0.0;
+  wt0 = cs_timer_wtime(), wt1 = wt0;
+  if (t_measure > 0)
+    n_runs = 8;
+  else
+    n_runs = 1;
+  run_id = 0;
+  while (run_id < n_runs) {
+    double test_sum_mult = 1.0/n_runs;
+    while (run_id < n_runs) {
+      cs_mat_vec_exdiag_native_sym_cuda(n_faces, d_face_cell, d_xa, d_x, d_y);
+      test_sum += y[n_cells-1]*test_sum_mult;
+      run_id++;
+    }
+    wt1 = cs_timer_wtime();
+    if (wt1 - wt0 < t_measure)
+      n_runs *= 2;
+  }
+
+  cs_disassociate_device_ptr((void *)face_cell);
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "\n"
+                "Matrix.vector product, extradiagonal part, CUDA variant\n"
+                "---------------------\n");
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "  (calls: %d;  test sum: %12.5f)\n",
+                n_runs, test_sum);
+
+  _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
+
+#endif /* (HAVE_CUDA) */
+
   /* Matrix.vector product, contribute to faces only */
 
   /* n_faces*2 nonzeroes, n_row_elts multiplications */
@@ -490,7 +543,7 @@ _sub_matrix_vector_test(double               t_measure,
   else
     n_ops_glob = (cs_glob_mesh->n_g_i_faces*2);
 
-  BFT_MALLOC(ya, n_faces, cs_real_t);
+  CS_MALLOC_HD(ya, n_faces, cs_real_t, cs_alloc_mode);
   for (jj = 0; jj < n_faces; jj++)
     ya[jj] = 0.0;
 
@@ -513,7 +566,7 @@ _sub_matrix_vector_test(double               t_measure,
       n_runs *= 2;
   }
 
-  BFT_FREE(ya);
+  CS_FREE_HD(ya);
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
@@ -1012,18 +1065,15 @@ cs_benchmark(int  mpi_trace_mode)
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
 
-  BFT_MALLOC(x, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(x, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   for (ii = 0; ii < n_cells_ext; ii++)
     x[ii] = mesh_v->cell_cen[ii*3];
 
-  if (CS_MEM_ALIGN > 0)
-    BFT_MEMALIGN(y, CS_MEM_ALIGN, n_cells_ext, cs_real_t);
-  else
-    BFT_MALLOC(y, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(y, n_cells_ext, cs_real_t, cs_alloc_mode);
 
-  BFT_MALLOC(da, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xa, n_faces*2, cs_real_t);
+  CS_MALLOC_HD(da, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(xa, n_faces*2, cs_real_t, cs_alloc_mode);
 
   for (ii = 0; ii < n_cells_ext; ii++)
     da[ii] = 1.0;
@@ -1094,11 +1144,11 @@ cs_benchmark(int  mpi_trace_mode)
   /* Free working arrays */
   /*---------------------*/
 
-  BFT_FREE(x);
-  BFT_FREE(y);
+  CS_FREE_HD(x);
+  CS_FREE_HD(y);
 
-  BFT_FREE(da);
-  BFT_FREE(xa);
+  CS_FREE_HD(da);
+  CS_FREE_HD(xa);
 }
 
 /*----------------------------------------------------------------------------*/

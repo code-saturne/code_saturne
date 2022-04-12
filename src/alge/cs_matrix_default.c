@@ -77,6 +77,10 @@
 #include "cs_matrix_petsc.h"
 #endif
 
+#if defined(HAVE_CUDA)
+#include "cs_matrix_spmv_cuda.h"
+#endif
+
 #include "cs_matrix_priv.h"
 #include "cs_matrix_tuning.h"
 
@@ -479,6 +483,10 @@ cs_matrix_initialize(void)
 void
 cs_matrix_finalize(void)
 {
+#if defined(HAVE_CUDA)
+  cs_matrix_spmv_cuda_finalize();
+#endif
+
   BFT_FREE(_global_row_id);
 
   for (cs_matrix_type_t t = 0; t < CS_MATRIX_N_BUILTIN_TYPES; t++) {

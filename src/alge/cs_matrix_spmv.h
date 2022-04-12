@@ -84,6 +84,8 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     default
  *     mkl             (with MKL)
+ *     cuda            (CUDA-accelerated)
+ *     cusparse        (with cuSPARSE)
  *
  *   CS_MATRIX_MSR
  *     default

@@ -123,6 +123,12 @@ cs_sles_it.h \
 cs_sles_it_priv.h \
 cs_sles_pc.h
 
+if HAVE_CUDA
+pkginclude_HEADERS += \
+cs_benchmark_cuda.h \
+cs_matrix_spmv_cuda.h
+endif
+
 if HAVE_PETSC
 pkginclude_HEADERS += \
 cs_matrix_petsc.h \
@@ -186,7 +192,9 @@ libcsalge_la_LIBADD =
 
 if HAVE_CUDA
 libcsalge_la_SOURCES += \
-cs_gradient_cuda.cu
+cs_benchmark_cuda.cu \
+cs_gradient_cuda.cu \
+cs_matrix_spmv_cuda.cu
 endif
 
 noinst_LTLIBRARIES += libcsalge_extension.la
