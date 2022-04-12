@@ -108,6 +108,16 @@ cs_cdofb_monolithic_sles_init_sharing(const cs_cdo_connect_t        *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Free if needed structure(s) associated CDO face-based schemes with
+ *         a monolithic velocity-pressure coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_monolithic_sles_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Start setting-up the Navier-Stokes equations when a monolithic
  *         algorithm is used to couple the system.
  *         No mesh information is available at this stage.

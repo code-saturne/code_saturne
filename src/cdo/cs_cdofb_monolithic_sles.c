@@ -222,7 +222,7 @@ typedef struct {
   const cs_navsto_param_t      *nsp;
   const cs_cdofb_monolithic_t  *sc;
 
-} cs_petsc_hook_context_t;
+} cs_cdofb_monolithic_petsc_context_t;
 
 /*============================================================================
  * Private variables
@@ -232,6 +232,8 @@ typedef struct {
 
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_cdo_quantities_t    *cs_shared_quant;
+
+static cs_cdofb_monolithic_petsc_context_t   *_petsc_hook_context = NULL;
 
 /*============================================================================
  * Private function prototypes
@@ -370,6 +372,30 @@ _face_gdot(const cs_range_set_t   *rset,
 }
 
 #if defined(HAVE_PETSC)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Allocate and initialize the cs_cdofb_monolithic_petsc_context_t
+ *
+ * \param[in]  nsp      pointer to the set of parameters related to NavSto
+ * \param[in]  sc       scheme context related to CDO-Fb monolithic schemes
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_initialize_petsc_hook_context(cs_navsto_param_t      *nsp,
+                               cs_cdofb_monolithic_t  *sc)
+{
+  /* Initialization must be called before setting options;
+     it does not need to be called before calling
+     cs_sles_petsc_define(), as this is handled automatically. */
+
+  if (_petsc_hook_context == NULL)
+    BFT_MALLOC(_petsc_hook_context, 1, cs_cdofb_monolithic_petsc_context_t);
+
+  _petsc_hook_context->nsp = nsp;
+  _petsc_hook_context->sc = sc;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the default options for a PCGAMG type in PETSc
@@ -1867,17 +1893,18 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
  *         preconditioner.
  *         Case of additive block preconditioner
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context     pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct  pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _additive_amg_hook(void     *context,
-                   KSP       ksp)
+                   void     *ksp_struct)
 {
   IS  isv = NULL, isp = NULL;
 
-  cs_petsc_hook_context_t  *phc = context;
+  KSP  ksp = ksp_struct;
+  cs_cdofb_monolithic_petsc_context_t  *phc = context;
 
   const cs_cdofb_monolithic_t  *sc = phc->sc;
   const cs_navsto_monolithic_t *cc = sc->coupling_context;
@@ -1968,17 +1995,18 @@ _additive_amg_hook(void     *context,
  *         preconditioner.
  *         Case of multiplicative block preconditioner
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _multiplicative_hook(void     *context,
-                     KSP       ksp)
+                     void     *ksp_struct)
 {
   IS  isv = NULL, isp = NULL;
 
-  cs_petsc_hook_context_t  *phc = context;
+  KSP  ksp = ksp_struct;
+  cs_cdofb_monolithic_petsc_context_t  *phc = context;
 
   const cs_navsto_param_t  *nsp = phc->nsp;
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
@@ -2065,17 +2093,18 @@ _multiplicative_hook(void     *context,
  *         preconditioner.
  *         Case of diagonal Schur preconditioner by block
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _diag_schur_hook(void     *context,
-                 KSP       ksp)
+                 void     *ksp_struct)
 {
   IS  isv = NULL, isp = NULL;
 
-  cs_petsc_hook_context_t  *phc = context;
+  KSP  ksp = ksp_struct;
+  cs_cdofb_monolithic_petsc_context_t  *phc = context;
 
   const cs_navsto_param_t  *nsp = phc->nsp;
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
@@ -2572,17 +2601,18 @@ _notay_full_block_precond(const cs_range_set_t          *rset,
  *         "Algebraic multigrid for Stokes equations", Y. Notay (2017)
  *         SIAM J. Sci. Comput., Vol. 39 (5), pp 88-111
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _notay_hook(void     *context,
-            KSP       ksp)
+            void     *ksp_struct)
 {
   IS  isv = NULL, isp = NULL;
 
-  cs_petsc_hook_context_t  *phc = context;
+  KSP  ksp = ksp_struct;
+  cs_cdofb_monolithic_petsc_context_t  *phc = context;
 
   const cs_navsto_param_t  *nsp = phc->nsp;
   const cs_cdofb_monolithic_t  *sc = phc->sc;
@@ -2802,17 +2832,18 @@ _notay_hook(void     *context,
  *         preconditioner.
  *         Case of upper Schur preconditioner by block
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _upper_schur_hook(void     *context,
-                  KSP       ksp)
+                  void     *ksp_struct)
 {
   IS  isv = NULL, isp = NULL;
 
-  cs_petsc_hook_context_t  *phc = context;
+  KSP  ksp = ksp_struct;
+  cs_cdofb_monolithic_petsc_context_t  *phc = context;
 
   const cs_navsto_param_t  *nsp = phc->nsp;
   const cs_cdofb_monolithic_t  *sc = phc->sc;
@@ -2905,17 +2936,18 @@ _upper_schur_hook(void     *context,
  *         preconditioner.
  *         Case of GKB as a solver.
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _gkb_hook(void     *context,
-          KSP       ksp)
+          void     *ksp_struct)
 {
   IS  isv = NULL, isp = NULL;
 
-  cs_petsc_hook_context_t  *phc = context;
+  KSP  ksp = ksp_struct;
+  cs_cdofb_monolithic_petsc_context_t  *phc = context;
 
   const cs_navsto_param_t  *nsp = phc->nsp;
   const cs_cdofb_monolithic_t  *sc = phc->sc;
@@ -2997,17 +3029,18 @@ _gkb_hook(void     *context,
  *         preconditioner.
  *         Case of GKB as a preconditioner.
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _gkb_precond_hook(void     *context,
-                  KSP       ksp)
+                  void     *ksp_struct)
 {
   IS  isv = NULL, isp = NULL;
 
-  cs_petsc_hook_context_t  *phc = context;
+  KSP  ksp = ksp_struct;
+  cs_cdofb_monolithic_petsc_context_t  *phc = context;
 
   const cs_navsto_param_t  *nsp = phc->nsp;
   const cs_cdofb_monolithic_t  *sc = phc->sc;
@@ -4025,6 +4058,20 @@ cs_cdofb_monolithic_sles_init_sharing(const cs_cdo_connect_t        *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Free if needed structure(s) associated CDO face-based schemes with
+ *         a monolithic velocity-pressure coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_monolithic_sles_finalize(void)
+{
+  if (_petsc_hook_context != NULL)
+    BFT_FREE(_petsc_hook_context); /* contains only shared pointers */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Start setting-up the Navier-Stokes equations when a monolithic
  *         algorithm is used to couple the system.
  *         No mesh information is available at this stage.
@@ -4052,12 +4099,6 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
   mom_slesp->field_id = field_id;
   if (mom_slesp->amg_type == CS_PARAM_AMG_NONE)
     mom_slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-
-  /* Initialization must be called before setting options;
-     it does not need to be called before calling
-     cs_sles_petsc_define(), as this is handled automatically. */
-
-  cs_petsc_hook_context_t  phc = {.nsp = nsp, .sc = sc};
 
   switch (nslesp->strategy) {
 
@@ -4131,47 +4172,52 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
     cs_sles_petsc_init();
+    _initialize_petsc_hook_context(nsp, sc);
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
                          _additive_amg_hook,
-                         (void *)&phc);
+                         (void *)_petsc_hook_context);
     break;
 
   case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
     cs_sles_petsc_init();
+    _initialize_petsc_hook_context(nsp, sc);
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
                          _diag_schur_hook,
-                         (void *)&phc);
+                         (void *)_petsc_hook_context);
     break;
+
   case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
     cs_sles_petsc_init();
+    _initialize_petsc_hook_context(nsp, sc);
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
                          _multiplicative_hook,
-                         (void *)&phc);
+                         (void *)_petsc_hook_context);
     break;
 
   case CS_NAVSTO_SLES_NOTAY_TRANSFORM:
     cs_sles_petsc_init();
+    _initialize_petsc_hook_context(nsp, sc);
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
                          _notay_hook,
-                         (void *)&phc);
+                         (void *)_petsc_hook_context);
     break;
-
 
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
     cs_sles_petsc_init();
+    _initialize_petsc_hook_context(nsp, sc);
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
                          _upper_schur_hook,
-                         (void *)&phc);
+                         (void *)_petsc_hook_context);
     break;
 
   /* Golub-Kahan Bi-diagonalization is available starting from the 3.11 version
@@ -4179,20 +4225,22 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 #if PETSC_VERSION_GE(3,11,0)
   case CS_NAVSTO_SLES_GKB_PETSC:
     cs_sles_petsc_init();
+    _initialize_petsc_hook_context(nsp, sc);
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
                          _gkb_hook,
-                         (void *)&phc);
+                         (void *)_petsc_hook_context);
     break;
 
   case CS_NAVSTO_SLES_GKB_GMRES:
     cs_sles_petsc_init();
+    _initialize_petsc_hook_context(nsp, sc);
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
                          _gkb_precond_hook,
-                         (void *)&phc);
+                         (void *)_petsc_hook_context);
     break;
 #else  /* PETSC version < 3.11 */
   case CS_NAVSTO_SLES_GKB_PETSC:
