@@ -29,6 +29,7 @@ dnl-----------------------------------------------------------------------------
 AC_DEFUN([CS_AC_TEST_CUDA], [
 
 cs_have_cuda=no
+cs_have_cusparse=no
 
 AC_ARG_ENABLE(cuda,
   [AS_HELP_STRING([--enable-cuda], [Enable cuda offload])],
@@ -53,10 +54,10 @@ if test "x$cs_have_cuda" != "xno" ; then
   # Set flags, substituting "bin/nvcc" by "include".
   CUDA_CPPFLAGS=" -I${NVCC/'bin/nvcc'/include}"
 
-  CUDA_LDFLAGS=""
-  CUDA_LIBS=" -L${NVCC/'bin/nvcc'/lib}"
+  cs_cuda_lib_path="${NVCC/'bin/nvcc'/lib}"
   AS_IF([echo $build_cpu | grep -q "_64"],
-        [CUDA_LIBS+="64"])
+        [cs_cuda_lib_path+="64"])
+  CUDA_LDFLAGS="-L${cs_cuda_lib_path}"
   CUDA_LIBS+=" -lcublas -lcudart"
 
   # Try to detect available architectures.
@@ -86,9 +87,6 @@ if test "x$cs_have_cuda" != "xno" ; then
   AC_DEFINE([HAVE_CUDA], 1, [CUDA offload support])
 
   AC_SUBST(cs_have_cuda)
-  AC_SUBST(CUDA_CPPFLAGS)
-  AC_SUBST(CUDA_LDFLAGS)
-  AC_SUBST(CUDA_LIBS)
   AC_SUBST(NVCC)
   AC_SUBST(NVCCFLAGS)
 
@@ -96,5 +94,103 @@ fi
 
 AM_CONDITIONAL([HAVE_CUDA], [test "$cs_have_cuda" = "yes"])
 
-])dnl
+# Now check for libraries such as cuSPARSE if CUDA enabled.
 
+if test "x$cs_have_cuda" != "xno" ; then
+
+  AC_ARG_WITH(cusparse,
+              [AS_HELP_STRING([--with-cusparse=PATH],
+                              [specify prefix directory for cuSPARSE])],
+              [if test "x$withval" = "x"; then
+                 with_cusparse=yes
+               fi],
+              [with_cusparse=check])
+
+  AC_ARG_WITH(cusparse-include,
+              [AS_HELP_STRING([--with-cusparse-include=PATH],
+                              [specify directory for cuSPARSE include files])],
+              [if test "x$with_cusparse" = "xcheck"; then
+                 with_cusparse=yes
+               fi
+               CUSPARSE_CPPFLAGS="-I$with_cusparse_include"],
+              [if test "x$with_cusparse" != "xno" -a "x$with_cusparse" != "xyes" \
+  	          -a "x$with_cusparse" != "xcheck"; then
+                 if test "${NVCC/'bin/nvcc'/include}" != "$with_cusparse/include" ; then
+                   CUSPARSE_CPPFLAGS="-I$with_cusparse/include"
+                 fi
+               fi])
+
+  AC_ARG_WITH(cusparse-lib,
+              [AS_HELP_STRING([--with-cusparse-lib=PATH],
+                              [specify directory for cuSPARSE library])],
+              [if test "x$with_cusparse" = "xcheck"; then
+                 with_cusparse=yes
+               fi
+               CUSPARSE_LDFLAGS="-L$with_cusparse_lib"],
+              [if test "x$with_cusparse" != "xno" -a "x$with_cusparse" != "xyes" \
+	            -a "x$with_cusparse" != "xcheck"; then
+                 if test "$cs_cuda_lib_path" != "$with_cusparse/lib64" ; then
+                   CUSPARSE_LDFLAGS="-L$with_cusparse/lib64"
+                 fi
+               fi])
+
+  if test "x$with_cusparse" != "xno" ; then
+
+    saved_CPPFLAGS="$CPPFLAGS"
+    saved_LDFLAGS="$LDFLAGS"
+    saved_LIBS="$LIBS"
+
+    saved_CUDA_CPPFLAGS="$CUDA_CPPFLAGS"
+    saved_CUDA_LDFLAGS="$CUDA_LDFLAGS"
+    saved_CUDA_LIBS="$CUDA_LIBS"
+
+    if test "x$CUSPARSE_CPPFLAGS" != "x" ; then
+      CUDA_CPPFLAGS="${CUDA_CPPFLAGS} ${CUSPARSE_CPPFLAGS}"
+    fi
+    if test "x$CUSPARSE_LDFLAGS" != "x" ; then
+      CUDA_LDFLAGS="${CUDA_LDFLAGS} ${CUSPARSE_LDFLAGS}"
+    fi
+    CUDA_LIBS="-lcusparse ${CUDA_LIBS}"
+
+    CPPFLAGS="${CPPFLAGS} ${CUDA_CPPFLAGS}"
+    LDFLAGS="${LDFLAGS} ${CUDA_LDFLAGS}"
+    LIBS="${CUDA_LIBS} ${LIBS}"
+
+    AC_MSG_CHECKING([for cuSPARSE support])
+    AC_LINK_IFELSE(
+[AC_LANG_PROGRAM([[#include <cusparse.h>]],
+[[cusparseHandle_t  handle = NULL;
+cusparseStatus_t status = cusparseCreate(handle);]])
+                   ],
+                   [ AC_DEFINE([HAVE_CUSPARSE], 1, [cuSPARSE support])
+                     cs_have_cusparse=yes ],
+                   [cs_have_cusparse=no])
+
+    AC_MSG_RESULT($cs_have_cusparse)
+    if test "x$cs_have_cusparse" = "xno" ; then
+      if test "x$with_cusparse" != "xcheck" ; then
+        AC_MSG_FAILURE([cuSPARSE support is requested, but test for cuSPARSE failed!])
+      else
+        CUDA_CPPFLAGS="$saved_CUDA_CPPFLAGS"
+        CUDA_LDFLAGS="$saved_CUDA_LDFLAGS"
+        CUDA_LIBS="$saved_CUDA_LIBS"
+      fi
+    fi
+
+    CPPFLAGS="$saved_CPPFLAGS"
+    LDFLAGS="$saved_LDFLAGS"
+    LIBS="$saved_LIBS"
+
+  fi
+
+  AC_SUBST(cs_have_cusparse)
+
+  # Finally set flags which can be extended by libraries and paths.
+
+  AC_SUBST(CUDA_CPPFLAGS)
+  AC_SUBST(CUDA_LDFLAGS)
+  AC_SUBST(CUDA_LIBS)
+
+fi
+
+])dnl

@@ -1267,6 +1267,9 @@ if test x$cs_have_openmp = xyes ; then
   echo " OpenMP Fortran support: "$cs_have_openmp_f""
 fi
 echo " CUDA support: "$cs_have_cuda""
+if test x$cs_have_cuda = xyes ; then
+  echo "   cuSPARSE support: "$cs_have_cusparse""
+fi
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""
 echo " ParMETIS (Parallel Graph Partitioning) support: "$cs_have_parmetis""
 if test x$cs_have_parmetis = xno ; then
