@@ -879,7 +879,7 @@ cs_associate_device_ptr(void    *host_ptr,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_dissassociate_device_ptr(void  *host_ptr)
+cs_disassociate_device_ptr(void  *host_ptr)
 {
   if (_hd_alloc_map.count(host_ptr) == 0)
     return;
@@ -901,6 +901,8 @@ cs_dissassociate_device_ptr(void  *host_ptr)
 #endif
 
   }
+
+  _hd_alloc_map.erase(host_ptr);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -949,7 +951,7 @@ cs_set_alloc_mode(void             **host_ptr,
     _cs_base_accel_mem_map  me = _hd_alloc_map[_host_ptr];
 
     if (old_mode == CS_ALLOC_HOST_DEVICE)
-      cs_dissassociate_device_ptr(_host_ptr);
+      cs_disassociate_device_ptr(_host_ptr);
 
     if (   mode == CS_ALLOC_HOST_DEVICE_SHARED
         || old_mode == CS_ALLOC_HOST_DEVICE_SHARED) {

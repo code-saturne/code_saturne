@@ -523,11 +523,11 @@ cs_associate_device_ptr(void    *host_ptr,
 #if defined(HAVE_ACCEL)
 
 void
-cs_dissassociate_device_ptr(void  *host_ptr);
+cs_disassociate_device_ptr(void  *host_ptr);
 
 #else
 
-#define cs_dissassociate_device_ptr(_host_ptr);
+#define cs_disassociate_device_ptr(_host_ptr);
 
 #endif
 
