@@ -2340,6 +2340,8 @@ cs_hodge_vb_bubble_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in, out] hodge   pointer to a cs_hodge_t structure
  * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ *
+ * \return true if something has been computed or false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2373,6 +2375,8 @@ cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_cell_mesh_t     *cm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, cb->loc);
 #endif
+
+  return true;
 }
 
 /*----------------------------------------------------------------------------*/
