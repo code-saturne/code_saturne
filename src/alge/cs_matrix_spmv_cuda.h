@@ -74,17 +74,17 @@ cs_matrix_spmv_cuda_finalize(void);
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
  * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   x             multipliying vector values
- * \param[out]  y             resulting vector
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_cuda_p_l_csr(const cs_matrix_t  *matrix,
-                            bool                exclude_diag,
-                            bool                sync,
-                            cs_real_t           x[restrict],
-                            cs_real_t           y[restrict]);
+cs_matrix_spmv_cuda_csr(const cs_matrix_t  *matrix,
+                        bool                exclude_diag,
+                        bool                sync,
+                        cs_real_t           d_x[restrict],
+                        cs_real_t           d_y[restrict]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -93,17 +93,75 @@ cs_matrix_spmv_cuda_p_l_csr(const cs_matrix_t  *matrix,
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
  * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   x             multipliying vector values
- * \param[out]  y             resulting vector
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_cuda_p_l_csr_cusparse(cs_matrix_t  *matrix,
-                                     bool          exclude_diag,
-                                     bool          sync,
-                                     cs_real_t     x[restrict],
-                                     cs_real_t     y[restrict]);
+cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
+                                 bool          exclude_diag,
+                                 bool          sync,
+                                 cs_real_t     d_x[restrict],
+                                 cs_real_t     d_y[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x with MSR matrix, scalar CUDA version.
+ *
+ * \param[in]   matrix        pointer to matrix structure
+ * \param[in]   exclude_diag  exclude diagonal if true,
+ * \param[in]   sync          synchronize ghost cells if true
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_spmv_cuda_msr(const cs_matrix_t  *matrix,
+                        bool                exclude_diag,
+                        bool                sync,
+                        cs_real_t           d_x[restrict],
+                        cs_real_t           d_y[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x with MSR matrix, scalar cuSPARSE version.
+ *
+ * \param[in]   matrix        pointer to matrix structure
+ * \param[in]   exclude_diag  exclude diagonal if true,
+ * \param[in]   sync          synchronize ghost cells if true
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
+                                 bool          exclude_diag,
+                                 bool          sync,
+                                 cs_real_t     d_x[restrict],
+                                 cs_real_t     d_y[restrict]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
+ *        CUDA version.
+ *
+ * \param[in]   matrix        pointer to matrix structure
+ * \param[in]   exclude_diag  exclude diagonal if true,
+ * \param[in]   sync          synchronize ghost cells if true
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
+                          bool          exclude_diag,
+                          bool          sync,
+                          cs_real_t     d_x[restrict],
+                          cs_real_t     d_y[restrict]);
 
 /*----------------------------------------------------------------------------*/
 

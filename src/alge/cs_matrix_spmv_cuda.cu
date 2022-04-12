@@ -70,8 +70,6 @@
 #include "cs_matrix_spmv.h"
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*! \file cs_matrix_spmv_cuda.c
  *
  * \brief Sparse Matrix SpMV operations with CUDA.
@@ -316,15 +314,15 @@ _mat_vect_p_l_msr(cs_lnum_t         n_rows,
 /*----------------------------------------------------------------------------*/
 
 __global__ static void
-_mat_vect_p_l_msr_adddiag(cs_lnum_t         n_rows,
-                          const cs_real_t  *__restrict__ d_val,
-                          const cs_real_t  *__restrict__ x,
-                          cs_real_t        *__restrict__ y)
+_mat_vect_p_l_msr_diag(cs_lnum_t         n_rows,
+                       const cs_real_t  *__restrict__ d_val,
+                       const cs_real_t  *__restrict__ x,
+                       cs_real_t        *__restrict__ y)
 {
   cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
 
   if (ii < n_rows)
-    y[ii] += d_val[ii] * x[ii];
+    y[ii] = d_val[ii] * x[ii];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -345,8 +343,8 @@ __global__ static void
 _b_3_3_mat_vect_p_l_msr(cs_lnum_t        n_rows,
                         const cs_lnum_t  *__restrict__ col_id,
                         const cs_lnum_t  *__restrict__ row_index,
-                        const cs_real_t  *__restrict__ x_val,
                         const cs_real_t  *__restrict__ d_val,
+                        const cs_real_t  *__restrict__ x_val,
                         const cs_real_t  *__restrict__ x,
                         cs_real_t        *__restrict__ y)
 {
@@ -392,8 +390,8 @@ __global__ static void
 _b_3_3_mat_vect_p_l_msr_exdiag(cs_lnum_t        n_rows,
                                const cs_lnum_t  *__restrict__ col_id,
                                const cs_lnum_t  *__restrict__ row_index,
-                               const cs_real_t  *__restrict__ x_val,
                                const cs_real_t  *__restrict__ d_val,
+                               const cs_real_t  *__restrict__ x_val,
                                const cs_real_t  *__restrict__ x,
                                cs_real_t        *__restrict__ y)
 {
@@ -437,8 +435,8 @@ __global__ static void
 _b_mat_vect_p_l_msr(cs_lnum_t        n_rows,
                     const cs_lnum_t  *__restrict__ col_id,
                     const cs_lnum_t  *__restrict__ row_index,
-                    const cs_real_t  *__restrict__ x_val,
                     const cs_real_t  *__restrict__ d_val,
+                    const cs_real_t  *__restrict__ x_val,
                     const cs_real_t  *__restrict__ x,
                     cs_real_t        *__restrict__ y)
 {
@@ -496,8 +494,6 @@ _b_mat_vect_p_l_msr_exdiag(cs_lnum_t        n_rows,
   cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
 
   if (ii < n_rows) {
-    const cs_lnum_t nn = n*n;
-
     const cs_lnum_t *__restrict__ _col_id = col_id + row_index[ii];
     const cs_real_t *__restrict__ m_row  = x_val + row_index[ii];
     cs_lnum_t n_cols = row_index[ii + 1] - row_index[ii];
@@ -819,35 +815,30 @@ cs_matrix_spmv_cuda_finalize(void)
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
  * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   x             multipliying vector values
- * \param[out]  y             resulting vector
+ * \param[in]   d_x           multipliying vector values (device)
+ * \param[out]  d_y           resulting vector (device)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_cuda_p_l_csr(const cs_matrix_t  *matrix,
-                            bool                exclude_diag,
-                            bool                sync,
-                            cs_real_t           x[restrict],
-                            cs_real_t           y[restrict])
+cs_matrix_spmv_cuda_csr(const cs_matrix_t  *matrix,
+                        bool                exclude_diag,
+                        bool                sync,
+                        cs_real_t           d_x[restrict],
+                        cs_real_t           d_y[restrict])
 {
   const cs_matrix_struct_csr_t *ms
     = (const cs_matrix_struct_csr_t *)matrix->structure;
   const cs_matrix_coeff_csr_t *mc
     = (const cs_matrix_coeff_csr_t  *)matrix->coeffs;
 
-  const cs_lnum_t *__restrict__ d_row_index
+  const cs_lnum_t *__restrict__ row_index
     = (const cs_lnum_t *)cs_get_device_ptr
                            (const_cast<cs_lnum_t *>(ms->row_index));
-  const cs_lnum_t *__restrict__ d_col_id
+  const cs_lnum_t *__restrict__ col_id
     = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->col_id));
-  const cs_real_t *__restrict__ d_val
+  const cs_real_t *__restrict__ val
     = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->val));
-
-  cs_real_t *__restrict__ d_x
-    = (cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(x));
-  cs_real_t *__restrict__  d_y
-    = (cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(y));
 
   /* Ghost cell communication */
 
@@ -864,12 +855,12 @@ cs_matrix_spmv_cuda_p_l_csr(const cs_matrix_t  *matrix,
 
   if (!exclude_diag)
     _mat_vect_p_l_csr<<<gridsize, blocksize>>>
-      (ms->n_rows, d_row_index, d_col_id, d_val, d_x, d_y);
+      (ms->n_rows, row_index, col_id, val, d_x, d_y);
   else
     _mat_vect_p_l_csr_exdiag<<<gridsize, blocksize>>>
-      (ms->n_rows, d_row_index, d_col_id, d_val, d_x, d_y);
+      (ms->n_rows, row_index, col_id, val, d_x, d_y);
 
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(0);
   CS_CUDA_CHECK(cudaGetLastError());
 }
 
@@ -882,23 +873,20 @@ cs_matrix_spmv_cuda_p_l_csr(const cs_matrix_t  *matrix,
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
  * \param[in]   sync          synchronize ghost cells if true
- * \param[in]   x             multipliying vector values
- * \param[out]  y             resulting vector
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_cuda_p_l_csr_cusparse(cs_matrix_t  *matrix,
-                                     bool          exclude_diag,
-                                     bool          sync,
-                                     cs_real_t     x[restrict],
-                                     cs_real_t     y[restrict])
+cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
+                                 bool          exclude_diag,
+                                 bool          sync,
+                                 cs_real_t     d_x[restrict],
+                                 cs_real_t     d_y[restrict])
 {
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
-
-  void  *d_x = cs_get_device_ptr(const_cast<cs_real_t *>(x));
-  void  *d_y = cs_get_device_ptr(y);
 
   if (csm == NULL) {
     matrix->ext_lib_map = _set_cusparse_map(matrix);
@@ -996,11 +984,286 @@ cs_matrix_spmv_cuda_p_l_csr_cusparse(cs_matrix_t  *matrix,
 
   }
 
-  cudaDeviceSynchronize();
+  cudaStreamSynchronize(0);
   CS_CUDA_CHECK(cudaGetLastError());
 }
 
 #endif /* defined(HAVE_CUSPARSE) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x with MSR matrix, scalar CUDA version.
+ *
+ * \param[in]   matrix        pointer to matrix structure
+ * \param[in]   exclude_diag  exclude diagonal if true,
+ * \param[in]   sync          synchronize ghost cells if true
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_spmv_cuda_msr(const cs_matrix_t  *matrix,
+                        bool                exclude_diag,
+                        bool                sync,
+                        cs_real_t           d_x[restrict],
+                        cs_real_t           d_y[restrict])
+{
+  const cs_matrix_struct_dist_t *ms
+    = (const cs_matrix_struct_dist_t *)matrix->structure;
+  const cs_matrix_coeff_dist_t *mc
+    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+
+  const cs_lnum_t *__restrict__ row_index
+    = (const cs_lnum_t *)cs_get_device_ptr
+                           (const_cast<cs_lnum_t *>(ms->e.row_index));
+  const cs_lnum_t *__restrict__ col_id
+    = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->e.col_id));
+
+  const cs_real_t *__restrict__ d_val
+    = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->d_val));
+  const cs_real_t *__restrict__ x_val
+    = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->e_val));
+
+  /* Ghost cell communication */
+
+  if (sync) {
+    cs_halo_state_t *hs = _pre_vector_multiply_sync_x_start(matrix, d_x);
+    cs_halo_sync_wait(matrix->halo, d_x, hs);
+  }
+
+  /* Compute SpMV */
+
+  unsigned int blocksize = 256;
+  unsigned int gridsize
+    = (unsigned int)ceil((double)ms->n_rows / blocksize);
+
+  if (!exclude_diag)
+    _mat_vect_p_l_msr<<<gridsize, blocksize>>>
+      (ms->n_rows, row_index, col_id, d_val, x_val, d_x, d_y);
+  else
+    _mat_vect_p_l_csr<<<gridsize, blocksize>>>
+      (ms->n_rows, row_index, col_id, x_val, d_x, d_y);
+
+  cudaStreamSynchronize(0);
+  CS_CUDA_CHECK(cudaGetLastError());
+}
+
+#if defined(HAVE_CUSPARSE)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x with MSR matrix, scalar cuSPARSE version.
+ *
+ * \param[in]   matrix        pointer to matrix structure
+ * \param[in]   exclude_diag  exclude diagonal if true,
+ * \param[in]   sync          synchronize ghost cells if true
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
+                                 bool          exclude_diag,
+                                 bool          sync,
+                                 cs_real_t     d_x[restrict],
+                                 cs_real_t     d_y[restrict])
+{
+  cs_matrix_cusparse_map_t *csm
+    = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+
+  if (csm == NULL) {
+    matrix->ext_lib_map = _set_cusparse_map(matrix);
+    csm = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+  }
+
+  /* Ghost cell communication */
+
+  if (sync) {
+    cs_halo_state_t *hs = _pre_vector_multiply_sync_x_start(matrix,
+                                                            (cs_real_t *)d_x);
+    cs_halo_sync_wait(matrix->halo, (cs_real_t *)d_x, hs);
+  }
+
+  _update_cusparse_map(csm, matrix, d_x, d_y);
+
+  cs_real_t alpha = 1.;
+  cs_real_t beta = 0.;
+
+  if (!exclude_diag) {
+
+    const cs_matrix_struct_csr_t *ms
+      = (const cs_matrix_struct_csr_t *)matrix->structure;
+    const cs_matrix_coeff_csr_t *mc
+      = (const cs_matrix_coeff_csr_t  *)matrix->coeffs;
+    const cs_lnum_t *__restrict__ d_row_index
+      = (const cs_lnum_t *)cs_get_device_ptr
+                             (const_cast<cs_lnum_t *>(ms->row_index));
+    const cs_lnum_t *__restrict__ d_col_id
+      = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->col_id));
+    const cs_real_t *__restrict__ d_val
+      = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->val));
+
+    unsigned int blocksize = 256;
+    unsigned int gridsize
+      = (unsigned int)ceil((double)ms->n_rows / blocksize);
+
+    _mat_vect_p_l_msr_diag<<<gridsize, blocksize>>>
+      (ms->n_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
+
+    beta = 1.;
+
+  }
+
+#if defined(USE_CUSPARSE_GENERIC_API)
+
+  cudaDataType_t val_dtype
+    = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
+
+  cusparseStatus_t status = cusparseSpMV(_handle,
+                                         CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                         &alpha,
+                                         csm->matA,
+                                         csm->vecX,
+                                         &beta,
+                                         csm->vecY,
+                                         val_dtype,
+                                         CUSPARSE_MV_ALG_DEFAULT,
+                                         csm->dBuffer);
+
+#else
+
+#if SIZEOF_DOUBLE == 8
+
+  cusparseDcsrmv(_handle,
+                 CUSPARSE_OPERATION_NON_TRANSPOSE,
+                 matrix->n_rows,
+                 matrix->n_cols_ext,
+                 csm->nnz,
+                 &alpha,
+                 csm->descrA,
+                 (const double *)csm->d_e_val,
+                 (const int *)csm->d_row_index,
+                 (const int *)csm->d_col_id,
+                 (const double *)d_x,
+                 &beta,
+                 (double *)d_y);
+
+#elif SIZEOF_DOUBLE == 4
+
+  cusparseScsrmv(_handle,
+                 CUSPARSE_OPERATION_NON_TRANSPOSE,
+                 matrix->n_rows,
+                 matrix->n_cols_ext,
+                 csm->nnz,
+                   &alpha,
+                 csm->descrA,
+                 (const float *)csm->d_e_val,
+                 (const int *)csm->d_row_index,
+                 (const int *)csm->d_col_id,
+                 (const float *)d_x,
+                 &beta,
+                 (float *)d_y);
+
+#endif
+
+#endif
+
+  cudaStreamSynchronize(0);
+  CS_CUDA_CHECK(cudaGetLastError());
+}
+
+#endif /* defined(HAVE_CUSPARSE) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
+ *        CUDA version.
+ *
+ * \param[in]   matrix        pointer to matrix structure
+ * \param[in]   exclude_diag  exclude diagonal if true,
+ * \param[in]   sync          synchronize ghost cells if true
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
+                          bool          exclude_diag,
+                          bool          sync,
+                          cs_real_t     d_x[restrict],
+                          cs_real_t     d_y[restrict])
+{
+  const cs_matrix_struct_dist_t *ms
+    = (const cs_matrix_struct_dist_t *)matrix->structure;
+  const cs_matrix_coeff_dist_t *mc
+    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+
+  const cs_lnum_t *__restrict__ row_index
+    = (const cs_lnum_t *)cs_get_device_ptr
+                           (const_cast<cs_lnum_t *>(ms->e.row_index));
+  const cs_lnum_t *__restrict__ col_id
+    = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->e.col_id));
+
+  const cs_real_t *__restrict__ d_val
+    = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->d_val));
+  const cs_real_t *__restrict__ x_val
+    = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->e_val));
+
+  cudaStream_t stream1;
+  cudaStreamCreate(&stream1);
+
+  /* Ghost cell communication */
+
+  if (sync) {
+    cs_halo_state_t *hs = _pre_vector_multiply_sync_x_start(matrix, d_x);
+    cs_halo_sync_wait(matrix->halo, d_x, hs);
+  }
+
+  /* Compute SpMV */
+
+  unsigned int blocksize = 128;
+  unsigned int gridsize
+    = (unsigned int)ceil((double)ms->n_rows / blocksize);
+
+  if (!exclude_diag) {
+
+    if (matrix->db_size == 3)
+      _b_3_3_mat_vect_p_l_msr<<<gridsize, blocksize, 0, stream1>>>
+        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+    else if (matrix->db_size == 6)
+      _b_mat_vect_p_l_msr<6><<<gridsize, blocksize, 0, stream1>>>
+        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+    else if (matrix->db_size == 9)
+      _b_mat_vect_p_l_msr<9><<<gridsize, blocksize, 0, stream1>>>
+        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+    else
+      bft_error(__FILE__, __LINE__, 0, _("%s: block size %d not implemented."),
+                __func__, (int)matrix->db_size);
+
+  }
+  else {
+
+    if (matrix->db_size == 3)
+      _b_3_3_mat_vect_p_l_msr_exdiag<<<gridsize, blocksize, 0, stream1>>>
+        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+    else if (matrix->db_size == 6)
+      _b_mat_vect_p_l_msr_exdiag<6><<<gridsize, blocksize, 0, stream1>>>
+        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+    else if (matrix->db_size == 9)
+      _b_mat_vect_p_l_msr_exdiag<9><<<gridsize, blocksize, 0, stream1>>>
+        (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
+    else
+      bft_error(__FILE__, __LINE__, 0, _("%s: block size %d not implemented."),
+                __func__, (int)matrix->db_size);
+
+  }
+
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream1));
+  CS_CUDA_CHECK(cudaStreamDestroy(stream1));
+}
 
 /*----------------------------------------------------------------------------*/
 

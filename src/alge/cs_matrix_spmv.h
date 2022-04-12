@@ -91,15 +91,23 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *     default
  *     omp_sched       (Improved OpenMP scheduling, for CS_MATRIX_SCALAR*)
  *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
+ *     cuda            (CUDA-accelerated)
+ *     cusparse        (with cuSPARSE)
+ *
+ *   CS_MATRIX_DIST
+ *     default
+ *     omp_sched       (Improved OpenMP scheduling, for CS_MATRIX_SCALAR*)
+ *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *
  * parameters:
- *   m_type     <--  Matrix type
- *   fill type  <--  matrix fill type to merge from
- *   spmv_type  <--  SpMV operation type (full or sub-matrix)
- *                   (all types if CS_MATRIX_SPMV_N_TYPES)
- *   numbering  <--  mesh numbering structure, or NULL
- *   func_name  <--  function type name, or NULL for default
- *   spmv       <->  multiplication function array
+ *   m_type      <--  Matrix type
+ *   fill type   <--  matrix fill type to merge from
+ *   spmv_type   <--  SpMV operation type (full or sub-matrix)
+ *                    (all types if CS_MATRIX_SPMV_N_TYPES)
+ *   numbering   <--  mesh numbering structure, or NULL
+ *   func_name   <--  function type name, or NULL for default
+ *   spmv        <->  multiplication function array
+ *   spmv_xy_hd  <->  multiplication function x and y host/device location
  *
  * returns:
  *   0 for success, 1 for incompatible function, 2 for compatible
@@ -112,7 +120,8 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
                         cs_matrix_spmv_type_t        spmv_type,
                         const cs_numbering_t        *numbering,
                         const char                  *func_name,
-                        cs_matrix_vector_product_t  *spmv[CS_MATRIX_SPMV_N_TYPES]);
+                        cs_matrix_vector_product_t  *spmv[CS_MATRIX_SPMV_N_TYPES],
+                        char                   spmv_xy_hd[CS_MATRIX_SPMV_N_TYPES]);
 
 /*======================================à=======================================
  * Public function prototypes

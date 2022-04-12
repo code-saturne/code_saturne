@@ -359,6 +359,11 @@ struct _cs_matrix_t {
   cs_matrix_vector_product_t  *vector_multiply[CS_MATRIX_N_FILL_TYPES]
                                               [CS_MATRIX_SPMV_N_TYPES];
 
+  /* Indicate whether vector_multiply function is handled with
+     host ('h') or device ('d') x and y vector addresses */
+
+  char                   vector_multiply_xy_hd[CS_MATRIX_N_FILL_TYPES]
+                                              [CS_MATRIX_SPMV_N_TYPES];
 };
 
 /* Structure used for tuning variants */
@@ -374,6 +379,10 @@ struct _cs_matrix_variant_t {
   /* Function pointer arrays */
 
   cs_matrix_vector_product_t   *vector_multiply[CS_MATRIX_SPMV_N_TYPES];
+
+  /* Associated vector host/device locations */
+
+  char                          vector_multiply_xy_hd[CS_MATRIX_SPMV_N_TYPES];
 };
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

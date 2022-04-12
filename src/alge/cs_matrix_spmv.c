@@ -2942,7 +2942,8 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
                               spmv_type,
                               m->numbering,
                               NULL, /* func_name */
-                              m->vector_multiply[mft]);
+                              m->vector_multiply[mft],
+                              m->vector_multiply_xy_hd[mft]);
   }
 }
 
@@ -2969,15 +2970,23 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
  *     default
  *     omp_sched       (Improved OpenMP scheduling, for CS_MATRIX_SCALAR*)
  *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
+ *     cuda            (CUDA-accelerated)
+ *     cusparse        (with cuSPARSE)
+ *
+ *   CS_MATRIX_DIST
+ *     default
+ *     omp_sched       (Improved OpenMP scheduling, for CS_MATRIX_SCALAR*)
+ *     mkl             (with MKL, for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *
  * parameters:
- *   m_type     <--  Matrix type
- *   fill type  <--  matrix fill type to merge from
- *   spmv_type  <--  SpMV operation type (full or sub-matrix)
- *                   (all types if CS_MATRIX_SPMV_N_TYPES)
- *   numbering  <--  mesh numbering structure, or NULL
- *   func_name  <--  function type name, or NULL for default
- *   spmv       <->  multiplication function array
+ *   m_type      <--  Matrix type
+ *   fill type   <--  matrix fill type to merge from
+ *   spmv_type   <--  SpMV operation type (full or sub-matrix)
+ *                    (all types if CS_MATRIX_SPMV_N_TYPES)
+ *   numbering   <--  mesh numbering structure, or NULL
+ *   func_name   <--  function type name, or NULL for default
+ *   spmv        <->  multiplication function array
+ *   spmv_xy_hd  <->  multiplication function x and y host/device location
  *
  * returns:
  *   0 for success, 1 for incompatible function, 2 for compatible
@@ -2990,13 +2999,16 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
                         cs_matrix_spmv_type_t        spmv_type,
                         const cs_numbering_t        *numbering,
                         const char                  *func_name,
-                        cs_matrix_vector_product_t  *spmv[CS_MATRIX_SPMV_N_TYPES])
+                        cs_matrix_vector_product_t  *spmv[CS_MATRIX_SPMV_N_TYPES],
+                        char                   spmv_xy_hd[CS_MATRIX_SPMV_N_TYPES])
 {
   int retcode = 1;
   int standard = 0;
 
   cs_matrix_vector_product_t *_spmv[CS_MATRIX_SPMV_N_TYPES]
     = {NULL, NULL};
+
+  char _spmv_xy_hd[CS_MATRIX_SPMV_N_TYPES] = {'h', 'h'};
 
   if (func_name == NULL)
     standard = 2;
@@ -3154,8 +3166,10 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       }
       else if (!strcmp(func_name, "cuda")) {
 #if defined(HAVE_CUDA)
-        _spmv[0] = cs_matrix_spmv_cuda_p_l_csr;
-        _spmv[1] = cs_matrix_spmv_cuda_p_l_csr;
+        _spmv[0] = cs_matrix_spmv_cuda_csr;
+        _spmv[1] = cs_matrix_spmv_cuda_csr;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
 #else
         retcode = 2;
 #endif
@@ -3163,9 +3177,11 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       else if (!strcmp(func_name, "cusparse")) {
 #if defined(HAVE_CUSPARSE)
         _spmv[0] = (cs_matrix_vector_product_t *)
-                     cs_matrix_spmv_cuda_p_l_csr_cusparse;
+                     cs_matrix_spmv_cuda_csr_cusparse;
         _spmv[1] = (cs_matrix_vector_product_t *)
-                     cs_matrix_spmv_cuda_p_l_csr_cusparse;
+                     cs_matrix_spmv_cuda_csr_cusparse;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
 #else
         retcode = 2;
 #endif
@@ -3211,6 +3227,50 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       case CS_MATRIX_SCALAR_SYM:
         _spmv[0] = _mat_vec_p_l_msr_mkl;
         _spmv[1] = _mat_vec_p_l_msr_mkl;
+        break;
+      default:
+        break;
+      }
+#else
+      retcode = 2;
+#endif
+    }
+
+    else if (!strcmp(func_name, "cuda")) {
+#if defined(HAVE_CUDA)
+      switch(fill_type) {
+      case CS_MATRIX_SCALAR:
+      case CS_MATRIX_SCALAR_SYM:
+        _spmv[0] = cs_matrix_spmv_cuda_msr;
+        _spmv[1] = cs_matrix_spmv_cuda_msr;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+        break;
+      case CS_MATRIX_BLOCK_D:
+      case CS_MATRIX_BLOCK_D_66:
+      case CS_MATRIX_BLOCK_D_SYM:
+        _spmv[0] = cs_matrix_spmv_cuda_msr_b;
+        _spmv[1] = cs_matrix_spmv_cuda_msr_b;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+        break;
+      default:
+        break;
+      }
+#else
+      retcode = 2;
+#endif
+    }
+
+    else if (!strcmp(func_name, "cusparse")) {
+#if defined(HAVE_CUDA)
+      switch(fill_type) {
+      case CS_MATRIX_SCALAR:
+      case CS_MATRIX_SCALAR_SYM:
+        _spmv[0] = cs_matrix_spmv_cuda_msr;
+        _spmv[1] = cs_matrix_spmv_cuda_msr;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
         break;
       default:
         break;
@@ -3298,6 +3358,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
   if (spmv_type < CS_MATRIX_SPMV_N_TYPES) {
     if (_spmv[spmv_type] != NULL) {
       spmv[spmv_type] = _spmv[spmv_type];
+      spmv_xy_hd[spmv_type] = _spmv_xy_hd[spmv_type];
       retcode = 0;
     }
   }
@@ -3305,6 +3366,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
     for (cs_matrix_spmv_type_t i = 0; i < CS_MATRIX_SPMV_N_TYPES; i++) {
       if (_spmv[i] != NULL) {
         spmv[i] = _spmv[i];
+        spmv_xy_hd[i] = _spmv_xy_hd[i];
         retcode = 0;
       }
     }

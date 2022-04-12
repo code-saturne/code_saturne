@@ -3231,8 +3231,9 @@ _variant_add(const char                *name,
                                        mft,
                                        CS_MATRIX_SPMV_N_TYPES,
                                        numbering,
-                                       "standard",
-                                       v->vector_multiply);
+                                       func_name,
+                                       v->vector_multiply,
+                                       v->vector_multiply_xy_hd);
 
   if (retval == 0)
     *n_variants += 1;
@@ -4431,8 +4432,10 @@ _matrix_create(cs_matrix_type_t  type)
   m->assembler = NULL;
 
   for (mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++) {
-    for (cs_matrix_spmv_type_t i = 0; i < CS_MATRIX_SPMV_N_TYPES; i++)
+    for (cs_matrix_spmv_type_t i = 0; i < CS_MATRIX_SPMV_N_TYPES; i++) {
       m->vector_multiply[mft][i] = NULL;
+      m->vector_multiply_xy_hd[mft][i] = 'h';
+    }
   }
 
   /* Define coefficients */
@@ -5317,10 +5320,26 @@ cs_matrix_get_l_range(const cs_matrix_t  *matrix)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ *\brief Query matrix allocation mode.
+ *
+ * \param[in, out]  matrix  pointer to matrix structure
+ *
+ * \return  host/device allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_alloc_mode_t
+cs_matrix_get_alloc_mode(cs_matrix_t  *matrix)
+{
+  return matrix->alloc_mode;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  *\brief Set matrix allocation mode.
  *
  * \param[in, out]  matrix      pointer to matrix structure
- * \param[in]       alloc_mode  indicates if matrix coefficients are symmetric
+ * \param[in]       alloc_mode  host/device allocation mode
  */
 /*----------------------------------------------------------------------------*/
 
@@ -6256,9 +6275,23 @@ cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
 {
   assert(matrix != NULL);
 
-  if (matrix->vector_multiply[matrix->fill_type][0] != NULL)
-    matrix->vector_multiply[matrix->fill_type][0](matrix, false, true, x, y);
+  if (matrix->vector_multiply[matrix->fill_type][0] != NULL) {
 
+#if defined(HAVE_ACCEL)
+    if (matrix->vector_multiply_xy_hd[matrix->fill_type][0] == 'd') {
+      cs_real_t *d_x = (cs_real_t *)cs_get_device_ptr(x);
+      cs_real_t *d_y = (cs_real_t *)cs_get_device_ptr(y);
+
+      matrix->vector_multiply[matrix->fill_type][0](matrix, false, true,
+                                                    d_x, d_y);
+    }
+    else
+      matrix->vector_multiply[matrix->fill_type][0](matrix, false, true, x, y);
+#else
+    matrix->vector_multiply[matrix->fill_type][0](matrix, false, true, x, y);
+#endif
+
+  }
   else
     bft_error(__FILE__, __LINE__, 0,
               _("%s: Matrix of type: %s is missing a vector multiply\n"
@@ -6289,9 +6322,23 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
 {
   assert(matrix != NULL);
 
-  if (matrix->vector_multiply[matrix->fill_type][0] != NULL)
-    matrix->vector_multiply[matrix->fill_type][0](matrix, false, false, x, y);
+  if (matrix->vector_multiply[matrix->fill_type][0] != NULL) {
 
+#if defined(HAVE_ACCEL)
+    if (matrix->vector_multiply_xy_hd[matrix->fill_type][0] == 'd') {
+      cs_real_t *d_x = (cs_real_t *)cs_get_device_ptr(x);
+      cs_real_t *d_y = (cs_real_t *)cs_get_device_ptr(y);
+
+      matrix->vector_multiply[matrix->fill_type][0](matrix, false, false,
+                                                    d_x, d_y);
+    }
+    else
+      matrix->vector_multiply[matrix->fill_type][0](matrix, false, false, x, y);
+#else
+    matrix->vector_multiply[matrix->fill_type][0](matrix, false, false, x, y);
+#endif
+
+  }
   else
     bft_error(__FILE__, __LINE__, 0,
               _("%s: Matrix of type: %s is missing a vector multiply\n"
@@ -6324,10 +6371,24 @@ cs_matrix_vector_multiply_partial(const cs_matrix_t      *matrix,
 {
   assert(matrix != NULL);
 
-  if (matrix->vector_multiply[matrix->fill_type][op_type] != NULL)
+  if (matrix->vector_multiply[matrix->fill_type][op_type] != NULL) {
+
+#if defined(HAVE_ACCEL)
+    if (matrix->vector_multiply_xy_hd[matrix->fill_type][op_type] == 'd') {
+      cs_real_t *d_x = (cs_real_t *)cs_get_device_ptr(x);
+      cs_real_t *d_y = (cs_real_t *)cs_get_device_ptr(y);
+
+      matrix->vector_multiply[matrix->fill_type][op_type]
+        (matrix, true, true, d_x, d_y);
+    }
+    else
+      matrix->vector_multiply[matrix->fill_type][op_type]
+                (matrix, true, true, x, y);
+#else
     matrix->vector_multiply[matrix->fill_type][op_type]
               (matrix, true, true, x, y);
-
+#endif
+  }
   else
     bft_error(__FILE__, __LINE__, 0,
               _("%s: Matrix of type: %s is missing a partial SpMV\n"
@@ -6373,7 +6434,8 @@ cs_matrix_variant_create(cs_matrix_t  *m)
                               spmv_type,
                               m->numbering,
                               NULL, /* func_name */
-                              mv->vector_multiply);
+                              mv->vector_multiply,
+                              mv->vector_multiply_xy_hd);
   }
 
   return mv;
@@ -6526,6 +6588,32 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
 #endif /* defined(HAVE_MKL) */
 
+#if defined(HAVE_CUDA)
+
+    _variant_add(_("MSR, CUDA"),
+                 m->type,
+                 m->fill_type,
+                 m->numbering,
+                 "cuda",
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+#endif /* defined(HAVE_CUDA) */
+
+#if defined(HAVE_CUSPARSE)
+
+    _variant_add(_("MSR, with cuSPARSE"),
+                 m->type,
+                 m->fill_type,
+                 m->numbering,
+                 "cusparse",
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+#endif /* defined(HAVE_CUSPARSE) */
+
 #if defined(HAVE_OPENMP)
 
     if (omp_get_num_threads() > 1) {
@@ -6582,8 +6670,10 @@ cs_matrix_variant_apply(cs_matrix_t          *m,
       || m->fill_type < 0 || m->fill_type > CS_MATRIX_N_FILL_TYPES)
     return;
 
-  for (int i = 0; i < 2; i++)
+  for (int i = 0; i < 2; i++) {
     m->vector_multiply[m->fill_type][i] = mv->vector_multiply[i];
+    m->vector_multiply_xy_hd[m->fill_type][i] = mv->vector_multiply_xy_hd[i];
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6631,7 +6721,8 @@ cs_matrix_variant_set_func(cs_matrix_variant_t     *mv,
                                         spmv_type,
                                         numbering,
                                         func_name,
-                                        mv->vector_multiply);
+                                        mv->vector_multiply,
+                                        mv->vector_multiply_xy_hd);
 
   if (retcode == 1) {
     if (spmv_type < CS_MATRIX_SPMV_N_TYPES)

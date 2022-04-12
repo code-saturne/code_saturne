@@ -323,7 +323,6 @@ _create_assembler(int  coupling_id)
   const cs_mesh_t *m = cs_glob_mesh;
 
   const cs_lnum_t     n_rows = m->n_cells;
-  const cs_lnum_t     n_cols_ext = m->n_cells_with_ghosts;
   const cs_lnum_t     n_edges = m->n_i_faces;
   const cs_lnum_2_t  *edges = (const cs_lnum_2_t *)(m->i_face_cells);
 

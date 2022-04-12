@@ -472,13 +472,27 @@ cs_matrix_get_halo(const cs_matrix_t  *matrix);
 const cs_gnum_t *
 cs_matrix_get_l_range(const cs_matrix_t  *matrix);
 
-/*----------------------------------------------------------------------------
- * Set matrix allocation mode.
+/*----------------------------------------------------------------------------*/
+/*!
+ *\brief Query matrix allocation mode.
  *
- * parameters:
- *   matrix       <-> pointer to matrix structure
- *   alloc_mode   <-- indicates if matrix coefficients are symmetric
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  matrix  pointer to matrix structure
+ *
+ * \return  host/device allocation mode
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_alloc_mode_t
+cs_matrix_get_alloc_mode(cs_matrix_t  *matrix);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ *\brief Set matrix allocation mode.
+ *
+ * \param[in, out]  matrix      pointer to matrix structure
+ * \param[in]       alloc_mode  host/device allocation mode
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_matrix_set_alloc_mode(cs_matrix_t       *matrix,

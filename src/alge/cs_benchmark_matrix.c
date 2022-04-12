@@ -487,6 +487,40 @@ _variant_build_list(int                             n_fill_types,
 
 #endif /* defined(HAVE_MKL) */
 
+#if defined(HAVE_CUDA)
+
+    _variant_add("MSR, CUDA",
+                 NULL,
+                 CS_MATRIX_MSR,
+                 n_fill_types,
+                 fill_types,
+                 op_flag_ae,
+                 "cuda",
+                 "cuda",
+                 NULL,
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+#endif /* defined(HAVE_CUDA) */
+
+#if defined(HAVE_CUSPARSE)
+
+    _variant_add("MSR, with cuSPARSE",
+                 NULL,
+                 CS_MATRIX_MSR,
+                 n_fill_types,
+                 fill_types,
+                 op_flag_ae,
+                 "cusparse",
+                 NULL,
+                 NULL,
+                 n_variants,
+                 &n_variants_max,
+                 m_variant);
+
+#endif /* defined(HAVE_CUSPARSE) */
+
     _variant_add("MSR, OpenMP scheduling",
                  NULL,
                  CS_MATRIX_MSR,
@@ -674,7 +708,7 @@ _matrix_check(int                          n_variants,
   cs_lnum_t d_block_stride = d_block_size*d_block_size;
   cs_lnum_t e_block_stride = e_block_size*e_block_size;
 
-  BFT_MALLOC(da, n_cols_ext*d_block_stride, cs_real_t);
+  CS_MALLOC_HD(da, n_cols_ext*d_block_stride, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(xa, n_edges*2*e_block_stride, cs_real_t);
 
   /* Initialize arrays */
