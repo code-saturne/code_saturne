@@ -323,12 +323,14 @@ _create_assembler(int  coupling_id)
   const cs_mesh_t *m = cs_glob_mesh;
 
   const cs_lnum_t     n_rows = m->n_cells;
+  const cs_lnum_t     n_cols_ext = m->n_cells_with_ghosts;
   const cs_lnum_t     n_edges = m->n_i_faces;
   const cs_lnum_2_t  *edges = (const cs_lnum_2_t *)(m->i_face_cells);
 
   /* Global cell ids, based on range/scan */
 
-  if (_global_row_id == NULL)
+  if (   _global_row_id == NULL || n_cols_ext > _row_num_size
+      || _global_row_id_l_range != NULL || m->halo != _global_row_id_halo)
     _update_block_row_g_id(n_rows, NULL, m->halo);
 
   const cs_gnum_t *r_g_id = _global_row_id;
@@ -535,7 +537,8 @@ cs_matrix_update_mesh(void)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
-  if (_global_row_id != NULL)
+  if (   _global_row_id == NULL || mesh->n_cells_with_ghosts > _row_num_size
+      || _global_row_id_l_range != NULL || mesh->halo != _global_row_id_halo)
     _update_block_row_g_id(mesh->n_cells, NULL, mesh->halo);
 
   for (cs_matrix_type_t t = 0; t < CS_MATRIX_N_TYPES; t++) {
@@ -957,6 +960,7 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
   const cs_mesh_t *mesh = cs_glob_mesh;
 
   const cs_lnum_t     n_rows = mesh->n_cells;
+  const cs_lnum_t     n_cols_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t     n_edges = mesh->n_i_faces;
   const cs_lnum_2_t  *edges = (const cs_lnum_2_t *)(mesh->i_face_cells);
 
@@ -993,6 +997,12 @@ cs_matrix_set_coefficients_by_assembler(const cs_field_t  *f,
   /* Range information already built for assembler */
 
   assert(n_rows == cs_matrix_get_n_rows(m));
+
+  /* Make sure range is consistant with assembler creation */
+
+  if (   _global_row_id == NULL || n_cols_ext > _row_num_size
+      || _global_row_id_l_range != NULL || m->halo != _global_row_id_halo)
+    _update_block_row_g_id(n_rows, NULL, mesh->halo);
 
   const cs_gnum_t *r_g_id = _global_row_id;
 
