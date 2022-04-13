@@ -243,7 +243,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
 /*!
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it to the given array of values.
- *         Case of a scalar density defined at dual cells by a value.
+ *         Case of a scalar density defined at dual cells by value
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -289,7 +289,8 @@ cs_source_term_dcvd_by_value(const cs_xdef_t           *source,
 /*!
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it to the given array of values.
- *         Case of a scalar density defined at dual cells by an array.
+ *         Case of a scalar density defined at dual cells by an array defined
+ *         at (primal) vertices or dual cells
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -301,12 +302,36 @@ cs_source_term_dcvd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_dcsd_by_array(const cs_xdef_t           *source,
-                             const cs_cell_mesh_t      *cm,
-                             cs_real_t                  time_eval,
-                             cs_cell_builder_t         *cb,
-                             void                      *input,
-                             double                    *values);
+cs_source_term_dcsd_by_pv_array(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it to the given array of values.
+ *         Case of a scalar density defined at dual cells by an array defined
+ *         at (primal) cells
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcsd_by_pc_array(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -331,6 +331,159 @@ _hho_add_tetra_by_ana_vd(const cs_xdef_analytic_context_t  *ac,
   }  /* End of loop on Gauss points */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assign a function to compute a source term and update flag storing
+ *         which cellwise quantities have to be defined for this kind of
+ *         computation.
+ *         Case of CDO vertex-based schemes
+ *
+ * \param[in]      st_def        pointer to the definition
+ * \param[in, out] sys_flag      metadata about the algebraic system
+ * \param[in, out] msh_flag      metadata about cellwise quantities
+ *
+ * \return a pointer to the function used for the source term computation
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_source_term_cellwise_t *
+_set_cdovb_function(const cs_xdef_t              *st_def,
+                    cs_flag_t                    *sys_flag,
+                    cs_eflag_t                   *msh_flag)
+{
+  assert(st_def != NULL);
+
+  cs_source_term_cellwise_t  *func = NULL;
+
+  switch (st_def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    /* ---------------- */
+
+    if (st_def->meta & CS_FLAG_DUAL) {
+
+      *msh_flag |= CS_FLAG_COMP_PVQ;
+      if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
+        func = cs_source_term_dcvd_by_value;
+      else
+        func = cs_source_term_dcsd_by_value;
+
+    }
+    else {
+
+      assert(st_def->meta & CS_FLAG_PRIMAL);
+      *msh_flag |= CS_FLAG_COMP_PV;
+      func = cs_source_term_pvsp_by_value;
+
+    }
+    break; /* definition by value */
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    /* ---------------------------- */
+
+    if (st_def->meta & CS_FLAG_DUAL) {
+
+      switch (st_def->qtype) {
+      case CS_QUADRATURE_NONE:
+        *msh_flag |= CS_FLAG_COMP_PVQ;
+        func = cs_source_term_dcsd_none_by_analytic;
+        break;
+
+      case CS_QUADRATURE_BARY:
+        *msh_flag |=
+          CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC |
+          CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  |
+          CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PEC | CS_FLAG_COMP_DEQ;
+        func = cs_source_term_dcsd_bary_by_analytic;
+        break;
+
+      case CS_QUADRATURE_BARY_SUBDIV:
+        *msh_flag |=
+          CS_FLAG_COMP_EV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC |
+          CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_DEQ;
+        func = cs_source_term_dcsd_q1o1_by_analytic;
+        break;
+
+      case CS_QUADRATURE_HIGHER:
+        *msh_flag |=
+          CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FE  |
+          CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_PVQ |
+          CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DEQ;
+        func = cs_source_term_dcsd_q10o2_by_analytic;
+        break;
+
+      case CS_QUADRATURE_HIGHEST:
+        *msh_flag |=
+          CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE  |
+          CS_FLAG_COMP_EV  | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FEQ |
+          CS_FLAG_COMP_DEQ;
+        func = cs_source_term_dcsd_q5o3_by_analytic;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " Invalid type of quadrature for computing a source term"
+                  " with CDOVB schemes");
+      } /* quad_type */
+
+    }
+    else {
+
+      assert(st_def->meta & CS_FLAG_PRIMAL);
+      *msh_flag |= CS_FLAG_COMP_PV;
+      func = cs_source_term_pvsp_by_analytic;
+
+    }
+    break; /* definition by analytic */
+
+  case CS_XDEF_BY_ARRAY:
+    /* ---------------- */
+    {
+      cs_xdef_array_context_t  *cx = st_def->context;
+
+      assert(st_def->meta & CS_FLAG_DUAL);
+      assert(cx->stride == 1);
+
+      *msh_flag |= CS_FLAG_COMP_PVQ;
+
+      if (cs_flag_test(cx->loc, cs_flag_primal_vtx)) {
+        if (st_def->meta & CS_FLAG_DUAL)
+          func = cs_source_term_dcsd_by_pv_array;
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Invalid type of definition for a source term in CDOVB",
+                    __func__);
+      }
+      else if (cs_flag_test(cx->loc, cs_flag_dual_cell))
+        func = cs_source_term_dcsd_by_pv_array;
+      else if (cs_flag_test(cx->loc, cs_flag_primal_cell))
+        func = cs_source_term_dcsd_by_pc_array;
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid type of definition for a source term in CDOVB",
+                  __func__);
+    }
+    break;
+
+  case CS_XDEF_BY_DOF_FUNCTION:
+    /* ----------------------- */
+
+    assert(st_def->meta & CS_FLAG_DUAL);
+    *msh_flag |= CS_FLAG_COMP_PVQ;
+    func = cs_source_term_dcsd_by_dof_func;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of definition for a source term in CDOVB",
+              __func__);
+    break;
+
+  } /* switch one the type of definition */
+
+  return func;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -538,112 +691,14 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
     if ((st_def->meta & CS_FLAG_FULL_LOC) == 0)
       need_mask = true;
 
+    /* Assign the right function according to the space discretization */
+
     switch (space_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
-
       msh_flag |= CS_FLAG_COMP_PV;
-      if (st_def->meta & CS_FLAG_DUAL) {
-
-        switch (st_def->type) {
-
-        case CS_XDEF_BY_VALUE:
-          msh_flag |= CS_FLAG_COMP_PVQ;
-          if ((*sys_flag) & CS_FLAG_SYS_VECTOR)
-            compute_source[st_id] = cs_source_term_dcvd_by_value;
-          else
-            compute_source[st_id] = cs_source_term_dcsd_by_value;
-          break;
-
-        case CS_XDEF_BY_ANALYTIC_FUNCTION:
-
-          switch (st_def->qtype) {
-          case CS_QUADRATURE_NONE:
-            msh_flag |= CS_FLAG_COMP_PVQ;
-            compute_source[st_id] = cs_source_term_dcsd_none_by_analytic;
-            break;
-
-          case CS_QUADRATURE_BARY:
-            msh_flag |=
-              CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC |
-              CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  |
-              CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PEC | CS_FLAG_COMP_DEQ;
-            compute_source[st_id] = cs_source_term_dcsd_bary_by_analytic;
-            break;
-
-          case CS_QUADRATURE_BARY_SUBDIV:
-            msh_flag |=
-              CS_FLAG_COMP_EV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC |
-              CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_DEQ;
-            compute_source[st_id] = cs_source_term_dcsd_q1o1_by_analytic;
-            break;
-
-          case CS_QUADRATURE_HIGHER:
-            msh_flag |=
-              CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FE  |
-              CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_PVQ |
-              CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DEQ;
-            compute_source[st_id] = cs_source_term_dcsd_q10o2_by_analytic;
-            break;
-
-          case CS_QUADRATURE_HIGHEST:
-            msh_flag |=
-              CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE  |
-              CS_FLAG_COMP_EV  | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FEQ |
-              CS_FLAG_COMP_DEQ;
-            compute_source[st_id] = cs_source_term_dcsd_q5o3_by_analytic;
-            break;
-
-          default:
-            bft_error(__FILE__, __LINE__, 0,
-                      " Invalid type of quadrature for computing a source term"
-                      " with CDOVB schemes");
-          } /* quad_type */
-          break;
-
-        case CS_XDEF_BY_ARRAY:
-          msh_flag |= CS_FLAG_COMP_PVQ;
-          compute_source[st_id] = cs_source_term_dcsd_by_array;
-          break;
-
-        case CS_XDEF_BY_DOF_FUNCTION:
-          msh_flag |= CS_FLAG_COMP_PVQ;
-          compute_source[st_id] = cs_source_term_dcsd_by_dof_func;
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Invalid type of definition for a source term in CDOVB",
-                    __func__);
-          break;
-        } /* switch def_type */
-
-      }
-      else {
-        assert(st_def->meta & CS_FLAG_PRIMAL);
-
-        switch (st_def->type) {
-
-        case CS_XDEF_BY_VALUE:
-          msh_flag |= CS_FLAG_COMP_PV;
-          compute_source[st_id] = cs_source_term_pvsp_by_value;
-          break;
-
-        case CS_XDEF_BY_ANALYTIC_FUNCTION:
-          msh_flag |= CS_FLAG_COMP_PV;
-          compute_source[st_id] = cs_source_term_pvsp_by_analytic;
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Invalid type of definition for a source term in CDOVB",
-                    __func__);
-          break;
-
-        } /* switch def_type */
-
-      } /* flag PRIMAL or DUAL */
-      break; /* CDOVB */
+      compute_source[st_id] = _set_cdovb_function(st_def, sys_flag, &msh_flag);
+      break;
 
     case CS_SPACE_SCHEME_CDOVCB:
       if (st_def->meta & CS_FLAG_DUAL) {
@@ -1098,7 +1153,8 @@ cs_source_term_dcvd_by_value(const cs_xdef_t           *source,
 /*!
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it to the given array of values.
- *         Case of a scalar density defined at dual cells by an array.
+ *         Case of a scalar density defined at dual cells by an array defined
+ *         at (primal) vertices or dual cells
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -1110,12 +1166,12 @@ cs_source_term_dcvd_by_value(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_dcsd_by_array(const cs_xdef_t           *source,
-                             const cs_cell_mesh_t      *cm,
-                             cs_real_t                  time_eval,
-                             cs_cell_builder_t         *cb,
-                             void                      *input,
-                             double                    *values)
+cs_source_term_dcsd_by_pv_array(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
@@ -1133,6 +1189,49 @@ cs_source_term_dcsd_by_array(const cs_xdef_t           *source,
   assert(cs_flag_test(ac->loc, cs_flag_primal_vtx));
   for (int v = 0; v < cm->n_vc; v++)
     values[v] += ac->values[cm->v_ids[v]] * cm->wvc[v] * cm->vol_c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it to the given array of values.
+ *         Case of a scalar density defined at dual cells by an array defined
+ *         at (primal) cells
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcsd_by_pc_array(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
+  if (source == NULL)
+    return;
+
+  const cs_xdef_array_context_t  *ac =
+    (const cs_xdef_array_context_t *)source->context;
+
+  assert(values != NULL && cm != NULL);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
+  assert(cs_flag_test(ac->loc, cs_flag_primal_cell));
+
+  const cs_real_t  val_c = ac->values[cm->c_id] * cm->vol_c;
+  for (int v = 0; v < cm->n_vc; v++)
+    values[v] += val_c * cm->wvc[v];
 }
 
 /*----------------------------------------------------------------------------*/
