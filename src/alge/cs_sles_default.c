@@ -766,8 +766,7 @@ cs_sles_solve_native(int                  f_id,
     }
     const char *sles_type = cs_sles_get_type(sc);
     if (strcmp(sles_type, "cs_sles_amgx_t") == 0) {
-      if (m->n_init_perio > 0)
-        need_matrix_assembler = true;
+      need_matrix_assembler = true;
     }
 
     if (need_matrix_assembler)

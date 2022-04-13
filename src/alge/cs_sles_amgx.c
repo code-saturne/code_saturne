@@ -1211,7 +1211,7 @@ cs_sles_amgx_setup(void               *context,
         || (cs_mat_type != CS_MATRIX_CSR && cs_mat_type != CS_MATRIX_MSR))
       bft_error
         (__FILE__, __LINE__, 0,
-         _("Matrix type %s with block size %d for system \"%s\""
+         _("Matrix type %s with block size %d for system \"%s\" "
            "is not usable by AmgX.\n"
            "Only block size 1 with CSR or MSR type "
            "is currently supported by AmgX."),
