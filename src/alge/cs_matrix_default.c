@@ -329,7 +329,7 @@ _create_assembler(int  coupling_id)
 
   /* Global cell ids, based on range/scan */
 
-  if (   _global_row_id == NULL || n_cols_ext > _row_num_size
+  if (   _global_row_id == NULL
       || _global_row_id_l_range != NULL || m->halo != _global_row_id_halo)
     _update_block_row_g_id(n_rows, NULL, m->halo);
 
@@ -537,9 +537,7 @@ cs_matrix_update_mesh(void)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
-  if (   _global_row_id == NULL || mesh->n_cells_with_ghosts > _row_num_size
-      || _global_row_id_l_range != NULL || mesh->halo != _global_row_id_halo)
-    _update_block_row_g_id(mesh->n_cells, NULL, mesh->halo);
+  _update_block_row_g_id(mesh->n_cells, NULL, mesh->halo);
 
   for (cs_matrix_type_t t = 0; t < CS_MATRIX_N_TYPES; t++) {
 
@@ -908,7 +906,6 @@ const cs_gnum_t *
 cs_matrix_get_block_row_g_id(cs_matrix_t  *m)
 {
   const cs_lnum_t  n_rows = m->n_rows;
-  const cs_lnum_t  n_cols_ext = m->n_cols_ext;
   const cs_halo_t  *halo = m->halo;
   const cs_gnum_t *l_range = NULL;
 
@@ -917,7 +914,7 @@ cs_matrix_get_block_row_g_id(cs_matrix_t  *m)
 
   const cs_gnum_t  *g_row_num = _global_row_id;
 
-  if (   _global_row_id == NULL || n_cols_ext > _row_num_size
+  if (   _global_row_id == NULL
       || l_range != _global_row_id_l_range || halo != _global_row_id_halo) {
     _update_block_row_g_id(n_rows, l_range, halo);
     g_row_num = _global_row_id;
