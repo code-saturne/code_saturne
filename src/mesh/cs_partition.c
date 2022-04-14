@@ -3126,8 +3126,10 @@ cs_partition(cs_mesh_t             *mesh,
     if (   stage != CS_PARTITION_MAIN
         || cs_partition_get_preprocess() == false) {
       _read_cell_rank(mesh, mb, CS_IO_ECHO_OPEN_CLOSE);
-      if (mb->have_cell_rank)
+      if (mb->have_cell_rank) {
+        cs_partition_set_preprocess(false);
         return;
+      }
     }
   }
   else { /* if (cs_glob_n_ranks == 1) */
