@@ -834,6 +834,8 @@ class MainFieldsModel(Variables, Model):
         energyModel = "total_enthalpy"
         if self.getHeatMassTransferStatus() == "off":
             energyModel = "off"
+        if flow_choice == "particles_flow":
+            energyModel = "specific_enthalpy"
 
         field_id_list = self.getFieldIdList()
         label_list = self.getFieldLabelsList()
