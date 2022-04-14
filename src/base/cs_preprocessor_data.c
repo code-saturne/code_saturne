@@ -1453,6 +1453,7 @@ _read_data(int                 file_id,
   cs_gnum_t n_g_faces = 0;
   cs_gnum_t n_g_vertices = 0;
   cs_gnum_t n_g_face_connect_size = 0;
+  void *elts_cur = NULL;
 
   cs_gnum_t face_vtx_range[2] = {0, 0};
   _mesh_file_info_t  *f = NULL;
@@ -1573,8 +1574,12 @@ _read_data(int                 file_id,
 
         /* Read data */
         cs_io_set_cs_gnum(&header, pp_in);
+        if (mb->face_cells != NULL)
+          elts_cur = mb->face_cells + val_offset_cur;
+        else
+          elts_cur = NULL;
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
-                         mb->face_cells + val_offset_cur, pp_in);
+                         elts_cur, pp_in);
 
         /* Shift referenced cell numbers in case of appended data */
         if (mr->n_g_cells_read > 0) {
@@ -1613,8 +1618,12 @@ _read_data(int                 file_id,
 
         /* Read data */
         cs_io_set_int(&header, pp_in);
+        if (mb->cell_gc_id != NULL)
+          elts_cur = mb->cell_gc_id + val_offset_cur;
+        else
+          elts_cur = NULL;
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
-                         mb->cell_gc_id + val_offset_cur, pp_in);
+                         elts_cur, pp_in);
 
         /* Shift referenced numbers in case of appended data */
         if (gc_id_shift > 0) {
@@ -1653,8 +1662,12 @@ _read_data(int                 file_id,
 
         /* Read data */
         cs_io_set_int(&header, pp_in);
+        if (mb->face_gc_id != NULL)
+          elts_cur = mb->face_gc_id + val_offset_cur;
+        else
+          elts_cur = NULL;
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
-                         mb->face_gc_id + val_offset_cur, pp_in);
+                         elts_cur, pp_in);
 
         /* Shift referenced numbers in case of appended data */
         if (gc_id_shift > 0) {
@@ -1696,8 +1709,12 @@ _read_data(int                 file_id,
         }
 
         /* Read data */
+        if (mb->face_r_gen != NULL)
+          elts_cur = mb->face_r_gen + val_offset_cur;
+        else
+          elts_cur = NULL;
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
-                         mb->face_r_gen + val_offset_cur, pp_in);
+                         elts_cur, pp_in);
       }
 
       /* Face -> vertices connectivity */
@@ -1789,8 +1806,12 @@ _read_data(int                 file_id,
 
         /* Read data */
         cs_io_set_cs_gnum(&header, pp_in);
+        if (mb->face_vertices != NULL)
+          elts_cur = mb->face_vertices + val_offset_cur;
+        else
+          elts_cur = NULL;
         cs_io_read_block(&header, face_vtx_range[0], face_vtx_range[1],
-                         mb->face_vertices + val_offset_cur, pp_in);
+                         elts_cur, pp_in);
 
         /* Shift referenced vertex numbers in case of appended data */
         if (mr->n_g_vertices_read > 0) {
@@ -1829,8 +1850,12 @@ _read_data(int                 file_id,
 
         /* Read data */
         cs_io_assert_cs_real(&header, pp_in);
+        if (mb->vertex_coords != NULL)
+          elts_cur = mb->vertex_coords + val_offset_cur;
+        else
+          elts_cur = NULL;
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
-                         mb->vertex_coords + val_offset_cur, pp_in);
+                         elts_cur, pp_in);
 
         /* Transform coordinates if necessary */
 
@@ -1860,8 +1885,12 @@ _read_data(int                 file_id,
 
         /* Read data */
         cs_io_assert_cs_real(&header, pp_in);
+        if (mb->vtx_r_gen != NULL)
+          elts_cur = mb->vtx_r_gen + val_offset_cur;
+        else
+          elts_cur = NULL;
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
-                         mb->vertex_coords + val_offset_cur, pp_in);
+                         elts_cur, pp_in);
 
       }
 
