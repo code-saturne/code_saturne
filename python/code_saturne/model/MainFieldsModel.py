@@ -135,8 +135,12 @@ class MainFieldsModel(Variables, Model):
         default = {}
         default['id']                         = ""
         default['label']                      = "defaultLabel"
-        default['enthalpyResolutionStatus']   = "on"
-        default['enthalpyResolutionModel']    = "total_enthalpy"
+        if self.getHeatMassTransferStatus() == "on":
+            default['enthalpyResolutionStatus']   = "on"
+            default['enthalpyResolutionModel']    = "total_enthalpy"
+        else:
+            default['enthalpyResolutionStatus']   = "off"
+            default['enthalpyResolutionModel']    = "off"
         default['typeChoice']                 = FieldAttributesDescription.typeChoiceValues[0]
         default['phase']                      = FieldAttributesDescription.phaseValues[0]
         default['carrierField']               = "off"
