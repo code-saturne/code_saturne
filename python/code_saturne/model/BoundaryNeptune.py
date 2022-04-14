@@ -489,7 +489,7 @@ class InletBoundary(Boundary):
                    ('R13', "Reynolds stress R23"),
                    ('eps', "turbulent dissipation")]
 
-        elif turbModel in ('tchen', 'q2-q12'):
+        elif turbModel in ('q2-q12-tchen', 'q2-q12'):
             req = [('q2', "turbulent kinetic energy"),
                    ('q12', "covariance")]
 
@@ -538,7 +538,7 @@ R13 = 5e-05;
 R23 = 5e-05;
 eps = 0.001;"""
 
-        elif turb_model in ('tchen', 'q2-q12'):
+        elif turb_model in ('q2-q12-tchen', 'q2-q12'):
             formula = """q2 = 5.e-05;
 q12 = 0.0001;"""
 

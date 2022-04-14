@@ -124,7 +124,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         turb_model =  TurbulenceModel(self.case).getTurbulenceModel(self.__currentField)
         self.__modelTurbulence.enableItem(0)
         self.__modelTurbulence.enableItem(1)
-        if turb_model != "none" and turb_model != 'mixing_length' and turb_model != 'tchen' and turb_model != 'r2-r12-tchen':
+        if turb_model != "none" and turb_model != 'mixing_length' and turb_model != 'q2-q12-tchen' and turb_model != 'r2-r12-tchen':
             turb_choice = boundary.getTurbulenceChoice(self.__currentField)
             self.__modelTurbulence.setItem(str_model=turb_choice)
             if turb_model == 'q2-q12' or turb_model == 'r2-q12':
@@ -299,7 +299,7 @@ R23 = 0;
 """
             name = 'turbulence_rije_%s' % (self.__currentField)
 
-        elif turb_model in ('tchen', 'q2-q12'):
+        elif turb_model in ('q2-q12-tchen', 'q2-q12'):
             name = 'turbulence_tchen_%s' % (self.__currentField)
             if exp in _empty_exps:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)

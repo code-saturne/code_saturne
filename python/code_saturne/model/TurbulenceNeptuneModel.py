@@ -40,9 +40,9 @@ class TurbulenceModelsDescription:
                                   'rij-epsilon_ssg', 'rij-epsilon_ebrsm',
                                   'les_smagorinsky', 'les_wale']
 
-    dispersedTurbulenceModels = ['none', 'tchen', 'q2-q12', 'r2-q12', 'r2-r12-tchen']
+    dispersedTurbulenceModels = ['none', 'q2-q12-tchen', 'q2-q12', 'r2-q12', 'r2-r12-tchen']
 
-    bubblyFlowsTurbulenceModels = ["none", "tchen", "r2-r12-tchen"]
+    bubblyFlowsTurbulenceModels = ["none", "q2-q12-tchen", "r2-r12-tchen"]
     dropletFlowsTurbulenceModels = ["none", "q2-q12", "r2-q12"]
 
     continuousCouplingModels = ['none', 'separate_phase', 'separate_phase_cond']
@@ -59,7 +59,7 @@ class TurbulenceModelsDescription:
     turbulenceVariables['rij-epsilon_ebrsm'] = ['reynolds_stress', 'epsilon', 'alpha']
     turbulenceVariables['les_smagorinsky'] = []
     turbulenceVariables['les_wale'] = []
-    turbulenceVariables['tchen'] = []
+    turbulenceVariables['q2-q12-tchen'] = []
     turbulenceVariables['q2-q12'] = ['TurbKineEner_q2', 'Covariance_q12']
     turbulenceVariables['r2-q12'] = ['reynolds_stress','Covariance_q12']
     turbulenceVariables['r2-r12-tchen'] = ['reynolds_stress',
@@ -84,7 +84,7 @@ class TurbulenceModelsDescription:
     turbulenceProperties['rij-epsilon_ebrsm'] = ["turb_viscosity"]
     turbulenceProperties['les_smagorinsky'] = ["turb_viscosity"]
     turbulenceProperties['les_wale'] = ["turb_viscosity"]
-    turbulenceProperties['tchen'] = ["TurbKineEner_q2", "Covariance_q12", "turb_viscosity"]
+    turbulenceProperties['q2-q12-tchen'] = ["TurbKineEner_q2", "Covariance_q12", "turb_viscosity"]
     turbulenceProperties['q2-q12'] = ["turb_viscosity"]
     turbulenceProperties['r2-q12'] = ["turb_viscosity"]
     turbulenceProperties['r2-r12-tchen'] = ["turb_viscosity"]
@@ -428,7 +428,7 @@ class TurbulenceTestCase(ModelTest):
         MainFieldsModel(self.case).addDefinedField("2", "field2", 'dispersed', 'gas', 'on', 'on', 'off', 2)
         mdl = TurbulenceModel(self.case)
 
-        mdl.setTurbulenceModel('2','tchen')
+        mdl.setTurbulenceModel('2','q2-q12-tchen')
         mdl.setTwoWayCouplingModel('2','small_inclusions')
         doc = '''<turbulence>
                          <variables/>
@@ -446,7 +446,7 @@ class TurbulenceTestCase(ModelTest):
                                          <postprocessing_recording status="on"/>
                                  </property>
                          </properties>
-                         <field field_id="2" model="tchen" two_way_coupling="small_inclusions"/>
+                         <field field_id="2" model="q2-q12-tchen" two_way_coupling="small_inclusions"/>
                  </turbulence>'''
         assert mdl.XMLturbulence == self.xmlNodeFromString(doc),\
             'Could not set TwoWayCouplingModel'
