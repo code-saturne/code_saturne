@@ -186,7 +186,7 @@ double precision albe, heuray, fos
 double precision qqv(kmx+1), qqqv(kmx+1), qqvinf, zqq(kmx+1)
 double precision qlray(kmx), fneray(kmx), zray(kmx)
 double precision qvray(kmx), preray(kmx)
-double precision aeroso(kmx)!TODO remove
+double precision aeroso(kmx)!TODO remove, optical width directly given.
 double precision rayst(kmx), romray(kmx)
 double precision temray(kmx)
 double precision ncray(kmx)
@@ -257,7 +257,7 @@ double precision beta2(12), beta3(12),beta4(12),copioc20(12)
 double precision nu0, dm0, dm, coeff_E_o3(12), coeff_E_h2o(12)
 double precision pioco3C, pioch2oC
 double precision tauao3(kmx+1) , tauah2o(kmx+1)
-double precision corp, rov, cp_cloud
+double precision corp, rov, cp_cloud, cp_aero
 
 ! data for pkn and kn distribution
 data kn/4.d-5,0.002,0.035,0.377,1.95,9.40,44.6,190./
@@ -334,6 +334,20 @@ do k = 1, kmx+1
   gch2o(k)=0.d0
   pic_o3(k)=0.d0
   pic_h2o(k)=0.d0
+  dddsh2o(k) = 0.d0
+  dddso3(k) = 0.d0
+  ddfs(k) = 0.d0
+  dffs(k) = 0.d0
+  drfs(k) = 0.d0
+  dffsh2o(k) =0.d0
+  dffso3(k) = 0.d0
+  ddfsh2o(k) = 0.d0
+  ddfso3(k) = 0.d0
+  dfsh2o(k) = 0.d0
+  ufsh2o(k) = 0.d0
+  dfso3(k) = 0.d0
+  ufso3(k) = 0.d0
+
   if(iaer.ge.1) then
     fneba(k) = 1.d0
   endif
@@ -381,8 +395,6 @@ gama2=0.d0
 kt=0.d0
 tln=0.d0
 ! Leighton 1980
-
-
 ! id of the top of the aerosol layer
 iaero_top=0
 ! remaining aerosol quantities above this level
@@ -412,7 +424,6 @@ enddo
 !  ---------
 
 qureel = float(squant)
-! Note: correction for very low zenith angles is taken into account
 call raysze(xlat, xlon, qureel, heuray, imer1, albe, muzero, omega, fo)
 ! if muzero is negative, it is night and solar radiation is not
 ! computed
@@ -422,10 +433,13 @@ if (muzero.gt.epzero) then
   ! Optical air mass
   ! cf. Kasten, F., Young, A.T., 1989. Revised optical air mass tables and approximation formula.
 
-  ! Note: old formula
+  ! Note: old formula (LH74)
   ! m = 35.d0/sqrt(1224.d0*muzero*muzero + 1.d0)
-  m = 1.d0/(muzero+0.50572d0*(96.07995d0-180.d0/PI*acos(muzero))**(-1.6364d0))
+  ! Corrected value for very low angle
+  m = 1.d0/(muzero+0.50572d0*(96.07995d0-180.d0/pi*acos(muzero))**(-1.6364d0))
 
+  ! m coefficient for O3 (5/3 or 1.9 for LH74)
+  ! TODO test 5/3 but not coherent with LH74...
   mbar = 1.9d0
 
   !  3 -  albedos for O3 and Rayleigh diffusion
@@ -645,9 +659,10 @@ if (muzero.gt.epzero) then
     ! ( itop=1  in the case without aerosols and clouds)
     zqm1 = zqq(i)
 
-    if (i.eq.k1p1) zqm1 = zray(k1)
-
     zq = zqq(i+1)
+    ! For the ground, we have to get fabso3c(1,1)=0. and ddfso3c(1,1)= incomming
+    ! flux. It is the cas with zq=zqq(k1)(=zray(k1))
+    if (i.eq.k1) zq = zray(k1)
     xm1 = m*rayuoz(zqm1)
     x = m*rayuoz(zq)
 
@@ -798,13 +813,13 @@ if (muzero.gt.epzero) then
     !flux coming from the top
     fabso3(l)=fo*muzero*(0.647d0- raysoz(m*rayuoz(zray(itop))))*absn(l,n)
   enddo
-  ! If the is no cloud
+  ! If there is no cloud
   if (itop .gt. 1) then
     do i = k1, itop
       ! addition of ozone absorption for heating in the layers when adding method is used
       zqm1 = zqq(i)
       zq = zqq(i+1)
-      if(i.eq.k1p1) zqm1 = zray(k1)
+      if(i.eq.k1) zq = zqm1
       xm1 = m*rayuoz(zqm1)
       x = m*rayuoz(zq)
       zbas = zray(k1)
@@ -1013,21 +1028,19 @@ if (muzero.gt.epzero) then
     ufsh2o(i) = fo*muzero*ufsh2o(i)
     ddfsh2o(i) = fo*muzero*ddfsh2o(i)
 
-    ym1 = m*(qqvtot - qqv(i))
-    if (i.eq.k1p1) ym1 = m*qqvtot
-    y = m*(qqvtot - qqv(i+1))!FIXME LUC: this value was used,
-    ystarm1 = m*qqvtot + 5.d0/3.d0*qqv(i)
-    if(i.eq.k1p1) ystarm1 = m*qqvtot
-    ystar = m*qqvtot + 5.d0/3.d0*qqv(i+1)! FIXME LUC, which level should be taken?
+    y = m*(qqvtot - qqv(i))
+    if (i.eq.k1) y = m*qqvtot
+    ystar = m*qqvtot + 5.d0/3.d0*qqv(i)
+    if(i.eq.k1) ystar = m*qqvtot
 
-    corp = (preray(i) / preray(k1))* preray(k1) / 101300.d0!FIXME /p0?
+    corp = (preray(i) / preray(k1))* preray(k1) / 101300.d0!FIXME use /p0? Idem in rayir.f90
     rov = romray(i)*(qvray(i)*corp*sqrt(tkelvi/(temray(i) + tkelvi)))
     dy = rov
     dystar=(5.d0/3.d0)*rov
     ! calculation of absorption coefficient ckup and ckdown useful for 3D calculations
-    ckdown_sir_r(i) = dzyama(ym1,dy)/(0.353d0-raysve(ym1)) !FIXME should be ym1 ?
-    ckup_sir_f(i) = dzyama(ystarm1,dystar)/(0.353d0-raysve(ystarm1))
-    ckdown_sir_f(i) = dzyama(ym1,dy)/(0.353d0-raysve(ym1))
+    ckdown_sir_r(i) = dzyama(y,dy)/(0.353d0-raysve(y))
+    ckup_sir_f(i) = dzyama(ystar,dystar)/(0.353d0-raysve(ystar))
+    ckdown_sir_f(i) = dzyama(y,dy)/(0.353d0-raysve(y))
   enddo
 
   ! 6. Calculation of solar fluxes For the whole spectrum
@@ -1066,58 +1079,51 @@ if (muzero.gt.epzero) then
   ! for 3D simulation
   ! For water vapor without clouds and aerosols downward is only direct,
   ! upward is only diffuse
-  cp_cloud=0.001d0 !FIXME LEA was ist das? is it a conversio factor?
+
   ! SIR band
   ! The other coefficients are calculated before
   do k = k1, kmray
 
-    ! liquid water density in g/m3 in the layers
-    wh2ol = 1.d3*(romray(k)*qlray(k))
-    ck_cloud=cp_cloud*m*1.5d0 * wh2ol / 3.d0 !FIXME LUC was is das? 3.d0 is the radius TODO replace by re
+    ! cp_cloud is a coefficient which takes dropplet into account: they diffuse
+    ! but do not absorb a lot
+    ! It takes simple diffusion albedo of the cloud
+    cp_cloud =(1.d0-pic_h2o(k))/pic_h2o(k)
+    deltaz = zqq(k+1) - zqq(k)
+    if(k.eq.k1p1) deltaz=zqq(k+1) - zray(k1)
 
-    ck_aero_h2o=m*tauah2o(k)/500.d0 ! FIXME LUC 500 is zaero? TODO replace by zaero
+    ! Note: no need to compute it above the cloud layer because ck_cloud is 0
+    ! there.
+    ck_cloud=cp_cloud*m*tauc(k)/deltaz
+
+    ! Idem for aerosols
+    cp_aero=(1.d0-piaero_h2o)/piaero_h2o
+    ck_aero_h2o=cp_aero*m*tauah2o(k)/deltaz
 
     !SIR band
     ckup_sir_f(k) = (ckup_sir_f(k) +  ck_aero_h2o)*(1.d0-fneray(k))+&
-          (ckup_sir_f(k) +  ck_aero_h2o + ck_cloud)*(fneray(k))
+      (ckup_sir_f(k) +  ck_aero_h2o + ck_cloud)*(fneray(k))
     ckdown_sir_r(k) = (ckdown_sir_r(k) +  ck_aero_h2o)*(1.d0-fneray(k))+&
-        (ckdown_sir_r(k) +  ck_aero_h2o+ ck_cloud)*(fneray(k))
+      (ckdown_sir_r(k) +  ck_aero_h2o+ ck_cloud)*(fneray(k))
     ckdown_sir_f(k) = (ckdown_sir_f(k) +  ck_aero_h2o)*(1.d0-fneray(k))+&
-        (ckdown_sir_f(k) +  ck_aero_h2o+ ck_cloud)*(fneray(k))
+      (ckdown_sir_f(k) +  ck_aero_h2o+ ck_cloud)*(fneray(k))
   enddo
 
-  ! Above cloud layer
-  do k = itop, kmray
+  !SUV band
+  do k = k1p1,kmray
+    cp_cloud =(1.d0-pic_o3(k))/pic_o3(k)
+    deltaz = zqq(k+1) - zqq(k)
+    if(i.eq.k1p1) deltaz=zqq(k+1) - zray(k1)
+    ck_cloud=cp_cloud*m*tauc(k)/deltaz
+    cp_aero=(1.d0-piaero_o3)/piaero_o3
+    ck_aero_o3=cp_aero*m*tauao3(k)/deltaz
 
-    wh2ol = 1.d3*(romray(k)*qlray(k))
-    ck_cloud=cp_cloud*m*1.5d0 * wh2ol / 3.d0
-
-    ck_aero_o3=m*tauao3(k)/500.d0 ! FIXME LEA 500 est l'epaisseur de la couche limite?
-
-    !SUV band
-    ckup_suv_f(k)= (ckup_suv_f(k)+ ck_aero_o3)*(1.d0- fnebmax(k1p1))+&
-         (ckup_suv_f(k)+ ck_aero_o3 -ck_cloud)*( fnebmax(k1p1))
-    ckdown_suv_f(k)=(ckdown_suv_f(k)+ ck_aero_o3)*(1.d0- fnebmax(k1p1))+&
-         (ckdown_suv_f(k) + ck_cloud +ck_aero_o3 )*(fnebmax(k1p1))
-
-    ckdown_suv_r(k)=(ckdown_suv_r(k)+ ck_aero_o3)*(1.d0- fnebmax(k1p1))+&
-         (ckdown_suv_r(k) + ck_cloud +ck_aero_o3)*(fnebmax(k1p1))
-  enddo
-
-  do k = k1p1,itopp1
-    wh2ol = 1.d3*(romray(k)*qlray(k))
-    ck_cloud=cp_cloud*m*1.5d0 * wh2ol / 3.d0
-
-    ck_aero_o3=m*tauao3(k)/500.d0
-
-    !SUV band
     ckup_suv_f(k)=(ckup_suv_f(k)+ ck_aero_o3)*(1.d0-fneray(k))+&
-      (ckup_suv_f(k)+ ck_aero_o3-ck_cloud)*(fneray(k))
+      (ckup_suv_f(k)+ ck_aero_o3+ck_cloud)*(fneray(k))
     ckdown_suv_f(k)=(ckdown_suv_f(k)+ ck_aero_o3)*(1.d0-fneray(k))+&
-         (ckdown_suv_f(k)+  ck_cloud +ck_aero_o3 )*(fneray(k))
+      (ckdown_suv_f(k)+  ck_cloud +ck_aero_o3 )*(fneray(k))
 
     ckdown_suv_r(k)=(ckdown_suv_r(k)+ ck_aero_o3)*(1.d0-fneray(k))+&
-         (ckdown_suv_r(k)+  ck_cloud +ck_aero_o3)*(fneray(k))
+      (ckdown_suv_r(k)+  ck_cloud +ck_aero_o3)*(fneray(k))
   enddo
 ! if muzero < 0, it is night
 else
