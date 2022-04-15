@@ -2439,7 +2439,8 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
  * \param[in]      array     pointer to an array
  * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
  *                           (true or false)
- * \param[in]      index     optional pointer to the array index
+ * \param[in]      index     optional pointer to an array of index values
+ * \param[in]      ids       optional pointer to a list of entity ids
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -2451,7 +2452,8 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
                                       cs_flag_t             loc,
                                       cs_real_t            *array,
                                       bool                  is_owner,
-                                      cs_lnum_t            *index)
+                                      const cs_lnum_t      *index,
+                                      const cs_lnum_t      *ids)
 {
   if (nsp == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -2479,7 +2481,8 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
                                       .loc = loc,
                                       .values = array,
                                       .is_owner = is_owner,
-                                      .index = index };
+                                      .index = index,
+                                      .ids = ids };
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           3,
@@ -2646,6 +2649,7 @@ cs_navsto_add_source_term_by_val(cs_navsto_param_t    *nsp,
  * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
  *                           (true or false)
  * \param[in]      index     optional pointer to the array index
+ * \param[in]      ids       optional pointer to a list of entity ids
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -2657,7 +2661,8 @@ cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
                                    cs_flag_t             loc,
                                    cs_real_t            *array,
                                    bool                  is_owner,
-                                   cs_lnum_t            *index)
+                                   const cs_lnum_t      *index,
+                                   const cs_lnum_t      *ids)
 {
   if (nsp == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -2665,7 +2670,8 @@ cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
 
   return cs_equation_add_source_term_by_array(eqp, z_name, loc,
-                                              array, is_owner, index);
+                                              array, is_owner,
+                                              index, ids);
 }
 
 /*----------------------------------------------------------------------------*/

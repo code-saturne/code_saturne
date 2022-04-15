@@ -645,12 +645,13 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
 
   cs_equation_t  *corr_eq = nsc->correction;
   cs_equation_param_t  *corr_eqp = cs_equation_get_param(corr_eq);
+
   cs_equation_add_source_term_by_array(corr_eqp,
                                        NULL,
                                        cs_flag_primal_cell,
                                        nsc->div_st,
-                                       false,     /* xdef is not owner */
-                                       NULL);     /* no index */
+                                       false,       /* xdef is not owner */
+                                       NULL, NULL); /* no index/ids */
 
   /* Defined BC for the pressure increment in the correction step */
 
@@ -668,7 +669,7 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
                                 cs_flag_primal_face,
                                 nsc->bdy_pressure_incr,
                                 false, /* xdef is not owner */
-                                NULL); /* no index */
+                                NULL, NULL); /* no index, no ids */
 
   } /* Loop on pressure definitions */
 }

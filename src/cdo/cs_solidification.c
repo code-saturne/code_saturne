@@ -4480,7 +4480,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                              cs_flag_primal_cell,
                              solid->forcing_mom_array,
                              false, /* definition is owner ? */
-                             NULL); /* no index */
+                             NULL, NULL); /* no index, no ids */
 
     /* Add the temperature array for the Boussinesq term (thermal effect) */
 
@@ -4505,19 +4505,20 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                              cs_flag_primal_cell,
                              solid->thermal_reaction_coef_array,
                              false, /* definition is owner ? */
-                             NULL); /* no index */
+                             NULL, NULL); /* no index, no ids */
 
     BFT_MALLOC(solid->thermal_source_term_array, n_cells, cs_real_t);
     memset(solid->thermal_source_term_array, 0, size_c);
 
-    cs_equation_param_t
-      *thm_eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
+    cs_equation_param_t  *thm_eqp =
+      cs_equation_param_by_name(CS_THERMAL_EQNAME);
+
     cs_equation_add_source_term_by_array(thm_eqp,
                                          NULL,   /* all cells selected */
                                          cs_flag_primal_cell,
                                          solid->thermal_source_term_array,
                                          false,  /* definition is owner ? */
-                                         NULL);  /* no index */
+                                         NULL, NULL); /* no index, no ids */
 
   }
 
@@ -4582,7 +4583,8 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                                cs_flag_primal_cell,
                                alloy->eta_coef_array,
                                false,
-                               NULL);
+                               NULL, NULL); /* no index, no ids */
+
     }
 
     /* Estimate the reference value for the solutal diffusion property
@@ -4603,7 +4605,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                              cs_flag_primal_cell,
                              alloy->diff_pty_array,
                              false,
-                             NULL);
+                             NULL, NULL); /* no index/ids */
 
     if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
 

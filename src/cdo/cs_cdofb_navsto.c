@@ -353,7 +353,7 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
       case CS_XDEF_BY_ARRAY:
         {
-          cs_xdef_array_context_t  *c = (cs_xdef_array_context_t *)def->context;
+          cs_xdef_array_context_t  *c = def->context;
           assert(c->stride == 1);
           assert(cs_flag_test(c->loc, cs_flag_primal_face));
           nsb->pressure_bc_val[i] = c->values[bf_id];

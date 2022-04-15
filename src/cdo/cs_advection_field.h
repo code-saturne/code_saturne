@@ -574,7 +574,8 @@ cs_advection_field_def_by_dof_func(cs_adv_field_t    *adv,
  * \param[in]       array     pointer to an array
  * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
  *                            (true or false)
- * \param[in]       index     optional pointer to the array index
+ * \param[in]       index     optional pointer to an array of index values
+ * \param[in]       ids       optional pointer to a list of entity ids
  */
 /*----------------------------------------------------------------------------*/
 
@@ -583,7 +584,8 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                 cs_flag_t          loc,
                                 cs_real_t         *array,
                                 bool               is_owner,
-                                cs_lnum_t         *index);
+                                const cs_lnum_t   *index,
+                                const cs_lnum_t   *ids);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -643,7 +645,8 @@ cs_advection_field_def_boundary_flux_by_analytic(cs_adv_field_t        *adv,
  * \param[in]       array     pointer to an array
  * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
  *                            (true or false)
- * \param[in]       index     optional pointer to the array index
+ * \param[in]       index     optional pointer to an array of index values
+ * \param[in]       ids       optional pointer to a list of entity ids
  */
 /*----------------------------------------------------------------------------*/
 
@@ -653,7 +656,8 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
                                               cs_flag_t          loc,
                                               cs_real_t         *array,
                                               bool               is_owner,
-                                              cs_lnum_t         *index);
+                                              const cs_lnum_t   *index,
+                                              const cs_lnum_t   *ids);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -872,8 +872,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 
       case CS_XDEF_BY_ARRAY:
         {
-          cs_xdef_array_context_t  *ac =
-            (cs_xdef_array_context_t *)def->context;
+          cs_xdef_array_context_t  *ac = def->context;
 
           assert(ac->stride == eqp->dim);
           assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
@@ -1145,8 +1144,7 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
 
   case CS_XDEF_BY_ARRAY:
     {
-      cs_xdef_array_context_t  *ac
-        = (cs_xdef_array_context_t *)def->context;
+      cs_xdef_array_context_t  *ac = def->context;
 
       assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(ac->stride == 3);
@@ -1251,8 +1249,7 @@ cs_equation_compute_neumann_fb(cs_real_t                    t_eval,
 
   case CS_XDEF_BY_ARRAY:
     {
-      cs_xdef_array_context_t  *ac
-        = (cs_xdef_array_context_t *)def->context;
+      cs_xdef_array_context_t  *ac = def->context;
 
       assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(ac->stride == 3);
@@ -1341,7 +1338,7 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
   case CS_XDEF_BY_ARRAY:
     {
-      cs_xdef_array_context_t  *c = (cs_xdef_array_context_t *)def->context;
+      cs_xdef_array_context_t  *c = def->context;
 
       assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
       assert(c->stride == 3);

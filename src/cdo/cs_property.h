@@ -713,18 +713,20 @@ cs_property_def_by_func(cs_property_t         *pty,
  * \param[in]       array     pointer to an array
  * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
  *                            (true or false)
- * \param[in]       index     optional pointer to the array index
+ * \param[in]       index     optional pointer to an array of index values
+ * \param[in]       ids       optional pointer to a list of entity ids
  *
  * \return a pointer to the resulting cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_by_array(cs_property_t    *pty,
-                         cs_flag_t         loc,
-                         cs_real_t        *array,
-                         bool              is_owner,
-                         cs_lnum_t        *index);
+cs_property_def_by_array(cs_property_t      *pty,
+                         cs_flag_t           loc,
+                         cs_real_t          *array,
+                         bool                is_owner,
+                         const cs_lnum_t    *index,
+                         const cs_lnum_t    *ids);
 
 /*----------------------------------------------------------------------------*/
 /*!

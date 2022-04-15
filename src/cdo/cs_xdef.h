@@ -219,22 +219,31 @@ typedef struct {
    * \var values
    * Array values
    *
-   * \var index
-   * Optional index for accessing to the values. One assumes that the lifecycle
-   * of this buffer is managed outside (pointer to a cs_adjacency_t stored
-   * either in the \ref cs_cdo_connect_t struct. or the \ref cs_mesh_t struct.
-   *
    * \var is_owner
    * If true the lifecycle of the values is managed by the cs_xdef_t structure.
    * Otherwise, the lifecycle is managed by the calling code.
+   *
+   * \var index
+   * Optional index for accessing to the values. (shared pointer => One assumes
+   * that the lifecycle of this buffer is managed outside (pointer to a
+   * cs_adjacency_t stored either in the \ref cs_cdo_connect_t struct. or the
+   * \ref cs_mesh_t struct.
+   *
+   * \var ids
+   * Optional list of entity ids (shared pointer)
+   * This can be either the list of ids associated to the given index (case of
+   * a \ref cs_adjacency_t struct.) or simply an indirection list if index is
+   * set to NULL
    */
 
-  int           z_id;
-  int           stride;
-  cs_flag_t     loc;
-  cs_real_t    *values;
-  cs_lnum_t    *index;
-  bool          is_owner;
+  int                 z_id;
+  int                 stride;
+  cs_flag_t           loc;
+  cs_real_t          *values;
+  bool                is_owner;
+
+  const cs_lnum_t    *index;
+  const cs_lnum_t    *ids;
 
 } cs_xdef_array_context_t;
 
@@ -589,17 +598,19 @@ cs_xdef_set_array(cs_xdef_t     *d,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  In case of definition by array, set the index to get access to the
- *         array values.
+ * \brief  In case of definition by array, set the optional index and ids
+ *         arrays that may be useful when operating on definitions by array
  *
- * \param[in, out]  d             pointer to a cs_xdef_t structure
- * \param[in]       array_index   index on array values
+ * \param[in, out]  d         pointer to a cs_xdef_t structure
+ * \param[in]       index     optional pointer to an array of index values
+ * \param[in]       ids       optional pointer to a list of entity ids
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_set_array_index(cs_xdef_t     *d,
-                        cs_lnum_t     *array_index);
+cs_xdef_set_array_pointers(cs_xdef_t            *d,
+                           const cs_lnum_t      *index,
+                           const cs_lnum_t      *ids);
 
 /*----------------------------------------------------------------------------*/
 /*!

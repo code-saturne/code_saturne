@@ -1021,8 +1021,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
                                       loc_flag,
                                       ns->mass_flux_array,
                                       false, /* advection field is not owner */
-                                      NULL); /* index (not useful here) */
-
+                                      NULL, NULL); /* no index/ids */
     }
     break;
 

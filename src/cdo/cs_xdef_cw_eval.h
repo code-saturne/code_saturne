@@ -414,13 +414,12 @@ cs_xdef_cw_eval_scalar_face_avg_by_array(const cs_cell_mesh_t       *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_context_t *array_input
-    = (const cs_xdef_array_context_t *)input;
+  const cs_xdef_array_context_t *actx = (const cs_xdef_array_context_t *)input;
 
   assert(input != NULL);
-  assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
+  assert(cs_flag_test(actx->loc, cs_flag_primal_face));
 
-  eval[0] = array_input->values[cm->f_ids[f]];
+  eval[0] = actx->values[cm->f_ids[f]];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -523,13 +522,12 @@ cs_xdef_cw_eval_vector_face_avg_by_array(const cs_cell_mesh_t     *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_context_t *array_input
-    = (const cs_xdef_array_context_t *)input;
+  const cs_xdef_array_context_t *actx = (const cs_xdef_array_context_t *)input;
 
   assert(input != NULL);
-  assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
+  assert(cs_flag_test(actx->loc, cs_flag_primal_face));
 
-  memcpy(eval, array_input->values + 3*cm->f_ids[f], 3*sizeof(cs_real_t));
+  memcpy(eval, actx->values + 3*cm->f_ids[f], 3*sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -603,13 +601,12 @@ cs_xdef_cw_eval_tensor_face_avg_by_array(const cs_cell_mesh_t     *cm,
               " %s: Array storing the evaluation should be allocated before"
               " the call to this function.", __func__);
 
-  const cs_xdef_array_context_t *array_input
-    = (const cs_xdef_array_context_t *)input;
+  const cs_xdef_array_context_t *actx = (const cs_xdef_array_context_t *)input;
 
   assert(input != NULL);
-  assert(cs_flag_test(array_input->loc, cs_flag_primal_face));
+  assert(cs_flag_test(actx->loc, cs_flag_primal_face));
 
-  memcpy(eval, array_input->values + 9*cm->f_ids[f], 9*sizeof(cs_real_t));
+  memcpy(eval, actx->values + 9*cm->f_ids[f], 9*sizeof(cs_real_t));
 }
 
 /*============================================================================

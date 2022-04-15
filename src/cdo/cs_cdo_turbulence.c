@@ -483,7 +483,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                            cs_flag_primal_cell,
                            tbs->mu_tot_array,
                            false, /* definition is owner ? */
-                           NULL); /* no index */
+                           NULL, NULL); /* no index/ids */
 
   /* Last setup for each turbulence model */
   switch (model->iturb) {
@@ -501,14 +501,14 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                                              cs_flag_primal_cell,
                                              NULL,
                                              false, /*is owner */
-                                             NULL); /* index */
+                                             NULL, NULL); /* no index/ids */
 
       kec->tke_reaction =
         cs_property_def_by_array(cs_property_by_name("k_reaction"),
                                  cs_flag_primal_cell,
                                  NULL,
                                  false, /* definition is owner ? */
-                                 NULL); /* no index */
+                                 NULL, NULL); /* no index/ids */
 
       cs_equation_param_t  *eps_eqp = cs_equation_get_param(kec->eps);
       kec->eps_source_term =
@@ -517,20 +517,20 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                                              cs_flag_primal_cell,
                                              NULL,
                                              false, /*is owner */
-                                             NULL); /* index */
+                                             NULL, NULL); /* no index/ids */
 
       kec->eps_reaction =
         cs_property_def_by_array(cs_property_by_name("eps_reaction"),
                                  cs_flag_primal_cell,
                                  NULL,
                                  false, /* definition is owner ? */
-                                 NULL); /* no index */
+                                 NULL, NULL); /* no index/ids */
 
       cs_property_def_by_array(tbs->mu_tot,
                                cs_flag_primal_cell,
                                tbs->mu_tot_array,
                                false, /* definition is owner ? */
-                               NULL); /* no index */
+                               NULL, NULL); /* no index/ids */
 
       /* Initialize TKE */
       cs_turb_ref_values_t *t_ref= cs_get_glob_turb_ref_values();

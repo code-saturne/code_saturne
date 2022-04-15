@@ -247,7 +247,8 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
                                                     array_location,
                                                     darcy->boundary_flux_val,
                                                     false,
-                                                    bf2v->idx);
+                                                    bf2v->idx,
+                                                    bf2v->ids);
 
       /* Define the advection field in the volume */
 
@@ -266,7 +267,8 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
                                         array_location,
                                         darcy->flux_val,
                                         false, /* transfer ownership */
-                                        c2e->idx);
+                                        c2e->idx,
+                                        c2e->ids);
 
         /* Reset the type of advection field */
 
@@ -308,7 +310,6 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
     break;
 
   } /* Switch on the space scheme */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -410,7 +411,6 @@ cs_gwf_darcy_flux_update(const cs_real_t              t_eval,
     cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -474,7 +474,7 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t       *connect,
 
 #if defined(DEBUG) && !defined(NDEBUG)
       cs_xdef_t  *_def = adv->bdy_flux_defs[0];
-      cs_xdef_array_context_t  *actx = (cs_xdef_array_context_t *)_def->context;
+      cs_xdef_array_context_t  *actx = _def->context;
 
       assert(adv->n_bdy_flux_defs == 1 && _def->type == CS_XDEF_BY_ARRAY);
       assert(cs_flag_test(actx->loc, cs_flag_dual_closure_byf) == true);

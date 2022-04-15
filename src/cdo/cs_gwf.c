@@ -1826,7 +1826,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                              cs_flag_primal_cell,  /* where data are located */
                              mc->time_wl_array,
                              false,                /* not owner of the array */
-                             NULL);                /* no index */
+                             NULL, NULL);          /* no index, no ids */
 
     BFT_MALLOC(mc->time_wg_array, n_cells, cs_real_t);
     memset(mc->time_wg_array, 0, csize);
@@ -1835,7 +1835,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                              cs_flag_primal_cell,  /* where data are located */
                              mc->time_wg_array,
                              false,                /* not owner of the array */
-                             NULL);                /* no index */
+                             NULL, NULL);          /* no index, no ids */
 
     BFT_MALLOC(mc->time_hl_array, n_cells, cs_real_t);
     memset(mc->time_hl_array, 0, csize);
@@ -1844,7 +1844,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                              cs_flag_primal_cell,  /* where data are located */
                              mc->time_hl_array,
                              false,                /* not owner of the array */
-                             NULL);                /* no index */
+                             NULL, NULL);          /* no index, no ids */
 
   } /* Only defined for a coupled system */
 
@@ -1857,7 +1857,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                            cs_flag_primal_cell,  /* where data are located */
                            mc->diff_wl_array,
                            false,                /* not owner of the array */
-                           NULL);                /* no index */
+                           NULL, NULL);          /* no index, no ids */
 
   /* Define the array storing the time property for the hydrogen eq. */
 
@@ -1868,7 +1868,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                            cs_flag_primal_cell,  /* where data are located */
                            mc->time_hg_array,
                            false,                /* not owner of the array */
-                           NULL);                /* no index */
+                           NULL, NULL);          /* no index/ids */
 
   if (gw->flag & CS_GWF_INCREMENTAL_SOLVE) {
 
@@ -1878,11 +1878,11 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
     memset(mc->srct_wl_array, 0, csize);
 
     cs_equation_add_source_term_by_array(cs_equation_get_param(mc->wl_eq),
-                                         NULL,   /* all cells */
+                                         NULL,        /* all cells */
                                          cs_flag_primal_cell,
                                          mc->srct_wl_array,
-                                         false,  /* is owner ? */
-                                         NULL);  /* no index */
+                                         false,       /* is owner ? */
+                                         NULL, NULL); /* no index/ids */
 
     /* Define the array storing the reaction property for the hydrogen eq. */
 
@@ -1893,8 +1893,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                              cs_flag_primal_cell,  /* where data are located */
                              mc->reac_hg_array,
                              false,                /* not owner of the array */
-                             NULL);                /* no index */
-
+                             NULL, NULL);          /* no index/ids */
   }
 
   /* Define the array storing the diffusion property in the hydrogen eq. */
@@ -1906,7 +1905,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                            cs_flag_primal_cell,  /* where data are located */
                            mc->diff_hg_array,
                            false,                /* not owner of the array */
-                           NULL);                /* no index */
+                           NULL, NULL);          /* no index/ids */
 
   BFT_MALLOC(mc->diff_hl_array, n_cells, cs_real_t);
   memset(mc->diff_hl_array, 0, csize);
@@ -1915,7 +1914,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                            cs_flag_primal_cell,  /* where data are located */
                            mc->diff_hl_array,
                            false,                /* not owner of the array */
-                           NULL);                /* no index */
+                           NULL, NULL);          /* no index/ids */
 }
 
 /*----------------------------------------------------------------------------*/

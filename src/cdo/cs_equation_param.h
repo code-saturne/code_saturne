@@ -1800,7 +1800,8 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
  * \param[in]       array     pointer to an array
  * \param[in]       is_owner  transfer the lifecycle to the cs_xdef_t structure
  *                            (true or false)
- * \param[in]       index     optional pointer to the array index
+ * \param[in]       index     optional pointer to an array of index values
+ * \param[in]       ids       optional pointer to a list of entity ids
  *
  * \return a pointer to the new allocated \ref cs_xdef_t structure
  */
@@ -1813,7 +1814,8 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
                             cs_flag_t                   loc,
                             cs_real_t                  *array,
                             bool                        is_owner,
-                            cs_lnum_t                  *index);
+                            const cs_lnum_t            *index,
+                            const cs_lnum_t            *ids);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2115,7 +2117,8 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
  * \param[in]      array     pointer to an array
  * \param[in]      is_owner  transfer the lifecycle to the cs_xdef_t structure
  *                           (true or false)
- * \param[in]      index     optional pointer to the array index
+ * \param[in]      index     optional pointer to an array of index values
+ * \param[in]      ids       optional pointer to a list of entity ids
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -2127,7 +2130,8 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                      cs_flag_t               loc,
                                      cs_real_t              *array,
                                      bool                    is_owner,
-                                     cs_lnum_t              *index);
+                                     const cs_lnum_t        *index,
+                                     const cs_lnum_t        *ids);
 
 /*----------------------------------------------------------------------------*/
 /*!

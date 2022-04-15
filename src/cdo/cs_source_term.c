@@ -1183,8 +1183,7 @@ cs_source_term_dcsd_by_pv_array(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
-  const cs_xdef_array_context_t  *ac =
-    (const cs_xdef_array_context_t *)source->context;
+  const cs_xdef_array_context_t  *ac = source->context;
 
   assert(cs_flag_test(ac->loc, cs_flag_primal_vtx));
   for (int v = 0; v < cm->n_vc; v++)
@@ -1222,8 +1221,7 @@ cs_source_term_dcsd_by_pc_array(const cs_xdef_t           *source,
   if (source == NULL)
     return;
 
-  const cs_xdef_array_context_t  *ac =
-    (const cs_xdef_array_context_t *)source->context;
+  const cs_xdef_array_context_t  *ac = source->context;
 
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
@@ -2340,11 +2338,10 @@ cs_source_term_pcsd_by_array(const cs_xdef_t           *source,
 
   assert(values != NULL && cm != NULL);
 
-  const cs_xdef_array_context_t  *ai =
-    (cs_xdef_array_context_t *)source->context;
+  const cs_xdef_array_context_t  *actx = source->context;
 
-  assert(cs_flag_test(ai->loc, cs_flag_primal_cell));
-  values[cm->n_fc] += ai->values[cm->c_id];
+  assert(cs_flag_test(actx->loc, cs_flag_primal_cell));
+  values[cm->n_fc] += actx->values[cm->c_id];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2568,11 +2565,10 @@ cs_source_term_pcvd_by_array(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(source->dim == 3);
 
-  const cs_xdef_array_context_t  *ai =
-    (cs_xdef_array_context_t *)source->context;
-  const double  *arr = ai->values + 3*cm->c_id;
+  const cs_xdef_array_context_t  *actx = source->context;
+  const double  *arr = actx->values + 3*cm->c_id;
 
-  assert(cs_flag_test(ai->loc, cs_flag_primal_cell));
+  assert(cs_flag_test(actx->loc, cs_flag_primal_cell));
 
   double  *val_c = values + 3*cm->n_fc;
   val_c[0] += arr[0];

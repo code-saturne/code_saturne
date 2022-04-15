@@ -208,6 +208,7 @@ cs_xdef_volume_create(cs_xdef_type_t           type,
       b->values = a->values;
       b->is_owner = a->is_owner;
       b->index = a->index;
+      b->ids = a->ids;
 
       /* Update state flag */
 
@@ -369,6 +370,7 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
       b->values = a->values;
       b->is_owner = a->is_owner;
       b->index = a->index;
+      b->ids = a->ids;
 
       d->context = b;
 
@@ -525,6 +527,10 @@ cs_xdef_free(cs_xdef_t     *d)
       cs_xdef_array_context_t  *a = (cs_xdef_array_context_t *)d->context;
       if (a->is_owner)
         BFT_FREE(a->values);
+
+      /* ids and idx if set are only shared so that one does not have to free
+         thme at this stage */
+
       BFT_FREE(d->context);
     }
     break;
@@ -788,17 +794,19 @@ cs_xdef_set_array(cs_xdef_t     *d,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  In case of definition by array, set the index to get access to the
- *         array values.
+ * \brief  In case of definition by array, set the optional index and ids
+ *         arrays that may be useful when operating on definitions by array
  *
- * \param[in, out]  d             pointer to a cs_xdef_t structure
- * \param[in]       array_index   index on array values
+ * \param[in, out]  d         pointer to a cs_xdef_t structure
+ * \param[in]       index     optional pointer to an array of index values
+ * \param[in]       ids       optional pointer to a list of entity ids
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_set_array_index(cs_xdef_t     *d,
-                        cs_lnum_t     *array_index)
+cs_xdef_set_array_pointers(cs_xdef_t            *d,
+                           const cs_lnum_t      *index,
+                           const cs_lnum_t      *ids)
 {
   if (d == NULL)
     return;
@@ -808,9 +816,10 @@ cs_xdef_set_array_index(cs_xdef_t     *d,
               "%s: The given cs_xdef_t structure should be defined by array.",
               __func__);
 
-  cs_xdef_array_context_t  *ai = (cs_xdef_array_context_t *)d->context;
+  cs_xdef_array_context_t  *actx = d->context;
 
-  ai->index = array_index;
+  actx->index = index;
+  actx->ids = ids;
 }
 
 /*----------------------------------------------------------------------------*/
