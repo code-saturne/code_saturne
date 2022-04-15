@@ -160,7 +160,10 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         Check if EOS material laws can be activated
         :param field_id:
         """
-        if self.getEnergyModel(field_id) == "off" or self.getEnergyResolution(field_id) == "off":
+        if (self.getEnergyModel(field_id) == "off"
+                or self.getEnergyResolution(field_id) == "off"
+                or self.getFieldNature(field_id) == "solid"
+                or self.getPredefinedFlow() == "particles_flow"): #TODO check if EOS exists for solid phases
             return False
 
         return self.eos.isActive()
@@ -309,23 +312,23 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
                 ref_idx = 0
                 if self.eos.getNumberOfFluidReferences(material, method) == 1:
-                   # cas des gaz par exemple
-                   ref = self.eos.getFluidReferences(material, method)
+                    # cas des gaz par exemple
+                    ref = self.eos.getFluidReferences(material, method)
                 else :
-                   if phase == "liquid" :
-                      ref = self.eos.getLiquidReferences(material, method)
-                      _s = "Liquid"
-                   elif phase == "gas" :
-                      ref = self.eos.getVaporReferences(material, method)
-                      _s = "Vapor"
+                    if phase == "liquid" :
+                       ref = self.eos.getLiquidReferences(material, method)
+                       _s = "Liquid"
+                    elif phase == "gas" :
+                       ref = self.eos.getVaporReferences(material, method)
+                       _s = "Vapor"
 
-                    # For Cathare tables with water force IAPWS as default if
-                    # available
-                   if method in ("Cathare","Cathare2") and material == "Water":
-                       for _t in ("IAPWS", "Water"):
-                           if _t+_s in ref:
-                               ref_idx = ref.index(_t+_s)
-                               break
+                     # For Cathare tables with water force IAPWS as default if
+                     # available
+                    if method in ("Cathare","Cathare2") and material == "Water":
+                        for _t in ("IAPWS", "Water"):
+                            if _t+_s in ref:
+                                ref_idx = ref.index(_t+_s)
+                                break
 
                 reference = ref[ref_idx]
             else :
