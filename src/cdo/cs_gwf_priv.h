@@ -478,6 +478,12 @@ typedef struct {
    *      the gaseous phase.  This array is linked to the \ref reac_hg_pty
    *      (size = n_cells)
    *
+   * \var srct_hg_array
+   *      Values in each vertex of the source term corresponding to a quantity
+   *      proportional to the time evolution of the unsteady term in the hg
+   *      equation. This term is allocated only if the flag \ref
+   *      CS_GWF_LIQUID_SATURATION_ON_SUBMESH is activated
+   *
    * \var time_hl_array
    *      Values in each cell of the coefficient appearing in front of the
    *      unsteady term in the hydrogen conservation equation w.r.t. the
@@ -521,6 +527,20 @@ typedef struct {
    *      used to update the unsteady/diffusion term coefficients in the
    *      conservation equation for the gas component. This quantity can also
    *      be useful for post-processing purposes.
+   *
+   * \var l_saturation_submesh
+   *      Array storing the current values of the liquid saturation on a
+   *      submesh. This submesh corresponds to the subdivision of the primal
+   *      mesh by the dual mesh associated to each vertex (scanned this array
+   *      with the c2v adjacency structure). This array is allocated only if
+   *      the option CS_GWF_LIQUID_SATURATION_ON_SUBMESH is swicth on.
+   *
+   * \var l_saturation_submesh _pre
+   *      Array storing the previous values of the liquid saturation on a
+   *      submesh. This submesh corresponds to the subdivision of the primal
+   *      mesh by the dual mesh associated to each vertex (scanned this array
+   *      with the c2v adjacency structure). This array is allocated only if
+   *      the option CS_GWF_LIQUID_SATURATION_ON_SUBMESH is swicth on.
    */
 
   cs_real_t                    *time_wl_array;
@@ -532,15 +552,22 @@ typedef struct {
   cs_real_t                    *time_hg_array;
   cs_real_t                    *diff_hg_array;
   cs_real_t                    *reac_hg_array;
+  cs_real_t                    *srct_hg_array;
 
   cs_real_t                    *time_hl_array;
   cs_real_t                    *diff_hl_array;
 
   cs_real_t                    *l_rel_permeability;
   cs_real_t                    *g_rel_permeability;
+
+  /* These arrays are not always allocated. It depends on the numerical
+     settings */
+
   cs_real_t                    *l_capacity;
   cs_real_t                    *capillarity_cell_pressure;
   cs_real_t                    *g_cell_pressure;
+  cs_real_t                    *l_saturation_submesh;
+  cs_real_t                    *l_saturation_submesh_pre;
 
   /*!
    * @}

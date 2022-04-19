@@ -1359,7 +1359,6 @@ _tpf_init_context(void)
     mc->time_wl_pty = cs_property_add("time_wl_pty", CS_PROPERTY_ISO);
     mc->diff_wl_pty = NULL;
     mc->time_wg_pty = cs_property_add("time_wg_pty", CS_PROPERTY_ISO);
-    mc->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
     mc->diff_hg_pty = NULL;
     mc->reac_hg_pty = NULL;     /* Not useful in this case */
     mc->time_hl_pty = cs_property_add("time_hl_pty", CS_PROPERTY_ISO);
@@ -1369,8 +1368,6 @@ _tpf_init_context(void)
        define the unsteady terms in these equations */
 
     cs_equation_add_time(wl_eqp, mc->time_wl_pty);
-
-    cs_equation_add_time(hg_eqp, mc->time_hg_pty);
 
     /* Cross terms */
 
@@ -1390,6 +1387,10 @@ _tpf_init_context(void)
       hg_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
 
     }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Segregated solved without an incremental solve"
+                " are not yet implemented.\n", __func__);
 
     /* Properties
      * ----------
@@ -1400,24 +1401,36 @@ _tpf_init_context(void)
      */
 
     mc->time_wl_pty = NULL;
-    mc->diff_wl_pty = NULL;     /* postponed */
-
     mc->time_wg_pty = NULL;
+    mc->time_hl_pty = NULL;  /* not useful in this case */
+    mc->diff_wl_pty = NULL;  /* postponed */
+    mc->diff_hg_pty = NULL;  /* postponed */
 
-    mc->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
-    mc->reac_hg_pty = cs_property_add("reac_hg_pty", CS_PROPERTY_ISO);
-    mc->diff_hg_pty = NULL;     /* postponed */
+    if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
 
-    cs_equation_add_time(hg_eqp, mc->time_hg_pty);
-    cs_equation_add_reaction(hg_eqp, mc->reac_hg_pty);
+      /* All these terms are treated as a souce term */
+
+      mc->reac_hg_pty = NULL;
+
+    }
+    else {
+
+      mc->reac_hg_pty = cs_property_add("reac_hg_pty", CS_PROPERTY_ISO);
+      cs_equation_add_reaction(hg_eqp, mc->reac_hg_pty);
+
+    }
 
     /* diff_hl_pty is used in the build hook function to define a source term
        related to a diffusion term */
 
-    mc->time_hl_pty = NULL;
     mc->diff_hl_pty = NULL; /* postponed */
 
   } /* Define a coupled or segregated system */
+
+  /* Property shared among all numerical options */
+
+  mc->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
+  cs_equation_add_time(hg_eqp, mc->time_hg_pty);
 
   /* Advection fields */
   /* ---------------- */
@@ -1450,6 +1463,7 @@ _tpf_init_context(void)
   mc->time_hg_array = NULL;
   mc->diff_hg_array = NULL;
   mc->reac_hg_array = NULL;
+  mc->srct_hg_array = NULL;
 
   mc->time_hl_array = NULL;
   mc->diff_hl_array = NULL;
@@ -1461,6 +1475,8 @@ _tpf_init_context(void)
   mc->l_capacity = NULL;
   mc->capillarity_cell_pressure = NULL;
   mc->g_cell_pressure = NULL;
+  mc->l_saturation_submesh = NULL;
+  mc->l_saturation_submesh_pre = NULL;
 
   /* Model parameters (default values) */
   /* ---------------- */
@@ -1527,6 +1543,7 @@ _tpf_free_context(cs_gwf_two_phase_t  **p_mc)
   BFT_FREE(mc->time_hg_array);
   BFT_FREE(mc->diff_hg_array);
   BFT_FREE(mc->reac_hg_array);
+  BFT_FREE(mc->srct_hg_array);
   BFT_FREE(mc->time_hl_array);
   BFT_FREE(mc->diff_hl_array);
 
@@ -1535,6 +1552,8 @@ _tpf_free_context(cs_gwf_two_phase_t  **p_mc)
   BFT_FREE(mc->l_capacity);
   BFT_FREE(mc->capillarity_cell_pressure);
   BFT_FREE(mc->g_cell_pressure);
+  BFT_FREE(mc->l_saturation_submesh);
+  BFT_FREE(mc->l_saturation_submesh_pre);
 
   if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
@@ -1631,6 +1650,8 @@ _tpf_log_context(cs_gwf_two_phase_t   *mc)
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Coupled solver\n");
   else
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Segregated solver\n");
+  if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH)
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Liquid saturation on submesh\n");
 
   if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
 
@@ -1846,6 +1867,17 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                              false,                /* not owner of the array */
                              NULL, NULL);          /* no index, no ids */
 
+    /* Define the array storing the time property for the hydrogen eq. */
+
+    BFT_MALLOC(mc->time_hg_array, n_cells, cs_real_t);
+    memset(mc->time_hg_array, 0, csize);
+
+    cs_property_def_by_array(mc->time_hg_pty,
+                             cs_flag_primal_cell,  /* where data are located */
+                             mc->time_hg_array,
+                             false,                /* not owner of the array */
+                             NULL, NULL);          /* no index, no ids */
+
   } /* Only defined for a coupled system */
 
   /* Define the array storing the diffusion property for the water eq. */
@@ -1859,42 +1891,86 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                            false,                /* not owner of the array */
                            NULL, NULL);          /* no index, no ids */
 
-  /* Define the array storing the time property for the hydrogen eq. */
-
-  BFT_MALLOC(mc->time_hg_array, n_cells, cs_real_t);
-  memset(mc->time_hg_array, 0, csize);
-
-  cs_property_def_by_array(mc->time_hg_pty,
-                           cs_flag_primal_cell,  /* where data are located */
-                           mc->time_hg_array,
-                           false,                /* not owner of the array */
-                           NULL, NULL);          /* no index/ids */
-
   if (gw->flag & CS_GWF_INCREMENTAL_SOLVE) {
 
-    /* Define the array storing the source term values for the water eq. */
+    if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
 
-    BFT_MALLOC(mc->srct_wl_array, n_cells, cs_real_t);
-    memset(mc->srct_wl_array, 0, csize);
+      const cs_adjacency_t  *c2v = connect->c2v;
+      const cs_lnum_t  c2v_size = c2v->idx[n_cells];
+      const size_t  c2v_alloc_size = c2v_size*sizeof(cs_real_t);
 
-    cs_equation_add_source_term_by_array(cs_equation_get_param(mc->wl_eq),
-                                         NULL,        /* all cells */
-                                         cs_flag_primal_cell,
-                                         mc->srct_wl_array,
-                                         false,       /* is owner ? */
-                                         NULL, NULL); /* no index/ids */
+      BFT_MALLOC(mc->l_saturation_submesh, c2v_size, cs_real_t);
+      memset(mc->l_saturation_submesh, 0, c2v_alloc_size);
 
-    /* Define the array storing the reaction property for the hydrogen eq. */
+      BFT_MALLOC(mc->l_saturation_submesh_pre, c2v_size, cs_real_t);
+      memset(mc->l_saturation_submesh_pre, 0, c2v_alloc_size);
 
-    BFT_MALLOC(mc->reac_hg_array, n_cells, cs_real_t);
-    memset(mc->reac_hg_array, 0, csize);
+      /* Define the array storing the source term values for the water eq. */
 
-    cs_property_def_by_array(mc->reac_hg_pty,
-                             cs_flag_primal_cell,  /* where data are located */
-                             mc->reac_hg_array,
-                             false,                /* not owner of the array */
-                             NULL, NULL);          /* no index/ids */
-  }
+      BFT_MALLOC(mc->srct_wl_array, c2v_size, cs_real_t);
+      memset(mc->srct_wl_array, 0, c2v_alloc_size);
+
+      cs_equation_add_source_term_by_array(cs_equation_get_param(mc->wl_eq),
+                                           NULL,        /* all cells */
+                                           cs_flag_dual_cell_byc,
+                                           mc->srct_wl_array,
+                                           false,       /* is owner ? */
+                                           c2v->idx, c2v->ids);
+
+      BFT_MALLOC(mc->srct_hg_array, c2v_size, cs_real_t);
+      memset(mc->srct_hg_array, 0, c2v_alloc_size);
+
+      cs_equation_add_source_term_by_array(cs_equation_get_param(mc->hg_eq),
+                                           NULL,   /* all cells */
+                                           cs_flag_dual_cell_byc,
+                                           mc->srct_hg_array,
+                                           false,  /* is owner ? */
+                                           c2v->idx, c2v->ids);
+
+      /* Set the time_hg_pty property by a constant in each soil */
+
+      cs_gwf_soil_tpf_set_property(mc);
+
+    }
+    else { /* Liquid saturation only at cells */
+
+      /* Define the array storing the source term values for the water eq. */
+
+      BFT_MALLOC(mc->srct_wl_array, n_cells, cs_real_t);
+      memset(mc->srct_wl_array, 0, csize);
+
+      cs_equation_add_source_term_by_array(cs_equation_get_param(mc->wl_eq),
+                                           NULL,   /* all cells */
+                                           cs_flag_primal_cell,
+                                           mc->srct_wl_array,
+                                           false,  /* is owner ? */
+                                           NULL, NULL);  /* no index/ids */
+
+      /* Define the array storing the time property for the hydrogen eq. */
+
+      BFT_MALLOC(mc->time_hg_array, n_cells, cs_real_t);
+      memset(mc->time_hg_array, 0, csize);
+
+      cs_property_def_by_array(mc->time_hg_pty,
+                               cs_flag_primal_cell, /* where data are located */
+                               mc->time_hg_array,
+                               false,               /* not owner of the array */
+                               NULL, NULL);         /* no index, no ids */
+
+      /* Define the array storing the reaction property for the hydrogen eq. */
+
+      BFT_MALLOC(mc->reac_hg_array, n_cells, cs_real_t);
+      memset(mc->reac_hg_array, 0, csize);
+
+      cs_property_def_by_array(mc->reac_hg_pty,
+                               cs_flag_primal_cell, /* where data are located */
+                               mc->reac_hg_array,
+                               false,               /* not owner of the array */
+                               NULL, NULL);         /* no index/ids */
+
+    }
+
+  } /* Incremental solve */
 
   /* Define the array storing the diffusion property in the hydrogen eq. */
 
@@ -1963,6 +2039,11 @@ _tpf_updates(const cs_mesh_t             *mesh,
     cs_field_current_to_previous(mc->c_pressure);
     cs_field_current_to_previous(mc->l_saturation);
 
+    if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH)
+      memcpy(mc->l_saturation_submesh_pre,                           /* dest */
+             mc->l_saturation_submesh,                               /* src */
+             connect->c2v->idx[connect->n_cells]*sizeof(cs_real_t)); /* size */
+
   }
 
   cs_real_t  *c_pr = mc->c_pressure->val;
@@ -1997,9 +2078,32 @@ _tpf_updates(const cs_mesh_t             *mesh,
    * - l_rel_permeability, g_rel_permeability
    * - liquid_saturation
    * - capacity: \frac{\partial S_l}{\partial P_c}
+   *
+   * Either a call to a user-defined function or a predefined function if the
+   * soil corresponds to a known model
    */
 
   cs_gwf_soil_update(time_eval, mesh, connect, quant);
+
+  /* Define the liquid saturation in each cell in some specific situations */
+
+  if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
+
+    const cs_adjacency_t  *c2v = connect->c2v;
+    cs_real_t  *l_sat = mc->l_saturation->val;
+
+    /* Compute the average liquid saturation in each cell */
+
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      cs_real_t  _sat = 0;
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+        _sat += mc->l_saturation_submesh[j] * quant->dcell_vol[j];
+      l_sat[c_id] = _sat/quant->cell_vol[c_id];
+
+    } /* Loop on cells */
+
+  }
 
   /* TODO: Update the Darcy advection field for the liquid and the gas phase */
 
@@ -2013,10 +2117,21 @@ _tpf_updates(const cs_mesh_t             *mesh,
     if (gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE)
       cs_gwf_soil_iso_update_mtpf_terms(mc);
     else {
-      if (gw->flag & CS_GWF_INCREMENTAL_SOLVE)
-        cs_gwf_soil_iso_update_itpf_terms_incr(ts, mc);
+
+      if (gw->flag & CS_GWF_INCREMENTAL_SOLVE) {
+
+        if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
+
+          cs_gwf_soil_iso_update_itpf_terms_incr_submesh(ts, connect->c2v, mc);
+
+        }
+        else
+          cs_gwf_soil_iso_update_itpf_terms_incr(ts, mc);
+
+      }
       else
         cs_gwf_soil_iso_update_itpf_terms(mc);
+
     }
     break;
 

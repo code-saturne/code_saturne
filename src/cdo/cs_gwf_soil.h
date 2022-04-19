@@ -471,6 +471,19 @@ cs_gwf_soil_saturated_set_property(cs_property_t   *moisture_content);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the definition of some property(ies) in specific situations for
+ *         the two-phase flow models
+ *         This relies on the definition of each soil.
+ *
+ * \param[in, out]  mc  pointer to the model context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_tpf_set_property(cs_gwf_two_phase_t     *mc);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update the soil properties
  *
  * \param[in]  time_eval         time at which one evaluates properties
@@ -526,6 +539,24 @@ cs_gwf_soil_iso_update_itpf_terms(cs_gwf_two_phase_t     *mc);
 void
 cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
                                        cs_gwf_two_phase_t      *mc);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update arrays associated to the definition of terms involved in the
+ *         immiscible two-phase flow model.
+ *         Case of an isotropic absolute permeability with an incremental solve
+ *         and a liquid saturation defined on a submesh.
+ *
+ * \param[in]      ts          pointer to a cs_time_step_t structure
+ * \param[in]      c2v         cell --> vertices connectivity
+ * \param[in, out] mc          pointer to the model context to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t    *ts,
+                                               const cs_adjacency_t    *c2v,
+                                               cs_gwf_two_phase_t      *mc);
 
 /*----------------------------------------------------------------------------*/
 

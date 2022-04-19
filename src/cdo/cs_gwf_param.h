@@ -222,7 +222,14 @@ typedef enum {
    * instance whith a Picard or Anderson acceleration)
    */
 
-  CS_GWF_INCREMENTAL_SOLVE              = 1<< 10  /* = 1024 */
+  CS_GWF_INCREMENTAL_SOLVE              = 1<< 10, /* = 1024 */
+
+  /*!
+   * \var CS_GWF_LIQUID_SATURATION_ON_SUBMESH
+   * \brief
+   */
+
+  CS_GWF_LIQUID_SATURATION_ON_SUBMESH  = 1<< 11  /* = 2048 */
 
 } cs_gwf_model_bit_t;
 
