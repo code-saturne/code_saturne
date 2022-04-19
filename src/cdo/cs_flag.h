@@ -158,6 +158,7 @@ extern const cs_flag_t  cs_flag_boundary_face;
 extern const cs_flag_t  cs_flag_dual_vtx;
 extern const cs_flag_t  cs_flag_dual_face;
 extern const cs_flag_t  cs_flag_dual_cell;
+extern const cs_flag_t  cs_flag_dual_cell_byc;
 extern const cs_flag_t  cs_flag_dual_face_byc;
 
 /* Part of dual cell closure belonging to a boundary primal face */

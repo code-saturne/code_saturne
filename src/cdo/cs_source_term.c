@@ -347,9 +347,9 @@ _hho_add_tetra_by_ana_vd(const cs_xdef_analytic_context_t  *ac,
 /*----------------------------------------------------------------------------*/
 
 static cs_source_term_cellwise_t *
-_set_cdovb_function(const cs_xdef_t              *st_def,
-                    cs_flag_t                    *sys_flag,
-                    cs_eflag_t                   *msh_flag)
+_set_vb_function(const cs_xdef_t              *st_def,
+                 cs_flag_t                    *sys_flag,
+                 cs_eflag_t                   *msh_flag)
 {
   assert(st_def != NULL);
 
@@ -454,6 +454,8 @@ _set_cdovb_function(const cs_xdef_t              *st_def,
                     "%s: Invalid type of definition for a source term in CDOVB",
                     __func__);
       }
+      else if (cs_flag_test(cx->loc, cs_flag_dual_cell_byc)) /* Should be before cs_flag_dual_cell */
+        func = cs_source_term_dcsd_by_pc2v_array;
       else if (cs_flag_test(cx->loc, cs_flag_dual_cell))
         func = cs_source_term_dcsd_by_pv_array;
       else if (cs_flag_test(cx->loc, cs_flag_primal_cell))
@@ -697,7 +699,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
     case CS_SPACE_SCHEME_CDOVB:
       msh_flag |= CS_FLAG_COMP_PV;
-      compute_source[st_id] = _set_cdovb_function(st_def, sys_flag, &msh_flag);
+      compute_source[st_id] = _set_vb_function(st_def, sys_flag, &msh_flag);
       break;
 
     case CS_SPACE_SCHEME_CDOVCB:
@@ -1188,6 +1190,55 @@ cs_source_term_dcsd_by_pv_array(const cs_xdef_t           *source,
   assert(cs_flag_test(ac->loc, cs_flag_primal_vtx));
   for (int v = 0; v < cm->n_vc; v++)
     values[v] += ac->values[cm->v_ids[v]] * cm->wvc[v] * cm->vol_c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution of a source term in a cell and add it to
+ *         the given array of values.
+ *         Case of a scalar density defined at dual cells by an array relying
+ *         on the c2v connectivity to access the values
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcsd_by_pc2v_array(const cs_xdef_t           *source,
+                                  const cs_cell_mesh_t      *cm,
+                                  cs_real_t                  time_eval,
+                                  cs_cell_builder_t         *cb,
+                                  void                      *input,
+                                  double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(input);
+  CS_UNUSED(time_eval);
+
+  if (source == NULL)
+    return;
+
+  assert(values != NULL && cm != NULL);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
+
+  const cs_xdef_array_context_t  *ac =
+    (const cs_xdef_array_context_t *)source->context;
+
+  assert(cs_flag_test(ac->loc, cs_flag_dual_cell_byc));
+  assert(ac->index != NULL && ac->ids != NULL);
+
+  const cs_real_t  *_val = ac->values + ac->index[cm->c_id];
+  const cs_lnum_t  *_ids = ac->ids + ac->index[cm->c_id];
+
+  for (int v = 0; v < cm->n_vc; v++) {
+    assert(cm->v_ids[v] == _ids[v]);
+    values[v] += _val[v] * cm->wvc[v] * cm->vol_c;
+  }
 }
 
 /*----------------------------------------------------------------------------*/
