@@ -429,6 +429,7 @@ _shell_mat_destroy(Mat                  a,
                    Mat                 *m)
 {
   CS_UNUSED(m);
+  CS_UNUSED(op);
 
   _mat_shell_t *sh;
 

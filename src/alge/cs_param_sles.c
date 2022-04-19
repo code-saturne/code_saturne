@@ -827,16 +827,17 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
 /*!
  * \brief Set PETSc solver and preconditioner
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_setup_hook(void   *context,
-                  KSP     ksp)
+_petsc_setup_hook(void    *context,
+                  void    *ksp_struct)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t  *)context;
+  KSP  ksp = ksp_struct;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -925,16 +926,17 @@ _petsc_common_block_hook(const cs_param_sles_t    *slesp,
  *         Case of multiplicative AMG block preconditioner for a CG with GAMG
  *         as AMG type
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _petsc_amg_block_gamg_hook(void     *context,
-                           KSP       ksp)
+                           void     *ksp_struct)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
+  KSP  ksp = ksp_struct;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1012,16 +1014,17 @@ _petsc_amg_block_gamg_hook(void     *context,
  *         Case of multiplicative AMG block preconditioner for a CG with boomer
  *         as AMG type
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context     pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct  pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _petsc_amg_block_boomer_hook(void     *context,
-                             KSP       ksp)
+                             void     *ksp_struct)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
+  KSP  ksp = ksp_struct;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
@@ -1099,16 +1102,17 @@ _petsc_amg_block_boomer_hook(void     *context,
  *         preconditioner.
  *         Case of block preconditioner
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _petsc_block_hook(void     *context,
-                  KSP       ksp)
+                  void     *ksp_struct)
 {
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
+  KSP  ksp = ksp_struct;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */

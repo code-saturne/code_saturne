@@ -247,16 +247,17 @@ cs_user_navsto_sles_solve(const cs_navsto_param_sles_t    *nslesp,
  *         preconditioner.
  *         Case of multiplicative block preconditioner for a CG
  *
- * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] ksp      pointer to PETSc KSP context
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] ksp_struct pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_navsto_sles_amg_block_hook(void     *context,
-                              KSP       ksp)
+                              void     *ksp_struct)
 {
   const cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
 
+  KSP  ksp = ksp_struct;
   cs_equation_param_t  *eqp = cs_navsto_param_get_velocity_param(nsp);
   cs_param_sles_t  *slesp = eqp->sles_param;
 
