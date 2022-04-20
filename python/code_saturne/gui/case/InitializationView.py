@@ -256,7 +256,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
     def defineConnections(self):
         self.comboBoxThermal.activated[str].connect(self.slotThermalChoice)
-        self.comboBoxTurbulence.activated[str].connect(self.slotChoice)
+        self.comboBoxTurbulence.activated[str].connect(self.slotTurbulenceChoice)
         self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
         self.comboBoxMeteo.activated[str].connect(self.slotMeteoChoice)
         self.comboBoxCombustion.activated[str].connect(self.slotCombustionChoice)
@@ -299,17 +299,20 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonThermal.hide()
 
     @pyqtSlot(str)
-    def slotChoice(self, text):
+    def slotTurbulenceChoice(self, text):
         """
         INPUT choice of method of initialization
         """
         choice = self.modelTurbulence.dicoV2M[str(text)]
-        log.debug("slotChoice choice =  %s " % str(choice))
+        log.debug("slotTurbulenceChoice choice =  %s " % str(choice))
         zone_id = str(self.zone.getCodeNumber())
         self.init.setInitialTurbulenceChoice(zone_id, choice)
         turb_model = self.turb.getTurbulenceModel()
 
         self.initializeVariables()
+        if choice == 'reference_value':
+            self.init.setTurbFormula(zone_id, None)
+
 
     @pyqtSlot(str)
     def slotMeteoChoice(self, text):
@@ -856,7 +859,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.modelTurbulence.setItem(str_model=turb_init)
 
             if turb_init == 'formula':
-                self.pushButtonTurbulence.setEnabled(True)
+                self.pushButtonTurbulence.show()
                 turb_formula = self.init.getTurbFormula(zone_id, turb_model)
                 if not turb_formula:
                     turb_formula = self.init.getDefaultTurbFormula(turb_model)
@@ -866,7 +869,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                 self.init.setTurbFormula(zone_id, turb_formula)
                 self.pushButtonTurbulence.setToolTip(turb_formula)
             else:
-                self.pushButtonTurbulence.setEnabled(False)
+                self.pushButtonTurbulence.hide()
                 self.pushButtonTurbulence.setStyleSheet("background-color: None")
 
         # velocity

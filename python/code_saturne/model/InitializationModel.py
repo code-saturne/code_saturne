@@ -290,7 +290,11 @@ omega = k^0.5/almax;"""
             msg = "There is an error: this node " + str(node) + "should be existed"
             raise ValueError(msg)
         n = node.xmlInitChildNode('formula')
-        n.xmlSetTextNode(formula)
+        if formula != None:
+            n.xmlSetTextNode(formula)
+        else:
+            n.xmlRemoveNode()
+        
 
 
     def getVelocityFormulaComponents(self, zone):
