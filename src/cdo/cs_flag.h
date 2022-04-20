@@ -65,6 +65,22 @@ BEGIN_C_DECLS
 #define CS_FLAG_SOLID_CELL                (1 << 3)
 
 /*!
+ * @name Flags specifying the type of update to perform
+ * @{
+ *
+ * \def CS_FLAG_CURRENT_TO_PREVIOUS
+ * \brief (value = 1) perform a previous to current operation on fields during
+ *        the update step
+ *
+ * \def CS_FLAG_INITIALIZATION
+ * \brief (value = 2) This is the first time that the update is called so it is
+ *        also an initialization step
+ */
+
+#define CS_FLAG_CURRENT_TO_PREVIOUS       (1 << 0)
+#define CS_FLAG_INITIALIZATION            (1 << 1)
+
+/*!
  * @}
  * @name Flag related to the way a CDO system is built
  * @{

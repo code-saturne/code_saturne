@@ -80,7 +80,7 @@ BEGIN_C_DECLS
  * Local macro definitions
  *============================================================================*/
 
-#define CS_GWF_SOIL_DBG 0
+#define CS_GWF_SOIL_DBG  0
 
 /*============================================================================
  * Structure definitions
@@ -1327,18 +1327,34 @@ cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
  *         and a liquid saturation defined on a submesh.
  *
  * \param[in]      ts      pointer to a cs_time_step_t structure
- * \param[in]      c2v     cell --> vertices connectivity
+ * \param[in]      connect pointer to a cs_cdo_connect_t structure
  * \param[in, out] mc      pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t    *ts,
-                                               const cs_adjacency_t    *c2v,
+                                               const cs_cdo_connect_t  *connect,
                                                cs_gwf_two_phase_t      *mc)
 {
   if (mc == NULL)
     return;
+
+  const cs_adjacency_t  *c2v = connect->c2v;
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SOIL_DBG > 1
+  cs_iter_algo_t  *algo = mc->nl_algo;
+  cs_real_t  *wl_time = NULL, *wl_src = NULL;
+  cs_real_t  *hg_src = NULL, *hg_time = NULL;
+  cs_real_t  *slc = NULL, *hg_reac = NULL;
+
+  BFT_MALLOC(wl_time, connect->n_cells, cs_real_t);
+  BFT_MALLOC(wl_src, connect->n_cells, cs_real_t);
+  BFT_MALLOC(hg_src, connect->n_cells, cs_real_t);
+  BFT_MALLOC(hg_time, connect->n_cells, cs_real_t);
+  BFT_MALLOC(hg_reac, connect->n_cells, cs_real_t);
+  BFT_MALLOC(slc, connect->n_cells, cs_real_t);
+#endif
 
   /* One assumes that there is no diffusion of the gas component in the liquid
      phase --> This removes some terms w.r.t. the miscible model */
@@ -1349,9 +1365,13 @@ cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t    *ts,
   const double  hmh = mc->h_molar_mass * mc->henry_constant;
   const double  mh_ov_rt =
     mc->h_molar_mass / (mc->ref_temperature * cs_physical_constants_r);
+  const double  delta_h = hmh - mh_ov_rt;
+  assert(delta_h < 0);
 
   const cs_real_t  *g_pr = mc->g_pressure->val;
   const cs_real_t  *g_pr_pre = mc->g_pressure->val_pre;
+  const cs_real_t  *l_pr = mc->l_pressure->val;
+  const cs_real_t  *l_pr_pre = mc->l_pressure->val_pre;
   const cs_real_t  *g_cell_pr = mc->g_cell_pressure;
 
   /* In the immiscible case, mc->l_diffusivity_h is set to 0 */
@@ -1391,8 +1411,9 @@ cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t    *ts,
 #endif
 
     const double  k_abs = soil->abs_permeability[0][0];
+    const double  phi_rhol = soil->porosity * mc->l_mass_density;
     const double  phi_ov_dt = soil->porosity * inv_dtcur;
-    const double  phi_rhol_ov_dt = phi_ov_dt * mc->l_mass_density;
+    const double  phi_rhol_ov_dt = phi_rhol * inv_dtcur;
     const double  l_diff_coef = k_abs/mc->l_viscosity;
     const double  wl_diff_coef = mc->l_mass_density * l_diff_coef;
     const double  hg_diff_coef = k_abs/mc->g_viscosity;
@@ -1403,19 +1424,95 @@ cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t    *ts,
 
       const cs_lnum_t  c_id = zone->elt_ids[i];
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SOIL_DBG > 1
+      wl_time[c_id] = 0, hg_time[c_id] = 0, hg_reac[c_id] = 0;
+      wl_src[c_id] = 0, hg_src[c_id] = 0., slc[c_id] = 0;
+#endif
+
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-        const cs_lnum_t  v_id = c2v->ids[j];
-        const double  pg = g_pr[v_id];          /* last (k,n+1) value */
-        const double  pg_pre = g_pr_pre[v_id];  /* previous (n) value */
-        const double  sl = l_sat[j];         /* last (k,n+1) value */
-        const double  sl_pre = l_sat_pre[j]; /* previous (n) value */
+        const cs_lnum_t  v = c2v->ids[j];
+        const double  pg = g_pr[v];            /* last (k,n+1) value */
+        const double  pg_pre = g_pr_pre[v];    /* last (n) value */
+        const double  pl = l_pr[v];            /* last (k,n+1) value */
+        const double  pl_pre = l_pr_pre[v];    /* last (n) value */
+        const double  lc = mc->l_capacity[j];
 
-        mc->srct_wl_array[j] = phi_rhol_ov_dt * (sl_pre - sl);
-        mc->srct_hg_array[j] =
-          phi_ov_dt * ( mh_ov_rt - hmh) * (pg*sl - pg_pre*sl_pre);
+        const double  sl = l_sat[j];           /* last (k,n+1) value */
 
-      }
+        /* Water equation */
+
+        if (lc > 0)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Invalid dsl/dpc > 0\n", __func__);
+
+        mc->time_wl_array[j] = -lc*phi_rhol;
+        mc->srct_wl_array[j] = phi_rhol_ov_dt * lc * (pg_pre - pg);
+
+        /* Hydrogen equation */
+
+        mc->time_hg_array[j] = soil->porosity * (mh_ov_rt*(1-sl) + hmh*sl);
+        mc->srct_hg_array[j] = 0;
+        mc->reac_hg_array[j] = 0;
+
+        const double  coef = phi_ov_dt * lc * delta_h;
+
+        if (pg > 0)
+          mc->time_hg_array[j] += lc * delta_h * pg * soil->porosity;
+
+        else { /* pg < 0 */
+
+          /* lc * delta_h > 0 ==> lc * delta_h * pg < 0 */
+
+          if (pg > pg_pre)
+            mc->reac_hg_array[j] += coef * (pg - pg_pre);
+
+          else {  /* pg < pg_pre and pg < 0 */
+
+            mc->reac_hg_array[j] += -coef * pg_pre;
+            mc->srct_hg_array[j] += -coef * pg*pg;
+
+          }
+
+        } /* sign of pg */
+
+        if (pl < pl_pre)
+          mc->reac_hg_array[j] += coef * (pl_pre - pl);
+
+        else { /* pl > pl_pre */
+
+          if (pg > 0)
+            mc->srct_hg_array[j] += coef * (pl - pl_pre) * pg;
+
+          else {  /* pg < 0 */
+
+            mc->reac_hg_array[j] += -coef * pl;
+            mc->srct_hg_array[j] += -coef * pl_pre * pg;
+
+          }
+
+        }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SOIL_DBG > 1
+        wl_time[c_id] += mc->time_wl_array[j];
+        wl_src[c_id] += mc->srct_wl_array[j];
+        hg_time[c_id] += mc->time_hg_array[j];
+        hg_src[c_id] += mc->srct_hg_array[j];
+        hg_reac[c_id] += mc->srct_hg_array[j];
+        slc[c_id] += sl;
+#endif
+      } /* Loop on cell vertices */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SOIL_DBG > 1
+      const double  ratio = 1./(c2v->idx[c_id+1] - c2v->idx[c_id]);
+
+      slc[c_id] *= ratio;
+      hg_time[c_id] *= ratio;
+      hg_reac[c_id] *= ratio;
+      hg_src[c_id] *= ratio;
+      wl_src[c_id] *= ratio;
+      wl_time[c_id] *= ratio;
+#endif
 
       /* Water conservation equation. Updates arrays linked to properties which
          define computed terms */
@@ -1435,16 +1532,19 @@ cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t    *ts,
       if (c_id == c_min_id || c_id == c_mid_id || c_id == c_max_id) {
 
         cs_log_printf(CS_LOG_DEFAULT,
-                      "c_id%4d |wl block| diff_pty % 6.4e srct",
+                      "c_id%4d |wl block| diff_pty %6.4e srct",
                       c_id, mc->diff_wl_array[c_id]);
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
           cs_log_printf(CS_LOG_DEFAULT, " % 6.4e", mc->srct_wl_array[j]);
         cs_log_printf(CS_LOG_DEFAULT, "\n");
 
-        cs_log_printf(CS_LOG_DEFAULT, "         |hg block| diff_pty %6.4e srct",
+        cs_log_printf(CS_LOG_DEFAULT, "         |hg block|"
+                      "diff_pty %6.4e (time_pty; reac; srct)",
                       mc->diff_hg_array[c_id]);
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          cs_log_printf(CS_LOG_DEFAULT, " % 6.4e", mc->srct_hg_array[j]);
+          cs_log_printf(CS_LOG_DEFAULT, " (% 6.4e; % 6.4e; % 6.4e)",
+                        mc->time_hg_array[j], mc->reac_hg_array[j],
+                        mc->srct_hg_array[j]);
         cs_log_printf(CS_LOG_DEFAULT, "\n");
 #if CS_GWF_SOIL_DBG > 1
         cs_log_printf(CS_LOG_DEFAULT,
@@ -1460,6 +1560,78 @@ cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t    *ts,
     } /* Loop on cells of the zone (= soil) */
 
   } /* Loop on soils */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_SOIL_DBG > 1
+  char  label[32];
+
+  sprintf(label, "wl_time_iter%02d", algo != NULL ? algo->n_algo_iter : -1);
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_DEFAULT,
+                    label,
+                    1,
+                    false,
+                    false,
+                    CS_POST_TYPE_cs_real_t,
+                    wl_time, NULL, NULL,
+                    ts);
+  sprintf(label, "wl_src_iter%02d", algo != NULL ? algo->n_algo_iter : -1);
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_DEFAULT,
+                    label,
+                    1,
+                    false,
+                    false,
+                    CS_POST_TYPE_cs_real_t,
+                    wl_src, NULL, NULL,
+                    ts);
+  sprintf(label, "hg_src_iter%02d", algo != NULL ? algo->n_algo_iter : -1);
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_DEFAULT,
+                    label,
+                    1,
+                    false,
+                    false,
+                    CS_POST_TYPE_cs_real_t,
+                    hg_src, NULL, NULL,
+                    ts);
+  sprintf(label, "hg_time_iter%02d", algo != NULL ? algo->n_algo_iter : -1);
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_DEFAULT,
+                    label,
+                    1,
+                    false,
+                    false,
+                    CS_POST_TYPE_cs_real_t,
+                    hg_time, NULL, NULL,
+                    ts);
+  sprintf(label, "hg_reac_iter%02d", algo != NULL ? algo->n_algo_iter : -1);
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_DEFAULT,
+                    label,
+                    1,
+                    false,
+                    false,
+                    CS_POST_TYPE_cs_real_t,
+                    hg_reac, NULL, NULL,
+                    ts);
+  sprintf(label, "sl_iter%02d", algo != NULL ? algo->n_algo_iter : -1);
+  cs_post_write_var(CS_POST_MESH_VOLUME,
+                    CS_POST_WRITER_DEFAULT,
+                    label,
+                    1,
+                    false,
+                    false,
+                    CS_POST_TYPE_cs_real_t,
+                    slc, NULL, NULL,
+                    ts);
+
+  BFT_FREE(wl_time);
+  BFT_FREE(wl_src);
+  BFT_FREE(hg_src);
+  BFT_FREE(hg_time);
+  BFT_FREE(hg_reac);
+  BFT_FREE(slc);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

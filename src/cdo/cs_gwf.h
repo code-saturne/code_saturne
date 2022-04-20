@@ -329,11 +329,12 @@ cs_gwf_initialize(const cs_mesh_t             *mesh,
  * \brief  Update the groundwater system (pressure head, head in law, moisture
  *         content, darcian velocity, soil capacity or permeability if needed)
  *
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts         pointer to a cs_time_step_t structure
- * \param[in]  cur2prev   true or false
+ * \param[in]  mesh         pointer to a cs_mesh_t structure
+ * \param[in]  connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant        pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts           pointer to a cs_time_step_t structure
+ * \param[in]  update_flag  metadata associated to the status of the update
+ *                          step to perform
  */
 /*----------------------------------------------------------------------------*/
 
@@ -342,7 +343,7 @@ cs_gwf_update(const cs_mesh_t             *mesh,
               const cs_cdo_connect_t      *connect,
               const cs_cdo_quantities_t   *quant,
               const cs_time_step_t        *ts,
-              bool                         cur2prev);
+              cs_flag_t                    update_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

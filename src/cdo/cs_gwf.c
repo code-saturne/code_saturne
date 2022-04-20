@@ -450,7 +450,7 @@ _spf_compute_steady_state(const cs_mesh_t                  *mesh,
 
     /* Update the variables related to the groundwater flow system */
 
-    cs_gwf_update(mesh, connect, cdoq, time_step, true);
+    cs_gwf_update(mesh, connect, cdoq, time_step, CS_FLAG_CURRENT_TO_PREVIOUS);
 
   }
 }
@@ -497,7 +497,7 @@ _spf_compute(const cs_mesh_t                    *mesh,
 
     /* Update the variables related to the groundwater flow system */
 
-    cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
+    cs_gwf_update(mesh, connect, cdoq, time_step, CS_FLAG_CURRENT_TO_PREVIOUS);
 
   }
 }
@@ -725,11 +725,11 @@ _sspf_finalize_setup(const cs_cdo_connect_t            *connect,
  * \brief  Perform the update step in the case of a saturated single-phase
  *         flow model in porous media
  *
- * \param[in]       connect     pointer to a cs_cdo_connect_t structure
- * \param[in]       quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]       ts          pointer to a cs_time_step_t structure
- * \param[in]       cur2prev    true or false
- * \param[in, out]  mc          pointer to the casted model context
+ * \param[in]       connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]       quant        pointer to a cs_cdo_quantities_t structure
+ * \param[in]       ts           pointer to a cs_time_step_t structure
+ * \param[in]       update_flag  metadata associated to type of operation to do
+ * \param[in, out]  mc           pointer to the casted model context
  *
  *\return the value at which one has to evaluate the properties
  */
@@ -739,12 +739,18 @@ static cs_real_t
 _sspf_updates(const cs_cdo_connect_t            *connect,
               const cs_cdo_quantities_t         *quant,
               const cs_time_step_t              *ts,
-              bool                               cur2prev,
+              cs_flag_t                          update_flag,
               cs_gwf_saturated_single_phase_t   *mc)
 {
   cs_real_t  time_eval = ts->t_cur;
-  if (cur2prev)
+  bool  cur2prev = false;
+
+  if (update_flag & CS_FLAG_CURRENT_TO_PREVIOUS) {
+
     time_eval = _get_time_eval(ts, mc->richards);
+    cur2prev = true;
+
+  }
 
   /* Update head */
 
@@ -1100,12 +1106,12 @@ _uspf_finalize_setup(const cs_cdo_connect_t              *connect,
  * \brief  Perform the update step in the case of a unsaturated single-phase
  *         flow model in porous media
  *
- * \param[in]       mesh        pointer to a cs_mesh_t structure
- * \param[in]       connect     pointer to a cs_cdo_connect_t structure
- * \param[in]       quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]       ts          pointer to a cs_time_step_t structure
- * \param[in]       cur2prev    true or false
- * \param[in, out]  mc          pointer to the casted model context
+ * \param[in]      mesh         pointer to a cs_mesh_t structure
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      ts           pointer to a cs_time_step_t structure
+ * \param[in]      update_flag  metadata associated to type of operation to do
+ * \param[in, out] mc           pointer to the casted model context
  *
  *\return the value at which one has to evaluate the properties
  */
@@ -1116,12 +1122,18 @@ _uspf_updates(const cs_mesh_t                    *mesh,
               const cs_cdo_connect_t             *connect,
               const cs_cdo_quantities_t          *quant,
               const cs_time_step_t               *ts,
-              bool                                cur2prev,
+              cs_flag_t                           update_flag,
               cs_gwf_unsaturated_single_phase_t  *mc)
 {
   cs_real_t  time_eval = ts->t_cur;
-  if (cur2prev)
+  bool cur2prev = false;
+
+  if (update_flag & CS_FLAG_CURRENT_TO_PREVIOUS) {
+
     time_eval = _get_time_eval(ts, mc->richards);
+    cur2prev = true;
+
+  }
 
   /* Update head */
 
@@ -1361,6 +1373,7 @@ _tpf_init_context(void)
     mc->diff_wl_pty = NULL;
     mc->time_wg_pty = cs_property_add("time_wg_pty", CS_PROPERTY_ISO);
     mc->diff_hg_pty = NULL;
+    mc->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
     mc->reac_hg_pty = NULL;     /* Not useful in this case */
     mc->time_hl_pty = cs_property_add("time_hl_pty", CS_PROPERTY_ISO);
     mc->diff_hl_pty = NULL;
@@ -1401,36 +1414,48 @@ _tpf_init_context(void)
      * (iso, ortho, or anisotropic)
      */
 
-    mc->time_wl_pty = NULL;
-    mc->time_wg_pty = NULL;
-    mc->time_hl_pty = NULL;  /* not useful in this case */
+    /* Water equation  */
+
     mc->diff_wl_pty = NULL;  /* postponed */
+    mc->time_wg_pty = NULL;
+
+    /* Hydrogen equation */
+
+    mc->time_hl_pty = NULL;  /* not useful in this case */
     mc->diff_hg_pty = NULL;  /* postponed */
-
-    if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
-
-      /* All these terms are treated as a souce term */
-
-      mc->reac_hg_pty = NULL;
-
-    }
-    else {
-
-      mc->reac_hg_pty = cs_property_add("reac_hg_pty", CS_PROPERTY_ISO);
-      cs_equation_add_reaction(hg_eqp, mc->reac_hg_pty);
-
-    }
 
     /* diff_hl_pty is used in the build hook function to define a source term
        related to a diffusion term */
 
     mc->diff_hl_pty = NULL; /* postponed */
 
+    if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
+
+      mc->time_wl_pty = cs_property_subcell_add("time_wl_pty", CS_PROPERTY_ISO);
+      mc->time_hg_pty = cs_property_subcell_add("time_hg_pty", CS_PROPERTY_ISO);
+      mc->reac_hg_pty = cs_property_subcell_add("reac_hg_pty", CS_PROPERTY_ISO);
+
+    }
+    else {
+
+      mc->time_wl_pty = cs_property_add("time_wl_pty", CS_PROPERTY_ISO);
+      mc->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
+      mc->reac_hg_pty = cs_property_add("reac_hg_pty", CS_PROPERTY_ISO);
+
+    }
+
+    cs_equation_add_reaction(hg_eqp, mc->reac_hg_pty);
+
   } /* Define a coupled or segregated system */
 
-  /* Property shared among all numerical options */
+  /* Properties shared among all numerical options
+   *
+   * Associate properties related to the unsteady term with equations to define
+   * the unsteady terms in these equations
+   */
 
-  mc->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
+  cs_equation_add_time(wl_eqp, mc->time_wl_pty);
+
   cs_equation_add_time(hg_eqp, mc->time_hg_pty);
 
   /* Advection fields */
@@ -1906,6 +1931,20 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
       BFT_MALLOC(mc->l_saturation_submesh_pre, c2v_size, cs_real_t);
       memset(mc->l_saturation_submesh_pre, 0, c2v_alloc_size);
 
+      BFT_MALLOC(mc->l_capacity, c2v_size, cs_real_t);
+      memset(mc->l_capacity, 0, c2v_alloc_size);
+
+      /* Define the array storing the source term values for the water eq. */
+
+      BFT_MALLOC(mc->time_wl_array, c2v_size, cs_real_t);
+      memset(mc->time_wl_array, 0, c2v_alloc_size);
+
+      cs_property_def_by_array(mc->time_wl_pty,
+                               cs_flag_dual_cell_byc,  /* data location */
+                               mc->time_wl_array,
+                               false,                  /* not owner */
+                               c2v->idx, c2v->ids);
+
       /* Define the array storing the source term values for the water eq. */
 
       BFT_MALLOC(mc->srct_wl_array, c2v_size, cs_real_t);
@@ -1928,9 +1967,27 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                                            false,  /* is owner ? */
                                            c2v->idx, c2v->ids);
 
-      /* Set the time_hg_pty property by a constant in each soil */
+      /* Define the array storing the time property for the hydrogen eq. */
 
-      cs_gwf_soil_tpf_set_property(mc);
+      BFT_MALLOC(mc->time_hg_array, c2v_size, cs_real_t);
+      memset(mc->time_hg_array, 0, c2v_alloc_size);
+
+      cs_property_def_by_array(mc->time_hg_pty,
+                               cs_flag_dual_cell_byc, /* data location */
+                               mc->time_hg_array,
+                               false,                 /* not owner */
+                               c2v->idx, c2v->ids);
+
+      /* Define the array storing the reaction property for the hydrogen eq. */
+
+      BFT_MALLOC(mc->reac_hg_array, c2v_size, cs_real_t);
+      memset(mc->reac_hg_array, 0, c2v_alloc_size);
+
+      cs_property_def_by_array(mc->reac_hg_pty,
+                               cs_flag_dual_cell_byc, /* data location */
+                               mc->reac_hg_array,
+                               false,                 /* not owner */
+                               c2v->idx, c2v->ids);
 
     }
     else { /* Liquid saturation only at cells */
@@ -1999,12 +2056,12 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
  * \brief Perform the update step in the case of a two-phase flow model in
  *        porous media (miscible or immiscible)
  *
- * \param[in]       mesh        pointer to a cs_mesh_t structure
- * \param[in]       connect     pointer to a cs_cdo_connect_t structure
- * \param[in]       quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]       ts          pointer to a cs_time_step_t structure
- * \param[in]       cur2prev    true or false
- * \param[in, out]  mc          pointer to the casted model context
+ * \param[in]      mesh         pointer to a cs_mesh_t structure
+ * \param[in]      connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant        pointer to a cs_cdo_quantities_t structure
+ * \param[in]      ts           pointer to a cs_time_step_t structure
+ * \param[in]      update_flag  metadata associated to type of operation to do
+ * \param[in, out] mc           pointer to the casted model context
  *
  *\return the value at which one has to evaluate the properties
  */
@@ -2015,15 +2072,21 @@ _tpf_updates(const cs_mesh_t             *mesh,
              const cs_cdo_connect_t      *connect,
              const cs_cdo_quantities_t   *quant,
              const cs_time_step_t        *ts,
-             bool                         cur2prev,
+             cs_flag_t                    update_flag,
              cs_gwf_two_phase_t          *mc)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw != NULL && mc != NULL);
 
   cs_real_t  time_eval = ts->t_cur;
-  if (cur2prev)
+  bool  cur2prev = false;
+
+  if (update_flag & CS_FLAG_CURRENT_TO_PREVIOUS) {
+
     time_eval = _get_time_eval(ts, mc->wl_eq);
+    cur2prev = true;
+
+  }
 
   cs_param_space_scheme_t  space_scheme =
     cs_equation_get_space_scheme(mc->wl_eq);
@@ -2032,6 +2095,10 @@ _tpf_updates(const cs_mesh_t             *mesh,
 
   const cs_real_t  *l_pr = mc->l_pressure->val;
   const cs_real_t  *g_pr = mc->g_pressure->val;
+
+  if (update_flag & CS_FLAG_INITIALIZATION)
+    memcpy(mc->g_pressure->val_pre, g_pr,          /* dest, src */
+           connect->n_vertices*sizeof(cs_real_t)); /* size */
 
   /* Update the capillary pressure: P_c = P_g - P_l */
 
@@ -2104,6 +2171,11 @@ _tpf_updates(const cs_mesh_t             *mesh,
 
     } /* Loop on cells */
 
+    if (update_flag & CS_FLAG_INITIALIZATION)
+      memcpy(mc->l_saturation_submesh_pre,                           /* dest */
+             mc->l_saturation_submesh,                               /* src */
+             connect->c2v->idx[connect->n_cells]*sizeof(cs_real_t)); /* size */
+
   }
 
   /* TODO: Update the Darcy advection field for the liquid and the gas phase */
@@ -2123,7 +2195,7 @@ _tpf_updates(const cs_mesh_t             *mesh,
 
         if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
 
-          cs_gwf_soil_iso_update_itpf_terms_incr_submesh(ts, connect->c2v, mc);
+          cs_gwf_soil_iso_update_itpf_terms_incr_submesh(ts, connect, mc);
 
         }
         else
@@ -2339,6 +2411,8 @@ _coupled_tpf_picard_compute(const cs_mesh_t              *mesh,
                             cs_gwf_two_phase_t           *mc)
 {
   bool cur2prev = false;
+  cs_flag_t  update_flag = 0;   /* No current to previous operation */
+
   cs_iter_algo_t  *algo = mc->nl_algo;
   assert(algo != NULL);
 
@@ -2399,7 +2473,7 @@ _coupled_tpf_picard_compute(const cs_mesh_t              *mesh,
 
     }
 
-    cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
+    cs_gwf_update(mesh, connect, cdoq, time_step, update_flag);
 
   } /* Until convergence */
 
@@ -2438,6 +2512,7 @@ _coupled_tpf_anderson_compute(const cs_mesh_t              *mesh,
                               cs_gwf_two_phase_t           *mc)
 {
   bool  cur2prev = false;
+  cs_flag_t  update_flag = 0;   /* No current to previous operation */
   cs_iter_algo_t  *algo = mc->nl_algo;
   assert(algo != NULL);
 
@@ -2492,7 +2567,7 @@ _coupled_tpf_anderson_compute(const cs_mesh_t              *mesh,
 
     }
 
-    cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
+    cs_gwf_update(mesh, connect, cdoq, time_step, update_flag);
 
     /* Build and solve the linear system related to the coupled system of
        equations. First call: current --> previous and then no operation */
@@ -2507,7 +2582,7 @@ _coupled_tpf_anderson_compute(const cs_mesh_t              *mesh,
   /* Get the soil state up to date with the last compute values for the
      liquid and gas pressures */
 
-  cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
+  cs_gwf_update(mesh, connect, cdoq, time_step, update_flag);
 
   /* If something wrong happens, write a message in the listing */
 
@@ -2551,7 +2626,9 @@ _segregated_tpf_compute(const cs_mesh_t              *mesh,
   cs_field_current_to_previous(mc->g_pressure);
   cs_field_current_to_previous(mc->l_pressure);
 
-  bool cur2prev = false; /* Done just above */
+  bool cur2prev = false;        /* Done just above */
+  cs_flag_t  update_flag = 0;   /* No current to previous operation */
+
   cs_equation_builder_t  *wl_eqb = cs_equation_get_builder(mc->wl_eq);
   cs_equation_builder_t  *hg_eqb = cs_equation_get_builder(mc->hg_eq);
   cs_iter_algo_t  *algo = mc->nl_algo;
@@ -2566,17 +2643,58 @@ _segregated_tpf_compute(const cs_mesh_t              *mesh,
     algo->normalization = sqrt(algo->normalization);
 
   /* First solve step:
-   * 1. Solve the equation associated to Pl
-   * 2. Solve the equation associated to Pg
+   * 1. Solve the equation associated to Pl --> Pl^(n+1,1) knowing
+   *    Pl^(n+1,0) = Pl^n, Pg^n and thus Pc^n and Sl^n
+   *    --> Sl^(n+1,0) - Sl^n = 0 --> no source term
+   * 2. Solve the equation associated to Pg --> Pg^(n+1,1) knowing
+   *
    */
 
-  cs_equation_solve_steady_state(mesh, mc->wl_eq);
+  cs_equation_solve(cur2prev, mesh, mc->wl_eq);
 
   cs_equation_solve(cur2prev, mesh, mc->hg_eq);
 
   /* Update the variables related to the groundwater flow system */
 
-  cs_gwf_update(mesh, connect, cdoq, time_step, true);
+  cs_gwf_update(mesh, connect, cdoq, time_step,
+                CS_FLAG_CURRENT_TO_PREVIOUS); /* Force this operation */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
+  char  label[32];
+
+  sprintf(label, "Pl_iter%02d", algo->n_algo_iter);
+  cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                           CS_POST_WRITER_DEFAULT,
+                           label,
+                           1,
+                           false,
+                           false,
+                           CS_POST_TYPE_cs_real_t,
+                           cs_field_by_name("liquid_pressure")->val,
+                           time_step);
+
+  sprintf(label, "Pg_iter%02d", algo->n_algo_iter);
+  cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                           CS_POST_WRITER_DEFAULT,
+                           label,
+                           1,
+                           false,
+                           false,
+                           CS_POST_TYPE_cs_real_t,
+                           cs_field_by_name("gas_pressure")->val,
+                           time_step);
+
+  sprintf(label, "Pc_iter%02d", algo->n_algo_iter);
+  cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                           CS_POST_WRITER_DEFAULT,
+                           label,
+                           1,
+                           false,
+                           false,
+                           CS_POST_TYPE_cs_real_t,
+                           cs_field_by_name("capillarity_pressure")->val,
+                           time_step);
+#endif
 
   const cs_real_t  *dpl_kp1 = wl_eqb->increment;
   const cs_real_t  *dpg_kp1 = hg_eqb->increment;
@@ -2587,22 +2705,68 @@ _segregated_tpf_compute(const cs_mesh_t              *mesh,
   for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
     dpc_kp1[i] = dpg_kp1[i] - dpl_kp1[i];
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 0
+  cs_log_printf(CS_LOG_DEFAULT, "%s: dpl=% 6.4e; dpg=% 6.4e\n", __func__,
+                sqrt(cs_cdo_blas_square_norm_pvsp(dpl_kp1)),
+                sqrt(cs_cdo_blas_square_norm_pvsp(dpg_kp1)));
+#endif
+
   while(_check_nl_tpf_dpc_cvg(mc->nl_algo_type,
                               dpc_kp1, algo) == CS_SLES_ITERATING) {
 
     /* Solve step */
 
-    cs_equation_solve_steady_state(mesh, mc->wl_eq);
+    cs_equation_solve(cur2prev, mesh, mc->wl_eq);
 
     cs_equation_solve(cur2prev, mesh, mc->hg_eq);
 
     /* Update the variables related to the groundwater flow system */
 
-    cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
+    cs_gwf_update(mesh, connect, cdoq, time_step, update_flag);
 
-    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 1
+    sprintf(label, "Pl_iter%02d", algo->n_algo_iter);
+    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                             CS_POST_WRITER_DEFAULT,
+                             label,
+                             1,
+                             false,
+                             false,
+                             CS_POST_TYPE_cs_real_t,
+                             cs_field_by_name("liquid_pressure")->val,
+                             time_step);
+
+    sprintf(label, "Pg_iter%02d", algo->n_algo_iter);
+    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                             CS_POST_WRITER_DEFAULT,
+                             label,
+                             1,
+                             false,
+                             false,
+                             CS_POST_TYPE_cs_real_t,
+                             cs_field_by_name("gas_pressure")->val,
+                             time_step);
+
+    sprintf(label, "Pc_iter%02d", algo->n_algo_iter);
+    cs_post_write_vertex_var(CS_POST_MESH_VOLUME,
+                             CS_POST_WRITER_DEFAULT,
+                             label,
+                             1,
+                             false,
+                             false,
+                             CS_POST_TYPE_cs_real_t,
+                             cs_field_by_name("capillarity_pressure")->val,
+                             time_step);
+#endif
+
+  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
       dpc_kp1[i] = dpg_kp1[i] - dpl_kp1[i];
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 0
+    cs_log_printf(CS_LOG_DEFAULT, "%s: dpl=% 6.4e; dpg=% 6.4e\n", __func__,
+                  sqrt(cs_cdo_blas_square_norm_pvsp(dpl_kp1)),
+                  sqrt(cs_cdo_blas_square_norm_pvsp(dpg_kp1)));
+#endif
   } /* while not converged */
 
   /* If something wrong happens, write a message in the listing */
@@ -2662,7 +2826,7 @@ _tpf_compute(const cs_mesh_t              *mesh,
 
     /* Update the variables related to the groundwater flow system */
 
-    cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
+    cs_gwf_update(mesh, connect, cdoq, time_step, CS_FLAG_CURRENT_TO_PREVIOUS);
 
     switch (mc->nl_algo_type) {
 
@@ -3517,8 +3681,8 @@ cs_gwf_initialize(const cs_mesh_t             *mesh,
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
-  cs_gwf_update(mesh, connect, quant, ts,
-                false); /* No current to previous operation */
+  cs_log_printf(CS_LOG_DEFAULT, "\n%s:%d\n", __func__, __LINE__);
+  cs_gwf_update(mesh, connect, quant, ts, CS_FLAG_INITIALIZATION);
 
   /* Further steps dedicated to each model */
 
@@ -3544,6 +3708,16 @@ cs_gwf_initialize(const cs_mesh_t             *mesh,
         cs_equation_add_build_hook(mc->hg_eq,
                                    mc,                 /* hook context */
                                    _build_hg_incr_st); /* hook function */
+
+        /* Initialise other previous quantities */
+
+        if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
+
+          memcpy(mc->l_saturation_submesh_pre,                      /* dest */
+                 mc->l_saturation_submesh,                          /* src */
+                 connect->c2v->idx[connect->n_cells]*sizeof(cs_real_t));
+
+        }
 
       }
 
@@ -3578,11 +3752,12 @@ cs_gwf_initialize(const cs_mesh_t             *mesh,
  * \brief  Update the groundwater system (pressure head, head in law, moisture
  *         content, darcian velocity, soil capacity or permeability if needed)
  *
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts         pointer to a cs_time_step_t structure
- * \param[in]  cur2prev   true or false
+ * \param[in]  mesh         pointer to a cs_mesh_t structure
+ * \param[in]  connect      pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant        pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts           pointer to a cs_time_step_t structure
+ * \param[in]  update_flag  metadata associated to the status of the update
+ *                          step to perform
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3591,7 +3766,7 @@ cs_gwf_update(const cs_mesh_t             *mesh,
               const cs_cdo_connect_t      *connect,
               const cs_cdo_quantities_t   *quant,
               const cs_time_step_t        *ts,
-              bool                         cur2prev)
+              cs_flag_t                    update_flag)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
@@ -3604,17 +3779,18 @@ cs_gwf_update(const cs_mesh_t             *mesh,
   switch (gw->model) {
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
-    time_eval = _sspf_updates(connect, quant, ts, cur2prev, gw->model_context);
+    time_eval = _sspf_updates(connect, quant, ts, update_flag,
+                              gw->model_context);
     break;
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
-    time_eval = _uspf_updates(mesh, connect, quant, ts, cur2prev,
+    time_eval = _uspf_updates(mesh, connect, quant, ts, update_flag,
                               gw->model_context);
     break;
 
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
-    time_eval = _tpf_updates(mesh, connect, quant, ts, cur2prev,
+    time_eval = _tpf_updates(mesh, connect, quant, ts, update_flag,
                              gw->model_context);
     break;
 
@@ -4082,18 +4258,29 @@ cs_gwf_extra_post_mtpf(void                      *input,
         bft_printf("%s: Requested postprocessing for capacity but not"
                    " allocated.\n This postprocessing is skipped.\n", __func__);
       }
-      else
-        cs_post_write_var(mesh_id,
-                          CS_POST_WRITER_DEFAULT,
-                          "l_capacity",
-                          1,
-                          true,
-                          false,
-                          CS_POST_TYPE_cs_real_t,
-                          mc->l_capacity,
-                          NULL,
-                          NULL,
-                          time_step);
+      else {
+
+        if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
+          cs_base_warn(__FILE__, __LINE__);
+          bft_printf("%s: Requested postprocessing for capacity at cells but"
+                     " this functionnality is not yet available\n"
+                     "%s: with CS_GWF_LIQUID_SATURATION_ON_SUBMESH\n",
+                     __func__, __func__);
+        }
+        else
+          cs_post_write_var(mesh_id,
+                            CS_POST_WRITER_DEFAULT,
+                            "l_capacity",
+                            1,
+                            true,
+                            false,
+                            CS_POST_TYPE_cs_real_t,
+                            mc->l_capacity,
+                            NULL,
+                            NULL,
+                            time_step);
+
+      }
 
     }
 

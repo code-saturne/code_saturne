@@ -547,15 +547,15 @@ cs_gwf_soil_iso_update_itpf_terms_incr(const cs_time_step_t    *ts,
  *         Case of an isotropic absolute permeability with an incremental solve
  *         and a liquid saturation defined on a submesh.
  *
- * \param[in]      ts          pointer to a cs_time_step_t structure
- * \param[in]      c2v         cell --> vertices connectivity
- * \param[in, out] mc          pointer to the model context to update
+ * \param[in]      ts      pointer to a cs_time_step_t structure
+ * \param[in]      connect pointer to a cs_cdo_connect_t structure
+ * \param[in, out] mc      pointer to the model context to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t    *ts,
-                                               const cs_adjacency_t    *c2v,
+                                               const cs_cdo_connect_t  *connect,
                                                cs_gwf_two_phase_t      *mc);
 
 /*----------------------------------------------------------------------------*/
