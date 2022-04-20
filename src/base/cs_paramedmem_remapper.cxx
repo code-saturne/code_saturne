@@ -63,7 +63,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_medcoupling_utils.hxx"
+#include "cs_medcoupling_mesh.hxx"
 #include "cs_paramedmem_remapper.h"
 
 /*----------------------------------------------------------------------------
@@ -363,15 +363,14 @@ _cs_paramedmem_remapper_target_mesh(cs_paramedmem_remapper_t  *r,
 
   assert(r != NULL);
 
-  /* Initialization: Only volumes are possible for this option */
-  r->local_mesh = cs_medcoupling_mesh_create(name,
-                                             select_criteria,
-                                             3);
-
   cs_mesh_t *parent_mesh = cs_glob_mesh;
 
   /* Building the MED representation of the internal mesh */
-  cs_medcoupling_mesh_copy_from_base(parent_mesh, r->local_mesh, 0);
+  r->local_mesh = cs_medcoupling_mesh_from_base(parent_mesh,
+                                                name,
+                                                select_criteria,
+                                                3,
+                                                0);
 
   return;
 
@@ -474,8 +473,6 @@ _cs_paramedmem_remapper_destroy(cs_paramedmem_remapper_t *r)
   BFT_FREE(r->order);
   BFT_FREE(r->time_steps);
   BFT_FREE(r->odec);
-
-  cs_medcoupling_mesh_destroy(r->local_mesh);
 
   return;
 }

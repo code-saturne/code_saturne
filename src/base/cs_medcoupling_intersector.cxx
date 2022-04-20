@@ -65,7 +65,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_medcoupling_utils.hxx"
+#include "cs_medcoupling_mesh.hxx"
 #include "cs_medcoupling_intersector.h"
 
 /*----------------------------------------------------------------------------
@@ -197,8 +197,11 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   BFT_MALLOC(mi->interp_method, strlen(interp_method)+1, char);
   strcpy(mi->interp_method, interp_method);
 
-  mi->local_mesh = cs_medcoupling_mesh_create(name, select_criteria, 3);
-  cs_medcoupling_mesh_copy_from_base(cs_glob_mesh, mi->local_mesh, 1);
+  mi->local_mesh = cs_medcoupling_mesh_from_base(cs_glob_mesh,
+                                                 name,
+                                                 select_criteria,
+                                                 3,
+                                                 1);
 
   mi->matrix_needs_update = 1;
 
@@ -431,7 +434,8 @@ _destroy_intersector(cs_medcoupling_intersector_t *mi)
   BFT_FREE(mi->init_boundary_coords);
   BFT_FREE(mi->vol_intersect);
 
-  cs_medcoupling_mesh_destroy(mi->local_mesh);
+  // Mesh will deallocated afterwards since it can be shared
+  mi->local_mesh = NULL;
 }
 
 /*----------------------------------------------------------------------------*/

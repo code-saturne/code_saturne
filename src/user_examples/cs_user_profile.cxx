@@ -58,7 +58,7 @@
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
 
 #include "cs_medcoupling_intersector.h"
-#include "cs_medcoupling_utils.hxx"
+#include "cs_medcoupling_mesh.hxx"
 
 #include <MEDCoupling_version.h>
 
@@ -172,9 +172,11 @@ _allocate_med_mesh_struct(cs_lnum_t n_layers)
     med_t->layer_mesh[layer_id] = mesh;
   }
 
-  med_t->local_mesh
-    = cs_medcoupling_mesh_create("Case_global_mesh", "all[]", 3);
-  cs_medcoupling_mesh_copy_from_base(cs_glob_mesh, med_t->local_mesh, 1);
+  med_t->local_mesh = cs_medcoupling_mesh_from_base(cs_glob_mesh,
+                                                    "Case_global_mesh",
+                                                    "all[]",
+                                                    3,
+                                                    1);
 
 #endif
 
@@ -1909,7 +1911,8 @@ _free_profile_all(user_profile_t *profile_t)
       med_t->layer_mesh[m_id]->decrRef();
     }
     BFT_FREE(med_t->layer_mesh);
-    cs_medcoupling_mesh_destroy(med_t->local_mesh);
+    // Mesh will deallocated afterwards since it can be shared
+    med_t->local_mesh = NULL;
     BFT_FREE(profile_t->med_mesh_struct);
   }
 

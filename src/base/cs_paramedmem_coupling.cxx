@@ -75,7 +75,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_medcoupling_utils.hxx"
+#include "cs_medcoupling_mesh.hxx"
 #include "cs_paramedmem_coupling.h"
 
 #if defined(HAVE_PARAMEDMEM)
@@ -165,14 +165,12 @@ _generate_coupling_mesh(cs_paramedmem_coupling_t  *c,
 {
   cs_mesh_t *parent_mesh = cs_glob_mesh;
 
-  /* Initialization of the MEDCouplingUMesh*/
-  c->mesh = cs_medcoupling_mesh_create("CouplingMesh",
-                                       select_criteria,
-                                       elt_dim);
-  assert(c->mesh != NULL);
-
   /* Building the MED representation of the internal mesh */
-  cs_medcoupling_mesh_copy_from_base(parent_mesh, c->mesh, 0);
+  c->mesh = cs_medcoupling_mesh_from_base(parent_mesh,
+                                          "CouplingMesh",
+                                          select_criteria,
+                                          elt_dim,
+                                          0);
 
   /* Define associated ParaMESH */
   ProcessorGroup *Grp =
@@ -429,7 +427,9 @@ cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t  *c)
 
     /* Deallocate mesh */
     delete c->para_mesh;
-    cs_medcoupling_mesh_destroy(c->mesh);
+
+    // Mesh will deallocated afterwards since it can be shared
+    c->mesh = NULL;
 
     /* Destroy DECs */
     delete c->dec;

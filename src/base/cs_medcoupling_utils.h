@@ -1,5 +1,8 @@
+#ifndef __CS_MEDCOUPLING_UTILS_H__
+#define __CS_MEDCOUPLING_UTILS_H__
+
 /*============================================================================
- * Global utilities functions used for initialize and finalize calls.
+ * Usage of MEDCoupling base components.
  *============================================================================*/
 
 /*
@@ -25,64 +28,29 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Local headers
- *----------------------------------------------------------------------------*/
-
-#include "cs_defs.h"
-
-/*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <ctype.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/*----------------------------------------------------------------------------
- * Local headers
- *----------------------------------------------------------------------------*/
-
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_medcoupling_intersector.h"
-#include "cs_medcoupling_remapper.h"
-#include "cs_medcoupling_utils.h"
-#include "cs_stl.h"
-
-/*----------------------------------------------------------------------------
- * Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_utilities.h"
-
-/*----------------------------------------------------------------------------*/
-
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Public function definitions
+ * Public functions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Destroy different intersectors/remapping structures related to STL or
- * MEDCoupling.
+ * \brief C Wrapper used to destroy all cs_medcoupling_mesh_t instances.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_utilities_destroy_all_remapping(void)
-{
-  cs_medcoupling_intersector_destroy_all();
-  cs_medcoupling_remapper_destroy_all();
-  cs_medcoupling_free_meshes();
-  cs_stl_mesh_destroy_all();
-}
-
-/*----------------------------------------------------------------------------*/
+cs_medcoupling_free_meshes(void);
 
 END_C_DECLS
+
+#endif /* __CS_MEDCOUPLING_UTILS_H__ */

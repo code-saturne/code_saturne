@@ -436,7 +436,8 @@ lib_LTLIBRARIES =
 pkglib_LTLIBRARIES =
 
 pkginclude_HEADERS += \
-cs_medcoupling_utils.hxx \
+cs_medcoupling_mesh.hxx \
+cs_medcoupling_utils.h \
 cs_medcoupling_remapper.h \
 cs_medcoupling_intersector.h \
 cs_paramedmem_coupling.h \
@@ -459,6 +460,7 @@ pkglib_LTLIBRARIES += cs_medcoupling.la
 
 cs_medcoupling_la_SOURCES = \
 cs_medcoupling_utils.cxx \
+cs_medcoupling_mesh.cxx \
 cs_medcoupling_remapper.cxx \
 cs_medcoupling_intersector.cxx \
 cs_paramedmem_coupling.cxx \
@@ -485,6 +487,7 @@ $(MPI_CPPFLAGS)
 
 libcs_medcoupling_la_SOURCES = \
 cs_medcoupling_utils.cxx \
+cs_medcoupling_mesh.cxx \
 cs_medcoupling_remapper.cxx \
 cs_medcoupling_intersector.cxx \
 cs_paramedmem_coupling.cxx \

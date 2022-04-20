@@ -60,7 +60,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_medcoupling_utils.hxx"
+#include "cs_medcoupling_mesh.hxx"
 #include "cs_medcoupling_remapper.h"
 
 /*----------------------------------------------------------------------------
@@ -235,13 +235,12 @@ _create_remapper(const char                        *name,
   }
 
   // New MEDCoupling UMesh linked to Code_Saturne mesh
-  cs_medcoupling_mesh_t *new_mesh = cs_medcoupling_mesh_create(name,
-                                                               select_criteria,
-                                                               elt_dim);
-
   cs_mesh_t *parent_mesh = cs_glob_mesh;
-  cs_medcoupling_mesh_copy_from_base(parent_mesh, new_mesh, 1);
-  r->target_mesh = new_mesh;
+  r->target_mesh = cs_medcoupling_mesh_from_base(parent_mesh,
+                                                 name,
+                                                 select_criteria,
+                                                 elt_dim,
+                                                 1);
 
   /* Get the time step values from the file */
   MCAuto<MEDFileAnyTypeFieldMultiTS>
@@ -561,7 +560,8 @@ _cs_medcoupling_remapper_destroy(cs_medcoupling_remapper_t *r)
   BFT_FREE(r->field_names);
   BFT_FREE(r->source_fields);
 
-  cs_medcoupling_mesh_destroy(r->target_mesh);
+  // Mesh will deallocated afterwards since it can be shared
+  r->target_mesh = NULL;
 
   BFT_FREE(r);
 }

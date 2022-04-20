@@ -1,5 +1,5 @@
-#ifndef __CS_MEDCOUPLING_UTILS_HXX__
-#define __CS_MEDCOUPLING_UTILS_HXX__
+#ifndef __CS_MEDCOUPLING_MESH_HXX__
+#define __CS_MEDCOUPLING_MESH_HXX__
 
 /*============================================================================
  * Usage of MEDCoupling base components.
@@ -38,9 +38,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
+#include "cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers
@@ -88,40 +86,24 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   create a new cs_medcoupling_mesh_t instance
+ * \brief   create a new cs_medcoupling_mesh_t instance based on cs_mesh_t
  *
+ * \param[in] csmesh              pointer to cs_mesh_t instance
  * \param[in] name                name of the mesh
  * \param[in] selection_criteria  selection criteria (entire mesh or part of it)
- * \param[in] elt_dim             dimension of elements.
- *                                2: faces
- *                                3: cells
+ * \param[in] elt_dim             dimension of elements. 2: faces, 3: cells
+ * \param[in] use_bbox            Use a reduced bounding box
  *
  * \return  pointer to the newly created cs_medcoupling_mesh_t struct
  */
 /*----------------------------------------------------------------------------*/
 
 cs_medcoupling_mesh_t *
-cs_medcoupling_mesh_create(const char  *name,
-                           const char  *selection_criteria,
-                           int          elt_dim);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief copy a cs_mesh_t into a cs_medcoupling_mesh_t
- *
- * \param[in] csmesh    pointer to the cs_mesh_t struct to copy data from
- * \param[in] pmmesh    pointer to the cs_medcoupling_mesh_t for copy
- * \param[in] use_bbox  flag indicating if a reduced bounding is used. Usefull
- *                      for interpolation to reduce the matrix sice.
- *                      0: Do not use a reduced bbox
- *                      1: Use a reduced bbox
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
-                                   cs_medcoupling_mesh_t  *pmmesh,
-                                   int                     use_bbox);
+cs_medcoupling_mesh_from_base(cs_mesh_t  *csmesh,
+                              const char *name,
+                              const char *selection_criteria,
+                              const int   elt_dim,
+                              const int   use_bbox);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -133,6 +115,15 @@ cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
 
 void
 cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t  *mesh);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy all cs_medcoupling_mesh_t instances.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_mesh_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -190,4 +181,4 @@ cs_medcoupling_mesh_get_connectivity(cs_medcoupling_mesh_t  *m);
 
 END_C_DECLS
 
-#endif /* __CS_MEDCOUPLING_UTILS_HXX__ */
+#endif /* __CS_MEDCOUPLING_MESH_HXX__ */
