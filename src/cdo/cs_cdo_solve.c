@@ -115,10 +115,12 @@ _set_xsol(int                 stride,
      "gather" view: n_rows = n_gather_elts */
 
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
-  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(matrix);
 
+#if defined(DEBUG) && !defined(NDEBUG)
+  const cs_lnum_t  n_rows = cs_matrix_get_n_rows(matrix);
   assert(n_cols >= n_rows);
   assert(n_rows <= n_scatter_elts);
+#endif
 
   if (n_cols > n_scatter_elts) {
 

@@ -475,13 +475,14 @@ _spf_compute(const cs_mesh_t                    *mesh,
              const cs_cdo_quantities_t          *cdoq,
              cs_equation_t                      *richards)
 {
+#if defined(DEBUG) && !defined(NDEBUG)
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
   assert(gw != NULL && richards != NULL);
-
   assert(gw->model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE ||
          gw->model == CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE);
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
+#endif
 
   bool cur2prev = true;
 
@@ -704,8 +705,8 @@ _sspf_finalize_setup(const cs_cdo_connect_t            *connect,
                      const cs_cdo_quantities_t         *quant,
                      cs_gwf_saturated_single_phase_t   *mc)
 {
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-  assert(gw != NULL && mc != NULL);
+  if (mc == NULL)
+    return;
 
   const cs_param_space_scheme_t  richards_scheme =
     cs_equation_get_space_scheme(mc->richards);
@@ -2164,6 +2165,7 @@ _tpf_extra_op(const cs_cdo_connect_t                *connect,
 {
   CS_UNUSED(connect);
   CS_UNUSED(cdoq);
+  CS_UNUSED(mc);
 
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw != NULL && mc != NULL);
@@ -2541,8 +2543,10 @@ _segregated_tpf_compute(const cs_mesh_t              *mesh,
                         const cs_cdo_quantities_t    *cdoq,
                         cs_gwf_two_phase_t           *mc)
 {
+#if defined(DEBUG) && !defined(NDEBUG)
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw->flag & CS_GWF_INCREMENTAL_SOLVE);
+#endif
 
   cs_field_current_to_previous(mc->g_pressure);
   cs_field_current_to_previous(mc->l_pressure);

@@ -391,12 +391,11 @@ _solve_mumps(int                                 n_eqs,
 
   const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
   const cs_range_set_t  *rset = cs_cdo_system_get_range_set(sh, 0);
-  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
 
   /* n_cols could be greater than n_dofs = n_equations*n_vertices in case of a
      parallel computation */
 
-  assert(n_dofs <= n_cols);
+  assert(n_dofs <= cs_matrix_get_n_columns(matrix));
 
   /* Initialize the solution array */
 
