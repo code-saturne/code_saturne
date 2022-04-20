@@ -295,6 +295,27 @@ typedef int
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the threshold value used in the detection of immediate exit
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_epzero(double  new_value);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the current threshold value used in the detection of immediate
+ *        exit
+ *
+ * \return the value of the threshold
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_sles_get_epzero(void);
+
 /*----------------------------------------------------------------------------
  * \brief Initialize sparse linear equation solver API.
  *----------------------------------------------------------------------------*/

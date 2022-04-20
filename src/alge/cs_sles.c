@@ -279,8 +279,6 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-#define EPZERO  1.E-12
-
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
@@ -365,6 +363,10 @@ static cs_sles_t **_cs_sles_systems[3] = {NULL, NULL, NULL};
 
 static cs_timer_counter_t   _sles_t_tot;     /* Total time in linear solvers */
 static int _sles_stat_id = -1;
+
+/* Threshold for the detection of an immediate exit */
+
+static double _cs_sles_epzero = 1e-12;
 
 /*============================================================================
  * Private function definitions
@@ -668,11 +670,12 @@ _needs_solving(const  char        *name,
 
   if (r[1] < 1e-60) {
 
-    double _precision = CS_MIN(EPZERO, precision); /* prefer to err on the side
-                                                      of caution... */
+    double _precision = CS_MIN(_cs_sles_epzero, /* prefer to err on the side */
+                               precision);      /* of caution... */
+
     *residue = sqrt(r[0]);
 
-    if (r_norm <= EPZERO)
+    if (r_norm <= _cs_sles_epzero)
       retval = 0;
     else if (*residue/r_norm <= _precision)
       retval = 0;
@@ -868,6 +871,33 @@ _post_function(void                  *sles_p,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the threshold value used in the detection of immediate exit
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_set_epzero(double  new_value)
+{
+  _cs_sles_epzero = new_value;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the current threshold value used in the detection of immediate
+ *        exit
+ *
+ * \return the value of the threshold
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_sles_get_epzero(void)
+{
+  return _cs_sles_epzero;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Initialize sparse linear equation solver API.
  */
 /*----------------------------------------------------------------------------*/
@@ -951,6 +981,24 @@ cs_sles_log(cs_log_t  log_type)
        _("\n"
          "Total elapsed time for linear equation system solvers:  %.3f s\n"),
        _sles_t_tot.nsec*1e-9);
+
+  else if (log_type == CS_LOG_SETUP) {
+
+    const char  header[] = "Linear solver options for all systems";
+    size_t l = cs_log_strlen(header);
+    char ul[128];
+
+    l = CS_MIN(l, 127);
+    for (size_t ll = 0; ll < l; ll++)
+      ul[ll] = '-';
+    ul[l] = '\0';
+
+    cs_log_printf(log_type, "\n%s\n", header);
+    cs_log_printf(log_type, "%s\n\n", ul);
+    cs_log_printf(log_type,
+                  "Immediate exit threshold value: %5.2e\n", _cs_sles_epzero);
+
+  }
 
   const char *option_category[]
     = {N_("Linear solver options modified during run (previous values)"),
