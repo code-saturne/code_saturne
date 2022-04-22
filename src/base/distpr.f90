@@ -72,8 +72,8 @@ implicit none
 
 ! Arguments
 
-integer          iterns
 integer          itypfb(nfabor)
+integer          iterns
 
 ! Local variables
 
