@@ -136,7 +136,7 @@ call field_get_key_struct_var_cal_opt(f_id, vcopt)
 call field_get_val_s(f_id, cvar_var)
 ! Previous value is stored in a specific field beacause
 ! the solved field is not directly the wall distance
-call field_get_id_try("work_wall_distance_pre", f_id_pre)
+call field_get_id_try("wall_distance_aux_pre", f_id_pre)
 if (f_id_pre.ge.0) then
   call field_get_val_s(f_id_pre, cvara_var)
 else

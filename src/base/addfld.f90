@@ -535,8 +535,9 @@ if (ineedy.eq.1) then
   ! Working field to store value of the solved variable at the previous
   ! time step if needed (ALE)
   if (iale.ne.0.or.iturbo.ne.0) then
-    f_name  = 'work_wall_distance_pre'
+    f_name  = 'wall_distance_aux_pre'
     call add_property_field(f_name, f_label, 1, .false., iflid)
+    call hide_property(iflid)
   endif
 
   ! Dimensionless wall distance "y+"
