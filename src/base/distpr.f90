@@ -23,7 +23,7 @@
 !> \file distpr.f90
 !> \brief Compute distance to wall by solving a 3d diffusion equation.
 !> Solve
-!>   \f[ \divs ( \grad \varia ) = -1 \f]
+!>   \f[ -\divs ( \grad \varia ) = 1 \f]
 !> with:
 !>  - \f$ \varia_|b = 0 \f$  at the wall
 !>  - \f$ \grad \varia \cdot \vect{n} = 0 \f$ elsewhere
@@ -41,9 +41,10 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     itypfb        boundary face types
+!> \param[in]     iterns        iteration number on Navier-Stokes equations
 !______________________________________________________________________________
 
-subroutine distpr(itypfb)
+subroutine distpr(itypfb, iterns)
 
 !===============================================================================
 ! Module files
@@ -71,19 +72,19 @@ implicit none
 
 ! Arguments
 
+integer          iterns
 integer          itypfb(nfabor)
-
 
 ! Local variables
 
 integer          ndircp, imvisp
 integer          iel   , ifac
-integer          inc   , iccocg, f_id
+integer          inc   , iccocg, f_id, f_id_pre
 integer          mmprpl, nswrsp
 integer          imucpp
 integer          icvflb, iescap, ircflp
 integer          ivoid(1)
-integer          init, counter
+integer          counter
 
 double precision dismax, dismin, hint, pimp, qimp, norm_grad
 double precision normp
@@ -133,13 +134,14 @@ call field_get_id("wall_distance", f_id)
 call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
 call field_get_val_s(f_id, cvar_var)
-call field_get_val_prev_s(f_id, cvara_var)
-
-! Always start from a 0 previous wall distance
-do iel = 1, ncel
-  cvara_var(iel) = 0.d0
-enddo
-call synsce(cvara_var)
+! Previous value is stored in a specific field beacause
+! the solved field is not directly the wall distance
+call field_get_id_try("work_wall_distance_pre", f_id_pre)
+if (f_id_pre.ge.0) then
+  call field_get_val_s(f_id_pre, cvara_var)
+else
+  call field_get_val_prev_s(f_id, cvara_var)
+endif
 
 !===============================================================================
 ! 2. Boundary conditions
@@ -237,7 +239,6 @@ iescap = 0
 imucpp = 0
 ! all boundary convective flux with upwind
 icvflb = 0
-init   = 1
 normp = -1.d0
 
 vcopt_loc = vcopt
@@ -266,7 +267,7 @@ do iel = 1, ncel
 enddo
 
 call cs_equation_iterative_solve_scalar                           &
- ( idtvar , init   ,                                              &
+ ( idtvar , iterns ,                                              &
    f_id   , c_null_char ,                                         &
    iescap , imucpp , normp  , c_k_value       ,                   &
    cvara_var       , cvara_var       ,                            &
@@ -275,7 +276,7 @@ call cs_equation_iterative_solve_scalar                           &
    viscf  , viscb  , viscf  , viscb  ,                            &
    rvoid  , rvoid  , rvoid  ,                                     &
    icvflb , ivoid  ,                                              &
-   rovsdt , smbrp  , cvar_var       , dpvar,                     &
+   rovsdt , smbrp  , cvar_var        , dpvar  ,                   &
    rvoid  , rvoid  )
 
 ! Count clippings
@@ -321,7 +322,15 @@ endif
 
 do iel = 1, ncel
   dpvar(iel) = max(cvar_var(iel), 0.d0)
+  ! Save working field for the next time step
+  if (f_id_pre.ge.0) then
+    cvara_var(iel) = cvar_var(iel)
+  endif
 enddo
+
+if (f_id_pre.ge.0) then
+  call synsca(cvara_var)
+endif
 
 !===============================================================================
 ! 5. Compute distance to wall

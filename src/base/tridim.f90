@@ -986,7 +986,7 @@ do while (iterns.le.nterup)
     if (imajdy.eq.0 .and. ineedy.eq.1) then
 
       if (abs(icdpar).eq.1) then
-        call distpr(itypfb)
+        call distpr(itypfb, iterns)
       ! Deprecated algorithm
       else if (abs(icdpar).eq.2) then
         call distpr2(itypfb)
