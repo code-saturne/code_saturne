@@ -104,16 +104,6 @@ extern void CS_PROCF (csinit, CSINIT)
 );
 
 /*----------------------------------------------------------------------------
- * Compute distance to wall by solving a 3d diffusion equation.
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (distpr, DISTPR)
-(
- const int  *itypfb,    /* <-- boudnary face types */
- cs_real_t  *distpa     /* <-- wall distance */
-);
-
-/*----------------------------------------------------------------------------
  * Developer function for output of variables on a post-processing mesh
  *----------------------------------------------------------------------------*/
 

@@ -68,6 +68,7 @@ use cplsat
 use mesh
 use post
 use field
+use turbomachinery
 use cs_f_interfaces
 use cs_c_bindings
 
@@ -509,6 +510,7 @@ endif
 
 ! User may set ineedy to 1
 if (ineedy.eq.1) then
+  ! Working variable
   f_name  = 'wall_distance'
   f_label = 'Wall distance'
   call add_variable_field(f_name, f_label, 1, ivar)
@@ -522,6 +524,14 @@ if (ineedy.eq.1) then
   vcopt%idifft = 0
   vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
   call field_set_key_struct_var_cal_opt(iflid, vcopt)
+
+  ! Working field to store value of the solved variable at the previous
+  ! time step if needed (ALE)
+  if (iale.ne.0.or.iturbo.ne.0) then
+    f_name  = 'wall_distance_aux_pre'
+    call add_property_field(f_name, f_label, 1, .false., iflid)
+    call hide_property(iflid)
+  endif
 
   ! Dimensionless wall distance "y+"
   !> non-dimensional distance \f$y^+\f$ between a given volume and the closest
