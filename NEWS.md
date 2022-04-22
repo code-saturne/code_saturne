@@ -3,6 +3,8 @@ Release 7.0.5 (not released yet)
 
 Bug fixes:
 
+- ALE: wall distance was not always correctly recomputed.
+
 - Fix possible crash in transient turbomachinery module when accessing
   domain->mesh and domain->mesh_quantities pointers, which were not
   updated when mesh was rebuilt.

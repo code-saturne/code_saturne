@@ -23,7 +23,7 @@
 !> \file distpr.f90
 !> \brief Compute distance to wall by solving a 3d diffusion equation.
 !> Solve
-!>   \f[ \divs ( \grad \varia ) = -1 \f]
+!>   \f[ -\divs ( \grad \varia ) = 1 \f]
 !> with:
 !>  - \f$ \varia_|b = 0 \f$  at the wall
 !>  - \f$ \grad \varia \cdot \vect{n} = 0 \f$ elsewhere
@@ -41,9 +41,10 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     itypfb        boundary face types
+!> \param[in]     iterns        iteration number on Navier-Stokes equations
 !______________________________________________________________________________
 
-subroutine distpr(itypfb)
+subroutine distpr(itypfb, iterns)
 
 !===============================================================================
 ! Module files
@@ -69,20 +70,20 @@ implicit none
 
 ! Arguments
 
+integer          iterns
 integer          itypfb(nfabor)
-
 
 ! Local variables
 
 integer          ndircp, iconvp, idiffp
 integer          iel   , ifac
-integer          inc   , iccocg, f_id
+integer          inc   , iccocg, f_id, f_id_pre
 integer          mmprpl, nswrsp
 integer          imucpp, idftnp
 integer          imrgrp, nswrgp
 integer          icvflb, iescap, imligp, ircflp, iswdyp, isstpp, ischcp, iwarnp
 integer          ivoid(1)
-integer          init, counter
+integer          counter
 
 double precision relaxp, blencp, climgp, epsilp, epsrgp, epsrsp
 double precision dismax, dismin, hint, pimp, qimp, norm_grad, thetap
@@ -131,13 +132,14 @@ call field_get_id("wall_distance", f_id)
 call field_get_key_struct_var_cal_opt(f_id, vcopt)
 
 call field_get_val_s(f_id, cvar_var)
-call field_get_val_prev_s(f_id, cvara_var)
-
-! Always start from a 0 previous wall distance
-do iel = 1, ncel
-  cvara_var(iel) = 0.d0
-enddo
-call synsce(cvara_var)
+! Previous value is stored in a specific field beacause
+! the solved field is not directly the wall distance
+call field_get_id_try("wall_distance_aux_pre", f_id_pre)
+if (f_id_pre.ge.0) then
+  call field_get_val_s(f_id_pre, cvara_var)
+else
+  call field_get_val_prev_s(f_id, cvara_var)
+endif
 
 !===============================================================================
 ! 2. Boundary conditions
@@ -250,7 +252,6 @@ relaxp = vcopt%relaxv
 thetap = vcopt%thetav
 ! all boundary convective flux with upwind
 icvflb = 0
-init   = 1
 normp = -1.d0
 
 110 continue
@@ -267,7 +268,7 @@ do iel = 1, ncel
 enddo
 
 call codits &
- ( idtvar , init, f_id   , iconvp , idiffp , ndircp ,             &
+ ( idtvar , iterns , f_id   , iconvp , idiffp , ndircp ,          &
    imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
@@ -325,7 +326,15 @@ endif
 
 do iel = 1, ncel
   dpvar(iel) = max(cvar_var(iel), 0.d0)
+  ! Save working field for the next time step
+  if (f_id_pre.ge.0) then
+    cvara_var(iel) = cvar_var(iel)
+  endif
 enddo
+
+if (f_id_pre.ge.0) then
+  call synsca(cvara_var)
+endif
 
 !===============================================================================
 ! 5. Compute distance to wall
