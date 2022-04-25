@@ -609,11 +609,9 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)mq->b_face_cog;
   cs_field_t *f = cs_field_by_name(name);
+  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);
   int f_id = f->id;
   int niterf;
-
-  cs_var_cal_opt_t vcopt;
-  cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
 
   /*==========================================================================
    * 0.  Initialization
@@ -646,7 +644,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   /* Boundary conditions
    *====================*/
 
-  vcopt.ndircl = 0;
+  eqp_p->ndircl = 0;
 
   /* To solve hydrostatic pressure:
    * p_ground on the lowest face, homogeneous Neumann everywhere else */
@@ -662,7 +660,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                                                   pimp,
                                                   hint,
                                                   cs_math_big_r);
-      vcopt.ndircl = 1;
+      eqp_p->ndircl = 1;
     }
     else {
       cs_boundary_conditions_set_neumann_scalar(&(f->bc_coeffs->a[face_id]),
@@ -674,7 +672,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     }
   }
 
-  cs_parall_max(1, CS_INT_TYPE, &(vcopt.ndircl));
+  cs_parall_max(1, CS_INT_TYPE, &(eqp_p->ndircl));
   cs_real_t *rovsdt;
   BFT_MALLOC(rovsdt, m->n_cells_with_ghosts, cs_real_t);
 
@@ -688,13 +686,13 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
     c_visc[cell_id] = 1.;
 
-  cs_face_viscosity(m, mq, vcopt.imvisf, c_visc, i_viscm, b_viscm);
+  cs_face_viscosity(m, mq, eqp_p->imvisf, c_visc, i_viscm, b_viscm);
 
-  cs_matrix_wrapper_scalar(vcopt.iconv,
-                           vcopt.idiff,
-                           vcopt.ndircl,
+  cs_matrix_wrapper_scalar(eqp_p->iconv,
+                           eqp_p->idiff,
+                           eqp_p->ndircl,
                            isym,
-                           vcopt.thetav,
+                           eqp_p->thetav,
                            0,
                            f->bc_coeffs->b,
                            f->bc_coeffs->bf,
@@ -713,7 +711,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_ext_force_flux(m,
                     mq,
                     1, /* init */
-                    vcopt.nswrgr,
+                    eqp_p->nswrgr,
                     next_fext,
                     f->bc_coeffs->bf,
                     i_massflux,
@@ -738,20 +736,20 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_real_t residu = rnorm;
 
   /* Initial Right-Hand-Side */
-  cs_diffusion_potential(-1,//FIXME why not f_id?
+  cs_diffusion_potential(f_id,
                          m,
                          mq,
                          1, /* init */
                          1, /* inc */
-                         vcopt.imrgra,
+                         eqp_p->imrgra,
                          1, /* iccocg */
-                         vcopt.nswrgr,
-                         vcopt.imligr,
+                         eqp_p->nswrgr,
+                         eqp_p->imligr,
                          1, /* iphydp */
-                         vcopt.iwgrec,
-                         vcopt.iwarni,
-                         vcopt.epsrgr,
-                         vcopt.climgr,
+                         eqp_p->iwgrec,
+                         eqp_p->iwarni,
+                         eqp_p->epsrgr,
+                         eqp_p->climgr,
                          next_fext,
                          pvar,
                          f->bc_coeffs->a,
@@ -768,7 +766,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
 
   cs_real_t ressol = 0;
   for (int sweep = 0;
-       sweep < vcopt.nswrsm && residu > (rnorm * vcopt.epsrsm);
+       sweep < eqp_p->nswrsm && residu > (rnorm * eqp_p->epsrsm);
        sweep++) {
 
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
@@ -782,7 +780,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                          1, /* eb_size */
                          dam,
                          xam,
-                         vcopt.epsilo,
+                         eqp_p->epsilo,
                          rnorm,
                          &niterf,
                          &ressol,
@@ -793,21 +791,20 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
       pvar[cell_id] += dpvar[cell_id];
 
-
-    cs_diffusion_potential(-1,//FIXME why not f_id?
+    cs_diffusion_potential(f_id,
                            m,
                            mq,
                            1, /* init */
                            1, /* inc */
-                           vcopt.imrgra,
+                           eqp_p->imrgra,
                            1, /* iccocg */
-                           vcopt.nswrgr,
-                           vcopt.imligr,
+                           eqp_p->nswrgr,
+                           eqp_p->imligr,
                            1, /* iphydp */
-                           vcopt.iwgrec,
-                           vcopt.iwarni,
-                           vcopt.epsrgr,
-                           vcopt.climgr,
+                           eqp_p->iwgrec,
+                           eqp_p->iwarni,
+                           eqp_p->epsrgr,
+                           eqp_p->climgr,
                            next_fext,
                            pvar,
                            f->bc_coeffs->a,
@@ -826,7 +823,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     residu = sqrt(cs_gdot(m->n_cells, rhs, rhs));
 
     /* Writing */
-    if (vcopt.iwarni >= 2) {
+    if (eqp_p->iwarni >= 2) {
       bft_printf("%s: CV_DIF_TS, IT: %d, Res: %12.5e, Norm: %12.5e\n",
           name, sweep, residu, rnorm);
       bft_printf("%s: Current reconstruction sweep: %d, "
@@ -1303,8 +1300,7 @@ cs_atmo_z_ground_compute(void)
     = cs_field_by_id
         (cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id")))->val;
 
-  cs_var_cal_opt_t vcopt;
-  cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
+  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);
 
   cs_real_t normal[3];
   /* Normal direction is given by the gravity */
@@ -1336,7 +1332,7 @@ cs_atmo_z_ground_compute(void)
     if ((bc_type[face_id] == CS_SMOOTHWALL || bc_type[face_id] == CS_ROUGHWALL)
         && b_massflux[face_id] <= 0.) {
 
-      vcopt.ndircl = 1;
+      eqp_p->ndircl = 1;
       cs_real_t hint = 1. / mq->b_dist[face_id];
       cs_real_t pimp = cs_math_3_dot_product(b_face_cog[face_id], normal);
 
@@ -1366,7 +1362,7 @@ cs_atmo_z_ground_compute(void)
     }
   }
 
-  cs_parall_max(1, CS_INT_TYPE, &(vcopt.ndircl));
+  cs_parall_max(1, CS_INT_TYPE, &(eqp_p->ndircl));
 
   /* Matrix
    *=======*/
@@ -1409,7 +1405,7 @@ cs_atmo_z_ground_compute(void)
   cs_real_t inf_norm = 1.;
 
   /* Overall loop in order to ensure convergence */
-  for (int sweep = 0; sweep < vcopt.nswrsm && inf_norm > vcopt.epsrsm; sweep++) {
+  for (int sweep = 0; sweep < eqp_p->nswrsm && inf_norm > eqp_p->epsrsm; sweep++) {
 
     cs_equation_iterative_solve_scalar(0,   /* idtvar: no steady state algo */
                                        -1,  /* no over loops */
@@ -1418,7 +1414,7 @@ cs_atmo_z_ground_compute(void)
                                        0,   /* iescap */
                                        0,   /* imucpp */
                                        norm,
-                                       &vcopt,
+                                       eqp_p,
                                        f->val_pre,
                                        f->val,
                                        f->bc_coeffs->a,
@@ -1498,12 +1494,10 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
   cs_field_t *f = cs_field_by_name("meteo_pressure");
-  cs_var_cal_opt_t vcopt;
-  cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
   cs_field_t *potemp = cs_field_by_name("meteo_pot_temperature");
   cs_field_t *density = cs_field_by_name("meteo_density");
   cs_field_t *temp = cs_field_by_name("meteo_temperature");
-
+  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);
   cs_atmo_option_t *aopt = &_atmo_option;
   cs_real_t g = cs_math_3_norm(phys_cst->gravity);
 
@@ -1543,6 +1537,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
     cs_real_t factor = fmax(1. - g * zt / (cp0 * aopt->meteo_t0), 0.);
     temp->val[cell_id] = aopt->meteo_t0 * factor ;
     f->val[cell_id] = p_ground * pow(factor, rscp)
+                    /* correction factor for z > 11000m */
                     * exp(- g/(rair*temp->val[cell_id]) * (z - zt));
     density->val[cell_id] = f->val[cell_id] / (rair * temp->val[cell_id]);
   }
@@ -1618,7 +1613,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
   cs_real_t inf_norm = 1.;
 
   /* Loop to compute pressure profile */
-  for (int sweep = 0; sweep < vcopt.nswrsm && inf_norm > vcopt.epsrsm; sweep++) {
+  for (int sweep = 0; sweep < eqp_p->nswrsm && inf_norm > eqp_p->epsrsm; sweep++) {
     //FIXME 100 or nswrsm
 
     /* Update previous values of pressure for the convergence test */
