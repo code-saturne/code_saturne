@@ -58,6 +58,10 @@ def arg_parser(argv):
     parser.add_argument("-r", "--restart", dest="RestartRun", type=str,
                         help="Run to restart from (in same case)")
 
+    parser.add_argument("--different-restart-mesh", dest="DiffRestartMesh", type=str,
+                        help="Use a different mesh when restarting. Provide
+                        original mesh with this argument.")
+
     parser.add_argument("-n", "--iter-num", dest="iterationsNumber", type=int,
                         help="New iteration number")
 
@@ -418,10 +422,23 @@ class case_setup_filter(object):
         self.initRestartModel()
 
         self.restartModel.setRestartPath(checkpoint_path)
-        _mp = os.path.join(checkpoint_path, 'mesh_input.csm')
-        self.restartModel.setRestartMeshPath(_mp)
         pass
 
+
+    #---------------------------------------------------------------------------
+
+    def setDifferentRestartMesh(self, restart_mesh_path):
+        """
+        Set a different mesh for restart data than the one used for current
+        computation.
+        @param restart_mesh_path: path to original mesh
+        """
+
+        self.initRestartModel()
+
+        self.restartModel.setRestartMeshPath(restart_mesh_path)
+
+        pass
     #---------------------------------------------------------------------------
 
     def removeRestartPath(self):
@@ -640,6 +657,9 @@ def update_case_model(case, options, pkg):
     if options.RestartRun:
         restart_path = os.path.join('RESU', options.RestartRun, 'checkpoint')
         xml_controller.setRestartPath(restart_path)
+
+    if options.DiffRestartMesh:
+        xml_controller.setDifferentRestartMesh(options.DiffRestartMesh)
 
 #-------------------------------------------------------------------------------
 # Main function which modifies the case setup based on given argument list
