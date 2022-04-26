@@ -511,13 +511,15 @@ nlogla = 0
 nsubla = 0
 iuiptn = 0
 
-! Alpha constant for a realisable BC for R12 with the SSG model
-alpha_rnn = 0.47d0
 
 if (iturb.eq.30 .and. abs(crij2).le.epzero .and. crij1.gt.1.d0) then
   c0 = (crij1-1) * 2.0 / 3.0 ! depend on the lag model
+  ! Alpha constant for a realisable BC for R12 with the Rotta model
+  alpha_rnn = 1.d0 / sqrt(c0+2.0d0)
 else
   c0 = 3.5d0
+  ! Alpha constant for a realisable BC for R12 with the SSG model
+  alpha_rnn = 0.47d0
 endif
 cl = 1.d0 / (0.5d0 + 0.75d0 * c0) ! see the different model
 
