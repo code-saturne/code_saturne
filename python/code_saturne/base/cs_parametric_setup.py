@@ -59,8 +59,8 @@ def arg_parser(argv):
                         help="Run to restart from (in same case)")
 
     parser.add_argument("--different-restart-mesh", dest="DiffRestartMesh", type=str,
-                        help="Use a different mesh when restarting. Provide
-                        original mesh with this argument.")
+                        help="Restart from run on a different mesh. " \
+                        "Provide original mesh with this argument.")
 
     parser.add_argument("-n", "--iter-num", dest="iterationsNumber", type=int,
                         help="New iteration number")
