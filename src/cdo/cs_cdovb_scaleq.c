@@ -2715,53 +2715,73 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
       _svb_apply_weak_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
 
       /* Unsteady term + time scheme
-       * =========================== */
-
-      if (!(eqb->time_pty_uniform))
-        cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property,
-                                                 cb->t_pty_eval);
+       * ===========================
+       *
+       * STEPS >> Compute the time contribution to the RHS: Mtime*pn
+       *       >> Update the cellwise system with the time matrix
+       *
+       * Update the RHS with values at time t_n (stored in field->val_pre
+       * in case of an incremental solve)
+       *
+       * p^{k+1,n+1} = p^{k,n+1} + delta_p^{k+1,n+1}
+       *
+       * The unsteady term is equal to p^{k+1,n+1} - p^{n} so that
+       * p^{k+1,n+1} - p^{n} = delta_p^{k+1,n+1} + p^{k,n+1} - p^{n}
+       */
 
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
-        /* |c|*wvc = |dual_cell(v) cap c| */
-
         CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
-        const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
-        /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
-         *       >> Update the cellwise system with the time matrix */
+        if (cs_property_is_subcell(eqp->time_property)) {
 
-        for (short int i = 0; i < cm->n_vc; i++) {
+          const double  coefc = cm->vol_c * inv_dtcur;
 
-          const double  dval =  ptyc * cm->wvc[i];
+          cs_property_c2v_values(cm, eqp->time_property, cb->t_pty_eval,
+                                 cb->values);
 
-          /* Update the RHS with values at time t_n (stored in field->val_pre
-           * in case of an incremental solve)
-           *
-           * p^{k+1,n+1} = p^{k,n+1} + delta_p^{k+1,n+1}
-           *
-           * The unsteady term is equal to p^{k+1,n+1} - p^{n} so that
-           * p^{k+1,n+1} - p^{n} = delta_p^{k+1,n+1} + p^{k,n+1} - p^{n}
-           */
+          for (short int i = 0; i < cm->n_vc; i++) {
 
-          csys->rhs[i] += dval * (csys->val_nm1[i] - csys->val_n[i]);
+            /* |c|*wvc = |dual_cell(v) cap c| */
 
-          /* Add the diagonal contribution from time matrix */
+            const double  dval =  cb->values[i] * cm->wvc[i] * coefc;
 
-          csys->mat->val[i*(cm->n_vc + 1)] += dval;
+            csys->mat->val[i*(cm->n_vc + 1)] += dval;
+            csys->rhs[i] += dval * (csys->val_nm1[i] - csys->val_n[i]);
+
+          }
 
         }
+        else {
+
+          if (!(eqb->time_pty_uniform))
+            cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property,
+                                                     cb->t_pty_eval);
+
+          /* |c|*wvc = |dual_cell(v) cap c| */
+
+          const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
+
+          for (short int i = 0; i < cm->n_vc; i++) {
+
+            const double  dval =  ptyc * cm->wvc[i];
+
+            csys->mat->val[i*(cm->n_vc + 1)] += dval;
+            csys->rhs[i] += dval * (csys->val_nm1[i] - csys->val_n[i]);
+
+          }
+
+        } /* Not on the sub-partition */
 
       }
       else { /* Use the mass matrix */
 
+        if (!(eqb->time_pty_uniform))
+          cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property,
+                                                   cb->t_pty_eval);
+
         const double  tpty_coef = cb->tpty_val * inv_dtcur;
         const cs_sdm_t  *mass_mat = mass_hodge->matrix;
-
-        /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
-         *       >> Update the cellwise system with the time matrix */
-
-        /* Update the rhs with csys->mat*(p^n - p^{k,n+1}) */
 
         double  *vec = cb->values;
         double  *matvec = cb->values + csys->n_dofs;
@@ -2773,8 +2793,6 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
 
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += tpty_coef*matvec[i];
-
-        /* Update the cellwise system with the time matrix */
 
         cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
 
