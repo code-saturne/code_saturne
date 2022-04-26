@@ -755,6 +755,27 @@ cs_property_add(const char            *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Create and initialize a new property structure with an evaluation
+ *         which can be called on a sub-partition of a cell.
+ *         This kind of property is not available for all numerical scheme.
+ *         By default, only one evaluation is performed in each cell.
+ *
+ * \param[in]  name          name of the property
+ * \param[in]  type          type of property
+ *
+ * \return a pointer to a new allocated cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_property_subcell_add(const char            *name,
+                        cs_property_type_t     type)
+{
+  return cs_property_add(name, type | CS_PROPERTY_SUBCELL_DEFINITION);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define a cs_property_t structure thanks to the product of two
  *         properties
  *         The type is infered from that of the related properties
@@ -1706,7 +1727,8 @@ cs_property_def_by_array(cs_property_t      *pty,
 
   if (cs_flag_test(loc, cs_flag_primal_cell)   == false &&
       cs_flag_test(loc, cs_flag_primal_vtx)    == false &&
-      cs_flag_test(loc, cs_flag_dual_face_byc) == false)
+      cs_flag_test(loc, cs_flag_dual_face_byc) == false &&
+      cs_flag_test(loc, cs_flag_dual_cell_byc) == false)
     bft_error(__FILE__, __LINE__, 0,
               " %s: case not available.\n", __func__);
 
@@ -2238,6 +2260,133 @@ cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the values of an isotropic property in each portion of dual
+ *         cell in a (primal) cell. This relies on the c2v connectivity.
+ *
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      pty       pointer to a cs_property_t structure
+ * \param[in]      t_eval    physical time at which one evaluates the term
+ * \param[in, out] eval      array of values storing the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_c2v_values(const cs_cell_mesh_t   *cm,
+                       const cs_property_t    *pty,
+                       cs_real_t               t_eval,
+                       cs_real_t              *eval)
+{
+  if (pty == NULL)
+    return;
+
+  if ((pty->type & CS_PROPERTY_ISO) == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " Invalid type of property for this function.\n"
+              " Property %s has to be isotropic.", pty->name);
+
+  assert(cs_property_is_subcell(pty));
+  assert(eval != NULL);
+
+  const cs_xdef_t  *def = pty->defs[_get_def_id(cm->c_id, pty)];
+
+  switch(def->type) {
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_xdef_analytic_context_t  *cx =
+        (cs_xdef_analytic_context_t *)def->context;
+      assert(cx != NULL);
+
+      /* Evaluate the function for this time inside each portion of dual cell */
+
+      for (int i = 0; i < cm->n_vc; i++) {
+
+        double xvc[3] = { 0.5*cm->xc[0] + 0.5*cm->xv[3*i],
+                          0.5*cm->xc[1] + 0.5*cm->xv[3*i+1],
+                          0.5*cm->xc[2] + 0.5*cm->xv[3*i+2] };
+
+        cx->func(t_eval, 1, NULL, xvc, true, cx->input, eval + i);
+
+      }
+    }
+    break;
+
+  case CS_XDEF_BY_ARRAY:
+    {
+      cs_xdef_array_context_t  *cx = (cs_xdef_array_context_t *)def->context;
+
+      assert(cx->stride == 1);
+
+      if (cx->loc == cs_flag_primal_vtx || cx->loc == cs_flag_dual_cell) {
+
+        for (int i = 0; i < cm->n_vc; i++)
+          eval[i] = cx->values[cm->v_ids[i]];
+
+      }
+      else if (cx->loc == cs_flag_primal_cell) {
+
+        const cs_real_t val_c = cx->values[cm->c_id];
+        for (int i = 0; i < cm->n_vc; i++)
+          eval[i] = val_c;
+
+      }
+      else if (cx->loc == cs_flag_dual_cell_byc) {
+
+        assert(cx->index != NULL);
+        cs_real_t  *_val = cx->values + cx->index[cm->c_id];
+        memcpy(eval, _val, cm->n_vc*sizeof(cs_real_t));
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, "%s: Invalid location for array.",
+                  __func__);
+    }
+    break;
+
+  case CS_XDEF_BY_FIELD:
+    {
+      cs_field_t  *fld = (cs_field_t *)def->context;
+
+      assert(fld != NULL);
+      assert(fld->dim == 1);
+
+      if (fld->location_id == cs_mesh_location_get_id_by_name(N_("cells"))) {
+
+        const cs_real_t val_c = fld->val[cm->c_id];
+        for (int i = 0; i < cm->n_vc; i++)
+          eval[i] = val_c;
+
+      }
+      else if (fld->location_id ==
+               cs_mesh_location_get_id_by_name(N_("vertices"))) {
+
+        for (int i = 0; i < cm->n_vc; i++)
+          eval[i] = fld->val[cm->v_ids[i]];
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, "%s: Invalid location for field.",
+                  __func__);
+    }
+    break;
+
+  case CS_XDEF_BY_VALUE:
+    {
+      const cs_real_t  *constant_val = (cs_real_t *)def->context;
+
+      for (int i = 0; i < cm->n_vc; i++)
+        eval[i] = constant_val[0];
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid definition.", __func__);
+
+  } /* Type of definition */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the Fourier number in each cell
  *
  * \param[in]      pty       pointer to the diffusive property struct.
@@ -2360,6 +2509,9 @@ cs_property_log_setup(void)
       cs_log_printf(CS_LOG_SETUP, " | by product\n");
     else
       cs_log_printf(CS_LOG_SETUP, "\n");
+
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Subcell definition %s\n",
+                  pty->name, cs_base_strtf(cs_property_is_subcell(pty)));
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | Number of definitions: %d\n\n",
                   pty->name, pty->n_definitions);

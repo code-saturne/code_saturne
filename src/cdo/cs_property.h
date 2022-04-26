@@ -78,26 +78,35 @@ BEGIN_C_DECLS
  *  2: Orthotropic behavior (three real numbers describe the behavior assuming
  *  that the different behavior is aligned with Cartesian axis) */
 
-#define CS_PROPERTY_ORTHO         (1 << 1)
+#define CS_PROPERTY_ORTHO                    (1 << 1)
 
 /*! \var CS_PROPERTY_ANISO
  *  4: Anisotropic behavior (a 3x3 tensor describe the behavior). This tensor
  *  should be symmetric positive definite (i.e 6 real numbers describe the
  *  behavior) but by default a 3x3 tensor is used. */
 
-#define CS_PROPERTY_ANISO         (1 << 2)
+#define CS_PROPERTY_ANISO                    (1 << 2)
 
 /*! \var CS_PROPERTY_ANISO_SYM
  *  8: Anisotropic behavior. This tensor is represented with 6 real numbers
  *  since the tensor is symmetric */
 
-#define CS_PROPERTY_ANISO_SYM     (1 << 3)
+#define CS_PROPERTY_ANISO_SYM                (1 << 3)
 
 /*! \var CS_PROPERTY_BY_PRODUCT
  *  16: The property is defined as the product of two other properties
  */
 
-#define CS_PROPERTY_BY_PRODUCT    (1 << 4)
+#define CS_PROPERTY_BY_PRODUCT               (1 << 4)
+
+/*! \var CS_PROPERTY_SUBCELL_DEFINITION
+
+ *  32: The property is defined such that one wants to evaluate the definition
+ *  on entities which are a partition of a cell. By default, one perfoms only
+ *  one evaluation in each cell
+ */
+
+#define CS_PROPERTY_SUBCELL_DEFINITION       (1 << 5)
 
 /*! @} */
 
@@ -306,6 +315,29 @@ cs_property_is_isotropic(const cs_property_t   *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  returns true if the property is allowed to be evaluated on a
+ *         sub-partition of a cell
+ *
+ * \param[in]    pty    pointer to a property to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_property_is_subcell(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return false;
+
+  if (pty->type & CS_PROPERTY_SUBCELL_DEFINITION)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve the name of a property
  *
  * \param[in]    pty    pointer to a property
@@ -412,6 +444,24 @@ cs_property_get_n_properties(void);
 cs_property_t *
 cs_property_add(const char            *name,
                 cs_property_type_t     type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and initialize a new property structure with an evaluation
+ *         which can be called on a sub-partition of a cell.
+ *         This kind of property is not available for all numerical scheme.
+ *         By default, only one evaluation is performed in each cell.
+ *
+ * \param[in]  name          name of the property
+ * \param[in]  type          type of property
+ *
+ * \return a pointer to a new allocated cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_property_subcell_add(const char            *name,
+                        cs_property_type_t     type);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -852,6 +902,24 @@ cs_real_t
 cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
                           const cs_property_t    *pty,
                           cs_real_t               t_eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the values of an isotropic property in each portion of dual
+ *         cell in a (primal) cell. This relies on the c2v connectivity.
+ *
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      pty       pointer to a cs_property_t structure
+ * \param[in]      t_eval    physical time at which one evaluates the term
+ * \param[in, out] eval      array of values storing the evaluation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_c2v_values(const cs_cell_mesh_t   *cm,
+                       const cs_property_t    *pty,
+                       cs_real_t               t_eval,
+                       cs_real_t              *eval);
 
 /*----------------------------------------------------------------------------*/
 /*!
