@@ -157,6 +157,32 @@ _add_new_def(cs_property_t     *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the associated definition id for the current cell id
+ *
+ * \param[in]  c_id      current cell id
+ * \param[in]  pty       pointer to a cs_property_t structure
+ *
+ * \return the definition id
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static int
+_get_def_id(cs_lnum_t                c_id,
+            const cs_property_t     *pty)
+{
+  if (pty->n_definitions > 1) {
+
+    assert(pty->def_ids != NULL);
+    assert(pty->def_ids[c_id] > -1);
+    return pty->def_ids[c_id];
+
+  }
+  else
+    return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Check if the settings are valid and then invert a tensor
  *
  * \param[in, out]  tens           values of the tensor
@@ -218,12 +244,7 @@ _get_cell_value(cs_lnum_t              c_id,
                 cs_real_t              t_eval,
                 const cs_property_t   *pty)
 {
-  int  def_id = 0;
-  if (pty->n_definitions > 1) {
-    assert(pty->def_ids != NULL);
-    def_id = pty->def_ids[c_id];
-    assert(def_id > -1);
-  }
+  int  def_id = _get_def_id(c_id, pty);
 
   assert(pty->get_eval_at_cell[def_id] != NULL);
 
@@ -260,11 +281,7 @@ _value_in_cell(const cs_cell_mesh_t   *cm,
                cs_real_t               t_eval)
 {
   cs_real_t  result = 0;
-  int  def_id = 0;
-  if (pty->n_definitions > 1) {
-    def_id = pty->def_ids[cm->c_id];
-    assert(def_id > -1);
-  }
+  int  def_id = _get_def_id(cm->c_id, pty);
   cs_xdef_t  *def = pty->defs[def_id];
 
   assert(pty->get_eval_at_cell_cw[def_id] != NULL);
@@ -291,14 +308,10 @@ _get_cell_tensor(cs_lnum_t               c_id,
                  const cs_property_t    *pty,
                  cs_real_t               tensor[3][3])
 {
-  int  def_id = 0;
-  if (pty->n_definitions > 1) {
-    def_id = pty->def_ids[c_id];
-    assert(def_id > -1);
-  }
-  assert(pty->get_eval_at_cell[def_id] != NULL);
-
+  int  def_id = _get_def_id(c_id, pty);
   cs_xdef_t  *def = pty->defs[def_id];
+
+  assert(pty->get_eval_at_cell[def_id] != NULL);
 
   if (pty->type & CS_PROPERTY_ISO) {
 
@@ -433,14 +446,10 @@ _tensor_in_cell(const cs_cell_mesh_t   *cm,
                 cs_real_t               t_eval,
                 cs_real_t               tensor[3][3])
 {
-  int  def_id = 0;
-  if (pty->n_definitions > 1) {
-    def_id = pty->def_ids[cm->c_id];
-    assert(def_id > -1);
-  }
-  assert(pty->get_eval_at_cell_cw[def_id] != NULL);
-
+  int  def_id = _get_def_id(cm->c_id, pty);
   cs_xdef_t  *def = pty->defs[def_id];
+
+  assert(pty->get_eval_at_cell_cw[def_id] != NULL);
 
   if (pty->type & CS_PROPERTY_ISO) {
 
