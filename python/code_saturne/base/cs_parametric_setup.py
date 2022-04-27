@@ -58,7 +58,12 @@ def arg_parser(argv):
     parser.add_argument("-r", "--restart", dest="RestartRun", type=str,
                         help="Run to restart from (in same case)")
 
-    parser.add_argument("--different-restart-mesh", dest="DiffRestartMesh", type=str,
+    parser.add_argument("--different-restart-mesh", dest="DiffRestartMesh",
+                        action="store_true",
+                        help="Restart from run on a different mesh. " \
+                        "Will check for mesh in checkpoint folder.")
+
+    parser.add_argument("--different-restart-mesh-path", dest="DiffRestartMeshPath", type=str,
                         help="Restart from run on a different mesh. " \
                         "Provide original mesh with this argument.")
 
@@ -413,13 +418,18 @@ class case_setup_filter(object):
 
     #---------------------------------------------------------------------------
 
-    def setRestartPath(self, checkpoint_path):
+    def setRestartPath(self, checkpoint_path, diff_restart_mesh=False):
         """
         Set restart path in xml file.
         @param path: path to checkpoint folder
         """
 
         self.initRestartModel()
+
+        # If restart is done using a new mesh which is in the checkpoint folder
+        if diff_restart_mesh:
+            _mp = os.path.join(checkpoint_path, "mesh_input.csm")
+            self.setDifferentRestartMesh(_mp)
 
         self.restartModel.setRestartPath(checkpoint_path)
         pass
@@ -656,10 +666,10 @@ def update_case_model(case, options, pkg):
 
     if options.RestartRun:
         restart_path = os.path.join('RESU', options.RestartRun, 'checkpoint')
-        xml_controller.setRestartPath(restart_path)
+        xml_controller.setRestartPath(restart_path, options.DiffRestartMesh)
 
-    if options.DiffRestartMesh:
-        xml_controller.setDifferentRestartMesh(options.DiffRestartMesh)
+    if options.DiffRestartMeshPath:
+        xml_controller.setDifferentRestartMesh(options.DiffRestartMeshPath)
 
 #-------------------------------------------------------------------------------
 # Main function which modifies the case setup based on given argument list
