@@ -29,6 +29,8 @@ itself and for writing user-defined functions.
 
 \subpage cs_dg_common_constructs
 
+\subpage cs_dg_node_level_parallelism
+
 \subpage cs_dg_writing_theory
 
 \subpage cs_dg_build_system
