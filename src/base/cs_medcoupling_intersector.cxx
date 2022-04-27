@@ -79,18 +79,11 @@
 #include <MEDFileMesh.hxx>
 #include <MEDCouplingUMesh.hxx>
 
-#include <MEDFileField1TS.hxx>
-#include <MEDCouplingField.hxx>
-#include <MEDCouplingFieldFloat.hxx>
-#include <MEDCouplingFieldDouble.hxx>
-#include <MEDFileFieldMultiTS.hxx>
-
-#include <MEDCouplingRemapper.hxx>
-
 #include <MEDLoader.hxx>
 
 #include <MEDCouplingNormalizedUnstructuredMesh.txx>
 #include "Interpolation3D.hxx"
+#include "Interpolation3DSurf.hxx"
 
 using namespace MEDCoupling;
 #endif
@@ -104,6 +97,8 @@ struct _cs_medcoupling_intersector_t {
   char                           *name;
   char                           *medfile_path;
   char                           *interp_method;
+
+  cs_medcpl_intersect_type_t      type;
 
   cs_medcoupling_mesh_t          *local_mesh;
 
@@ -125,7 +120,7 @@ struct _cs_medcoupling_intersector_t {
   fvm_nodal_t                    *ext_mesh;         // Associated external mesh
 
   int                             matrix_needs_update;
-  cs_real_t                      *vol_intersect;
+  cs_real_t                      *intersect_vals;
 
 };
 
@@ -156,13 +151,14 @@ _create_intersector(void)
   mi->name                = NULL;
   mi->medfile_path        = NULL;
   mi->interp_method       = NULL;
+  mi->type                = CS_MEDCPL_INTERSECT_UKNOWN;
   mi->local_mesh          = NULL;
   mi->source_mesh         = NULL;
   mi->boundary_coords     = NULL;
   mi->n_b_vertices        = -1;
   mi->init_coords         = NULL;
   mi->ext_mesh            = NULL;
-  mi->vol_intersect       = NULL;
+  mi->intersect_vals       = NULL;
   mi->matrix_needs_update = 1;
 
   return mi;
@@ -170,47 +166,23 @@ _create_intersector(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize a cs_medcoupling_intersector with given parameters
+ * \brief Allocate and fill arrays needed for fvm writers
  *
- * \param[in] mi               pointer to the cs_medcoupling_intersector_t struct
- * \param[in] name             name of the intersector
- * \param[in] medfile_path     path to the MED file
- * \param[in] interp_method    interpolation method (P0P0, P1P0, ..)
- * \param[in] select_criteria  selection criteria
+ * \param[in] mi      pointer to the cs_medcoupling_intersector_t struct
+ * \param[in] n_vtx   number of vertices in the mesh
+ * \param[in] dim     mesh dimension
  *
- */
 /*----------------------------------------------------------------------------*/
 
 void
-_allocate_intersector(cs_medcoupling_intersector_t *mi,
-                      const char                   *name,
-                      const char                   *medfile_path,
-                      const char                   *interp_method,
-                      const char                   *select_criteria)
+_allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
+                                    const cs_lnum_t               n_vtx,
+                                    const cs_lnum_t               dim)
 {
-  BFT_MALLOC(mi->name, strlen(name)+1, char);
-  strcpy(mi->name, name);
 
-  BFT_MALLOC(mi->medfile_path, strlen(medfile_path)+1, char);
-  strcpy(mi->medfile_path, medfile_path);
-
-  BFT_MALLOC(mi->interp_method, strlen(interp_method)+1, char);
-  strcpy(mi->interp_method, interp_method);
-
-  mi->local_mesh = cs_medcoupling_mesh_from_base(cs_glob_mesh,
-                                                 name,
-                                                 select_criteria,
-                                                 3,
-                                                 1);
-
-  mi->matrix_needs_update = 1;
-
-  MEDCoupling::MEDFileUMesh *mesh = MEDCoupling::MEDFileUMesh::New(medfile_path);
-  mi->source_mesh = mesh->getMeshAtLevel(0);
+  assert(mi != NULL);
 
   /* Copy med mesh coordinates at init */
-  cs_lnum_t n_vtx = mesh->getNumberOfNodes();
-  const cs_lnum_t dim = mesh->getMeshDimension();
   BFT_MALLOC(mi->init_coords, n_vtx, cs_coord_3_t);
 
   DataArrayDouble *med_coords = DataArrayDouble::New();
@@ -227,7 +199,7 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
 
   DataArrayDouble *b_coords = DataArrayDouble::New();
 
-  b_coords= b_mesh->getCoordinatesAndOwner();
+  b_coords = b_mesh->getCoordinatesAndOwner();
 
   cs_lnum_t n_b_vtx = b_mesh->getNumberOfNodes();
 
@@ -261,7 +233,7 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   if (cs_glob_rank_id < 1)
     _n_b_faces = n_b_faces;
 
-  BFT_MALLOC(vertex_idx  , _n_b_faces +1, cs_lnum_t);
+  BFT_MALLOC(vertex_idx, _n_b_faces +1, cs_lnum_t);
   vertex_idx[0] = 0;
 
   if (cs_glob_rank_id < 1) {
@@ -318,10 +290,112 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
     BFT_FREE(faces_gnum);
   }
 
-  /* Allocate volume intersection array */
-  BFT_MALLOC(mi->vol_intersect, cs_glob_mesh->n_cells, cs_real_t);
-  for (cs_lnum_t e_id = 0; e_id < cs_glob_mesh->n_cells; e_id++)
-    mi->vol_intersect[e_id] = 0.;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize a cs_medcoupling_intersector with given parameters
+ *
+ * \param[in] mi               pointer to the cs_medcoupling_intersector_t struct
+ * \param[in] name             name of the intersector
+ * \param[in] medfile_path     path to the MED file
+ * \param[in] interp_method    interpolation method (P0P0, P1P0, ..)
+ * \param[in] select_criteria  selection criteria
+ * \param[in] type             intersection type (volume or surface)
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_allocate_intersector(cs_medcoupling_intersector_t *mi,
+                      const char                   *name,
+                      const char                   *medfile_path,
+                      const char                   *interp_method,
+                      const char                   *select_criteria,
+                      cs_medcpl_intersect_type_t    type)
+{
+  BFT_MALLOC(mi->name, strlen(name)+1, char);
+  strcpy(mi->name, name);
+
+  BFT_MALLOC(mi->medfile_path, strlen(medfile_path)+1, char);
+  strcpy(mi->medfile_path, medfile_path);
+
+  BFT_MALLOC(mi->interp_method, strlen(interp_method)+1, char);
+  strcpy(mi->interp_method, interp_method);
+
+  int cs_elt_dim = -1;
+  if (mi->type == CS_MEDCPL_INTERSECT_VOL)
+    cs_elt_dim = 3;
+  else if (mi->type == CS_MEDCPL_INTERSECT_SURF)
+    cs_elt_dim = 2;
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: Uknown element dimension.\n"));
+
+  mi->local_mesh = cs_medcoupling_mesh_from_base(cs_glob_mesh,
+                                                 name,
+                                                 select_criteria,
+                                                 cs_elt_dim,
+                                                 1);
+
+  mi->matrix_needs_update = 1;
+
+  MEDCoupling::MEDFileUMesh *mesh = MEDCoupling::MEDFileUMesh::New(medfile_path);
+  mi->source_mesh = mesh->getMeshAtLevel(0);
+
+  /* Allocate pointers related to fvm and external meshes */
+  cs_lnum_t n_vtx = mesh->getNumberOfNodes();
+  cs_lnum_t dim   = mesh->getMeshDimension();
+  _allocate_intersector_external_mesh(mi, n_vtx, dim);
+
+  /* Allocate intersection array (volume in 3D, surface in 2D) */
+  const cs_lnum_t _n_intersect_vals =
+    (cs_elt_dim == 3) ? cs_glob_mesh->n_cells : mi->local_mesh->n_elts;
+
+  BFT_MALLOC(mi->intersect_vals, _n_intersect_vals, cs_real_t);
+  for (cs_lnum_t e_id = 0; e_id < _n_intersect_vals; e_id++)
+    mi->intersect_vals[e_id] = 0.;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a MEDCoupling intersector
+ *
+ * \param[in] name             name of the intersector
+ * \param[in] medfile_path     path to the MED file
+ * \param[in] interp_method    interpolation method (P0P0, P1P0, ..)
+ * \param[in] select_criteria  selection criteria
+ * \param[in] type             intersection type (volume or surface)
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_add_intersector(const char                 *name,
+                 const char                 *medfile_path,
+                 const char                 *interp_method,
+                 const char                 *select_criteria,
+                 cs_medcpl_intersect_type_t  type)
+{
+
+  if (_n_intersects == 0)
+    BFT_MALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
+  else
+    BFT_REALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
+
+  cs_medcoupling_intersector_t *mi = _create_intersector();
+
+  _allocate_intersector(mi,
+                        name,
+                        medfile_path,
+                        interp_method,
+                        select_criteria,
+                        type);
+
+  _intersects[_n_intersects] = mi;
+
+  _n_intersects++;
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -432,10 +506,65 @@ _destroy_intersector(cs_medcoupling_intersector_t *mi)
   BFT_FREE(mi->init_coords);
   BFT_FREE(mi->boundary_coords);
   BFT_FREE(mi->init_boundary_coords);
-  BFT_FREE(mi->vol_intersect);
+  BFT_FREE(mi->intersect_vals);
 
   // Mesh will deallocated afterwards since it can be shared
   mi->local_mesh = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute surface intersection matrix and update the intersection array
+ *
+ * \param[in] mi  pointer to the cs_medcoupling_intersector_t struct
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_compute_intersection_surfaces(cs_medcoupling_intersector_t *mi)
+{
+  /* If local mesh is empty, nothing to do... */
+  cs_lnum_t n_elts = mi->local_mesh->n_elts;
+
+  if (n_elts > 0 && mi->matrix_needs_update) {
+
+    /* initialize the pointer */
+    for (cs_lnum_t c_id = 0; c_id < cs_glob_mesh->n_cells; c_id++)
+      mi->intersect_vals[c_id] = 0.;
+
+    /* Matrix for the target mesh */
+    MEDCouplingNormalizedUnstructuredMesh<3,2>
+      tMesh_wrapper(mi->local_mesh->med_mesh);
+
+    MEDCouplingNormalizedUnstructuredMesh<3,2>
+      sMesh_wrapper(mi->source_mesh);
+
+    /* Compute the intersection matrix between source and target meshes */
+    std::vector<std::map<mcIdType, double> > mat;
+    INTERP_KERNEL::Interpolation3DSurf interpolator;
+
+    interpolator.interpolateMeshes(sMesh_wrapper,
+                                   tMesh_wrapper,
+                                   mat,
+                                   mi->interp_method);
+
+    /* Loop on the different elements of the target mesh.
+     * For each element, we sum all intersected volumes to retrieve the total
+     * intersected volume per cell.
+     * The iterator map contains two elements:
+     * -> first  : which is the index of the intersected cell in source mesh
+     * -> second : which the intersection volume
+     */
+    const cs_lnum_t *connec = mi->local_mesh->new_to_old;
+    for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
+      cs_lnum_t c_id = connec[e_id];
+      for (std::map<mcIdType, double>::iterator it = mat[e_id].begin();
+           it != mat[e_id].end();
+           ++it)
+        mi->intersect_vals[c_id] += it->second;
+    }
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -456,7 +585,7 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
 
     /* initialize the pointer */
     for (cs_lnum_t c_id = 0; c_id < cs_glob_mesh->n_cells; c_id++)
-      mi->vol_intersect[c_id] = 0.;
+      mi->intersect_vals[c_id] = 0.;
 
     /* Matrix for the target mesh */
     MEDCouplingNormalizedUnstructuredMesh<3,3>
@@ -495,7 +624,7 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
       for (std::map<mcIdType, double>::iterator it = mat[e_id].begin();
            it != mat[e_id].end();
            ++it)
-        mi->vol_intersect[c_id] += it->second;
+        mi->intersect_vals[c_id] += it->second;
     }
 
   }
@@ -573,7 +702,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add a MEDCoupling intersector.
+ * \brief Add a volume MEDCoupling intersector.
  *
  * \param[in] name             name of the intersector
  * \param[in] medfile_path     path to the MED file
@@ -584,10 +713,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_intersector_add(const char  *name,
-                               const char  *medfile_path,
-                               const char  *interp_method,
-                               const char  *select_criteria)
+cs_medcoupling_intersector_add_vol(const char  *name,
+                                   const char  *medfile_path,
+                                   const char  *interp_method,
+                                   const char  *select_criteria)
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   CS_NO_WARN_IF_UNUSED(name);
@@ -599,21 +728,47 @@ cs_medcoupling_intersector_add(const char  *name,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
 #else
-  if (_n_intersects == 0)
-    BFT_MALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
-  else
-    BFT_REALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
+  _add_intersector(name,
+                   medfile_path,
+                   interp_method,
+                   select_criteria,
+                   CS_MEDCPL_INTERSECT_VOL);
+#endif
+}
 
-  cs_medcoupling_intersector_t *mi = _create_intersector();
-  _allocate_intersector(mi,
-                        name,
-                        medfile_path,
-                        interp_method,
-                        select_criteria);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a surface MEDCoupling intersector.
+ *
+ * \param[in] name             name of the intersector
+ * \param[in] medfile_path     path to the MED file
+ * \param[in] interp_method    interpolation method (P0P0, P1P0, ..)
+ * \param[in] select_criteria  selection criteria
+ *
+ */
+/*----------------------------------------------------------------------------*/
 
-  _intersects[_n_intersects] = mi;
+void
+cs_medcoupling_intersector_add_surf(const char  *name,
+                                    const char  *medfile_path,
+                                    const char  *interp_method,
+                                    const char  *select_criteria)
+{
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(name);
+  CS_NO_WARN_IF_UNUSED(medfile_path);
+  CS_NO_WARN_IF_UNUSED(interp_method);
+  CS_NO_WARN_IF_UNUSED(select_criteria);
 
-  _n_intersects++;
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
+  _add_intersector(name,
+                   medfile_path,
+                   interp_method,
+                   select_criteria,
+                   CS_MEDCPL_INTERSECT_SURF);
 #endif
 }
 
@@ -727,6 +882,12 @@ cs_medcoupling_intersect_volumes(cs_medcoupling_intersector_t  *mi)
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
 #else
+  /* Test that intersector is a volume intersector */
+  if (mi->type != CS_MEDCPL_INTERSECT_VOL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: intersector \"%s\" is not a volume intersector.\n"),
+              mi->name);
+
   /* Compute intersection */
   _compute_intersection_volumes(mi);
 
@@ -734,7 +895,48 @@ cs_medcoupling_intersect_volumes(cs_medcoupling_intersector_t  *mi)
   mi->matrix_needs_update = 0;
 
   /* Return intersected volumes */
-  retval = mi->vol_intersect;
+  retval = mi->intersect_vals;
+#endif
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the intersection surfaces between the source mesh and
+ * code mesh
+ *
+ * \param[in] mi            pointer to the cs_medcoupling_intersector_t struct
+ *
+ * \return a pointer to the array containing the intersected volume of each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_medcoupling_intersect_surfaces(cs_medcoupling_intersector_t  *mi)
+{
+  cs_real_t *retval = NULL;
+
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(mi);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
+  /* Test that intersector is a volume intersector */
+  if (mi->type != CS_MEDCPL_INTERSECT_SURF)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error: intersector \"%s\" is not a surface intersector.\n"),
+              mi->name);
+
+  /* Compute intersection */
+  _compute_intersection_surfaces(mi);
+
+  /* Reset intersector matrix status */
+  mi->matrix_needs_update = 0;
+
+  /* Return intersected volumes */
+  retval = mi->intersect_vals;
 #endif
 
   return retval;
