@@ -1167,7 +1167,6 @@ NEPTUNE_CFD=
 if test x$cs_have_neptune_cfd = xyes; then
   AC_CONFIG_SUBDIRS([neptune_cfd])
   NEPTUNE_CFD=neptune_cfd
-  NEPTUNE_CFD_LIBS="-lneptune"
 fi
 
 AC_SUBST(NEPTUNE_CFD)
