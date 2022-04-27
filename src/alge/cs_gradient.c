@@ -2343,18 +2343,16 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
   int gq_id = (ce == NULL) ? 0 : ce->id+1;
   cs_gradient_quantities_t  *gq = _gradient_quantities_get(gq_id);
 
-  cs_cocg_6_t *_cocg = NULL, *_cocgb = NULL;
+  cs_cocg_6_t *_cocg = NULL;
 
   bool extended = (   halo_type == CS_HALO_EXTENDED
                    && m->cell_cells_idx) ? true : false;
 
   if (extended) {
     _cocg = gq->cocg_lsq_ext;
-    _cocgb = gq->cocgb_s_lsq_ext;
   }
   else {
     _cocg = gq->cocg_lsq;
-    _cocgb = gq->cocgb_s_lsq;
   }
 
   /* Compute if not present yet.
@@ -2371,11 +2369,6 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
   if (accel) {
 
     cs_alloc_mode_t alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
-
-    void *_cocg_p = _cocg, *_cocgb_p = _cocgb;
-
-    cs_set_alloc_mode(&_cocg_p, alloc_mode);
-    cs_set_alloc_mode(&_cocgb_p, alloc_mode);
 
     if (extended) {
       cs_set_alloc_mode(&(gq->cocg_lsq_ext), alloc_mode);
