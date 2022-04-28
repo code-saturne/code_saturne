@@ -219,8 +219,8 @@ template <typename T>
 __global__ static void
 _compute_cocg_rhsv_lsq_s_i_face(cs_lnum_t           size,
                                 T                  *cocg,
-                                const cs_lnum_t    *cell_cells,
                                 const cs_lnum_t    *cell_cells_idx,
+                                const cs_lnum_t    *cell_cells,
                                 const cs_real_3_t  *cell_cen,
                                 cs_real_4_t        *rhsv,
                                 const cs_real_t    *c_weight)
@@ -332,8 +332,8 @@ _compute_cocg_rhsv_lsq_s_b_face(cs_lnum_t         n_b_cells,
 
 __global__ static void
 _compute_rhsv_lsq_s_i_face(cs_lnum_t          size,
-                           const cs_lnum_t   *cell_cells_p,
                            const cs_lnum_t   *cell_cells_idx,
+                           const cs_lnum_t   *cell_cells,
                            const cs_real_3_t *cell_cen,
                            const cs_real_t   *c_weight,
                            cs_real_4_t       *rhsv)
@@ -345,7 +345,7 @@ _compute_rhsv_lsq_s_i_face(cs_lnum_t          size,
     cs_real_t dc[3], ddc, _weight;
     cs_lnum_t c_id1;
     for (cs_lnum_t i = s_id; i < e_id; i++) {
-      c_id1 = cell_cells_p[i];
+      c_id1 = cell_cells[i];
       if (c_weight == NULL)
         _weight = 1;
       else
@@ -611,18 +611,18 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
   /* Recompute cocg and at rhsv from interior cells */
 
-  if (hyd_p_flag == 0  && init_cocg) {
+  if (hyd_p_flag == 0 && init_cocg) {
 
     _compute_cocg_rhsv_lsq_s_i_face<<<gridsize, blocksize, 0, stream>>>
-      (n_cells, cocg, cell_cells, cell_cells_idx, cell_cen, rhsv, c_weight);
+      (n_cells, cocg, cell_cells_idx, cell_cells, cell_cen, rhsv, c_weight);
 
     /* Contribution from extended neighborhood */
     if (halo_type == CS_HALO_EXTENDED && cell_cells_e_idx != NULL)
       _compute_cocg_rhsv_lsq_s_i_face<<<gridsize, blocksize, 0, stream>>>
         (n_cells,
          cocg,
-         cell_cells_e,
          cell_cells_e_idx,
+         cell_cells_e,
          cell_cen,
          rhsv,
          c_weight);
@@ -696,14 +696,14 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
          rhsv);
 
     _compute_rhsv_lsq_s_i_face<<<gridsize, blocksize, 0, stream>>>
-      (n_cells, cell_cells, cell_cells_idx, cell_cen, c_weight, rhsv);
+      (n_cells, cell_cells_idx, cell_cells, cell_cen, c_weight, rhsv);
 
     /* Contribution from extended neighborhood */
     if (halo_type == CS_HALO_EXTENDED && cell_cells_e_idx != NULL)
       _compute_rhsv_lsq_s_i_face<<<gridsize, blocksize, 0, stream>>>
         (n_cells,
-         cell_cells_e,
          cell_cells_e_idx,
+         cell_cells_e,
          cell_cen,
          c_weight,
          rhsv);
