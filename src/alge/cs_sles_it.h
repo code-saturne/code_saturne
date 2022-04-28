@@ -572,6 +572,25 @@ cs_sles_it_set_plot_options(cs_sles_it_t  *context,
                             const char    *base_name,
                             bool           use_iteration);
 
+/*----------------------------------------------------------------------------
+ * Convergence test.
+ *
+ * parameters:
+ *   c           <-- pointer to solver context info
+ *   n_iter      <-- Number of iterations done
+ *   residue     <-- Non normalized residue
+ *   convergence <-> Convergence information structure
+ *
+ * returns:
+ *   convergence status.
+ *----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_sles_it_convergence_test(cs_sles_it_t              *c,
+                            unsigned                   n_iter,
+                            double                     residue,
+                            cs_sles_it_convergence_t  *convergence);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -318,8 +318,12 @@ _sles_setup_matrix_native(int                  f_id,
     cs_sles_it_t *c = cs_sles_get_context(sc);
     cs_sles_it_type_t s_type = cs_sles_it_get_type(c);
     if (   s_type >= CS_SLES_P_GAUSS_SEIDEL
-        && s_type <= CS_SLES_TS_B_GAUSS_SEIDEL)
+        && s_type <= CS_SLES_TS_B_GAUSS_SEIDEL) {
       need_msr = true;
+      /* Gauss-Seidel not yet implemented with full blocks */
+      if (eb_size > 1)
+        need_msr = false;
+    }
     else {
       pc = cs_sles_it_get_pc(c);
       if (pc != NULL) {
@@ -365,9 +369,9 @@ _sles_setup_matrix_native(int                  f_id,
       need_msr = true;
   }
 
-  /* MSR not supported yet for some solvers with full blocks */
-  if (eb_size > 1)
-    need_msr = false;
+  /* For now, simply force MSR when running on accelerated node */
+  if (need_external == false && cs_get_device_id() > -1)
+    need_msr = true;
 
   if (need_msr)
     a = cs_matrix_msr(symmetric,

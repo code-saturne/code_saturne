@@ -122,6 +122,10 @@
 #include "cs_volume_mass_injection.h"
 #include "cs_volume_zone.h"
 
+#if defined(HAVE_CUDA)
+#include "cs_blas_cuda.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -479,13 +483,17 @@ _run(void)
 
   cs_sles_default_finalize();
 
-  /* Finalize sparse linear systems resolution */
+  /* Finalize matrix API */
 
   cs_matrix_finalize();
 
   /* Finalize user extra operations */
   if (opts.verif == false)
     cs_user_extra_operations_finalize(cs_glob_domain);
+
+#if defined(HAVE_CUDA)
+  cs_blas_cuda_finalize();
+#endif
 
   /* Switch logging back to C (may be moved depending on Fortran dependencies) */
 

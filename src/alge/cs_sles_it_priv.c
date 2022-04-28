@@ -45,6 +45,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_base_accel.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -229,6 +231,8 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 {
   cs_sles_it_setup_t *sd = c->setup_data;
 
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+
   if (sd == NULL) {
     BFT_MALLOC(c->setup_data, 1, cs_sles_it_setup_t);
     sd = c->setup_data;
@@ -275,15 +279,15 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
     if (s != NULL) {
       sd->ad_inv = s->setup_data->ad_inv;
-      BFT_FREE(sd->_ad_inv);
+      CS_FREE_HD(sd->_ad_inv);
     }
     else {
 
       const cs_lnum_t n_rows = sd->n_rows;
-      if (diag_block_size < 3 || block_nn_inverse == false)
-        BFT_REALLOC(sd->_ad_inv, sd->n_rows, cs_real_t);
-      else
-        BFT_REALLOC(sd->_ad_inv, sd->n_rows*diag_block_size, cs_real_t);
+      const cs_lnum_t ad_inv_size = (block_nn_inverse) ?
+        n_rows*diag_block_size : n_rows;
+
+      CS_MALLOC_HD(sd->_ad_inv, ad_inv_size, cs_real_t, amode);
 
       sd->ad_inv = sd->_ad_inv;
 
@@ -307,6 +311,8 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
           _fact_lu(n_blocks, diag_block_size, ad, sd->_ad_inv);
 
       }
+
+      cs_sync_h2d(sd->_ad_inv);
 
     }
 

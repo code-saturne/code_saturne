@@ -58,6 +58,10 @@ BEGIN_C_DECLS
 
 #  define CS_NUMBERING_SIMD_SIZE 64
 
+#elif defined(HAVE_CUDA)                 /* For CUDA devices (warp size) */
+
+#  define CS_NUMBERING_SIMD_SIZE 32
+
 #else
 
 #  define CS_NUMBERING_SIMD_SIZE 4       /* Most current platforms */

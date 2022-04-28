@@ -691,11 +691,10 @@ _set_cusparse_map(cs_matrix_t   *matrix)
               __func__, (int)status);
 
   csm->nnz = nnz;
-  csm->d_e_val = e_val;
+  csm->d_e_val = const_cast<void *>(e_val);
 
-  csm->d_row_index = row_index;
-  csm->d_col_id = col_id;
-  csm->d_e_val = e_val;
+  csm->d_row_index = const_cast<void *>(row_index);
+  csm->d_col_id = const_cast<void *>(col_id);
 
   status = cusparseCreateMatDescr(&(csm->descrA));
 

@@ -38,8 +38,6 @@
 #include <cooperative_groups/reduce.h>
 #endif
 
-#include <cublas_v2.h>
-
 namespace cg = cooperative_groups;
 
 /*---------------------------------------------------------------------------*/
@@ -49,7 +47,7 @@ namespace cg = cooperative_groups;
 #include "bft_mem_usage.h"
 #include "bft_printf.h"
 
-#include "cs_defs.h"
+#include "cs_blas_cuda.h"
 #include "cs_math.h"
 #include "cs_timer.h"
 
@@ -177,75 +175,6 @@ _dot_xy_stage_1_of_2(cs_lnum_t    n,
       stmp[tid] += stmp[tid + j];
     }
     __syncthreads();
-  }
-
-  if (tid < 32)
-    _warp_reduce_sum<blockSize>(stmp, tid);
-
-  // Output: b_res for this block
-
-  if (tid == 0) b_res[blockIdx.x] = stmp[0];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute dot product x.y, summing result over all threads of a block.
- *
- * blockSize must be a power of 2.
- *
- * This kernel is similar to _dot_xy_0a, but with explicit loop unrolling.
- *
- * \param[in]   n      array size
- * \param[in]   x      x vector
- * \param[in]   y      y vector
- * \param[out]  b_res  result of s = x.x
- */
-/*----------------------------------------------------------------------------*/
-
-template <size_t blockSize, typename T>
-__global__ static void
-_dot_xy_stage_1_of_2_u(cs_lnum_t    n,
-                       const T     *x,
-                       const T     *y,
-                       double      *b_res)
-{
-  __shared__ double stmp[blockSize];
-
-  cs_lnum_t tid = threadIdx.x;
-  size_t grid_size = blockDim.x*gridDim.x;
-
-  stmp[tid] = 0;
-  for (int i = blockIdx.x*(blockDim.x) + tid;
-       i < n;
-       i += grid_size) {
-    stmp[tid] += static_cast<double>(x[i] * y[i]);
-  }
-
-  __syncthreads();
-
-  /* Loop from _dot_xy_0a explicitely unrolled */
-
-  if (blockSize >= 1024) {
-    if (tid < 512) {
-      stmp[tid] += stmp[tid + 512];
-    }
-    __syncthreads();
-  }
-  if (blockSize >=  512) {
-    if (tid < 256) {
-      stmp[tid] += stmp[tid + 256];
-    }
-    __syncthreads();
-  }
-  if (blockSize >=  256) {
-    if (tid < 128) {
-      stmp[tid] += stmp[tid + 128];
-    } __syncthreads();
-  }
-  if (blockSize >=  128) {
-    if (tid <  64) {
-      stmp[tid] += stmp[tid +  64];
-    } __syncthreads();
   }
 
   if (tid < 32)
@@ -412,71 +341,56 @@ _dot_xy_block_aa(cs_lnum_t    n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute dot product x.y on device using cooperative groups.
+ * \brief Parallel sum reduction using shared memory.
  *
- *  This version adds multiple elements per thread sequentially.  This reduces
+ * This version adds multiple elements per thread sequentially. This reduces
  * the overall cost of the algorithm while keeping the work complexity O(n) and
  * the step complexity O(log n). (Brent's Theorem optimization)
+ *
+ * takes log(n) steps for n input elements
+ * uses n/2 threads
+ * only works for power-of-2 arrays
  *
  * Note, this kernel needs a minimum of:
  * sizeof(double) * ((blockSize/32) + 1); bytes of shared memory.
  *
- * \param[in]   n    array size
- * \param[in]   x    x vector
- * \param[in]   x    y vector
- * \param[out]  res  result of s = x.x
+ * \param[in]       cta    cooperative thread block
+ * \param[in, out]  sdata  shared data
  */
 /*----------------------------------------------------------------------------*/
 
-template <class T>
 __device__ static void
-_dot_xy_cg(const cg::thread_block  &block,
-           const cg::grid_group    &grid,
-           cs_lnum_t                n,
-           const T                 *x,
-           const T                 *y,
-           double                  *res)
+_reduce_block_d(const cg::thread_block  &cta,
+                double                  *sdata)
 {
-  extern __shared__ double stmp[];
+  const unsigned int tid = cta.thread_rank();
+  cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
 
-  double t_xy = 0.0;
+  sdata[tid] = cg::reduce(tile32, sdata[tid], cg::plus<double>());
+  cg::sync(cta);
 
-  for (int i = grid.thread_rank(); i < n; i += grid.size()) {
-    t_xy += static_cast<double>(x[i] * y[i]);
-  }
-
-  cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(block);
-
-  t_xy = cg::reduce(tile32, t_xy, cg::plus<double>());
-
-  if (tile32.thread_rank() == 0) {
-    stmp[tile32.meta_group_rank()] = t_xy;
-  }
-
-  cg::sync(block);
-
-  if (tile32.meta_group_rank() == 0) {
-     t_xy = tile32.thread_rank() < tile32.meta_group_size() ?
-       stmp[tile32.thread_rank()] : 0.0;
-     t_xy = cg::reduce(tile32, t_xy, cg::plus<double>());
-
-    if (tile32.thread_rank() == 0) {
-#if (__CUDA_ARCH__ < 600)
-      atomicAddDouble(res, t_xy);
-#else
-      atomicAdd(res, t_xy);
-#endif
+  double w = 0.0;
+  if (cta.thread_rank() == 0) {
+    w = 0;
+    for (int i = 0; i < blockDim.x; i += tile32.size()) {
+      w += sdata[i];
     }
+    sdata[0] = w;
   }
+  cg::sync(cta);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Launch dot product x.y on device using cooperative groups.
+ * \brief Kernel for dot product x.y on device using cooperative groups in
+ * a single kernel invocation.
+ *
+ * For more details on the reduction algorithm (notably the multi-pass
+ * approach), see the "reduction" sample in the CUDA SDK.
  *
  * This version adds multiple elements per thread sequentially.  This reduces
  * the overall cost of the algorithm while keeping the work complexity O(n) and
- * the step complexity O(log n). (Brent's Theorem optimization)
+ * the step complexity O(log n). (Brent's Theorem optimization).
  *
  * Note, this kernel needs a minimum of:
  * sizeof(double) * ((blockSize/32) + 1); bytes of shared memory.
@@ -490,21 +404,39 @@ _dot_xy_cg(const cg::thread_block  &block,
 
 template <class T>
 __global__ static void
-_dot_xy_cg_l(cs_lnum_t   n,
-             const T    *x,
-             const T    *y,
-             T          *res)
+_dot_xy_cg_single_pass(cs_lnum_t   n,
+                       const T    *x,
+                       const T    *y,
+                       double     *res)
 {
-  cg::thread_block cta = cg::this_thread_block();
+  cg::thread_block block = cg::this_thread_block();
   cg::grid_group grid = cg::this_grid();
 
-  *res = 0;
+  extern double __shared__ sdata[];
 
-  // cg::sync(grid);
+  // Stride over grid and add the values to a shared memory buffer
+  sdata[block.thread_rank()] = 0;
 
-  _dot_xy_cg<T>(cta, grid, n, x, y, res);
+  for (int i = grid.thread_rank(); i < n; i += grid.size()) {
+    sdata[block.thread_rank()] += static_cast<double>(x[i] * y[i]);
+  }
 
+  cg::sync(block);
+
+  // Reduce each block (called once per block)
+  _reduce_block_d(block, sdata);
+
+  // Write out the result to global memory
+  if (block.thread_rank() == 0) {
+    res[blockIdx.x] = sdata[0];
+  }
   cg::sync(grid);
+
+  if (grid.thread_rank() == 0) {
+    for (int block = 1; block < gridDim.x; block++) {
+      res[0] += res[block];
+    }
+  }
 }
 
 #endif /* (CUDART_VERSION >= 11000) */
@@ -646,14 +578,9 @@ _dot_products_1(double   t_measure,
     std::cout << std::endl << "block_size = " << block_size
               << ", grid_size = " << grid_size << std::endl;
 
-    // When there is only one warp per block, we need to allocate two warps
-    // worth of shared memory so that we don't index shared memory out of bounds
-    int smem_size = (block_size <= 32) ?
-      2 * block_size * sizeof(double) : block_size * sizeof(double);
-
     CS_MALLOC_HD(x, n, double, CS_ALLOC_HOST_DEVICE_PINNED);
     CS_MALLOC_HD(y, n, double, CS_ALLOC_HOST_DEVICE_PINNED);
-    CS_MALLOC_HD(r, 1, double, CS_ALLOC_HOST_DEVICE_PINNED);
+    CS_MALLOC_HD(r, 1, double, CS_ALLOC_HOST_DEVICE_SHARED);
 
     CS_MALLOC_HD(r_grid, grid_size, double, CS_ALLOC_DEVICE);
 
@@ -672,18 +599,21 @@ _dot_products_1(double   t_measure,
     cs_real_t *r_d = (cs_real_t *)cs_get_device_ptr(r);
 
 #if (CUDART_VERSION >= 11000)
-    int smem_size_5 = sizeof(double) * (block_size/32) + 1;
-    int num_blocks_per_sm = 0;
-    int num_sms = cs_glob_cuda_n_mp;
-    int num_threads = block_size;
-    cudaOccupancyMaxActiveBlocksPerMultiprocessor
-      (&num_blocks_per_sm, _dot_xy_cg_l<double>,
-       num_threads, smem_size_5);
-#endif
+    cudaDeviceProp prop = {0};
+    cudaGetDeviceProperties(&prop, cs_glob_cuda_device_id);
+    int n_max_blocks
+      = prop.multiProcessorCount * (  prop.maxThreadsPerMultiProcessor
+                                    / prop.maxThreadsPerBlock);
 
-    /* Get handle to the CUBLAS context */
-    cublasHandle_t cublasHandle = 0;
-    cublasStatus_t cublasStatus = cublasCreate(&cublasHandle);
+    int n_threads_cg = 1, n_blocks_cg = 1;
+    if (n > 1) {
+      cudaOccupancyMaxPotentialBlockSize(&n_blocks_cg, &n_threads_cg,
+                                         _dot_xy_cg_single_pass<double>);
+      n_blocks_cg = min(n_blocks_cg, n_max_blocks);
+    }
+
+    int smem_size_cg = n_threads_cg * sizeof(double);
+#endif
 
     /* Events for timing */
     cudaEvent_t start, stop;
@@ -708,28 +638,28 @@ _dot_products_1(double   t_measure,
               (n, x_d, y_d, r_grid);
             _reduce_single_block<block_size><<<1, block_size, 0>>>
               (grid_size, r_grid, r_d);
+            cudaStreamSynchronize(0);
             break;
           case 1:
-            _dot_xy_stage_1_of_2_u<block_size><<<grid_size, block_size, 0>>>
-              (n, x_d, y_d, r_grid);
-            _reduce_single_block<block_size><<<1, block_size, 0>>>
-              (grid_size, r_grid, r_d);
+            cs_blas_cuda_dot(n, x_d, y_d);
             break;
           case 2:
             _dot_xy_stage_1_of_2_wr<block_size><<<grid_size, block_size, 0>>>
               (n, x_d, y_d, r_grid);
             _reduce_single_block<block_size><<<1, block_size, 0>>>
               (grid_size, r_grid, r_d);
+            cudaStreamSynchronize(0);
             break;
           case 3:
             _dot_xy_block_aa_pre<<<1, block_size>>>(r_d);
-            cudaDeviceSynchronize();
+            cudaStreamSynchronize(0);
             _dot_xy_block_aa<block_size><<<grid_size, block_size>>>
               (n, x_d, y_d, r_d);
+            cudaStreamSynchronize(0);
             break;
           case 4:
-#if (CUDART_VERSION >= 10000)
-            cublasStatus = cublasDdot(cublasHandle, n, x_d, 1, y_d, 1, r_d);
+#if defined(HAVE_CUBLAS)
+            cs_blas_cublas_dot(n, x_d, y_d);
 #else
             run_id = n_runs;
             v_enabled = false;
@@ -738,19 +668,19 @@ _dot_products_1(double   t_measure,
           case 5:
 #if (CUDART_VERSION >= 11000)
             {
-              dim3 dim_grid(num_sms * num_blocks_per_sm, 1, 1);
-              dim3 dim_block(block_size, 1, 1);
+              dim3 dim_grid(n_blocks_cg, 1, 1);
+              dim3 dim_block(n_threads_cg, 1, 1);
 
               void *kernel_args[] = {
                 (void *)&n,  (void *)&x_d, (void *)&y_d, (void *)&r_d,
               };
 
               cudaEventRecord(start, 0);
-              cudaLaunchCooperativeKernel((void *)_dot_xy_cg_l<double>,
+              cudaLaunchCooperativeKernel((void *)_dot_xy_cg_single_pass<double>,
                                           dim_grid, dim_block, kernel_args,
-                                          smem_size_5, NULL);
+                                          smem_size_cg, NULL);
               cudaEventRecord(stop, 0);
-              cudaDeviceSynchronize();
+              cudaStreamSynchronize(0);
 
               float k_time = 0;
               cudaEventElapsedTime(&k_time, start, stop);
@@ -764,9 +694,10 @@ _dot_products_1(double   t_measure,
 
           if (run_id == 0) {
             cs_sync_d2h(r);
-            cudaDeviceSynchronize();
             s1 = r[0];
           }
+          else
+            s1 = r[0];
 
 #if defined(HAVE_MPI)
           if (_global && v_enabled) {
@@ -809,7 +740,7 @@ _dot_products_1(double   t_measure,
     cudaEventDestroy(start);
     cudaEventDestroy(stop);
 
-    cublasDestroy(cublasHandle);
+    cs_blas_cuda_finalize();
 
     CS_FREE_HD(y);
     CS_FREE_HD(x);
@@ -829,7 +760,7 @@ BEGIN_C_DECLS
 void
 main_cuda(void)
 {
-  double t_measure = 1.0;
+  double t_measure = 10.0;
   double test_sum = 0.0;
 
   /* Initialization and environment */

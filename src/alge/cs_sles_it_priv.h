@@ -155,6 +155,8 @@ struct _cs_sles_it_t {
 
   cs_sles_it_type_t    type;               /* Solver type */
 
+  bool                 on_device;          /* Run on device ? */
+
   bool                 update_stats;       /* do stats need to be updated ? */
   bool                 ignore_convergence; /* ignore convergence for some
                                               solvers used as preconditioners */

@@ -55,6 +55,10 @@
 #include "cs_sles_it.h"
 #include "cs_sles_it_priv.h"
 
+#if defined(HAVE_CUDA)
+#include "cs_sles_it_cuda.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -89,8 +93,8 @@ BEGIN_C_DECLS
  Switching from diagonal to polynomial degree 1 often divides the number of
  required iterations by approximately 2, but each iteration then costs
  close to 2 times that of diagonal preconditioning (other vector operations
- are not doubled), so the net gain is often about 10%. Higher degree
- polynomials usually lead to diminishing returns.
+ and reductions are not doubled), so the net gain is often about 10%.
+ Higher degree polynomials usually lead to diminishing returns.
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -1602,6 +1606,11 @@ _jacobi(cs_sles_it_t              *c,
 
   const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
 
+# pragma omp parallel for if(n_rows > CS_THR_MIN)
+  for (ii = 0; ii < n_rows; ii++) {
+    rk[ii] = vx[ii];
+  }
+
   cvg = CS_SLES_ITERATING;
 
   /* Current iteration */
@@ -1610,18 +1619,6 @@ _jacobi(cs_sles_it_t              *c,
   while (cvg == CS_SLES_ITERATING) {
 
     n_iter += 1;
-
-#if defined(HAVE_OPENMP)
-
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
-      rk[ii] = vx[ii];
-
-#else
-
-    memcpy(rk, vx, n_rows * sizeof(cs_real_t));   /* rk <- vx */
-
-#endif
 
     /* Compute Vx <- Vx - (A-diag).Rk and residue. */
 
@@ -1634,6 +1631,7 @@ _jacobi(cs_sles_it_t              *c,
       vx[ii] = (rhs[ii]-vx[ii])*ad_inv[ii];
       double r = ad[ii] * (vx[ii]-rk[ii]);
       res2 += (r*r);
+      rk[ii] = vx[ii];
     }
 
 #if defined(HAVE_MPI)
@@ -3857,6 +3855,7 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   }
   c->pc = c->_pc;
 
+  c->on_device = false;
   c->update_stats = update_stats;
   c->ignore_convergence = false;
 
@@ -4126,6 +4125,11 @@ cs_sles_it_setup(void               *context,
   if (c->update_stats == true)
     t0 = cs_timer_time();
 
+#if defined(HAVE_ACCEL)
+  bool on_device = (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST) ?
+    true : false;
+#endif
+
   const int diag_block_size = (cs_matrix_get_diag_block_size(a));
 
   if (verbosity > 1) {
@@ -4195,8 +4199,15 @@ cs_sles_it_setup(void               *context,
     break;
 
   case CS_SLES_JACOBI:
-    if (diag_block_size == 1)
+    if (diag_block_size == 1) {
       c->solve = _jacobi;
+#if defined(HAVE_CUDA)
+      if (on_device) {
+        c->on_device = true;
+        c->solve = cs_sles_it_cuda_jacobi;
+      }
+#endif
+    }
     else if (diag_block_size == 3)
       c->solve = _block_3_jacobi;
     else
@@ -4355,11 +4366,69 @@ cs_sles_it_solve(void                *context,
   }
 #endif
 
-  if (local_solve)
+  if (local_solve) {
+
+    const cs_real_t *_rhs = rhs;
+    cs_real_t       *_vx = vx;;
+
+#if defined(HAVE_ACCEL)
+
+    /* When using accelerators, ideally, the arrays passed here should
+       already be usable on the device, but in case they are allocated with
+       Fortran intrinsics, we copy them here. When using unified shared
+       memory, we let the called solver handle prefetching rather than
+       doing it here, as it is not strictly needed, and the solver may
+       exploit additional asynchronicity */
+
+    cs_lnum_t v_size = diag_block_size * cs_matrix_get_n_columns(a);
+    cs_real_t *_rhs_w = NULL;
+    cs_alloc_mode_t amode_vx = CS_ALLOC_HOST, amode_rhs = CS_ALLOC_HOST;
+
+    if (c->on_device) {
+      amode_vx = cs_check_device_ptr(vx);
+      amode_rhs = cs_check_device_ptr(rhs);
+
+      if (amode_vx == CS_ALLOC_HOST) {
+        CS_MALLOC_HD(_vx, v_size, cs_real_t, CS_ALLOC_DEVICE);
+        cs_copy_h2d(_vx, vx, v_size*sizeof(cs_real_t));
+      }
+      else if (amode_vx < CS_ALLOC_HOST_DEVICE_SHARED)
+        cs_sync_h2d(_vx);
+
+      if (amode_rhs == CS_ALLOC_HOST) {
+        CS_MALLOC_HD(_rhs_w, v_size, cs_real_t, CS_ALLOC_DEVICE);
+        cs_copy_h2d(_rhs_w, rhs, v_size*sizeof(cs_real_t));
+        _rhs = _rhs_w;
+      }
+      else if (amode_rhs < CS_ALLOC_HOST_DEVICE_SHARED)
+        cs_sync_h2d(_rhs);
+    }
+
+#endif
+
+    /* Call selected solver function */
+
     cvg = c->solve(c,
                    a, diag_block_size, &convergence,
-                   rhs, vx,
+                   _rhs, _vx,
                    aux_size, aux_vectors);
+
+#if defined(HAVE_ACCEL)
+
+    if (c->on_device) {
+      if (amode_vx == CS_ALLOC_HOST) {
+        cs_copy_d2h(vx, _vx, v_size*sizeof(cs_real_t));
+        CS_FREE_HD(_vx);
+      }
+      else if (amode_vx < CS_ALLOC_HOST_DEVICE_SHARED)
+        cs_sync_d2h(_vx);
+
+      CS_FREE_HD(_rhs_w);
+    }
+
+#endif
+
+  }
 
   /* Broadcast convergence info from "active" ranks to others*/
 
@@ -4452,7 +4521,7 @@ cs_sles_it_free(void  *context)
     cs_sles_pc_free(c->_pc);
 
   if (c->setup_data != NULL) {
-    BFT_FREE(c->setup_data->_ad_inv);
+    CS_FREE_HD(c->setup_data->_ad_inv);
     BFT_FREE(c->setup_data);
   }
 
@@ -4935,6 +5004,28 @@ cs_sles_it_set_plot_options(cs_sles_it_t  *context,
       context->plot_time_stamp = 0;
     }
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Convergence test.
+ *
+ * parameters:
+ *   c           <-- pointer to solver context info
+ *   n_iter      <-- Number of iterations done
+ *   residue     <-- Non normalized residue
+ *   convergence <-> Convergence information structure
+ *
+ * returns:
+ *   convergence status.
+ *----------------------------------------------------------------------------*/
+
+cs_sles_convergence_state_t
+cs_sles_it_convergence_test(cs_sles_it_t              *c,
+                            unsigned                   n_iter,
+                            double                     residue,
+                            cs_sles_it_convergence_t  *convergence)
+{
+  return _convergence_test(c, n_iter, residue, convergence);
 }
 
 /*----------------------------------------------------------------------------*/
