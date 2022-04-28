@@ -27,7 +27,7 @@
 #include "cs_defs.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <stdarg.h>
@@ -139,6 +139,8 @@ typedef struct _cs_matrix_cusparse_map_t {
 /*============================================================================
  *  Global variables
  *============================================================================*/
+
+static cudaStream_t _stream = 0;
 
 #if defined(HAVE_CUSPARSE)
 
@@ -552,6 +554,8 @@ _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
   return hs;
 }
 
+#if defined(HAVE_CUSPARSE)
+
 /*----------------------------------------------------------------------------
  * Unset matrix cuSPARSE mapping.
  *
@@ -613,8 +617,8 @@ _set_cusparse_map(cs_matrix_t   *matrix)
   }
   matrix->destroy_adaptor = _unset_cusparse_map;
 
-  void *row_index, *col_id;
-  void *e_val;
+  const void *row_index, *col_id;
+  const void *e_val;
   cs_lnum_t nnz = 0;
 
   if (matrix->type == CS_MATRIX_CSR) {
@@ -623,9 +627,12 @@ _set_cusparse_map(cs_matrix_t   *matrix)
     const cs_matrix_coeff_csr_t *mc
       = (const cs_matrix_coeff_csr_t *)matrix->coeffs;
     nnz = ms->row_index[matrix->n_rows];
-    row_index = cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->row_index));
-    col_id = cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->col_id));
-    e_val = cs_get_device_ptr(const_cast<cs_real_t *>(mc->val));
+    row_index = cs_get_device_ptr_const_pf
+                  (const_cast<cs_lnum_t *>(ms->row_index));
+    col_id = cs_get_device_ptr_const_pf
+               (const_cast<cs_lnum_t *>(ms->col_id));
+    e_val = cs_get_device_ptr_const_pf
+              (const_cast<cs_real_t *>(mc->val));
   }
   else {
     const cs_matrix_struct_dist_t *ms
@@ -633,9 +640,12 @@ _set_cusparse_map(cs_matrix_t   *matrix)
     const cs_matrix_coeff_dist_t *mc
       = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
     nnz = ms->e.row_index[matrix->n_rows];
-    row_index = cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->e.row_index));
-    col_id = cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->e.col_id));
-    e_val = cs_get_device_ptr(const_cast<cs_real_t *>(mc->e_val));
+    row_index = cs_get_device_ptr_const_pf
+                  (const_cast<cs_lnum_t *>(ms->e.row_index));
+    col_id = cs_get_device_ptr_const_pf
+               (const_cast<cs_lnum_t *>(ms->e.col_id));
+    e_val = cs_get_device_ptr_const_pf
+              (const_cast<cs_real_t *>(mc->e_val));
   }
 
   cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
@@ -662,9 +672,9 @@ _set_cusparse_map(cs_matrix_t   *matrix)
                              matrix->n_rows,
                              matrix->n_cols_ext,
                              nnz,
-                             row_index,
-                             col_id,
-                             e_val,
+                             const_cast<void *>(row_index),
+                             const_cast<void *>(col_id),
+                             const_cast<void *>(e_val),
                              index_dtype,
                              index_dtype,
                              CUSPARSE_INDEX_BASE_ZERO,
@@ -783,6 +793,8 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
 #endif
 }
 
+#endif // defined(HAVE_CUSPARSE)
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 BEGIN_C_DECLS
@@ -802,10 +814,35 @@ BEGIN_C_DECLS
 void
 cs_matrix_spmv_cuda_finalize(void)
 {
+  _stream = 0;
+
+#if defined(HAVE_CUSPARSE)
+
   if (_handle != NULL) {
     cusparseDestroy(_handle);
     _handle = NULL;
   }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign CUDA stream for next CUDA-based SpMV operations.
+ *
+ * If a stream other than the default stream (0) is used, it will not be
+ * synchronized automatically after sparse matrix-vector products (so as to
+ * avoid the corresponding overhead), so the caller will need to manage
+ * stream syncronization manually.
+ *
+ * This function is callable only from CUDA code.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_spmv_cuda_set_stream(cudaStream_t  stream)
+{
+  _stream = stream;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -833,12 +870,14 @@ cs_matrix_spmv_cuda_csr(const cs_matrix_t  *matrix,
     = (const cs_matrix_coeff_csr_t  *)matrix->coeffs;
 
   const cs_lnum_t *__restrict__ row_index
-    = (const cs_lnum_t *)cs_get_device_ptr
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
                            (const_cast<cs_lnum_t *>(ms->row_index));
   const cs_lnum_t *__restrict__ col_id
-    = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->col_id));
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+                           (const_cast<cs_lnum_t *>(ms->col_id));
   const cs_real_t *__restrict__ val
-    = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->val));
+    = (const cs_real_t *)cs_get_device_ptr_const_pf
+                           (const_cast<cs_real_t *>(mc->val));
 
   /* Ghost cell communication */
 
@@ -854,14 +893,16 @@ cs_matrix_spmv_cuda_csr(const cs_matrix_t  *matrix,
     = (unsigned int)ceil((double)ms->n_rows / blocksize);
 
   if (!exclude_diag)
-    _mat_vect_p_l_csr<<<gridsize, blocksize>>>
+    _mat_vect_p_l_csr<<<gridsize, blocksize, 0, _stream>>>
       (ms->n_rows, row_index, col_id, val, d_x, d_y);
   else
-    _mat_vect_p_l_csr_exdiag<<<gridsize, blocksize>>>
+    _mat_vect_p_l_csr_exdiag<<<gridsize, blocksize, 0, _stream>>>
       (ms->n_rows, row_index, col_id, val, d_x, d_y);
 
-  cudaStreamSynchronize(0);
-  CS_CUDA_CHECK(cudaGetLastError());
+  if (_stream == 0) {
+    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaGetLastError());
+  }
 }
 
 #if defined(HAVE_CUSPARSE)
@@ -911,6 +952,7 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
   cudaDataType_t val_dtype
     = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
 
+  cusparseSetStream(_handle, _stream);
   cusparseStatus_t status = cusparseSpMV(_handle,
                                          CUSPARSE_OPERATION_NON_TRANSPOSE,
                                          &alpha,
@@ -967,25 +1009,29 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
     const cs_matrix_coeff_csr_t *mc
       = (const cs_matrix_coeff_csr_t  *)matrix->coeffs;
     const cs_lnum_t *__restrict__ d_row_index
-      = (const cs_lnum_t *)cs_get_device_ptr
+      = (const cs_lnum_t *)cs_get_device_ptr_const_pf
                              (const_cast<cs_lnum_t *>(ms->row_index));
     const cs_lnum_t *__restrict__ d_col_id
-      = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->col_id));
+      = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+                             (const_cast<cs_lnum_t *>(ms->col_id));
     const cs_real_t *__restrict__ d_val
-      = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->val));
+      = (const cs_real_t *)cs_get_device_ptr_const_pf
+                             (const_cast<cs_real_t *>(mc->val));
 
     unsigned int blocksize = 256;
     unsigned int gridsize
       = (unsigned int)ceil((double)ms->n_rows / blocksize);
 
-    _mat_vect_p_l_csr_substract_diag<<<gridsize, blocksize>>>
+    _mat_vect_p_l_csr_substract_diag<<<gridsize, blocksize, 0, _stream>>>
       (ms->n_rows, d_row_index, d_col_id, d_val,
        (const cs_real_t *)d_x, (cs_real_t *)d_y);
 
   }
 
-  cudaStreamSynchronize(0);
-  CS_CUDA_CHECK(cudaGetLastError());
+  if (_stream == 0) {
+    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaGetLastError());
+  }
 }
 
 #endif /* defined(HAVE_CUSPARSE) */
@@ -1015,15 +1061,17 @@ cs_matrix_spmv_cuda_msr(const cs_matrix_t  *matrix,
     = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
 
   const cs_lnum_t *__restrict__ row_index
-    = (const cs_lnum_t *)cs_get_device_ptr
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
                            (const_cast<cs_lnum_t *>(ms->e.row_index));
   const cs_lnum_t *__restrict__ col_id
     = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->e.col_id));
 
   const cs_real_t *__restrict__ d_val
-    = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->d_val));
+    = (const cs_real_t *)cs_get_device_ptr_const_pf
+                           (const_cast<cs_real_t *>(mc->d_val));
   const cs_real_t *__restrict__ x_val
-    = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->e_val));
+    = (const cs_real_t *)cs_get_device_ptr_const_pf
+                           (const_cast<cs_real_t *>(mc->e_val));
 
   /* Ghost cell communication */
 
@@ -1039,14 +1087,16 @@ cs_matrix_spmv_cuda_msr(const cs_matrix_t  *matrix,
     = (unsigned int)ceil((double)ms->n_rows / blocksize);
 
   if (!exclude_diag)
-    _mat_vect_p_l_msr<<<gridsize, blocksize>>>
+    _mat_vect_p_l_msr<<<gridsize, blocksize, 0, _stream>>>
       (ms->n_rows, row_index, col_id, d_val, x_val, d_x, d_y);
   else
-    _mat_vect_p_l_csr<<<gridsize, blocksize>>>
+    _mat_vect_p_l_csr<<<gridsize, blocksize, 0, _stream>>>
       (ms->n_rows, row_index, col_id, x_val, d_x, d_y);
 
-  cudaStreamSynchronize(0);
-  CS_CUDA_CHECK(cudaGetLastError());
+  if (_stream == 0) {
+    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaGetLastError());
+  }
 }
 
 #if defined(HAVE_CUSPARSE)
@@ -1098,12 +1148,14 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
     const cs_matrix_coeff_csr_t *mc
       = (const cs_matrix_coeff_csr_t  *)matrix->coeffs;
     const cs_lnum_t *__restrict__ d_row_index
-      = (const cs_lnum_t *)cs_get_device_ptr
+      = (const cs_lnum_t *)cs_get_device_ptr_const_pf
                              (const_cast<cs_lnum_t *>(ms->row_index));
     const cs_lnum_t *__restrict__ d_col_id
-      = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->col_id));
+      = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+                             (const_cast<cs_lnum_t *>(ms->col_id));
     const cs_real_t *__restrict__ d_val
-      = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->val));
+      = (const cs_real_t *)cs_get_device_ptr_const_pf
+                             (const_cast<cs_real_t *>(mc->val));
 
     unsigned int blocksize = 256;
     unsigned int gridsize
@@ -1121,6 +1173,7 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
   cudaDataType_t val_dtype
     = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
 
+  cusparseSetStream(_handle, _stream);
   cusparseStatus_t status = cusparseSpMV(_handle,
                                          CUSPARSE_OPERATION_NON_TRANSPOSE,
                                          &alpha,
@@ -1170,8 +1223,10 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
 
 #endif
 
-  cudaStreamSynchronize(0);
-  CS_CUDA_CHECK(cudaGetLastError());
+  if (_stream == 0) {
+    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaGetLastError());
+  }
 }
 
 #endif /* defined(HAVE_CUSPARSE) */
@@ -1202,18 +1257,18 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
     = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
 
   const cs_lnum_t *__restrict__ row_index
-    = (const cs_lnum_t *)cs_get_device_ptr
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
                            (const_cast<cs_lnum_t *>(ms->e.row_index));
   const cs_lnum_t *__restrict__ col_id
-    = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->e.col_id));
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+                           (const_cast<cs_lnum_t *>(ms->e.col_id));
 
   const cs_real_t *__restrict__ d_val
-    = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->d_val));
+    = (const cs_real_t *)cs_get_device_ptr_const_pf
+                           (const_cast<cs_real_t *>(mc->d_val));
   const cs_real_t *__restrict__ x_val
-    = (const cs_real_t *)cs_get_device_ptr(const_cast<cs_real_t *>(mc->e_val));
-
-  cudaStream_t stream1;
-  cudaStreamCreate(&stream1);
+    = (const cs_real_t *)cs_get_device_ptr_const_pf
+                           (const_cast<cs_real_t *>(mc->e_val));
 
   /* Ghost cell communication */
 
@@ -1231,13 +1286,13 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
   if (!exclude_diag) {
 
     if (matrix->db_size == 3)
-      _b_3_3_mat_vect_p_l_msr<<<gridsize, blocksize, 0, stream1>>>
+      _b_3_3_mat_vect_p_l_msr<<<gridsize, blocksize, 0, _stream>>>
         (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else if (matrix->db_size == 6)
-      _b_mat_vect_p_l_msr<6><<<gridsize, blocksize, 0, stream1>>>
+      _b_mat_vect_p_l_msr<6><<<gridsize, blocksize, 0, _stream>>>
         (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else if (matrix->db_size == 9)
-      _b_mat_vect_p_l_msr<9><<<gridsize, blocksize, 0, stream1>>>
+      _b_mat_vect_p_l_msr<9><<<gridsize, blocksize, 0, _stream>>>
         (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else
       bft_error(__FILE__, __LINE__, 0, _("%s: block size %d not implemented."),
@@ -1247,13 +1302,13 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
   else {
 
     if (matrix->db_size == 3)
-      _b_3_3_mat_vect_p_l_msr_exdiag<<<gridsize, blocksize, 0, stream1>>>
+      _b_3_3_mat_vect_p_l_msr_exdiag<<<gridsize, blocksize, 0, _stream>>>
         (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else if (matrix->db_size == 6)
-      _b_mat_vect_p_l_msr_exdiag<6><<<gridsize, blocksize, 0, stream1>>>
+      _b_mat_vect_p_l_msr_exdiag<6><<<gridsize, blocksize, 0, _stream>>>
         (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else if (matrix->db_size == 9)
-      _b_mat_vect_p_l_msr_exdiag<9><<<gridsize, blocksize, 0, stream1>>>
+      _b_mat_vect_p_l_msr_exdiag<9><<<gridsize, blocksize, 0, _stream>>>
         (ms->n_rows, col_id, row_index, d_val, x_val, d_x, d_y);
     else
       bft_error(__FILE__, __LINE__, 0, _("%s: block size %d not implemented."),
@@ -1261,8 +1316,10 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
 
   }
 
-  CS_CUDA_CHECK(cudaStreamSynchronize(stream1));
-  CS_CUDA_CHECK(cudaStreamDestroy(stream1));
+  if (_stream == 0) {
+    CS_CUDA_CHECK(cudaStreamSynchronize(0));
+    CS_CUDA_CHECK(cudaGetLastError());
+  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -154,14 +154,8 @@ _matrix_tune_test(const cs_matrix_t     *m,
 
   cs_lnum_t n = n_cols*b_size;
 
-  if (CS_MEM_ALIGN > 0) {
-    BFT_MEMALIGN(x, CS_MEM_ALIGN, n, cs_real_t);
-    BFT_MEMALIGN(y, CS_MEM_ALIGN, n, cs_real_t);
-  }
-  else {
-    BFT_MALLOC(x, n, cs_real_t);
-    BFT_MALLOC(y, n, cs_real_t);
-  }
+  CS_MALLOC_HD(x, n, cs_real_t, m->alloc_mode);
+  CS_MALLOC_HD(y, n, cs_real_t, m->alloc_mode);
 
 # pragma omp parallel for  if(n > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n; i++) {
@@ -230,8 +224,8 @@ _matrix_tune_test(const cs_matrix_t     *m,
 
   } /* end of loop on variants */
 
-  BFT_FREE(x);
-  BFT_FREE(y);
+  CS_FREE_HD(x);
+  CS_FREE_HD(y);
 }
 
 /*----------------------------------------------------------------------------*/

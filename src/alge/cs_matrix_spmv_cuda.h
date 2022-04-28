@@ -67,6 +67,26 @@ BEGIN_C_DECLS
 void
 cs_matrix_spmv_cuda_finalize(void);
 
+#if defined(__CUDACC__)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign CUDA stream for next CUDA-based SpMV operations.
+ *
+ * If a stream other than the default stream (0) is used, it will not be
+ * synchronized automatically after sparse matrix-vector products (so as to
+ * avoid the corresponding overhead), so the caller will need to manage
+ * stream syncronization manually.
+ *
+ * This function is callable only from CUDA code.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_spmv_cuda_set_stream(cudaStream_t  stream);
+
+#endif /* defined(__CUDACC__) */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x with CSR matrix, scalar CUDA version.

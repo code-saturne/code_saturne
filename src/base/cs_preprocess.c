@@ -596,7 +596,10 @@ cs_preprocess_mesh_update_fortran(void)
 void
 cs_preprocess_mesh_update_device(cs_alloc_mode_t  alloc_mode)
 {
+#if 0  /* For local testing of various modes */
   alloc_mode = CS_ALLOC_HOST_DEVICE_PINNED;
+#endif
+
   cs_mesh_t *m = cs_glob_mesh;
 
   const cs_lnum_t n_cells = m->n_cells;

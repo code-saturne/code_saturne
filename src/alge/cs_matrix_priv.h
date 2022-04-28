@@ -359,7 +359,17 @@ struct _cs_matrix_t {
   cs_matrix_vector_product_t  *vector_multiply[CS_MATRIX_N_FILL_TYPES]
                                               [CS_MATRIX_SPMV_N_TYPES];
 
-  /* Indicate whether vector_multiply function is handled with
+#if defined(HAVE_ACCEL)
+
+  /* Function pointer arrays, with CS_MATRIX_N_FILL_TYPES variants,
+     for device: fill_type*4 + full, extra-diagonal, lower, upper parts */
+
+  cs_matrix_vector_product_t  *vector_multiply_d[CS_MATRIX_N_FILL_TYPES]
+                                                [CS_MATRIX_SPMV_N_TYPES];
+
+#endif /* defined(HAVE_ACCEL) */
+
+  /* Indicate whether main vector_multiply function is handled with
      host ('h') or device ('d') x and y vector addresses */
 
   char                   vector_multiply_xy_hd[CS_MATRIX_N_FILL_TYPES]

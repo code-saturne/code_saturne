@@ -476,14 +476,14 @@ cs_matrix_get_l_range(const cs_matrix_t  *matrix);
 /*!
  *\brief Query matrix allocation mode.
  *
- * \param[in, out]  matrix  pointer to matrix structure
+ * \param[in]  matrix  pointer to matrix structure
  *
  * \return  host/device allocation mode
  */
 /*----------------------------------------------------------------------------*/
 
 cs_alloc_mode_t
-cs_matrix_get_alloc_mode(cs_matrix_t  *matrix);
+cs_matrix_get_alloc_mode(const cs_matrix_t  *matrix);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -876,6 +876,28 @@ cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
                           cs_real_t           *restrict x,
                           cs_real_t           *restrict y);
 
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x, on device
+ *
+ * This function includes a halo update of x prior to multiplication by A.
+ *
+ * \param[in]       matrix         pointer to matrix structure
+ * \param[in, out]  x              multipliying vector values, on device
+ *                                 (ghost values updated)
+ * \param[out]      y              resulting vector (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vector_multiply_d(const cs_matrix_t   *matrix,
+                            cs_real_t           *restrict x,
+                            cs_real_t           *restrict y);
+
+#endif /* defined(HAVE_ACCEL) */
+
 /*----------------------------------------------------------------------------
  * Matrix.vector product y = A.x with no prior halo update of x.
  *
@@ -914,6 +936,32 @@ cs_matrix_vector_multiply_partial(const cs_matrix_t      *matrix,
                                   cs_matrix_spmv_type_t   op_type,
                                   cs_real_t              *restrict x,
                                   cs_real_t              *restrict y);
+
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Partial matrix.vector product, on device
+ *
+ * This function includes a halo update of x prior to multiplication,
+ * except for the CS_MATRIX_SPMV_L operation type, which does not require it,
+ * as halo adjacencies are only present and useful in the upper-diagonal part..
+ *
+ * \param[in]       matrix         pointer to matrix structure
+ * \param[in]       op_type        SpMV operation type
+ * \param[in, out]  x              multipliying vector values, on device
+ *                                 (ghost values updated)
+ * \param[out]      y              resulting vector, on device
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vector_multiply_partial_d(const cs_matrix_t      *matrix,
+                                    cs_matrix_spmv_type_t   op_type,
+                                    cs_real_t              *restrict x,
+                                    cs_real_t              *restrict y);
+
+#endif /* defined(HAVE_ACCEL) */
 
 /*----------------------------------------------------------------------------
  * Synchronize ghost values prior to matrix.vector product

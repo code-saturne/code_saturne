@@ -1267,6 +1267,7 @@ if test x$cs_have_openmp = xyes ; then
 fi
 echo " CUDA support: "$cs_have_cuda""
 if test x$cs_have_cuda = xyes ; then
+  echo "   cuBLAS support: "$cs_have_cublas""
   echo "   cuSPARSE support: "$cs_have_cusparse""
 fi
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$cs_have_blas""

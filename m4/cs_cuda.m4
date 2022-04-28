@@ -29,6 +29,7 @@ dnl-----------------------------------------------------------------------------
 AC_DEFUN([CS_AC_TEST_CUDA], [
 
 cs_have_cuda=no
+cs_have_cublas=no
 cs_have_cusparse=no
 
 AC_ARG_ENABLE(cuda,
@@ -58,7 +59,7 @@ if test "x$cs_have_cuda" != "xno" ; then
   AS_IF([echo $build_cpu | grep -q "_64"],
         [cs_cuda_lib_path+="64"])
   CUDA_LDFLAGS="-L${cs_cuda_lib_path}"
-  CUDA_LIBS+=" -lcublas -lcudart"
+  CUDA_LIBS+=" -lcudart"
 
   # Try to detect available architectures.
   # As of late 2021, we do not care to support CUDA versions older than 9
@@ -94,9 +95,45 @@ fi
 
 AM_CONDITIONAL([HAVE_CUDA], [test "$cs_have_cuda" = "yes"])
 
-# Now check for libraries such as cuSPARSE if CUDA enabled.
+# Now check for libraries such as cuBLAS and cuSPARSE if CUDA enabled.
 
 if test "x$cs_have_cuda" != "xno" ; then
+
+  AC_ARG_WITH(cublas,
+              [AS_HELP_STRING([--with-cublas=PATH],
+                              [specify prefix directory for cublas])],
+              [if test "x$withval" = "x"; then
+                 with_cublas=yes
+               fi],
+              [with_cublas=check])
+
+  AC_ARG_WITH(cublas-include,
+              [AS_HELP_STRING([--with-cublas-include=PATH],
+                              [specify directory for cublas include files])],
+              [if test "x$with_cublas" = "xcheck"; then
+                 with_cublas=yes
+               fi
+               CUBLAS_CPPFLAGS="-I$with_cublas_include"],
+              [if test "x$with_cublas" != "xno" -a "x$with_cublas" != "xyes" \
+  	          -a "x$with_cublas" != "xcheck"; then
+                 if test "${NVCC/'bin/nvcc'/include}" != "$with_cublas/include" ; then
+                   CUBLAS_CPPFLAGS="-I$with_cublas/include"
+                 fi
+               fi])
+
+  AC_ARG_WITH(cublas-lib,
+              [AS_HELP_STRING([--with-cublas-lib=PATH],
+                              [specify directory for cublas library])],
+              [if test "x$with_cublas" = "xcheck"; then
+                 with_cublas=yes
+               fi
+               CUBLAS_LDFLAGS="-L$with_cublas_lib"],
+              [if test "x$with_cublas" != "xno" -a "x$with_cublas" != "xyes" \
+	            -a "x$with_cublas" != "xcheck"; then
+                 if test "$cs_cuda_lib_path" != "$with_cublas/lib64" ; then
+                   CUBLAS_LDFLAGS="-L$with_cublas/lib64"
+                 fi
+               fi])
 
   AC_ARG_WITH(cusparse,
               [AS_HELP_STRING([--with-cusparse=PATH],
@@ -134,6 +171,61 @@ if test "x$cs_have_cuda" != "xno" ; then
                  fi
                fi])
 
+  # Check for cuBLAS
+
+  if test "x$with_cublas" != "xno" ; then
+
+    saved_CPPFLAGS="$CPPFLAGS"
+    saved_LDFLAGS="$LDFLAGS"
+    saved_LIBS="$LIBS"
+
+    saved_CUDA_CPPFLAGS="$CUDA_CPPFLAGS"
+    saved_CUDA_LDFLAGS="$CUDA_LDFLAGS"
+    saved_CUDA_LIBS="$CUDA_LIBS"
+
+    if test "x$CUBLAS_CPPFLAGS" != "x" ; then
+      CUDA_CPPFLAGS="${CUDA_CPPFLAGS} ${CUBLAS_CPPFLAGS}"
+    fi
+    if test "x$CUBLAS_LDFLAGS" != "x" ; then
+      CUDA_LDFLAGS="${CUDA_LDFLAGS} ${CUBLAS_LDFLAGS}"
+    fi
+    CUDA_LIBS="-lcublas ${CUDA_LIBS}"
+
+    CPPFLAGS="${CPPFLAGS} ${CUDA_CPPFLAGS}"
+    LDFLAGS="${LDFLAGS} ${CUDA_LDFLAGS}"
+    LIBS="${CUDA_LIBS} ${LIBS}"
+
+    AC_MSG_CHECKING([for cuBLAS support])
+    AC_LINK_IFELSE(
+[AC_LANG_PROGRAM([[#include <cublas_v2.h>]],
+[[cublasHandle_t handle = NULL;
+cublasStatus_t status = cublasCreate(&handle);]])
+                   ],
+                   [ AC_DEFINE([HAVE_CUBLAS], 1, [cuBLAS support])
+                     cs_have_cublas=yes ],
+                   [cs_have_cublas=no])
+
+    AC_MSG_RESULT($cs_have_cublas)
+    if test "x$cs_have_cublas" = "xno" ; then
+      if test "x$with_cublas" != "xcheck" ; then
+        AC_MSG_FAILURE([cuBLAS support is requested, but test for cuBLAS failed!])
+      else
+        CUDA_CPPFLAGS="$saved_CUDA_CPPFLAGS"
+        CUDA_LDFLAGS="$saved_CUDA_LDFLAGS"
+        CUDA_LIBS="$saved_CUDA_LIBS"
+      fi
+    fi
+
+    CPPFLAGS="$saved_CPPFLAGS"
+    LDFLAGS="$saved_LDFLAGS"
+    LIBS="$saved_LIBS"
+
+  fi
+
+  AC_SUBST(cs_have_cublas)
+
+  # Check for cuSPARSE
+
   if test "x$with_cusparse" != "xno" ; then
 
     saved_CPPFLAGS="$CPPFLAGS"
@@ -159,8 +251,8 @@ if test "x$cs_have_cuda" != "xno" ; then
     AC_MSG_CHECKING([for cuSPARSE support])
     AC_LINK_IFELSE(
 [AC_LANG_PROGRAM([[#include <cusparse.h>]],
-[[cusparseHandle_t  handle = NULL;
-cusparseStatus_t status = cusparseCreate(handle);]])
+[[cusparseHandle_t handle = NULL;
+cusparseStatus_t status = cusparseCreate(&handle);]])
                    ],
                    [ AC_DEFINE([HAVE_CUSPARSE], 1, [cuSPARSE support])
                      cs_have_cusparse=yes ],

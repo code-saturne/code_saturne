@@ -2917,6 +2917,80 @@ _mat_vec_p_l_dist_mkl(const cs_matrix_t  *matrix,
 
 #endif /* defined (HAVE_MKL) */
 
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------
+ * Select the sparse matrix-vector product function to be used on device by a
+ * matrix or variant for a given fill type.
+ *
+ * Currently, possible variant functions are:
+ *
+ *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
+ *     default
+ *     cuda            (CUDA-accelerated)
+ *     cusparse        (with cuSPARSE)
+ *
+ *   CS_MATRIX_MSR
+ *     default
+ *     cuda            (CUDA-accelerated)
+ *     cusparse        (with cuSPARSE)
+ *
+ * parameters:
+ *   m_type      <--  Matrix type
+ *   fill type   <--  matrix fill type to merge from
+ *   spmv_type   <--  SpMV operation type (full or sub-matrix)
+ *                    (all types if CS_MATRIX_SPMV_N_TYPES)
+ *   numbering   <--  mesh numbering structure, or NULL
+ *   func_name   <--  function type name, or NULL for default
+ *   spmv        <->  multiplication function array
+ *
+ * returns:
+ *   0 for success, 1 for incompatible function, 2 for compatible
+ *   function not available in current build
+ *----------------------------------------------------------------------------*/
+
+static int
+_matrix_spmv_set_func_d(cs_matrix_type_t             m_type,
+                        cs_matrix_fill_type_t        fill_type,
+                        cs_matrix_spmv_type_t        spmv_type,
+                        const cs_numbering_t        *numbering,
+                        const char                  *func_name,
+                        cs_matrix_vector_product_t  *spmv[CS_MATRIX_SPMV_N_TYPES])
+{
+  const char *_func_name = func_name;
+
+#if defined(HAVE_CUDA)
+
+#if defined(HAVE_CUSPARSE)
+const char default_name[] = "cusparse";
+#else
+const char default_name[] = "cuda";
+#endif
+
+#else
+const char default_name[] = "not_implemented";
+#endif
+
+ if (_func_name == NULL)
+   _func_name = default_name;
+ else if (!strcmp(func_name, "default"))
+   _func_name = default_name;
+
+  char spmv_xy_hd[CS_MATRIX_SPMV_N_TYPES];
+
+  int retcode = cs_matrix_spmv_set_func(m_type,
+                                        fill_type,
+                                        spmv_type,
+                                        numbering,
+                                        _func_name,
+                                        spmv,
+                                        spmv_xy_hd);
+
+  return retcode;
+}
+
+#endif /* defined(HAVE_ACCEL) */
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2936,7 +3010,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
   for (cs_matrix_fill_type_t mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++) {
     for (cs_matrix_spmv_type_t spmv_type = 0;
          spmv_type < CS_MATRIX_SPMV_N_TYPES;
-         spmv_type++)
+         spmv_type++) {
       cs_matrix_spmv_set_func(m->type,
                               mft,
                               spmv_type,
@@ -2944,6 +3018,15 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
                               NULL, /* func_name */
                               m->vector_multiply[mft],
                               m->vector_multiply_xy_hd[mft]);
+#if defined(HAVE_ACCEL)
+      _matrix_spmv_set_func_d(m->type,
+                              mft,
+                              spmv_type,
+                              m->numbering,
+                              NULL, /* func_name */
+                              m->vector_multiply_d[mft]);
+#endif
+    }
   }
 }
 
@@ -3000,7 +3083,7 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
                         const cs_numbering_t        *numbering,
                         const char                  *func_name,
                         cs_matrix_vector_product_t  *spmv[CS_MATRIX_SPMV_N_TYPES],
-                        char                   spmv_xy_hd[CS_MATRIX_SPMV_N_TYPES])
+                        char                         spmv_xy_hd[CS_MATRIX_SPMV_N_TYPES])
 {
   int retcode = 1;
   int standard = 0;

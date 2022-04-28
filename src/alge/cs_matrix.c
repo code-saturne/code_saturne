@@ -2436,6 +2436,12 @@ _map_or_copy_d_coeffs_msr(cs_matrix_t      *matrix,
 
   if (da != NULL) {
 
+#if defined(HAVE_ACCEL)
+    if (   cs_check_device_ptr(da) == CS_ALLOC_HOST
+        && matrix->alloc_mode > CS_ALLOC_HOST)
+      copy = true;
+#endif
+
     if (copy) {
       const cs_lnum_t b_size = mc->db_size;
       const cs_lnum_t b_size_2 = b_size * b_size;
@@ -4422,6 +4428,10 @@ _matrix_create(cs_matrix_type_t  type)
   m->eb_size = 0;
 
   m->alloc_mode = cs_alloc_mode;
+  /* Native matrix only on host, distributed not on accelerator yet */
+  if (m->type == CS_MATRIX_NATIVE || m-type == CS_MATRIX_DIST)
+    m->alloc_mode = CS_ALLOC_HOST;
+
   m->fill_type = CS_MATRIX_N_FILL_TYPES;
 
   m->structure = NULL;
@@ -4434,6 +4444,9 @@ _matrix_create(cs_matrix_type_t  type)
   for (mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++) {
     for (cs_matrix_spmv_type_t i = 0; i < CS_MATRIX_SPMV_N_TYPES; i++) {
       m->vector_multiply[mft][i] = NULL;
+#if defined(HAVE_ACCEL)
+      m->vector_multiply_d[mft][i] = NULL;
+#endif
       m->vector_multiply_xy_hd[mft][i] = 'h';
     }
   }
@@ -4525,6 +4538,10 @@ _matrix_create(cs_matrix_type_t  type)
   for (int i = 0; i < CS_MATRIX_N_FILL_TYPES; i++) {
     if (m->vector_multiply[i][1] == NULL)
       m->vector_multiply[i][1] = m->vector_multiply[i][0];
+#if defined(HAVE_ACCEL)
+    if (m->vector_multiply_d[i][1] == NULL)
+      m->vector_multiply_d[i][1] = m->vector_multiply_d[i][0];
+#endif
   }
 
   m->destroy_adaptor = NULL;
@@ -5322,14 +5339,14 @@ cs_matrix_get_l_range(const cs_matrix_t  *matrix)
 /*!
  *\brief Query matrix allocation mode.
  *
- * \param[in, out]  matrix  pointer to matrix structure
+ * \param[in]  matrix  pointer to matrix structure
  *
  * \return  host/device allocation mode
  */
 /*----------------------------------------------------------------------------*/
 
 cs_alloc_mode_t
-cs_matrix_get_alloc_mode(cs_matrix_t  *matrix)
+cs_matrix_get_alloc_mode(const cs_matrix_t  *matrix)
 {
   return matrix->alloc_mode;
 }
@@ -6300,6 +6317,41 @@ cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
               cs_matrix_fill_type_name[matrix->fill_type]);
 }
 
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x, on device
+ *
+ * This function includes a halo update of x prior to multiplication by A.
+ *
+ * \param[in]       matrix         pointer to matrix structure
+ * \param[in, out]  x              multipliying vector values, on device
+ *                                 (ghost values updated)
+ * \param[out]      y              resulting vector (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vector_multiply_d(const cs_matrix_t   *matrix,
+                            cs_real_t           *restrict x,
+                            cs_real_t           *restrict y)
+{
+  assert(matrix != NULL);
+
+  if (matrix->vector_multiply_d[matrix->fill_type][0] != NULL)
+    matrix->vector_multiply_d[matrix->fill_type][0](matrix, false, true, x, y);
+
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Matrix of type: %s is missing a device vector multiply\n"
+                "function for fill type %s."),
+              __func__, cs_matrix_get_type_name(matrix),
+              cs_matrix_fill_type_name[matrix->fill_type]);
+}
+
+#endif /* defined(HAVE_ACCEL) */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x with no prior halo update of x.
@@ -6397,6 +6449,47 @@ cs_matrix_vector_multiply_partial(const cs_matrix_t      *matrix,
               cs_matrix_spmv_type_name[op_type],
               cs_matrix_fill_type_name[matrix->fill_type]);
 }
+
+#if defined(HAVE_ACCEL)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Partial matrix.vector product, on device
+ *
+ * This function includes a halo update of x prior to multiplication,
+ * except for the CS_MATRIX_SPMV_L operation type, which does not require it,
+ * as halo adjacencies are only present and useful in the upper-diagonal part..
+ *
+ * \param[in]       matrix         pointer to matrix structure
+ * \param[in]       op_type        SpMV operation type
+ * \param[in, out]  x              multipliying vector values, on device
+ *                                 (ghost values updated)
+ * \param[out]      y              resulting vector, on device
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vector_multiply_partial_d(const cs_matrix_t      *matrix,
+                                    cs_matrix_spmv_type_t   op_type,
+                                    cs_real_t              *restrict x,
+                                    cs_real_t              *restrict y)
+{
+  assert(matrix != NULL);
+
+  if (matrix->vector_multiply_d[matrix->fill_type][op_type] != NULL)
+    matrix->vector_multiply_d[matrix->fill_type][op_type]
+              (matrix, true, true, x, y);
+
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Matrix of type: %s is missing a device partial SpMV\n"
+                "(%s) function for fill type %s."),
+              __func__, cs_matrix_get_type_name(matrix),
+              cs_matrix_spmv_type_name[op_type],
+              cs_matrix_fill_type_name[matrix->fill_type]);
+}
+
+#endif /* defined(HAVE_ACCEL) */
 
 /*----------------------------------------------------------------------------*/
 /*!
