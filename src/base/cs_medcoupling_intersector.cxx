@@ -323,6 +323,8 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   BFT_MALLOC(mi->interp_method, strlen(interp_method)+1, char);
   strcpy(mi->interp_method, interp_method);
 
+  mi->type = type;
+
   int cs_elt_dim = -1;
   if (mi->type == CS_MEDCPL_INTERSECT_VOL)
     cs_elt_dim = 3;
