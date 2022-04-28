@@ -273,6 +273,124 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add the reaction term for a scalar-valued CDO vertex-based scheme
+ *         Case of reaction terms relying on a classical mass matrix
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
+ * \param[in]      eqb         pointer to the equation builder structure
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_svb_reaction(const cs_equation_param_t    *eqp,
+              const cs_cell_mesh_t         *cm,
+              const cs_hodge_t             *mass_hodge,
+              const cs_equation_builder_t  *eqb,
+              cs_cell_builder_t            *cb,
+              cs_cell_sys_t                *csys)
+{
+  /* Update the value of the reaction property(ies) if needed */
+
+  bool  do_something  = cs_equation_builder_set_reaction_pty_cw(eqp, eqb, cm,
+                                                                cb);
+
+  if (do_something) { /* |rpty_val| > 0 */
+
+    assert(cs_flag_test(eqb->sys_flag, CS_FLAG_SYS_MASS_MATRIX));
+
+    /* Update local system matrix with the reaction term */
+
+    cs_sdm_add_mult(csys->mat, cb->rpty_val, mass_hodge->matrix);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add the reaction term for a scalar-valued CDO vertex-based scheme
+ *         Case of reaction terms relying on a lumped mass matrix
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
+ * \param[in]      eqb         pointer to the equation builder structure
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_svb_lumped_reaction(const cs_equation_param_t    *eqp,
+                     const cs_cell_mesh_t         *cm,
+                     const cs_hodge_t             *mass_hodge,
+                     const cs_equation_builder_t  *eqb,
+                     cs_cell_builder_t            *cb,
+                     cs_cell_sys_t                *csys)
+{
+  CS_UNUSED(mass_hodge);
+
+  /* Update the value of the reaction property(ies) if needed */
+
+  bool  do_something  = cs_equation_builder_set_reaction_pty_cw(eqp, eqb, cm,
+                                                                cb);
+
+  if (do_something) { /* |rpty_val| > 0 */
+
+    /* |c|*wvc = |dual_cell(v) cap c| corresponds to the diagonal entry of the
+     * lumped mass matrix */
+
+    const double  ptyc = cb->rpty_val * cm->vol_c;
+    for (short int i = 0; i < cm->n_vc; i++)
+      csys->mat->val[i*(cm->n_vc + 1)] += cm->wvc[i] * ptyc;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add the reaction term for a scalar-valued CDO vertex-based scheme
+ *         Case of reaction terms relying on a lumped mass matrix
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
+ * \param[in]      eqb         pointer to the equation builder structure
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_svb_lumped_subcell_reaction(const cs_equation_param_t    *eqp,
+                             const cs_cell_mesh_t         *cm,
+                             const cs_hodge_t             *mass_hodge,
+                             const cs_equation_builder_t  *eqb,
+                             cs_cell_builder_t            *cb,
+                             cs_cell_sys_t                *csys)
+{
+  CS_UNUSED(mass_hodge);
+  CS_UNUSED(eqb);
+  assert(eqp->n_reaction_terms == 1);
+
+  /* The value of the property in each portion of the dual cell is stored
+     inside cb->values */
+
+  cs_property_c2v_values(cm, eqp->reaction_properties[0], cb->t_pty_eval,
+                         cb->values);
+
+  /* |c|*wvc = |dual_cell(v) cap c| corresponds to the diagonal entry of the
+   * lumped mass matrix */
+
+  for (short int i = 0; i < cm->n_vc; i++)
+    csys->mat->val[i*(cm->n_vc + 1)] += cm->wvc[i] * cm->vol_c * cb->values[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build the local matrices arising from the diffusion, advection,
  *         reaction terms.
  *         mass_hodge could be set to NULL if a Voronoi algo. is used.
@@ -386,34 +504,7 @@ _svb_conv_diff_reac(const cs_equation_param_t     *eqp,
   if (cs_equation_param_has_reaction(eqp)) { /* REACTION TERM
                                               * ============= */
 
-    /* Update the value of the reaction property(ies) if needed */
-
-    bool  do_something  = cs_equation_builder_set_reaction_pty_cw(eqp, eqb, cm,
-                                                                  cb);
-
-    if (do_something) { /* |rpty_val| > 0 */
-
-      if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
-
-        /* |c|*wvc = |dual_cell(v) cap c| */
-
-        assert(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
-        const double  ptyc = cb->rpty_val * cm->vol_c;
-        for (short int i = 0; i < cm->n_vc; i++)
-          csys->mat->val[i*(cm->n_vc + 1)] += cm->wvc[i] * ptyc;
-
-      }
-      else {
-
-        assert(cs_flag_test(eqb->sys_flag, CS_FLAG_SYS_MASS_MATRIX));
-
-        /* Update local system matrix with the reaction term */
-
-        cs_sdm_add_mult(csys->mat, cb->rpty_val, mass_hodge->matrix);
-
-      }
-
-    } /* Do something */
+    eqc->add_reaction_term(eqp, cm, mass_hodge, eqb, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1305,6 +1396,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
      eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) ? true : false;
 
   /* Diffusion term */
+  /* -------------- */
 
   eqc->diffusion_hodge = NULL;
   eqc->get_stiffness_matrix = NULL;
@@ -1366,6 +1458,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   } /* Diffusion term is requested */
 
   /* Boundary conditions */
+  /* ------------------- */
 
   BFT_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
   cs_equation_set_vertex_bc_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
@@ -1464,6 +1557,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   }
 
   /* Advection term */
+  /* -------------- */
 
   eqc->get_advection_matrix = NULL;
   eqc->add_advection_bc = NULL;
@@ -1585,6 +1679,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   cs_hodge_algo_t  srct_hodge_algo = CS_HODGE_N_ALGOS;
 
   /* Reaction term */
+  /* ------------- */
+
+  eqc->add_reaction_term = NULL;
 
   if (cs_equation_param_has_reaction(eqp)) {
 
@@ -1592,6 +1689,19 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
       eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
       reac_hodge_algo = CS_HODGE_ALGO_VORONOI;
+
+      if (cs_property_is_subcell(eqp->reaction_properties[0])) {
+
+        eqc->add_reaction_term = _svb_lumped_subcell_reaction;
+
+        if (eqp->n_reaction_terms > 1)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Invalid settings. Only one reaction is possible.\n",
+                    __func__);
+
+      }
+      else
+        eqc->add_reaction_term = _svb_lumped_reaction;
 
     }
     else {
@@ -1601,11 +1711,27 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       case CS_HODGE_ALGO_VORONOI:
         eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
         reac_hodge_algo = CS_HODGE_ALGO_VORONOI;
+
+        if (cs_property_is_subcell(eqp->reaction_properties[0])) {
+
+          eqc->add_reaction_term = _svb_lumped_subcell_reaction;
+
+          if (eqp->n_reaction_terms > 1)
+            bft_error(__FILE__, __LINE__, 0,
+                      "%s: Invalid settings. Only one reaction is possible.\n",
+                      __func__);
+
+        }
+        else
+          eqc->add_reaction_term = _svb_lumped_reaction;
         break;
+
       case CS_HODGE_ALGO_WBS:
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
         reac_hodge_algo = CS_HODGE_ALGO_WBS;
+        eqc->add_reaction_term = _svb_reaction;
         break;
+
       default:
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid choice of algorithm for the reaction term.",
@@ -1615,9 +1741,15 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Lumping or not lumping */
 
+    if (eqc->add_reaction_term == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid settings. This case is not handled yet.\n",
+                __func__);
+
   } /* Reaction term is requested */
 
   /* Unsteady term */
+  /* ------------- */
 
   eqc->add_unsteady_term = NULL; /* steady-state case by default */
 
@@ -1720,6 +1852,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   } /* Unsteady term is requested */
 
   /* Source term */
+  /* ----------- */
 
   eqc->source_terms = NULL;
 
@@ -1768,7 +1901,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   } /* There is at least one source term */
 
-  /* Pre-defined a cs_hodge_param_t structure */
+  /* Mass matrix */
+  /* ----------- */
 
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.coef = 1.0;  /* not useful in this case */
@@ -1805,8 +1939,9 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     eqb->incremental_algo->context =
       cs_iter_algo_aa_create(eqp->incremental_anderson_param, n_vertices);
 
-  /* Helper structures (range set, interface set, matrix structure and all the
-     assembly process) */
+  /* Helper structures
+     -----------------
+     range set, interface set, matrix structure and all the assembly process */
 
   cs_cdo_system_helper_t  *sh = NULL;
 
