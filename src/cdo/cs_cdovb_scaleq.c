@@ -2889,8 +2889,16 @@ cs_cdovb_scaleq_solve_steady_state_incr(bool                        cur2prev,
   /* p^{n+1,k+1} = p^{n+1,k} + inc_kp1
    * since inc_kp1 represents p^{n+1,k+1} - p^{n+1,k} */
 
-  for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
-    fld->val[i] += eqb->increment[i];
+  if (eqp->incremental_relax_factor < 1) {
+
+    assert(eqp->incremental_relax_factor > 0);
+    for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
+      fld->val[i] += eqp->incremental_relax_factor*eqb->increment[i];
+
+  }
+  else
+    for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
+      fld->val[i] += eqb->increment[i];
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
@@ -3398,8 +3406,16 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
   /* p^{n+1,k+1} = p^{n+1,k} + inc_kp1
    * since inc_kp1 represents p^{n+1,k+1} - p^{n+1,k} */
 
-  for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
-    fld->val[i] += eqb->increment[i];
+  if (eqp->incremental_relax_factor < 1) {
+
+    assert(eqp->incremental_relax_factor > 0);
+    for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
+      fld->val[i] += eqp->incremental_relax_factor*eqb->increment[i];
+
+  }
+  else
+    for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
+      fld->val[i] += eqb->increment[i];
 
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);

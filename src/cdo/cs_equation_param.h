@@ -755,6 +755,10 @@ typedef struct {
    * \var incremental_algo_param
    * Set of parameters to manage an iterative algorithm
    *
+   * \var incremental_relax_factor
+   * strictly positive value for the relaxation of the incremental algorithm
+   * A recommanded range is between 0.5 and 0.9
+   *
    * \var incremental_anderson_param
    * Set of parameters dedicated to the driving of the Anderson acceleration.
    * This is only useful if the incremental_algo_type is set to the Anderson
@@ -765,6 +769,7 @@ typedef struct {
 
   cs_param_nl_algo_t          incremental_algo_type;
   cs_iter_algo_param_t        incremental_algo_param;
+  cs_real_t                   incremental_relax_factor;
   cs_iter_algo_param_aa_t     incremental_anderson_param;
 
   /*!

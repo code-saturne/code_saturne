@@ -1254,6 +1254,8 @@ cs_equation_param_create(const char            *name,
     .rtol = 1e-2,           /* relative tolerance */
     .dtol = 1e3 };          /* divergence tolerance */
 
+  eqp->incremental_relax_factor = 1.0; /* No relaxation by default */
+
   eqp->incremental_anderson_param = (cs_iter_algo_param_aa_t) {
     .n_max_dir = 6,
     .starting_iter = 3,
@@ -1995,6 +1997,8 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
                   eqp->incremental_algo_param.dtol);
     cs_log_printf(CS_LOG_SETUP, "  * %s | Max of non-linear iterations: %d\n",
                   eqname, eqp->incremental_algo_param.n_max_algo_iter);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Relaxation factor: %.3f\n",
+                  eqname, eqp->incremental_relax_factor);
 
     if (eqp->incremental_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
