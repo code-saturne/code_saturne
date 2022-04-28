@@ -33,6 +33,7 @@
 #include "cs_hodge.h"
 #include "cs_cdo_advection.h"
 #include "cs_equation_bc.h"
+#include "cs_equation_builder.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -52,6 +53,29 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Apply the time scheme for a CDO vertex-based scheme
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or NULL if useless
+ * \param[in]      inv_dtcur   value of 1./dt for the current time step
+ * \param[in, out] eqb         pointer to the equation builder structure
+ * \param[in, out] cb          pointer to a cs_cell_builder_t structure
+ * \param[in, out] csys        pointer to a cs_cell_sys_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdovb_time_t)(const cs_equation_param_t   *eqp,
+                  const cs_cell_mesh_t        *cm,
+                  const cs_hodge_t            *mass_hodge,
+                  const double                 inv_dtcur,
+                  cs_equation_builder_t       *eqb,
+                  cs_cell_builder_t           *cb,
+                  cs_cell_sys_t               *csys);
 
 /*=============================================================================
  * Structure definitions
@@ -98,6 +122,10 @@ struct _cs_cdovb_t {
 
   cs_cdovb_advection_t     *get_advection_matrix;
   cs_cdovb_advection_bc_t  *add_advection_bc;
+
+  /* Pointer of function to build the unsteady term */
+
+  cs_cdovb_time_t          *add_unsteady_term;
 
   /* If one needs to build a local Hodge operator for the unsteady and/or the
      reaction term(s) */
