@@ -2402,7 +2402,7 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
       *cocgb = gq->cocgb_s_lsq;
   }
 
-  /* If used on acclelerator, copy/prefetch values and switch to
+  /* If used on accelerator, copy/prefetch values and switch to
      device pointers */
 
   if (accel) {

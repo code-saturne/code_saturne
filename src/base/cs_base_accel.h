@@ -135,6 +135,10 @@ BEGIN_C_DECLS
  * Variable value type.
  *----------------------------------------------------------------------------*/
 
+/*!
+ * Allocation modes for accelerated code.
+ */
+
 typedef enum {
 
   CS_ALLOC_HOST,                /*!< allocation on host only */
@@ -596,7 +600,7 @@ cs_sync_h2d(const void  *ptr)
  *
  * If separate pointers are used on the host and device,
  * the host pointer should be used with this function.
- * In this case, synchronization is done are started (asynchronously
+ * In this case, synchronization is started (asynchronously
  * if the allocation mode supports it).
  *
  * In other cases, synchronization will be delayed until actual use.
