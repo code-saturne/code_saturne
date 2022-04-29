@@ -1232,9 +1232,9 @@ cs_base_mpi_init(int    *argc,
   int arg_id = 0, flag = 0;
   int use_mpi = false;
 
-#if   defined(__bg__) || defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
 
-  /* Blue Gene/Q or Cray: assume MPI is always used. */
+  /* Cray: assume MPI is always used. */
 
   use_mpi = true;
 
@@ -1249,9 +1249,7 @@ cs_base_mpi_init(int    *argc,
     use_mpi = true;
 
 #elif defined(OPEN_MPI)
-  if (getenv("OMPI_MCA_ns_nds_vpid") != NULL)         /* OpenMPI 1.2 */
-    use_mpi = true;
-  else if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 + */
+  if (getenv("OMPI_COMM_WORLD_RANK") != NULL)    /* OpenMPI 1.3 + */
     use_mpi = true;
 
 #endif /* Tests for known MPI variants */
@@ -1268,7 +1266,7 @@ cs_base_mpi_init(int    *argc,
   if (use_mpi == true) {
     MPI_Initialized(&flag);
     if (!flag) {
-#if (MPI_VERSION >= 2) && defined(HAVE_OPENMP)
+#if defined(HAVE_OPENMP)
       int mpi_threads;
       MPI_Init_thread(argc, argv, MPI_THREAD_FUNNELED, &mpi_threads);
 #else

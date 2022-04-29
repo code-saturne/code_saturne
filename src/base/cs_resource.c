@@ -117,11 +117,9 @@ _t_remain(double  *tps)
     bft_error(__FILE__, __LINE__, errno,
               "getrusage(RUSAGE_SELF) error.");
 
-#if !defined(__bg__)
   else if ((retval = getrusage(RUSAGE_CHILDREN, &buf_time1)) < 0)
     bft_error(__FILE__, __LINE__, errno,
               "getrusage(RUSAGE_CHILDREN) error.");
-#endif
 
   else if ((retval = getrlimit(RLIMIT_CPU, &ressources)) < 0)
     bft_error(__FILE__, __LINE__, errno,
