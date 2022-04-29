@@ -1110,6 +1110,7 @@ cs_halo_state_destroy(cs_halo_state_t  **halo_state)
 #endif
 
     CS_FREE_HD(hs->send_buffer);
+    CS_FREE_HD(hs->recv_buffer);
 
 #if defined(HAVE_MPI)
     BFT_FREE(hs->request);
@@ -1634,7 +1635,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
 
     /* When array passed is defined on device but is not shared, use
        separate (smaller) CPU for receive (as we cannot know whether
-       a matching host beffer without complexifying the API);
+       a matching host better without complexifying the API);
        this will be copied back to device at the next step */
     if (_hs->var_location != CS_ALLOC_HOST_DEVICE_SHARED) {
       if (_hs->recv_buffer_size < _hs->send_buffer_size) {
