@@ -1574,7 +1574,8 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
 
 #endif
 
-  _hs->var_location = CS_ALLOC_HOST;
+  _hs->var_location = CS_ALLOC_DEVICE;  /* May actually be shared,
+                                           but uses device functions */
 }
 
 #endif /* defined(HAVE_ACCEL) */
