@@ -312,7 +312,8 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
       }
 
-      cs_sync_h2d(sd->_ad_inv);
+      if (c->on_device)
+        cs_sync_h2d(sd->_ad_inv);
 
     }
 
