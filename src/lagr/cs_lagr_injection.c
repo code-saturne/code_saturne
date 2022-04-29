@@ -908,8 +908,6 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
           euler[3] = 0.25 * (trans_m[1][0] - trans_m[0][1]) / euler[0];
 
           /* Compute initial angular velocity */
-          /* Get velocity gradient */
-          cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
 
           /* Local reference frame */
           cs_real_t grad_vf_r[3][3];
