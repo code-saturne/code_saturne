@@ -550,15 +550,16 @@ _cs_medcoupling_remapper_destroy(cs_medcoupling_remapper_t *r)
 {
   BFT_FREE(r->name);
   BFT_FREE(r->medfile_path);
-  BFT_FREE(r->bbox_source_mesh);
-  BFT_FREE(r->remapper);
 
   for (int i = 0; i < r->n_fields; i++) {
     BFT_FREE(r->field_names[i]);
-    BFT_FREE(r->source_fields[i]);
+    r->source_fields[i]->decrRef();
   }
   BFT_FREE(r->field_names);
   BFT_FREE(r->source_fields);
+
+  //r->bbox_source_mesh->decrRef();
+  delete r->remapper;
 
   // Mesh will deallocated afterwards since it can be shared
   r->target_mesh = NULL;
