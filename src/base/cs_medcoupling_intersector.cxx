@@ -566,13 +566,12 @@ _compute_intersection_surfaces(cs_medcoupling_intersector_t *mi)
      * -> first  : which is the index of the intersected cell in source mesh
      * -> second : which the intersection volume
      */
-    const cs_lnum_t *connec = mi->local_mesh->new_to_old;
     for (cs_lnum_t e_id = 0; e_id < n_elts; e_id++) {
-      cs_lnum_t c_id = connec[e_id];
       for (std::map<mcIdType, double>::iterator it = mat[e_id].begin();
            it != mat[e_id].end();
-           ++it)
-        mi->intersect_vals[c_id] += it->second;
+           ++it) {
+        mi->intersect_vals[e_id] += it->second;
+      }
     }
 
   }
