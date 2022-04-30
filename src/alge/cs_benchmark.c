@@ -483,7 +483,7 @@ _sub_matrix_vector_test(double               t_measure,
 
   _print_stats(n_runs, n_ops, n_ops_glob, wt1 - wt0);
 
-  /* Matrix.vector product, CUDA variant*/
+  /* Matrix.vector product, CUDA variant */
 
 #if (HAVE_CUDA)
 
@@ -497,6 +497,11 @@ _sub_matrix_vector_test(double               t_measure,
     = (const cs_real_t *)cs_get_device_ptr((void *)x);
   cs_real_t *__restrict__ d_y
     = (cs_real_t *)cs_get_device_ptr((void *)y);
+
+  cs_sync_h2d(face_cell);
+  cs_sync_h2d(xa);
+  cs_sync_h2d(x);
+  cs_sync_h2d(y);
 
   test_sum = 0.0;
   wt0 = cs_timer_wtime(), wt1 = wt0;
