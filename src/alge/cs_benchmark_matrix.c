@@ -699,17 +699,18 @@ _matrix_check(int                          n_variants,
      "Checking matrix structure and operation variants (diff/reference):\n"
      "------------------------------------------------\n");
 
-  /* Allocate and initialize  working arrays */
+  /* Allocate and initialize  working arrays
+     (for a maximum block size of 6) */
 
-  CS_MALLOC_HD(x, n_cols_ext*d_block_size, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(y, n_cols_ext*d_block_size, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(yr0, n_cols_ext*d_block_size, cs_real_t);
+  CS_MALLOC_HD(x, n_cols_ext*6, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(y, n_cols_ext*6, cs_real_t, cs_alloc_mode);
+  BFT_MALLOC(yr0, n_cols_ext*6, cs_real_t);
 
   cs_lnum_t d_block_stride = d_block_size*d_block_size;
   cs_lnum_t e_block_stride = e_block_size*e_block_size;
 
-  CS_MALLOC_HD(da, n_cols_ext*d_block_stride, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(xa, n_edges*2*e_block_stride, cs_real_t);
+  CS_MALLOC_HD(da, n_cols_ext*6*6, cs_real_t, cs_alloc_mode);
+  BFT_MALLOC(xa, n_edges*2*6*6, cs_real_t);
 
   /* Initialize arrays */
 
@@ -735,6 +736,8 @@ _matrix_check(int                          n_variants,
 
     cs_lnum_t _d_block_size
       = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size : 1;
+    if (f_id == CS_MATRIX_BLOCK_D_66)
+      _d_block_size = 6;
     cs_lnum_t _e_block_size
       = (f_id >= CS_MATRIX_BLOCK) ? e_block_size : 1;
     const cs_lnum_t _block_mult = _d_block_size;
@@ -853,7 +856,7 @@ _matrix_check(int                          n_variants,
         if (vector_multiply != NULL) {
           /* Set part of y to incorrect value (to check setting) */
 
-          for (cs_lnum_t ii = 0; ii < n_cols_ext && ii < 100; ii++)
+          for (cs_lnum_t ii = 0; ii < n_cols_ext*_d_block_size; ii++)
             y[ii] = -1;
 
           /* Check multiplication */
