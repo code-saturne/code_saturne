@@ -112,14 +112,20 @@ typedef struct _cs_matrix_cusparse_map_t {
 
 #if defined(USE_CUSPARSE_GENERIC_API)
 
+  bool  block_diag;             /* Use identity blocks diagonal structure ? */
+
   cusparseSpMatDescr_t  matA;   /* Handle to cusparse Matrix */
+
+  cusparseDnMatDescr_t  matX;   /* Handle to cusparse Matrix (blocked vector) */
+  cusparseDnMatDescr_t  matY;   /* Handle to cusparse Matrix (blocked vector) */
+
   cusparseDnVecDescr_t  vecX;   /* Handle to cusparse Vector */
   cusparseDnVecDescr_t  vecY;   /* Handle to cusparse output Vector */
 
-  void  *vecXValues;  /* Pointer to vector values */
-  void  *vecYValues;  /* Pointer to vector values */
+  void  *vecXValues;            /* Pointer to vector values */
+  void  *vecYValues;            /* Pointer to vector values */
 
-  void  *dBuffer;     /* Associated buffer */
+  void  *dBuffer;               /* Associated buffer */
 
 #else
 
@@ -306,7 +312,7 @@ _mat_vect_p_l_msr(cs_lnum_t         n_rows,
 /* \brief Local diagonal contribution y = Da.x  + y.
  *
  * This can be combined with a cuSPARSE CSR SpMV product with the
- * extra-diagonal portion of an MSR matrix.
+ * extra-diagonal portion of an MSR or distributed matrix.
  *
  * \param[in]       n_rows  number of local rows
  * \param[in]       d_val   pointer to diagonal matrix values
@@ -325,6 +331,75 @@ _mat_vect_p_l_msr_diag(cs_lnum_t         n_rows,
 
   if (ii < n_rows)
     y[ii] = d_val[ii] * x[ii];
+}
+
+/*----------------------------------------------------------------------------*/
+/* \brief Local matrix.vector product y = A.x with MSR matrix,
+ *        3x3 blocked diagonal version.
+ *
+ * \param[in]   n_rows     number of local rows
+ * \param[in]   d_val      pointer to diagonal matrix values
+ * \param[in]   x          multipliying vector values
+ * \param[out]  y          resulting vector
+ */
+/*----------------------------------------------------------------------------*/
+
+__global__ static void
+_b_3_3_spmv_diag(cs_lnum_t        n_rows,
+                 const cs_real_t  *__restrict__ d_val,
+                 const cs_real_t  *__restrict__ x,
+                 cs_real_t        *__restrict__ y)
+{
+  cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
+  if (ii < n_rows) {
+
+#   pragma unroll
+    for (cs_lnum_t kk = 0; kk < 3; kk++) {
+      y[ii*3 + kk] =   d_val[ii * 9 + kk * 3]     * x[ii * 3]
+                     + d_val[ii * 9 + kk * 3 + 1] * x[ii * 3 + 1]
+                     + d_val[ii * 9 + kk * 3 + 2] * x[ii * 3 + 2];
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/* \brief Local matrix.vector product y = A.x with MSR matrix,
+ *        templated blocked diagonal version.
+ *
+ * \param[in]   n_rows     number of local rows
+ * \param[in]   d_val      pointer to diagonal matrix values
+ * \param[in]   x          multipliying vector values
+ * \param[out]  y          resulting vector
+ */
+/*----------------------------------------------------------------------------*/
+
+template <const int n>
+__global__ static void
+_b_spmv_diag(cs_lnum_t        n_rows,
+             const cs_real_t  *__restrict__ d_val,
+             const cs_real_t  *__restrict__ x,
+             cs_real_t        *__restrict__ y)
+{
+  cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (ii < n_rows) {
+    const cs_lnum_t nn = n*n;
+
+    cs_real_t sii[n];
+
+    for (cs_lnum_t kk = 0; kk < n; kk++)
+      sii[kk] = 0.;
+
+    for (cs_lnum_t kk = 0; kk < n; kk++) {
+      for (cs_lnum_t ll = 0; ll < n; ll++) {
+        sii[kk] += d_val[ii*nn + kk*n + ll] * x[ii*n + ll];
+      }
+    }
+
+    for (cs_lnum_t kk = 0; kk < n; kk++)
+      y[ii*n + kk] = sii[kk];
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -456,12 +531,14 @@ _b_mat_vect_p_l_msr(cs_lnum_t        n_rows,
       sii[kk] = 0.;
 
     for (cs_lnum_t kk = 0; kk < n; kk++) {
-      sii[kk] += d_val[ii*nn + kk*n + kk] * x[ii*n + kk];
+      for (cs_lnum_t ll = 0; ll < n; ll++) {
+        sii[kk] += d_val[ii*nn + kk*n + ll] * x[ii*n + ll];
+      }
     }
 
     for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        sii[kk] += m_row[jj] * __ldg(x + (_col_id[jj]*3 + kk));
+      for (cs_lnum_t kk = 0; kk < n; kk++)
+        sii[kk] += m_row[jj] * __ldg(x + (_col_id[jj]*n + kk));
     }
 
     for (cs_lnum_t kk = 0; kk < n; kk++)
@@ -488,8 +565,8 @@ __global__ static void
 _b_mat_vect_p_l_msr_exdiag(cs_lnum_t        n_rows,
                            const cs_lnum_t  *__restrict__ col_id,
                            const cs_lnum_t  *__restrict__ row_index,
-                           const cs_real_t  *__restrict__ x_val,
                            const cs_real_t  *__restrict__ d_val,
+                           const cs_real_t  *__restrict__ x_val,
                            const cs_real_t  *__restrict__ x,
                            cs_real_t        *__restrict__ y)
 {
@@ -576,15 +653,28 @@ _unset_cusparse_map(cs_matrix_t   *matrix)
 
   cusparseDestroySpMat(csm->matA);
 
-  if (csm->vecXValues != NULL)
-    cusparseDestroyDnVec(csm->vecX);
-  if (csm->vecYValues != NULL)
-    cusparseDestroyDnVec(csm->vecY);
+  if (csm->block_diag == false) {
+    if (csm->vecXValues != NULL)
+      cusparseDestroyDnVec(csm->vecX);
+    if (csm->vecYValues != NULL)
+      cusparseDestroyDnVec(csm->vecY);
+  }
+  else {
+    if (csm->vecXValues != NULL)
+      cusparseDestroyDnMat(csm->matX);
+    if (csm->vecYValues != NULL)
+      cusparseDestroyDnMat(csm->matY);
+  }
 
   if (csm->dBuffer != NULL) {
     CS_CUDA_CHECK(cudaFree(csm->dBuffer));
     csm->dBuffer = NULL;
   }
+
+  csm->block_diag = false;
+
+  csm->vecXValues = NULL;
+  csm->vecYValues = NULL;
 
 #else
 
@@ -654,6 +744,11 @@ _set_cusparse_map(cs_matrix_t   *matrix)
     status = cusparseCreate(&_handle);
 
 #if defined(USE_CUSPARSE_GENERIC_API)
+
+  if (matrix->db_size > matrix->eb_size)
+    csm->block_diag = true;
+  else
+    csm->block_diag = false;
 
   if (CUSPARSE_STATUS_SUCCESS != status)
     bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
@@ -785,6 +880,99 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
                                      val_dtype,
                                      CUSPARSE_MV_ALG_DEFAULT,
                                      &bufferSize);
+
+    CS_CUDA_CHECK(cudaMalloc(&(csm->dBuffer), bufferSize));
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Update matrix cuSPARSE mapping in block diagonal case.
+ *
+ * parameters:
+ *   csm       <-> cuSPARSE matrix mapping
+ *   matrix    <-- pointer to matrix structure
+ *   d_x       <-- pointer to input vector (on device)
+ *   d_y       <-- pointer to output vector (on device)
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
+                                const cs_matrix_t         *matrix,
+                                void                      *d_x,
+                                void                      *d_y)
+{
+  assert(csm != NULL);
+
+#if defined(USE_CUSPARSE_GENERIC_API)
+
+  cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
+  cudaDataType_t val_dtype
+    = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
+
+  if (d_x != csm->vecXValues) {
+    if (csm->vecXValues != NULL)
+      cusparseDestroyDnMat(csm->matX);
+
+    cs_lnum_t nn = matrix->n_cols_ext*matrix->db_size;
+    status = cusparseCreateDnMat(&(csm->matX),
+                                 matrix->n_cols_ext,
+                                 matrix->db_size,
+                                 matrix->db_size, // n_cols_ext, /* leading dimension */
+                                 d_x,
+                                 val_dtype,
+                                 CUSPARSE_ORDER_ROW);
+
+    if (CUSPARSE_STATUS_SUCCESS != status)
+      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+                __func__, cusparseGetErrorString(status));
+
+    csm->vecXValues = d_x;
+  }
+
+  if (d_y != csm->vecYValues) {
+    if (csm->vecYValues != NULL)
+      cusparseDestroyDnMat(csm->matY);
+
+    status = cusparseCreateDnMat(&(csm->matY),
+                                 matrix->n_rows,
+                                 matrix->db_size,
+                                 matrix->db_size, //n_rows, /* leading dimension */
+                                 d_y,
+                                 val_dtype,
+                                 CUSPARSE_ORDER_ROW);
+
+    if (CUSPARSE_STATUS_SUCCESS != status)
+      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+                __func__, cusparseGetErrorString(status));
+
+    csm->vecYValues = d_y;
+  }
+
+  if (csm->dBuffer == NULL) {
+    size_t bufferSize = 0;
+    cs_real_t alpha = 1.0;
+    cs_real_t beta = 1.0;  /* 0 should be enough for SmPV, 1 needed for
+                              y = A.x + b.y
+                              which is useful when y is initialized by
+                              a separate diagonal da.x product */
+
+    status = cusparseSpMM_bufferSize(_handle,
+                                     CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                     CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                     &alpha,
+                                     csm->matA,
+                                     csm->matX,
+                                     &beta,
+                                     csm->matY,
+                                     val_dtype,
+                                     CUSPARSE_SPMM_ALG_DEFAULT,
+                                     &bufferSize);
+
+    if (CUSPARSE_STATUS_SUCCESS != status)
+      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+                __func__, cusparseGetErrorString(status));
 
     CS_CUDA_CHECK(cudaMalloc(&(csm->dBuffer), bufferSize));
   }
@@ -1142,25 +1330,19 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
 
   if (!exclude_diag) {
 
-    const cs_matrix_struct_csr_t *ms
-      = (const cs_matrix_struct_csr_t *)matrix->structure;
-    const cs_matrix_coeff_csr_t *mc
-      = (const cs_matrix_coeff_csr_t  *)matrix->coeffs;
-    const cs_lnum_t *__restrict__ d_row_index
-      = (const cs_lnum_t *)cs_get_device_ptr_const_pf
-                             (const_cast<cs_lnum_t *>(ms->row_index));
-    const cs_lnum_t *__restrict__ d_col_id
-      = (const cs_lnum_t *)cs_get_device_ptr_const_pf
-                             (const_cast<cs_lnum_t *>(ms->col_id));
+    const cs_matrix_struct_dist_t *ms
+      = (const cs_matrix_struct_dist_t *)matrix->structure;
+    const cs_matrix_coeff_dist_t *mc
+      = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
     const cs_real_t *__restrict__ d_val
       = (const cs_real_t *)cs_get_device_ptr_const_pf
-                             (const_cast<cs_real_t *>(mc->val));
+                             (const_cast<cs_real_t *>(mc->d_val));
 
     unsigned int blocksize = 256;
     unsigned int gridsize
       = (unsigned int)ceil((double)ms->n_rows / blocksize);
 
-    _mat_vect_p_l_msr_diag<<<gridsize, blocksize>>>
+    _mat_vect_p_l_msr_diag<<<gridsize, blocksize, 0, _stream>>>
       (ms->n_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
 
     beta = 1.;
@@ -1183,6 +1365,10 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
                                          val_dtype,
                                          CUSPARSE_MV_ALG_DEFAULT,
                                          csm->dBuffer);
+
+  if (CUSPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+              __func__, cusparseGetErrorString(status));
 
 #else
 
@@ -1320,6 +1506,158 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
     CS_CUDA_CHECK(cudaGetLastError());
   }
 }
+
+#if defined(HAVE_CUSPARSE)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
+ *        cuSPARSE version.
+ *
+ * \param[in]   matrix        pointer to matrix structure
+ * \param[in]   exclude_diag  exclude diagonal if true,
+ * \param[in]   sync          synchronize ghost cells if true
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
+                                   bool          exclude_diag,
+                                   bool          sync,
+                                   cs_real_t     d_x[restrict],
+                                   cs_real_t     d_y[restrict])
+{
+  cs_matrix_cusparse_map_t *csm
+    = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+
+  if (csm == NULL) {
+    matrix->ext_lib_map = _set_cusparse_map(matrix);
+    csm = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+  }
+
+  /* Ghost cell communication */
+
+  if (sync) {
+    cs_halo_state_t *hs = _pre_vector_multiply_sync_x_start(matrix,
+                                                            (cs_real_t *)d_x);
+    cs_halo_sync_wait(matrix->halo, (cs_real_t *)d_x, hs);
+  }
+
+  _update_cusparse_map_block_diag(csm, matrix, d_x, d_y);
+
+  cs_real_t alpha = 1.;
+  cs_real_t beta = 0.;
+
+  if (!exclude_diag) {
+
+    const cs_matrix_struct_dist_t *ms
+      = (const cs_matrix_struct_dist_t *)matrix->structure;
+    const cs_matrix_coeff_dist_t *mc
+      = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+    const cs_real_t *__restrict__ d_val
+      = (const cs_real_t *)cs_get_device_ptr_const_pf
+                             (const_cast<cs_real_t *>(mc->d_val));
+
+    unsigned int blocksize = 128;
+    unsigned int gridsize
+      = (unsigned int)ceil((double)ms->n_rows / blocksize);
+
+    if (matrix->db_size == 3)
+      _b_3_3_spmv_diag<<<gridsize, blocksize, 0, _stream>>>
+        (ms->n_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
+    else if (matrix->db_size == 6)
+      _b_spmv_diag<6><<<gridsize, blocksize, 0, _stream>>>
+        (ms->n_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
+    else if (matrix->db_size == 9)
+      _b_spmv_diag<9><<<gridsize, blocksize, 0, _stream>>>
+        (ms->n_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
+    else
+      bft_error(__FILE__, __LINE__, 0, _("%s: block size %d not implemented."),
+                __func__, (int)matrix->db_size);
+
+    beta = 1.;
+
+  }
+
+#if defined(USE_CUSPARSE_GENERIC_API)
+
+  cudaDataType_t val_dtype
+    = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
+
+  cusparseSetStream(_handle, _stream);
+  cusparseStatus_t status = cusparseSpMM(_handle,
+                                         CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                         CUSPARSE_OPERATION_NON_TRANSPOSE,
+                                         &alpha,
+                                         csm->matA,
+                                         csm->matX,
+                                         &beta,
+                                         csm->matY,
+                                         val_dtype,
+                                         CUSPARSE_SPMM_ALG_DEFAULT,
+                                         csm->dBuffer);
+
+  if (CUSPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+              __func__, cusparseGetErrorString(status));
+
+#else
+
+  /* FIXME:
+     cusparseDcsrmm does not seem to provide a working solution
+     here, though the newer cuSPARSE functions above work */
+
+#if SIZEOF_DOUBLE == 8
+
+  cusparseDcsrmm(_handle,
+                 CUSPARSE_OPERATION_NON_TRANSPOSE,
+                 matrix->n_rows,
+                 matrix->n_cols_ext,
+                 matrix->db_size,
+                 csm->nnz,
+                 &alpha,
+                 csm->descrA,
+                 (const double *)csm->d_e_val,
+                 (const int *)csm->d_row_index,
+                 (const int *)csm->d_col_id,
+                 (const double *)d_x,
+                 matrix->db_size,
+                 &beta,
+                 (double *)d_y,
+                 matrix->db_size);
+
+#elif SIZEOF_DOUBLE == 4
+
+  cusparseScsrmm(_handle,
+                 CUSPARSE_OPERATION_NON_TRANSPOSE,
+                 matrix->n_rows,
+                 matrix->n_cols_ext,
+                 matrix->db_size,
+                 csm->nnz,
+                 &alpha,
+                 csm->descrA,
+                 (const float *)csm->d_e_val,
+                 (const int *)csm->d_row_index,
+                 (const int *)csm->d_col_id,
+                 (const float *)d_x,
+                 matrix->db_size,
+                 &beta,
+                 (double *)d_y,
+                 matrix->db_size);
+
+#endif
+
+#endif
+
+  if (_stream == 0) {
+    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaGetLastError());
+  }
+}
+
+#endif /* defined(HAVE_CUSPARSE) */
 
 /*----------------------------------------------------------------------------*/
 

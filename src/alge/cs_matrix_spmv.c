@@ -3346,12 +3346,20 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
     }
 
     else if (!strcmp(func_name, "cusparse")) {
-#if defined(HAVE_CUDA)
+#if defined(HAVE_CUSPARSE)
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
       case CS_MATRIX_SCALAR_SYM:
-        _spmv[0] = cs_matrix_spmv_cuda_msr;
-        _spmv[1] = cs_matrix_spmv_cuda_msr;
+        _spmv[0] = cs_matrix_spmv_cuda_msr_cusparse;
+        _spmv[1] = cs_matrix_spmv_cuda_msr_cusparse;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+        break;
+      case CS_MATRIX_BLOCK_D:
+      case CS_MATRIX_BLOCK_D_66:
+      case CS_MATRIX_BLOCK_D_SYM:
+        _spmv[0] = cs_matrix_spmv_cuda_msr_b_cusparse;
+        _spmv[1] = cs_matrix_spmv_cuda_msr_b_cusparse;
         _spmv_xy_hd[0] = 'd';
         _spmv_xy_hd[1] = 'd';
         break;
