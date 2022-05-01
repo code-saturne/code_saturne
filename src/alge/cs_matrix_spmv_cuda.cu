@@ -82,12 +82,6 @@
  * Local macro definitions
  *============================================================================*/
 
-#if defined(HAVE_CUSPARSE)
-#  if (CUDART_VERSION > 10000)
-#    define USE_CUSPARSE_GENERIC_API  1
-#  endif
-#endif
-
 /*----------------------------------------------------------------------------
  * Compatibility macro for __ldg (load from generic memory) intrinsic,
  * forcing load from read-only texture cache.
@@ -110,7 +104,7 @@
 
 typedef struct _cs_matrix_cusparse_map_t {
 
-#if defined(USE_CUSPARSE_GENERIC_API)
+#if defined(HAVE_CUSPARSE_GENERIC_API)
 
   bool  block_diag;             /* Use identity blocks diagonal structure ? */
 
@@ -649,7 +643,7 @@ _unset_cusparse_map(cs_matrix_t   *matrix)
   if (csm == NULL)
     return;
 
-#if defined(USE_CUSPARSE_GENERIC_API)
+#if defined(HAVE_CUSPARSE_GENERIC_API)
 
   cusparseDestroySpMat(csm->matA);
 
@@ -743,7 +737,7 @@ _set_cusparse_map(cs_matrix_t   *matrix)
   if (_handle == NULL)
     status = cusparseCreate(&_handle);
 
-#if defined(USE_CUSPARSE_GENERIC_API)
+#if defined(HAVE_CUSPARSE_GENERIC_API)
 
   if (matrix->db_size > matrix->eb_size)
     csm->block_diag = true;
@@ -824,7 +818,7 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
 {
   assert(csm != NULL);
 
-#if defined(USE_CUSPARSE_GENERIC_API)
+#if defined(HAVE_CUSPARSE_GENERIC_API)
 
   cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
   cudaDataType_t val_dtype
@@ -905,7 +899,7 @@ _update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
 {
   assert(csm != NULL);
 
-#if defined(USE_CUSPARSE_GENERIC_API)
+#if defined(HAVE_CUSPARSE_GENERIC_API)
 
   cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
   cudaDataType_t val_dtype
@@ -1134,58 +1128,74 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
   cs_real_t alpha = 1.0;
   cs_real_t beta = 0.0;
 
-#if defined(USE_CUSPARSE_GENERIC_API)
+  cusparseSetStream(_handle, _stream);
+
+  cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
+
+#if defined(HAVE_CUSPARSE_GENERIC_API)
 
   cudaDataType_t val_dtype
     = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
 
-  cusparseSetStream(_handle, _stream);
-  cusparseStatus_t status = cusparseSpMV(_handle,
-                                         CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                         &alpha,
-                                         csm->matA,
-                                         csm->vecX,
-                                         &beta,
-                                         csm->vecY,
-                                         val_dtype,
-                                         CUSPARSE_MV_ALG_DEFAULT,
-                                         csm->dBuffer);
+  status = cusparseSpMV(_handle,
+                        CUSPARSE_OPERATION_NON_TRANSPOSE,
+                        &alpha,
+                        csm->matA,
+                        csm->vecX,
+                        &beta,
+                        csm->vecY,
+                        val_dtype,
+                        CUSPARSE_MV_ALG_DEFAULT,
+                        csm->dBuffer);
+
+  if (CUSPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+              __func__, cusparseGetErrorString(status));
 
 #else
 
-#if SIZEOF_DOUBLE == 8
+  if (sizeof(cs_real_t) == 8) {
+    double _alpha = alpha;
+    double _beta = beta;
 
-  cusparseDcsrmv(_handle,
-                 CUSPARSE_OPERATION_NON_TRANSPOSE,
-                 matrix->n_rows,
-                 matrix->n_cols_ext,
-                 csm->nnz,
-                 &alpha,
-                 csm->descrA,
-                 (const double *)csm->d_e_val,
-                 (const int *)csm->d_row_index,
-                 (const int *)csm->d_col_id,
-                 (const double *)d_x,
-                 &beta,
-                 (double *)d_y);
+    status = cusparseDcsrmv(_handle,
+                            CUSPARSE_OPERATION_NON_TRANSPOSE,
+                            matrix->n_rows,
+                            matrix->n_cols_ext,
+                            csm->nnz,
+                            &_alpha,
+                            csm->descrA,
+                            (const double *)csm->d_e_val,
+                            (const int *)csm->d_row_index,
+                            (const int *)csm->d_col_id,
+                            (const double *)d_x,
+                            &_beta,
+                            (double *)d_y);
+  }
 
-#elif SIZEOF_DOUBLE == 4
+  else if (sizeof(cs_real_t) == 4) {
+    float _alpha = alpha;
+    float _beta = beta;
 
-  cusparseScsrmv(_handle,
-                 CUSPARSE_OPERATION_NON_TRANSPOSE,
-                 matrix->n_rows,
-                 matrix->n_cols_ext,
-                 csm->nnz,
-                   &alpha,
-                 csm->descrA,
-                 (const float *)csm->d_e_val,
-                 (const int *)csm->d_row_index,
-                 (const int *)csm->d_col_id,
-                 (const float *)d_x,
-                 &beta,
-                 (float *)d_y);
+    status = cusparseScsrmv(_handle,
+                            CUSPARSE_OPERATION_NON_TRANSPOSE,
+                            matrix->n_rows,
+                            matrix->n_cols_ext,
+                            csm->nnz,
+                            &_alpha,
+                            csm->descrA,
+                            (const float *)csm->d_e_val,
+                            (const int *)csm->d_row_index,
+                            (const int *)csm->d_col_id,
+                            (const float *)d_x,
+                            &_beta,
+                            (float *)d_y);
 
-#endif
+  if (CUSPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: cuSPARSE error %d."),
+              __func__, (int)status);
+
+  }
 
 #endif
 
@@ -1349,22 +1359,25 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
 
   }
 
-#if defined(USE_CUSPARSE_GENERIC_API)
+  cusparseSetStream(_handle, _stream);
+
+  cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
+
+#if defined(HAVE_CUSPARSE_GENERIC_API)
 
   cudaDataType_t val_dtype
     = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
 
-  cusparseSetStream(_handle, _stream);
-  cusparseStatus_t status = cusparseSpMV(_handle,
-                                         CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                         &alpha,
-                                         csm->matA,
-                                         csm->vecX,
-                                         &beta,
-                                         csm->vecY,
-                                         val_dtype,
-                                         CUSPARSE_MV_ALG_DEFAULT,
-                                         csm->dBuffer);
+  status = cusparseSpMV(_handle,
+                        CUSPARSE_OPERATION_NON_TRANSPOSE,
+                        &alpha,
+                        csm->matA,
+                        csm->vecX,
+                        &beta,
+                        csm->vecY,
+                        val_dtype,
+                        CUSPARSE_MV_ALG_DEFAULT,
+                        csm->dBuffer);
 
   if (CUSPARSE_STATUS_SUCCESS != status)
     bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
@@ -1372,39 +1385,46 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
 
 #else
 
-#if SIZEOF_DOUBLE == 8
+  if (sizeof(cs_real_t) == 8) {
+    double _alpha = alpha;
+    double _beta = beta;
+    status = cusparseDcsrmv(_handle,
+                            CUSPARSE_OPERATION_NON_TRANSPOSE,
+                            matrix->n_rows,
+                            matrix->n_cols_ext,
+                            csm->nnz,
+                            &_alpha,
+                            csm->descrA,
+                            (const double *)csm->d_e_val,
+                            (const int *)csm->d_row_index,
+                            (const int *)csm->d_col_id,
+                            (const double *)d_x,
+                            &_beta,
+                            (double *)d_y);
+  }
 
-  cusparseDcsrmv(_handle,
-                 CUSPARSE_OPERATION_NON_TRANSPOSE,
-                 matrix->n_rows,
-                 matrix->n_cols_ext,
-                 csm->nnz,
-                 &alpha,
-                 csm->descrA,
-                 (const double *)csm->d_e_val,
-                 (const int *)csm->d_row_index,
-                 (const int *)csm->d_col_id,
-                 (const double *)d_x,
-                 &beta,
-                 (double *)d_y);
+  else if (sizeof(cs_real_t) == 4) {
+    float _alpha = alpha;
+    float _beta = beta;
 
-#elif SIZEOF_DOUBLE == 4
+    status = cusparseScsrmv(_handle,
+                            CUSPARSE_OPERATION_NON_TRANSPOSE,
+                            matrix->n_rows,
+                            matrix->n_cols_ext,
+                            csm->nnz,
+                            &_alpha,
+                            csm->descrA,
+                            (const float *)csm->d_e_val,
+                            (const int *)csm->d_row_index,
+                            (const int *)csm->d_col_id,
+                            (const float *)d_x,
+                            &_beta,
+                            (float *)d_y);
+  }
 
-  cusparseScsrmv(_handle,
-                 CUSPARSE_OPERATION_NON_TRANSPOSE,
-                 matrix->n_rows,
-                 matrix->n_cols_ext,
-                 csm->nnz,
-                   &alpha,
-                 csm->descrA,
-                 (const float *)csm->d_e_val,
-                 (const int *)csm->d_row_index,
-                 (const int *)csm->d_col_id,
-                 (const float *)d_x,
-                 &beta,
-                 (float *)d_y);
-
-#endif
+  if (CUSPARSE_STATUS_SUCCESS != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: cuSPARSE error %d."),
+              __func__, (int)status);
 
 #endif
 
@@ -1507,12 +1527,17 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
   }
 }
 
-#if defined(HAVE_CUSPARSE)
+#if defined(HAVE_CUSPARSE_GENERIC_API)
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
  *        cuSPARSE version.
+ *
+ * Remmark: this functions is available with older cuSPARSE versions not
+ *          providing the generic API, because they
+ *          assume dense matrixes are always in column-major order, while
+ *          row-major is needed with interleaved blocks.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
@@ -1581,75 +1606,28 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
 
   }
 
-#if defined(USE_CUSPARSE_GENERIC_API)
+  cusparseSetStream(_handle, _stream);
+
+  cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
 
   cudaDataType_t val_dtype
     = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
 
-  cusparseSetStream(_handle, _stream);
-  cusparseStatus_t status = cusparseSpMM(_handle,
-                                         CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                         CUSPARSE_OPERATION_NON_TRANSPOSE,
-                                         &alpha,
-                                         csm->matA,
-                                         csm->matX,
-                                         &beta,
-                                         csm->matY,
-                                         val_dtype,
-                                         CUSPARSE_SPMM_ALG_DEFAULT,
-                                         csm->dBuffer);
+  status = cusparseSpMM(_handle,
+                        CUSPARSE_OPERATION_NON_TRANSPOSE,
+                        CUSPARSE_OPERATION_NON_TRANSPOSE,
+                        &alpha,
+                        csm->matA,
+                        csm->matX,
+                        &beta,
+                        csm->matY,
+                        val_dtype,
+                        CUSPARSE_SPMM_ALG_DEFAULT,
+                        csm->dBuffer);
 
   if (CUSPARSE_STATUS_SUCCESS != status)
     bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
               __func__, cusparseGetErrorString(status));
-
-#else
-
-  /* FIXME:
-     cusparseDcsrmm does not seem to provide a working solution
-     here, though the newer cuSPARSE functions above work */
-
-#if SIZEOF_DOUBLE == 8
-
-  cusparseDcsrmm(_handle,
-                 CUSPARSE_OPERATION_NON_TRANSPOSE,
-                 matrix->n_rows,
-                 matrix->n_cols_ext,
-                 matrix->db_size,
-                 csm->nnz,
-                 &alpha,
-                 csm->descrA,
-                 (const double *)csm->d_e_val,
-                 (const int *)csm->d_row_index,
-                 (const int *)csm->d_col_id,
-                 (const double *)d_x,
-                 matrix->db_size,
-                 &beta,
-                 (double *)d_y,
-                 matrix->db_size);
-
-#elif SIZEOF_DOUBLE == 4
-
-  cusparseScsrmm(_handle,
-                 CUSPARSE_OPERATION_NON_TRANSPOSE,
-                 matrix->n_rows,
-                 matrix->n_cols_ext,
-                 matrix->db_size,
-                 csm->nnz,
-                 &alpha,
-                 csm->descrA,
-                 (const float *)csm->d_e_val,
-                 (const int *)csm->d_row_index,
-                 (const int *)csm->d_col_id,
-                 (const float *)d_x,
-                 matrix->db_size,
-                 &beta,
-                 (double *)d_y,
-                 matrix->db_size);
-
-#endif
-
-#endif
 
   if (_stream == 0) {
     cudaStreamSynchronize(0);
@@ -1657,7 +1635,7 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
   }
 }
 
-#endif /* defined(HAVE_CUSPARSE) */
+#endif /* defined(HAVE_CUSPARSE_GENERIC_API) */
 
 /*----------------------------------------------------------------------------*/
 

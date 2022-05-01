@@ -3358,10 +3358,12 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       case CS_MATRIX_BLOCK_D:
       case CS_MATRIX_BLOCK_D_66:
       case CS_MATRIX_BLOCK_D_SYM:
+#if defined(HAVE_CUSPARSE_GENERIC_API)
         _spmv[0] = cs_matrix_spmv_cuda_msr_b_cusparse;
         _spmv[1] = cs_matrix_spmv_cuda_msr_b_cusparse;
         _spmv_xy_hd[0] = 'd';
         _spmv_xy_hd[1] = 'd';
+#endif
         break;
       default:
         break;

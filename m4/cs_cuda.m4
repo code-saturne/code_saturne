@@ -249,14 +249,33 @@ cublasStatus_t status = cublasCreate(&handle);]])
     LIBS="${CUDA_LIBS} ${LIBS}"
 
     AC_MSG_CHECKING([for cuSPARSE support])
+
     AC_LINK_IFELSE(
+[AC_LANG_PROGRAM([[#include <cusparse.h>]],
+[[cusparseSpMatDescr_t matA;
+cusparseStatus_t status = cusparseDestroySpMat(matA);]])
+                   ],
+                   [ AC_DEFINE([HAVE_CUSPARSE_GENERIC_API], 1,
+                               [cuSPARSE generic API support ])
+                     AC_MSG_RESULT([cuSPARSE generic API found])
+                     cs_have_cusparse=yes ],
+                   [cs_have_cusparse=fallback])
+
+    if test "x$cs_have_cusparse" = "xfallback" ; then
+
+      AC_LINK_IFELSE(
 [AC_LANG_PROGRAM([[#include <cusparse.h>]],
 [[cusparseHandle_t handle = NULL;
 cusparseStatus_t status = cusparseCreate(&handle);]])
                    ],
-                   [ AC_DEFINE([HAVE_CUSPARSE], 1, [cuSPARSE support])
-                     cs_have_cusparse=yes ],
-                   [cs_have_cusparse=no])
+                   [ cs_have_cusparse=yes ],
+                   [ cs_have_cusparse=no ])
+
+    fi
+
+    if test "$cs_have_cusparse" = "yes"; then
+      AC_DEFINE([HAVE_CUSPARSE], 1, [cuSPARSE support])
+    fi
 
     AC_MSG_RESULT($cs_have_cusparse)
     if test "x$cs_have_cusparse" = "xno" ; then

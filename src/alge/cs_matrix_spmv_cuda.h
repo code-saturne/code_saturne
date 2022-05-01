@@ -183,6 +183,8 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
                           cs_real_t     d_x[restrict],
                           cs_real_t     d_y[restrict]);
 
+#if defined(HAVE_CUSPARSE_GENERIC_API)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
@@ -202,6 +204,8 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
                                    bool          sync,
                                    cs_real_t     d_x[restrict],
                                    cs_real_t     d_y[restrict]);
+
+#endif /* defined(HAVE_CUSPARSE_GENERIC_API) */
 
 /*----------------------------------------------------------------------------*/
 
