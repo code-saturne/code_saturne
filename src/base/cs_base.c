@@ -1393,6 +1393,94 @@ cs_base_get_rank_step_comm(int  rank_step)
   return _step_comm[comm_id];
 }
 
+/*----------------------------------------------------------------------------
+ * Return a reduced communicator matching a multiple of the total
+ * number of ranks, and given a parent communicator.
+ *
+ * Compared to \ref cs_base_get_rank_step_comm, this function is
+ * collective only on the provided communicator.
+ *
+ * This updates the number of reduced communicators if necessary.
+ *
+ * parameters:
+ *   parent_comm <-- associated parent communicator (must be either
+ *                   cs_glob_mpi_comm or a communicator returned by a
+ *                   previous
+ *   rank_step   <-- associated multiple of ranks of parent communicator
+ *----------------------------------------------------------------------------*/
+
+MPI_Comm
+cs_base_get_rank_step_comm_recursive(MPI_Comm  parent_comm,
+				     int       rank_step)
+{
+  if (rank_step <= 1 || parent_comm == MPI_COMM_NULL)
+    return parent_comm;
+
+  int parent_n_ranks = -1;
+  MPI_Comm_size(parent_comm, &parent_n_ranks);
+
+  int n_ranks = parent_n_ranks / rank_step;
+  if (parent_n_ranks % rank_step > 0)
+    n_ranks += 1;
+
+  if (n_ranks <= 1)
+    return MPI_COMM_NULL;
+
+  int comm_id = 0;
+  if (_n_step_comms > 0) {
+    while (   _step_ranks[comm_id] != n_ranks
+           && comm_id < _n_step_comms)
+      comm_id++;
+  }
+
+  printf("get_rank_step_comm_recursive: %d glob id, %d parent, step %d -> id %d\n",
+	 cs_glob_rank_id, parent_n_ranks, rank_step, comm_id);
+
+  /* Add communicator if required */
+
+  if (comm_id >= _n_step_comms) {
+
+    _n_step_comms += 1;
+    BFT_REALLOC(_step_comm, _n_step_comms, MPI_Comm);
+    BFT_REALLOC(_step_ranks, _n_step_comms, int);
+
+    _step_ranks[comm_id] = n_ranks;
+
+    if (n_ranks == cs_glob_n_ranks)
+      _step_comm[comm_id] = cs_glob_mpi_comm;
+
+    else if (n_ranks == 1)
+      _step_comm[comm_id] = MPI_COMM_NULL;
+
+    else {
+
+      int ranges[1][3];
+      MPI_Group old_group, new_group;
+
+      MPI_Barrier(parent_comm); /* For debugging */
+
+      MPI_Comm_size(parent_comm, &n_ranks);
+      MPI_Comm_group(parent_comm, &old_group);
+
+      ranges[0][0] = 0;
+      ranges[0][1] = n_ranks - 1;
+      ranges[0][2] = rank_step;
+
+      MPI_Group_range_incl(old_group, 1, ranges, &new_group);
+      MPI_Comm_create(parent_comm, new_group, &(_step_comm[comm_id]));
+      MPI_Group_free(&new_group);
+
+      MPI_Group_free(&old_group);
+
+      MPI_Barrier(parent_comm); /* For debugging */
+
+    }
+
+  }
+
+  return _step_comm[comm_id];
+}
+
 #endif /* HAVE_MPI */
 
 /*----------------------------------------------------------------------------

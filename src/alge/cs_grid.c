@@ -116,6 +116,7 @@ struct _cs_grid_t {
                                        false otherwhise */
   bool                symmetric;    /* Symmetric matrix coefficients
                                        indicator */
+  bool                use_faces;    /* True if face information is present */
 
   cs_lnum_t           db_size;      /* Block sizes for diagonal */
   cs_lnum_t           eb_size;      /* Block sizes for extra diagonal */
@@ -447,6 +448,7 @@ _coarse_init(const cs_grid_t *f)
   c->level = f->level + 1;
   c->symmetric = f->symmetric;
   c->conv_diff = f->conv_diff;
+  c->use_faces = f->use_faces;
   c->db_size = f->db_size;
   c->eb_size = f->eb_size;
 
@@ -2199,7 +2201,7 @@ _merge_grids(cs_grid_t  *g,
       g->n_ranks = (g->n_ranks/merge_stride) + 1;
     else
       g->n_ranks = (g->n_ranks/merge_stride);
-    g->comm = cs_base_get_rank_step_comm(g->next_merge_stride);
+    g->comm = cs_base_get_rank_step_comm_recursive(g->comm, merge_stride);
   }
 
   if (verbosity > 2) {
@@ -4971,6 +4973,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   g->level = 0;
   g->conv_diff = conv_diff;
   g->symmetric = cs_matrix_is_symmetric(a);
+  g->use_faces = (face_cell != NULL) ? true : false;
 
   g->db_size = db_size;
   g->eb_size = eb_size;
@@ -5126,6 +5129,7 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
 
   g->level = 0;
   g->symmetric = cs_matrix_is_symmetric(g->matrix);
+  g->use_faces = false;
 
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(g->matrix);
   const cs_lnum_t eb_size = cs_matrix_get_extra_diag_block_size(g->matrix);
@@ -5508,7 +5512,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
   /* Ensure default is available */
 
   if (coarsening_type == CS_GRID_COARSENING_DEFAULT) {
-    if (f->face_cell != NULL) {
+    if (f->use_faces) {
       if (f->conv_diff == false)
         coarsening_type = CS_GRID_COARSENING_SPD_DX;
       else
@@ -5539,7 +5543,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
 
   if (   coarsening_type == CS_GRID_COARSENING_SPD_DX
       || coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
-    if (f->face_cell != NULL)
+    if (f->use_faces)
       _automatic_aggregation_fc(f,
                                 coarsening_type,
                                 aggregation_limit,
@@ -5592,7 +5596,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
   BFT_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
   c->xa = c->_xa;
 
-  if (  (fine_matrix_type == CS_MATRIX_NATIVE || f->face_cell != NULL)
+  if (  (fine_matrix_type == CS_MATRIX_NATIVE || f->use_faces)
       && c->relaxation > 0) {
 
     /* Allocate permanent arrays in coarse grid */
@@ -5661,7 +5665,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
 
   }
 
-  else if (f->face_cell != NULL) {
+  else if (f->use_faces) {
 
     if (conv_diff)
       _compute_coarse_quantities_conv_diff(f, c, verbosity);
@@ -5783,7 +5787,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
     cc->coarse_row = c->coarse_row;
     c->coarse_row = NULL;
 
-    if (c->face_cell != NULL) {
+    if (c->use_faces) {
       BFT_FREE(cc->coarse_face);
       BFT_FREE(cc->_face_cell);
       _coarsen_faces(f,
@@ -5884,7 +5888,7 @@ cs_grid_coarsen_to_single(const cs_grid_t  *f,
 #endif
   }
 
-  else if (f->face_cell != NULL) {
+  else if (f->use_faces) {
 
     BFT_MALLOC(c->_da, c->n_cols_ext * db_stride, cs_real_t);
     c->da = c->_da;
