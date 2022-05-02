@@ -167,6 +167,26 @@ cs_base_mpi_init(int    *argc,
 MPI_Comm
 cs_base_get_rank_step_comm(int  rank_step);
 
+/*----------------------------------------------------------------------------
+ * Return a reduced communicator matching a multiple of the total
+ * number of ranks, and given a parent communicator.
+ *
+ * Compared to \ref cs_base_get_rank_step_comm, this function is
+ * collective only on the provided communicator.
+ *
+ * This updates the number of reduced communicators if necessary.
+ *
+ * parameters:
+ *   parent_comm <-- associated parent communicator (must be either
+ *                   cs_glob_mpi_comm or a communicator returned by a
+ *                   previous
+ *   rank_step   <-- associated multiple of ranks of parent communicator
+ *----------------------------------------------------------------------------*/
+
+MPI_Comm
+cs_base_get_rank_step_comm_recursive(MPI_Comm  parent_comm,
+				     int       rank_step);
+
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------

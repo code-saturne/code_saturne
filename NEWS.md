@@ -3,6 +3,8 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- Multigrid: fix for hang in optional grid merging.
+
 - ALE: wall distance was not always correctly recomputed.
 
 - Fix crash when combining transient turbomachinery model and VoF.
