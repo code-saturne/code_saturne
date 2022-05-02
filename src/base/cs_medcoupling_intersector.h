@@ -46,6 +46,7 @@ typedef enum {
 
   CS_MEDCPL_INTERSECT_SURF,     /*!< Surface intersection */
   CS_MEDCPL_INTERSECT_VOL,      /*!< Volume intersection */
+  CS_MEDCPL_INTERSECT_VOL_SURF, /*!< Surface intersecting a volume */
   CS_MEDCPL_N_INTERSECT_TYPES,  /*!< Number of intersection options */
   CS_MEDCPL_INTERSECT_UKNOWN    /*!< Uknown flag */
 } cs_medcpl_intersect_type_t;
@@ -96,6 +97,24 @@ cs_medcoupling_intersector_add_surf(const char  *name,
                                     const char  *medfile_path,
                                     const char  *interp_method,
                                     const char  *select_criteria);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a surface in volume MEDCoupling intersector.
+ *
+ * \param[in] name             name of the intersector
+ * \param[in] medfile_path     path to the MED file
+ * \param[in] interp_method    interpolation method (P0P0, P1P0, ..)
+ * \param[in] select_criteria  selection criteria
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_intersector_add_vol_surf(const char  *name,
+                                        const char  *medfile_path,
+                                        const char  *interp_method,
+                                        const char  *select_criteria);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -170,6 +189,20 @@ cs_medcoupling_intersect_volumes(cs_medcoupling_intersector_t  *mi);
 
 cs_real_t *
 cs_medcoupling_intersect_surfaces(cs_medcoupling_intersector_t  *mi);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the intersection surfaces between the source mesh and
+ * code mesh
+ *
+ * \param[in] mi            pointer to the cs_medcoupling_intersector_t struct
+ *
+ * \return a pointer to the array containing the intersected volume of each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_medcoupling_intersect_volume_and_surfaces(cs_medcoupling_intersector_t  *mi);
 
 /*----------------------------------------------------------------------------*/
 /*!
