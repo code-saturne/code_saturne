@@ -109,7 +109,41 @@ cs_turbulence_rij_solve_lrr_sg(int              field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Solve of epsilon for \f$ R_{ij} - \varepsilon \f$ RANS
+ * \brief Solve the coupled Reynolds stress components in the
+ *        \f$ R_{ij} - \varepsilon \f$ RANS (SSG) turbulence model.
+ *
+ * \param[in]     field_id      index of current field
+ * \param[in]     gradv         work array for the velocity grad term
+ *                                 only for iturb=31
+ * \param[in]     produc        work array for production
+ * \param[in]     gradro        work array for grad rom
+ *                              (without rho volume) only for iturb=30
+ * \param[out]    viscf         visc*surface/dist at internal faces
+ * \param[out]    viscb         visc*surface/dist at edge faces
+ * \param[out]    viscce        Daly Harlow diffusion term
+ * \param[out]    rhs           working array
+ * \param[out]    rovsdt        working array
+ * \param[out]    weighf        working array
+ * \param[out]    weighb        working array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij_solve_ssg(int               field_id,
+                            const cs_real_t   gradv[][3][3],
+                            const cs_real_t   produc[][6],
+                            const cs_real_t   gradro[][3],
+                            cs_real_t         viscf[],
+                            cs_real_t         viscb[],
+                            cs_real_t         viscce[][6],
+                            cs_real_t         rhs[][6],
+                            cs_real_t         rovsdt[][6][6],
+                            cs_real_t         weighf[][2],
+                            cs_real_t         weighb[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Solve epsilon for \f$ R_{ij} - \varepsilon \f$ RANS
  *        turbulence model.
  *
  * \param[in]     ncesmp      number of cells with mass source term
@@ -155,20 +189,6 @@ cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
 void
 cs_turbulence_rij_solve_alpha(int        f_id,
                               cs_real_t  c_durbin_l);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Gravity terms for terms
- *        For \f$R_{ij}\f$
- *
- * \param[in]   gradro    work array for \f$ \grad{\rho} \f$
- * \param[out]  buoyancy  buoyancy term
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_turbulence_rij_grav_st(const cs_real_t  gradro[][3],
-                          cs_real_t        buoyancy[][6]);
 
 /*----------------------------------------------------------------------------*/
 /*!

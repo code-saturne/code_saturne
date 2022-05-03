@@ -1850,29 +1850,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function computing turbulence gravity source term
-
-     subroutine cs_turbulence_rij_grav_st(gradro, buoyancy) &
-      bind(C, name='cs_turbulence_rij_grav_st')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(3,*) :: gradro
-      real(kind=c_double), dimension(6,*) :: buoyancy
-    end subroutine cs_turbulence_rij_grav_st
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function computing Rij wall echo
-
-     subroutine cs_turbulence_rij_echo(produc, smbr) &
-      bind(C, name='cs_turbulence_rij_echo')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(6,*) :: produc, smbr
-    end subroutine cs_turbulence_rij_echo
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function computing turbulence rotation correction
 
     subroutine cs_turbulence_rotation_correction(dt, rotfct, ce2rc) &

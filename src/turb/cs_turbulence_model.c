@@ -1508,10 +1508,14 @@ cs_turb_compute_constants(void)
   else
     cs_field_set_key_double(CS_F_(eps), k_turb_schmidt, 1.30);
 
-  if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
-    cs_turb_csrij = 0.21;
-  else
-    cs_turb_csrij = 0.22;
+  if (cs_glob_turb_rans_model->idirsm == 0)
+    cs_turb_csrij = 0.11;
+  else {
+    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+      cs_turb_csrij = 0.21;
+    else
+      cs_turb_csrij = 0.22;
+  }
 
   if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA){
     /* SST DDES */
