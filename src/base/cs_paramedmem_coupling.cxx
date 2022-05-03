@@ -166,11 +166,12 @@ _generate_coupling_mesh(cs_paramedmem_coupling_t  *c,
   cs_mesh_t *parent_mesh = cs_glob_mesh;
 
   /* Building the MED representation of the internal mesh */
+  int use_bbox = (elt_dim == 3) ? 1 : 0;
   c->mesh = cs_medcoupling_mesh_from_base(parent_mesh,
                                           "CouplingMesh",
                                           select_criteria,
                                           elt_dim,
-                                          0);
+                                          use_bbox);
 
   /* Define associated ParaMESH */
   ProcessorGroup *Grp =
