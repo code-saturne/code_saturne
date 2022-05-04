@@ -3,6 +3,8 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- Fix contribution of mass-source terms with Rij models.
+
 - Multigrid: fix for hang in optional grid merging.
 
 - ALE: wall distance was not always correctly recomputed.
