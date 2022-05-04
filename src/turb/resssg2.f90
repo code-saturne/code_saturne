@@ -352,8 +352,8 @@ if (ncesmp.gt.0) then
   allocate(gatinj(6,ncelet))
 
   ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
-  call catsmt(ncesmp, 6, icetsm, itypsm(:,ivar),                            &
-              cell_f_vol, cvara_var, smacel(:,ivar+isou-1), smacel(:,ipr),  &
+  call catsmt(ncesmp, 1, icetsm, itypsm(:,ivar),                            &
+              cell_f_vol, cvara_var, smacel(:,ivar), smacel(:,ipr),  &
               smbr, rovsdt, gatinj)
 
   do isou = 1, 6

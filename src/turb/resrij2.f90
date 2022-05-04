@@ -151,7 +151,7 @@ double precision, allocatable, dimension(:,:), target :: buoyancy
 double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:) :: w7
 double precision, allocatable, dimension(:) :: dpvar
-double precision, allocatable, dimension(:,:) :: viscce
+double precision, allocatable, dimension(:,:) :: gatinj, viscce
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
 double precision, dimension(:), pointer :: imasfl, bmasfl
@@ -326,10 +326,12 @@ endif
 
 if (ncesmp.gt.0) then
 
+  allocate(gatinj(6,ncelet))
+
   do isou = 1, dimrij
 
     ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
-    call catsmt(ncesmp, 1, icetsm, itypsm(:,irij+isou-1),                     &
+    call catsmt(ncesmp, 1, icetsm, itypsm(:,irij),                            &
                 cell_f_vol, cvara_var, smacel(:,irij+isou-1), smacel(:,ipr),  &
                 smbr, rovsdt, w1)
 
@@ -344,6 +346,8 @@ if (ncesmp.gt.0) then
         smbr(isou, iel) = smbr(isou, iel) + w1(iel)
       enddo
     endif
+
+  deallocate(gatinj)
 
   enddo
 endif
