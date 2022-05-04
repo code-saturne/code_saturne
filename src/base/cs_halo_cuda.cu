@@ -104,8 +104,9 @@ _gather_real_strided(cs_lnum_t        n,
   cs_lnum_t i = blockIdx.x*blockDim.x + threadIdx.x;
 
   if (i < n) {
-    for (cs_lnum_t j = 0; j < stride; j++)
-      dest[i*stride + j] = src[ids[i]*stride + j];
+    cs_lnum_t j = ids[i];
+    for (cs_lnum_t k = 0; k < stride; k++)
+      dest[i*stride + k] = src[j*stride + k];
   }
 }
 
@@ -163,7 +164,7 @@ cs_halo_cuda_pack_send_buffer_real(const cs_halo_t  *halo,
         (length, send_list+start, var, send_buffer+start);
     else
       _gather_real_strided<<<gridsize, blocksize, 0, nstream[rank_id]>>>
-        (length, stride, send_list+start, var, send_buffer);
+        (length, stride, send_list+start, var, send_buffer+(start*stride));
   }
 
   for (cs_lnum_t i = 0; i < halo->n_c_domains; i++) {
