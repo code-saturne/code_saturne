@@ -1376,22 +1376,22 @@ cs_parameters_check(void)
   if (cs_glob_lagr_time_scheme->extended_t_scheme == 1) {
 
     cs_parameters_is_equal_int(CS_ABORT_DELAYED,
-                                   _("while reading input data,\n"
-                                     "extended scheme in Lagrangian modelling "
-                                     "is only compatible with "
-                                     "spherical particles"),
-                                   "cs_glob_lagr_model->shape",
-                                   cs_glob_lagr_model->shape,
-                                   CS_LAGR_SHAPE_SPHERE_MODEL);
+                               _("while reading input data,\n"
+                                 "extended scheme in Lagrangian modelling "
+                                 "is only compatible with "
+                                 "spherical particles"),
+                               "cs_glob_lagr_model->shape",
+                               cs_glob_lagr_model->shape,
+                               CS_LAGR_SHAPE_SPHERE_MODEL);
 
     cs_parameters_is_equal_int(CS_WARNING,
-                                   _("while reading input data,\n"
-                                     "extended scheme in Lagrangian modelling "
-                                     "is usefull only if turbulent dispersion "
-                                     "is considered"),
-                                   "cs_glob_lagr_model->idistu",
-                                   cs_glob_lagr_model->idistu,
-                                   1);
+                               _("while reading input data,\n"
+                                 "extended scheme in Lagrangian modelling "
+                                 "is usefull only if turbulent dispersion "
+                                 "is considered"),
+                               "cs_glob_lagr_model->idistu",
+                               cs_glob_lagr_model->idistu,
+                               1);
   }
 
   /* LES balance */
