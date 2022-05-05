@@ -847,11 +847,11 @@ class DoubleValidator(QDoubleValidator):
 
         msg = ""
         if min > -1.e99 and max == 1.e99:
-            msg = self.tr("The float value must be greater than %.1f" % min)
+            msg = self.tr("The float value must be greater than %.2f" % min)
         elif min == -1.e99 and max < 1.e99:
-            msg = self.tr("The float value must be lower than %.1f" % max)
+            msg = self.tr("The float value must be lower than %.2f" % max)
         elif min > -1.e99 and max < 1.e99:
-            msg = self.tr("The float value must be between than %.1f and %.1f" % (min, max))
+            msg = self.tr("The float value must be between %.2f and %.2f" % (min, max))
 
         self.parent.setStatusTip(str(msg))
 
