@@ -359,15 +359,25 @@ _run(void)
   else if (opts.preprocess == true)
     cs_mesh_coherency_check();
 
-  if (opts.benchmark > 0) {
-    int mpi_trace_mode = (opts.benchmark == 2) ? 1 : 0;
-    cs_benchmark(mpi_trace_mode);
-  }
-
   if (check_mask && cs_syr_coupling_n_couplings())
     bft_error(__FILE__, __LINE__, 0,
               _("Coupling with SYRTHES is not possible in mesh preprocessing\n"
                 "or verification mode."));
+
+  if (opts.preprocess == false) {
+
+    cs_mesh_adjacencies_update_mesh();
+
+#if defined(HAVE_ACCEL)
+    cs_preprocess_mesh_update_device(cs_alloc_mode);
+#endif
+
+  }
+
+  if (opts.benchmark > 0) {
+    int mpi_trace_mode = (opts.benchmark == 2) ? 1 : 0;
+    cs_benchmark(mpi_trace_mode);
+  }
 
   if (opts.preprocess == false && opts.benchmark <= 0) {
 
@@ -376,12 +386,6 @@ _run(void)
     cs_mesh_quantities_check_vol(cs_glob_mesh,
                                  cs_glob_mesh_quantities,
                                  (opts.verif ? 1 : 0));
-
-    cs_mesh_adjacencies_update_mesh();
-
-#if defined(HAVE_ACCEL)
-    cs_preprocess_mesh_update_device(cs_alloc_mode);
-#endif
 
     /* Initialization related to CDO/HHO schemes */
 

@@ -487,8 +487,6 @@ _sub_matrix_vector_test(double               t_measure,
 
 #if (HAVE_CUDA)
 
-  cs_associate_device_ptr((void *)face_cell, n_faces*2, sizeof(cs_lnum_t));
-
   const cs_lnum_2_t *__restrict__ d_face_cell
     = (const cs_lnum_2_t *)cs_get_device_ptr((void *)face_cell);
   const cs_real_t *__restrict__ d_xa
@@ -498,7 +496,7 @@ _sub_matrix_vector_test(double               t_measure,
   cs_real_t *__restrict__ d_y
     = (cs_real_t *)cs_get_device_ptr((void *)y);
 
-  cs_sync_h2d(face_cell);
+  //cs_sync_h2d(face_cell);
   cs_sync_h2d(xa);
   cs_sync_h2d(x);
   cs_sync_h2d(y);
@@ -521,8 +519,6 @@ _sub_matrix_vector_test(double               t_measure,
     if (wt1 - wt0 < t_measure)
       n_runs *= 2;
   }
-
-  cs_disassociate_device_ptr((void *)face_cell);
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
