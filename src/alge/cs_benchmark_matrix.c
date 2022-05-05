@@ -518,7 +518,7 @@ _variant_build_list(int                             n_fill_types,
 #else
                  NULL,
 #endif
-                 NULL,
+                 "cusparse",
                  n_variants,
                  &n_variants_max,
                  m_variant);
@@ -709,9 +709,6 @@ _matrix_check(int                          n_variants,
   CS_MALLOC_HD(x, n_cols_ext*6, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(y, n_cols_ext*6, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(yr0, n_cols_ext*6, cs_real_t);
-
-  cs_lnum_t d_block_stride = d_block_size*d_block_size;
-  cs_lnum_t e_block_stride = e_block_size*e_block_size;
 
   CS_MALLOC_HD(da, n_cols_ext*6*6, cs_real_t, cs_alloc_mode);
   BFT_MALLOC(xa, n_edges*2*6*6, cs_real_t);

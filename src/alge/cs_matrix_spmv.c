@@ -3365,6 +3365,11 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
         _spmv_xy_hd[1] = 'd';
 #endif
         break;
+      case CS_MATRIX_BLOCK:
+        _spmv[0] = cs_matrix_spmv_cuda_msr_bb_cusparse;
+        _spmv[1] = cs_matrix_spmv_cuda_msr_bb_cusparse;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
       default:
         break;
       }

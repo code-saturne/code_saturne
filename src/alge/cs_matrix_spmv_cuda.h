@@ -208,6 +208,31 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
 #endif /* defined(HAVE_CUSPARSE_GENERIC_API) */
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x with MSR matrix, block
+ *        cuSPARSE version.
+ *
+ * Remmark: this functions is available with older cuSPARSE versions not
+ *          providing the generic API, because they
+ *          assume dense matrixes are always in column-major order, while
+ *          row-major is needed with interleaved blocks.
+ *
+ * \param[in]   matrix        pointer to matrix structure
+ * \param[in]   exclude_diag  exclude diagonal if true,
+ * \param[in]   sync          synchronize ghost cells if true
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
+                                    bool          exclude_diag,
+                                    bool          sync,
+                                    cs_real_t     d_x[restrict],
+                                    cs_real_t     d_y[restrict]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
