@@ -56,6 +56,7 @@
 #include "cs_field_default.h"
 #include "cs_field_operator.h"
 #include "cs_field_pointer.h"
+#include "cs_gradient.h"
 #include "cs_lagr.h"
 #include "cs_log_iteration.h"
 #include "cs_mass_source_terms.h"
@@ -65,6 +66,7 @@
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
+#include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_rotation.h"
 #include "cs_thermal_model.h"
@@ -72,6 +74,7 @@
 #include "cs_turbomachinery.h"
 #include "cs_turbulence_bc.h"
 #include "cs_turbulence_model.h"
+#include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -542,43 +545,38 @@ _gravity_st_epsilon(const cs_real_t  gradro[][3],
   }
 }
 
-/*=============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Solve the coupled Reynolds stress components in the
+ * \brief Prepare the resolution of the coupled Reynolds stress components
  *        \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
  *
- * \param[in]     field_id      index of current field
- * \param[in]     gradv         work array for the velocity grad term
- *                                 only for iturb=31
- * \param[in]     produc        work array for production
- * \param[in]     gradro        work array for grad rom
- *                              (without rho volume) only for iturb=30
- * \param[out]    viscf         visc*surface/dist at internal faces
- * \param[out]    viscb         visc*surface/dist at edge faces
- * \param[out]    viscce        Daly Harlow diffusion term
- * \param[out]    rhs           working array
- * \param[out]    rovsdt        working array
- * \param[out]    weighf        working array
- * \param[out]    weighb        working array
+ * \param[in]   f_rij    pointer to Rij field
+ * \param[in]   gradv    work array for the velocity grad term
+ * \param[in]   produc   work array for production
+ * \param[in]   gradro   work array for grad rom
+ *                       (without rho volume) only for iturb=30
+ * \param[out]  viscf    visc*surface/dist at internal faces
+ * \param[out]  viscb    visc*surface/dist at edge faces
+ * \param[out]  viscce   Daly Harlow diffusion term
+ * \param[out]  rhs      working array
+ * \param[out]  rovsdt   working array
+ * \param[out]  weighf   working array
+ * \param[out]  weighb   working array
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_turbulence_rij_solve_lrr(int              field_id,
-                            const cs_real_t  gradv[][3][3],
-                            const cs_real_t  produc[][6],
-                            const cs_real_t  gradro[][3],
-                            cs_real_t        viscf[],
-                            cs_real_t        viscb[],
-                            cs_real_t        viscce[][6],
-                            cs_real_t        rhs[][6],
-                            cs_real_t        rovsdt[][6][6],
-                            cs_real_t        weighf[][2],
-                            cs_real_t        weighb[])
+static void
+_pre_solve_lrr(const cs_field_t  *f_rij,
+               const cs_real_t    gradv[][3][3],
+               const cs_real_t    produc[][6],
+               const cs_real_t    gradro[][3],
+               cs_real_t          viscf[],
+               cs_real_t          viscb[],
+               cs_real_t          viscce[][6],
+               cs_real_t          rhs[][6],
+               cs_real_t          rovsdt[][6][6],
+               cs_real_t          weighf[][2],
+               cs_real_t          weighb[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -588,24 +586,22 @@ cs_turbulence_rij_solve_lrr(int              field_id,
 
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
 
-  const cs_field_t *f = cs_field_by_id(field_id);
-
   const cs_real_t *crom = CS_F_(rho)->val;
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *cvara_ep = CS_F_(eps)->val_pre;
-  const cs_real_6_t*cvara_var = (const cs_real_6_t *)f->val_pre;
+  const cs_real_6_t*cvara_var = (const cs_real_6_t *)f_rij->val_pre;
 
   const cs_equation_param_t *eqp
-    = cs_field_get_equation_param_const(f);
+    = cs_field_get_equation_param_const(f_rij);
 
   if (eqp->iwarni >= 1) {
     bft_printf(" Solving the variable %s\n",
-               cs_field_get_label(f));
+               cs_field_get_label(f_rij));
   }
 
   cs_real_6_t *c_st_prv = NULL;
   int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f, kstprv);
+  int st_prv_id = cs_field_get_key_int(f_rij, kstprv);
   if (st_prv_id > -1)
     c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
 
@@ -979,35 +975,34 @@ cs_turbulence_rij_solve_lrr(int              field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!/
- * \brief Solve the segregated Reynolds stress components in the
- *        \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
+ * \brief Prepare the resolution of the segregated Reynolds stress components
+ *        in the  \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
  *
- * \param[in]     field_id      index of current field
- *
- * \param[in]     produc        work array for production
- * \param[in]     gradro        work array for grad rom
- *                              (without rho volume) only for iturb=30
- * \param[out]    viscf         visc*surface/dist at internal faces
- * \param[out]    viscb         visc*surface/dist at edge faces
- * \param[out]    viscce        Daly Harlow diffusion term
- * \param[out]    rhs           working array
- * \param[out]    rovsdt        working array
- * \param[out]    weighf        working array
- * \param[out]    weighb        working array
+ * \param[in]   f_rij    pointer to Rij field
+ * \param[in]   produc   work array for production
+ * \param[in]   gradro   work array for grad rom
+ *                       (without rho volume)
+ * \param[out]  viscf    visc*surface/dist at internal faces
+ * \param[out]  viscb    visc*surface/dist at edge faces
+ * \param[out]  viscce   Daly Harlow diffusion term
+ * \param[out]  rhs      working array
+ * \param[out]  rovsdt   working array
+ * \param[out]  weighf   working array
+ * \param[out]  weighb   working array
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_turbulence_rij_solve_lrr_sg(int              field_id,
-                               const cs_real_t  produc[][6],
-                               const cs_real_t  gradro[][3],
-                               cs_real_t        viscf[],
-                               cs_real_t        viscb[],
-                               cs_real_t        viscce[][6],
-                               cs_real_t        rhs[][6],
-                               cs_real_t        rovsdt[][6][6],
-                               cs_real_t        weighf[][2],
-                               cs_real_t        weighb[])
+static void
+_pre_solve_lrr_sg(const cs_field_t  *f_rij,
+                  const cs_real_t    produc[][6],
+                  const cs_real_t    gradro[][3],
+                  cs_real_t          viscf[],
+                  cs_real_t          viscb[],
+                  cs_real_t          viscce[][6],
+                  cs_real_t          rhs[][6],
+                  cs_real_t          rovsdt[][6][6],
+                  cs_real_t          weighf[][2],
+                  cs_real_t          weighb[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -1017,24 +1012,22 @@ cs_turbulence_rij_solve_lrr_sg(int              field_id,
 
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
 
-  const cs_field_t *f = cs_field_by_id(field_id);
-
   const cs_real_t *crom = CS_F_(rho)->val;
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *cvara_ep = CS_F_(eps)->val_pre;
-  const cs_real_6_t *cvara_var = (const cs_real_6_t *)f->val_pre;
+  const cs_real_6_t *cvara_var = (const cs_real_6_t *)f_rij->val_pre;
 
   const cs_equation_param_t *eqp
-    = cs_field_get_equation_param_const(f);
+    = cs_field_get_equation_param_const(f_rij);
 
   if (eqp->iwarni >= 1) {
     bft_printf(" Solving the variable %s\n",
-               cs_field_get_label(f));
+               cs_field_get_label(f_rij));
   }
 
   cs_real_6_t *c_st_prv = NULL;
   int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f, kstprv);
+  int st_prv_id = cs_field_get_key_int(f_rij, kstprv);
   if (st_prv_id > -1)
     c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
 
@@ -1356,37 +1349,36 @@ cs_turbulence_rij_solve_lrr_sg(int              field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Solve the coupled Reynolds stress components in the
- *        \f$ R_{ij} - \varepsilon \f$ RANS (SSG) turbulence model.
+ * \brief Prepare the resolution ofthe coupled Reynolds stress components
+ *        in the \f$ R_{ij} - \varepsilon \f$ RANS (SSG) turbulence model.
  *
- * \param[in]     field_id      index of current field
- * \param[in]     gradv         work array for the velocity grad term
- *                                 only for iturb=31
- * \param[in]     produc        work array for production
- * \param[in]     gradro        work array for grad rom
- *                              (without rho volume) only for iturb=30
- * \param[out]    viscf         visc*surface/dist at internal faces
- * \param[out]    viscb         visc*surface/dist at edge faces
- * \param[out]    viscce        Daly Harlow diffusion term
- * \param[out]    rhs           working array
- * \param[out]    rovsdt        working array
- * \param[out]    weighf        working array
- * \param[out]    weighb        working array
+ * \param[in]   f_rij    pointer to Rij field
+ * \param[in]   gradv    work array for the velocity grad term
+ * \param[in]   produc   work array for production
+ * \param[in]   gradro   work array for grad rom
+ *                       (without rho volume) only for iturb=30
+ * \param[out]  viscf    visc*surface/dist at internal faces
+ * \param[out]  viscb    visc*surface/dist at edge faces
+ * \param[out]  viscce   Daly Harlow diffusion term
+ * \param[out]  rhs      working array
+ * \param[out]  rovsdt   working array
+ * \param[out]  weighf   working array
+ * \param[out]  weighb   working array
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_turbulence_rij_solve_ssg(int               field_id,
-                            const cs_real_t   gradv[][3][3],
-                            const cs_real_t   produc[][6],
-                            const cs_real_t   gradro[][3],
-                            cs_real_t         viscf[],
-                            cs_real_t         viscb[],
-                            cs_real_t         viscce[][6],
-                            cs_real_t         rhs[][6],
-                            cs_real_t         rovsdt[][6][6],
-                            cs_real_t         weighf[][2],
-                            cs_real_t         weighb[])
+static void
+_pre_solve_ssg(const cs_field_t  *f_rij,
+               const cs_real_t    gradv[][3][3],
+               const cs_real_t    produc[][6],
+               const cs_real_t    gradro[][3],
+               cs_real_t          viscf[],
+               cs_real_t          viscb[],
+               cs_real_t          viscce[][6],
+               cs_real_t          rhs[][6],
+               cs_real_t          rovsdt[][6][6],
+               cs_real_t          weighf[][2],
+               cs_real_t          weighb[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -1396,31 +1388,29 @@ cs_turbulence_rij_solve_ssg(int               field_id,
 
   const cs_real_t *cell_f_vol = fvq->cell_f_vol;
 
-  const cs_field_t *f = cs_field_by_id(field_id);
-
   const cs_real_t *crom = CS_F_(rho)->val;
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
   const cs_real_t *cvara_ep = CS_F_(eps)->val_pre;
-  const cs_real_6_t *cvara_var = (const cs_real_6_t *)f->val_pre;
+  const cs_real_6_t *cvara_var = (const cs_real_6_t *)f_rij->val_pre;
 
   cs_real_t *cvar_al = NULL;
   if (cs_glob_turb_model->iturb != CS_TURB_RIJ_EPSILON_SSG)
     cvar_al = CS_F_(alp_bl)->val;
 
   const cs_equation_param_t *eqp
-    = cs_field_get_equation_param_const(f);
+    = cs_field_get_equation_param_const(f_rij);
 
   if (eqp->iwarni >= 1) {
     bft_printf(" Solving the variable %s\n ",
-               cs_field_get_label(f));
+               cs_field_get_label(f_rij));
   }
 
   const int coupled_components = cs_glob_turb_rans_model->irijco;
 
   cs_real_6_t *c_st_prv = NULL;
   int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f, kstprv);
+  int st_prv_id = cs_field_get_key_int(f_rij, kstprv);
   if (st_prv_id > -1)
     c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
 
@@ -2033,18 +2023,18 @@ cs_turbulence_rij_solve_ssg(int               field_id,
  !*/
 /*----------------------------------------------------------------------------*/
 
-void
-cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
-                            cs_lnum_t        icetsm[],
-                            int              itypsm[],
-                            const cs_real_t  gradv[][3][3],
-                            const cs_real_t  produc[][6],
-                            const cs_real_t  gradro[][3],
-                            cs_real_t        smacel[],
-                            cs_real_t        viscf[],
-                            cs_real_t        viscb[],
-                            cs_real_t        rhs[],
-                            cs_real_t        rovsdt[])
+static void
+_solve_epsilon(cs_lnum_t        ncesmp,
+               cs_lnum_t        icetsm[],
+               int              itypsm[],
+               const cs_real_t  gradv[][3][3],
+               const cs_real_t  produc[][6],
+               const cs_real_t  gradro[][3],
+               cs_real_t        smacel[],
+               cs_real_t        viscf[],
+               cs_real_t        viscb[],
+               cs_real_t        rhs[],
+               cs_real_t        rovsdt[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -2114,7 +2104,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
   BFT_MALLOC(w1, n_cells_ext, cs_real_t);
 
   /* User source terms
-   * ================= */
+   * ----------------- */
 
   cs_user_source_terms(cs_glob_domain,
                        CS_F_(eps)->id,
@@ -2146,7 +2136,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
   }
 
   /* Lagrangian source terms
-   * ======================= */
+   * ----------------------- */
 
   /* Second order is not taken into account  */
 
@@ -2174,7 +2164,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
   }
 
   /* Mass source term
-   * ================ */
+   * ---------------- */
 
   if (ncesmp > 0) {
 
@@ -2213,7 +2203,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
   }
 
   /* Unsteady term
-   * ============== */
+   * ------------- */
 
   if (eqp->istat == 1) {
 #   pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
@@ -2224,7 +2214,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
 
   /* Production (rho * Ce1 * epsilon / k * P)
    *    Dissipation (rho*Ce2.epsilon/k*epsilon)
-   * ========================================== */
+   * ------------------------------------------ */
 
   cs_real_t thetap = (st_prv_id > -1) ? thetv : 1.;
 
@@ -2333,7 +2323,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
   }
 
   /* Buoyancy term
-   * ============= */
+   * ------------- */
 
   /* FIXME use beta ... WARNING */
   if (cs_glob_turb_rans_model->igrari == 1) {
@@ -2348,7 +2338,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
   }
 
   /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
-   *===================================================================== */
+   * -------------------------------------------------------------------- */
 
   cs_real_t *weighb;
   cs_real_6_t *viscce;
@@ -2404,7 +2394,7 @@ cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
   }
 
   /* Solving
-   * ======= */
+   * ------- */
 
   if (st_prv_id > -1) {
     const cs_real_t thetp1 = 1.+thets;
@@ -2472,6 +2462,702 @@ cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
   BFT_FREE(viscce);
   BFT_FREE(weighb);
   BFT_FREE(weighf);
+}
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Solve the \f$ R_{ij} - \epsilon \f$ for incompressible flows or
+ *         slightly compressible flows for one time step.
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#rijeps"><b>\f$ R_{ij} - \epsilon \f$ model</b></a>
+ * section of the theory guide for more informations, as well as the
+ * <a href="../../theory.pdf#turrij"><b>turrij</b></a> section.
+ *
+ * \param[in]     ncesmp        number of cells with mass source term
+ * \param[in]     icetsm        index of cells with mass source term
+ * \param[in]     itypsm        mass source type for the variables
+ * \param[in]     smacel        values of the variables associated to the
+ *                               mass source
+ *                               (for ivar=ipr, smacel is the mass flux)
+ !*/
+/*-----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_rij(cs_lnum_t    ncesmp,
+                  cs_lnum_t    icetsm[],
+                  int          itypsm[],
+                  cs_real_t    smacel[])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_turb_model_t *turb_model = cs_glob_turb_model;
+  const cs_turb_rans_model_t *turb_rans_model = cs_glob_turb_rans_model;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  const cs_real_t *cell_f_vol = fvq->cell_f_vol;
+
+  cs_real_t *cvar_ep = CS_F_(eps)->val;
+  cs_real_6_t *cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
+
+  const cs_real_t *dt = CS_F_(dt)->val;
+  const cs_real_t *crom = CS_F_(rho)->val;
+  const cs_real_6_t *cvara_rij = (const cs_real_6_t *)CS_F_(rij)->val_pre;
+
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  const int iflmas =  cs_field_get_key_int(CS_F_(vel), kimasf);
+  const int iflmab =  cs_field_get_key_int(CS_F_(vel), kbmasf);
+
+  const cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
+  const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+
+  /* Time extrapolation ? */
+  cs_real_6_t *c_st_prv = NULL;
+  int kstprv = cs_field_key_id("source_term_prev_id");
+  int st_prv_id = cs_field_get_key_int(CS_F_(rij), kstprv);
+  if (st_prv_id > -1)
+    c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
+
+  cs_field_t *f_rij = CS_F_(rij);
+
+  const cs_equation_param_t *eqp
+    = cs_field_get_equation_param_const(f_rij);
+
+  const cs_time_step_t *time_step = cs_glob_time_step;
+  const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
+
+  const cs_real_t thets = time_scheme->thetst;
+  const cs_real_t thetv = eqp->thetav;
+  const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
+  const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
+
+  if (eqp->iwarni >= 1) {
+    const char *f_label = cs_field_get_label(f_rij);
+    switch(turb_model->iturb) {
+      case CS_TURB_RIJ_EPSILON_LRR:
+        bft_printf(" ** Solving Rij-EPSILON LRR %s\n"
+                   "    -----------------------\n", f_label);
+        break;
+    case CS_TURB_RIJ_EPSILON_SSG:
+      bft_printf(" ** Solving Rij-EPSILON SSG %s\n"
+                 "    -----------------------\n", f_label);
+        break;
+    case CS_TURB_RIJ_EPSILON_EBRSM:
+      bft_printf(" ** Solving Rij-EPSILON EBRSM %s\n"
+                 "    -------------------------\n", f_label);
+      break;
+    default:
+      assert(0);
+    }
+  }
+
+  /* Allocate or map temporary arrays for the turbulence resolution,
+     depending on user options */
+
+  cs_real_3_t *gradro = NULL;
+
+  cs_real_6_t *cpro_press_correl = NULL;
+  {
+    cs_field_t *f_psc = cs_field_by_name_try("rij_pressure_strain_correlation");
+    if (f_psc != NULL)
+      cpro_press_correl = (cs_real_6_t *)f_psc->val;
+  }
+
+  cs_real_6_t *produc = NULL, *_produc = NULL;
+  if (cs_field_by_name_try("rij_production") != NULL) {
+    produc = (cs_real_6_t *)cs_field_by_name_try("rij_production")->val;
+  }
+  else {
+    BFT_MALLOC(_produc, n_cells_ext, cs_real_6_t);
+    produc = _produc;
+  }
+
+  cs_real_t *viscf, *viscb;
+  BFT_MALLOC(viscf, n_i_faces, cs_real_t);
+  BFT_MALLOC(viscb, n_b_faces, cs_real_t);
+
+  cs_real_33_t *gradv = NULL, *_gradv = NULL;
+  {
+    cs_field_t *f_vg = cs_field_by_name_try("velocity_gradient");
+    if (f_vg != NULL)
+      gradv = (cs_real_33_t *)f_vg->val;
+    else {
+      BFT_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
+      gradv = _gradv;
+    }
+  }
+
+  cs_real_6_t *smbrts;
+  cs_real_66_t *rovsdtts;
+  BFT_MALLOC(smbrts, n_cells_ext, cs_real_6_t);
+  BFT_MALLOC(rovsdtts,  n_cells_ext, cs_real_66_t);
+
+  /* Advanced initialiation for EBRSM
+   * -------------------------------- */
+
+  /* Automatic reinitialization at the end of the first iteration:
+   * wall distance y^+ is computed with -C log(1-alpha), where C=CL*Ceta*L*kappa,
+   * then y so we have an idea of the wall distance in complex geometries.
+   * Then U is initialized with a Reichard layer,
+   * Epsilon by 1/(kappa y), clipped next to the wall at its value for y^+=15
+   * k is given by a blending between eps/(2 nu)*y^2 and utau/sqrt(Cmu).
+   * The blending function is chosen so that the asymptotic behavior
+   * and give the correct peak of k. */
+
+  /* TODO FIXME Are the BCs uncompatible ? */
+  if (   time_step->nt_cur == 1
+      && turb_rans_model->reinit_turb == 1
+      && turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    cs_real_t *cvar_al = CS_F_(alp_bl)->val;
+    cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+
+    const cs_real_t uref = cs_glob_turb_ref_values->uref;
+    const cs_real_t utaurf = 0.05 * uref;
+    const cs_real_t nu0 = viscl0 / ro0;
+    const cs_real_t xkappa = cs_turb_xkappa;
+
+    cs_real_3_t *grad;
+    BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
+
+    /* Compute the gradient of Alpha */
+    cs_field_gradient_scalar(CS_F_(alp_bl),
+                             false,  /* use_previous_t */
+                             1,      /* inc */
+                             grad);
+
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      /* Velocity magnitude */
+      cs_real_t xunorm = cs_math_3_norm(vel[c_id]);
+
+      /* y+ is bounded by 400, because in the Reichard profile,
+       * it corresponds to saturation (u>uref) */
+      cvar_al[c_id] = cs_math_fmax(cs_math_fmin(cvar_al[c_id], (1.-exp(-8.))),
+                                   0.);
+      /* Magnitude and unit vector of the Alpha gradient */
+      cs_real_t xnal[3];
+      cs_real_t xnoral = cs_math_3_norm(grad[c_id]);
+      if (xnoral <= cs_math_epzero / pow(cell_f_vol[c_id], 1./3.)) {
+        for (int ii = 0; ii < 3; ii++)
+          xnal[ii] = 1.0 / sqrt(3.0);
+      }
+      else {
+        for (int ii = 0; ii < 3; ii++)
+          xnal[ii] = grad[c_id][ii]/xnoral;
+      }
+
+      const cs_real_t alpha3 = cs_math_pow3(cvar_al[c_id]);
+
+      /* Compute YA, therefore alpha is given by 1-exp(-YA/(50 nu/utau))
+       * NB: y^+ = 50 give the best compromise */
+      const cs_real_t ya = -log(1.-cvar_al[c_id]) * 50 * nu0 / utaurf;
+      const cs_real_t ypa = ya / (nu0 / utaurf);
+      /* Velocity magnitude is imposed (limited only), the direction is
+       * conserved */
+      cs_real_t limiter = 1.0;
+      if (xunorm > 1.e-12 * uref)
+        limiter = cs_math_fmin(   utaurf / xunorm
+                               * (  2.5 * log(1.+0.4*ypa)
+                                  + 7.80*(  1. - exp(-ypa/11.0)
+                                          - (ypa/11.)*exp(-0.33*ypa))),
+                                  1.0);
+
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        vel[c_id][ii] = limiter * vel[c_id][ii];
+
+      const cs_real_t ut2 = 0.050 * uref;
+      cvar_ep[c_id] =   cs_math_pow3(utaurf)
+                      * cs_math_fmin(1. / (xkappa * 15.0 * nu0 / utaurf),
+                                     1. / (xkappa * ya));
+      const cs_real_t tke =     cvar_ep[c_id] * 0.5 / nu0*cs_math_pow2(ya)
+                              * cs_math_pow2(exp(-ypa/25))
+                            +   cs_math_pow2(ut2) / 0.3
+                              * cs_math_pow2((1.-exp(-ypa/25.)));
+
+      for (int ii = 0; ii < 3; ii++)
+        cvar_rij[c_id][ii] =      alpha3  * 2./3 * tke
+                            + (1.-alpha3) * (1. - cs_math_pow2(xnal[ii])) * tke;
+      cvar_rij[c_id][3] = -(1.-alpha3)*(xnal[0]*xnal[1])*tke;
+      cvar_rij[c_id][4] = -(1.-alpha3)*(xnal[1]*xnal[2])*tke;
+      cvar_rij[c_id][5] = -(1.-alpha3)*(xnal[0]*xnal[2])*tke;
+
+    } /* End of loop on cells */
+
+    BFT_FREE(grad);
+
+    cs_field_current_to_previous(CS_F_(vel));
+    cs_field_current_to_previous(CS_F_(rij));
+  }
+
+  /* Compute the velocity gradient */
+
+  cs_field_gradient_vector(CS_F_(vel), true, 1, gradv);
+
+  /* Compute the production term for Rij
+   * ----------------------------------- */
+
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    /* Pij = - (Rik dUk/dXj + dUk/dXi Rkj)
+     * Pij is stored as (P11, P22, P33, P12, P23, P13) */
+    produc[c_id][0] = -2. * (  cvara_rij[c_id][0] * gradv[c_id][0][0]
+                             + cvara_rij[c_id][3] * gradv[c_id][0][1]
+                             + cvara_rij[c_id][5] * gradv[c_id][0][2]);
+
+    produc[c_id][1] = -2. * (  cvara_rij[c_id][3] * gradv[c_id][1][0]
+                             + cvara_rij[c_id][1] * gradv[c_id][1][1]
+                             + cvara_rij[c_id][4] * gradv[c_id][1][2]);
+
+    produc[c_id][2] = -2. * (  cvara_rij[c_id][5] * gradv[c_id][2][0]
+                             + cvara_rij[c_id][4] * gradv[c_id][2][1]
+                             + cvara_rij[c_id][2] * gradv[c_id][2][2]);
+
+    produc[c_id][3] = - (  cvara_rij[c_id][3] * gradv[c_id][0][0]
+                         + cvara_rij[c_id][1] * gradv[c_id][0][1]
+                         + cvara_rij[c_id][4] * gradv[c_id][0][2])
+                      - (  cvara_rij[c_id][0] * gradv[c_id][1][0]
+                         + cvara_rij[c_id][3] * gradv[c_id][1][1]
+                         + cvara_rij[c_id][5] * gradv[c_id][1][2]);
+
+    produc[c_id][4] = - (  cvara_rij[c_id][5] * gradv[c_id][1][0]
+                         + cvara_rij[c_id][4] * gradv[c_id][1][1]
+                         + cvara_rij[c_id][2] * gradv[c_id][1][2])
+                      - (  cvara_rij[c_id][3] * gradv[c_id][2][0]
+                         + cvara_rij[c_id][1] * gradv[c_id][2][1]
+                         + cvara_rij[c_id][4] * gradv[c_id][2][2]);
+
+    produc[c_id][5] = - (  cvara_rij[c_id][5] * gradv[c_id][0][0]
+                         + cvara_rij[c_id][4] * gradv[c_id][0][1]
+                         + cvara_rij[c_id][2] * gradv[c_id][0][2])
+                      - (  cvara_rij[c_id][0] * gradv[c_id][2][0]
+                         + cvara_rij[c_id][3] * gradv[c_id][2][1]
+                         + cvara_rij[c_id][5] * gradv[c_id][2][2]);
+
+  }
+
+  /* Compute the pressure correlation  term for Rij
+   * ----------------------------------------------
+   * Phi,ij = Phi1,ij+Phi2,ij
+   * Phi,ij = -C1 k/eps (Rij-2/3k dij) - C2 (Pij-2/3P dij)
+   * Phi,ij is stored as (Phi11, Phi22, Phi33, Phi12, Phi23, Phi13)
+
+   * TODO : coherency with the model */
+
+  if (cpro_press_correl != NULL)  {
+    const cs_real_t d2s3 = 2./3;
+
+    const cs_real_t crij1 = cs_turb_crij1;
+    const cs_real_t crij2 = cs_turb_crij2;
+
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      const cs_real_t k = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
+      const cs_real_t p = 0.5 * cs_math_6_trace(produc[c_id]);
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        cpro_press_correl[c_id][ii]
+          = - crij1 * cvar_ep[c_id] / k * (cvara_rij[c_id][ii] - d2s3*k)
+            - crij2 * (produc[c_id][ii] - d2s3 * p);
+      for (cs_lnum_t ii = 3; ii < 6; ii++)
+        cpro_press_correl[c_id][ii]
+          = - crij1 * cvar_ep[c_id] /  k * (cvara_rij[c_id][ii])
+            - crij2 * (produc[c_id][ii]);
+    }
+  }
+
+  /* Compute the density gradient for buoyant terms
+   * ---------------------------------------------- */
+
+  /* Note that the buoyant term is normally expressed in temr of
+   * (u'T') or (u'rho') here modelled with a GGDH:
+   *   (u'rho') = C * k/eps * R_ij Grad_j(rho)
+
+   * Buoyant term for the Atmospheric module
+   * (function of the potential temperature) */
+
+  if (turb_rans_model->igrari == 1) {
+
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
+
+      const cs_field_t *thf = cs_thermal_model_field();
+      if (thf != NULL) {
+
+        const cs_real_t *cvara_scalt = thf->val_pre;
+
+        /* TODO check if we really want cromo (as below)
+           or simply crom) */
+        const cs_real_t *cromo = CS_F_(rho)->val;
+
+        BFT_MALLOC(gradro, n_cells_ext, cs_real_3_t);
+
+        cs_field_gradient_scalar(thf,
+                                 true,   /* use_previous_t */
+                                 1,      /* inc */
+                                 gradro);
+
+        /* gradro stores: - rho grad(theta)/theta
+         * grad(rho) and grad(theta) have opposite signs */
+
+#       pragma omp parallel for if(n_cells > CS_THR_MIN)
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          for (cs_lnum_t ii = 0; ii < 3; ii++)
+            gradro[c_id][ii] *= -cromo[c_id] / cvara_scalt[c_id];
+        }
+      }
+
+    }
+    else { /* Other models */
+
+      const cs_velocity_pressure_model_t  *vp_model
+        = cs_glob_velocity_pressure_model;
+      const int idilat = vp_model->idilat;
+
+      BFT_MALLOC(gradro, n_cells_ext, cs_real_3_t);
+
+      if (idilat == 0) {
+        const cs_field_t *thf = cs_thermal_model_field();
+        if (thf != NULL) {
+
+          cs_field_gradient_scalar(thf,
+                                   false,  /* use current (not previous) value */
+                                   1,      /* inc */
+                                   gradro);
+
+          const cs_real_t *cpro_beta
+            = cs_field_by_name("thermal_expansion")->val;
+
+          /* gradro stores: - beta grad(T)
+           * grad(rho) and grad(T) have opposite signs */
+
+#         pragma omp parallel for if(n_cells > CS_THR_MIN)
+          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+            for (cs_lnum_t ii = 0; ii < 3; ii++)
+              gradro[c_id][ii] = -ro0 * cpro_beta[c_id] * gradro[c_id][ii];
+          }
+
+        }
+      }
+      else {
+
+        /* Boundary conditions: Dirichlet romb
+         * We use viscb to store the relative coefficient of rom
+         * We impose in Dirichlet (coefa) the value romb */
+
+        cs_array_set_value_real(n_b_faces, 1, 0, viscb);
+
+        int key_t_ext_id = cs_field_key_id("time_extrapolated");
+        int iroext = cs_field_get_key_int(CS_F_(rho), key_t_ext_id);
+
+        int t_i = (cs_glob_time_scheme->isto2t > 0 && iroext > 0) ? 1 : 0;
+        cs_real_t *cromo = CS_F_(rho)->vals[t_i];
+        const cs_real_t *bromo = CS_F_(rho_b)->vals[t_i];
+
+        /* Compute gradient */
+        cs_halo_type_t halo_type = CS_HALO_STANDARD;
+        cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+        cs_gradient_type_by_imrgra(eqp->imrgra,
+                                   &gradient_type,
+                                   &halo_type);
+
+        cs_gradient_scalar("density",
+                           gradient_type,
+                           halo_type,
+                           1,             /* inc */
+                           eqp->nswrgr,
+                           0,             /* iphydp */
+                           1,             /* w_stride */
+                           eqp->iwarni,
+                           eqp->imligr,
+                           eqp->epsrgr,
+                           eqp->climgr,
+                           NULL,          /* f_ext */
+                           bromo,
+                           viscb,
+                           cromo,
+                           NULL,         /* c_weight */
+                           NULL,         /* cpl */
+                           gradro);
+
+      }
+
+    }
+
+  } /* End of test on igrari */
+
+  /* Prepare to solve Rij, in a manner similar to that of covofi.
+   * ==================== */
+
+  /* Source terms for Rij
+   * -------------------- */
+
+  cs_array_set_value_real(n_cells, 6, 0, (cs_real_t*)smbrts);
+  cs_array_set_value_real(n_cells, 36, 0, (cs_real_t*)rovsdtts);
+
+  cs_user_source_terms(cs_glob_domain,
+                       CS_F_(rij)->id,
+                       (cs_real_t*)smbrts,
+                       (cs_real_t*)rovsdtts);
+
+  if (c_st_prv != NULL) {
+
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t ii = 0; ii < 6; ii++) {
+        const cs_real_t tuexpr = c_st_prv[c_id][ii];
+        /* For continuation and the next time step */
+        c_st_prv[c_id][ii] = smbrts[c_id][ii];
+
+        smbrts[c_id][ii] = -thets*tuexpr;
+        /* Right hand side of the previous time step
+         * We suppose -rovsdt > 0: we implicit
+         * the user source term (the rest) */
+        for (cs_lnum_t jj = 0; jj < 6; jj++) {
+          smbrts[c_id][ii] += rovsdtts[c_id][ii][jj] * cvara_rij[c_id][jj];
+          /* Diagonal */
+          rovsdtts[c_id][ii][jj] *= -thetv;
+        }
+      }
+    }
+
+  }
+  else {
+
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t ii = 0; ii < 6; ii++) {
+        for (cs_lnum_t jj = 0; jj < 6; jj++)
+          smbrts[c_id][ii] += rovsdtts[c_id][ii][jj] * cvara_rij[c_id][jj];
+        rovsdtts[c_id][ii][ii] = cs_math_fmax(-rovsdtts[c_id][ii][ii], 0.);
+      }
+    }
+
+  }
+
+  /* Lagrangian source terms
+   * ----------------------- */
+
+  /* Second order is not taken into account  */
+
+  if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
+      && cs_glob_lagr_source_terms->ltsdyn == 1) {
+    const cs_real_6_t *lagr_st_rij
+      = (const cs_real_6_t *)cs_field_by_name_try("rij_st_lagr")->val;
+
+    const cs_lagr_source_terms_t  *lag_st = cs_glob_lagr_source_terms;
+    cs_real_t *tslagi = lag_st->st_val + (lag_st->itsli-1)*n_cells_ext;
+
+#   pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t ii = 0; ii < 6; ii++) {
+        smbrts[c_id][ii] += lagr_st_rij[c_id][ii];
+        rovsdtts[c_id][ii][ii] += cs_math_fmax(-tslagi[c_id],
+                                               cs_math_zero_threshold);
+      }
+    }
+  }
+
+  /* Mass source terms
+   *------------------ */
+
+  if (ncesmp > 0) {
+    const int var_key_id = cs_field_key_id("variable_id");
+    int ivar = cs_field_get_key_int(CS_F_(rij), var_key_id)-1;
+    int ivar_pr = cs_field_get_key_int(CS_F_(p), var_key_id)-1;
+
+    cs_real_6_t *gatinj;
+    BFT_MALLOC(gatinj, n_cells_ext, cs_real_6_t);
+
+    /* We increment smbrts with -Gamma.var_prev. and rovsdr with Gamma */
+    cs_mass_source_terms(1, /* iterns*/
+                         6, /* dim */
+                         ncesmp,
+                         icetsm,
+                         itypsm + ivar,
+                         cell_f_vol,
+                         (cs_real_t*)cvara_rij,
+                         smacel + ivar,
+                         smacel + ivar_pr,
+                         (cs_real_t*)smbrts,
+                         (cs_real_t*)rovsdtts,
+                         (cs_real_t*)gatinj);
+
+    /* If we extrapolate the source terms, we put Gamma Pinj in c_st_prv */
+    if (st_prv_id > -1) {
+#     pragma omp parallel for if(n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          c_st_prv[c_id][ii] += gatinj[c_id][ii];
+    }
+    /* Otherwise we put it directly in smbrts */
+    else {
+#     pragma omp parallel for if(n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        for (cs_lnum_t ii = 0; ii < 6; ii++)
+          smbrts[c_id][ii] += gatinj[c_id][ii];
+    }
+
+    BFT_FREE(gatinj);
+  }
+
+  /* Unsteady term
+   * ------------- */
+  if (eqp->istat == 1) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (int ii = 0; ii < 6; ii++)
+        rovsdtts[c_id][ii][ii] += (crom[c_id]/dt[c_id])*cell_f_vol[c_id];
+    }
+  }
+
+  /* Terms specific to Rij-epsilon model
+   * ----------------------------------- */
+
+  cs_real_t *weighb;
+  cs_real_6_t *viscce;
+  cs_real_2_t *weighf;
+
+   BFT_MALLOC(weighb, n_b_faces, cs_real_t);
+   BFT_MALLOC(weighf, n_i_faces, cs_real_2_t);
+   BFT_MALLOC(viscce, n_cells_ext, cs_real_6_t);
+
+   if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR) {
+     if (turb_rans_model->irijco == 1)
+       _pre_solve_lrr(f_rij, gradv,
+                      produc, gradro,
+                      viscf, viscb, viscce,
+                      smbrts, rovsdtts,
+                      weighf, weighb);
+     else
+       _pre_solve_lrr_sg(f_rij,
+                         produc, gradro,
+                         viscf, viscb, viscce,
+                         smbrts, rovsdtts,
+                         weighf, weighb);
+
+   }
+   else { /* if (   turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG
+                 || turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) */
+     _pre_solve_ssg(f_rij, gradv,
+                    produc, gradro,
+                    viscf, viscb, viscce,
+                    smbrts, rovsdtts,
+                    weighf, weighb);
+   }
+
+   /* Solve Rij
+    * --------- */
+
+   if (c_st_prv != NULL) {
+     const cs_real_t thetp1 = 1. + thets;
+#    pragma omp parallel for if(n_cells > CS_THR_MIN)
+     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+       for (cs_lnum_t ii = 0; ii < 6; ii++)
+         smbrts[c_id][ii] += thetp1 * c_st_prv[c_id][ii];
+   }
+
+   /* All boundary convective flux with upwind */
+   int icvflb = 0;
+
+   const cs_real_6_t  *coefa_rij = (const cs_real_6_t *)f_rij->bc_coeffs->a;
+   const cs_real_66_t *coefb_rij = (const cs_real_66_t *)f_rij->bc_coeffs->b;
+   const cs_real_6_t  *cofaf_rij = (const cs_real_6_t *)f_rij->bc_coeffs->af;
+   const cs_real_66_t *cofbf_rij = (const cs_real_66_t *)f_rij->bc_coeffs->bf;
+
+   cs_equation_param_t eqp_loc = *eqp;
+   eqp_loc.istat  = -1;
+   eqp_loc.idifft = -1;
+   eqp_loc.iwgrec = 0;     /* Warning, may be overwritten if a field */
+   eqp_loc.thetav = thetv;
+   eqp_loc.blend_st = 0;   /* Warning, may be overwritten if a field */
+
+   cs_equation_iterative_solve_tensor(cs_glob_time_step_options->idtvar,
+                                      CS_F_(rij)->id,
+                                      NULL,
+                                      &eqp_loc,
+                                      cvara_rij,
+                                      cvara_rij,
+                                      coefa_rij,
+                                      coefb_rij,
+                                      cofaf_rij,
+                                      cofbf_rij,
+                                      imasfl,
+                                      bmasfl,
+                                      viscf,
+                                      viscb,
+                                      viscf,
+                                      viscb,
+                                      viscce,
+                                      weighf,
+                                      weighb,
+                                      icvflb,
+                                      NULL,
+                                      rovsdtts,
+                                      smbrts,
+                                      cvar_rij);
+
+   BFT_FREE(viscce);
+   BFT_FREE(rovsdtts);
+   BFT_FREE(smbrts);
+
+   /* Solve Epsilon
+    * ------------- */
+
+   {
+     cs_real_t *smbr, *rovsdt;
+     BFT_MALLOC(smbr, n_cells_ext, cs_real_t);
+     BFT_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+
+     _solve_epsilon(ncesmp,
+                    icetsm,
+                    itypsm,
+                    gradv,
+                    produc,
+                    gradro,
+                    smacel,
+                    viscf,
+                    viscb,
+                    smbr,
+                    rovsdt);
+
+     BFT_FREE(rovsdt);
+     BFT_FREE(smbr);
+   }
+
+   /* Clipping
+    * -------- */
+
+   int iclip = 2;
+   if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+     iclip = 1;
+
+   if (turb_rans_model->irijco == 1)
+     cs_turbulence_rij_clip(n_cells);
+   else
+     cs_turbulence_rij_clip_sg(n_cells, iclip);
+
+   /* Free memory */
+
+   gradv = NULL;
+   BFT_FREE(_gradv);
+   produc = NULL;
+   BFT_FREE(_produc);
+
+   BFT_FREE(gradro);
+
+   BFT_FREE(viscf);
+   BFT_FREE(viscb);
+   BFT_FREE(gradv);
+   BFT_FREE(weighb);
+   BFT_FREE(weighf);
 }
 
 /*----------------------------------------------------------------------------*/

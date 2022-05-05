@@ -349,6 +349,7 @@ module paramx
           cs_user_extra_operations, ushist, cs_f_user_head_losses, &
           cs_user_mass_source_terms,                               &
           cs_user_turbulence_source_terms,                         &
+          cs_user_turbulence_source_terms2,                        &
           usatph, ussmag, usvosy, usvpst, usati1, usthht,usatsoil
 
 end module paramx

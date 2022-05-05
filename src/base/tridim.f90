@@ -281,6 +281,16 @@ interface
     real(kind=c_double), dimension(*) :: dt, smacel
   end subroutine cs_turbulence_kw
 
+  subroutine cs_turbulence_rij &
+        (ncesmp, icetsm, itypsm, smacel) &
+    bind(C, name='cs_turbulence_rij')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: ncesmp
+    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
+    real(kind=c_double), dimension(*) :: smacel
+  end subroutine cs_turbulence_rij
+
   subroutine cs_turbulence_sa &
        (ncesmp, icetsm, itypsm, dt, smacel, itypfb) &
     bind(C, name='cs_turbulence_sa')
@@ -1352,13 +1362,7 @@ if (iccvfg.eq.0) then
 
     endif
 
-    call turrij &
-  ( nvar   , nscal  ,                                              &
-    ncepdc , ncetsm ,                                              &
-    icepdc , icetsm , itypsm ,                                     &
-    dt     ,                                                       &
-    tslagr ,                                                       &
-    ckupdc , smacel )
+    call cs_turbulence_rij(ncetsm, icetsm, itypsm, smacel)
 
   else if (iturb.eq.60) then
 

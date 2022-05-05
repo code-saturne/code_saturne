@@ -42,139 +42,28 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Solve the coupled Reynolds stress components in the
- *        \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
+/*! \brief Solve the \f$ R_{ij} - \epsilon \f$ for incompressible flows or
+ *         slightly compressible flows for one time step.
  *
- * \param[in]     field_id      index of current field
- * \param[in]     gradv         work array for the velocity grad term
- *                                 only for iturb=31
- * \param[in]     produc        work array for production
- * \param[in]     gradro        work array for grad rom
- *                              (without rho volume) only for iturb=30
- * \param[out]    viscf         visc*surface/dist at internal faces
- * \param[out]    viscb         visc*surface/dist at edge faces
- * \param[out]    viscce        Daly Harlow diffusion term
- * \param[out]    rhs           working array
- * \param[out]    rovsdt        working array
- * \param[out]    weighf        working array
- * \param[out]    weighb        working array
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_turbulence_rij_solve_lrr(int              field_id,
-                            const cs_real_t  gradv[][3][3],
-                            const cs_real_t  produc[][6],
-                            const cs_real_t  gradro[][3],
-                            cs_real_t        viscf[],
-                            cs_real_t        viscb[],
-                            cs_real_t        viscce[][6],
-                            cs_real_t        rhs[][6],
-                            cs_real_t        rovsdt[][6][6],
-                            cs_real_t        weighf[][2],
-                            cs_real_t        weighb[]);
-
-/*----------------------------------------------------------------------------*/
-/*!/
- * \brief Solve the segregated Reynolds stress components in the
- *        \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
+ * Please refer to the
+ * <a href="../../theory.pdf#rijeps"><b>\f$ R_{ij} - \epsilon \f$ model</b></a>
+ * section of the theory guide for more informations, as well as the
+ * <a href="../../theory.pdf#turrij"><b>turrij</b></a> section.
  *
- * \param[in]     field_id      index of current field
- *
- * \param[in]     produc        work array for production
- * \param[in]     gradro        work array for grad rom
- *                              (without rho volume) only for iturb=30
- * \param[out]    viscf         visc*surface/dist at internal faces
- * \param[out]    viscb         visc*surface/dist at edge faces
- * \param[out]    viscce        Daly Harlow diffusion term
- * \param[out]    rhs           working array
- * \param[out]    rovsdt        working array
- * \param[out]    weighf        working array
- * \param[out]    weighb        working array
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_turbulence_rij_solve_lrr_sg(int              field_id,
-                               const cs_real_t  produc[][6],
-                               const cs_real_t  gradro[][3],
-                               cs_real_t        viscf[],
-                               cs_real_t        viscb[],
-                               cs_real_t        viscce[][6],
-                               cs_real_t        rhs[][6],
-                               cs_real_t        rovsdt[][6][6],
-                               cs_real_t        weighf[][2],
-                               cs_real_t        weighb[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Solve the coupled Reynolds stress components in the
- *        \f$ R_{ij} - \varepsilon \f$ RANS (SSG) turbulence model.
- *
- * \param[in]     field_id      index of current field
- * \param[in]     gradv         work array for the velocity grad term
- *                                 only for iturb=31
- * \param[in]     produc        work array for production
- * \param[in]     gradro        work array for grad rom
- *                              (without rho volume) only for iturb=30
- * \param[out]    viscf         visc*surface/dist at internal faces
- * \param[out]    viscb         visc*surface/dist at edge faces
- * \param[out]    viscce        Daly Harlow diffusion term
- * \param[out]    rhs           working array
- * \param[out]    rovsdt        working array
- * \param[out]    weighf        working array
- * \param[out]    weighb        working array
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_turbulence_rij_solve_ssg(int               field_id,
-                            const cs_real_t   gradv[][3][3],
-                            const cs_real_t   produc[][6],
-                            const cs_real_t   gradro[][3],
-                            cs_real_t         viscf[],
-                            cs_real_t         viscb[],
-                            cs_real_t         viscce[][6],
-                            cs_real_t         rhs[][6],
-                            cs_real_t         rovsdt[][6][6],
-                            cs_real_t         weighf[][2],
-                            cs_real_t         weighb[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Solve epsilon for \f$ R_{ij} - \varepsilon \f$ RANS
- *        turbulence model.
- *
- * \param[in]     ncesmp      number of cells with mass source term
- * \param[in]     icetsm      index of cells with mass source term
- * \param[in]     itypsm      type of mass source term for each variable
- * \param[in]     gradv       work array for the term grad
- *                            of velocity only for iturb=31
- * \param[in]     produc      work array for production (without
- *                            rho volume) only for iturb=30
- * \param[in]     gradro      work array for \f$ \grad{rom} \f$
- * \param[in]     smacel      value associated to each variable in the mass
- *                            source terms or mass rate
- * \param[in]     viscf       visc*surface/dist at internal faces
- * \param[in]     viscb       visc*surface/dist at edge faces
- * \param[in]     rhs         working array
- * \param[in]     rovsdt      working array
+ * \param[in]     ncesmp        number of cells with mass source term
+ * \param[in]     icetsm        index of cells with mass source term
+ * \param[in]     itypsm        mass source type for the variables
+ * \param[in]     smacel        values of the variables associated to the
+ *                               mass source
+ *                               (for ivar=ipr, smacel is the mass flux)
  !*/
-/*-------------------------------------------------------------------------------*/
+/*-----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_rij_solve_eps(cs_lnum_t        ncesmp,
-                            cs_lnum_t        icetsm[],
-                            int              itypsm[],
-                            const cs_real_t  gradv[][3][3],
-                            const cs_real_t  produc[][6],
-                            const cs_real_t  gradro[][3],
-                            cs_real_t        smacel[],
-                            cs_real_t        viscf[],
-                            cs_real_t        viscb[],
-                            cs_real_t        rhs[],
-                            cs_real_t        rovsdt[]);
+cs_turbulence_rij(cs_lnum_t    ncesmp,
+                  cs_lnum_t    icetsm[],
+                  int          itypsm[],
+                  cs_real_t    smacel[]);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Solve the equation on alpha in the framework of the Rij-EBRSM model.
