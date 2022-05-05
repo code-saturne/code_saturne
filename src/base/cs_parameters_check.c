@@ -48,6 +48,7 @@
 #include "cs_base.h"
 #include "cs_domain.h"
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_field_pointer.h"
 #include "cs_lagr.h"
 #include "cs_les_balance.h"
@@ -808,8 +809,6 @@ void
 cs_parameters_check(void)
 {
   int n_fields = cs_field_n_fields();
-  cs_var_cal_opt_t var_cal_opt;
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   const int keysca = cs_field_key_id("scalar_id");
   const int kscavr = cs_field_key_id("first_moment_id");
   const int keyvar = cs_field_key_id("variable_id");
@@ -883,72 +882,72 @@ cs_parameters_check(void)
   for (int f_id = 0 ; f_id < n_fields ; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       f_desc = _field_section_desc(f, "while reading numerical "
                                       "parameters for variable");
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
-                                    "var_cal_opt.iconv (convection flag)",
-                                    var_cal_opt.iconv,
+                                    "equation param iconv (convection flag)",
+                                    eqp->iconv,
                                     0, 2);
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
-                                    "var_cal_opt.istat (unsteadiness flag)",
-                                    var_cal_opt.istat,
+                                    "equation param istat (unsteadiness flag)",
+                                    eqp->istat,
                                     0, 2);
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
-                                    "var_cal_opt.idircl (reinforce matrix diag)",
-                                    var_cal_opt.idircl,
+                                    "equation param idircl (reinforce matrix diag)",
+                                    eqp->idircl,
                                     0, 2);
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
-                                    "var_cal_opt.idiff (diffusion flag)",
-                                    var_cal_opt.idiff,
+                                    "equation param idiff (diffusion flag)",
+                                    eqp->idiff,
                                     0, 2);
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
-                                    "var_cal_opt.idifft (turbulent diffusion "
+                                    "equation param idifft (turbulent diffusion "
                                                                        "flag)",
-                                    var_cal_opt.idifft,
+                                    eqp->idifft,
                                     0, 2);
 
       cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                        _(f_desc),
-                                       "var_cal_opt.thetav (theta-scheme)",
-                                       var_cal_opt.thetav,
+                                       "equation param thetav (theta-scheme)",
+                                       eqp->thetav,
                                        0., 1.);
 
       cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                        _(f_desc),
-                                       "var_cal_opt.blencv (2nd order scheme "
+                                       "equation param blencv (2nd order scheme "
                                        "share for convection)",
-                                       var_cal_opt.blencv,
+                                       eqp->blencv,
                                        0., 1.);
 
       cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                        _(f_desc),
-                                       "var_cal_opt.blend_st (2nd order scheme "
+                                       "equation param blend_st (2nd order scheme "
                                        "share for convection)",
-                                       var_cal_opt.blend_st,
+                                       eqp->blend_st,
                                        0., 1.);
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
-                                    "var_cal_opt.ischcv (2nd order scheme "
+                                    "equation param ischcv (2nd order scheme "
                                     "choice)",
-                                    var_cal_opt.ischcv,
+                                    eqp->ischcv,
                                     0, 5);
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
-                                    "var_cal_opt.isstpc (limiter type)",
-                                    var_cal_opt.isstpc,
+                                    "equation param isstpc (limiter type)",
+                                    eqp->isstpc,
                                     0, 3);
 
       BFT_FREE(f_desc);
@@ -957,8 +956,8 @@ cs_parameters_check(void)
 
   /* check if NVD scheme for thermal scalar is not one of the VOF schemes */
   if (f_th != NULL) {
-    cs_field_get_key_struct(f_th, key_cal_opt_id, &var_cal_opt);
-    if (var_cal_opt.ischcv >= 4) { /* NVD scheme on thermal scalar? */
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f_th);
+    if (eqp->ischcv >= 4) { /* NVD scheme on thermal scalar? */
       cs_nvd_type_t limiter_choice = cs_field_get_key_int(f_th, key_limiter);
 
       f_desc = _field_section_desc(f_th, "while reading numerical "
@@ -975,15 +974,17 @@ cs_parameters_check(void)
   }
 
   /* thetav for pressure must be equal to 1 */
-  cs_field_get_key_struct(f_pot, key_cal_opt_id, &var_cal_opt);
-  f_desc = _field_section_desc(f_pot, "while reading numerical "
-                                      "parameters for variable");
+  {
+    cs_equation_param_t *eqp = cs_field_get_equation_param(f_pot);
+    f_desc = _field_section_desc(f_pot, "while reading numerical "
+                                        "parameters for variable");
 
-  cs_parameters_is_equal_double(CS_ABORT_DELAYED,
-                                _(f_desc),
-                                "var_cal_opt.thetav (theta-scheme)",
-                                var_cal_opt.thetav,
-                                1.);
+    cs_parameters_is_equal_double(CS_ABORT_DELAYED,
+                                  _(f_desc),
+                                  "equation param thetav (theta-scheme)",
+                                  eqp->thetav,
+                                  1.);
+  }
 
   BFT_FREE(f_desc);
 
@@ -995,14 +996,14 @@ cs_parameters_check(void)
   assert(turb_model != NULL);
 
   if (turb_model->type == CS_TURB_LES) {
-    cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
+    cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
     f_desc = _field_section_desc(CS_F_(vel), "in LES, while reading time "
                                            "scheme parameters for variable");
 
     cs_parameters_is_equal_double(CS_WARNING,
                                   _(f_desc),
-                                  "var_cal_opt.thetav (theta-scheme)",
-                                  var_cal_opt.thetav,
+                                  "equation param thetav (theta-scheme)",
+                                  eqp->thetav,
                                   0.5);
 
     BFT_FREE(f_desc);
@@ -1013,22 +1014,22 @@ cs_parameters_check(void)
 
     cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                      _(f_desc),
-                                     "var_cal_opt.blencv (2nd order scheme "
+                                     "equation param blencv (2nd order scheme "
                                                      "share for convection)",
-                                     var_cal_opt.blencv,
+                                     eqp->blencv,
                                      0.95, 1.);
 
     cs_parameters_is_equal_double(CS_WARNING,
                                   _(f_desc),
-                                  "var_cal_opt.blencv (2nd order scheme "
+                                  "equation param blencv (2nd order scheme "
                                                   "share for convection)",
-                                  var_cal_opt.blencv,
+                                  eqp->blencv,
                                   1.);
 
     cs_parameters_is_equal_int(CS_WARNING,
                                _(f_desc),
-                               "var_cal_opt.isstpc (limiter type)",
-                               var_cal_opt.isstpc,
+                               "equation param isstpc (limiter type)",
+                               eqp->isstpc,
                                1);
 
     BFT_FREE(f_desc);
@@ -1037,14 +1038,14 @@ cs_parameters_check(void)
       cs_field_t *f = cs_field_by_id(f_id);
       int isca = cs_field_get_key_int(f, keysca);
       if (isca > 0) {
-        cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
         f_desc = _field_section_desc(f, "in LES, while reading time "
                                         "scheme parameters for variable");
 
         cs_parameters_is_equal_double(CS_WARNING,
                                       _(f_desc),
-                                      "var_cal_opt.thetav (theta-scheme)",
-                                      var_cal_opt.thetav,
+                                      "equation param thetav (theta-scheme)",
+                                      eqp->thetav,
                                       0.5);
 
         BFT_FREE(f_desc);
@@ -1055,22 +1056,22 @@ cs_parameters_check(void)
 
         cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                          _(f_desc),
-                                         "var_cal_opt.blencv (2nd order "
+                                         "equation param blencv (2nd order "
                                            "scheme share for convection)",
-                                         var_cal_opt.blencv,
+                                         eqp->blencv,
                                          0.95, 1.);
 
         cs_parameters_is_equal_double(CS_WARNING,
                                       _(f_desc),
-                                      "var_cal_opt.blencv (2nd order scheme "
+                                      "equation param blencv (2nd order scheme "
                                                       "share for convection)",
-                                      var_cal_opt.blencv,
+                                      eqp->blencv,
                                       1.);
 
         cs_parameters_is_equal_int(CS_WARNING,
                                    _(f_desc),
-                                   "var_cal_opt.isstpc (limiter type)",
-                                   var_cal_opt.isstpc,
+                                   "equation param isstpc (limiter type)",
+                                   eqp->isstpc,
                                    0);
 
         BFT_FREE(f_desc);
@@ -1101,27 +1102,27 @@ cs_parameters_check(void)
       cs_field_t *f = cs_field_by_id(f_id);
       int ivar = cs_field_get_key_int(f, keyvar);
       if (ivar > 0) {
-        cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
         f_desc = _field_section_desc(f, "With steady algorithm (SIMPLE), while "
                                         "reading numerical parameters for "
                                         "variable");
 
         cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                          _(f_desc),
-                                         "var_cal_opt.relaxv (relax. coef.)",
-                                         var_cal_opt.relaxv,
+                                         "equation param relaxv (relax. coef.)",
+                                         eqp->relaxv,
                                          0., 1.);
 
         cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                       _(f_desc),
-                                      "var_cal_opt.isstpc (limiter type)",
-                                      var_cal_opt.isstpc,
+                                      "equation param isstpc (limiter type)",
+                                      eqp->isstpc,
                                       0, 2);
 
         cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                       _(f_desc),
-                                      "var_cal_opt.ischcv",
-                                      var_cal_opt.ischcv,
+                                      "equation param ischcv",
+                                      eqp->ischcv,
                                       0, 3);
 
         const int kiflux = cs_field_key_id("inner_flux_id");
@@ -1179,42 +1180,42 @@ cs_parameters_check(void)
     cs_field_t *f = cs_field_by_id(f_id);
     int ivar = cs_field_get_key_int(f, keyvar);
     if (ivar > 0) {
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       f_desc = _field_section_desc(f, "Wile reading numerical parameters "
                                       " for variable");
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
-                                    "var_cal_opt.imligr "
+                                    "equation param imligr "
                                     "(gradient limitation method)",
-                                    var_cal_opt.imligr,
+                                    eqp->imligr,
                                     -1, 2);
 
       cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                       _(f_desc),
-                                      "var_cal_opt.climgr "
+                                      "equation param climgr "
                                       "(gradient limitation coeffcient)",
-                                      var_cal_opt.climgr,
+                                      eqp->climgr,
                                       1.);
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
-                                    "var_cal_opt.ircflu (fluxes "
+                                    "equation param ircflu (fluxes "
                                     "reconstruction)",
-                                    var_cal_opt.ircflu,
+                                    eqp->ircflu,
                                     0, 2);
 
       BFT_FREE(f_desc);
 
-      if (   var_cal_opt.ischcv == 0
-          && CS_ABS(var_cal_opt.blencv) > cs_math_epzero) {
+      if (   eqp->ischcv == 0
+          && CS_ABS(eqp->blencv) > cs_math_epzero) {
         f_desc = _field_section_desc(f, "Second order linear upwind "
                                         "enabled for variable ");
 
         cs_parameters_is_equal_int(CS_ABORT_DELAYED,
                                    _(f_desc),
-                                   "var_cal_opt.ircflu (fluxes reconstruction)",
-                                   var_cal_opt.ircflu,
+                                   "equation param ircflu (fluxes reconstruction)",
+                                   eqp->ircflu,
                                    1);
 
         BFT_FREE(f_desc);
@@ -1503,7 +1504,7 @@ cs_parameters_check(void)
 
     for (int ii = 0; ii < 2; ii++) {
       cs_field_t *f = cs_field_by_id(f_ids[ii]);
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
 
       if (cs_glob_turb_rans_model->ikecou == 1) {
         f_desc = _field_section_desc(f,
@@ -1514,8 +1515,8 @@ cs_parameters_check(void)
 
         cs_parameters_is_equal_double(CS_WARNING,
                                       _(f_desc),
-                                      "var_cal_opt.relaxv",
-                                      var_cal_opt.relaxv,
+                                      "equation param relaxv",
+                                      eqp->relaxv,
                                       1.);
         BFT_FREE(f_desc);
       } else { /* ikecou = 0 */
@@ -1524,8 +1525,8 @@ cs_parameters_check(void)
 
         cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                          _(f_desc),
-                                         "var_cal_opt.relaxv",
-                                         var_cal_opt.relaxv,
+                                         "equation param relaxv",
+                                         eqp->relaxv,
                                          0, 1);
         BFT_FREE(f_desc);
       }
@@ -1537,15 +1538,15 @@ cs_parameters_check(void)
   if (   turb_model->iturb == CS_TURB_SPALART_ALLMARAS
       && cs_glob_time_step_options->idtvar >= 0) {
       cs_field_t *f = CS_F_(nusa);
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
 
       f_desc = _field_section_desc(f, "while reading numerical "
                                       "parameters for variable");
 
       cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                        _(f_desc),
-                                       "var_cal_opt.relaxv",
-                                       var_cal_opt.relaxv,
+                                       "equation param relaxv",
+                                       eqp->relaxv,
                                        0, 1);
       BFT_FREE(f_desc);
   }
@@ -1673,8 +1674,8 @@ cs_parameters_check(void)
 
     cs_real_t arakfr = vp_param->arak;
     if (cs_glob_time_step_options->idtvar < 0) {
-      cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
-      arakfr *= var_cal_opt.relaxv;
+      cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
+      arakfr *= eqp->relaxv;
     }
 
     cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
@@ -1727,7 +1728,7 @@ cs_parameters_check(void)
                                NULL);
   }
 
-  cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
+  cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
   /* steady or variable time step time algorithm not compatible with theta
      scheme with theta different from 1 for the velocity */
   if (cs_glob_time_step_options->idtvar != 0) {
@@ -1737,8 +1738,8 @@ cs_parameters_check(void)
                                     "for the velocity\n"
                                     "only compatible with constant time step "
                                     "unsteady algorithm"),
-                                  "var_cal_opt.thetav",
-                                  var_cal_opt.thetav,
+                                  "equation param thetav",
+                                  eqp->thetav,
                                   1);
   }
   /* U-P reinforced coupling not compatible with theta scheme with theta
@@ -1750,8 +1751,8 @@ cs_parameters_check(void)
                                     "for the velocity\n"
                                     "not compatible with reinforced "
                                     "velocity-pressure coupling"),
-                                  "var_cal_opt.thetav",
-                                  var_cal_opt.thetav,
+                                  "equation param thetav",
+                                  eqp->thetav,
                                   1);
   }
 
@@ -1852,24 +1853,23 @@ cs_parameters_check(void)
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      if (var_cal_opt.iswdyn >= 1) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp->iswdyn >= 1) {
         if (f->id == CS_F_(vel)->id) {
           cs_parameters_is_equal_int(CS_WARNING,
                                      _("Dynamic relaxation enabled for "
                                        "variable velocity.\n"
                                        "The slope test must be disabled."),
-                                     "var_cal_opt.isstpc",
-                                     var_cal_opt.isstpc,
+                                     "equation param isstpc",
+                                     eqp->isstpc,
                                      1);
 
-          if (var_cal_opt.isstpc == 0) {
-            var_cal_opt.isstpc = 1;
+          if (eqp->isstpc == 0) {
+            eqp->isstpc = 1;
             int log_id = CS_LOG_DEFAULT;
             cs_log_printf(log_id,
                           _("The calculation continues with isstpc = 1 for "
                             "the variable velocity.\n"));
-            cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
           }
         }
       }
@@ -1879,24 +1879,23 @@ cs_parameters_check(void)
   for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       f_desc = _field_section_desc(f, "Number of RHS reconstruction "
                                       "sweeps for variable ");
 
       cs_parameters_is_positive_int(CS_WARNING,
                                     _(f_desc),
-                                    "var_cal_opt.nswrsm",
-                                    var_cal_opt.nswrsm);
+                                    "equation param nswrsm",
+                                    eqp->nswrsm);
 
       BFT_FREE(f_desc);
 
-      if (var_cal_opt.nswrsm <= 0) {
-        var_cal_opt.nswrsm = 1;
+      if (eqp->nswrsm <= 0) {
+        eqp->nswrsm = 1;
         int log_id = CS_LOG_DEFAULT;
         cs_log_printf(log_id,
                       _("The calculation continues with nswrsm = 1 "
                         "for this variable.\n"));
-        cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
       }
     }
   }
@@ -1964,9 +1963,9 @@ cs_parameters_check(void)
 
       int diff_id = cs_field_get_key_int(f, kivisl);
       int isca = cs_field_get_key_int(f, keysca);
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
 
-      if (isca > 0 && diff_id == -1 && var_cal_opt.idiff > 0) {
+      if (isca > 0 && diff_id == -1 && eqp->idiff > 0) {
         cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                         _(f_desc),
                                         "key diffusivity_ref",
