@@ -614,11 +614,39 @@ _residual(cs_lnum_t            n_vals,
           cs_real_t            vx[],
           cs_real_t            res[])
 {
+#if defined(HAVE_ACCEL)
+
+  bool ddp_vx = false, ddp_res = false;
+
+  if (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST) {
+    cs_lnum_t _n_vals =   cs_matrix_get_n_columns(a)
+                        * cs_matrix_get_diag_block_size(a);
+    if (cs_check_device_ptr(vx) == CS_ALLOC_HOST) {
+      cs_associate_device_ptr(vx, _n_vals, sizeof(cs_real_t));
+      ddp_vx = true;
+    }
+    if (cs_check_device_ptr(res) == CS_ALLOC_HOST) {
+      cs_associate_device_ptr(res, _n_vals, sizeof(cs_real_t));
+      ddp_res = true;
+    }
+  }
+
+#endif
+
   cs_matrix_vector_multiply(a, vx, res);
 
 # pragma omp parallel for if(n_vals > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_vals; ii++)
     res[ii] = fabs(res[ii] - rhs[ii]);
+
+#if defined(HAVE_ACCEL)
+
+  if (ddp_vx)
+    cs_disassociate_device_ptr(vx);
+  if (ddp_res)
+    cs_disassociate_device_ptr(res);
+
+#endif
 }
 
 /*----------------------------------------------------------------------------
