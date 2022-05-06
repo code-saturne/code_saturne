@@ -173,7 +173,7 @@ _create_intersector(void)
  * \param[in] mi      pointer to the cs_medcoupling_intersector_t struct
  * \param[in] n_vtx   number of vertices in the mesh
  * \param[in] dim     mesh dimension
- *
+ */
 /*----------------------------------------------------------------------------*/
 
 void
@@ -181,7 +181,6 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
                                     const cs_lnum_t               n_vtx,
                                     const cs_lnum_t               dim)
 {
-
   assert(mi != NULL);
 
   /* Copy med mesh boundary coordinates */
@@ -283,7 +282,6 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
     BFT_FREE(vertex_gnum);
     BFT_FREE(faces_gnum);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -413,7 +411,6 @@ _add_intersector(const char                 *name,
                  const char                 *select_criteria,
                  cs_medcpl_intersect_type_t  type)
 {
-
   if (_n_intersects == 0)
     BFT_MALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
   else
@@ -431,7 +428,6 @@ _add_intersector(const char                 *name,
   _intersects[_n_intersects] = mi;
 
   _n_intersects++;
-
 }
 
 /*----------------------------------------------------------------------------*/
