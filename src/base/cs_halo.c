@@ -1575,8 +1575,13 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
 
 #endif
 
-  _hs->var_location = CS_ALLOC_DEVICE;  /* May actually be shared,
-                                           but uses device functions */
+  /* As device pointer is passed, cs_check_device_ptr will provide
+     the correct result only in case of CS_ALLOC_HOST_DEVICE_SHARED
+     (where the pointers are identical). */
+
+  _hs->var_location = cs_check_device_ptr(val);
+  if (_hs->var_location != CS_ALLOC_HOST_DEVICE_SHARED)
+    _hs->var_location = CS_ALLOC_DEVICE;
 }
 
 #endif /* defined(HAVE_ACCEL) */
@@ -1633,13 +1638,14 @@ cs_halo_sync_start(const cs_halo_t  *halo,
     /* For host-based MPI, copy or prefetch buffer */
     cs_sync_d2h(buffer);
 
-    /* When array passed is defined on device but is not shared, use
-       separate (smaller) CPU for receive (as we cannot know whether
-       a matching host better without complexifying the API);
+    /* When array passed is defined on device but is not shared, use separate
+       (smaller) CPU buffer for receive (as we cannot know whether a matching
+       host array is present without complexifying the API);
        this will be copied back to device at the next step */
     if (_hs->var_location != CS_ALLOC_HOST_DEVICE_SHARED) {
-      if (_hs->recv_buffer_size < _hs->send_buffer_size) {
-        _hs->recv_buffer_size = _hs->send_buffer_size;
+      size_t recv_size = halo->n_elts[_hs->sync_mode] * elt_size;
+      if (_hs->recv_buffer_size < recv_size) {
+        _hs->recv_buffer_size = recv_size;
         CS_FREE_HD(_hs->recv_buffer);
         CS_MALLOC_HD(_hs->recv_buffer, _hs->recv_buffer_size, unsigned char,
                      CS_ALLOC_HOST_DEVICE_PINNED);
