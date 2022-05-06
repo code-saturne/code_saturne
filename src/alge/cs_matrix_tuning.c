@@ -287,6 +287,7 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
       const cs_matrix_variant_t *mv_s = m_variant+min_c[j];
       strcpy(m_variant->name[j], mv_s->name[j]);
       m_variant->vector_multiply[j] = mv_s->vector_multiply[j];
+      m_variant->vector_multiply_xy_hd[j] = mv_s->vector_multiply_xy_hd[j];
     }
   }
 
