@@ -360,6 +360,11 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
                 "the one needed by intersector \"%d\".\n"),
               med_elt_dim + med_rel_dim, med_elt_dim);
 
+  /* CK: Correct polyhedron orientation if needed */
+  if (mi->source_mesh->getMeshDimension() == 3 &&
+      mi->source_mesh->getSpaceDimension() == 3)
+    mi->source_mesh->orientCorrectlyPolyhedrons();
+
   /* Copy med mesh coordinates at init */
   cs_lnum_t n_vtx = mesh->getNumberOfNodes();
   cs_lnum_t dim   = mesh->getMeshDimension();
