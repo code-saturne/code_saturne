@@ -2961,15 +2961,29 @@ _matrix_spmv_set_func_d(cs_matrix_type_t             m_type,
 
 #if defined(HAVE_CUDA)
 
+const char s_cuda[] = "cuda";
+
 #if defined(HAVE_CUSPARSE)
-const char default_name[] = "cusparse";
-#else
-const char default_name[] = "cuda";
+
+const char s_cusparse[] = "cusparse";
+const char *default_name = s_cusparse;
+
+#if !defined(HAVE_CUSPARSE_GENERIC_API)
+ if (fill_type >= CS_MATRIX_BLOCK_D && fill_type < CS_MATRIX_BLOCK)
+   default_name = s_cuda;
 #endif
 
 #else
+
+const char *default_name = s_cuda;
+
+#endif /* defined(HAVE_CUSPARSE) */
+
+#else
+
 const char default_name[] = "not_implemented";
-#endif
+
+#endif /* defined(HAVE_CUDA) */
 
  if (_func_name == NULL)
    _func_name = default_name;
