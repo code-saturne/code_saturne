@@ -4199,19 +4199,23 @@ cs_sles_it_setup(void               *context,
     break;
 
   case CS_SLES_JACOBI:
-    if (diag_block_size == 1) {
+    if (diag_block_size == 1)
       c->solve = _jacobi;
-#if defined(HAVE_CUDA)
-      if (on_device) {
-        c->on_device = true;
-        c->solve = cs_sles_it_cuda_jacobi;
-      }
-#endif
-    }
     else if (diag_block_size == 3)
       c->solve = _block_3_jacobi;
     else
       c->solve = _block_jacobi;
+
+#if defined(HAVE_CUDA)
+    if (on_device) {
+      c->on_device = true;
+      if (diag_block_size == 1)
+        c->solve = cs_sles_it_cuda_jacobi;
+      else
+        c->solve = cs_sles_it_cuda_block_jacobi;
+    }
+#endif
+
     break;
 
   case CS_SLES_BICGSTAB:
