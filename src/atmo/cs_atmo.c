@@ -1507,7 +1507,6 @@ cs_atmo_hydrostatic_profiles_compute(void)
   cs_real_t rair = phys_pro->r_pg_cnst;
   cs_real_t cp0 = phys_pro->cp0;
   cs_real_t rscp = rair/cp0; /* Around 2/7 */
-  cs_real_t theta0 = aopt->meteo_t0 * pow(pref/ aopt->meteo_psea, rscp);
 
   const cs_velocity_pressure_model_t  *vp_model
     = cs_glob_velocity_pressure_model;

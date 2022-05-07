@@ -996,40 +996,40 @@ cs_parameters_check(void)
   assert(turb_model != NULL);
 
   if (turb_model->type == CS_TURB_LES) {
-    cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
+    cs_equation_param_t *eqp_v = cs_field_get_equation_param(CS_F_(vel));
     f_desc = _field_section_desc(CS_F_(vel), "in LES, while reading time "
-                                           "scheme parameters for variable");
+                                 "scheme parameters for variable");
 
     cs_parameters_is_equal_double(CS_WARNING,
                                   _(f_desc),
                                   "equation param thetav (theta-scheme)",
-                                  eqp->thetav,
+                                  eqp_v->thetav,
                                   0.5);
 
     BFT_FREE(f_desc);
 
     f_desc = _field_section_desc(CS_F_(vel), "in LES, while reading "
-                                           "convection scheme "
-                                           "parameters for variable");
+                                 "convection scheme "
+                                 "parameters for variable");
 
     cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                      _(f_desc),
                                      "equation param blencv (2nd order scheme "
-                                                     "share for convection)",
-                                     eqp->blencv,
+                                     "share for convection)",
+                                     eqp_v->blencv,
                                      0.95, 1.);
 
     cs_parameters_is_equal_double(CS_WARNING,
                                   _(f_desc),
                                   "equation param blencv (2nd order scheme "
-                                                  "share for convection)",
-                                  eqp->blencv,
+                                  "share for convection)",
+                                  eqp_v->blencv,
                                   1.);
 
     cs_parameters_is_equal_int(CS_WARNING,
                                _(f_desc),
                                "equation param isstpc (limiter type)",
-                               eqp->isstpc,
+                               eqp_v->isstpc,
                                1);
 
     BFT_FREE(f_desc);
@@ -1728,7 +1728,7 @@ cs_parameters_check(void)
                                NULL);
   }
 
-  cs_equation_param_t *eqp = cs_field_get_equation_param(CS_F_(vel));
+  cs_equation_param_t *eqp_v = cs_field_get_equation_param(CS_F_(vel));
   /* steady or variable time step time algorithm not compatible with theta
      scheme with theta different from 1 for the velocity */
   if (cs_glob_time_step_options->idtvar != 0) {
@@ -1739,7 +1739,7 @@ cs_parameters_check(void)
                                     "only compatible with constant time step "
                                     "unsteady algorithm"),
                                   "equation param thetav",
-                                  eqp->thetav,
+                                  eqp_v->thetav,
                                   1);
   }
   /* U-P reinforced coupling not compatible with theta scheme with theta
@@ -1752,7 +1752,7 @@ cs_parameters_check(void)
                                     "not compatible with reinforced "
                                     "velocity-pressure coupling"),
                                   "equation param thetav",
-                                  eqp->thetav,
+                                  eqp_v->thetav,
                                   1);
   }
 

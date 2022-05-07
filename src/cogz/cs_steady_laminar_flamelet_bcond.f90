@@ -105,7 +105,7 @@ double precision rcodcl(nfabor,nvar,3)
 ! Local variables
 
 integer          ifac, izone,  iscal
-integer          ii, iel, ifue, ioxy
+integer          ii, ifue, ioxy
 double precision qimabs, qisqc
 double precision qcalc(nozppm)
 double precision, dimension(:), pointer ::  brom

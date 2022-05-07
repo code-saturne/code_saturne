@@ -99,9 +99,6 @@ typedef struct {
 /* Table giving the Reynolds stress component for [i][j] */
 
 /* Warning: old fashion to store Rij */
-static const int _rij[3][3] = {{0, 3, 4},
-                               {3, 1, 5},
-                               {4, 5, 2}};
 
 static const int _symt[3][3] = {{0, 3, 5},
                                 {3, 1, 4},
@@ -181,80 +178,6 @@ _apply_vector_rotation(cs_real_t    matrix[3][4],
 
   for (i = 0; i < 3; i++)
     xyz[i] = matrix[i][0]*t[0] + matrix[i][1]*t[1] + matrix[i][2]*t[2];
-
-}
-
-/*----------------------------------------------------------------------------
- * Compute a matrix * tensor * Tmatrix product to apply a rotation to a
- * given tensor
- *
- * parameters:
- *   matrix[3][4]        --> transformation matrix in homogeneous coords.
- *                           last line = [0; 0; 0; 1] (Not used here)
- *   in11, in12, in13    --> incoming first line of the tensor
- *   in21, in22, in23    --> incoming second line of the tensor
- *   in31, in32, in33    --> incoming third line of the tensor
- *   out11, out12, out13 <-- pointer to the first line of the output
- *   out21, out22, out23 <-- pointer to the second line of the output
- *   out31, out32, out33 <-- pointer to the third line of the output
- *----------------------------------------------------------------------------*/
-
-static void
-_apply_tensor_rotation_ni(cs_real_t   matrix[3][4],
-                          cs_real_t   in11,
-                          cs_real_t   in12,
-                          cs_real_t   in13,
-                          cs_real_t   in21,
-                          cs_real_t   in22,
-                          cs_real_t   in23,
-                          cs_real_t   in31,
-                          cs_real_t   in32,
-                          cs_real_t   in33,
-                          cs_real_t   *out11,
-                          cs_real_t   *out12,
-                          cs_real_t   *out13,
-                          cs_real_t   *out21,
-                          cs_real_t   *out22,
-                          cs_real_t   *out23,
-                          cs_real_t   *out31,
-                          cs_real_t   *out32,
-                          cs_real_t   *out33)
-{
-  cs_lnum_t  i, j, k;
-  cs_real_t  tensorA[3][3], tensorB[3][3];
-
-  tensorA[0][0] = matrix[0][0]*in11 + matrix[0][1]*in12 + matrix[0][2]*in13;
-  tensorA[0][1] = matrix[1][0]*in11 + matrix[1][1]*in12 + matrix[1][2]*in13;
-  tensorA[0][2] = matrix[2][0]*in11 + matrix[2][1]*in12 + matrix[2][2]*in13;
-
-  tensorA[1][0] = matrix[0][0]*in21 + matrix[0][1]*in22 + matrix[0][2]*in23;
-  tensorA[1][1] = matrix[1][0]*in21 + matrix[1][1]*in22 + matrix[1][2]*in23;
-  tensorA[1][2] = matrix[2][0]*in21 + matrix[2][1]*in22 + matrix[2][2]*in23;
-
-  tensorA[2][0] = matrix[0][0]*in31 + matrix[0][1]*in32 + matrix[0][2]*in33;
-  tensorA[2][1] = matrix[1][0]*in31 + matrix[1][1]*in32 + matrix[1][2]*in33;
-  tensorA[2][2] = matrix[2][0]*in31 + matrix[2][1]*in32 + matrix[2][2]*in33;
-
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++) {
-      tensorB[i][j] = 0.;
-      for (k = 0; k < 3; k++)
-        tensorB[i][j] += matrix[i][k] * tensorA[k][j];
-    }
-  }
-
-  *out11 = tensorB[0][0];
-  *out22 = tensorB[1][1];
-  *out33 = tensorB[2][2];
-
-  if (out12 != NULL) {
-    *out12 = tensorB[0][1];
-    *out13 = tensorB[0][2];
-    *out21 = tensorB[1][0];
-    *out23 = tensorB[1][2];
-    *out31 = tensorB[2][0];
-    *out32 = tensorB[2][1];
-  }
 
 }
 
@@ -346,61 +269,6 @@ _apply_sym_tensor_rotation(cs_real_t   matrix[3][4],
   tensor[3] = t0[1][0];
   tensor[4] = t0[2][1];
   tensor[5] = t0[2][0];
-
-}
-
-/*----------------------------------------------------------------------------
- * Compute the rotation of a third-order symmetric interleaved tensor
- * (18 components)
- * TENSOR_ijk = M_ip M_jq M_kr TENSOR_pqr
- *
- * WARNING: old fashion to store Rij (11, 22, 33, 12, 13, 23)
- *
- * parameters:
- *   matrix[3][4]        --> transformation matrix in homogeneous coords.
- *                           last line = [0; 0; 0; 1] (Not used here)
- *   tensor              <-> incoming 3x3x3 tensor
- *                           (in fact 3x6 due to symmetry)
- *----------------------------------------------------------------------------*/
-
-static void
-_apply_tensor3sym_rotation_old(cs_real_t   matrix[3][4],
-                               cs_real_t   *tensor)
-{
-  cs_lnum_t  i, j, k, p, q, r;
-
-  cs_real_t  t1[3][3][3], t2[3][3][3];
-
-  for (p = 0; p < 3; p++) {
-    for (q = 0; q < 3; q++) {
-      for (k = 0; k < 3; k++) {
-        t1[p][q][k] = 0.;
-        for (r = 0; r < 3; r++)
-          t1[p][q][k] += matrix[k][r] * tensor[3*_rij[p][q] + r];
-      }
-    }
-  }
-
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++) {
-      for (k = 0; k < 3; k++) {
-        t2[i][j][k] = 0.;
-        for (p = 0; p < 3; p++) {
-          for (q = 0; q < 3; q++)
-            t2[i][j][k] += matrix[i][p] * matrix[j][q] * t1[p][q][k];
-        }
-      }
-    }
-  }
-
-  /* Output */
-
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 3; j++) {
-      for (k = 0; k < 3; k++)
-        tensor[3*_rij[i][j] + k] = t2[i][j][k];
-    }
-  }
 
 }
 

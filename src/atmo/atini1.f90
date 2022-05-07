@@ -54,9 +54,8 @@ implicit none
 
 ! Local variables
 
-integer          ii, isc, jj
+integer          ii
 double precision turb_schmidt
-double precision visls_0
 
 !===============================================================================
 

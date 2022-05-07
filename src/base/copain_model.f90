@@ -95,7 +95,7 @@ double precision hpcond(nfbpcd)
 
 ! Local variables
 
-integer          ii, iz, iel, ifac, iesp
+integer          ii, iz, iel, ifac
 integer          ivar, f_id, ifcvsl
 integer          ustar_id, conv_regime
 
@@ -125,7 +125,7 @@ type(var_cal_opt) :: vcopt
 double precision, allocatable, dimension(:) :: mix_mol_mas, mol_mas_ncond
 double precision, allocatable, dimension(:) :: x_h2o_g, diff_m
 double precision, dimension(:), pointer :: cpro_rho, cpro_viscl, cpro_cp, cpro_venth
-double precision, dimension(:), pointer :: cvar_enth, cvar_yk
+double precision, dimension(:), pointer :: cvar_enth
 double precision, dimension(:), pointer :: y_h2o_g
 double precision, dimension(:), pointer :: yplbr
 double precision, dimension(:), pointer :: bpro_ustar

@@ -97,8 +97,8 @@ double precision hpcond(nfbpcd)
 
 ! Local variables
 
-integer          ii, iz, iel, ifac, iesp, idims
-integer          ivar, f_id, ifcvsl, idir
+integer          ii, iz, iel, ifac
+integer          ivar, f_id, ifcvsl
 integer          ustar_id, conv_regime
 
 double precision flux
@@ -106,33 +106,30 @@ double precision gravity
 double precision sink_term, gamma_cond
 double precision lambda, theta, tinf, psat
 double precision Sh_z, Nu_z, Gr_z, schdt, Prdtl
-double precision Sh_z_NC, Sh_z_FC, Re_z
-double precision Nu_z_NC, Nu_z_FC
-double precision xnu, u_ref, u_square, u_norm
-double precision x_inc,y_ncond, x_k
+double precision Re_z
+double precision xnu, u_ref
+double precision x_inc,y_ncond
 double precision x_vapint,x_ncond_int,y_ncond_int
 double precision distbf
-double precision ratio_tkpr,drho
+double precision drho
 double precision mix_mol_mas_int
-double precision xmab,xvab,a1
 double precision dplus, yplus, sigmat, ypth
 double precision hcond,hcdt,hcdcop,hw_cop,hflui,hpflui,hw_enth
 double precision h1min, h1max, h2min, h2max
 double precision h3min, h3max, h4min, h4max
 double precision flmin, flmax
 double precision t_wall
-double precision dtheta
-double precision pressure, rho_wall, rho_ref
+double precision pressure
 double precision uk, rough_t
 double precision lcar
 
-type(gas_mix_species_prop) s_h2o_g, s_k
+type(gas_mix_species_prop) s_h2o_g
 type(var_cal_opt) :: vcopt
 
 double precision, allocatable, dimension(:) :: mix_mol_mas, mol_mas_ncond
 double precision, allocatable, dimension(:) :: x_h2o_g, diff_m
 double precision, dimension(:), pointer :: cpro_rho, cpro_viscl, cpro_cp, cpro_venth
-double precision, dimension(:), pointer :: cvar_enth, cvar_yk
+double precision, dimension(:), pointer :: cvar_enth
 double precision, dimension(:), pointer :: y_h2o_g
 double precision, dimension(:), pointer :: bpro_ustar
 double precision, dimension(:), pointer :: yplbr

@@ -289,7 +289,6 @@ implicit none
 ! Arguments
 
 integer Ns,Nbin_aer,nr
-double precision rk156,rk157,rk158,rk159
 double precision lwctmp
 double precision WetDiam(Nbin_aer)
 double precision granulo(Nbin_aer)
@@ -298,8 +297,7 @@ integer ICLD,IHETER
 integer ispeclost(4)
 double precision Wmol(Ns),LWCmin
 double precision rk(nr),temp,xlw,Press
-double precision Effko,Rapk,facteur,SumM,azi,att
-double precision YlH2O
+double precision azi,att
 integer option_photolysis
 
 end subroutine ssh_kinetic
@@ -330,9 +328,9 @@ subroutine ssh_fexchem(NS,Nr,nemis,y,rk,ZCsourc,convers_factor,chem)
 implicit none
 
 integer nemis
-integer nr,ns,i
-double precision w(nr),rk(nr),y(ns),chem(ns),ZCsourc(ns)
-double precision conc(ns), convers_factor(ns)
+integer nr,ns
+double precision rk(nr),y(ns),chem(ns),ZCsourc(ns)
+double precision convers_factor(ns)
 
 end subroutine ssh_fexchem
 

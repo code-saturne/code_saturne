@@ -72,7 +72,7 @@ implicit none
 
 ! Local variables
 
-integer          ii , jj, iok
+integer          jj, iok
 integer          isc
 double precision wmolme, turb_schmidt
 !===============================================================================

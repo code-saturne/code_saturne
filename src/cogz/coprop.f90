@@ -66,7 +66,7 @@ implicit none
 
 ! Local variables
 
-integer       idirac, ifmk, gg_id
+integer       idirac, ifmk
 
 character(len=80) :: f_name, f_label
 

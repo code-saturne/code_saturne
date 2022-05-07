@@ -76,7 +76,6 @@ double precision, allocatable, dimension (:) :: tot_vol, dpdtx, dpdty
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:,:), pointer :: vel, cpro_momst, cpro_vel_target
 double precision, allocatable, dimension (:,:), target :: wvel_target
-double precision, dimension(:,:), pointer :: cpro_met_vel
 
 !===============================================================================
 ! 1. Initialisation

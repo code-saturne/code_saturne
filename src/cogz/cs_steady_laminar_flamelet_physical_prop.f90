@@ -78,7 +78,7 @@ integer          izfppp(nfabor)
 
 ! Local variables
 
-integer           iel, ii, ifac, izone, ifcvsl, isc, iscal, iesp, ig, iprev
+integer           iel, ifac, izone, ifcvsl, isc, iscal, iesp, ig, iprev
 integer           viscls_counter, viscls_number
 
 double precision  had, cmin, cmid, cmax
@@ -1114,7 +1114,7 @@ use pointe
 
 implicit none
 
-integer          ifac, iel, ifcvsl
+integer          iel, ifcvsl
 integer          key_turb_diff, t_dif_id
 
 double precision  dnum, delta_les
@@ -1197,8 +1197,7 @@ use cs_c_bindings
 use pointe
 
 implicit none
-integer          ivar
-integer          ii, ifac , iel
+integer          iel
 integer          iprev
 
 double precision, pointer, dimension(:) :: fm, fp2m, fsqm
