@@ -110,7 +110,11 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
 
   /* Allocate and map */
 
-  BFT_REALLOC(ma->cell_cells_idx, n_cells + 1, cs_lnum_t);
+  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(ma->cell_cells_idx);
+
+  CS_FREE(ma->cell_cells_idx);
+  CS_MALLOC_HD(ma->cell_cells_idx, n_cells + 1, cs_lnum_t, alloc_mode);
+
   cs_lnum_t *c2c_idx = ma->cell_cells_idx;
 
   /* Count number of nonzero elements per row */
@@ -139,7 +143,8 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
 
   /* Build structure */
 
-  BFT_REALLOC(ma->cell_cells, c2c_idx[n_cells], cs_lnum_t);
+  CS_FREE(ma->cell_cells);
+  CS_MALLOC_HD(ma->cell_cells, c2c_idx[n_cells], cs_lnum_t, alloc_mode);
 
   cs_lnum_t *c2c = ma->cell_cells;
 
@@ -190,7 +195,7 @@ _update_cell_cells(cs_mesh_adjacencies_t  *ma)
     assert(c2c_idx[n_cells] < tmp_c2c_idx[n_cells]);
 
     BFT_FREE(tmp_c2c_idx);
-    BFT_REALLOC(c2c, c2c_idx[n_cells], cs_lnum_t);
+    CS_REALLOC_HD(c2c, c2c_idx[n_cells], cs_lnum_t, alloc_mode);
 
     ma->cell_cells = c2c;
 
@@ -221,8 +226,13 @@ _update_cell_i_faces(cs_mesh_adjacencies_t  *ma)
   /* Allocate and map */
 
   const cs_lnum_t n_elts = c2c_idx[n_cells];
-  BFT_REALLOC(ma->cell_i_faces, n_elts, cs_lnum_t);
-  BFT_REALLOC(ma->cell_i_faces_sgn, n_elts, short int);
+
+  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(ma->cell_i_faces);
+
+  CS_FREE(ma->cell_i_faces);
+  CS_MALLOC_HD(ma->cell_i_faces, n_elts, cs_lnum_t, alloc_mode);
+  CS_FREE(ma->cell_i_faces_sgn);
+  CS_MALLOC_HD(ma->cell_i_faces_sgn, n_elts, short int, alloc_mode);
 
   cs_lnum_t *c2i = ma->cell_i_faces;
   short int *sgn = ma->cell_i_faces_sgn;
@@ -290,7 +300,10 @@ _update_cell_b_faces(cs_mesh_adjacencies_t  *ma)
 
   /* (re)build cell -> boundary faces index */
 
-  BFT_REALLOC(ma->cell_b_faces_idx, n_cells + 1, cs_lnum_t);
+  cs_alloc_mode_t alloc_mode = cs_check_device_ptr(ma->cell_b_faces_idx);
+
+  CS_FREE(ma->cell_b_faces_idx);
+  CS_MALLOC_HD(ma->cell_b_faces_idx, n_cells + 1, cs_lnum_t, alloc_mode);
   cs_lnum_t *c2b_idx = ma->cell_b_faces_idx;
 
   cs_lnum_t *c2b_count;
@@ -310,7 +323,8 @@ _update_cell_b_faces(cs_mesh_adjacencies_t  *ma)
 
   /* Rebuild values */
 
-  BFT_REALLOC(ma->cell_b_faces, c2b_idx[n_cells], cs_lnum_t);
+  CS_FREE(ma->cell_b_faces);
+  CS_MALLOC_HD(ma->cell_b_faces, c2b_idx[n_cells], cs_lnum_t, alloc_mode);
   cs_lnum_t *c2b = ma->cell_b_faces;
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {

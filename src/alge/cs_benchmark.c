@@ -1038,9 +1038,6 @@ cs_benchmark(int  mpi_trace_mode)
   cs_matrix_fill_type_t  fill_types_sym[] = {CS_MATRIX_SCALAR_SYM,
                                              CS_MATRIX_BLOCK_D_SYM};
 
-  cs_mesh_adjacencies_initialize();
-  cs_mesh_adjacencies_update_mesh();
-
   cs_matrix_initialize();
 
   cs_log_printf(CS_LOG_PERFORMANCE,

@@ -421,35 +421,37 @@ _variant_build_list(int                             n_fill_types,
 
 #if defined(HAVE_CUDA)
 
-    _variant_add("CSR, CUDA",
-                 NULL,
-                 CS_MATRIX_CSR,
-                 n_fill_types,
-                 fill_types,
-                 op_flag_ae,
-                 "cuda",
-                 NULL,
-                 NULL,
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
+    if (cs_get_device_id() > -1)
+      _variant_add("CSR, CUDA",
+                   NULL,
+                   CS_MATRIX_CSR,
+                   n_fill_types,
+                   fill_types,
+                   op_flag_ae,
+                   "cuda",
+                   NULL,
+                   NULL,
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
 
 #endif /* defined(HAVE_CUDA) */
 
 #if defined(HAVE_CUSPARSE)
 
-    _variant_add("CSR, with cuSPARSE",
-                 NULL,
-                 CS_MATRIX_CSR,
-                 n_fill_types,
-                 fill_types,
-                 op_flag_ae,
-                 "cusparse",
-                 NULL,
-                 NULL,
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
+    if (cs_get_device_id() > -1)
+      _variant_add("CSR, with cuSPARSE",
+                   NULL,
+                   CS_MATRIX_CSR,
+                   n_fill_types,
+                   fill_types,
+                   op_flag_ae,
+                   "cusparse",
+                   NULL,
+                   NULL,
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
 
 #endif /* defined(HAVE_CUSPARSE) */
 
@@ -489,39 +491,41 @@ _variant_build_list(int                             n_fill_types,
 
 #if defined(HAVE_CUDA)
 
-    _variant_add("MSR, CUDA",
-                 NULL,
-                 CS_MATRIX_MSR,
-                 n_fill_types,
-                 fill_types,
-                 op_flag_ae,
-                 "cuda",
-                 "cuda",
-                 NULL,
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
+    if (cs_get_device_id() > -1)
+      _variant_add("MSR, CUDA",
+                   NULL,
+                   CS_MATRIX_MSR,
+                   n_fill_types,
+                   fill_types,
+                   op_flag_ae,
+                   "cuda",
+                   "cuda",
+                   NULL,
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
 
 #endif /* defined(HAVE_CUDA) */
 
 #if defined(HAVE_CUSPARSE)
 
-    _variant_add("MSR, with cuSPARSE",
-                 NULL,
-                 CS_MATRIX_MSR,
-                 n_fill_types,
-                 fill_types,
-                 op_flag_ae,
-                 "cusparse",
+    if (cs_get_device_id() > -1)
+      _variant_add("MSR, with cuSPARSE",
+                   NULL,
+                   CS_MATRIX_MSR,
+                   n_fill_types,
+                   fill_types,
+                   op_flag_ae,
+                   "cusparse",
 #if defined(HAVE_CUSPARSE_GENERIC_API)
-                 "cusparse",
+                   "cusparse",
 #else
-                 NULL,
+                   NULL,
 #endif
-                 "cusparse",
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
+                   "cusparse",
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
 
 #endif /* defined(HAVE_CUSPARSE) */
 

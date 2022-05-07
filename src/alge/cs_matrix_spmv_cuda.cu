@@ -682,6 +682,7 @@ _unset_cusparse_map(cs_matrix_t   *matrix)
   csm->d_e_val = NULL;
 
   BFT_FREE(matrix->ext_lib_map);
+  matrix->destroy_adaptor = NULL;
 }
 
 /*----------------------------------------------------------------------------
@@ -1280,7 +1281,8 @@ cs_matrix_spmv_cuda_msr(const cs_matrix_t  *matrix,
     = (const cs_lnum_t *)cs_get_device_ptr_const_pf
                            (const_cast<cs_lnum_t *>(ms->e.row_index));
   const cs_lnum_t *__restrict__ col_id
-    = (const cs_lnum_t *)cs_get_device_ptr(const_cast<cs_lnum_t *>(ms->e.col_id));
+    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+                          (const_cast<cs_lnum_t *>(ms->e.col_id));
 
   const cs_real_t *__restrict__ d_val
     = (const cs_real_t *)cs_get_device_ptr_const_pf

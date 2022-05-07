@@ -5758,7 +5758,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
     }
 
     if (coarse_mv != NULL)
-      cs_matrix_variant_apply(c->_matrix, coarse_mv);
+      cs_matrix_variant_apply_tuned(c->_matrix, coarse_mv);
   }
 
   if (c->matrix == NULL) {

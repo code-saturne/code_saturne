@@ -4073,9 +4073,9 @@ _matrix_create(cs_matrix_type_t  type)
     for (cs_matrix_spmv_type_t i = 0; i < CS_MATRIX_SPMV_N_TYPES; i++) {
       m->vector_multiply[mft][i] = NULL;
 #if defined(HAVE_ACCEL)
+      m->vector_multiply_h[mft][i] = NULL;
       m->vector_multiply_d[mft][i] = NULL;
 #endif
-      m->vector_multiply_xy_hd[mft][i] = 'h';
     }
   }
 
@@ -4111,6 +4111,7 @@ _matrix_create(cs_matrix_type_t  type)
   /* Set function pointers here */
 
   m->set_coefficients = NULL;
+  m->destroy_adaptor = NULL;
 
   cs_matrix_spmv_set_defaults(m);
 
@@ -4167,12 +4168,12 @@ _matrix_create(cs_matrix_type_t  type)
     if (m->vector_multiply[i][1] == NULL)
       m->vector_multiply[i][1] = m->vector_multiply[i][0];
 #if defined(HAVE_ACCEL)
+    if (m->vector_multiply_h[i][1] == NULL)
+      m->vector_multiply_h[i][1] = m->vector_multiply_h[i][0];
     if (m->vector_multiply_d[i][1] == NULL)
       m->vector_multiply_d[i][1] = m->vector_multiply_d[i][0];
 #endif
   }
-
-  m->destroy_adaptor = NULL;
 
   return m;
 }
@@ -5923,12 +5924,20 @@ cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
   if (matrix->vector_multiply[matrix->fill_type][0] != NULL) {
 
 #if defined(HAVE_ACCEL)
-    if (matrix->vector_multiply_xy_hd[matrix->fill_type][0] == 'd') {
-      cs_real_t *d_x = (cs_real_t *)cs_get_device_ptr(x);
-      cs_real_t *d_y = (cs_real_t *)cs_get_device_ptr(y);
+    if (   matrix->vector_multiply[matrix->fill_type][0]
+        == matrix->vector_multiply_d[matrix->fill_type][0]) {
+      cs_alloc_mode_t md_x = cs_check_device_ptr(x);
+      cs_alloc_mode_t md_y = cs_check_device_ptr(y);
+      if (md_x == CS_ALLOC_HOST || md_y == CS_ALLOC_HOST)
+        matrix->vector_multiply_h[matrix->fill_type][0](matrix, false, true,
+                                                        x, y);
+      else {
+        cs_real_t *d_x = (cs_real_t *)cs_get_device_ptr(x);
+        cs_real_t *d_y = (cs_real_t *)cs_get_device_ptr(y);
 
-      matrix->vector_multiply[matrix->fill_type][0](matrix, false, true,
-                                                    d_x, d_y);
+        matrix->vector_multiply[matrix->fill_type][0](matrix, false, true,
+                                                      d_x, d_y);
+      }
     }
     else
       matrix->vector_multiply[matrix->fill_type][0](matrix, false, true, x, y);
@@ -6005,12 +6014,20 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
   if (matrix->vector_multiply[matrix->fill_type][0] != NULL) {
 
 #if defined(HAVE_ACCEL)
-    if (matrix->vector_multiply_xy_hd[matrix->fill_type][0] == 'd') {
-      cs_real_t *d_x = (cs_real_t *)cs_get_device_ptr(x);
-      cs_real_t *d_y = (cs_real_t *)cs_get_device_ptr(y);
+    if (   matrix->vector_multiply[matrix->fill_type][0]
+        == matrix->vector_multiply_d[matrix->fill_type][0]) {
+      cs_alloc_mode_t md_x = cs_check_device_ptr(x);
+      cs_alloc_mode_t md_y = cs_check_device_ptr(y);
+      if (md_x == CS_ALLOC_HOST || md_y == CS_ALLOC_HOST)
+        matrix->vector_multiply_h[matrix->fill_type][0](matrix, false, false,
+                                                        x, y);
+      else {
+        cs_real_t *d_x = (cs_real_t *)cs_get_device_ptr(x);
+        cs_real_t *d_y = (cs_real_t *)cs_get_device_ptr(y);
 
-      matrix->vector_multiply[matrix->fill_type][0](matrix, false, false,
-                                                    d_x, d_y);
+        matrix->vector_multiply[matrix->fill_type][0](matrix, false, false,
+                                                      d_x, d_y);
+      }
     }
     else
       matrix->vector_multiply[matrix->fill_type][0](matrix, false, false, x, y);
@@ -6054,12 +6071,20 @@ cs_matrix_vector_multiply_partial(const cs_matrix_t      *matrix,
   if (matrix->vector_multiply[matrix->fill_type][op_type] != NULL) {
 
 #if defined(HAVE_ACCEL)
-    if (matrix->vector_multiply_xy_hd[matrix->fill_type][op_type] == 'd') {
-      cs_real_t *d_x = (cs_real_t *)cs_get_device_ptr(x);
-      cs_real_t *d_y = (cs_real_t *)cs_get_device_ptr(y);
+    if (   matrix->vector_multiply[matrix->fill_type][op_type]
+        == matrix->vector_multiply_d[matrix->fill_type][op_type]) {
+      cs_alloc_mode_t md_x = cs_check_device_ptr(x);
+      cs_alloc_mode_t md_y = cs_check_device_ptr(y);
+      if (md_x == CS_ALLOC_HOST || md_y == CS_ALLOC_HOST)
+        matrix->vector_multiply_h[matrix->fill_type][op_type]
+                  (matrix, true, true, x, y);
+      else {
+        cs_real_t *d_x = (cs_real_t *)cs_get_device_ptr(x);
+        cs_real_t *d_y = (cs_real_t *)cs_get_device_ptr(y);
 
-      matrix->vector_multiply[matrix->fill_type][op_type]
-        (matrix, true, true, d_x, d_y);
+        matrix->vector_multiply[matrix->fill_type][op_type]
+                  (matrix, true, true, d_x, d_y);
+      }
     }
     else
       matrix->vector_multiply[matrix->fill_type][op_type]
@@ -6263,23 +6288,25 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
 #if defined(HAVE_CUDA)
 
-    _variant_add(_("CSR, CUDA"),
-                 m->type,
-                 m->fill_type,
-                 m->numbering,
-                 "cuda",
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
+    if (cs_get_device_id() > -1)
+      _variant_add(_("CSR, CUDA"),
+                   m->type,
+                   m->fill_type,
+                   m->numbering,
+                   "cuda",
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
 
-    _variant_add(_("CSR, with cuSPARSE"),
-                 m->type,
-                 m->fill_type,
-                 m->numbering,
-                 "cusparse",
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
+    if (cs_get_device_id() > -1)
+      _variant_add(_("CSR, with cuSPARSE"),
+                   m->type,
+                   m->fill_type,
+                   m->numbering,
+                   "cusparse",
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
 
 #endif /* defined(HAVE_CUDA) */
 
@@ -6311,27 +6338,29 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
 #if defined(HAVE_CUDA)
 
-    _variant_add(_("MSR, CUDA"),
-                 m->type,
-                 m->fill_type,
-                 m->numbering,
-                 "cuda",
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
+    if (cs_get_device_id() > -1)
+      _variant_add(_("MSR, CUDA"),
+                   m->type,
+                   m->fill_type,
+                   m->numbering,
+                   "cuda",
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
 
 #endif /* defined(HAVE_CUDA) */
 
 #if defined(HAVE_CUSPARSE)
 
-    _variant_add(_("MSR, with cuSPARSE"),
-                 m->type,
-                 m->fill_type,
-                 m->numbering,
-                 "cusparse",
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
+    if (cs_get_device_id() > -1)
+      _variant_add(_("MSR, with cuSPARSE"),
+                   m->type,
+                   m->fill_type,
+                   m->numbering,
+                   "cusparse",
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
 
 #endif /* defined(HAVE_CUSPARSE) */
 
@@ -6387,21 +6416,65 @@ cs_matrix_variant_apply(cs_matrix_t          *m,
   if (m == NULL || mv == NULL)
     return;
 
+  if (m->destroy_adaptor != NULL)
+    m->destroy_adaptor(m);
+
   if (   m->type < 0 || m->type > CS_MATRIX_N_BUILTIN_TYPES
       || m->fill_type < 0 || m->fill_type > CS_MATRIX_N_FILL_TYPES)
     return;
 
   for (int i = 0; i < 2; i++) {
     m->vector_multiply[m->fill_type][i] = mv->vector_multiply[i];
-    m->vector_multiply_xy_hd[m->fill_type][i] = mv->vector_multiply_xy_hd[i];
 
 #if defined(HAVE_ACCEL)
-    /* When chosen SpMV function is on device, also force device
-       function to the same (instead of default) one */
-    if (m->vector_multiply_xy_hd[m->fill_type][i] == 'd')
+    if (mv->vector_multiply_xy_hd[i] == 'h')
+      m->vector_multiply_h[m->fill_type][i] = mv->vector_multiply[i];
+    else if (mv->vector_multiply_xy_hd[i] == 'd')
       m->vector_multiply_d[m->fill_type][i] = mv->vector_multiply[i];
 #endif
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply variants defined by tuning to a given matrix
+ *
+ * \param[in, out]  m   pointer to matrix
+ * \param[in]       mv  pointer to matrix variant pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_variant_apply_tuned(cs_matrix_t          *m,
+                              cs_matrix_variant_t  *mv)
+{
+  if (m == NULL || mv == NULL)
+    return;
+
+  if (   m->type < 0 || m->type > CS_MATRIX_N_BUILTIN_TYPES
+      || m->fill_type < 0 || m->fill_type > CS_MATRIX_N_FILL_TYPES)
+    return;
+
+  if (m->destroy_adaptor != NULL)
+    m->destroy_adaptor(m);
+
+  for (int i = 0; i < 2; i++)
+    m->vector_multiply[m->fill_type][i] = mv->vector_multiply[i];
+
+#if defined(HAVE_ACCEL)
+  if (cs_get_device_id() > -1) {
+    for (int i = 0; i < 2; i++)
+      m->vector_multiply_h[m->fill_type][i] = (mv+1)->vector_multiply[i];
+    for (int i = 0; i < 2; i++)
+      m->vector_multiply_d[m->fill_type][i] = (mv+2)->vector_multiply[i];
+  }
+  else {
+    for (int i = 0; i < 2; i++)
+      m->vector_multiply_h[m->fill_type][i] = mv->vector_multiply[i];
+    for (int i = 0; i < 2; i++)
+      m->vector_multiply_d[m->fill_type][i] = NULL;
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

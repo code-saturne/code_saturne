@@ -1777,6 +1777,7 @@ cs_multigrid_smoother_create(cs_sles_it_type_t    smoother_type,
 
   /* Predefined settings */
   c->type = smoother_type;
+  c->on_device = false;
   c->update_stats = false;
   c->ignore_convergence = true;
   c->fallback = NULL;

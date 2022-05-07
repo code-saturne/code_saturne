@@ -64,6 +64,8 @@
  * Local Macro Definitions
  *============================================================================*/
 
+#define _CS_ALLOC_LOG 0
+
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -75,6 +77,12 @@ typedef struct
 
   size_t           size;    //! allocation size
   cs_alloc_mode_t  mode;    //!< allocation mode
+
+#if _CS_ALLOC_LOG == 1
+  char  var_name[32];       //!< variable name
+  char  src_line[64];       //!< source line info
+#endif
+
 } _cs_base_accel_mem_map;
 
 /*============================================================================
@@ -277,6 +285,43 @@ _omp_target_mem_malloc_managed(size_t        n,
 
 #endif /* defined(HAVE_OPENMP_TARGET) */
 
+#if _CS_ALLOC_LOG == 1
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Loc variable namev and line if enabled.
+ *
+ * If separate pointers are used on the host and device,
+ * the host pointer is returned.
+ *
+ * \param [in, out]  me         memory map element
+ * \param [in]       var_name   allocated variable name string
+ * \param [in]       file_name  name of calling source file
+ * \param [in]       line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_log_call_site(_cs_base_accel_mem_map  &me,
+               const char              *var_name,
+               const char              *file_name,
+               int                      line_num)
+{
+  memset(me.var_name, 0, 32);
+  memset(me.src_line, 0, 64);
+  strncpy(me.var_name, var_name, 63);
+  const char *_file_name = file_name;
+  for (size_t i = 0; file_name[i] != '\0'; i++) {
+    if (file_name[i] == '/')
+      _file_name = file_name + i + 1;
+  }
+  snprintf(me.src_line, 63, "%s:%d", _file_name, line_num);
+}
+
+#endif
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 BEGIN_C_DECLS
@@ -353,6 +398,10 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
     .device_ptr = NULL,
     .size = ni * size,
     .mode = mode};
+
+#if _CS_ALLOC_LOG == 1
+  _log_call_site(me, var_name, file_name, line_num);
+#endif
 
   if (mode < CS_ALLOC_HOST_DEVICE_PINNED)
     me.host_ptr = bft_mem_malloc(ni, size, var_name, file_name, line_num);
@@ -431,7 +480,12 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
  * the host pointer should be used with this function.
  *
  * If the allocation parameters are unchanged, no actual reallocation
- * occurs.
+ * occurs on the host.
+ *
+ * If the device uses a separate allocation, it is freed, and a new
+ * allocation is delayed (as per initial allocation) so as to invalidate copies
+ * which will not be up to date anymore after the associated values
+ * modification.
  *
  * \param [in]  ptr        pointer to previously allocated memory
  * \param [in]  mode       allocation mode
@@ -474,10 +528,25 @@ cs_realloc_hd(void            *ptr,
           .size = bft_mem_get_block_size(ptr),
           .mode = CS_ALLOC_HOST};
     _hd_alloc_map[me.host_ptr] = me;
+
   }
   else {
     me = _hd_alloc_map[ptr];
+
+    if (me.device_ptr != me.host_ptr && me.device_ptr != NULL) {
+#if defined(HAVE_CUDA)
+      cs_cuda_mem_free(me.device_ptr, var_name, file_name, line_num);
+      me.device_ptr = NULL;
+#elif defined(HAVE_OPENMP_TARGET)
+      omp_target_free(me.device_ptr, cs_glob_omp_target_device_id);
+      me.device_ptr = NULL;
+#endif
+    }
   }
+
+#if _CS_ALLOC_LOG == 1
+  _log_call_site(me, var_name, file_name, line_num);
+#endif
 
   if (new_size == me.size && mode == me.mode) {
     if (me.host_ptr != NULL)

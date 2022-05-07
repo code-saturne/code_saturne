@@ -63,6 +63,10 @@ BEGIN_C_DECLS
  *
  * The variant may later be applied to matrices of the same type and fill type.
  *
+ * In presence of supported accelerated devices, an array of 3 variants
+ * is returned; the second one applies to the host only, the third one
+ * to the device only.
+ *
  * \param[in]  m           associated matrix
  * \param[in]  verbosity   verbosity level
  * \param[in]  n_measure   minimum number of measuring runs

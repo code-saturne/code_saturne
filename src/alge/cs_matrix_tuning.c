@@ -216,6 +216,10 @@ _matrix_tune_test(const cs_matrix_t     *m,
         }
         wtu = (wt1 - wt0) / n_runs;
         spmv_cost[v_id*CS_MATRIX_SPMV_N_TYPES + op_type] = wtu;
+
+        if (m_t.destroy_adaptor != NULL)
+          m_t.destroy_adaptor(&m_t);
+
       }
       else
         spmv_cost[v_id*CS_MATRIX_SPMV_N_TYPES + op_type] = -1;
@@ -235,12 +239,15 @@ _matrix_tune_test(const cs_matrix_t     *m,
  * The first variant of the list is modified to select the function
  * with best performance.
  *
- * \param[in]       m             associated matrix
- * \param[in]       verbosity     verbosity level
- * \param[in]       fill_type     fill type tuned for
- * \param[in]       n_variants    number of variants
- * \param[in, out]  m_variant     array of matrix variants
- * \param[in]       spmv_cost     costs for each variant
+ * \param[in]   m             associated matrix
+ * \param[in]   verbosity     verbosity level
+ * \param[in]   fill_type     fill type tuned for
+ * \param[in]   n_variants    number of variants
+ * \param[in]   n_r_variants  number of return variants (1 on host only,
+ *                            3 with device)
+ * \param[in]   m_variant     array of input matrix variants
+ * \param[out]  r_variant     array of output matrix variants
+ * \param[in]   spmv_cost     costs for each variant
  */
 /*----------------------------------------------------------------------------*/
 
@@ -248,7 +255,9 @@ static void
 _matrix_tune_spmv_select(const cs_matrix_t    *m,
                          int                   verbosity,
                          int                   n_variants,
+                         int                   n_r_variants,
                          cs_matrix_variant_t  *m_variant,
+                         cs_matrix_variant_t  *r_variant,
                          double                spmv_cost[])
 {
   /* Use maximum value for comparisons */
@@ -271,38 +280,76 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
 
 #endif
 
-  int min_c[2] = {0, 0};
+  int min_c[3][2] = {{-1, -1}, {-1, -1}, {-1, -1}};
 
-  for (int i = 1; i < n_variants; i++) {
+  for (int i = 0; i < n_variants; i++) {
+    const cs_matrix_variant_t *mv = m_variant+i;
     for (int j = 0; j < CS_MATRIX_SPMV_N_TYPES; j++) {
-      if (    spmv_cost[i*CS_MATRIX_SPMV_N_TYPES + j] > 0
-          && (  spmv_cost[i*CS_MATRIX_SPMV_N_TYPES + j]
-              < spmv_cost[min_c[j]*CS_MATRIX_SPMV_N_TYPES + j]))
-        min_c[j] = i;
+      if (spmv_cost[i*CS_MATRIX_SPMV_N_TYPES + j] > 0) {
+        int k = 1;
+        if (mv->vector_multiply_xy_hd[j] == 'd')
+          k = 2;
+        if (min_c[k][j] < 0)
+          min_c[k][j] = i;
+        else if (  spmv_cost[i*CS_MATRIX_SPMV_N_TYPES + j]
+                 < spmv_cost[min_c[k][j]*CS_MATRIX_SPMV_N_TYPES + j])
+          min_c[k][j] = i;
+      }
     }
   }
 
   for (int j = 0; j < CS_MATRIX_SPMV_N_TYPES; j++) {
-    if (spmv_cost[min_c[j]*CS_MATRIX_SPMV_N_TYPES + j] < spmv_cost[j]) {
-      const cs_matrix_variant_t *mv_s = m_variant+min_c[j];
-      strcpy(m_variant->name[j], mv_s->name[j]);
-      m_variant->vector_multiply[j] = mv_s->vector_multiply[j];
-      m_variant->vector_multiply_xy_hd[j] = mv_s->vector_multiply_xy_hd[j];
+    if (min_c[1][j] > -1)
+      min_c[0][j] = min_c[1][j];
+    if (min_c[2][j] > -1) {
+      if (min_c[0][j] > -1) {
+        if (  spmv_cost[min_c[2][j]*CS_MATRIX_SPMV_N_TYPES + j]
+            < spmv_cost[min_c[0][j]*CS_MATRIX_SPMV_N_TYPES + j])
+          min_c[0][j] = min_c[2][j];
+      }
+      else
+        min_c[0][j] = min_c[2][j];
+    }
+  }
+
+  for (int k = 0; k < n_r_variants; k++) {
+    cs_matrix_variant_t *o_variant = r_variant + k;
+    o_variant->fill_type = m->fill_type;
+
+    for (int j = 0; j < CS_MATRIX_SPMV_N_TYPES; j++) {
+      if (min_c[k][j] > -1) {
+        const cs_matrix_variant_t *mv_s = m_variant+min_c[k][j];
+        strcpy(o_variant->name[j], mv_s->name[j]);
+        o_variant->vector_multiply[j] = mv_s->vector_multiply[j];
+        o_variant->vector_multiply_xy_hd[j] = mv_s->vector_multiply_xy_hd[j];
+      }
     }
   }
 
   if (verbosity > 0) {
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("\n"
-                    "Selected SpMV variant for matrix of type %s and fill %s:\n"
-                    "  %32s for y <= A.x       (speedup: %6.2f)\n"
-                    "  %32s for y <= (A-D).x   (speedup: %6.2f)\n"),
-                  _(cs_matrix_get_type_name(m)),
-                  _(cs_matrix_fill_type_name[m->fill_type]),
-                  m_variant[0].name[0],
-                  spmv_cost[0]/spmv_cost[min_c[0]*CS_MATRIX_SPMV_N_TYPES],
-                  m_variant[0].name[1],
-                  spmv_cost[1]/spmv_cost[min_c[1]*CS_MATRIX_SPMV_N_TYPES+1]);
+    const char* hd_type[] = {"", "host ", "device "};
+    for (int k = 0; k < n_r_variants; k++) {
+      cs_matrix_variant_t *o_variant = r_variant + k;
+      cs_log_printf
+        (CS_LOG_PERFORMANCE,
+         _("\n"
+           "Selected %sSpMV variant for matrix of type %s and fill %s:\n"),
+         hd_type[k],
+         _(cs_matrix_get_type_name(m)),
+         _(cs_matrix_fill_type_name[m->fill_type]));
+      if (min_c[k][0] > -1)
+        cs_log_printf
+          (CS_LOG_PERFORMANCE,
+           _("  %32s for y <= A.x       (speedup: %6.2f)\n"),
+           o_variant->name[0],
+           spmv_cost[0]/spmv_cost[min_c[k][0]*CS_MATRIX_SPMV_N_TYPES]);
+      if (min_c[k][1] > -1)
+        cs_log_printf
+          (CS_LOG_PERFORMANCE,
+           _("  %32s for y <= (A-D).x   (speedup: %6.2f)\n"),
+           o_variant->name[1],
+           spmv_cost[1]/spmv_cost[min_c[k][1]*CS_MATRIX_SPMV_N_TYPES+1]);
+    }
   }
 }
 
@@ -317,6 +364,10 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
  * \brief Build a matrix variant tuned matrix.vector product operations.
  *
  * The variant may later be applied to matrices of the same type and fill type.
+ *
+ * In presence of supported accelerated devices, an array of 3 variants
+ * is returned; the second one applies to the host only, the third one
+ * to the device only.
  *
  * \param[in]  m           associated matrix
  * \param[in]  verbosity   verbosity level
@@ -333,8 +384,14 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
                         int                 n_measure,
                         double              t_measure)
 {
-  int  n_variants = 0;
+  int  n_variants = 0, n_r_variants = 1;
+  cs_matrix_variant_t  *r_variant = NULL;
   cs_matrix_variant_t  *m_variant = NULL;
+
+  if (cs_get_device_id() > -1)
+    n_r_variants = 3;
+
+  BFT_MALLOC(r_variant, n_r_variants, cs_matrix_variant_t);
 
   cs_matrix_variant_build_list(m, &n_variants, &m_variant);
 
@@ -361,7 +418,9 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
     _matrix_tune_spmv_select(m,
                              verbosity,
                              n_variants,
+                             n_r_variants,
                              m_variant,
+                             r_variant,
                              spmv_cost);
 
     BFT_FREE(spmv_cost);
@@ -369,12 +428,16 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
     cs_log_printf(CS_LOG_PERFORMANCE, "\n");
     cs_log_separator(CS_LOG_PERFORMANCE);
 
-    n_variants = 1;
-    BFT_REALLOC(m_variant, 1, cs_matrix_variant_t);
-
   }
 
-  return m_variant;
+  /* Single-variant case */
+
+  else
+    memcpy(r_variant, m_variant, sizeof(cs_matrix_variant_t));
+
+  BFT_FREE(m_variant);
+
+  return r_variant;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -2961,7 +2961,9 @@ _matrix_spmv_set_func_d(cs_matrix_type_t             m_type,
 
 #if defined(HAVE_CUDA)
 
+#if !defined(HAVE_CUSPARSE_GENERIC_API)
 const char s_cuda[] = "cuda";
+#endif
 
 #if defined(HAVE_CUSPARSE)
 
@@ -3021,6 +3023,11 @@ const char default_name[] = "not_implemented";
 void
 cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
 {
+  char spmv_xy_hd[CS_MATRIX_SPMV_N_TYPES];
+
+  if (m->destroy_adaptor != NULL)
+    m->destroy_adaptor(m);
+
   for (cs_matrix_fill_type_t mft = 0; mft < CS_MATRIX_N_FILL_TYPES; mft++) {
     for (cs_matrix_spmv_type_t spmv_type = 0;
          spmv_type < CS_MATRIX_SPMV_N_TYPES;
@@ -3031,7 +3038,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
                               m->numbering,
                               NULL, /* func_name */
                               m->vector_multiply[mft],
-                              m->vector_multiply_xy_hd[mft]);
+                              spmv_xy_hd);
 #if defined(HAVE_ACCEL)
       _matrix_spmv_set_func_d(m->type,
                               mft,

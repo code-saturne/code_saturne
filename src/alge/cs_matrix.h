@@ -1030,6 +1030,19 @@ void
 cs_matrix_variant_apply(cs_matrix_t          *m,
                         cs_matrix_variant_t  *mv);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply variants defined by tuning to a given matrix
+ *
+ * \param[in, out]  m   pointer to matrix
+ * \param[in]       mv  pointer to matrix variant pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_variant_apply_tuned(cs_matrix_t          *m,
+                              cs_matrix_variant_t  *mv);
+
 /*----------------------------------------------------------------------------
  * Select the sparse matrix-vector product function to be used by a
  * matrix variant for a given fill type.

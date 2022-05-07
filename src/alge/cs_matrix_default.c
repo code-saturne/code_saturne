@@ -815,13 +815,14 @@ cs_matrix_default_set_tuned(cs_matrix_t  *m)
     _matrix_variant_tuned[m->type][m->fill_type]
       = cs_matrix_variant_tuned(_get_matrix(m->type),
                                 1,
-                                m->fill_type,
+                                _n_min_products,
                                 _t_measure);
 
   }
 
   if (_matrix_variant_tuned[m->type][m->fill_type] != NULL)
-    cs_matrix_variant_apply(m, _matrix_variant_tuned[m->type][m->fill_type]);
+    cs_matrix_variant_apply_tuned(m,
+                                  _matrix_variant_tuned[m->type][m->fill_type]);
 }
 
 /*----------------------------------------------------------------------------

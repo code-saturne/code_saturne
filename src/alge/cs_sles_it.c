@@ -4369,7 +4369,7 @@ cs_sles_it_solve(void                *context,
   if (local_solve) {
 
     const cs_real_t *_rhs = rhs;
-    cs_real_t       *_vx = vx;;
+    cs_real_t       *_vx = vx;
 
 #if defined(HAVE_ACCEL)
 
@@ -4414,6 +4414,8 @@ cs_sles_it_solve(void                *context,
                    aux_size, aux_vectors);
 
 #if defined(HAVE_ACCEL)
+
+    /* Free device copies if needed */
 
     if (c->on_device) {
       if (amode_vx == CS_ALLOC_HOST) {

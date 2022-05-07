@@ -251,7 +251,12 @@ cs_malloc_hd(cs_alloc_mode_t   mode,
  * the host pointer should be used with this function.
  *
  * If the allocation parameters are unchanged, no actual reallocation
- * occurs.
+ * occurs on the host.
+ *
+ * If the device uses a separate allocation, it is freed, and a new
+ * allocation is delayed (as per initial allocation) so as to invalidate copies
+ * which will not be up to date anymore after the associated values
+ * modification.
  *
  * \param [in]  ptr        pointer to previously allocated memory
  * \param [in]  mode       allocation mode
