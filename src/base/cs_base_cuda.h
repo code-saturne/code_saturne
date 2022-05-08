@@ -373,6 +373,32 @@ cs_cuda_copy_d2d(void        *dst,
 #endif
 
 /*=============================================================================
+ * Inline static function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute grid size for given array and block sizes.
+ *
+ * This assumes each thread on a given block handles a single array element.
+ * For kernels in which each thread handles multiple elements, a grid size
+ * divided by that multiple is sufficient.
+ *
+ * \param[in]  n           size of arrays
+ * \param[in]  block_size  block size for kernels
+ *
+ * \return  grid size for kernels
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline unsigned int
+cs_cuda_grid_size(cs_lnum_t     n,
+                  unsigned int  block_size)
+{
+  return (n % block_size) ?  n/block_size : n/block_size + 1;
+}
+
+/*=============================================================================
  * Public function prototypes
  *============================================================================*/
 

@@ -84,6 +84,63 @@ cs_blas_cuda_warp_reduce_sum(volatile T  *stmp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute dot product x.y, summing result over all threads of a block.
+ *
+ * blockSize must be a power of 2.
+ *
+ * This kernel uses explicit loop unrolling, which seems to offer equal or
+ * slightly better performance than the non-unrolled version on an Ampere
+ * architecure with CUDA 11.
+ *
+ * \param[in, out]  stmp       shared value to reduce
+ * \param[in, out]  tid        thread id
+ * \param[out]      sum_block  contribution of this block to the sum
+ */
+/*----------------------------------------------------------------------------*/
+
+template <size_t blockSize, typename T>
+__device__ static void __forceinline__
+cs_blas_cuda_block_reduce_sum(T       *stmp,
+                              size_t   tid,
+                              double  *sum_block)
+{
+  __syncthreads();
+
+  /* Loop explicitely unrolled */
+
+  if (blockSize >= 1024) {
+    if (tid < 512) {
+      stmp[tid] += stmp[tid + 512];
+    }
+    __syncthreads();
+  }
+  if (blockSize >=  512) {
+    if (tid < 256) {
+      stmp[tid] += stmp[tid + 256];
+    }
+    __syncthreads();
+  }
+  if (blockSize >=  256) {
+    if (tid < 128) {
+      stmp[tid] += stmp[tid + 128];
+    } __syncthreads();
+  }
+  if (blockSize >=  128) {
+    if (tid <  64) {
+      stmp[tid] += stmp[tid +  64];
+    } __syncthreads();
+  }
+
+  if (tid < 32)
+    cs_blas_cuda_warp_reduce_sum<blockSize>(stmp, tid);
+
+  // Output: b_res for this block
+
+  if (tid == 0) sum_block[blockIdx.x] = stmp[0];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Kernel for sum reduction within a block.
  *
  * \param[in, out]  n        number of values to reduce
@@ -138,6 +195,50 @@ BEGIN_C_DECLS
 
 void
 cs_blas_cuda_finalize(void);
+
+#if defined(__CUDACC__)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign CUDA stream for next CUDA-based blas operations.
+ *
+ * If a stream other than the default stream (0) is used, it will not be
+ * synchronized automatically after sparse matrix-vector products (so as to
+ * avoid the corresponding overhead), so the caller will need to manage
+ * stream syncronization manually.
+ *
+ * This function is callable only from CUDA code.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_blas_cuda_set_stream(cudaStream_t  stream);
+
+#endif /* defined(__CUDACC__) */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to reduction buffer needed for 2-stage reductions.
+ *
+ * This buffer is used internally by all cs_blas_cuda 2-stage operations,
+ * allocated and resized updon demand, and freed when calling
+ * cs_blas_cuda_finalize, so it is assumed no two operations (in different
+ * threads) use this simultaneously.
+ *
+ * Also check initialization of work arrays.
+ *
+ * \param[in]  n           size of arrays
+ * \param[in]  tuple_size  number of values per tuple simultaneously reduced
+ * \param[in]  grid_size   associated grid size
+ *
+ * \return  pointer to reduction bufffer.
+ */
+/*----------------------------------------------------------------------------*/
+
+double *
+cs_blas_cuda_get_2_stage_reduce_buffer(cs_lnum_t     n,
+                                       cs_lnum_t     tuple_size,
+                                       unsigned int  grid_size);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -206,6 +307,40 @@ cs_blas_cublas_dot(cs_lnum_t        n,
                    const cs_real_t  y[]);
 
 #endif  /* defined(HAVE_CUBLAS) */
+
+/*----------------------------------------------------------------------------
+ * Compute y <- alpha.x + y
+ *
+ * This function may be set to use either cuBLAS or a local kernel.
+ *
+ * parameters:
+ *   n      <-- number of elements
+ *   alpha  <-- constant value (on device)
+ *   x      <-- vector of elements (on device)
+ *   y      <-> vector of elements (on device)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_blas_cuda_axpy(cs_lnum_t         n,
+                  const cs_real_t  *alpha,
+                  const cs_real_t  *restrict x,
+                  cs_real_t        *restrict y);
+
+/*----------------------------------------------------------------------------
+ * Compute x <- alpha.x
+ *
+ * This function may be set to use either cuBLAS or a local kernel.
+ *
+ * parameters:
+ *   n      <-- number of elements
+ *   alpha  <-- constant value (on device)
+ *   x      <-> vector of elements (on device)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_blas_cuda_scal(cs_lnum_t         n,
+                  const cs_real_t  *alpha,
+                  cs_real_t        *restrict x);
 
 /*----------------------------------------------------------------------------*/
 

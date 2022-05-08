@@ -74,12 +74,15 @@ namespace cg = cooperative_groups;
  *  Global variables
  *============================================================================*/
 
+static cudaStream_t _stream = 0;
+
 static double  *_r_reduce = NULL;
 static double  *_r_grid = NULL;
 static unsigned int  _r_grid_size = 0;
 
 #if defined(HAVE_CUBLAS)
 
+static bool            _prefer_cublas = false;
 static cublasHandle_t  _handle = NULL;
 
 #endif
@@ -90,13 +93,10 @@ static cublasHandle_t  _handle = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute dot product x.y, summing result over all threads of a block.
+ * \brief Compute the absolute sum of vector values,
+ *        summing result over all threads of a block.
  *
  * blockSize must be a power of 2.
- *
- * This kernel uses explicit loop unrolling, which seems to offer equal or
- * slightly better performance than the non-unrolled version on an Ampere
- * architecure with CUDA 11.
  *
  * \param[in]   n      array size
  * \param[in]   x      x vector
@@ -106,9 +106,9 @@ static cublasHandle_t  _handle = NULL;
 
 template <size_t blockSize, typename T>
 __global__ static void
-_asum_stage_1_of_2_u(cs_lnum_t    n,
-                     const T     *x,
-                     double      *b_res)
+_asum_stage_1_of_2(cs_lnum_t    n,
+                   const T     *x,
+                   double      *b_res)
 {
   __shared__ double stmp[blockSize];
 
@@ -122,39 +122,9 @@ _asum_stage_1_of_2_u(cs_lnum_t    n,
     stmp[tid] += fabs(static_cast<double>(x[i]));
   }
 
-  __syncthreads();
-
-  /* Loop explicitely unrolled */
-
-  if (blockSize >= 1024) {
-    if (tid < 512) {
-      stmp[tid] += stmp[tid + 512];
-    }
-    __syncthreads();
-  }
-  if (blockSize >=  512) {
-    if (tid < 256) {
-      stmp[tid] += stmp[tid + 256];
-    }
-    __syncthreads();
-  }
-  if (blockSize >=  256) {
-    if (tid < 128) {
-      stmp[tid] += stmp[tid + 128];
-    } __syncthreads();
-  }
-  if (blockSize >=  128) {
-    if (tid <  64) {
-      stmp[tid] += stmp[tid +  64];
-    } __syncthreads();
-  }
-
-  if (tid < 32)
-    cs_blas_cuda_warp_reduce_sum<blockSize>(stmp, tid);
-
   // Output: b_res for this block
 
-  if (tid == 0) b_res[blockIdx.x] = stmp[0];
+  cs_blas_cuda_block_reduce_sum<blockSize>(stmp, tid, b_res);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -162,10 +132,6 @@ _asum_stage_1_of_2_u(cs_lnum_t    n,
  * \brief Compute dot product x.y, summing result over all threads of a block.
  *
  * blockSize must be a power of 2.
- *
- * This kernel uses explicit loop unrolling, which seems to offer equal or
- * slightly better performance than the non-unrolled version on an Ampere
- * architecure with CUDA 11.
  *
  * \param[in]   n      array size
  * \param[in]   x      x vector
@@ -176,10 +142,10 @@ _asum_stage_1_of_2_u(cs_lnum_t    n,
 
 template <size_t blockSize, typename T>
 __global__ static void
-_dot_xy_stage_1_of_2_u(cs_lnum_t    n,
-                       const T     *x,
-                       const T     *y,
-                       double      *b_res)
+_dot_xy_stage_1_of_2(cs_lnum_t    n,
+                     const T     *x,
+                     const T     *y,
+                     double      *b_res)
 {
   __shared__ double stmp[blockSize];
 
@@ -193,39 +159,84 @@ _dot_xy_stage_1_of_2_u(cs_lnum_t    n,
     stmp[tid] += static_cast<double>(x[i] * y[i]);
   }
 
-  __syncthreads();
-
-  /* Loop explicitely unrolled */
-
-  if (blockSize >= 1024) {
-    if (tid < 512) {
-      stmp[tid] += stmp[tid + 512];
-    }
-    __syncthreads();
-  }
-  if (blockSize >=  512) {
-    if (tid < 256) {
-      stmp[tid] += stmp[tid + 256];
-    }
-    __syncthreads();
-  }
-  if (blockSize >=  256) {
-    if (tid < 128) {
-      stmp[tid] += stmp[tid + 128];
-    } __syncthreads();
-  }
-  if (blockSize >=  128) {
-    if (tid <  64) {
-      stmp[tid] += stmp[tid +  64];
-    } __syncthreads();
-  }
-
-  if (tid < 32)
-    cs_blas_cuda_warp_reduce_sum<blockSize>(stmp, tid);
-
   // Output: b_res for this block
 
-  if (tid == 0) b_res[blockIdx.x] = stmp[0];
+  cs_blas_cuda_block_reduce_sum<blockSize>(stmp, tid, b_res);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute y <- alpha.x + y (device kernel)
+ *
+ * parameters:
+ *   n     <-- number of elements
+ *   alpha <-- constant value
+ *   x     <-- vector of elements
+ *   y     <-> vector of elements
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_axpy(cs_lnum_t         n,
+      const cs_real_t  *alpha,
+      const cs_real_t  *restrict x,
+      cs_real_t        *restrict y)
+ {
+   cs_real_t _alpha = *alpha;
+   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+   size_t grid_size = blockDim.x*gridDim.x;
+   while (ii < n){
+     y[ii] += _alpha * x[ii];
+     ii += grid_size;
+   }
+ }
+
+/*----------------------------------------------------------------------------
+ * Compute x <- alpha.x (device kernel)
+ *
+ * parameters:
+ *   n     <-- number of elements
+ *   alpha <-- constant value
+ *   x     <-> vector of elements
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_scal(cs_lnum_t         n,
+      const cs_real_t  *alpha,
+      cs_real_t        *restrict x)
+ {
+   cs_real_t _alpha = *alpha;
+   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+   size_t grid_size = blockDim.x*gridDim.x;
+   while (ii < n){
+     x[ii] *= _alpha;
+     ii += grid_size;
+   }
+ }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize cuBLAS and return a handle.
+ *
+ * \return  pointer to global cuBLAS handle
+ */
+/*----------------------------------------------------------------------------*/
+
+static cublasHandle_t
+_init_cublas(void)
+{
+  cublasStatus_t status = cublasCreate(&_handle);
+
+  if (status != CUBLAS_STATUS_SUCCESS)
+#if CUBLAS_VERSION >= 11600
+    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+              __func__, cublasGetStatusString(status));
+#else
+  bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
+            __func__, (int)status);
+#endif
+
+  return _handle;
 }
 
 /*============================================================================
@@ -249,7 +260,7 @@ unsigned int
 _grid_size(cs_lnum_t     n,
            unsigned int  block_size)
 {
-  unsigned int grid_size = (n % block_size) ?  n/block_size : n/block_size + 1;
+  unsigned int grid_size = cs_cuda_grid_size(n, block_size);
 
   if (_r_reduce == NULL) {
     // large enough for 3-way combined dot product.
@@ -298,6 +309,67 @@ cs_blas_cuda_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Assign CUDA stream for next CUDA-based blas operations.
+ *
+ * If a stream other than the default stream (0) is used, it will not be
+ * synchronized automatically after sparse matrix-vector products (so as to
+ * avoid the corresponding overhead), so the caller will need to manage
+ * stream syncronization manually.
+ *
+ * This function is callable only from CUDA code.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_blas_cuda_set_stream(cudaStream_t  stream)
+{
+  _stream = stream;
+
+#if defined(HAVE_CUBLAS)
+
+  if (_handle != NULL) {
+    cublasSetStream(_handle, stream);
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return pointer to reduction buffer needed for 2-stage reductions.
+ *
+ * This buffer is used internally by all cs_blas_cuda 2-stage operations,
+ * allocated and resized updon demand, and freed when calling
+ * cs_blas_cuda_finalize, so it is assumed no two operations (in different
+ * threads) use this simultaneously.
+ *
+ * Also check initialization of work arrays.
+ *
+ * \param[in]  n           size of arrays
+ * \param[in]  tuple_size  number of values per tuple simultaneously reduced
+ * \param[in]  grid_size   associated grid size
+ *
+ * \return  pointer to reduction bufffer.
+ */
+/*----------------------------------------------------------------------------*/
+
+double *
+cs_blas_cuda_get_2_stage_reduce_buffer(cs_lnum_t     n,
+                                       cs_lnum_t     tuple_size,
+                                       unsigned int  grid_size)
+{
+  unsigned int t_grid_size = grid_size * tuple_size;
+
+  if (_r_grid_size < t_grid_size) {
+    CS_REALLOC_HD(_r_grid, t_grid_size, double, CS_ALLOC_DEVICE);
+    _r_grid_size = t_grid_size;
+  }
+
+  return _r_grid;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return the absolute sum of vector values using CUDA.
  *
  * \param[in]  n  size of array x
@@ -314,12 +386,13 @@ cs_blas_cuda_asum(cs_lnum_t        n,
   const unsigned int block_size = 256;
   unsigned int grid_size = _grid_size(n, block_size);
 
-  _asum_stage_1_of_2_u<block_size><<<grid_size, block_size, 0>>>
+  _asum_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
     (n, x, _r_grid);
-  cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+  cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0, _stream>>>
     (grid_size, _r_grid, _r_reduce);
 
-  cudaStreamSynchronize(0);
+  if (_stream == 0)
+    cudaStreamSynchronize(0);
 
   return _r_reduce[0];
 }
@@ -344,12 +417,13 @@ cs_blas_cuda_dot(cs_lnum_t        n,
   const unsigned int block_size = 256;
   unsigned int grid_size = _grid_size(n, block_size);
 
-  _dot_xy_stage_1_of_2_u<block_size><<<grid_size, block_size, 0>>>
+  _dot_xy_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
     (n, x, y, _r_grid);
-  cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+  cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0, _stream>>>
     (grid_size, _r_grid, _r_reduce);
 
-  cudaStreamSynchronize(0);
+  if (_stream == 0)
+    cudaStreamSynchronize(0);
 
   return _r_reduce[0];
 }
@@ -375,27 +449,18 @@ cs_blas_cublas_asum(cs_lnum_t        n,
 
   cublasStatus_t status = CUBLAS_STATUS_SUCCESS;
 
-  if (_handle == NULL) {
-    status = cublasCreate(&_handle);
-    if (status != CUBLAS_STATUS_SUCCESS)
-#if CUBLAS_VERSION >= 11600
-      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-                __func__, cublasGetStatusString(status));
-#else
-      bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
-                __func__, (int)status);
-#endif
-  }
+  if (_handle == NULL)
+    _handle = _init_cublas();
 
   if (sizeof(cs_real_t) == 8)
-    cublasDasum(_handle, n, (double *)x, 1, &dot);
+    status = cublasDasum(_handle, n, (double *)x, 1, &dot);
   else if (sizeof(cs_real_t) == 4) {
     float fdot;
-    cublasSasum(_handle, n, (float *)x, 1, &fdot);
+    status = cublasSasum(_handle, n, (float *)x, 1, &fdot);
     dot = fdot;
   }
 
-  if (status != CUBLAS_STATUS_SUCCESS)
+  if (status != CUBLAS_STATUS_SUCCESS) {
 #if CUBLAS_VERSION >= 11600
     bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
               __func__, cublasGetStatusString(status));
@@ -403,6 +468,7 @@ cs_blas_cublas_asum(cs_lnum_t        n,
     bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
               __func__, (int)status);
 #endif
+  }
 
   return dot;
 }
@@ -428,17 +494,8 @@ cs_blas_cublas_dot(cs_lnum_t        n,
 
   cublasStatus_t status = CUBLAS_STATUS_SUCCESS;
 
-  if (_handle == NULL) {
-    status = cublasCreate(&_handle);
-    if (status != CUBLAS_STATUS_SUCCESS)
-#if CUBLAS_VERSION >= 11600
-      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-                __func__, cublasGetStatusString(status));
-#else
-      bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
-                __func__, (int)status);
-#endif
-  }
+  if (_handle == NULL)
+    _handle = _init_cublas();
 
   if (sizeof(cs_real_t) == 8)
     cublasDdot(_handle, n, (double *)x, 1, (double *)y, 1, &dot);
@@ -448,7 +505,7 @@ cs_blas_cublas_dot(cs_lnum_t        n,
     dot = fdot;
   }
 
-  if (status != CUBLAS_STATUS_SUCCESS)
+  if (status != CUBLAS_STATUS_SUCCESS) {
 #if CUBLAS_VERSION >= 11600
     bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
               __func__, cublasGetStatusString(status));
@@ -456,11 +513,130 @@ cs_blas_cublas_dot(cs_lnum_t        n,
     bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
               __func__, (int)status);
 #endif
+  }
 
   return dot;
 }
 
 #endif // defined(HAVE_CUBLAS)
+
+/*----------------------------------------------------------------------------
+ * Compute y <- alpha.x + y
+ *
+ * This function may be set to use either cuBLAS or a local kernel.
+ *
+ * parameters:
+ *   n      <-- number of elements
+ *   alpha  <-- constant value (on device)
+ *   x      <-- vector of elements (on device)
+ *   y      <-> vector of elements (on device)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_blas_cuda_axpy(cs_lnum_t         n,
+                  const cs_real_t  *alpha,
+                  const cs_real_t  *restrict x,
+                  cs_real_t        *restrict y)
+{
+#if defined(HAVE_CUBLAS)
+
+  if (_prefer_cublas && _handle != NULL) {
+    _handle = _init_cublas();
+
+    cublasStatus_t status = CUBLAS_STATUS_SUCCESS;
+
+    if (sizeof(cs_real_t) == 8)
+      status = cublasDaxpy(_handle, n,
+                           (double *)alpha,
+                           (double *)x, 1,
+                           (double *)y, 1);
+    else if (sizeof(cs_real_t) == 4)
+      status = cublasSaxpy(_handle, n,
+                           (float *)alpha,
+                           (float *)x, 1,
+                           (float *)y, 1);
+
+    if (status != CUBLAS_STATUS_SUCCESS) {
+#if CUBLAS_VERSION >= 11600
+      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+                __func__, cublasGetStatusString(status));
+#else
+      bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
+                __func__, (int)status);
+#endif
+    }
+
+    return;
+  }
+
+#endif /* defined(HAVE_CUBLAS) */
+
+  /* If not using cuBLAS for this operation */
+
+  const unsigned int blocksize = 256;  // try 640 also
+
+  unsigned int gridsize = cs_cuda_grid_size(n, blocksize);
+  // gridsize = min(gridsize, 640;
+
+  _axpy<<<gridsize, blocksize, 0, _stream>>>(n, alpha, x, y);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute x <- alpha.x
+ *
+ * This function may be set to use either cuBLAS or a local kernel.
+ *
+ * parameters:
+ *   n      <-- number of elements
+ *   alpha  <-- constant value (on device)
+ *   x      <-> vector of elements (on device)
+ *----------------------------------------------------------------------------*/
+
+void
+cs_blas_cuda_scal(cs_lnum_t         n,
+                  const cs_real_t  *alpha,
+                  cs_real_t        *restrict x)
+{
+#if defined(HAVE_CUBLAS)
+
+  if (_prefer_cublas && _handle != NULL) {
+    _handle = _init_cublas();
+
+    cublasStatus_t status = CUBLAS_STATUS_SUCCESS;
+
+    if (sizeof(cs_real_t) == 8)
+      status = cublasDscal(_handle, n,
+                           (double *)alpha,
+                           (double *)x, 1);
+    else if (sizeof(cs_real_t) == 4)
+      status = cublasSscal(_handle, n,
+                           (float *)alpha,
+                           (float *)x, 1);
+
+    if (status != CUBLAS_STATUS_SUCCESS) {
+#if CUBLAS_VERSION >= 11600
+      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+                __func__, cublasGetStatusString(status));
+#else
+      bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
+                __func__, (int)status);
+#endif
+    }
+
+    return;
+  }
+
+#endif /* defined(HAVE_CUBLAS) */
+
+  /* If not using cuBLAS for this operation */
+
+  const unsigned int blocksize = 256;  // try 640 also
+
+  unsigned int gridsize = cs_cuda_grid_size(n, blocksize);
+  // gridsize = min(gridsize, 640;
+
+  _scal<<<gridsize, blocksize, 0, _stream>>>(n, alpha, x);
+}
 
 /*----------------------------------------------------------------------------*/
 

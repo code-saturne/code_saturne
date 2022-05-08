@@ -2547,15 +2547,14 @@ _gcr(cs_sles_it_t              *c,
      size_t                     aux_size,
      void                      *aux_vectors)
 {
-  cs_sles_convergence_state_t cvg;
-  double  residue;
-  cs_real_t *_aux_vectors, *alpha;
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
+
+  cs_real_t *_aux_vectors = NULL, *alpha = NULL;
   cs_real_t *restrict rk, *restrict zk, *restrict ck;
   cs_real_t *restrict gkj, *restrict gkj_inv;
 
   /* In case of the standard GCR, n_k_per_restart --> Inf,
    * or stops until convergence*/
-  unsigned n_iter = 0;
   const unsigned n_k_per_restart = c->restart_interval;
 
   size_t wa_size;
@@ -2592,12 +2591,10 @@ _gcr(cs_sles_it_t              *c,
   BFT_MALLOC(gkj, (n_k_per_restart + 1) * n_k_per_restart / 2, cs_real_t);
   BFT_MALLOC(gkj_inv, (n_k_per_restart + 1) * n_k_per_restart / 2, cs_real_t);
 
-  cvg = CS_SLES_ITERATING;
-
   /* Current Restart */
   while (cvg == CS_SLES_ITERATING) {
 
-    n_iter = 0;
+    unsigned n_c_iter = 0;
 
     /* Initialize iterative calculation */
     /*----------------------------------*/
@@ -2608,7 +2605,7 @@ _gcr(cs_sles_it_t              *c,
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       rk[ii] -= rhs[ii];
 
-    residue = sqrt(_dot_product_xx(c, rk));
+    double residue = sqrt(_dot_product_xx(c, rk));
 
     if (n_restart == 0)
       c->setup_data->initial_residue = residue;
@@ -2616,27 +2613,28 @@ _gcr(cs_sles_it_t              *c,
     /* Current Iteration on k */
     /* ---------------------- */
 
-    while (cvg == CS_SLES_ITERATING && n_iter < n_k_per_restart) {
+    while (cvg == CS_SLES_ITERATING && n_c_iter < n_k_per_restart) {
 
       /* Preconditionning */
 
-      cs_real_t *zk_n = zk + n_iter * wa_size;
-      cs_real_t *ck_n = ck + n_iter * wa_size;
+      cs_real_t *zk_n = zk + n_c_iter * wa_size;
+      cs_real_t *ck_n = ck + n_c_iter * wa_size;
 
       c->setup_data->pc_apply(c->setup_data->pc_context, rk, zk_n);
 
       cs_matrix_vector_multiply(a, zk_n, ck_n);
 
-      for(cs_lnum_t jj = 0; jj < (int)n_iter; jj++) {
+      for (cs_lnum_t jj = 0; jj < (int)n_c_iter; jj++) {
         cs_real_t *ck_j = ck + jj * wa_size;
 
-        gkj[(n_iter + 1) * n_iter / 2 + jj] = _dot_product(c, ck_j, ck_n);
+        cs_lnum_t ii_jn = (n_c_iter + 1) * n_c_iter / 2 + jj;
+        gkj[ii_jn] = _dot_product(c, ck_j, ck_n);
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-          ck_n[ii] += - gkj[(n_iter + 1) * n_iter / 2 + jj] * ck_j[ii];
+          ck_n[ii] += - gkj[ii_jn] * ck_j[ii];
       }
 
-      const int  iter_shift = (n_iter+1) * n_iter / 2 + n_iter;
+      const int  iter_shift = (n_c_iter+1) * n_c_iter / 2 + n_c_iter;
       gkj[iter_shift] = sqrt(_dot_product(c, ck_n, ck_n));
 
       if (fabs(gkj[iter_shift]) > 0) {
@@ -2645,25 +2643,25 @@ _gcr(cs_sles_it_t              *c,
         for (cs_lnum_t ii = 0; ii < n_rows; ii++)
           ck_n[ii] /= gkj[iter_shift];
 
-        alpha[n_iter] = _dot_product(c, ck_n, rk);
+        alpha[n_c_iter] = _dot_product(c, ck_n, rk);
 
       }
       else
-        alpha[n_iter] = 0.;
+        alpha[n_c_iter] = 0.;
 
 #     pragma omp parallel for if(n_rows > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += - alpha[n_iter] * ck_n[ii];
+        rk[ii] += - alpha[n_c_iter] * ck_n[ii];
 
       /* Compute residue */
 
       residue = sqrt(_dot_product_xx(c, rk));
 
-      n_iter += 1;
+      n_c_iter += 1;
 
       /* Convergence test of current iteration */
 
-      cvg = _convergence_test(c, (n_restart * n_k_per_restart) + n_iter,
+      cvg = _convergence_test(c, (n_restart * n_k_per_restart) + n_c_iter,
                               residue, convergence);
 
       if (cvg != CS_SLES_ITERATING)
@@ -2673,7 +2671,7 @@ _gcr(cs_sles_it_t              *c,
 
     /* Inversion of Gamma */
 
-    if (n_iter == 1 && !(fabs(alpha[0]) > 0))
+    if (n_c_iter == 1 && !(fabs(alpha[0]) > 0))
       gkj_inv[0] = 1.0;
 
     else {
@@ -2682,7 +2680,7 @@ _gcr(cs_sles_it_t              *c,
       for (cs_lnum_t jj = 0; jj < n_g_inv; jj++)
         gkj_inv[jj] = 0.0;
 
-      for (cs_lnum_t kk = 0; kk < (int)n_iter; kk++) {
+      for (cs_lnum_t kk = 0; kk < (int)n_c_iter; kk++) {
         for(cs_lnum_t ii = 0; ii < kk; ii++) {
           for (cs_lnum_t jj = 0; jj < kk; jj++)
             gkj_inv[(kk + 1) * kk / 2 + ii]
@@ -2696,7 +2694,7 @@ _gcr(cs_sles_it_t              *c,
         gkj_inv[(kk + 1) * kk / 2 + kk] = 1.0 / gkj[(kk + 1) * kk / 2 + kk];
       }
 
-    } /* n_iter > 1 */
+    } /* n_c_iter > 1 */
 
     /* Compute the solution */
 
@@ -2705,7 +2703,7 @@ _gcr(cs_sles_it_t              *c,
       cs_lnum_t s_id, e_id;
       cs_parall_thread_range(n_rows, sizeof(cs_real_t), &s_id, &e_id);
 
-      for(cs_lnum_t kk = 0; kk < (int)n_iter; kk++) {
+      for(cs_lnum_t kk = 0; kk < (int)n_c_iter; kk++) {
         for(cs_lnum_t jj = 0; jj <= kk; jj++) {
           const cs_real_t *zk_j = zk + jj*wa_size;
           for (cs_lnum_t ii = s_id; ii < e_id; ii++)

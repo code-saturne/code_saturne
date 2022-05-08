@@ -75,28 +75,6 @@ static double _pi = 3.14159265358979323846;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Kernel for sum reduction within a warp (for warp size 32).
- *
- * \param[in, out]  stmp  shared value to reduce
- * \param[in, out]  tid   thread id
- */
-/*----------------------------------------------------------------------------*/
-
-template <size_t blockSize, typename T>
-__device__ static void __forceinline__
-_warp_reduce_sum(volatile T  *stmp,
-                 size_t       tid)
-{
-  if (blockSize >= 64) stmp[tid] += stmp[tid + 32];
-  if (blockSize >= 32) stmp[tid] += stmp[tid + 16];
-  if (blockSize >= 16) stmp[tid] += stmp[tid +  8];
-  if (blockSize >=  8) stmp[tid] += stmp[tid +  4];
-  if (blockSize >=  4) stmp[tid] += stmp[tid +  2];
-  if (blockSize >=  2) stmp[tid] += stmp[tid +  1];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Kernel for sum reduction within a block.
  *
  * \param[in, out]  n        number of values to reduce
@@ -129,7 +107,7 @@ _reduce_single_block(size_t   n,
     __syncthreads();
   }
 
-  if (tid < 32) _warp_reduce_sum<blockSize>(sdata, tid);
+  if (tid < 32) cs_blas_cuda_warp_reduce_sum<blockSize>(sdata, tid);
   if (tid == 0) *g_odata = sdata[0];
 }
 
@@ -178,7 +156,7 @@ _dot_xy_stage_1_of_2(cs_lnum_t    n,
   }
 
   if (tid < 32)
-    _warp_reduce_sum<blockSize>(stmp, tid);
+    cs_blas_cuda_warp_reduce_sum<blockSize>(stmp, tid);
 
   // Output: b_res for this block
 
