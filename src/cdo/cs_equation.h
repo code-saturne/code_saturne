@@ -1063,10 +1063,10 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
-                                       cs_flag_t              location,
-                                       cs_real_t              t_eval,
-                                       cs_real_t             *diff_flux);
+cs_equation_compute_diffusive_flux(const cs_equation_t   *eq,
+                                   cs_flag_t              location,
+                                   cs_real_t              t_eval,
+                                   cs_real_t             *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!

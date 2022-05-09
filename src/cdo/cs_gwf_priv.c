@@ -357,10 +357,10 @@ cs_gwf_darcy_flux_update(const cs_real_t              t_eval,
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid definition of the advection field", __func__);
 
-      cs_equation_compute_diff_flux_cellwise(eq,
-                                             darcy->flux_location,
-                                             t_eval,
-                                             darcy->flux_val);
+      cs_equation_compute_diffusive_flux(eq,
+                                         darcy->flux_location,
+                                         t_eval,
+                                         darcy->flux_val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_PRIV_DBG > 2
       cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
@@ -374,10 +374,10 @@ cs_gwf_darcy_flux_update(const cs_real_t              t_eval,
 
     }
     else if (cs_flag_test(darcy->flux_location, cs_flag_primal_cell))
-      cs_equation_compute_diff_flux_cellwise(eq,
-                                             darcy->flux_location,
-                                             t_eval,
-                                             vel->val);
+      cs_equation_compute_diffusive_flux(eq,
+                                         darcy->flux_location,
+                                         t_eval,
+                                         vel->val);
 
     /* Update the Darcy flux at the boundary */
 
