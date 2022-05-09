@@ -77,7 +77,6 @@
 #include <MEDCoupling_version.h>
 
 #include <MEDFileMesh.hxx>
-#include <MEDCouplingUMesh.hxx>
 
 #include <MEDLoader.hxx>
 

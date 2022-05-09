@@ -72,10 +72,10 @@
 #if defined(HAVE_MEDCOUPLING)
 #include <MEDCoupling_version.h>
 
-#include <MEDCouplingUMesh.hxx>
-#include <MEDCouplingField.hxx>
-#include <MEDCouplingFieldDouble.hxx>
-#include "MEDCouplingRemapper.hxx"
+// Medloader
+#if defined(HAVE_MEDCOUPLING_LOADER)
+#include <MEDFileMesh.hxx>
+#endif
 
 using namespace MEDCoupling;
 
