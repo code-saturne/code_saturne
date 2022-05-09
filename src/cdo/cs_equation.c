@@ -3313,6 +3313,18 @@ cs_equation_compute_diffusive_flux(const cs_equation_t   *eq,
       bft_error(__FILE__, __LINE__, 0, lmsg, __func__, eqp->name);
     break;
 
+  case CS_SPACE_SCHEME_CDOFB:
+    if (cs_flag_test(location, cs_flag_primal_face))
+      cs_cdofb_scaleq_diff_flux_faces(fld->val,
+                                      eqp,
+                                      t_eval,
+                                      eq->builder,
+                                      eq->scheme_context,
+                                      diff_flux);
+    else
+      bft_error(__FILE__, __LINE__, 0, lmsg, __func__, eqp->name);
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0, fmsg, __func__, eqp->name);
 

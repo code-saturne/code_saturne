@@ -617,6 +617,31 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the diffusive flux across primal faces for a given cell.
+ *          Use the same consistent approximation as in the discrete Hodge op.
+ *          for this computation.
+ *          This function is dedicated to scalar-valued face-based schemes.
+ *                       Flux = -Consistent(Hdg) * GRAD(pot)
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_diffusion_cw_flux_t
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot     values of the potential fields at specific locations
+ * \param[in]      hodge   pointer to a \ref cs_hodge_t structure
+ * \param[in, out] cb      auxiliary structure for computing the flux
+ * \param[in, out] flx     values of the flux across primal faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_sfb_get_face_flux(const cs_cell_mesh_t      *cm,
+                                   const double              *pot,
+                                   const cs_hodge_t          *hodge,
+                                   cs_cell_builder_t         *cb,
+                                   double                    *flx);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the diffusive flux across dual faces for a given cell.
  *          Use the same consistent approximation as in the discrete Hodge op.
  *          for this computation.

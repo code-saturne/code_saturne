@@ -3007,6 +3007,47 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Compute the diffusive flux across primal faces for a given cell.
+ *          Use the same consistent approximation as in the discrete Hodge op.
+ *          for this computation.
+ *          This function is dedicated to scalar-valued face-based schemes.
+ *                       Flux = -Consistent(Hdg) * GRAD(pot)
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_diffusion_cw_flux_t
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot     values of the potential fields at specific locations
+ * \param[in]      hodge   pointer to a \ref cs_hodge_t structure
+ * \param[in, out] cb      auxiliary structure for computing the flux
+ * \param[in, out] flx     values of the flux across primal faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_sfb_get_face_flux(const cs_cell_mesh_t      *cm,
+                                   const double              *pot,
+                                   const cs_hodge_t          *hodge,
+                                   cs_cell_builder_t         *cb,
+                                   double                    *flx)
+{
+  if (flx == NULL)
+    return;
+
+  /* Cellwise DoFs related to the discrete gradient (size: n_fc)
+   * flux(f,c) = - Hodge * gradient */
+
+  double  *grd_f = cb->values;
+  for (int f = 0; f < cm->n_fc; f++)
+    grd_f[f] = cm->f_sgn[f]*(pot[cm->n_fc] - pot[f]);
+
+  /* Store the local fluxes. flux = -Hdg * gradient (grd_f = -gradient)
+   * hodge->matrix has been computed just before the call to this function */
+
+  cs_sdm_square_matvec(hodge->matrix, grd_f, flx);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the diffusive flux across dual faces for a given cell.
  *          Use the same consistent approximation as in the discrete Hodge op.
  *          for this computation.

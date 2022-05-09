@@ -2656,6 +2656,136 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Cellwise computation of the diffusive flux accross primal faces.
+ *         Interior faces first and then boundary faces.
+ *         Values at faces are recovered thanks to the equation builder
+ *         Case of scalar-valued CDO-Fb schemes
+ *
+ * \param[in]       c_values    values for the potential at cells
+ * \param[in]       eqp         pointer to a cs_equation_param_t structure
+ * \param[in]       t_eval      time at which one performs the evaluation
+ * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context     pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out]  diff_flux   value of the diffusive flux at primal faces
+  */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *c_values,
+                                const cs_equation_param_t   *eqp,
+                                cs_real_t                    t_eval,
+                                cs_equation_builder_t       *eqb,
+                                void                        *context,
+                                cs_real_t                   *diff_flux)
+{
+  if (diff_flux == NULL)
+    return;
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  /* If no diffusion, return after resetting */
+
+  if (cs_equation_param_has_diffusion(eqp) == false) {
+    memset(diff_flux, 0, quant->n_faces*sizeof(cs_real_t));
+    return;
+  }
+
+  cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
+
+  assert(eqp != NULL && eqb != NULL && eqc!= NULL);
+  assert(eqc->diffusion_hodge != NULL);
+
+  cs_timer_t  t0 = cs_timer_time();
+
+  cs_hodge_compute_t  *get_diffusion_hodge =
+    cs_hodge_get_func(__func__, eqp->diffusion_hodgep);
+
+  const cs_real_t  *f_values = eqc->face_values;
+
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
+  shared(t_eval, quant, connect, eqp, eqb, diff_flux, c_values,         \
+         f_values, get_diffusion_hodge, cs_cdofb_cell_bld)
+  {
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    /* Each thread get back its related structures:
+       Get the cellwise view of the mesh and the algebraic system */
+
+    cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_hodge_t  *diff_hodge = eqc->diffusion_hodge[t_id];
+    cs_eflag_t  msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ |
+      CS_FLAG_COMP_DEQ;
+    cs_cdo_diffusion_cw_flux_t  *compute_flux =
+      cs_cdo_diffusion_sfb_get_face_flux;
+
+    /* Set inside the OMP section so that each thread has its own value */
+
+    double  *pot = cs_cdo_local_get_d_buffer(t_id);
+    double  *flx = pot + cm->n_fc + 1;
+
+    /* Set times at which one evaluates quantities if needed */
+
+    cb->t_pty_eval = cb->t_bc_eval = cb->t_st_eval = t_eval;
+
+    if (eqb->diff_pty_uniform)  /* c_id = 0, cell_flag = 0 */
+      cs_hodge_set_property_value(0, cb->t_pty_eval, 0, diff_hodge);
+
+    /* Define the flux by cellwise contributions */
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      /* Set the local mesh structure for the current cell */
+
+      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
+      if (cs_dbg_cw_test(eqp, cm, NULL)) cs_cell_mesh_dump(cm);
+#endif
+
+      if (!eqb->diff_pty_uniform)
+        cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, 0, diff_hodge);
+
+      /* Define a local buffer keeping the value of the discrete potential
+         for the current cell */
+
+      for (short int f = 0; f < cm->n_fc; f++)
+        pot[f] = f_values[cm->f_ids[f]];
+      pot[cm->n_fc] = c_values[cm->c_id];
+
+      /* Compute the local Hodge operator */
+
+      get_diffusion_hodge(cm, diff_hodge, cb);
+
+      /* Compute and store the flux */
+
+      compute_flux(cm, pot, diff_hodge, cb, flx);
+
+      /* Store the fluxes (the flux for the face f seen from the cell c_id is
+       * equal to minus the flux from the same face but from the adjacent cell.
+       * So, one only keeps the flux whose the face normal is aligned with the
+       * arbitrary direction chosen for this face */
+
+      for (short int f = 0; f < cm->n_fc; f++)
+        if (cm->f_sgn[f] > 0)
+          diff_flux[cm->f_ids[f]] = flx[f];
+
+    } /* Loop on cells */
+
+  } /* OMP Section */
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute an approximation of the the diffusive flux across each
  *         boundary face.
  *         Case of scalar-valued CDO-Fb schemes
