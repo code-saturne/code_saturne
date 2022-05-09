@@ -5210,10 +5210,10 @@ cs_grid_free_quantities(cs_grid_t  *g)
     BFT_FREE(g->_face_cell);
     g->face_cell = NULL;
     BFT_FREE(g->_xa);
-    g->_xa = NULL;
-    if (cs_matrix_get_type(g->matrix) != CS_MATRIX_MSR) {
+    g->xa = NULL;
+    if (cs_matrix_get_type(g->matrix) == CS_MATRIX_CSR) {
       BFT_FREE(g->_da);
-      g->xa = NULL;
+      g->da = NULL;
     }
   }
 
