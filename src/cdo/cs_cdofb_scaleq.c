@@ -2656,7 +2656,8 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the diffusive flux across each boundary face.
+ * \brief  Compute an approximation of the the diffusive flux across each
+ *         boundary face.
  *         Case of scalar-valued CDO-Fb schemes
  *
  * \param[in]       t_eval    time at which one performs the evaluation

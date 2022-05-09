@@ -1038,7 +1038,7 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
  * \param[in]      direction   vector indicating in which direction flux is > 0
  * \param[in, out] diff_flux   value of the diffusive part of the flux
  * \param[in, out] conv_flux   value of the convective part of the flux
-  */
+ */
 /*----------------------------------------------------------------------------*/
 
 void
@@ -1050,14 +1050,16 @@ cs_equation_compute_flux_across_plane(const cs_equation_t   *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Cellwise computation of the diffusive flux across all cell faces.
- *         Primal or dual faces are considered according to the space scheme.
+ * \brief Cellwise computation of the diffusive flux across the requested
+ *        location. If the location is not the "natural" one (which depends on
+ *        the space discretization scheme) then the diffusive flux is only an
+ *        approximation.
  *
  * \param[in]      eq          pointer to a cs_equation_t structure
  * \param[in]      location    indicate where the flux has to be computed
  * \param[in]      t_eval      time at which one performs the evaluation
- * \param[in, out] diff_flux   value of the diffusive flux
-  */
+ * \param[in, out] diff_flux   value of the diffusive flux (must be allocated)
+ */
 /*----------------------------------------------------------------------------*/
 
 void
@@ -1072,7 +1074,7 @@ cs_equation_compute_diff_flux_cellwise(const cs_equation_t   *eq,
  *
  * \param[in]      eq          pointer to a cs_equation_t structure
  * \param[in, out] v_gradient  gradient at vertices
-  */
+ */
 /*----------------------------------------------------------------------------*/
 
 void

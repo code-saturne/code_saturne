@@ -510,8 +510,8 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
  * \param[in]       t_eval      time at which one performs the evaluation
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
  * \param[in, out]  context     pointer to cs_cdovb_scaleq_t structure
- * \param[in, out]  diff_flux   value of the diffusive flux
-  */
+ * \param[in, out]  diff_flux   values of the diffusive flux
+ */
 /*----------------------------------------------------------------------------*/
 
 void
