@@ -5038,7 +5038,7 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   g->level = 0;
   g->conv_diff = false;
   g->symmetric = cs_matrix_is_symmetric(a);
-  g->use_faces = (face_cell != NULL) ? true : false;
+  g->use_faces = false;
 
   if (db_size != NULL) {
     for (ii = 0; ii < 4; ii++)
@@ -5071,8 +5071,10 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   }
 #endif
 
-  if (cs_matrix_is_mapped_from_native(a))
+  if (cs_matrix_is_mapped_from_native(a)) {
     g->face_cell = face_cell;
+    g->use_faces = true;
+  }
 
   g->relaxation = 0;
 
