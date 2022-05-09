@@ -4711,6 +4711,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   /* If no diffusion, return after resetting */
+
   if (cs_equation_param_has_diffusion(eqp) == false) {
     memset(diff_flux, 0, connect->c2e->idx[quant->n_cells]*sizeof(cs_real_t));
     return;
@@ -4718,7 +4719,6 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 
   cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
 
-  /* Sanity checks */
   assert(eqp != NULL && eqb != NULL && eqc!= NULL);
   assert(eqc->diffusion_hodge != NULL);
 

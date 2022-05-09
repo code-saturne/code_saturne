@@ -71,6 +71,7 @@ BEGIN_C_DECLS
 #define CS_CDO_LOCAL_DBG       0
 
 /* Redefined names of function from cs_math to get shorter names */
+
 #define _dp3 cs_math_3_dot_product
 
 /*============================================================================
@@ -81,10 +82,12 @@ BEGIN_C_DECLS
  * buffers are also used for computing quantities related to a cs_cell_mesh_t
  * (there are as many buffers as threads since a call to these buffers can be
  * inside an OpenMP directive */
+
 int                     cs_cdo_local_d_buffer_size = 0;
 double                **cs_cdo_local_d_buffer = NULL;
 
 /* Pointer of pointers to global structures */
+
 cs_cell_mesh_t        **cs_cdo_local_cell_meshes = NULL;
 cs_face_mesh_t        **cs_cdo_local_face_meshes = NULL;
 cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light = NULL;
@@ -99,6 +102,7 @@ static int  cs_cdo_local_n_structures = 0;
 /* Auxiliary buffers for computing quantities related to a cs_cell_mesh_t
    (there are as many buffers as threads since a call to these buffers can be
    inside an OpenMP directive */
+
 static short int     **cs_cdo_local_kbuf = NULL;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -125,7 +129,6 @@ static short int     **cs_cdo_local_kbuf = NULL;
 void
 cs_cdo_local_initialize(const cs_cdo_connect_t     *connect)
 {
-  /* Sanity check */
   assert(cs_glob_n_threads > 0);
 
   int  nthr = cs_glob_n_threads;
