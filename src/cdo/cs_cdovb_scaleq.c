@@ -233,14 +233,14 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
 
     /* Set the bc (specific part) */
 
-    cs_equation_vb_set_cell_bc(cm,
-                               eqp,
-                               eqb->face_bc,
-                               vtx_bc_flag,
-                               eqb->dir_values,
-                               cb->t_bc_eval,
-                               csys,
-                               cb);
+    cs_equation_bc_set_cw_vb(cm,
+                             eqp,
+                             eqb->face_bc,
+                             vtx_bc_flag,
+                             eqb->dir_values,
+                             cb->t_bc_eval,
+                             csys,
+                             cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
     cs_dbg_check_hmg_dirichlet_cw(__func__, csys);
@@ -1461,7 +1461,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* ------------------- */
 
   BFT_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
-  cs_equation_set_vertex_bc_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
+  cs_equation_bc_set_vertex_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
 
   eqc->enforce_sliding = NULL;  /* Only useful for vector-valued eq. */
   eqc->enforce_robin_bc = NULL;

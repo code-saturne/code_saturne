@@ -327,14 +327,14 @@ _svcb_init_cell_system(const cs_cell_mesh_t           *cm,
 
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
-    cs_equation_vb_set_cell_bc(cm,
-                               eqp,
-                               eqb->face_bc,
-                               vtx_bc_flag,
-                               eqb->dir_values,
-                               cb->t_bc_eval,
-                               csys,
-                               cb);
+    cs_equation_bc_set_cw_vb(cm,
+                             eqp,
+                             eqb->face_bc,
+                             vtx_bc_flag,
+                             eqb->dir_values,
+                             cb->t_bc_eval,
+                             csys,
+                             cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
     cs_dbg_check_hmg_dirichlet_cw(__func__, csys);
@@ -1072,7 +1072,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Dirichlet boundary condition enforcement */
 
   BFT_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
-  cs_equation_set_vertex_bc_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
+  cs_equation_bc_set_vertex_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
 
   /* Boundary conditions (no other choice for Robin boundary conditions */
 

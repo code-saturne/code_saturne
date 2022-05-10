@@ -174,12 +174,12 @@ _eb_init_cell_system(const cs_cell_mesh_t                *cm,
      has at least one border face */
 
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)
-    cs_equation_eb_set_cell_bc(cm,
-                               eqp,
-                               eqb->face_bc,
-                               eqb->dir_values, /* circulation on edges */
-                               csys,
-                               cb);
+    cs_equation_bc_set_cw_eb(cm,
+                             eqp,
+                             eqb->face_bc,
+                             eqb->dir_values, /* circulation on edges */
+                             csys,
+                             cb);
 
   /* Special case to handle if enforcement by penalization or algebraic
    * This situation may happen with a tetrahedron with an edge lying on
@@ -683,7 +683,7 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
    * edges has the same behavior as enforcing a Dirichlet BC */
 
   BFT_MALLOC(eqc->edge_bc_flag, n_edges, cs_flag_t);
-  cs_equation_set_edge_bc_flag(connect, eqb->face_bc, eqc->edge_bc_flag);
+  cs_equation_bc_set_edge_flag(connect, eqb->face_bc, eqc->edge_bc_flag);
 
   eqc->enforce_essential_bc = NULL;
   switch (eqp->default_enforcement) {

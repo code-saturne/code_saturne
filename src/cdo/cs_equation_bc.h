@@ -133,14 +133,14 @@ cs_equation_init_boundary_flux_from_bc(cs_real_t                   t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
-                           const cs_equation_param_t    *eqp,
-                           const cs_cdo_bc_face_t       *face_bc,
-                           const cs_flag_t               vtx_bc_flag[],
-                           const cs_real_t               dir_values[],
-                           cs_real_t                     t_eval,
-                           cs_cell_sys_t                *csys,
-                           cs_cell_builder_t            *cb);
+cs_equation_bc_set_cw_vb(const cs_cell_mesh_t         *cm,
+                         const cs_equation_param_t    *eqp,
+                         const cs_cdo_bc_face_t       *face_bc,
+                         const cs_flag_t               vtx_bc_flag[],
+                         const cs_real_t               dir_values[],
+                         cs_real_t                     t_eval,
+                         cs_cell_sys_t                *csys,
+                         cs_cell_builder_t            *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -157,12 +157,12 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_eb_set_cell_bc(const cs_cell_mesh_t         *cm,
-                           const cs_equation_param_t    *eqp,
-                           const cs_cdo_bc_face_t       *face_bc,
-                           const cs_real_t               dir_values[],
-                           cs_cell_sys_t                *csys,
-                           cs_cell_builder_t            *cb);
+cs_equation_bc_set_cw_eb(const cs_cell_mesh_t         *cm,
+                         const cs_equation_param_t    *eqp,
+                         const cs_cdo_bc_face_t       *face_bc,
+                         const cs_real_t               dir_values[],
+                         cs_cell_sys_t                *csys,
+                         cs_cell_builder_t            *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -179,12 +179,12 @@ cs_equation_eb_set_cell_bc(const cs_cell_mesh_t         *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
-                           const cs_equation_param_t    *eqp,
-                           const cs_cdo_bc_face_t       *face_bc,
-                           const cs_real_t               dir_values[],
-                           cs_cell_sys_t                *csys,
-                           cs_cell_builder_t            *cb);
+cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
+                         const cs_equation_param_t    *eqp,
+                         const cs_cdo_bc_face_t       *face_bc,
+                         const cs_real_t               dir_values[],
+                         cs_cell_sys_t                *csys,
+                         cs_cell_builder_t            *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -253,7 +253,7 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
+cs_equation_bc_set_vertex_flag(const cs_cdo_connect_t     *connect,
                                const cs_cdo_bc_face_t     *face_bc,
                                cs_flag_t                  *vflag);
 
@@ -270,7 +270,7 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_set_edge_bc_flag(const cs_cdo_connect_t     *connect,
+cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
                              const cs_cdo_bc_face_t     *face_bc,
                              cs_flag_t                  *edge_flag);
 

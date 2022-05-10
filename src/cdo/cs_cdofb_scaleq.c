@@ -240,12 +240,12 @@ _sfb_init_cell_system(const cs_cell_mesh_t         *cm,
 
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
-    cs_equation_fb_set_cell_bc(cm,
-                               eqp,
-                               eqb->face_bc,
-                               eqb->dir_values,
-                               csys,
-                               cb);
+    cs_equation_bc_set_cw_fb(cm,
+                             eqp,
+                             eqb->face_bc,
+                             eqb->dir_values,
+                             csys,
+                             cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
     cs_dbg_check_hmg_dirichlet_cw(__func__, csys);
