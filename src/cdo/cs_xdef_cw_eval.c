@@ -971,25 +971,86 @@ cs_xdef_cw_eval_vector_at_xyz_by_field(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer for evaluating the normal flux of a quantity
- *         defined by values. The normal flux is then added to each portion of
- *         face related to a vertex.
+ * \brief  Function pointer for evaluating the normal flux defined by
+ *         scalar-valued quantities. The normal flux is then added to each
+ *         portion of face related to a vertex.
  *         Use of a \ref cs_cell_mesh_t structure.
  *
  * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f          local face id
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      context    pointer to a context structure
- * \param[in, out] eval       result of the evaluation (updated inside)
+ * \param[in, out] eval       array of Neumann fluxes at DoFs
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
-                                   short int                 f,
-                                   cs_real_t                 time_eval,
-                                   void                     *context,
-                                   cs_real_t                *eval)
+cs_xdef_cw_eval_flux_v_by_scalar_val(const cs_cell_mesh_t     *cm,
+                                     short int                 f,
+                                     cs_real_t                 time_eval,
+                                     void                     *context,
+                                     cs_real_t                *eval)
+{
+  CS_UNUSED(time_eval);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+
+  const cs_real_t  *flux = (cs_real_t *)context;
+
+  if (cs_eflag_test(cm->flag, CS_FLAG_COMP_FEQ)) {
+
+    /* Loop on face edges */
+
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const double  _flx = 0.5 * cm->tef[i] * flux[0];
+      const short int  ee = 2*cm->f2e_ids[i];
+
+      eval[cm->e2v_ids[ee  ]] += _flx;
+      eval[cm->e2v_ids[ee+1]] += _flx;
+
+    }
+
+  }
+  else {
+
+    /* Loop on face edges */
+
+    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const short int  e = cm->f2e_ids[i];
+      const double  tef = cs_compute_area_from_quant(cm->edge[e],
+                                                     cm->face[f].center);
+      const double  _flx = 0.5 * tef * flux[0];
+
+      eval[cm->e2v_ids[2*e  ]] += _flx;
+      eval[cm->e2v_ids[2*e+1]] += _flx;
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the normal flux defined by
+ *         vector-valued quantities. The normal flux is then added to each
+ *         portion of face related to a vertex.
+ *         Use of a \ref cs_cell_mesh_t structure.
+ *
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      f          local face id
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in]      context    pointer to a context structure
+ * \param[in, out] eval       array of Neumann fluxes at DoFs
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_cw_eval_flux_v_by_vector_val(const cs_cell_mesh_t     *cm,
+                                     short int                 f,
+                                     cs_real_t                 time_eval,
+                                     void                     *context,
+                                     cs_real_t                *eval)
 {
   CS_UNUSED(time_eval);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
@@ -1032,9 +1093,10 @@ cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer for evaluating the normal flux of a quantity
- *         defined by analytic function. The normal flux is then added to each
- *         portion of face related to a vertex.
+ * \brief  Function pointer for evaluating the normal flux defined by a
+ *         scalar-valued quantities and relying on an analytic function. The
+ *         normal flux is then added to each portion of face related to a
+ *         vertex.
  *         Use of a \ref cs_cell_mesh_t structure.
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -1042,17 +1104,335 @@ cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      context    pointer to a context structure
  * \param[in]      qtype      level of quadrature to use
- * \param[in, out] eval       result of the evaluation (updated inside)
+ * \param[in, out] eval       array of Neumann fluxes at DoFs
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
-                                        short int                  f,
-                                        cs_real_t                  time_eval,
-                                        void                      *context,
-                                        cs_quadrature_type_t       qtype,
-                                        cs_real_t                 *eval)
+cs_xdef_cw_eval_flux_v_by_scalar_analytic(const cs_cell_mesh_t      *cm,
+                                          short int                  f,
+                                          cs_real_t                  time_eval,
+                                          void                      *context,
+                                          cs_quadrature_type_t       qtype,
+                                          cs_real_t                 *eval)
+{
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+
+  const cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)context;
+  const cs_quant_t  fq = cm->face[f];
+
+  switch (qtype) {
+
+  case CS_QUADRATURE_NONE:
+  case CS_QUADRATURE_BARY:
+    {
+      cs_real_t  flux_xf = 0;
+
+      /* Evaluate the function for this time at the face center */
+
+      ac->func(time_eval, 1, NULL, fq.center, true, /* compacted output ? */
+               ac->input,
+               &flux_xf);
+
+      /* Plug into the evaluation by value now */
+
+      cs_xdef_cw_eval_flux_v_by_scalar_val(cm, f, time_eval, &flux_xf, eval);
+    }
+    break;
+
+  case CS_QUADRATURE_BARY_SUBDIV:
+    {
+      assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ));
+      cs_real_t  _val[2];
+      cs_real_3_t  _xyz[2];
+
+      if (cs_flag_test(cm->flag, CS_FLAG_COMP_FEQ)) {
+
+        /* Loop on face edges */
+
+        for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+          const short int  e = cm->f2e_ids[i];
+          const short int v1 = cm->e2v_ids[2*e];
+          const short int v2 = cm->e2v_ids[2*e+1];
+
+          for (int k = 0; k < 3; k++) {
+            const double xef = cm->edge[e].center[k] + fq.center[k];
+            _xyz[0][k] = cs_math_1ov3 * (xef + cm->xv[3*v1+k]);
+            _xyz[1][k] = cs_math_1ov3 * (xef + cm->xv[3*v2+k]);
+          }
+
+          /* Evaluate the function for this time at the given coordinates */
+
+          ac->func(time_eval, 2, NULL,
+                   (const cs_real_t *)_xyz, true, /* compacted output ? */
+                   ac->input,
+                   (cs_real_t *)_val);
+
+          eval[v1] += 0.5*cm->tef[i] * _val[0];
+          eval[v2] += 0.5*cm->tef[i] * _val[1];
+
+        }
+      }
+      else {
+
+        /* Loop on face edges */
+
+        for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+          const short int  e = cm->f2e_ids[i];
+          const short int v1 = cm->e2v_ids[2*e];
+          const short int v2 = cm->e2v_ids[2*e+1];
+
+          for (int k = 0; k < 3; k++) {
+            const double xef = cm->edge[e].center[k] + fq.center[k];
+            _xyz[0][k] = cs_math_1ov3 * (xef + cm->xv[3*v1+k]);
+            _xyz[1][k] = cs_math_1ov3 * (xef + cm->xv[3*v2+k]);
+          }
+
+          /* Evaluate the function for this time at the given coordinates */
+
+          ac->func(time_eval, 2, NULL,
+                   (const cs_real_t *)_xyz, true, /* compacted output ? */
+                   ac->input,
+                   (cs_real_t *)_val);
+
+          const double tef = cs_compute_area_from_quant(cm->edge[e], fq.center);
+
+          eval[v1] += 0.5 * tef * _val[0];
+          eval[v2] += 0.5 * tef * _val[1];
+
+        }
+
+      }
+
+    }
+    break; /* BARY_SUBDIV */
+
+  case CS_QUADRATURE_HIGHER:
+    {
+      assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ));
+
+      /* Two triangles s_{vef} related to a vertex and four values by triangle
+       * --> 2*4 = 8 Gauss points
+       * The flux returns by the analytic function is a vector. So the size
+       * of _val is 24 = 8*3
+       */
+
+      cs_real_t _val[8], w[8];
+      cs_real_3_t  gpts[8];
+
+      if (cs_flag_test(cm->flag, CS_FLAG_COMP_FEQ)) { /* tef is pre-computed */
+
+        /* Loop on face edges */
+
+        for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+          const short int  e = cm->f2e_ids[i];
+          const short int v1 = cm->e2v_ids[2*e];
+          const short int v2 = cm->e2v_ids[2*e+1];
+          const cs_real_t  svef = 0.5 * cm->tef[i];
+
+          /* Two triangles composing the portion of face related to a vertex
+             Evaluate the field at the four quadrature points */
+
+          cs_quadrature_tria_4pts(cm->edge[e].center, fq.center, cm->xv + 3*v1,
+                                  svef,
+                                  gpts, w);
+
+          cs_quadrature_tria_4pts(cm->edge[e].center, fq.center, cm->xv + 3*v2,
+                                  svef,
+                                  gpts + 4, w + 4);
+
+          /* Evaluate the function for this time at the given coordinates */
+
+          ac->func(time_eval, 8, NULL,
+                   (const cs_real_t *)gpts, true, /* compacted output ? */
+                   ac->input,
+                   _val);
+
+          cs_real_t  add0 = 0, add1 = 0;
+          for (int p = 0; p < 4; p++)
+            add0 += w[p] * _val[p], add1 += w[4 + p] * _val[4+p];
+
+          eval[v1] += add0;
+          eval[v2] += add1;
+
+        }
+
+      }
+      else {
+
+        /* Loop on face edges */
+
+        for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+          const short int  e = cm->f2e_ids[i];
+          const short int v1 = cm->e2v_ids[2*e];
+          const short int v2 = cm->e2v_ids[2*e+1];
+          const double svef = 0.5 * cs_compute_area_from_quant(cm->edge[e],
+                                                               fq.center);
+
+          /* Two triangles composing the portion of face related to a vertex
+             Evaluate the field at the four quadrature points */
+
+          cs_quadrature_tria_4pts(cm->edge[e].center, fq.center, cm->xv + 3*v1,
+                                  svef,
+                                  gpts, w);
+
+          cs_quadrature_tria_4pts(cm->edge[e].center, fq.center, cm->xv + 3*v2,
+                                  svef,
+                                  gpts + 4, w + 4);
+
+          /* Evaluate the function for this time at the given coordinates */
+
+          ac->func(time_eval, 8, NULL,
+                   (const cs_real_t *)gpts, true, /* compacted output ? */
+                   ac->input,
+                   _val);
+
+          cs_real_t  add0 = 0, add1 = 0;
+          for (int p = 0; p < 4; p++)
+            add0 += w[p] * _val[p], add1 += w[4+p] * _val[4+p];
+
+          eval[v1] += add0;
+          eval[v2] += add1;
+
+        }
+
+      } /* Is tef already computed ? */
+    }
+    break;
+
+  case CS_QUADRATURE_HIGHEST:
+    {
+      assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ));
+
+      /* Two triangles s_{vef} related to a vertex and seven values by triangle
+       * --> 2*7 = 14 Gauss points
+       * The flux returns by the analytic function is a scalar. So the size
+       * of _val is 14
+       */
+
+      cs_real_t _val[14], w[14];
+      cs_real_3_t  gpts[14];
+
+      if (cs_flag_test(cm->flag, CS_FLAG_COMP_FEQ)) { /* tef is pre-computed */
+
+        /* Loop on face edges */
+
+        for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+          const short int  e = cm->f2e_ids[i];
+          const short int v1 = cm->e2v_ids[2*e];
+          const short int v2 = cm->e2v_ids[2*e+1];
+          const cs_real_t  svef = 0.5 * cm->tef[i];
+
+          /* Two triangles composing the portion of face related to a vertex
+             Evaluate the field at the seven quadrature points */
+
+          cs_quadrature_tria_7pts(cm->edge[e].center, fq.center, cm->xv + 3*v1,
+                                  svef,
+                                  gpts, w);
+
+          cs_quadrature_tria_7pts(cm->edge[e].center, fq.center, cm->xv + 3*v2,
+                                  svef,
+                                  gpts + 7, w + 7);
+
+          /* Evaluate the function for this time at the given coordinates */
+
+          ac->func(time_eval, 14, NULL,
+                   (const cs_real_t *)gpts, true, /* compacted output ? */
+                   ac->input,
+                   _val);
+
+          cs_real_t  add0 = 0, add1 = 0;
+          for (int p = 0; p < 7; p++)
+            add0 += w[p] * _val[p], add1 += w[7+p] * _val[7+p];
+
+          eval[v1] += add0;
+          eval[v2] += add1;
+
+        }
+
+      }
+      else {
+
+        /* Loop on face edges */
+
+        for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+          const short int  e = cm->f2e_ids[i];
+          const short int v1 = cm->e2v_ids[2*e];
+          const short int v2 = cm->e2v_ids[2*e+1];
+          const double svef = 0.5 * cs_compute_area_from_quant(cm->edge[e],
+                                                               fq.center);
+
+          /* Two triangles composing the portion of face related to a vertex
+             Evaluate the field at the seven quadrature points */
+
+          cs_quadrature_tria_7pts(cm->edge[e].center, fq.center, cm->xv + 3*v1,
+                                  svef,
+                                  gpts, w);
+
+          cs_quadrature_tria_7pts(cm->edge[e].center, fq.center, cm->xv + 3*v2,
+                                  svef,
+                                  gpts + 7, w + 7);
+
+          /* Evaluate the function for this time at the given coordinates */
+
+          ac->func(time_eval, 14, NULL,
+                   (const cs_real_t *)gpts, true, /* compacted output ? */
+                   ac->input,
+                   _val);
+
+          cs_real_t  add0 = 0, add1 = 0;
+          for (int p = 0; p < 7; p++)
+            add0 += w[p] * _val[p], add1 += w[7+p] * _val[7+p];
+
+          eval[v1] += add0;
+          eval[v2] += add1;
+
+        }
+
+      } /* Is tef already computed ? */
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid type of quadrature.", __func__);
+    break;
+
+  }  /* switch type of quadrature */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the normal flux defined by a
+ *         vector-valued quantities and relying on an analytic function. The
+ *         normal flux is then added to each portion of face related to a
+ *         vertex.
+ *         Use of a \ref cs_cell_mesh_t structure.
+ *
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      f          local face id
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in]      context    pointer to a context structure
+ * \param[in]      qtype      level of quadrature to use
+ * \param[in, out] eval       array of Neumann fluxes at DoFs
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_cw_eval_flux_v_by_vector_analytic(const cs_cell_mesh_t      *cm,
+                                          short int                  f,
+                                          cs_real_t                  time_eval,
+                                          void                      *context,
+                                          cs_quadrature_type_t       qtype,
+                                          cs_real_t                 *eval)
 {
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
@@ -1075,7 +1455,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 
       /* Plug into the evaluation by value now */
 
-      cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, time_eval, flux_xf, eval);
+      cs_xdef_cw_eval_flux_v_by_vector_val(cm, f, time_eval, flux_xf, eval);
     }
     break;
 

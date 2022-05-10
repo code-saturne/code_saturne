@@ -965,31 +965,54 @@ cs_xdef_cw_eval_vector_at_xyz_by_field(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer for evaluating the normal flux of a quantity
- *         defined by values. The normal flux is then added to each portion of
- *         face related to a vertex.
+ * \brief  Function pointer for evaluating the normal flux defined by
+ *         scalar-valued quantities. The normal flux is then added to each
+ *         portion of face related to a vertex.
  *         Use of a \ref cs_cell_mesh_t structure.
  *
  * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f          local face id
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      context    pointer to a context structure
- * \param[in, out] eval       result of the evaluation (updated inside)
+ * \param[in, out] eval       array of Neumann fluxes at DoFs
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
-                                   short int                 f,
-                                   cs_real_t                 time_eval,
-                                   void                     *context,
-                                   cs_real_t                *eval);
+cs_xdef_cw_eval_flux_v_by_scalar_val(const cs_cell_mesh_t     *cm,
+                                     short int                 f,
+                                     cs_real_t                 time_eval,
+                                     void                     *context,
+                                     cs_real_t                *eval);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer for evaluating the normal flux of a quantity
- *         defined by analytic function. The normal flux is then added to each
+ * \brief  Function pointer for evaluating the normal flux defined by
+ *         vector-valued quantities. The normal flux is then added to each
  *         portion of face related to a vertex.
+ *         Use of a \ref cs_cell_mesh_t structure.
+ *
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      f          local face id
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in]      context    pointer to a context structure
+ * \param[in, out] eval       array of Neumann fluxes at DoFs
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_cw_eval_flux_v_by_vector_val(const cs_cell_mesh_t     *cm,
+                                     short int                 f,
+                                     cs_real_t                 time_eval,
+                                     void                     *context,
+                                     cs_real_t                *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the normal flux defined by a
+ *         scalar-valued quantities and relying on an analytic function. The
+ *         normal flux is then added to each portion of face related to a
+ *         vertex.
  *         Use of a \ref cs_cell_mesh_t structure.
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -997,17 +1020,42 @@ cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      context    pointer to a context structure
  * \param[in]      qtype      level of quadrature to use
- * \param[in, out] eval       result of the evaluation (updated inside)
+ * \param[in, out] eval       array of Neumann fluxes at DoFs
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
-                                        short int                  f,
-                                        cs_real_t                  time_eval,
-                                        void                      *context,
-                                        cs_quadrature_type_t       qtype,
-                                        cs_real_t                 *eval);
+cs_xdef_cw_eval_flux_v_by_scalar_analytic(const cs_cell_mesh_t      *cm,
+                                          short int                  f,
+                                          cs_real_t                  time_eval,
+                                          void                      *context,
+                                          cs_quadrature_type_t       qtype,
+                                          cs_real_t                 *eval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the normal flux defined by a
+ *         vector-valued quantities and relying on an analytic function. The
+ *         normal flux is then added to each portion of face related to a
+ *         vertex.
+ *         Use of a \ref cs_cell_mesh_t structure.
+ *
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      f          local face id
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in]      context    pointer to a context structure
+ * \param[in]      qtype      level of quadrature to use
+ * \param[in, out] eval       array of Neumann fluxes at DoFs
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_cw_eval_flux_v_by_vector_analytic(const cs_cell_mesh_t      *cm,
+                                          short int                  f,
+                                          cs_real_t                  time_eval,
+                                          void                      *context,
+                                          cs_quadrature_type_t       qtype,
+                                          cs_real_t                 *eval);
 
 /*----------------------------------------------------------------------------*/
 /*!

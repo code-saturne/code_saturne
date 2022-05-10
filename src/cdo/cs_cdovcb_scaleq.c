@@ -2790,6 +2790,10 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     cs_hodge_t  *hodge = eqc->diffusion_hodge[t_id];
     cs_property_data_t  *diff_pty = hodge->pty_data;
 
+    /* Set times at which one evaluates quantities if needed */
+
+    cb->t_pty_eval = cb->t_bc_eval = cb->t_st_eval = t_eval;
+
     /* msh_flag for Neumann and Robin BCs. Add add_flag for the other cases
        when one has to reconstruct a flux */
 
@@ -2820,6 +2824,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
         break;
 
       case CS_CDO_BC_NEUMANN:
+      case CS_CDO_BC_FULL_NEUMANN:
         {
           cs_real_t  *neu_values = cb->values;
 
@@ -2829,17 +2834,24 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
           const short int  f = cs_cell_mesh_get_f(f_id, cm);
 
-          cs_equation_compute_neumann_sv(t_eval,
-                                         face_bc->def_ids[bf_id],
-                                         f,
-                                         eqp,
-                                         cm,
-                                         neu_values);
+          if (face_bc->flag[bf_id] == CS_CDO_BC_NEUMANN)
+            cs_equation_compute_neumann_svb(t_eval,
+                                            face_bc->def_ids[bf_id],
+                                            f,
+                                            eqp,
+                                            cm,
+                                            neu_values);
+          else
+            cs_equation_compute_full_neumann_svb(t_eval,
+                                                 face_bc->def_ids[bf_id],
+                                                 f,
+                                                 eqp,
+                                                 cm,
+                                                 neu_values);
 
           short int n_vf = 0;
           for (int i = cm->f2v_idx[f]; i < cm->f2v_idx[f+1]; i++)
             _flx[n_vf++] = neu_values[cm->f2v_ids[i]];
-
         }
         break;
 

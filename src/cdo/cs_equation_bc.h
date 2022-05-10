@@ -277,7 +277,8 @@ cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the values of the Neumann BCs when DoFs are scalar-valued
- *         and attached to vertices. (Not the full Neumann BCs)
+ *         and attached to a vertex-based schemes (Vb or VCb)
+ *         Case of the Neumann BCs i.e. Neumann is defined by a scalar
  *
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
@@ -289,12 +290,35 @@ cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
-                               short int                   def_id,
-                               short int                   f,
-                               const cs_equation_param_t  *eqp,
-                               const cs_cell_mesh_t       *cm,
-                               double                     *neu_values);
+cs_equation_compute_neumann_svb(cs_real_t                   t_eval,
+                                short int                   def_id,
+                                short int                   f,
+                                const cs_equation_param_t  *eqp,
+                                const cs_cell_mesh_t       *cm,
+                                double                     *neu_values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the values of the Neumann BCs when DoFs are scalar-valued
+ *         and attached to a vertex-based schemes (Vb or VCb)
+ *         Case of the full Neumann BCs i.e. Neumann is defined by a vector
+ *
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in]      def_id      id of the definition for setting the Neumann BC
+ * \param[in]      f           local face number in the cs_cell_mesh_t
+ * \param[in]      eqp         pointer to a cs_equation_param_t
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in, out] neu_values  array storing the Neumann values for all DoFs
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_full_neumann_svb(cs_real_t                   t_eval,
+                                     short int                   def_id,
+                                     short int                   f,
+                                     const cs_equation_param_t  *eqp,
+                                     const cs_cell_mesh_t       *cm,
+                                     double                     *neu_values);
 
 /*----------------------------------------------------------------------------*/
 /*!

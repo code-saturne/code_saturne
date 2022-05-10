@@ -413,18 +413,31 @@ cs_equation_bc_set_cw_vb(const cs_cell_mesh_t         *cm,
      (for vector-valued equations). Identify which face is a boundary face */
 
   for (short int f = 0; f < cm->n_fc; f++) {
-    if (csys->bf_ids[f] > -1) { /* This a boundary face */
+
+    const cs_lnum_t  bf_id = csys->bf_ids[f];
+
+    if (bf_id > -1) { /* This a boundary face */
 
       switch(csys->bf_flag[f]) {
 
+      case CS_CDO_BC_FULL_NEUMANN:
+        csys->has_nhmg_neumann = true;
+        cs_equation_compute_full_neumann_svb(t_eval,
+                                             face_bc->def_ids[bf_id],
+                                             f,
+                                             eqp,
+                                             cm,
+                                             csys->neu_values);
+        break;
+
       case CS_CDO_BC_NEUMANN:
         csys->has_nhmg_neumann = true;
-        cs_equation_compute_neumann_sv(t_eval,
-                                       face_bc->def_ids[csys->bf_ids[f]],
-                                       f,
-                                       eqp,
-                                       cm,
-                                       csys->neu_values);
+        cs_equation_compute_neumann_svb(t_eval,
+                                        face_bc->def_ids[bf_id],
+                                        f,
+                                        eqp,
+                                        cm,
+                                        csys->neu_values);
         break;
 
       case CS_CDO_BC_ROBIN:
@@ -435,7 +448,7 @@ cs_equation_bc_set_cw_vb(const cs_cell_mesh_t         *cm,
            are defined at each vertices. Be aware of that when computing */
 
         cs_equation_compute_robin(t_eval,
-                                  face_bc->def_ids[csys->bf_ids[f]],
+                                  face_bc->def_ids[bf_id],
                                   f,
                                   eqp,
                                   cm,
@@ -444,10 +457,6 @@ cs_equation_bc_set_cw_vb(const cs_cell_mesh_t         *cm,
 
       case CS_CDO_BC_SLIDING:
         csys->has_sliding = true;
-        break;
-
-      case CS_CDO_BC_FULL_NEUMANN:
-        bft_error(__FILE__, __LINE__, 0, "%s: Case not handled yet.", __func__);
         break;
 
       default:   /* Nothing to do for */
@@ -1138,7 +1147,8 @@ cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the values of the Neumann BCs when DoFs are scalar-valued
- *         and attached to vertices. (Not the full Neumann BCs)
+ *         and attached to a vertex-based schemes (Vb or VCb)
+ *         Case of the Neumann BCs i.e. Neumann is defined by a scalar
  *
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
@@ -1150,12 +1160,12 @@ cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
-                               short int                   def_id,
-                               short int                   f,
-                               const cs_equation_param_t  *eqp,
-                               const cs_cell_mesh_t       *cm,
-                               double                     *neu_values)
+cs_equation_compute_neumann_svb(cs_real_t                   t_eval,
+                                short int                   def_id,
+                                short int                   f,
+                                const cs_equation_param_t  *eqp,
+                                const cs_cell_mesh_t       *cm,
+                                double                     *neu_values)
 {
   assert(neu_values != NULL && cm != NULL && eqp != NULL);
   assert(def_id > -1);
@@ -1164,7 +1174,7 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
 
   const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
-  assert(def->dim == 3); /* flux is a vector in the scalar case */
+  assert(def->dim == 1); /* flux is a scalar-valued quantity in this case */
   assert(def->meta & CS_CDO_BC_NEUMANN); /* Neuman BC */
 
   /* Evaluate the boundary condition at each boundary vertex */
@@ -1172,16 +1182,93 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
   switch(def->type) {
 
   case CS_XDEF_BY_VALUE:
-    cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, t_eval, def->context, neu_values);
+    cs_xdef_cw_eval_flux_v_by_scalar_val(cm, f, t_eval, def->context,
+                                         neu_values);
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_xdef_cw_eval_flux_at_vtx_by_analytic(cm,
-                                            f,
-                                            t_eval,
-                                            def->context,
-                                            def->qtype,
-                                            neu_values);
+    cs_xdef_cw_eval_flux_v_by_scalar_analytic(cm, f, t_eval,
+                                                   def->context,
+                                                   def->qtype,
+                                                   neu_values);
+    break;
+
+  case CS_XDEF_BY_ARRAY:
+    {
+      cs_xdef_array_context_t  *ac = def->context;
+
+      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
+      assert(ac->stride == 1);
+
+      cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
+      assert(bf_id > -1);
+
+      if (cs_flag_test(ac->loc, cs_flag_primal_face) ||
+          cs_flag_test(ac->loc, cs_flag_boundary_face))
+        cs_xdef_cw_eval_flux_v_by_scalar_val(cm, f, t_eval,
+                                             ac->values + bf_id,
+                                             neu_values);
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid array location.", __func__);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Invalid type of definition.\n"
+                " Stop computing the Neumann value.\n"), __func__);
+
+  } /* switch def_type */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the values of the Neumann BCs when DoFs are scalar-valued
+ *         and attached to a vertex-based schemes (Vb or VCb)
+ *         Case of the full Neumann BCs i.e. Neumann is defined by a vector
+ *
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in]      def_id      id of the definition for setting the Neumann BC
+ * \param[in]      f           local face number in the cs_cell_mesh_t
+ * \param[in]      eqp         pointer to a cs_equation_param_t
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in, out] neu_values  array storing the Neumann values for all DoFs
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_full_neumann_svb(cs_real_t                   t_eval,
+                                     short int                   def_id,
+                                     short int                   f,
+                                     const cs_equation_param_t  *eqp,
+                                     const cs_cell_mesh_t       *cm,
+                                     double                     *neu_values)
+{
+  assert(neu_values != NULL && cm != NULL && eqp != NULL);
+  assert(def_id > -1);
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FV));
+
+  const cs_xdef_t  *def = eqp->bc_defs[def_id];
+
+  assert(def->dim == 3); /* flux is a vector-valued quantity in this case */
+  assert(def->meta & CS_CDO_BC_FULL_NEUMANN); /* Full Neuman BC */
+
+  /* Evaluate the boundary condition at each boundary vertex */
+
+  switch(def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    cs_xdef_cw_eval_flux_v_by_vector_val(cm, f, t_eval, def->context,
+                                         neu_values);
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    cs_xdef_cw_eval_flux_v_by_vector_analytic(cm, f, t_eval,
+                                              def->context,
+                                              def->qtype,
+                                              neu_values);
     break;
 
   case CS_XDEF_BY_ARRAY:
@@ -1196,25 +1283,12 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
 
       if (cs_flag_test(ac->loc, cs_flag_primal_face) ||
           cs_flag_test(ac->loc, cs_flag_boundary_face))
-        cs_xdef_cw_eval_flux_at_vtx_by_val(cm, f, t_eval,
-                                           ac->values + 3*bf_id,
-                                           neu_values);
-
-      else if (cs_flag_test(ac->loc, cs_flag_dual_closure_byf)) {
-
-        assert(ac->index != NULL);
-
-        /* Retrieve the bf2v->idx stored in the cs_cdo_connect_t structure */
-
-        cs_lnum_t  shift = ac->index[bf_id];
-        for (short int iv = cm->f2v_idx[f]; iv < cm->f2v_idx[f+1]; iv++)
-          neu_values[cm->f2v_ids[iv]] = ac->values[shift++];
-
-      }
+        cs_xdef_cw_eval_flux_v_by_vector_val(cm, f, t_eval,
+                                             ac->values + 3*bf_id,
+                                             neu_values);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid array location.", __func__);
-
     }
     break;
 
