@@ -1012,7 +1012,7 @@ class domain(base_domain):
                     print(' Restart from ' + self.restart_input)
                     print('')
 
-                    r = os.path.join(self.restart_input, 'main.csc')
+                    r = os.path.join(restart_input, 'main.csc')
                     if not os.path.isfile(r):
                         if not os.path.isfile(os.path.join(self.restart_input, 'main')):
                             upstream_pending = [r]
