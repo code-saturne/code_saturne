@@ -357,13 +357,13 @@ cs_lagr_aux_mean_fluid_quantities(int            time_id,
         tl  = CS_MAX(tl, cs_math_epzero);
 
         lagr_time->val[cell_id] = tl;
+
       }
-      else {
-        for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          lagr_time->val[cell_id] = cs_math_epzero;
-      }
+      else
+        lagr_time->val[cell_id] = cs_math_epzero;
 
     }
+
     if (grad_lagr_time != NULL)
       cs_field_gradient_scalar(lagr_time,
                                time_id, /* use_previous_t */
