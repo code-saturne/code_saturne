@@ -2881,22 +2881,18 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
       case CS_CDO_BC_NEUMANN:
         {
-          cs_real_t  *neu_values = cb->values;
-
           /* Set the local mesh structure for the current cell */
 
           cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
           const short int  f = cs_cell_mesh_get_f(f_id, cm);
 
-          cs_equation_compute_neumann_fb(cb->t_bc_eval,
-                                         face_bc->def_ids[bf_id],
-                                         f,
-                                         eqp,
-                                         cm,
-                                         neu_values);
-
-          bflux[bf_id] = neu_values[f];
+          cs_equation_compute_neumann_sfb(cb->t_bc_eval,
+                                          face_bc->def_ids[bf_id],
+                                          f,
+                                          eqp,
+                                          cm,
+                                          bflux + bf_id);
         }
         break;
 

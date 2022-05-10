@@ -650,8 +650,9 @@ cs_xdef_cw_eval_by_time_func(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate a quantity defined using an analytic function by a
- *         cellwise process (usage of a \ref cs_cell_mesh_t structure)
+ * \brief  Evaluate a quantity at the cell center defined using an analytic
+ *         function by a cellwise process (usage of a \ref cs_cell_mesh_t
+ *         structure)
  *
  * \param[in]      cm          pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      time_eval   physical time at which one evaluates the term
@@ -671,7 +672,8 @@ cs_xdef_cw_eval_by_analytic(const cs_cell_mesh_t       *cm,
   /* Evaluate the function for this time at the cell center */
 
   ac->func(time_eval,
-           1, NULL, cm->xc, true, /* compacted output ? */
+           1, NULL, cm->xc,
+           true, /* compacted output ? */
            ac->input,
            eval);
 }
@@ -1357,7 +1359,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function pointer for evaluating the normal flux of a quantity
- *         defined by analytic function.
+ *         defined by analytic function (scalar-valued) at the face f.
  *         Use of a \ref cs_cell_mesh_t structure.
  *
  * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
@@ -1365,17 +1367,199 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      context    pointer to a context structure
  * \param[in]      qtype      level of quadrature to use
- * \param[in, out] eval       result of the evaluation (set inside)
+ * \param[in, out] eval       array of values at DoFs
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
-                                 short int                  f,
-                                 cs_real_t                  time_eval,
-                                 void                      *context,
-                                 cs_quadrature_type_t       qtype,
-                                 cs_real_t                 *eval)
+cs_xdef_cw_eval_flux_by_scalar_analytic(const cs_cell_mesh_t      *cm,
+                                        short int                  f,
+                                        cs_real_t                  time_eval,
+                                        void                      *context,
+                                        cs_quadrature_type_t       qtype,
+                                        cs_real_t                 *eval)
+{
+  cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
+
+  switch (qtype) {
+
+  case CS_QUADRATURE_NONE:
+  case CS_QUADRATURE_BARY:
+    {
+      double  flux = 0;
+
+      ac->func(time_eval,
+               1, NULL, cm->face[f].center,
+               true, /* compacted output ? */
+               ac->input,
+               &flux);
+
+      eval[f] = cm->face[f].meas * flux;
+    }
+    break;
+
+  case CS_QUADRATURE_BARY_SUBDIV:
+    {
+      assert(cs_flag_test(cm->flag,
+                          CS_FLAG_COMP_EV |CS_FLAG_COMP_FE |CS_FLAG_COMP_FEQ));
+
+      const cs_quant_t  fq = cm->face[f];
+      const cs_real_t  *xv = cm->xv;
+
+      eval[f] = 0.; /* Reset value */
+
+      /* Loop on face edges */
+
+      for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+        const short int  e = cm->f2e_ids[i];
+        const short int v1 = cm->e2v_ids[2*e];
+        const short int v2 = cm->e2v_ids[2*e+1];
+
+        cs_real_3_t  _xyz;
+        for (int k = 0; k < 3; k++)
+          _xyz[k] = cs_math_1ov3 * (fq.center[k] + xv[3*v1+k] + xv[3*v2+k]);
+
+        /* Evaluate the function for this time at the given coordinates */
+
+        double  _eval = 0.;
+        ac->func(time_eval, 1, NULL,
+                 (const cs_real_t *)_xyz, true, /* compacted output ? */
+                 ac->input,
+                 &_eval);
+
+        eval[f] += cm->tef[i] * _eval;
+
+      } /* Loop on face edges */
+    }
+    break; /* BARY_SUBDIV */
+
+  case CS_QUADRATURE_HIGHER:
+    {
+      assert(cs_flag_test(cm->flag,
+                          CS_FLAG_COMP_EV |CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ));
+
+      /* Four values by triangle --> 4 Gauss points
+       * The flux returns by the analytic function is a vector. So the size of
+       * _eval is 4 */
+
+      cs_real_t  w[4], _eval[4];
+      cs_real_3_t  gpts[4];
+
+      const cs_quant_t  fq = cm->face[f];
+
+      eval[f] = 0.; /* Reset value */
+
+      /* Loop on face edges */
+
+      for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+        const short int  e = cm->f2e_ids[i];
+        const short int v1 = cm->e2v_ids[2*e];
+        const short int v2 = cm->e2v_ids[2*e+1];
+
+        /* Evaluate the field at the three quadrature points */
+
+        cs_quadrature_tria_4pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
+                                cm->tef[i],
+                                gpts, w);
+
+        /* Evaluate the function for this time at the given coordinates */
+
+        ac->func(time_eval, 4, NULL,
+                 (const cs_real_t *)gpts, true,  /* compacted output ? */
+                 ac->input,
+                 _eval);
+
+        cs_real_t  add = 0;
+        for (int p = 0; p < 4; p++)
+          add += w[p] * _eval[p];
+
+        eval[f] += add;
+
+      } /* Loop on face edges */
+    }
+    break;
+
+
+  case CS_QUADRATURE_HIGHEST:
+    {
+      assert(cs_flag_test(cm->flag,
+                          CS_FLAG_COMP_EV |CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ));
+
+      /* Seven values by triangle --> 7 Gauss points
+       * The flux returns by the analytic function is a vector. So the size of
+       * _eval is 7
+       */
+
+      cs_real_t  w[7], _eval[7];
+      cs_real_3_t  gpts[7];
+
+      const cs_quant_t  fq = cm->face[f];
+
+      eval[f] = 0.; /* Reset value */
+
+      /* Loop on face edges */
+
+      for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+        const short int  e = cm->f2e_ids[i];
+        const short int v1 = cm->e2v_ids[2*e];
+        const short int v2 = cm->e2v_ids[2*e+1];
+
+        /* Evaluate the field at the three quadrature points */
+
+        cs_quadrature_tria_7pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
+                                cm->tef[i],
+                                gpts, w);
+
+        /* Evaluate the function for this time at the given coordinates */
+
+        ac->func(time_eval, 7, NULL,
+                 (const cs_real_t *)gpts, true,  /* compacted output ? */
+                 ac->input,
+                 _eval);
+
+        cs_real_t  add = 0;
+        for (int p = 0; p < 7; p++)
+          add += w[p] * _eval[p];
+
+        eval[f] += add;
+
+      } /* Loop on face edges */
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of quadrature.", __func__);
+    break;
+
+  } /* Switch on the quadrature type */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the (scalar-valued) normal flux of
+ *         a quantity defined by an analytic function.
+ *         Use of a \ref cs_cell_mesh_t structure.
+ *
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      f          local face id
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in]      context    pointer to a context structure
+ * \param[in]      qtype      level of quadrature to use
+ * \param[in, out] eval       array of evaluations at DoFs
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_cw_eval_flux_by_vector_analytic(const cs_cell_mesh_t      *cm,
+                                        short int                  f,
+                                        cs_real_t                  time_eval,
+                                        void                      *context,
+                                        cs_quadrature_type_t       qtype,
+                                        cs_real_t                 *eval)
 {
   cs_xdef_analytic_context_t  *ac = (cs_xdef_analytic_context_t *)context;
 
@@ -1395,7 +1579,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
       /* Plug into the evaluation by value now */
 
-      cs_xdef_cw_eval_flux_by_val(cm, f, time_eval, flux_xf, eval);
+      cs_xdef_cw_eval_flux_by_vector_val(cm, f, time_eval, flux_xf, eval);
     }
     break;
 
@@ -1405,6 +1589,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
                           CS_FLAG_COMP_EV |CS_FLAG_COMP_FE |CS_FLAG_COMP_FEQ));
 
       const cs_quant_t  fq = cm->face[f];
+      const cs_real_t  *xv = cm->xv;
 
       cs_real_3_t  _val, _xyz;
 
@@ -1419,8 +1604,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
         const short int v2 = cm->e2v_ids[2*e+1];
 
         for (int k = 0; k < 3; k++)
-          _xyz[k] = cs_math_1ov3 *
-            (fq.center[k] + cm->xv[3*v1+k] + cm->xv[3*v2+k]);
+          _xyz[k] = cs_math_1ov3 * (fq.center[k] + xv[3*v1+k] + xv[3*v2+k]);
 
         /* Evaluate the function for this time at the given coordinates */
 
@@ -1432,7 +1616,6 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
         eval[f] += cm->tef[i] * _dp3(_val, fq.unitv);
 
       }
-
     }
     break; /* BARY_SUBDIV */
 
@@ -1461,6 +1644,7 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
         const short int v2 = cm->e2v_ids[2*e+1];
 
         /* Evaluate the field at the three quadrature points */
+
         cs_quadrature_tria_4pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
                                 cm->tef[i],
                                 gpts, w);
@@ -1479,7 +1663,6 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
         eval[f] += add;
 
       } /* Loop on face edges */
-
     }
     break;
 
@@ -1528,7 +1711,6 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
         eval[f] += add;
 
       }
-
     }
     break;
 
@@ -1542,22 +1724,22 @@ cs_xdef_cw_eval_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer for evaluating the normal flux of a quantity
- *         defined by analytic function.
+ * \brief  Function pointer for evaluating the normal vector-valued flux of
+ *         a quantity defined by analytic function for the face f
  *         Use of a \ref cs_cell_mesh_t structure.
- *         Case of tensor-valued quantities.
+ *         Case of a vector-valued quantities.
  *
  * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
  * \param[in]      f          local face id
  * \param[in]      time_eval  physical time at which one evaluates the term
  * \param[in]      context    pointer to a context structure
  * \param[in]      qtype      level of quadrature to use
- * \param[in, out] eval       result of the evaluation (set inside)
+ * \param[in, out] eval       array of evaluations at DoFs
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
+cs_xdef_cw_eval_vector_flux_by_analytic(const cs_cell_mesh_t      *cm,
                                         short int                  f,
                                         cs_real_t                  time_eval,
                                         void                      *context,
@@ -1571,7 +1753,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
   case CS_QUADRATURE_NONE:
   case CS_QUADRATURE_BARY:
     {
-      cs_real_33_t  flux_xc = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+      cs_real_3_t  flux_xc = {0, 0, 0};
 
       /* Evaluate the function for this time at the cell center */
 
@@ -1581,7 +1763,8 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
       /* Plug into the evaluation by value now */
 
-      cs_xdef_cw_eval_tensor_flux_by_val(cm, f, time_eval, flux_xc, eval);
+      for (int k = 0; k < 3; k++)
+        eval[3*f+k] = cm->face[f].meas * flux_xc[k];
     }
     break;
 
@@ -1591,9 +1774,9 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
                           CS_FLAG_COMP_EV| CS_FLAG_COMP_FE| CS_FLAG_COMP_FEQ));
 
       const cs_quant_t  fq = cm->face[f];
+      const cs_real_t  *xv = cm->xv;
 
-      cs_real_3_t  _xyz, _val;
-      cs_real_33_t  _eval;
+      cs_real_3_t  _xyz, _eval;
 
       for (int k = 0; k < 3; k++)
         eval[3*f+k] = 0.; /* Reset value */
@@ -1607,8 +1790,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
         const short int v2 = cm->e2v_ids[_2e+1];
 
         for (int k = 0; k < 3; k++)
-          _xyz[k] = cs_math_1ov3 *
-            (fq.center[k] + cm->xv[3*v1+k] + cm->xv[3*v2+k]);
+          _xyz[k] = cs_math_1ov3 * (fq.center[k] + xv[3*v1+k] + xv[3*v2+k]);
 
         /* Evaluate the function for this time at the given coordinates */
 
@@ -1617,12 +1799,10 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
                  ac->input,
                  (cs_real_t *)_eval);
 
-        cs_math_33_3_product((const cs_real_t (*)[3])_eval, fq.unitv, _val);
         for (int k = 0; k < 3; k++)
-          eval[3*f+k] += cm->tef[i] * _val[k];
+          eval[3*f+k] += cm->tef[i] * _eval[k];
 
       }
-
     }
     break; /* BARY_SUBDIV */
 
@@ -1634,11 +1814,11 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
       /* Four values by triangle --> 4 Gauss points
        * The flux returns by the analytic function is a 3x3 tensor. */
 
-      cs_real_t  w[4];
-      cs_real_3_t  gpts[4], _val;
-      cs_real_33_t  _eval[4];
+      cs_real_t  w[4], _eval[12];
+      cs_real_3_t  gpts[4];
 
       const cs_quant_t  fq = cm->face[f];
+      const cs_real_t  *xv = cm->xv;
 
       for (int k = 0; k < 3; k++)
         eval[3*f+k] = 0.; /* Reset value */
@@ -1653,7 +1833,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
 
         /* Evaluate the field at the three quadrature points */
 
-        cs_quadrature_tria_4pts(fq.center, cm->xv + 3*v1, cm->xv + 3*v2,
+        cs_quadrature_tria_4pts(fq.center, xv + 3*v1, xv + 3*v2,
                                 cm->tef[i],
                                 gpts, w);
 
@@ -1662,17 +1842,13 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
         ac->func(time_eval, 4, NULL,
                  (const cs_real_t *)gpts, true,  /* compacted output ? */
                  ac->input,
-                 (cs_real_t *)_eval);
+                 _eval);
 
-        for (int p = 0; p < 4; p++) {
-          cs_math_33_3_product((const cs_real_t (*)[3])_eval[p], fq.unitv,
-                               _val);
+        for (int p = 0; p < 4; p++)
           for (int k = 0; k < 3; k++)
-            eval[3*f+k] += w[p] * _val[k];
-        }
+            eval[3*f+k] += w[p] * _eval[3*p+k];
 
       }
-
     }
     break;
 
@@ -1684,9 +1860,8 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
       /* Seven values by triangle --> 7 Gauss points
        * The flux returns by the analytic function is a 3x3 tensor. */
 
-      cs_real_t  w[7];
-      cs_real_3_t  gpts[7], _val;
-      cs_real_33_t  _eval[7];
+      cs_real_t  w[7], _eval[21];
+      cs_real_3_t  gpts[7];
 
       const cs_quant_t  fq = cm->face[f];
 
@@ -1712,17 +1887,14 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
         ac->func(time_eval, 7, NULL,
                  (const cs_real_t *)gpts, true,  /* compacted output ? */
                  ac->input,
-                 (cs_real_t *)_eval);
+                 _eval);
 
         for (int p = 0; p < 7; p++) {
-          cs_math_33_3_product((const cs_real_t (*)[3])_eval[p], fq.unitv,
-                               _val);
           for (int k = 0; k < 3; k++)
-            eval[3*f+k] += w[p] * _val[k];
+            eval[3*f+k] += w[p] * _eval[3*p+k];
         }
 
       }
-
     }
     break;
 

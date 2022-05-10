@@ -2754,7 +2754,8 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
 
     case CS_XDEF_BY_VALUE:
       for (short int f = 0; f < cm->n_fc; f++)
-        cs_xdef_cw_eval_flux_by_val(cm, f, time_eval, def->context, fluxes);
+        cs_xdef_cw_eval_flux_by_vector_val(cm, f, time_eval, def->context,
+                                           fluxes);
       break;
 
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -2762,10 +2763,10 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
         assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFQ));
 
         for (short int f = 0; f < cm->n_fc; f++)
-          cs_xdef_cw_eval_flux_by_analytic(cm, f, time_eval,
-                                           def->context,
-                                           def->qtype,
-                                           fluxes);
+          cs_xdef_cw_eval_flux_by_vector_analytic(cm, f, time_eval,
+                                                  def->context,
+                                                  def->qtype,
+                                                  fluxes);
       }
       break;
 

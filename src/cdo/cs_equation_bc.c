@@ -446,6 +446,10 @@ cs_equation_bc_set_cw_vb(const cs_cell_mesh_t         *cm,
         csys->has_sliding = true;
         break;
 
+      case CS_CDO_BC_FULL_NEUMANN:
+        bft_error(__FILE__, __LINE__, 0, "%s: Case not handled yet.", __func__);
+        break;
+
       default:   /* Nothing to do for */
         /* case CS_CDO_BC_HMG_DIRICHLET: */
         /* case CS_CDO_BC_DIRICHLET: */
@@ -515,6 +519,13 @@ cs_equation_bc_set_cw_eb(const cs_cell_mesh_t         *cm,
         }
         break;
 
+      case CS_CDO_BC_FULL_NEUMANN:
+      case CS_CDO_BC_NEUMANN:
+      case CS_CDO_BC_ROBIN:
+      case CS_CDO_BC_SLIDING:
+        bft_error(__FILE__, __LINE__, 0, "%s: Case not handled yet.", __func__);
+        break;
+
       default:   /* Nothing to do for */
         /* case CS_CDO_BC_HMG_DIRICHLET: */
         /* case CS_CDO_BC_HMG_NEUMANN: */
@@ -557,7 +568,10 @@ cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
   /* Identify which face is a boundary face */
 
   for (short int f = 0; f < cm->n_fc; f++) {
-    if (csys->bf_ids[f] > -1) { /* This a boundary face */
+
+    const cs_lnum_t  bf_id = csys->bf_ids[f];
+
+    if (bf_id > -1) { /* This a boundary face */
 
       switch(csys->bf_flag[f]) {
 
@@ -571,7 +585,7 @@ cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
         csys->has_dirichlet = true;
         for (int k = 0; k < d; k++) {
           csys->dof_flag[d*f + k] |= CS_CDO_BC_DIRICHLET;
-          csys->dir_values[d*f + k] = dir_values[d*csys->bf_ids[f] + k];
+          csys->dir_values[d*f + k] = dir_values[d*bf_id + k];
         }
         break;
 
@@ -580,12 +594,40 @@ cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
         for (int k = 0; k < d; k++)
           csys->dof_flag[d*f + k] |= CS_CDO_BC_NEUMANN;
 
-        cs_equation_compute_neumann_fb(cb->t_bc_eval,
-                                       face_bc->def_ids[csys->bf_ids[f]],
-                                       f,
-                                       eqp,
-                                       cm,
-                                       csys->neu_values);
+        if (d == 1)
+          cs_equation_compute_neumann_sfb(cb->t_bc_eval,
+                                          face_bc->def_ids[bf_id],
+                                          f,
+                                          eqp,
+                                          cm,
+                                          csys->neu_values);
+        else if (d == 3)
+          cs_equation_compute_neumann_vfb(cb->t_bc_eval,
+                                          face_bc->def_ids[bf_id],
+                                          f,
+                                          eqp,
+                                          cm,
+                                          csys->neu_values);
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Case not handled yet.", __func__);
+        break;
+
+      case CS_CDO_BC_FULL_NEUMANN:
+        csys->has_nhmg_neumann = true;
+        for (int k = 0; k < d; k++)
+          csys->dof_flag[d*f + k] |= CS_CDO_BC_NEUMANN;
+
+        if (d == 1)
+          cs_equation_compute_full_neumann_sfb(cb->t_bc_eval,
+                                               face_bc->def_ids[bf_id],
+                                               f,
+                                               eqp,
+                                               cm,
+                                               csys->neu_values);
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Case not handled yet.", __func__);
         break;
 
       case CS_CDO_BC_ROBIN:
@@ -594,7 +636,7 @@ cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
           csys->dof_flag[d*f + k] |= CS_CDO_BC_ROBIN;
 
         cs_equation_compute_robin(cb->t_bc_eval,
-                                  face_bc->def_ids[csys->bf_ids[f]],
+                                  face_bc->def_ids[bf_id],
                                   f,
                                   eqp,
                                   cm,
@@ -1095,15 +1137,15 @@ cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the values of the Neumann BCs when DoFs are scalar-valued
- *          and attached to vertices.
+ * \brief  Compute the values of the Neumann BCs when DoFs are scalar-valued
+ *         and attached to vertices. (Not the full Neumann BCs)
  *
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
  * \param[in]      f           local face number in the cs_cell_mesh_t
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in, out] neu_values  array storing the Neumann values
+ * \param[in, out] neu_values  array storing the Neumann values for all DoFs
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1178,8 +1220,8 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of definition.\n"
-                " Stop computing the Neumann value.\n"));
+              _(" %s: Invalid type of definition.\n"
+                " Stop computing the Neumann value.\n"), __func__);
 
   } /* switch def_type */
 }
@@ -1187,64 +1229,123 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the values of the Neumann BCs when DoFs are attached to
- *          faces.
+ *          the face f.
+ *          Case of scalar-valued equation (not full Neumann BCs)
  *
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in]      def_id      id of the definition for setting the Neumann BC
  * \param[in]      f           local face number in the cs_cell_mesh_t
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in, out] neu_values  array storing Neumann values to use
+ * \param[in, out] neu_values  array storing Neumann values for all DoFs
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_compute_neumann_fb(cs_real_t                    t_eval,
-                               short int                    def_id,
-                               short int                    f,
-                               const cs_equation_param_t   *eqp,
-                               const cs_cell_mesh_t        *cm,
-                               double                      *neu_values)
+cs_equation_compute_neumann_sfb(cs_real_t                    t_eval,
+                                short int                    def_id,
+                                short int                    f,
+                                const cs_equation_param_t   *eqp,
+                                const cs_cell_mesh_t        *cm,
+                                double                      *neu_values)
 {
   assert(neu_values != NULL && cm != NULL && eqp != NULL);
   assert(def_id > -1);
-  assert(eqp->dim == 1 || eqp->dim == 3);
+  assert(eqp->dim == 1);
 
   const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
-  /* Flux is a vector in the scalar-valued case and a tensor in the
-     vector-valued case */
+  assert(def->meta & CS_CDO_BC_NEUMANN);
 
-  assert(def->meta & CS_CDO_BC_NEUMANN); /* Neuman BC */
-
-  /* Evaluate the boundary condition at each boundary face */
+  /* Flux in this case is a scalar for each face */
 
   switch(def->type) {
 
   case CS_XDEF_BY_VALUE:
-    if (eqp->dim == 1)
-      cs_xdef_cw_eval_flux_by_val(cm, f, t_eval, def->context, neu_values);
-    else if (eqp->dim == 3)
-      cs_xdef_cw_eval_tensor_flux_by_val(cm, f, t_eval,
-                                         def->context,
-                                         neu_values);
+    {
+      double  *input = def->context;
+
+      neu_values[f] = cm->face[f].meas * input[0];
+    }
     break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    if (eqp->dim == 1)
-      cs_xdef_cw_eval_flux_by_analytic(cm,
-                                       f,
-                                       t_eval,
-                                       def->context,
-                                       def->qtype,
+    cs_xdef_cw_eval_flux_by_scalar_analytic(cm, f, t_eval,
+                                            def->context,
+                                            def->qtype,
+                                            neu_values);
+    break;
+
+  case CS_XDEF_BY_ARRAY:
+    {
+      cs_xdef_array_context_t  *ac = def->context;
+
+      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
+      assert(ac->stride == 1);
+      assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
+             cs_flag_test(ac->loc, cs_flag_boundary_face));
+
+      cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
+      assert(bf_id > -1);
+
+      neu_values[f] = cm->face[f].meas * ac->values[bf_id];
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: Invalid type of definition.\n"
+                " Stop computing the Neumann value.\n"), __func__);
+
+  } /* switch def_type */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the Neumann BCs when DoFs are attached to
+ *          the face f.
+ *          Case of scalar-valued equation with a full Neumann BC definition.
+ *
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in]      def_id      id of the definition for setting the Neumann BC
+ * \param[in]      f           local face number in the cs_cell_mesh_t
+ * \param[in]      eqp         pointer to a cs_equation_param_t
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in, out] neu_values  array storing Neumann values for all DoFs
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_full_neumann_sfb(cs_real_t                    t_eval,
+                                     short int                    def_id,
+                                     short int                    f,
+                                     const cs_equation_param_t   *eqp,
+                                     const cs_cell_mesh_t        *cm,
+                                     double                      *neu_values)
+{
+  assert(neu_values != NULL && cm != NULL && eqp != NULL);
+  assert(def_id > -1);
+  assert(eqp->dim == 1);
+
+  const cs_xdef_t  *def = eqp->bc_defs[def_id];
+
+  assert(def->meta & CS_CDO_BC_FULL_NEUMANN); /* Full Neuman BC */
+
+  /* The flux definition is a vector in this case.
+   * Evaluate the boundary condition at each boundary face */
+
+  switch(def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    cs_xdef_cw_eval_flux_by_vector_val(cm, f, t_eval, def->context,
                                        neu_values);
-    else if (eqp->dim == 3)
-      cs_xdef_cw_eval_tensor_flux_by_analytic(cm,
-                                              f,
-                                              t_eval,
-                                              def->context,
-                                              def->qtype,
-                                              neu_values);
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    cs_xdef_cw_eval_flux_by_vector_analytic(cm, f, t_eval,
+                                            def->context,
+                                            def->qtype,
+                                            neu_values);
     break;
 
   case CS_XDEF_BY_ARRAY:
@@ -1261,14 +1362,92 @@ cs_equation_compute_neumann_fb(cs_real_t                    t_eval,
 
       cs_real_t  *face_val = ac->values + 3*bf_id;
 
-      cs_xdef_cw_eval_flux_by_val(cm, f, t_eval, face_val, neu_values);
+      cs_xdef_cw_eval_flux_by_vector_val(cm, f, t_eval, face_val,
+                                         neu_values);
     }
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid type of definition.\n"
-                " Stop computing the Neumann value.\n"));
+              _(" %s: Invalid type of definition.\n"
+                " Stop computing the Neumann value.\n"), __func__);
+
+  } /* switch def_type */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the values of the Neumann BCs at the face f when DoFs are
+ *         attached to faces.
+ *         Case of vector-valued equation (not the full Neumann)
+ *
+ * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in]      def_id      id of the definition for setting the Neumann BC
+ * \param[in]      f           local face number in the cs_cell_mesh_t
+ * \param[in]      eqp         pointer to a cs_equation_param_t
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in, out] neu_values  array storing Neumann values at DoFs
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_neumann_vfb(cs_real_t                    t_eval,
+                                short int                    def_id,
+                                short int                    f,
+                                const cs_equation_param_t   *eqp,
+                                const cs_cell_mesh_t        *cm,
+                                double                      *neu_values)
+{
+  assert(neu_values != NULL && cm != NULL && eqp != NULL);
+  assert(def_id > -1);
+  assert(eqp->dim == 3);
+
+  const cs_xdef_t  *def = eqp->bc_defs[def_id];
+
+  assert(def->meta & CS_CDO_BC_FULL_NEUMANN); /* Neuman BC */
+
+  /* Flux is a vector in the vector-valued case */
+
+  switch(def->type) {
+
+  case CS_XDEF_BY_VALUE:
+    {
+      double  *input = def->context;
+
+      for (int k = 0; k < 3; k++)
+        neu_values[3*f+k] = cm->face[f].meas * input[k];
+    }
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    cs_xdef_cw_eval_vector_flux_by_analytic(cm, f, t_eval,
+                                            def->context,
+                                            def->qtype,
+                                            neu_values);
+    break;
+
+  case CS_XDEF_BY_ARRAY:
+    {
+      cs_xdef_array_context_t  *ac = def->context;
+
+      assert(eqp->n_bc_defs == 1); /* Only one definition allowed */
+      assert(ac->stride == 3);
+      assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
+             cs_flag_test(ac->loc, cs_flag_boundary_face));
+
+      const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
+      assert(bf_id > -1);
+      const cs_real_t  *face_val = ac->values + 3*bf_id;
+
+      for (int k = 0; k < 3; k++)
+        neu_values[3*f+k] = cm->face[f].meas * face_val[k];
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Invalid type of definition.\n"
+                " Stop computing the Neumann value.\n"), __func__);
 
   } /* switch def_type */
 }

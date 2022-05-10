@@ -56,33 +56,37 @@ BEGIN_C_DECLS
  * @{
  */
 
-/*!  1: Neumann boundary conditions */
+/*!  1: Neumann boundary conditions (scalar/vector-valued) */
 
 #define CS_CDO_BC_NEUMANN               (1 << 0)
 
-/*!  2: Homogeneous Neumann boundary conditions */
+/*!  2: Neumann boundary conditions (vector/tenors-valued) */
 
-#define CS_CDO_BC_HMG_NEUMANN           (1 << 1)
+#define CS_CDO_BC_FULL_NEUMANN          (1 << 1)
 
-/*!  4: Dirichlet boundary conditions */
+/*!  4: Homogeneous Neumann boundary conditions */
 
-#define CS_CDO_BC_DIRICHLET             (1 << 2)
+#define CS_CDO_BC_HMG_NEUMANN           (1 << 2)
 
-/*!  8: Homogeneous Dirichlet boundary conditions */
+/*!  8: Dirichlet boundary conditions */
 
-#define CS_CDO_BC_HMG_DIRICHLET         (1 << 3)
+#define CS_CDO_BC_DIRICHLET             (1 << 3)
 
-/*! 16: Robin boundary conditions */
+/*!  16: Homogeneous Dirichlet boundary conditions */
 
-#define CS_CDO_BC_ROBIN                 (1 << 4)
+#define CS_CDO_BC_HMG_DIRICHLET         (1 << 4)
 
-/*! 32: Apply a sliding condition (for vector-valued equations) */
+/*!  32: Robin boundary conditions */
 
-#define CS_CDO_BC_SLIDING               (1 << 5)
+#define CS_CDO_BC_ROBIN                 (1 << 5)
 
-/*! 64: Apply a Dirichlet on the tangential part of a vector-valued quantity */
+/*!  64: Apply a sliding condition (for vector-valued equations) */
 
-#define CS_CDO_BC_TANGENTIAL_DIRICHLET  (1 << 6)
+#define CS_CDO_BC_SLIDING               (1 << 6)
+
+/*! 128: Apply a Dirichlet on the tangential part of a vector-valued quantity */
+
+#define CS_CDO_BC_TANGENTIAL_DIRICHLET  (1 << 7)
 
 /*! @} */
 
