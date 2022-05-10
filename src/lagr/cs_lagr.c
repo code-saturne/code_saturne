@@ -1789,8 +1789,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
   const cs_time_step_t *ts = cs_glob_time_step;
   const cs_mesh_t *mesh = cs_glob_mesh;
 
-  int  mode;
-
   cs_lagr_boundary_interactions_t *lag_bdi = cs_glob_lagr_boundary_interactions;
   cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
@@ -2129,16 +2127,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
     if (extra->grad_pr == NULL) {
       BFT_MALLOC(extra->grad_pr, cs_glob_mesh->n_cells_with_ghosts, cs_real_3_t);
 
-      cs_lagr_aux_mean_fluid_quantities(0,
-                                        extra->lagr_time,
+      cs_lagr_aux_mean_fluid_quantities(extra->lagr_time,
                                         extra->grad_pr,
                                         extra->grad_vel,
                                         extra->grad_lagr_time);
     }
     else if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
-      mode = 1;
-      if (ts->nt_cur == 1)
-        mode = 0;
 
       if (mesh->time_dep >= CS_MESH_TRANSIENT_CONNECT) {
         cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
@@ -2147,8 +2141,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
           BFT_REALLOC(extra->grad_vel, n_cells_ext, cs_real_33_t);
       }
 
-      cs_lagr_aux_mean_fluid_quantities(mode,
-                                        extra->lagr_time,
+      cs_lagr_aux_mean_fluid_quantities(extra->lagr_time,
                                         extra->grad_pr,
                                         extra->grad_vel,
                                         extra->grad_lagr_time);
@@ -2221,8 +2214,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
          at n+1 (with values at current time step) */
       if (   cs_glob_lagr_time_step->nor == 2
           && cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE)
-        cs_lagr_aux_mean_fluid_quantities(0,
-                                          extra->lagr_time,
+        cs_lagr_aux_mean_fluid_quantities(extra->lagr_time,
                                           extra->grad_pr,
                                           extra->grad_vel,
                                           extra->grad_lagr_time);

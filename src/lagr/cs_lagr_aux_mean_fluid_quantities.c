@@ -92,7 +92,6 @@ BEGIN_C_DECLS
  *  - velocity gradient
  *  - Lagragian time gradient
  *
- * \param[in]   time_id                0: current time, 1: previous
  * \param[out]  lagr_time              Lagragian time scale
  * \param[out]  grad_pr                pressure gradient
  * \param[out]  grad_vel               velocity gradient
@@ -101,8 +100,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_aux_mean_fluid_quantities(int            time_id,
-                                  cs_field_t    *lagr_time,
+cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                                   cs_real_3_t   *grad_pr,
                                   cs_real_33_t  *grad_vel,
                                   cs_real_3_t   *grad_lagr_time)
@@ -114,6 +112,8 @@ cs_lagr_aux_mean_fluid_quantities(int            time_id,
 
   cs_real_t ro0 = cs_glob_fluid_properties->ro0;
   const cs_real_t *grav  = cs_glob_physical_constants->gravity;
+
+  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
 
   bool turb_disp_model = false;
   if (   cs_glob_lagr_model->modcpl > 0
@@ -143,136 +143,134 @@ cs_lagr_aux_mean_fluid_quantities(int            time_id,
         }
       }
     }
-
-    return;
   }
 
-  cs_real_t *wpres = NULL;
-
-  /* Hydrostatic pressure algorithm? */
-  int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
-
-  cs_real_3_t *f_ext = NULL;
-  if (hyd_p_flag == 1)
-    f_ext = (cs_real_3_t *)(cs_field_by_name("volume_forces")->val);
-
-  cs_real_t *solved_pres
-    = time_id ? extra->pressure->val_pre : extra->pressure->val;
-
-  /* retrieve 2/3 rho^{n} k^{n} from solved pressure field for EVM models */
-  // FIXME if time_id = 1, we don't have k^{n-1}
-  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
-  assert(turb_model != NULL);
-  if (   turb_model->itytur == 2
-      || turb_model->itytur == 4
-      || turb_model->itytur == 5
-      || turb_model->itytur == 6) {
-    BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
-
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      wpres[c_id] =  solved_pres[c_id]
-                   -  2./3. * extra->cromf->val[c_id]
-                    * extra->cvar_k->val_pre[c_id];
-    }
-  }
   else {
-    wpres = solved_pres;
-  }
 
-  /* Parameters for gradient computation
-   * =================================== */
+    cs_real_t *wpres = NULL;
 
-  int tr_dim = 0;
-  cs_lnum_t inc = 1;
-  cs_lnum_t iccocg = 1;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_var_cal_opt_t var_cal_opt;
+    /* Hydrostatic pressure algorithm? */
+    int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
 
-  int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+    cs_real_3_t *f_ext = NULL;
+    if (hyd_p_flag == 1)
+      f_ext = (cs_real_3_t *)(cs_field_by_name("volume_forces")->val);
 
-  /* Get the calculation option from the pressure field */
+    cs_real_t *solved_pres = extra->pressure->val;
 
-  cs_field_get_key_struct(extra->pressure, key_cal_opt_id, &var_cal_opt);
+    /* retrieve 2/3 rho^{n} k^{n} from solved pressure field for EVM models */
+    assert(turb_model != NULL);
+    if (   turb_model->itytur == 2
+        || turb_model->itytur == 4
+        || turb_model->itytur == 5
+        || turb_model->itytur == 6) {
+      BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
 
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                             &gradient_type,
-                             &halo_type);
-
-  cs_real_t *weight = NULL;
-  cs_internal_coupling_t  *cpl = NULL;
-  int w_stride = 1;
-
-  if (var_cal_opt.iwgrec == 1) {
-    /* Weighted gradient coefficients */
-    int key_id = cs_field_key_id("gradient_weighting_id");
-    int diff_id = cs_field_get_key_int(extra->pressure, key_id);
-    if (diff_id > -1) {
-      cs_field_t *weight_f = cs_field_by_id(diff_id);
-      weight = weight_f->val;
-      w_stride = weight_f->dim;
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        wpres[c_id] =  solved_pres[c_id]
+                     -  2./3. * extra->cromf->val[c_id]
+                      * extra->cvar_k->val_pre[c_id];
+      }
     }
-    /* Internal coupling structure */
-    key_id = cs_field_key_id_try("coupling_entity");
-    if (key_id > -1) {
-      int coupl_id = cs_field_get_key_int(extra->pressure, key_id);
-      if (coupl_id > -1)
-        cpl = cs_internal_coupling_by_id(coupl_id);
+    else {
+      wpres = solved_pres;
     }
-  } else if (var_cal_opt.iwgrec == 0) {
-    if (var_cal_opt.idiff > 0) {
-      int key_id = cs_field_key_id_try("coupling_entity");
+
+    /* Parameters for gradient computation
+     * =================================== */
+
+    int tr_dim = 0;
+    cs_lnum_t inc = 1;
+    cs_lnum_t iccocg = 1;
+    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+    cs_halo_type_t halo_type = CS_HALO_STANDARD;
+    cs_var_cal_opt_t var_cal_opt;
+
+    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
+
+    /* Get the calculation option from the pressure field */
+
+    cs_field_get_key_struct(extra->pressure, key_cal_opt_id, &var_cal_opt);
+
+    cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+                               &gradient_type,
+                               &halo_type);
+
+    cs_real_t *weight = NULL;
+    cs_internal_coupling_t  *cpl = NULL;
+    int w_stride = 1;
+
+    if (var_cal_opt.iwgrec == 1) {
+      /* Weighted gradient coefficients */
+      int key_id = cs_field_key_id("gradient_weighting_id");
+      int diff_id = cs_field_get_key_int(extra->pressure, key_id);
+      if (diff_id > -1) {
+        cs_field_t *weight_f = cs_field_by_id(diff_id);
+        weight = weight_f->val;
+        w_stride = weight_f->dim;
+      }
+      /* Internal coupling structure */
+      key_id = cs_field_key_id_try("coupling_entity");
       if (key_id > -1) {
         int coupl_id = cs_field_get_key_int(extra->pressure, key_id);
         if (coupl_id > -1)
           cpl = cs_internal_coupling_by_id(coupl_id);
       }
+    } else if (var_cal_opt.iwgrec == 0) {
+      if (var_cal_opt.idiff > 0) {
+        int key_id = cs_field_key_id_try("coupling_entity");
+        if (key_id > -1) {
+          int coupl_id = cs_field_get_key_int(extra->pressure, key_id);
+          if (coupl_id > -1)
+            cpl = cs_internal_coupling_by_id(coupl_id);
+        }
+      }
     }
-  }
 
-  /* Compute pressure gradient
-   * ========================= */
+    /* Compute pressure gradient
+     * ========================= */
 
-  cs_gradient_scalar("pressure [Lagrangian module]",
-                     gradient_type,
-                     halo_type,
-                     inc,
-                     iccocg,
-                     var_cal_opt.nswrgr,
-                     tr_dim,
-                     hyd_p_flag,
-                     w_stride,
-                     var_cal_opt.verbosity,
-                     var_cal_opt.imligr,
-                     var_cal_opt.epsrgr,
-                     var_cal_opt.climgr,
-                     f_ext,
-                     extra->pressure->bc_coeffs->a,
-                     extra->pressure->bc_coeffs->b,
-                     wpres,
-                     weight,
-                     cpl,
-                     grad_pr);
+    cs_gradient_scalar("pressure [Lagrangian module]",
+                       gradient_type,
+                       halo_type,
+                       inc,
+                       iccocg,
+                       var_cal_opt.nswrgr,
+                       tr_dim,
+                       hyd_p_flag,
+                       w_stride,
+                       var_cal_opt.verbosity,
+                       var_cal_opt.imligr,
+                       var_cal_opt.epsrgr,
+                       var_cal_opt.climgr,
+                       f_ext,
+                       extra->pressure->bc_coeffs->a,
+                       extra->pressure->bc_coeffs->b,
+                       wpres,
+                       weight,
+                       cpl,
+                       grad_pr);
 
-  if (wpres != solved_pres)
-    BFT_FREE(wpres);
+    if (wpres != solved_pres)
+      BFT_FREE(wpres);
 
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
-    for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
-      for (cs_lnum_t id = 0; id < 3; id++)
-        grad_pr[iel][id] += ro0 * grav[id];
+    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
+      for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
+        for (cs_lnum_t id = 0; id < 3; id++)
+          grad_pr[iel][id] += ro0 * grav[id];
+      }
     }
-  }
 
-  /* Compute velocity gradient
-     ========================= */
+    /* Compute velocity gradient
+       ========================= */
 
-  if (turb_disp_model || cs_glob_lagr_model->shape > 0
-      || cs_glob_lagr_time_scheme->interpol_field) {
-    cs_field_gradient_vector(extra->vel,
-                             time_id,
-                             inc,
-                             grad_vel);
+    if (turb_disp_model || cs_glob_lagr_model->shape > 0
+        || cs_glob_lagr_time_scheme->interpol_field) {
+      cs_field_gradient_vector(extra->vel,
+                               0,
+                               inc,
+                               grad_vel);
+    }
   }
 
   /* Compute Lagrangian time gradient
@@ -296,8 +294,8 @@ cs_lagr_aux_mean_fluid_quantities(int            time_id,
     if (extra->itytur == 2 || extra->itytur == 4 || extra->iturb == 50) {
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        energi[cell_id] = extra->cvar_k->vals[time_id][cell_id];
-        dissip[cell_id] = extra->cvar_ep->vals[time_id][cell_id];
+        energi[cell_id] = extra->cvar_k->val[cell_id];
+        dissip[cell_id] = extra->cvar_ep->val[cell_id];
       }
 
     }
@@ -305,10 +303,10 @@ cs_lagr_aux_mean_fluid_quantities(int            time_id,
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
-        energi[cell_id] = 0.5 * (  extra->cvar_rij->vals[time_id][6*cell_id]
-                                 + extra->cvar_rij->vals[time_id][6*cell_id+1]
-                                 + extra->cvar_rij->vals[time_id][6*cell_id+2]);
-        dissip[cell_id] = extra->cvar_ep->vals[time_id][cell_id];
+        energi[cell_id] = 0.5 * (  extra->cvar_rij->val[6*cell_id]
+                                 + extra->cvar_rij->val[6*cell_id+1]
+                                 + extra->cvar_rij->val[6*cell_id+2]);
+        dissip[cell_id] = extra->cvar_ep->val[cell_id];
         extra->cvar_k->val[cell_id] = energi[cell_id] ;
       }
 
@@ -316,9 +314,9 @@ cs_lagr_aux_mean_fluid_quantities(int            time_id,
     else if (extra->iturb == 60) {
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        energi[cell_id] = extra->cvar_k->vals[time_id][cell_id];
+        energi[cell_id] = extra->cvar_k->val[cell_id];
         dissip[cell_id] = extra->cmu * energi[cell_id]
-                                     * extra->cvar_omg->vals[time_id][cell_id];
+                                     * extra->cvar_omg->val[cell_id];
       }
 
     }
@@ -366,7 +364,7 @@ cs_lagr_aux_mean_fluid_quantities(int            time_id,
 
     if (grad_lagr_time != NULL)
       cs_field_gradient_scalar(lagr_time,
-                               time_id, /* use_previous_t */
+                               0, /* use_previous_t */
                                1, /* inc: not an increment */
                                true, /* _recompute_cocg */
                                grad_lagr_time);

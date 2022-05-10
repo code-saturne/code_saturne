@@ -58,7 +58,6 @@ BEGIN_C_DECLS
  *  - velocity gradient
  *  - Lagragian time gradient
  *
- * \param[in]   time_id            0: current time, 1: previous
  * \param[out]  lagr_time          Lagrangian time scale
  * \param[out]  grad_pr            pressure gradient
  * \param[out]  grad_vel           velocity gradient
@@ -67,8 +66,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_aux_mean_fluid_quantities(int            time_id,
-                                  cs_field_t    *lagr_time,
+cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                                   cs_real_3_t   *gradpr,
                                   cs_real_33_t  *grad_vel,
                                   cs_real_3_t   *grad_lagr_time);
