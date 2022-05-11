@@ -1274,15 +1274,15 @@ cs_cdovb_scaleq_init_sharing(const cs_cdo_quantities_t    *quant,
     assert(t_id < cs_glob_n_threads);
 
     _svb_cell_system[t_id] = cs_cell_sys_create(connect->n_max_vbyc,
-                                                 connect->n_max_fbyc,
-                                                 1, NULL);
+                                                connect->n_max_fbyc,
+                                                1, NULL);
     _svb_cell_builder[t_id] = _svb_create_cell_builder(connect);
   }
 #else
   assert(cs_glob_n_threads == 1);
   _svb_cell_system[0] = cs_cell_sys_create(connect->n_max_vbyc,
-                                            connect->n_max_fbyc,
-                                            1, NULL);
+                                           connect->n_max_fbyc,
+                                           1, NULL);
   _svb_cell_builder[0] = _svb_create_cell_builder(connect);
 
 #endif /* openMP */

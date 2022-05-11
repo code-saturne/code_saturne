@@ -446,7 +446,7 @@ typedef enum {
  *
  * \var CS_PARAM_BC_NEUMANN_FULL
  * Neumann conditions with full definition relative to all directions, i.e.
- * not only the normal direction.  The value of the flux of variable is set to
+ * not only the normal direction. The value of the flux of variable is set to
  * the user requirements.
  *
  * \var CS_PARAM_BC_ROBIN

@@ -103,6 +103,7 @@ void
 cs_cdo_field_interpolation_activate(cs_flag_t     mode)
 {
   /* Store which kind of interpolation will be called */
+
   _field_interpolation_flag = mode;
 
   cs_property_t  *pty = cs_property_by_name("unity");
@@ -114,6 +115,7 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
   if (mode & CS_CDO_FIELD_INTERPOLATION_SCALAR_C2V) {
 
     /* Add a new equation to build a cell --> vertices interpolation */
+
     _field_interpolation_scalar_c2v_eq
       = cs_equation_add("scalar_c2v_field_interpolation",
                         "scalar_c2v_field_interpolation",
@@ -131,6 +133,7 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-4");
 
     /* Add a diffusion term (Poisson eq.) */
+
     cs_equation_add_diffusion(eqp, pty);
 
   }
@@ -138,6 +141,7 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
   if (mode & CS_CDO_FIELD_INTERPOLATION_SCALAR_C2F) {
 
     /* Add a new equation to build a cell --> faces interpolation */
+
     _field_interpolation_scalar_c2f_eq
       = cs_equation_add("scalar_c2f_field_interpolation",
                         "scalar_c2f_field_interpolation",
@@ -155,6 +159,7 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-4");
 
     /* Add a diffusion term (Poisson eq.) */
+
     cs_equation_add_diffusion(eqp, pty);
 
   }
@@ -186,7 +191,6 @@ cs_cdo_field_interpolation_cell_to_vertices(const cs_mesh_t    *mesh,
 
   cs_equation_t  *eq = _field_interpolation_scalar_c2v_eq;
 
-  /* Sanity check */
   assert(CS_SPACE_SCHEME_CDOVCB == cs_equation_get_space_scheme(eq));
 
   if (eq->main_ts_id > -1)
@@ -195,6 +199,7 @@ cs_cdo_field_interpolation_cell_to_vertices(const cs_mesh_t    *mesh,
   /* Allocate, build and solve the algebraic system:
    * The linear solver is called inside and the field value is updated inside
    */
+
   cs_cdovcb_scaleq_interpolate(mesh,
                                cell_values,
                                eq->field_id,
@@ -203,6 +208,7 @@ cs_cdo_field_interpolation_cell_to_vertices(const cs_mesh_t    *mesh,
                                eq->scheme_context);
 
   /* Copy the computed solution into the given array at vertices */
+
   cs_field_t  *f = cs_field_by_id(eq->field_id);
   memcpy(vtx_values, f->val, mesh->n_vertices*sizeof(cs_real_t));
 
@@ -236,7 +242,6 @@ cs_cdo_field_interpolation_cell_to_faces(const cs_mesh_t    *mesh,
 
   cs_equation_t  *eq = _field_interpolation_scalar_c2f_eq;
 
-  /* Sanity check */
   assert(CS_SPACE_SCHEME_CDOFB == cs_equation_get_space_scheme(eq));
 
   if (eq->main_ts_id > -1)
@@ -245,6 +250,7 @@ cs_cdo_field_interpolation_cell_to_faces(const cs_mesh_t    *mesh,
   /* Allocate, build and solve the algebraic system:
    * The linear solver is called inside and the field value is updated inside
    */
+
   cs_cdofb_scaleq_interpolate(mesh,
                               cell_values,
                               eq->field_id,
@@ -253,6 +259,7 @@ cs_cdo_field_interpolation_cell_to_faces(const cs_mesh_t    *mesh,
                               eq->scheme_context);
 
   /* Copy the computed solution into the given array on faces */
+
   cs_real_t *_face_values =
     cs_cdofb_scaleq_get_face_values(eq->scheme_context, false);
   memcpy(face_values, _face_values,

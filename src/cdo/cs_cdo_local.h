@@ -143,9 +143,10 @@ typedef struct {
  *  This is a key structure for building the local algebraic system.
  *  This structure belongs to one thread and only.
  */
+
 typedef struct {
 
-  cs_lnum_t   c_id;       /*!< cell id  */
+  cs_lnum_t   c_id;     /*!< cell id  */
 
   int         n_dofs;   /*!< Number of Degrees of Freedom (DoFs) in this cell */
   cs_lnum_t  *dof_ids;  /*!< DoF ids */
@@ -205,23 +206,27 @@ typedef struct {
   fvm_element_t  type;    /*!< type of element related to this cell */
 
   /* Sizes used to allocate buffers */
+
   short int      n_max_vbyc;
   short int      n_max_ebyc;
   short int      n_max_fbyc;
 
   /* Cell information */
+
   cs_lnum_t      c_id;    /*!< id of related cell */
   cs_real_3_t    xc;      /*!< coordinates of the cell center */
   double         vol_c;   /*!< volume of the current cell */
   double         diam_c;  /*!< diameter of the current cell */
 
   /* Vertex information */
+
   short int    n_vc;  /*!< number of vertices in a cell */
   cs_lnum_t   *v_ids; /*!< vertex ids on this rank */
   double      *xv;    /*!< local vertex coordinates (copy) */
   double      *wvc;   /*!< weight |dualvol(v) cap vol_c|/|vol_c|, size: n_vc */
 
   /* Edge information */
+
   short int    n_ec;   /*!< number of edges in a cell */
   cs_lnum_t   *e_ids;  /*!< edge ids on this rank */
   cs_quant_t  *edge;   /*!< edge quantities (xe, length and unit vector) */
@@ -229,6 +234,7 @@ typedef struct {
   cs_real_t   *pvol_e; /*!< volume associated to an edge in the cell */
 
   /* Face information */
+
   short int    n_fc;        /*!< number of faces in a cell */
   cs_lnum_t    bface_shift; /*!< shift to get the boundary face numbering */
   cs_lnum_t   *f_ids;       /*!< face ids on this rank */
@@ -240,10 +246,12 @@ typedef struct {
   cs_real_t   *pvol_f;      /*!< volume associated to a face in the cell */
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
+
   short int   *e2v_ids;  /*!< cell-wise edge->vertices connectivity */
   short int   *e2v_sgn;  /*!< cell-wise edge->vertices orientation (-1 or +1) */
 
   /* Local f2v connectivity: size = 2*n_max_ebyc */
+
   short int   *f2v_idx;  /*!< size n_fc + 1 */
   short int   *f2v_ids;  /*!< size 2*n_max_ebyc */
 
@@ -254,6 +262,7 @@ typedef struct {
   double      *tef;      /*!< area of the triangle of base |e| and apex xf */
 
   /* Local e2f connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
+
   short int   *e2f_ids;  /*!< cell-wise edge -> faces connectivity */
   cs_nvec3_t  *sefc;     /*!< portion of dual faces (2 triangles by edge) */
 
@@ -275,6 +284,7 @@ typedef struct {
   cs_real_3_t  xc;      /*!< pointer to the coordinates of the cell center */
 
   /* Face information */
+
   cs_lnum_t    f_id;   /*!< local mesh face id */
   short int    f_sgn;  /*!< incidence number between f and c */
   cs_quant_t   face;   /*!< face quantities (xf, area and unit normal) */
@@ -283,26 +293,29 @@ typedef struct {
   double       hfc;    /*!< height of the pyramid of base f and apex x_c */
 
   /* Vertex information */
+
   short int    n_vf;    /*!< local number of vertices on this face */
   cs_lnum_t   *v_ids;   /*!< vertex ids (in the mesh or cellwise numbering) */
   double      *xv;      /*!< local vertex coordinates (copy) */
   double      *wvf;     /*!< weight related to each vertex */
 
   /* Edge information */
+
   short int    n_ef;    /*!< local number of edges in on this face (= n_vf) */
   cs_lnum_t   *e_ids;   /*!< edge ids (in the mesh or cellwise numbering) */
   cs_quant_t  *edge;    /*!< edge quantities (xe, length and unit vector) */
   double      *tef;     /*!< area of the triangle of base e and apex xf */
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyf) */
+
   short int   *e2v_ids;  /*!< face-wise edge -> vertices connectivity */
 
 } cs_face_mesh_t;
 
 /*
-   A cs_face_mesh_light_t structure is close to a cs_face_mesh_t structure
-   There are less members to be buildt quicker.
-   Such structure is always associated to a cs_cell_mesh_t structure
+  A cs_face_mesh_light_t structure is close to a cs_face_mesh_t structure
+  There are less members to be buildt quicker.
+  Such structure is always associated to a cs_cell_mesh_t structure
 */
 
 typedef struct {
@@ -314,11 +327,13 @@ typedef struct {
   short int    f;       /* id of the face in the cell mesh numbering */
 
   /* Vertex information */
+
   short int    n_vf;    /* local number of vertices on this face */
   short int   *v_ids;   /* vertex ids in the cellwise numbering */
   double      *wvf;     /* weights related to each vertex */
 
   /* Edge information */
+
   short int    n_ef;    /* local number of edges on this face (= n_vf) */
   short int   *e_ids;   /* edge ids in the cellwise numbering */
   double      *tef;     /* area of the triangle of base e and apex xf */
@@ -333,10 +348,12 @@ typedef struct {
  * buffers are also used for computing quantities related to a cs_cell_mesh_t
  * (there are as many buffers as threads since a call to these buffers can be
  * inside an OpenMP directive */
+
 extern int                     cs_cdo_local_d_buffer_size;
 extern double                **cs_cdo_local_d_buffer;
 
 /* Pointer of pointers to global structures */
+
 extern cs_cell_mesh_t        **cs_cdo_local_cell_meshes;
 extern cs_face_mesh_t        **cs_cdo_local_face_meshes;
 extern cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light;
@@ -488,10 +505,12 @@ cs_cell_mesh_get_f2v(short int                    f,
                      short int                   *v_ids)
 {
   /* Reset */
+
   *n_vf = 0;
   for (short int v = 0; v < cm->n_vc; v++) v_ids[v] = -1;
 
   /* Tag vertices belonging to the current face f */
+
   for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
     const int  shift_e = 2*cm->f2e_ids[i];
@@ -504,7 +523,6 @@ cs_cell_mesh_get_f2v(short int                    f,
     if (v_ids[v] > 0)
       v_ids[*n_vf] = v, *n_vf += 1;
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
