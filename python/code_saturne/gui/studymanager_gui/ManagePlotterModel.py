@@ -140,7 +140,7 @@ class ManagePlotterModel(Model):
         study_node = self.case.xmlGetNode("study", label=study)
         id_max = -1
         for nn in study_node.xmlGetNodeList("subplot"):
-            idx = nn['id']
+            idx = int(nn['id'])
             if id_max < idx:
                 id_max = idx
         id_max = id_max+1
