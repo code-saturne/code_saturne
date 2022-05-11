@@ -628,7 +628,7 @@ class StandardItemModelFigure(QStandardItemModel):
                         self.tr("size (in)"),
                         self.tr("format")]
         self.keys = ['name', 'subplots', 'title', 'rows', 'columns',
-                     'size (in)', 'format']
+                     'figsize', 'format']
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
