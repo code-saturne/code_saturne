@@ -2767,7 +2767,7 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
   /* We might have remaining cells */
 
   for (int ii = 0; ii < f_n_rows; ii++) {
-    if (f_c_row[ii] < -1)
+    if (f_c_row[ii] < 0)
       f_c_row[ii] = c_n_rows++;
   }
 
