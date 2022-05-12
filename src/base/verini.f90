@@ -278,9 +278,7 @@ endif
 
 if (nterup.gt.1) then
 
-  if (ipucou.eq.1.or.indest.eq.1.or.                             &
-      ippmod(icompf).ge.0.or.iccvfg.eq.1.or.                     &
-      idtvar.eq.-1) then
+  if (indest.eq.1.or.ippmod(icompf).ge.0) then
     write(nfecra,2141) nterup
     iok = iok + 1
   endif
@@ -1015,10 +1013,7 @@ endif
 '@  Current version does not allow this in combination with',   /,&
 '@  one of the following options (which has been activated ):', /,&
 '@    - Error estimation (IESCAL)',                             /,&
-'@    - reinforced U-P coupling (IPUCOU)',                      /,&
-'@    - steady-state algorithm(IDTVAR=-1)',                     /,&
 '@    - compressible module (IPPMOD(ICOMPF)>=0)',               /,&
-'@    - frozen velocity field (ICCVFG=1)',                      /,&
 '@  Computation CAN NOT run',                                   /,&
 '@',                                                            /,&
 '@ Check the input data.',                                      /,&

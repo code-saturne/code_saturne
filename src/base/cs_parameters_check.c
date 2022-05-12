@@ -838,7 +838,7 @@ cs_parameters_check(void)
 
   const cs_velocity_pressure_model_t *vp_model
     = cs_glob_velocity_pressure_model;
-  const cs_velocity_pressure_param_t *vp_param
+  cs_velocity_pressure_param_t *vp_param
     = cs_glob_velocity_pressure_param;
 
   cs_field_t *f_th = cs_thermal_model_field();
@@ -1095,6 +1095,47 @@ cs_parameters_check(void)
                                 "cs_glob_time_step_options->idtvar",
                                 cs_glob_time_step_options->idtvar,
                                 -1, 3);
+
+  if (cs_glob_time_scheme->iccvfg == 1) {
+    cs_parameters_is_equal_int(CS_WARNING,
+                              _("while reading input data,\n"
+                                "cs_glob_velocity_pressure_param->nterup "
+                                "(Navier-Stokes sub-iterations)\n"
+                                "is incompatible with fozen velocity field\n"
+                                "it will be set to 1."),
+                              "nterup",
+                              vp_param->nterup,
+                              1);
+    vp_param->nterup = 1;
+  }
+
+  if (vp_param->ipucou == 1) {
+    cs_parameters_is_equal_int(CS_WARNING,
+                              _("while reading input data,\n"
+                                "cs_glob_velocity_pressure_param->nterup "
+                                "(Navier-Stokes sub-iterations)\n"
+                                "is not compatible with reinforced "
+                                "velocity-pressure coupling (ipucou=1)\n"
+                                "it will be set to 1."),
+                              "nterup",
+                              vp_param->nterup,
+                              1);
+    vp_param->nterup = 1;
+  }
+
+  if (cs_glob_time_step_options->idtvar == -1) {
+    cs_parameters_is_equal_int(CS_WARNING,
+                              _("while reading input data,\n"
+                                "cs_glob_velocity_pressure_param->nterup "
+                                "(Navier-Stokes sub-iterations)\n"
+                                "is not compatible with steady algorithm "
+                                "(idtvar=-1)\n"
+                                "it will be set to 1."),
+                              "nterup",
+                              vp_param->nterup,
+                              1);
+    vp_param->nterup = 1;
+  }
 
   /* Steady Algorithm */
   if (cs_glob_time_step_options->idtvar < 0) {
