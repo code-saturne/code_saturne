@@ -1751,7 +1751,6 @@ contains
 
   !=============================================================================
 
-
   !> \brief Return pointer to the values array of a given vector field
 
   !> \param[in]     field_id  id of given field (which must be vectorial)
@@ -1779,6 +1778,38 @@ contains
     call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)])
 
   end subroutine field_get_val_v
+
+  !=============================================================================
+
+  !> \brief Return pointer to the values array of a given 3*3 tensor field
+
+  !> \param[in]     field_id  id of given field (which must be vectorial)
+  !> \param[out]    p         pointer to vector field values
+
+  subroutine field_get_val_t(field_id, p)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    integer, intent(in)                                      :: field_id
+    double precision, dimension(:,:,:), pointer, intent(inout) :: p
+
+    ! Local variables
+
+    integer(c_int) :: f_id, p_type, p_rank
+    integer(c_int), dimension(2) :: f_dim
+    type(c_ptr) :: c_p
+
+    f_id = field_id
+    p_type = 1
+    p_rank = 2
+
+    call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
+    ! TODO assert f_dim(2) = 9
+    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)/3, f_dim(2)/3])
+
+  end subroutine field_get_val_t
+
 
 !=============================================================================
 

@@ -206,8 +206,10 @@ double precision, dimension(:,:), allocatable :: smbr
 double precision, dimension(:,:,:), allocatable :: fimp
 double precision, dimension(:,:,:), allocatable :: fimpcp
 double precision, dimension(:,:), allocatable :: gavinj
-double precision, dimension(:,:), allocatable :: tsexp
-double precision, dimension(:,:,:), allocatable :: tsimp
+double precision, allocatable, dimension(:,:), target :: loctsexp
+double precision, allocatable, dimension(:,:,:), target :: loctsimp
+double precision, dimension(:,:), pointer :: tsexp
+double precision, dimension(:,:,:), pointer :: tsimp
 double precision, allocatable, dimension(:,:) :: viscce
 double precision, dimension(:,:), allocatable :: vect
 double precision, dimension(:), pointer :: crom, croma, cromaa, pcrom
@@ -303,8 +305,6 @@ endif
 allocate(smbr(3,ncelet))
 allocate(fimp(3,3,ncelet))
 allocate(fimpcp(3,3,ncelet))
-allocate(tsexp(3,ncelet))
-allocate(tsimp(3,3,ncelet))
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
@@ -405,6 +405,22 @@ endif
 
 !-------------------------------------------------------------------------------
 ! ---> Get user source terms
+
+call field_get_id_try("velocity_source_term_exp", f_id)
+if (f_id.ge.0) then
+  call field_get_val_v(f_id, tsexp)
+else
+  allocate(loctsexp(3,ncelet))
+  tsexp => loctsexp
+endif
+
+call field_get_id_try("velocity_source_term_imp", f_id)
+if (f_id.ge.0) then
+  call field_get_val_t(f_id, tsimp)
+else
+  allocate(loctsimp(3,3,ncelet))
+  tsimp => loctsimp
+endif
 
 do iel = 1, ncel
   do isou = 1, 3
@@ -1891,8 +1907,8 @@ endif
 deallocate(smbr)
 deallocate(fimp)
 deallocate(fimpcp)
-deallocate(tsexp)
-deallocate(tsimp)
+if (allocated(loctsexp)) deallocate(loctsexp)
+if (allocated(loctsimp)) deallocate(loctsimp)
 if (allocated(viscce)) deallocate(viscce)
 if (allocated(divt)) deallocate(divt)
 if (allocated(cproa_rho_tc)) deallocate(cproa_rho_tc)
