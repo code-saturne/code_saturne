@@ -215,10 +215,12 @@ class TimeStepModel(Model):
         node = self.node_np.xmlInitNode('velocity_pressure_algo', 'choice')
         node['choice'] = value
         if value == 'simple' or value =='simplec':
+            # Note: set 1 will remove the line because it is default in
+            # self.node_algo.xmlSetData('piso_sweep_number', value, default=1)
             self.setVelocityPressureParamSweepNumber(1)
         else:
             default = self.defaultValues()['piso_sweep_number']
-            if self.getVelocityPressureParamSweepNumber() < default:
+            if self.getVelocityPressureParamSweepNumber() is None:
                 value = default
                 self.setVelocityPressureParamSweepNumber(value)
 
@@ -230,8 +232,6 @@ class TimeStepModel(Model):
         """
         self.node_algo = self.node_np.xmlGetNode('velocity_pressure_algo')
         value = self.node_algo.xmlGetInt('piso_sweep_number')
-        if value is None:
-            value = self.defaultValues()['piso_sweep_number']
         return value
 
 
@@ -242,6 +242,8 @@ class TimeStepModel(Model):
         """
         self.isInt(value)
         self.node_algo = self.node_np.xmlGetNode('velocity_pressure_algo')
+        # Note: default here is default value of nterup in general,
+        # not default value  of nterup when PISO is chosen (2)
         self.node_algo.xmlSetData('piso_sweep_number', value, default=1)
 
 

@@ -280,7 +280,8 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.spinBoxNTERUP.hide()
 
         value = self.mdl.getVelocityPressureParamSweepNumber()
-        self.spinBoxNTERUP.setValue(value)
+        if value is not None:
+            self.spinBoxNTERUP.setValue(value)
 
         if idtvar == -1:
             self.labelRELXST.show()
