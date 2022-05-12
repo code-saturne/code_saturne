@@ -1542,7 +1542,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
   }
 
   /* Boussinesq hypothesis */
-  if (idilat==0) {
+  if (idilat == 0) {
     bft_printf(
         "Meteo profiles are computed according to Boussinesq approximation.\n"
         "Using adiabatic profiles for temperature and pressure."
