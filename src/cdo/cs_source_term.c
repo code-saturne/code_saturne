@@ -441,7 +441,6 @@ _set_vb_function(const cs_xdef_t              *st_def,
     {
       cs_xdef_array_context_t  *cx = st_def->context;
 
-      assert(st_def->meta & CS_FLAG_DUAL);
       assert(cx->stride == 1);
 
       *msh_flag |= CS_FLAG_COMP_PVQ;
@@ -449,13 +448,22 @@ _set_vb_function(const cs_xdef_t              *st_def,
       if (cs_flag_test(cx->loc, cs_flag_primal_vtx)) {
         if (st_def->meta & CS_FLAG_DUAL)
           func = cs_source_term_dcsd_by_pv_array;
-        else
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Invalid type of definition for a source term in CDOVB",
-                    __func__);
+        else {
+          assert(st_def->meta & CS_FLAG_PRIMAL);
+          func = cs_source_term_pvsp_by_array;
+        }
       }
-      else if (cs_flag_test(cx->loc, cs_flag_dual_cell_byc)) /* Should be before cs_flag_dual_cell */
-        func = cs_source_term_dcsd_by_pc2v_array;
+      else if (cs_flag_test(cx->loc, cs_flag_dual_cell_byc))  {
+
+        /* Should be before cs_flag_dual_cell */
+        if (st_def->meta & CS_FLAG_DUAL)
+          func = cs_source_term_dcsd_by_c2v_array;
+        else {
+          assert(st_def->meta & CS_FLAG_PRIMAL);
+          func = cs_source_term_pvsp_by_c2v_array;
+        }
+
+      }
       else if (cs_flag_test(cx->loc, cs_flag_dual_cell))
         func = cs_source_term_dcsd_by_pv_array;
       else if (cs_flag_test(cx->loc, cs_flag_primal_cell))
@@ -1075,6 +1083,117 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
 /*!
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it to the given array of values.
+ *         Case of a scalar potential defined at primal vertices by an array.
+ *         A discrete Hodge operator has to be computed before this call and
+ *         given as an input parameter
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_pvsp_by_array(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
+                             cs_cell_builder_t         *cb,
+                             void                      *input,
+                             double                    *values)
+{
+  if (source == NULL)
+    return;
+
+  cs_hodge_t  *mass_hodge = (cs_hodge_t *)input;
+
+  assert(values != NULL && cm != NULL && cb != NULL);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV));
+  assert(mass_hodge != NULL);
+  assert(mass_hodge->matrix != NULL);
+
+  cs_xdef_array_context_t  *ac =
+    (cs_xdef_array_context_t *)source->context;
+
+  assert(ac->stride == 1);
+  assert(ac->loc == cs_flag_primal_vtx);
+
+  /* Retrieve the values of the potential at each cell vertices */
+
+  double  *vals = cb->values;
+  double  *eval = cb->values + cm->n_vc;
+
+  for (int v = 0; v < cm->n_vc; v++)
+    vals[v] = ac->values[cm->v_ids[v]];
+
+  /* Multiply these values by a cellwise Hodge operator previously computed */
+
+  cs_sdm_square_matvec(mass_hodge->matrix, vals, eval);
+
+  for (short int v = 0; v < cm->n_vc; v++)
+    values[v] += eval[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it to the given array of values.
+ *         Case of a scalar potential defined at primal vertices by an array.
+ *         A discrete Hodge operator has to be computed before this call and
+ *         given as an input parameter
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_pvsp_by_c2v_array(const cs_xdef_t           *source,
+                                 const cs_cell_mesh_t      *cm,
+                                 cs_real_t                  time_eval,
+                                 cs_cell_builder_t         *cb,
+                                 void                      *input,
+                                 double                    *values)
+{
+  if (source == NULL)
+    return;
+
+  cs_hodge_t  *mass_hodge = (cs_hodge_t *)input;
+
+  assert(values != NULL && cm != NULL && cb != NULL);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV));
+  assert(mass_hodge != NULL);
+  assert(mass_hodge->matrix != NULL);
+
+  cs_xdef_array_context_t  *ac =
+    (cs_xdef_array_context_t *)source->context;
+
+  assert(ac->stride == 1);
+  assert(ac->loc == cs_flag_primal_vtx);
+  assert(ac->index != NULL);
+
+  double  *eval = cb->values;
+
+  /* Multiply these values by a cellwise Hodge operator previously computed */
+
+  cs_sdm_square_matvec(mass_hodge->matrix,
+                       ac->values + ac->index[cm->c_id],
+                       eval);
+
+  for (short int v = 0; v < cm->n_vc; v++)
+    values[v] += eval[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it to the given array of values.
  *         Case of a scalar density defined at dual cells by a value.
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
@@ -1209,12 +1328,12 @@ cs_source_term_dcsd_by_pv_array(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_source_term_dcsd_by_pc2v_array(const cs_xdef_t           *source,
-                                  const cs_cell_mesh_t      *cm,
-                                  cs_real_t                  time_eval,
-                                  cs_cell_builder_t         *cb,
-                                  void                      *input,
-                                  double                    *values)
+cs_source_term_dcsd_by_c2v_array(const cs_xdef_t           *source,
+                                 const cs_cell_mesh_t      *cm,
+                                 cs_real_t                  time_eval,
+                                 cs_cell_builder_t         *cb,
+                                 void                      *input,
+                                 double                    *values)
 {
   CS_UNUSED(cb);
   CS_UNUSED(input);
