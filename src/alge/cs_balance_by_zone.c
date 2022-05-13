@@ -1494,14 +1494,17 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       beta = CS_MAX(CS_MIN(cv_limiter[c_id1], cv_limiter[c_id2]), 0.);
     }
 
-    cs_real_t bldfrp = (cs_real_t) ircflp;
+    int bldfrp = ircflp;
     /* Local limitation of the reconstruction */
-    if (df_limiter != NULL && ircflp > 0)
-      bldfrp = CS_MAX(CS_MIN(df_limiter[c_id1], df_limiter[c_id2]), 0.);
+    if (df_limiter != NULL && ircflp > 0) {
+      cs_real_t _bldfrp = fmax(fmin(df_limiter[c_id1],
+                                    df_limiter[c_id2]), 0.);
+      bldfrp = (int)_bldfrp;
+    }
 
     cs_real_t hybrid_coef_ii, hybrid_coef_jj;
     cs_lnum_t ic = -1, id = -1;
-    cs_real_t courant_c = -1.;
+    cs_real_t courant_c = -1., _local_max = 0., _local_min = 0.;
     if (ischcp == 3) {
       hybrid_coef_ii = CS_F_(hybrid_blend)->val[c_id1];
       hybrid_coef_jj = CS_F_(hybrid_blend)->val[c_id2];
@@ -1519,7 +1522,12 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       if (courant != NULL)
         courant_c = courant[ic];
 
-    } else {
+      if (local_max != NULL) {
+        _local_max = local_max[ic];
+        _local_min = local_min[ic];
+      }
+    }
+    else {
       hybrid_coef_ii = 0.;
       hybrid_coef_jj = 0.;
     }
@@ -1567,8 +1575,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                             i_mass_flux[f_id_sel],
                             cpro_cp[c_id1],
                             cpro_cp[c_id2],
-                            local_max[ic],
-                            local_min[ic],
+                            _local_max,
+                            _local_min,
                             courant_c,
                             bi_bterms);
 
@@ -3022,14 +3030,17 @@ cs_flux_through_surface(const char         *scalar_name,
       beta = CS_MAX(CS_MIN(cv_limiter[c_id1], cv_limiter[c_id2]), 0.);
     }
 
-    cs_real_t bldfrp = (cs_real_t) ircflp;
+    int bldfrp = ircflp;
     /* Local limitation of the reconstruction */
-    if (df_limiter != NULL && ircflp > 0)
-      bldfrp = CS_MAX(CS_MIN(df_limiter[c_id1], df_limiter[c_id2]), 0.);
+    if (df_limiter != NULL && ircflp > 0) {
+      cs_real_t _bldfrp = fmax(fmin(df_limiter[c_id1],
+                                    df_limiter[c_id2]), 0.);
+      bldfrp = (int)_bldfrp;
+    }
 
     cs_real_t hybrid_coef_ii, hybrid_coef_jj;
     cs_lnum_t ic = -1, id = -1;
-    cs_real_t courant_c = -1.;
+    cs_real_t courant_c = -1., _local_max = 0., _local_min = 0.;
     if (ischcp == 3) {
       hybrid_coef_ii = CS_F_(hybrid_blend)->val[c_id1];
       hybrid_coef_jj = CS_F_(hybrid_blend)->val[c_id2];
@@ -3047,7 +3058,12 @@ cs_flux_through_surface(const char         *scalar_name,
       if (courant != NULL)
         courant_c = courant[ic];
 
-    } else {
+      if (local_max != NULL) {
+        _local_max = local_max[ic];
+        _local_min = local_min[ic];
+      }
+    }
+    else {
       hybrid_coef_ii = 0.;
       hybrid_coef_jj = 0.;
     }
@@ -3095,8 +3111,8 @@ cs_flux_through_surface(const char         *scalar_name,
                             i_mass_flux[f_id_sel],
                             cpro_cp[c_id1],
                             cpro_cp[c_id2],
-                            local_max[ic],
-                            local_min[ic],
+                            _local_max,
+                            _local_min,
                             courant_c,
                             bi_bterms);
 
