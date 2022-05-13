@@ -35,6 +35,8 @@ Architectural changes:
 
 Bug fixes:
 
+- Balance by zone: fix crash in some configurations.
+
 - Probes and profiles: fix possible location error on hybrid meshes
   depending on order of appearance of cell types.
 
