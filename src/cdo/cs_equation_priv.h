@@ -223,6 +223,31 @@ typedef cs_cdo_balance_t *
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the cellwise stiffness matrix associated to the property
+ *         given as a parameter and apply it to the pot array to define
+ *         the resulting array associated to entities defined at loc_res
+ *
+ * \param[in]      eqp      pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb      pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] context  pointer to a scheme builder structure
+ * \param[in]      property pointer to the property related to the stiffness op.
+ * \param[in]      pot      array to multiply with the stiffness matrix
+ * \param[in]      loc_res  location of entities in the resulting array
+ * \param[in, out] res      resulting array
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_apply_sitffness_t)(const cs_equation_param_t     *eqp,
+                                cs_equation_builder_t         *eqb,
+                                void                          *context,
+                                const cs_property_t           *property,
+                                const cs_real_t               *pot,
+                                cs_flag_t                      loc_res,
+                                cs_real_t                     *res);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Generic prototype for extra-operations related to an equation
  *
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
@@ -368,6 +393,9 @@ struct _cs_equation_t {
    * \var compute_balance
    * Pointer of function given by the prototype cs_equation_get_balance_t
    *
+   * \var apply_stiffness
+   * Pointer of function given by the prototype cs_equation_apply_sitffness_t
+   *
    * \var postprocess
    * Additional predefined post-processing. Pointer of function given by the
    * prototype cs_equation_extra_op_t
@@ -406,6 +434,7 @@ struct _cs_equation_t {
   cs_equation_solve_t              *solve;
 
   cs_equation_get_balance_t        *compute_balance;
+  cs_equation_apply_sitffness_t    *apply_stiffness;
   cs_equation_extra_op_t           *postprocess;
   cs_equation_extra_op_t           *current_to_previous;
 

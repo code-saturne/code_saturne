@@ -427,6 +427,32 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the cellwise stiffness matrix associated to the property
+ *         given as a parameter and apply it to the pot array to define
+ *         the resulting array associated to entities defined at loc_res
+ *         Case of scalar-valued CDO vertex-based scheme
+ *
+ * \param[in]      eqp      pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb      pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] context  pointer to a scheme builder structure
+ * \param[in]      property pointer to the property related to the stiffness op.
+ * \param[in]      pot      array to multiply with the stiffness matrix
+ * \param[in]      loc_res  location of entities in the resulting array
+ * \param[in, out] res      resulting array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
+                                cs_equation_builder_t         *eqb,
+                                void                          *context,
+                                const cs_property_t           *property,
+                                const cs_real_t               *pot,
+                                cs_flag_t                      loc_res,
+                                cs_real_t                     *res);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute for each vertex of a boundary face, the portion of diffusive
  *         flux across the boundary face. The surface attached to each vertex
  *         corresponds to the intersection of its dual cell (associated to

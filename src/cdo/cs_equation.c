@@ -1401,6 +1401,7 @@ cs_equation_add(const char            *eqname,
   /* Extra-operations */
 
   eq->compute_balance = NULL;
+  eq->apply_stiffness = NULL;
   eq->postprocess = NULL;
   eq->current_to_previous = NULL;
 
@@ -1987,6 +1988,7 @@ cs_equation_set_functions(void)
         } /* Incremental solve or not */
 
         eq->compute_balance = cs_cdovb_scaleq_balance;
+        eq->apply_stiffness = cs_cdovb_scaleq_apply_stiffness;
         eq->postprocess = cs_cdovb_scaleq_extra_post;
         eq->current_to_previous = cs_cdovb_scaleq_current_to_previous;
 
@@ -2167,6 +2169,7 @@ cs_equation_set_functions(void)
         }
 
         eq->compute_balance = cs_cdofb_scaleq_balance;
+        eq->apply_stiffness = NULL;
         eq->postprocess = cs_cdofb_scaleq_extra_post;
         eq->current_to_previous = cs_cdofb_scaleq_current_to_previous;
 
@@ -3592,6 +3595,60 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
       cs_timer_stats_stop(eq->main_ts_id);
 
   } /* Loop on equations */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the cellwise stiffness matrix associated to the property
+ *         given as a parameter and apply it to the pot array to define
+ *         the resulting array associated to entities defined at loc_res
+ *
+ * \param[in]      eq        pointer to a \ref cs_equation_t structure
+ * \param[in]      property  pointer to the property to consider
+ * \param[in]      pot       array to multiply with the stiffness matrix
+ * \param[in]      loc_res   location of entities in the resulting array
+ * \param[in, out] res       resulting array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_apply_stiffness(cs_equation_t          *eq,
+                            const cs_property_t    *property,
+                            const cs_real_t        *pot,
+                            cs_flag_t               loc_res,
+                            cs_real_t              *res)
+{
+  if (eq == NULL)
+    return;
+
+  /* Preliminary checkings */
+
+  if (pot == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Input array not allocated.\n",
+              __func__);
+  if (res == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Resulting array not allocated.\n",
+              __func__);
+  if (eq->apply_stiffness == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Function not defined for this equation \"%s\".\n",
+              __func__, cs_equation_get_name(eq));
+
+  /* Perform the requested operation */
+
+  if (eq->main_ts_id > -1)    /* Activate timer statistics */
+    cs_timer_stats_start(eq->main_ts_id);
+
+ eq->apply_stiffness(eq->param,
+                      eq->builder,
+                      eq->scheme_context,
+                      property,
+                      pot,
+                      loc_res,
+                      res);
+
+ if (eq->main_ts_id > -1)
+   cs_timer_stats_stop(eq->main_ts_id);
 }
 
 /*----------------------------------------------------------------------------*/

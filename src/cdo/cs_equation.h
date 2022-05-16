@@ -1140,6 +1140,27 @@ cs_equation_post_balance(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the cellwise stiffness matrix associated to the property
+ *         given as a parameter and apply it to the pot array to define
+ *         the resulting array associated to entities defined at loc_res
+ *
+ * \param[in]      eq        pointer to a \ref cs_equation_t structure
+ * \param[in]      property  pointer to the property to consider
+ * \param[in]      pot       array to multiply with the stiffness matrix
+ * \param[in]      loc_res   location of entities in the resulting array
+ * \param[in, out] res       resulting array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_apply_stiffness(cs_equation_t          *eq,
+                            const cs_property_t    *property,
+                            const cs_real_t        *pot,
+                            cs_flag_t               loc_res,
+                            cs_real_t              *res);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined extra-operations related to equations according to the
  *         type of numerical scheme (for the space discretization)
  */

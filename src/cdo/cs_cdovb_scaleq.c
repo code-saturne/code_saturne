@@ -4144,6 +4144,168 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the cellwise stiffness matrix associated to the property
+ *         given as a parameter and apply it to the pot array to define
+ *         the resulting array associated to entities defined at loc_res
+ *         Case of scalar-valued CDO vertex-based scheme
+ *
+ * \param[in]      eqp      pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb      pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] context  pointer to a scheme builder structure
+ * \param[in]      property pointer to the property related to the stiffness op.
+ * \param[in]      pot      array to multiply with the stiffness matrix
+ * \param[in]      loc_res  location of entities in the resulting array
+ * \param[in, out] res      resulting array
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t     *eqp,
+                                cs_equation_builder_t         *eqb,
+                                void                          *context,
+                                const cs_property_t           *property,
+                                const cs_real_t               *pot,
+                                cs_flag_t                      loc_res,
+                                cs_real_t                     *res)
+{
+  if (res == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Resulting array not allocated.",
+              __func__);
+
+  if (cs_flag_test(loc_res, cs_flag_primal_vtx) == false  &&
+      cs_flag_test(loc_res, cs_flag_primal_cell) == false &&
+      cs_flag_test(loc_res, cs_flag_dual_cell_byc) == false)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid location for the resulting array.", __func__);
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_real_t  t_cur = cs_shared_time_step->t_cur;
+
+  cs_timer_t  t0 = cs_timer_time();
+
+  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
+  cs_hodge_t  **hodge_array = cs_hodge_init_context(connect,
+                                                    property,
+                                                    &(eqp->diffusion_hodgep),
+                                                    true,   /* tensor ? */
+                                                    false); /* eigen ? */
+
+  /* OpenMP block */
+
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
+  shared(quant, connect, eqp, eqb, eqc, pot, _svb_cell_builder, hodge_array) \
+  firstprivate(t_cur)
+  {
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    /* Set inside the OMP section so that each thread has its own value
+     * Each thread get back its related structures:
+     * Get the cell-wise view of the mesh and the algebraic system */
+
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_builder_t  *cb = _svb_cell_builder[t_id];
+    cs_hodge_t  *hodge = hodge_array[t_id];
+    bool  pty_uniform = cs_property_is_uniform(property);
+
+    /* Initialization of the values of properties */
+
+    if (pty_uniform)
+      cs_hodge_set_property_value(0, /* cell_id */
+                                  t_cur,
+                                  CS_FLAG_BOUNDARY_CELL_BY_FACE,
+                                  hodge);
+
+    /* Set inside the OMP section so that each thread has its own value */
+
+    cs_real_t  *p_cur = cs_cdo_local_get_d_buffer(t_id);
+
+    /* --------------------------------------------- */
+    /* Main loop on cells to build the linear system */
+    /* --------------------------------------------- */
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      /* Set the current cell flag */
+
+      cb->cell_flag = connect->cell_flag[c_id];
+
+      /* Set the local mesh structure for the current cell */
+
+      cs_cell_mesh_build(c_id,
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
+                         connect, quant, cm);
+
+      /* Set the diffusion property */
+
+      if (!pty_uniform)
+        cs_hodge_set_property_value_cw(cm, t_cur, cb->cell_flag, hodge);
+
+      /* Define the local stiffness matrix: local matrix owned by the cellwise
+         builder (store in cb->loc) */
+
+      eqc->get_stiffness_matrix(cm, hodge, cb);
+
+      /* Set the value of the current potential */
+
+      for (short int v = 0; v < cm->n_vc; v++)
+        p_cur[v] = pot[cm->v_ids[v]];
+
+      /* Update the resulting array */
+
+      cs_real_t  *cell_res = cb->values;
+      memset(res, 0, cm->n_vc*sizeof(cs_real_t));
+      cs_sdm_square_matvec(cb->loc, p_cur, cell_res);
+
+      if (cs_flag_test(loc_res, cs_flag_primal_vtx)) {
+
+        for (short int v = 0; v < cm->n_vc; v++) {
+#       pragma omp atomic
+          res[cm->v_ids[v]] += cell_res[v];
+        }
+
+      }
+      else if (cs_flag_test(loc_res, cs_flag_primal_cell)) {
+
+        for (short int v = 0; v < cm->n_vc; v++)
+          res[c_id] += cell_res[v];
+
+      }
+      else {
+
+        assert(cs_flag_test(loc_res, cs_flag_dual_cell_byc));
+        cs_real_t  *_res = res + connect->c2v->idx[c_id];
+
+        for (short int v = 0; v < cm->n_vc; v++)
+          _res[v] = cell_res[v];
+
+      }
+
+    } /* Main loop on cells */
+
+  } /* OpenMP Block */
+
+  /* Parallel or periodic synchronisation */
+
+  if (cs_flag_test(loc_res, cs_flag_primal_vtx)) {
+    if (connect->vtx_ifs != NULL)
+      cs_interface_set_sum(connect->vtx_ifs,
+                           connect->n_vertices,
+                           1, false, CS_REAL_TYPE,
+                           res);
+  }
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute for each vertex of a boundary face, the portion of diffusive
  *         flux across the boundary face. The surface attached to each vertex
  *         corresponds to the intersection of its dual cell (associated to
