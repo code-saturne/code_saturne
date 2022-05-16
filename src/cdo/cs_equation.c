@@ -2465,6 +2465,7 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
                        const cs_cdo_connect_t      *connect)
 {
   CS_UNUSED(quant);
+  CS_UNUSED(connect);
 
   for (int i = 0; i < _n_equations; i++) {
 

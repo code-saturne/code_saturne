@@ -997,6 +997,7 @@ _svb_lumped_subcell_implicit_euler_incr(const cs_equation_param_t   *eqp,
                                         cs_cell_sys_t               *csys)
 {
   CS_UNUSED(mass_hodge);
+  CS_UNUSED(eqb);
   CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
 
   const double  coefc = cm->vol_c * inv_dtcur;
