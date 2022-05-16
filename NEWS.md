@@ -48,7 +48,11 @@ Bug fixes:
 - Fix gradient reconstruction for anisotropic cases using
   Green-Gauss with least-squares gradient face values algorithm.
 
-CDO:
+- Solidification/CDO: Several fixes to handle the melting process
+
+- CDO: Fix to handle properly the Neumann and full Neumann boundary conditions
+
+Numerics CDO:
 
 - *Major reshape*: Add a generic framework to manipulate linear systems arising
   from CDO schemes. This framework handles classical linear systems (scalar- or
@@ -60,10 +64,21 @@ CDO:
   manipulate block matrices and apply to it either external libraries or
   in-house algorithms to solve these systems.
 
+- Add a resolution by increment in CDO-Vb schemes
+
+- Add new ways to define source terms in CDO-Vb schemes
+
 Physical modeling:
 
 - For VoF, add a surface tension force, accessible from the GUI. If null, one
   recovers previous behaviour.
+
+- GWF/CDO: Add two new models for two-phase flows in porous media: an immiscible
+  and a miscible model. Solved variables are the liquid and gas pressures. Only
+  user-defined laws are available in this case to define the behavior of the
+  soil. Several numerical algorithm are currently under tests (coupled or
+  segregated solver; different ways of treating the non-linearities). This
+  functionality is still under development and may evolve in depth.
 
 Release 7.1.0 (December 21 2021)
 --------------------------------
