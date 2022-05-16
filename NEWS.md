@@ -3,6 +3,9 @@ Release 7.0.5 (not released yet)
 
 Bug fixes:
 
+- Merge option to activate atmospheric pressure outlet condition aligned
+  with meteo velocity direction.
+
 - Balance by zone: fix crash in some configurations.
 
 - Fix contribution of mass-source terms with Rij models.

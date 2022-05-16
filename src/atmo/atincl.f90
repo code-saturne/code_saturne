@@ -166,6 +166,11 @@ integer, save :: initmeteo
 !> for automatic open boundaries
 integer(c_int), pointer, save :: iatmst
 
+!> Temporary option use for back compatibility:
+!> Outlet pressure boundary conditions take meteo_velocity
+!> direction into account (if 1) or not (if 0)
+integer, save :: tmp_pressure_outlet_condition = 0
+
 !> flag for meteo velocity field interpolation
 !> - 0: linear interpolation of the meteo profile
 !> - 1: the user can directly impose the exact meteo velocity

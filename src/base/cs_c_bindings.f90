@@ -2868,6 +2868,19 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+
+    ! Interface to C function cs_math_3_normalize
+
+    subroutine vector_normalize(vin, vout)                   &
+      bind(C, name='cs_f_math_3_normalize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(in) :: vin
+      real(kind=c_double), dimension(*), intent(out) :: vout
+    end subroutine vector_normalize
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function for data assimilation (atmospheric module)
 
     subroutine cs_at_data_assim_initialize()                        &
