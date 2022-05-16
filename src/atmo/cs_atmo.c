@@ -98,6 +98,8 @@
 #include "cs_sles_default.h"
 #include "cs_face_viscosity.h"
 #include "cs_divergence.h"
+#include "cs_restart.h"
+#include "cs_restart_default.h"
 #include "cs_velocity_pressure.h"
 
 /*----------------------------------------------------------------------------
@@ -1487,18 +1489,43 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
   cs_real_t p_ground = aopt->meteo_psea;
 
+  /* Check if restart is read and if meteo_pressure is present */
+  int has_restart = cs_restart_present();
+  if (has_restart == 1) {
+    cs_restart_t *rp = cs_restart_create("main.csc",
+                                         NULL,
+                                         CS_RESTART_MODE_READ);
+
+    int retval = cs_restart_read_field_vals(rp,
+                                            f->id, /* meteo_pressure */
+                                            0);    /* current value */
+    if (retval != CS_RESTART_SUCCESS)
+      has_restart = 0;
+
+  }
+
   /* Initialize temperature, pressure and density from neutral conditions
    *=====================================================================*/
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
     cs_real_t z  = cell_cen[cell_id][2] - xyzp0[2];
     cs_real_t zt = fmin(z, 11000.);
     cs_real_t factor = fmax(1. - g * zt / (cp0 * aopt->meteo_t0), 0.);
-    temp->val[cell_id] = aopt->meteo_t0 * factor ;
-    f->val[cell_id] = p_ground * pow(factor, rscp)
-                    /* correction factor for z > 11000m */
-                    * exp(- g/(rair*temp->val[cell_id]) * (z - zt));
+    temp->val[cell_id] = aopt->meteo_t0 * factor;
+
+    /* Do not overwrite pressure in case of restart */
+    if (has_restart == 0)
+      f->val[cell_id] = p_ground * pow(factor, rscp)
+                      /* correction factor for z > 11000m */
+                      * exp(- g/(rair*temp->val[cell_id]) * (z - zt));
+
+    if (idilat > 0)
+      temp->val[cell_id] = potemp->val[cell_id]
+                         * pow((f->val[cell_id]/pref), rscp);
     density->val[cell_id] = f->val[cell_id] / (rair * temp->val[cell_id]);
   }
+
+  if (has_restart == 1)
+    return;
 
   /* Boussinesq hypothesis */
   if (idilat==0) {
