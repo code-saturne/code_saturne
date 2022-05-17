@@ -1070,8 +1070,28 @@ cs_atmo_compute_meteo_profiles(void)
 
   cs_real_t *z_ground = NULL;
   if (aopt->compute_z_ground == true) {
-    cs_atmo_z_ground_compute();
-    z_ground = cs_field_by_name_try("z_ground")->val;
+
+    cs_field_t *f_z_ground = cs_field_by_name("z_ground");
+
+    /* Do not recompute in case of restart */
+    int has_restart = cs_restart_present();
+    if (has_restart == 1) {
+      cs_restart_t *rp = cs_restart_create("main.csc",
+                                           NULL,
+                                           CS_RESTART_MODE_READ);
+
+      int retval = cs_restart_read_field_vals(rp,
+                                              f_z_ground->id,
+                                              0);    /* current value */
+      if (retval != CS_RESTART_SUCCESS)
+        has_restart = 0;
+    }
+
+    /* z_ground needs to be computed? */
+    if (has_restart == 0)
+      cs_atmo_z_ground_compute();
+
+    z_ground = f_z_ground->val;
   }
 
   BFT_MALLOC(dlmo_var, m->n_cells_with_ghosts, cs_real_t);

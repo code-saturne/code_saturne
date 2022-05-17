@@ -3,6 +3,8 @@ Release 7.0.5 (not released yet)
 
 Bug fixes:
 
+- Fix in meteo preprocessor in case of restart: do not recompute variables.
+
 - Merge option to activate atmospheric pressure outlet condition aligned
   with meteo velocity direction.
 
