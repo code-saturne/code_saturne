@@ -910,7 +910,7 @@ cs_post_activate_by_time_step(const cs_time_step_t  *ts);
  *
  * \param[in]  writer_id  writer id
  *
- * \return  true if writer is active atr this time step, false otherwise
+ * \return  true if writer is active at this time step, false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
