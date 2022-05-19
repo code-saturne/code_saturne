@@ -2250,6 +2250,55 @@ _tpf_extra_op(const cs_cdo_connect_t                *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the new increment on the capillarity pressure
+ *
+ * \param[in]      mesh     pointer to a cs_mesh_t structure
+ * \param[in]      wl_eq    pointer on tne "wl" equation structure
+ * \param[in]      hg_eq    pointer on tne "wl" equation structure
+ * \param[in, out] dpc_kp1  values of the increment on the capillarity pressure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_get_capillarity_pressure_increment(const cs_mesh_t       *mesh,
+                                    const cs_equation_t   *wl_eq,
+                                    const cs_equation_t   *hg_eq,
+                                    cs_real_t             *dpc_kp1)
+{
+  const cs_equation_param_t  *wl_eqp = cs_equation_get_param(wl_eq);
+  const cs_equation_param_t  *hg_eqp = cs_equation_get_param(hg_eq);
+  const cs_equation_builder_t  *wl_eqb = cs_equation_get_builder(wl_eq);
+  const cs_equation_builder_t  *hg_eqb = cs_equation_get_builder(hg_eq);
+  const cs_real_t  *dpl_kp1 = wl_eqb->increment;
+  const cs_real_t  *dpg_kp1 = hg_eqb->increment;
+
+  if (wl_eqp->incremental_relax_factor < 1 ||
+      hg_eqp->incremental_relax_factor < 1) {
+
+    assert(wl_eqp->incremental_relax_factor > 0);
+    assert(hg_eqp->incremental_relax_factor > 0);
+
+    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
+      dpc_kp1[i] = hg_eqp->incremental_relax_factor*dpg_kp1[i]
+                 - wl_eqp->incremental_relax_factor*dpl_kp1[i];
+
+  }
+  else {
+
+    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
+      dpc_kp1[i] = dpg_kp1[i] - dpl_kp1[i];
+
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 0
+  cs_log_printf(CS_LOG_DEFAULT, "%s: dpl=% 6.4e; dpg=% 6.4e\n", __func__,
+                sqrt(cs_cdo_blas_square_norm_pvsp(dpl_kp1)),
+                sqrt(cs_cdo_blas_square_norm_pvsp(dpg_kp1)));
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Check the convergence of the non-linear algorithm in case of TPF
  *         model. Work only with the capillarity pressure at vertices
  *
@@ -2629,8 +2678,6 @@ _segregated_tpf_compute(const cs_mesh_t              *mesh,
   bool cur2prev = false;        /* Done just above */
   cs_flag_t  update_flag = 0;   /* No current to previous operation */
 
-  cs_equation_builder_t  *wl_eqb = cs_equation_get_builder(mc->wl_eq);
-  cs_equation_builder_t  *hg_eqb = cs_equation_get_builder(mc->hg_eq);
   cs_iter_algo_t  *algo = mc->nl_algo;
   assert(algo != NULL);
 
@@ -2696,20 +2743,10 @@ _segregated_tpf_compute(const cs_mesh_t              *mesh,
                            time_step);
 #endif
 
-  const cs_real_t  *dpl_kp1 = wl_eqb->increment;
-  const cs_real_t  *dpg_kp1 = hg_eqb->increment;
-
   cs_real_t  *dpc_kp1 = NULL;
   BFT_MALLOC(dpc_kp1, mesh->n_vertices, cs_real_t);
 
-  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
-    dpc_kp1[i] = dpg_kp1[i] - dpl_kp1[i];
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 0
-  cs_log_printf(CS_LOG_DEFAULT, "%s: dpl=% 6.4e; dpg=% 6.4e\n", __func__,
-                sqrt(cs_cdo_blas_square_norm_pvsp(dpl_kp1)),
-                sqrt(cs_cdo_blas_square_norm_pvsp(dpg_kp1)));
-#endif
+  _get_capillarity_pressure_increment(mesh, mc->wl_eq, mc->hg_eq, dpc_kp1);
 
   while(_check_nl_tpf_dpc_cvg(mc->nl_algo_type,
                               dpc_kp1, algo) == CS_SLES_ITERATING) {
@@ -2759,14 +2796,8 @@ _segregated_tpf_compute(const cs_mesh_t              *mesh,
                              time_step);
 #endif
 
-  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
-      dpc_kp1[i] = dpg_kp1[i] - dpl_kp1[i];
+    _get_capillarity_pressure_increment(mesh, mc->wl_eq, mc->hg_eq, dpc_kp1);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_DBG > 0
-    cs_log_printf(CS_LOG_DEFAULT, "%s: dpl=% 6.4e; dpg=% 6.4e\n", __func__,
-                  sqrt(cs_cdo_blas_square_norm_pvsp(dpl_kp1)),
-                  sqrt(cs_cdo_blas_square_norm_pvsp(dpg_kp1)));
-#endif
   } /* while not converged */
 
   /* If something wrong happens, write a message in the listing */
