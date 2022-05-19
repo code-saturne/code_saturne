@@ -684,7 +684,7 @@ def run_command(args, pkg = None, echo = False,
                     l += ' ' + s
             stdout.write(l.strip() + '\n')
 
-    # Modify the PATH for relocatable installation: add Code_Saturne "bindir"
+    # Modify the PATH for relocatable installation: add code_saturne "bindir"
 
     if pkg != None:
         if pkg.config.features['relocatable'] == "yes":

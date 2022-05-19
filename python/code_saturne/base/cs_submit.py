@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 """
-This module describes the script used to run a study/case for Code_Saturne.
+This module describes the script used to run a study/case for code_saturne.
 
 This module defines the following functions:
 - process_cmd_line
@@ -162,4 +162,3 @@ if __name__ == '__main__':
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------
-

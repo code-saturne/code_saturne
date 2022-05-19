@@ -471,7 +471,7 @@ if (ippmod(iatmos).ge.0) then
   endif
 endif
 
-! Coupling between two Code_Saturne
+! Coupling between two code_saturne
 if (nbrcpl.gt.0) then
   !vectorial interleaved exchange
   call csccel(iu, vela, coefav, coefbv, tsexp)

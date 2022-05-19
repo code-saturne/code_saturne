@@ -1348,7 +1348,7 @@ _set_saturne_sles(bool                 use_field_id,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: System: %s; Invalid AMG type with Code_Saturne solvers.",
+                " %s: System: %s; Invalid AMG type with code_saturne solvers.",
                 __func__, slesp->name);
       break;
 

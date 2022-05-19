@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 """
-This module describes the script used to display information on Code_Saturne.
+This module describes the script used to display information on code_saturne.
 
 This module defines the following functions:
 - process_cmd_line

@@ -556,7 +556,7 @@ typedef enum {
  * \brief Class of iterative solvers to consider for solver the linear system
  *
  * \var CS_PARAM_SLES_CLASS_CS
- * Iterative solvers available in Code_Saturne
+ * Iterative solvers available in code_saturne
  *
  * \var CS_PARAM_SLES_CLASS_HYPRE
  * Solvers available in HYPRE through the PETSc library

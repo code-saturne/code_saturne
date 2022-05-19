@@ -152,7 +152,7 @@ const char   *cs_datatype_name[] = {"",
 
 #if defined(HAVE_MPI)
 
-/* MPI Datatypes associated with Code_Saturne datatypes */
+/* MPI Datatypes associated with code_saturne datatypes */
 
 MPI_Datatype  cs_datatype_to_mpi[] = {MPI_DATATYPE_NULL,
                                       MPI_CHAR,

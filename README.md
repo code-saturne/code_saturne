@@ -55,4 +55,4 @@ or by a combination thereof.
 Install instructions (from source) are provided in the
 accompanying [INSTALL.md](INSTALL.md) file.
 
-Code_Saturne support: saturne-support@edf.fr
+code_saturne support: saturne-support@edf.fr

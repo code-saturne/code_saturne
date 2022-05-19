@@ -263,7 +263,7 @@ _finalize_comm(cs_syr_coupling_t  *syr_coupling)
 }
 
 /*----------------------------------------------------------------------------
- * Exchange synchronization messages between Code_Saturne and SYRTHES.
+ * Exchange synchronization messages between code_saturne and SYRTHES.
  *
  * parameters:
  *   syr_coupling  <--  Syrthes coupling structure
@@ -867,7 +867,7 @@ _create_coupled_ent(cs_syr_coupling_t  *syr_coupling,
 
   }
 
-  /* Post-process distances from SYRTHES points to Code_Saturne faces */
+  /* Post-process distances from SYRTHES points to code_saturne faces */
 
   if (elt_dim == syr_coupling->dim - 1) {
 
@@ -1199,7 +1199,7 @@ _post_var_update(cs_syr_coupling_ent_t  *coupling_ent,
 /*----------------------------------------------------------------------------
  * Ensure conservativity thanks to a corrector coefficient computed by SYRTHES
  * SYRTHES computes a global flux for a given tfluid and hfluid field.
- * Code_Saturne sent before its computed global flux for this time step.
+ * code_saturne sent before its computed global flux for this time step.
  *
  * parameters:
  *   syr_coupling   <-- SYRTHES coupling structure

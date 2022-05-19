@@ -57,7 +57,7 @@
 
 /* On certain architectures such as IBM Blue Gene, some operations may
  * be better optimized on memory-aligned data (if 0 here, no alignment
- * is leveraged). This alignment is not exploited yet in Code_Saturne. */
+ * is leveraged). This alignment is not exploited yet in code_saturne. */
 
 #define CS_MEM_ALIGN 0
 

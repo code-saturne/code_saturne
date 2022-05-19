@@ -1,6 +1,6 @@
 dnl--------------------------------------------------------------------------------
 dnl
-dnl This file is part of Code_Saturne, a general-purpose CFD tool.
+dnl This file is part of code_saturne, a general-purpose CFD tool.
 dnl
 dnl Copyright (C) 1998-2022 EDF S.A.
 dnl
@@ -80,4 +80,3 @@ AC_DEFUN([PLE_AC_PYTHON_DEV],[
   AC_SUBST([PYTHON_CPPFLAGS])
 
 ])
-

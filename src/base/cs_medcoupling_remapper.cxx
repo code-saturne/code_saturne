@@ -233,7 +233,7 @@ _create_remapper(const char                        *name,
     strcpy(r->field_names[i], field_names[i]);
   }
 
-  // New MEDCoupling UMesh linked to Code_Saturne mesh
+  // New MEDCoupling UMesh linked to code_saturne mesh
   cs_mesh_t *parent_mesh = cs_glob_mesh;
   r->target_mesh = cs_medcoupling_mesh_from_base(parent_mesh,
                                                  name,
@@ -1060,4 +1060,3 @@ cs_medcoupling_remapper_update_time_value(cs_medcoupling_remapper_t *r,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-

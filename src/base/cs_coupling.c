@@ -320,7 +320,7 @@ cs_coupling_get_sync_flag(void)
  * It is defined by a mask, so for example flags f1, f2, and f3 may be
  * combined using the "f1 | f2 | f2" syntax.
  *
- * Note also that for Code_Saturne, in the case of a variable time step,
+ * Note also that for code_saturne, in the case of a variable time step,
  * the reference time step is synchronized at the beginning of each
  * iteration, but the actual time step is recomputed later.
  *

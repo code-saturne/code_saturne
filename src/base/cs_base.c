@@ -891,7 +891,7 @@ _cs_base_mpi_error(MPI_Comm  *comm,
 #endif
 
 /*----------------------------------------------------------------------------
- * Ensure Code_Saturne to MPI datatype conversion has correct values.
+ * Ensure code_saturne to MPI datatype conversion has correct values.
  *----------------------------------------------------------------------------*/
 
 static void

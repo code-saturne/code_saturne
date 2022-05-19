@@ -685,7 +685,7 @@ allocate(rcodcl(nfabor,nvar,3))
 allocate(isostd(nfabor+1))
 
 ! First pass for initialization BC types
-! -- Couplage Code_Saturne/Code_Saturne
+! -- Couplage code_saturne/code_saturne
 
 call cscini(nvar)
 call condli_ini(nvar, nscal, itrale, icodcl, isostd, dt, rcodcl)

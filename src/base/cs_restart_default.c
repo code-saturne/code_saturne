@@ -153,7 +153,7 @@ _cancel_in_solid_zones(cs_lnum_t   stride,
 /*----------------------------------------------------------------------------
  * Read and rebuild partial field metadata from legacy checkpoint.
  *
- * Note that when reading legacy files (Code_Saturne version 3.3 and below),
+ * Note that when reading legacy files (code_saturne version 3.3 and below),
  * the old id will actually be the old scalar id (-1 for others).
  *
  * parameters:
@@ -781,7 +781,7 @@ _legacy_mass_flux_num(cs_restart_t      *r,
 /*----------------------------------------------------------------------------
  * Read fields depending on others from checkpoint.
  *
- * This function handles legacy files (Code_Saturne version 3.3 and below).
+ * This function handles legacy files (code_saturne version 3.3 and below).
  *
  * parameters:
  *   r         <-> associated restart file pointer
@@ -1700,7 +1700,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
  * \brief Read field metadata from checkpoint.
  *
  * Old ids associated to each field are determined for future use.
- * Note that when reading legacy files (Code_Saturne version 3.3 and below),
+ * Note that when reading legacy files (code_saturne version 3.3 and below),
  * the old id will actually be the old scalar id (-1 for others).
  *
  * \param[in, out]  r              associated restart file pointer
@@ -2214,7 +2214,7 @@ cs_restart_write_variables(cs_restart_t  *r,
  * \brief Read fields depending on others from checkpoint.
  *
  * Old ids associate to each field are determined for future use.
- * Note that when reading legacy files (Code_Saturne version 3.3 and below),
+ * Note that when reading legacy files (code_saturne version 3.3 and below),
  * the old id will actually be the old scalar id (-1 for others).
  *
  * \param[in, out]  r              associated restart file pointer
