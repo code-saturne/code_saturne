@@ -185,6 +185,9 @@ cs_cdo_bc_get_desc(cs_flag_t   bc_flag,
   case CS_CDO_BC_NEUMANN:
     sprintf(desc, "%s", "Neumann");
     break;
+  case CS_CDO_BC_FULL_NEUMANN:
+    sprintf(desc, "%s", "Full Neumann");
+    break;
   case CS_CDO_BC_ROBIN:
     sprintf(desc, "%s", "Robin");
     break;
@@ -232,7 +235,7 @@ cs_cdo_bc_get_flag(cs_param_bc_type_t   bc_type)
     ret_flag = CS_CDO_BC_NEUMANN;
     break;
   case CS_PARAM_BC_NEUMANN_FULL:
-    ret_flag = CS_CDO_BC_NEUMANN;
+    ret_flag = CS_CDO_BC_FULL_NEUMANN;
     break;
   case CS_PARAM_BC_ROBIN:
     ret_flag = CS_CDO_BC_ROBIN;

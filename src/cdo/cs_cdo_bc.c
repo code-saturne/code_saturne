@@ -187,6 +187,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
       bc->n_hmg_dir_faces += z->n_elts;
       break;
     case CS_CDO_BC_NEUMANN:
+    case CS_CDO_BC_FULL_NEUMANN:
       bc->n_nhmg_neu_faces += z->n_elts;
       break;
     case CS_CDO_BC_HMG_NEUMANN:
@@ -294,11 +295,10 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
       shift[CS_PARAM_BC_HMG_DIRICHLET] += 1;
       break;
     case CS_CDO_BC_NEUMANN:
-      /* TODO: check if we must add CS_CDO_BC_NEUMANN_FULL
-         to map to parameters 1 to 1 */
-      bc->nhmg_neu_ids[shift[CS_PARAM_BC_NEUMANN_FULL]] = i;
-      shift[CS_PARAM_BC_NEUMANN_FULL] += 1;
-    break;
+    case CS_CDO_BC_FULL_NEUMANN:
+      bc->nhmg_neu_ids[shift[CS_PARAM_BC_NEUMANN]] = i;
+      shift[CS_PARAM_BC_NEUMANN] += 1;
+      break;
     case CS_CDO_BC_HMG_NEUMANN:
       bc->hmg_neu_ids[shift[CS_PARAM_BC_HMG_NEUMANN]] = i;
       shift[CS_PARAM_BC_HMG_NEUMANN] += 1;
