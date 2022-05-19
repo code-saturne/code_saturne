@@ -2307,8 +2307,7 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
   /* Add a new cs_xdef_t structure */
 
   int  dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL ||
-      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
@@ -2396,8 +2395,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
     state_flag = CS_FLAG_STATE_FACEWISE;
 
   int dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL ||
-      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
@@ -2457,8 +2455,7 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
   int  z_id = cs_get_bdy_zone_id(z_name);
 
   int dim = eqp->dim;
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL ||
-      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_ROBIN) {
@@ -2530,8 +2527,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
 
   int dim = eqp->dim;
 
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL ||
-      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+  if (bc_type == CS_PARAM_BC_NEUMANN_FULL )
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_CIRCULATION) {
@@ -2619,8 +2615,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
 
   int dim = eqp->dim;
 
-  if (bc_type == CS_PARAM_BC_NEUMANN_FULL ||
-      bc_type == CS_PARAM_BC_HMG_NEUMANN)
+  if (bc_type == CS_PARAM_BC_NEUMANN_FULL)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
   if (bc_type == CS_PARAM_BC_CIRCULATION) {
