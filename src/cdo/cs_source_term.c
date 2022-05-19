@@ -1104,6 +1104,8 @@ cs_source_term_pvsp_by_array(const cs_xdef_t           *source,
                              void                      *input,
                              double                    *values)
 {
+  CS_UNUSED(time_eval);
+
   if (source == NULL)
     return;
 
@@ -1161,6 +1163,8 @@ cs_source_term_pvsp_by_c2v_array(const cs_xdef_t           *source,
                                  void                      *input,
                                  double                    *values)
 {
+  CS_UNUSED(time_eval);
+
   if (source == NULL)
     return;
 
