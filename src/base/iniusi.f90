@@ -148,6 +148,14 @@ interface
     real(c_double), value :: value
   end subroutine cs_runaway_check_define_field_max
 
+  ! Interface to C function to initialize CDO model structures
+
+  subroutine cs_f_domain_setup_init_model_context()  &
+       bind(C, name='cs_f_domain_setup_init_model_context')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_f_domain_setup_init_model_context
+
 end interface
 
 !===============================================================================
@@ -192,6 +200,12 @@ call cs_user_model
 
 ! Set type and order of the turbulence model
 call cs_set_type_order_turbulence_model()
+
+! If CDO has been activated, initialize the context structures for
+! models which have been activated
+if (icdo.ge.1) then
+   call cs_f_domain_setup_init_model_context
+endif
 
 ! Activate CDO for ALE
 if (iale.eq.2) then

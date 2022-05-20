@@ -57,6 +57,17 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_domain_setup_init_model_context(void);
+
+void
+cs_f_domain_initialize_cdo_systems(void);
+
+/*============================================================================
  * Public function prototypes
  *============================================================================*/
 

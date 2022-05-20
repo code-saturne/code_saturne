@@ -201,35 +201,7 @@ typedef enum {
    * \brief Activate a treatment to enforce a Darcy flux to be divergence-free
    */
 
-  CS_GWF_ENFORCE_DIVERGENCE_FREE         = 1<< 8,  /* =  256 */
-
-  /*!
-   * \var CS_GWF_COUPLED_SOLVER
-   * \brief When a model relies on several coupled equations, there are two
-   * main options to build and solve the system of equations. Either use a
-   * coupled solver (and thus build a coupled system) or use a segregated
-   * approach and an associated strategy to solve the sequence of equations and
-   * apply sub-iterations. The latter case (segregated solver) corresponds to
-   * the default choice.
-   */
-
-  CS_GWF_COUPLED_SOLVER                 = 1<< 9,  /* =  512 */
-
-  /*!
-   * \var CS_GWF_INCREMENTAL_SOLVE
-   * \brief When a model includes non-linearities it can be useful to formulate
-   * the problem using increment and to iterate on the non-linear process (for
-   * instance whith a Picard or Anderson acceleration)
-   */
-
-  CS_GWF_INCREMENTAL_SOLVE              = 1<< 10, /* = 1024 */
-
-  /*!
-   * \var CS_GWF_LIQUID_SATURATION_ON_SUBMESH
-   * \brief
-   */
-
-  CS_GWF_LIQUID_SATURATION_ON_SUBMESH  = 1<< 11  /* = 2048 */
+  CS_GWF_ENFORCE_DIVERGENCE_FREE         = 1<< 8   /* =  256 */
 
 } cs_gwf_model_bit_t;
 

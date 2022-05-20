@@ -516,7 +516,7 @@ _spf_compute(const cs_mesh_t                    *mesh,
 /*----------------------------------------------------------------------------*/
 
 static cs_gwf_saturated_single_phase_t *
-_sspf_init_context(void)
+_sspf_activate(void)
 {
   cs_gwf_saturated_single_phase_t  *mc = NULL;
 
@@ -537,7 +537,7 @@ _sspf_init_context(void)
 
   mc->moisture_content = cs_property_add("moisture_content", CS_PROPERTY_ISO);
 
-/* Define the Darcy flux structure
+  /* Define the Darcy flux structure
      Add an advection field related to the darcian flux stemming from the
      Richards equation. This advection field is steady since the head is
      steady in this model.
@@ -599,16 +599,16 @@ _sspf_log_context(cs_gwf_saturated_single_phase_t   *mc)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Setup related to the modelling context of saturated single-phase
- *        flows. At this stage, all soils have been defined and equation
- *        parameters are set.
+ * \brief Initialize the model context according to the settings done inside
+ *        the function cs_user_model()
+ *        Case of a saturated single-phase flows model in porous media
  *
  * \param[in, out] mc   pointer to the model context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_sspf_init_setup(cs_gwf_saturated_single_phase_t   *mc)
+_sspf_init_model_context(cs_gwf_saturated_single_phase_t   *mc)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
@@ -633,16 +633,42 @@ _sspf_init_setup(cs_gwf_saturated_single_phase_t   *mc)
 
   /* Add the variable field */
 
-  bool has_previous = false;
-
-  if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS) {
-
-    has_previous = true;
+  if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
     cs_equation_predefined_create_field(1, eq); /* Keep two states */
-
-  }
   else
     cs_equation_predefined_create_field(0, eq); /* Keep only one state */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup related to the modelling context of saturated single-phase
+ *        flows. At this stage, all soils have been defined and equation
+ *        parameters are set.
+ *
+ * \param[in, out] mc   pointer to the model context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_sspf_init_setup(cs_gwf_saturated_single_phase_t   *mc)
+{
+  if (mc == NULL)
+    return;
+
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+
+  cs_equation_t  *eq = mc->richards;
+  assert(eq != NULL);
+  assert(cs_equation_is_steady(eq) == true);
+
+  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+  assert(eqp != NULL);
+
+  /* Set the "has_previous" flag */
+
+  bool  has_previous = false;
+  if (gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
+    has_previous = true;
 
   /* Add new fields if needed */
 
@@ -811,7 +837,7 @@ _sspf_extra_op(const cs_cdo_connect_t                *connect,
 /*----------------------------------------------------------------------------*/
 
 static cs_gwf_unsaturated_single_phase_t *
-_uspf_init_context(void)
+_uspf_activate(void)
 {
   cs_gwf_unsaturated_single_phase_t  *mc = NULL;
 
@@ -832,35 +858,27 @@ _uspf_init_context(void)
                                  CS_PARAM_BC_HMG_NEUMANN);
 
   /* Define the Darcy flux structure
-     Add an advection field related to the darcian flux stemming from the
-     Richards equation. This advection field is steady since the head is
-     steady in this model.
-  */
+   * Add an advection field related to the darcian flux stemming from the
+   * Richards equation. This advection field is steady since the head is
+   * steady in this model.
+   */
 
   mc->darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
 
   cs_advection_field_status_t  adv_status = CS_ADVECTION_FIELD_GWF |
     CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
 
-  mc->darcy->adv_field = cs_advection_field_add("darcy_field",
-                                                adv_status);
+  mc->darcy->adv_field = cs_advection_field_add("darcy_field", adv_status);
 
   /* Add several properties:
    * - the moisture content
-   * - the soil capacity
+   * - the soil capacity --> for the unsteady term
    * - the (full) permeability = rel_permeability * abs_permeability
    */
 
   mc->moisture_content = cs_property_add("moisture_content", CS_PROPERTY_ISO);
 
   mc->soil_capacity = cs_property_add("soil_capacity", CS_PROPERTY_ISO);
-
-  /* Add the time term to the Richards equation by associating the the soil
-     capacity to the unsteady term */
-
-  cs_equation_param_t  *eqp = cs_equation_get_param(mc->richards);
-
-  cs_equation_add_time(eqp, mc->soil_capacity);
 
   return mc;
 }
@@ -910,9 +928,9 @@ _uspf_log_context(cs_gwf_unsaturated_single_phase_t   *mc)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Setup related to the modelling context of unsaturated single-phase
- *        flows. At this stage, all soils have been defined and equation
- *        parameters are set.
+ * \brief Initialize the model context according to the settings done inside
+ *        the function cs_user_model()
+ *        Case of an unsaturated single-phase flows model in porous media
  *
  * \param[in, out] mc          pointer to the model context structure
  * \param[in, out] perm_type   type of permeability to handle
@@ -920,8 +938,50 @@ _uspf_log_context(cs_gwf_unsaturated_single_phase_t   *mc)
 /*----------------------------------------------------------------------------*/
 
 static void
-_uspf_init_setup(cs_gwf_unsaturated_single_phase_t   *mc,
-                 cs_property_type_t                   perm_type)
+_uspf_init_model_context(cs_gwf_unsaturated_single_phase_t   *mc,
+                         cs_property_type_t                   perm_type)
+{
+  if (mc == NULL)
+    return;
+
+  /* Add the property related to the diffusion term */
+
+  mc->permeability = cs_property_add("permeability", perm_type);
+
+  /* Define the Richards equation */
+
+  if (mc->richards == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The Richards equation is not defined. Stop execution.\n",
+              __func__);
+
+  cs_equation_param_t  *eqp = cs_equation_get_param(mc->richards);
+  assert(eqp != NULL);
+
+  /* Add the diffusion term to the Richards equation by associating the
+     full permeability to the diffusion property of the Richards eq. */
+
+  cs_equation_add_diffusion(eqp, mc->permeability);
+
+  /* Add the time term to the Richards equation by associating the the soil
+     capacity to the unsteady term */
+
+  assert(mc->soil_capacity != NULL);
+  cs_equation_add_time(eqp, mc->soil_capacity);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setup related to the modelling context of unsaturated single-phase
+ *        flows. At this stage, all soils have been defined and equation
+ *        parameters are set.
+ *
+ * \param[in, out] mc          pointer to the model context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_uspf_init_setup(cs_gwf_unsaturated_single_phase_t   *mc)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
@@ -934,16 +994,8 @@ _uspf_init_setup(cs_gwf_unsaturated_single_phase_t   *mc,
               __func__);
   assert(cs_equation_is_steady(mc->richards) == false);
 
-  /* Add the property related to the diffusion term */
-
-  mc->permeability = cs_property_add("permeability", perm_type);
-
-  /* Add the diffusion term to the Richards equation by associating the
-     full permeability to the diffusion property of the Richards eq. */
-
   cs_equation_param_t  *eqp = cs_equation_get_param(mc->richards);
-
-  cs_equation_add_diffusion(eqp, mc->permeability);
+  assert(eqp != NULL);
 
   /* Add the variable field (Keep one previous state) */
 
@@ -1286,7 +1338,7 @@ _build_hg_incr_st(const cs_equation_param_t     *eqp,
 /*----------------------------------------------------------------------------*/
 
 static cs_gwf_two_phase_t *
-_tpf_init_context(void)
+_tpf_activate(void)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw != NULL);
@@ -1307,8 +1359,6 @@ _tpf_init_context(void)
                               1,
                               CS_PARAM_BC_HMG_NEUMANN);
 
-  cs_equation_param_t  *wl_eqp = cs_equation_get_param(mc->wl_eq);
-
   /* Create a new equation for the hydrogen conservation associated to the
      pressure in the gaseous phase. This will stand for the (1,1)-block */
 
@@ -1318,145 +1368,12 @@ _tpf_init_context(void)
                               1,
                               CS_PARAM_BC_HMG_NEUMANN);
 
-  cs_equation_param_t  *hg_eqp = cs_equation_get_param(mc->hg_eq);
+  /* Set to NULL the remaining pointers. Only a part is set according to the
+     numerical settings */
 
-  if (gw->flag & CS_GWF_COUPLED_SOLVER) {
-
-    /* Define the coupled system of equations */
-    /* -------------------------------------- */
-
-    /* Create the (0,1)-block related to the water in the gas phase */
-
-    mc->wg_eqp = cs_equation_param_create("water_gas_block",
-                                          CS_EQUATION_TYPE_GROUNDWATER,
-                                          1,
-                                          CS_PARAM_BC_HMG_NEUMANN);
-
-    /* Create the (1,0)-block related to the hydrogen in the liquid phase */
-
-    mc->hl_eqp = cs_equation_param_create("h_liquid_block",
-                                          CS_EQUATION_TYPE_GROUNDWATER,
-                                          1,
-                                          CS_PARAM_BC_HMG_NEUMANN);
-
-    /* Add a 2x2 system of coupled equations and define each block */
-
-    mc->system = cs_equation_system_add("PorousTwoPhaseFlow",
-                                        2,   /* system size */
-                                        1);  /* scalar-valued block */
-
-    /* Set all the blocks in the coupled system */
-
-    cs_equation_system_assign_equation(0, mc->wl_eq, mc->system);  /* (0,0) */
-    cs_equation_system_assign_equation(1, mc->hg_eq, mc->system);  /* (1,1) */
-    cs_equation_system_assign_param(0, 1, mc->wg_eqp, mc->system); /* (0,1) */
-    cs_equation_system_assign_param(1, 0, mc->hl_eqp, mc->system); /* (1,0) */
-
-    /* Properties */
-    /* ---------- */
-
-    /* Properties which will be associated to blocks
-     * - unsteady term for water eq. in the liquid phase      (0,0) block
-     * - diffusion term for water eq. in the liquid phase     (0,0)-block
-     * - unsteady term for water eq. in the gaseous phase     (0,1)-block
-     * - unsteady term for hydrogen eq. in the gaseous phase  (1,1)-block
-     * - diffusion term for hydrogen eq. in the gaseous phase (1,1)-block
-     * - unsteady term for hydrogen eq. in the liquid phase   (1,0)-block
-     * - diffusion term for hydrogen eq. in the liquid phase  (1,0)-block
-     *
-     * Adding the properties related to the permeability (diffusion) is
-     * postponed since one has to know which type of permeability is considered
-     * (iso, ortho, or anisotropic)
-     */
-
-    mc->time_wl_pty = cs_property_add("time_wl_pty", CS_PROPERTY_ISO);
-    mc->diff_wl_pty = NULL;
-    mc->time_wg_pty = cs_property_add("time_wg_pty", CS_PROPERTY_ISO);
-    mc->diff_hg_pty = NULL;
-    mc->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
-    mc->reac_hg_pty = NULL;     /* Not useful in this case */
-    mc->time_hl_pty = cs_property_add("time_hl_pty", CS_PROPERTY_ISO);
-    mc->diff_hl_pty = NULL;
-
-    /* Associate properties related to the unsteady term with equations to
-       define the unsteady terms in these equations */
-
-    cs_equation_add_time(wl_eqp, mc->time_wl_pty);
-
-    /* Cross terms */
-
-    cs_equation_add_time(mc->wg_eqp, mc->time_wg_pty);
-    cs_equation_add_time(mc->hl_eqp, mc->time_hl_pty);
-
-  }
-  else { /* Define the segregated system */
-
-    mc->wg_eqp = NULL;
-    mc->hl_eqp = NULL;
-    mc->system = NULL;
-
-    if (gw->flag & CS_GWF_INCREMENTAL_SOLVE) {
-
-      wl_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
-      hg_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
-
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Segregated solved without an incremental solve"
-                " are not yet implemented.\n", __func__);
-
-    /* Properties
-     * ----------
-     *
-     * Adding the properties related to the permeability (diffusion) is
-     * postponed since one has to know which type of permeability is considered
-     * (iso, ortho, or anisotropic)
-     */
-
-    /* Water equation  */
-
-    mc->diff_wl_pty = NULL;  /* postponed */
-    mc->time_wg_pty = NULL;
-
-    /* Hydrogen equation */
-
-    mc->time_hl_pty = NULL;  /* not useful in this case */
-    mc->diff_hg_pty = NULL;  /* postponed */
-
-    /* diff_hl_pty is used in the build hook function to define a source term
-       related to a diffusion term */
-
-    mc->diff_hl_pty = NULL; /* postponed */
-
-    if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
-
-      mc->time_wl_pty = cs_property_subcell_add("time_wl_pty", CS_PROPERTY_ISO);
-      mc->time_hg_pty = cs_property_subcell_add("time_hg_pty", CS_PROPERTY_ISO);
-      mc->reac_hg_pty = cs_property_subcell_add("reac_hg_pty", CS_PROPERTY_ISO);
-
-    }
-    else {
-
-      mc->time_wl_pty = cs_property_add("time_wl_pty", CS_PROPERTY_ISO);
-      mc->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
-      mc->reac_hg_pty = cs_property_add("reac_hg_pty", CS_PROPERTY_ISO);
-
-    }
-
-    cs_equation_add_reaction(hg_eqp, mc->reac_hg_pty);
-
-  } /* Define a coupled or segregated system */
-
-  /* Properties shared among all numerical options
-   *
-   * Associate properties related to the unsteady term with equations to define
-   * the unsteady terms in these equations
-   */
-
-  cs_equation_add_time(wl_eqp, mc->time_wl_pty);
-
-  cs_equation_add_time(hg_eqp, mc->time_hg_pty);
+  mc->wg_eqp = NULL;
+  mc->hl_eqp = NULL;
+  mc->system = NULL;
 
   /* Advection fields */
   /* ---------------- */
@@ -1465,6 +1382,29 @@ _tpf_init_context(void)
 
   mc->l_darcy = NULL;
   mc->g_darcy = NULL;
+
+  /* Properties
+   * ----------
+   *
+   * Adding the properties related to the permeability (diffusion) is
+   * postponed since one has to know which type of permeability is considered
+   * (iso, ortho, or anisotropic) and this information is a result of the type
+   * of soils which have been added.
+   */
+
+  /* Properties related to the water equation  */
+
+  mc->time_wl_pty = NULL;
+  mc->diff_wl_pty = NULL;
+  mc->time_wg_pty = NULL;
+
+  /* Properties related to the hydrogen equation  */
+
+  mc->time_hg_pty = NULL;
+  mc->diff_hg_pty = NULL;
+  mc->reac_hg_pty = NULL;
+  mc->time_hl_pty = NULL;
+  mc->diff_hl_pty = NULL;
 
   /* Fields */
   /* ------ */
@@ -1517,6 +1457,10 @@ _tpf_init_context(void)
   mc->henry_constant = 1e-20;   /* nearly immiscible case */
 
   /* Numerical parameters */
+
+  mc->use_coupled_solver = false;
+  mc->use_incremental_solver = true;
+  mc->use_properties_on_submesh = true;
 
   mc->nl_algo_type = CS_PARAM_NL_ALGO_NONE; /* Linear algo. by default */
 
@@ -1664,19 +1608,21 @@ _tpf_log_context(cs_gwf_two_phase_t   *mc)
   if (mc == NULL)
     return;
 
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-
   cs_log_printf(CS_LOG_SETUP, "  * GWF | Reference temperature: %5.2f K\n",
                 mc->ref_temperature);
 
   cs_gwf_darcy_flux_log(mc->l_darcy);
   cs_gwf_darcy_flux_log(mc->g_darcy);
 
-  if (gw->flag & CS_GWF_COUPLED_SOLVER)
+  if (mc->use_coupled_solver)
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Coupled solver\n");
   else
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Segregated solver\n");
-  if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH)
+
+  if (mc->use_incremental_solver)
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Incremental solver\n");
+
+  if (mc->use_properties_on_submesh)
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Liquid saturation on submesh\n");
 
   if (mc->nl_algo_type != CS_PARAM_NL_ALGO_NONE) {
@@ -1708,8 +1654,9 @@ _tpf_log_context(cs_gwf_two_phase_t   *mc)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Perform the initial setup step in the case of a miscible or
- *        immiscible two-phase flows model in porous media
+ * \brief Initialize the model context according to the settings done inside
+ *        the function cs_user_model()
+ *        Case of a miscible or immiscible two-phase flows model in porous media
  *
  * \param[in, out]  mc         pointer to the casted model context
  * \param[in, out]  perm_type  type of permeability to handle
@@ -1717,8 +1664,8 @@ _tpf_log_context(cs_gwf_two_phase_t   *mc)
 /*----------------------------------------------------------------------------*/
 
 static void
-_tpf_init_setup(cs_gwf_two_phase_t     *mc,
-                cs_property_type_t      perm_type)
+_tpf_init_model_context(cs_gwf_two_phase_t     *mc,
+                        cs_property_type_t      perm_type)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw != NULL && mc != NULL);
@@ -1728,36 +1675,156 @@ _tpf_init_setup(cs_gwf_two_phase_t     *mc,
               "%s: Equations are not defined for this model. Stop execution.\n",
               __func__);
 
-  assert(cs_equation_is_steady(mc->hg_eq) == false);
-
-  /* Add properties which will be associated to blocks
-   * - diffusion term for water eq. in the liquid phase     (0,0)-block
-   * - diffusion term for hydrogen eq. in the gaseous phase (1,1)-block
-   * - diffusion term for hydrogen eq. in the liquid phase  (1,0)-block
-   */
-
-  mc->diff_wl_pty = cs_property_add("diff_wl_pty", perm_type);
-  mc->diff_hg_pty = cs_property_add("diff_hg_pty", perm_type);
-  mc->diff_hl_pty = cs_property_add("diff_hl_pty", perm_type);
-
-  /* Associate the diffusion properties with the equation parameter structure
-   * to define new terms in these equations */
-
   cs_equation_param_t  *wl_eqp = cs_equation_get_param(mc->wl_eq);
-
-  cs_equation_add_diffusion(wl_eqp, mc->diff_wl_pty);
-
   cs_equation_param_t  *hg_eqp = cs_equation_get_param(mc->hg_eq);
 
-  cs_equation_add_diffusion(hg_eqp, mc->diff_hg_pty);
+  if (mc->use_coupled_solver) {
 
-  if (gw->flag & CS_GWF_COUPLED_SOLVER) {
+    /* Define the coupled system of equations */
+    /* -------------------------------------- */
 
-    /* Cross-terms */
+    /* Create the (0,1)-block related to the water in the gas phase */
 
+    mc->wg_eqp = cs_equation_param_create("water_gas_block",
+                                          CS_EQUATION_TYPE_GROUNDWATER,
+                                          1,
+                                          CS_PARAM_BC_HMG_NEUMANN);
+
+    /* Create the (1,0)-block related to the hydrogen in the liquid phase */
+
+    mc->hl_eqp = cs_equation_param_create("h_liquid_block",
+                                          CS_EQUATION_TYPE_GROUNDWATER,
+                                          1,
+                                          CS_PARAM_BC_HMG_NEUMANN);
+
+    /* Add a 2x2 system of coupled equations and define each block */
+
+    mc->system = cs_equation_system_add("PorousTwoPhaseFlow",
+                                        2,   /* system size */
+                                        1);  /* scalar-valued block */
+
+    /* Set all the blocks in the coupled system */
+
+    cs_equation_system_assign_equation(0, mc->wl_eq, mc->system);  /* (0,0) */
+    cs_equation_system_assign_equation(1, mc->hg_eq, mc->system);  /* (1,1) */
+    cs_equation_system_assign_param(0, 1, mc->wg_eqp, mc->system); /* (0,1) */
+    cs_equation_system_assign_param(1, 0, mc->hl_eqp, mc->system); /* (1,0) */
+
+    /* Properties */
+    /* ---------- */
+
+    /* Properties which will be associated to blocks
+     * - unsteady term for water eq. in the liquid phase      (0,0) block
+     * - diffusion term for water eq. in the liquid phase     (0,0)-block
+     * - unsteady term for water eq. in the gaseous phase     (0,1)-block
+     * - unsteady term for hydrogen eq. in the gaseous phase  (1,1)-block
+     * - diffusion term for hydrogen eq. in the gaseous phase (1,1)-block
+     * - unsteady term for hydrogen eq. in the liquid phase   (1,0)-block
+     * - diffusion term for hydrogen eq. in the liquid phase  (1,0)-block
+     */
+
+    mc->time_wl_pty = cs_property_add("time_wl_pty", CS_PROPERTY_ISO);
+    mc->diff_wl_pty = cs_property_add("diff_wl_pty", perm_type);
+
+    mc->time_wg_pty = cs_property_add("time_wg_pty", CS_PROPERTY_ISO);
+
+    mc->diff_hg_pty = cs_property_add("diff_hg_pty", perm_type);
+    mc->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
+
+    mc->time_hl_pty = cs_property_add("time_hl_pty", CS_PROPERTY_ISO);
+    mc->diff_hl_pty = cs_property_add("diff_hl_pty", perm_type);
+
+    /* Add terms to the water equation */
+    /* ------------------------------- */
+
+    cs_equation_add_time(wl_eqp, mc->time_wl_pty);
+    cs_equation_add_diffusion(wl_eqp, mc->diff_wl_pty);
+
+    /* Cross-terms for the block (0,1) -- Water equation */
+
+    cs_equation_add_time(mc->wg_eqp, mc->time_wg_pty);
+
+    /* Add terms to the hydrogen equation */
+    /* ---------------------------------- */
+
+    cs_equation_add_diffusion(hg_eqp, mc->diff_hg_pty);
+
+    /* Cross-terms for the block (1,0) -- Hydrogen equation */
+
+    cs_equation_add_time(mc->hl_eqp, mc->time_hl_pty);
     cs_equation_add_diffusion(mc->hl_eqp, mc->diff_hl_pty);
 
   }
+  else { /* Segregated solver */
+
+    mc->use_incremental_solver = true; /* Segregated solver are always solved
+                                          by increment */
+
+    /* Properties */
+    /* ---------- */
+
+    mc->diff_wl_pty = cs_property_add("diff_wl_pty", perm_type);
+    mc->diff_hg_pty = cs_property_add("diff_hg_pty", perm_type);
+    mc->diff_hl_pty = cs_property_add("diff_hl_pty", perm_type);
+
+    if (mc->use_properties_on_submesh) {
+
+      mc->time_wl_pty = cs_property_subcell_add("time_wl_pty", CS_PROPERTY_ISO);
+      mc->time_hg_pty = cs_property_subcell_add("time_hg_pty", CS_PROPERTY_ISO);
+      mc->reac_hg_pty = cs_property_subcell_add("reac_hg_pty", CS_PROPERTY_ISO);
+
+    }
+    else {
+
+      mc->time_wl_pty = cs_property_add("time_wl_pty", CS_PROPERTY_ISO);
+      mc->time_hg_pty = cs_property_add("time_hg_pty", CS_PROPERTY_ISO);
+      mc->reac_hg_pty = cs_property_add("reac_hg_pty", CS_PROPERTY_ISO);
+
+    }
+
+    /* Add terms to the water equation */
+    /* ------------------------------- */
+
+    cs_equation_add_time(wl_eqp, mc->time_wl_pty);
+    cs_equation_add_diffusion(wl_eqp, mc->diff_wl_pty);
+
+
+    /* Add terms to the hydrogen equation */
+    /* ---------------------------------- */
+
+    cs_equation_add_time(hg_eqp, mc->time_hg_pty);
+    cs_equation_add_diffusion(hg_eqp, mc->diff_hg_pty);
+    cs_equation_add_reaction(hg_eqp, mc->reac_hg_pty);
+
+  } /* Segregated or coupled solver */
+
+  if (mc->use_incremental_solver) {
+
+    wl_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
+    hg_eqp->incremental_algo_type = CS_PARAM_NL_ALGO_PICARD;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Perform the initial setup step in the case of a miscible or
+ *        immiscible two-phase flows model in porous media
+ *
+ * \param[in, out]  mc         pointer to the casted model context
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_tpf_init_setup(cs_gwf_two_phase_t     *mc)
+{
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+  assert(gw != NULL && mc != NULL);
+
+  if (mc->wl_eq == NULL || mc->hg_eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Equations are not defined for this model. Stop execution.\n",
+              __func__);
 
   /* Add the variable fields (Keep always the previous state) */
 
@@ -1775,6 +1842,11 @@ _tpf_init_setup(cs_gwf_two_phase_t     *mc,
   const int  log_key = cs_field_key_id("log");
   const int  post_key = cs_field_key_id("post_vis");
 
+  /* Retrieve the pointers to the structure storing the equation parameters */
+
+  cs_equation_param_t  *wl_eqp = cs_equation_get_param(mc->wl_eq);
+  cs_equation_param_t  *hg_eqp = cs_equation_get_param(mc->hg_eq);
+
   assert(wl_eqp->space_scheme == hg_eqp->space_scheme);
 
   /* One has to be consistent with the location of DoFs for the w_eq and h_eq
@@ -1784,6 +1856,8 @@ _tpf_init_setup(cs_gwf_two_phase_t     *mc,
   if (wl_eqp->space_scheme == CS_SPACE_SCHEME_CDOVB ||
       wl_eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
     loc_id = v_loc_id;
+  else
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid space scheme", __func__);
 
   mc->c_pressure = cs_field_create("capillarity_pressure",
                                    field_mask,
@@ -1859,7 +1933,7 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
   BFT_MALLOC(mc->g_cell_pressure, n_cells, cs_real_t);
   memset(mc->g_cell_pressure, 0, sizeof(cs_real_t)*n_cells);
 
-  if (gw->flag & CS_GWF_COUPLED_SOLVER) {
+  if (mc->use_coupled_solver) {
 
     BFT_MALLOC(mc->l_capacity, n_cells, cs_real_t);
     memset(mc->l_capacity, 0, sizeof(cs_real_t)*n_cells);
@@ -1917,9 +1991,9 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
                            false,                /* not owner of the array */
                            NULL, NULL);          /* no index, no ids */
 
-  if (gw->flag & CS_GWF_INCREMENTAL_SOLVE) {
+  if (mc->use_incremental_solver) {
 
-    if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
+    if (mc->use_properties_on_submesh) {
 
       const cs_adjacency_t  *c2v = connect->c2v;
       const cs_lnum_t  c2v_size = c2v->idx[n_cells];
@@ -2107,7 +2181,7 @@ _tpf_updates(const cs_mesh_t             *mesh,
     cs_field_current_to_previous(mc->c_pressure);
     cs_field_current_to_previous(mc->l_saturation);
 
-    if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH)
+    if (mc->use_properties_on_submesh)
       memcpy(mc->l_saturation_submesh_pre,                           /* dest */
              mc->l_saturation_submesh,                               /* src */
              connect->c2v->idx[connect->n_cells]*sizeof(cs_real_t)); /* size */
@@ -2155,7 +2229,7 @@ _tpf_updates(const cs_mesh_t             *mesh,
 
   /* Define the liquid saturation in each cell in some specific situations */
 
-  if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
+  if (mc->use_properties_on_submesh) {
 
     const cs_adjacency_t  *c2v = connect->c2v;
     cs_real_t  *l_sat = mc->l_saturation->val;
@@ -2189,15 +2263,13 @@ _tpf_updates(const cs_mesh_t             *mesh,
   case 1: /* Isotropic case */
     if (gw->model == CS_GWF_MODEL_MISCIBLE_TWO_PHASE)
       cs_gwf_soil_iso_update_mtpf_terms(mc);
+
     else {
 
-      if (gw->flag & CS_GWF_INCREMENTAL_SOLVE) {
+      if (mc->use_incremental_solver) {
 
-        if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
-
+        if (mc->use_properties_on_submesh)
           cs_gwf_soil_iso_update_itpf_terms_incr_submesh(ts, connect, mc);
-
-        }
         else
           cs_gwf_soil_iso_update_itpf_terms_incr(ts, mc);
 
@@ -2667,10 +2739,7 @@ _segregated_tpf_compute(const cs_mesh_t              *mesh,
                         const cs_cdo_quantities_t    *cdoq,
                         cs_gwf_two_phase_t           *mc)
 {
-#if defined(DEBUG) && !defined(NDEBUG)
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-  assert(gw->flag & CS_GWF_INCREMENTAL_SOLVE);
-#endif
+  assert(mc->use_incremental_solver);
 
   cs_field_current_to_previous(mc->g_pressure);
   cs_field_current_to_previous(mc->l_pressure);
@@ -2830,6 +2899,7 @@ _tpf_compute(const cs_mesh_t              *mesh,
              const cs_cdo_quantities_t    *cdoq,
              cs_gwf_two_phase_t           *mc)
 {
+#if defined(DEBUG) && !defined(NDEBUG)
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
   assert(gw != NULL && mc != NULL);
@@ -2837,6 +2907,7 @@ _tpf_compute(const cs_mesh_t              *mesh,
          gw->model == CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE);
   assert(cs_equation_get_type(mc->wl_eq) == CS_EQUATION_TYPE_GROUNDWATER);
   assert(cs_equation_get_type(mc->hg_eq) == CS_EQUATION_TYPE_GROUNDWATER);
+#endif
 
   if (cs_equation_is_steady(mc->wl_eq) && cs_equation_is_steady(mc->hg_eq)) {
     cs_base_warn(__FILE__, __LINE__);
@@ -2844,7 +2915,7 @@ _tpf_compute(const cs_mesh_t              *mesh,
                   "Unsteady computation whereas all equations are steady.\n");
   }
 
-  if (gw->flag & CS_GWF_COUPLED_SOLVER) {
+  if (mc->use_coupled_solver) {
 
     bool cur2prev = true;
 
@@ -2968,18 +3039,18 @@ cs_gwf_activate(cs_gwf_model_type_t      model,
   switch (model) {
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
-    gw->model_context = _sspf_init_context();
+    gw->model_context = _sspf_activate();
     break;
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
     gw->post_flag |= CS_GWF_POST_LIQUID_SATURATION;
-    gw->model_context = _uspf_init_context();
+    gw->model_context = _uspf_activate();
     break;
 
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
     gw->post_flag |= CS_GWF_POST_LIQUID_SATURATION;
-    gw->model_context = _tpf_init_context();
+    gw->model_context = _tpf_activate();
     break;
 
   default:
@@ -3096,8 +3167,6 @@ cs_gwf_log_setup(void)
   if (gw->flag & CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE)
     cs_log_printf(CS_LOG_SETUP,
                   "  * GWF | Rescale head w.r.t zero mean value\n");
-  if (gw->flag & CS_GWF_INCREMENTAL_SOLVE)
-    cs_log_printf(CS_LOG_SETUP, "  * GWF | Incremental solve\n");
 
   /* Display information on the post-processing options */
 
@@ -3199,6 +3268,33 @@ cs_gwf_get_two_phase_model(void)
 
   assert(mc != NULL);
   return mc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the numerical options related to the two phase flow models
+ *
+ * \param[in] use_coupled_solver         true/false
+ * \param[in] use_incremental_solver     true/false
+ * \param[in] use_properties_on_submesh  true/false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_set_two_phase_numerical_options(bool    use_coupled_solver,
+                                       bool    use_incremental_solver,
+                                       bool    use_properties_on_submesh)
+{
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  cs_gwf_two_phase_t  *mc = gw->model_context;
+  assert(mc != NULL);
+
+  mc->use_coupled_solver = use_coupled_solver;
+  mc->use_incremental_solver = use_incremental_solver;
+  mc->use_properties_on_submesh = use_properties_on_submesh;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3581,16 +3677,14 @@ cs_gwf_add_user_tracer(const char                       *eq_name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined settings for the groundwater flow model and its related
- *         equations.
- *         At this stage, all soils have been defined and equation parameters
- *         are set.
- *         Create new cs_field_t structures according to the setting.
+ * \brief  Initialize the context of the model after the activation of the
+ *         module and a first settings of the model parameters (physical and
+ *         numerical). At this stage, cs_user_parameters() has not been called
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_init_setup(void)
+cs_gwf_init_model_context(void)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
@@ -3614,16 +3708,56 @@ cs_gwf_init_setup(void)
   switch (gw->model) {
 
   case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
-    _sspf_init_setup(gw->model_context);
+    _sspf_init_model_context(gw->model_context);
     break;
 
   case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
-    _uspf_init_setup(gw->model_context, perm_type);
+    _uspf_init_model_context(gw->model_context, perm_type);
     break;
 
   case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
   case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
-    _tpf_init_setup(gw->model_context, perm_type);
+    _tpf_init_model_context(gw->model_context, perm_type);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid model type for the GroundWater Flow module.\n",
+              __func__);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined settings for the groundwater flow model and its related
+ *         equations.
+ *         At this stage, all soils have been defined and equation parameters
+ *         are set (cs_user_parameters() has been called).
+ *         Create new cs_field_t structures according to the setting.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_init_setup(void)
+{
+  cs_gwf_t  *gw = cs_gwf_main_structure;
+  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
+
+  /* Continue the setup of the model and create new fields */
+
+  switch (gw->model) {
+
+  case CS_GWF_MODEL_SATURATED_SINGLE_PHASE:
+    _sspf_init_setup(gw->model_context);
+    break;
+
+  case CS_GWF_MODEL_UNSATURATED_SINGLE_PHASE:
+    _uspf_init_setup(gw->model_context);
+    break;
+
+  case CS_GWF_MODEL_MISCIBLE_TWO_PHASE:
+  case CS_GWF_MODEL_IMMISCIBLE_TWO_PHASE:
+    _tpf_init_setup(gw->model_context);
     break;
 
   default:
@@ -3712,7 +3846,6 @@ cs_gwf_initialize(const cs_mesh_t             *mesh,
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
-  cs_log_printf(CS_LOG_DEFAULT, "\n%s:%d\n", __func__, __LINE__);
   cs_gwf_update(mesh, connect, quant, ts, CS_FLAG_INITIALIZATION);
 
   /* Further steps dedicated to each model */
@@ -3724,7 +3857,7 @@ cs_gwf_initialize(const cs_mesh_t             *mesh,
     {
       cs_gwf_two_phase_t *mc = gw->model_context;
 
-      if (gw->flag & CS_GWF_INCREMENTAL_SOLVE) {
+      if (mc->use_incremental_solver) {
 
         /* This model is non-linear so that one needs an iterative algorithm to
            manage this non-linearity */
@@ -3742,7 +3875,7 @@ cs_gwf_initialize(const cs_mesh_t             *mesh,
 
         /* Initialise other previous quantities */
 
-        if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
+        if (mc->use_properties_on_submesh) {
 
           memcpy(mc->l_saturation_submesh_pre,                      /* dest */
                  mc->l_saturation_submesh,                          /* src */
@@ -3762,7 +3895,7 @@ cs_gwf_initialize(const cs_mesh_t             *mesh,
            vertex-based schemes */
 
         cs_lnum_t  size = quant->n_vertices;
-        if (gw->flag & CS_GWF_COUPLED_SOLVER)
+        if (mc->use_coupled_solver)
           size *= 2;
 
         if (mc->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON)
@@ -4291,7 +4424,7 @@ cs_gwf_extra_post_mtpf(void                      *input,
       }
       else {
 
-        if (gw->flag & CS_GWF_LIQUID_SATURATION_ON_SUBMESH) {
+        if (mc->use_properties_on_submesh) {
           cs_base_warn(__FILE__, __LINE__);
           bft_printf("%s: Requested postprocessing for capacity at cells but"
                      " this functionnality is not yet available\n"
@@ -4313,7 +4446,7 @@ cs_gwf_extra_post_mtpf(void                      *input,
 
       }
 
-    }
+    } /* Postprocess the soil capacity */
 
     if (gw->post_flag & CS_GWF_POST_PERMEABILITY) {
 

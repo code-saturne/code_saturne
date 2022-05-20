@@ -102,14 +102,6 @@ static const char _err_empty_cdo_context[] =
   " Please check your settings.\n";
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_initialize_cdo_systems(void);
-
-/*============================================================================
  * Private function prototypes
  *============================================================================*/
 
@@ -290,12 +282,30 @@ _set_scheme_flags(cs_domain_t    *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  When the models have been activated, continue to allocate, add and
+ *         define structures related to those models
+ *         This function is called after the user function cs_user_model and
+ *         before the user function cs_user_parameters
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_f_domain_setup_init_model_context(void)
+{
+  /* Groundwater flow module */
+
+  if (cs_gwf_is_activated())
+    cs_gwf_init_model_context();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize CDO systems
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_f_initialize_cdo_systems(void)
+cs_f_domain_initialize_cdo_systems(void)
 {
   assert(cs_glob_domain != NULL);
   cs_domain_initialize_systems(cs_glob_domain);

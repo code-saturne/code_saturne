@@ -37,8 +37,8 @@ module cdomod
 
   !=============================================================================
 
-  !> Activated (=1 or =2) or not (=0)
-  !> If icdo=1 (CDO and FV)
+  !> Activated (=1 or =2) or not activated (=0)
+  !> If icdo=1 (CDO and FV at the same time)
   !> If icdo=2 (CDO only)
   integer, save :: icdo
 
@@ -64,11 +64,11 @@ module cdomod
 
     ! Interface to C function related to the initialization CDO systems
 
-    subroutine cs_f_initialize_cdo_systems()  &
-      bind(C, name='cs_f_initialize_cdo_systems')
+    subroutine cs_f_domain_initialize_cdo_systems()  &
+      bind(C, name='cs_f_domain_initialize_cdo_systems')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine cs_f_initialize_cdo_systems
+    end subroutine cs_f_domain_initialize_cdo_systems
 
     ! Interface to C function to postprocess data related to CDO schemes
 

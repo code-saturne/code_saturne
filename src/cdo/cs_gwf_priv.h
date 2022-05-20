@@ -334,7 +334,7 @@ typedef struct {
 
   /*! \var system
    * System of equations (wl_eq, hg_eq and the cross-term defined in the related
-   * cs_equation_param_t structures)
+   * cs_equation_param_t structures) used for the coupled approach
    */
 
   cs_equation_system_t         *system;
@@ -571,7 +571,7 @@ typedef struct {
 
   /*!
    * @}
-   * @name Model parameters
+   * @name Physical model parameters
    * @{
    *
    * \var l_mass_density
@@ -621,6 +621,23 @@ typedef struct {
    * @name Numerical parameters
    * @{
    *
+   * \var use_coupled_solver
+   * \brief When a model relies on several coupled equations, there are two
+   *        main options to build and solve the system of equations. Either use
+   *        a coupled solver (and thus build a coupled system) or use a
+   *        segregated approach and an associated strategy to solve the
+   *        sequence of equations and apply sub-iterations. The latter case
+   *        (segregated solver) corresponds to the default choice.  true if a
+   *        coupled solver is used. Otherwise a segregated solver is considered
+   *
+   * \var use_incremental_solver
+   * \brief When a model includes non-linearities it can be useful to formulate
+   *        the problem using increment and to iterate on the non-linear
+   *        process (for instance whith a Picard or Anderson acceleration)
+   *
+   * \var use_properties_on_submesh
+   * \brief Consider a submesh to define the liquid saturation
+   *
    * \var nl_algo_type
    *      Type of algorithm to solve the non-linearities
    *
@@ -634,6 +651,10 @@ typedef struct {
    * \var nl_algo
    *      Structure used to manage the non-linearities
    */
+
+  bool                           use_coupled_solver;
+  bool                           use_incremental_solver;
+  bool                           use_properties_on_submesh;
 
   cs_param_nl_algo_t             nl_algo_type;
   cs_iter_algo_param_t           nl_algo_param;

@@ -106,6 +106,21 @@ cs_gwf_get_two_phase_model(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the numerical options related to the two phase flow models
+ *
+ * \param[in] use_coupled_solver         true/false
+ * \param[in] use_incremental_solver     true/false
+ * \param[in] use_properties_on_submesh  true/false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_set_two_phase_numerical_options(bool    use_coupled_solver,
+                                       bool    use_incremental_solver,
+                                       bool    use_properties_on_submesh);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the parameters defining the two-phase flow model.
  *         Use SI unit if not prescribed otherwise.
  *
@@ -281,10 +296,22 @@ cs_gwf_add_user_tracer(const char                       *eq_name,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize the context of the model after the activation of the
+ *         module and a first settings of the model parameters (physical and
+ *         numerical). At this stage, cs_user_parameters() has not been called
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gwf_init_model_context(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predefined settings for the groundwater flow model and its related
  *         equations.
  *         At this stage, all soils have been defined and equation parameters
- *         are set. Create new cs_field_t structures according to the setting.
+ *         are set (cs_user_parameters() has been called).
+ *         Create new cs_field_t structures according to the setting.
  */
 /*----------------------------------------------------------------------------*/
 
