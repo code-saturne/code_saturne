@@ -802,9 +802,6 @@ cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r)
 #else
   cs_lnum_t n_elts = r->target_mesh->n_elts;
 
-  r->remapper->setPrecision(1.e-12);
-  r->remapper->setIntersectionType(INTERP_KERNEL::PointLocator);
-
   if (n_elts > 0) {
     // List of subcells intersecting the local mesh bounding box
     const cs_real_t *rbbox = r->target_mesh->bbox;

@@ -51,6 +51,14 @@ typedef enum {
   CS_MEDCPL_INTERSECT_UKNOWN    /*!< Uknown flag */
 } cs_medcpl_intersect_type_t;
 
+typedef enum {
+
+  CS_MEDCPL_MESH_FROM_FILE,
+  CS_MEDCPL_MESH_FROM_PRIMITIVE,
+  CS_MEDCPL_N_MESH_TYPES,
+  CS_MEDCPL_MESH_UKNOWN
+
+} cs_medcpl_mesh_type_t;
 
 /*============================================================================
  * Structure definitions
