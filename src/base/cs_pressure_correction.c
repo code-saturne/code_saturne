@@ -115,6 +115,10 @@ static const char _err_empty_prcdo[] =
   " Stop execution. The structure related to the pressure correction is"
   " empty.\n Please check your settings.\n";
 
+/*============================================================================
+ * Global variables
+ *============================================================================*/
+
 static bool cs_pressure_correction_cdo_active = false;
 
 static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = NULL;

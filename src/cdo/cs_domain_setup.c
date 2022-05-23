@@ -61,6 +61,7 @@
 #include "cs_thermal_system.h"
 #include "cs_time_step.h"
 #include "cs_walldistance.h"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
