@@ -242,9 +242,11 @@ call cs_gui_radiative_transfer_parameters
 ! and computes the number of user scalars (nscaus)
 if (icdo.lt.2) then
   call fldvar(nmodpp)
+
+  ! Activate the pressure correction model only if CDO mode is not stand-alone
+  call cs_pressure_correction_model_activate
 endif
 
-call cs_pressure_correction_model_activate
 
 if (iale.ge.1) then
   call uialvm
