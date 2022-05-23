@@ -45,12 +45,33 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+typedef struct _gwf_darcy_flux_t  cs_gwf_darcy_flux_t;
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the advection field/arrays related to the Darcy flux.
+ *
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in]      eq        pointer to the equation related to this Darcy flux
+ * \param[in]      cur2prev  true or false
+ * \param[in]      input     pointer to the context structure
+ * \param[in, out] darcy     pointer to the darcy flux structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_gwf_darcy_update_t)(const cs_real_t              t_eval,
+                        const cs_equation_t         *eq,
+                        bool                         cur2prev,
+                        void                        *input,
+                        cs_gwf_darcy_flux_t         *darcy);
+
 /*! \struct cs_gwf_darcy_flux_t
  *
  * \brief Structure to handle the Darcy flux
  */
 
-typedef struct {
+struct _gwf_darcy_flux_t {
 
   /*!
    * \var adv_field
@@ -68,6 +89,12 @@ typedef struct {
    * \var boundary_flux_val
    * Array storing the normal Darcian flux across the boundary of the
    * computational domain for the liquid phase. This is an optional array.
+   *
+   * \var update_input
+   * Context pointer for the update function or NULL if useless
+   *
+   * \var update_func
+   * Pointer to the function which performs the update of the advection field
    */
 
   cs_adv_field_t               *adv_field;
@@ -75,7 +102,10 @@ typedef struct {
   cs_real_t                    *flux_val;
   cs_real_t                    *boundary_flux_val;
 
-} cs_gwf_darcy_flux_t;
+  void                         *update_input;
+  cs_gwf_darcy_update_t        *update_func;
+
+};
 
 
 /*! \struct cs_gwf_saturated_single_phase_t
@@ -535,7 +565,7 @@ typedef struct {
    *      with the c2v adjacency structure). This array is allocated only if
    *      the option CS_GWF_LIQUID_SATURATION_ON_SUBMESH is swicth on.
    *
-   * \var l_saturation_submesh _pre
+   * \var l_saturation_submesh_pre
    *      Array storing the previous values of the liquid saturation on a
    *      submesh. This submesh corresponds to the subdivision of the primal
    *      mesh by the dual mesh associated to each vertex (scanned this array
@@ -780,11 +810,15 @@ cs_gwf_darcy_flux_log(cs_gwf_darcy_flux_t    *darcy);
 /*!
  * \brief  Set the definition of the advection field attached to a
  *         \ref cs_gwf_darcy_flux_t structure
+ *         If the function pointer is set to NULL, then an automatic settings
+ *         is done.
  *
- * \param[in]       connect       pointer to a cs_cdo_connect_t structure
- * \param[in]       quant         pointer to a cs_cdo_quantities_t structure
- * \param[in]       space_scheme  space discretization using this structure
- * \param[in, out]  darcy         pointer to the darcy structure
+ * \param[in]      connect         pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant           pointer to a cs_cdo_quantities_t structure
+ * \param[in]      space_scheme    space discretization using this structure
+ * \param[in]      update_context  pointer to the context for the update step
+ * \param[in]      update_func     pointer to an update function or NULL
+ * \param[in, out] darcy           pointer to the darcy structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -792,24 +826,9 @@ void
 cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
                          const cs_cdo_quantities_t    *quant,
                          cs_param_space_scheme_t       space_scheme,
+                         void                         *update_context,
+                         cs_gwf_darcy_update_t        *update_func,
                          cs_gwf_darcy_flux_t          *darcy);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the advection field/arrays related to the Darcy flux.
- *
- * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      eq        pointer to the equation related to this Darcy flux
- * \param[in]      cur2prev  true or false
- * \param[in, out] darcy     pointer to the darcy structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_darcy_flux_update(const cs_real_t              t_eval,
-                         const cs_equation_t         *eq,
-                         bool                         cur2prev,
-                         cs_gwf_darcy_flux_t         *darcy);
 
 /*----------------------------------------------------------------------------*/
 /*!

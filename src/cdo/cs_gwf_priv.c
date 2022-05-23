@@ -118,6 +118,153 @@ _update_vb_darcy_flux_at_boundary(cs_real_t                t_eval,
   cs_equation_compute_boundary_diff_flux(t_eval, eq, nflx_val);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the advection field/arrays related to the Darcy flux
+ *         Case of CDO-Vb schemes and a Darcy flux defined at dual faces
+ *
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in]      eq        pointer to the equation related to this Darcy flux
+ * \param[in]      cur2prev  true or false
+ * \param[in]      input     pointer to the context structure
+ * \param[in, out] darcy     pointer to the darcy flux structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_darcy_update_vb_dfbyc_flux(const cs_real_t              t_eval,
+                            const cs_equation_t         *eq,
+                            bool                         cur2prev,
+                            void                        *input,
+                            cs_gwf_darcy_flux_t         *darcy)
+{
+  CS_UNUSED(input);
+
+  cs_adv_field_t  *adv = darcy->adv_field;
+  assert(adv != NULL);
+
+  /* Update the velocity field at cell centers induced by the Darcy flux */
+
+  cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
+
+  assert(vel != NULL); /* Sanity check */
+  if (cur2prev)
+    cs_field_current_to_previous(vel);
+
+  /* Update arrays related to the Darcy flux:
+   * Compute the new darcian flux and darcian velocity inside each cell */
+
+  /* Update the array of flux values associated to the advection field */
+
+  assert(darcy->flux_val != NULL);
+  if (adv->definition->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid definition of the advection field", __func__);
+
+  cs_equation_compute_diffusive_flux(eq,
+                                     darcy->flux_location,
+                                     t_eval,
+                                     darcy->flux_val);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_PRIV_DBG > 2
+  cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
+                           connect->c2e->idx[cdoq->n_cells],
+                           darcy->flux_val, 8);
+#endif
+
+  /* Set the new values of the vector field at cell centers */
+
+  cs_advection_field_in_cells(adv, t_eval, vel->val);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_PRIV_DBG > 1
+  cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL", 3*cdoq->n_cells, vel->val, 3);
+#endif
+
+  /* Update the Darcy flux at the boundary */
+
+  _update_vb_darcy_flux_at_boundary(t_eval, eq, adv);
+
+  cs_field_t  *bdy_nflx =
+    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  if (bdy_nflx != NULL) { /* Values of the Darcy flux at boundary face exist */
+
+    if (cur2prev)
+      cs_field_current_to_previous(bdy_nflx);
+
+    /* Set the new values of the field related to the normal boundary flux */
+
+    cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the advection field/arrays related to the Darcy flux
+ *         Case of CDO-Vb schemes and a Darcy velocity defined at primal cells
+ *
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in]      eq        pointer to the equation related to this Darcy flux
+ * \param[in]      cur2prev  true or false
+ * \param[in]      input     pointer to the context structure
+ * \param[in, out] darcy     pointer to the darcy flux structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_darcy_update_vb_pc_flux(const cs_real_t              t_eval,
+                         const cs_equation_t         *eq,
+                         bool                         cur2prev,
+                         void                        *input,
+                         cs_gwf_darcy_flux_t         *darcy)
+{
+  CS_UNUSED(input);
+
+  cs_adv_field_t  *adv = darcy->adv_field;
+  assert(adv != NULL);
+
+  /* Update the velocity field at cell centers induced by the Darcy flux */
+
+  cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
+
+  assert(vel != NULL); /* Sanity check */
+  if (cur2prev)
+    cs_field_current_to_previous(vel);
+
+  /* Update arrays related to the Darcy flux:
+   * Compute the new darcian flux and darcian velocity inside each cell */
+
+  /* Update the array of flux values associated to the advection field */
+
+  cs_equation_compute_diffusive_flux(eq,
+                                     darcy->flux_location,
+                                     t_eval,
+                                     vel->val);
+
+  /* Update the Darcy flux at the boundary */
+
+  _update_vb_darcy_flux_at_boundary(t_eval, eq, adv);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_PRIV_DBG > 1
+  cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL", 3*cdoq->n_cells, vel->val, 3);
+#endif
+
+  cs_field_t  *bdy_nflx =
+    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  if (bdy_nflx != NULL) { /* Values of the Darcy flux at boundary face exist */
+
+    if (cur2prev)
+      cs_field_current_to_previous(bdy_nflx);
+
+    /* Set the new values of the field related to the normal boundary flux */
+
+    cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
+
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -205,11 +352,15 @@ cs_gwf_darcy_flux_log(cs_gwf_darcy_flux_t  *darcy)
 /*!
  * \brief  Set the definition of the advection field attached to a
  *         \ref cs_gwf_darcy_flux_t structure
+ *         If the function pointer is set to NULL, then an automatic settings
+ *         is done.
  *
- * \param[in]       connect       pointer to a cs_cdo_connect_t structure
- * \param[in]       quant         pointer to a cs_cdo_quantities_t structure
- * \param[in]       space_scheme  space discretization using this structure
- * \param[in, out]  darcy         pointer to the darcy structure
+ * \param[in]      connect         pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant           pointer to a cs_cdo_quantities_t structure
+ * \param[in]      space_scheme    space discretization using this structure
+ * \param[in]      update_context  pointer to the context for the update step
+ * \param[in]      update_func     pointer to an update function or NULL
+ * \param[in, out] darcy           pointer to the darcy structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -217,6 +368,8 @@ void
 cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
                          const cs_cdo_quantities_t    *quant,
                          cs_param_space_scheme_t       space_scheme,
+                         void                         *update_context,
+                         cs_gwf_darcy_update_t        *update_func,
                          cs_gwf_darcy_flux_t          *darcy)
 {
   if (darcy == NULL)
@@ -224,6 +377,13 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
 
   cs_adv_field_t  *adv = darcy->adv_field;
   assert(adv != NULL);
+
+  /* Set the pointer to the input structure for the update step */
+
+  darcy->update_input = update_context;
+  darcy->update_func = update_func;
+
+  /* Additional set-up */
 
   switch (space_scheme) {
 
@@ -276,6 +436,9 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
           adv->status -= CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR;
         adv->status |= CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
 
+        if (darcy->update_func == NULL)
+          darcy->update_func = _darcy_update_vb_dfbyc_flux;
+
       }
       else if (cs_flag_test(darcy->flux_location, cs_flag_primal_cell)) {
 
@@ -290,6 +453,9 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
         if (adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX)
           adv->status -= CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
         adv->status |= CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR;
+
+        if (darcy->update_func == NULL)
+          darcy->update_func = _darcy_update_vb_pc_flux;
 
       }
       else
@@ -310,107 +476,6 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t       *connect,
     break;
 
   } /* Switch on the space scheme */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update the advection field/arrays related to the Darcy flux.
- *
- * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      eq        pointer to the equation related to this Darcy flux
- * \param[in]      cur2prev  true or false
- * \param[in, out] darcy     pointer to the darcy structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_darcy_flux_update(const cs_real_t              t_eval,
-                         const cs_equation_t         *eq,
-                         bool                         cur2prev,
-                         cs_gwf_darcy_flux_t         *darcy)
-{
-  cs_adv_field_t  *adv = darcy->adv_field;
-  assert(adv != NULL);
-
-  /* Update the velocity field at cell centers induced by the Darcy flux */
-
-  cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
-
-  assert(vel != NULL); /* Sanity check */
-  if (cur2prev)
-    cs_field_current_to_previous(vel);
-
-  /* Update arrays related to the Darcy flux:
-   * Compute the new darcian flux and darcian velocity inside each cell */
-
-  switch (cs_equation_get_space_scheme(eq)) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-  case CS_SPACE_SCHEME_CDOVCB:
-
-    /* Update the array of flux values associated to the advection field */
-
-    if (cs_flag_test(darcy->flux_location, cs_flag_dual_face_byc)) {
-
-      assert(darcy->flux_val != NULL);
-      if (adv->definition->type != CS_XDEF_BY_ARRAY)
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid definition of the advection field", __func__);
-
-      cs_equation_compute_diffusive_flux(eq,
-                                         darcy->flux_location,
-                                         t_eval,
-                                         darcy->flux_val);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_PRIV_DBG > 2
-      cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
-                               connect->c2e->idx[cdoq->n_cells],
-                               darcy->flux_val, 8);
-#endif
-
-      /* Set the new values of the vector field at cell centers */
-
-      cs_advection_field_in_cells(adv, t_eval, vel->val);
-
-    }
-    else if (cs_flag_test(darcy->flux_location, cs_flag_primal_cell))
-      cs_equation_compute_diffusive_flux(eq,
-                                         darcy->flux_location,
-                                         t_eval,
-                                         vel->val);
-
-    /* Update the Darcy flux at the boundary */
-
-    _update_vb_darcy_flux_at_boundary(t_eval, eq, adv);
-    break;
-
-  case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO_P0:
-    bft_error(__FILE__, __LINE__, 0, " TODO.");
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, " Invalid space scheme.");
-
-  } /* End of switch */
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_PRIV_DBG > 1
-  cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL", 3*cdoq->n_cells, vel->val, 3);
-#endif
-
-  cs_field_t  *bdy_nflx =
-    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
-
-  if (bdy_nflx != NULL) { /* Values of the Darcy flux at boundary face exist */
-
-    if (cur2prev)
-      cs_field_current_to_previous(bdy_nflx);
-
-    /* Set the new values of the field related to the normal boundary flux */
-
-    cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
-
-  }
 }
 
 /*----------------------------------------------------------------------------*/

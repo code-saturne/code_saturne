@@ -561,11 +561,12 @@ _sspf_activate(void)
 
   mc->darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
 
-  cs_advection_field_status_t  adv_status = CS_ADVECTION_FIELD_GWF |
-    CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX | CS_ADVECTION_FIELD_STEADY;
+  cs_advection_field_status_t  adv_status =
+    CS_ADVECTION_FIELD_GWF |
+    CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX |
+    CS_ADVECTION_FIELD_STEADY;
 
-  mc->darcy->adv_field = cs_advection_field_add("darcy_field",
-                                                adv_status);
+  mc->darcy->adv_field = cs_advection_field_add("darcy_field", adv_status);
 
   return mc;
 }
@@ -755,7 +756,10 @@ _sspf_finalize_setup(const cs_cdo_connect_t            *connect,
 
   /* Set the Darcian flux (in the volume and at the boundary) */
 
-  cs_gwf_darcy_flux_define(connect, quant, richards_scheme, mc->darcy);
+  cs_gwf_darcy_flux_define(connect, quant,
+                           richards_scheme,
+                           NULL, NULL, /* update context and func */
+                           mc->darcy);
 
   /* Set the moisture content from the soil porosity */
 
@@ -803,7 +807,11 @@ _sspf_updates(const cs_cdo_connect_t            *connect,
 
   /* Update the advection field related to the groundwater flow module */
 
-  cs_gwf_darcy_flux_update(time_eval, mc->richards, cur2prev, mc->darcy);
+  cs_gwf_darcy_flux_t  *darcy = mc->darcy;
+
+  darcy->update_func(time_eval, mc->richards, cur2prev,
+                     NULL,      /* input context */
+                     darcy);
 
   /* Properties are constant in saturated soils. Therefore, there is no need fo
      an update of the associated properties (permeability and moisture
@@ -1124,7 +1132,10 @@ _uspf_finalize_setup(const cs_cdo_connect_t              *connect,
 
   /* Set the Darcian flux (in the volume and at the boundary) */
 
-  cs_gwf_darcy_flux_define(connect, quant, richards_scheme, mc->darcy);
+  cs_gwf_darcy_flux_define(connect, quant,
+                           richards_scheme,
+                           NULL, NULL, /* update context/func */
+                           mc->darcy);
 
   /* Allocate a head array defined at cells and used to update the soil
      properties */
@@ -1212,7 +1223,11 @@ _uspf_updates(const cs_mesh_t                    *mesh,
 
   /* Update the advection field related to the groundwater flow module */
 
-  cs_gwf_darcy_flux_update(time_eval, mc->richards, cur2prev, mc->darcy);
+  cs_gwf_darcy_flux_t  *darcy = mc->darcy;
+
+  darcy->update_func(time_eval, mc->richards, cur2prev,
+                     NULL,      /* input context */
+                     darcy);
 
   /* Update properties related to soils.
    * Handle the permeability, the moisture content and the soil capacity
@@ -1342,6 +1357,110 @@ _build_hg_incr_st(const cs_equation_param_t     *eqp,
   /* Set the diffusion property data back to the initial pointer */
 
   diff_hodge->pty_data = saved;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the advection field/arrays related to the Darcy flux in the
+ *         liquid phase when a two-phase flow model is used.
+ *         This relies on the case of CDO-Vb schemes and a Darcy flux defined
+ *         at dual faces
+ *
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in]      eq        pointer to the equation related to this Darcy flux
+ * \param[in]      cur2prev  true or false
+ * \param[in]      input     pointer to the context structure
+ * \param[in, out] darcy     pointer to the darcy flux structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_tpf_l_darcy_update(const cs_real_t              t_eval,
+                    const cs_equation_t         *eq,
+                    bool                         cur2prev,
+                    void                        *input,
+                    cs_gwf_darcy_flux_t         *darcy)
+{
+  cs_adv_field_t  *adv = darcy->adv_field;
+  assert(adv != NULL);
+
+  cs_gwf_two_phase_t  *mc = (cs_gwf_two_phase_t *)input;
+
+  /* Update the velocity field at cell centers induced by the Darcy flux */
+
+  cs_field_t  *vel = cs_advection_field_get_field(adv, CS_MESH_LOCATION_CELLS);
+
+  assert(vel != NULL); /* Sanity check */
+  if (cur2prev)
+    cs_field_current_to_previous(vel);
+
+  /* Update arrays related to the Darcy flux:
+   * Compute the new darcian flux and darcian velocity inside each cell */
+
+  /* Update the array of flux values associated to the advection field */
+
+  assert(darcy->flux_val != NULL);
+  if (adv->definition->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid definition of the advection field", __func__);
+
+  cs_equation_compute_diffusive_flux(eq,
+                                     darcy->flux_location,
+                                     t_eval,
+                                     darcy->flux_val);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_PRIV_DBG > 2
+  cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
+                           connect->c2e->idx[cdoq->n_cells],
+                           darcy->flux_val, 8);
+#endif
+
+  /* Set the new values of the vector field at cell centers */
+
+  cs_advection_field_in_cells(adv, t_eval, vel->val);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_GWF_PRIV_DBG > 1
+  cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL", 3*cdoq->n_cells, vel->val, 3);
+#endif
+
+  cs_field_t  *bdy_nflx =
+    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  if (bdy_nflx != NULL) { /* Values of the Darcy flux at boundary face exist */
+
+    if (cur2prev)
+      cs_field_current_to_previous(bdy_nflx);
+
+    /* Set the new values of the field related to the normal boundary flux */
+
+    cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the advection field/arrays related to the Darcy flux in the
+ *         gaseous phase when a two-phase flow model is used.
+ *         This relies on the case of CDO-Vb schemes and a Darcy flux defined
+ *         at dual faces
+ *
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in]      eq        pointer to the equation related to this Darcy flux
+ * \param[in]      cur2prev  true or false
+ * \param[in]      input     pointer to the context structure
+ * \param[in, out] darcy     pointer to the darcy flux structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_tpf_g_darcy_update(const cs_real_t              t_eval,
+                    const cs_equation_t         *eq,
+                    bool                         cur2prev,
+                    void                        *input,
+                    cs_gwf_darcy_flux_t         *darcy)
+{
+  /* TODO */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1955,8 +2074,15 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
   if (wl_eqp->space_scheme != CS_SPACE_SCHEME_CDOVB)
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid space scheme", __func__);
 
-  cs_gwf_darcy_flux_define(connect, quant, wl_eqp->space_scheme, mc->l_darcy);
-  cs_gwf_darcy_flux_define(connect, quant, hg_eqp->space_scheme, mc->g_darcy);
+  cs_gwf_darcy_flux_define(connect, quant,
+                           wl_eqp->space_scheme,
+                           mc, _tpf_l_darcy_update,
+                           mc->l_darcy);
+
+  cs_gwf_darcy_flux_define(connect, quant,
+                           hg_eqp->space_scheme,
+                           mc, _tpf_g_darcy_update,
+                           mc->g_darcy);
 
   /* Allocate and initialize the relative permeability in the liquid and gas
      phase */
@@ -2216,8 +2342,17 @@ _tpf_updates(const cs_mesh_t             *mesh,
 
   /* Update the Darcy fluxes */
 
-  cs_gwf_darcy_flux_update(time_eval, mc->wl_eq, cur2prev, mc->l_darcy);
-  cs_gwf_darcy_flux_update(time_eval, mc->hg_eq, cur2prev, mc->g_darcy);
+  cs_gwf_darcy_flux_t  *l_darcy = mc->l_darcy;
+
+  l_darcy->update_func(time_eval, mc->wl_eq, cur2prev,
+                       l_darcy->update_input,
+                       l_darcy);
+
+  cs_gwf_darcy_flux_t  *g_darcy = mc->g_darcy;
+
+  g_darcy->update_func(time_eval, mc->hg_eq, cur2prev,
+                       g_darcy->update_input,
+                       g_darcy);
 
   /* Avoid to add an unsteady contribution at the first iteration  */
 
