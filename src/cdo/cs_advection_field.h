@@ -57,6 +57,7 @@ BEGIN_C_DECLS
  */
 
 /*!  1: Perform the computation and post-processing of the Courant number */
+
 #define CS_ADVECTION_FIELD_POST_COURANT (1 << 0)
 
 /*! @} */
@@ -204,9 +205,11 @@ typedef struct {
 
   /* We assume that there is only one definition associated to an advection
      field inside the computational domain */
+
   cs_xdef_t                    *definition;
 
   /* Optional: Definition(s) for the boundary flux */
+
   int                           n_bdy_flux_defs;
   cs_xdef_t                   **bdy_flux_defs;
   short int                    *bdy_def_ids;

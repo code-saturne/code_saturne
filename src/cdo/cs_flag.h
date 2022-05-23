@@ -100,15 +100,14 @@ BEGIN_C_DECLS
  * @{
  */
 
-#define CS_FLAG_STATE_UNIFORM     (1 << 0) /*!<   1: uniform (in space) */
-#define CS_FLAG_STATE_CELLWISE    (1 << 1) /*!<   2: cellwise uniform */
-#define CS_FLAG_STATE_FACEWISE    (1 << 2) /*!<   4: uniform on each face */
-#define CS_FLAG_STATE_STEADY      (1 << 3) /*!<   8: steady */
-#define CS_FLAG_STATE_POTENTIAL   (1 << 4) /*!<  16: potential */
-#define CS_FLAG_STATE_CIRCULATION (1 << 5) /*!<  32: circulation */
-#define CS_FLAG_STATE_FLUX        (1 << 6) /*!<  64: flux */
-#define CS_FLAG_STATE_DENSITY     (1 << 7) /*!< 128: density */
-#define CS_FLAG_STATE_OWNER       (1 << 8) /*!< 256: owner */
+#define CS_FLAG_STATE_UNIFORM      (1 << 0) /*!<   1: uniform (in space) */
+#define CS_FLAG_STATE_CELLWISE     (1 << 1) /*!<   2: cellwise uniform */
+#define CS_FLAG_STATE_FACEWISE     (1 << 2) /*!<   4: uniform on each face */
+#define CS_FLAG_STATE_STEADY       (1 << 3) /*!<   8: steady */
+#define CS_FLAG_STATE_POTENTIAL    (1 << 4) /*!<  16: potential */
+#define CS_FLAG_STATE_CIRCULATION  (1 << 5) /*!<  32: circulation */
+#define CS_FLAG_STATE_FLUX         (1 << 6) /*!<  64: flux */
+#define CS_FLAG_STATE_DENSITY      (1 << 7) /*!< 128: density */
 
 /*!
  * @}

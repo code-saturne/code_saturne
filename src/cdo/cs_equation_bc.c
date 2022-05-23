@@ -668,6 +668,126 @@ cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Define an array of flags for each vertex collecting the flags
+ *          of associated boundary faces
+ *
+ * \param[in]      connect   pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]      face_bc   pointer to a structure collecting boundary
+ *                           conditions applied to faces
+ * \param[in, out] vflag     BC flag on vertices to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_set_vertex_flag(const cs_cdo_connect_t     *connect,
+                               const cs_cdo_bc_face_t     *face_bc,
+                               cs_flag_t                  *vflag)
+{
+  if (vflag == NULL)
+    return;
+
+  assert(connect->bf2v != NULL);
+
+  const cs_adjacency_t  *bf2v = connect->bf2v;
+  const cs_lnum_t  n_vertices = connect->n_vertices;
+  const cs_lnum_t  n_b_faces = connect->n_faces[CS_BND_FACES];
+
+  /* Initialization */
+
+  memset(vflag, 0, n_vertices*sizeof(cs_flag_t));
+
+  for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
+
+    const cs_flag_t  bc_flag = face_bc->flag[bf_id];
+    for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++) {
+      vflag[bf2v->ids[j]] |= bc_flag;
+    }
+
+  } /* Loop on border faces */
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
+    for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++) {
+      const cs_lnum_t v_id = bf2v->ids[j];
+      if (vflag[v_id] == 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Border vertices %ld without any boundary conditions.",
+                  __func__, (long)v_id);
+    }
+  } /* Loop on border faces */
+#endif
+
+  if (connect->vtx_ifs != NULL)
+    cs_interface_set_inclusive_or(connect->vtx_ifs,
+                                  n_vertices,
+                                  1,             /* stride */
+                                  false,         /* interlace */
+                                  CS_FLAG_TYPE,  /* unsigned short int */
+                                  vflag);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Define an array of flags for each edge collecting the flags
+ *          of associated boundary faces
+ *
+ * \param[in]      connect     pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]      face_bc     pointer to a structure collecting boundary
+ *                             conditions applied to faces
+ * \param[in, out] edge_flag   BC flag on edges to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
+                             const cs_cdo_bc_face_t     *face_bc,
+                             cs_flag_t                  *edge_flag)
+{
+  if (edge_flag == NULL)
+    return;
+
+  const cs_adjacency_t  *f2e = connect->f2e;
+  const cs_lnum_t  n_edges = connect->n_edges;
+  const cs_lnum_t  n_i_faces = connect->n_faces[CS_INT_FACES];
+  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
+
+  /* Initialization */
+
+  memset(edge_flag, 0, n_edges*sizeof(cs_flag_t));
+
+  for (cs_lnum_t bf_id = 0, f_id = n_i_faces; f_id < n_faces;
+       f_id++, bf_id++) {
+
+    const cs_flag_t  bc_flag = face_bc->flag[bf_id];
+    for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
+      edge_flag[f2e->ids[j]] |= bc_flag;
+    }
+
+  } /* Loop on border faces */
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  for (cs_lnum_t bf_id = n_i_faces; bf_id < n_faces; bf_id++) {
+    for (cs_lnum_t j = f2e->idx[bf_id]; j < f2e->idx[bf_id+1]; j++) {
+      const cs_lnum_t e_id = f2e->ids[j];
+      if (edge_flag[e_id] == 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Border edge %ld without any boundary conditions.",
+                  __func__, (long)e_id);
+    }
+  } /* Loop on border faces */
+#endif
+
+  if (connect->edge_ifs != NULL)
+    cs_interface_set_inclusive_or(connect->edge_ifs,
+                                  n_edges,
+                                  1,             /* stride */
+                                  false,         /* interlace */
+                                  CS_FLAG_TYPE,  /* unsigned short int */
+                                  edge_flag);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
  *          vertices
  *
@@ -1022,126 +1142,6 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
   cs_dbg_darray_to_listing("DIRICHLET_VALUES",
                            eqp->dim*quant->n_b_faces, values, 9);
 #endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Define an array of flags for each vertex collecting the flags
- *          of associated boundary faces
- *
- * \param[in]      connect   pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]      face_bc   pointer to a structure collecting boundary
- *                           conditions applied to faces
- * \param[in, out] vflag     BC flag on vertices to define
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_bc_set_vertex_flag(const cs_cdo_connect_t     *connect,
-                               const cs_cdo_bc_face_t     *face_bc,
-                               cs_flag_t                  *vflag)
-{
-  if (vflag == NULL)
-    return;
-
-  assert(connect->bf2v != NULL);
-
-  const cs_adjacency_t  *bf2v = connect->bf2v;
-  const cs_lnum_t  n_vertices = connect->n_vertices;
-  const cs_lnum_t  n_b_faces = connect->n_faces[CS_BND_FACES];
-
-  /* Initialization */
-
-  memset(vflag, 0, n_vertices*sizeof(cs_flag_t));
-
-  for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
-
-    const cs_flag_t  bc_flag = face_bc->flag[bf_id];
-    for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++) {
-      vflag[bf2v->ids[j]] |= bc_flag;
-    }
-
-  } /* Loop on border faces */
-
-#if defined(DEBUG) && !defined(NDEBUG)
-  for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
-    for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++) {
-      const cs_lnum_t v_id = bf2v->ids[j];
-      if (vflag[v_id] == 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Border vertices %ld without any boundary conditions.",
-                  __func__, (long)v_id);
-    }
-  } /* Loop on border faces */
-#endif
-
-  if (connect->vtx_ifs != NULL)
-    cs_interface_set_inclusive_or(connect->vtx_ifs,
-                                  n_vertices,
-                                  1,             /* stride */
-                                  false,         /* interlace */
-                                  CS_FLAG_TYPE,  /* unsigned short int */
-                                  vflag);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Define an array of flags for each edge collecting the flags
- *          of associated boundary faces
- *
- * \param[in]      connect     pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]      face_bc     pointer to a structure collecting boundary
- *                             conditions applied to faces
- * \param[in, out] edge_flag   BC flag on edges to define
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
-                             const cs_cdo_bc_face_t     *face_bc,
-                             cs_flag_t                  *edge_flag)
-{
-  if (edge_flag == NULL)
-    return;
-
-  const cs_adjacency_t  *f2e = connect->f2e;
-  const cs_lnum_t  n_edges = connect->n_edges;
-  const cs_lnum_t  n_i_faces = connect->n_faces[CS_INT_FACES];
-  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
-
-  /* Initialization */
-
-  memset(edge_flag, 0, n_edges*sizeof(cs_flag_t));
-
-  for (cs_lnum_t bf_id = 0, f_id = n_i_faces; f_id < n_faces;
-       f_id++, bf_id++) {
-
-    const cs_flag_t  bc_flag = face_bc->flag[bf_id];
-    for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
-      edge_flag[f2e->ids[j]] |= bc_flag;
-    }
-
-  } /* Loop on border faces */
-
-#if defined(DEBUG) && !defined(NDEBUG)
-  for (cs_lnum_t bf_id = n_i_faces; bf_id < n_faces; bf_id++) {
-    for (cs_lnum_t j = f2e->idx[bf_id]; j < f2e->idx[bf_id+1]; j++) {
-      const cs_lnum_t e_id = f2e->ids[j];
-      if (edge_flag[e_id] == 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Border edge %ld without any boundary conditions.",
-                  __func__, (long)e_id);
-    }
-  } /* Loop on border faces */
-#endif
-
-  if (connect->edge_ifs != NULL)
-    cs_interface_set_inclusive_or(connect->edge_ifs,
-                                  n_edges,
-                                  1,             /* stride */
-                                  false,         /* interlace */
-                                  CS_FLAG_TYPE,  /* unsigned short int */
-                                  edge_flag);
 }
 
 /*----------------------------------------------------------------------------*/

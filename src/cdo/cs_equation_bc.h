@@ -188,6 +188,40 @@ cs_equation_bc_set_cw_fb(const cs_cell_mesh_t         *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Define an array of flags for each vertex collecting the flags
+ *          of associated boundary faces
+ *
+ * \param[in]      connect   pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]      face_bc   pointer to a structure collecting boundary
+ *                           conditions applied to faces
+ * \param[in, out] vflag     BC flag on vertices to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_set_vertex_flag(const cs_cdo_connect_t     *connect,
+                               const cs_cdo_bc_face_t     *face_bc,
+                               cs_flag_t                  *vflag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Define an array of flags for each edge collecting the flags
+ *          of associated boundary faces
+ *
+ * \param[in]      connect     pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]      face_bc     pointer to a structure collecting boundary
+ *                             conditions applied to faces
+ * \param[in, out] edge_flag   BC flag on edges to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
+                             const cs_cdo_bc_face_t     *face_bc,
+                             cs_flag_t                  *edge_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the values of the Dirichlet BCs when DoFs are attached to
  *          vertices
  *
@@ -239,40 +273,6 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
                                  cs_real_t                   t_eval,
                                  cs_cell_builder_t          *cb,
                                  cs_real_t                  *values);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Define an array of flags for each vertex collecting the flags
- *          of associated boundary faces
- *
- * \param[in]      connect   pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]      face_bc   pointer to a structure collecting boundary
- *                           conditions applied to faces
- * \param[in, out] vflag     BC flag on vertices to define
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_bc_set_vertex_flag(const cs_cdo_connect_t     *connect,
-                               const cs_cdo_bc_face_t     *face_bc,
-                               cs_flag_t                  *vflag);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Define an array of flags for each edge collecting the flags
- *          of associated boundary faces
- *
- * \param[in]      connect     pointer to a \ref cs_cdo_connect_t struct.
- * \param[in]      face_bc     pointer to a structure collecting boundary
- *                             conditions applied to faces
- * \param[in, out] edge_flag   BC flag on edges to define
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_bc_set_edge_flag(const cs_cdo_connect_t     *connect,
-                             const cs_cdo_bc_face_t     *face_bc,
-                             cs_flag_t                  *edge_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

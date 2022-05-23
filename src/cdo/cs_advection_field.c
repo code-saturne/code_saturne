@@ -2087,12 +2087,12 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
             if (z->elt_ids == NULL) {
               assert(z->n_elts == n_b_faces);
-#           pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+#             pragma omp parallel for if (n_b_faces > CS_THR_MIN)
               for (cs_lnum_t i = 0; i < n_b_faces; i++)
                 flx_values[i] = constant_val[0];
             }
             else {
-#           pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+#             pragma omp parallel for if (z->n_elts > CS_THR_MIN)
               for (cs_lnum_t i = 0; i < z->n_elts; i++)
                 flx_values[z->elt_ids[i]] = constant_val[0];
             }
@@ -2102,7 +2102,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
 
         case CS_XDEF_BY_ARRAY:
           {
-            const cs_xdef_array_context_t *actx = bdef->context;
+            const cs_xdef_array_context_t  *actx = bdef->context;
             const cs_real_t  *val = actx->values;
 
             assert(actx->stride == 1);
