@@ -45,33 +45,40 @@ typedef struct {
 
   /*!< Pressure correction step related to the mass
    * balance equation (scalar-valued) */
+
   cs_equation_t  *pressure_incr;
 
   /*! \var pressure_incr_gradient
    * Gradient of pressure increment. Used to store the gradient
    * pressure increment. */
+
   cs_field_t    *pressure_incr_gradient;
 
   /*! \var pressure_gradient
    * Gradient of pressure. Used to store the gradient of pressure */
+
   cs_field_t    *pressure_gradient;
 
   /*! \var div_st
    * Source term on the correction step stemming from the divergence of the
    * predicted velocity */
+
   cs_real_t      *div_st;
 
   /*! \var inner_potential_flux
    * Potential flux at interior faces. Used for Rhie & Chow */
+
   cs_real_t      *inner_potential_flux;
 
   /*! \var bdy_potential_flux
    * Potential flux at boundary faces. Used for Rhie & Chow */
+
   cs_real_t      *bdy_potential_flux;
 
   /*! \var bdy_pressure_incr
    * Pressure increment at the boundary. Used as an array to set the boundary
    * condition arising from a Dirichlet on the pressure. */
+
   cs_real_t      *bdy_pressure_incr;
 
   cs_flag_t      post_flag;
@@ -145,7 +152,8 @@ cs_pressure_correction_cdo_init_setup(void);
 /*!
  * \brief  Finalize setting-up the pressure increment equation
  *         At this stage, numerical settings should be completely determined
- *         but connectivity and geometrical information is not yet available.
+ *
+ * \param[in] domain     pointer to a cs_domaint_t structure
  */
 /*----------------------------------------------------------------------------*/
 

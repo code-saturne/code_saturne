@@ -184,7 +184,7 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = NULL;
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _pressure_correction_fv(int        iterns,
                         cs_lnum_t  nfbpcd,
                         cs_lnum_t  ncmast,
@@ -2627,7 +2627,7 @@ _pressure_correction_fv(int        iterns,
  * The mass flux is then updated as follows:
  * \f[
  *  \dot{m}^{n+1} = \dot{m}^{n}
- *                 - H_dge \cdot GRAD \left(\delta p \right)
+ *                 - Hodge \cdot GRAD \left(\delta p \right)
  * \f]
  * \param[in]       iterns    Navier-Stokes iteration number
  * \param[in]       nfbpcd    number of faces with condensation source term
@@ -2659,7 +2659,7 @@ _pressure_correction_fv(int        iterns,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _pressure_correction_cdo(int        iterns,
                          cs_lnum_t  nfbpcd,
                          cs_lnum_t  ncmast,
@@ -2679,15 +2679,20 @@ _pressure_correction_cdo(int        iterns,
                          cs_real_t  i_visc[restrict],
                          cs_real_t  b_visc[restrict])
 {
+  CS_UNUSED(iterns);
+  CS_UNUSED(ncmast);
+  CS_UNUSED(ifbpcd);
+  CS_UNUSED(ltmast);
+  CS_UNUSED(isostd);  /* etc... */
+  /* Remove unused parameters ? */
+
   const cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_b_faces = m->n_b_faces;
-
-  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
 
   const cs_cdo_quantities_t  *quant = cs_glob_domain->cdo_quantities;
   const cs_cdo_connect_t  *connect = cs_glob_domain->connect;
@@ -2697,10 +2702,8 @@ _pressure_correction_cdo(int        iterns,
 
   assert((cs_real_t *)vel == f_vel->val);
 
-  const cs_equation_param_t *eqp_u
-    = cs_field_get_equation_param_const(f_vel);
-  const cs_equation_param_t *eqp_p
-    = cs_field_get_equation_param_const(f_p);
+  const cs_equation_param_t *eqp_u = cs_field_get_equation_param_const(f_vel);
+  const cs_equation_param_t *eqp_p = cs_field_get_equation_param_const(f_p);
 
   const cs_velocity_pressure_model_t  *vp_model
     = cs_glob_velocity_pressure_model;
@@ -2988,10 +2991,9 @@ void
 cs_pressure_correction_fv_activate(void)
 {
   if (cs_pressure_correction_cdo_active)
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("\n The pressure correction step is treated by CDO,"
-         "\n  Check the pressure correction model"));
+    bft_error (__FILE__, __LINE__, 0,
+               _("\n The pressure correction step is treated by CDO,"
+                 "\n  Check the pressure correction model"));
 
   cs_field_t *f = cs_field_create("pressure_increment",
                                   CS_FIELD_INTENSIVE,
@@ -3001,7 +3003,6 @@ cs_pressure_correction_fv_activate(void)
   cs_field_set_key_int(f,
                        cs_field_key_id("parent_field_id"),
                        CS_F_(p)->id);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3068,14 +3069,12 @@ cs_pressure_correction_cdo_activate(void)
 void
 cs_pressure_correction_model_activate(void)
 {
-
   cs_velocity_pressure_model_t  *vp_model = cs_glob_velocity_pressure_model;
 
   if (vp_model->iprcdo > 0)
     cs_pressure_correction_cdo_activate();
   else
     cs_pressure_correction_fv_activate();
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3161,14 +3160,14 @@ cs_pressure_correction_cdo_init_setup(void)
   cs_property_t *pty = cs_property_by_name("time_step");
   cs_property_def_by_field(pty, cs_field_by_name("dt"));
   cs_equation_add_diffusion(eqp, pty);
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Finalize setting-up the pressure increment equation
  *         At this stage, numerical settings should be completely determined
- *         but connectivity and geometrical information is not yet available.
+ *
+ * \param[in] domain     pointer to a cs_domaint_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3184,77 +3183,67 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
 
   /* Allocate useful array
      --------------------- */
-  cs_cdo_quantities_t *quant = cs_glob_domain->cdo_quantities;
+
+  cs_cdo_quantities_t *quant = domain->cdo_quantities;
 
   BFT_MALLOC(prcdo->div_st, quant->n_cells, cs_real_t);
-
   BFT_MALLOC(prcdo->inner_potential_flux, quant->n_i_faces, cs_real_t);
-
   BFT_MALLOC(prcdo->bdy_potential_flux, quant->n_b_faces, cs_real_t);
-
   BFT_MALLOC(prcdo->bdy_pressure_incr, quant->n_b_faces, cs_real_t);
 
   /* Affect source term for the equation
      ----------------------------------- */
 
-  {
-    cs_real_t *pred_divu = prcdo->div_st;
+  cs_real_t *pred_divu = prcdo->div_st;
 
-    cs_xdef_t *st = cs_equation_add_source_term_by_array(eqp,
-                                                         NULL, /* all cells */
-                                                         cs_flag_primal_cell,
-                                                         pred_divu,
-                                                         false, /*is owner */
-                                                         NULL, /* index */
-                                                         NULL); /* ids */
-  }
+  cs_equation_add_source_term_by_array(eqp,
+                                       NULL,  /* all cells */
+                                       cs_flag_primal_cell,
+                                       pred_divu,
+                                       false, /*is owner */
+                                       NULL,  /* index */
+                                       NULL); /* ids */
 
-  {
-    for (int i = 0; i < domain->boundaries->n_boundaries; i++) {
+  for (int i = 0; i < domain->boundaries->n_boundaries; i++) {
 
-      const int z_id = domain->boundaries->zone_ids[i];
-      const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
+    const int z_id = domain->boundaries->zone_ids[i];
+    const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
 
-      cs_boundary_type_t b_type = domain->boundaries->types[i];
+    cs_boundary_type_t b_type = domain->boundaries->types[i];
 
-      // TODO handle more types of pressure boundary conditions
-      if (b_type & CS_BOUNDARY_OUTLET || b_type & CS_BOUNDARY_IMPOSED_P) {
+    // TODO handle more types of pressure boundary conditions
+    if (b_type & CS_BOUNDARY_OUTLET || b_type & CS_BOUNDARY_IMPOSED_P) {
 
-        for (cs_lnum_t iel = 0; iel < z->n_elts; iel++) {
-          cs_lnum_t f_id = z->elt_ids[iel];
-          prcdo->bdy_pressure_incr[f_id] = 0.0;
-        }
-
-        cs_equation_add_bc_by_array(eqp,
-                                    CS_PARAM_BC_DIRICHLET,
-                                    z->name,
-                                    cs_flag_primal_face,
-                                    prcdo->bdy_pressure_incr,
-                                    false, /* Do not transfer ownership */
-                                    NULL, NULL);
-
+      for (cs_lnum_t iel = 0; iel < z->n_elts; iel++) {
+        cs_lnum_t f_id = z->elt_ids[iel];
+        prcdo->bdy_pressure_incr[f_id] = 0.0;
       }
-      else { /* To be deleted when partial zonal bc defintion is handled */
 
-        cs_real_t bc_value = 0.0;
-        cs_equation_add_bc_by_value(eqp,
-                                    CS_PARAM_BC_NEUMANN,
-                                    z->name,
-                                    &bc_value);
+      cs_equation_add_bc_by_array(eqp,
+                                  CS_PARAM_BC_DIRICHLET,
+                                  z->name,
+                                  cs_flag_primal_face,
+                                  prcdo->bdy_pressure_incr,
+                                  false, /* Do not transfer ownership */
+                                  NULL, NULL);
 
-      }
-    } /* Loop on pressure definitions */
-  }
+    }
+    else { /* To be deleted when partial zonal bc defintion is handled */
+
+      cs_real_t bc_value = 0.0;
+      cs_equation_add_bc_by_value(eqp,
+                                  CS_PARAM_BC_NEUMANN,
+                                  z->name,
+                                  &bc_value);
+
+    }
+  } /* Loop on pressure definitions */
 
   /* Initialization defination
      ------------------------ */
-  {
-    cs_real_t ic_value = 0.;
-    cs_equation_add_ic_by_value(eqp,
-                                NULL,
-                                &ic_value);
-  }
 
+  cs_real_t ic_value = 0.;
+  cs_equation_add_ic_by_value(eqp, NULL, &ic_value);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3279,7 +3268,6 @@ cs_pressure_correction_cdo_destroy_all(void)
 
   cs_pressure_correction_cdo = NULL;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3358,7 +3346,6 @@ cs_pressure_correction(int        iterns,
                        cs_real_t  i_visc[restrict],
                        cs_real_t  b_visc[restrict])
 {
-
  const cs_velocity_pressure_model_t  *vp_model
     = cs_glob_velocity_pressure_model;
 
