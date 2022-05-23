@@ -1049,21 +1049,50 @@ cs_equation_compute_dirichlet_fb(const cs_mesh_t            *mesh,
           assert(cs_flag_test(ac->loc, cs_flag_primal_face) ||
                  cs_flag_test(ac->loc, cs_flag_boundary_face));
 
-          if (eqp->n_bc_defs == 1) { /* Only one definition */
+          if (bz->id == ac->z_id) {
 
-            assert(bz->n_elts == quant->n_b_faces);
-            memcpy(values, ac->values, sizeof(cs_real_t)*bz->n_elts*eqp->dim);
+            if (ac->z_id == 0) {  /* Array is defined on the full location */
+
+              assert(bz->n_elts == quant->n_b_faces);
+              assert(eqp->n_bc_defs == 1); /* Only one definition */
+              memcpy(values, ac->values, sizeof(cs_real_t)*bz->n_elts*eqp->dim);
+
+            }
+            else { /* Zone is only a part of the location */
+
+#             pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+              for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+
+                const cs_lnum_t  r_shift = def->dim*elt_ids[i];
+                const cs_lnum_t  s_shift = def->dim*i;
+
+                for (int k = 0; k < def->dim; k++)
+                  values[r_shift+k] = ac->values[s_shift+k];
+
+              }
+
+            }
 
           }
-          else { /* Only a selection has to be considered */
+          else { /* bz->id != ac->z_id */
 
-            assert(elt_ids != NULL);
-#           pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
-            for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
-              const cs_lnum_t  shift = def->dim*elt_ids[i];
-              for (int k = 0; k < def->dim; k++)
-                values[shift+k] = ac->values[shift+k];
+            if (ac->z_id == 0) {  /* Array is defined on the full location */
+
+              assert(elt_ids != NULL);
+
+#             pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+              for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+                const cs_lnum_t  shift = def->dim*elt_ids[i];
+                for (int k = 0; k < def->dim; k++)
+                  values[shift+k] = ac->values[shift+k];
+              }
+
             }
+            else
+              bft_error(__FILE__, __LINE__, 0,
+                        "%s: Inconsistent zone id.\n"
+                        "%s: array zone_id: %d and definition zone_id: %d\n",
+                        __func__, __func__, ac->z_id, bz->id);
 
           }
         }
