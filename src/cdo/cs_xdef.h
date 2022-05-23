@@ -208,7 +208,7 @@ typedef struct {
 
   /*!
    * \var z_id
-   * id related to a zone (volume or boundary) for this definition
+   * id related to a zone (volume or boundary) used for the size of the array.
    *
    * \var stride
    * Stride to access the array values
@@ -595,6 +595,22 @@ void
 cs_xdef_set_array(cs_xdef_t     *d,
                   bool           is_owner,
                   cs_real_t     *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  In case of definition by array, set the zone id related to the size
+ *         of the array. By default, the zone id is the same as the zone id
+ *         related to the definition so that there is no need to call this
+ *         function.
+ *
+ * \param[in, out]  d       pointer to a cs_xdef_t structure
+ * \param[in]       z_id    zone id associated to the array size
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_set_array_zone_id(cs_xdef_t     *d,
+                          int            z_id);
 
 /*----------------------------------------------------------------------------*/
 /*!

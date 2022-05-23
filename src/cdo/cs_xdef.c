@@ -795,6 +795,35 @@ cs_xdef_set_array(cs_xdef_t     *d,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  In case of definition by array, set the zone id related to the size
+ *         of the array. By default, the zone id is the same as the zone id
+ *         related to the definition so that there is no need to call this
+ *         function.
+ *
+ * \param[in, out]  d       pointer to a cs_xdef_t structure
+ * \param[in]       z_id    zone id associated to the array size
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_set_array_zone_id(cs_xdef_t     *d,
+                          int            z_id)
+{
+  if (d == NULL)
+    return;
+
+  if (d->type != CS_XDEF_BY_ARRAY)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The given cs_xdef_t structure should be defined by array.",
+              __func__);
+
+  cs_xdef_array_context_t  *actx = d->context;
+
+  actx->z_id = z_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  In case of definition by array, set the optional index and ids
  *         arrays that may be useful when operating on definitions by array
  *
