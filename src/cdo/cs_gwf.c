@@ -1394,7 +1394,16 @@ _tpf_activate(void)
   /* Advection fields */
   /* ---------------- */
 
-  /* Darcy flux (not used up to now) */
+  /* Darcy flux */
+
+  cs_advection_field_status_t  adv_status =
+    CS_ADVECTION_FIELD_GWF | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+
+  cs_advection_field_add("l_darcy_field", adv_status);
+  cs_advection_field_add("g_darcy_field", adv_status);
+
+  /* The Darcy flux structures will be defined when the space discretization
+   * will be set (i.e. after cs_user_parameters() --> in*_init_setup() */
 
   mc->l_darcy = NULL;
   mc->g_darcy = NULL;
@@ -1865,15 +1874,24 @@ _tpf_init_setup(cs_gwf_two_phase_t     *mc)
 
   assert(wl_eqp->space_scheme == hg_eqp->space_scheme);
 
-  /* One has to be consistent with the location of DoFs for the w_eq and h_eq
-   * which are respectively related to the l_pressure and g_pressure */
-
   int loc_id = c_loc_id;
   if (wl_eqp->space_scheme == CS_SPACE_SCHEME_CDOVB ||
       wl_eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB)
     loc_id = v_loc_id;
   else
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid space scheme", __func__);
+
+  /* Add the structure dealing the Darcy fluxes (in the liquid and the gas
+   * phases) */
+
+  mc->l_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
+  mc->l_darcy->adv_field = cs_advection_field_by_name("l_darcy_field");
+
+  mc->g_darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
+  mc->g_darcy->adv_field = cs_advection_field_by_name("g_darcy_field");
+
+  /* One has to be consistent with the location of DoFs for the w_eq and h_eq
+   * which are respectively related to the l_pressure and g_pressure */
 
   mc->c_pressure = cs_field_create("capillarity_pressure",
                                    field_mask,
@@ -1927,8 +1945,18 @@ _tpf_finalize_setup(const cs_cdo_connect_t        *connect,
   const cs_lnum_t  n_cells = connect->n_cells;
   const size_t  csize = n_cells*sizeof(cs_real_t);
 
-  /* Set the Darcian flux (in the volume and at the boundary)
-   * Not done up to now. */
+  /* Set the Darcian flux (in the volume and at the boundary) */
+
+  cs_equation_param_t  *wl_eqp = cs_equation_get_param(mc->wl_eq);
+  cs_equation_param_t  *hg_eqp = cs_equation_get_param(mc->hg_eq);
+
+  assert(wl_eqp->space_scheme == hg_eqp->space_scheme);
+
+  if (wl_eqp->space_scheme != CS_SPACE_SCHEME_CDOVB)
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid space scheme", __func__);
+
+  cs_gwf_darcy_flux_define(connect, quant, wl_eqp->space_scheme, mc->l_darcy);
+  cs_gwf_darcy_flux_define(connect, quant, hg_eqp->space_scheme, mc->g_darcy);
 
   /* Allocate and initialize the relative permeability in the liquid and gas
      phase */
@@ -2186,6 +2214,13 @@ _tpf_updates(const cs_mesh_t             *mesh,
   const cs_real_t  *l_pr = mc->l_pressure->val;
   const cs_real_t  *g_pr = mc->g_pressure->val;
 
+  /* Update the Darcy fluxes */
+
+  cs_gwf_darcy_flux_update(time_eval, mc->wl_eq, cur2prev, mc->l_darcy);
+  cs_gwf_darcy_flux_update(time_eval, mc->hg_eq, cur2prev, mc->g_darcy);
+
+  /* Avoid to add an unsteady contribution at the first iteration  */
+
   if (update_flag & CS_FLAG_INITIALIZATION)
     memcpy(mc->g_pressure->val_pre, g_pr,          /* dest, src */
            connect->n_vertices*sizeof(cs_real_t)); /* size */
@@ -2321,19 +2356,19 @@ _tpf_updates(const cs_mesh_t             *mesh,
 static void
 _tpf_extra_op(const cs_cdo_connect_t                *connect,
               const cs_cdo_quantities_t             *cdoq,
-              cs_gwf_unsaturated_single_phase_t     *mc)
+              cs_gwf_two_phase_t                    *mc)
 {
-  CS_UNUSED(connect);
-  CS_UNUSED(cdoq);
-  CS_UNUSED(mc);
-
   cs_gwf_t  *gw = cs_gwf_main_structure;
   assert(gw != NULL && mc != NULL);
 
   if (cs_flag_test(gw->post_flag, CS_GWF_POST_DARCY_FLUX_BALANCE) == false)
     return; /* Nothing to do */
 
-  /* TO BE DONE (not useful up to now) */
+  cs_gwf_darcy_flux_balance(connect, cdoq, cs_equation_get_param(mc->wl_eq),
+                            mc->l_darcy);
+
+  cs_gwf_darcy_flux_balance(connect, cdoq, cs_equation_get_param(mc->hg_eq),
+                            mc->g_darcy);
 }
 
 /*----------------------------------------------------------------------------*/
