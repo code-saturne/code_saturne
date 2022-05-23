@@ -920,6 +920,12 @@ module optcal
   !> It will be zero if there is no buoyant scalar
   integer(c_int), pointer, save :: n_buoyant_scal
 
+  !> Dicretization method for pressure
+  !>    - 0: Legacy FV method
+  !>    - 1: Use CDF face-based scheme
+  integer(c_int), pointer, save :: iprcdo
+
+
   !> \}
 
   !----------------------------------------------------------------------------
@@ -1330,11 +1336,12 @@ module optcal
     ! velocity pressure model options structure
 
     subroutine cs_f_velocity_pressure_model_get_pointers  &
-      (ivisse, idilat, fluid_solid, n_buoyant_scal)  &
+      (ivisse, idilat, fluid_solid, n_buoyant_scal, iprcdo)  &
       bind(C, name='cs_f_velocity_pressure_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: ivisse, idilat, fluid_solid, n_buoyant_scal
+      type(c_ptr), intent(out) :: iprcdo
     end subroutine cs_f_velocity_pressure_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1671,7 +1678,7 @@ contains
     type(c_ptr) :: c_iporos, c_ivisse, c_irevmc, c_iprco, c_arak, c_rcfact, c_staggered
     type(c_ptr) :: c_ipucou, c_itpcol, c_idilat, c_epsdp, c_iphydr
     type(c_ptr) :: c_igprij, c_igpust, c_iifren, c_icalhy, c_irecmf
-    type(c_ptr) :: c_fluid_solid
+    type(c_ptr) :: c_fluid_solid, c_iprcdo
     type(c_ptr) :: c_nterup, c_epsup, c_xnrmu, c_xnrmu0, c_n_buoyant_scal
 
     call cs_f_porous_model_get_pointers(c_iporos)
@@ -1679,12 +1686,13 @@ contains
     call c_f_pointer(c_iporos, iporos)
 
     call cs_f_velocity_pressure_model_get_pointers  &
-      (c_ivisse, c_idilat, c_fluid_solid, c_n_buoyant_scal)
+      (c_ivisse, c_idilat, c_fluid_solid, c_n_buoyant_scal, c_iprcdo)
 
     call c_f_pointer(c_ivisse, ivisse)
     call c_f_pointer(c_idilat, idilat)
     call c_f_pointer(c_fluid_solid, fluid_solid)
     call c_f_pointer(c_n_buoyant_scal, n_buoyant_scal)
+    call c_f_pointer(c_iprcdo, iprcdo)
 
     call cs_f_velocity_pressure_param_get_pointers  &
       (c_iphydr, c_icalhy, c_iprco, c_irevmc, c_iifren, c_irecmf,  &

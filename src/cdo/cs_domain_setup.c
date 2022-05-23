@@ -54,13 +54,13 @@
 #include "cs_mesh_location.h"
 #include "cs_navsto_system.h"
 #include "cs_parall.h"
+#include "cs_pressure_correction.h"
 #include "cs_prototypes.h"
 #include "cs_solidification.h"
 #include "cs_source_term.h"
 #include "cs_thermal_system.h"
 #include "cs_time_step.h"
 #include "cs_walldistance.h"
-
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -566,6 +566,10 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   if (cs_solidification_is_activated())
     cs_solidification_init_setup();
 
+  if (cs_pressure_correction_cdo_is_activated())
+    cs_pressure_correction_cdo_init_setup();
+
+
   /* Add fields associated to advection fields */
 
   cs_advection_field_create_fields();
@@ -752,6 +756,9 @@ cs_domain_finalize_module_setup(cs_domain_t         *domain)
   if (cs_solidification_is_activated())
     cs_solidification_finalize_setup(domain->connect,
                                      domain->cdo_quantities);
+
+  if (cs_pressure_correction_cdo_is_activated())
+    cs_pressure_correction_cdo_finalize_setup(domain);
 
   /* Last stage to define properties (when complex definition is requested) */
 

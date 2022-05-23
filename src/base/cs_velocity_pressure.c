@@ -113,6 +113,11 @@ BEGIN_C_DECLS
         Has a solid zone where dynamics must be killed?
         - false (default)
         - true
+  \var  cs_velocity_pressure_model_t::iprcdo
+        Indicate discretization method for presssure
+        - 0: Use Legacy Finite Volume method
+        - 1: Use CDO method, if CDO/FV is coupled
+
 */
 
 /*----------------------------------------------------------------------------*/
@@ -281,6 +286,7 @@ static cs_velocity_pressure_model_t  _velocity_pressure_model = {
   .idilat = 1,
   .fluid_solid = false,
   .n_buoyant_scal = 0,
+  .iprcdo = 0,
 };
 
 const cs_velocity_pressure_model_t  *cs_glob_velocity_pressure_model
@@ -322,7 +328,8 @@ void
 cs_f_velocity_pressure_model_get_pointers(int     **ivisse,
                                           int     **idilat,
                                           bool    **fluid_solid,
-                                          int     **n_buoyant_scal);
+                                          int     **n_buoyant_scal,
+                                          int     **iprcdo);
 void
 cs_f_velocity_pressure_param_get_pointers(int     **iphydr,
                                           int     **icalhy,
@@ -358,12 +365,14 @@ void
 cs_f_velocity_pressure_model_get_pointers(int     **ivisse,
                                           int     **idilat,
                                           bool    **fluid_solid,
-                                          int     **n_buoyant_scal)
+                                          int     **n_buoyant_scal,
+                                          int     **iprcdo)
 {
   *ivisse = &(_velocity_pressure_model.ivisse);
   *idilat = &(_velocity_pressure_model.idilat);
   *fluid_solid = &(_velocity_pressure_model.fluid_solid);
   *n_buoyant_scal = &(_velocity_pressure_model.n_buoyant_scal);
+  *iprcdo = &(_velocity_pressure_model.iprcdo);
 }
 
 /*----------------------------------------------------------------------------
@@ -567,6 +576,12 @@ cs_velocity_pressure_model_log_setup(void)
       (CS_LOG_SETUP,
        _("\n"
          "  Fluid-solid mode (disable dynamics in the solid part)\n\n"));
+
+  if (vp_model->iprcdo)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("\n"
+         "  Pressure correction equation is solved by CDO\n\n"));
 
 }
 

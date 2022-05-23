@@ -75,6 +75,12 @@
 #include "cs_velocity_pressure.h"
 #include "cs_volume_mass_injection.h"
 #include "cs_vof.h"
+#include "cs_post.h"
+#include "cs_cdo_headers.h"
+
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -95,12 +101,26 @@ BEGIN_C_DECLS
         Pressure correction step.
 */
 
-/*============================================================================
- * Private function definitions
+/*=============================================================================
+ * Local Macro definitions
  *============================================================================*/
 
+#define CS_PRESSURE_CORRECTION_CDO_DBG  0
+
 /*============================================================================
- * Public function definitions
+ * Private variables
+ *============================================================================*/
+
+static const char _err_empty_prcdo[] =
+  " Stop execution. The structure related to the pressure correction is"
+  " empty.\n Please check your settings.\n";
+
+static bool cs_pressure_correction_cdo_active = false;
+
+static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = NULL;
+
+/*============================================================================
+ * Private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -161,24 +181,24 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_pressure_correction(int        iterns,
-                       cs_lnum_t  nfbpcd,
-                       cs_lnum_t  ncmast,
-                       cs_lnum_t  ifbpcd[nfbpcd],
-                       cs_lnum_t  ltmast[],
-                       int        isostd[],
-                       cs_real_t  vel[restrict][3],
-                       cs_real_t  da_uu[restrict][6],
-                       cs_real_t  coefav[restrict][3],
-                       cs_real_t  coefbv[restrict][3][3],
-                       cs_real_t  coefa_dp[restrict],
-                       cs_real_t  coefb_dp[restrict],
-                       cs_real_t  spcond[restrict],
-                       cs_real_t  svcond[restrict],
-                       cs_real_t  frcxt[restrict][3],
-                       cs_real_t  dfrcxt[restrict][3],
-                       cs_real_t  i_visc[restrict],
-                       cs_real_t  b_visc[restrict])
+_pressure_correction_fv(int        iterns,
+                        cs_lnum_t  nfbpcd,
+                        cs_lnum_t  ncmast,
+                        cs_lnum_t  ifbpcd[nfbpcd],
+                        cs_lnum_t  ltmast[],
+                        int        isostd[],
+                        cs_real_t  vel[restrict][3],
+                        cs_real_t  da_uu[restrict][6],
+                        cs_real_t  coefav[restrict][3],
+                        cs_real_t  coefbv[restrict][3][3],
+                        cs_real_t  coefa_dp[restrict],
+                        cs_real_t  coefb_dp[restrict],
+                        cs_real_t  spcond[restrict],
+                        cs_real_t  svcond[restrict],
+                        cs_real_t  frcxt[restrict][3],
+                        cs_real_t  dfrcxt[restrict][3],
+                        cs_real_t  i_visc[restrict],
+                        cs_real_t  b_visc[restrict])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -2587,6 +2607,795 @@ cs_pressure_correction(int        iterns,
 
   BFT_FREE(cpro_rho_tc);
   BFT_FREE(bpro_rho_tc);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Perform the pressure correction step of the Navier-Stokes equations
+ *        for incompressible or slightly compressible flows.
+ *
+ * \Remark:
+ * - CDO face-based scheme is used to solve the Poisson equation.
+ *  \f[
+ *     - DIV \cdot Hdg \cdot GRAD \left(\delta p \right) =
+ * - \divs \left( \rho \vect{\widetilde{u}}\right)
+ * \f]
+ * The mass flux is then updated as follows:
+ * \f[
+ *  \dot{m}^{n+1} = \dot{m}^{n}
+ *                 - H_dge \cdot GRAD \left(\delta p \right)
+ * \f]
+ * \param[in]       iterns    Navier-Stokes iteration number
+ * \param[in]       nfbpcd    number of faces with condensation source term
+ * \param[in]       ncmast    number of cells with condensation source terms
+ * \param[in]       ifbpcd    index of faces with condensation source term
+ * \param[in]       ltmast    index of cells with condensation source terms
+ * \param[in]       isostd    indicator of standard outlet and index
+ *                            of the reference outlet face
+ * \param[in]       vel       velocity
+ * \param[in, out]  da_uu     velocity matrix
+ * \param[in]       coefav    boundary condition array for the variable
+ *                            (explicit part)
+ * \param[in]       coefbv    boundary condition array for the variable
+ *                            (implicit part)
+ * \param[in]       coefa_dp  boundary conditions for the pressure increment
+ * \param[in]       coefb_dp  boundary conditions for the pressure increment
+ * \param[in]       spcond    variable value associated to the condensation
+ *                            source term (for ivar=ipr, spcond is the
+ *                            flow rate
+ *                            \f$ \Gamma_{s,cond}^n \f$)
+ * \param[in]       svcond    variable value associated to the condensation
+ *                            source term (for ivar=ipr, svcond is the flow rate
+ *                            \f$ \Gamma_{v, cond}^n \f$)
+ * \param[in]       frcxt     external forces making hydrostatic pressure
+ * \param[in]       dfrcxt    variation of the external forces
+ *                            composing the hydrostatic pressure
+ * \param[in]       i_visc    visc*surface/dist aux faces internes
+ * \param[in]       b_visc    visc*surface/dist aux faces de bord
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_pressure_correction_cdo(int        iterns,
+                         cs_lnum_t  nfbpcd,
+                         cs_lnum_t  ncmast,
+                         cs_lnum_t  ifbpcd[nfbpcd],
+                         cs_lnum_t  ltmast[],
+                         int        isostd[],
+                         cs_real_t  vel[restrict][3],
+                         cs_real_t  da_uu[restrict][6],
+                         cs_real_t  coefav[restrict][3],
+                         cs_real_t  coefbv[restrict][3][3],
+                         cs_real_t  coefa_dp[restrict],
+                         cs_real_t  coefb_dp[restrict],
+                         cs_real_t  spcond[restrict],
+                         cs_real_t  svcond[restrict],
+                         cs_real_t  frcxt[restrict][3],
+                         cs_real_t  dfrcxt[restrict][3],
+                         cs_real_t  i_visc[restrict],
+                         cs_real_t  b_visc[restrict])
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+
+  const cs_cdo_quantities_t  *quant = cs_glob_domain->cdo_quantities;
+  const cs_cdo_connect_t  *connect = cs_glob_domain->connect;
+
+  cs_field_t *f_p = CS_F_(p);
+  const cs_field_t *f_vel = CS_F_(vel);
+
+  assert((cs_real_t *)vel == f_vel->val);
+
+  const cs_equation_param_t *eqp_u
+    = cs_field_get_equation_param_const(f_vel);
+  const cs_equation_param_t *eqp_p
+    = cs_field_get_equation_param_const(f_p);
+
+  const cs_velocity_pressure_model_t  *vp_model
+    = cs_glob_velocity_pressure_model;
+  const cs_velocity_pressure_param_t  *vp_param
+    = cs_glob_velocity_pressure_param;
+
+  const int idilat = vp_model->idilat;
+  const int iphydr = vp_param->iphydr;
+
+  const int compressible_flag
+    = cs_glob_physical_model_flag[CS_COMPRESSIBLE];
+
+  cs_pressure_correction_cdo_t *prcdo = cs_pressure_correction_cdo;
+  if (prcdo == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_prcdo));
+  cs_equation_t  *eq_dp = prcdo->pressure_incr;
+
+  cs_real_t *restrict dt = CS_F_(dt)->val;
+
+  cs_real_t *c_visc = NULL;
+
+  /* Allocate temporary arrays */
+
+  cs_real_3_t *trav;
+  BFT_MALLOC(trav, n_cells_ext, cs_real_3_t);
+
+  cs_field_t *f_iddp = cs_field_by_id(eq_dp->field_id);
+  cs_real_t *phi = f_iddp->val;
+
+  cs_real_t *divu = prcdo->div_st;
+
+  /* Associate pointers to pressure diffusion coefficients */
+  c_visc = dt;
+
+  /* Index of the field */
+  cs_solving_info_t *sinfo
+    = cs_field_get_key_struct_ptr(f_p,
+                                  cs_field_key_id("solving_info"));
+
+  /* Physical quantities */
+
+  cs_real_t *crom = NULL;
+  cs_real_t *brom = NULL;
+
+  cs_real_t *crom_eos = CS_F_(rho)->val;
+  cs_real_t *brom_eos = CS_F_(rho_b)->val;
+
+  crom = crom_eos;
+  brom = brom_eos;
+
+  cs_real_t *cvar_pr = f_p->vals[0];
+
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+
+  cs_real_t *imasfl = cs_field_by_id(cs_field_get_key_int(f_p, kimasf))->val;
+  cs_real_t *bmasfl = cs_field_by_id(cs_field_get_key_int(f_p, kbmasf))->val;
+
+  cs_real_t *ipotfl = prcdo->inner_potential_flux;
+  cs_real_t *bpotfl = prcdo->bdy_potential_flux;
+
+  /* Solving options */
+
+  const cs_time_step_t *ts = cs_glob_time_step;
+
+  cs_real_3_t *gradp = (cs_real_3_t*) prcdo->pressure_gradient->val;
+
+  if (   ts->nt_cur <= ts->nt_ini
+      && iphydr == 0 && idilat <= 1
+      && compressible_flag < 0
+      && cs_restart_present() == false){
+
+    memset(gradp, 0.0,  n_cells*sizeof(cs_real_3_t));
+    memset(ipotfl, 0.0, n_i_faces*sizeof(cs_real_t));
+    memset(bpotfl, 0.0, n_b_faces*sizeof(cs_real_t));
+  }
+
+  /* Building the linear system to solve.
+   * ==================================== */
+
+  const cs_real_t arak = vp_param->arak;
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t j = 0; j < 3; j++)
+      trav[c_id][j] = vel[c_id][j] + arak*gradp[c_id][j]*dt[c_id]/crom[c_id];
+  }
+
+  /* Sync for parallelism and periodicity */
+  cs_mesh_sync_var_vect((cs_real_t *)trav);
+
+  {
+    int inc = 1;
+    int iflmb0 = (cs_glob_ale >= 1) ? 0 : 1;
+    int itypfl = 1;
+
+    cs_mass_flux(m,
+                 fvq,
+                 -1, /* f_id */
+                 itypfl,
+                 iflmb0,
+                 1, /* init */
+                 inc,
+                 eqp_u->imrgra,
+                 eqp_u->nswrgr,
+                 eqp_u->imligr,
+                 eqp_p->verbosity,
+                 eqp_u->epsrgr,
+                 eqp_u->climgr,
+                 crom, brom,
+                 trav,
+                 coefav, coefbv,
+                 imasfl, bmasfl);
+  }
+
+  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
+    imasfl[f_id] += arak*ipotfl[f_id];
+
+  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
+    bmasfl[f_id] += arak*bpotfl[f_id];
+
+  /*
+   * Solving
+   * =========================================== */
+
+  /* Variables are set to 0
+   *   phi  is the increment of the pressure
+   *   divu is the initial divergence of the predicted mass flux */
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    phi[c_id] = 0.;
+
+  /* Initial divergence */
+
+  cs_divergence(m,
+                1,  /* init */
+                imasfl,
+                bmasfl,
+                divu);
+
+  /* Right hand side residual */
+  cs_real_t residual = sqrt(cs_gdot(n_cells, divu, divu));
+
+  sinfo->rhs_norm = residual;
+
+  /* Use CDO methode to resolve pressure increment */
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    divu[c_id] = - divu[c_id];
+
+  /* Solve the pressure increment
+     ---------------------------- */
+
+  cs_equation_solve_steady_state(m, eq_dp);
+
+  /* Update the mass flux and potential flux
+     --------------------------------------- */
+
+  cs_real_t *diff_flux = NULL;
+  BFT_MALLOC(diff_flux, quant->n_faces, cs_real_t);
+
+  cs_equation_compute_diffusive_flux(eq_dp,
+                                     cs_flag_primal_face,
+                                     cs_glob_time_step->t_cur,
+                                     diff_flux);
+
+  for (cs_lnum_t f_id = 0; f_id < quant->n_i_faces; f_id++) {
+    imasfl[f_id] += diff_flux[f_id];
+    ipotfl[f_id] += diff_flux[f_id];
+  }
+
+  for (cs_lnum_t f_id = 0; f_id < quant->n_b_faces; f_id++) {
+    bmasfl[f_id] += diff_flux[f_id + quant->n_i_faces];
+    bpotfl[f_id] += diff_flux[f_id + quant->n_i_faces];
+  }
+
+  /* Reconstruct the cell gradient
+     ----------------------------- */
+  cs_real_3_t *grddp_c = (cs_real_3_t*) prcdo->pressure_incr_gradient->val;
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_lnum_t  s = connect->c2f->idx[c_id], e = connect->c2f->idx[c_id+1];
+    const cs_lnum_t  *c2f_ids = connect->c2f->ids + s;
+    const short int  *c2f_sgn = connect->c2f->sgn + s;
+
+    const cs_lnum_t n_fc = e - s;
+    const cs_real_t vol_c = quant->cell_vol[c_id];
+    const cs_real_t *cell_center = quant->cell_centers + 3*c_id;
+    cs_real_3_t grddp_reco = {0.0, 0.0, 0.0};
+
+    for (short int f_id = 0; f_id < n_fc; f_id++) {
+
+      cs_lnum_t ff = c2f_ids[f_id];
+
+      const cs_real_t *face_center  = (ff < quant->n_i_faces) ?
+        quant->i_face_center + 3*ff:
+        quant->b_face_center + 3*(ff - quant->n_i_faces);
+
+      for (short int j = 0; j < 3; j++)
+        grddp_reco[j] += - c2f_sgn[f_id]/vol_c/c_visc[c_id]
+          *diff_flux[ff]*(face_center[j] - cell_center[j]);
+    }
+
+    for (short int j = 0; j < 3; j++) {
+      grddp_c[c_id][j] = grddp_reco[j];
+      gradp[c_id][j] += grddp_reco[j];
+    }
+  }
+
+  BFT_FREE(diff_flux);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_PRESSURE_CORRECTION_CDO_DBG > 0
+
+  cs_real_t *res = NULL;
+  BFT_MALLOC(res, n_cells_ext, cs_real_t);
+
+  cs_divergence(m, 1, imasfl, bmasfl, res);
+
+  cs_real_t rnormp = sqrt(cs_gdot(n_cells, res, res));
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                ">> Divergence of mass flux after correction step: %15.7e \n",
+                rnormp);
+
+  BFT_FREE(res);
+
+#endif
+
+  /* Update the pressure field
+     ------------------------- */
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    cvar_pr[c_id] += phi[c_id];
+
+  /*  Free memory */
+  BFT_FREE(trav);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and initialize a cs_pressure_correction_cdo_t structure
+ *
+ * \return a pointer to a newly allocated \ref cs_pressure_correction_cdo_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_pressure_correction_cdo_t *
+_pressure_correction_cdo_create(void)
+{
+  cs_pressure_correction_cdo_t *prcdo = NULL;
+
+  BFT_MALLOC(prcdo, 1, cs_pressure_correction_cdo_t);
+
+  /* Equation
+     -------- */
+  prcdo->pressure_incr = NULL;
+
+  /* Fields
+     ------ */
+  prcdo->pressure_incr_gradient = NULL;
+  prcdo->pressure_gradient = NULL;
+
+  /* Other arrays
+     ------------ */
+
+  prcdo->div_st = NULL;
+  prcdo->inner_potential_flux = NULL;
+  prcdo->bdy_potential_flux = NULL;
+  prcdo->bdy_pressure_incr = NULL;
+
+  return prcdo;
+}
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the pressure increment solving with Legacy FV
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_fv_activate(void)
+{
+  if (cs_pressure_correction_cdo_active)
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("\n The pressure correction step is treated by CDO,"
+         "\n  Check the pressure correction model"));
+
+  cs_field_t *f = cs_field_create("pressure_increment",
+                                  CS_FIELD_INTENSIVE,
+                                  CS_MESH_LOCATION_CELLS,
+                                  1,
+                                  false);
+  cs_field_set_key_int(f,
+                       cs_field_key_id("parent_field_id"),
+                       CS_F_(p)->id);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the pressure increment solving with CDO
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_cdo_activate(void)
+{
+  if (cs_pressure_correction_cdo_active)
+    return;
+
+  cs_pressure_correction_cdo_active = true;
+
+  cs_pressure_correction_cdo_t *prcdo = NULL;
+
+  if (cs_pressure_correction_cdo == NULL)
+    prcdo = _pressure_correction_cdo_create();
+  else
+    prcdo = cs_pressure_correction_cdo;
+
+  cs_domain_set_cdo_mode(cs_glob_domain, CS_DOMAIN_CDO_MODE_WITH_FV);
+
+  cs_equation_t  *eq =
+    cs_equation_add("pressure_increment", /* equation name */
+                    "pressure_increment", /* associated variable field name */
+                    CS_EQUATION_TYPE_PREDEFINED,
+                    1,                        /* dimension of the unknown */
+                    CS_PARAM_BC_HMG_NEUMANN); /* default boundary */
+
+  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+
+  /* Predefined settings */
+
+  cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+
+  /* BC settings */
+
+  cs_equation_param_set(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
+
+  /* System to solve is SPD by construction */
+
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
+  cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
+  cs_equation_param_set(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
+
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_MAX_ITER, "2500");
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_EPS, "1e-5");
+  cs_equation_param_set(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "filtered");
+
+  prcdo->pressure_incr = eq;
+
+  cs_pressure_correction_cdo = prcdo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the pressure increment, either FV or CDO
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_model_activate(void)
+{
+
+  cs_velocity_pressure_model_t  *vp_model = cs_glob_velocity_pressure_model;
+
+  if (vp_model->iprcdo > 0)
+    cs_pressure_correction_cdo_activate();
+  else
+    cs_pressure_correction_fv_activate();
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Test if pressure solving with CDO is activated
+ *
+ * \return true if solving with CDO is requested, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_pressure_correction_cdo_is_activated(void)
+{
+  if (cs_pressure_correction_cdo_active)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Start setting-up the pressure increment equation
+ *         At this stage, numerical settings should be completely determined
+ *         but connectivity and geometrical information is not yet available.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_cdo_init_setup(void)
+{
+  cs_pressure_correction_cdo_t *prcdo = cs_pressure_correction_cdo;
+
+  if (prcdo == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_prcdo));
+
+  cs_equation_t *eq = prcdo->pressure_incr;
+  cs_equation_param_t* eqp = cs_equation_get_param(eq);
+
+  /* Add the variable field */
+
+  cs_equation_predefined_create_field(1, eq);
+
+  cs_field_set_key_int(cs_field_by_id(eq->field_id),
+                       cs_field_key_id("parent_field_id"),
+                       CS_F_(p)->id);
+
+  const int  log_key = cs_field_key_id("log");
+  const int  post_key = cs_field_key_id("post_vis");
+  const int  field_post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
+
+  prcdo->pressure_gradient =
+    cs_field_find_or_create("pressure_gradient",
+                            CS_FIELD_INTENSIVE,
+                            CS_MESH_LOCATION_CELLS,
+                            3,
+                            false);
+  cs_field_set_key_int(prcdo->pressure_gradient,
+                       post_key,
+                       1);
+  cs_field_set_key_int(prcdo->pressure_gradient,
+                       log_key,
+                       field_post_flag);
+
+  prcdo->pressure_incr_gradient =
+    cs_field_find_or_create("pressure_increment_gradient",
+                            CS_FIELD_INTENSIVE,
+                            CS_MESH_LOCATION_CELLS,
+                            3,
+                            false);
+  cs_field_set_key_int(prcdo->pressure_incr_gradient,
+                       post_key,
+                       1);
+  cs_field_set_key_int(prcdo->pressure_incr_gradient,
+                       log_key,
+                       field_post_flag);
+
+ /* Activate the diffusion term
+     ---------------------------
+   * Diffusivity coefficent for pressure correction
+   * equation is represented by time step.
+   * Thus the diffusion is added after the field dt
+   * is created. */
+
+  cs_property_t *pty = cs_property_by_name("time_step");
+  cs_property_def_by_field(pty, cs_field_by_name("dt"));
+  cs_equation_add_diffusion(eqp, pty);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize setting-up the pressure increment equation
+ *         At this stage, numerical settings should be completely determined
+ *         but connectivity and geometrical information is not yet available.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
+{
+  cs_pressure_correction_cdo_t *prcdo = cs_pressure_correction_cdo;
+
+  if (prcdo == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_prcdo));
+
+  cs_equation_t *eq = prcdo->pressure_incr;
+  cs_equation_param_t* eqp = cs_equation_get_param(eq);
+
+  /* Allocate useful array
+     --------------------- */
+  cs_cdo_quantities_t *quant = cs_glob_domain->cdo_quantities;
+
+  BFT_MALLOC(prcdo->div_st, quant->n_cells, cs_real_t);
+
+  BFT_MALLOC(prcdo->inner_potential_flux, quant->n_i_faces, cs_real_t);
+
+  BFT_MALLOC(prcdo->bdy_potential_flux, quant->n_b_faces, cs_real_t);
+
+  BFT_MALLOC(prcdo->bdy_pressure_incr, quant->n_b_faces, cs_real_t);
+
+  /* Affect source term for the equation
+     ----------------------------------- */
+
+  {
+    cs_real_t *pred_divu = prcdo->div_st;
+
+    cs_xdef_t *st = cs_equation_add_source_term_by_array(eqp,
+                                                         NULL, /* all cells */
+                                                         cs_flag_primal_cell,
+                                                         pred_divu,
+                                                         false, /*is owner */
+                                                         NULL, /* index */
+                                                         NULL); /* ids */
+  }
+
+  {
+    for (int i = 0; i < domain->boundaries->n_boundaries; i++) {
+
+      const int z_id = domain->boundaries->zone_ids[i];
+      const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
+
+      cs_boundary_type_t b_type = domain->boundaries->types[i];
+
+      // TODO handle more types of pressure boundary conditions
+      if (b_type & CS_BOUNDARY_OUTLET || b_type & CS_BOUNDARY_IMPOSED_P) {
+
+        for (cs_lnum_t iel = 0; iel < z->n_elts; iel++) {
+          cs_lnum_t f_id = z->elt_ids[iel];
+          prcdo->bdy_pressure_incr[f_id] = 0.0;
+        }
+
+        cs_equation_add_bc_by_array(eqp,
+                                    CS_PARAM_BC_DIRICHLET,
+                                    z->name,
+                                    cs_flag_primal_face,
+                                    prcdo->bdy_pressure_incr,
+                                    false, /* Do not transfer ownership */
+                                    NULL, NULL);
+
+      }
+      else { /* To be deleted when partial zonal bc defintion is handled */
+
+        cs_real_t bc_value = 0.0;
+        cs_equation_add_bc_by_value(eqp,
+                                    CS_PARAM_BC_NEUMANN,
+                                    z->name,
+                                    &bc_value);
+
+      }
+    } /* Loop on pressure definitions */
+  }
+
+  /* Initialization defination
+     ------------------------ */
+  {
+    cs_real_t ic_value = 0.;
+    cs_equation_add_ic_by_value(eqp,
+                                NULL,
+                                &ic_value);
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free the main structure related to the pressure correction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_cdo_destroy_all(void)
+{
+  cs_pressure_correction_cdo_t  *prcdo = cs_pressure_correction_cdo;
+  if (prcdo == NULL)
+    return;
+
+  BFT_FREE(prcdo->div_st);
+  BFT_FREE(prcdo->inner_potential_flux);
+  BFT_FREE(prcdo->bdy_potential_flux);
+  BFT_FREE(prcdo->bdy_pressure_incr);
+
+  BFT_FREE(prcdo);
+
+  cs_pressure_correction_cdo = NULL;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Perform the pressure correction step of the Navier-Stokes equations
+ *        for incompressible or slightly compressible flows.
+ *
+ * This function solves the following Poisson equation on the pressure:
+ * \f[
+ *     D \left( \Delta t, \delta p \right) =
+ * \divs \left( \rho \vect{\widetilde{u}}\right)
+ *     - \Gamma^n
+ *     + \dfrac{\rho^n - \rho^{n-1}}{\Delta t}
+ * \f]
+ * The mass flux is then updated as follows:
+ * \f[
+ *  \dot{m}^{n+1}_\ij = \dot{m}^{n}_\ij
+ *                    - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
+ * \f]
+ *
+ * \Remark:
+ * - an iterative process is used to solve the Poisson equation.
+ * - if the arak coefficient is set to 1, the the Rhie & Chow filter is
+ *   activated.
+ *
+ * Please refer to the
+ * <a href="../../theory.pdf#resopv"><b>resopv</b></a>
+ * section of the theory guide for more information.
+ *
+ * \param[in]       iterns    Navier-Stokes iteration number
+ * \param[in]       nfbpcd    number of faces with condensation source term
+ * \param[in]       ncmast    number of cells with condensation source terms
+ * \param[in]       ifbpcd    index of faces with condensation source term
+ * \param[in]       ltmast    index of cells with condensation source terms
+ * \param[in]       isostd    indicator of standard outlet and index
+ *                            of the reference outlet face
+ * \param[in]       vel       velocity
+ * \param[in, out]  da_uu     velocity matrix
+ * \param[in]       coefav    boundary condition array for the variable
+ *                            (explicit part)
+ * \param[in]       coefbv    boundary condition array for the variable
+ *                            (implicit part)
+ * \param[in]       coefa_dp  boundary conditions for the pressure increment
+ * \param[in]       coefb_dp  boundary conditions for the pressure increment
+ * \param[in]       spcond    variable value associated to the condensation
+ *                            source term (for ivar=ipr, spcond is the
+ *                            flow rate
+ *                            \f$ \Gamma_{s,cond}^n \f$)
+ * \param[in]       svcond    variable value associated to the condensation
+ *                            source term (for ivar=ipr, svcond is the flow rate
+ *                            \f$ \Gamma_{v, cond}^n \f$)
+ * \param[in]       frcxt     external forces making hydrostatic pressure
+ * \param[in]       dfrcxt    variation of the external forces
+ *                            composing the hydrostatic pressure
+ * \param[in]       i_visc    visc*surface/dist aux faces internes
+ * \param[in]       b_visc    visc*surface/dist aux faces de bord
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction(int        iterns,
+                       cs_lnum_t  nfbpcd,
+                       cs_lnum_t  ncmast,
+                       cs_lnum_t  ifbpcd[nfbpcd],
+                       cs_lnum_t  ltmast[],
+                       int        isostd[],
+                       cs_real_t  vel[restrict][3],
+                       cs_real_t  da_uu[restrict][6],
+                       cs_real_t  coefav[restrict][3],
+                       cs_real_t  coefbv[restrict][3][3],
+                       cs_real_t  coefa_dp[restrict],
+                       cs_real_t  coefb_dp[restrict],
+                       cs_real_t  spcond[restrict],
+                       cs_real_t  svcond[restrict],
+                       cs_real_t  frcxt[restrict][3],
+                       cs_real_t  dfrcxt[restrict][3],
+                       cs_real_t  i_visc[restrict],
+                       cs_real_t  b_visc[restrict])
+{
+
+ const cs_velocity_pressure_model_t  *vp_model
+    = cs_glob_velocity_pressure_model;
+
+ if (vp_model->iprcdo == 0)
+   _pressure_correction_fv(iterns,
+                           nfbpcd,
+                           ncmast,
+                           ifbpcd,
+                           ltmast,
+                           isostd,
+                           vel,
+                           da_uu,
+                           coefav,
+                           coefbv,
+                           coefa_dp,
+                           coefb_dp,
+                           spcond,
+                           svcond,
+                           frcxt,
+                           dfrcxt,
+                           i_visc,
+                           b_visc);
+ else
+   _pressure_correction_cdo(iterns,
+                            nfbpcd,
+                            ncmast,
+                            ifbpcd,
+                            ltmast,
+                            isostd,
+                            vel,
+                            da_uu,
+                            coefav,
+                            coefbv,
+                            coefa_dp,
+                            coefb_dp,
+                            spcond,
+                            svcond,
+                            frcxt,
+                            dfrcxt,
+                            i_visc,
+                            b_visc);
 }
 
 /*----------------------------------------------------------------------------*/

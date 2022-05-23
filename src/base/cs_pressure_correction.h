@@ -38,8 +38,119 @@
 BEGIN_C_DECLS
 
 /*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+typedef struct {
+
+  /*!< Pressure correction step related to the mass
+   * balance equation (scalar-valued) */
+  cs_equation_t  *pressure_incr;
+
+  /*! \var pressure_incr_gradient
+   * Gradient of pressure increment. Used to store the gradient
+   * pressure increment. */
+  cs_field_t    *pressure_incr_gradient;
+
+  /*! \var pressure_gradient
+   * Gradient of pressure. Used to store the gradient of pressure */
+  cs_field_t    *pressure_gradient;
+
+  /*! \var div_st
+   * Source term on the correction step stemming from the divergence of the
+   * predicted velocity */
+  cs_real_t      *div_st;
+
+  /*! \var inner_potential_flux
+   * Potential flux at interior faces. Used for Rhie & Chow */
+  cs_real_t      *inner_potential_flux;
+
+  /*! \var bdy_potential_flux
+   * Potential flux at boundary faces. Used for Rhie & Chow */
+  cs_real_t      *bdy_potential_flux;
+
+  /*! \var bdy_pressure_incr
+   * Pressure increment at the boundary. Used as an array to set the boundary
+   * condition arising from a Dirichlet on the pressure. */
+  cs_real_t      *bdy_pressure_incr;
+
+  cs_flag_t      post_flag;
+
+} cs_pressure_correction_cdo_t;
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the pressure increment solving with Legacy FV
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_fv_activate(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free the main structure related to the pressure correction
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_cdo_destroy_all(void);
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the pressure increment solving with CDO
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_cdo_activate(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Activate the pressure increment, either FV or CDO
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_model_activate(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Test if pressure solving with CDO is activated
+ *
+ * \return true if solving with CDO is requested, false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_pressure_correction_cdo_is_activated(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Start setting-up the pressure increment equation
+ *         At this stage, numerical settings should be completely determined
+ *         but connectivity and geometrical information is not yet available.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_cdo_init_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Finalize setting-up the pressure increment equation
+ *         At this stage, numerical settings should be completely determined
+ *         but connectivity and geometrical information is not yet available.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -53,20 +164,7 @@ BEGIN_C_DECLS
  *     - \Gamma^n
  *     + \dfrac{\rho^n - \rho^{n-1}}{\Delta t}
  * \f]
- * The mass flux is then updated as follows:
- * \f[
- *  \dot{m}^{n+1}_\ij = \dot{m}^{n}_\ij
- *                    - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
- * \f]
- *
- * \Remark:
- * - an iterative process is used to solve the Poisson equation.
- * - if the arak coefficient is set to 1, the the Rhie & Chow filter is
- *   activated.
- *
- * Please refer to the
- * <a href="../../theory.pdf#resopv"><b>resopv</b></a>
- * section of the theory guide for more information.
+ *  Either Legacy FV method or CDO face-based scheme is used
  *
  * \param[in]       iterns    Navier-Stokes iteration number
  * \param[in]       nfbpcd    number of faces with condensation source term

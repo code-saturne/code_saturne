@@ -71,6 +71,10 @@ typedef struct {
   int         n_buoyant_scal; /* number of buoyant scalars,
                                  zero if there is no buoyant scalar */
 
+  int         iprcdo;         /* Discretization method for pressure:
+                                  - 0: Legacy finite Volume method.
+                                  - 1: CDO method, if CDO/FV is coupled. */
+
 } cs_velocity_pressure_model_t;
 
 /*----------------------------------------------------------------------------

@@ -61,6 +61,7 @@
 #include "cs_navsto_system.h"
 #include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_pressure_correction.h"
 #include "cs_prototypes.h"
 #include "cs_solid_selection.h"
 #include "cs_solidification.h"
@@ -918,6 +919,10 @@ cs_cdo_finalize(cs_domain_t    *domain)
   /* Navier-Stokes system */
 
   cs_navsto_system_destroy();
+
+  /* CDO resolved Pressure correction coupled with FV*/
+
+  cs_pressure_correction_cdo_destroy_all();
 
   /* Solidification module */
 

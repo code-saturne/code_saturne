@@ -134,6 +134,12 @@ interface
     implicit none
   end subroutine cs_velocity_pressure_set_solid
 
+  subroutine cs_pressure_correction_model_activate()  &
+       bind(C, name='cs_pressure_correction_model_activate')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_pressure_correction_model_activate
+
   subroutine cs_runaway_check_define_field_max(f_id, value)  &
        bind(C, name='cs_runaway_check_define_field_max')
     use, intrinsic :: iso_c_binding
@@ -223,6 +229,8 @@ call cs_gui_radiative_transfer_parameters
 if (icdo.lt.2) then
   call fldvar(nmodpp)
 endif
+
+call cs_pressure_correction_model_activate
 
 if (iale.ge.1) then
   call uialvm

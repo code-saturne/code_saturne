@@ -962,10 +962,11 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
       endif
     endif
 
-    call field_gradient_potential(f_iddp, 0, 0, inc,                   &
-                                  iccocg, iphydr,                      &
-                                  dfrcxt, cpro_gradp)
-
+    if (iprcdo.eq.0) then
+      call field_gradient_potential(f_iddp, 0, 0, inc,                   &
+                                    iccocg, iphydr,                      &
+                                    dfrcxt, cpro_gradp)
+    endif
     ! Update the velocity field
     !--------------------------
     thetap = vcopt_p%thetav

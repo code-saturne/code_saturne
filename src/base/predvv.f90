@@ -564,9 +564,11 @@ endif
 call grdpor(inc)
 
 ! Pressure gradient
-call field_gradient_potential(ivarfl(ipr), iprev, 0, inc,         &
-                              iccocg, iphydr,                     &
-                              frcxt, cpro_gradp)
+if (iprcdo.eq.0) then
+  call field_gradient_potential(ivarfl(ipr), iprev, 0, inc,         &
+                                iccocg, iphydr,                     &
+                                frcxt, cpro_gradp)
+endif
 
 !    Calcul des efforts aux parois (partie 2/5), si demande
 !    La pression a la face est calculee comme dans gradrc/gradmc
@@ -1917,7 +1919,6 @@ if (allocated(stf)) deallocate(stf)
 !--------
 ! Formats
 !--------
-
  1100 format(/,                                                   &
  1X,'Maximum velocity after prediction ',E12.4)
 
