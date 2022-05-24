@@ -3184,15 +3184,6 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
                                   NULL, NULL);
 
     }
-    else { /* To be deleted when partial zonal bc defintion is handled */
-
-      cs_real_t bc_value = 0.0;
-      cs_equation_add_bc_by_value(eqp,
-                                  CS_PARAM_BC_NEUMANN,
-                                  z->name,
-                                  &bc_value);
-
-    }
   } /* Loop on pressure definitions */
 
   /* Initialization defination
