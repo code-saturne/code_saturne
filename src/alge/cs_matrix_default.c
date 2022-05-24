@@ -813,11 +813,11 @@ cs_matrix_default_set_tuned(cs_matrix_t  *m)
       && (_t_measure > 0 || _n_min_products > 0)) {
 
     cs_matrix_t *m_t = _get_matrix(m->type);
-    cs_matrix_fill_type_t mft_save = m->fill_type;
-    cs_lnum_t b_size_save[] = {m->db_size, m->eb_size};
+    cs_matrix_t m_t_save = *m_t;
     m_t->fill_type = m->fill_type;
     m_t->db_size = m->db_size;
     m_t->eb_size = m->eb_size;
+    m_t->coeffs = m->coeffs;
 
     _matrix_variant_tuned[m->type][m->fill_type]
       = cs_matrix_variant_tuned(m_t,
@@ -825,9 +825,7 @@ cs_matrix_default_set_tuned(cs_matrix_t  *m)
                                 _n_min_products,
                                 _t_measure);
 
-    m_t->fill_type = mft_save;
-    m_t->db_size = b_size_save[0];
-    m_t->eb_size = b_size_save[1];
+    *m_t = m_t_save;
 
   }
 
