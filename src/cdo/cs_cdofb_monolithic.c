@@ -3062,8 +3062,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Frees */
 
-  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_cdofb_monolithic_sles_clean(msles);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_equation_builder_reset(mom_eqb);
   if (mass_flux_array_k != NULL)
     BFT_FREE(mass_flux_array_k);

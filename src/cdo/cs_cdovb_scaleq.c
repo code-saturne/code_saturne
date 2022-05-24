@@ -2640,8 +2640,8 @@ cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2904,8 +2904,8 @@ cs_cdovb_scaleq_solve_steady_state_incr(bool                        cur2prev,
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3137,8 +3137,8 @@ cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3421,8 +3421,8 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                        cur2prev,
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/

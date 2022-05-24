@@ -936,8 +936,8 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
 
   /* Free remaining buffers */
 
-  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1176,8 +1176,8 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
 
   /* Free remaining buffers */
 
-  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1461,8 +1461,8 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
 
   /* Final step */
 
-  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/

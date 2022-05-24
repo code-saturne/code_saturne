@@ -1118,8 +1118,8 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_timer_t  t3 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t2, &t3);
 
-  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
   cs_sles_free(sles);
+  cs_cdo_system_helper_reset(sh);      /* free rhs and matrix */
 }
 
 /*----------------------------------------------------------------------------*/
