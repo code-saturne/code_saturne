@@ -86,6 +86,17 @@ interface
 
   !---------------------------------------------------------------------------
 
+  ! Interface to C function defining Ground water flow model
+
+  subroutine cs_gui_gwf_model(permeability, unsteady, gravity, unsaturated)  &
+    bind(C, name='cs_gui_gwf_model')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer :: permeability, unsteady, gravity, unsaturated
+  end subroutine cs_gui_gwf_model
+
+  !---------------------------------------------------------------------------
+
 end interface
 
 !===============================================================================
@@ -116,9 +127,9 @@ irecmf = 1
 ro0 = 1.d0
 p0 = 0.d0
 
-! Set permeability and dispersion to isotropic
+! Set permeability to isotropic and dispersion to anisotropic
 darcy_anisotropic_permeability = 0
-darcy_anisotropic_dispersion = 0
+darcy_anisotropic_dispersion = 1
 
 ! Steady flow
 darcy_unsteady = 0
@@ -140,18 +151,16 @@ darcy_unsaturated = 1
 ! Definition of sorption parameters
 call cs_gwf_parameters_define_field_keys
 
-call uidai1(darcy_anisotropic_permeability,     &
-            darcy_anisotropic_dispersion,       &
-            darcy_unsteady,                     &
-            darcy_gravity,                      &
-            darcy_unsaturated)
+call cs_gui_gwf_model(darcy_anisotropic_permeability,     &
+                      darcy_unsteady,                     &
+                      darcy_gravity,                      &
+                      darcy_unsaturated)
 
 !===============================================================================
 ! 2. Define user settings
 !===============================================================================
 
 call user_darcy_ini1
-!===================
 
 return
 end subroutine

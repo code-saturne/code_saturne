@@ -130,8 +130,6 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.groupBoxVanGenuchten.show()
         self.groupBoxUser.hide()
         self.groupBoxSoluteProperties.hide()
-        self.groupBoxIsotropicDispersion.show()
-        self.groupBoxAnisotropicDispersion.hide()
 
     def setConnections(self):
         self.comboBoxType.activated[str].connect(self.slotGroundwaterLaw)
@@ -162,10 +160,6 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditKd.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kd"))
         self.lineEditkplus.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kplus"))
         self.lineEditkminus.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kminus"))
-        self.lineEditLongitudinal.textChanged[str].connect(
-            lambda x: self.slotSetDispersionCoefficient(x, "longitudinal"))
-        self.lineEditTransverse.textChanged[str].connect(lambda x: self.slotSetDispersionCoefficient(x, "transverse"))
-        self.lineEditDispersion.textChanged[str].connect(lambda x: self.slotSetDispersionCoefficient(x, "isotropic"))
 
     def setValidators(self):
         self.lineEditKs.setValidator(DoubleValidator(self.lineEditKs))
@@ -190,7 +184,6 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditKsSaturatedXZ.setValidator(DoubleValidator(self.lineEditKsSaturatedXZ))
         self.lineEditKsSaturatedYZ.setValidator(DoubleValidator(self.lineEditKsSaturatedYZ))
         self.lineEditThetasSaturated.setValidator(DoubleValidator(self.lineEditThetasSaturated))
-        self.lineEditDispersion.setValidator(DoubleValidator(self.lineEditDispersion))
         self.lineEditSoilDensity.setValidator(DoubleValidator(self.lineEditSoilDensity))
         self.lineEditDiffusivity.setValidator(DoubleValidator(self.lineEditDiffusivity))
         self.lineEditKd.setValidator(DoubleValidator(self.lineEditKd))
@@ -294,18 +287,10 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
                 self.lineEditkminus.hide()
                 self.label_kminus.hide()
 
-        if GroundwaterModel(self.case).getDispersionType() == 'anisotropic':
-            self.groupBoxIsotropicDispersion.hide()
-            self.groupBoxAnisotropicDispersion.show()
-            value = self.mdl.getDispersionCoefficient(name, "longitudinal")
-            self.lineEditLongitudinal.setText(str(value))
-            value = self.mdl.getDispersionCoefficient(name, "transverse")
-            self.lineEditTransverse.setText(str(value))
-        else:
-            self.groupBoxIsotropicDispersion.show()
-            self.groupBoxAnisotropicDispersion.hide()
-            value = self.mdl.getDispersionCoefficient(name, "isotropic")
-            self.lineEditDispersion.setText(str(value))
+        value = self.mdl.getDispersionCoefficient(name, "longitudinal")
+        self.lineEditLongitudinal.setText(str(value))
+        value = self.mdl.getDispersionCoefficient(name, "transverse")
+        self.lineEditTransverse.setText(str(value))
 
     def initializeVanGenuchten(self, name):
         """

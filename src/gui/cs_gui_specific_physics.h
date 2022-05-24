@@ -152,26 +152,6 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
                                int           *len      /* --> String Length  */
                                CS_ARGF_SUPP_CHAINE);
 
-/*----------------------------------------------------------------------------
- * groundwater model : read parameters
- *
- * Fortran Interface:
- *
- * subroutine uidai1
- * *****************
- * integer         permeability    <--   permeability type
- * integer         dispersion      <--   dispersion type
- * integer         unsteady        <--   steady flow
- * integer         gravity         <--   check if gravity is taken into account
- * integer         unsaturated     <--   take into account unsaturated zone
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uidai1, UIDAI1) (int    *permeability,
-                                int    *dispersion,
-                                int    *unsteady,
-                                int    *gravity,
-                                int    *unsaturated);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -206,6 +186,22 @@ cs_gui_elec_model_rec(void);
 
 const char *
 cs_gui_get_thermophysical_model(const char  *model_thermo);
+
+/*----------------------------------------------------------------------------
+ * groundwater model : read parameters
+ *
+ * parameters:
+ *   permeability    <--   permeability type
+ *   unsteady        <--   steady flow
+ *   gravity         <--   check if gravity is taken into account
+ *   unsaturated     <--   take into account unsaturated zone
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_gwf_model(int  *permeability,
+                 int  *unsteady,
+                 int  *gravity,
+                 int  *unsaturated);
 
 /*----------------------------------------------------------------------------*/
 

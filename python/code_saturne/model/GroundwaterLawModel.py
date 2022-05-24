@@ -212,7 +212,7 @@ class GroundwaterLawModel(Variables, Model):
         """
         self.isInt(int(zoneid))
         self.isFloat(value)
-        self.isInList(variable, ['longitudinal', 'transverse', 'isotropic'])
+        self.isInList(variable, ['longitudinal', 'transverse'])
 
         nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
         node = nodeZone.xmlInitChildNode('diffusion_coefficient')
@@ -226,7 +226,7 @@ class GroundwaterLawModel(Variables, Model):
         Return value for variable
         """
         self.isInt(int(zoneid))
-        self.isInList(variable, ['longitudinal', 'transverse', 'isotropic'])
+        self.isInList(variable, ['longitudinal', 'transverse'])
 
         nodeZone = self.node_darcy.xmlGetNode('groundwater_law', zone_id=zoneid)
         node = nodeZone.xmlInitChildNode('diffusion_coefficient')

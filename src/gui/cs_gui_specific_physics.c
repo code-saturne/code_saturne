@@ -1178,123 +1178,6 @@ void CS_PROCF(cfnmtd, CFNMTD) (char          *fstr,    /* --> Fortran string */
   }
 }
 
-/*----------------------------------------------------------------------------
- * groundwater model : read parameters
- *
- * Fortran Interface:
- *
- * subroutine uidai1
- * *****************
- * integer         permeability    <--   permeability type
- * integer         dispersion      <--   dispersion type
- * integer         unsteady        <--   steady flow
- * integer         gravity         <--   check if gravity is taken into account
- * integer         unsaturated     <--   take into account unsaturated zone
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (uidai1, UIDAI1) (int  *permeability,
-                                int  *dispersion,
-                                int  *unsteady,
-                                int  *gravity,
-                                int  *unsaturated)
-{
-  cs_tree_node_t *tn0
-    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/groundwater_model");
-
-  const char *mdl;
-
-  /* Get dispersion type */
-  mdl = cs_tree_node_get_tag(cs_tree_node_get_child(tn0, "dispersion"),
-                             "model");
-
-  if (cs_gui_strcmp(mdl, "anisotropic"))
-    *dispersion = 1;
-  else
-    *dispersion = 0;
-
-  /* Get flow type */
-  mdl = cs_tree_node_get_tag(cs_tree_node_get_child(tn0, "flowType"),
-                             "model");
-
-  if (cs_gui_strcmp(mdl, "steady"))
-    *unsteady = 0;
-  else
-    *unsteady = 1;
-
-  /* Get permeability type */
-  mdl = cs_tree_node_get_tag(cs_tree_node_get_child(tn0, "permeability"),
-                             "model");
-
-  if (cs_gui_strcmp(mdl, "anisotropic"))
-    *permeability = 1;
-  else
-    *permeability = 0;
-
-  /* Get gravity */
-  cs_gui_node_get_status_int(cs_tree_node_get_child(tn0, "gravity"),
-                             gravity);
-
-  /* Get the possible presence of unsaturated zone */
-  mdl = cs_tree_node_get_tag(cs_tree_node_get_child(tn0, "unsaturatedZone"),
-                             "model");
-
-  if (cs_gui_strcmp(mdl, "true"))
-    *unsaturated = 1;
-  else
-    *unsaturated = 0;
-
-  /* Get first-order decay rate and chemistry model */
-
-  const int key_decay = cs_field_key_id("fo_decay_rate");
-  const int key_part = cs_field_key_id("gwf_soilwater_partition");
-
-  for (cs_tree_node_t *tn = cs_tree_get_node(tn0, "scalar");
-       tn != NULL;
-       tn = cs_tree_node_get_next_of_name(tn)) {
-
-    const char *name = cs_gui_node_get_tag(tn, "name");
-
-    cs_field_t *f = cs_field_by_name_try(name);
-    if (f == NULL) continue;
-
-    if (    (f->type & CS_FIELD_VARIABLE)
-         && (f->type & CS_FIELD_USER)) {
-
-      /* get first-order decay rate */
-
-      cs_real_t decay = cs_field_get_key_double(f, key_decay);
-      cs_gui_node_get_child_real(tn, "fo_decay_rate", &decay);
-      cs_field_set_key_double(f, key_decay, decay);
-
-      /* get chemistry model */
-
-      const char *cmodel = cs_tree_node_get_tag(tn, "chemistry_model");
-
-      if (cmodel != NULL) {
-        cs_gwf_soilwater_partition_t sorption_scal;
-        cs_field_get_key_struct(f, key_part, &sorption_scal);
-
-        if (! strcmp(cmodel, "EK"))
-          sorption_scal.kinetic = 1;
-        else
-          sorption_scal.kinetic = 0;
-
-        cs_field_set_key_struct(f, key_part, &sorption_scal);
-      }
-
-    }
-  }
-
-#if _XML_DEBUG_
-  bft_printf("==> %s\n", __func__);
-  bft_printf("--groundwater_anisotropic_permeability  = %d\n", *permeability);
-  bft_printf("--groundwater_anisotropic_dispersion    = %d\n", *dispersion);
-  bft_printf("--groundwater_unsteady                  = %d\n", *unsteady);
-  bft_printf("--groundwater_gravity                   = %d\n", *gravity);
-  bft_printf("--groundwater_unsaturated               = %d\n", *unsaturated);
-#endif
-}
-
 /*-----------------------------------------------------------------------------
  * Return 1 if a specific physics model is activated, 0 otherwise.
  *----------------------------------------------------------------------------*/
@@ -1680,6 +1563,109 @@ cs_gui_get_thermophysical_model(const char  *model_thermo)
   }
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * groundwater model : read parameters
+ *
+ * parameters:
+ *   permeability    <--   permeability type
+ *   unsteady        <--   steady flow
+ *   gravity         <--   check if gravity is taken into account
+ *   unsaturated     <--   take into account unsaturated zone
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_gwf_model(int  *permeability,
+                 int  *unsteady,
+                 int  *gravity,
+                 int  *unsaturated)
+{
+  cs_tree_node_t *tn0
+    = cs_tree_get_node(cs_glob_tree, "thermophysical_models/groundwater_model");
+
+  const char *mdl;
+
+  /* Get flow type */
+  mdl = cs_tree_node_get_tag(cs_tree_node_get_child(tn0, "flowType"),
+                             "model");
+
+  if (cs_gui_strcmp(mdl, "steady"))
+    *unsteady = 0;
+  else
+    *unsteady = 1;
+
+  /* Get permeability type */
+  mdl = cs_tree_node_get_tag(cs_tree_node_get_child(tn0, "permeability"),
+                             "model");
+
+  if (cs_gui_strcmp(mdl, "anisotropic"))
+    *permeability = 1;
+  else
+    *permeability = 0;
+
+  /* Get gravity */
+  cs_gui_node_get_status_int(cs_tree_node_get_child(tn0, "gravity"),
+                             gravity);
+
+  /* Get the possible presence of unsaturated zone */
+  mdl = cs_tree_node_get_tag(cs_tree_node_get_child(tn0, "unsaturatedZone"),
+                             "model");
+
+  if (cs_gui_strcmp(mdl, "true"))
+    *unsaturated = 1;
+  else
+    *unsaturated = 0;
+
+  /* Get first-order decay rate and chemistry model */
+
+  const int key_decay = cs_field_key_id("fo_decay_rate");
+  const int key_part = cs_field_key_id("gwf_soilwater_partition");
+
+  for (cs_tree_node_t *tn = cs_tree_get_node(tn0, "scalar");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn)) {
+
+    const char *name = cs_gui_node_get_tag(tn, "name");
+
+    cs_field_t *f = cs_field_by_name_try(name);
+    if (f == NULL) continue;
+
+    if (    (f->type & CS_FIELD_VARIABLE)
+         && (f->type & CS_FIELD_USER)) {
+
+      /* get first-order decay rate */
+
+      cs_real_t decay = cs_field_get_key_double(f, key_decay);
+      cs_gui_node_get_child_real(tn, "fo_decay_rate", &decay);
+      cs_field_set_key_double(f, key_decay, decay);
+
+      /* get chemistry model */
+
+      const char *cmodel = cs_tree_node_get_tag(tn, "chemistry_model");
+
+      if (cmodel != NULL) {
+        cs_gwf_soilwater_partition_t sorption_scal;
+        cs_field_get_key_struct(f, key_part, &sorption_scal);
+
+        if (! strcmp(cmodel, "EK"))
+          sorption_scal.kinetic = 1;
+        else
+          sorption_scal.kinetic = 0;
+
+        cs_field_set_key_struct(f, key_part, &sorption_scal);
+      }
+
+    }
+  }
+
+#if _XML_DEBUG_
+  bft_printf("==> %s\n", __func__);
+  bft_printf("--groundwater_anisotropic_permeability  = %d\n", *permeability);
+  bft_printf("--groundwater_unsteady                  = %d\n", *unsteady);
+  bft_printf("--groundwater_gravity                   = %d\n", *gravity);
+  bft_printf("--groundwater_unsaturated               = %d\n", *unsaturated);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

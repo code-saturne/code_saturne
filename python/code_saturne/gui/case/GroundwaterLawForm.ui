@@ -44,35 +44,6 @@
            <item row="0" column="0">
             <layout class="QVBoxLayout" name="verticalLayout_2">
              <item>
-              <widget class="QGroupBox" name="groupBoxIsotropicDispersion">
-               <property name="title">
-                <string>Isotropic dispersion</string>
-               </property>
-               <layout class="QGridLayout" name="gridLayout_8">
-                <item row="0" column="0">
-                 <layout class="QHBoxLayout" name="horizontalLayout_2">
-                  <item>
-                   <widget class="QLineEdit" name="lineEditDispersion"/>
-                  </item>
-                  <item>
-                   <spacer name="horizontalSpacer_20">
-                    <property name="orientation">
-                     <enum>Qt::Horizontal</enum>
-                    </property>
-                    <property name="sizeHint" stdset="0">
-                     <size>
-                      <width>45</width>
-                      <height>58</height>
-                     </size>
-                    </property>
-                   </spacer>
-                  </item>
-                 </layout>
-                </item>
-               </layout>
-              </widget>
-             </item>
-             <item>
               <widget class="QGroupBox" name="groupBoxAnisotropicDispersion">
                <property name="title">
                 <string>Anisotropic dispersion parameters</string>
@@ -914,10 +885,8 @@
                    <string/>
                   </property>
                   <property name="icon">
-                      <iconset resource="resources_pages.qrc">
-                          <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>
-                          :/new/prefix1/icons/22x22/edit-find-replace.png
-                      </iconset>
+                   <iconset resource="resources_pages.qrc">
+                    <normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</normaloff>:/new/prefix1/icons/22x22/edit-find-replace.png</iconset>
                   </property>
                   <property name="iconSize">
                    <size>

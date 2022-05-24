@@ -89,7 +89,6 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
 
         # ComboBox
         self.modelPermeability = ComboModel(self.comboBoxPermeability,2,1)
-        self.modelDispersion = ComboModel(self.comboBoxDispersion,2,1)
         self.modelFlowType = ComboModel(self.comboBoxFlowType,2,1)
         self.modelUnsaturated = ComboModel(self.comboBoxUnsaturated,2,1)
         self.modelChemistryModel = ComboModel(self.comboBoxChemistryModel,2,1)
@@ -97,8 +96,6 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
 
         self.modelPermeability.addItem(self.tr("isotropic"), 'isotropic')
         self.modelPermeability.addItem(self.tr("anisotropic"), 'anisotropic')
-        self.modelDispersion.addItem(self.tr("isotropic"), 'isotropic')
-        self.modelDispersion.addItem(self.tr("anisotropic"), 'anisotropic')
         self.modelFlowType.addItem(self.tr("steady"), 'steady')
         self.modelFlowType.addItem(self.tr("unsteady"), 'unsteady')
         self.modelUnsaturated.addItem(self.tr("True"), 'true')
@@ -123,7 +120,6 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
 
         # Connections
         self.comboBoxPermeability.activated[str].connect(self.slotPermeabilityType)
-        self.comboBoxDispersion.activated[str].connect(self.slotDispersionType)
         self.comboBoxFlowType.activated[str].connect(self.slotFlowType)
         self.comboBoxUnsaturated.activated[str].connect(self.slotUnsaturated)
         self.checkBoxGravity.clicked.connect(self.slotGravity)
@@ -142,9 +138,6 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         """
         value = self.mdl.getPermeabilityType()
         self.modelPermeability.setItem(str_model=value)
-
-        value = self.mdl.getDispersionType()
-        self.modelDispersion.setItem(str_model=value)
 
         value = self.mdl.getFlowType()
         self.modelFlowType.setItem(str_model=value)
@@ -171,15 +164,6 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         """
         mdl = self.modelPermeability.dicoV2M[str(text)]
         self.mdl.setPermeabilityType(mdl)
-
-
-    @pyqtSlot(str)
-    def slotDispersionType(self, text):
-        """
-        Input viscosity type : isotrop or anisotrop.
-        """
-        mdl = self.modelDispersion.dicoV2M[str(text)]
-        self.mdl.setDispersionType(mdl)
 
 
     @pyqtSlot(str)

@@ -73,7 +73,6 @@ class GroundwaterModel(Variables, Model):
         """
         default = {}
         default['permeability' ]     = 'isotropic'
-        default['dispersion' ]       = 'isotropic'
         default['flow' ]             = 'steady'
         default['groundwater_model'] = 'off'
         default['gravity']           = 'off'
@@ -190,46 +189,6 @@ class GroundwaterModel(Variables, Model):
 
         if oldchoice != None and oldchoice != choice:
             node.xmlRemoveChild('formula')
-
-
-    @Variables.noUndo
-    def getDispersionType(self):
-        """
-        Get the dispersion model
-        """
-        node = self.node_darcy.xmlInitChildNode('dispersion')
-        mdl = node['model']
-        if mdl is None:
-            mdl = self.__defaultValues()['dispersion']
-            self.setDispersionType(mdl)
-        return mdl
-
-
-    @Variables.undoLocal
-    def setDispersionType(self, choice):
-        """
-        Put the dispersion model
-        """
-        self.isInList(choice, ['isotropic', 'anisotropic'])
-        node = self.node_darcy.xmlInitChildNode('dispersion')
-        node['model'] = choice
-
-        node_models  = self.case.xmlGetNode('thermophysical_models')
-        noded   = node_models.xmlInitNode('groundwater')
-        nodelist = noded.xmlGetNodeList('diffusion_coefficient')
-        if choice == 'anisotropic':
-            for n in nodelist:
-                nn = n.xmlGetNode('isotropic')
-                if nn:
-                    nn.xmlRemoveNode()
-        else:
-            for n in nodelist:
-                nn = n.xmlGetNode('longitudinal')
-                if nn:
-                    nn.xmlRemoveNode()
-                nn = n.xmlGetNode('transverse')
-                if nn:
-                    nn.xmlRemoveNode()
 
 
     @Variables.noUndo
