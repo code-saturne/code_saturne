@@ -139,21 +139,27 @@ Architectural changes:
 - Drop support of AMD ACML (which is end-of-life) and IBM ESSL BLAS libraries,
   which were only used in unit tests comparisons.
 
-Numerics CDO:
+Numerics:
 
-- *Major reshape*: Add a generic framework to manipulate linear systems arising
-  from CDO schemes. This framework handles classical linear systems (scalar- or
-  vector-valued) but also (2x2) saddle-point systems and linear systems of
-  coupled equations (NxN). The notion of block is at the core of the framework
-  and it can handle matrix in the standard way (cs_matrix_t) but also a
-  collection of cs_matrix_t structures or a matrix which is unassembled in a
+- CDO: *Major reshape* Add a generic framework to manipulate linear systems
+  arising from CDO schemes. This framework handles classical linear systems
+  (scalar- or vector-valued) but also (2x2) saddle-point systems and linear
+  systems of coupled equations (NxN). The notion of block is at the core of the
+  framework and it can handle matrix in the standard way (cs_matrix_t) but also
+  a collection of cs_matrix_t structures or a matrix which is unassembled in a
   part of the system or for the full system. The aim is to get a framework to
   manipulate block matrices and apply to it either external libraries or
   in-house algorithms to solve these systems.
 
-- Add a resolution by increment in CDO-Vb schemes
+- CDO: Add a resolution by increment in scalar-valued CDO-Vb schemes useful to
+  handle non-linear algorithm (steady and unsteady cases are available)
 
-- Add new ways to define source terms in CDO-Vb schemes
+- CDO: Add new ways to define source terms in CDO-Vb schemes (array defined on
+  different locations)
+
+- velocity-pressure algorithm: Add an option to solve the pressure correction
+  with a CDO face-based scheme while still using the legacy FV scheme for the
+  velocity prediction
 
 Physical modeling:
 
