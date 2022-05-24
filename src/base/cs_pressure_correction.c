@@ -2951,14 +2951,16 @@ cs_pressure_correction_fv_activate(void)
                _("\n The pressure correction step is treated by CDO,"
                  "\n  Check the pressure correction model"));
 
-  cs_field_t *f = cs_field_create("pressure_increment",
-                                  CS_FIELD_INTENSIVE,
-                                  CS_MESH_LOCATION_CELLS,
-                                  1,
-                                  false);
-  cs_field_set_key_int(f,
-                       cs_field_key_id("parent_field_id"),
-                       CS_F_(p)->id);
+  if (CS_F_(p) != NULL) {
+    cs_field_t *f = cs_field_create("pressure_increment",
+                                    CS_FIELD_INTENSIVE,
+                                    CS_MESH_LOCATION_CELLS,
+                                    1,
+                                    false);
+    cs_field_set_key_int(f,
+                         cs_field_key_id("parent_field_id"),
+                         CS_F_(p)->id);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3025,7 +3027,8 @@ cs_pressure_correction_cdo_activate(void)
 void
 cs_pressure_correction_model_activate(void)
 {
-  cs_velocity_pressure_model_t  *vp_model = cs_glob_velocity_pressure_model;
+  const cs_velocity_pressure_model_t
+    *vp_model = cs_glob_velocity_pressure_model;
 
   if (vp_model->iprcdo > 0)
     cs_pressure_correction_cdo_activate();
