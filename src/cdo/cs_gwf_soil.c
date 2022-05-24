@@ -1377,7 +1377,6 @@ cs_gwf_soil_iso_update_itpf_terms_incr_submesh(const cs_time_step_t    *ts,
   /* In the immiscible case, mc->l_diffusivity_h is set to 0 */
 
   const cs_real_t  *l_sat = mc->l_saturation_submesh;
-  const cs_real_t  *l_sat_pre = mc->l_saturation_submesh_pre;
   const cs_real_t  *krl =  mc->l_rel_permeability;
   const cs_real_t  *krg =  mc->g_rel_permeability;
 

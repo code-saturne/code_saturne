@@ -665,6 +665,10 @@ typedef struct {
    *        the problem using increment and to iterate on the non-linear
    *        process (for instance whith a Picard or Anderson acceleration)
    *
+   * \var use_explicit_dsldt_liquid
+   * \brief Consider an explicit treatment of the time derivative of the liquid
+   *        saturation in the mass conservation for the water equation
+   *
    * \var use_properties_on_submesh
    * \brief Consider a submesh to define the liquid saturation
    *
@@ -685,6 +689,7 @@ typedef struct {
   bool                           use_coupled_solver;
   bool                           use_incremental_solver;
   bool                           use_properties_on_submesh;
+  bool                           use_explicit_dsldt_liquid;
 
   cs_param_nl_algo_t             nl_algo_type;
   cs_iter_algo_param_t           nl_algo_param;

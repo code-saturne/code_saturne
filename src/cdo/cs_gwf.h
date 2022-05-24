@@ -108,16 +108,18 @@ cs_gwf_get_two_phase_model(void);
 /*!
  * \brief  Set the numerical options related to the two phase flow models
  *
- * \param[in] use_coupled_solver         true/false
- * \param[in] use_incremental_solver     true/false
- * \param[in] use_properties_on_submesh  true/false
+ * \param[in] use_coupled_solver          true/false
+ * \param[in] use_incremental_solver      true/false
+ * \param[in] use_properties_on_submesh   true/false
+ * \param[in] use_explicit_dsldt_liquid   true/false
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gwf_set_two_phase_numerical_options(bool    use_coupled_solver,
                                        bool    use_incremental_solver,
-                                       bool    use_properties_on_submesh);
+                                       bool    use_properties_on_submesh,
+                                       bool    use_explicit_dsldt_liquid);
 
 /*----------------------------------------------------------------------------*/
 /*!
