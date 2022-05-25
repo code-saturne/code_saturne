@@ -95,6 +95,18 @@ void
 cs_turbulence_ke_q_mu_t(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of non linear terms of the quadratic k-epsilon model
+ *        (Baglietto et al.)
+ *
+ * \param[out]  rij  non linear terms of quadratic Boussinesq approximation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_ke_q(cs_real_6_t  rij[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

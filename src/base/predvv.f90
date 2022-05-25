@@ -1038,8 +1038,7 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
   else if(iturb.eq.23) then
 
     ! --- Compute the non linear part of Rij
-    call cnlevm (rij)
-
+    call cs_turbulence_ke_q(rij)
     ! --- Boundary conditions : Homogeneous Neumann
     do ifac = 1, nfabor
       do ii = 1, 6

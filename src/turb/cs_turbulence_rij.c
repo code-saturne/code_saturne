@@ -246,11 +246,6 @@ cs_turbulence_rij_alpha(int        f_id,
 
   // FIXME the source term extrapolation is not well done!!!!
 
-  if (   cs_glob_time_step->nt_cur == 1
-      && cs_glob_turb_rans_model->reinit_turb == 1) {
-
-  }
-
   /* For automatic initialization, the length scale is fixed at L^+ =50 */
 
   if (   cs_glob_time_step->nt_cur == 1

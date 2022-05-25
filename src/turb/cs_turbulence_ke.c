@@ -2302,5 +2302,121 @@ cs_turbulence_ke_q_mu_t(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of non linear terms of the quadratic k-epsilon model
+ *        (Baglietto et al.)
+ *
+ * \param[out]  rij  non linear terms of quadratic Boussinesq approximation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_ke_q(cs_real_6_t  rij[])
+{
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  const cs_real_t *visct =  CS_F_(mu_t)->val;
+  const cs_real_t *cvar_k = CS_F_(k)->val;
+  const cs_real_t *cvar_ep = CS_F_(eps)->val;
+
+  /* Initialization
+   * ============== */
+
+  cs_real_33_t *gradv;
+  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+
+  cs_field_gradient_vector(CS_F_(vel),
+                           true, // use_previous_t
+                           1,    // inc
+                           gradv);
+
+  const cs_real_t d1s2 = 0.5, d2s3 = 2./3;
+
+  /*  Computation
+   *===============*/
+
+# pragma omp parallel for if(n_cells_ext > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+
+    cs_real_t xrij[3][3];
+    cs_real_t xstrai[3][3], xrotac[3][3], sikskj[3][3];
+    cs_real_t wikskj[3][3], skiwjk[3][3], wikwjk[3][3];
+
+    const cs_real_t xvisct = visct[c_id];
+    const cs_real_t xeps   = cvar_ep[c_id];
+    const cs_real_t xk     = cvar_k[c_id];
+    const cs_real_t xttke  = xk/xeps;
+
+    /* Sij */
+    xstrai[0][0] = gradv[c_id][0][0];
+    xstrai[0][1] = d1s2*(gradv[c_id][0][1]+gradv[c_id][1][0]);
+    xstrai[0][2] = d1s2*(gradv[c_id][0][2]+gradv[c_id][2][0]);
+    xstrai[1][0] = xstrai[0][1];
+    xstrai[1][1] = gradv[c_id][1][1];
+    xstrai[1][2] = d1s2*(gradv[c_id][1][2]+gradv[c_id][2][1]);
+    xstrai[2][0] = xstrai[0][2];
+    xstrai[2][1] = xstrai[1][2];
+    xstrai[2][2] = gradv[c_id][2][2];
+
+    /* omegaij */
+    xrotac[0][0] = 0;
+    xrotac[0][1] = d1s2*(-gradv[c_id][0][1]+gradv[c_id][1][0]);
+    xrotac[0][2] = d1s2*(-gradv[c_id][0][2]+gradv[c_id][2][0]);
+    xrotac[1][0] = -xrotac[0][1];
+    xrotac[1][1] = 0;
+    xrotac[1][2] = d1s2*(-gradv[c_id][1][2]+gradv[c_id][2][1]);
+    xrotac[2][0] = -xrotac[0][2];
+    xrotac[2][1] = -xrotac[1][2];
+    xrotac[2][2] = 0;
+
+    cs_real_t sijsij = 0;
+    for (cs_lnum_t ii = 0; ii < 3; ii++) {
+      for (cs_lnum_t jj = 0; jj < 3; jj++) {
+        sijsij += xstrai[jj][ii]*xstrai[jj][ii];
+        sikskj[jj][ii] = 0.0;
+        wikskj[jj][ii] = 0.0;
+        skiwjk[jj][ii] = 0.0;
+        wikwjk[jj][ii] = 0.0;
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
+          sikskj[jj][ii] += xstrai[kk][ii]*xstrai[jj][kk];
+          wikskj[jj][ii] += xrotac[kk][ii]*xstrai[jj][kk];
+          skiwjk[jj][ii] += xstrai[ii][kk]*xrotac[kk][jj];
+          wikwjk[jj][ii] += xrotac[kk][ii]*xrotac[kk][jj];
+        }
+      }
+    }
+
+    const cs_real_t xss = xttke*sqrt(0.5*sijsij);
+    const cs_real_t xcmu = d2s3/(3.9 + xss);
+
+    /* Evaluating "constants". */
+    const cs_real_t xqc1
+      = cs_turb_cnl1/((cs_turb_cnl4+cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
+    const cs_real_t xqc2
+      = cs_turb_cnl2/((cs_turb_cnl4+cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
+    const cs_real_t xqc3
+      = cs_turb_cnl3/((cs_turb_cnl4+cs_turb_cnl5*cs_math_pow3(xss))*xcmu);
+
+    for (cs_lnum_t ii = 0; ii < 3; ii++) {
+      for (cs_lnum_t jj = 0; jj < 3; jj++) {
+        xrij[jj][ii] =   xqc1*xvisct*xttke*sikskj[jj][ii]
+                       + xqc2*xvisct*xttke*(wikskj[jj][ii]+skiwjk[jj][ii])
+                       + xqc3*xvisct*xttke*wikwjk[jj][ii];
+      }
+    }
+
+    rij[c_id][0] = xrij[0][0];
+    rij[c_id][1] = xrij[1][1];
+    rij[c_id][2] = xrij[2][2];
+    rij[c_id][3] = xrij[1][0];
+    rij[c_id][4] = xrij[2][1];
+    rij[c_id][5] = xrij[2][0];
+  }
+
+  /* Free memory */
+  BFT_FREE(gradv);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -3435,11 +3435,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Solving the equation on alpha in the framwork of the Rij-EBRSM model.
-    !>        Also called for alpha of scalars for EB-DFM.
+    ! Interface to C function solving the quadratic k-epsilon model.
 
-    !> \param[in]     f_id          field id of alpha variable
-    !> \param[in]     c_durbin_l    constant for the Durbin length
+    subroutine cs_turbulence_ke_q(rij) &
+      bind(C, name='cs_turbulence_ke_q')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(6,*), intent(out) :: rij
+    end subroutine cs_turbulence_ke_q
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function solving the equation on alpha for Rij-EBRSM.
 
     subroutine cs_turbulence_rij_alpha(f_id, c_durbin_l ) &
       bind(C, name='cs_turbulence_rij_alpha')
