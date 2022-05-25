@@ -2773,8 +2773,7 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *c_values,
        * arbitrary direction chosen for this face */
 
       for (short int f = 0; f < cm->n_fc; f++)
-        if (cm->f_sgn[f] > 0)
-          diff_flux[cm->f_ids[f]] = flx[f];
+        diff_flux[cm->f_ids[f]] = flx[f];
 
     } /* Loop on cells */
 
