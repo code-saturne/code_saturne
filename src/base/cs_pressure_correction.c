@@ -3140,15 +3140,18 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain)
   cs_equation_t *eq = prcdo->pressure_incr;
   cs_equation_param_t* eqp = cs_equation_get_param(eq);
 
-  /* Allocate useful array
+  /* Allocate useful arrays
      --------------------- */
 
-  cs_cdo_quantities_t *quant = domain->cdo_quantities;
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  BFT_MALLOC(prcdo->div_st, quant->n_cells, cs_real_t);
-  BFT_MALLOC(prcdo->inner_potential_flux, quant->n_i_faces, cs_real_t);
-  BFT_MALLOC(prcdo->bdy_potential_flux, quant->n_b_faces, cs_real_t);
-  BFT_MALLOC(prcdo->bdy_pressure_incr, quant->n_b_faces, cs_real_t);
+  BFT_MALLOC(prcdo->div_st, n_cells_ext, cs_real_t);
+  BFT_MALLOC(prcdo->inner_potential_flux, n_i_faces, cs_real_t);
+  BFT_MALLOC(prcdo->bdy_potential_flux, n_b_faces, cs_real_t);
+  BFT_MALLOC(prcdo->bdy_pressure_incr, n_b_faces, cs_real_t);
 
   /* Affect source term for the equation
      ----------------------------------- */
