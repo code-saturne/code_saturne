@@ -17,7 +17,11 @@
 ### Select the batch system type and job template.
 # batch =
 
-### Define the command used for job submission
+### Define the local help file used by the GUI for the batch system
+### (text or HTML).
+# batch_help =
+
+### Define the command used for job submission.
 ### (if batch system unknown or a local command needs to be used instead)
 # submit_command =
 

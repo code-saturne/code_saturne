@@ -1,0 +1,19 @@
+# Batch options for Sun Grid Engine (Oracle Grid Engine, Open Grid Engine, ...)
+# =================================
+#
+#$ -pe mpi* 4
+#$ -l h_rt=1:00:00
+#
+#$ -j y
+#$ -N nameandcase
+#
+# -pe         : program_environment  min_slots[-max_slots]
+# -l h_rt=    : wall clock time (hh:mm:ss)
+# -q queue    : queue name
+# -N name     : job name
+# -o dir/file : redirect standard output
+# -e dir/file : redirect standard error
+# -j y        : to combine standard output and error
+#
+# Note that the program environment defined by the -pe option is site-specific;
+# wildcards are allowed. "qconf -spl" will return a list of valid pe's.

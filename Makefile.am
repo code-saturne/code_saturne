@@ -243,7 +243,13 @@ extras/batch/batch.LSF \
 extras/batch/batch.OAR \
 extras/batch/batch.PBS \
 extras/batch/batch.SGE \
-extras/batch/batch.SLURM
+extras/batch/batch.SLURM \
+extras/batch/batch_help.CCC \
+extras/batch/batch_help.LSF \
+extras/batch/batch_help.OAR \
+extras/batch/batch_help.PBS \
+extras/batch/batch_help.SGE \
+extras/batch/batch_help.SLURM
 
 # Install man pages
 

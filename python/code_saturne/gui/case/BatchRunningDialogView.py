@@ -50,7 +50,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.base import cs_case
 from code_saturne.base import cs_exec_environment
-from code_saturne.base import cs_submit
+from code_saturne.base import cs_batch, cs_submit
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -370,6 +370,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         self.mdl = ScriptRunningModel(self.case)
         self.jmdl = self.case['job_model']
+        self.batch_help = None
 
         if self.jmdl is None:
             if self.case['data_path']:
@@ -711,6 +712,16 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
     @pyqtSlot()
     def switchBox(self):
         if not self.pushButtonAdvparam.isChecked():
+
+            if self.batch_help == None:
+                self.batch_help = cs_batch.get_help_text(self.case['package'])
+                self.textBrowserBatchHelp.setOpenExternalLinks(True)
+                # Set fixed font for plain text (ignored by HTML)
+                self.textBrowserBatchHelp.setFontFamily("monospace")
+                # Set text (autodetects text/html; Markdown would need to call
+                # self.textBrowserBatchHelp.setMarkdown().
+                self.textBrowserBatchHelp.setText(self.batch_help)
+
             self.textEditJob.clear()
 
             self.jmdl.batch.update_lines(self.job_header_lines)

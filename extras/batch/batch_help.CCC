@@ -1,0 +1,17 @@
+# Batch options for CEA's CCRT configuration
+# ======================
+#
+#MSUB -n 2
+#MSUB -T 300
+#MSUB -o job_%J.out.log
+#MSUB -e job_%J.err.log
+#MSUB -r nameandcase
+#
+#  -n : number of processors
+#  -N : number of nodes
+#  -T : walltime in seconds
+#  -q : queue (run "class" for list of queues)
+#  -o : output file name
+#  -e : error file name
+#  -r : job name
+

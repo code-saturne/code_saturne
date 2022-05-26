@@ -112,6 +112,50 @@ def generate_header(batch_template=None, job_name=None, package=None):
 
     return lines
 
+#-------------------------------------------------------------------------------
+
+def get_help_text(package=None):
+    """
+    Read batch help text based on configuration
+    """
+
+    text = None
+    help_path = None
+
+    if not package:
+        from code_saturne.base import cs_package
+        package = cs_package.package()
+
+    config = configparser.ConfigParser()
+    config.read(package.get_configfiles())
+    if config.has_option('install', 'batch_help'):
+        help_path = config.get('install', 'batch_help')
+        if not os.path.isabs(help_path):
+            i = help_path.rfind(".")
+            if i > -1:
+                help_path = 'batch_help.' + help_path
+            help_path = os.path.join(package.get_batchdir(),
+                                     help_path)
+
+    elif config.has_option('install', 'batch'):
+        batch_type = os.path.basename(config.get('install', 'batch'))
+        i = batch_type.rfind(".")
+        if i > -1:
+            batch_type = batch_type[i+1:]
+        help_path = os.path.join(package.get_batchdir(),
+                                 'batch_help.' + batch_type)
+
+    if help_path != None:
+        try:
+            fdt = open(help_path, 'r')
+            text = fdt.read()
+            fdt.close()
+        except Exception:
+            print('help file: ' + help_path + ' not present or readable.')
+            pass
+
+    return text
+
 #===============================================================================
 # Class used to manage batch directives
 #===============================================================================
@@ -156,6 +200,7 @@ class batch:
 
         if install_config:
             self.rm_template = install_config['batch']
+            self.rm_help = install_config['batch_help']
 
         elif package:
             config = configparser.ConfigParser()
@@ -163,15 +208,11 @@ class batch:
 
             if config.has_option('install', 'batch'):
                 self.rm_template = config.get('install', 'batch')
-                if os.path.isabs(self.rm_template):
-                    i = self.rm_template.rfind(".")
-                    if i > -1:
-                        self.rm_template = self.rm_template[i+1:]
-
             if config.has_option('install', 'submit_command'):
                 submit_command = config.get('install', 'submit_command')
 
         if self.rm_template:
+
             if self.rm_template[0:5] == 'SLURM':
                 self.rm_type = 'SLURM'
                 self.submit_command = 'sbatch'
@@ -196,7 +237,11 @@ class batch:
                 self.rm_type = 'SGE'
                 self.submit_command = 'qsub'
             else:
-                self.rm_type = os.path.basename(rm_template)
+                i = self.rm_template.rfind(".")
+                if i > -1:
+                    self.rm_type = self.rm_template[i+1:]
+                else:
+                    self.rm_type = os.path.basename(rm_template)
 
         if submit_command:
             self.submit_command = submit_command
