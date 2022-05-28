@@ -127,6 +127,11 @@ _warp_reduce_sum(volatile T  *stmp,
 /*----------------------------------------------------------------------------
  * Compute Vx <- Vx - (A-diag).Rk and residue for Jacobi solver.
  *
+ * This call must be followed by
+ * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ *  (grid_size, sum_block, _r_reduce);
+ * Also, block_size must be a power of 2.
+ *
  * parameters:
  *   n_rows    <-- number of rows
  *   ad_inv    <-- inverse of diagonal
@@ -193,6 +198,11 @@ _fw_and_bw_lu33_cuda(const cs_real_t  mat[],
 /*----------------------------------------------------------------------------
  * Compute Vx <- Vx - (A-diag).Rk and residue for Jacobi with
  * 3x3 block-diagonal matrix.
+ *
+ * This call must be followed by
+ * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ *  (grid_size, sum_block, _r_reduce);
+ * Also, block_size must be a power of 2.
  *
  * parameters:
  *   n_b_rows  <-- number of block rows
@@ -340,6 +350,7 @@ _block_jacobi_compute_vx_and_residue(cs_lnum_t          n_b_rows,
  * This call must be followed by
  * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
  *  (grid_size, sum_block, _r_reduce);
+ * Also, block_size must be a power of 2.
  *
  * parameters:
  *   n         <-- number of elements
@@ -350,10 +361,10 @@ _block_jacobi_compute_vx_and_residue(cs_lnum_t          n_b_rows,
 
 template <size_t block_size>
 __global__ static void
-_ymx_doty(cs_lnum_t          n,
-          const cs_real_t   *restrict x,
-          cs_real_t         *restrict y,
-          double            *sum_block)
+_ymx_dot_yy(cs_lnum_t          n,
+            const cs_real_t   *restrict x,
+            cs_real_t         *restrict y,
+            double            *sum_block)
 {
   __shared__ double sdata[block_size];
 
@@ -365,7 +376,7 @@ _ymx_doty(cs_lnum_t          n,
 
   while (ii < n) {
     y[ii] = y[ii] - x[ii];
-    double r = y[ii] * y[ii];
+    double r = y[ii];
     sdata[tid] += r*r;
 
     ii += grid_size;
@@ -375,7 +386,7 @@ _ymx_doty(cs_lnum_t          n,
 }
 
 /*----------------------------------------------------------------------------
- * Compute y <- y - alpha.x and stage 1 of resulting y.y.
+ * Compute y <- -alpha.x + y and stage 1 of resulting y.y.
  *
  * This call must be followed by
  * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
@@ -390,11 +401,55 @@ _ymx_doty(cs_lnum_t          n,
 
 template <size_t block_size>
 __global__ static void
-_ymax_doty(cs_lnum_t          n,
-           const cs_real_t   *restrict alpha,
-           const cs_real_t   *restrict x,
-           cs_real_t         *restrict y,
-           double            *sum_block)
+_smaxpy_dot_yy(cs_lnum_t          n,
+               const cs_real_t   *restrict alpha,
+               const cs_real_t   *restrict x,
+               cs_real_t         *restrict y,
+               double            *sum_block)
+{
+  __shared__ double sdata[block_size];
+
+  cs_real_t _alpha = - *alpha;
+
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+  size_t tid = threadIdx.x;
+  size_t grid_size = blockDim.x*gridDim.x;
+
+  sdata[tid] = 0.0;
+
+  while (ii < n) {
+    cs_real_t r = _alpha*x[ii] + y[ii];
+    y[ii] = r;
+    sdata[tid] += r*r;
+
+    ii += grid_size;
+  }
+
+  cs_blas_cuda_block_reduce_sum<block_size>(sdata, tid, sum_block);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute y <- alpha.y and stage 1 of following x.y dot product.
+ *
+ * This call must be followed by
+ * cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0>>>
+ *  (grid_size, sum_block, _r_reduce);
+ *
+ * parameters:
+ *   n         <-- number of elements
+ *   alpha     <-- scaling factor
+ *   x         <-- vector of elements
+ *   y         <-> vector of elements
+ *   sum_block --> contribution to residue
+ *----------------------------------------------------------------------------*/
+
+template <size_t block_size>
+__global__ static void
+_y_scale_dot_xy(cs_lnum_t         n,
+                const cs_real_t  *restrict alpha,
+                const cs_real_t  *restrict x,
+                cs_real_t        *restrict y,
+                double           *sum_block)
 {
   __shared__ double sdata[block_size];
 
@@ -407,9 +462,9 @@ _ymax_doty(cs_lnum_t          n,
   sdata[tid] = 0.0;
 
   while (ii < n) {
-    y[ii] = y[ii] - _alpha*x[ii];
-    double r = y[ii] * y[ii];
-    sdata[tid] += r*r;
+    cs_real_t r = _alpha * y[ii];
+    y[ii] = r;
+    sdata[tid] += x[ii]*r;
 
     ii += grid_size;
   }
@@ -418,32 +473,72 @@ _ymax_doty(cs_lnum_t          n,
 }
 
 /*----------------------------------------------------------------------------
- * Invert Gamma for GCR algorithm.
+ * Invert Gamma for GCR algorithm, for multiple restart directions.
+ *
+ * This is a basically small, serial operation, done only on one thread.
  *
  * parameters:
- *   gkj     <-- Gamma
- *   gkj_inv <-> Inverse of Gamma (initialized to zero)
+ *   n_c_iter <-- number of restart iterations
+ *   n_gkj    <-- number of gkj terms (diagonal matrix)
+ *   mgkj     <-- - Gamma
+ *   gkj_inv  <-> Inverse of Gamma
  *----------------------------------------------------------------------------*/
 
 __global__ static void
-_gcr_gkj_inv(const cs_real_t  *restrict gkj,
+_gcr_gkj_inv(int               n_c_iter,
+             int               n_gkj,
+             const cs_real_t  *restrict mgkj,
              cs_real_t        *restrict gkj_inv)
 {
-  cs_lnum_t kk = threadIdx.x;
+  int kk = blockIdx.x*blockDim.x + threadIdx.x;
+  size_t grid_size = blockDim.x*gridDim.x;
 
-  cs_real_t alpha = sqrt(gkj[(kk + 1) * kk / 2 + kk]);
-
-  for(cs_lnum_t ii = 0; ii < kk; ii++) {
-    for (cs_lnum_t jj = 0; jj < kk; jj++)
-      gkj_inv[(kk + 1) * kk / 2 + ii]
-          +=   ((ii <= jj) ? gkj_inv[(jj + 1) * jj / 2 + ii] : 0.0)
-           * gkj[(kk + 1) * kk / 2  + jj];
+  while (kk < n_gkj) {
+    gkj_inv[kk] = 0;
+    kk += grid_size;
   }
 
-  for (cs_lnum_t jj = 0; jj < kk; jj++)
-    gkj_inv[(kk + 1) * kk / 2 + jj] /= - gkj[(kk + 1) * kk / 2 + kk];
+  kk = blockIdx.x*blockDim.x + threadIdx.x;
+  if (kk != 0)
+    return;
 
-  gkj_inv[(kk + 1) * kk / 2 + kk] = 1.0 / alpha;
+  for (int kk = 0; kk < (int)n_c_iter; kk++) {
+    for (int ii = 0; ii < kk; ii++) {
+      for (int jj = 0; jj < kk; jj++)
+        gkj_inv[(kk + 1) * kk / 2 + ii]
+          -=   ((ii <= jj) ? gkj_inv[(jj + 1) * jj / 2 + ii] : 0.0)
+             * mgkj[(kk + 1) * kk / 2  + jj];
+    }
+
+    for (int jj = 0; jj < kk; jj++)
+      gkj_inv[(kk + 1) * kk / 2 + jj] /= mgkj[(kk + 1) * kk / 2 + kk];
+
+    gkj_inv[(kk + 1) * kk / 2 + kk] = 1.0 / -mgkj[(kk + 1) * kk / 2 + kk];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Invert Gamma for GCR algorithm, for single restart direction
+ *
+ * This is a basically small, serial operation, done only on one thread.
+ *
+ * parameters:
+ *   gkj      <-- Gamma
+ *   gkj_inv  <-> Inverse of Gamma
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_gcr_gkj_inv_1(const cs_real_t  *restrict gkj,
+               cs_real_t        *restrict gkj_inv)
+{
+  int ii = blockIdx.x*blockDim.x + threadIdx.x;
+  if (ii != 0)
+    return;
+
+  if (abs(gkj[0]) <= 0)
+    gkj_inv[0] = 1.0;
+  else
+    gkj_inv[0] = -1.0 / gkj[0];
 }
 
 /*----------------------------------------------------------------------------
@@ -538,7 +633,13 @@ _dot_product(const cs_sles_it_t  *c,
              const cs_real_t     *x,
              const cs_real_t     *y)
 {
+  /* Alternatives (need to set option for this) */
+
+#if 1
   double s = cs_blas_cuda_dot(c->setup_data->n_rows, x, y);
+#else
+  double s = cs_blas_cublas_dot(c->setup_data->n_rows, x, y);
+#endif
 
 #if defined(HAVE_MPI)
 
@@ -1009,7 +1110,6 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   /* In case of the standard GCR, n_k_per_restart --> Inf,
    * or stops until convergence*/
 
-  unsigned n_iter = 0;
   const unsigned n_k_per_restart = c->restart_interval;
   size_t wa_size;
   unsigned n_restart = 0;
@@ -1024,7 +1124,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == NULL || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      CS_MALLOC_HD(_aux_vectors, wa_size, cs_real_t, CS_ALLOC_DEVICE);
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_DEVICE);
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
 
@@ -1050,7 +1150,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   CS_MALLOC_HD(_aux_arrays, aux_arrays_size, double,
                CS_ALLOC_HOST_DEVICE_SHARED);
 
-  double *restrict gkj = _aux_arrays;
+  double *restrict mgkj = _aux_arrays;
   double *restrict alpha = _aux_arrays + n_gkj;
   double *restrict scale = alpha + n_k_per_restart+1;
   double *restrict res = scale + 1;
@@ -1059,7 +1159,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   CS_MALLOC_HD(gkj_inv, n_gkj, cs_real_t, CS_ALLOC_DEVICE);
 
   const unsigned int blocksize = CS_BLOCKSIZE;
-  const unsigned int blocksize_rsb = 640; /* cs_blas_cuda_reduce_single_block */
+  const unsigned int blocksize_rsb = 512; /* cs_blas_cuda_reduce_single_block */
 
   cs_cuda_grid_size(n_rows, blocksize);
 
@@ -1081,13 +1181,14 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     /* Initialize iterative calculation */
     /*----------------------------------*/
 
-    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+    cs_matrix_vector_multiply_d(a, vx, rk);  /* rk = A.x0 */
 
-    _ymx_doty<blocksize><<<gridsize_blas1, blocksize, 0, stream>>>
+    _ymx_dot_yy<blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
       (n_rows, rhs, rk, sum_block);
+
     cs_blas_cuda_reduce_single_block
       <blocksize_rsb><<<1, blocksize_rsb, 0, stream>>>
-      (gridsize, sum_block, res);
+      (gridsize_blas1, sum_block, res);
 
     _sync_reduction_sum(c, stream, 1, res);
 
@@ -1100,7 +1201,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     /* Current Iteration on k */
     /* ---------------------- */
 
-    while (cvg == CS_SLES_ITERATING && n_iter < n_k_per_restart) {
+    while (cvg == CS_SLES_ITERATING && n_c_iter < n_k_per_restart) {
 
       /* Preconditionning */
 
@@ -1111,7 +1212,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
 
       c->setup_data->pc_apply(c->setup_data->pc_context, rk, zk_n);
 
-      cs_matrix_vector_multiply(a, zk_n, ck_n);
+      cs_matrix_vector_multiply_d(a, zk_n, ck_n);
 
       /* Compute the ck_n direction;
 
@@ -1134,26 +1235,32 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
         cs_real_t *ck_j = ck + jj * wa_size;
 
         int ii_jn = (n_c_iter + 1) * n_c_iter / 2 + jj;
-        gkj[ii_jn] = - _dot_product(c, stream, ck_j, ck_n);
+        mgkj[ii_jn] = - _dot_product(c, stream, ck_j, ck_n);
 
         /* changed sign directly above to allow use of axpy */
 
-        cs_blas_cuda_axpy(n_rows, &gkj[ii_jn], ck_j, ck_n);
+        cs_blas_cuda_axpy(n_rows, &mgkj[ii_jn], ck_j, ck_n);
       }
 
       const int iter_shift = (n_c_iter+1) * n_c_iter / 2 + n_c_iter;
-      gkj[iter_shift] = sqrt(_dot_product(c, ck_n, ck_n));
+      mgkj[iter_shift] = - sqrt(_dot_product(c, stream, ck_n, ck_n));
 
-      if (abs(gkj[iter_shift]) > 0) {
-        *scale = 1. / (- gkj[iter_shift]);
+      if (abs(mgkj[iter_shift]) > 0) {
+        *scale = 1. / (- mgkj[iter_shift]);
 
-        cs_blas_cuda_scal(n_rows, scale, ck_n);
-        alpha[n_c_iter] = _dot_product(c, stream, ck_n, rk);  /* - alpha */
+        _y_scale_dot_xy
+          <blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
+          (n_rows, scale, rk, ck_n, sum_block);
+        cs_blas_cuda_reduce_single_block
+          <blocksize_rsb><<<1, blocksize_rsb, 0, stream>>>
+          (gridsize, sum_block, &alpha[n_c_iter]);
+        _sync_reduction_sum(c, stream, 1, &alpha[n_c_iter]);
+
       }
       else
         alpha[n_c_iter] = 0.;
 
-      _ymax_doty<blocksize><<<gridsize_blas1, blocksize, 0, stream>>>
+      _smaxpy_dot_yy<blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
         (n_rows, &alpha[n_c_iter], ck_n, rk, sum_block);
       cs_blas_cuda_reduce_single_block
         <blocksize_rsb><<<1, blocksize_rsb, 0, stream>>>
@@ -1166,19 +1273,29 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
       n_c_iter += 1;
 
       /* Convergence test of current iteration */
-      cvg = cs_sles_it_convergence_test(c, (n_restart * n_k_per_restart) + n_c_iter,
-                                        residue, convergence);
+      cvg = cs_sles_it_convergence_test(c,
+                                        (n_restart*n_k_per_restart) + n_c_iter,
+                                        residue,
+                                        convergence);
 
       if (cvg != CS_SLES_ITERATING)
         break;
 
     } /* Needs iterating or k < n_restart */
 
-    /* Inversion of Gamma */
+    /* Inversion of Gamma;
 
-    cudaMemsetAsync(gkj_inv, 0, n_gkj * sizeof(cs_real_t), stream);
+     * This is a basically small, serial operation, done only on one thread.
+     * we should check whether it is more efficient to run this on the
+     * GPU (with slower code but avoiding memory transfer latency)
+     * or on host CPU. */
 
-    _gcr_gkj_inv<<<1, n_iter, 0, stream>>>(gkj, gkj_inv);
+    if (n_c_iter == 1)
+      _gcr_gkj_inv_1<<<1, CS_CUDA_WARP_SIZE, 0, stream>>>
+        (mgkj, gkj_inv);
+    else
+      _gcr_gkj_inv<<<1, CS_CUDA_WARP_SIZE, 0, stream>>>
+        ((int)n_c_iter, n_gkj, mgkj, gkj_inv);
 
     /* Compute the solution */
     _gcr_update_vx<<<gridsize, blocksize, 0, stream>>>

@@ -4137,6 +4137,8 @@ cs_sles_it_setup(void               *context,
     cs_matrix_log_info(a, verbosity);
   }
 
+  bool block_nn_inverse = false;
+
   if (   c->type == CS_SLES_JACOBI
       || (   c->type >= CS_SLES_P_GAUSS_SEIDEL
           && c->type <= CS_SLES_P_SYM_GAUSS_SEIDEL)) {
@@ -4144,10 +4146,8 @@ cs_sles_it_setup(void               *context,
     if (cs_matrix_get_type(a) != CS_MATRIX_MSR) {
       c->type = CS_SLES_JACOBI;
     }
-    cs_sles_it_setup_priv(c, name, a, verbosity, diag_block_size, true);
+    block_nn_inverse = true;
   }
-  else
-    cs_sles_it_setup_priv(c, name, a, verbosity, diag_block_size, false);
 
   switch (c->type) {
 
@@ -4160,7 +4160,7 @@ cs_sles_it_setup(void               *context,
     {
       bool single_reduce = false;
 #if defined(HAVE_MPI)
-      cs_gnum_t n_m_rows = c->setup_data->n_rows;
+      cs_gnum_t n_m_rows = cs_matrix_get_n_rows(a) * diag_block_size;
       if (c->comm != MPI_COMM_NULL) {
         int size;
         cs_gnum_t _n_m_rows;
@@ -4228,6 +4228,13 @@ cs_sles_it_setup(void               *context,
   case CS_SLES_GCR:
     assert(c->restart_interval > 1);
     c->solve = _gcr;
+#if defined(HAVE_CUDA)
+    if (on_device) {
+      c->on_device = true;
+      c->solve = cs_sles_it_cuda_gcr;
+    }
+#endif
+
     break;
 
   case CS_SLES_GMRES:
@@ -4254,6 +4261,11 @@ cs_sles_it_setup(void               *context,
        name, (int)c->type);
     break;
   }
+
+  /* Setup preconditioner and/or auxiliary data */
+
+  cs_sles_it_setup_priv(c, name, a, verbosity, diag_block_size,
+                        block_nn_inverse);
 
   /* Now finish */
 
