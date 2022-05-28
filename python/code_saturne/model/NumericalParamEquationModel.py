@@ -574,8 +574,9 @@ class NumericalParamEquationModel(Model):
                               'conjugate_gradient',
                               'flexible_conjugate_gradient',
                               'inexact_conjugate_gradient', 'jacobi',
-                              'bi_cgstab', 'bi_cgstab2', 'gmres', 'automatic',
-                              'gauss_seidel', 'symmetric_gauss_seidel', 'PCR3'))
+                              'bi_cgstab', 'bi_cgstab2', 'gmres', 'gcr',
+                              'PCR3', 'automatic',
+                              'gauss_seidel', 'symmetric_gauss_seidel'))
         node = self._getSolverNameNode(name)
 
         default = self._defaultValues()['solver_choice']

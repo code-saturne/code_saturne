@@ -127,6 +127,7 @@ class SolverChoiceDelegate(QItemDelegate):
         editor.addItem("BiCGstab")
         editor.addItem("BiCGstab2")
         editor.addItem("GMRES")
+        editor.addItem("GCR")
         editor.addItem("Gauss Seidel")
         editor.addItem("Symmetric Gauss Seidel")
         editor.addItem("conjugate residual")
@@ -146,11 +147,12 @@ class SolverChoiceDelegate(QItemDelegate):
                 "bi_cgstab": 5,
                 "bi_cgstab2": 6,
                 "gmres": 7,
-                "gauss_seidel": 8,
-                "symmetric_gauss_seidel": 9,
-                "PCR3": 10,
-                "multigrid": 11,
-                "multigrid_k_cycle": 12}
+                "gcr": 8,
+                "gauss_seidel": 9,
+                "symmetric_gauss_seidel": 10,
+                "PCR3": 11,
+                "multigrid": 12,
+                "multigrid_k_cycle": 13}
         row = index.row()
         string = index.model().dataSolver[row]['iresol']
         idx = dico[string]
@@ -528,6 +530,7 @@ class StandardItemModelSolver(QStandardItemModel):
                        "BiCGstab"               : 'bi_cgstab',
                        "BiCGstab2"              : 'bi_cgstab2',
                        "GMRES"                  : 'gmres',
+                       "GCR"                    : 'gcr',
                        "Automatic"              : "automatic",
                        "Gauss Seidel"           : "gauss_seidel",
                        "Symmetric Gauss Seidel" : "symmetric_gauss_seidel",
@@ -544,6 +547,7 @@ class StandardItemModelSolver(QStandardItemModel):
                        "bi_cgstab"              : 'BiCGstab',
                        "bi_cgstab2"             : 'BiCGstab2',
                        'gmres'                  : "GMRES",
+                       'gcr'                    : "GCR",
                        "automatic"              : "Automatic",
                        "gauss_seidel"           : "Gauss Seidel",
                        "symmetric_gauss_seidel" : "Symmetric Gauss Seidel",

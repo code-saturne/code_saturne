@@ -3548,6 +3548,8 @@ cs_gui_linear_solvers(void)
         sles_it_type = CS_SLES_BICGSTAB2;
       else if (cs_gui_strcmp(algo_choice, "gmres"))
         sles_it_type = CS_SLES_GMRES;
+      else if (cs_gui_strcmp(algo_choice, "gcr"))
+        sles_it_type = CS_SLES_GCR;
       else if (cs_gui_strcmp(algo_choice, "gauss_seidel"))
         sles_it_type = CS_SLES_P_GAUSS_SEIDEL;
       else if (cs_gui_strcmp(algo_choice, "symmetric_gauss_seidel"))

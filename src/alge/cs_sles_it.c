@@ -2639,9 +2639,10 @@ _gcr(cs_sles_it_t              *c,
 
       if (fabs(gkj[iter_shift]) > 0) {
 
+        cs_real_t scale = 1. / gkj[iter_shift];
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-          ck_n[ii] /= gkj[iter_shift];
+          ck_n[ii] *= scale;
 
         alpha[n_c_iter] = _dot_product(c, ck_n, rk);
 
@@ -2681,11 +2682,11 @@ _gcr(cs_sles_it_t              *c,
         gkj_inv[jj] = 0.0;
 
       for (cs_lnum_t kk = 0; kk < (int)n_c_iter; kk++) {
-        for(cs_lnum_t ii = 0; ii < kk; ii++) {
+        for (cs_lnum_t ii = 0; ii < kk; ii++) {
           for (cs_lnum_t jj = 0; jj < kk; jj++)
             gkj_inv[(kk + 1) * kk / 2 + ii]
               +=   ((ii <= jj) ? gkj_inv[(jj + 1) * jj / 2 + ii] : 0.0)
-              * gkj[(kk + 1) * kk / 2  + jj];
+                 * gkj[(kk + 1) * kk / 2  + jj];
         }
 
         for (cs_lnum_t jj = 0; jj < kk; jj++)
@@ -2703,7 +2704,7 @@ _gcr(cs_sles_it_t              *c,
       cs_lnum_t s_id, e_id;
       cs_parall_thread_range(n_rows, sizeof(cs_real_t), &s_id, &e_id);
 
-      for(cs_lnum_t kk = 0; kk < (int)n_c_iter; kk++) {
+      for (cs_lnum_t kk = 0; kk < (int)n_c_iter; kk++) {
         for(cs_lnum_t jj = 0; jj <= kk; jj++) {
           const cs_real_t *zk_j = zk + jj*wa_size;
           for (cs_lnum_t ii = s_id; ii < e_id; ii++)
