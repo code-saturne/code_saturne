@@ -164,6 +164,42 @@ _dot_xy_stage_1_of_2(cs_lnum_t    n,
   cs_blas_cuda_block_reduce_sum<blockSize>(stmp, tid, b_res);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute dot product x.x, summing result over all threads of a block.
+ *
+ * blockSize must be a power of 2.
+ *
+ * \param[in]   n      array size
+ * \param[in]   x      x vector
+ * \param[in]   y      y vector
+ * \param[out]  b_res  result of s = x.x
+ */
+/*----------------------------------------------------------------------------*/
+
+template <size_t blockSize, typename T>
+__global__ static void
+_dot_xx_stage_1_of_2(cs_lnum_t    n,
+                     const T     *x,
+                     double      *b_res)
+{
+  __shared__ double stmp[blockSize];
+
+  cs_lnum_t tid = threadIdx.x;
+  size_t grid_size = blockDim.x*gridDim.x;
+
+  stmp[tid] = 0;
+  for (int i = blockIdx.x*(blockDim.x) + tid;
+       i < n;
+       i += grid_size) {
+    stmp[tid] += static_cast<double>(x[i] * x[i]);
+  }
+
+  // Output: b_res for this block
+
+  cs_blas_cuda_block_reduce_sum<blockSize>(stmp, tid, b_res);
+}
+
 /*----------------------------------------------------------------------------
  * Compute y <- alpha.x + y (device kernel)
  *
@@ -391,8 +427,10 @@ cs_blas_cuda_asum(cs_lnum_t        n,
   cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0, _stream>>>
     (grid_size, _r_grid, _r_reduce);
 
-  if (_stream == 0)
-    cudaStreamSynchronize(0);
+  /* Need to synchronize stream in all cases so as to
+     have up-to-date value in returned _r_reduce[0] */
+
+  cudaStreamSynchronize(_stream);
 
   return _r_reduce[0];
 }
@@ -417,13 +455,19 @@ cs_blas_cuda_dot(cs_lnum_t        n,
   const unsigned int block_size = 256;
   unsigned int grid_size = _grid_size(n, block_size);
 
-  _dot_xy_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
-    (n, x, y, _r_grid);
+  if (x != y)
+    _dot_xy_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
+      (n, x, y, _r_grid);
+  else
+    _dot_xx_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
+      (n, x, _r_grid);
   cs_blas_cuda_reduce_single_block<block_size><<<1, block_size, 0, _stream>>>
     (grid_size, _r_grid, _r_reduce);
 
-  if (_stream == 0)
-    cudaStreamSynchronize(0);
+  /* Need to synchronize stream in all cases so as to
+     have up-to-date value in returned _r_reduce[0] */
+
+  cudaStreamSynchronize(_stream);
 
   return _r_reduce[0];
 }
