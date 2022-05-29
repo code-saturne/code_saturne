@@ -259,6 +259,7 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
       cs_sles_pc_setup(c->pc,
                        name,
                        a,
+                       c->on_device,
                        verbosity);
 
     sd->pc_context = cs_sles_pc_get_context(c->pc);

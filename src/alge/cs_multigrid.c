@@ -1182,6 +1182,7 @@ _multigrid_pc_get_type(const void  *context,
  *   context   <-> pointer to preconditioner context
  *   name      <-- pointer to name of associated linear system
  *   a         <-- matrix
+ *   accel     <-- use accelerator version ?
  *   verbosity <-- associated verbosity
  *----------------------------------------------------------------------------*/
 
@@ -1189,8 +1190,11 @@ static void
 _multigrid_pc_setup(void               *context,
                     const char         *name,
                     const cs_matrix_t  *a,
+                    bool                accel,
                     int                 verbosity)
 {
+  CS_UNUSED(accel);
+
   cs_multigrid_setup(context,  name, a, verbosity);
 
   cs_multigrid_t  *mg = context;
@@ -1207,6 +1211,7 @@ _multigrid_pc_setup(void               *context,
  *   context   <-> pointer to preconditioner context
  *   name      <-- pointer to name of associated linear system
  *   a         <-- matrix
+ *   accel     <-- use accelerator version ?
  *   verbosity <-- associated verbosity
  *----------------------------------------------------------------------------*/
 
@@ -1214,8 +1219,11 @@ static void
 _multigrid_pc_setup_k_sub(void               *context,
                           const char         *name,
                           const cs_matrix_t  *a,
+                          bool                accel,
                           int                 verbosity)
 {
+  CS_UNUSED(accel);
+
   cs_multigrid_t  *mg = context;
   cs_multigrid_t  *parent = mg->p_mg;
   cs_multigrid_setup_data_t *p_mgd = parent->setup_data;

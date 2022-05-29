@@ -93,6 +93,7 @@ typedef const char *
  *   context   <-> pointer to preconditioner context
  *   name      <-- pointer to name of associated linear system
  *   a         <-- matrix
+ *   accel     <-- use accelerator version ?
  *   verbosity <-- associated verbosity
  *----------------------------------------------------------------------------*/
 
@@ -100,6 +101,7 @@ typedef void
 (cs_sles_pc_setup_t) (void               *context,
                       const char         *name,
                       const cs_matrix_t  *a,
+                      bool                accel,
                       int                 verbosity);
 
 /*----------------------------------------------------------------------------
@@ -410,6 +412,7 @@ cs_sles_pc_set_tolerance(cs_sles_pc_t  *pc,
  * \param[in, out]  pc         pointer to preconditioner object
  * \param[in]       name       linear system name
  * \param[in]       a          matrix
+ * \param[in]       accel      use accelerator version ?
  * \param[in]       verbosity  verbosity level
  */
 /*----------------------------------------------------------------------------*/
@@ -418,6 +421,7 @@ void
 cs_sles_pc_setup(cs_sles_pc_t       *pc,
                  const char         *name,
                  const cs_matrix_t  *a,
+                 bool                accel,
                  int                 verbosity);
 
 /*----------------------------------------------------------------------------*/

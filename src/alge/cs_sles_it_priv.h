@@ -2,7 +2,11 @@
 #define __CS_SLES_IT_PRIV_H__
 
 /*============================================================================
- * Sparse Linear Equation Solvers: Iterative solvers
+ * Sparse Linear Equation Solvers: private elements.
+ *
+ * These elements are shared between iterative solvers and smoother
+ * both for host and device implementations, but are not accessible to
+ * calling code.
  *============================================================================*/
 
 /*

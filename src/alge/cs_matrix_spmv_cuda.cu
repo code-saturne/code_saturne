@@ -1048,6 +1048,20 @@ cs_matrix_spmv_cuda_set_stream(cudaStream_t  stream)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return stream used for CUDA-based SpMV operations.
+ *
+ * This function is callable only from CUDA code.
+ */
+/*----------------------------------------------------------------------------*/
+
+cudaStream_t
+cs_matrix_spmv_cuda_get_stream(void)
+{
+  return _stream;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Matrix.vector product y = A.x with CSR matrix, scalar CUDA version.
  *
  * \param[in]   matrix        pointer to matrix structure

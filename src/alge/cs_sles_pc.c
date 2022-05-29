@@ -47,28 +47,27 @@
 
 #include "bft_mem.h"
 #include "bft_error.h"
-#include "bft_printf.h"
 
 #include "cs_base.h"
 #include "cs_blas.h"
 #include "cs_field.h"
 #include "cs_log.h"
 #include "cs_halo.h"
-#include "cs_map.h"
 #include "cs_mesh.h"
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
 #include "cs_matrix_util.h"
-#include "cs_parall.h"
-#include "cs_post.h"
-#include "cs_timer.h"
-#include "cs_timer_stats.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_sles_pc.h"
+#include "cs_sles_pc_priv.h"
+
+#if defined(HAVE_CUDA)
+#include "cs_sles_pc_cuda.h"
+#endif
 
 /*----------------------------------------------------------------------------*/
 
@@ -79,7 +78,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_sles.c
+  \file cs_sles_pc.c
 
   \brief Sparse linear equation solver preconditioner driver and
   simple preconditioners.
@@ -275,26 +274,6 @@ struct _cs_sles_pc_t {
 
 };
 
-/* Structure for Jacobi or polynomial preconditioner */
-/*---------------------------------------------------*/
-
-typedef struct {
-
-  int                  poly_degree;       /* 0: Jacobi, > 0: polynomial */
-  cs_lnum_t            n_rows;            /* Number of associated rows */
-  cs_lnum_t            n_cols;            /* Number of associated columns */
-
-  cs_lnum_t            n_aux;             /* Size of auxiliary data */
-
-  const cs_matrix_t   *a;                 /* Pointer to associated matrix */
-  const cs_real_t     *ad_inv;            /* pointer to diagonal inverse */
-  cs_real_t           *_ad_inv;           /* private pointer to
-                                             diagonal inverse */
-
-  cs_real_t           *aux;               /* Auxiliary data */
-
-} cs_sles_pc_poly_t;
-
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -316,6 +295,10 @@ _sles_pc_poly_create(void)
   cs_sles_pc_poly_t *pc;
 
   BFT_MALLOC(pc, 1, cs_sles_pc_poly_t);
+
+#if defined(HAVE_ACCEL)
+  pc->accelerated = false;
+#endif
 
   pc->poly_degree = 0;
 
@@ -370,6 +353,7 @@ _sles_pc_poly_get_type(const void  *context,
  *   context   <-> pointer to preconditioner context
  *   name      <-- pointer to name of associated linear system
  *   a         <-- matrix
+ *   accel     <-- use accelerator version ?
  *   verbosity <-- associated verbosity
  *----------------------------------------------------------------------------*/
 
@@ -377,6 +361,7 @@ static void
 _sles_pc_poly_setup(void               *context,
                     const char         *name,
                     const cs_matrix_t  *a,
+                    bool                accel,
                     int                 verbosity)
 {
   CS_UNUSED(name);
@@ -384,8 +369,18 @@ _sles_pc_poly_setup(void               *context,
 
   cs_sles_pc_poly_t  *c = context;
 
+#if defined(HAVE_ACCEL)
+  c->accelerated = accel;
+  cs_alloc_mode_t amode = (c->accelerated) ?
+    CS_ALLOC_HOST_DEVICE_SHARED : CS_ALLOC_HOST;
+#else
+  CS_UNUSED(accel);
+  cs_alloc_mode_t amode = CS_ALLOC_HOST;
+#endif
+
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
 
+  cs_lnum_t n_rows_prev = c->n_rows;
   c->n_rows = cs_matrix_get_n_rows(a)*db_size;
   c->n_cols = cs_matrix_get_n_columns(a)*db_size;
 
@@ -393,7 +388,10 @@ _sles_pc_poly_setup(void               *context,
 
   const cs_lnum_t n_rows = c->n_rows;
 
-  BFT_REALLOC(c->_ad_inv, n_rows, cs_real_t);
+  if (c->n_rows > n_rows_prev) {
+    CS_FREE_HD(c->_ad_inv);
+    CS_MALLOC_HD(c->_ad_inv, n_rows, cs_real_t, amode);
+  }
   c->ad_inv = c->_ad_inv;
 
   cs_matrix_copy_diagonal(a, c->_ad_inv);
@@ -401,6 +399,12 @@ _sles_pc_poly_setup(void               *context,
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_rows; i++)
     c->_ad_inv[i] = 1.0 / c->_ad_inv[i];
+
+
+#if defined(HAVE_ACCEL)
+  if (c->accelerated)
+    cs_sync_h2d_future(c->_ad_inv);
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -410,6 +414,7 @@ _sles_pc_poly_setup(void               *context,
  *   context   <-> pointer to preconditioner context
  *   name      <-- pointer to name of associated linear system
  *   a         <-- matrix
+ *   accel     <-- use accelerator version ?
  *   verbosity <-- associated verbosity
  *----------------------------------------------------------------------------*/
 
@@ -417,12 +422,19 @@ static void
 _sles_pc_poly_setup_none(void               *context,
                          const char         *name,
                          const cs_matrix_t  *a,
+                         bool                accel,
                          int                 verbosity)
 {
   CS_UNUSED(name);
   CS_UNUSED(verbosity);
 
   cs_sles_pc_poly_t  *c = context;
+
+#if defined(HAVE_ACCEL)
+  c->accelerated = accel;
+#else
+  CS_UNUSED(accel);
+#endif
 
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
 
@@ -464,6 +476,11 @@ _sles_pc_poly_apply_none(void                *context,
     cs_sles_pc_poly_t  *c = context;
     const cs_lnum_t n_rows = c->n_rows;
 
+#if defined(HAVE_CUDA)
+    if (c->accelerated)
+      return cs_sles_pc_cuda_apply_none(context, x_in, x_out);
+#endif
+
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       x_out[ii] = x_in[ii];
@@ -494,6 +511,11 @@ _sles_pc_poly_apply_jacobi(void                *context,
                            cs_real_t           *x_out)
 {
   cs_sles_pc_poly_t  *c = context;
+
+#if defined(HAVE_CUDA)
+  if (c->accelerated)
+    return cs_sles_pc_cuda_apply_jacobi(context, x_in, x_out);
+#endif
 
   const cs_lnum_t n_rows = c->n_rows;
   const cs_real_t *restrict ad_inv = c->ad_inv;
@@ -535,13 +557,20 @@ _sles_pc_poly_apply_poly(void                *context,
 {
   cs_sles_pc_poly_t  *c = context;
 
+#if defined(HAVE_CUDA)
+  if (c->accelerated)
+    return cs_sles_pc_cuda_apply_poly(context, x_in, x_out);
+#endif
+
   const cs_lnum_t n_rows = c->n_rows;
   const cs_lnum_t n_aux = (x_in == NULL) ?
     CS_SIMD_SIZE(c->n_cols) + c->n_cols : c->n_cols;
 
   if (c->n_aux < n_aux) {
     c->n_aux = n_aux;
-    BFT_REALLOC(c->aux, c->n_aux, cs_real_t);
+    cs_alloc_mode_t amode = cs_check_device_ptr(c->ad_inv);
+    CS_FREE_HD(c->aux);
+    CS_MALLOC_HD(c->aux, c->n_aux, cs_real_t, amode);
   }
 
   cs_real_t *restrict w = c->aux;
@@ -598,8 +627,8 @@ _sles_pc_poly_free(void  *context)
   c->a = NULL;
 
   c->ad_inv = NULL;
-  BFT_FREE(c->_ad_inv);
-  BFT_FREE(c->aux);
+  CS_FREE_HD(c->_ad_inv);
+  CS_FREE_HD(c->aux);
 }
 
 /*----------------------------------------------------------------------------
@@ -910,6 +939,7 @@ cs_sles_pc_set_tolerance(cs_sles_pc_t  *pc,
  * \param[in, out]  pc         pointer to preconditioner object
  * \param[in]       name       linear system name
  * \param[in]       a          matrix
+ * \param[in]       accel      use accelerator version ?
  * \param[in]       verbosity  verbosity level
  */
 /*----------------------------------------------------------------------------*/
@@ -918,12 +948,12 @@ void
 cs_sles_pc_setup(cs_sles_pc_t       *pc,
                  const char         *name,
                  const cs_matrix_t  *a,
+                 bool                accel,
                  int                 verbosity)
 {
   if (pc != NULL) {
-
     if (pc->context != NULL && pc->setup_func != NULL)
-      pc->setup_func(pc->context, name, a, verbosity);
+      pc->setup_func(pc->context, name, a, accel, verbosity);
   }
 }
 

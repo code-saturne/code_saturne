@@ -85,6 +85,17 @@ cs_matrix_spmv_cuda_finalize(void);
 void
 cs_matrix_spmv_cuda_set_stream(cudaStream_t  stream);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return stream used for CUDA-based SpMV operations.
+ *
+ * This function is callable only from CUDA code.
+ */
+/*----------------------------------------------------------------------------*/
+
+cudaStream_t
+cs_matrix_spmv_cuda_get_stream(void);
+
 #endif /* defined(__CUDACC__) */
 
 /*----------------------------------------------------------------------------*/
