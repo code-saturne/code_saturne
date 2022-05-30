@@ -2265,9 +2265,9 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   if (iwarnp >= 2) {
     const cs_real_t *_w1 = (cs_real_t *)w1, *_smbrp = (cs_real_t *)smbrp;
-    bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(3*n_cells, _w1, _w1)));
+    bft_printf("L2 norm ||AX^n|| = %f\n", sqrt(cs_gdot(6*n_cells, _w1, _w1)));
     bft_printf("L2 norm ||B^n|| = %f\n",
-               sqrt(cs_gdot(3*n_cells, _smbrp, _smbrp)));
+               sqrt(cs_gdot(6*n_cells, _smbrp, _smbrp)));
   }
 
 
