@@ -714,7 +714,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         if not self.pushButtonAdvparam.isChecked():
 
             if self.batch_help == None:
-                self.batch_help = cs_batch.get_help_text(self.case['package'])
+                self.batch_help = self.jmdl.batch.get_help_text(self.case['package'])
                 self.textBrowserBatchHelp.setOpenExternalLinks(True)
                 # Set fixed font for plain text (ignored by HTML)
                 self.textBrowserBatchHelp.setFontFamily("monospace")

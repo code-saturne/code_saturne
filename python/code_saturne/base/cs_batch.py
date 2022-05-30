@@ -112,50 +112,6 @@ def generate_header(batch_template=None, job_name=None, package=None):
 
     return lines
 
-#-------------------------------------------------------------------------------
-
-def get_help_text(package=None):
-    """
-    Read batch help text based on configuration
-    """
-
-    text = None
-    help_path = None
-
-    if not package:
-        from code_saturne.base import cs_package
-        package = cs_package.package()
-
-    config = configparser.ConfigParser()
-    config.read(package.get_configfiles())
-    if config.has_option('install', 'batch_help'):
-        help_path = config.get('install', 'batch_help')
-        if not os.path.isabs(help_path):
-            i = help_path.rfind(".")
-            if i > -1:
-                help_path = 'batch_help.' + help_path
-            help_path = os.path.join(package.get_batchdir(),
-                                     help_path)
-
-    elif config.has_option('install', 'batch'):
-        batch_type = os.path.basename(config.get('install', 'batch'))
-        i = batch_type.rfind(".")
-        if i > -1:
-            batch_type = batch_type[i+1:]
-        help_path = os.path.join(package.get_batchdir(),
-                                 'batch_help.' + batch_type)
-
-    if help_path != None:
-        try:
-            fdt = open(help_path, 'r')
-            text = fdt.read()
-            fdt.close()
-        except Exception:
-            print('help file: ' + help_path + ' not present or readable.')
-            pass
-
-    return text
-
 #===============================================================================
 # Class used to manage batch directives
 #===============================================================================
@@ -212,6 +168,10 @@ class batch:
                 submit_command = config.get('install', 'submit_command')
 
         if self.rm_template:
+            if os.path.isabs(self.rm_template):
+                i = self.rm_template.rfind(".")
+                if i > -1:
+                    self.rm_template = self.rm_template[i+1:]
 
             if self.rm_template[0:5] == 'SLURM':
                 self.rm_type = 'SLURM'
@@ -867,6 +827,49 @@ class batch:
             pass
 
         return class_list
+
+    #---------------------------------------------------------------------------
+
+    def get_help_text(self, package=None):
+        """
+        Read batch help text based on configuration
+        """
+
+        text = None
+        help_path = None
+
+        if not package:
+            from code_saturne.base import cs_package
+            package = cs_package.package()
+
+        config = configparser.ConfigParser()
+        config.read(package.get_configfiles())
+        if config.has_option('install', 'batch_help'):
+            help_path = config.get('install', 'batch_help')
+            if not os.path.isabs(help_path):
+                i = help_path.rfind(".")
+                if i > -1:
+                    help_path = 'batch_help.' + help_path
+                help_path = os.path.join(package.get_batchdir(),
+                                         help_path)
+
+        elif self.rm_template != None:
+            help_path = os.path.join(package.get_batchdir(),
+                                     'batch_help.' + self.rm_template)
+            if not os.path.isfile(help_path):
+                help_path = os.path.join(package.get_batchdir(),
+                                         'batch_help.' + self.rm_type)
+
+        if help_path != None:
+            try:
+                fdt = open(help_path, 'r')
+                text = fdt.read()
+                fdt.close()
+            except Exception:
+                print('help file: ' + help_path + ' not present or readable.')
+                pass
+
+        return text
 
 #-------------------------------------------------------------------------------
 # End
