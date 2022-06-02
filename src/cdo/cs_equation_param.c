@@ -553,6 +553,8 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "mumps") == 0 ||
              strcmp(keyval, "mumps_float") == 0 ||
              strcmp(keyval, "mumps_float_ldlt") == 0 ||
+             strcmp(keyval, "smumps") == 0 ||
+             strcmp(keyval, "smumps_ldlt") == 0 ||
              strcmp(keyval, "mumps_ldlt") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
@@ -579,9 +581,11 @@ _set_key(cs_equation_param_t   *eqp,
 
       if (strcmp(keyval, "mumps") == 0)
         eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS;
-      else if (strcmp(keyval, "mumps_float") == 0)
+      else if (strcmp(keyval, "mumps_float") == 0 ||
+               strcmp(keyval, "smumps") == 0)
         eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_FLOAT;
-      else if (strcmp(keyval, "mumps_float_ldlt") == 0)
+      else if (strcmp(keyval, "mumps_float_ldlt") == 0 ||
+               strcmp(keyval, "smumps_ldlt") == 0)
         eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT;
       else if (strcmp(keyval, "mumps_ldlt") == 0)
         eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_LDLT;

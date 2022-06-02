@@ -978,16 +978,16 @@ typedef struct {
  * - "minres"        --> Solver of choice for symmetric indefinite systems
  * - "mumps"         --> Direct solver (very robust but memory consumming)
  *                       LU factorization (through PETSc or MUMPS)
- * - "mumps_float"   --> Direct solver (very robust but memory consumming)
- *                       LU factorization (through PETSc or MUMPS).
+ * -  "mumps_float"  --> Direct solver (very robust but memory consumming)
+ * or "smumps"           LU factorization (through PETSc or MUMPS).
  *                       Reduction of the memory consumption thanks to the usage
  *                       of float instead of double. This is a recommended
  *                       choice when used inside a preconditioner
- * - "mumps_float_ldlt" --> Direct solver (very robust but memory consumming)
- *                          LDLT factorization (through PETSc or MUMPS).
- *                          Reduction of the memory consumption thanks to the
- *                          usage of float instead of double. This is a
- *                          recommended choice when used inside a preconditioner
+ * -  "smumps_ldlt"  --> Direct solver (very robust but memory consumming)
+ * or "mumps_float_ldlt" LDLT factorization (through PETSc or MUMPS).
+ *                       Reduction of the memory consumption thanks to the
+ *                       usage of float instead of double. This is a
+ *                       recommended choice when used inside a preconditioner
  * - "mumps_ldlt"    --> Direct solver (very robust but memory consumming)
  *                       LDLT factorization (through PETSc or MUMPS).
  * - "sym_gauss_seidel" or "sgs" --> Symmetric Gauss-Seidel algorithm
