@@ -176,6 +176,7 @@ _adv_strategy_key[CS_PARAM_N_ADVECTION_STRATEGIES][CS_BASE_STRING_LEN] =
 /* scaling coefficient used in Notay's transformation devised in
  * "Algebraic multigrid for Stokes equations" SIAM J. Sci. Comput. Vol. 39 (5),
  *  2017 */
+
 static double  cs_navsto_param_notay_scaling = 1.0;
 
 /*============================================================================
@@ -556,6 +557,7 @@ _navsto_param_sles_log(const cs_navsto_param_sles_t    *nslesp)
                 navsto, nslesp->il_algo_param.n_max_algo_iter);
 
   /* Additional settings for the Schur complement solver */
+
   if (nslesp->strategy == CS_NAVSTO_SLES_UZAWA_CG          ||
       nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_MINRES ||
       nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GCR    ||
@@ -874,7 +876,6 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
 
   _navsto_param_sles_free(&(param->sles_param));
 
-  /* Free the main structure */
   BFT_FREE(param);
 
   return NULL;
@@ -902,6 +903,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     bft_error(__FILE__, __LINE__, 0, "%s: Empty key value.\n", __func__);
 
   /* Conversion of the string to lower case */
+
   char val[CS_BASE_STRING_LEN];
   for (size_t i = 0; i < strlen(keyval); i++)
     val[i] = tolower(keyval[i]);
@@ -1314,7 +1316,6 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
               __func__);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1334,11 +1335,13 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
   assert(nsp != NULL && eqp != NULL);
 
   /*  Set the space discretization scheme */
+
   const char  *ss_key = _space_scheme_key[nsp->space_scheme];
 
   cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, ss_key);
 
   /*  Set the time discretization scheme */
+
   const char  *ts_key = _time_scheme_key[nsp->time_scheme];
 
   cs_equation_param_set(eqp, CS_EQKEY_TIME_SCHEME, ts_key);
@@ -1349,18 +1352,22 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
   }
 
   /*  Set the way DoFs are defined */
+
   const char  *dof_key = _dof_reduction_key[nsp->dof_reduction_mode];
 
   cs_equation_param_set(eqp, CS_EQKEY_DOF_REDUCTION, dof_key);
 
   /*  Set quadratures type */
+
   const char  *quad_key = _quad_type_key[nsp->qtype];
 
   /* If requested, add advection parameters */
+
   if ((nsp->model & (CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES |
                      CS_NAVSTO_MODEL_OSEEN)) > 0) {
 
     /* If different from default value */
+
     const char *extrap_key = _adv_extrap_key[nsp->adv_extrapol];
     cs_equation_param_set(eqp, CS_EQKEY_ADV_EXTRAPOL, extrap_key);
 
@@ -1393,8 +1400,6 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     return;
 
   const char  navsto[16] = "  * NavSto |";
-
-  /* Sanity checks */
 
   if (nsp->model == CS_NAVSTO_N_MODELS)
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid model for Navier-Stokes.\n",
@@ -1472,6 +1477,18 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     cs_log_printf(CS_LOG_SETUP, "%s Space scheme: %s\n", navsto, space_scheme);
   else
     bft_error(__FILE__, __LINE__, 0, " %s: Undefined space scheme.", __func__);
+
+  /* Way to define the degrees of freedom */
+
+  if (nsp->dof_reduction_mode == CS_PARAM_REDUCTION_AVERAGE)
+    cs_log_printf(CS_LOG_SETUP, "%s DoF reduction: %s\n", navsto,
+                  "Average on the related entity");
+  else if (nsp->dof_reduction_mode == CS_PARAM_REDUCTION_DERHAM)
+    cs_log_printf(CS_LOG_SETUP, "%s DoF reduction: %s\n", navsto,
+                  "potential (velociy and pressure)");
+  else
+    bft_error(__FILE__, __LINE__, 0, " %s: Invalid way to define DoFs.",
+              __func__);
 
   if (nsp->model == CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES) {
 
@@ -1663,7 +1680,6 @@ cs_navsto_param_get_velocity_param(const cs_navsto_param_t    *nsp)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid coupling algorithm", __func__);
     break;
-
   }
 
   return eqp;
@@ -1692,7 +1708,6 @@ cs_navsto_param_get_model_name(cs_navsto_param_model_t   model)
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid model.", __func__);
     break;
-
   }
 
   return NULL;
@@ -1721,7 +1736,6 @@ cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling)
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid coupling.", __func__);
     break;
-
   }
 
   return NULL;
@@ -2272,6 +2286,7 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
               " Please check your settings.", __func__, z_name);
 
   /* Add a new cs_xdef_t structure */
+
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           3,    /* dim */
                                           z_id,
@@ -2546,6 +2561,7 @@ cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t    *nsp,
        " Please check your settings.", __func__, z_name);
 
   /* Add a new cs_xdef_t structure */
+
   cs_xdef_dof_context_t  dc = { .z_id = z_id,
                                 .func = func,
                                 .input = func_input,
