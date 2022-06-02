@@ -151,13 +151,17 @@ class run_conf(object):
 
         # Determine or build default job name for batch
 
-        topdir, scriptdir = os.path.split(os.path.split(self.path)[0])
-        if scriptdir == 'DATA':
-            studydir, casedir = os.path.split(topdir)
-            studydir = os.path.split(studydir)[1]
-        else:
+        try:
+            topdir, scriptdir = os.path.split(os.path.split(self.path)[0])
+            if scriptdir == 'DATA':
+                studydir, casedir = os.path.split(topdir)
+                studydir = os.path.split(studydir)[1]
+            else:
+                casedir = ''
+                studydir = scriptdir
+        except Exception:
             casedir = ''
-            studydir = scriptdir
+            studydir = ''
 
         job_name = studydir.lower()
         if casedir:
