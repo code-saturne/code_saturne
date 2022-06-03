@@ -119,7 +119,6 @@ _log_global_model_options(void)
   /* Physical properties */
 
   cs_physical_constants_log_setup();
-
   cs_fluid_properties_log_setup();
 
   /* TODO : Add diftl0 printing */
@@ -129,37 +128,44 @@ _log_global_model_options(void)
   cs_thermal_model_log_setup();
 
   /* Turbulence */
-  cs_turb_model_log_setup();
 
+  cs_turb_model_log_setup();
   cs_turb_constants_log_setup();
+
+  /* Time discretization */
 
   cs_time_step_log_setup();
   cs_time_scheme_log_setup();
 
-  /* Velocity-pressure model*/
-  cs_velocity_pressure_model_log_setup();
+  /* Velocity-pressure coupling */
 
-  /* Velocity-pressure parameters */
+  cs_velocity_pressure_model_log_setup();
   cs_velocity_pressure_param_log_setup();
 
   /* Atmospheric */
+
   cs_atmo_log_setup();
 
   /* Atmospheric chemistry */
+
   cs_atmo_chemistry_log_setup();
 
   /* Atmospheric aerosols */
+
   cs_atmo_aerosol_log_setup();
 
   /* Combustion */
+
   cs_combustion_log_setup();
 
   /* TODO: iroext, etc... */
 
   /* Face viscosity */
+
   cs_space_disc_log_setup();
 
   /* Rotation info */
+
   if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_NONE) {
     const cs_rotation_t  *r = cs_glob_rotation;
 
@@ -178,10 +184,12 @@ _log_global_model_options(void)
   }
 
   /* Zone information */
+
   cs_volume_zone_log_setup();
   cs_boundary_zone_log_setup();
 
   /* BC information */
+
   cs_boundary_log_setup(cs_glob_domain->boundaries);
   cs_boundary_log_setup(cs_glob_domain->ale_boundaries);
 }

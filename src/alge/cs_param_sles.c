@@ -170,7 +170,6 @@ _petsc_cmd(bool          use_prefix,
 static inline void
 _petsc_bilu0_hook(const char              *prefix)
 {
-  /* Sanity checks */
   assert(prefix != NULL);
 
   _petsc_cmd(true, prefix, "pc_type", "bjacobi");
@@ -179,6 +178,7 @@ _petsc_bilu0_hook(const char              *prefix)
   _petsc_cmd(true, prefix, "sub_pc_type", "ilu");
   _petsc_cmd(true, prefix, "sub_pc_factor_level", "0");
   _petsc_cmd(true, prefix, "sub_pc_factor_reuse_ordering", "");
+
   /* If one wants to optimize the memory consumption */
   /* _petsc_cmd(true, prefix, "sub_pc_factor_in_place", ""); */
 }
@@ -194,7 +194,6 @@ _petsc_bilu0_hook(const char              *prefix)
 static inline void
 _petsc_bicc0_hook(const char              *prefix)
 {
-  /* Sanity checks */
   assert(prefix != NULL);
 
   _petsc_cmd(true, prefix, "pc_type", "bjacobi");
@@ -203,6 +202,7 @@ _petsc_bicc0_hook(const char              *prefix)
   _petsc_cmd(true, prefix, "sub_pc_type", "icc");
   _petsc_cmd(true, prefix, "sub_pc_factor_level", "0");
   _petsc_cmd(true, prefix, "sub_pc_factor_reuse_ordering", "");
+
   /* If one wants to optimize the memory consumption */
   /* _petsc_cmd(true, prefix, "sub_pc_factor_in_place", ""); */
 }
@@ -218,7 +218,6 @@ _petsc_bicc0_hook(const char              *prefix)
 static inline void
 _petsc_bssor_hook(const char              *prefix)
 {
-  /* Sanity checks */
   assert(prefix != NULL);
 
   _petsc_cmd(true, prefix, "pc_type", "bjacobi");
@@ -249,7 +248,6 @@ _petsc_pcgamg_hook(const char              *prefix,
                    bool                     is_symm,
                    PC                       pc)
 {
-  /* Sanity checks */
   assert(prefix != NULL);
   assert(slesp != NULL);
   assert(slesp->precond == CS_PARAM_PRECOND_AMG);
@@ -280,10 +278,12 @@ _petsc_pcgamg_hook(const char              *prefix,
   _petsc_cmd(true, prefix, "mg_levels_ksp_richardson_scale", "1.0");
 
   /* Do not build a coarser level if one reaches the following limit */
+
   _petsc_cmd(true, prefix, "pc_gamg_coarse_eq_limit", "100");
 
   /* In parallel computing, migrate data to another rank if the grid has less
      than 200 rows */
+
   if (cs_glob_n_ranks > 1) {
 
     _petsc_cmd(true, prefix, "pc_gamg_repartition", "true");
@@ -347,6 +347,7 @@ _petsc_pcgamg_hook(const char              *prefix,
   else { /* Not a symmetric linear system */
 
     /* Number of smoothing steps to use with smooth aggregation (default=1) */
+
     _petsc_cmd(true, prefix, "pc_gamg_agg_nsmooths", "0");
     _petsc_cmd(true, prefix, "pc_gamg_square_graph", "0");
     _petsc_cmd(true, prefix, "pc_gamg_threshold", "0.06");
@@ -383,7 +384,6 @@ _petsc_pcgamg_hook(const char              *prefix,
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid type of AMG for SLES %s\n",
               __func__, slesp->name);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -404,8 +404,6 @@ _petsc_pchypre_hook(const char              *prefix,
                     PC                       pc)
 {
   CS_UNUSED(is_symm);
-
-  /* Sanity checks */
 
   assert(prefix != NULL);
   assert(slesp != NULL);
@@ -665,6 +663,7 @@ _petsc_set_pc_type(cs_param_sles_t   *slesp,
    * This setting stands for a first setting and may be overwritten with
    * parameters stored in the structure cs_param_sles_t
    * To get the last word use cs_user_sles_petsc_hook()  */
+
   PCSetFromOptions(pc);
   PCSetUp(pc);
 }
@@ -683,10 +682,12 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
                          KSP                 ksp)
 {
   /* No choice otherwise PETSc yields an error */
+
   slesp->resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
   /* 2) Set the krylov solver */
+
   switch (slesp->solver) {
 
   case CS_PARAM_ITSOL_NONE:
@@ -745,6 +746,7 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
   }
 
   /* 3) Additional settings arising from command lines */
+
   switch (slesp->solver) {
 
   case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
@@ -768,6 +770,7 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
   KSPSetFromOptions(ksp);
 
   /* Apply settings from the cs_param_sles_t structure */
+
   switch (slesp->solver) {
 
   case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
@@ -795,6 +798,7 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
       KSPGetPC(ksp, &pc);
 
       /* Retrieve the matrices related to this KSP */
+
       Mat a, pa;
       KSPGetOperators(ksp, &a, &pa);
 
@@ -812,6 +816,7 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
   }
 
   /* Set KSP tolerances */
+
   PetscReal rtol, abstol, dtol;
   PetscInt  maxit;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
@@ -820,7 +825,6 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
                    abstol,              /* absolute convergence tolerance */
                    dtol,                /* divergence tolerance */
                    slesp->n_max_iter);  /* max number of iterations */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -851,15 +855,19 @@ _petsc_setup_hook(void    *context,
   BFT_FREE(prefix);
 
   /* 1) Set the solver */
+
   _petsc_set_krylov_solver(slesp, ksp);
 
   /* 2) Set the preconditioner */
+
   _petsc_set_pc_type(slesp, ksp);
 
   /* 3) User function for additional settings */
+
   cs_user_sles_petsc_hook((void *)slesp, ksp);
 
   /* Dump the setup related to PETSc in a specific file */
+
   if (!slesp->setup_done) {
     KSPSetUp(ksp);
     cs_sles_petsc_log_setup(ksp);
@@ -909,6 +917,7 @@ _petsc_common_block_hook(const cs_param_sles_t    *slesp,
   }
 
   /* Apply modifications to the KSP structure */
+
   PCFieldSplitSetBlockSize(pc, 3);
 
   PetscInt  id = 0;
@@ -942,6 +951,7 @@ _petsc_amg_block_gamg_hook(void     *context,
                                      SIGFPE detection */
 
   /* prefix will be extended with the fieldsplit */
+
   int len = strlen(slesp->name) + 1;
   int _len = len + strlen("_fieldsplit_x_") + 1;
   char  *prefix = NULL;
@@ -951,9 +961,11 @@ _petsc_amg_block_gamg_hook(void     *context,
   KSPSetOptionsPrefix(ksp, prefix);
 
   /* Set the solver */
+
   _petsc_set_krylov_solver(slesp, ksp);
 
   /* Common settings to block preconditionner */
+
   _petsc_common_block_hook(slesp, ksp);
 
   PC  pc;
@@ -976,6 +988,7 @@ _petsc_amg_block_gamg_hook(void     *context,
     _petsc_cmd(true, prefix, "ksp_type","preonly");
 
     /* Predefined settings when using AMG as a preconditioner */
+
     KSP  _ksp = xyz_subksp[id];
     KSPGetPC(_ksp, &_pc);
 
@@ -990,12 +1003,14 @@ _petsc_amg_block_gamg_hook(void     *context,
   PetscFree(xyz_subksp);
 
   /* User function for additional settings */
+
   cs_user_sles_petsc_hook(context, ksp);
 
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
+
   if (!slesp->setup_done) {
     KSPSetUp(ksp);
     cs_sles_petsc_log_setup(ksp);
@@ -1030,6 +1045,7 @@ _petsc_amg_block_boomer_hook(void     *context,
                                      SIGFPE detection */
 
   /* prefix will be extended with the fieldsplit */
+
   int len = strlen(slesp->name) + 1;
   int _len = len + strlen("_fieldsplit_x_") + 1;
   char  *prefix = NULL;
@@ -1039,12 +1055,15 @@ _petsc_amg_block_boomer_hook(void     *context,
   KSPSetOptionsPrefix(ksp, prefix);
 
   /* Set the solver */
+
   _petsc_set_krylov_solver(slesp, ksp);
 
   /* Common settings to block preconditionner */
+
   _petsc_common_block_hook(slesp, ksp);
 
   /* Predefined settings when using AMG as a preconditioner */
+
   PC  pc;
   KSPGetPC(ksp, &pc);
   PCSetUp(pc);
@@ -1065,6 +1084,7 @@ _petsc_amg_block_boomer_hook(void     *context,
     _petsc_cmd(true, prefix, "ksp_type","preonly");
 
     /* Predefined settings when using AMG as a preconditioner */
+
     KSP  _ksp = xyz_subksp[id];
     KSPGetPC(_ksp, &_pc);
 
@@ -1079,12 +1099,14 @@ _petsc_amg_block_boomer_hook(void     *context,
   PetscFree(xyz_subksp);
 
   /* User function for additional settings */
+
   cs_user_sles_petsc_hook(context, ksp);
 
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
+
   if (!slesp->setup_done) {
     KSPSetUp(ksp);
     cs_sles_petsc_log_setup(ksp);
@@ -1118,6 +1140,7 @@ _petsc_block_hook(void     *context,
                                      SIGFPE detection */
 
   /* prefix will be extended with the fieldsplit */
+
   int len = strlen(slesp->name) + 1;
   int _len = len + strlen("_fieldsplit_x_") + 1;
   char  *prefix = NULL;
@@ -1127,9 +1150,11 @@ _petsc_block_hook(void     *context,
   KSPSetOptionsPrefix(ksp, prefix);
 
   /* Set the solver (tolerance and max_it too) */
+
   _petsc_set_krylov_solver(slesp, ksp);
 
   /* Common settings to block preconditionner */
+
   _petsc_common_block_hook(slesp, ksp);
 
   PC  pc;
@@ -1226,12 +1251,14 @@ _petsc_block_hook(void     *context,
   PetscFree(xyz_subksp);
 
   /* User function for additional settings */
+
   cs_user_sles_petsc_hook(context, ksp);
 
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
+
   if (!slesp->setup_done) {
     KSPSetUp(ksp);
     cs_sles_petsc_log_setup(ksp);
@@ -1254,10 +1281,7 @@ _petsc_block_hook(void     *context,
 static void
 _check_settings(cs_param_sles_t     *slesp)
 {
-
-  /* Checks related to MUMPS */
-
-  if (_mumps_is_needed(slesp->solver)) {
+  if (_mumps_is_needed(slesp->solver)) { /* Checks related to MUMPS */
 
     cs_param_sles_class_t  ret_class =
       cs_param_sles_check_class(CS_PARAM_SLES_CLASS_MUMPS);
@@ -1290,7 +1314,6 @@ _check_settings(cs_param_sles_t     *slesp)
                 " The restart interval (=%d) is not big enough.\n"
                 " Please check your installation settings.\n",
                 __func__, slesp->name, slesp->restart);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1385,6 +1408,7 @@ _set_saturne_sles(bool                 use_field_id,
 
         /* Advanced setup (default is specified inside the brackets)
          * for AMG as solver */
+
         cs_multigrid_set_solver_options
           (mg,
            CS_SLES_JACOBI,   /* descent smoother type (CS_SLES_PCG) */
@@ -1548,6 +1572,7 @@ _set_saturne_sles(bool                 use_field_id,
   } /* end of switch */
 
   /* Update the preconditioner settings if needed */
+
   if (slesp->precond == CS_PARAM_PRECOND_AMG) {
 
     assert(pc != NULL && it != NULL);
@@ -1557,6 +1582,7 @@ _set_saturne_sles(bool                 use_field_id,
 
     /* If this is a K-cycle multigrid. Change the default settings when used as
        preconditioner */
+
     if (slesp->amg_type == CS_PARAM_AMG_HOUSE_K) {
 
       cs_multigrid_set_solver_options
@@ -1576,7 +1602,7 @@ _set_saturne_sles(bool                 use_field_id,
          1.0);              /* precision_mult_coarse */
 
       cs_multigrid_set_coarsening_options(mg,
-                                          8,   /* aggregation_limit*/
+                                          8,   /* aggregation_limit */
                                           CS_GRID_COARSENING_SPD_PW,
                                           10,  /* n_max_levels */
                                           50,  /* min_g_cells */
@@ -1588,16 +1614,17 @@ _set_saturne_sles(bool                 use_field_id,
   } /* AMG preconditioner */
 
   /* Define the level of verbosity for SLES structure */
+
   if (slesp->verbosity > 3) {
 
     cs_sles_t  *sles = cs_sles_find_or_add(slesp->field_id, sles_name);
     cs_sles_it_t  *sles_it = (cs_sles_it_t *)cs_sles_get_context(sles);
 
     /* true = use_iteration instead of wall clock time */
+
     cs_sles_it_set_plot_options(sles_it, slesp->name, true);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1959,9 +1986,11 @@ cs_param_sles_set(bool                 use_field_id,
   } /* End of switch on class of solvers */
 
   /* Define the level of verbosity for the SLES structure */
+
   if (slesp->verbosity > 1) {
 
     /* All the previous SLES are defined thanks to the field_id */
+
     cs_sles_t  *sles = NULL;
     if (use_field_id)
       sles = cs_sles_find_or_add(slesp->field_id, NULL);
@@ -1969,6 +1998,7 @@ cs_param_sles_set(bool                 use_field_id,
       sles = cs_sles_find_or_add(slesp->field_id, slesp->name);
 
     /* Set verbosity */
+
     cs_sles_set_verbosity(sles, slesp->verbosity);
 
   }

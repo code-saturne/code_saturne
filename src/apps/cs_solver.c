@@ -219,6 +219,7 @@ _run(void)
   cs_turbomachinery_define();
 
   /* Check if an internally generated cartesian mesh is used */
+
   if (cs_gui_mesh_build_cartesian())
     cs_gui_mesh_cartesian_define();
 
@@ -241,6 +242,7 @@ _run(void)
   cs_user_zones();
 
   /* Create a new structure for the computational domain */
+
   cs_glob_domain = cs_domain_create();
 
   /* Define MPI-based Couplings if applicable */
@@ -278,6 +280,7 @@ _run(void)
     cs_cdo_initialize_setup(cs_glob_domain);
 
     /* Setup linear solvers */
+
     cs_gui_linear_solvers();
     cs_user_linear_solvers();
 
@@ -492,6 +495,7 @@ _run(void)
   cs_matrix_finalize();
 
   /* Finalize user extra operations */
+
   if (opts.verif == false)
     cs_user_extra_operations_finalize(cs_glob_domain);
 

@@ -239,7 +239,7 @@ _set_key(cs_equation_param_t   *eqp,
   case CS_EQKEY_ADV_UPWIND_PORTION:
     eqp->upwind_portion = atof(keyval);
 
-    /* Automatic witch to a hybrid upwind/centered scheme for advection */
+    /* Automatic switch to a hybrid upwind/centered scheme for advection */
 
     eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND;
     break;
