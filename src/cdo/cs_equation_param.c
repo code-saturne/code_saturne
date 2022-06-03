@@ -247,18 +247,27 @@ _set_key(cs_equation_param_t   *eqp,
   case CS_EQKEY_AMG_TYPE:
     if (strcmp(keyval, "none") == 0 || strcmp(keyval, "") == 0)
       eqp->sles_param->amg_type = CS_PARAM_AMG_NONE;
+
     else if (strcmp(keyval, "v_cycle") == 0) {
+
       eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_V;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
+      eqp->sles_param->flexible = true;
+
     }
     else if (strcmp(keyval, "k_cycle") == 0) {
+
       eqp->sles_param->amg_type = CS_PARAM_AMG_HOUSE_K;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
+      eqp->sles_param->flexible = true;
+
     }
     else if (strcmp(keyval, "boomer") == 0 || strcmp(keyval, "boomer_v") == 0) {
 
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
+
+      eqp->sles_param->flexible = true;
 
       if (ret_class == CS_PARAM_SLES_CLASS_HYPRE) {
         eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
@@ -279,6 +288,8 @@ _set_key(cs_equation_param_t   *eqp,
 
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
+
+      eqp->sles_param->flexible = true;
 
       if (ret_class == CS_PARAM_SLES_CLASS_HYPRE) {
         eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
@@ -308,6 +319,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
+      eqp->sles_param->flexible = true;
 
     }
     else if (strcmp(keyval, "gamg_w") == 0) {
@@ -323,6 +335,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_W;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
+      eqp->sles_param->flexible = true;
 
     }
     else if (strcmp(keyval, "pcmg") == 0) {
@@ -338,6 +351,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_PCMG;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
+      eqp->sles_param->flexible = true;
 
     }
     else {
@@ -512,21 +526,27 @@ _set_key(cs_equation_param_t   *eqp,
       eqp->sles_param->solver = CS_PARAM_ITSOL_CG;
     else if (strcmp(keyval, "cr3") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_CR3;
-    else if (strcmp(keyval, "fcg") == 0)
+    else if (strcmp(keyval, "fcg") == 0) {
       eqp->sles_param->solver = CS_PARAM_ITSOL_FCG;
+      eqp->sles_param->flexible = true;
+    }
     else if (strcmp(keyval, "gauss_seidel") == 0 ||
              strcmp(keyval, "gs") == 0) {
       eqp->sles_param->solver = CS_PARAM_ITSOL_GAUSS_SEIDEL;
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
     }
-    else if (strcmp(keyval, "gcr") == 0)
+    else if (strcmp(keyval, "gcr") == 0) {
       eqp->sles_param->solver = CS_PARAM_ITSOL_GCR;
+      eqp->sles_param->flexible = true;
+    }
     else if (strcmp(keyval, "gmres") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_GMRES;
     else if (strcmp(keyval, "fgmres") == 0) {
 
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_PETSC);
+
+      eqp->sles_param->flexible = true;
 
       if (ret_class != CS_PARAM_SLES_CLASS_PETSC) {
 
@@ -757,6 +777,7 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "amg") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_AMG;
+      eqp->sles_param->flexible = true;
 
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(eqp->sles_param->solver_class);
@@ -795,6 +816,7 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "amg_block") == 0 ||
              strcmp(keyval, "block_amg") == 0) {
 
+      eqp->sles_param->flexible = true;
       eqp->sles_param->precond = CS_PARAM_PRECOND_AMG;
       if (eqp->sles_param->pcd_block_type == CS_PARAM_PRECOND_BLOCK_NONE)
         eqp->sles_param->pcd_block_type = CS_PARAM_PRECOND_BLOCK_DIAG;

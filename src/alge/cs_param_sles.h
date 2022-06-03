@@ -71,6 +71,7 @@ typedef struct {
   cs_param_sles_class_t      solver_class; /*!< class of SLES to consider  */
   cs_param_precond_type_t    precond;      /*!< type of preconditioner */
   cs_param_itsol_type_t      solver;       /*!< type of solver */
+  bool                       flexible;     /*!< need a flexible variant ? */
 
   /*! \var amg_type
    *  type of AMG algorithm if needed */

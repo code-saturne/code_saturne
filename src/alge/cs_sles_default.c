@@ -511,6 +511,9 @@ cs_sles_default_setup(void)
     const cs_field_t *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
 
+      if (f->type & CS_FIELD_CDO) /* Skipped this step for CDO equations */
+        continue;                 /* This is done elsewhere. */
+
       void *context = NULL;
       cs_sles_t *sc = cs_sles_find(f->id, NULL);
       if (sc != NULL)
