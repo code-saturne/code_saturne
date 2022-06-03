@@ -207,7 +207,7 @@ _log_global_model_options(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Log setup options.
+ * \brief Log setup options and define the default setup for SLES.
  */
 /*----------------------------------------------------------------------------*/
 
