@@ -1100,6 +1100,11 @@ _lagich(const cs_real_t   tempct[],
 
   }
 
+  if (nor == 2)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Lagrangian coal/shrinking diameter model is incompatible\n"
+                "with second-order model."));
+
   /* Main loop on particles
    * ====================== */
 
@@ -1214,7 +1219,8 @@ _lagich(const cs_real_t   tempct[],
     /* Vapor flux for particle */
 
     cs_real_t fwat[nlayer];
-    _lagsec(ip, layer_vol, mwat_max, sherw, radius, tempct, mlayer, mwater, fwat);
+    _lagsec(ip, layer_vol, mwat_max, sherw, radius, tempct,
+            mlayer, mwater, fwat);
 
     /* Compute velocity constants SPK1 of SPK2 of the mass transfer by
        devolatilization with the Arrhenius laws */
@@ -1289,7 +1295,8 @@ _lagich(const cs_real_t   tempct[],
      *                                                      */
     aux1 =   extra->cromf->val[cell_id] * cs_physical_constants_r
            * extra->temperature->val[cell_id]
-           * extra->x_oxyd->val[cell_id] / lag_cc->wmole[lag_cc->io2] / lag_cc->prefth;
+           * extra->x_oxyd->val[cell_id] / lag_cc->wmole[lag_cc->io2]
+             / lag_cc->prefth;
 
     /* Compute working surface: SE */
     aux2 =  cs_math_pi * (1.0 - lag_cc->xashch[co_id]) * pow(shrink_diam, 2);
@@ -1323,7 +1330,8 @@ _lagich(const cs_real_t   tempct[],
     for (cs_lnum_t iii = 0; iii < lag_cc->ngazem; iii++)
       coefe[iii] = 0.0;
 
-    coefe[lag_cc->ico]  = lag_cc->wmole[lag_cc->ico] / lag_cc->wmolat[lag_cc->iatc];
+    coefe[lag_cc->ico] =   lag_cc->wmole[lag_cc->ico]
+                         / lag_cc->wmolat[lag_cc->iatc];
 
     for (cs_lnum_t iii = 0; iii < lag_cc->ncharm; iii++) {
         f1mc[iii] = 0.0;
@@ -1331,7 +1339,8 @@ _lagich(const cs_real_t   tempct[],
     }
 
     int mode = -1;
-    CS_PROCF(cpthp1, CPTHP1) (&mode, &aux2, coefe, f1mc, f2mc, &part_temp[l_id_het]);
+    CS_PROCF(cpthp1, CPTHP1) (&mode, &aux2, coefe, f1mc, f2mc,
+                              &part_temp[l_id_het]);
 
     /* Compute MO2/MC/2. HO2(TF)    */
     for (cs_lnum_t iii = 0; iii < lag_cc->ngazem; iii++)
@@ -1378,17 +1387,18 @@ _lagich(const cs_real_t   tempct[],
       for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++)
         aux1 += fwat[l_id] * dtp;
 
-      cs_real_t mwat = 0.5 * (  cs_lagr_particle_get_real_n(particle, p_am,
-                                                            0, CS_LAGR_WATER_MASS)
-                              + cs_lagr_particle_get_real_n(particle, p_am,
-                                                              1, CS_LAGR_WATER_MASS)
-                              - aux1);
+      cs_real_t mwat
+        = 0.5 * (  cs_lagr_particle_get_real_n(particle, p_am,
+                                               0, CS_LAGR_WATER_MASS)
+                 + cs_lagr_particle_get_real_n(particle, p_am,
+                                               1, CS_LAGR_WATER_MASS)
+                 - aux1);
 
       /* Clipping */
       if (mwat < precis)
         mwat = 0.0;
 
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_WATER_MASS, mwat) ;
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_WATER_MASS, mwat);
 
     }
 
@@ -1484,7 +1494,8 @@ _lagich(const cs_real_t   tempct[],
 
           /* Possibly start combustion of next layer */
           if (l_id > 1 )
-            part_coke_mass[l_id - 1] = part_coke_mass[l_id - 1] + part_coke_mass[l_id];
+            part_coke_mass[l_id - 1]
+              = part_coke_mass[l_id - 1] + part_coke_mass[l_id];
 
           /* Limit coke mass */
           part_coke_mass[l_id] = 0.0;
@@ -1494,9 +1505,10 @@ _lagich(const cs_real_t   tempct[],
       }
 
     }
-    else if (nor == 2)
+    else if (nor == 2) {
       /* No second order for now */
-      cs_exit(1);
+      assert(0);
+    }
 
     /* Integrate temperature of coal grains */
 
@@ -1562,7 +1574,8 @@ _lagich(const cs_real_t   tempct[],
         aux5 = pow(  d6spi
                    / (1.0 - lag_cc->xashch[co_id])
                    * (  part_coal_mass[l_id_het] / lag_cc->rho0ch[co_id]
-                      + part_coke_mass[l_id_het] / part_coal_density[l_id_het]), d1s3);
+                      + part_coke_mass[l_id_het] / part_coal_density[l_id_het]),
+                     d1s3);
 
         /* Clipping   */
         if (aux5 > 2.0 * radius[l_id_het])
@@ -1571,7 +1584,8 @@ _lagich(const cs_real_t   tempct[],
         else if (aux5 < 0.0)
           aux5 = 0.0;
 
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_SHRINKING_DIAMETER, aux5);
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_SHRINKING_DIAMETER,
+                                  aux5);
 
       }
       else {
@@ -1591,7 +1605,8 @@ _lagich(const cs_real_t   tempct[],
         else if (aux5 < 2.0 * radius[l_id_het - 1])
           aux5 = 2.0 * radius[l_id_het - 1];
 
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_SHRINKING_DIAMETER, aux5);
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_SHRINKING_DIAMETER,
+                                  aux5);
 
       }
 
@@ -1614,7 +1629,8 @@ _lagich(const cs_real_t   tempct[],
     for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++)
       aux1 += part_coal_mass[l_id] + part_coke_mass[l_id];
 
-    cs_real_t mwat = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_WATER_MASS);
+    cs_real_t mwat = cs_lagr_particle_get_real(particle, p_am,
+                                               CS_LAGR_WATER_MASS);
 
     aux1 += mwat + lag_cc->xashch[co_id] * mp0;
 

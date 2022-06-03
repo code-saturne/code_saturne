@@ -74,6 +74,12 @@ interface
     implicit none
   end subroutine cs_gui_output
 
+  subroutine cs_lagr_add_fields()  &
+      bind(C, name='cs_lagr_add_fields')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_lagr_add_fields
+
   subroutine cs_parameters_eqp_complete()  &
       bind(C, name='cs_parameters_eqp_complete')
     use, intrinsic :: iso_c_binding
@@ -146,6 +152,7 @@ if (iscalt.ge.1) then
   have_thermal_model = 1
 endif
 call cs_lagr_options_definition(isuite, have_thermal_model, dtref, iccvfg)
+call cs_lagr_add_fields
 
 ! Additional fields if not in CDO mode only
 

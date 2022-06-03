@@ -1339,20 +1339,6 @@ cs_get_lagr_extra_module(void);
 void
 cs_lagr_solve_initialize(const cs_real_t  *dt);
 
-/*--------------------------------------------------------------------
- * Execute one time step of the Lagrangian model.
- *
- * This is the main function for that model.
- *
- *  parameters:
- *    itypfb <-- boundary face types
- *    dt     <-- time step (per cell)
- *-------------------------------------------------------------------- */
-
-void
-cs_lagr_solve_time_step(const int         itypfb[],
-                        const cs_real_t  *dt);
-
 /*----------------------------------------------------------------------------
  * Return pointers to lagrangian arrays
  *
@@ -1375,6 +1361,34 @@ cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
 
 void
 cs_lagr_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create additional fields needed by the Lagrangien model
+ *
+ * Most additional fields can be defined directly in
+ * \ref cs_lagr_options_definition, but some fields may be mapped to
+ * different fields based on the calling module (i.e. code_saturne or
+ * neptune_cfd), and possibly defined after that call.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_add_fields(void);
+
+/*--------------------------------------------------------------------
+ * Execute one time step of the Lagrangian model.
+ *
+ * This is the main function for that model.
+ *
+ *  parameters:
+ *    itypfb <-- boundary face types
+ *    dt     <-- time step (per cell)
+ *-------------------------------------------------------------------- */
+
+void
+cs_lagr_solve_time_step(const int         itypfb[],
+                        const cs_real_t  *dt);
 
 /*----------------------------------------------------------------------------*/
 

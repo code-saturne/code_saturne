@@ -669,8 +669,11 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
     if (extra->cvar_rij != NULL)
       cvar_rij = (const cs_real_6_t *) extra->cvar_rij->vals[time_id];
 
-    else if (extra->cvar_k != NULL)
+    else if (extra->cvar_k != NULL) {
       cvar_k = (const cs_real_t *)extra->cvar_k->vals[time_id];
+      if (extra->cvar_k != NULL)
+        cvar_k = (const cs_real_t *)extra->cvar_k->val;
+    }
 
     else {
       bft_error

@@ -199,7 +199,7 @@ cs_lagr_precipitation_mass_st(cs_real_t        dtref,
 
       preci->nbprec[iel]  = 0;
 
-      /* PRECIPITATION   */
+      /* Precipitation   */
       if (cvar_scal[iel] >= solub[iel]) {
 
         cs_real_t mass = pis6 * pow(preci->diameter, 3) * preci->rho;
@@ -210,8 +210,8 @@ cs_lagr_precipitation_mass_st(cs_real_t        dtref,
 
       }
 
-      /* to do:  impose a limit on  nbprec   */
-      /* DISSOLUTION     */
+      /* TODO: impose a limit on nbprec */
+      /* Dissolution */
       if (cvar_scal[iel] < solub[iel] && part_tot[iel] >= 1) {
 
         if (p_set->n_particles > 0) {
@@ -233,8 +233,9 @@ cs_lagr_precipitation_mass_st(cs_real_t        dtref,
                   && p_diam - ref_diameter < 1e-12
                   && p_mass - mass < 1e-12) {
 
-                cs_real_t p_weight = cs_lagr_particle_get_real(particle, p_am,
-                                                               CS_LAGR_STAT_WEIGHT);
+                cs_real_t p_weight
+                            = cs_lagr_particle_get_real(particle, p_am,
+                                                        CS_LAGR_STAT_WEIGHT);
 
                 if (   ((solub[iel] - cvar_scal[iel]) * fvq->cell_vol[iel])
                     >= (mp_diss[iel * preci->nbrclas + iclas] + p_weight * mass))
@@ -285,18 +286,17 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
   const cs_lagr_attribute_map_t *p_am = p_set->p_am;
 
-  /* ============================================================ */
-  /* 1. INITIALIZATION    */
-  /* ============================================================ */
+  /* Initialization
+     ============== */
 
-  /* number of dissolved particles  */
+  /* number of dissolved particles */
   cs_lnum_t *nbdiss;
   BFT_MALLOC(nbdiss, preci->nbrclas, cs_lnum_t);
 
   cs_real_t *mp;
   BFT_MALLOC(mp, preci->nbrclas, cs_real_t);
 
-  /* mass of dissolved particles    */
+  /* mass of dissolved particles */
   cs_real_t *mp_diss_t;
   BFT_MALLOC(mp_diss_t, mesh->n_cells_with_ghosts, cs_real_t);
 
@@ -317,18 +317,17 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
     }
   }
 
-  /* ============================================================ */
-  /* 2. GESTION DES PARTICULES */
-  /* ============================================================ */
+  /* Particle handling
+     ================= */
 
   for (cs_lnum_t iel = 0; iel < mesh->n_cells; iel++) {
-    nbprec2   = nbprec2 + preci->nbprec[iel];
+    nbprec2 = nbprec2 + preci->nbprec[iel];
   }
-  if (nbprec2 >= 1000000.0) {
-
-    /* Write(nfecra,1000) nbprec2 */
-
-    cs_exit(1);
+  if (nbprec2 >= 1000000) {
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: nbprec2 >= 1000000\n"
+              "(maximum number of precipitated particles exceeded).",
+              __func__, (int)nbprec2);
   }
 
   cs_lnum_t *cell;
@@ -390,7 +389,8 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
   cs_lnum_t npt = p_set->n_particles;
   p_set->n_part_new += nbprec_tot;
 
-  cs_lnum_t vv = cs_lagr_particle_set_resize(p_set->n_particles + p_set->n_part_new);
+  cs_lnum_t vv = cs_lagr_particle_set_resize
+                  (p_set->n_particles + p_set->n_part_new);
   assert(vv == 0);
 
   if (nbprec_tot >= 1) {
@@ -409,7 +409,8 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RANDOM_VALUE,
                                 part_random);
 
-      cs_real_t *part_coord = cs_lagr_particle_attr(particle, p_am, CS_LAGR_COORDS);
+      cs_real_t *part_coord = cs_lagr_particle_attr(particle, p_am,
+                                                    CS_LAGR_COORDS);
 
       for (cs_lnum_t i = 0; i <  3; i++)
         part_coord[i] = fvq->cell_cen[cell[ip - npt] * 3 + i];
@@ -423,11 +424,13 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
       for (cs_lnum_t i = 0; i < 3; i++)
         part_vel_seen[i] = vela[cell[ip - npt] * 3 + i];
 
-      cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
+      cs_real_t *part_vel = cs_lagr_particle_attr(particle, p_am,
+                                                  CS_LAGR_VELOCITY);
       for (cs_lnum_t i = 0; i < 3; i++)
         part_vel[i] = vela[cell[ip - npt] * 3 + i];
 
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, preci->diameter);
+      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
+                                preci->diameter);
 
       cs_real_t mass =   pow(preci->diameter, 3.0) * preci->rho * pis6;
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, mass);

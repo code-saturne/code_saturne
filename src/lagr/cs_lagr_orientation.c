@@ -576,6 +576,33 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
   cs_real_t *brown = NULL;
   BFT_MALLOC(brown, p_set->n_particles*9, cs_real_t);
 
+  const cs_real_t *cvar_k = NULL, *cvar_ep = NULL, *cvar_omg = NULL;
+  if (extra->cvar_k != NULL) {
+    cvar_k = (extra->cvar_k->n_time_vals > 1) ?
+      extra->cvar_k->vals[iprev] : extra->cvar_k->val;
+  }
+  if (extra->cvar_ep != NULL) {
+    cvar_ep = (extra->cvar_ep->n_time_vals > 1) ?
+      extra->cvar_ep->vals[iprev] : extra->cvar_ep->val;
+  }
+  if (extra->cvar_omg != NULL) {
+    cvar_omg = (extra->cvar_omg->n_time_vals > 1) ?
+      extra->cvar_omg->vals[iprev] : extra->cvar_omg->val;
+  }
+
+  if (! (   (extra->itytur >= 2 && extra->itytur <= 50)
+         || extra->iturb == 60))
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("The lagrangian turbulent dispersion model is not compatible\n"
+         "with the selected turbulence model.\n"
+         "\n"
+         "Turbulent dispersion is taken into account with IDISTU = %d.\n"
+         " Activated turbulence model is %d, when only k-eps, LES, Rij-eps,\n"
+         " V2f or k-omega are compatible lagrangian turbulent dispersion."),
+       (int)cs_glob_lagr_model->idistu,
+       (int)extra->iturb);
+
   /*===============================================
    * 2. Integration of the (S)DE on the orientation
    *===============================================*/
@@ -606,26 +633,11 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
     cs_real_t visccf = extra->viscl->val[cell_id] / romf;
 
     cs_real_t epsilon = 0;
-    if (extra->itytur == 2 || extra->itytur == 4 ||
-        extra->itytur == 3 || extra->iturb == 50) {
-      epsilon = extra->cvar_ep->vals[iprev][cell_id];
+    if (cvar_ep != NULL) {
+      epsilon = cvar_ep[cell_id];
     }
     else if (extra->iturb == 60) {
-      epsilon = extra->cmu * extra->cvar_k->vals[iprev][cell_id]
-                           * extra->cvar_omg->vals[iprev][cell_id];
-    }
-    else {
-      bft_printf(_("\n WARNING: STOP AT LAGRANGIAN MODULE EXECUTION\n"));
-      bft_printf
-        (_("The lagrangian module is not compatible with the selected turbulence model.\n"
-           "\n"
-           "Turbulent dispersion is taken into account with IDISTU = %d\n"
-           " Activated turbulence model is %d, when only k-eps, LES, Rij-eps,\n"
-           " V2f or k-omega are compatible with turbulent dispersion and Lagrangian module.\n"
-           "\n"),
-         (int)cs_glob_lagr_model->idistu,
-         (int)extra->iturb);
-      cs_exit(1);
+      epsilon = extra->cmu * cvar_k[cell_id] * cvar_omg[cell_id];
     }
 
     cs_real_t tau_eta = sqrt(visccf / epsilon);

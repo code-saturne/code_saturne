@@ -725,24 +725,30 @@ _lagr_map_fields_default(void)
 {
   if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
       || cs_glob_physical_model_flag[CS_COMBUSTION_FUEL] >= 0) {
-    _lagr_extra_module.cromf       = cs_field_by_name_try("rho_gas");
+    _lagr_extra_module.cromf   = cs_field_by_name_try("rho_gas");
   }
   else {
-    _lagr_extra_module.cromf       = cs_field_by_name_try("density");
+    _lagr_extra_module.cromf   = cs_field_by_name_try("density");
   }
 
-  _lagr_extra_module.pressure    = cs_field_by_name_try("pressure");
+  _lagr_extra_module.pressure  = cs_field_by_name_try("pressure");
 
-  _lagr_extra_module.luminance   = cs_field_by_name_try("luminance");
+  _lagr_extra_module.luminance = cs_field_by_name_try("luminance");
 
   _lagr_extra_module.lagr_time = cs_field_by_name_try("lagr_time");
+
+  _lagr_extra_module.cvar_k = cs_field_by_name_try("k");
+  if (_lagr_extra_module.cvar_k == NULL)
+    _lagr_extra_module.cvar_k = cs_field_by_name_try("lagr_k");
+
+  _lagr_extra_module.cvar_ep = cs_field_by_name_try("epsilon");
+  if (_lagr_extra_module.cvar_ep == NULL)
+    _lagr_extra_module.cvar_ep = cs_field_by_name_try("lagr_epsilon");
 
   if (cs_field_by_name_try("velocity_1") != NULL) {
     /* we are probably using NEPTUNE_CFD */
     _lagr_extra_module.vel         = cs_field_by_name_try("lagr_velocity");
 
-    _lagr_extra_module.cvar_k      = cs_field_by_name_try("lagr_k");
-    _lagr_extra_module.cvar_ep     = cs_field_by_name_try("lagr_epsilon");
     _lagr_extra_module.cvar_omg    = NULL;
     _lagr_extra_module.cvar_rij    = cs_field_by_name_try("lagr_rij");
     _lagr_extra_module.viscl       = cs_field_by_name_try
@@ -765,8 +771,6 @@ _lagr_map_fields_default(void)
   else {
     /* we use code_saturne */
     _lagr_extra_module.vel         = cs_field_by_name_try("velocity");
-    _lagr_extra_module.cvar_k      = cs_field_by_name_try("k");
-    _lagr_extra_module.cvar_ep     = cs_field_by_name_try("epsilon");
     _lagr_extra_module.cvar_omg    = cs_field_by_name_try("omega");
     _lagr_extra_module.cvar_rij    = cs_field_by_name_try("rij");
     _lagr_extra_module.viscl       = cs_field_by_name_try("molecular_viscosity");
@@ -1215,6 +1219,75 @@ cs_lagr_finalize(void)
   if (extra->grad_lagr_time != NULL)
     BFT_FREE(extra->grad_lagr_time);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create additional fields needed by the Lagrangien model
+ *
+ * Most additional fields can be defined directly in
+ * \ref cs_lagr_options_definition, but some fields may be mapped to
+ * different fields based on the calling module (i.e. code_saturne or
+ * neptune_cfd), and possibly defined after that call.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_add_fields(void)
+{
+  if (cs_glob_lagr_time_scheme->iilagr <= CS_LAGR_OFF)
+    return;
+
+  /* Add Lagrangian integral time for Lagrangian computation */
+
+  const int k_vis = cs_field_key_id("post_vis");
+  const int k_log = cs_field_key_id("log");
+
+  cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
+  cs_field_t *f = NULL;
+
+  /* Add Lagrangian integral time */
+
+  f = cs_field_create("lagr_time",
+                      CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                      CS_MESH_LOCATION_CELLS,
+                      1,
+                      false);
+
+  cs_field_set_key_int(f, k_log, 1);
+  cs_field_set_key_int(f, k_vis, 1);
+
+  /* Add TKE for DRSM model */
+
+  if (extra->itytur == 3 || extra->itytur == 4) {
+    f = cs_field_by_name_try("k");
+    if (f == NULL)
+      f = cs_field_by_name_try("lagr_k");
+    if (f == NULL) {
+      f = cs_field_find_or_create("lagr_k",
+                                  CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                                  CS_MESH_LOCATION_CELLS,
+                                  1,
+                                  true);
+      cs_field_set_key_int(f, k_log, 1);
+    }
+  }
+
+  /* Add Dissipation for LES */
+
+  if (extra->itytur == 4) {
+    f = cs_field_by_name_try("epsilon");
+    if (f == NULL)
+      f = cs_field_by_name_try("lagr_epsilon");
+    if (f == NULL) {
+      f = cs_field_find_or_create("lagr_epsilon",
+                                  CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                                  CS_MESH_LOCATION_CELLS,
+                                  1,
+                                  true);
+      cs_field_set_key_int(f, k_log, 1);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2114,13 +2187,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
        values at current time step and not at previous time step, because
        values at previous time step = initialization (zero gradients) */
 
-    if (extra->itytur == 3 ) {
+    if (extra->itytur == 3 && extra->cvar_k->n_time_vals > 1) {
       /* save previous value dor the kinetic energy */
       for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
-        extra->cvar_k->vals[1][cell_id] = 0.5 *
-                                    (  extra->cvar_rij->vals[1][6*cell_id]
-                                     + extra->cvar_rij->vals[1][6*cell_id + 1]
-                                     + extra->cvar_rij->vals[1][6*cell_id + 2]);
+        extra->cvar_k->vals[1][cell_id]
+          = 0.5 * (  extra->cvar_rij->vals[1][6*cell_id]
+                   + extra->cvar_rij->vals[1][6*cell_id + 1]
+                   + extra->cvar_rij->vals[1][6*cell_id + 2]);
     }
 
     /* First pass allocate and compute it */
@@ -2132,7 +2205,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                                         extra->grad_vel,
                                         extra->grad_lagr_time);
     }
-    else if (cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
+    else if (   cs_glob_lagr_time_scheme->iilagr
+             != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
 
       if (mesh->time_dep >= CS_MESH_TRANSIENT_CONNECT) {
         cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
