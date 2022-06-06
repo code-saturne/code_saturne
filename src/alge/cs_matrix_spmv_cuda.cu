@@ -608,6 +608,9 @@ _pre_vector_multiply_sync_x_start(const cs_matrix_t   *matrix,
 
   if (matrix->halo != NULL) {
 
+    if (_stream != 0)
+      cudaStreamSynchronize(_stream);
+
     hs = cs_halo_state_get_default();
 
     cs_halo_sync_pack_d(matrix->halo,
