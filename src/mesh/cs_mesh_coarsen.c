@@ -837,7 +837,7 @@ _build_merged_face(cs_lnum_t                    n_faces,
  * \brief Build interior faces equivalence array.
  *
  * \param[in, out]  m        mesh
- * \param[out]      i_f_o2n  cell old to new renumbering
+ * \param[out]      i_f_o2n  face old to new renumbering
  *
  * return  number of new interior faces
  */
@@ -897,17 +897,34 @@ _i_faces_equiv(cs_mesh_t  *m,
 
     cs_lnum_t c_id_prev = -1;
     cs_lnum_t f_id_eq = -1;
+    cs_lnum_t s_id_c = s_id;
 
     for (cs_lnum_t j = s_id; j < e_id; j++) {
-      cs_lnum_t f_id = c2f->ids[j];
       cs_lnum_t c_id_0 = c2c[j];
 
       if (c_id_0 != c_id_prev) {
+        f_id_eq = c2f->ids[s_id_c];
+        for (cs_lnum_t k = s_id_c; k < j; k++)
+          f_id_eq = CS_MIN(f_id_eq, c2f->ids[k]);
+        for (cs_lnum_t k = s_id_c; k < j; k++) {
+          cs_lnum_t f_id = c2f->ids[k];
+          _i_f_o2n[f_id] = f_id_eq;
+        }
+        s_id_c = j;
         c_id_prev = c_id_0;
-        f_id_eq = f_id;
       }
 
-      _i_f_o2n[f_id] = f_id_eq;
+    }
+
+    if (s_id_c < e_id) {
+      f_id_eq = c2f->ids[s_id_c];
+
+      for (cs_lnum_t k = s_id_c; k < e_id; k++)
+        f_id_eq = CS_MIN(f_id_eq, c2f->ids[k]);
+      for (cs_lnum_t k = s_id_c; k < e_id; k++) {
+        cs_lnum_t f_id = c2f->ids[k];
+        _i_f_o2n[f_id] = f_id_eq;
+      }
     }
 
   }
@@ -1222,7 +1239,7 @@ _filter_b_face_equiv(cs_lnum_t                    n_faces,
  * The caller is reqponsible for freeing the b_f_o2n array.
  *
  * \param[in, out]  m        mesh
- * \param[in]       c_flag   0 fur unchanged cells, > 0 for coarsened ones
+ * \param[in]       c_flag   0 for unchanged cells, > 0 for coarsened ones
  * \param[out]      b_f_o2n  face old to new renumbering
  *
  * return  number of new interior faces

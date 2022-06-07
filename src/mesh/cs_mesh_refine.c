@@ -213,6 +213,78 @@ _print_mesh_counts(const cs_mesh_t  *m,
              (unsigned long long)(m->n_g_vertices));
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine face refinement level based on associated vertex
+ *        levels.
+ *
+ * A refinement level is different from a refinement generation:
+ * - The generation corresponds to the cell refinement level at which a face
+ *   is added.
+ * - The level corresponds to the number of subdivisions of the root
+ *   ancestor face.
+ *
+ * Faces based on previous refinement should usually be triangles (with
+ * 1 edge/2 consecutive vertices of matching refinement level) or quadrangles
+ * (with 2 edges/3 consecutive vertices of matching refinement level).
+ *
+ * When a face is polygonal, we must try to identify corners, as some edges
+ * may have been split due to adjacent face/cell refinement. When an edge
+ * is split in this way, the added vertex is of a higher level than both
+ * adjacent vertices. We use this property to try to reconstruct the original
+ * topology.
+ *
+ * \param[in, out]  n_v        number of face vertices
+ * \param[in]       face_vtx   face vertex idx
+ * \param[in]       vtx_r_gen  refinedment level associated to each vertex.
+ */
+/*----------------------------------------------------------------------------*/
+
+static char
+_compute_face_r_level(cs_lnum_t        n_v,
+                      const cs_lnum_t  face_vtx[],
+                      const char       vtx_r_gen[])
+{
+  char retval = 0;
+
+  char r_gen[256];
+  char *_r_gen = r_gen;
+
+  if (n_v > 256) {
+    /* If we ever need to do this, mesh quality is probably quite bad... */
+    BFT_MALLOC(_r_gen, 256, char);
+  }
+
+  for (cs_lnum_t i = 0; i < n_v; i++)
+    _r_gen[i] = vtx_r_gen[face_vtx[i]];
+
+  cs_lnum_t _n_v = n_v, v_count = n_v;
+  do {
+    _n_v = v_count;
+    v_count = 0;
+    bool prev_up = (_r_gen[0] > _r_gen[n_v - 1]) ? true : false;
+
+    for (cs_lnum_t i = 0; i < _n_v; i++) {
+      cs_lnum_t i_n = (i+1)%_n_v;
+      if (prev_up && _r_gen[i] > _r_gen[i_n]) { /* Remove vertex */
+        prev_up = false;
+      }
+      else {
+        prev_up = (_r_gen[i_n] > _r_gen[i]) ? true : false;
+        _r_gen[v_count++] = _r_gen[i]; /* Keep vertex */
+      }
+    }
+  } while (v_count < _n_v);
+
+  for (cs_lnum_t i = 0; i < _n_v; i++)
+    retval = CS_MAX(retval, _r_gen[i]);
+
+  if (_r_gen != r_gen)
+    BFT_FREE(_r_gen);
+
+  return retval;
+}
+
 /*----------------------------------------------------------------------------
  * Check if a polygon is convex or at least star-shaped.
  *
@@ -347,7 +419,7 @@ _match_tetra(cs_lnum_t  vtx_tria[4][3],
   f_id_tria[0] = -1;
 
   /*
-    We start with found 3 of 4 vertices; all other triangles should share
+    We start with 3 of 4 vertices found; all other triangles should share
     vertex 4, and one edge of the base triangle.
   */
 
@@ -791,7 +863,10 @@ _cell_r_type(const cs_mesh_t              *m,
 
   const cs_lnum_t n_cell_faces = e_id - s_id;
 
-  /* Cells with more than 6 faces handled as general polyhedra */
+  /* Cells with more than 6 faces handled as general polyhedra.
+     TODO check face refinement levels and re-associated faces
+     of highest levels if possible to see if a pattern of cells with some
+     faces already subdivided can be identified. */
 
   if (n_cell_faces > 6 && c_r_flag[cell_id] == CS_REFINE_DEFAULT)
     c_r_flag[cell_id] = CS_REFINE_POLYHEDRON;
@@ -1867,12 +1942,13 @@ _element_centers(const cs_mesh_t              *m,
  * this function (to allow for vertices inserted on edges, faces, and possibly
  * cells with a single resize).
  *
- * \param[in, out]  m         mesh
- * \param[in]       n_faces   number of faces
- * \param[in]       f_r_flag  face refinement flag
- * \param[in]       f_r_gen   face refinement generation
- * \param[in]       f_v_idx   for each face, start index of added vertices
- * \param[in]       f_center  face centers
+ * \param[in, out]  m          mesh
+ * \param[in]       n_faces    number of faces
+ * \param[in]       f_vtx_idx  face -> vertices index
+ * \param[in]       f_vtx_lst  face -> vertices list
+ * \param[in]       f_r_flag   face refinement flag
+ * \param[in]       f_v_idx    for each face, start index of added vertices
+ * \param[in]       f_center   face centers
  *
  * \return  local number of vertices added on faces
  */
@@ -1881,8 +1957,9 @@ _element_centers(const cs_mesh_t              *m,
 static void
 _build_face_vertices(cs_mesh_t                    *m,
                      cs_lnum_t                     n_faces,
+                     const cs_lnum_t               f_vtx_idx[],
+                     const cs_lnum_t               f_vtx_lst[],
                      const cs_mesh_refine_type_t   f_r_flag[],
-                     const char                    f_r_gen[],
                      const cs_lnum_t               f_v_idx[],
                      const cs_real_t               f_center[][3])
 {
@@ -1893,9 +1970,15 @@ _build_face_vertices(cs_mesh_t                    *m,
     cs_lnum_t n_add = f_v_idx[f_id+1] - f_v_idx[f_id];
 
     if (n_add == 1) {
+      cs_lnum_t s_id = f_vtx_idx[f_id];
+      cs_lnum_t e_id = f_vtx_idx[f_id+1];
+      char r_level = _compute_face_r_level(e_id - s_id,
+                                           f_vtx_lst + s_id,
+                                           m->vtx_r_gen);
+
       for (cs_lnum_t i = 0; i < 3; i++)
         m->vtx_coord[(f_v_idx[f_id]*3) + i] = f_center[f_id][i];
-      m->vtx_r_gen[f_v_idx[f_id]] = f_r_gen[f_id] + 1;
+      m->vtx_r_gen[f_v_idx[f_id]] = r_level + 1;
 
     }
     else if (n_add > 1) {
@@ -4277,21 +4360,6 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
       m->i_face_r_gen[i] = 0;
   }
 
-  char *b_face_r_gen;
-  BFT_MALLOC(b_face_r_gen, m->n_b_faces, char);
-# pragma omp for schedule(dynamic, CS_CL_SIZE)
-  for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
-    char r_gen = 0;
-    cs_lnum_t s_id = m->b_face_vtx_idx[f_id];
-    cs_lnum_t e_id = m->b_face_vtx_idx[f_id+1];
-    for (cs_lnum_t i = s_id; i < e_id; i++) {
-      char v_r_gen = m->vtx_r_gen[m->b_face_vtx_lst[i]];
-      if (v_r_gen > r_gen)
-        r_gen = v_r_gen;
-      b_face_r_gen[f_id] = r_gen;
-    }
-  }
-
   /* Determine current cell refinement level */
 
   char *c_r_level = NULL;
@@ -4302,7 +4370,6 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
     const cs_lnum_2_t *restrict i_face_cells
       = (const cs_lnum_2_t *restrict)m->i_face_cells;
-    const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
     for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++) {
       for (cs_lnum_t i = 0; i < 2; i++) {
@@ -4310,12 +4377,6 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
         if (m->i_face_r_gen[f_id] > c_r_level[c_id])
           c_r_level[c_id] = m->i_face_r_gen[f_id];
       }
-    }
-
-    for (cs_lnum_t f_id = 0; f_id < m->n_b_faces; f_id++) {
-      cs_lnum_t c_id = b_face_cells[f_id];
-      if (b_face_r_gen[f_id] > c_r_level[c_id])
-        c_r_level[c_id] = b_face_r_gen[f_id];
     }
 
     if (m->halo != NULL)
@@ -4450,7 +4511,6 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   cs_lnum_t n_g_vtx_new =  m->n_g_vertices;
 
-
   BFT_REALLOC(m->vtx_coord, n_vtx_new*3, cs_real_t);
   BFT_REALLOC(m->vtx_r_gen, n_vtx_new, char);
   if (m->global_vtx_num != NULL)
@@ -4463,21 +4523,21 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   _build_face_vertices(m,
                        m->n_b_faces,
+                       m->b_face_vtx_idx,
+                       m->b_face_vtx_lst,
                        f_r_flag,
-                       b_face_r_gen,
                        f_v_idx,
                        (const cs_real_3_t *)b_face_cen_o);
   _build_face_vertices(m,
                        m->n_i_faces,
+                       m->i_face_vtx_idx,
+                       m->i_face_vtx_lst,
                        f_r_flag + m->n_b_faces,
-                       m->i_face_r_gen,
                        f_v_idx + m->n_b_faces,
                        (const cs_real_3_t *)i_face_cen_o);
 
   BFT_FREE(b_face_cen_o);
   BFT_FREE(i_face_cen_o);
-
-  BFT_FREE(b_face_r_gen);
 
   _build_vertices_gnum(m, m->n_b_faces, m->n_g_b_faces,
                        f_v_idx, m->global_b_face_num);
