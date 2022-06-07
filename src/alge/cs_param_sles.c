@@ -40,6 +40,11 @@
 #include <petscversion.h>
 #endif
 
+#if defined(HAVE_HYPRE)
+#include <HYPRE_krylov.h>
+#include <HYPRE_parcsr_ls.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -59,6 +64,10 @@
 
 #if defined(HAVE_PETSC)
 #include "cs_sles_petsc.h"
+#endif
+
+#if defined(HAVE_HYPRE)
+#include "cs_sles_hypre.h"
 #endif
 
 /*----------------------------------------------------------------------------
@@ -1081,7 +1090,7 @@ _petsc_amg_block_boomer_hook(void     *context,
 
     sprintf(prefix, "%s_fieldsplit_%c", slesp->name, xyz[id]);
 
-    _petsc_cmd(true, prefix, "ksp_type","preonly");
+    _petsc_cmd(true, prefix, "ksp_type", "preonly");
 
     /* Predefined settings when using AMG as a preconditioner */
 
@@ -1837,6 +1846,312 @@ _set_petsc_hypre_sles(bool                 use_field_id,
 #endif /* HAVE_PETSC */
 }
 
+#if defined(HAVE_HYPRE)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Setup hook function for a Hypre KSP solver with preconditioner
+ *         This function is called at the end of the setup stage for a KSP
+ *         solver.
+ *
+ *         Note: if the context pointer is non-NULL, it must point to valid
+ *         data when the selection function is called so that value or
+ *         structure should not be temporary (i.e. local);
+ *
+ *         Check HYPRE documentation for available options:
+ *         https://hypre.readthedocs.io/en/latest/index.html
+ *
+ * \param[in]      verbosity  verbosity level
+ * \param[in, out] context    pointer to optional (untyped) value or structure
+ * \param[in, out] solver     handle to HYPRE solver
+ *----------------------------------------------------------------------------*/
+
+static void
+_hypre_boomeramg_hook(int    verbosity,
+                      void  *context,
+                      void  *solver_p)
+{
+  CS_NO_WARN_IF_UNUSED(verbosity);
+
+  cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
+  HYPRE_Solver  hs = solver_p;
+  HYPRE_Solver  amg = NULL;
+  bool  amg_as_precond = false;
+
+  switch (slesp->solver) {
+
+  case CS_PARAM_ITSOL_AMG: /* BoomerAMG as solver */
+    amg = hs;
+    break;
+
+  case CS_PARAM_ITSOL_CG:
+  case CS_PARAM_ITSOL_FCG:
+    HYPRE_PCGGetPrecond(hs, &amg);
+    HYPRE_PCGSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
+    HYPRE_PCGSetTol(hs, (HYPRE_Real)slesp->eps);
+    amg_as_precond = true;
+    break;
+
+  case CS_PARAM_ITSOL_FGMRES:
+  case CS_PARAM_ITSOL_GCR:
+  case CS_PARAM_ITSOL_GMRES:
+    HYPRE_FlexGMRESGetPrecond(hs, &amg);
+    HYPRE_FlexGMRESSetMaxIter(hs, (HYPRE_Int)slesp->n_max_iter);
+    HYPRE_FlexGMRESSetKDim(hs, (HYPRE_Int)slesp->restart);
+    HYPRE_FlexGMRESSetTol(hs, (HYPRE_Real)slesp->eps);
+    amg_as_precond = true;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of AMG for eq. \"%s\"\n",
+              __func__, slesp->name);
+    break;
+  }
+
+  /* Set the type of cycle */
+
+  switch (slesp->amg_type) {
+
+  case CS_PARAM_AMG_HYPRE_BOOMER_V:
+    HYPRE_BoomerAMGSetCycleType(amg, 1);
+    break;
+
+  case CS_PARAM_AMG_HYPRE_BOOMER_W:
+    HYPRE_BoomerAMGSetCycleType(amg, 2);
+    break;
+
+    /* TODO: Add a full multigrid */
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid type of AMG cycle for eq. \"%s\"\n",
+              __func__, slesp->name);
+    break;
+  }
+
+  /* From HYPRE website. Coarsening type. Default = 10
+   *
+   * 22 and 8 are also good choices
+   *
+   *  HMIS (=10): uses one pass Ruge-Stueben on each processor independently,
+   *  followed by PMIS using the interior C-points generated as its first
+   *  independent set
+   *
+   *  PMIS (=8) can be also a good choice
+   *  a parallel coarsening algorithm using independent sets, generating lower
+   *  complexities than CLJP (=0), might also lead to slower convergence
+   *
+   * 21: CGC coarsening by M. Griebel, B. Metsch and A. Schweitzer
+   * 22: CGC-E coarsening by M. Griebel, B. Metsch and A.Schweitzer
+   */
+
+  HYPRE_BoomerAMGSetCoarsenType(amg, 10);
+
+  /* From HYPRE documentation.
+   * InterpType: recommended: 6 (default) or 7
+   *
+   *  2: classical modified interpolation for hyperbolic PDEs
+   *  4: multipass interpolation
+   *  6: extended+i interpolation (also for GPU use)
+   *  7: extended+i (if no common C neighbor) interpolation
+   * 10: classical block interpolation (with nodal systems only)
+   * 11: classical block interpolation (with nodal systems only) + diagonalized
+   *     diagonal blocks
+   * 13: FF1 interpolation
+   * 16: extended interpolation in matrix-matrix form
+   * 17: extended+i interpolation in matrix-matrix form
+   * 18: extended+e interpolation in matrix-matrix form
+   *
+   * PMAxElmts: maximal number of elements per row for the interpolation
+   *  recommended 4 (default) or 5 --> test with CDO --> 8
+   */
+
+  HYPRE_BoomerAMGSetInterpType(amg, 4);
+  HYPRE_BoomerAMGSetPMaxElmts(amg, 8);
+
+  /* From the HYPRE documentation.
+   * "One important parameter is the strong threshold, which can be set using
+   * the function HYPRE_BoomerAMGSetStrongThreshold. The default value is 0.25,
+   * which appears to be a good choice for 2- dimensional problems and the low
+   * complexity coarsening algorithms. For 3-dimensional problems a better
+   * choice appears to be 0.5, when using the default coarsening algorithm.
+   * However, the choice of the strength threshold is problem dependent and
+   * therefore there could be better choices than the two suggested ones."
+   */
+
+  HYPRE_Real  strong_th = 0.5;  /* 2d=>0.25 (default) 3d=>0.5 */
+
+  HYPRE_BoomerAMGSetStrongThreshold(amg, strong_th);
+  HYPRE_BoomerAMGSetStrongThresholdR(amg, strong_th);
+
+  if (amg_as_precond) {
+
+    /* Maximum size of coarsest grid. The default is 9 */
+
+    HYPRE_BoomerAMGSetMaxCoarseSize(amg, 50);
+
+    /* The default smoother is a good compromise in case of preconditioner
+     * Remark: fcf-jacobi or l1scaled-jacobi (or chebyshev) as up/down smoothers
+     * could be a good choice
+     *
+     *  0: Jacobi
+     *  6: hybrid sym. Gauss Seidel/Jacobi
+     *  7: Jacobi
+     *  8: l1 sym. Gauss Seidel
+     * 13: l1-Gauss Seidel (forward) --> default on the down cycle
+     * 14: l1 Gauss Seidel (backward) --> default on the up cycle
+     * 15: CG
+     * 16: Chebyshev
+     * 17: FCF-Jacobi
+     * 18: l1 Jacobi
+     */
+
+    HYPRE_BoomerAMGSetCycleRelaxType(amg, 13, 1); /* down cycle */
+    HYPRE_BoomerAMGSetCycleRelaxType(amg, 14, 2); /* up cycle */
+    HYPRE_BoomerAMGSetCycleRelaxType(amg,  8, 3); /* coarsest level */
+
+    /* Number of smoothing steps (precond, num, down/up/coarse) */
+
+    HYPRE_BoomerAMGSetCycleNumSweeps(amg, 1, 1); /* down cycle */
+    HYPRE_BoomerAMGSetCycleNumSweeps(amg, 1, 2); /* up cycle */
+    HYPRE_BoomerAMGSetCycleNumSweeps(amg, 1, 3); /* coarsest level */
+
+    HYPRE_BoomerAMGSetTol(amg, 0.0);
+    HYPRE_BoomerAMGSetMaxIter(amg, 1);
+
+    /* Aggressive coarsening on the nl=2 first levels */
+
+    HYPRE_BoomerAMGSetAggNumLevels(amg, 2);
+
+    /* From HYPRE documentation: For levels with aggressive coarsening
+     *
+     * AggInterType: interpolation used on levels of aggressive coarsening
+     *
+     *  4: (default) multipass interpolation
+     *  5: 2-stage extended interpolation in matrix-matrix form
+     *  6: 2-stage extended+i interpolation in matrix-matrix form
+     *  7: 2-stage extended+e interpolation in matrix-matrix form
+     */
+
+    HYPRE_BoomerAMGSetAggInterpType(amg, 4);
+
+    /* Number of paths for aggressive coarsening (default = 1) */
+
+    HYPRE_BoomerAMGSetNumPaths(amg, 2);
+
+    /* From the HYPRE documentation.
+     * "In order to reduce communication, there is a non-Galerkin coarse grid
+     * sparsification option. [...] It is common to drop more aggressively on
+     * coarser levels. A common choice of drop-tolerances is [0.0, 0.01, 0.05]
+     * where the value of 0.0 will skip the non-Galerkin process on the first
+     * coarse level (level 1), use a drop-tolerance of 0.01 on the second coarse
+     * level (level 2) and then use 0.05 on all subsequent coarse levels."
+     */
+
+    HYPRE_Real  nongalerkin_tol[3] = {0., 0.01, 0.05};
+    HYPRE_BoomerAMGSetNonGalerkTol(amg, 3, nongalerkin_tol);
+
+  }
+  else {
+
+    HYPRE_BoomerAMGSetRelaxType(amg, 6);      /* Sym G.S./Jacobi hybrid */
+    HYPRE_BoomerAMGSetMaxIter(amg, slesp->n_max_iter);
+    HYPRE_BoomerAMGSetRelaxOrder(amg, 0);
+
+    /* This option is recommended for GPU usage */
+
+    HYPRE_BoomerAMGSetKeepTranspose(amg, 1);  /* keep transpose to avoid
+                                                 SpMTV */
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set parameters for initializing SLES structures used for the
+ *        resolution of the linear system.
+ *        Case of Hypre families of solvers.
+ *
+ *        Check HYPRE documentation for available options:
+ *        https://hypre.readthedocs.io/en/latest/index.html
+ *
+ * \param[in]      use_field_id   if false use system name
+ * \param[in, out] slesp          pointer to a \ref cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_hypre_sles(bool                 use_field_id,
+                cs_param_sles_t     *slesp)
+{
+  assert(slesp != NULL);  /* Sanity checks */
+
+  const  char  *sles_name = use_field_id ? NULL : slesp->name;
+  assert(slesp->field_id > -1 || sles_name != NULL);
+
+  /* Set the solver and the associated preconditioner */
+
+  switch(slesp->solver) {
+
+  case CS_PARAM_ITSOL_AMG:
+    cs_sles_hypre_define(slesp->field_id,
+                         sles_name,
+                         CS_SLES_HYPRE_BOOMERAMG,
+                         CS_SLES_HYPRE_NONE,
+                         _hypre_boomeramg_hook,
+                         (void *)slesp);
+    break;
+
+  case CS_PARAM_ITSOL_CG:
+  case CS_PARAM_ITSOL_FCG:
+    switch (slesp->precond) {
+
+    case CS_PARAM_PRECOND_AMG:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_PCG,
+                           CS_SLES_HYPRE_BOOMERAMG,
+                           _hypre_boomeramg_hook,
+                           (void *)slesp);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: System: %s\n Invalid solver/preconditioner with HYPRE.",
+                __func__, slesp->name);
+    }
+    break;
+
+  case CS_PARAM_ITSOL_FGMRES:
+  case CS_PARAM_ITSOL_GCR:
+  case CS_PARAM_ITSOL_GMRES:
+    switch (slesp->precond) {
+
+    case CS_PARAM_PRECOND_AMG:
+      cs_sles_hypre_define(slesp->field_id,
+                           sles_name,
+                           CS_SLES_HYPRE_FLEXGMRES,
+                           CS_SLES_HYPRE_BOOMERAMG,
+                           _hypre_boomeramg_hook,
+                           (void *)slesp);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: System: %s\n Invalid solver/preconditioner with HYPRE.",
+                __func__, slesp->name);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: System: %s\n Incompatible solver with HYPRE.",
+              __func__, slesp->name);
+    break;
+
+  } /* Switch on solver */
+}
+#endif /* HAVE_HYPRE */
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -2059,11 +2374,23 @@ cs_param_sles_set(bool                 use_field_id,
     _set_mumps_sles(use_field_id, slesp);
     break;
 
+#if defined(HAVE_HYPRE)
+  case CS_PARAM_SLES_CLASS_HYPRE: /* HYPRE solvers through PETSc or not */
+    /* true = use field_id instead of slesp->name to set the sles */
+    _set_hypre_sles(use_field_id, slesp);
+    break;
+
   case CS_PARAM_SLES_CLASS_PETSC: /* PETSc solvers */
-  case CS_PARAM_SLES_CLASS_HYPRE: /* HYPRE solvers through PETSc */
     /* true = use field_id instead of slesp->name to set the sles */
     _set_petsc_hypre_sles(use_field_id, slesp);
     break;
+#else
+  case CS_PARAM_SLES_CLASS_HYPRE: /* HYPRE solvers through PETSc */
+  case CS_PARAM_SLES_CLASS_PETSC: /* PETSc solvers */
+    /* true = use field_id instead of slesp->name to set the sles */
+    _set_petsc_hypre_sles(use_field_id, slesp);
+    break;
+#endif
 
   default:
     return -1;
@@ -2112,6 +2439,10 @@ cs_param_sles_check_class(cs_param_sles_class_t   wanted_class)
     return CS_PARAM_SLES_CLASS_CS;
 
   case CS_PARAM_SLES_CLASS_HYPRE:
+    /* ------------------------- */
+#if defined(HAVE_HYPRE)
+    return CS_PARAM_SLES_CLASS_HYPRE;
+#else
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_HYPRE)
     return CS_PARAM_SLES_CLASS_HYPRE;
@@ -2121,10 +2452,12 @@ cs_param_sles_check_class(cs_param_sles_class_t   wanted_class)
     return CS_PARAM_SLES_CLASS_PETSC; /* Switch to petsc */
 #endif
 #else
-    return CS_PARAM_SLES_N_CLASSES;
+    return CS_PARAM_SLES_N_CLASSES; /* Neither HYPRE nor PETSc */
+#endif
 #endif
 
   case CS_PARAM_SLES_CLASS_PETSC:
+    /* ------------------------- */
 #if defined(HAVE_PETSC)
     return CS_PARAM_SLES_CLASS_PETSC;
 #else
@@ -2132,6 +2465,7 @@ cs_param_sles_check_class(cs_param_sles_class_t   wanted_class)
 #endif
 
   case CS_PARAM_SLES_CLASS_MUMPS:
+    /* ------------------------- */
 #if defined(HAVE_MUMPS)
     return CS_PARAM_SLES_CLASS_MUMPS;
 #else
