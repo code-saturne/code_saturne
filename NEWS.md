@@ -3,6 +3,9 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- Syrthes coupling: ensure post-processed received temperature is
+  initialized at time step 0, before actual exchanges (issue #370).
+
 - Balance by zone: fix crash in some configurations.
 
 - Fix contribution of mass-source terms with Rij models.
