@@ -204,20 +204,20 @@ cs_mesh_deform_activate(void)
   for (int i = 0; i < 3; i++) {
 
     cs_equation_t  *eq =
-      cs_equation_add(eq_name[i], // equation name
-                      eq_name[i], // associated variable field name
+      cs_equation_add(eq_name[i], /* equation name */
+                      eq_name[i], /* associated variable field name */
                       CS_EQUATION_TYPE_PREDEFINED,
-                      1,                 // dimension of the unknown
-                      CS_PARAM_BC_HMG_NEUMANN); // default boundary
+                      1,                        /* dimension of the unknown */
+                      CS_PARAM_BC_HMG_NEUMANN); /* default boundary */
 
     cs_equation_param_t  *eqp = cs_equation_get_param(eq);
 
     /* System to solve is SPD by construction */
+
     cs_equation_param_set(eqp, CS_EQKEY_ITSOL, "cg");
     cs_equation_param_set(eqp, CS_EQKEY_PRECOND, "amg");
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

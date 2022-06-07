@@ -70,12 +70,6 @@
 #include "cs_sles_petsc.h"
 #endif
 
-#if defined(HAVE_HYPRE)
-#  include <HYPRE_krylov.h>
-#  include <HYPRE_parcsr_ls.h>
-#  include <HYPRE_utilities.h>
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
