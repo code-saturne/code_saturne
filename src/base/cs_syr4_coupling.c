@@ -69,6 +69,7 @@
 #include "cs_mesh_connect.h"
 #include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_physical_constants.h"
 #include "cs_selector.h"
 #include "cs_time_step.h"
 #include "cs_timer_stats.h"
@@ -396,6 +397,8 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
   const int writer_id = -1;
   const int writer_ids[] = {writer_id};
 
+  const cs_real_t t_ref = cs_glob_fluid_properties->t0;
+
   /* Determine coupling id */
 
   for (coupling_id = 0;
@@ -418,11 +421,17 @@ _post_init(cs_syr4_coupling_t      *syr_coupling,
   /* Allocate arrays if not already present */
 
   if (coupling_ent->n_elts > 0) {
-    if (coupling_ent->solid_temp == NULL) /* surface coupling */
+    if (coupling_ent->solid_temp == NULL) { /* surface coupling */
       BFT_MALLOC(coupling_ent->solid_temp, coupling_ent->n_elts, cs_real_t);
+      for (cs_lnum_t i = 0; i < coupling_ent->n_elts; i++)
+        coupling_ent->solid_temp[i] = t_ref;
+    }
     if (coupling_ent->elt_dim == syr_coupling->dim) { /* volume coupling */
-      if (coupling_ent->flux == NULL)
+      if (coupling_ent->flux == NULL) {
         BFT_MALLOC(coupling_ent->flux, coupling_ent->n_elts, float);
+        for (cs_lnum_t i = 0; i < coupling_ent->n_elts; i++)
+          coupling_ent->flux[i] = 0;
+      }
     }
   }
   coupling_ent->tfluid_tmp = NULL;

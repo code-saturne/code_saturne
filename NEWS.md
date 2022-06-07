@@ -3,6 +3,9 @@ Release 7.0.5 (not released yet)
 
 Bug fixes:
 
+- Syrthes coupling: ensure post-processed received temperature is
+  initialized at time step 0, before actual exchanges (issue #370).
+
 - Fix in meteo preprocessor in case of restart: do not recompute variables.
 
 - Merge option to activate atmospheric pressure outlet condition aligned
