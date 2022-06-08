@@ -742,6 +742,7 @@ cs_cdovb_scalsys_define(int                                 n_eqs,
                                        1);  /* n_blocks */
 
       cs_cdo_system_add_dblock(sh, 0,
+                               CS_CDO_SYSTEM_MATRIX_CS,
                                cs_flag_primal_vtx,
                                n_vertices,
                                n_eqs,   /* stride */

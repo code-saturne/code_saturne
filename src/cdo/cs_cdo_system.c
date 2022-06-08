@@ -43,6 +43,10 @@
 #include "cs_flag.h"
 #include "cs_matrix_priv.h"
 
+#if defined(HAVE_HYPRE)
+#include "cs_matrix_hypre.h"
+#endif
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/
@@ -290,13 +294,28 @@ _assign_slave_assembly_func(const cs_cdo_system_block_info_t   bi)
 static cs_cdo_assembly_func_t *
 _assign_assembly_func(const cs_cdo_system_block_info_t   bi)
 {
-  if (bi.stride == 1)  /* Assemble a cell system with 1 DoF by element */
-    return _set_scalar_assembly_func();
-  else if (bi.stride == 3) {
-    if (bi.unrolled)
-      return _set_eblock33_assembly_func();
+  if (bi.stride == 1)  { /* Assemble a cell system with 1 DoF by element */
+
+    if (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE)
+      return cs_cdo_assembly_matrix_scal_generic;
     else
-      return _set_block33_assembly_func();
+      return _set_scalar_assembly_func();
+
+  }
+  else if (bi.stride == 3) {
+
+    if (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE)
+      return cs_cdo_assembly_matrix_e33_generic;
+
+    else {
+
+      if (bi.unrolled)
+        return _set_eblock33_assembly_func();
+      else
+        return _set_block33_assembly_func();
+
+    }
+
   }
   else
     return _set_block_assembly_func();
@@ -861,6 +880,8 @@ _find_in_block_array(cs_cdo_system_block_t   *b)
 
     if (b->type != b_store->type)
       continue;
+    if (b->info.matrix_class != b_store->info.matrix_class)
+      continue;
     if (b->info.location != b_store->info.location)
       continue;
     if (b->info.n_elements != b_store->info.n_elements)
@@ -1127,6 +1148,7 @@ cs_cdo_system_helper_free(cs_cdo_system_helper_t   **p_helper)
  *
  * \param[in, out] sh          pointer to the system helper to update
  * \param[in]      block_id    id in blocks array in a system helper
+ * \param[in]      matclass    class of the matrix to handle
  * \param[in]      location    where DoFs are defined
  * \param[in]      n_elements  number of elements (support entities for DoFs)
  * \param[in]      stride      number of DoFs by element
@@ -1138,13 +1160,14 @@ cs_cdo_system_helper_free(cs_cdo_system_helper_t   **p_helper)
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_system_block_t *
-cs_cdo_system_add_dblock(cs_cdo_system_helper_t   *sh,
-                         int                       block_id,
-                         cs_flag_t                 location,
-                         cs_lnum_t                 n_elements,
-                         int                       stride,
-                         bool                      interlaced,
-                         bool                      unrolled)
+cs_cdo_system_add_dblock(cs_cdo_system_helper_t       *sh,
+                         int                           block_id,
+                         cs_cdo_system_matrix_class_t  matclass,
+                         cs_flag_t                     location,
+                         cs_lnum_t                     n_elements,
+                         int                           stride,
+                         bool                          interlaced,
+                         bool                          unrolled)
 {
   if (sh == NULL)
     return NULL;
@@ -1158,6 +1181,7 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t   *sh,
   BFT_MALLOC(b, 1, cs_cdo_system_block_t);
 
   b->type = CS_CDO_SYSTEM_BLOCK_DEFAULT;
+  b->info.matrix_class = matclass;
   b->info.location = location;
   b->info.n_elements = n_elements;
   b->info.stride = stride;
@@ -1227,6 +1251,7 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t   *sh,
  *
  * \param[in, out] sh          pointer to the system helper to update
  * \param[in]      block_id    id in blocks array in a system helper
+ * \param[in]      matclass    class of the matrix to handle
  * \param[in]      location    where DoFs are defined
  * \param[in]      n_elements  number of elements (support entities for DoFs)
  * \param[in]      stride      number of DoFs by element
@@ -1236,11 +1261,12 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t   *sh,
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_system_block_t *
-cs_cdo_system_add_sblock(cs_cdo_system_helper_t   *sh,
-                         int                       block_id,
-                         cs_flag_t                 location,
-                         cs_lnum_t                 n_elements,
-                         int                       stride)
+cs_cdo_system_add_sblock(cs_cdo_system_helper_t       *sh,
+                         int                           block_id,
+                         cs_cdo_system_matrix_class_t  matclass,
+                         cs_flag_t                     location,
+                         cs_lnum_t                     n_elements,
+                         int                           stride)
 {
   if (sh == NULL)
     return NULL;
@@ -1254,6 +1280,7 @@ cs_cdo_system_add_sblock(cs_cdo_system_helper_t   *sh,
   BFT_MALLOC(b, 1, cs_cdo_system_block_t);
 
   b->type = CS_CDO_SYSTEM_BLOCK_SPLIT;
+  b->info.matrix_class = matclass;
   b->info.location = location;
   b->info.n_elements = n_elements;
   b->info.stride = stride;
@@ -1385,6 +1412,7 @@ cs_cdo_system_add_ublock(cs_cdo_system_helper_t   *sh,
   BFT_MALLOC(b, 1, cs_cdo_system_block_t);
 
   b->type = CS_CDO_SYSTEM_BLOCK_UNASS;
+  b->info.matrix_class = CS_CDO_SYSTEM_MATRIX_NONE;
   b->info.location = location;
   b->info.n_elements = n_elements;
   b->info.stride = stride;
@@ -1468,6 +1496,7 @@ cs_cdo_system_add_xblock(cs_cdo_system_helper_t   *sh,
   BFT_MALLOC(b, 1, cs_cdo_system_block_t);
 
   b->type = CS_CDO_SYSTEM_BLOCK_EXT;
+  b->info.matrix_class = CS_CDO_SYSTEM_MATRIX_CS;
   b->info.location = 0;         /* not defined */
   b->info.n_elements = n_dofs;
   b->info.stride = 1;
@@ -1819,6 +1848,17 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
         assert(db->matrix_structure != NULL);
         db->matrix = cs_matrix_create(db->matrix_structure);
 
+#if defined(HAVE_HYPRE)
+        if (b->info.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE) {
+
+          int device_id = cs_get_device_id();
+          int use_device = (device_id < 0) ? 0 : 1;
+
+          cs_matrix_set_type_hypre(db->matrix, use_device);
+
+        }
+#endif
+
         /* Matrix assembler values */
 
         if (db->mav != NULL)
@@ -1858,6 +1898,16 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
           assert(sb->matrix_structure != NULL);
           sb->matrices[k] = cs_matrix_create(sb->matrix_structure);
 
+#if defined(HAVE_HYPRE)
+        if (b->info.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE) {
+
+          int device_id = cs_get_device_id();
+          int use_device = (device_id < 0) ? 0 : 1;
+
+          cs_matrix_set_type_hypre(sb->matrices[k], use_device);
+
+        }
+#endif
           /* Matrix assembler values */
 
           if (sb->mav_array[k] != NULL)

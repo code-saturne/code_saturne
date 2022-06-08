@@ -1263,6 +1263,174 @@ cs_cdo_assembly_set_shift(cs_cdo_assembly_t    *asb,
   asb->l_col_shift = l_col_shift;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assemble a cellwise matrix into the global matrix
+ *         Rely on the generic cs_matrix_assembler_values_add_g() function
+ *         Case of scalar-valued matrices.
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] asb      pointer to a matrix assembler buffers
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t                   *m,
+                                    const cs_lnum_t                  *dof_ids,
+                                    const cs_range_set_t             *rset,
+                                    cs_cdo_assembly_t                *asb,
+                                    cs_matrix_assembler_values_t     *mav)
+{
+  cs_cdo_assembly_row_t  *row = asb->row;
+
+  assert(m->n_rows == m->n_cols);
+  row->n_cols = m->n_rows;
+
+  /* Switch to the global numbering */
+
+  for (int i = 0; i < m->n_cols; i++)
+    row->col_g_id[i] = rset->g_id[dof_ids[i]];
+
+  cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
+  cs_gnum_t  c_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
+
+  if (CS_CDO_ASSEMBLE_BUF_SIZE > m->n_rows*m->n_cols) {
+
+    int  bufsize = 0;
+    for (int r = 0; r < m->n_rows; r++) {
+
+      const cs_gnum_t r_gid = row->col_g_id[r];
+
+      for (int c = 0; c < m->n_cols; c++) {
+
+        r_gids[bufsize] = r_gid;
+        c_gids[bufsize] = row->col_g_id[c];
+        bufsize++;
+
+      } /* Loop on columns */
+    }   /* Loop on rows */
+
+#   pragma omp critical
+    cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, m->val);
+
+  }
+  else {  /* Buffer size is too small for this matrix. One needs several calls
+             to *_values_add_g() */
+
+    int  bufsize = 0;
+    for (int r = 0; r < m->n_rows; r++) {
+
+      const cs_gnum_t r_gid = row->col_g_id[r];
+
+      for (int c = 0; c < m->n_cols; c++) {
+
+        r_gids[bufsize] = r_gid;
+        c_gids[bufsize] = row->col_g_id[c];
+        bufsize++;
+
+        if (bufsize == CS_CDO_ASSEMBLE_BUF_SIZE) {
+#         pragma omp critical
+          cs_matrix_assembler_values_add_g(mav,
+                                           bufsize, r_gids, c_gids, m->val);
+
+          bufsize = 0;
+        }
+
+      } /* Loop on columns */
+    } /* Loop on rows */
+
+    if (bufsize > 0) {
+#     pragma omp critical
+      cs_matrix_assembler_values_add_g(mav, bufsize, r_gids, c_gids, m->val);
+      bufsize = 0;
+    }
+
+  } /* Test on the size of the local buffers */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Assemble a cellwise matrix into the global matrix
+ *         Rely on the generic cs_matrix_assembler_values_add_g() function
+ *         Case of vector-valued matrices with an expanded 33 block
+ *
+ * \param[in]      m        cellwise view of the algebraic system
+ * \param[in]      dof_ids  local DoF numbering
+ * \param[in]      rset     pointer to a cs_range_set_t structure
+ * \param[in, out] asb      pointer to a matrix assembler buffers
+ * \param[in, out] mav      pointer to a matrix assembler structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_assembly_matrix_e33_generic(const cs_sdm_t                  *m,
+                                   const cs_lnum_t                 *dof_ids,
+                                   const cs_range_set_t            *rset,
+                                   cs_cdo_assembly_t               *asb,
+                                   cs_matrix_assembler_values_t    *mav)
+{
+  const cs_sdm_block_t  *bd = m->block_desc;
+
+  assert(m->n_rows == m->n_cols);
+  assert(m->n_rows == 3*bd->n_row_blocks);
+  assert(m->n_cols == 3*bd->n_col_blocks);
+
+  cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
+  cs_cdo_assembly_row_t  *row = asb->row;
+  cs_real_t  *row_vals[3] = {row->expval,
+                             row->expval + m->n_rows,
+                             row->expval + 2*m->n_rows };
+
+  if (CS_CDO_ASSEMBLE_BUF_SIZE < m->n_rows)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Increase the size of CS_CDO_ASSEMBLE_BUF_SIZE\n",
+              __func__);
+
+  row->n_cols = m->n_rows;
+
+  /* Switch to the global numbering */
+
+  for (int i = 0; i < m->n_cols; i++)
+    row->col_g_id[i] = rset->g_id[dof_ids[i]];
+
+  /* Fill rows 3 by 3 */
+
+  for (int bi = 0; bi < bd->n_row_blocks; bi++) {
+    for (int bj = 0; bj < bd->n_col_blocks; bj++) {
+
+      /* mIJ matrices are small square matrices of size 3 */
+
+      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
+      const cs_real_t  *const mvals = mIJ->val;
+
+      for (int k = 0; k < 3; k++) {
+        row_vals[0][3*bj+k] = mvals[  k];
+        row_vals[1][3*bj+k] = mvals[3+k];
+        row_vals[2][3*bj+k] = mvals[6+k];
+      }
+
+    } /* Loop on column blocks */
+
+    for (int k = 0; k < 3; k++) {
+
+      row->g_id = row->col_g_id[3*bi+k]; /* global row id is constant for
+                                            all columns */
+      for (int i = 0; i < m->n_cols; i++)
+        r_gids[i] = row->g_id;
+
+#     pragma omp critical
+      cs_matrix_assembler_values_add_g(mav,
+                                       m->n_cols, r_gids, row->col_g_id,
+                                       row_vals[k]);
+
+    } /* Loop on the three rows in a block */
+
+  } /* Loop on row blocks */
+}
+
 #if defined(HAVE_MPI)
 /*----------------------------------------------------------------------------*/
 /*!

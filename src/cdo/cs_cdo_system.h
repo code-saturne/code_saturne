@@ -90,8 +90,42 @@ typedef enum {
 
 } cs_cdo_system_block_type_t;
 
+/*!
+ * \enum cs_cdo_system_matrix_class_t
+ * \brief Class of matrices to consider
+ *
+ * \var CS_CDO_SYSTEM_MATRIX_NONE
+ * No matrix is considered (unassembled treatment for instance)
+ *
+ * \var CS_CDO_SYSTEM_MATRIX_CS
+ * Matrix format specific to code_saturne (native)
+ *
+ * \var CS_CDO_SYSTEM_MATRIX_PETSC
+ * Matrix format specific to the library PETSC (external)
+ *
+ * \var CS_CDO_SYSTEM_MATRIX_HYPRE
+ * Matrix format specific to the library HYPRE (external)
+ */
+
+typedef enum {
+
+  CS_CDO_SYSTEM_MATRIX_NONE,
+  CS_CDO_SYSTEM_MATRIX_CS,
+  CS_CDO_SYSTEM_MATRIX_PETSC,
+  CS_CDO_SYSTEM_MATRIX_HYPRE,
+
+  CS_CDO_SYSTEM_N_MATRIX_CLASSES
+
+} cs_cdo_system_matrix_class_t;
+
 
 typedef struct {
+
+  /* If the block is associated to one or several matrices, one keeps
+   * the information about the class of the matrix
+   */
+
+  cs_cdo_system_matrix_class_t    matrix_class;
 
   /* An element is for instance a vertex, edge, face or cell */
 
@@ -133,6 +167,9 @@ typedef struct {
   /*
    * \var matrix
    *      matrix of the system to solve
+   *
+   * \var matrix_class
+   *      class of the matrix
    *
    * \var mav
    *      structure to manage the assembly of matrix values
@@ -427,24 +464,26 @@ cs_cdo_system_helper_create(cs_cdo_system_type_t    type,
  *
  * \param[in, out] sh          pointer to the system helper to update
  * \param[in]      block_id    id in blocks array in a system helper
+ * \param[in]      matclass    class of the matrix to handle
  * \param[in]      location    where DoFs are defined
  * \param[in]      n_elements  number of elements (support entities for DoFs)
  * \param[in]      stride      number of DoFs by element
  * \param[in]      interlaced  useful if stride > 1; way to store components
- * \param[in] unrolled    useful if stride > 1; true=treated as scalar-valued
+ * \param[in]      unrolled    useful if stride > 1; true=as scalar-valued
  *
  * \return a pointer to the newly allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_system_block_t *
-cs_cdo_system_add_dblock(cs_cdo_system_helper_t   *sh,
-                         int                       block_id,
-                         cs_flag_t                 location,
-                         cs_lnum_t                 n_elements,
-                         int                       stride,
-                         bool                      interlaced,
-                         bool                      unrolled);
+cs_cdo_system_add_dblock(cs_cdo_system_helper_t       *sh,
+                         int                           block_id,
+                         cs_cdo_system_matrix_class_t  matclass,
+                         cs_flag_t                     location,
+                         cs_lnum_t                     n_elements,
+                         int                           stride,
+                         bool                          interlaced,
+                         bool                          unrolled);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -453,6 +492,7 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t   *sh,
  *
  * \param[in, out] sh          pointer to the system helper to update
  * \param[in]      block_id    id in blocks array in a system helper
+ * \param[in]      matclass    class of the matrix to handle
  * \param[in]      location    where DoFs are defined
  * \param[in]      n_elements  number of elements (support entities for DoFs)
  * \param[in]      stride      number of DoFs by element
@@ -462,11 +502,12 @@ cs_cdo_system_add_dblock(cs_cdo_system_helper_t   *sh,
 /*----------------------------------------------------------------------------*/
 
 cs_cdo_system_block_t *
-cs_cdo_system_add_sblock(cs_cdo_system_helper_t   *sh,
-                         int                       block_id,
-                         cs_flag_t                 location,
-                         cs_lnum_t                 n_elements,
-                         int                       stride);
+cs_cdo_system_add_sblock(cs_cdo_system_helper_t       *sh,
+                         int                           block_id,
+                         cs_cdo_system_matrix_class_t  matclass,
+                         cs_flag_t                     location,
+                         cs_lnum_t                     n_elements,
+                         int                           stride);
 
 /*----------------------------------------------------------------------------*/
 /*!
