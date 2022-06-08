@@ -3,6 +3,9 @@ Release 7.0.5 (not released yet)
 
 Bug fixes:
 
+- boundary layer insertion: fixed nodes were ignored, leading to a modification
+  of the outer geometry (issue #400).
+
 - Syrthes coupling: ensure post-processed received temperature is
   initialized at time step 0, before actual exchanges (issue #370).
 
