@@ -64,7 +64,7 @@ BEGIN_C_DECLS
    when assembling the values in the global matrix from the local cellwise
    matrices */
 
-#define CS_CDO_ASSEMBLE_BUF_SIZE  99
+#define CS_CDO_ASSEMBLE_BUF_SIZE  200
 
 /* The following limitation only results from an optimization in the size of
    the bit mask (can be changed if needed by changing the definition of
