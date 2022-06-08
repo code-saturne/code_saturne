@@ -271,7 +271,7 @@ _assign_slave_assembly_func(const cs_cdo_system_block_info_t   bi)
 {
   CS_UNUSED(bi);
 
-  /* Up to now, ther is no choice */
+  /* Up to now, there is no choice */
 
   return _set_scalar_slave_assembly_func();
 }
@@ -871,6 +871,8 @@ _find_in_block_array(cs_cdo_system_block_t   *b)
       continue;
     if (b->info.interlaced != b_store->info.interlaced)
       continue;
+
+    return i; /* All metadata match */
 
   } /* Loop on blocks stored in the array */
 
