@@ -1835,9 +1835,8 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
 
         if (!b->info.unrolled) {
 
-          cs_lnum_t stride = b->info.stride;
-          db_size = stride;
-          eb_size = stride;
+          db_size = b->info.stride;
+          eb_size = b->info.stride;
 
         }
 

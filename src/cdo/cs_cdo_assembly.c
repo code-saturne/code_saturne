@@ -1181,7 +1181,7 @@ cs_cdo_assembly_get(int    t_id)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Allocate cs_cdo_assembly_t structure (shared among schemes). Each
- *         thread has its own copy this structure to enable a multithreaded
+ *         thread has its own copy of this structure to enable a multithreaded
  *         assembly process.
  *
  * \param[in]  ddim          max number of dof values on the diagonal part

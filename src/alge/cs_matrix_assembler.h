@@ -123,46 +123,6 @@ typedef void
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Function pointer for addition to matrix coefficients using
- *        local row ids and column indexes in case of CDO schemes.
- *        Contrary to other add_values() function. Here values are structured
- *        in a CSR-like way. By this way one avoids to allocate specific
- *        arrays for this step.
- *
- * Values whose associated row index is negative should be ignored;
- * Values whose column index is -1 are assumed to be assigned to a
- * separately stored diagonal. Other indexes should be valid.
- *
- * \warning  The matrix pointer must point to valid data when the selection
- *           function is called, so the life cycle of the data pointed to
- *           should be at least as long as that of the assembler values
- *           structure.
- *
- * \remark  Note that we pass column indexes (not ids) here; as the
- *          caller is already assumed to have identified the index
- *          matching a given column id.
- *
- * \param[in, out] matrix_p   untyped pointer to matrix description structure
- * \param[in]      row_id     local row id to deal with
- * \param[in]      stride     associated data block size
- * \param[in]      n_cols     number of columns for the row to deal with
- * \param[in]      diag_val   pointer to the diagonal value(s)
- * \param[in]      col_idx    associated local column indexes
- * \param[in]      vals       pointer to values (size: n*stride*row_size)
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_matrix_assembler_values_cdo_add_t) (void               *matrix,
-                                        cs_lnum_t           row_id,
-                                        cs_lnum_t           stride,
-                                        cs_lnum_t           n_cols,
-                                        const cs_real_t     diag_val[],
-                                        const cs_lnum_t     col_idx[],
-                                        const cs_real_t     vals[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Function pointer for addition to matrix coefficients using
  *        global row ids and column indexes.
  *
  * Values whose global row id is outside the local range should be ignored

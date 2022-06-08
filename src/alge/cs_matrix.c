@@ -5317,8 +5317,8 @@ cs_matrix_assembler_values_init(cs_matrix_t  *matrix,
 
   if (matrix->assembler_values_create != NULL)
     mav = matrix->assembler_values_create(matrix,
-                                        diag_block_size,
-                                        extra_diag_block_size);
+                                          diag_block_size,
+                                          extra_diag_block_size);
 
   else
     bft_error(__FILE__, __LINE__, 0,

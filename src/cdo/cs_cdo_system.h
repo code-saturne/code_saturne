@@ -142,7 +142,8 @@ typedef struct {
    *
    * \var slave_assembly_func
    *      function pointer to operate the assembly stage when the system helper
-   *      is declared as slave (this is the same for all matrices)
+   *      is declared as slave (this is the same for all matrices). Useful for
+   *      coupled systems.
    */
 
   cs_matrix_t                    *matrix;
