@@ -462,6 +462,15 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
   bool pre_init_setup = false, pre_init_structures = false;
   cs_cdo_is_initialized(&pre_init_setup, &pre_init_structures);
 
+  /* Now prescribe displacements (invert extrusion direction)
+     before initializing structures */
+
+  _prescribe_displacements(e);
+
+  cs_mesh_deform_force_displacements(n_fixed_vertices,
+                                     fixed_vertex_ids,
+                                     NULL);
+
   if (pre_init_setup == false)
     cs_cdo_initialize_setup(domain);
 
@@ -474,15 +483,6 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
     cs_field_set_key_int(f, cs_field_key_id("log"), 0);
     cs_field_set_key_int(f, cs_field_key_id("post_vis"), 0);
   }
-
-  /* Now prescribe displacements (invert extrusion direction)
-     before initializing structures */
-
-  _prescribe_displacements(e);
-
-  cs_mesh_deform_force_displacements(n_fixed_vertices,
-                                     fixed_vertex_ids,
-                                     NULL);
 
   if (pre_init_structures == false)
     cs_cdo_initialize_structures(domain, m, mq);

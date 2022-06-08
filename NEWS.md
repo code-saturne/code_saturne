@@ -48,9 +48,12 @@ Bug fixes:
 - Fix gradient reconstruction for anisotropic cases using
   Green-Gauss with least-squares gradient face values algorithm.
 
-- Solidification/CDO: Several fixes to handle the melting process
+- Solidification/CDO: Several fixes to handle the melting process.
 
-- CDO: Fix to handle properly the Neumann and full Neumann boundary conditions
+- CDO: Fix to handle properly the Neumann and full Neumann boundary conditions.
+
+- Boundary layer insertion: Take properly into account vertices with a
+  prescribed displacement.
 
 Numerics CDO:
 
