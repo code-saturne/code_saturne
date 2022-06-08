@@ -752,8 +752,7 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
                                    &n_edges,  /* col_block_size */
                                    1);        /* n_blocks */
 
-  cs_cdo_system_add_dblock(CS_CDO_SYSTEM_BLOCK_DEFAULT,
-                           0,      /* block_id */
+  cs_cdo_system_add_dblock(sh, 0,      /* block_id */
                            cs_flag_primal_edge,
                            n_edges,
                            1,
