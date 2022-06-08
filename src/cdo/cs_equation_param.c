@@ -279,7 +279,7 @@ _set_key(cs_equation_param_t   *eqp,
       }
       else
         bft_error(__FILE__, __LINE__, 0,
-                  "%s(): Eq. %s\n Invalid choice of AMG type.\n"
+                  "%s: Eq. %s\n Invalid choice of AMG type.\n"
                   " HYPRE/PETSc are not available."
                   " Please check your settings.", __func__, eqname);
 
@@ -301,7 +301,7 @@ _set_key(cs_equation_param_t   *eqp,
       }
       else
         bft_error(__FILE__, __LINE__, 0,
-                  "%s(): Eq. %s\n Invalid choice of AMG type.\n"
+                  "%s: Eq. %s\n Invalid choice of AMG type.\n"
                   " HYPRE/PETSc are not available."
                   " Please check your settings.", __func__, eqname);
 
@@ -313,7 +313,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       if (ret_class != CS_PARAM_SLES_CLASS_PETSC)
         bft_error(__FILE__, __LINE__, 0,
-                  "%s(): Eq. %s\n Invalid choice of AMG type.\n"
+                  "%s: Eq. %s\n Invalid choice of AMG type.\n"
                   " PETSc is not available."
                   " Please check your settings.", __func__, eqname);
 
@@ -329,7 +329,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       if (ret_class != CS_PARAM_SLES_CLASS_PETSC)
         bft_error(__FILE__, __LINE__, 0,
-                  "%s(): Eq. %s\n Invalid choice of AMG type.\n"
+                  "%s: Eq. %s\n Invalid choice of AMG type.\n"
                   " PETSc is not available."
                   " Please check your settings.", __func__, eqname);
 
@@ -345,7 +345,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       if (ret_class != CS_PARAM_SLES_CLASS_PETSC)
         bft_error(__FILE__, __LINE__, 0,
-                  "%s(): Eq. %s\n Invalid choice of AMG type.\n"
+                  "%s: Eq. %s\n Invalid choice of AMG type.\n"
                   " PETSc is not available."
                   " Please check your settings.", __func__, eqname);
 
@@ -589,7 +589,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       if (ret_class == CS_PARAM_SLES_N_CLASSES)
         bft_error(__FILE__, __LINE__, 0,
-                  " %s(): Eq. %s Error detected while setting \"%s\" key.\n"
+                  " %s: Eq. %s Error detected while setting \"%s\" key.\n"
                   " MUMPS is not available with your installation.\n"
                   " Please check your installation settings.\n",
                   __func__, eqname, "CS_EQKEY_ITSOL");
@@ -807,7 +807,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  "%s(): Eq. %s Invalid choice of AMG type.\n"
+                  "%s: Eq. %s Invalid choice of AMG type.\n"
                   " Please modify your settings", __func__, eqname);
 
       } /* End of switch */
@@ -849,7 +849,7 @@ _set_key(cs_equation_param_t   *eqp,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  "%s(): Eq. %s Invalid choice of block AMG type.\n"
+                  "%s: Eq. %s Invalid choice of block AMG type.\n"
                   " Please modify your settings", __func__, eqname);
 
       } /* End of switch */
@@ -916,18 +916,28 @@ _set_key(cs_equation_param_t   *eqp,
 
       if (ret_class == CS_PARAM_SLES_N_CLASSES)
         bft_error(__FILE__, __LINE__, 0,
-                  " %s(): Eq. %s Error detected while setting \"%s\" key.\n"
+                  " %s: Eq. %s Error detected while setting \"%s\" key.\n"
                   " Neither PETSc nor HYPRE is available.\n"
                   " Please check your installation settings.\n",
                   __func__, eqname, "CS_EQKEY_SOLVER_FAMILY");
       else if (ret_class == CS_PARAM_SLES_CLASS_PETSC)
         bft_error(__FILE__, __LINE__, 0,
-                  " %s(): Eq. %s Error detected while setting \"%s\" key.\n"
+                  " %s: Eq. %s Error detected while setting \"%s\" key.\n"
                   " PETSc with HYPRE is not available.\n"
                   " Please check your installation settings.\n",
                   __func__, eqname, "CS_EQKEY_SOLVER_FAMILY");
 
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_HYPRE;
+
+      /* Check that the AMG type is correctly set */
+
+      if (eqp->sles_param->precond == CS_PARAM_PRECOND_AMG) {
+
+        if (eqp->sles_param->amg_type != CS_PARAM_AMG_HYPRE_BOOMER_V &&
+            eqp->sles_param->amg_type != CS_PARAM_AMG_HYPRE_BOOMER_W)
+          eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+
+      }
 
     }
     else if (strcmp(keyval, "mumps") == 0) {
@@ -958,6 +968,17 @@ _set_key(cs_equation_param_t   *eqp,
                   __func__, eqname, "CS_EQKEY_SOLVER_FAMILY");
 
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_PETSC;
+
+      /* Check that the AMG type is correctly set */
+
+      if (eqp->sles_param->precond == CS_PARAM_PRECOND_AMG) {
+
+        if (eqp->sles_param->amg_type != CS_PARAM_AMG_PETSC_GAMG_V &&
+            eqp->sles_param->amg_type != CS_PARAM_AMG_PETSC_GAMG_W &&
+            eqp->sles_param->amg_type != CS_PARAM_AMG_PETSC_PCMG)
+          eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+
+      }
 
     }
     else {
