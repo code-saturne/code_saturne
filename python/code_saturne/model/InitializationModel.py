@@ -327,7 +327,10 @@ omega = k^0.5/almax;"""
         self.__verifyZone(zone)
         node = self.node_veloce.xmlInitNode('initialization')
         n = node.xmlInitChildNode('formula', zone_id=zone)
-        n.xmlSetTextNode(formula)
+        if formula != None:
+            n.xmlSetTextNode(formula)
+        else:
+            n.xmlRemoveNode()
 
 
     @Variables.noUndo
@@ -812,14 +815,17 @@ pressure = p0 + g * ro * z;\n"""
             msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlInitChildNode('formula', zone_id=zone)
-        n.xmlSetTextNode(formula)
+        if formula:
+            n.xmlSetTextNode(formula)
+        else:
+            n.xmlRemoveNode()
 
 
     @Variables.noUndo
     def getSpeciesFormula(self, zone, species):
         """
         Public method.
-        Return the formula for a turbulent variable.
+        Return the formula for a scalar species variable.
         """
         self.__verifyZone(zone)
         self.isInList(species, DefineUserScalarsModel(self.case).getUserScalarNameList())
@@ -882,9 +888,6 @@ pressure = p0 + g * ro * z;\n"""
             raise ValueError(msg)
 
         formula = node.xmlGetString('formula', zone_id=zone)
-        if not formula:
-            formula = str(scalar)+""" = 0;\n"""
-            self.setMeteoFormula(zone, scalar, formula)
 
         return formula
 
