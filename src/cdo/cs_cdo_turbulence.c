@@ -108,15 +108,18 @@ typedef struct {
 typedef struct {
 
   /* High level structures */
+
   const cs_mesh_t            *mesh;
   const cs_cdo_connect_t     *connect;
   const cs_cdo_quantities_t  *quant;
   const cs_time_step_t       *time_step;
 
   /* Turbulence structure */
+
   cs_turbulence_t  *tbs;
 
   /* Velocities arrays */
+
   cs_real_t   *u_cell;
   cs_real_t   *u_face;
 
@@ -164,6 +167,7 @@ _prepare_ke(const cs_mesh_t            *mesh,
   cs_real_t *mu_t = tbs->mu_t_field->val;
 
   /* Get the evaluation of rho */
+
   int rho_stride = 0;
   cs_real_t *rho = NULL;
 
@@ -171,6 +175,7 @@ _prepare_ke(const cs_mesh_t            *mesh,
   const cs_real_t *eps_cell = cs_equation_get_cell_values(kec->eps, false);
 
   /* Get mass density values in each cell */
+
   cs_property_iso_get_cell_values(time_step->t_cur, tbs->rho,
                                   &rho_stride, &rho);
 
@@ -178,12 +183,14 @@ _prepare_ke(const cs_mesh_t            *mesh,
   const cs_real_t d2s3 = 2./3.;
 
   /* Production term */
+
   if (tbp->model->iturb == CS_TURB_K_EPSILON) {
 #   pragma omp parallel for if (mesh->n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
 
-      cs_real_t grd_uc[3][3];
       /* Compute the velocity gradient */
+
+      cs_real_t grd_uc[3][3];
       cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
                                         u_cell, u_face, (cs_real_t *)grd_uc);
 
@@ -208,8 +215,9 @@ _prepare_ke(const cs_mesh_t            *mesh,
 #   pragma omp parallel for if (mesh->n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
 
-      cs_real_t grd_uc[3][3];
       /* Compute the velocity gradient */
+
+      cs_real_t grd_uc[3][3];
       cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
                                         u_cell, u_face, (cs_real_t *)grd_uc);
 
@@ -238,21 +246,24 @@ _prepare_ke(const cs_mesh_t            *mesh,
   }
 
   /* Implicit dissipation term and epsilon source term */
+
 # pragma omp parallel for if (mesh->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
+
     /* Inverse integral time scale */
+
     cs_real_t d_ttke = eps_cell[c_id] / tke_cell[c_id];
 
     /* Ce1 * eps/k * P */
-    eps_source_term[c_id] = cs_turb_ce1 * d_ttke * tke_source_term[c_id];
 
+    eps_source_term[c_id] = cs_turb_ce1 * d_ttke * tke_source_term[c_id];
     tke_reaction[c_id] = rho[c_id*rho_stride] * d_ttke;
 
     /* TODO Get Ce2 from curvature correction, to be merged with legacy */
+
     eps_reaction[c_id] = cs_turb_ce2 * rho[c_id*rho_stride] * d_ttke;
 
   }
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -307,10 +318,12 @@ cs_turbulence_create(cs_turbulence_param_t    *tbp)
   /* All the members of the following structures are shared with the Legacy
    * part. This structure is owned by cs_navsto_param_t
    */
+
   tbs->param = tbp;
   tbs->mom_eq = NULL;
 
   /* Properties */
+
   tbs->rho = NULL;             /* Mass density */
   tbs->mu_tot = NULL;          /* Total viscosity */
   tbs->mu_l = NULL;            /* Laminar viscosity */
@@ -319,13 +332,16 @@ cs_turbulence_create(cs_turbulence_param_t    *tbp)
   tbs->mu_tot_array = NULL;
 
   /* Fields */
+
   tbs->mu_t_field = NULL;      /* Turbulent viscosity */
   tbs->rij = NULL;             /* Reynolds stress tensor */
 
   /* Main structure (cast on-the-fly according to the turbulence model) */
+
   tbs->context = NULL;
 
   /* Function pointers */
+
   tbs->init_context = NULL;
   tbs->free_context = NULL;
   tbs->compute = NULL;
@@ -387,6 +403,7 @@ cs_turbulence_init_setup(cs_turbulence_t     *tbs,
   tbs->mom_eq = mom_eq;
 
   /* Set field metadata */
+
   const int  log_key = cs_field_key_id("log");
   const int  post_key = cs_field_key_id("post_vis");
   const bool  has_previous = false;
@@ -402,10 +419,12 @@ cs_turbulence_init_setup(cs_turbulence_t     *tbs,
                                             has_previous);
 
   /* Set default value for keys related to log and post-processing */
+
   cs_field_set_key_int(tbs->mu_t_field, log_key, 1);
   cs_field_set_key_int(tbs->mu_t_field, post_key, field_post_flag);
 
   /* Properties (shared) */
+
   tbs->rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
   tbs->mu_tot = cs_property_by_name(CS_NAVSTO_TOTAL_VISCOSITY);
   tbs->mu_l = cs_property_by_name(CS_NAVSTO_LAM_VISCOSITY);
@@ -413,11 +432,13 @@ cs_turbulence_init_setup(cs_turbulence_t     *tbs,
   assert(tbs->rho != NULL && tbs->mu_l != NULL && tbs->mu_tot != NULL);
 
   /* Add a mu_t property and define it with the associated field */
+
   tbs->mu_t = cs_property_add(CS_NAVSTO_TURB_VISCOSITY, CS_PROPERTY_ISO);
 
   cs_property_def_by_field(tbs->mu_t, tbs->mu_t_field);
 
   /* Set function pointers and initialize the context structure */
+
   switch (model->iturb) {
 
   case CS_TURB_K_EPSILON:
@@ -439,7 +460,6 @@ cs_turbulence_init_setup(cs_turbulence_t     *tbs,
               " Please check your settings.", __func__);
     break;
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -476,6 +496,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
     return; /* Nothing to do */
 
   /* Define the property related to the total viscosity */
+
   BFT_MALLOC(tbs->mu_tot_array, quant->n_cells, cs_real_t);
   memset(tbs->mu_tot_array, 0, quant->n_cells*sizeof(cs_real_t));
 
@@ -486,6 +507,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                            NULL, NULL); /* no index/ids */
 
   /* Last setup for each turbulence model */
+
   switch (model->iturb) {
 
   case CS_TURB_K_EPSILON:
@@ -493,6 +515,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
     {
       /* Add a source term after having retrieved the equation param related to
          the turbulent kinetic energy equation */
+
       cs_turb_context_k_eps_t  *kec = (cs_turb_context_k_eps_t *)tbs->context;
       cs_equation_param_t  *tke_eqp = cs_equation_get_param(kec->tke);
       kec->tke_source_term =
@@ -533,6 +556,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                                NULL, NULL); /* no index/ids */
 
       /* Initialize TKE */
+
       cs_turb_ref_values_t *t_ref= cs_get_glob_turb_ref_values();
       cs_real_t tke_ref = 1.5 * cs_math_pow2(0.02 * t_ref->uref);
       cs_equation_add_ic_by_value(tke_eqp,
@@ -540,11 +564,11 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                                   &tke_ref);
 
       /* Initialize epsilon */
+
       cs_real_t eps_ref = powf(tke_ref, 1.5) * cs_turb_cmu / t_ref->almax;
       cs_equation_add_ic_by_value(eps_eqp,
                                   NULL,
                                   &eps_ref);
-
     }
     break;
 
@@ -554,7 +578,6 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
               " Please check your settings.", __func__);
     break;
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -589,7 +612,6 @@ cs_turbulence_init_values(const cs_mesh_t             *mesh,
     return; /* Nothing to do */
 
   tbs->update(mesh, connect, quant, time_step, tbs);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -609,7 +631,6 @@ cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm)
   if (tbm == NULL)
     return NULL;
 
-  /* Sanity checks */
   assert((tbm->iturb == CS_TURB_K_EPSILON) ||
          (tbm->iturb == CS_TURB_K_EPSILON_LIN_PROD));
   assert(tbm->type == CS_TURB_RANS);
@@ -748,19 +769,23 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
     (cs_turb_context_k_eps_t *)tbs->context;
 
   /* Update turbulent viscosity field */
+
   cs_real_t *mu_t = tbs->mu_t_field->val;
   cs_real_t *k = cs_equation_get_cell_values(kec->tke, false);
   cs_real_t *eps = cs_equation_get_cell_values(kec->eps, false);
 
   /* Get the evaluation of rho */
+
   int rho_stride = 0;
   cs_real_t *rho = NULL;
 
   /* Get mass density values in each cell */
+
   cs_property_iso_get_cell_values(time_step->t_cur, tbs->rho,
                                   &rho_stride, &rho);
 
   /* Get laminar viscosity values in each cell */
+
   int mu_stride = 0;
   cs_real_t *mu_l = NULL;
   cs_property_iso_get_cell_values(time_step->t_cur, tbs->mu_l,
@@ -768,6 +793,7 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
 
 
   /* Compute mu_t in each cell and define mu_tot = mu_t + mu_l */
+
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
 
@@ -779,6 +805,7 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
   }
 
   /* Free memory */
+
   BFT_FREE(rho);
   BFT_FREE(mu_l);
 }
@@ -808,12 +835,14 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
     return;
 
   /* Get k epsilon context */
+
   cs_turb_context_k_eps_t  *kec = (cs_turb_context_k_eps_t *)tbs->context;
   cs_equation_t *tke_eq = kec->tke;
   cs_equation_t *eps_eq = kec->eps;
   assert(kec != NULL);
 
   /* Prepare source term and reaction term */
+
   cs_real_t *tke_source_term = NULL, *eps_source_term = NULL;
   cs_real_t *tke_reaction = NULL, *eps_reaction = NULL;
   BFT_MALLOC(tke_source_term, mesh->n_cells, cs_real_t);
@@ -822,9 +851,11 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
   BFT_MALLOC(eps_reaction, mesh->n_cells, cs_real_t);
 
   /* Set xdefs */
+
   cs_xdef_set_array(kec->tke_reaction,
                     false, /* is_owner */
                     tke_reaction);
+
 
   cs_xdef_set_array(kec->eps_reaction,
                     false, /* is_owner */
@@ -849,21 +880,23 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
               eps_source_term);
 
   /* Solve k */
+
   cs_equation_solve(true, /* cur2prev */
                     mesh,
                     tke_eq);
 
   /* Solve epsilon */
+
   cs_equation_solve(true, /* cur2prev */
                     mesh,
                     eps_eq);
 
   /* Free memory */
+
   BFT_FREE(tke_source_term);
   BFT_FREE(eps_source_term);
   BFT_FREE(tke_reaction);
   BFT_FREE(eps_reaction);
-
 }
 
 /*----------------------------------------------------------------------------*/

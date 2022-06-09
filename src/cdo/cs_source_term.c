@@ -943,6 +943,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
       cs_source_term_cellwise_t  *compute = compute_source[st_id];
 
       /* result is updated inside */
+
       compute(source_terms[st_id], cm, time_eval, cb, input, result);
 
     } /* Loop on source terms */
@@ -958,6 +959,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
         cs_source_term_cellwise_t  *compute = compute_source[st_id];
 
         /* result is updated inside */
+
         compute(source_terms[st_id], cm, time_eval, cb, input, result);
 
       } /* Compute the source term on this cell */

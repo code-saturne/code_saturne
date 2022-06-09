@@ -655,11 +655,13 @@ cs_sles_hypre_setup(void               *context,
 
         /* Default settings for host */
         else if (c->use_device == 0) {
-          HYPRE_BoomerAMGSetCoarsenType(hs, 10);        /* HMIS */
+
+          HYPRE_BoomerAMGSetCoarsenType(hs, 10); /* HMIS */
           HYPRE_BoomerAMGSetPMaxElmts(hs, 4);
-          HYPRE_BoomerAMGSetInterpType(hs, 7);          /* extended+e */
-          HYPRE_BoomerAMGSetRelaxType(hs, 6);   /* Sym G.S./Jacobi hybrid */
+          HYPRE_BoomerAMGSetInterpType(hs, 7);   /* extended+e */
+          HYPRE_BoomerAMGSetRelaxType(hs, 6);    /* Sym G.S./Jacobi hybrid */
           HYPRE_BoomerAMGSetRelaxOrder(hs, 0);
+
         }
 
         /* Defaults for both host and device */
@@ -922,7 +924,7 @@ cs_sles_hypre_setup(void               *context,
   /* Now setup systems (where rhs and vx values may be different
      when solving, but their shapes and addresses are the same) */
 
-  HYPRE_ParCSRMatrix par_a;              /* Associted matrix */
+  HYPRE_ParCSRMatrix par_a;              /* Associated matrix */
   HYPRE_ParVector p_x, p_rhs;
 
   HYPRE_IJMatrixGetObject(sd->coeffs->hm, (void **)&par_a);
@@ -937,6 +939,7 @@ cs_sles_hypre_setup(void               *context,
               _cs_hypre_type_name(c->solver_type));
 
   /* Update return values */
+
   c->n_setups += 1;
 
   cs_timer_t t1 = cs_timer_time();
