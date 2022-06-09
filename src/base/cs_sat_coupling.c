@@ -1389,19 +1389,19 @@ void CS_PROCF (npdcpl, NPDCPL)
  * SUBROUTINE COOCPL
  * *****************
  *
- * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NBRPTS         : --> : number of distant points
- * INTEGER          ITYDIS         : --> : 1 : access to the points associated
+ * INTEGER          numcpl         : --> : coupling number
+ * INTEGER          nbrpts         : --> : number of distant points
+ * INTEGER          itydis         : --> : 1 : access to the points associated
  *                                 :     :     to the distant cells
  *                                 :     : 2 : access to the points associated
  *                                 :     :     to the distant boundary faces
- * INTEGER          ITYLOC         : <-- : 1 : localization on the local cells
+ * INTEGER          ityloc         : <-- : 1 : localization on the local cells
  *                                 :     : 2 : localization on the local faces
- * INTEGER          LOCPTS(*)      : <-- : "containing" number associated to
+ * INTEGER          locpts(*)      : <-- : "containing" number associated to
  *                                 :     :   each point
- * DOUBLE PRECISION COOPTS(3,*)    : <-- : distant point coordinates
- * DOUBLE PRECISION DJPPTS(3,*)    : <-- : distant vectors to the coupled face
- * DOUBLE PRECISION PNDPTS(*)      : <-- : distant weighting coefficients
+ * DOUBLE PRECISION coopts(3,*)    : <-- : distant point coordinates
+ * DOUBLE PRECISION djppts(3,*)    : <-- : distant vectors to the coupled face
+ * DOUBLE PRECISION pndpts(*)      : <-- : distant weighting coefficients
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (coocpl, COOCPL)

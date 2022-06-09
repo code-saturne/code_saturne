@@ -235,7 +235,6 @@ do numcpl = 1, nbrcpl
       stride = 1
 
       call varcpl &
-      !==========
     ( numcpl , nfbdis , nfbcpl , ityvar , stride , &
       rvdis(1, ivarcp) ,                           &
       rvfbr(1, ivarcp) )

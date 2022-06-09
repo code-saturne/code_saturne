@@ -32,14 +32,15 @@
 !------------------------------------------------------------------------------
 !> \param[in]     ncecpl        number of coupling
 !> \param[in]     lcecpl
-!> \param[in]     vela          variable value at time step beginning
-!> \param[out]    crvexp        explicit source term
-!> \param[in]     rvcpce
+!> \param[in]     f_id          field index
+!> \param[in]     f_dim         field dimension
+!> \param[in]     rvcpce        distant variable array
+!> \param[in,out] crvexp        explicit source term
 !______________________________________________________________________________
 
 subroutine csc2ts &
- ( ncecpl,  lcecpl ,                                              &
-   vela   , crvexp , rvcpce )
+ ( ncecpl,  lcecpl , f_id, f_dim , rvcpce , &
+   crvexp )
 
 !===============================================================================
 
@@ -58,6 +59,7 @@ use period
 use cplsat
 use mesh
 use field
+
 !===============================================================================
 
 implicit none
@@ -65,12 +67,11 @@ implicit none
 ! Arguments
 
 integer          ncecpl
-
 integer          lcecpl(ncecpl)
+integer          f_id, f_dim
 
-double precision crvexp(3,ncelet)
-double precision rvcpce(3,ncecpl)
-double precision vela(3,ncelet)
+double precision crvexp(f_dim, ncelet)
+double precision rvcpce(f_dim, ncecpl)
 
 ! Local variables
 
@@ -78,26 +79,49 @@ integer          isou
 integer          ipt    , ielloc
 double precision xdis   , xloc   , xtau   , rovtau
 double precision, dimension(:), pointer ::  crom
-!----------------------------------------------------------------------------------
+double precision, dimension(:), pointer :: cvara_s
+double precision, dimension(:,:), pointer :: cvara_v
 
+!----------------------------------------------------------------------------------
 
 call field_get_val_s(icrom, crom)
 
 xtau = 100.d0*dtref
 
-do ipt = 1, ncecpl
+! For scalars
+if (f_dim.eq.1) then
+  call field_get_val_prev_s(f_id, cvara_s)
 
-  ielloc = lcecpl(ipt)
+  do ipt = 1, ncecpl
 
-  rovtau = cell_f_vol(ielloc)*crom(ielloc)/xtau
+    ielloc = lcecpl(ipt)
 
-  do isou = 1, 3
-    xdis = rvcpce(isou,ipt)
-    xloc = vela(isou,ielloc)
-    crvexp(isou,ielloc) = crvexp(isou,ielloc) + rovtau*(xdis-xloc)
+    rovtau = cell_f_vol(ielloc)*crom(ielloc)/xtau
+
+    xdis = rvcpce(1, ipt)
+    xloc = cvara_s(ielloc)
+    crvexp(1,ielloc) = crvexp(1,ielloc) + rovtau*(xdis-xloc) ! TODO Should be implicit to remove constrainte on the time step...
+
   enddo
 
-enddo
+  ! For vectors and tensors
+else
+  call field_get_val_prev_v(f_id, cvara_v)
+
+  do ipt = 1, ncecpl
+
+    ielloc = lcecpl(ipt)
+
+    rovtau = cell_f_vol(ielloc)*crom(ielloc)/xtau
+
+    do isou = 1, f_dim
+      xdis = rvcpce(isou,ipt)
+      xloc = cvara_v(isou,ielloc)
+      crvexp(isou,ielloc) = crvexp(isou,ielloc) + rovtau*(xdis-xloc) ! TODO Should be implicit to remove constrainte on the time step...
+    enddo
+
+  enddo
+endif
 
 !--------
 ! Formats

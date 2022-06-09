@@ -32,21 +32,17 @@
 !------------------------------------------------------------------------------
 !   mode          name          role
 !------------------------------------------------------------------------------
-!> \param[in]     nptdis
-!> \param[in]     ivar          variable number
-!> \param[in]     locpts
-!> \param[in]     vela          variable value at time step beginning
-!> \param[in]     coefav
-!> \param[in]     coefbv
-!> \param[in]     coopts
-!> \param[out]    rvdis
+!> \param[in]     nptdis        number of distant points
+!> \param[in]     f_id          field index
+!> \param[in]     f_dim         field dimension
+!> \param[in]     locpts        connectivity
+!> \param[in]     coopts        coordinates of the distants points
+!> \param[out]    rvdis         work array for the variable to be exchanged
 !______________________________________________________________________________
 
 subroutine cscpce &
- ( nptdis , ivar   ,                                              &
+ ( nptdis , f_id   , f_dim ,                                      &
    locpts ,                                                       &
-   vela   ,                                                       &
-   coefav , coefbv ,                                              &
    coopts , rvdis  )
 
 !===============================================================================
@@ -64,6 +60,8 @@ use parall
 use period
 use cplsat
 use mesh
+use field
+use field_operator
 use cs_c_bindings
 
 !===============================================================================
@@ -72,83 +70,100 @@ implicit none
 
 ! Arguments
 
-integer          ivar
 integer          nptdis
+integer          f_id
+integer          f_dim
 
 integer          locpts(nptdis)
 
-double precision coopts(3,nptdis), rvdis(3,nptdis)
-double precision coefav(3  ,nfabor)
-double precision coefbv(3,3,nfabor)
-double precision vela(3,ncelet)
+double precision coopts(3,nptdis), rvdis(f_dim,nptdis)
 
 ! Local variables
 
-integer          ipt    , iel    , isou   , f_id
-integer          inc    , iccocg , nswrgp
-integer          iwarnp , imrgrp, imligp
+integer          ipt    , iel    , isou   , iprev
+integer          inc    , iccocg
 
-double precision epsrgp , climgp
 double precision dx     , dy     , dz
 
+double precision, dimension(:,:), allocatable :: grads
 double precision, dimension(:,:,:), allocatable :: gradv
+double precision, dimension(:), pointer :: cvara_s
+double precision, dimension(:,:), pointer :: cvara_v
 
-type(var_cal_opt) :: vcopt
 
 !===============================================================================
 
-! Allocate a temporary array
-allocate(gradv(3,3,ncelet))
-
-call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
-
 inc    = 1
+iprev  = 1 ! previsous time step value
 iccocg = 1
-imrgrp = vcopt%imrgra
-nswrgp = vcopt%nswrgr
-imligp = vcopt%imligr
-iwarnp = vcopt%iwarni
-epsrgp = vcopt%epsrgr
-climgp = vcopt%climgr
 
-if (ivar.le.0) then
-  f_id = -1
-else
-  f_id = ivarfl(ivar)
-endif
+! For scalars
+if (f_dim.eq.1) then
+  call field_get_val_prev_s(f_id, cvara_s)
 
-call cgdvec &
-( f_id   , imrgrp , inc    , nswrgp , iwarnp , imligp ,          &
-  epsrgp , climgp ,                                              &
-  coefav , coefbv , vela   ,                                     &
-  gradv)
+  ! Allocate a temporary array
+  allocate(grads(3, ncelet))
 
-! --- Interpolation
+  call field_gradient_scalar(f_id, iprev, 0, inc, iccocg, grads)
 
-do ipt = 1, nptdis
+  ! --- Interpolation
+  do ipt = 1, nptdis
 
-  iel = locpts(ipt)
+    iel = locpts(ipt)
 
-  dx = coopts(1,ipt) - xyzcen(1,iel)
-  dy = coopts(2,ipt) - xyzcen(2,iel)
-  dz = coopts(3,ipt) - xyzcen(3,iel)
+    dx = coopts(1,ipt) - xyzcen(1,iel)
+    dy = coopts(2,ipt) - xyzcen(2,iel)
+    dz = coopts(3,ipt) - xyzcen(3,iel)
 
-  do isou = 1, 3
-    rvdis(isou,ipt) = vela(isou,iel) + gradv(1,isou,iel)*dx       &
-                                     + gradv(2,isou,iel)*dy       &
-                                     + gradv(3,isou,iel)*dz
+    ! FIXME remove reconstruction ?
+    rvdis(1,ipt) = cvara_s(iel) + grads(1,iel)*dx       &
+                                + grads(2,iel)*dy       &
+                                + grads(3,iel)*dz
   enddo
 
-enddo
+  ! Free memory
+  deallocate(grads)
 
-! Free memory
-deallocate(gradv)
+else if (f_dim.eq.3) then
+  call field_get_val_prev_v(f_id, cvara_v)
+
+  ! Allocate a temporary array
+  allocate(gradv(3, 3, ncelet))
+
+  call field_gradient_vector(f_id, iprev, 0, inc, gradv)
+
+  ! --- Interpolation
+  do ipt = 1, nptdis
+
+    iel = locpts(ipt)
+
+    dx = coopts(1,ipt) - xyzcen(1,iel)
+    dy = coopts(2,ipt) - xyzcen(2,iel)
+    dz = coopts(3,ipt) - xyzcen(3,iel)
+
+    ! FIXME remove reconstruction ?
+    do isou = 1, f_dim
+      rvdis(isou,ipt) = cvara_v(isou,iel) + gradv(1,isou,iel)*dx       &
+                                          + gradv(2,isou,iel)*dy       &
+                                          + gradv(3,isou,iel)*dz
+    enddo
+
+  enddo
+
+  ! Free memory
+  deallocate(gradv)
+
+else
+  !TODO for tensors
+  call csexit(1)
+endif
 
 !--------
-! FORMATS
+! Formats
 !--------
+
 !----
-! FIN
+! End
 !----
 
 return

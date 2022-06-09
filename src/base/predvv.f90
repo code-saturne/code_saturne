@@ -474,7 +474,7 @@ endif
 ! Coupling between two code_saturne
 if (nbrcpl.gt.0) then
   !vectorial interleaved exchange
-  call csccel(iu, vela, coefav, coefbv, tsexp)
+  call csccel(iu, tsexp)
 endif
 
 if (vcopt_u%ibdtso.gt.1.and.ntcabs.gt.ntinit &

@@ -21,8 +21,8 @@
 !-------------------------------------------------------------------------------
 
 !> \file csccel.f90
-!> \brief Exchange of coupling variables between to times of code_saturne
-!> thanks to boundary faces.
+!> \brief Exchange of coupling variables between tow instances of code_saturne
+!> thanks to cells.
 !>
 !------------------------------------------------------------------------------
 
@@ -32,16 +32,12 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     ivar          variable number
-!> \param[in]     vela          variable value at time step beginning
-!> \param[in]     coefav        boundary condition coefficient
-!> \param[in]     coefbv        boundary condition coefficient
+!> \param[out]    crvimp        working table for implicit part
 !> \param[out]    crvexp        working table for explicit part
 !______________________________________________________________________________
 
 subroutine csccel &
  ( ivar   ,                                                       &
-   vela   ,                                                       &
-   coefav , coefbv ,                                              &
    crvexp )
 
 !===============================================================================
@@ -58,6 +54,7 @@ use cstnum
 use parall
 use period
 use cplsat
+use field
 use mesh
 
 !===============================================================================
@@ -69,19 +66,16 @@ implicit none
 integer          ivar
 
 double precision crvexp(3,ncelet)
-double precision coefav(3,nfabor)
-double precision coefbv(3,3,nfabor)
-double precision vela(3,ncelet)
 
 ! Local variables
 
+integer          f_id, f_dim
 integer          numcpl
 integer          ncesup , nfbsup
 integer          ncecpl , nfbcpl , ncencp , nfbncp
 integer          ncedis , nfbdis
 integer          ncecpg , ncedig
 integer          ityloc , ityvar
-integer          stride
 
 integer, allocatable, dimension(:) :: lcecpl , lfbcpl
 integer, allocatable, dimension(:) :: locpts
@@ -92,6 +86,16 @@ double precision, allocatable, dimension(:,:) :: rvdis, rvcel
 
 !===============================================================================
 
+! cannot be called for non variables ...
+if (ivar.le.0) then
+  f_id = -1
+  call csexit(1)
+else
+  f_id = ivarfl(ivar)
+endif
+
+!get the dimension of the variable
+call field_get_dim(f_id, f_dim)
 
 do numcpl = 1, nbrcpl
 
@@ -134,8 +138,8 @@ do numcpl = 1, nbrcpl
   allocate(pndpts(ncedis))
 
   ! Allocate temporary arrays for variables exchange
-  allocate(rvdis(3, ncedis))
-  allocate(rvcel(3, ncecpl))
+  allocate(rvdis(f_dim, ncedis))
+  allocate(rvcel(f_dim, ncecpl))
 
   call coocpl &
   !==========
@@ -149,28 +153,23 @@ do numcpl = 1, nbrcpl
     !==========
   endif
 
-!       On vérifie qu'il faut bien échanger quelque chose
-!       de manière globale (à cause des appels à GRDCEL notamment)
+  ! We check that there exists some entities to be coupled at least on one
+  ! rank
+  ! otherwise there is no need to call gradients for instance
   ncecpg = ncecpl
   ncedig = ncedis
   if (irangp.ge.0) then
     call parcpt(ncecpg)
-    !==========
     call parcpt(ncedig)
-    !==========
   endif
 
-
-! --- Transfert des variables proprement dit.
+  ! --- Prepare variables to be transfer
 
   if (ncedig.gt.0) then
 
-    call cscpce                                                   &
-    !==========
-  ( ncedis , ivar   ,                                             &
+    call cscpce &
+  ( ncedis , f_id   , f_dim ,                                     &
     locpts ,                                                      &
-    vela   ,                                                      &
-    coefav , coefbv ,                                             &
     coopts , rvdis  )
 
   endif
@@ -180,16 +179,13 @@ do numcpl = 1, nbrcpl
   deallocate(coopts, djppts, dofpts)
   deallocate(pndpts)
 
-!       Cet appel est symétrique, donc on teste sur NCEDIG et NCECPG
-!       (rien a envoyer, rien a recevoir)
+  ! Cet appel est symétrique, donc on teste sur NCEDIG et NCECPG
+  ! (rien a envoyer, rien a recevoir)
   if (ncedig.gt.0.or.ncecpg.gt.0) then
 
     ! for vectorial exchange
-    stride = 3
-
     call varcpl &
-    !==========
-  ( numcpl , ncedis , ncecpl , ityvar , stride ,                  &
+  ( numcpl , ncedis , ncecpl , ityvar , f_dim  ,                  &
     rvdis  ,                                                      &
     rvcel  )
 
@@ -204,8 +200,7 @@ do numcpl = 1, nbrcpl
 
   if (ncecpg.gt.0) then
 
-    call csc2ts(ncecpl, lcecpl, vela, crvexp, rvcel)
-    !==========
+    call csc2ts(ncecpl, lcecpl, f_id, f_dim, rvcel, crvexp)
 
   endif
 

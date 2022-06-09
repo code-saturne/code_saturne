@@ -107,6 +107,7 @@ use cpincl
 use cs_fuel_incl
 use ppincl
 use ppcpfu
+use cplsat
 use lagran
 use radiat
 use field
@@ -484,6 +485,11 @@ call ustssc &
 
 ! C version
 call user_source_terms(iflid, smbrs, rovsdt)
+
+! Coupling between two code_saturne
+if (nbrcpl.gt.0) then
+  call csccel(ivar, smbrs)
+endif
 
 ! Take into account radioactive decay rate (implicit source term)
 if (ippmod(idarcy).eq.1) then
