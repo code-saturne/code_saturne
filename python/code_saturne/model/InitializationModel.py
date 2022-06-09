@@ -590,7 +590,10 @@ pressure = p0 + g * ro * z;\n"""
             msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlInitChildNode('formula', zone_id = zone)
-        n.xmlSetTextNode(formula)
+        if formula != None:
+            n.xmlSetTextNode(formula)
+        else:
+            n.xmlRemoveNode()
 
 
     @Variables.noUndo
@@ -870,7 +873,10 @@ pressure = p0 + g * ro * z;\n"""
             msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlInitChildNode('formula', zone_id=zone)
-        n.xmlSetTextNode(formula)
+        if formula != None:
+            n.xmlSetTextNode(formula)
+        else:
+            n.xmlRemoveNode()
 
 
     @Variables.noUndo
@@ -912,7 +918,6 @@ pressure = p0 + g * ro * z;\n"""
     @Variables.undoLocal
     def setCombustionFormula(self, zone, scalar, formula):
         """
-        Public method.
         Set the formula for a gas combustion variable.
         """
         self.__verifyZone(zone)
@@ -923,7 +928,10 @@ pressure = p0 + g * ro * z;\n"""
             msg = "There is an error: this node " + str(node) + "should be present"
             raise ValueError(msg)
         n = node.xmlInitChildNode('formula', zone_id=zone)
-        n.xmlSetTextNode(formula)
+        if formula != None:
+            n.xmlSetTextNode(formula)
+        else:
+            n.xmlRemoveNode()
 
 
     @Variables.noUndo

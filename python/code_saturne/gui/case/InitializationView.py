@@ -523,16 +523,16 @@ class InitializationView(QWidget, Ui_InitializationForm):
     @pyqtSlot()
     def slotHydraulicHeadCheck(self):
         zone_id = str(self.zone.getCodeNumber())
-        self.scalar = self.modelHydraulicHead.dicoV2M[self.comboBoxHydraulicHead.currentText()]
+
         if self.checkBoxHydraulicHead.isChecked():
-            exp = self.init.getHydraulicHeadFormula(zone_id, self.scalar)
+            exp = self.init.getHydraulicHeadFormula(zone_id)
             self.pushButtonHydraulicHead.show()
             self.pushButtonHydraulicHead.setStyleSheet("background-color: green")
             self.pushButtonHydraulicHead.setToolTip(exp)
-            self.init.setHydraulicHeadFormula(zone_id, self.scalar, exp)
+            self.init.setHydraulicHeadFormula(zone_id, exp)
         else:
             self.pushButtonHydraulicHead.hide()
-            self.init.setHydraulicHeadFormula(zone_id, self.scalar, None)
+            self.init.setHydraulicHeadFormula(zone_id, None)
 
 
     @pyqtSlot()
