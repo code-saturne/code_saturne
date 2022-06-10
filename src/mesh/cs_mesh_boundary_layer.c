@@ -487,23 +487,26 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
   if (pre_init_structures == false)
     cs_cdo_initialize_structures(domain, m, mq);
 
-  /* Create equation builder and context.
-   * Initialize field values (connect can be updated) */
+  /* Create an equation builder structure for each equation */
 
-  cs_equation_initialize(domain->mesh,
-                         domain->time_step,
-                         domain->cdo_quantities,
-                         domain->connect);
+  cs_equation_define_builders(m);
 
-  /* Define the cs_sles_t structure related to each equation */
+  /* Define the context structure associated to an equation */
+
+  cs_equation_define_context_structures();
+
+  /* Set the requested SLES from the settings (need the scheme context) */
 
   cs_equation_set_sles();
+
+  /* Initialize field values */
+
+  cs_equation_init_field_values(domain->mesh, domain->time_step);
 
   /* Compute or access reference volume for displacement limiter */
 
   const cs_lnum_t n_cells_ini = m->n_cells;
-
-  const cs_real_t *cell_vol_ref = cs_glob_mesh_quantities->cell_vol;
+  const cs_real_t *cell_vol_ref = mq->cell_vol;
 
   bool compute_displacement = true;
 

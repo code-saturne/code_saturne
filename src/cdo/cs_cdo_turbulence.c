@@ -559,7 +559,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize quantities related to a turbulence model.
+ * \brief  Initialize the values of quantities related to a turbulence model.
  *
  * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
  * \param[in]      connect    pointer to a cs_cdo_connect_t structure
@@ -570,11 +570,11 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_initialize(const cs_mesh_t            *mesh,
-                         const cs_cdo_connect_t     *connect,
-                         const cs_cdo_quantities_t  *quant,
-                         const cs_time_step_t       *time_step,
-                         cs_turbulence_t            *tbs)
+cs_turbulence_init_values(const cs_mesh_t             *mesh,
+                          const cs_cdo_connect_t      *connect,
+                          const cs_cdo_quantities_t   *quant,
+                          const cs_time_step_t        *time_step,
+                          cs_turbulence_t             *tbs)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(connect);

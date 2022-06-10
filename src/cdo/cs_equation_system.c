@@ -201,8 +201,8 @@ _equation_system_create(int            n_eqs,
 
   /* Function pointers */
 
-  eqsys->init_structures = NULL;
-  eqsys->free_structures = NULL;
+  eqsys->define = NULL;
+  eqsys->free = NULL;
   eqsys->solve_system = NULL;
   eqsys->solve_steady_state_system = NULL;
 
@@ -234,9 +234,7 @@ _equation_system_free(cs_equation_system_t  **p_eqsys)
 
   /* Free all structures inside array of structures */
 
-  eqsys->context = eqsys->free_structures(n_eqs,
-                                          eqsys->block_factories,
-                                          eqsys->context);
+  eqsys->context = eqsys->free(n_eqs, eqsys->block_factories, eqsys->context);
 
   cs_cdo_system_helper_free(&(eqsys->system_helper));
 
@@ -532,8 +530,8 @@ cs_equation_system_set_functions(void)
     case CS_SPACE_SCHEME_CDOVB:
       if (sysp->block_var_dim == 1) { /* Each block is scalar-valued  */
 
-        eqsys->init_structures = cs_cdovb_scalsys_init_structures;
-        eqsys->free_structures = cs_cdovb_scalsys_free_structures;
+        eqsys->define = cs_cdovb_scalsys_define;
+        eqsys->free = cs_cdovb_scalsys_free;
 
         eqsys->solve_steady_state_system = NULL; /* Not used up to now */
         eqsys->solve_system = cs_cdovb_scalsys_solve_implicit;
@@ -600,13 +598,16 @@ cs_equation_system_set_sles(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize builder and scheme context structures associated to all
- *         the systems of equations which have been added
+ * \brief  Define the builder and scheme context structures associated to all
+ *         the systems of equations which have been added.
+ *         For the diagonal blocks, one relies on the builder and context of
+ *         the related equations. For extra-diagonal blocks, one defines new
+ *         builder and context structures.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_initialize(void)
+cs_equation_system_define(void)
 {
   for (int sys_id = 0; sys_id < _n_equation_systems; sys_id++) {
 
@@ -637,9 +638,8 @@ cs_equation_system_initialize(void)
 
     } /* Loop on equations (Diagonal blocks) */
 
-    eqsys->context = eqsys->init_structures(n_eqs, sysp,
-                                            eqsys->block_factories,
-                                            &eqsys->system_helper);
+    eqsys->context = eqsys->define(n_eqs, sysp, eqsys->block_factories,
+                                   &eqsys->system_helper);
 
     cs_timer_t  t2 = cs_timer_time();
     cs_timer_counter_add_diff(&(eqsys->timer), &t1, &t2);

@@ -655,24 +655,23 @@ cs_equation_user_create_fields(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Allocate and initialize the builder of the algebraic system and the
- *        scheme context structure depending on the kind of space
- *        discretization and the dimension of the variable to solve. Set the
- *        initialize condition to all variable fields associated to each
- *        cs_equation_t structure.
+ * \brief Allocate and define the builder structure
  *
  * \param[in]  mesh      pointer to a cs_mesh_t structure
- * \param[in]  ts        pointer to a cs_time_step_t structure
- * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_initialize(const cs_mesh_t             *mesh,
-                       const cs_time_step_t        *ts,
-                       const cs_cdo_quantities_t   *quant,
-                       const cs_cdo_connect_t      *connect);
+cs_equation_define_builders(const cs_mesh_t     *mesh);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and define the context structure associated to each equation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_define_context_structures(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -687,6 +686,20 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
 void
 cs_equation_define_core(const cs_equation_t    *eq,
                         cs_equation_core_t    **p_core);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the initialize condition to all variable fields associated to
+ *         each cs_equation_t structure.
+ *
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_init_field_values(const cs_mesh_t             *mesh,
+                              const cs_time_step_t        *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!

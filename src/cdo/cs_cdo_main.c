@@ -602,6 +602,16 @@ _log_setup(const cs_domain_t   *domain)
   /* Summary of the setup for each system of equations */
 
   cs_equation_system_log_setup();
+
+  /* SLES options:
+   * ------------
+   * Part common with FV schemes
+   * Options attached to the cs_sles_t structure (not the cs_sles_param_t
+   * structure which is only used in the CDO part)
+   */
+
+  cs_log_printf(CS_LOG_SETUP, " Additional settings for SLES\n%s", cs_sep_h1);
+  cs_sles_log(CS_LOG_SETUP);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -740,8 +750,10 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the structures related to the computational domain when
- *         CDO/HHO schemes are activated
+ * \brief  Build additional connectivities and quantities when CDO/HHO schemes
+ *         are activated.
+ *         Finalize the setup and from the settings, define the structures
+ *         related to equations and modules
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in, out]  m        pointer to a cs_mesh_t struct.
@@ -819,6 +831,34 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
      domain */
 
   cs_domain_post_init(domain);
+
+  /* Define builder structures for equations */
+
+  cs_equation_define_builders(m);
+
+  /* Define the context structure for each equation. One relies on the given
+   * settings (low-level function pointers
+   * Do the same thing for systems of equations and the NavSto module if needed
+   */
+
+  cs_equation_define_context_structures();
+  cs_equation_system_define();
+
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_define_context(m);
+
+  /* SLES settings:
+   * -------------
+   *  Define associated cs_sles_t structure to solve the linear systems.
+   *  This should be done after the creation of fields and the definition of
+   *  the scheme context and system helper structures.
+   */
+
+  cs_equation_set_sles();
+  cs_equation_system_set_sles();
+
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_set_sles();
 
   /* Summary of the settings */
 
@@ -1011,7 +1051,6 @@ cs_cdo_main(cs_domain_t   *domain)
   cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
 
   /*  Build high-level structures and create algebraic systems
-      Define associated cs_sles_t structure to solve the linear systems
       Set the initial values of the fields and properties. */
 
   cs_domain_initialize_systems(domain);

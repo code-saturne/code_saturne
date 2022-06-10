@@ -69,8 +69,10 @@ cs_cdo_initialize_setup(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the structures related to the computational domain when
- *         CDO/HHO schemes are activated
+ * \brief  Build additional connectivities and quantities when CDO/HHO schemes
+ *         are activated.
+ *         Finalize the setup and from the settings, define the structures
+ *         related to equations and modules
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in, out]  m        pointer to a cs_mesh_t struct.

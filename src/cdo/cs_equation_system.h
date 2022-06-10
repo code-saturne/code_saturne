@@ -52,8 +52,7 @@ BEGIN_C_DECLS
  * \brief Create and initialize equation builders and scheme context for each
  *        equation which are in the extra-diagonal blocks related to a system
  *        of equations. Structures associated to diagonal blocks should be
- *        already initialized during the treatment of the classical full
- *        equations.
+ *        already initialized during the treatment of the classical equations.
  *
  *        Generic prototype to define the function pointer.
  *
@@ -67,10 +66,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 typedef void *
-(cs_equation_system_init_structures_t)(int                                n_eqs,
-                                       const cs_equation_system_param_t  *sysp,
-                                       cs_equation_core_t         **core_array,
-                                       cs_cdo_system_helper_t     **p_sh);
+(cs_equation_system_define_t)(int                                 n_eqs,
+                              const cs_equation_system_param_t   *sysp,
+                              cs_equation_core_t                **core_array,
+                              cs_cdo_system_helper_t            **p_sh);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -91,9 +90,9 @@ typedef void *
 /*----------------------------------------------------------------------------*/
 
 typedef void *
-(cs_equation_system_free_structures_t)(int                      n_eqs,
-                                       cs_equation_core_t     **core_array,
-                                       void                    *sys_context);
+(cs_equation_system_free_t)(int                      n_eqs,
+                            cs_equation_core_t     **core_array,
+                            void                    *sys_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -202,11 +201,11 @@ typedef struct {
    * @name Pointer to functions
    * @{
    *
-   * \var init_structures
+   * \var define
    *      Initialize builder and scheme context structures. Pointer of function
    *      given by the prototype cs_equation_system_init_structures_t
    *
-   * \var free_structures
+   * \var free
    *      Free builder and scheme context structures. Pointer of function given
    *      by the prototype cs_equation_system_free_context_t
    *
@@ -219,11 +218,11 @@ typedef struct {
    *      function given by the generic prototype cs_equation_system_solve_t
    */
 
-  cs_equation_system_init_structures_t   *init_structures;
-  cs_equation_system_free_structures_t   *free_structures;
+  cs_equation_system_define_t     *define;
+  cs_equation_system_free_t       *free;
 
-  cs_equation_system_solve_t             *solve_system;
-  cs_equation_system_solve_t             *solve_steady_state_system;
+  cs_equation_system_solve_t      *solve_system;
+  cs_equation_system_solve_t      *solve_steady_state_system;
 
   /*!
    * @}
@@ -329,13 +328,16 @@ cs_equation_system_set_sles(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize builder and scheme context structures associated to all
- *         the systems of equations which have been added
+ * \brief  Define the builder and scheme context structures associated to all
+ *         the systems of equations which have been added.
+ *         For the diagonal blocks, one relies on the builder and context of
+ *         the related equations. For extra-diagonal blocks, one defines new
+ *         builder and context structures.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_initialize(void);
+cs_equation_system_define(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

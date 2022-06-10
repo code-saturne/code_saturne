@@ -1134,6 +1134,13 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
   cs_real_t  *c_vals = fld->val;
   cs_real_t  *f_vals = eqc->face_values;
 
+  /* Check that a face interface has been defined */
+
+  if (eqp->n_ic_defs > 0 && cs_glob_n_ranks > 1 && connect->face_ifs == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Interface set structure at faces not allocated.\n",
+              __func__);
+
   /* By default, 0 is set as initial condition for the computational domain */
 
   memset(f_vals, 0, quant->n_faces*sizeof(cs_real_t));

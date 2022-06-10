@@ -1249,20 +1249,13 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 /*!
  * \brief  Initialize the scheme context structure used to build the algebraic
  *         system. This is done after the setup step.
- *         Set an initial value for the velocity and pressure field if needed
  *
  * \param[in]  mesh        pointer to a cs_mesh_t structure
- * \param[in]  connect     pointer to a cs_cdo_connect_t structure
- * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
- * \param[in]  time_step   pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_initialize(const cs_mesh_t             *mesh,
-                            const cs_cdo_connect_t      *connect,
-                            const cs_cdo_quantities_t   *quant,
-                            const cs_time_step_t        *time_step)
+cs_navsto_system_define_context(const cs_mesh_t             *mesh)
 {
   cs_navsto_system_t  *ns = cs_navsto_system;
 
@@ -1287,6 +1280,35 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
                                                ns->mass_flux_array_pre,
                                                ns->bf_type,
                                                ns->coupling_context);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set an initial value for the velocity and pressure fields as well
+ *         as mass fluxes and tubulent quantities if needed
+ *
+ * \param[in]  mesh        pointer to a cs_mesh_t structure
+ * \param[in]  connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant       pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_step   pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_init_values(const cs_mesh_t             *mesh,
+                             const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant,
+                             const cs_time_step_t        *time_step)
+{
+  cs_navsto_system_t  *ns = cs_navsto_system;
+
+  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+
+  const cs_navsto_param_t *nsp = ns->param;
+  assert(nsp != NULL);
+  if (nsp->space_scheme != CS_SPACE_SCHEME_CDOFB)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid space discretization scheme.", __func__);
 
   if (time_step->nt_cur < 1) {
 
@@ -1299,6 +1321,7 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
     if (ns->init_pressure != NULL)
       ns->init_pressure(nsp, quant, time_step, ns->pressure);
+
   }
 
   if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
@@ -1314,7 +1337,7 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
     }
 
-    /* Initialize the mass flux */
+    /* Initialize the mass flux values */
 
     const cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
     const cs_real_t  *face_vel = cs_equation_get_face_values(mom_eq, false);
@@ -1322,7 +1345,9 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
   } /* Face-based schemes */
 
-  cs_turbulence_initialize(mesh, connect, quant, time_step, ns->turbulence);
+  /* Initialize the values of the tubulent quantities */
+
+  cs_turbulence_init_values(mesh, connect, quant, time_step, ns->turbulence);
 }
 
 /*----------------------------------------------------------------------------*/

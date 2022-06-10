@@ -96,10 +96,10 @@ cs_cdovb_scalsys_init_sharing(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdovb_scalsys_init_structures(int                           n_eqs,
-                                 const cs_equation_system_param_t  *sysp,
-                                 cs_equation_core_t          **block_factories,
-                                 cs_cdo_system_helper_t      **p_sh);
+cs_cdovb_scalsys_define(int                                 n_eqs,
+                        const cs_equation_system_param_t   *sysp,
+                        cs_equation_core_t                **block_factories,
+                        cs_cdo_system_helper_t            **p_sh);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -118,9 +118,9 @@ cs_cdovb_scalsys_init_structures(int                           n_eqs,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdovb_scalsys_free_structures(int                        n_eqs,
-                                 cs_equation_core_t       **blocks,
-                                 void                      *sys_context);
+cs_cdovb_scalsys_free(int                     n_eqs,
+                      cs_equation_core_t    **blocks,
+                      void                   *sys_context);
 
 /*----------------------------------------------------------------------------*/
 /*!

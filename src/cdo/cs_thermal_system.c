@@ -791,7 +791,39 @@ cs_thermal_system_compute(bool                          cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update/initialize the thermal module according to the settings
+ * \brief  Set an initial values for all quantities related to this module
+ *         This is done after the setup step.
+ *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_thermal_system_init_values(const cs_mesh_t             *mesh,
+                              const cs_cdo_connect_t      *connect,
+                              const cs_cdo_quantities_t   *quant,
+                              const cs_time_step_t        *ts)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(ts);
+  CS_UNUSED(connect);
+  CS_UNUSED(quant);
+
+  cs_thermal_system_t  *thm = cs_thermal_system;
+
+  if (thm == NULL)
+    return;
+
+  /* The value of the variable field is initialize during the initialization
+   * of variable field associated to an equation */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the quantities related to the thermal module
  *
  * \param[in]  mesh       pointer to a cs_mesh_t structure
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure

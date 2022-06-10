@@ -3845,7 +3845,7 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
 /*!
  * \brief  Initialize the GWF module (done after all the setup phase and after
  *         the initialization of all equations)
- *         All quantities related to this module are given an initial value.
+ *         One sets an initial value to all quantities related to this module.
  *
  * \param[in]  mesh       pointer to a cs_mesh_t structure
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
@@ -3855,10 +3855,10 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_initialize(const cs_mesh_t             *mesh,
-                  const cs_cdo_connect_t      *connect,
-                  const cs_cdo_quantities_t   *quant,
-                  const cs_time_step_t        *ts)
+cs_gwf_init_values(const cs_mesh_t             *mesh,
+                   const cs_cdo_connect_t      *connect,
+                   const cs_cdo_quantities_t   *quant,
+                   const cs_time_step_t        *ts)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 

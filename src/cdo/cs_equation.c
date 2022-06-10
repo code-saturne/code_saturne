@@ -2445,28 +2445,15 @@ cs_equation_user_create_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Allocate and initialize the builder of the algebraic system and the
- *        scheme context structure depending on the kind of space
- *        discretization and the dimension of the variable to solve. Set the
- *        initialize condition to all variable fields associated to each
- *        cs_equation_t structure.
+ * \brief Allocate and define the builder structure
  *
  * \param[in]  mesh      pointer to a cs_mesh_t structure
- * \param[in]  ts        pointer to a cs_time_step_t structure
- * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_initialize(const cs_mesh_t             *mesh,
-                       const cs_time_step_t        *ts,
-                       const cs_cdo_quantities_t   *quant,
-                       const cs_cdo_connect_t      *connect)
+cs_equation_define_builders(const cs_mesh_t       *mesh)
 {
-  CS_UNUSED(quant);
-  CS_UNUSED(connect);
-
   for (int i = 0; i < _n_equations; i++) {
 
     cs_equation_t *eq = _equations[i];
@@ -2475,43 +2462,52 @@ cs_equation_initialize(const cs_mesh_t             *mesh,
     if (eq->main_ts_id > -1)
       cs_timer_stats_start(eq->main_ts_id);
 
-    const cs_equation_param_t  *eqp = eq->param;
-
     /* Allocate and initialize a system builder */
     /* Not initialized here if it is a restart */
 
     if (eq->builder == NULL)
-      eq->builder = cs_equation_builder_create(eqp, mesh);
+      eq->builder = cs_equation_builder_create(eq->param, mesh);
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  }  /* Loop on equations */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate and define the context structure associated to each equation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_define_context_structures(void)
+{
+  for (int i = 0; i < _n_equations; i++) {
+
+    cs_equation_t *eq = _equations[i];
+    assert(eq != NULL); /* Sanity check */
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
+
+    /* Allocate and initialize the context structures */
+    /* Not initialized here if it is a restart */
 
     if (eq->scheme_context == NULL)
-      eq->scheme_context = eq->init_context(eqp,
+      eq->scheme_context = eq->init_context(eq->param,
                                             eq->field_id,
                                             eq->boundary_flux_id,
                                             eq->builder);
-
-#if defined(DEBUG) && !defined(NDEBUG)
-    /* Check that a face interface has been defined */
-
-    if (eqp->n_ic_defs > 0)
-      if (cs_param_space_scheme_is_face_based(eqp->space_scheme))
-        if (cs_glob_n_ranks > 1 && connect->face_ifs == NULL)
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Interface set structure at faces not allocated.\n",
-                    __func__);
-#endif
-
-    /* Assign an initial value for the variable fields */
-
-    if (ts->nt_cur < 1)
-      eq->init_field_values(ts->t_cur, eq->field_id,
-                            mesh, eqp, eq->builder, eq->scheme_context);
 
     if (eq->main_ts_id > -1)
       cs_timer_stats_stop(eq->main_ts_id);
 
   }  /* Loop on equations */
 
-  /* Allocate or update the low-level assemble structures */
+  /* The system helper is defined during the definition of the scheme context.
+   * When all system helper have been defined, one can allocate or update the
+   * low-level assemble structures */
 
   cs_cdo_system_allocate_assembly();
 }
@@ -2543,6 +2539,58 @@ cs_equation_define_core(const cs_equation_t    *eq,
   core->scheme_context = eq->scheme_context;
 
   *p_core = core;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the initialize condition to all variable fields associated to
+ *         each cs_equation_t structure.
+ *
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
+ * \param[in]  ts        pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_init_field_values(const cs_mesh_t             *mesh,
+                              const cs_time_step_t        *ts)
+{
+  /* Loop on all equations */
+
+  for (int i = 0; i < _n_equations; i++) {
+
+    cs_equation_t *eq = _equations[i];
+    assert(eq != NULL); /* Sanity check */
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_start(eq->main_ts_id);
+
+    const cs_equation_param_t  *eqp = eq->param;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+    /* Check that the main structure for an equation have been defined */
+
+    if (eq->builder == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: A builder structure is expected for eq. \"%s\"\n",
+                __func__, eqp->name);
+
+    if (eq->scheme_context == NULL)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: A context structure is expected for eq. \"%s\"\n",
+                __func__, eqp->name);
+#endif
+
+    /* Assign an initial value for the variable fields */
+
+    if (ts->nt_cur < 1)
+      eq->init_field_values(ts->t_cur, eq->field_id,
+                            mesh, eqp, eq->builder, eq->scheme_context);
+
+    if (eq->main_ts_id > -1)
+      cs_timer_stats_stop(eq->main_ts_id);
+
+  }  /* Loop on equations */
 }
 
 /*----------------------------------------------------------------------------*/

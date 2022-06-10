@@ -580,7 +580,6 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   if (cs_pressure_correction_cdo_is_activated())
     cs_pressure_correction_cdo_init_setup();
 
-
   /* Add fields associated to advection fields */
 
   cs_advection_field_create_fields();
@@ -792,33 +791,9 @@ cs_domain_finalize_module_setup(cs_domain_t         *domain)
 void
 cs_domain_initialize_systems(cs_domain_t   *domain)
 {
-  /* Initialize system before building the linear systems
-   *  - create system builder
-   *  - initialize field according to initial conditions
-   *  - initialize source term
-   *  - set the initial condition to all variable fields
-   *
-   * connect can be updated during this initialization step
-   */
+  /* Set the initial condition to all variable fields */
 
-  cs_equation_initialize(domain->mesh,
-                         domain->time_step,
-                         domain->cdo_quantities,
-                         domain->connect);
-
-  cs_equation_system_initialize();
-
-  /* Last step: Proceed to the setup of the structure related to cs_sles_*
-   * This should be done after the creation of fields
-   */
-
-  /* Set equations (those not implied in the NavSto module) */
-
-  cs_equation_set_sles();
-
-  /* Set the SLES related to the systems of equations */
-
-  cs_equation_system_set_sles();
+  cs_equation_init_field_values(domain->mesh, domain->time_step);
 
   /* Set the initial condition for all advection fields */
 
@@ -836,18 +811,11 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
 
   /* Set the initial state for the Navier-Stokes system */
 
-  if (cs_navsto_system_is_activated()) {
-
-    cs_navsto_system_initialize(domain->mesh,
-                                domain->connect,
-                                domain->cdo_quantities,
-                                domain->time_step);
-
-    /* Need that the scheme context is allocated */
-
-    cs_navsto_system_set_sles();
-
-  }
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_init_values(domain->mesh,
+                                 domain->connect,
+                                 domain->cdo_quantities,
+                                 domain->time_step);
 
   /* Set the initial state for the Maxwell module */
 
@@ -862,15 +830,15 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
      initialized) */
 
   if (cs_solidification_is_activated())
-    cs_solidification_initialize(domain->mesh,
-                                 domain->connect,
-                                 domain->cdo_quantities,
-                                 domain->time_step);
+    cs_solidification_init_values(domain->mesh,
+                                  domain->connect,
+                                  domain->cdo_quantities,
+                                  domain->time_step);
 
   /* Set the initial state for the groundwater flow module */
 
   if (cs_gwf_is_activated())
-    cs_gwf_initialize(domain->mesh,
+    cs_gwf_init_values(domain->mesh,
                       domain->connect,
                       domain->cdo_quantities,
                       domain->time_step);

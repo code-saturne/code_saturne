@@ -937,7 +937,7 @@ cs_solidification_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize the context structure used to build the algebraic system
+ * \brief  Set an initial values for all quantities related to this module
  *         This is done after the setup step.
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
@@ -948,10 +948,10 @@ cs_solidification_log_setup(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_initialize(const cs_mesh_t              *mesh,
-                             const cs_cdo_connect_t       *connect,
-                             const cs_cdo_quantities_t    *quant,
-                             const cs_time_step_t         *time_step);
+cs_solidification_init_values(const cs_mesh_t              *mesh,
+                              const cs_cdo_connect_t       *connect,
+                              const cs_cdo_quantities_t    *quant,
+                              const cs_time_step_t         *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
