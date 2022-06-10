@@ -1043,6 +1043,9 @@ _assembler_values_end(void  *matrix_p)
 {
   cs_matrix_t  *matrix = (cs_matrix_t *)matrix_p;
 
+  if (matrix == NULL)
+    return;
+
   cs_matrix_coeffs_hypre_t  *coeffs = matrix->coeffs;
   HYPRE_IJMatrix hm = coeffs->hm;
 

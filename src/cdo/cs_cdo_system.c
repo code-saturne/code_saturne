@@ -903,9 +903,7 @@ _free_block(cs_cdo_system_block_t   **p_block)
     /* --------------------------- */
     {
       cs_cdo_system_dblock_t  *db = b->block_pointer;
-
-      cs_matrix_destroy(&(db->matrix));
-      cs_matrix_assembler_values_finalize(&(db->mav));
+      assert(db != NULL);
 
       if (b->owner) {
 
@@ -927,15 +925,9 @@ _free_block(cs_cdo_system_block_t   **p_block)
     /* -------------------------- */
     {
       cs_cdo_system_sblock_t  *sb = b->block_pointer;
+      assert(sb != NULL);
 
       if (b->owner) {
-
-        for (int i = 0; i < sb->n_matrices; i++) {
-
-          cs_matrix_destroy(&(sb->matrices[i]));
-          cs_matrix_assembler_values_finalize(&(sb->mav_array[i]));
-
-        }
 
         if (sb->matrix_struct_ownership) {
 
@@ -980,9 +972,8 @@ _free_block(cs_cdo_system_block_t   **p_block)
     /* ----------------------- */
     {
       cs_cdo_system_xblock_t  *xb = b->block_pointer;
+      assert(xb != NULL);
 
-      cs_matrix_destroy(&(xb->matrix));
-      cs_matrix_assembler_values_finalize(&(xb->mav));
       cs_matrix_assembler_destroy(&(xb->matrix_assembler));
       cs_matrix_structure_destroy(&(xb->matrix_structure));
       cs_range_set_destroy(&(xb->range_set));
@@ -1820,9 +1811,12 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
 
         /* Matrix */
 
-        if (db->matrix != NULL)
+        if (db->matrix != NULL) {
+          cs_matrix_release_coefficients(db->matrix);
           cs_matrix_destroy(&(db->matrix));
+        }
 
+        assert(db->matrix_structure != NULL);
         db->matrix = cs_matrix_create(db->matrix_structure);
 
         /* Matrix assembler values */
@@ -1856,9 +1850,12 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
 
           /* Matrices */
 
-          if (sb->matrices[k] != NULL)
+          if (sb->matrices[k] != NULL) {
+            cs_matrix_release_coefficients(sb->matrices[k]);
             cs_matrix_destroy(&(sb->matrices[k]));
+          }
 
+          assert(sb->matrix_structure != NULL);
           sb->matrices[k] = cs_matrix_create(sb->matrix_structure);
 
           /* Matrix assembler values */
@@ -1882,9 +1879,12 @@ cs_cdo_system_helper_init_system(cs_cdo_system_helper_t    *sh,
 
         /* Matrix */
 
-        if (xb->matrix != NULL)
+        if (xb->matrix != NULL) {
+          cs_matrix_release_coefficients(xb->matrix);
           cs_matrix_destroy(&(xb->matrix));
+        }
 
+        assert(xb->matrix_structure != NULL);
         xb->matrix = cs_matrix_create(xb->matrix_structure);
 
         /* Matrix assembler values */
@@ -1997,6 +1997,7 @@ cs_cdo_system_helper_reset(cs_cdo_system_helper_t    *sh)
       {
         cs_cdo_system_dblock_t  *db = b->block_pointer;
 
+        cs_matrix_release_coefficients(db->matrix);
         cs_matrix_destroy(&(db->matrix));
       }
       break;
@@ -2006,8 +2007,10 @@ cs_cdo_system_helper_reset(cs_cdo_system_helper_t    *sh)
       {
         cs_cdo_system_sblock_t  *sb = b->block_pointer;
 
-        for (int k = 0; k < sb->n_matrices; k++)
+        for (int k = 0; k < sb->n_matrices; k++) {
+          cs_matrix_release_coefficients(sb->matrices[k]);
           cs_matrix_destroy(&(sb->matrices[k]));
+        }
       }
       break;
 
@@ -2016,6 +2019,7 @@ cs_cdo_system_helper_reset(cs_cdo_system_helper_t    *sh)
       {
         cs_cdo_system_xblock_t  *xb = b->block_pointer;
 
+        cs_matrix_release_coefficients(xb->matrix);
         cs_matrix_destroy(&(xb->matrix));
       }
       break;

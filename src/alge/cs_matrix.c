@@ -4723,21 +4723,24 @@ cs_matrix_create_by_local_restrict(const cs_matrix_t  *src)
 void
 cs_matrix_destroy(cs_matrix_t **matrix)
 {
-  if (matrix != NULL && *matrix != NULL) {
+  if (matrix == NULL)
+    return;
 
-    cs_matrix_t *m = *matrix;
+  cs_matrix_t *m = *matrix;
 
-    m->destroy_coefficients(m);
+  if (m == NULL)
+    return;
 
-    if (m->_structure != NULL) {
-      m->destroy_structure(&(m->_structure));
-      m->structure = NULL;
-    }
+  m->destroy_coefficients(m);
 
-    /* Now free main structure */
-
-    BFT_FREE(*matrix);
+  if (m->_structure != NULL) {
+    m->destroy_structure(&(m->_structure));
+    m->structure = NULL;
   }
+
+  /* Now free main structure */
+
+  BFT_FREE(*matrix);
 }
 
 /*----------------------------------------------------------------------------*/

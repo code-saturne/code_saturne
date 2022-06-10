@@ -3540,6 +3540,9 @@ cs_matrix_assembler_values_add_g(cs_matrix_assembler_values_t  *mav,
 void
 cs_matrix_assembler_values_done(cs_matrix_assembler_values_t  *mav)
 {
+  if (mav == NULL)
+    return;
+
   /* Exchange row data with other ranks if required */
 
 #if defined(HAVE_MPI)
