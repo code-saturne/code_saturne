@@ -919,7 +919,7 @@ cs_sles_hypre_setup(void               *context,
   /* Call optional setup hook for user setting changes */
 
   if (c->setup_hook != NULL)
-    c->setup_hook(verbosity, c->hook_context, &(sd->solver));
+    c->setup_hook(verbosity, c->hook_context, sd->solver);
 
   /* Now setup systems (where rhs and vx values may be different
      when solving, but their shapes and addresses are the same) */
