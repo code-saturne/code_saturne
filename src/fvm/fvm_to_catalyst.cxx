@@ -519,8 +519,8 @@ _add_dir_scripts(const char  *dir_path)
  *   comm         <-- associated MPI communicator.
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI)
 static void
+#if defined(HAVE_MPI)
 _init_coprocessor(bool      private_comm,
                   MPI_Comm  comm)
 #else
