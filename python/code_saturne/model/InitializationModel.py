@@ -294,7 +294,7 @@ omega = k^0.5/almax;"""
             n.xmlSetTextNode(formula)
         else:
             n.xmlRemoveNode()
-        
+
 
 
     def getVelocityFormulaComponents(self, zone):

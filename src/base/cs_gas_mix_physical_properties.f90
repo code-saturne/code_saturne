@@ -425,7 +425,7 @@ do iel = 1, ncel
     y_k = cvar_yi(iel)
     x_k = y_k * mix_mol_mas(iel) / s_i%mol_mas
     xmab = DSQRT(2.0d0 / (1.0d0 / (s_d%mol_mas*1000.0d0) &
-                         +1.0d0 / (s_i%mol_mas*1000.0d0))) 
+                         +1.0d0 / (s_i%mol_mas*1000.0d0)))
     xvab = ((s_d%vol_dif)**(1.0d0/3.0d0) + (s_i%vol_dif)**(1.d0/3.d0))**2.d0
     a1 = 1.43d-7 / (xmab * xvab) * patm
     steam_binary_diffusion(iel) = steam_binary_diffusion(iel) &
