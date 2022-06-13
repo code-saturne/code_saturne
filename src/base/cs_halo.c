@@ -90,6 +90,10 @@ BEGIN_C_DECLS
  * Local macro definitions
  *============================================================================*/
 
+#if defined(OMPI_MAJOR_VERSION)
+  #include <mpi-ext.h>
+#endif
+
 #if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
   #define _CS_MPI_DEVICE_SUPPORT 1
 #else
