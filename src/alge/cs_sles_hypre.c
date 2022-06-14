@@ -636,16 +636,21 @@ cs_sles_hypre_setup(void               *context,
 
         /* Default settings for device */
         if (c->use_device == 1) {
-
-          HYPRE_BoomerAMGSetRelaxType(hs, 6);       /* 3, 4, 6, 7, 18, 11, 12 */
+          HYPRE_BoomerAMGSetRelaxType(hs, 18);      /* 3, 4, 6, 7, 18, 11, 12 */
           HYPRE_BoomerAMGSetRelaxOrder(hs, 0);      /* must be false */
           HYPRE_BoomerAMGSetCoarsenType(hs, 8);     /* PMIS */
-          HYPRE_BoomerAMGSetInterpType(hs, 17);     /* 3, 15, 6, 14, 17, 18 */
+          HYPRE_BoomerAMGSetInterpType(hs, 18);     /* 3, 15, 6, 14, 17, 18 */
           HYPRE_BoomerAMGSetAggInterpType(hs, 7);   /* 5 or 7 */
           HYPRE_BoomerAMGSetKeepTranspose(hs, 1);   /* keep transpose to
                                                        avoid SpMTV */
           HYPRE_BoomerAMGSetRAP2(hs, 0);            /* RAP in two multiplications
                                                        (default: FALSE) */
+
+          HYPRE_BoomerAMGSetAggNumLevels(hs, 2);
+          HYPRE_BoomerAMGSetPMaxElmts(hs, 4);
+
+          //HYPRE_SetSpGemmUseVendor(0);
+          HYPRE_BoomerAMGSetAggNumLevels(hs, 2);
         }
 
         /* Default settings for host */
