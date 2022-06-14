@@ -200,6 +200,12 @@ class XMLinitNeptune(BaseXmlInit):
             if from_vers[:3] < "6.4":
                 self.__backwardCompatibilityFrom_6_3()
 
+        if from_vers[:3] < "8.0":
+            if from_vers[:3] < "7.1":
+                self.__backwardCompatibilityFrom_7_0()
+            if from_vers[:3] < "7.2":
+                self.__backwardCompatibilityFrom_7_1()
+
 
     def __backwardCompatibilityFrom_2_0(self):
         """
@@ -746,7 +752,7 @@ class XMLinitNeptune(BaseXmlInit):
                     walltm = "none"
                 NeptuneWallTransferModel(self.case).wall_transfer_type = walltm
 
-    def _backwardCompatibilityCurrentVersion(self):
+    def __backwardCompatibilityFrom_7_0(self):
         """
         Change XML in order to ensure backward compatibility.
         """
@@ -762,6 +768,35 @@ class XMLinitNeptune(BaseXmlInit):
                 else:
                     node['physical_properties'] = 'off'
 
+
+    def __backwardCompatibilityFrom_7_1(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+
+        # Update pressure boundary condition for outlets
+        XMLBCNode = self.case.xmlGetNode('boundary_conditions')
+        for node in XMLBCNode.xmlGetChildNodeList('outlet', field_id='none'):
+            p_node = node.xmlGetChildNode('dirichlet', name='pressure')
+            if p_node:
+                # Get previous value of pressure
+                p_val = node.xmlGetDouble('dirichlet', name='pressure')
+
+                # Remove old node
+                p_node.xmlRemoveNode()
+
+                # Create new node witch correct choice value. Note that previous
+                # versions indicated 'dirichlet' while the bnd condition used was
+                # the dpdndtau (mean pressure value)
+                p_node = node.xmlInitChildNode('variable', choice='dpdndtau', name='pressure')
+                p_node.xmlSetData('value', str(p_val))
+
+
+    def _backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        self.__backwardCompatibilityFrom_7_1()
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------

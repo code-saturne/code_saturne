@@ -862,6 +862,7 @@ class OutletBoundary(Boundary) :
         dico['enthalpy']           = 0.
         dico['EnthalpyModel']      = 'flux'
         dico['FractionModel']      = 'dirichlet'
+        dico['PressureModel']      = 'dpdndtau'
         dico['fraction']           = 0.
         dico['noncondensable']     = 0.
         dico['scalar']             = 0.
@@ -869,17 +870,51 @@ class OutletBoundary(Boundary) :
         return dico
 
 
+    @Variables.undoLocal
+    def setPressureChoice(self, value):
+        """
+        Set reference boundary condition choice
+        """
+
+        Model().isInList(value, ['dirichlet', 'dpdndtau'])
+
+        node = self.boundNode.xmlInitNode('variable', 'choice', name='pressure')
+        node['choice'] = value
+
+
+    @Variables.noUndo
+    def getPressureChoice(self):
+        """
+        Get pressure boundary condition choice
+        """
+
+        node = self.boundNode.xmlInitNode('variable', 'choice', name="pressure")
+        choice = node['choice']
+
+        if not choice:
+            choice = self.__defaultValues()['PressureModel']
+            self.setPressureChoice(choice)
+
+        return choice
+
+
     @Variables.noUndo
     def getReferencePressure(self) :
         """
         Get reference pressure
         """
-        pressure = self.boundNode.xmlGetDouble('dirichlet', name='pressure')
-        if pressure is None:
-            pressure = self.__defaultValues()['reference_pressure']
-            self.setReferencePressure(pressure)
+        node = self.boundNode.xmlGetChildNode('variable', 'choice', name='pressure')
+        if not node:
+            node = self.boundNode.xmlInitChildNode('variable', 'choice', name='pressure')
 
-        return pressure
+        ValNode = node.xmlGetChildNode('value')
+        if not ValNode:
+            value = self.__defaultValues()['reference_pressure']
+            self.setReferencePressure(value)
+
+        value = node.xmlGetDouble('value')
+
+        return value
 
 
     @Variables.undoLocal
@@ -889,8 +924,10 @@ class OutletBoundary(Boundary) :
         """
         Model().isFloat(value)
 
-        node = self.boundNode.xmlInitNode('dirichlet', name='pressure')
-        self.boundNode.xmlSetData('dirichlet', value, name='pressure')
+        node = self.boundNode.xmlGetChildNode('variable', 'choice', name='pressure')
+        if not node:
+            node = self.boundNode.xmlInitChildNode('variable', 'choice', name='pressure')
+        node.xmlSetData('value', str(value))
 
 
     @Variables.noUndo

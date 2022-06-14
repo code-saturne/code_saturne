@@ -48,7 +48,7 @@ from code_saturne.gui.base.QtWidgets import *
 from code_saturne.gui.case.BoundaryConditionsPressure import Ui_BoundaryConditionsPressure
 
 from code_saturne.model.Common import GuiParam
-from code_saturne.gui.base.QtPage import DoubleValidator, from_qvariant
+from code_saturne.gui.base.QtPage import DoubleValidator, from_qvariant, ComboModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -82,6 +82,9 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressure) :
 
         self.lineEditPressure.setValidator(validatorPressure)
 
+        self.comboBoxPressureMode.activated[str].connect(self._slotChoicePressure)
+        self._modelPressure = ComboModel(self.comboBoxPressureMode, 2, 1);
+
 
     def setup(self, case, fieldId = None):
         """
@@ -100,6 +103,12 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressure) :
         self.lineEditPressure.show()
         val = boundary.getReferencePressure()
         self.lineEditPressure.setText(str(val))
+
+        self._modelPressure.addItem(self.tr("Mean outlet pressure"), "dpdndtau")
+        self._modelPressure.addItem(self.tr("Homogeneous outlet pressure"), "dirichlet")
+        pressureChoice = self.__boundary.getPressureChoice()
+        self._modelPressure.setItem(str_model=pressureChoice)
+
         self.show()
 
 
@@ -119,6 +128,15 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressure) :
             value = from_qvariant(text, float)
             self.__boundary.setReferencePressure(value)
 
+    @pyqtSlot(str)
+    def _slotChoicePressure(self, text):
+        """
+        Input choice of pressure boundary condition.
+        """
+
+        p_choice = self._modelPressure.dicoV2M[str(text)]
+
+        self.__boundary.setPressureChoice(p_choice)
 
 #-------------------------------------------------------------------------------
 # End
