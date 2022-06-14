@@ -704,6 +704,9 @@ _omp_version_info(bool  log)
   case 201511:
     strncpy(omp_version, "4.5", 8);
     break;
+  case 201611:
+    strncpy(omp_version, "5.0 preview 1", 8);
+    break;
   case 201811:
     strncpy(omp_version, "5.0", 8);
     break;
