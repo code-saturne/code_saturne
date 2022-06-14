@@ -183,6 +183,9 @@ _run(void)
   cs_base_cuda_select_default_device();
 #endif
 
+  if (cs_get_device_id() < 0)
+    cs_halo_set_buffer_alloc_mode(CS_ALLOC_HOST);
+
   cs_timer_stats_initialize();
   cs_timer_stats_define_defaults();
 
