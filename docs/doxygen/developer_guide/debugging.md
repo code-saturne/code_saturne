@@ -605,7 +605,7 @@ debugging serial runs.
 
 - If a true parallel debugger such as
   <span style="color: rgb(48,119,16)">TotalView</span> or
-  <span style="color: rgb(48,119,16)">Arm DDT</span> or
+  <span style="color: rgb(48,119,16)">Arm DDT</span>
   is available, do not hesitate to use it (by adapting the
   <span style="color: rgb(48,119,16)">`run_solver`</span> script in the
   exection directory), and ignore the rest of this slide.
