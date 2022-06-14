@@ -621,7 +621,8 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
     @pyqtSlot()
     def slotClass(self):
 
-        self.job_class = str(self.comboBoxClass.currentText())
+        self.jmdl.batch.params['job_class'] \
+            = str(self.comboBoxClass.currentText())
 
 
     @pyqtSlot(str)
