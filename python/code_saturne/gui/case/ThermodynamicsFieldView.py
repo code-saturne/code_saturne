@@ -344,7 +344,6 @@ class StandardItemModelProperty(QStandardItemModel):
             self._data[row][col] = new_ref
             self.mdl.setFluidReference(FieldId, new_ref)
 
-        self.updateReference(row)
         if row < 2:
             self.updateTable(0)
             self.updateTable(1)
