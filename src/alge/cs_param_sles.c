@@ -454,10 +454,22 @@ _petsc_pchypre_hook(const char              *prefix,
      can be a good choice
   */
 
-  /*
-    _petsc_cmd(true, prefix, "pc_hypre_boomeramg_relax_type_down","fcf-jacobi");
-    _petsc_cmd(true, prefix, "pc_hypre_boomeramg_relax_type_up","fcf-jacobi");
-  */
+  _petsc_cmd(true, prefix,
+             // "pc_hypre_boomeramg_relax_type_down", "l1scaled-SOR/Jacobi");
+             "pc_hypre_boomeramg_relax_type_down", "symmetric-SOR/Jacobi");
+
+  _petsc_cmd(true, prefix,
+             // "pc_hypre_boomeramg_relax_type_up", "l1scaled-SOR/Jacobi");
+             "pc_hypre_boomeramg_relax_type_up", "symmetric-SOR/Jacobi");
+
+  if (slesp->solver == CS_PARAM_ITSOL_CG ||
+      slesp->solver == CS_PARAM_ITSOL_FCG ||
+      slesp->solver == CS_PARAM_ITSOL_MINRES)
+    _petsc_cmd(true, prefix,
+               "pc_hypre_boomeramg_relax_type_coarse", "CG");
+  else
+    _petsc_cmd(true, prefix,
+               "pc_hypre_boomeramg_relax_type_coarse", "Gaussian-elimination");
 
   /* Note that the default coarsening is HMIS in HYPRE */
 
