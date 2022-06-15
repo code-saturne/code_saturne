@@ -2489,6 +2489,100 @@ cs_param_sles_check_class(cs_param_sles_class_t   wanted_class)
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if the setting related to the AMG is consistent with the
+ *         solver class.
+ *
+ * \param[in, out] slesp    pointer to a cs_pparam_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_check_amg(cs_param_sles_t   *slesp)
+{
+  if (slesp == NULL)
+    return;
+  if (slesp->precond != CS_PARAM_PRECOND_AMG)
+    return;
+
+  switch (slesp->solver_class) {
+
+  case CS_PARAM_SLES_CLASS_PETSC:
+#if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_HYPRE) /* PETSC with HYPRE */
+    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
+        slesp->amg_type == CS_PARAM_AMG_HOUSE_K)
+      slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+#else
+    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
+        slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
+        slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V)
+      slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
+    else if (slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
+      slesp->amg_type = CS_PARAM_AMG_PETSC_GAMG_W;
+#endif
+#else  /* PETSC is not available */
+    bft_error(__FILE__, __LINE__, 0,
+              " %s(): System \"%s\" PETSc is not available.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
+#endif
+    break;
+
+  case CS_PARAM_SLES_CLASS_HYPRE:
+#if defined(HAVE_HYPRE)
+    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
+        slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
+      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+    else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
+      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
+#else
+ #if defined(HAVE_PETSC)
+  #if defined(PETSC_HAVE_HYPRE) /* PETSC with HYPRE */
+    if (slesp->amg_type == CS_PARAM_AMG_HOUSE_V ||
+        slesp->amg_type == CS_PARAM_AMG_HOUSE_K ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V)
+      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+    else if (slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W)
+      slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_W;
+  #else  /* PETSc without HYPRE */
+    bft_error(__FILE__, __LINE__, 0,
+              " %s(): System \"%s\" HYPRE is not available.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
+
+  #endif
+ #else  /* Neither HYPRE nor PETSC is available */
+    bft_error(__FILE__, __LINE__, 0,
+              " %s(): System \"%s\" HYPRE/PETSc is not available.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
+ #endif
+#endif
+    break;
+
+  case CS_PARAM_SLES_CLASS_CS:
+    if (slesp->amg_type == CS_PARAM_AMG_PETSC_PCMG ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_V ||
+        slesp->amg_type == CS_PARAM_AMG_PETSC_GAMG_W ||
+        slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_V ||
+        slesp->amg_type == CS_PARAM_AMG_HYPRE_BOOMER_W)
+      slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s(): System \"%s\" Incompatible setting detected.\n"
+              " Please check your installation settings.\n",
+              __func__, slesp->name);
+    break; /* Nothing to do */
+  }
+}
+
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/
 /*!

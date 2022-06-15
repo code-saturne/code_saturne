@@ -595,9 +595,9 @@ typedef enum {
   CS_PARAM_AMG_NONE,            /*!< No specified algorithm */
   CS_PARAM_AMG_HYPRE_BOOMER_V,  /*!< V-cycle Boomer algorithm (Hypre lib.) */
   CS_PARAM_AMG_HYPRE_BOOMER_W,  /*!< W-cycle Boomer algorithm (Hypre lib.) */
-  CS_PARAM_AMG_PETSC_GAMG_V  ,  /*!< V-cycle GAMG algorithm (PETSc lib.) */
-  CS_PARAM_AMG_PETSC_GAMG_W  ,  /*!< W-cycle GAMG algorithm (PETSc lib.) */
-  CS_PARAM_AMG_PETSC_PCMG  ,    /*!< preconditioned MG algorithm from PETSc */
+  CS_PARAM_AMG_PETSC_GAMG_V,    /*!< V-cycle GAMG algorithm (PETSc lib.) */
+  CS_PARAM_AMG_PETSC_GAMG_W,    /*!< W-cycle GAMG algorithm (PETSc lib.) */
+  CS_PARAM_AMG_PETSC_PCMG,      /*!< preconditioned MG algorithm from PETSc */
   CS_PARAM_AMG_HOUSE_V,         /*!< In-house algorithm with V-cycle */
   CS_PARAM_AMG_HOUSE_K,         /*!< In-house algorithm with K-cycle */
 

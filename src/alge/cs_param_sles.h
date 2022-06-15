@@ -186,6 +186,17 @@ cs_param_sles_set(bool                 use_field_id,
 cs_param_sles_class_t
 cs_param_sles_check_class(cs_param_sles_class_t   wanted_class);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if the setting related to the AMG is consistent with the
+ *         solver class.
+ *
+ * \param[in, out] slesp    pointer to a cs_pparam_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_check_amg(cs_param_sles_t   *slesp);
 
 #if defined(HAVE_PETSC)
 /*----------------------------------------------------------------------------*/

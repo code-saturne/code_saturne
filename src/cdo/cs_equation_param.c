@@ -906,9 +906,14 @@ _set_key(cs_equation_param_t   *eqp,
     break;
 
   case CS_EQKEY_SOLVER_FAMILY:
-    if (strcmp(keyval, "cs") == 0)
+    if (strcmp(keyval, "cs") == 0) {
+
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;
 
+      if (eqp->sles_param->precond == CS_PARAM_PRECOND_AMG)
+        cs_param_sles_check_amg(eqp->sles_param);
+
+    }
     else if (strcmp(keyval, "hypre") == 0) {
 
       cs_param_sles_class_t  ret_class =
@@ -931,13 +936,8 @@ _set_key(cs_equation_param_t   *eqp,
 
       /* Check that the AMG type is correctly set */
 
-      if (eqp->sles_param->precond == CS_PARAM_PRECOND_AMG) {
-
-        if (eqp->sles_param->amg_type != CS_PARAM_AMG_HYPRE_BOOMER_V &&
-            eqp->sles_param->amg_type != CS_PARAM_AMG_HYPRE_BOOMER_W)
-          eqp->sles_param->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
-
-      }
+      if (eqp->sles_param->precond == CS_PARAM_PRECOND_AMG)
+        cs_param_sles_check_amg(eqp->sles_param);
 
     }
     else if (strcmp(keyval, "mumps") == 0) {
@@ -971,14 +971,8 @@ _set_key(cs_equation_param_t   *eqp,
 
       /* Check that the AMG type is correctly set */
 
-      if (eqp->sles_param->precond == CS_PARAM_PRECOND_AMG) {
-
-        if (eqp->sles_param->amg_type != CS_PARAM_AMG_PETSC_GAMG_V &&
-            eqp->sles_param->amg_type != CS_PARAM_AMG_PETSC_GAMG_W &&
-            eqp->sles_param->amg_type != CS_PARAM_AMG_PETSC_PCMG)
-          eqp->sles_param->amg_type = CS_PARAM_AMG_PETSC_GAMG_V;
-
-      }
+      if (eqp->sles_param->precond == CS_PARAM_PRECOND_AMG)
+        cs_param_sles_check_amg(eqp->sles_param);
 
     }
     else {
