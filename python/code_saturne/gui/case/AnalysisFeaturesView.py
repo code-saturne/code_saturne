@@ -496,6 +496,20 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.comboBoxLagrangian.setEnabled(True)
 
+        # TurboMachinary
+        print(self.comboBoxTurboMachinery.currentIndex())
+        _NCFD_turbo_models = ['off', 'transient']
+
+        _turbo_itm_str = self.comboBoxTurboMachinery.currentText()
+        _turbo_itm_mdl = self.modelTurboMachinery.dicoV2M[str(_turbo_itm_str)]
+
+        if _turbo_itm_mdl not in _NCFD_turbo_models:
+            self.modelTurboMachinery.setItem(str_model='off')
+
+        for itm in self.modelTurboMachinery.getItems():
+            if itm not in _NCFD_turbo_models:
+                self.modelTurboMachinery.disableItem(str_model=str(itm))
+
         # Other features
 
         self.checkBoxALE.hide()
