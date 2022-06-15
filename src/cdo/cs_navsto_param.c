@@ -367,7 +367,7 @@ _navsto_param_sles_create(cs_navsto_param_model_t         model,
                                                        "schur_approximation");
 
   schur_slesp->precond = CS_PARAM_PRECOND_AMG;   /* preconditioner */
-  schur_slesp->solver = CS_PARAM_ITSOL_CG;       /* iterative solver */
+  schur_slesp->solver = CS_PARAM_ITSOL_FCG;      /* iterative solver */
   schur_slesp->amg_type = CS_PARAM_AMG_HOUSE_K;  /* no predefined AMG type */
   schur_slesp->eps = 1e-4;                       /* relative tolerance to stop
                                                     an iterative solver */
