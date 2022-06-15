@@ -634,13 +634,14 @@ _set_residual_normalization(cs_param_resnorm_type_t    norm_type,
  * \brief  Define the matrix for an approximation of the Schur complement based
  *         on the inverse of the diagonal of the velocity block
  *
- * \param[in]   nsp     pointer to a cs_navsto_param_t structure
- * \param[in]   a       (MSR) matrix for the velocity block
- * \param[in]   rset    pointer to the associated range set structure
- * \param[out]  diagK   double pointer to the diagonal coefficients
- * \param[out]  xtraK   double pointer to the extra-diagonal coefficients
+ * \param[in]      nsp          pointer to a cs_navsto_param_t structure
+ * \param[in]      a            (MSR) matrix for the velocity block
+ * \param[in]      rset         pointer to the associated range set structure
+ * \param[in, out] uza          structure to manage the Uzawa algorithm
+ * \param[out]     p_diag_smat  diagonal coefficients for the Schur matrix
+ * \param[out]     p_xtra_smat  extra-diagonal coefficients for the Schur matrix
  *
- * \return a pointer to a the computed matrix
+ * \return a pointer to the computed matrix
  */
 /*----------------------------------------------------------------------------*/
 
@@ -649,8 +650,8 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
                           const cs_matrix_t         *a,
                           const cs_range_set_t      *rset,
                           cs_uza_builder_t          *uza,
-                          cs_real_t                **p_diagK,
-                          cs_real_t                **p_xtraK)
+                          cs_real_t                **p_diag_smat,
+                          cs_real_t                **p_xtra_smat)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t  *ts = cs_glob_time_step;
@@ -679,9 +680,12 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
     cs_property_eval_at_cells(ts->t_cur, nsp->tot_viscosity, visc_val);
   }
 
-  cs_real_t  alpha = 1/ts->dt[0];
+  cs_real_t  alpha = 1.;
   if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
     alpha = 0.01*nsp->lam_viscosity->ref_value;
+  else
+    alpha /= ts->dt[0];
+
   uza->alpha = rho0*alpha;
 
 # pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
@@ -706,22 +710,25 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
                          _diagA);
 
     diagA = _diagA; /* scatter view (synchronized)*/
+
   }
   else {
+
     diagA = cs_matrix_get_diagonal(a);
     assert(m->periodicity == NULL); /* TODO */
+
   }
 
   /* Native format for the Schur approximation matrix */
 
-  cs_real_t   *diagK = NULL;
-  cs_real_t   *xtraK = NULL;
+  cs_real_t   *diag_smat = NULL;
+  cs_real_t   *xtra_smat = NULL;
 
-  BFT_MALLOC(diagK, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xtraK, 2*n_i_faces, cs_real_t);
+  BFT_MALLOC(diag_smat, n_cells_ext, cs_real_t);
+  BFT_MALLOC(xtra_smat, 2*n_i_faces, cs_real_t);
 
-  memset(diagK, 0, n_cells_ext*sizeof(cs_real_t));
-  memset(xtraK, 0, 2*n_i_faces*sizeof(cs_real_t));
+  memset(diag_smat, 0, n_cells_ext*sizeof(cs_real_t));
+  memset(xtra_smat, 0, 2*n_i_faces*sizeof(cs_real_t));
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
 
@@ -738,16 +745,16 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
     /* Extra-diagonal contribution. This is scanned by the i_face_cells mesh
        adjacency */
 
-    cs_real_t  *_xtraK = xtraK + 2*f_id;
-    _xtraK[0] = _xtraK[1] = contrib;
+    cs_real_t  *_xtra_smat = xtra_smat + 2*f_id;
+    _xtra_smat[0] = _xtra_smat[1] = contrib;
 
     /* Diagonal contributions */
 
     cs_lnum_t cell_i = i_face_cells[f_id][0];
     cs_lnum_t cell_j = i_face_cells[f_id][1];
 
-    diagK[cell_i] -= contrib;
-    diagK[cell_j] -= contrib;
+    diag_smat[cell_i] -= contrib;
+    diag_smat[cell_j] -= contrib;
 
   } /* Loop on interior faces */
 
@@ -768,7 +775,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
 
     /* Diagonal contributions */
 
-    diagK[b_face_cells[f_id]] += contrib;
+    diag_smat[b_face_cells[f_id]] += contrib;
 
   } /* Loop on border faces */
 
@@ -777,22 +784,22 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  cs_matrix_t  *K = cs_matrix_native(false, /* symmetry */
-                                     1, 1);
+  cs_matrix_t  *smat = cs_matrix_native(false, /* symmetry */
+                                        1, 1);
 
-  cs_matrix_set_coefficients(K, false, /* symmetry */
+  cs_matrix_set_coefficients(smat, false, /* symmetry */
                              1, 1,
                              n_i_faces, i_face_cells,
-                             diagK, xtraK);
+                             diag_smat, xtra_smat);
 
   /* Return arrays (to be freed when the algorithm is converged) */
 
-  *p_diagK = diagK;
-  *p_xtraK = xtraK;
+  *p_diag_smat = diag_smat;
+  *p_xtra_smat = xtra_smat;
 
   BFT_FREE(_diagA);
 
-  return K;
+  return smat;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -801,15 +808,16 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
  *         on the inverse of the sum of the absolute values of the velocity
  *         block
  *
- * \param[in]      nsp     pointer to a cs_navsto_param_t structure
- * \param[in]      eqp     pointer to the set of equation parameters
- * \param[in]      a       (MSR) matrix for the velocity block
- * \param[in]      rset    pointer to a range set structure
- * \param[in, out] msles   pointer to a helper structure for monolithic SLES
- * \param[out]     diagK   double pointer to the diagonal coefficients
- * \param[out]     xtraK   double pointer to the extra-diagonal coefficients
+ * \param[in]      nsp          pointer to a cs_navsto_param_t structure
+ * \param[in]      eqp          pointer to the set of equation parameters
+ * \param[in]      a            (MSR) matrix for the velocity block
+ * \param[in]      rset         pointer to a range set structure
+ * \param[in, out] msles        structure to manage the monolithic SLES
+ * \param[in, out] uza          structure to manage the Uzawa algorithm
+ * \param[out]     p_diag_smat  diagonal coefficients for the Schur matrix
+ * \param[out]     p_xtra_smat  extra-diagonal coefficients for the Schur matrix
  *
- * \return a pointer to a the computed matrix
+ * \return a pointer to the computed matrix
  */
 /*----------------------------------------------------------------------------*/
 
@@ -820,8 +828,8 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
                                const cs_range_set_t        *rset,
                                cs_cdofb_monolithic_sles_t  *msles,
                                cs_uza_builder_t            *uza,
-                               cs_real_t                  **p_diagK,
-                               cs_real_t                  **p_xtraK)
+                               cs_real_t                  **p_diag_smat,
+                               cs_real_t                  **p_xtra_smat)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t  *ts = cs_glob_time_step;
@@ -901,14 +909,14 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
 
   /* Native format for the Schur approximation matrix */
 
-  cs_real_t   *diagK = NULL;
-  cs_real_t   *xtraK = NULL;
+  cs_real_t   *diag_smat = NULL;
+  cs_real_t   *xtra_smat = NULL;
 
-  BFT_MALLOC(diagK, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xtraK, 2*n_i_faces, cs_real_t);
+  BFT_MALLOC(diag_smat, n_cells_ext, cs_real_t);
+  BFT_MALLOC(xtra_smat, 2*n_i_faces, cs_real_t);
 
-  memset(diagK, 0, n_cells_ext*sizeof(cs_real_t));
-  memset(xtraK, 0, 2*n_i_faces*sizeof(cs_real_t));
+  memset(diag_smat, 0, n_cells_ext*sizeof(cs_real_t));
+  memset(xtra_smat, 0, 2*n_i_faces*sizeof(cs_real_t));
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
 
@@ -925,20 +933,20 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
     /* Extra-diagonal contribution. This is scanned by the i_face_cells mesh
        adjacency */
 
-    cs_real_t  *_xtraK = xtraK + 2*f_id;
-    _xtraK[0] = _xtraK[1] = contrib;
+    cs_real_t  *_xtra_smat = xtra_smat + 2*f_id;
+    _xtra_smat[0] = _xtra_smat[1] = contrib;
 
     /* Diagonal contributions */
 
     cs_lnum_t cell_i = i_face_cells[f_id][0];
     cs_lnum_t cell_j = i_face_cells[f_id][1];
 
-    diagK[cell_i] -= contrib;
-    diagK[cell_j] -= contrib;
+    diag_smat[cell_i] -= contrib;
+    diag_smat[cell_j] -= contrib;
 
   } /* Loop on interior faces */
 
-  /* Add diagonal contributions from border faces*/
+  /* Add diagonal contributions from border faces */
 
   cs_real_t  *diagA_shift = invA_lumped + 3*n_i_faces;
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -955,7 +963,7 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
 
     /* Diagonal contributions */
 
-    diagK[b_face_cells[f_id]] += contrib;
+    diag_smat[b_face_cells[f_id]] += contrib;
 
   } /* Loop on border faces */
 
@@ -964,22 +972,22 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  cs_matrix_t  *K = cs_matrix_native(false, /* symmetry */
-                                     1, 1);
+  cs_matrix_t  *smat = cs_matrix_native(false, /* symmetry */
+                                        1, 1);
 
-  cs_matrix_set_coefficients(K, false, /* symmetry */
+  cs_matrix_set_coefficients(smat, false, /* symmetry */
                              1, 1,
                              n_i_faces, i_face_cells,
-                             diagK, xtraK);
+                             diag_smat, xtra_smat);
 
   /* Return arrays (to be freed when the algorithm is converged) */
 
-  *p_diagK = diagK;
-  *p_xtraK = xtraK;
+  *p_diag_smat = diag_smat;
+  *p_xtra_smat = xtra_smat;
 
   BFT_FREE(invA_lumped);
 
-  return K;
+  return smat;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1022,7 +1030,7 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
   cs_real_t  *inv_diag = NULL;
   BFT_MALLOC(inv_diag, CS_MAX(b11_size, n_rows), cs_real_t);
 
-  /*  Operation in gather view (the default view for a matrix */
+  /*  Operation in gather view (the default view for a matrix) */
 
   for (cs_lnum_t i1 = 0; i1 < n_rows; i1++)
     inv_diag[i1] = 1./diag_m11[i1];
@@ -1034,14 +1042,14 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
 
   /* Native format for the Schur approximation matrix */
 
-  cs_real_t   *diagK = NULL;
-  cs_real_t   *xtraK = NULL;
+  cs_real_t   *diag_smat = NULL;
+  cs_real_t   *xtra_smat = NULL;
 
-  BFT_MALLOC(diagK, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xtraK, 2*n_i_faces, cs_real_t);
+  BFT_MALLOC(diag_smat, n_cells_ext, cs_real_t);
+  BFT_MALLOC(xtra_smat, 2*n_i_faces, cs_real_t);
 
-  memset(diagK, 0, n_cells_ext*sizeof(cs_real_t));
-  memset(xtraK, 0, 2*n_i_faces*sizeof(cs_real_t));
+  memset(diag_smat, 0, n_cells_ext*sizeof(cs_real_t));
+  memset(xtra_smat, 0, 2*n_i_faces*sizeof(cs_real_t));
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
 
@@ -1058,16 +1066,16 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
     /* Extra-diagonal contribution. This is scanned by the i_face_cells mesh
        adjacency */
 
-    cs_real_t  *_xtraK = xtraK + 2*f_id;
-    _xtraK[0] = _xtraK[1] = contrib;
+    cs_real_t  *_xtra_smat = xtra_smat + 2*f_id;
+    _xtra_smat[0] = _xtra_smat[1] = contrib;
 
     /* Diagonal contributions */
 
     cs_lnum_t cell_i = i_face_cells[f_id][0];
     cs_lnum_t cell_j = i_face_cells[f_id][1];
 
-    diagK[cell_i] -= contrib;
-    diagK[cell_j] -= contrib;
+    diag_smat[cell_i] -= contrib;
+    diag_smat[cell_j] -= contrib;
 
   } /* Loop on interior faces */
 
@@ -1088,7 +1096,7 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
 
     /* Diagonal contributions */
 
-    diagK[b_face_cells[f_id]] += contrib;
+    diag_smat[b_face_cells[f_id]] += contrib;
 
   } /* Loop on border faces */
 
@@ -1103,12 +1111,12 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
                              1, 1,
                              n_i_faces, i_face_cells,
-                             diagK, xtraK);
+                             diag_smat, xtra_smat);
 
   /* Return arrays (to be freed when the algorithm is converged) */
 
-  sbp->schur_diag = diagK;
-  sbp->schur_xtra = xtraK;
+  sbp->schur_diag = diag_smat;
+  sbp->schur_xtra = xtra_smat;
   sbp->m11_inv_diag = inv_diag;
 }
 
@@ -1197,14 +1205,14 @@ _elman_schur_sbp(const cs_navsto_param_t       *nsp,
 
   /* Native format for the Schur approximation matrix */
 
-  cs_real_t   *diagK = NULL;
-  cs_real_t   *xtraK = NULL;
+  cs_real_t   *diag_smat = NULL;
+  cs_real_t   *xtra_smat = NULL;
 
-  BFT_MALLOC(diagK, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xtraK, 2*n_i_faces, cs_real_t);
+  BFT_MALLOC(diag_smat, n_cells_ext, cs_real_t);
+  BFT_MALLOC(xtra_smat, 2*n_i_faces, cs_real_t);
 
-  memset(diagK, 0, n_cells_ext*sizeof(cs_real_t));
-  memset(xtraK, 0, 2*n_i_faces*sizeof(cs_real_t));
+  memset(diag_smat, 0, n_cells_ext*sizeof(cs_real_t));
+  memset(xtra_smat, 0, 2*n_i_faces*sizeof(cs_real_t));
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
 
@@ -1220,16 +1228,16 @@ _elman_schur_sbp(const cs_navsto_param_t       *nsp,
     /* Extra-diagonal contribution. This is scanned by the i_face_cells mesh
        adjacency */
 
-    cs_real_t  *_xtraK = xtraK + 2*f_id;
-    _xtraK[0] = _xtraK[1] = contrib;
+    cs_real_t  *_xtra_smat = xtra_smat + 2*f_id;
+    _xtra_smat[0] = _xtra_smat[1] = contrib;
 
     /* Diagonal contributions */
 
     cs_lnum_t cell_i = i_face_cells[f_id][0];
     cs_lnum_t cell_j = i_face_cells[f_id][1];
 
-    diagK[cell_i] -= contrib;
-    diagK[cell_j] -= contrib;
+    diag_smat[cell_i] -= contrib;
+    diag_smat[cell_j] -= contrib;
 
   } /* Loop on interior faces */
 
@@ -1247,26 +1255,25 @@ _elman_schur_sbp(const cs_navsto_param_t       *nsp,
 
     /* Diagonal contributions */
 
-    diagK[b_face_cells[f_id]] += contrib;
+    diag_smat[b_face_cells[f_id]] += contrib;
 
   } /* Loop on border faces */
 
-  /* Return the associated matrix */
-
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
+
   sbp->schur_matrix = cs_matrix_native(false, /* symmetry */
                                        1, 1);
 
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
                              1, 1,
                              n_i_faces, i_face_cells,
-                             diagK, xtraK);
+                             diag_smat, xtra_smat);
 
   /* Return arrays (to be freed when the algorithm is converged) */
 
-  sbp->schur_diag = diagK;
-  sbp->schur_xtra = xtraK;
+  sbp->schur_diag = diag_smat;
+  sbp->schur_xtra = xtra_smat;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1335,14 +1342,14 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
 
   /* Native format for the Schur approximation matrix */
 
-  cs_real_t   *diagK = NULL;
-  cs_real_t   *xtraK = NULL;
+  cs_real_t   *diag_smat = NULL;
+  cs_real_t   *xtra_smat = NULL;
 
-  BFT_MALLOC(diagK, n_cells_ext, cs_real_t);
-  BFT_MALLOC(xtraK, 2*n_i_faces, cs_real_t);
+  BFT_MALLOC(diag_smat, n_cells_ext, cs_real_t);
+  BFT_MALLOC(xtra_smat, 2*n_i_faces, cs_real_t);
 
-  memset(diagK, 0, n_cells_ext*sizeof(cs_real_t));
-  memset(xtraK, 0, 2*n_i_faces*sizeof(cs_real_t));
+  memset(diag_smat, 0, n_cells_ext*sizeof(cs_real_t));
+  memset(xtra_smat, 0, 2*n_i_faces*sizeof(cs_real_t));
 
   /* Add diagonal and extra-diagonal contributions from interior faces */
 
@@ -1359,16 +1366,16 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
     /* Extra-diagonal contribution. This is scanned by the i_face_cells mesh
        adjacency */
 
-    cs_real_t  *_xtraK = xtraK + 2*f_id;
-    _xtraK[0] = _xtraK[1] = contrib;
+    cs_real_t  *_xtra_smat = xtra_smat + 2*f_id;
+    _xtra_smat[0] = _xtra_smat[1] = contrib;
 
     /* Diagonal contributions */
 
     cs_lnum_t cell_i = i_face_cells[f_id][0];
     cs_lnum_t cell_j = i_face_cells[f_id][1];
 
-    diagK[cell_i] -= contrib;
-    diagK[cell_j] -= contrib;
+    diag_smat[cell_i] -= contrib;
+    diag_smat[cell_j] -= contrib;
 
   } /* Loop on interior faces */
 
@@ -1389,7 +1396,7 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
 
     /* Diagonal contributions */
 
-    diagK[b_face_cells[f_id]] += contrib;
+    diag_smat[b_face_cells[f_id]] += contrib;
 
   } /* Loop on border faces */
 
@@ -1404,12 +1411,12 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
                              1, 1,
                              n_i_faces, i_face_cells,
-                             diagK, xtraK);
+                             diag_smat, xtra_smat);
 
   /* Return arrays (to be freed when the algorithm is converged) */
 
-  sbp->schur_diag = diagK;
-  sbp->schur_xtra = xtraK;
+  sbp->schur_diag = diag_smat;
+  sbp->schur_xtra = xtra_smat;
 
   sbp->m11_inv_diag = inv_lumped;
 }
@@ -4956,17 +4963,20 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   /* The Schur complement approximation (B.A^-1.Bt) is build and stored in the
      native format */
 
-  cs_matrix_t  *K = NULL;
-  cs_real_t  *diagK = NULL, *xtraK = NULL;
+  cs_matrix_t  *smat = NULL;
+  cs_real_t  *diag_smat = NULL, *xtra_smat = NULL;
 
   switch (nsp->sles_param->schur_approximation) {
 
   case CS_PARAM_SCHUR_DIAG_INVERSE:
-    K = _diag_schur_approximation(nsp, matrix, range_set, uza, &diagK, &xtraK);
+    smat = _diag_schur_approximation(nsp, matrix, range_set,
+                                     uza,
+                                     &diag_smat, &xtra_smat);
     break;
   case CS_PARAM_SCHUR_LUMPED_INVERSE:
-    K = _invlumped_schur_approximation(nsp, eqp, matrix, range_set, msles,
-                                       uza, &diagK, &xtraK);
+    smat = _invlumped_schur_approximation(nsp, eqp, matrix, range_set,
+                                          msles, uza,
+                                          &diag_smat, &xtra_smat);
     break;
 
   default:
@@ -5055,14 +5065,14 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   double div_l2_norm = _get_cbscal_norm(rk);
 
   /* Compute g0 as
-   *   Solve K.zk = r0
+   *   Solve smat.zk = r0
    *   g0 = alpha zk + nu Mp^-1 r0 */
 
   memset(zk, 0, sizeof(cs_real_t)*uza->n_p_dofs);
 
   _n_iter = cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
                                             schur_slesp,
-                                            K,
+                                            smat,
                                             div_l2_norm,
                                             msles->schur_sles,
                                             zk,
@@ -5121,13 +5131,13 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
     normalization = _get_cbscal_norm(dwk);
 
-    /* Solve K.zk = dwk */
+    /* Solve smat.zk = dwk */
 
     memset(zk, 0, sizeof(cs_real_t)*uza->n_p_dofs);
 
     _n_iter = cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
                                               schur_slesp,
-                                              K,
+                                              smat,
                                               normalization,
                                               msles->schur_sles,
                                               zk,
@@ -5183,8 +5193,8 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   /* Last step: Free temporary memory */
 
-  BFT_FREE(diagK);
-  BFT_FREE(xtraK);
+  BFT_FREE(diag_smat);
+  BFT_FREE(xtra_smat);
   _free_uza_builder(&uza);
 
   return  n_inner_iter;
@@ -5239,17 +5249,19 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
   /* The Schur complement approximation (B.A^-1.Bt) is build and stored in the
      native format */
 
-  cs_real_t  *diagK = NULL, *xtraK = NULL;
-  cs_matrix_t  *K = NULL;
+  cs_real_t  *diag_smat = NULL, *xtra_smat = NULL;
+  cs_matrix_t  *smat = NULL;
 
   switch (nsp->sles_param->schur_approximation) {
 
   case CS_PARAM_SCHUR_DIAG_INVERSE:
-    K = _diag_schur_approximation(nsp, matrix, range_set, uza, &diagK, &xtraK);
+    smat = _diag_schur_approximation(nsp, matrix, range_set, uza,
+                                     &diag_smat, &xtra_smat);
     break;
   case CS_PARAM_SCHUR_LUMPED_INVERSE:
-    K = _invlumped_schur_approximation(nsp, eqp, matrix, range_set, msles,
-                                       uza, &diagK, &xtraK);
+    smat = _invlumped_schur_approximation(nsp, eqp, matrix, range_set,
+                                          msles, uza,
+                                          &diag_smat, &xtra_smat);
     break;
 
   default:
@@ -5341,7 +5353,7 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
   cs_real_t  *dzk = uza->dzk;
 
   /* Compute gk0 as
-   *   Solve K.gk00 = rk0
+   *   Solve smat.gk00 = rk0
    *   gk0 = alpha gk00 + nu Mp^-1 rk0 */
 
   memset(gk, 0, sizeof(cs_real_t)*msles->n_cells);
@@ -5350,7 +5362,7 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
     += (uza->algo->last_inner_iter =
         cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
                                         schur_slesp,
-                                        K,
+                                        smat,
                                         div_l2_norm,
                                         msles->schur_sles,
                                         gk,
@@ -5425,13 +5437,13 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
 
   while (uza->algo->cvg == CS_SLES_ITERATING) {
 
-    /* Solve K.gk = rk */
+    /* Solve smat.gk = rk */
 
     uza->algo->n_inner_iter
       += (uza->algo->last_inner_iter =
           cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
                                           schur_slesp,
-                                          K,
+                                          smat,
                                           uza->algo->res, /* ||r(k-1)|| */
                                           msles->schur_sles,
                                           gk,
@@ -5515,8 +5527,8 @@ cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
 
   /* Last step: Free temporary memory */
 
-  BFT_FREE(diagK);
-  BFT_FREE(xtraK);
+  BFT_FREE(diag_smat);
+  BFT_FREE(xtra_smat);
   _free_uza_builder(&uza);
 
   return  n_inner_iter;
