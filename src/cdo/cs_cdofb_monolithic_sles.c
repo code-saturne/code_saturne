@@ -784,8 +784,8 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  cs_matrix_t  *smat = cs_matrix_native(false, /* symmetry */
-                                        1, 1);
+  cs_matrix_t  *smat = cs_matrix_msr(false, /* symmetry */
+                                     1, 1);
 
   cs_matrix_set_coefficients(smat, false, /* symmetry */
                              1, 1,
@@ -972,8 +972,8 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  cs_matrix_t  *smat = cs_matrix_native(false, /* symmetry */
-                                        1, 1);
+  cs_matrix_t  *smat = cs_matrix_msr(false, /* symmetry */
+                                     1, 1);
 
   cs_matrix_set_coefficients(smat, false, /* symmetry */
                              1, 1,
@@ -1105,8 +1105,8 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  sbp->schur_matrix = cs_matrix_native(false, /* symmetry */
-                                       1, 1);
+  sbp->schur_matrix = cs_matrix_msr(false, /* symmetry */
+                                    1, 1);
 
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
                              1, 1,
@@ -1262,8 +1262,8 @@ _elman_schur_sbp(const cs_navsto_param_t       *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  sbp->schur_matrix = cs_matrix_native(false, /* symmetry */
-                                       1, 1);
+  sbp->schur_matrix = cs_matrix_msr(false, /* symmetry */
+                                    1, 1);
 
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
                              1, 1,
@@ -1405,8 +1405,8 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  sbp->schur_matrix = cs_matrix_native(false, /* symmetry */
-                                       1, 1);
+  sbp->schur_matrix = cs_matrix_msr(false, /* symmetry */
+                                    1, 1);
 
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
                              1, 1,
