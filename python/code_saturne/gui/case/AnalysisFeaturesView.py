@@ -497,7 +497,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.comboBoxLagrangian.setEnabled(True)
 
         # TurboMachinary
-        print(self.comboBoxTurboMachinery.currentIndex())
         _NCFD_turbo_models = ['off', 'transient']
 
         _turbo_itm_str = self.comboBoxTurboMachinery.currentText()
