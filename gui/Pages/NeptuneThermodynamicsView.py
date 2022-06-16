@@ -59,7 +59,10 @@ class NeptuneThermodynamicsView(QWidget, Ui_NeptuneThermodynamics):
 
     @pyqtSlot(int)
     def slotRefresh(self, index):
-        if index == 1:
-            self.tabInteractionProperties.refresh()
+
+        # Properties and saturation need to recall setup while the surface
+        # tension has a built-in refresh method
+        if index < 2:
+            self.tabWidget.widget(index).setup(self.case, self.zone_name)
         else:
-            pass
+            self.tabWidget.widget(index).refresh()

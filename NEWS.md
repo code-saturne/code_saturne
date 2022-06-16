@@ -3,6 +3,12 @@ Release 7.0.5 (not released yet)
 
 Bug fixes:
 
+- Force refresh tabs in the physical properties page of neptune_cfd when
+  modifying the fluids equation of state
+
+- Disable all turbomachinery models except for "full transient" when using
+  neptune_cfd
+
 - boundary layer insertion: fixed nodes were ignored, leading to a modification
   of the outer geometry (issue #400).
 
