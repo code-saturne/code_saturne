@@ -3,6 +3,9 @@ Release 7.0.5 (not released yet)
 
 Bug fixes:
 
+- Do not hide the notebook page when the user chooses preprocessing mode,
+  since notebook parameters can be used in the "cs_user_mesh" functions.
+
 - Fix spurious apparition of the "Atmospheric flows" page when using neptune_cfd
 
 - Force refresh tabs in the physical properties page of neptune_cfd when
