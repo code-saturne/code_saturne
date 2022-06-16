@@ -3,6 +3,8 @@ Release 7.0.5 (not released yet)
 
 Bug fixes:
 
+- Fix spurious apparition of the "Atmospheric flows" page when using neptune_cfd
+
 - Force refresh tabs in the physical properties page of neptune_cfd when
   modifying the fluids equation of state
 

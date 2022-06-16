@@ -69,7 +69,6 @@ class GasCombustionModel(Variables, Model):
         self.node_gas    = nModels.xmlInitNode('gas_combustion',    'model')
         self.node_coal   = nModels.xmlInitNode('solid_fuels',       'model')
         self.node_joule  = nModels.xmlInitNode('joule_effect',      'model')
-        self.node_atmo   = nModels.xmlInitNode('atmospheric_flows', 'model')
         self.node_prop   = self.case.xmlGetNode('physical_properties')
         self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
 
@@ -579,7 +578,7 @@ class ThermochemistryData(Model):
 
     def defaultParamforTabu(self):
         """
-        Return in a dictionnary which contains default values 
+        Return in a dictionnary which contains default values
         for parameters necessarry to create the Janaf File
         """
         default = {}
@@ -864,7 +863,7 @@ class ThermochemistryData(Model):
         length = len(__coef)
         Lspe = self.defaultSpeciesProperties()['species_label']
 
-        # new species: default value 
+        # new species: default value
 
         if not species_name:
             if length != 0:
@@ -1061,11 +1060,11 @@ class ThermochemistryData(Model):
         """
 
         ChemicalFormula = str(ChemicalFormula.upper())
-        
+
         NumberOfChemElem = {}
         for Elem in self.ChemicalElem:
             NumberOfChemElem[Elem] = "0"
-        
+
         ChemicalElem_sorted = sorted(self.ChemicalElem, key=len, reverse=True)
 
         for Elem in ChemicalElem_sorted :
@@ -1076,7 +1075,7 @@ class ThermochemistryData(Model):
                 position = ChemicalFormula.find(Elem)+len(Elem)
                 ChemicalFormula = ChemicalFormula.replace(str(Elem), ' ')
                 while ChemicalFormula[position:position+1].isdigit():
-                    if ReadFirstElem: 
+                    if ReadFirstElem:
                         NumberOfChemElem[Elem] = ChemicalFormula[position:position+1]
                     else :
                         NumberOfChemElem[Elem] = NumberOfChemElem[Elem]+ChemicalFormula[position:position+1]
@@ -1087,7 +1086,7 @@ class ThermochemistryData(Model):
 
                     ReadFirstElem = False
                     position=position+1
-                
+
         return NumberOfChemElem
 
     @Variables.undoGlobal
@@ -1215,9 +1214,9 @@ class ThermochemistryData(Model):
         self.Error_GUI = False
         if Option_UserMode == 'user':
             CheckComp = {}
-            FLAG_No_Oxi = False 
-            FLAG_No_Fuel = False 
-            FLAG_No_Prod = False 
+            FLAG_No_Oxi = False
+            FLAG_No_Fuel = False
+            FLAG_No_Prod = False
             FLAG_No_compo = False
 
             if not ListOfSpecies :
@@ -1260,7 +1259,7 @@ class ThermochemistryData(Model):
         f.write(InfoLine['LineInfo-GaseousSpecies']+"\n")
         f.write(" "*10)
 
-        # Reorder the species to have the Fuel in first, then Oxidiser and 
+        # Reorder the species to have the Fuel in first, then Oxidiser and
         # finish by the Product and sorted the compositions (see colecd.f90)
         maxCompFuel = 0.0
         maxCompOxi  = 0.0
@@ -1283,7 +1282,7 @@ class ThermochemistryData(Model):
             if CompProdDict[label] > 0.0:
                 Order[i] = 3 + CompProdDict[label]/maxCompProd
             i = i + 1
-      
+
         getSpeciesNamesList_Sorted = ListOfSpecies
         Order, getSpeciesNamesList_Sorted = zip(*sorted(zip(Order, getSpeciesNamesList_Sorted)))
 
@@ -1348,7 +1347,7 @@ class ThermochemistryData(Model):
         for label in getSpeciesNamesList_Sorted:
             f.write('{:>15}'.format(str(CompProdDict[label])))
         f.write(" "*5+InfoLine['ProdComposition'])
-        
+
         #If all the species have a given composition : ngazg == 3
         if self.NumberOfKnownGlobalSpecies == 3 :
             position_fuel = 1
