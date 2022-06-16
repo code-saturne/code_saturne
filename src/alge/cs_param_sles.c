@@ -2432,6 +2432,35 @@ cs_param_sles_set(bool                 use_field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the related solver class from the amg type
+ *
+ * \param[in]  amg_type    type of AMG to consider
+ *
+ * \return the related solver class or CS_PARAM_SLES_CLASS_CS
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_param_sles_class_t
+cs_param_sles_get_class_from_amg(cs_param_amg_type_t   amg_type)
+{
+  switch (amg_type) {
+
+  case CS_PARAM_AMG_HYPRE_BOOMER_V:
+  case CS_PARAM_AMG_HYPRE_BOOMER_W:
+    return CS_PARAM_SLES_CLASS_HYPRE;
+
+  case CS_PARAM_AMG_PETSC_GAMG_V:
+  case CS_PARAM_AMG_PETSC_GAMG_W:
+  case CS_PARAM_AMG_PETSC_PCMG:
+    return CS_PARAM_SLES_CLASS_PETSC;
+
+  default:
+    return CS_PARAM_SLES_CLASS_CS;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Check the availability of a solver library and return the requested
  *        one if this is possible or an alternative or CS_PARAM_SLES_N_CLASSES
  *        if no alternative is available.

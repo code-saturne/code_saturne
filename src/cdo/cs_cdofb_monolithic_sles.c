@@ -3959,6 +3959,57 @@ _uza_incr_cvg_test(cs_real_t                   delta_u_l2,
     return false;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check and possibly fix the settings related to the Schur complement
+ *         in case of AMG preconditioner
+ *
+ * \param[in, out] schur_slesp   pointer to the SLES parameters for the Schur
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_schur_sles(cs_param_sles_t   *schur_slesp)
+{
+  if (schur_slesp->precond == CS_PARAM_PRECOND_AMG) {
+
+    if (schur_slesp->amg_type == CS_PARAM_AMG_NONE) {
+
+      cs_param_sles_class_t  ret_class =
+        cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
+
+      if (ret_class == CS_PARAM_SLES_N_CLASSES)
+        schur_slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
+      else
+        schur_slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+
+    }
+    else {
+
+      cs_param_sles_class_t  ret_class =
+        cs_param_sles_get_class_from_amg(schur_slesp->amg_type);
+
+      /* Modify the default settings if needed */
+
+      if (ret_class != schur_slesp->solver_class &&
+          schur_slesp->solver_class == CS_PARAM_SLES_CLASS_CS)
+        schur_slesp->solver_class = ret_class;
+
+    }
+
+    cs_param_sles_check_amg(schur_slesp);
+
+  } /* Check AMG settings */
+
+  int ier = cs_param_sles_set(false, schur_slesp);
+
+  if (ier == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: The requested class of solvers is not available"
+              " for the system %s\n Please modify your settings.",
+              __func__, schur_slesp->name);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -4104,8 +4155,17 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
   int  field_id = cs_equation_get_field_id(mom_eq);
 
   mom_slesp->field_id = field_id;
-  if (mom_slesp->amg_type == CS_PARAM_AMG_NONE)
-    mom_slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+  if (mom_slesp->amg_type == CS_PARAM_AMG_NONE) {
+
+    cs_param_sles_class_t  ret_class =
+      cs_param_sles_check_class(CS_PARAM_SLES_CLASS_HYPRE);
+
+    if (ret_class == CS_PARAM_SLES_N_CLASSES)
+      mom_slesp->amg_type = CS_PARAM_AMG_HOUSE_K;
+    else
+      mom_slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER_V;
+
+  }
 
   switch (nslesp->strategy) {
 
@@ -4131,19 +4191,15 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
   case CS_NAVSTO_SLES_UPPER_SCHUR_GCR:
   case CS_NAVSTO_SLES_UZAWA_SCHUR_GCR:
     {
+      /* Set solver and preconditioner for solving A */
+
       cs_equation_param_set_sles(mom_eqp);
 
       /* Set the solver for the compatible Laplacian (the related SLES is
          defined using the system name instead of the field id since this is an
          auxiliary system) */
 
-      int ier = cs_param_sles_set(false, nslesp->schur_sles_param);
-
-      if (ier == -1)
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: The requested class of solvers is not available"
-                  " for the system %s\n Please modify your settings.",
-                  __func__, nslesp->schur_sles_param->name);
+      _set_schur_sles(nslesp->schur_sles_param);
     }
     break;
 
@@ -4157,13 +4213,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
          defined using the system name instead of the field id since this is an
          auxiliary system) */
 
-      int ier = cs_param_sles_set(false, nslesp->schur_sles_param);
-
-      if (ier == -1)
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: The requested class of solvers is not available"
-                  " for the system %s\n Please modify your settings.",
-                  __func__, nslesp->schur_sles_param->name);
+      _set_schur_sles(nslesp->schur_sles_param);
     }
     break;
 
