@@ -736,8 +736,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
         Configures the browser with users data.
         """
 
-        self.setRowClose(self.tr('Notebook'))
-
         show_prepro = True
         if case['run_type'] == 'none':
             show_prepro = False
