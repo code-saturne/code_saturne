@@ -784,8 +784,16 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  cs_matrix_t  *smat = cs_matrix_msr(false, /* symmetry */
-                                     1, 1);
+  cs_matrix_t  *smat = NULL;
+
+  if (nsp->sles_param->schur_sles_param->solver_class ==
+      CS_PARAM_SLES_CLASS_HYPRE)
+    smat = cs_matrix_external("HYPRE_ParCSR",
+                              false, /* symmetry */
+                              1, 1);
+  else
+    smat = cs_matrix_msr(false, /* symmetry */
+                         1, 1);
 
   cs_matrix_set_coefficients(smat, false, /* symmetry */
                              1, 1,
@@ -972,8 +980,16 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  cs_matrix_t  *smat = cs_matrix_msr(false, /* symmetry */
-                                     1, 1);
+  cs_matrix_t  *smat = NULL;
+
+  if (nsp->sles_param->schur_sles_param->solver_class ==
+      CS_PARAM_SLES_CLASS_HYPRE)
+    smat = cs_matrix_external("HYPRE_ParCSR",
+                              false, /* symmetry */
+                              1, 1);
+  else
+    smat = cs_matrix_msr(false, /* symmetry */
+                         1, 1);
 
   cs_matrix_set_coefficients(smat, false, /* symmetry */
                              1, 1,
@@ -1105,8 +1121,14 @@ _diag_schur_sbp(const cs_navsto_param_t       *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  sbp->schur_matrix = cs_matrix_msr(false, /* symmetry */
-                                    1, 1);
+  if (nsp->sles_param->schur_sles_param->solver_class ==
+      CS_PARAM_SLES_CLASS_HYPRE)
+    sbp->schur_matrix = cs_matrix_external("HYPRE_ParCSR",
+                                           false, /* symmetry */
+                                           1, 1);
+  else
+    sbp->schur_matrix = cs_matrix_msr(false, /* symmetry */
+                                      1, 1);
 
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
                              1, 1,
@@ -1191,7 +1213,6 @@ _elman_schur_sbp(const cs_navsto_param_t       *nsp,
                  cs_saddle_block_precond_t     *sbp)
 {
   CS_UNUSED(ssys);
-  CS_UNUSED(nsp);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -1262,8 +1283,14 @@ _elman_schur_sbp(const cs_navsto_param_t       *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  sbp->schur_matrix = cs_matrix_msr(false, /* symmetry */
-                                    1, 1);
+  if (nsp->sles_param->schur_sles_param->solver_class ==
+      CS_PARAM_SLES_CLASS_HYPRE)
+    sbp->schur_matrix = cs_matrix_external("HYPRE_ParCSR",
+                                           false, /* symmetry */
+                                           1, 1);
+  else
+    sbp->schur_matrix = cs_matrix_msr(false, /* symmetry */
+                                      1, 1);
 
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
                              1, 1,
@@ -1293,8 +1320,6 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
                      const cs_saddle_system_t      *ssys,
                      cs_saddle_block_precond_t     *sbp)
 {
-  CS_UNUSED(nsp);
-
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
@@ -1405,8 +1430,14 @@ _invlumped_schur_sbp(const cs_navsto_param_t       *nsp,
   /* One assumes a non-symmetric matrix even if in most (all?) cases the matrix
      should be symmetric */
 
-  sbp->schur_matrix = cs_matrix_msr(false, /* symmetry */
-                                    1, 1);
+  if (nsp->sles_param->schur_sles_param->solver_class ==
+      CS_PARAM_SLES_CLASS_HYPRE)
+    sbp->schur_matrix = cs_matrix_external("HYPRE_ParCSR",
+                                           false, /* symmetry */
+                                           1, 1);
+  else
+    sbp->schur_matrix = cs_matrix_msr(false, /* symmetry */
+                                      1, 1);
 
   cs_matrix_set_coefficients(sbp->schur_matrix, false, /* symmetry */
                              1, 1,
