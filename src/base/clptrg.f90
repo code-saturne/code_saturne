@@ -214,9 +214,9 @@ double precision, dimension(:), pointer :: tlag
 double precision, dimension(:), pointer :: cvar_totwt, cvar_t, cpro_liqwt
 double precision, dimension(:), pointer :: bpro_rough_d
 double precision, dimension(:), pointer :: bpro_rough_t
-double precision, dimension(:), pointer :: cpro_diff_lim_k
-double precision, dimension(:), pointer :: cpro_diff_lim_eps
-double precision, dimension(:), pointer :: cpro_diff_lim_rij
+double precision, dimension(:), pointer :: bpro_diff_lim_k
+double precision, dimension(:), pointer :: bpro_diff_lim_eps
+double precision, dimension(:), pointer :: bpro_diff_lim_rij
 
 double precision, dimension(:,:), pointer :: coefau, cofafu, visten
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
@@ -346,9 +346,9 @@ if (ik.gt.0) then
   ! Diffusion limiter
   call field_get_key_int(ivarfl(ik), kdflim, f_id)
   if (f_id.ge.0) then
-    call field_get_val_s(f_id, cpro_diff_lim_k)
+    call field_get_val_s(f_id, bpro_diff_lim_k)
   else
-    cpro_diff_lim_k => null()
+    bpro_diff_lim_k => null()
   endif
 else
   coefa_k => null()
@@ -366,9 +366,9 @@ if (iep.gt.0) then
   ! Diffusion limiter
   call field_get_key_int(ivarfl(iep), kdflim, f_id)
   if (f_id.ge.0) then
-    call field_get_val_s(f_id, cpro_diff_lim_eps)
+    call field_get_val_s(f_id, bpro_diff_lim_eps)
   else
-    cpro_diff_lim_eps => null()
+    bpro_diff_lim_eps => null()
   endif
 else
   coefa_ep => null()
@@ -391,9 +391,9 @@ if (itytur.eq.3) then! Also have boundary conditions for the momentum equation
   ! Diffusion limiter
   call field_get_key_int(ivarfl(irij), kdflim, f_id)
   if (f_id.ge.0) then
-    call field_get_val_s(f_id, cpro_diff_lim_rij)
+    call field_get_val_s(f_id, bpro_diff_lim_rij)
   else
-    cpro_diff_lim_rij => null()
+    bpro_diff_lim_rij => null()
   endif
 endif
 
@@ -1049,7 +1049,7 @@ do ifac = 1, nfabor
 
 
       ! No diffusion reconstruction when using wall functions
-      if (associated(cpro_diff_lim_k)) cpro_diff_lim_k(ifac) = 0.d0
+      if (associated(bpro_diff_lim_k)) bpro_diff_lim_k(ifac) = 0.d0
 
       ! Neumann Boundary Condition on epsilon
       !--------------------------------------
@@ -1086,7 +1086,7 @@ do ifac = 1, nfabor
       endif
 
       ! No diffusion reconstruction when using wall functions
-      if (associated(cpro_diff_lim_eps)) cpro_diff_lim_eps(ifac) = 0.d0
+      if (associated(bpro_diff_lim_eps)) bpro_diff_lim_eps(ifac) = 0.d0
 
     !===========================================================================
     ! 5. Boundary conditions on Rij-epsilon
@@ -1241,7 +1241,7 @@ do ifac = 1, nfabor
       endif
 
       ! No diffusion reconstruction when using wall functions
-      if (associated(cpro_diff_lim_rij)) cpro_diff_lim_rij(ifac) = 0.d0
+      if (associated(bpro_diff_lim_rij)) bpro_diff_lim_rij(ifac) = 0.d0
 
       ! ---> Epsilon
 
@@ -1331,7 +1331,7 @@ do ifac = 1, nfabor
       endif
 
       ! No diffusion reconstruction when using wall functions
-      if (associated(cpro_diff_lim_eps)) cpro_diff_lim_eps(ifac) = 0.d0
+      if (associated(bpro_diff_lim_eps)) bpro_diff_lim_eps(ifac) = 0.d0
 
     !===========================================================================
     ! 6a.Boundary conditions on k, epsilon, f_bar and phi in the phi_Fbar model
