@@ -472,8 +472,8 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
         continue;
     }
 
-    int t_dif_id = cs_field_get_key_int(fld, key_turb_diff) - 1;
-    int sca_dync_id = cs_field_get_key_int(fld, key_sgs_sca_coef) - 1;
+    int t_dif_id = cs_field_get_key_int(fld, key_turb_diff);
+    int sca_dync_id = cs_field_get_key_int(fld, key_sgs_sca_coef);
 
     if ((t_dif_id >= 0) && (sca_dync_id >= 0)) {
       cs_real_t *cpro_turb_diff = cs_field_by_id(t_dif_id)->val;
