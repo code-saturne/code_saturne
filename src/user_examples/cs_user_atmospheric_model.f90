@@ -297,7 +297,7 @@ allocate(lstelt(nfabor))
 
 if (iappel.eq.1) then
   ! On precise la couleur du sol
-  call getfbr('75',nlelt,lstelt)
+  call getfbr('Sol',nlelt,lstelt)
   do ilelt = 1, nlelt
     ifbt1d = ifbt1d + 1
   enddo
