@@ -88,6 +88,12 @@ extern const cs_real_t cs_math_infinite_r;
 extern const cs_real_t cs_math_big_r;
 extern const cs_real_t cs_math_pi;
 
+/* Identity matrix in dimension 3 */
+static const cs_real_33_t cs_math_33_identity = {{1., 0., 0.,},
+                                                 {0., 1., 0.},
+                                                 {0., 0., 1.}};
+static const cs_real_6_t cs_math_sym_33_identity  = {1., 1., 1., 0. ,0., 0.};
+
 /*=============================================================================
  * Inline static function prototypes
  *============================================================================*/
