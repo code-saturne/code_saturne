@@ -125,7 +125,7 @@ double precision d1s3, d2s3
 
 double precision, allocatable, dimension(:) :: viscf, viscb
 double precision, allocatable, dimension(:) :: smbr, rovsdt
-double precision, allocatable, dimension(:,:,:) :: gradv
+double precision, allocatable, dimension(:,:,:), target :: gradv
 double precision, allocatable, dimension(:,:), target :: produc
 double precision, allocatable, dimension(:,:) :: gradro
 double precision, allocatable, dimension(:,:) :: grad
@@ -144,6 +144,7 @@ double precision, dimension(:), pointer :: cvar_ep, cvar_al
 double precision, dimension(:,:), pointer :: cvara_rij, cvar_rij, vel
 double precision, dimension(:,:), pointer :: c_st_prv, lagr_st_rij
 double precision, dimension(:,:), pointer :: cpro_produc
+double precision, dimension(:,:,:), pointer :: cpro_gradv
 double precision, dimension(:,:), pointer :: cpro_press_correl
 double precision, dimension(:), pointer :: cpro_beta
 
@@ -168,7 +169,15 @@ call field_get_coefb_v(ivarfl(iu), coefbu)
 ! Allocate temporary arrays for the turbulence resolution
 allocate(viscf(nfac), viscb(nfabor))
 allocate(smbr(ncelet), rovsdt(ncelet))
-allocate(gradv(3, 3, ncelet))
+
+call field_get_id_try("velocity_gradient", f_id)
+if (f_id.ge.0) then
+  call field_get_val_t(f_id, cpro_gradv)
+else
+  allocate(gradv(3, 3, ncelet))
+  cpro_gradv => gradv
+endif
+
 allocate(smbrts(6,ncelet))
 allocate(rovsdtts(6,6,ncelet))
 
@@ -333,7 +342,7 @@ endif
 inc = 1
 iprev = 1
 
-call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
+call field_gradient_vector(ivarfl(iu), iprev, 0, inc, cpro_gradv)
 
 !===============================================================================
 ! 2.2 Compute the production term for Rij
@@ -344,43 +353,43 @@ do iel = 1, ncel
    ! Pij = - (Rik dUk/dXj + dUk/dXi Rkj)
    ! Pij is stored as (P11, P22, P33, P12, P23, P13)
    cpro_produc(1,iel) = &
-                  - 2.0d0*(cvara_rij(1,iel)*gradv(1, 1, iel) +           &
-                           cvara_rij(4,iel)*gradv(2, 1, iel) +           &
-                           cvara_rij(6,iel)*gradv(3, 1, iel) )
+                  - 2.0d0*(cvara_rij(1,iel)*cpro_gradv(1, 1, iel) +           &
+                           cvara_rij(4,iel)*cpro_gradv(2, 1, iel) +           &
+                           cvara_rij(6,iel)*cpro_gradv(3, 1, iel) )
 
    cpro_produc(4,iel) = &
-                  - (cvara_rij(4,iel)*gradv(1, 1, iel) +                 &
-                     cvara_rij(2,iel)*gradv(2, 1, iel) +                 &
-                     cvara_rij(5,iel)*gradv(3, 1, iel) )                 &
-                  - (cvara_rij(1,iel)*gradv(1, 2, iel) +                 &
-                     cvara_rij(4,iel)*gradv(2, 2, iel) +                 &
-                     cvara_rij(6,iel)*gradv(3, 2, iel) )
+                  - (cvara_rij(4,iel)*cpro_gradv(1, 1, iel) +                 &
+                     cvara_rij(2,iel)*cpro_gradv(2, 1, iel) +                 &
+                     cvara_rij(5,iel)*cpro_gradv(3, 1, iel) )                 &
+                  - (cvara_rij(1,iel)*cpro_gradv(1, 2, iel) +                 &
+                     cvara_rij(4,iel)*cpro_gradv(2, 2, iel) +                 &
+                     cvara_rij(6,iel)*cpro_gradv(3, 2, iel) )
 
    cpro_produc(6,iel) = &
-                  - (cvara_rij(6,iel)*gradv(1, 1, iel) +                 &
-                     cvara_rij(5,iel)*gradv(2, 1, iel) +                 &
-                     cvara_rij(3,iel)*gradv(3, 1, iel) )                 &
-                  - (cvara_rij(1,iel)*gradv(1, 3, iel) +                 &
-                     cvara_rij(4,iel)*gradv(2, 3, iel) +                 &
-                     cvara_rij(6,iel)*gradv(3, 3, iel) )
+                  - (cvara_rij(6,iel)*cpro_gradv(1, 1, iel) +                 &
+                     cvara_rij(5,iel)*cpro_gradv(2, 1, iel) +                 &
+                     cvara_rij(3,iel)*cpro_gradv(3, 1, iel) )                 &
+                  - (cvara_rij(1,iel)*cpro_gradv(1, 3, iel) +                 &
+                     cvara_rij(4,iel)*cpro_gradv(2, 3, iel) +                 &
+                     cvara_rij(6,iel)*cpro_gradv(3, 3, iel) )
 
    cpro_produc(2,iel) = &
-                  - 2.0d0*(cvara_rij(4,iel)*gradv(1, 2, iel) +           &
-                           cvara_rij(2,iel)*gradv(2, 2, iel) +           &
-                           cvara_rij(5,iel)*gradv(3, 2, iel) )
+                  - 2.0d0*(cvara_rij(4,iel)*cpro_gradv(1, 2, iel) +           &
+                           cvara_rij(2,iel)*cpro_gradv(2, 2, iel) +           &
+                           cvara_rij(5,iel)*cpro_gradv(3, 2, iel) )
 
    cpro_produc(5,iel) = &
-                  - (cvara_rij(6,iel)*gradv(1, 2, iel) +                 &
-                     cvara_rij(5,iel)*gradv(2, 2, iel) +                 &
-                     cvara_rij(3,iel)*gradv(3, 2, iel) )                 &
-                  - (cvara_rij(4,iel)*gradv(1, 3, iel) +                 &
-                     cvara_rij(2,iel)*gradv(2, 3, iel) +                 &
-                     cvara_rij(5,iel)*gradv(3, 3, iel) )
+                  - (cvara_rij(6,iel)*cpro_gradv(1, 2, iel) +                 &
+                     cvara_rij(5,iel)*cpro_gradv(2, 2, iel) +                 &
+                     cvara_rij(3,iel)*cpro_gradv(3, 2, iel) )                 &
+                  - (cvara_rij(4,iel)*cpro_gradv(1, 3, iel) +                 &
+                     cvara_rij(2,iel)*cpro_gradv(2, 3, iel) +                 &
+                     cvara_rij(5,iel)*cpro_gradv(3, 3, iel) )
 
    cpro_produc(3,iel) = &
-                  - 2.0d0*(cvara_rij(6,iel)*gradv(1, 3, iel) +           &
-                           cvara_rij(5,iel)*gradv(2, 3, iel) +           &
-                           cvara_rij(3,iel)*gradv(3, 3, iel) )
+                  - 2.0d0*(cvara_rij(6,iel)*cpro_gradv(1, 3, iel) +           &
+                           cvara_rij(5,iel)*cpro_gradv(2, 3, iel) +           &
+                           cvara_rij(3,iel)*cpro_gradv(3, 3, iel) )
 
 enddo
 
@@ -653,7 +662,7 @@ if (iturb.eq.30) then
 
   if (irijco.eq.1) then
     call resrij2(ivar,                                       &
-                 gradv, cpro_produc, gradro,                 &
+                 cpro_gradv, cpro_produc, gradro,                 &
                  viscf, viscb, viscce,                       &
                  smbrts, rovsdtts,                           &
                  weighf, weighb)
@@ -669,7 +678,7 @@ if (iturb.eq.30) then
 elseif (iturb.eq.31.or.iturb.eq.32) then
 
   call resssg2(ivar,                                         &
-               gradv, cpro_produc, gradro,                   &
+               cpro_gradv, cpro_produc, gradro,                   &
                viscf, viscb, viscce,                         &
                smbrts, rovsdtts,                             &
                weighf, weighb)
@@ -722,7 +731,7 @@ call cs_equation_iterative_solve_tensor(idtvar, ivarfl(ivar), c_null_char,     &
 !===============================================================================
 
 call reseps(nvar, ncesmp, icetsm, itypsm,                    &
-            dt, gradv, cpro_produc, gradro,                  &
+            dt, cpro_gradv, cpro_produc, gradro,                  &
             smacel, viscf, viscb,                            &
             smbr, rovsdt)
 
@@ -747,7 +756,7 @@ deallocate(viscf, viscb)
 deallocate(smbr, rovsdt)
 if (allocated(gradro)) deallocate(gradro)
 if (allocated(produc)) deallocate(produc)
-deallocate(gradv)
+if (allocated(gradv)) deallocate(gradv)
 
 deallocate(smbrts)
 deallocate(rovsdtts)
