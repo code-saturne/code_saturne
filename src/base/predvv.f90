@@ -88,7 +88,6 @@
 !> \param[in]     viscbi        same as viscb for increments
 !> \param[in]     secvif        secondary viscosity at interior faces
 !> \param[in]     secvib        secondary viscosity at boundary faces
-!> \param[in]     w1            working array
 !_______________________________________________________________________________
 
 subroutine predvv &
@@ -100,8 +99,7 @@ subroutine predvv &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
    ckupdc , smacel , frcxt  ,                                     &
    trava  ,                   dfrcxt , tpucou , trav   ,          &
-   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
-   w1     )
+   viscf  , viscb  , viscfi , viscbi , secvif , secvib )
 
 !===============================================================================
 
@@ -159,7 +157,6 @@ double precision trav(3,ncelet)
 double precision viscf(*), viscb(nfabor)
 double precision viscfi(*), viscbi(nfabor)
 double precision secvif(nfac), secvib(nfabor)
-double precision w1(ncelet)
 double precision coefav(3  ,nfabor)
 double precision cofafv(3  ,nfabor)
 double precision coefbv(3,3,nfabor)
@@ -200,6 +197,7 @@ double precision rvoid(1)
 
 ! Working arrays
 double precision, allocatable, dimension(:,:) :: eswork
+double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:,:), target :: grad
 double precision, allocatable, dimension(:,:), target :: hl_exp
 double precision, dimension(:,:), allocatable :: smbr
@@ -305,6 +303,7 @@ endif
 allocate(smbr(3,ncelet))
 allocate(fimp(3,3,ncelet))
 allocate(fimpcp(3,3,ncelet))
+allocate(w1(ncelet))
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 
@@ -1908,6 +1907,7 @@ endif
 deallocate(smbr)
 deallocate(fimp)
 deallocate(fimpcp)
+deallocate(w1)
 if (allocated(loctsexp)) deallocate(loctsexp)
 if (allocated(loctsimp)) deallocate(loctsimp)
 if (allocated(viscce)) deallocate(viscce)

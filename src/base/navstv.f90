@@ -145,7 +145,6 @@ double precision, allocatable, dimension(:,:), target :: uvwk
 double precision, dimension(:,:), pointer :: velk
 double precision, allocatable, dimension(:), target :: wvisbi
 double precision, allocatable, dimension(:), target :: cpro_rho_tc, bpro_rho_tc
-double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: esflum, esflub
 double precision, allocatable, dimension(:) :: intflx, bouflx
 double precision, allocatable, dimension(:) :: secvif, secvib
@@ -295,9 +294,6 @@ if (ivofmt.gt.0) then
   call field_get_val_s(ivarfl(ivolf2), cvar_voidf)
   call field_get_val_prev_s(ivarfl(ivolf2), cvara_voidf)
 endif
-
-! Allocate work arrays
-allocate(w1(ncelet))
 
 ! Initialize variables to avoid compiler warnings
 
@@ -485,8 +481,7 @@ call predvv &
   tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
   ckupdc , smacel , frcxt  ,                                     &
   trava  ,                   dfrcxt , dttens ,  trav  ,          &
-  viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
-  w1     )
+  viscf  , viscb  , viscfi , viscbi , secvif , secvib )
 
 
 ! Bad cells regularisation
@@ -654,10 +649,15 @@ if (iprco.le.0) then
   endif
 
   ! Free memory
-  !--------------
+  deallocate(viscf, viscb)
+  deallocate(trav)
+  deallocate(da_uu)
+  deallocate(dfrcxt)
+  if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
+  if (allocated(uvwk)) deallocate(uvwk)
+  if (allocated(secvif)) deallocate(secvif, secvib)
   if (allocated(cpro_rho_tc)) deallocate(cpro_rho_tc)
   if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
-
   return
 
 endif
@@ -729,11 +729,6 @@ if (iturbo.eq.2 .and. iterns.eq.1) then
     call field_get_val_s(iflmas, imasfl)
 
     if (irangp.ge.0 .or. iperio.eq.1) then
-
-      ! Scratch and resize work arrays
-
-      deallocate(w1)
-      allocate(w1(ncelet))
 
       ! Resize auxiliary arrays (pointe module)
 
@@ -1490,7 +1485,9 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
 
   if (iestim(iescor).ge.0) then
     init = 1
-    call divmas(init, esflum, esflub, w1)
+
+    ! Allocate work arrays
+    call divmas(init, esflum, esflub, c_estim)
 
     call field_get_val_s(iestim(iescor), c_estim)
 
@@ -1498,21 +1495,22 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
       !$omp parallel do private(iel) if(ncetsm > thr_n_min)
       do iitsm = 1, ncetsm
         iel = icetsm(iitsm)
-        w1(iel) = w1(iel)-cell_f_vol(iel)*smacel(iitsm,ipr)
+        c_estim(iel) = c_estim(iel)-cell_f_vol(iel)*smacel(iitsm,ipr)
       enddo
     endif
 
     if (iescal(iescor).eq.2) then
       !$omp parallel do
       do iel = 1, ncel
-        c_estim(iel) =  abs(w1(iel))
+        c_estim(iel) = abs(c_estim(iel))
       enddo
     elseif (iescal(iescor).eq.1) then
       !$omp parallel do
       do iel = 1, ncel
-        c_estim(iel) =  abs(w1(iel)) / volume(iel)
+        c_estim(iel) = abs(c_estim(iel)) / volume(iel)
       enddo
     endif
+
   endif
 
   ! ---> CALCUL DE L'ESTIMATEUR TOTAL
@@ -1540,8 +1538,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
    tslagr , coefau , coefbu , cofafu , cofbfu ,                   &
    ckupdc , smacel , frcxt  ,                                     &
    trava  ,                   dfrcxt , dttens , trav   ,          &
-   viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
-   w1     )
+   viscf  , viscb  , viscfi , viscbi , secvif , secvib )
 
   endif
 
@@ -1794,7 +1791,6 @@ deallocate(viscf, viscb)
 deallocate(trav)
 deallocate(da_uu)
 deallocate(dfrcxt)
-deallocate(w1)
 if (allocated(wvisfi)) deallocate(wvisfi, wvisbi)
 if (allocated(uvwk)) deallocate(uvwk)
 if (allocated(secvif)) deallocate(secvif, secvib)
