@@ -654,7 +654,6 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
                           cs_real_t                **p_xtra_smat)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_time_step_t  *ts = cs_glob_time_step;
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_lnum_t  n_cells = m->n_cells;
   const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
@@ -664,35 +663,6 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-
-  /* Compute scaling coefficients */
-
-  const cs_real_t  rho0 = nsp->mass_density->ref_value;
-  cs_real_t  *visc_val = NULL;
-  int  visc_stride = 0;
-  if (nsp->turbulence->model->iturb == CS_TURB_NONE) {
-    BFT_MALLOC(visc_val, 1, cs_real_t);
-    visc_val[0] = nsp->lam_viscosity->ref_value;
-  }
-  else {
-    visc_stride = 1;
-    BFT_MALLOC(visc_val, n_cells, cs_real_t);
-    cs_property_eval_at_cells(ts->t_cur, nsp->tot_viscosity, visc_val);
-  }
-
-  cs_real_t  alpha = 1.;
-  if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
-    alpha = 0.01*nsp->lam_viscosity->ref_value;
-  else
-    alpha /= ts->dt[0];
-
-  uza->alpha = rho0*alpha;
-
-# pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
-  for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
-    uza->inv_mp[ip] = visc_val[visc_stride*ip]/quant->cell_vol[ip];
-
-  BFT_FREE(visc_val);
 
   /* Synchronize the diagonal values for A */
 
@@ -842,7 +812,6 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
                                cs_real_t                  **p_xtra_smat)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_time_step_t  *ts = cs_glob_time_step;
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_lnum_t  n_cells = m->n_cells;
   const cs_lnum_t  n_cells_ext = m->n_cells_with_ghosts;
@@ -853,34 +822,16 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
-  /* Compute scaling coefficients */
+  /* Compute A^-1 lumped. Consider a rhs with only one values. */
 
-  const cs_real_t  rho0 = nsp->mass_density->ref_value;
-  cs_real_t  *visc_val = NULL;
-  int  visc_stride = 0;
-  if (nsp->turbulence->model->iturb == CS_TURB_NONE) {
-    BFT_MALLOC(visc_val, 1, cs_real_t);
-    visc_val[0] = nsp->lam_viscosity->ref_value;
-  }
-  else {
-    visc_stride = 1;
-    BFT_MALLOC(visc_val, n_cells, cs_real_t);
-    cs_property_eval_at_cells(ts->t_cur, nsp->tot_viscosity, visc_val);
-  }
+  for (cs_lnum_t i = 0; i < uza->n_u_dofs; i++)
+    uza->rhs[i] = 1;
 
-  cs_real_t  alpha = 1/ts->dt[0];
-  if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
-    alpha = 0.01*nsp->lam_viscosity->ref_value;
-  uza->alpha = rho0*alpha;
+  cs_real_t  *invA_lumped = NULL;
+  BFT_MALLOC(invA_lumped, uza->n_u_dofs, cs_real_t);
+  memset(invA_lumped, 0, sizeof(cs_real_t)*uza->n_u_dofs);
 
-# pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
-  for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
-    uza->inv_mp[ip] = visc_val[visc_stride*ip]/quant->cell_vol[ip];
-
-  BFT_FREE(visc_val);
-
-  /* Compute A^-1 lumped
-   * Modify the tolerance. Only a coarse approximation is needed */
+  /* Modify the tolerance. Only a coarse approximation is needed */
 
   char  *init_system_name = slesp->name;
   double  init_eps = slesp->eps;
@@ -894,12 +845,7 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   slesp->eps = 1e-1; /* Only a coarse approximation is needed */
   slesp->n_max_iter = 50;
 
-  for (cs_lnum_t i = 0; i < uza->n_u_dofs; i++)
-    uza->rhs[i] = 1;
-
-  cs_real_t  *invA_lumped = NULL;
-  BFT_MALLOC(invA_lumped, uza->n_u_dofs, cs_real_t);
-  memset(invA_lumped, 0, sizeof(cs_real_t)*uza->n_u_dofs);
+  cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
 
   uza->algo->n_inner_iter
     += (uza->algo->last_inner_iter =
@@ -918,6 +864,8 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   slesp->name = init_system_name;
   slesp->eps = init_eps;
   slesp->n_max_iter = init_max_iter;
+
+  cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
 
   /* Partial memory free */
 
@@ -3375,7 +3323,10 @@ _init_uzawa_builder(const cs_navsto_param_t      *nsp,
 
   uza->gk = NULL;
   uza->dzk = NULL;
+
   if (nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_CG) {
+
+    const cs_time_step_t  *ts = cs_glob_time_step;
 
     /* Since gk is used as a variable in a cell system, one has to take into
        account extra-space for synchronization */
@@ -3386,6 +3337,37 @@ _init_uzawa_builder(const cs_navsto_param_t      *nsp,
     BFT_MALLOC(uza->gk, size, cs_real_t);
 
     BFT_MALLOC(uza->dzk, n_u_dofs, cs_real_t);
+
+    /* Define alpha weighting */
+
+    cs_real_t  alpha = 1.;
+    if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
+      alpha = 0.01*nsp->lam_viscosity->ref_value;
+    else
+      alpha /= ts->dt[0];
+
+    const cs_real_t  rho0 = nsp->mass_density->ref_value;
+    uza->alpha = rho0*alpha;
+
+    /* Define the inverse of the pressure mass matrix scaled by the viscosity */
+
+    cs_real_t  *visc_val = NULL;
+    int  visc_stride = 0;
+
+    if (nsp->turbulence->model->iturb == CS_TURB_NONE) {
+      BFT_MALLOC(visc_val, 1, cs_real_t);
+      visc_val[0] = nsp->lam_viscosity->ref_value;
+    }
+    else {
+      visc_stride = 1;
+      BFT_MALLOC(visc_val, n_p_dofs, cs_real_t);
+      cs_property_eval_at_cells(ts->t_cur, nsp->tot_viscosity, visc_val);
+    }
+
+    for (cs_lnum_t i = 0; i < n_p_dofs; i++)
+      uza->inv_mp[i] = visc_val[visc_stride*i]/quant->cell_vol[i];
+
+    BFT_FREE(visc_val);
 
   }
   else  {
@@ -5090,35 +5072,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     break;
 
   case CS_PARAM_SCHUR_MASS_SCALED:
-    {
-      cs_real_t  *visc_val = NULL;
-      int  visc_stride = 0;
-
-      if (nsp->turbulence->model->iturb == CS_TURB_NONE) {
-        BFT_MALLOC(visc_val, 1, cs_real_t);
-        visc_val[0] = nsp->lam_viscosity->ref_value;
-      }
-      else {
-        visc_stride = 1;
-        BFT_MALLOC(visc_val, msles->n_cells, cs_real_t);
-        cs_property_eval_at_cells(ts->t_cur, nsp->tot_viscosity, visc_val);
-      }
-
-      cs_real_t  alpha = 1.;
-      if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
-        alpha = 0.01*nsp->lam_viscosity->ref_value;
-      else
-        alpha /= ts->dt[0];
-
-      const cs_real_t  rho0 = nsp->mass_density->ref_value;
-      uza->alpha = rho0*alpha;
-
-      for (cs_lnum_t i = 0; i < msles->n_cells; i++)
-        uza->inv_mp[i] = visc_val[visc_stride*i]/quant->cell_vol[i];
-
-      BFT_FREE(visc_val);
-    }
-    break;
+    break; /* Nothing else to do. One relies on the pressure mass matrix */
 
   default:
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid Schur approximation.",
@@ -5171,7 +5125,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   slesp->eps = fmin(1e-6, 0.05*nslesp->il_algo_param.rtol);
   slesp->n_max_iter = CS_MAX(100, init_max_iter);
 
-  cs_param_sles_update_cvg_settings(true, slesp);
+  cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
 
   _n_iter = cs_cdo_solve_scalar_system(uza->n_u_dofs,
                                        slesp,
