@@ -141,6 +141,33 @@ type(var_cal_opt) :: vcopt_u, vcopt_p
 ! 0. Initialisation
 !===============================================================================
 
+if (ntlist.gt.0) then
+  modntl = mod(ntcabs,ntlist)
+elseif (ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
+  modntl = 0
+else
+  modntl = 1
+endif
+
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
+
+if (.not. (vcopt_u%iconv.ge.1 .and. icour.ge.1) .and.              &
+    .not. (vcopt_u%idiff.ge.1 .and. ifour.ge.1) .and.              &
+    .not. ((vcopt_u%iconv.ge.1 .or.vcopt_u%idiff.ge.1).and.        &
+           (iwarnp.ge.2.or.modntl.eq.0)) .and.                     &
+    .not. (ippmod(icompf).ge.0.and.                                &
+           (iwarnp.ge.2.or.modntl.eq.0)) .and.                     &
+    .not. (idtvar.eq.-1.or.idtvar.eq.1.or.idtvar.eq.2.or.          &
+           ((iwarnp.ge.2.or.modntl.eq.0).and.                      &
+            (vcopt_u%idiff.ge.1.or.vcopt_u%iconv.ge.1.or.          &
+             ippmod(icompf).ge.0)))                                &
+   ) then
+
+  return
+
+endif
+
 ! Pointers to the mass fluxes
 if (ivofmt.eq.0) then
   call field_get_key_int(ivarfl(iu), kimasf, iflmas)
@@ -173,33 +200,6 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icour, cpro_cour)
 call field_get_val_s(ifour, cpro_four)
-
-if (ntlist.gt.0) then
-  modntl = mod(ntcabs,ntlist)
-elseif (ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
-  modntl = 0
-else
-  modntl = 1
-endif
-
-call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
-call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
-
-if (.not. (vcopt_u%iconv.ge.1 .and. icour.ge.1) .and.              &
-    .not. (vcopt_u%idiff.ge.1 .and. ifour.ge.1) .and.              &
-    .not. ((vcopt_u%iconv.ge.1 .or.vcopt_u%idiff.ge.1).and.        &
-           (iwarnp.ge.2.or.modntl.eq.0)) .and.                     &
-    .not. (ippmod(icompf).ge.0.and.                                &
-           (iwarnp.ge.2.or.modntl.eq.0)) .and.                     &
-    .not. (idtvar.eq.-1.or.idtvar.eq.1.or.idtvar.eq.2.or.          &
-           ((iwarnp.ge.2.or.modntl.eq.0).and.                      &
-            (vcopt_u%idiff.ge.1.or.vcopt_u%iconv.ge.1.or.          &
-             ippmod(icompf).ge.0)))                                &
-   ) then
-
-  return
-
-endif
 
 !===============================================================================
 ! 1. Compute CFL like condition on the time step for positive density for the
@@ -842,6 +842,32 @@ type(var_cal_opt) :: vcopt_u
 ! 0. Initialisation
 !===============================================================================
 
+if (ntlist.gt.0) then
+  modntl = mod(ntcabs,ntlist)
+elseif (ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
+  modntl = 0
+else
+  modntl = 1
+endif
+
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+
+if (.not. (vcopt_u%iconv.ge.1 .and. icour.ge.1) .and.              &
+    .not. (vcopt_u%idiff.ge.1 .and. ifour.ge.1) .and.              &
+    .not. ((vcopt_u%iconv.ge.1 .or.vcopt_u%idiff.ge.1).and.        &
+           (vcopt_u%iwarni.ge.2.or.modntl.eq.0)) .and.             &
+    .not. (ippmod(icompf).ge.0.and.                                &
+           (vcopt_u%iwarni.ge.2.or.modntl.eq.0)) .and.             &
+    .not. (idtvar.eq.-1.or.idtvar.eq.1.or.idtvar.eq.2.or.          &
+           ((vcopt_u%iwarni.ge.2.or.modntl.eq.0).and.              &
+            (vcopt_u%idiff.ge.1.or.vcopt_u%iconv.ge.1.or.          &
+             ippmod(icompf).ge.0)))                                &
+   ) then
+
+  return
+
+endif
+
 ! Pointers to the mass fluxes
 call field_get_key_int(ivarfl(iu), kimasf, iflmas)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
@@ -863,16 +889,6 @@ call field_get_val_s(icrom, crom)
 call field_get_val_s(ibrom, brom)
 call field_get_val_s(icour, cpro_cour)
 call field_get_val_s(ifour, cpro_four)
-
-if (ntlist.gt.0) then
-  modntl = mod(ntcabs,ntlist)
-elseif (ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
-  modntl = 0
-else
-  modntl = 1
-endif
-
-call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 
 !===============================================================================
 ! Compute the diffusivity at the faces
@@ -956,8 +972,8 @@ if (vcopt_u%iconv.ge.1 .and. icour.ge.1) then
   ! Compute min and max Courant numbers
   cfmax = -grand
   cfmin =  grand
-  icfmax(1)= 1
-  icfmin(1)= 1
+  icfmax(1)= 0
+  icfmin(1)= 0
 
   do iel = 1, ncel
     cpro_cour(iel) = dam(iel)/(crom(iel)*volume(iel)) * dt(iel)
@@ -988,13 +1004,13 @@ if (vcopt_u%iconv.ge.1 .and. icour.ge.1) then
       call parmxl(nbrval, cfmax, xyzmax)
     endif
 
-    if (icfmin(1).gt.0) then
+    if (icfmax(1).gt.0) then
       write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
     else
       write(nfecra,*) cnom, "Too big to be displayed"
     endif
 
-    if (icfmax(1).gt.0) then
+    if (icfmin(1).gt.0) then
       write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
     else
       write(nfecra,*) cnom, "Too big to be displayed"
@@ -1026,8 +1042,8 @@ if (vcopt_u%idiff.ge.1 .and. ifour.ge.1) then
   ! Compute min/max of Fourier number
   cfmax  = -grand
   cfmin  =  grand
-  icfmax(1) = 1
-  icfmin(1) = 1
+  icfmax(1) = 0
+  icfmin(1) = 0
 
   do iel = 1, ncel
     cpro_four(iel) = dam(iel)/(crom(iel)*volume(iel)) * dt(iel)
@@ -1046,12 +1062,12 @@ if (vcopt_u%idiff.ge.1 .and. ifour.ge.1) then
       endif
     enddo
 
-    xyzmin(1) = xyzcen(1,icfmin(1))
-    xyzmin(2) = xyzcen(2,icfmin(1))
-    xyzmin(3) = xyzcen(3,icfmin(1))
-    xyzmax(1) = xyzcen(1,icfmax(1))
-    xyzmax(2) = xyzcen(2,icfmax(1))
-    xyzmax(3) = xyzcen(3,icfmax(1))
+    xyzmin(1) = xyzcen(1,max(icfmin(1), 1))
+    xyzmin(2) = xyzcen(2,max(icfmin(1), 1))
+    xyzmin(3) = xyzcen(3,max(icfmin(1), 1))
+    xyzmax(1) = xyzcen(1,max(icfmax(1), 1))
+    xyzmax(2) = xyzcen(2,max(icfmax(1), 1))
+    xyzmax(3) = xyzcen(3,max(icfmax(1), 1))
 
     if (irangp.ge.0) then
       nbrval = 3
@@ -1129,13 +1145,13 @@ if ((vcopt_u%idiff.ge.1.or.vcopt_u%iconv.ge.1) &
       call parmxl (nbrval, cfmax, xyzmax)
     endif
 
-    if (icfmin(1).gt.0) then
+    if (icfmax(1).gt.0) then
       write(nfecra,1001) cnom,cfmax,xyzmax(1),xyzmax(2),xyzmax(3)
     else
       write(nfecra,*) cnom, "Too big to be displayed"
     endif
 
-    if (icfmax(1).gt.0) then
+    if (icfmin(1).gt.0) then
       write(nfecra,1002) cnom,cfmin,xyzmin(1),xyzmin(2),xyzmin(3)
     else
       write(nfecra,*) cnom, "Too big to be displayed"
