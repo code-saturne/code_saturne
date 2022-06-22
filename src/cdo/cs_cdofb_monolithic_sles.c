@@ -5049,7 +5049,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-  /* The Schur complement approximation (B.A^-1.Bt) is build and stored in the
+  /* The Schur complement approximation (B.A^-1.Bt) is built and stored in the
      native format */
 
   cs_matrix_t  *smat = NULL;
@@ -5078,7 +5078,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   cs_param_sles_t  *schur_slesp = nslesp->schur_sles_param;
 
-  if (msles->schur_sles == NULL) /* has been defined by name */
+  if (msles->schur_sles == NULL) /* Not set yet. Definition by name */
     msles->schur_sles = cs_sles_find_or_add(-1, schur_slesp->name);
 
   /* Compute the first RHS: A.u0 = rhs = b_f - B^t.p_0 to solve */

@@ -1365,6 +1365,7 @@ cs_sles_petsc_free(void  *context)
     PetscLogStagePop();
 
   }
+
   if (c->setup_data != NULL)
     BFT_FREE(c->setup_data);
 

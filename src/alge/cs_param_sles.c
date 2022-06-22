@@ -1419,16 +1419,16 @@ _set_saturne_sles(bool                 use_field_id,
 
           cs_multigrid_set_solver_options
             (mg,
-             CS_SLES_JACOBI,   /* descent smoother type (CS_SLES_PCG) */
-             CS_SLES_JACOBI,   /* ascent smoother type (CS_SLES_PCG) */
-             CS_SLES_PCG,      /* coarse solver type (CS_SLES_PCG) */
+             CS_SLES_JACOBI,    /* descent smoother type (CS_SLES_PCG) */
+             CS_SLES_JACOBI,    /* ascent smoother type (CS_SLES_PCG) */
+             CS_SLES_PCG,       /* coarse solver type (CS_SLES_PCG) */
              slesp->n_max_iter, /* n max cycles (100) */
-             5,                /* n max iter for descent (10) */
-             5,                /* n max iter for ascent (10) */
-             1000,             /* n max iter coarse solver (10000) */
-             0,                /* polynomial precond. degree descent (0) */
-             0,                /* polynomial precond. degree ascent (0) */
-             -1,               /* polynomial precond. degree coarse (0) */
+             5,                 /* n max iter for descent (10) */
+             5,                 /* n max iter for ascent (10) */
+             1000,              /* n max iter coarse solver (10000) */
+             0,                 /* polynomial precond. degree descent (0) */
+             0,                 /* polynomial precond. degree ascent (0) */
+             -1,                /* polynomial precond. degree coarse (0) */
              1.0,    /* precision multiplier descent (< 0 forces max iters) */
              1.0,    /* precision multiplier ascent (< 0 forces max iters) */
              1);     /* requested precision multiplier coarse (default 1) */
@@ -1443,7 +1443,7 @@ _set_saturne_sles(bool                 use_field_id,
              CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoother */
              CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoother */
              CS_SLES_PCG,                /* coarse smoother */
-             slesp->n_max_iter,           /* n_max_cycles */
+             slesp->n_max_iter,          /* n_max_cycles */
              1,                          /* n_max_iter_descent, */
              1,                          /* n_max_iter_ascent */
              100,                        /* n_max_iter_coarse */
