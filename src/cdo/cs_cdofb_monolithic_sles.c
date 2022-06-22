@@ -5023,8 +5023,10 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   assert(sh != NULL && sh->n_blocks == 2);
 
   const cs_real_t  *B_op = msles->div_op;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_range_set_t  *range_set = cs_cdo_system_get_range_set(sh, 0);
   const cs_matrix_t  *matrix = cs_cdo_system_get_matrix(sh, 0);
+  const cs_time_step_t  *ts = cs_glob_time_step;
 
   cs_real_t  *u_f = msles->u_f;
   cs_real_t  *p_c = msles->p_c;
@@ -5058,6 +5060,37 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     smat = _invlumped_schur_approximation(nsp, eqp, matrix, range_set,
                                           msles, uza,
                                           &diag_smat, &xtra_smat);
+    break;
+
+  case CS_PARAM_SCHUR_MASS_SCALED:
+    {
+      cs_real_t  *visc_val = NULL;
+      int  visc_stride = 0;
+
+      if (nsp->turbulence->model->iturb == CS_TURB_NONE) {
+        BFT_MALLOC(visc_val, 1, cs_real_t);
+        visc_val[0] = nsp->lam_viscosity->ref_value;
+      }
+      else {
+        visc_stride = 1;
+        BFT_MALLOC(visc_val, msles->n_cells, cs_real_t);
+        cs_property_eval_at_cells(ts->t_cur, nsp->tot_viscosity, visc_val);
+      }
+
+      cs_real_t  alpha = 1.;
+      if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
+        alpha = 0.01*nsp->lam_viscosity->ref_value;
+      else
+        alpha /= ts->dt[0];
+
+      const cs_real_t  rho0 = nsp->mass_density->ref_value;
+      uza->alpha = rho0*alpha;
+
+      for (cs_lnum_t i = 0; i < msles->n_cells; i++)
+        uza->inv_mp[i] = visc_val[visc_stride*i]/quant->cell_vol[i];
+
+      BFT_FREE(visc_val);
+    }
     break;
 
   default:
@@ -5151,13 +5184,31 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   memset(zk, 0, sizeof(cs_real_t)*uza->n_p_dofs);
 
-  _n_iter = cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
-                                            schur_slesp,
-                                            smat,
-                                            div_l2_norm,
-                                            msles->schur_sles,
-                                            zk,
-                                            rk);
+  _n_iter = 0;
+  switch (nsp->sles_param->schur_approximation) {
+
+  case CS_PARAM_SCHUR_DIAG_INVERSE:
+  case CS_PARAM_SCHUR_LUMPED_INVERSE:
+    _n_iter = cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
+                                              schur_slesp,
+                                              smat,
+                                              div_l2_norm,
+                                              msles->schur_sles,
+                                              zk,
+                                              rk);
+    break;
+
+  case CS_PARAM_SCHUR_MASS_SCALED:
+    for (cs_lnum_t i = 0; i < msles->n_cells; i++)
+      zk[i] = rk[i]/uza->inv_mp[i];
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid Schur approximation.",
+              __func__);
+
+  }
+
   uza->algo->n_inner_iter += _n_iter;
   uza->algo->last_inner_iter += _n_iter;
 
@@ -5216,13 +5267,31 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
     memset(zk, 0, sizeof(cs_real_t)*uza->n_p_dofs);
 
-    _n_iter = cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
-                                              schur_slesp,
-                                              smat,
-                                              normalization,
-                                              msles->schur_sles,
-                                              zk,
-                                              dwk);
+    _n_iter = 0;
+    switch (nsp->sles_param->schur_approximation) {
+
+    case CS_PARAM_SCHUR_DIAG_INVERSE:
+    case CS_PARAM_SCHUR_LUMPED_INVERSE:
+      _n_iter = cs_cdo_solve_scalar_cell_system(uza->n_p_dofs,
+                                                schur_slesp,
+                                                smat,
+                                                normalization,
+                                                msles->schur_sles,
+                                                zk,
+                                                dwk);
+      break;
+
+    case CS_PARAM_SCHUR_MASS_SCALED:
+      for (cs_lnum_t i = 0; i < msles->n_cells; i++)
+        zk[i] = dwk[i]/uza->inv_mp[i];
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid Schur approximation.",
+                __func__);
+
+    }
+
     uza->algo->n_inner_iter += _n_iter;
     uza->algo->last_inner_iter += _n_iter;
 
