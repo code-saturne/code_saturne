@@ -820,6 +820,7 @@ _diag_schur_approximation(const cs_navsto_param_t   *nsp,
  * \param[in]      eqp          pointer to the set of equation parameters
  * \param[in]      a            (MSR) matrix for the velocity block
  * \param[in]      rset         pointer to a range set structure
+ * \param[in, out] slesp        pointer to a set of parameters to drive the SLES
  * \param[in, out] msles        structure to manage the monolithic SLES
  * \param[in, out] uza          structure to manage the Uzawa algorithm
  * \param[out]     p_diag_smat  diagonal coefficients for the Schur matrix
@@ -834,6 +835,7 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
                                const cs_equation_param_t   *eqp,
                                const cs_matrix_t           *a,
                                const cs_range_set_t        *rset,
+                               cs_param_sles_t             *slesp,
                                cs_cdofb_monolithic_sles_t  *msles,
                                cs_uza_builder_t            *uza,
                                cs_real_t                  **p_diag_smat,
@@ -880,15 +882,17 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   /* Compute A^-1 lumped
    * Modify the tolerance. Only a coarse approximation is needed */
 
+  char  *init_system_name = slesp->name;
+  double  init_eps = slesp->eps;
+  int  init_max_iter = slesp->n_max_iter;
+
   char  *system_name = NULL;
   BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":inv_lumped") + 1, char);
   sprintf(system_name, "%s:inv_lumped", eqp->name);
 
-  cs_param_sles_t  *slesp0 = cs_param_sles_create(-1, system_name);
-
-  cs_param_sles_copy_from(eqp->sles_param, slesp0);
-  slesp0->eps = 1e-1; /* Only a coarse approximation is needed */
-  slesp0->n_max_iter = 50;
+  slesp->name = system_name;
+  slesp->eps = 1e-1; /* Only a coarse approximation is needed */
+  slesp->n_max_iter = 50;
 
   for (cs_lnum_t i = 0; i < uza->n_u_dofs; i++)
     uza->rhs[i] = 1;
@@ -900,7 +904,7 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   uza->algo->n_inner_iter
     += (uza->algo->last_inner_iter =
         cs_cdo_solve_scalar_system(uza->n_u_dofs,
-                                   slesp0,
+                                   slesp,
                                    a,
                                    rset,
                                    1,     /* no normalization */
@@ -909,10 +913,15 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
                                    invA_lumped,
                                    uza->rhs));
 
+  /* Set back the initial parameters */
+
+  slesp->name = init_system_name;
+  slesp->eps = init_eps;
+  slesp->n_max_iter = init_max_iter;
+
   /* Partial memory free */
 
   BFT_FREE(system_name);
-  cs_param_sles_free(&slesp0);
 
   /* Native format for the Schur approximation matrix */
 
@@ -3507,6 +3516,7 @@ _apply_div_op_transpose(const cs_real_t   *div_op,
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      nslesp   pointer to SLES settings for NavSto
  * \param[in]      div_op   pointer to the values of divergence operator
+ * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
  * \param[in, out] gkb      pointer to a GKB builder structure
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in]      u_f      initial velocity on faces
@@ -3521,6 +3531,7 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
                       const cs_equation_param_t      *eqp,
                       const cs_navsto_param_sles_t   *nslesp,
                       const cs_real_t                *div_op,
+                      cs_param_sles_t                *slesp,
                       cs_gkb_builder_t               *gkb,
                       cs_sles_t                      *sles,
                       const cs_real_t                *u_f,
@@ -3530,18 +3541,6 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
   assert(gkb != NULL);
 
   cs_real_t  normalization = 1.0; /* TODO */
-
-  /* Modifiy the tolerance in order to be more accurate on this step */
-
-  char  *system_name = NULL;
-  BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":gkb_transfo") + 1, char);
-  sprintf(system_name, "%s:gkb_transfo", eqp->name);
-
-  cs_param_sles_t  *slesp = cs_param_sles_create(-1, system_name);
-
-  cs_param_sles_copy_from(eqp->sles_param, slesp);
-
-  slesp->eps = nslesp->il_algo_param.rtol;
 
   if (gkb->gamma > 0) {
 
@@ -3561,6 +3560,21 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
   else
     memcpy(gkb->b_tilda, b_f, gkb->n_u_dofs*sizeof(cs_real_t));
 
+  /* Modifiy the tolerance in order to be more accurate on the next solve
+     step (the final accuracy relies on this step) */
+
+  char  *init_system_name = slesp->name;
+  int  init_field_id = slesp->field_id;
+  double  init_eps = slesp->eps;
+
+  char  *system_name = NULL;
+  BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":gkb_transfo") + 1, char);
+  sprintf(system_name, "%s:gkb_transfo", eqp->name);
+
+  slesp->name = system_name;
+  slesp->field_id = -1;
+  slesp->eps = nslesp->il_algo_param.rtol;
+
   /* Compute M^-1.(b_f + gamma. Bt.N^-1.b_c) */
 
   gkb->algo->n_inner_iter
@@ -3574,6 +3588,12 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
                                      sles,
                                      gkb->v,
                                      gkb->b_tilda));
+
+  /* Set back the initial parameters */
+
+  slesp->name = init_system_name;
+  slesp->field_id = init_field_id;
+  slesp->eps = init_eps;
 
   /* Compute the initial u_tilda := u_f - M^-1.(b_f + gamma. Bt.N^-1.b_c) */
 
@@ -3592,7 +3612,6 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
   /* Free memory */
 
   BFT_FREE(system_name);
-  cs_param_sles_free(&slesp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3601,8 +3620,8 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
  *
  * \param[in]      matrix   pointer to a cs_matrix_t structure
  * \param[in]      rset     pointer to a range set structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      div_op   pointer to the values of divergence operator
+ * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
  * \param[in, out] gkb      pointer to a GKB builder structure
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in, out] p_c      right_hand side on cells (mass equation)
@@ -3612,8 +3631,8 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
 static void
 _init_gkb_algo(const cs_matrix_t             *matrix,
                const cs_range_set_t          *rset,
-               const cs_equation_param_t     *eqp,
                const cs_real_t               *div_op,
+               cs_param_sles_t               *slesp,
                cs_gkb_builder_t              *gkb,
                cs_sles_t                     *sles,
                cs_real_t                     *p_c)
@@ -3713,7 +3732,7 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   gkb->algo->n_inner_iter
     += (gkb->algo->last_inner_iter =
         cs_cdo_solve_scalar_system(gkb->n_u_dofs,
-                                   eqp->sles_param,
+                                   slesp,
                                    matrix,
                                    rset,
                                    normalization,
@@ -4421,6 +4440,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
+ * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the (cumulated) number of iterations of the solver
@@ -4431,6 +4451,7 @@ int
 cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                           const cs_equation_param_t     *eqp,
                           const cs_cdo_system_helper_t  *sh,
+                          cs_param_sles_t               *slesp,
                           cs_cdofb_monolithic_sles_t    *msles)
 {
   assert(sh != NULL);
@@ -4494,10 +4515,9 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   /* Solve the linear solver */
 
-  const cs_param_sles_t  *sles_param = eqp->sles_param;
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
 
-  cs_real_t  rtol = sles_param->eps;
+  cs_real_t  rtol = slesp->eps;
 
   if (nslesp->strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GMRES              ||
       nslesp->strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GMRES               ||
@@ -4519,7 +4539,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   /* Output information about the convergence of the resolution */
 
-  if (sles_param->verbosity > 1)
+  if (slesp->verbosity > 1)
     cs_log_printf(CS_LOG_DEFAULT, "  <%20s/sles_cvg_code=%-d> n_iters %d |"
                   " residual % -8.4e\n",
                   eqp->name, code, n_iters, residual);
@@ -4629,6 +4649,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
+ * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the (cumulated) number of iterations of the solver
@@ -4639,8 +4660,11 @@ int
 cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
                                          const cs_equation_param_t     *eqp,
                                          const cs_cdo_system_helper_t  *sh,
+                                         cs_param_sles_t               *slesp,
                                          cs_cdofb_monolithic_sles_t    *msles)
 {
+  CS_UNUSED(eqp);
+
   if (msles == NULL)
     return 0;
 
@@ -4735,7 +4759,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
       cs_saddle_block_precond_t  *sbp =
         cs_saddle_block_precond_create(preblock_type,
                                        nslesp->schur_approximation,
-                                       eqp->sles_param,
+                                       slesp,
                                        msles->sles);
 
       /* Define an approximation of the Schur complement */
@@ -4758,7 +4782,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
       cs_saddle_block_precond_t  *sbp =
         cs_saddle_block_precond_create(CS_PARAM_PRECOND_BLOCK_DIAG,
                                        nslesp->schur_approximation,
-                                       eqp->sles_param,
+                                       slesp,
                                        msles->sles);
 
       /* Define an approximation of the Schur complement */
@@ -4789,7 +4813,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
       cs_saddle_block_precond_t  *sbp =
         cs_saddle_block_precond_create(CS_PARAM_PRECOND_BLOCK_DIAG,
                                        nslesp->schur_approximation,
-                                       eqp->sles_param,
+                                       slesp,
                                        msles->sles);
 
       cs_user_navsto_sles_solve(nslesp, ssys, sbp, xu, msles->p_c, saddle_algo);
@@ -4835,6 +4859,7 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
+ * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
@@ -4845,6 +4870,7 @@ int
 cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                               const cs_equation_param_t     *eqp,
                               const cs_cdo_system_helper_t  *sh,
+                              cs_param_sles_t               *slesp,
                               cs_cdofb_monolithic_sles_t    *msles)
 {
   assert(nsp != NULL);
@@ -4873,11 +4899,11 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
   /* Transformation of the initial saddle-point system */
 
   _transform_gkb_system(matrix, range_set, eqp, nslesp, div_op,
-                        gkb, msles->sles, u_f, b_f, b_c);
+                        slesp, gkb, msles->sles, u_f, b_f, b_c);
 
   /* Initialization */
 
-  _init_gkb_algo(matrix, range_set, eqp, div_op, gkb, msles->sles, p_c);
+  _init_gkb_algo(matrix, range_set, div_op, slesp, gkb, msles->sles, p_c);
 
   /* Main loop */
   /* ========= */
@@ -4930,7 +4956,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
     gkb->algo->n_inner_iter
       += (gkb->algo->last_inner_iter =
           cs_cdo_solve_scalar_system(gkb->n_u_dofs,
-                                     eqp->sles_param,
+                                     slesp,
                                      matrix,
                                      range_set,
                                      normalization,
@@ -5004,6 +5030,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
+ * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
@@ -5014,6 +5041,7 @@ int
 cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
                                    const cs_equation_param_t     *eqp,
                                    const cs_cdo_system_helper_t  *sh,
+                                   cs_param_sles_t               *slesp,
                                    cs_cdofb_monolithic_sles_t    *msles)
 {
   int  _n_iter;
@@ -5057,7 +5085,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     break;
   case CS_PARAM_SCHUR_LUMPED_INVERSE:
     smat = _invlumped_schur_approximation(nsp, eqp, matrix, range_set,
-                                          msles, uza,
+                                          slesp, msles, uza,
                                           &diag_smat, &xtra_smat);
     break;
 
@@ -5128,21 +5156,25 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   double normalization = _get_fbvect_norm(uza->rhs);
 
-  /* Compute the first velocity guess */
+  /* Compute the first velocity guess
+   * Modify the tolerance in order to be more accurate on this step */
 
-  /* Modify the tolerance in order to be more accurate on this step */
+  char  *init_system_name = slesp->name;
+  double  init_eps = slesp->eps;
+  int  init_max_iter = slesp->n_max_iter;
 
   char  *system_name = NULL;
   BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":init_guess") + 1, char);
   sprintf(system_name, "%s:init_guess", eqp->name);
 
-  cs_param_sles_t  *slesp0 = cs_param_sles_create(-1, system_name);
+  slesp->name = system_name;
+  slesp->eps = fmin(1e-6, 0.05*nslesp->il_algo_param.rtol);
+  slesp->n_max_iter = CS_MAX(100, init_max_iter);
 
-  cs_param_sles_copy_from(eqp->sles_param, slesp0);
-  slesp0->eps = fmin(1e-6, 0.05*nslesp->il_algo_param.rtol);
+  cs_param_sles_update_cvg_settings(true, slesp);
 
   _n_iter = cs_cdo_solve_scalar_system(uza->n_u_dofs,
-                                       slesp0,
+                                       slesp,
                                        matrix,
                                        range_set,
                                        normalization,
@@ -5153,10 +5185,17 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   uza->algo->n_inner_iter += _n_iter;
   uza->algo->last_inner_iter += _n_iter;
 
+  /* Set back the initial parameters */
+
+  slesp->name = init_system_name;
+  slesp->eps = init_eps;
+  slesp->n_max_iter = init_max_iter;
+
+  cs_param_sles_update_cvg_settings(true, slesp);
+
   /* Partial memory free */
 
   BFT_FREE(system_name);
-  cs_param_sles_free(&slesp0);
 
   /* Set pointers used in this algorithm */
 
@@ -5249,7 +5288,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     uza->algo->n_inner_iter
       += (uza->algo->last_inner_iter =
           cs_cdo_solve_scalar_system(uza->n_u_dofs,
-                                     eqp->sles_param,
+                                     slesp,
                                      matrix,
                                      range_set,
                                      normalization,
@@ -5359,6 +5398,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
+ * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
@@ -5369,6 +5409,7 @@ int
 cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                         const cs_equation_param_t     *eqp,
                                         const cs_cdo_system_helper_t  *sh,
+                                        cs_param_sles_t               *slesp,
                                         cs_cdofb_monolithic_sles_t    *msles)
 {
   assert(nsp != NULL && nsp->sles_param->strategy == CS_NAVSTO_SLES_UZAWA_AL);
@@ -5442,15 +5483,19 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
     uza->rhs[iu] += uza->b_tilda[iu];
   }
 
-  /* Solve AL.u_f = rhs */
-  /* Modifiy the tolerance in order to be more accurate on this step */
+  /* Solve AL.u_f = rhs
+   * Modifiy the tolerance in order to be more accurate on this step since
+   * the accuracy at this step has an influence on the global accuracy
+   */
+
+  char  *init_system_name = slesp->name;
+  double  init_eps = slesp->eps;
 
   char  *system_name = NULL;
   BFT_MALLOC(system_name, strlen(eqp->name) + strlen(":alu0") + 1, char);
   sprintf(system_name, "%s:alu0", eqp->name);
 
-  cs_param_sles_t  *slesp = cs_param_sles_create(-1, system_name);
-  cs_param_sles_copy_from(eqp->sles_param, slesp);
+  slesp->name = system_name;
   slesp->eps = nsp->sles_param->il_algo_param.rtol;
 
   cs_real_t  normalization = cs_cdo_blas_square_norm_pfvp(uza->rhs);
@@ -5472,10 +5517,14 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                    u_f,
                                    uza->rhs));
 
-  /* Partia free */
+  /* Set back the initial parameters */
+
+  slesp->name = init_system_name;
+  slesp->eps = init_eps;
+
+  /* Partial free */
 
   BFT_FREE(system_name);
-  cs_param_sles_free(&slesp);
 
   /* Main loop */
   /* ========= */
@@ -5520,7 +5569,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
     uza->algo->n_inner_iter
       += (uza->algo->last_inner_iter =
           cs_cdo_solve_scalar_system(uza->n_u_dofs,
-                                     eqp->sles_param,
+                                     slesp,
                                      matrix,
                                      range_set,
                                      delta_u_l2, /* normalization */

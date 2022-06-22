@@ -1384,6 +1384,7 @@ cs_sles_define(int                 f_id,
     sles->type_id = cs_map_name_to_id(_type_name_map, type_name);
 
   /* Now define options */
+
   sles->context = context;
   sles->setup_func = setup_func;
   sles->solve_func = solve_func;

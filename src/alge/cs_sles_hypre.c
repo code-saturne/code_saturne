@@ -1258,6 +1258,61 @@ cs_sles_hypre_free(void  *context)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the max. number of iterations associated to the given HYPRE
+ *        contrext
+ *
+ * \param[in,out]  context       pointer to HYPRE linear solver info
+ * \param[in]      n_max_iter    max. number of iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_hypre_set_n_max_iter(cs_sles_hypre_t   *context,
+                             int                n_max_iter)
+{
+  if (context == NULL)
+    return;
+
+  cs_sles_hypre_setup_t *sd = context->setup_data;
+
+  if (sd == NULL)
+    return; /* No need to continue. This will be done during the first call to
+               the solve function */
+
+  switch(context->solver_type) {
+
+  case CS_SLES_HYPRE_BOOMERAMG:
+    HYPRE_BoomerAMGSetMaxIter(sd->solver, n_max_iter);
+    break;
+
+  case CS_SLES_HYPRE_BICGSTAB:
+    HYPRE_ParCSRBiCGSTABSetMaxIter(sd->solver, n_max_iter);
+    break;
+
+  case CS_SLES_HYPRE_GMRES:
+    HYPRE_GMRESSetMaxIter(sd->solver, n_max_iter);
+    break;
+
+  case CS_SLES_HYPRE_FLEXGMRES:
+    HYPRE_ParCSRFlexGMRESSetMaxIter(sd->solver, n_max_iter);
+    break;
+
+  case CS_SLES_HYPRE_LGMRES:
+    HYPRE_ParCSRLGMRESSetMaxIter(sd->solver, n_max_iter);
+    break;
+
+  case CS_SLES_HYPRE_PCG:
+    HYPRE_PCGSetMaxIter(sd->solver, n_max_iter);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Solver not handled yet", __func__);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define whether the solver should run on the host or
  *        accelerated device.
  *

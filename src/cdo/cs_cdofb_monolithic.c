@@ -2556,7 +2556,8 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   msles->u_f = mom_eqc->face_values; /* velocity DoFs at faces */
   msles->p_c = sc->pressure->val;    /* pressure DoFs at cells */
 
-  int  cumulated_inner_iters = sc->solve(nsp, mom_eqp, sh, msles);
+  int  cumulated_inner_iters = sc->solve(nsp, mom_eqp, sh,
+                                         mom_eqp->sles_param, msles);
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2677,7 +2678,8 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    * Update the value of mom_eqc->face_values and sc->pressure->val */
 
   nl_algo->n_inner_iter =
-    (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh, msles));
+    (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh,
+                                          mom_eqp->sles_param, msles));
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2736,7 +2738,8 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
     t_solve_start = cs_timer_time();
 
     nl_algo->n_inner_iter +=
-      (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh, msles));
+      (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh,
+                                            mom_eqp->sles_param, msles));
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2873,7 +2876,8 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   msles->u_f = mom_eqc->face_values; /* velocity DoFs at faces */
   msles->p_c = sc->pressure->val;    /* pressure DoFs at cells */
 
-  int  cumulated_inner_iters = sc->solve(nsp, mom_eqp, sh, msles);
+  int  cumulated_inner_iters = sc->solve(nsp, mom_eqp, sh,
+                                         mom_eqp->sles_param, msles);
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2996,7 +3000,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    * Update the value of mom_eqc->face_values and sc->pressure->val */
 
   nl_algo->n_inner_iter =
-    (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh, msles));
+    (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh,
+                                          mom_eqp->sles_param, msles));
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -3062,7 +3067,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     t_solve_start = cs_timer_time();
 
     nl_algo->n_inner_iter +=
-      (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh, msles));
+      (nl_algo->last_inner_iter = sc->solve(nsp, mom_eqp, sh,
+                                            mom_eqp->sles_param, msles));
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);

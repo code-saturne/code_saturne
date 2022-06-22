@@ -2432,6 +2432,101 @@ cs_param_sles_set(bool                 use_field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update the settings associated to a cs_sles_t structure and apply
+ *        those defined in the given cs_param_sles_t structure.
+ *        This function is used only when a first setup has been performed.
+ *
+ *        One modifies only some specific options like the max. number of
+ *        iterations or the relative tolerance
+ *
+ * \param[in] use_field_id  if false use a name to retrieve the cs_sles_t struc.
+ * \param[in] slesp         pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_update_cvg_settings(bool                     use_field_id,
+                                  const cs_param_sles_t   *slesp)
+{
+  if (slesp == NULL)
+    return;
+
+  /* Retrieve the sles structure associated to this sles parameters */
+
+  const  char  *sles_name = use_field_id ? NULL : slesp->name;
+  assert(slesp->field_id > -1 || sles_name != NULL);
+
+  cs_sles_t  *sles = cs_sles_find(slesp->field_id, sles_name);
+
+  if (sles == NULL)
+    return;
+
+  switch (slesp->solver_class) {
+
+  case CS_PARAM_SLES_CLASS_CS: /* code_saturne's own solvers */
+    {
+      switch (slesp->solver) {
+
+      case CS_PARAM_ITSOL_AMG:
+        {
+          cs_multigrid_t  *mg = cs_sles_get_context(sles);
+          assert(mg != NULL);
+
+          cs_multigrid_set_max_cycles(mg, slesp->n_max_iter);
+        }
+        break;
+
+      case CS_PARAM_ITSOL_GCR:
+      case CS_PARAM_ITSOL_GMRES:
+        {
+          cs_sles_it_t  *itsol = cs_sles_get_context(sles);
+          assert(itsol != NULL);
+
+          cs_sles_it_set_n_max_iter(itsol, slesp->n_max_iter);
+          cs_sles_it_set_restart_interval(itsol, slesp->restart);
+        }
+        break;
+
+      default:
+        {
+          cs_sles_it_t  *itsol = cs_sles_get_context(sles);
+          assert(itsol != NULL);
+
+          cs_sles_it_set_n_max_iter(itsol, slesp->n_max_iter);
+        }
+        break;
+
+      } /* which solver */
+
+    }   /* code_saturne class */
+    break;
+
+  case CS_PARAM_SLES_CLASS_PETSC:
+    {
+      cs_sles_petsc_t  *petsc_ctx = cs_sles_get_context(sles);
+      assert(petsc_ctx);
+
+      cs_sles_petsc_set_cvg_criteria(petsc_ctx, slesp->eps, slesp->n_max_iter);
+    }
+    break;
+
+  case CS_PARAM_SLES_CLASS_HYPRE:
+    {
+      cs_sles_hypre_t  *hypre_ctx = cs_sles_get_context(sles);
+      assert(hypre_ctx);
+
+      cs_sles_hypre_set_n_max_iter(hypre_ctx, slesp->n_max_iter);
+    }
+    break;
+
+  default:
+    /* CS_PARAM_SLES_CLASS_MUMPS => Nothing to do */
+    break;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Retrieve the related solver class from the amg type
  *
  * \param[in]  amg_type    type of AMG to consider

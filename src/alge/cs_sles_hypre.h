@@ -314,6 +314,20 @@ cs_sles_hypre_log(const void  *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set the max. number of iterations associated to the given HYPRE
+ *        contrext
+ *
+ * \param[in,out]  context       pointer to HYPRE linear solver info
+ * \param[in]      n_max_iter    max. number of iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_hypre_set_n_max_iter(cs_sles_hypre_t   *context,
+                             int                n_max_iter);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define whether the solver should run on the host or
  *        accelerated device.
  *

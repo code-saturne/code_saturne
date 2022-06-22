@@ -230,6 +230,19 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
                                 double              precision_mult_ascent,
                                 double              precision_mult_coarse);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the max. number of cycles for a multigrid
+ *
+ * \param[in, out]  mg              pointer to multigrid info and context
+ * \param[in]       n_max_cycles    maximum number of cycles
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_multigrid_set_max_cycles(cs_multigrid_t     *mg,
+                            int                 n_max_cycles);
+
 /*----------------------------------------------------------------------------
  * Return solver type used on fine mesh.
  *

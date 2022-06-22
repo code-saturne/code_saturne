@@ -173,6 +173,24 @@ cs_param_sles_set(bool                 use_field_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update the settings associated to a cs_sles_t structure and apply
+ *        those defined in the given cs_param_sles_t structure.
+ *        This function is used only when a first setup has been performed.
+ *
+ *        One modifies only some specific options like the max. number of
+ *        iterations or the relative tolerance
+ *
+ * \param[in] use_field_id  if false use a name to retrieve the cs_sles_t struc.
+ * \param[in] slesp         pointer to a cs_param_sles_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_param_sles_update_cvg_settings(bool                     use_field_id,
+                                  const cs_param_sles_t   *slesp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Retrieve the related solver class from the amg type
  *
  * \param[in]  amg_type    type of AMG to consider

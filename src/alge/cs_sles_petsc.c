@@ -1524,6 +1524,34 @@ cs_sles_petsc_log_setup(void  *ksp)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set some of the convergence criteria for the associated KSP structure
+ *
+ * \param[in, out] context    pointer to iterative solver info and context
+ *                            (actual type: cs_sles_petsc_t  *)
+ * \param[in]      rtol       relative tolerance value
+ * \param[in]      max_iter   max. number of iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_petsc_set_cvg_criteria(const void  *context,
+                               double       rtol,
+                               int          max_iter)
+{
+  const cs_sles_petsc_t  *c = context;
+  if (c == NULL)
+    return;
+
+  cs_sles_petsc_setup_t   *sd = c->setup_data;
+  if (sd == NULL)
+    return; /* No need to continue. This will be done during the first call to
+               the solve function */
+  
+  KSPSetTolerances(sd->ksp, rtol, 1e-30, 1.e10, max_iter);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return matrix type associated with PETSc linear system solver
  *        info and context.
  *

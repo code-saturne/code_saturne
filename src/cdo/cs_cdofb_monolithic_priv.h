@@ -163,6 +163,7 @@ typedef void
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
+ * \param[in, out] slesp    pointer to a set of parameters to drive the SLES
  * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
@@ -173,6 +174,7 @@ typedef int
 (cs_cdofb_monolithic_solve_t)(const cs_navsto_param_t        *nsp,
                               const cs_equation_param_t      *eqp,
                               const cs_cdo_system_helper_t   *sh,
+                              cs_param_sles_t                *slesp,
                               cs_cdofb_monolithic_sles_t     *msles);
 
 /*=============================================================================

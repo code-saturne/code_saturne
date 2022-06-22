@@ -485,6 +485,19 @@ void
 cs_sles_it_set_restart_interval(cs_sles_it_t                 *context,
                                 int                           interval);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define the max. number of iterations before stoping the algorithm
+ *
+ * \param[in, out]  context     pointer to iterative solver info and context
+ * \param[in]       n_max_iter  max. number of iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_n_max_iter(cs_sles_it_t        *context,
+                          int                  n_max_iter);
+
 /*----------------------------------------------------------------------------
  * Query mean number of rows under which Conjugate Gradient algorithm
  * uses the single-reduction variant.
