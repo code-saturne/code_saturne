@@ -95,6 +95,8 @@ using namespace MEDCoupling;
 struct _cs_medcoupling_intersector_t {
 
   char                           *name;
+  int                             id;
+
   char                           *medfile_path;
   char                           *interp_method;
 
@@ -149,6 +151,7 @@ _create_intersector(void)
   BFT_MALLOC(mi, 1, cs_medcoupling_intersector_t);
 
   mi->name                 = NULL;
+  mi->id                   = -1;
   mi->medfile_path         = NULL;
   mi->interp_method        = NULL;
   mi->type                 = CS_MEDCPL_INTERSECT_UKNOWN;
@@ -308,6 +311,8 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   BFT_MALLOC(mi->name, strlen(name)+1, char);
   strcpy(mi->name, name);
 
+  mi->id = _n_intersects;
+
   BFT_MALLOC(mi->medfile_path, strlen(medfile_path)+1, char);
   strcpy(mi->medfile_path, medfile_path);
 
@@ -410,12 +415,33 @@ _add_intersector(const char                 *name,
                  const char                 *select_criteria,
                  cs_medcpl_intersect_type_t  type)
 {
+
+  // Check that an intersector with that name does not allready exist
+  cs_medcoupling_intersector_t *mi = cs_medcoupling_intersector_by_name(name);
+  if (mi != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error creating intersector:\n"
+                "  name:                 \"%s\"\n"
+                "  MED File:             \"%s\"\n"
+                "  Interpolation method: \"%s\"\n"
+                "  selection criteria:   \"%s\"\n"
+                "  type:                 %d\n"
+                "An intersector with that name has already been defined:\n"
+                "  id:                   %d\n"
+                "  MED File:             \"%s\"\n"
+                "  Interpolation method: \"%s\"\n"
+                "  selection criteria:   \"%s\"\n"
+                "  type:                 %d\n"),
+              name, medfile_path, interp_method, select_criteria, type,
+              mi->id, mi->medfile_path, mi->interp_method,
+              mi->local_mesh->sel_criteria, mi->type);
+
   if (_n_intersects == 0)
     BFT_MALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
   else
     BFT_REALLOC(_intersects, _n_intersects + 1, cs_medcoupling_intersector_t *);
 
-  cs_medcoupling_intersector_t *mi = _create_intersector();
+  mi = _create_intersector();
 
   _allocate_intersector(mi,
                         name,

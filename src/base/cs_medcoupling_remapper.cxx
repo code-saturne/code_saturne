@@ -95,6 +95,7 @@ using namespace MEDCoupling;
 struct _cs_medcoupling_remapper_t {
 
   char                     *name;
+  int                       id;
   char                     *medfile_path;
   char                    **field_names;
 
@@ -222,6 +223,8 @@ _create_remapper(const char                        *name,
   BFT_MALLOC(r->name, strlen(name)+1, char);
   strcpy(r->name, name);
 
+  r->id = _n_remappers;
+
   // Store fields and medfile info in case updates are needed
 
   BFT_MALLOC(r->medfile_path, strlen(medfile_path)+1, char);
@@ -321,8 +324,26 @@ _add_remapper(const char   *name,
               int           iteration,
               int           order)
 {
-  // Allocate or reallocate if needed
 
+  // Check that a remapper with that name does not already exits
+  cs_medcoupling_remapper_t *r = cs_medcoupling_remapper_by_name_try(name);
+  if (r != NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error creating remapper:\n"
+                "  name:               \"%s\"\n"
+                "  dimension:          %d\n"
+                "  selection criteria: \"%s\"\n"
+                "  MED File:           \"%s\"\n"
+                "A remapper with that name has already been defined:\n"
+                "  id:                 %d\n"
+                "  dimension:          %d\n"
+                "  selection criteria: \"%s\"\n"
+                "  MED File:           \"%s\"\n"),
+              name, elt_dim, select_criteria, medfile_path,
+              r->id, r->target_mesh->elt_dim,
+              r->target_mesh->sel_criteria, r->medfile_path);
+
+  // Allocate or reallocate if needed
   if (_remapper == NULL)
     BFT_MALLOC(_remapper, 1, cs_medcoupling_remapper_t *);
   else
