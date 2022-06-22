@@ -161,7 +161,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
  *        Navier-Stokes equation with a CDO face-based approach. The system is
  *        split into blocks to enable more efficient preconditioning
  *        techniques. The main iterative solver is a Krylov solver such as GCR,
- *        GMRES or MINRES
+ *        or MINRES
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -177,28 +177,6 @@ cs_cdofb_monolithic_krylov_block_precond(const cs_navsto_param_t       *nsp,
                                          const cs_equation_param_t     *eqp,
                                          const cs_cdo_system_helper_t  *sh,
                                          cs_cdofb_monolithic_sles_t    *msles);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve a linear system arising from the discretization of the
- *         Navier-Stokes equation with a CDO face-based approach.
- *         The system is split into blocks to enable more efficient
- *         preconditioning techniques
- *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
- * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
- *
- * \return the (cumulated) number of iterations of the solver
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_cdofb_monolithic_by_blocks_solve(const cs_navsto_param_t       *nsp,
-                                    const cs_equation_param_t     *eqp,
-                                    const cs_cdo_system_helper_t  *sh,
-                                    cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -247,54 +225,8 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Use the preconditioned Uzawa-CG algorithm to solve the saddle-point
- *         problem arising from CDO-Fb schemes for Stokes, Oseen and
- *         Navier-Stokes with a monolithic coupling
- *         This algorithm is based on the EDF report H-E40-1991-03299-FR
- *         devoted the numerical algorithms used in the code N3S.
- *         Specifically a Cahout-Chabard preconditioning is used to approximate
- *         the Schur complement.
- *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
- * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
- *
- * \return the cumulated number of iterations of the solver
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_cdofb_monolithic_uzawa_n3s_solve(const cs_navsto_param_t       *nsp,
-                                    const cs_equation_param_t     *eqp,
-                                    const cs_cdo_system_helper_t  *sh,
-                                    cs_cdofb_monolithic_sles_t    *msles);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Use the Uzawa algorithm with an Augmented Lagrangian technique to
- *         solve the saddle-point problem arising from CDO-Fb schemes for
- *         Stokes, Oseen and Navier-Stokes with a monolithic coupling
- *
- * \param[in]      nsp      pointer to a cs_navsto_param_t structure
- * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      sh       pointer to a cs_cdo_system_helper_t structure
- * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
- *
- * \return the cumulated number of iterations of the solver
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
-                                   const cs_equation_param_t     *eqp,
-                                   const cs_cdo_system_helper_t  *sh,
-                                   cs_cdofb_monolithic_sles_t    *msles);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Use the Uzawa algorithm with an Augmented Lagrangian technique in an
- *         incremental way to solve the saddle-point problem arising from
+ * \brief  Use the Uzawa algorithm with an Augmented Lagrangian (ALU) technique
+ *         in an incremental way to solve the saddle-point problem arising from
  *         CDO-Fb schemes for Stokes, Oseen and Navier-Stokes with a monolithic
  *         coupling
  *
