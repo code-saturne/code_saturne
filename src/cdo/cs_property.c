@@ -2518,7 +2518,7 @@ cs_property_log_setup(void)
 
     for (int j = 0; j < pty->n_definitions; j++) {
       sprintf(prefix, "        Definition %3d", j);
-      cs_xdef_log(prefix, pty->defs[j]);
+      cs_xdef_log_setup(prefix, pty->defs[j]);
     }
 
   } /* Loop on properties */

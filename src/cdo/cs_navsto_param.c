@@ -1559,7 +1559,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   char  prefix[256];
   for (int i = 0; i < nsp->n_velocity_ic_defs; i++) {
     sprintf(prefix, "%s Velocity.Init.Cond | Definition %2d",  navsto, i);
-    cs_xdef_log(prefix, nsp->velocity_ic_defs[i]);
+    cs_xdef_log_setup(prefix, nsp->velocity_ic_defs[i]);
   }
 
   /* Initial conditions for the pressure */
@@ -1569,7 +1569,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                 navsto, nsp->n_pressure_ic_defs);
   for (int i = 0; i < nsp->n_pressure_ic_defs; i++) {
     sprintf(prefix, "%s Pressure.Init.Cond | Definition %2d",  navsto, i);
-    cs_xdef_log(prefix, nsp->pressure_ic_defs[i]);
+    cs_xdef_log_setup(prefix, nsp->pressure_ic_defs[i]);
   }
 }
 

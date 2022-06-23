@@ -932,7 +932,8 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Output the settings related to a cs_xdef_t structure
+ * \brief  Output the settings related to a cs_xdef_t structure in the setup
+ *         logging file
  *
  * \param[in] prefix    optional string
  * \param[in] d         pointer to a cs_xdef_t structure
@@ -940,7 +941,25 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_log(const char          *prefix,
+cs_xdef_log_setup(const char          *prefix,
+                  const cs_xdef_t     *d)
+{
+  cs_xdef_log(CS_LOG_SETUP, prefix, d);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Output the settings related to a cs_xdef_t structure
+ *
+ * \param[in] log_type  related log file to consider
+ * \param[in] prefix    optional string
+ * \param[in] d         pointer to a cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_log(cs_log_t             log_type,
+            const char          *prefix,
             const cs_xdef_t     *d)
 {
   if (d == NULL)
@@ -958,7 +977,7 @@ cs_xdef_log(const char          *prefix,
   else
     _p = prefix;
 
-  cs_log_printf(CS_LOG_SETUP,
+  cs_log_printf(log_type,
                 "%s | Uniform %s Cellwise %s Steady %s Meta: %u\n",
                 _p, cs_base_strtf(is_uniform), cs_base_strtf(is_cellwise),
                 cs_base_strtf(is_steady), d->meta);
@@ -970,7 +989,7 @@ cs_xdef_log(const char          *prefix,
 
     const cs_zone_t  *z = cs_volume_zone_by_id(d->z_id);
     assert(z != NULL);
-    cs_log_printf(CS_LOG_SETUP, "%s | Support:   volume | Zone: %s (id:%5d)\n",
+    cs_log_printf(log_type, "%s | Support:   volume | Zone: %s (id:%5d)\n",
                   _p, z->name, z->id);
 
   }
@@ -978,12 +997,12 @@ cs_xdef_log(const char          *prefix,
 
     const cs_zone_t  *z = cs_boundary_zone_by_id(d->z_id);
     assert(z != NULL);
-    cs_log_printf(CS_LOG_SETUP, "%s | Support: boundary | Zone: %s (id:%5d)\n",
+    cs_log_printf(log_type, "%s | Support: boundary | Zone: %s (id:%5d)\n",
                   _p, z->name, z->id);
 
   }
   else if (d->support == CS_XDEF_SUPPORT_TIME)
-    cs_log_printf(CS_LOG_SETUP, "%s | Support: time\n", _p);
+    cs_log_printf(log_type, "%s | Support: time\n", _p);
 
   /* Type of definition */
   /* ================== */
@@ -991,16 +1010,16 @@ cs_xdef_log(const char          *prefix,
   switch (d->type) {
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    cs_log_printf(CS_LOG_SETUP, "%s | Definition by an analytical function\n",
+    cs_log_printf(log_type, "%s | Definition by an analytical function\n",
                   _p);
     break;
 
   case CS_XDEF_BY_DOF_FUNCTION:
-    cs_log_printf(CS_LOG_SETUP, "%s | Definition by a DoF function\n", _p);
+    cs_log_printf(log_type, "%s | Definition by a DoF function\n", _p);
     break;
 
   case CS_XDEF_BY_ARRAY:
-    cs_log_printf(CS_LOG_SETUP, "%s | Definition by an array\n", _p);
+    cs_log_printf(log_type, "%s | Definition by an array\n", _p);
     break;
 
   case CS_XDEF_BY_FIELD:
@@ -1011,26 +1030,26 @@ cs_xdef_log(const char          *prefix,
         bft_error(__FILE__, __LINE__, 0,
                   " Field pointer is set to NULL in a definition by field");
 
-      cs_log_printf(CS_LOG_SETUP, "%s | Definition by the field \"%s\"\n",
+      cs_log_printf(log_type, "%s | Definition by the field \"%s\"\n",
                     _p, f->name);
     }
     break;
 
   case CS_XDEF_BY_FUNCTION:
-    cs_log_printf(CS_LOG_SETUP, "%s | Definition by function\n", _p);
+    cs_log_printf(log_type, "%s | Definition by function\n", _p);
     break;
 
   case CS_XDEF_BY_QOV:
-    cs_log_printf(CS_LOG_SETUP,
+    cs_log_printf(log_type,
                   "%s | Definition by a quantity over a volume\n", _p);
     break;
 
   case CS_XDEF_BY_SUB_DEFINITIONS:
-    cs_log_printf(CS_LOG_SETUP, "%s | Definition by sub-definitions\n", _p);
+    cs_log_printf(log_type, "%s | Definition by sub-definitions\n", _p);
     break;
 
   case CS_XDEF_BY_TIME_FUNCTION:
-    cs_log_printf(CS_LOG_SETUP, "%s | Definition by a time function\n", _p);
+    cs_log_printf(log_type, "%s | Definition by a time function\n", _p);
     break;
 
   case CS_XDEF_BY_VALUE:
@@ -1038,14 +1057,14 @@ cs_xdef_log(const char          *prefix,
       cs_real_t *values = (cs_real_t *)d->context;
 
       if (d->dim == 1)
-        cs_log_printf(CS_LOG_SETUP, "%s | Definition by_value: % 5.3e\n",
+        cs_log_printf(log_type, "%s | Definition by_value: % 5.3e\n",
                       _p, values[0]);
       else if (d->dim == 3)
-        cs_log_printf(CS_LOG_SETUP, "%s | Definition by_value:"
+        cs_log_printf(log_type, "%s | Definition by_value:"
                       " [% 5.3e, % 5.3e, % 5.3e]\n",
                       _p, values[0], values[1], values[2]);
       else if (d->dim == 9)
-        cs_log_printf(CS_LOG_SETUP, "%s | Definition by_value:"
+        cs_log_printf(log_type, "%s | Definition by_value:"
                       " [[% 4.2e, % 4.2e, % 4.2e], [% 4.2e, % 4.2e, % 4.2e],"
                       " [% 4.2e, % 4.2e, % 4.2e]]\n",
                       _p, values[0], values[1], values[2], values[3], values[4],
@@ -1064,7 +1083,7 @@ cs_xdef_log(const char          *prefix,
 
   } /* switch on def_type */
 
-  cs_log_printf(CS_LOG_SETUP, "%s | Quadrature: %s\n",
+  cs_log_printf(log_type, "%s | Quadrature: %s\n",
                 _p, cs_quadrature_get_type_name(d->qtype));
 }
 

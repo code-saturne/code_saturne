@@ -1879,7 +1879,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
       cs_cdo_bc_get_desc(d->meta, desc);
       sprintf(prefix, "        Definition %3d", id);
       cs_log_printf(CS_LOG_SETUP, "\n%s | Type: %s\n", prefix, desc);
-      cs_xdef_log(prefix, d);
+      cs_xdef_log_setup(prefix, d);
     }
   }
 
@@ -1893,7 +1893,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
       cs_log_printf(CS_LOG_SETUP, "\n\n");
     for (int i = 0; i < eqp->n_ic_defs; i++) {
       sprintf(prefix, "        Definition %3d", i);
-      cs_xdef_log(prefix, eqp->ic_defs[i]);
+      cs_xdef_log_setup(prefix, eqp->ic_defs[i]);
     }
 
     const char  *time_scheme = cs_param_get_time_scheme_name(eqp->time_scheme);
@@ -2006,7 +2006,7 @@ cs_equation_param_log(const cs_equation_param_t   *eqp)
 
     for (int s_id = 0; s_id < eqp->n_source_terms; s_id++) {
       sprintf(prefix, "        Definition %3d", s_id);
-      cs_xdef_log(prefix, eqp->source_terms[s_id]);
+      cs_xdef_log_setup(prefix, eqp->source_terms[s_id]);
     }
 
   } /* Source terms */

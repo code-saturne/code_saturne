@@ -684,7 +684,8 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Output the settings related to a cs_xdef_t structure
+ * \brief  Output the settings related to a cs_xdef_t structure in the setup
+ *         logging file
  *
  * \param[in] prefix    optional string
  * \param[in] d         pointer to a cs_xdef_t structure
@@ -692,7 +693,22 @@ cs_xdef_get_state_flag(const cs_xdef_t     *d);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_xdef_log(const char          *prefix,
+cs_xdef_log_setup(const char          *prefix,
+                  const cs_xdef_t     *d);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Output the settings related to a cs_xdef_t structure
+ *
+ * \param[in] log_type  related log file to consider
+ * \param[in] prefix    optional string
+ * \param[in] d         pointer to a cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_xdef_log(cs_log_t             log_type,
+            const char          *prefix,
             const cs_xdef_t     *d);
 
 /*----------------------------------------------------------------------------*/

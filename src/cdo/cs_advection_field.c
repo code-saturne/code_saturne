@@ -699,7 +699,7 @@ cs_advection_field_log_setup(void)
                   cs_base_strtf(at_ifaces));
 
     sprintf(prefix, "        Definition");
-    cs_xdef_log(prefix, adv->definition);
+    cs_xdef_log_setup(prefix, adv->definition);
 
     /* Boundary flux definition */
 
@@ -710,7 +710,7 @@ cs_advection_field_log_setup(void)
       cs_log_printf(CS_LOG_SETUP, "\n");
     for (int ib = 0; ib < adv->n_bdy_flux_defs; ib++) {
       sprintf(prefix, "        Definition %2d", ib);
-      cs_xdef_log(prefix, adv->bdy_flux_defs[ib]);
+      cs_xdef_log_setup(prefix, adv->bdy_flux_defs[ib]);
     }
 
   }  /* Loop on advection fields */
