@@ -2363,6 +2363,9 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
 
   }
 
+  if (bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+    bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
+
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
     (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
 
@@ -2451,6 +2454,10 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
 
   }
 
+  if (bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+    bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
+
+
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
     (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
 
@@ -2510,6 +2517,9 @@ cs_equation_add_bc_by_field(cs_equation_param_t        *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
 
   }
+
+  if (bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+    bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
   assert(field != NULL);
   if (dim != field->dim)
@@ -2595,6 +2605,9 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
 
   }
+
+  if (bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+    bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
   int  z_id = cs_get_bdy_zone_id(z_name);
 
@@ -2683,6 +2696,9 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t        *eqp,
                 "%s: This situation is not handled yet.\n", __func__);
 
   }
+
+  if (bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
+    bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
 
   int  z_id = cs_get_bdy_zone_id(z_name);
 

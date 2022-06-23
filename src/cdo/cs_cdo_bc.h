@@ -88,6 +88,10 @@ BEGIN_C_DECLS
 
 #define CS_CDO_BC_TANGENTIAL_DIRICHLET  (1 << 7)
 
+/*! 256: Apply a wall function/law to prescribe the value at a wall */
+
+#define CS_CDO_BC_WALL_PRESCRIBED       (1 << 8)
+
 /*! @} */
 
 /*============================================================================
@@ -222,6 +226,7 @@ cs_cdo_bc_get_flag(cs_param_bc_type_t   bc_type)
   cs_flag_t  ret_flag;
 
   switch (bc_type) {
+
   case CS_PARAM_BC_HMG_DIRICHLET:
     ret_flag = CS_CDO_BC_HMG_DIRICHLET;
     break;
@@ -246,11 +251,15 @@ cs_cdo_bc_get_flag(cs_param_bc_type_t   bc_type)
   case CS_PARAM_BC_CIRCULATION:
     ret_flag = CS_CDO_BC_TANGENTIAL_DIRICHLET;
     break;
+  case CS_PARAM_BC_WALL_PRESCRIBED:
+    ret_flag = CS_CDO_BC_WALL_PRESCRIBED; /* TO BE CHECKED */
+    break;
 
   default:
     ret_flag = 0;               /* Not handle automatically */
     break;
   }
+
   return ret_flag;
 }
 

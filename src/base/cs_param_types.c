@@ -142,7 +142,8 @@ cs_param_bc_type_name[CS_PARAM_N_BC_TYPES][CS_BASE_STRING_LEN] =
     N_("Neumann"),
     N_("Neumann (full)"),
     N_("Robin"),
-    N_("Sliding")
+    N_("Sliding"),
+    N_("Wall prescribed")
   };
 
 static const char
@@ -408,6 +409,7 @@ cs_param_get_bc_name(cs_param_bc_type_t    type)
   case CS_PARAM_BC_ROBIN:
   case CS_PARAM_BC_SLIDING:
   case CS_PARAM_BC_CIRCULATION:
+  case CS_PARAM_BC_WALL_PRESCRIBED:
     return cs_param_bc_type_name[type];
 
   default:

@@ -461,6 +461,10 @@ typedef enum {
  * Set the tangential part of a vector-valued field. This is the part lying on
  * the boundary of a part of the computatinal domain. Nothing is prescribed for
  * the normal part of the vector-valued field.
+ *
+ * \var CS_PARAM_BC_WALL_PRESCRIBED
+ * Hybrid way to enforce the value at a wall. Use a wall function to prescribe
+ * the wall value knowing the value at the associated cell center for instance
  */
 
 typedef enum {
@@ -473,6 +477,7 @@ typedef enum {
   CS_PARAM_BC_ROBIN,
   CS_PARAM_BC_SLIDING,
   CS_PARAM_BC_CIRCULATION,
+  CS_PARAM_BC_WALL_PRESCRIBED,
 
   CS_PARAM_N_BC_TYPES
 
