@@ -29,10 +29,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_backtrace.h"
 #include "bft_error.h"
 #include "bft_mem.h"
-#include "bft_mem_usage.h"
 #include "bft_printf.h"
 
 /*----------------------------------------------------------------------------*/
