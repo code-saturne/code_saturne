@@ -842,8 +842,8 @@ _invlumped_schur_approximation(const cs_navsto_param_t     *nsp,
   sprintf(system_name, "%s:inv_lumped", eqp->name);
 
   slesp->name = system_name;
-  slesp->eps = 1e-1; /* Only a coarse approximation is needed */
-  slesp->n_max_iter = 50;
+  slesp->eps = 1e-2;  /* Only a coarse approximation is needed */
+  slesp->n_max_iter = 10;
 
   cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
 
@@ -5122,7 +5122,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   sprintf(system_name, "%s:init_guess", eqp->name);
 
   slesp->name = system_name;
-  slesp->eps = fmin(1e-6, 0.05*nslesp->il_algo_param.rtol);
+  slesp->eps = fmin(slesp->eps, nslesp->il_algo_param.rtol);
   slesp->n_max_iter = CS_MAX(100, init_max_iter);
 
   cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
