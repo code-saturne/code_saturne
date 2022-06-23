@@ -87,7 +87,7 @@ BEGIN_C_DECLS
 #define HUGE_VAL  1.E+12
 #endif
 
-#define DB_SIZE_MAX 8
+#define DB_SIZE_MAX 9
 
 /*=============================================================================
  * Local Structure Definitions
