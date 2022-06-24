@@ -1806,7 +1806,7 @@ contains
 
     call cs_f_field_var_ptr_by_id(f_id, p_type, p_rank, f_dim, c_p)
     ! TODO assert f_dim(2) = 9
-    call c_f_pointer(c_p, p, [f_dim(1), f_dim(2)/3, f_dim(2)/3])
+    call c_f_pointer(c_p, p, [f_dim(1)/3, f_dim(1)/3, f_dim(2)])
 
   end subroutine field_get_val_t
 
