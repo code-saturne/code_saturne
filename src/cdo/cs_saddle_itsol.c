@@ -484,7 +484,7 @@ _compute_residual_3(cs_saddle_system_t   *ssys,
   memset(res1, 0, sizeof(cs_real_t)*ssys->max_x1_size);
 
   /* Two parts:
-   * a) rhs1 - M11.x1 -M12.x2
+   * a) rhs1 - M11.x1 - M12.x2
    * b) rhs2 - M21.x1
    */
 
@@ -1610,6 +1610,14 @@ cs_saddle_minres(cs_saddle_system_t          *ssys,
   cs_saddle_pc_apply_t  *pc_apply = _set_pc(ssys, sbp, &pc_wsp_size, &pc_wsp);
 
   /* --- ALGO BEGIN --- */
+
+  /* The RHS is not reduced by default */
+
+  if (ssys->rset->ifs != NULL)
+    cs_interface_set_sum(ssys->rset->ifs,
+                         ssys->x1_size,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         ssys->rhs1);
 
   /* Compute the first residual: v = b - M.x */
 
