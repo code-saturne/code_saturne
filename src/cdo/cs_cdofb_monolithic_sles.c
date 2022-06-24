@@ -3546,7 +3546,6 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
      step (the final accuracy relies on this step) */
 
   char  *init_system_name = slesp->name;
-  int  init_field_id = slesp->field_id;
   double  init_eps = slesp->eps;
 
   char  *system_name = NULL;
@@ -3554,7 +3553,6 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
   sprintf(system_name, "%s:gkb_transfo", eqp->name);
 
   slesp->name = system_name;
-  slesp->field_id = -1;
   slesp->eps = nslesp->il_algo_param.rtol;
 
   /* Compute M^-1.(b_f + gamma. Bt.N^-1.b_c) */
@@ -3574,7 +3572,6 @@ _transform_gkb_system(const cs_matrix_t              *matrix,
   /* Set back the initial parameters */
 
   slesp->name = init_system_name;
-  slesp->field_id = init_field_id;
   slesp->eps = init_eps;
 
   /* Compute the initial u_tilda := u_f - M^-1.(b_f + gamma. Bt.N^-1.b_c) */
