@@ -822,7 +822,7 @@ cs_math_33_inv_cramer(const cs_real_t  in[3][3],
   out[2][2] = in[0][0]*in[1][1] - in[1][0]*in[0][1];
 
   const double  det = in[0][0]*out[0][0]+in[1][0]*out[0][1]+in[2][0]*out[0][2];
-  const double  invdet = 1/det;
+  const double  invdet = 1./det;
 
   out[0][0] *= invdet, out[0][1] *= invdet, out[0][2] *= invdet;
   out[1][0] *= invdet, out[1][1] *= invdet, out[1][2] *= invdet;
