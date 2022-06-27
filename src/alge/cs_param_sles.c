@@ -2501,6 +2501,7 @@ cs_param_sles_update_cvg_settings(bool                     use_field_id,
     }   /* code_saturne class */
     break;
 
+#if defined(HAVE_PETSC)
   case CS_PARAM_SLES_CLASS_PETSC:
     {
       cs_sles_petsc_t  *petsc_ctx = cs_sles_get_context(sles);
@@ -2509,7 +2510,9 @@ cs_param_sles_update_cvg_settings(bool                     use_field_id,
       cs_sles_petsc_set_cvg_criteria(petsc_ctx, slesp->eps, slesp->n_max_iter);
     }
     break;
+#endif
 
+#if defined(HAVE_HYPRE)
   case CS_PARAM_SLES_CLASS_HYPRE:
     {
       cs_sles_hypre_t  *hypre_ctx = cs_sles_get_context(sles);
@@ -2518,6 +2521,7 @@ cs_param_sles_update_cvg_settings(bool                     use_field_id,
       cs_sles_hypre_set_n_max_iter(hypre_ctx, slesp->n_max_iter);
     }
     break;
+#endif
 
   default:
     /* CS_PARAM_SLES_CLASS_MUMPS => Nothing to do */
