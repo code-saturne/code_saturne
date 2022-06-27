@@ -229,7 +229,6 @@ if (icalhy.eq.1) then
   f_id = ivarfl(ivar)
 
   call field_set_key_int(f_id, keyvis, 0)
-  call field_set_key_int(f_id, keylog, 0)
 
   ! Elliptic equation (no convection, no time term)
   call field_get_key_struct_var_cal_opt(f_id, vcopt)
