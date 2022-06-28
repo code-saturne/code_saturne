@@ -590,7 +590,7 @@ The list of third-party software usable with code_saturne is provided here:
   visualization files using the CGNS format, available as an export format with
   many third-party meshing tools. CGNS version 3.1 or above is required.
 
-* [MED](https://www.salome-platform.org/user-section/about/med) is necessary to
+* [MED](https://old.salome-platform.org/user-section/about/med) is necessary to
   read or write mesh and visualization files using the MED format, mainly used by
   the SALOME platform.
 

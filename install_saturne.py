@@ -598,9 +598,9 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgns",
-                    version="4.2.0",
-                    archive="CGNS-4.2.0.tar.gz",
-                    url="https://github.com/CGNS/CGNS/archive/v4.2.0.tar.gz")
+                    version="4.3.0",
+                    archive="CGNS-4.3.0.tar.gz",
+                    url="https://github.com/CGNS/CGNS/archive/v4.3.0.tar.gz")
 
         p = self.packages['cgns']
         p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
@@ -614,7 +614,7 @@ class Setup:
                     package="med",
                     version="4.1.1",
                     archive="med-4.1.1.tar.gz",
-                    url="http://files.salome-platform.org/Salome/other/%s")
+                    url="https://files.salome-platform.org/Salome/other/%s")
 
         p = self.packages['med']
         p.config_opts = "--with-med_int=long --disable-fortran --disable-python"
