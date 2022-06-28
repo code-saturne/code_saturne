@@ -154,8 +154,13 @@ do isol = 1, nfmodsol
   r2     = solution_sol(isol)%constantes%r2
   tprof  = solution_sol(isol)%constantes%tprof
 
-  foir = soilvert(1)%foir
-  fos  = soilvert(1)%fos
+  if (iatra1.eq.1) then
+    foir = soilvert(1)%foir
+    fos  = soilvert(1)%fos
+  else
+    foir = 0.d0 
+    fos  = 0.d0 
+  endif
 
   !     ==================================================================
   !     2) calcul du vecteur vitesse tangent (identique a celui fait ds fr
