@@ -326,11 +326,28 @@ if (iappel.eq.2) then
   tab_sol(4)%rugthe = 0.0012
 
   ! Initialization of the pourcent_sol array
-  do ifac = 1, nfmodsol
+  !  For 7 soil types:
+  !    water  = 1
+  !    forest = 2
+  !    divers = 3
+  !    rocks  = 4
+  !    diffus = 5
+  !    mixt   = 6
+  !    dense  = 7
+
+  ! For 5 soil types
+  !    water  = 1
+  !    forest = 2
+  !    divers = 3
+  !    minral = 4
+  !    bati   = 5
+
+  do ilelt = 1, nfmodsol
+    ifac = indsol(ilelt) 
     do isol = 1, nbrsol
-      pourcent_sol(ifac,isol) = 0
+      pourcent_sol(ilelt,isol) = 0
     enddo
-    pourcent_sol(ifac,4) = 100
+    pourcent_sol(ilelt,4) = 100
   enddo
 endif
 
