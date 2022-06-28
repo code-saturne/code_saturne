@@ -83,10 +83,9 @@ calculation domain is defined by its own directory (bearing the same name as the
 domain), but results are placed in a `RESU COUPLING` directory, with a sub-directory
 for each run, itself containing one sub-directory per coupled domain.
 
-Coupled cases are run through the standard the code_saturne run command, but
-require a coupling parameters file (`coupling parameters.py`) specified using
-the `--coupling` option. The run command must be called from the top-level (`Study`)
-directory, so an additional `Study/run.cfg` file is also used in this case.
+Coupled cases are run through the standard the code_saturne run command, which
+must be called from the top-level (`Study`) directory, so an additional
+`Study/run.cfg` file containing coupling metadata is also used in this case.
 Note that case-local scripts (such as `Study/Domain_1/DATA/run.cfg`)
 are still used by the master script to determine which parameter file to use.
 So in the coupled case, calculation results would not be placed in
@@ -206,8 +205,8 @@ code_saturne create --case Flow3 --case Flow4
 ```
 executed in the `STUDY` directory adds the case directories `Flow3` and `Flow4`.
 Whenever multiple cases are created simultaneously, it is assumed they may be
-coupled, so top-level `run.cfg` and `coupling_parameters.py` files and a
-`RESU_COUPLING` directory are also created.
+coupled, so a top-level `run.cfg and a `RESU_COUPLING` directory are
+also created.
 
 In each case's `DATA` directory, reference (minimal) `setup.xml` and
 `run.cfg` files are generated.
@@ -414,11 +413,12 @@ Optional section relative to associated setup. Allowed keywords are:
   a section named after each domain's (transformed to lowercase)
   may also be present to define additional options for that case.
 
-As the recommended `setup.xml` and coupling_parameters.py are used by default
-if not specified here but present in the directory structure, this section is
-optional, and useful only for compatibility with older cases containing multiple
-setup files (which is not recommended). An absolute path may also be used, but is
-usually not recommended as the case structure is then not self-contained.
+As the recommended `setup.xml` is used by default if not specified here but
+present in the directory structure, this section is optional except for
+top-level coupled case `run.cfg` files, and useful only for compatibility
+with older cases containing multiple setup files (which is not recommended).
+An absolute path may also be used, but is usually not recommended as the case
+structure is then not self-contained.
 
 ### [job_defaults]
 <!-- -->
