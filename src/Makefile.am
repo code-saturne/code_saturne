@@ -37,6 +37,11 @@ ple_locator.h
 noinst_HEADERS = \
 ple_config_defs.h
 
+EXTRA_DIST = \
+ple_defs.c \
+ple_coupling.c \
+ple_locator.c
+
 # Dependency rules
 #
 # - Not handled by AutoMake, since we do not define an execcutable or library
