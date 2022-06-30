@@ -97,14 +97,8 @@ if (iatsoil.ge.0) then
         call csexit(1)
       endif
 
-    endif ! End of the first call
-
-    if (iappel.eq.2) then
-      call usatsoil(iappel)
-
-      ! On definit une structure dediee a la resolution du probleme,
-      ! avec presence des constantes  propre a chaque face ainsi que
-      ! des 3 variables que l'on traitera
+      ! We allocate the structure use for the solving with soil constants for
+      ! each soil face and the 3 variables
       allocate(solution_sol(nfmodsol),stat = error)
 
       if (error /= 0) then
@@ -112,18 +106,23 @@ if (iatsoil.ge.0) then
         call csexit(1)
       endif
 
-      call solmoy( error )
-      if (error /= 0) then
-        write(nfecra,*) "Allocation error of atmodsol::solmoy"
-        call csexit(1)
-      endif
+    endif ! nfmodsol > 0
 
-      !Initialisation des variables Temps , Tempp , Total Water W1 et W2
-      call soliva()
+  endif ! End of the first call
 
-    endif ! End of second call
+  if (iappel.eq.2.and.nfmodsol.gt.0) then
+    call usatsoil(iappel)
 
-  endif ! nfmodsol > 0
+    call solmoy(error)
+    if (error /= 0) then
+      write(nfecra,*) "Allocation error of atmodsol::solmoy"
+      call csexit(1)
+    endif
+
+    !Initialisation des variables Temps , Tempp , Total Water W1 et W2
+    call soliva()
+
+  endif ! End of second call
 
 endif ! iatsoil > 0
 
