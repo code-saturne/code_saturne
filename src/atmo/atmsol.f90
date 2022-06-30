@@ -24,7 +24,18 @@
 !
 !> \brief    build constants and variables to describe ground model
 !>-     NB : soil model structures defined in module atsoil.f90
-subroutine atmsol
+
+!------------------------------------------------------------------------------
+! Arguments
+!------------------------------------------------------------------------------
+!   mode          name          role
+!------------------------------------------------------------------------------
+!> \param[in]     iappel        Calling number: 1 allocation, 2 fillign arrays
+!______________________________________________________________________________
+
+subroutine atmsol &
+     ( iappel )
+
 !===============================================================================
 ! Module files
 !===============================================================================
@@ -45,67 +56,72 @@ use atsoil
 use mesh
 
 !===============================================================================
+
 implicit none
-!===============================================================================
+
+! Arguments
+
+integer          iappel
 
 ! Local variables
 
-integer          iappel
 integer          error
 
 !===============================================================================
 
 if (iatsoil.ge.0) then
-  ! Premier appel: definition de nfmodsol
-  iappel = 1
-  call usatsoil(iappel)
-  !============
+  ! First call, define nfmodsol
+  if (iappel.eq.1) then
 
-  ! On fabrique une table de valeur des constantes utilisees dans le
-  ! modele sol
-  allocate(tab_sol(nbrsol),stat = error)
-  call solcat( error )
-
-  if (error /= 0) then
-    write(nfecra,*) "Allocation error of atmodsol::tab_sol"
-    call csexit(1)
-  endif
-
-  ! On continue seulement si nfmodsol > 0
-
-  if (nfmodsol.gt.0) then
-
-    ! On alloue le pourcentage de presence de sol pour chaque face de bord
-    ! sa definition se fera dans l'appel2 de usatsoil
-    allocate(pourcent_sol(nfmodsol,nbrsol),stat = error)
-
-    if (error /= 0) then
-      write(nfecra,*) "Allocation error of atmodsol::pourcent_sol"
-      call csexit(1)
-    endif
-
-    iappel = 2
     call usatsoil(iappel)
-    !============
 
-    ! On definit une structure dediee a la resolution du probleme,
-    ! avec presence des constantes  propre a chaque face ainsi que
-    ! des 3 variables que l'on traitera
-    allocate(solution_sol(nfmodsol),stat = error)
+    ! Allocation of table of values, TODO move to zone
+    allocate(tab_sol(nbrsol),stat = error)
+    call solcat( error )
 
     if (error /= 0) then
-      write(nfecra,*) "Allocation error of atmodsol::solution_sol"
+      write(nfecra,*) "Allocation error of atmodsol::tab_sol"
       call csexit(1)
     endif
 
-    call solmoy( error )
-    if (error /= 0) then
-      write(nfecra,*) "Allocation error of atmodsol::solmoy"
-      call csexit(1)
-    endif
+    ! We continue only if nfmodsol > 0
 
-    !Initialisation des variables Temps , Tempp , Total Water W1 et W2
-    call soliva()
+    if (nfmodsol.gt.0) then
+
+      ! We allocate the percentage of soil for all faces, its definition is done th the second
+      ! call of usatsoil
+      allocate(pourcent_sol(nfmodsol,nbrsol),stat = error)
+
+      if (error /= 0) then
+        write(nfecra,*) "Allocation error of atmodsol::pourcent_sol"
+        call csexit(1)
+      endif
+
+    endif ! End of the first call
+
+    if (iappel.eq.2) then
+      call usatsoil(iappel)
+
+      ! On definit une structure dediee a la resolution du probleme,
+      ! avec presence des constantes  propre a chaque face ainsi que
+      ! des 3 variables que l'on traitera
+      allocate(solution_sol(nfmodsol),stat = error)
+
+      if (error /= 0) then
+        write(nfecra,*) "Allocation error of atmodsol::solution_sol"
+        call csexit(1)
+      endif
+
+      call solmoy( error )
+      if (error /= 0) then
+        write(nfecra,*) "Allocation error of atmodsol::solmoy"
+        call csexit(1)
+      endif
+
+      !Initialisation des variables Temps , Tempp , Total Water W1 et W2
+      call soliva()
+
+    endif ! End of second call
 
   endif ! nfmodsol > 0
 

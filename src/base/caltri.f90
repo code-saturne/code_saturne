@@ -517,11 +517,11 @@ if (iporos.ge.1) then
 endif
 
 !===============================================================================
-! Initialization for the atmospheric soil model
+! Initialization for the atmospheric soil model (1st pass)
 !===============================================================================
 
 if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
-  call atmsol()
+  call atmsol(1)
 endif
 
 !==============================================================================
@@ -636,6 +636,14 @@ endif
 
 iterns = -1
 call phyvar(nvar, nscal, iterns, dt)
+
+!===============================================================================
+! Initialization for the atmospheric soil model (2nd pass)
+!===============================================================================
+
+if (ippmod(iatmos).ge.2.and.iatsoil.eq.1) then
+  call atmsol(2)
+endif
 
 !===============================================================================
 ! Initializations for the 1D thermal wall module
