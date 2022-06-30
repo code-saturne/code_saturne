@@ -172,7 +172,7 @@ $(LDADD_BLAS) \
 $(CUDA_LDFLAGS) $(CUDA_LIBS) \
 $(LTLIBINTL) \
 $(FCLIBS)
-libsaturne_la_LDFLAGS = -no-undefined -release 7.2
+libsaturne_la_LDFLAGS = -no-undefined -release 7.3
 
 libcs_solver_la_SOURCES = cs_solver.c
 libcs_solver_la_LIBADD = libsaturne.la \
@@ -192,7 +192,7 @@ $(LDADD_BLAS) \
 $(CUDA_LDFLAGS) $(CUDA_LIBS) \
 $(LTLIBINTL) \
 $(FCLIBS)
-libcs_solver_la_LDFLAGS = -no-undefined -release 7.2
+libcs_solver_la_LDFLAGS = -no-undefined -release 7.3
 
 endif
 

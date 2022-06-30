@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 7.2.0 (June 30 2022)
+----------------------------
+
 User changes:
 
 - Fixes errors with Python >= 3.10 due to non-robust version tests.
@@ -13,9 +16,6 @@ User changes:
   * Some PETSc structures are cas as (void *) pointers to avoid propagating
     compile warnings due to PETSc headers, which can now be included
     more sparingly.
-
-- Drop support of AMD ACML (which is end-of-life) and IBM ESSL BLAS libraries,
-  which were only used in unit tests comparisons.
 
 - Subdivision of warped faces now only modifies boundary faces.
 
@@ -32,6 +32,9 @@ Architectural changes:
 - Debug wrapper and other tool wrappers are now configured in the
   `run.cfg` file, and can be directly defined through the
   `code_saturne run` command-line arguments.
+
+- Drop support of AMD ACML (which is end-of-life) and IBM ESSL BLAS libraries,
+  which were only used in unit tests comparisons.
 
 Bug fixes:
 
