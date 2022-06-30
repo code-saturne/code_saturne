@@ -1,28 +1,28 @@
-# ==============================================================================
-#  This file is part of the "Parallel Location and Exchange" library,
-#  intended to provide mesh or particle-based code coupling services.
+#===============================================================================
+# This file is part of the "Parallel Location and Exchange" library,
+# intended to provide mesh or particle-based code coupling services.
 #
-#  Copyright (C) 2005-2022  EDF S.A.
+# Copyright (C) 2005-2022  EDF S.A.
 #
-#  This library is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU Lesser General Public
-#  License as published by the Free Software Foundation; either
-#  version 2.1 of the License, or (at your option) any later version.
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
 #
-#  This library is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
 #
-#  You should have received a copy of the GNU Lesser General Public
-#  License along with this library; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# ==============================================================================
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#===============================================================================
 
-# ==============================================================================
+#===============================================================================
 # Python utility module, facilitating the use of PLE for the coupling of
 # a python code with code_saturne.
-# ==============================================================================
+#===============================================================================
 
 mpi4pypath = '@mpi4pydir@'
 
@@ -37,12 +37,15 @@ try:
 except:
     _ple_avail = False
 
+#-------------------------------------------------------------------------------
+
 class pyple_coupler():
     """
     Coupling class based on PLE
     """
 
-    # ----------------------------------
+    #---------------------------------------------------------------------------
+
     def __init__(self,
                  run_dir=None,
                  verbosity=1,
@@ -102,10 +105,9 @@ class pyple_coupler():
         self.has_ple = False
         # Check for MPI and PLE presence
         self.check_mpi_status()
-    # ----------------------------------
 
+    #---------------------------------------------------------------------------
 
-    # ----------------------------------
     def _parse_cmd_line(self, argv):
         """
         Parse the command line in launch script
@@ -135,10 +137,9 @@ class pyple_coupler():
         (options, args) = parser.parse_known_args(argv)
 
         self.cmd_line_options = options
-    # ----------------------------------
 
+    #---------------------------------------------------------------------------
 
-    # ----------------------------------
     def init_log(self):
         """
         Init the log file
@@ -179,10 +180,8 @@ class pyple_coupler():
             self.logger.info("  '%s' pycoupler usage log " % self.name)
             self.logger.info(" ===================================== ")
 
-    # ----------------------------------
+    #---------------------------------------------------------------------------
 
-
-    # ----------------------------------
     def log(self, msg, verbosity = 0):
         """
         Write a message to the log file.
@@ -201,10 +200,9 @@ class pyple_coupler():
             self.logger.info(msg)
         else:
             self.logger.debug(msg)
-    # ----------------------------------
 
+    #---------------------------------------------------------------------------
 
-    # ----------------------------------
     def check_mpi_status(self):
         """
         Check that MPI and PLE are available and initialized.
@@ -232,10 +230,9 @@ class pyple_coupler():
 
         self.base_comm  = ple_init.get_comm_world()
         self.world_rank = self.base_comm.rank
-    # ----------------------------------
 
+    #---------------------------------------------------------------------------
 
-    # ----------------------------------
     def init_coupling(self, app_name=None, app_type=None):
         """
         Start the coupling communicator based on the PLE coupling library
@@ -296,10 +293,9 @@ class pyple_coupler():
 
         # Print info concerning the coupling mpi set to log
         self.ple_set.dump()
-    # ----------------------------------
 
+    #---------------------------------------------------------------------------
 
-    # ----------------------------------
     def get_app_ranks(self, app_name):
         """
         Retrieve the ranks in MPI_COMM_WORLD of a given app
@@ -319,10 +315,9 @@ class pyple_coupler():
                 break
 
         return app_ranks
-    # ----------------------------------
 
+    #---------------------------------------------------------------------------
 
-    # ----------------------------------
     def sync_coupling_status(self,
                              user_flags=ple_coupling.PLE_COUPLING_FLAGS['TS_MIN'],
                              end_coupling=False,
@@ -388,10 +383,18 @@ class pyple_coupler():
 
         return exit_status
 
-    # ----------------------------------
+    #---------------------------------------------------------------------------
 
+    def get_status(self):
+        """
+        Get status of apps from the coupling ple_mpi_set,
+        coherent with last sync call.
+        """
 
-    # ----------------------------------
+        return self.ple_set.get_status()
+
+    #---------------------------------------------------------------------------
+
     def finalize(self, force_exit=True):
         """
         Finalize the coupling and exit if necessary
@@ -408,4 +411,5 @@ class pyple_coupler():
 
         if force_exit:
             sys.exit(0)
-    # ----------------------------------
+
+#-------------------------------------------------------------------------------

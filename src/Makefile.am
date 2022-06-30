@@ -64,6 +64,16 @@ libple_objs += \
 ple_coupling.o
 endif
 
+ple_dep_headers = \
+$(pleinclude_HEADERS) \
+$(noinst_HEADERS) \
+$(top_builddir)/ple_config.h \
+$(top_builddir)/ple_config_priv.h
+
+ple_defs.o: $(ple_dep_headers)
+ple_locator.o: $(ple_dep_headers)
+ple_coupling.o: $(ple_dep_headers)
+
 # Library
 
 libple.a: ${libple_objs}

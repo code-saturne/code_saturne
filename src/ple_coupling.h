@@ -358,6 +358,17 @@ ple_coupling_mpi_intracomm_create(MPI_Comm   base_comm,
                                   int        local_range[2],
                                   int        distant_range[2]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get base communicator of an PLE coupling MPI set
+ *
+ * \param[in] s pointer to PLE coupling MPI set info structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+MPI_Comm
+ple_coupling_mpi_set_get_base_comm(const ple_coupling_mpi_set_t *s);
+
 /*----------------------------------------------------------------------------
  * Dump printout of an PLE coupling MPI set info structure.
  *
