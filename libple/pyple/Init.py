@@ -1,29 +1,28 @@
-# ==============================================================================
-#   This file is part of the "Parallel Location and Exchange" library,
-#   intended to provide mesh or particle-based code coupling services.
+#===============================================================================
+# This file is part of the "Parallel Location and Exchange" library,
+# intended to provide mesh or particle-based code coupling services.
 #
-#   Copyright (C) 2005-2022  EDF S.A.
+# Copyright (C) 2005-2022  EDF S.A.
 #
-#   This library is free software; you can redistribute it and/or
-#   modify it under the terms of the GNU Lesser General Public
-#   License as published by the Free Software Foundation; either
-#   version 2.1 of the License, or (at your option) any later version.
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
 #
-#   This library is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#   Lesser General Public License for more details.
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
 #
-#   You should have received a copy of the GNU Lesser General Public
-#   License along with this library; if not, write to the Free Software
-#   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-# ==============================================================================
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#===============================================================================
 
-# ==============================================================================
-# MPI UTILITIES FOR EASIER USE BY EXTERNAL CODES
-# ==============================================================================
+#===============================================================================
+# MPI utilities for easier use by external codes.
+#===============================================================================
 
-# ==============================================================================
 def mpi_initialized():
     """
     This function checks if the python script was launched with MPI.
@@ -43,9 +42,9 @@ def mpi_initialized():
         return False
 
     return True
-# ==============================================================================
 
-# ==============================================================================
+#-------------------------------------------------------------------------------
+
 def get_comm_world():
     """
     This function returns the MPI_COMM_WORLD communicator which can then
@@ -57,4 +56,5 @@ def get_comm_world():
     base_comm = MPI.COMM_WORLD
 
     return base_comm
-# ==============================================================================
+
+#-------------------------------------------------------------------------------

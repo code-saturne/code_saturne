@@ -1060,7 +1060,6 @@ ple_coupling_mpi_set_get_base_comm(const ple_coupling_mpi_set_t *s)
   }
 
   return s->base_comm;
-
 }
 
 /*----------------------------------------------------------------------------*/
