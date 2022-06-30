@@ -824,12 +824,12 @@ if (iand(vcopt%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
   call field_get_val_v(ivsten, visten)
 
   do iel = 1, ncel
-    viscce(1,iel) = visten(1,iel) + viscl(iel)
-    viscce(2,iel) = visten(2,iel) + viscl(iel)
-    viscce(3,iel) = visten(3,iel) + viscl(iel)
-    viscce(4,iel) = visten(4,iel)
-    viscce(5,iel) = visten(5,iel)
-    viscce(6,iel) = visten(6,iel)
+    viscce(1,iel) = vcopt%idifft*visten(1,iel) + viscl(iel)
+    viscce(2,iel) = vcopt%idifft*visten(2,iel) + viscl(iel)
+    viscce(3,iel) = vcopt%idifft*visten(3,iel) + viscl(iel)
+    viscce(4,iel) = vcopt%idifft*visten(4,iel)
+    viscce(5,iel) = vcopt%idifft*visten(5,iel)
+    viscce(6,iel) = vcopt%idifft*visten(6,iel)
   enddo
 
   iwarnp = vcopt%iwarni
