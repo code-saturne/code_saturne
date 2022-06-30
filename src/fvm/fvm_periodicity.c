@@ -1147,8 +1147,6 @@ fvm_periodicity_get_equiv_id(const fvm_periodicity_t  *this_periodicity,
  *   tr_id            <-- id of transformation we are interested in
  *   matrix           --> coefficients of transformation matrix
  *
- * returns:
- *   periodicity transform's matrix
  *---------------------------------------------------------------------------*/
 
 void
@@ -1176,6 +1174,36 @@ fvm_periodicity_get_matrix(const fvm_periodicity_t  *this_periodicity,
         matrix[i][j] = 0.0;
     }
   }
+}
+
+/*----------------------------------------------------------------------------
+ * Return a periodicity transformation's matrix.
+ *
+ * parameters:
+ *   this_periodicity <-- pointer to periodicity structure
+ *   tr_id            <-- id of transformation we are interested in
+ *   matrix           <-- coefficients of transformation matrix
+ *
+ *---------------------------------------------------------------------------*/
+
+void
+fvm_periodicity_set_matrix(const fvm_periodicity_t  *this_periodicity,
+                           int                       tr_id,
+                           double                    matrix[3][4])
+{
+  int i, j;
+  _transform_t  *transform = NULL;
+
+  if (this_periodicity != NULL)
+    if (tr_id >= 0 && tr_id < this_periodicity->n_transforms) {
+
+      transform = this_periodicity->transform[tr_id];
+
+      for (i = 0; i < 3; i++) {
+        for (j = 0; j < 4; j++)
+          transform->m[i][j] = matrix[i][j];
+      }
+    }
 }
 
 /*----------------------------------------------------------------------------
