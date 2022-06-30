@@ -343,7 +343,7 @@ if (iappel.eq.2) then
   !    bati   = 5
 
   do ilelt = 1, nfmodsol
-    ifac = indsol(ilelt) 
+    ifac = indsol(ilelt)
     do isol = 1, nbrsol
       pourcent_sol(ilelt,isol) = 0
     enddo
