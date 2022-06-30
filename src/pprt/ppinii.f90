@@ -707,14 +707,6 @@ iqv0 = 0
 nvert = 1
 kvert = 20
 
-! flag to use the soil model (if humid atmosphere)
-iatsoil = 0
-! Initial values for soil variables
-tsini  = 20.d0   !TSINI  : Surface ground temperature
-tprini = 20.d0   !TPRINI : Deep ground temperature
-qvsini = 0.d0    !QVSINI : Ground humidity
-tmer   = 20.d0   !Sea temperature
-
 !  -------------------------------------------------------------------------------
 !  Microphysics parameterization options
 !  -------------------------------------------------------------------------------

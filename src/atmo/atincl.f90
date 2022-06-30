@@ -322,8 +322,8 @@ double precision, allocatable, dimension(:,:) :: iru, ird, solu, sold
 
 ! 3.0 Data specific to the ground model
 !-------------------------------------------------------------------------------
-!> iatsoil  --> flag to use the ground model
-integer, save:: iatsoil
+!> Flag to use the ground model (0 off, 1 on)
+integer, save:: iatsoil = 0
 
 !> Water content of the first ground reservoir
 double precision, save:: w1ini

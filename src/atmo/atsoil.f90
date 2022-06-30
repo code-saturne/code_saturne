@@ -83,13 +83,13 @@ end type variables_sol
 ! (filled in usispu/cs_user_parameters)
 
 !> initial soil surface temperature
-double precision :: tsini
+double precision :: tsini = 20.d0
 !> initial deep soil temperature
-double precision :: tprini
+double precision :: tprini = 20.d0
 !> initial soil specific humidity
-double precision :: qvsini
+double precision :: qvsini = 0.d0
 !> Sea surface temperature
-double precision :: tmer
+double precision :: tmer = 20.d0
 
 !> array of the different features of each soil category
 type(categorie_sol) , dimension(:) , allocatable :: tab_sol
