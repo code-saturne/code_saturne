@@ -715,10 +715,11 @@ _build_sd_desc(int        n_fields,
  * Negative component ids in the second position mean all components are used.
  *
  * parameters:
- *   name     <-- name of associated decription
- *   n_fields <-- number of multiplying fields
- *   field_id <-- array of ids of multiplying fields
- *   comp_id  <-- array of ids of multiplying components
+ *   name         <-- name of associated decription
+ *   n_fields     <-- number of multiplying fields
+ *   field_id     <-- array of ids of multiplying fields
+ *   comp_id      <-- array of ids of multiplying components
+ *   is_intensive <-> is resulting data intensive ?
  *
  * returns:
  *   id of matching simple data definition
@@ -729,7 +730,7 @@ _find_or_add_sd(const char  *name,
                 int          n_fields,
                 const int    f_id[],
                 const int    c_id[],
-                bool         *is_intensive)
+                bool        *is_intensive)
 {
   char sd_desc[256];
 
@@ -738,6 +739,13 @@ _find_or_add_sd(const char  *name,
   if (n_fields < 1)
     bft_error(__FILE__, __LINE__, 0,
               _("Definition of simple data requires at least one field id."));
+
+  /* Check if all associated fields are intensive */
+
+  for (int i = 0; i < n_fields; i++) {
+    const cs_field_t *f = cs_field_by_id(f_id[i]);
+    *is_intensive = (*is_intensive) && (f->type & CS_FIELD_INTENSIVE);
+  }
 
   /* Check if this definition has already been provided (assume field and
      component ids are given in same order; at worse, if this is not the case
@@ -750,11 +758,6 @@ _find_or_add_sd(const char  *name,
 
   for (sd_id = 0; sd_id < _n_moment_sd_defs; sd_id++) {
     bool is_different = false;
-    *is_intensive =  true;
-    for (int i = 0; i < n_fields; i++) {
-      const cs_field_t *f = cs_field_by_id(f_id[i]);
-      *is_intensive = (*is_intensive) && (f->type & CS_FIELD_INTENSIVE);
-    }
     const int *msd = _moment_sd_defs[sd_id];
     const int stride = 2 + msd[1];
     if (n_fields != msd[2])
@@ -1538,7 +1541,7 @@ cs_time_moment_define_by_field_ids(const char                *name,
                                    const char                *restart_name)
 {
   int m_id = -1;
-  bool is_intensive;
+  bool is_intensive = true;
   int sd_id =_find_or_add_sd(name, n_fields, field_id, component_id,
                              &is_intensive);
 
@@ -1676,7 +1679,8 @@ cs_time_moment_define_by_func(const char                *name,
         break;
       }
     }
-  } else { /* Build field matching moment */
+  }
+  else { /* Build field matching moment */
     int type_flag = CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR;
     if (is_intensive)
       type_flag |= CS_FIELD_INTENSIVE;
