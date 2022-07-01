@@ -278,7 +278,7 @@ _dot_product(cs_saddle_system_t   *ssys,
   cs_real_t  *x1 = x, *x2 = x + ssys->max_x1_size;
   cs_real_t  *y1 = y, *y2 = y + ssys->max_x1_size;
 
-  /* First part x1 and y1 whose DoFs are shared among processes */
+  /* First part x1 and y1 whose DoFs may be shared among processes */
 
   if (rset != NULL) {
 
@@ -308,6 +308,13 @@ _dot_product(cs_saddle_system_t   *ssys,
                          y1,
                          y1);
   }
+  else {
+
+    dp_value = cs_dot(ssys->x1_size, x1, y1);
+
+  }
+
+  /* Second part: x2 and y2, DoFs which are not shared */
 
   dp_value += cs_dot(ssys->x2_size, x2, y2);
 
