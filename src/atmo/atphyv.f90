@@ -352,12 +352,10 @@ do iel = 1, ncel
 
   ! Celcius temperature of the air parcel
   cpro_tempc(iel) = tliq + (clatev/cp0)*yw_liq - tkelvi
-  lrhum = rair*(1.d0 - yw_liq + (rvsra - 1.d0)*(qwt - yw_liq))
   ! liquid water content
   cpro_liqwt(iel) = yw_liq
-  !Celcius temperature of the air parcel
-  cpro_tempc(iel) = tliq + (clatev/cp0)*yw_liq - tkelvi
   !density
+  lrhum = rair*(1.d0 - yw_liq + (rvsra - 1.d0)*(qwt - yw_liq))
   crom(iel) = pp/(lrhum*(tliq + (clatev/cp0)*yw_liq))
 
 enddo

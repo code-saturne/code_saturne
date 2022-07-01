@@ -67,9 +67,9 @@ end type categorie_sol
 !> Class definition of soil_variables
 type variables_sol
   type(categorie_sol) :: constantes
-!> soil temperature
+!> Soil temperature (in Celsius)
   double precision :: temp_sol
-!> deep soil temperature
+!> Soil potential temperature
   double precision :: tempp
 !> total water content
   double precision :: total_water

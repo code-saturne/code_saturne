@@ -866,11 +866,11 @@ _convert_from_l93_to_wgs84(void)
 
   cs_glob_atmo_option->longitude = ((atan(-(cs_glob_atmo_option->x_l93-xs)
                                           /(cs_glob_atmo_option->y_l93-ys)))/n
-                                    + 3*cs_math_pi/180)/cs_math_pi*180;
+                                    + 3.*cs_math_pi/180.)/cs_math_pi*180.;
   cs_glob_atmo_option->latitude
     = asin(tanh((log(c/sqrt(  cs_math_pow2(cs_glob_atmo_option->x_l93-xs)
                             + cs_math_pow2(cs_glob_atmo_option->y_l93-ys)))/n)
-                +e*atanh(e*tanh(t3))))/cs_math_pi*180;
+                +e*atanh(e*tanh(t3))))/cs_math_pi*180.;
 }
 
 /*----------------------------------------------------------------------------*/
