@@ -26,8 +26,8 @@ SMGR
 ====
 
 This document presents the STUDYMANAGER (SMGR) command. The aim of this command
-is to drive code_saturne's cases automatically, to compare checkpoint files and
-to display results.
+is to drive code_saturne's cases automatically, to compare checkpoint files,
+to display results and to generate reports.
 
 SMGR is a small framework to automate the launch of code_saturne computations
 and do some operations on new results.
@@ -36,14 +36,15 @@ The script needs a source directory of code_saturne cases, called the
 **repository**, which will be run in a **destination** directory.
 
 The **destination** directory structure only contains the required files for
-SMGR functionalities. Thus, only `POST` and `<CASE>` directories will be found
-in duplicated studies. In the same way, only `RESU/<run_id>` directories will be
-found in `<CASE>`.
+SMGR functionalities. Thus, only `POST`, `REPORT` and `<CASE>` directories will
+be found in duplicated studies. In the same way, only `RESU/<run_id>`
+directories will be found in `<CASE>`.
 
 For each duplicated case, SMGR can run the case, compare the obtained checkpoint
 file with the previous one from a reference destination repository,
 and plot curves in order to illustrate the computations. All generated figures are
-batched in`report_figures.pdf`.
+batched in`report_figures.pdf`. For each duplicated study, SMGR can generate the
+description report based on the latex file in the `REPORT` folder.
 
 In the **repository**, previous results of computations are required only for
 checkpoint files comparison purposes. They can be also useful, if the user needs
@@ -102,6 +103,7 @@ Majors command-line options are detailed here:
   Cases are sorted by number of processors and level of dependency.
 - `--slurm-batch-wtime=M` specify the wall time limit in hours in slurm batch
   mode (3 hours by default)
+- `--report` generate description report
 
 Examples
 --------
@@ -132,6 +134,10 @@ Examples
   ```
   $ code_saturne smgr -f sample.xml -c -p
   ```
+- run, plot results and generate report in **destination**
+  ```
+  $ code_saturne smgr -f sample.xml -rp --report
+  ```
 - run cases tagged "coarse" (standing for coarse mesh for example) _and_ "hr"
   (standing for high Reynolds for example) only for 2 time iterations in
   destination directory of path `../RUNS/RIBS` (`RIBS`} will be created, `RUNS`
@@ -151,6 +157,10 @@ Examples
 
 `report_figures.pdf` is generated only if the option `-p, --post` is present in
 the command line.
+
+`write-up.pdf` is generated only if the option `--report` is present in the
+command line. The content of POST folder in **destination** is not overwriten
+if the option `-p, --post` is not also present in the command line.
 
 SMGR parameter file
 ===================

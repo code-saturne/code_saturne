@@ -104,6 +104,10 @@ def process_cmd_line(argv, pkg):
                       action="store_true", dest="post", default=False,
                       help="postprocess results of computations")
 
+    parser.add_option("--report",
+                      action="store_true", dest="sheet", default=False,
+                      help="generate V&V description report")
+
     parser.add_option("-m", "--mail", dest="addresses", default="",
                       type="string", metavar="ADDRESS1 ADDRESS2 ...",
                       help="addresses for sending the reports")
@@ -311,7 +315,7 @@ def run_studymanager(pkg, options):
 
     # Print header
     report_in_file = False
-    if options.compare or options.post or options.runcase:
+    if options.compare or options.post or options.runcase or options.sheet:
         report_in_file = True
 
     studies.reporting(" -------------", report=report_in_file)
@@ -351,7 +355,7 @@ def run_studymanager(pkg, options):
     if options.test_compilation:
         studies.test_compilation()
 
-    if options.compare or options.post or options.runcase:
+    if options.compare or options.post or options.runcase or options.sheet:
 
         # Create dependency graph based on all studies and cases
         studies.dump_graph()
@@ -370,7 +374,7 @@ def run_studymanager(pkg, options):
 
     # Create all studies and all cases
 
-    if options.runcase or options.post:
+    if options.runcase or options.post or options.sheet:
         studies.create_studies(options.runcase)
 
     # Preprocessing and run all cases
@@ -402,14 +406,17 @@ def run_studymanager(pkg, options):
         studies.postpro()
         studies.plot()
 
-    studies.reporting("\n --------------------", report=report_in_file)
-    studies.reporting(" End of Study Manager", report=report_in_file)
-    studies.reporting(" --------------------", report=report_in_file)
-
     # Reporting - attached files are either pdf or
     # raw tex files if pdflatex is disabled
     if options.post:
         attached_file = studies.build_reports("report_figures")
+
+    if options.sheet:
+        studies.build_description_report()
+
+    studies.reporting("\n --------------------", report=report_in_file)
+    studies.reporting(" End of Study Manager", report=report_in_file)
+    studies.reporting(" --------------------", report=report_in_file)
 
     if len(options.addresses.split()) > 0:
         send_report(pkg.code_name, studies.logs(),

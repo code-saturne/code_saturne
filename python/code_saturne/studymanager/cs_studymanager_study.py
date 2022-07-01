@@ -1118,6 +1118,7 @@ class Studies(object):
         self.__postpro           = options.post
         self.__slurm_batch_size  = options.slurm_batch_size
         self.__slurm_batch_wtime = options.slurm_batch_wtime
+        self.__sheet             = options.sheet
         self.__default_fmt       = options.default_fmt
         # do not use tex in matplotlib (built-in mathtext is used instead)
         self.__dis_tex           = options.disable_tex
@@ -1257,7 +1258,7 @@ class Studies(object):
                     + " the command line option (--dest=..).\n"
                 self.reporting(msg, report=False, exit=True)
 
-        if options.runcase or options.compare or options.post:
+        if options.runcase or options.compare or options.post or options.sheet:
 
             # create if necessary the destination directory
 
@@ -1493,20 +1494,63 @@ class Studies(object):
             # create empty study
             cr_study.create()
 
-        # write content of MESH and POST is the study is new
-        # overwrite them if not disabled
+        # Write content of POST and REPORT in destination
+        # Content is overwritten by default if the study already exist
+        # Option --dow can be used to disable overwriting
+        # POST is not overwritten if --report option is used without --post
         if new_study or not self.__disable_ow:
 
-            if not new_study:
-                self.reporting("  /!\ POST folder is overwritten in %s"
-                               " use option --dow to disable overwrite" %study)
+            write_post = new_study or \
+                         not (self.__sheet and not self.__postpro)
 
             # Copy external scripts for post-processing
-            ref = os.path.join(repo_study, "POST")
+            if write_post:
+                if not new_study:
+                    self.reporting("    /!\ POST folder is overwritten in %s"
+                                   " use option --dow to disable overwrite" %study)
+                ref = os.path.join(repo_study, "POST")
+                if os.path.isdir(ref):
+                    des = os.path.join(dest_study, "POST")
+                    shutil.rmtree(des)
+                    shutil.copytree(ref, des, symlinks=True)
+
+            else:
+                if self.__sheet and not self.__postpro:
+                    self.reporting("    /!\ POST folder is not overwritten in %s"
+                                   " as --report option is used without --post"
+                                   %study)
+
+            # REPORT and STYLE folders are mandatory to generate
+            # V&V description report
+            # Copy REPORT folder
+            ref = os.path.join(repo_study, "REPORT")
             if os.path.isdir(ref):
-                des = os.path.join(dest_study, "POST")
-                shutil.rmtree(des)
+                des = os.path.join(dest_study, "REPORT")
+                if os.path.isdir(des):
+                    self.reporting("    /!\ REPORT folder is overwritten in %s"
+                                   " use option --dow to disable overwrite"
+                                   %study)
+                    shutil.rmtree(des)
                 shutil.copytree(ref, des, symlinks=True)
+            else:
+                if self.__sheet:
+                    self.reporting("    /!\ REPORT folder is mandatory in STUDY"
+                                   " folder to generate description report of"
+                                   " study %s" %study)
+
+            # Copy STYLE folder
+            ref = os.path.join(self.__repo, "STYLE")
+            if os.path.isdir(ref):
+                des = os.path.join(self.__dest, "STYLE")
+                if os.path.isdir(des):
+                    shutil.rmtree(des)
+                shutil.copytree(ref, des, symlinks=True)
+            else:
+                if self.__sheet:
+                    self.reporting("    /!\ STYLE folder is mandatory in"
+                                   " REPOSITORY to generate description report"
+                                   " of study %s" %study)
+
         os.chdir(home)
 
     #---------------------------------------------------------------------------
@@ -2326,6 +2370,47 @@ class Studies(object):
         attached_files.append(doc.close())
 
         return attached_files
+
+    #---------------------------------------------------------------------------
+
+    def build_description_report(self):
+        """
+        Generate description report of the study
+        REPORT ans STYLE folders are mandatory
+        """
+
+        # save current location
+        save_dir = os.getcwd()
+
+        self.reporting('  o Generation of V&V description report')
+
+        for l, s in self.studies:
+
+            # change directory to make report pdf file
+            make_dir = os.path.join(self.__dest, l, "REPORT")
+            if os.path.isdir(make_dir):
+                os.chdir(make_dir)
+
+                log_pdf = open("make_pdf.log", mode='w')
+                cmd = "make pdf"
+                pdf_retval, t = run_studymanager_command(cmd, log_pdf)
+                log_pdf.close()
+
+                report_pdf = "write-up.pdf"
+                if os.path.isfile(report_pdf):
+                    self.reporting('    - write-up.pdf file was generated ' + \
+                                   'in ' + l + "/REPORT folder.")
+                else:
+                    self.reporting('    - ERROR: write-up.pdf file was not ' + \
+                                   'generated. See write-up.log and ' + \
+                                   'make_pdf.log in REPORT folder.')
+
+            else:
+                self.reporting('    - No REPORT folder: generation of ' + \
+                               'description file is aborted.')
+
+        # move to initial location
+        os.chdir(save_dir)
 
 #-------------------------------------------------------------------------------
 # class dependency_graph

@@ -56,6 +56,7 @@ An optional study directory containing:
 
 * A `MESH` directory containing the required mesh(es)
 * A `POST` directory for post-processing scripts (not used directly by the code)
+* A `REPORT` directory for description report (not used directly by the code)
 * One or several calculation directories
 
 Every calculation directory contains:

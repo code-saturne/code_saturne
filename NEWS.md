@@ -57,6 +57,8 @@ Studymanager:
 - New option (--slurm-batch-size=N with N>0) to submit batches of cases using
   the SLURM resource manager on cluster. Cases are sorted by number of
   processors and level of dependency.
+- New option (--report) to generate description report of studies based on latex
+  file in the STUDY/REPORT folder.
 
 Numerics:
 
