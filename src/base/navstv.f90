@@ -1484,12 +1484,10 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
   !                                          - GAMMA
 
   if (iestim(iescor).ge.0) then
-    init = 1
-
-    ! Allocate work arrays
-    call divmas(init, esflum, esflub, c_estim)
-
     call field_get_val_s(iestim(iescor), c_estim)
+
+    init = 1
+    call divmas(init, esflum, esflub, c_estim)
 
     if (ncetsm.gt.0) then
       !$omp parallel do private(iel) if(ncetsm > thr_n_min)
