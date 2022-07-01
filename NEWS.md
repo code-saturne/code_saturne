@@ -1,3 +1,10 @@
+Release 7.2.1 (not released yet)
+--------------------------------
+
+Bug fixes:
+
+- Fix crash when computing `iescor` error indicator.
+
 Release 7.2.0 (June 30 2022)
 ----------------------------
 
