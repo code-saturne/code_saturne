@@ -1596,8 +1596,7 @@ class case:
             if len(d.error) > 0:
                 self.error = d.error
 
-        if self.exec_solver:
-            s_path = self.generate_solver_script(exec_env)
+        s_path = self.generate_solver_script(exec_env)
 
         # Rename temporary file to indicate new status
 

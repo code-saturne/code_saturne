@@ -583,7 +583,10 @@ class domain(base_domain):
         results = os.listdir(results_dir)
         results.sort(reverse=True)
         for r in results:
-            m = os.path.join(results_dir, r, 'checkpoint', 'main.csc')
+            d = os.path.join(results_dir, r)
+            if d == self.exec_dir:
+                continue
+            m = os.path.join(d, 'checkpoint', 'main.csc')
             if not os.path.isfile(m):
                 m = os.path.join(results_dir, r, 'checkpoint', 'main')
             if os.path.isfile(m):
@@ -1238,8 +1241,10 @@ class domain(base_domain):
             # Check if preprocessor is needed or not
             if mesh_path[-4:] == ".csm":
                 # code_saturne mesh, no need to run preprocessor
-                self.symlink(mesh_path,
-                             os.path.join(self.exec_dir, _outputmesh))
+
+                if os.path.islink(_outputmesh):
+                    os.remove(_outputmesh)
+                self.symlink(mesh_path, _outputmesh)
 
                 retcode = 0
             else:
