@@ -1546,7 +1546,7 @@ cs_sles_petsc_set_cvg_criteria(const void  *context,
   if (sd == NULL)
     return; /* No need to continue. This will be done during the first call to
                the solve function */
-  
+
   KSPSetTolerances(sd->ksp, rtol, 1e-30, 1.e10, max_iter);
 }
 

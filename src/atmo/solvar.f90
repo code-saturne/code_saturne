@@ -158,8 +158,8 @@ do isol = 1, nfmodsol
     foir = soilvert(1)%foir
     fos  = soilvert(1)%fos
   else
-    foir = 0.d0 
-    fos  = 0.d0 
+    foir = 0.d0
+    fos  = 0.d0
   endif
 
   !     ==================================================================
