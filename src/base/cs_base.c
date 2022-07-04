@@ -184,6 +184,7 @@ static bool   _cs_trace = false;
 /* Additional cleanup steps */
 
 static cs_base_atexit_t  * _cs_base_atexit = NULL;
+static cs_base_sigterm_handler_t  * _cs_base_sigterm_handler = NULL;
 
 /* Additional MPI communicators */
 
@@ -661,6 +662,12 @@ _cs_base_backtrace_print(int  lv_start)
 static void
 _cs_base_sig_fatal(int  signum)
 {
+  if (_cs_base_sigterm_handler != NULL && signum == SIGTERM) {
+    _cs_base_sigterm_handler(signum);
+    _cs_base_sigterm_handler = NULL;
+    return;
+  }
+
   if (_cs_base_atexit != NULL) {
     _cs_base_atexit();
     _cs_base_atexit = NULL;
@@ -2166,6 +2173,22 @@ void
 cs_base_atexit_set(cs_base_atexit_t  *const fct)
 {
   _cs_base_atexit = fct;
+}
+
+/*----------------------------------------------------------------------------
+ * Set handler function for SIGTERM or similar.
+ *
+ * When first encountered, SIGTERM will call that handler if present,
+ * ther revert to the general handler if encountered again.
+ *
+ * parameters:
+ *   h <-- pointer tu function to be called
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_sigterm_handler_set(cs_base_sigterm_handler_t  *const h)
+{
+  _cs_base_sigterm_handler = h;
 }
 
 /*----------------------------------------------------------------------------

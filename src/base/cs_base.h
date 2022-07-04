@@ -76,6 +76,10 @@ BEGIN_C_DECLS
 
 typedef void (cs_base_atexit_t) (void);
 
+/* Function pointers for SIGTERM (or similar) handler */
+
+typedef void (cs_base_sigterm_handler_t) (int signum);
+
 /*=============================================================================
  * Global variable definitions
  *============================================================================*/
@@ -343,6 +347,19 @@ cs_base_warn(const char  *file_name,
 
 void
 cs_base_atexit_set(cs_base_atexit_t  *const fct);
+
+/*----------------------------------------------------------------------------
+ * Set handler function for SIGTERM or similar.
+ *
+ * When first encountered, SIGTERM will call that handler if present,
+ * ther revert to the general handler if encountered again.
+ *
+ * parameters:
+ *   h <-- pointer tu function to be called
+ *----------------------------------------------------------------------------*/
+
+void
+cs_base_sigterm_handler_set(cs_base_sigterm_handler_t  *const h);
 
 /*----------------------------------------------------------------------------
  * Clean a string representing options.

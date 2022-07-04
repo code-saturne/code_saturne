@@ -150,6 +150,29 @@ static cs_opts_t  opts;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle first SIGTERM by setting the max number of iterations to
+ * the current value..
+ *
+ * \param[in]  signum  signal number.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_sigterm_handler(int signum)
+{
+  cs_time_step_define_nt_max(cs_glob_time_step->nt_cur);
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                _("Signal %d received.\n"
+                  "--> computation interrupted by environment.\n"
+                  "\n"
+                  "    maximum time step number set to: %d\n"),
+                signum,
+                cs_glob_time_step->nt_max);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -169,6 +192,8 @@ _run(void)
 
   int  check_mask = 0;
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
+
+  cs_base_sigterm_handler_set(_sigterm_handler);
 
   /* System information */
 
