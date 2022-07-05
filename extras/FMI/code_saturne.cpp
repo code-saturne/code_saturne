@@ -1,5 +1,5 @@
 /*============================================================================
- * Functional Mock-up Unit main methods implementation
+ * Functional Mock-up Unit main methods implementation.
  *============================================================================*/
 
 /*
@@ -39,6 +39,7 @@
 #include <string>
 #include <string.h>
 #include <array>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -699,6 +700,9 @@ static void
 static void
 _advance(int   n)
 {
+  struct timeval  tv_time_0, tv_time_1;
+  (void)gettimeofday(&tv_time_0, NULL);
+
   string buffer = "advance " + to_string(n);
 
   string s = "Advancing " + to_string(n) + " iterations";
@@ -724,6 +728,14 @@ _advance(int   n)
         + string(buf_rcv);
     _cs_log(fmi2Warning, CS_LOG_WARNING, s);
   }
+
+  (void)gettimeofday(&tv_time_0, NULL);
+
+  long usec =   (tv_time_1.tv_sec - tv_time_0.tv_sec) * (long)1000000
+              + (tv_time_1.tv_usec - tv_time_0.tv_usec);
+  double sec = (double)usec / 1000000.;
+
+  cout << "Time to advance " << _instance_name << ": " << sec << endl;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -927,7 +939,7 @@ fmi2Status code_saturne::init()
 
   /* Initialize code_saturne calculation */
   cmd = "cd " + s_casename + " && " + s_code_saturne +
-        " run --param setup.xml --initialize --id='" + s_run_id + "'";
+        " run --initialize --id='" + s_run_id + "'";
 
 #if CS_DRY_RUN == 1
 
