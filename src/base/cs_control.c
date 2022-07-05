@@ -167,6 +167,10 @@ static double  _control_file_wt_last = -1.;
 static int     _control_advance_steps = -1;
 static int     _flush_nt = -1;
 
+/* Timer statistics */
+
+static cs_timer_counter_t   _control_t_tot = {.nsec = 0};
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -1522,8 +1526,18 @@ _parse_control_buffer(const char         *name,
 void
 cs_control_finalize(void)
 {
+  cs_timer_t t0 = cs_timer_time();
+
   _comm_finalize(&_cs_glob_control_comm);
   _queue_finalize(&_cs_glob_control_queue);
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_control_t_tot, &t0, &t1);
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Total elapsed time for controller:  %.3f s\n"),
+                _control_t_tot.nsec*1e-9);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1536,6 +1550,8 @@ cs_control_finalize(void)
 void
 cs_control_check_file(void)
 {
+  cs_timer_t t0 = cs_timer_time();
+
   long f_size = -1;
   char *buffer = NULL;
   const cs_time_step_t  *ts = cs_glob_time_step;
@@ -1667,6 +1683,9 @@ cs_control_check_file(void)
     bft_printf_flush();
     cs_time_plot_flush_all();
   }
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_control_t_tot, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
