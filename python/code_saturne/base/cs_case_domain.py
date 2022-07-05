@@ -1009,8 +1009,10 @@ class domain(base_domain):
                 elif not os.path.isdir(restart_input):
                     err_str += restart_input + ' is not a directory.\n\n.'
                 else:
-                    self.symlink(restart_input,
-                                 os.path.join(self.exec_dir, 'restart'))
+                    _restartlink = os.path.join(self.exec_dir, 'restart')
+                    if os.path.islink(_restartlink):
+                        os.remove(_restartlink)
+                    self.symlink(restart_input, _restartlink)
 
                     print(' Restart from ' + self.restart_input)
                     print('')
