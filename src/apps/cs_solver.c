@@ -152,15 +152,15 @@ static cs_opts_t  opts;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Handle first SIGTERM by setting the max number of iterations to
- * the current value..
+ * \brief Handle first SIGINT by setting the max number of iterations to
+ * the current value.
  *
  * \param[in]  signum  signal number.
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_sigterm_handler(int signum)
+_sigint_handler(int signum)
 {
   cs_time_step_define_nt_max(cs_glob_time_step->nt_cur);
 
@@ -193,7 +193,7 @@ _run(void)
   int  check_mask = 0;
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
 
-  cs_base_sigterm_handler_set(_sigterm_handler);
+  cs_base_sigint_handler_set(_sigint_handler);
 
   /* System information */
 

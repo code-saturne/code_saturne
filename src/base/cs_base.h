@@ -76,9 +76,9 @@ BEGIN_C_DECLS
 
 typedef void (cs_base_atexit_t) (void);
 
-/* Function pointers for SIGTERM (or similar) handler */
+/* Function pointers for SIGINT (or similar) handler */
 
-typedef void (cs_base_sigterm_handler_t) (int signum);
+typedef void (cs_base_sigint_handler_t) (int signum);
 
 /*=============================================================================
  * Global variable definitions
@@ -349,17 +349,17 @@ void
 cs_base_atexit_set(cs_base_atexit_t  *const fct);
 
 /*----------------------------------------------------------------------------
- * Set handler function for SIGTERM or similar.
+ * Set handler function for SIGINT or similar.
  *
- * When first encountered, SIGTERM will call that handler if present,
- * ther revert to the general handler if encountered again.
+ * When first encountered, SIGINT will call that handler if present,
+ * then revert to the general handler if encountered again.
  *
  * parameters:
- *   h <-- pointer tu function to be called
+ *   h <-- pointer to function to be called
  *----------------------------------------------------------------------------*/
 
 void
-cs_base_sigterm_handler_set(cs_base_sigterm_handler_t  *const h);
+cs_base_sigint_handler_set(cs_base_sigint_handler_t  *const h);
 
 /*----------------------------------------------------------------------------
  * Clean a string representing options.
