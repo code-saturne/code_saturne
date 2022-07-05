@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 Architectural changes:
 
+- FMI: modified FMU client and code_saturne controller communication
+  protocol to regroup input/output variables exchange and reduce latency.
+
 - Drop support for older EOS versions (prior to 1.8.0).
 
 Release 7.2.0 (June 30 2022)
@@ -31,15 +34,6 @@ User changes:
 
 - Remove legacy `cs_user_mass_source_terms` function.
 
-Architectural changes:
-
-- Debug wrapper and other tool wrappers are now configured in the
-  `run.cfg` file, and can be directly defined through the
-  `code_saturne run` command-line arguments.
-
-- Drop support of AMD ACML (which is end-of-life) and IBM ESSL BLAS libraries,
-  which were only used in unit tests comparisons.
-
 Bug fixes:
 
 - Balance by zone: fix crash in some configurations.
@@ -61,6 +55,15 @@ Bug fixes:
 
 - Boundary layer insertion: Take properly into account vertices with a
   prescribed displacement.
+
+Architectural changes:
+
+- Debug wrapper and other tool wrappers are now configured in the
+  `run.cfg` file, and can be directly defined through the
+  `code_saturne run` command-line arguments.
+
+- Drop support of AMD ACML (which is end-of-life) and IBM ESSL BLAS libraries,
+  which were only used in unit tests comparisons.
 
 Numerics CDO:
 

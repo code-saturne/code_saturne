@@ -28,7 +28,7 @@ can be used to generate an FMU based on code_saturne.
 
 The main steps are the following:
 * Open the FMU Builder;
-* Define every needed variables and static informations and save
+* Define every needed variable and static information and save
 them in a .fpd file;
 * Generate the project, creating a directory containing the XML file,
 auto-generated C++ files that should not be modified, and a C++ file named

@@ -28,25 +28,27 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctype.h>
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <iostream>
 #include <fstream>
-#include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <string.h>
 #include <array>
+#include <limits.h>
 #include <sys/time.h>
+#include <sys/time.h>
+#include <pthread.h>
+
+#include <netdb.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/time.h>
-#include <pthread.h>
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -58,8 +60,10 @@
 
 using namespace std;
 
-#define CS_DRY_RUN 0   // set to 1 to for simulation mode with no actual
+#define CS_DRY_RUN 0   // Set to 1 to for simulation mode with no actual
                        // connection to code_saturne.
+
+#define CS_TIMING 0    // Log some timings.
 
 /*============================================================================
  * Type definitions
@@ -98,12 +102,34 @@ typedef enum {
 
 typedef struct {
 
-  size_t                  buf_idx[4];    /* Buffer index (0: next command,
-                                            1: partial read start; 2: end,
-                                            3: size) */
+  size_t                  buf_idx[3];    /* Buffer index
+                                            (0: partial read start;
+                                            1: end,
+                                            2: size) */
   char                   *buf;           /* Buffer */
 
 } cs_control_queue_t;
+
+/* Save value references of read and written variables */
+
+typedef struct {
+
+  int  n_input;
+  int  n_output;
+
+  int  input_max;
+  int  output_max;
+
+  int  input_max_size;
+  int  output_max_size;
+
+  int     *input_ids;
+  int     *output_ids;
+
+  double  *input_vals;
+  double  *output_vals;
+
+} cs_variables_t;
 
 /*============================================================================
  * Static global variables
@@ -112,6 +138,7 @@ typedef struct {
 static int _n_iter = 0;
 static int _master_socket = -1;
 static int _cs_socket = -1;
+static int _cs_swap_endian = 0;
 
 static fmi2ComponentEnvironment  _component_environment = nullptr;
 static fmi2String                _instance_name = "[unnamed]";
@@ -146,7 +173,7 @@ static int _log_active[] = {-1,  /* events */
                             -1,  /* error */
                             -1,  /* fatal */
                             -1,  /* all */
-                            0,   /* comm */
+                             0,  /* comm */
                             -1,  /* launch */
                             -1}; /* trace */
 
@@ -154,9 +181,9 @@ static int _log_active[] = {-1,  /* events */
 
 cs_control_queue_t *_cs_glob_control_queue = NULL;
 
-/* Map for delayed notebook value settings */
+/* Structure for grouped notebook value settings */
 
-std::map<int, double> _queued_notebook_send;
+cs_variables_t *_cs_variables = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -294,9 +321,8 @@ _queue_initialize(void)
 
   queue->buf_idx[0] = 0;
   queue->buf_idx[1] = 0;
-  queue->buf_idx[2] = 0;
-  queue->buf_idx[3] = 32767;
-  queue->buf = (char *)malloc(queue->buf_idx[3]+1);
+  queue->buf_idx[2] = 32767;
+  queue->buf = (char *)malloc(queue->buf_idx[2]+1);
 
   return queue;
 }
@@ -317,13 +343,109 @@ _queue_finalize(cs_control_queue_t  **queue)
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Convert data from "little-endian" to "big-endian" or the reverse.
+ *
+ * parameters:
+ *   buf  <-> pointer to data location.
+ *   size <-- size of each item of data in bytes.
+ *   ni   <-- number of data items.
+ *----------------------------------------------------------------------------*/
+
+static void
+_swap_endian(void        *buf,
+             size_t       size,
+             size_t       ni)
+{
+  unsigned char  *pbuf = (unsigned char *)buf;
+
+  for (size_t i = 0; i < ni; i++) {
+
+    size_t shift = i * size;
+
+    for (size_t ib = 0; ib < (size / 2); ib++) {
+
+      unsigned char tmpswap = *(pbuf + shift + ib);
+      *(pbuf + shift + ib) = *(pbuf + shift + (size - 1) - ib);
+      *(pbuf + shift + (size - 1) - ib) = tmpswap;
+
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+
+/* Send a data on a socket */
+
+static void
+_send_sock(int       sock,
+           char     *buffer,
+           size_t    size,
+           size_t    ni)
+{
+  size_t start_id = 0;
+  size_t n_bytes = size*ni;
+
+#if CS_DRY_RUN == 1
+  return;
+#endif
+
+  if (_cs_swap_endian && size > 1)
+    _swap_endian(buffer, size, ni);
+
+  if (tracefile != NULL) {
+    if (size == 1) {
+      fprintf(tracefile, "== send %d bytes: [", (int)n_bytes);
+      _trace_buf(tracefile, buffer, n_bytes);
+      fprintf(tracefile, "]...\n");
+    }
+    else {
+      fprintf(tracefile, "== send %d values of size %d:\n", (int)ni, (int)size);
+      for (size_t i = 0; i < ni; i++) {
+        fprintf(tracefile, "    ");
+        for (size_t j = 0; j < size; j++)
+          fprintf(tracefile, " %x", (unsigned)buffer[i*size + j]);
+        fprintf(tracefile, "\n");
+      }
+    }
+    fflush(tracefile);
+  }
+
+  while (start_id < n_bytes) {
+
+    size_t end_id = start_id + SSIZE_MAX;
+    if (n_bytes < end_id)
+      end_id = n_bytes;
+    size_t n_loc = end_id - start_id;
+
+    ssize_t ret = send(sock, buffer+start_id, n_loc, 0);
+
+    if (ret < 1) {
+      string s0 = "Error sending buffer ";
+      string s2 = strerror(errno);
+      _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s2);
+      exit(EXIT_FAILURE);
+    }
+    else if (tracefile != NULL) {
+      fprintf(tracefile, "   sent %d bytes\n", (int)ret);
+      fflush(tracefile);
+    }
+
+    start_id += ret;
+  }
+
+  if (_cs_swap_endian && size > 1)  /* restore endiannes */
+    _swap_endian(buffer, size, ni);
+}
+
 /*----------------------------------------------------------------------------*/
 
 /* Send a message on a socket */
 
 static void
-_send_sock(int          sock,
-           const char  *str)
+_send_sock_str(int          sock,
+               const char  *str)
 {
 #if CS_DRY_RUN == 1
   return;
@@ -332,7 +454,7 @@ _send_sock(int          sock,
   size_t n = strlen(str)+1;
 
   if (tracefile != NULL) {
-    fprintf(tracefile, "== send %d values: [", (int)n);
+    fprintf(tracefile, "== send %d bytes: [", (int)n);
     _trace_buf(tracefile, str, n);
     fprintf(tracefile, "]...\n");
     fflush(tracefile);
@@ -355,151 +477,207 @@ _send_sock(int          sock,
 
 /*----------------------------------------------------------------------------*/
 
-/* Reception of a message on a socket */
+/* Receive data message (fixed size) on a socket */
 
 static void
-_recv_sock(int       socket,
-           char     *buffer,
-           size_t    len_buffer)
+_recv_sock(int                  socket,
+           char                *buffer,
+           cs_control_queue_t  *queue,
+           size_t               size,
+           size_t               ni)
 {
-  /* Cleaning buffer */
-  memset(buffer, 0, len_buffer);
+  size_t start_id = 0;
+  size_t n_bytes = size*ni;
 
-  if (tracefile != NULL) {
-    fprintf(tracefile, "== receiving up to %d bytes...\n",
-            (int)len_buffer);
-  }
+  /* Cleaning buffer */
+  memset(buffer, 0, n_bytes);
 
 #if CS_DRY_RUN == 1
   buffer[0] = '\0';
   return;
 #endif
 
-  ssize_t ret = recv(socket, buffer, len_buffer, 0);
+  /* Part of the message may already have been read to queue */
 
-  if (ret < 1) {
-    string s0 = "Error receiving data: ";
-    string s1;
-    if (errno != 0)
-      s1 = strerror(errno);
-    else
-      s1 = "code_saturne may have disconnected.";
-    _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s1);
-    exit(EXIT_FAILURE);
+  if (queue != NULL) {
+    ssize_t n_prv = queue->buf_idx[1] - queue->buf_idx[0];
+    if (n_prv > 0) {
+      if ((size_t)n_prv > n_bytes)
+        n_prv = n_bytes;
+      memcpy(buffer, queue->buf + queue->buf_idx[0], n_prv);
+      queue->buf_idx[0] += n_prv;
+      start_id = n_prv;
+    }
   }
-  else if (tracefile != NULL) {
-    fprintf(tracefile, "   received %d bytes: [", (int)ret);
-    _trace_buf(tracefile, buffer, ret);
-    fprintf(tracefile, "]\n");
-    fflush(tracefile);
+
+  while (start_id < n_bytes) {
+
+    size_t end_id = start_id + SSIZE_MAX;
+    if (n_bytes < end_id)
+      end_id = n_bytes;
+    size_t n_loc = end_id - start_id;
+
+    if (tracefile != NULL) {
+      fprintf(tracefile, "== receiving up to %d bytes, %d of %d bytes already buffered...\n",
+              (int)n_loc, (int)start_id, (int)n_bytes);
+    }
+
+    ssize_t ret = recv(socket, buffer + start_id, n_loc, 0);
+
+    if (ret < 1) {
+      string s0 = "Error receiving data: ";
+      string s1;
+      if (errno != 0)
+        s1 = strerror(errno);
+      else
+        s1 = "code_saturne may have disconnected.";
+      _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s1);
+      exit(EXIT_FAILURE);
+    }
+    else if (tracefile != NULL) {
+      fprintf(tracefile, "   received %d bytes: [", (int)ret);
+      if (size == 1)
+        _trace_buf(tracefile, buffer, ret);
+      fprintf(tracefile, "]\n");
+      fflush(tracefile);
+    }
+
+    start_id += ret;
+
   }
+
+  if (tracefile != NULL && size > 1) {
+    for (size_t i = 0; i < ni; i++) {
+      fprintf(tracefile, "    ");
+      for (size_t j = 0; j < size; j++)
+        fprintf(tracefile, " %x", (unsigned)buffer[i*size + j]);
+      fprintf(tracefile, "\n");
+    }
+  }
+
+  if (_cs_swap_endian && size > 1)
+    _swap_endian(buffer, size, ni);
 }
 
 /*----------------------------------------------------------------------------*/
 
-/* Reception of a message on a socket */
+/* Receive message (text expected) on a socket */
 
 static char *
 _recv_sock_with_queue(int                  socket,
                       cs_control_queue_t  *queue,
                       size_t               min_size)
 {
-  /* Read record from socket (skip if data still in queue) */
+  size_t start_id = queue->buf_idx[1] - queue->buf_idx[0];
+  ssize_t cut_id = -1;
 
-  ssize_t  n_loc_max = queue->buf_idx[3];
+  if (tracefile != NULL) {
+    fprintf(tracefile, "_recv_sock_with_queue: %d %d\n", (int)start_id, (int)min_size);
+  }
 
-  size_t start_id = queue->buf_idx[2] - queue->buf_idx[1];
+  /* Move previously read but not consumed data to beginning of queue */
 
-  if (queue->buf_idx[0] == 0) {
+  if (start_id > 0) {
+    memmove(queue->buf, queue->buf + queue->buf_idx[0], start_id);
 
-    /* Move previously read but not consumed data to beginning of queue */
+    queue->buf_idx[1] -= queue->buf_idx[0];
+    queue->buf_idx[0] = 0;
 
-    ssize_t n_prv = queue->buf_idx[2] - queue->buf_idx[1];
-    if (n_prv > 0) {
-      memmove(queue->buf, queue->buf + queue->buf_idx[1], n_prv);
+    for (size_t i = 0; i < start_id; i++) {
+      if (queue->buf[i] == '\0') {
+        cut_id = i;
+        break;
+      }
+    }
+  }
+
+  /* Read records from socket until complete string is read */
+
+  ssize_t n_loc_max = queue->buf_idx[2];
+
+  while (cut_id < 0) {
+
+    n_loc_max = queue->buf_idx[2] - start_id;
+
+    if (n_loc_max < 1) {
+      /* If we do not have a complete line, continue reading if possible */
+      queue->buf_idx[2] *= 2;
+      queue->buf = (char *)realloc(queue->buf, queue->buf_idx[2]);
+      n_loc_max = queue->buf_idx[2] - start_id;
     }
 
-    while (true) {
-
-      n_loc_max = queue->buf_idx[3] - start_id;
-
-      if (tracefile != NULL) {
-        fprintf(tracefile, "== receiving up to %d bytes...\n",
-                (int)n_loc_max);
+    if (tracefile != NULL) {
+      fprintf(tracefile, "== receiving up to %d bytes...\n",
+              (int)n_loc_max);
     }
 
 #if CS_DRY_RUN == 1
-      queue->buf[start_id] = '\0';
-      return;
+    queue->buf[start_id] =$ '\0';
+    return;
 #endif
 
-      ssize_t  ret = read(socket, queue->buf + start_id, n_loc_max);
+    ssize_t ret = (socket != NULL) ?
+      read(socket, queue->buf + start_id, n_loc_max) : 0;
 
-      if (ret < 1) {
-        string s0 = "Error receiving data: ";
-        string s1;
-        if (errno != 0)
-          s1 = strerror(errno);
-        else
-          s1 = "code_saturne may have disconnected.";
-        _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s1);
-        exit(EXIT_FAILURE);
-      }
-
-      if (tracefile != NULL) {
-        fprintf(tracefile, "   received %d bytes: [", (int)ret);
-        _trace_buf(tracefile, queue->buf + start_id, ret);
-        fprintf(tracefile, "]\n");
-        fflush(tracefile);
-      }
-
-      /* Check for end of command (end of line if not escaped
-         by continuation character such as "/" or ","
-         min_size should usually be 0, but could be set to a known size
-         to handle binary data in the future. */
-      size_t cut_id = start_id + ret - 1;
-      bool escape = false;
-      queue->buf_idx[2] = cut_id;
-      while (cut_id > min_size && queue->buf[cut_id] != '\0') {
-        if (queue->buf[cut_id] == ',' || queue->buf[cut_id] == '\\')
-          escape = true;
-        else if (queue->buf[cut_id] == '\n') {
-          if (escape == false)
-            break;
-          else
-            escape = false;
-        }
-        cut_id -= 1;
-      }
-      queue->buf_idx[1] = cut_id;
-      queue->buf[cut_id] = '\0';
-
-      start_id += ret;
-
-      /* If we do not have a complete line, continue reading if possible */
-      if (ret == n_loc_max && cut_id < 1) {
-        queue->buf_idx[3] *= 2;
-        queue->buf = (char *)realloc(queue->buf, queue->buf_idx[3]);
-      }
+    if (ret < 1) {
+      string s0 = "Error receiving data: ";
+      string s1;
+      if (errno != 0)
+        s1 = strerror(errno);
       else
-        break;
-
+        s1 = "code_saturne may have disconnected.";
+      _cs_log(fmi2Fatal, CS_LOG_FATAL, s0 + s1);
+      exit(EXIT_FAILURE);
     }
 
-  }  /* End of actual receive */
+    if (tracefile != NULL) {
+      fprintf(tracefile, "   received %d bytes: [", (int)ret);
+      _trace_buf(tracefile, queue->buf + start_id, ret);
+      fprintf(tracefile, "]\n");
+      fflush(tracefile);
+    }
 
-  /* Return pointer to next requested data to buffer,
-     after updating next pointer in buffer */
+    queue->buf_idx[1] = start_id + ret;
 
-  char *next_p = queue->buf + queue->buf_idx[0];
-  size_t n_cur = strlen(next_p);
+    /* Check for end of string */
 
-  queue->buf_idx[0] += n_cur;
+    for (ssize_t i = 0; i < ret; i++) {
+      if (queue->buf[start_id + i] == '\0') {
+        cut_id = start_id + i;
+        break;
+      }
+    }
 
-  if (queue->buf_idx[0] >= queue->buf_idx[1])
+  }
+
+  /* A full string has now been read, and data from following
+     reads may already be present also */
+
+  queue->buf_idx[0] = cut_id + 1;
+
+  /* Clean end of line */
+
+  for (ssize_t i = cut_id; i > 0; i--) {
+    char c = queue->buf[i];
+    if (c == ' '  || c == '\t' || c == '\n' || c == '\r' || c == '\f') {
+      queue->buf[i] = '\0';
+      cut_id = i;
+    }
+    else
+      break;
+  }
+
+  /* Set pointers to remaining part for next call */
+
+  if (queue->buf_idx[0] > queue->buf_idx[1]) {
     queue->buf_idx[0] = 0;
+    queue->buf_idx[1] = 0;
+  }
 
-  return next_p;
+  /* Return pointer to usable string in buffer
+     (always at the beginning of the buffer). */
+
+  return queue->buf;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -521,7 +699,7 @@ _comm_with_saturne(int   key)
   magic_buffer = new char[magic_string.size()+1]();
 
   /* code_saturne socket */
-  _recv_sock(_cs_socket, key_buffer, len_key);
+  _recv_sock(_cs_socket, key_buffer, NULL, 1, len_key);
 
   if (strncmp(key_s.c_str(), key_buffer, len_key) != 0) {
     _cs_log(fmi2Fatal, CS_LOG_ERROR,
@@ -529,16 +707,16 @@ _comm_with_saturne(int   key)
     exit(EXIT_FAILURE);
   }
 
-  _recv_sock(_cs_socket, magic_buffer, magic_string.size());
+  _recv_sock(_cs_socket, magic_buffer, NULL, 1, magic_string.size());
 
-  _send_sock(_cs_socket, magic_buffer);
+  _send_sock_str(_cs_socket, magic_buffer);
 
   _cs_log(fmi2OK, CS_LOG_ALL,
           "Connection between FMU client and code_saturne established");
 
   /* Iteration OK */
   char buf_rcv[13];
-  _recv_sock(_cs_socket, buf_rcv, 13);
+  _recv_sock(_cs_socket, buf_rcv, NULL,1, 13);
 
   delete[] key_buffer;
   delete[] magic_buffer;
@@ -656,6 +834,15 @@ _start_server(void *data)
     exit(EXIT_FAILURE);
   }
 
+  /* Test if system is big-endian */
+  _cs_swap_endian = 0;
+  unsigned int_endian = 0;
+  *((char *) (&int_endian)) = '\1';
+  if (int_endian == 1)
+    _cs_swap_endian = 1;
+
+  /* Create socket */
+
   if ((_cs_socket = accept(_master_socket,
                            (sockaddr *)&address,
                            (socklen_t*)&addrlen)) < 0) {
@@ -695,13 +882,169 @@ static void
   pthread_exit(nullptr);
 }
 
+/*----------------------------------------------------------------------------
+ * Initialize a variables grouping structure
+ *
+ * returns:
+ *   pointer to initialized control queue
+ *----------------------------------------------------------------------------*/
+
+static cs_variables_t *
+_variables_initialize(void)
+{
+  cs_variables_t *v = NULL;
+
+  v = (cs_variables_t *)malloc(sizeof(cs_variables_t));
+
+  v->n_input = 0;
+  v->n_output = 0;
+
+  v->input_max = 0;
+  v->output_max = 0;
+
+  v->input_max_size = 0;
+  v->output_max_size = 0;
+
+  v->input_ids = NULL;
+  v->output_ids = NULL;
+
+  v->input_vals = NULL;
+  v->output_vals = NULL;
+
+  return v;
+}
+
+/*----------------------------------------------------------------------------
+ * Finalize a variables grouping structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_variables_finalize(cs_variables_t  **v)
+{
+  if (v != NULL) {
+    if (*v == NULL)
+      return;
+    cs_variables_t  *_v = *v;
+
+    if (_v->input_max_size > 0) {
+      free(_v->input_ids);
+      free(_v->input_vals);
+    }
+    if (_v->output_max_size > 0) {
+      free(_v->output_ids);
+      free(_v->output_vals);
+    }
+
+    free(*v);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Add or set a variables input;
+ *
+ * return 0 if variable was already present, 1 if inserted
+ *----------------------------------------------------------------------------*/
+
+static int
+_variables_add_input(cs_variables_t  *v,
+                     int              id,
+                     double           val)
+{
+  int retval = 0;
+
+  assert(id >= 0);
+
+  if (id >= v->input_max) {
+
+    if (id >= v->input_max_size) {
+
+      if (v->input_max_size == 0)
+        v->input_max_size = 2;
+      while (id >= v->input_max_size)
+        v->input_max_size *= 2;
+
+      v->input_ids = (int *)realloc(v->input_ids,
+                                    v->input_max_size*sizeof(int));
+      v->input_vals = (double *)realloc(v->input_vals,
+                                        v->input_max_size*sizeof(double));
+
+      for (int i = v->input_max; i < v->input_max_size; i++) {
+        v->input_ids[i] = -1;
+        v->input_vals[i] = 0;
+      }
+    }
+
+    v->input_max = id + 1;
+  }
+
+  if (v->input_ids[id] < 0) {
+    retval = 1;
+    v->input_ids[id] = v->n_input;
+    v->n_input += 1;
+  }
+
+  v->input_vals[id] = val;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Add or get a variables output;
+ *
+ * return 0 if variable was already present, 1 if inserted
+ *----------------------------------------------------------------------------*/
+
+static int
+_variables_add_output(cs_variables_t  *v,
+                      int              id)
+{
+  int retval = 0;
+
+  assert(id >= 0);
+
+  if (id >= v->output_max) {
+
+    if (id >= v->output_max_size) {
+
+      if (v->output_max_size == 0)
+        v->output_max_size = 2;
+      while (id >= v->output_max_size)
+        v->output_max_size *= 2;
+
+      v->output_ids = (int *)realloc(v->output_ids,
+                                     v->output_max_size*sizeof(int));
+      v->output_vals = (double *)realloc(v->output_vals,
+                                         v->output_max_size*sizeof(double));
+
+      for (int i = v->output_max; i < v->output_max_size; i++) {
+        v->output_ids[i] = -1;
+        v->output_vals[i] = 0;
+      }
+    }
+
+    v->output_max = id + 1;
+  }
+
+  if (v->output_ids[id] < 0) {
+    retval = 1;
+    v->output_ids[id] = v->n_output;
+    v->n_output += 1;
+  }
+
+  return retval;
+}
+
 /*----------------------------------------------------------------------------*/
 
 static void
 _advance(int   n)
 {
+#if CS_TIMING == 1
   struct timeval  tv_time_0, tv_time_1;
   (void)gettimeofday(&tv_time_0, NULL);
+#endif
+
+  cs_variables_t *v = _cs_variables;
 
   string buffer = "advance " + to_string(n);
 
@@ -709,10 +1052,21 @@ _advance(int   n)
   _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
 #if CS_DRY_RUN == 1
+  {
+    for (int i = 0; i < v->output_max; i++) {
+      static long _counter = 0;
+      _counter += 1;
+      int id = v->output_ids[i];
+      if (id < 0)
+        continue;
+      v->output_vals[id] = (double)(_counter % 50) * 0.02;
+    }
+  }
+
   return;
 #endif
 
-  _send_sock(_cs_socket, buffer.c_str());
+  _send_sock_str(_cs_socket, buffer.c_str());
 
   /* receive 0 */
   char *buf_rcv = _recv_sock_with_queue(_cs_socket, _cs_glob_control_queue, 0);
@@ -721,37 +1075,50 @@ _advance(int   n)
     _cs_log(fmi2Warning, CS_LOG_WARNING, s);
   }
 
-  /* receive iteration OK */
-  buf_rcv = _recv_sock_with_queue(_cs_socket, _cs_glob_control_queue, 0);
-  if (strcmp(buf_rcv, "Iteration OK") != 0) {
-    s =   string(__func__) + ": expected \"Iteration OK\", not: "
-        + string(buf_rcv);
-    _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+  /* Get output notebook values */
+
+  if (v->n_output > 0) {
+    string s = "Get " + to_string(v->n_output) + " output variables";
+    _cs_log(fmi2OK, CS_LOG_TRACE, s);
+    _recv_sock(_cs_socket, (char *)_cs_variables->output_vals,
+               _cs_glob_control_queue,
+               sizeof(double), v->n_output);
   }
 
-  (void)gettimeofday(&tv_time_0, NULL);
+  /* Send input notebook values */
 
-  long usec =   (tv_time_1.tv_sec - tv_time_0.tv_sec) * (long)1000000
-              + (tv_time_1.tv_usec - tv_time_0.tv_usec);
-  double sec = (double)usec / 1000000.;
+  if (v->n_input > 0) {
+    string s = "Send " + to_string(v->n_input) + " input variables";
+    _send_sock(_cs_socket, (char *)_cs_variables->input_vals,
+               sizeof(double), v->n_input);
+  }
 
-  cout << "Time to advance " << _instance_name << ": " << sec << endl;
+  /* receive iteration OK */
+  if (n > 0) {
+
+    buf_rcv = _recv_sock_with_queue(_cs_socket, _cs_glob_control_queue, 0);
+    if (strcmp(buf_rcv, "Iteration OK") != 0) {
+      s =   string(__func__) + ": expected \"Iteration OK\", not: "
+          + string(buf_rcv);
+      _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+    }
+
+#if CS_TIMING == 1
+    (void)gettimeofday(&tv_time_1, NULL);
+
+    long usec =   (tv_time_1.tv_sec - tv_time_0.tv_sec) * (long)1000000
+                + (tv_time_1.tv_usec - tv_time_0.tv_usec);
+    double sec = (double)usec / 1000000.;
+
+    cout << "Time to advance " << _instance_name << ": " << sec << endl;
+#endif
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
 
-/* Queue notebook variable to send to the server */
-
-static void
-_queue_notebook_variable(int       fmi2ValueReference,
-                         double    value)
-{
-  _queued_notebook_send[fmi2ValueReference] = value;
-}
-
-/*----------------------------------------------------------------------------*/
-
-/* Send 'notebook_set variable value' to the server */
+/* Send 'notebook_add_input value' to the server */
 
 static void
 _set_notebook_variable(int          sock,
@@ -760,12 +1127,12 @@ _set_notebook_variable(int          sock,
 {
   string var_s(variable);
 
-  string buffer = "notebook_set " + var_s + " " + to_string(value);
+  string buffer = "notebook_add_input " + var_s + " " + to_string(value);
 
   string s = string(__func__) + ": sending " + string(variable);
   _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
-  _send_sock(sock, buffer.c_str());
+  _send_sock_str(sock, buffer.c_str());
 
 #if CS_DRY_RUN == 1
   return;
@@ -798,7 +1165,8 @@ _get_notebook_variable(int         sock,
   char *eptr = nullptr;
   double val = 0.;
   string var_s(variable);
-  string buffer = "notebook_get " + var_s;
+
+  string buffer = "notebook_add_output " + var_s;
 
   string s_log = string(__func__) + ": send query for " + string(variable);
   _cs_log(fmi2OK, CS_LOG_TRACE, s_log);
@@ -811,7 +1179,7 @@ _get_notebook_variable(int         sock,
 
 #else
 
-  _send_sock(sock, buffer.c_str());
+  _send_sock_str(sock, buffer.c_str());
 
   s_log = string(__func__) + ": waiting for " + string(variable);
   _cs_log(fmi2OK, CS_LOG_TRACE, s_log);
@@ -819,9 +1187,12 @@ _get_notebook_variable(int         sock,
   /* Received get: val */
   char *buf_rcv = _recv_sock_with_queue(_cs_socket, _cs_glob_control_queue, 0);
 
-  char *s = buf_rcv;
-  s += 4;
-  val = strtod(s, &eptr);
+  if (strncmp(buf_rcv, "get: ", 5) != 0) {
+    s_log =   string(__func__) + ": unexpected reply; " + string(buf_rcv);
+    _cs_log(fmi2Error, CS_LOG_ERROR, s_log);
+  }
+
+  val = strtod(buf_rcv + 5, &eptr);
 
   s_log =   string(__func__) + ": retrieved "
           + string(variable) + " (" + to_string(val) + ")";
@@ -848,9 +1219,9 @@ _disconnect(void)
 {
   char buffer[13] = "disconnect ";
 
-  _send_sock(_cs_socket, buffer);
+  _send_sock_str(_cs_socket, buffer);
 
-  _cs_log(fmi2Error, CS_LOG_TRACE, "Disconnecting the controller...");
+  _cs_log(fmi2OK, CS_LOG_TRACE, "Disconnecting the controller...");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -887,7 +1258,7 @@ void code_saturne::setResourceLocation(const char* fmiResourceLocation)
      a workaround the current limited scope of user-generated and
      auto-generated code boundaries). */
 
-  _instance_name = malloc(sizeof(id) + 1);
+  _instance_name = (fmi2String)malloc(sizeof(id) + 1);
   strcpy(_instance_name, id);
 
   /* Also set id to saved string, as it seems the string to which
@@ -939,11 +1310,12 @@ fmi2Status code_saturne::init()
 
   /* Initialize code_saturne calculation */
   cmd = "cd " + s_casename + " && " + s_code_saturne +
-        " run --initialize --id='" + s_run_id + "'";
+        " run --initialize --force --id='" + s_run_id + "'";
 
 #if CS_DRY_RUN == 1
 
   _cs_log(fmi2OK, CS_LOG_LAUNCH, cmd);
+  _cs_socket = 444444;
 
 #else
 
@@ -975,15 +1347,43 @@ fmi2Status code_saturne::init()
   /* Sleep 3 seconds just to make sure the connection is well established */
   sleep(3);
 
-  /* Now send queued values */
+  /* Now exchange input and output values which are already declared */
 
-  if (_queued_notebook_send.size() > 0) {
-    for (const auto& n : _queued_notebook_send) {
+  if (_cs_variables == NULL)
+    _cs_variables = _variables_initialize();
+
+  for (int i = 0; i < _cs_variables->input_max; i++) {
+    if (_cs_variables->input_ids[i] > -1)
       _set_notebook_variable(_cs_socket,
-                             realVariables[n.first].name,
-                             n.second);
+                             realVariables[i].name,
+                             realVariables[i].getter(this));
+  }
+  for (int i = 0; i < _cs_variables->output_max; i++) {
+    if (_cs_variables->output_ids[i] > -1) {
+      double value
+        = _get_notebook_variable(_cs_socket,
+                                 realVariables[i].name);
+      realVariables[i].setter(this, value);
     }
-    _queued_notebook_send.clear();
+  }
+
+  /* Increase the number of maximum time steps, as FMI is controlling
+     the time stepping, not the code. */
+
+  {
+    _send_sock_str(_cs_socket, "max_time_step 9999999");
+
+    char *buf_rcv = _recv_sock_with_queue(_cs_socket, _cs_glob_control_queue, 0);
+
+    string s = string(__func__);
+    if (strcmp(buf_rcv, "0") != 0) {
+      s += ": unexpected return code: " + string(buf_rcv);
+      _cs_log(fmi2Warning, CS_LOG_WARNING, s);
+    }
+    else {
+      s += ": set max time step to 9999999 for FMI control.";
+      _cs_log(fmi2OK, CS_LOG_TRACE, s);
+    }
   }
 
   return fmi2OK;
@@ -996,8 +1396,30 @@ fmi2Status code_saturne::doStep(double step)
   string s = "----- " + string(__func__) + "(" + to_string(step) + ")";
   _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
-  /* Advance 1 iterations */
+  cs_variables_t *v = _cs_variables;
+
+  /* Update input notebook values */
+
+  for (int i = 0; i < v->input_max; i++) {
+    int id = v->input_ids[i];
+    if (id < 0)
+      continue;
+    double val = realVariables[i].getter(this);
+    v->input_vals[id] = val;
+  }
+
+  /* Advance 1 iteration */
   _advance(1);
+
+  /* Update output notebook values */
+
+  for (int i = 0; i < v->output_max; i++) {
+    int id = v->output_ids[i];
+    if (id < 0)
+      continue;
+    double val = v->output_vals[id];
+    realVariables[i].setter(this, val);
+  }
 
   _n_iter++;
 
@@ -1012,14 +1434,21 @@ fmi2Status code_saturne::terminate()
   string s_run_id(run_id);
   string resu = s_casename + "/RESU/" + s_run_id;
 
+  _send_sock_str(_cs_socket, "max_time_step 0");
+  _advance(0);
+
+  _variables_finalize(&_cs_variables);
+
   _queue_finalize(&_cs_glob_control_queue);
 
   /* Send disconnect to the server */
   _disconnect();
 
-  _cs_log(fmi2OK, CS_LOG_ALL, "Disconnecting the controller...");
+#if CS_DRY_RUN == 1
 
-#if CS_DRY_RUN != 1
+  _cs_socket = -1;
+
+#else
 
   shutdown(_cs_socket, SHUT_RDWR);
   close(_cs_socket);
@@ -1057,33 +1486,47 @@ fmi2Status code_saturne::reset()
 
 double code_saturne::getReal(int fmi2ValueReference)
 {
+  if (_cs_variables == NULL)
+    _cs_variables = _variables_initialize();
+
   string s = string(__func__) + "(" + to_string(fmi2ValueReference) + ")";
   _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
   if (realVariables[fmi2ValueReference].causality() != input) {
-    return _get_notebook_variable(_cs_socket, realVariables[fmi2ValueReference].name);
+    int first = _variables_add_output(_cs_variables, fmi2ValueReference);
+    if (first && _cs_socket >= 0) {
+      double value
+        = _get_notebook_variable(_cs_socket,
+                                 realVariables[fmi2ValueReference].name);
+      realVariables[fmi2ValueReference].setter(this, value);
+    }
   }
-  else {
-    return realVariables[fmi2ValueReference].getter(this);
-  }
+
+  return realVariables[fmi2ValueReference].getter(this);
 }
 
 /*----------------------------------------------------------------------------*/
 
 void code_saturne::setReal(int fmi2ValueReference, double value)
 {
+  if (_cs_variables == NULL)
+    _cs_variables = _variables_initialize();
+
   string s = string(__func__) + "(" + to_string(fmi2ValueReference)
     + ", " + to_string(value) + ")";
   _cs_log(fmi2OK, CS_LOG_TRACE, s);
 
   if (realVariables[fmi2ValueReference].causality() == input) {
-    if (_cs_socket >= 0)
+    realVariables[fmi2ValueReference].setter(this, value);
+
+    int first = _variables_add_input(_cs_variables,
+                                     fmi2ValueReference,
+                                     value);
+    if (first && _cs_socket >= 0) {
       _set_notebook_variable(_cs_socket,
                              realVariables[fmi2ValueReference].name,
                              value);
-    else
-      _queue_notebook_variable(fmi2ValueReference, value);
-    realVariables[fmi2ValueReference].setter(this, value);
+    }
   }
 }
 

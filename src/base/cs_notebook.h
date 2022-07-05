@@ -123,6 +123,51 @@ cs_notebook_parameter_get_description(char *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get id associated with a notebook parameter.
+ *
+ * \param[in]   name      name of the parameter
+ *
+ * \return -1 if not present, id if present
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_notebook_parameter_get_id(const char  *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a group of notebook variable values
+ *
+ * \param[in]   n       number of notebook variables to query
+ * \param[in]   ids     ids of notebook variables to query
+ *                      (value set to 0 where id < 0)
+ * \param[out]  values  values of notebook variables to query
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_get_values(int        n,
+                       const int  ids[],
+                       double     values[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set a group of notebook variable values
+ *
+ * \param[in]  n       number of notebook variables to set
+ * \param[in]  ids     ids of notebook variables to set
+ *                     (ignored where id < 0)
+ * \param[in]  values  values of notebook variables to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_set_values(int           n,
+                       const int     ids[],
+                       const double  values[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Destroy the notebook structure.
  *
  * Destroys the structures related to the notebook.

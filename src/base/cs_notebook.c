@@ -121,7 +121,7 @@ static cs_map_name_to_id_t *_entry_map = NULL;
 /*----------------------------------------------------------------------------*/
 
 static _cs_notebook_entry_t *
-cs_notebook_entry_by_name(const char *name)
+_entry_by_name(const char *name)
 {
   int id = cs_map_name_to_id_try(_entry_map, name);
 
@@ -396,7 +396,7 @@ cs_notebook_parameter_is_present(const char  *name,
 cs_real_t
 cs_notebook_parameter_value_by_name(const char *name)
 {
-  _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
+  _cs_notebook_entry_t *e = _entry_by_name(name);
   return e->val;
 }
 
@@ -415,7 +415,7 @@ void
 cs_notebook_parameter_set_value(const char *name,
                                 cs_real_t   val)
 {
-  _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
+  _cs_notebook_entry_t *e = _entry_by_name(name);
 
   if (e->editable == false)
     bft_error(__FILE__, __LINE__, 0,
@@ -444,7 +444,7 @@ cs_notebook_parameter_set_value(const char *name,
 int
 cs_notebook_parameter_get_openturns_status(char *name)
 {
-  _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
+  _cs_notebook_entry_t *e = _entry_by_name(name);
   return e->uncertain;
 }
 
@@ -461,8 +461,81 @@ cs_notebook_parameter_get_openturns_status(char *name)
 const char *
 cs_notebook_parameter_get_description(char *name)
 {
-  _cs_notebook_entry_t *e = cs_notebook_entry_by_name(name);
+  _cs_notebook_entry_t *e = _entry_by_name(name);
   return e->description;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get id associated with a notebook parameter.
+ *
+ * \param[in]   name      name of the parameter
+ *
+ * \return -1 if not present, id if present
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_notebook_parameter_get_id(const char  *name)
+{
+  int id = cs_map_name_to_id_try(_entry_map, name);
+
+  return id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a group of notebook variable values
+ *
+ * \param[in]   n       number of notebook variables to query
+ * \param[in]   ids     ids of notebook variables to query
+ *                      (value set to 0 where id < 0)
+ * \param[out]  values  values of notebook variables to query
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_get_values(int        n,
+                       const int  ids[],
+                       double     values[])
+{
+  for (int i = 0; i < n; i++) {
+    int id = ids[i];
+    if (id > -1)
+      values[i] = _entries[id]->val;
+    else
+      values[i] = 0;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set a group of notebook variable values
+ *
+ * \param[in]  n       number of notebook variables to set
+ * \param[in]  ids     ids of notebook variables to set
+ *                     (ignored where id < 0)
+ * \param[in]  values  values of notebook variables to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_notebook_set_values(int           n,
+                       const int     ids[],
+                       const double  values[])
+{
+  for (int i = 0; i < n; i++) {
+    int id = ids[i];
+    if (id > -1) {
+      _cs_notebook_entry_t *e = _entries[id];
+      if (e->editable == false)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Entry \"%s\" was defined as not editable in the notebook.\n"),
+                  e->name);
+      else
+        _entry_set_value(e, values[i]);
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

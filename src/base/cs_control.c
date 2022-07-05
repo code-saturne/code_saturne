@@ -100,6 +100,8 @@ BEGIN_C_DECLS
 # define SSIZE_MAX  32767
 #endif
 
+#define CS_CONTROL_TIME_COMM  1
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -141,7 +143,7 @@ typedef struct {
 
 /* TODO: use control queue after advance for remaining commands
    * commands may return response in case of controller sockets
-   * socket errors should give xwarnings, not errors to allow dirty disconnect */
+   * socket errors should give warnings, not errors to allow dirty disconnect */
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -167,9 +169,23 @@ static double  _control_file_wt_last = -1.;
 static int     _control_advance_steps = -1;
 static int     _flush_nt = -1;
 
+static int     _n_input_notebook_vars = 0;
+static int     _n_output_notebook_vars = 0;
+
+static int     *_input_notebook_vars = NULL;
+static int     *_output_notebook_vars = NULL;
+
 /* Timer statistics */
 
 static cs_timer_counter_t   _control_t_tot = {.nsec = 0};
+static cs_timer_counter_t   _control_comm_t_tot = {.nsec = 0};
+static cs_timer_counter_t   _control_recv_t_tot = {.nsec = 0};
+static cs_timer_counter_t   _control_send_t_tot = {.nsec = 0};
+
+static long _n_reads = 0;
+static cs_timer_counter_t   _control_read_t_min = {.nsec = 0};
+static cs_timer_counter_t   _control_read_t_max = {.nsec = 0};
+static cs_timer_counter_t   _control_read_t_sum = {.nsec = 0};
 
 /*============================================================================
  * Private function definitions
@@ -317,46 +333,37 @@ _comm_sock_disconnect(cs_control_comm_t  *comm)
  * Read a record from an interface socket into a given buffer
  *
  * parameters:
- *   comm  <-- pointer to communicator
- *   rec   <-- buffer for record, or NULL for default
- *   size  <-- element size
- *   count <-- number of elements to read
+ *   comm    <-- pointer to communicator
+ *   rec     <-- buffer for record, or NULL for default
+ *   n_bytes <-- number of elements to read
  *----------------------------------------------------------------------------*/
 
 static void
-_comm_read_sock(const cs_control_comm_t  *comm,
-                void                     *rec,
-                size_t                    size,
-                size_t                    count)
+_comm_read_sock_r0(const cs_control_comm_t  *comm,
+                   void                     *rec,
+                   size_t                    n_bytes)
 {
-  size_t   start_id;
-  size_t   end_id;
-  size_t   n_loc;
-  size_t   n_bytes;
-  ssize_t  ret;
   char    *_rec = rec;
 
   assert(rec  != NULL);
   assert(comm != NULL);
   assert(comm->socket > -1);
 
-  n_bytes = size * count;
+  size_t start_id = 0;
 
   /* Read record from socket */
 
-  start_id = 0;
-
   while (start_id < n_bytes) {
 
-    end_id = CS_MIN(start_id + SSIZE_MAX, n_bytes);
-    n_loc = end_id - start_id;
+    size_t end_id = CS_MIN(start_id + SSIZE_MAX, n_bytes);
+    size_t n_loc = end_id - start_id;
 
     if (comm->trace != NULL) {
-      fprintf(comm->trace, "-- reading up to %d values of size %d...\n",
-              (int)count, (int)size);
+      fprintf(comm->trace, "-- reading up to %d values...\n",
+              (int)n_bytes);
     }
 
-    ret = read(comm->socket, _rec + start_id, n_loc);
+    ssize_t ret = read(comm->socket, _rec + start_id, n_loc);
 
     if (ret < 1)
       bft_error(__FILE__, __LINE__, errno,
@@ -373,9 +380,112 @@ _comm_read_sock(const cs_control_comm_t  *comm,
     start_id += ret;
 
   }
+}
 
-  if (comm->swap_endian == true && size > 1)
-    _swap_endian(rec, rec, size, count);
+/*----------------------------------------------------------------------------
+ * Read a record from an interface socket into a given buffer
+ *
+ * parameters:
+ *   comm  <-- pointer to communicator
+ *   queue <-- pointer to queue, or NULL
+ *   rec   <-- buffer for record, or NULL for default
+ *   size  <-- element size
+ *   count <-- number of elements to read
+ *----------------------------------------------------------------------------*/
+
+static void
+_comm_read_sock(const cs_control_comm_t  *comm,
+                cs_control_queue_t       *queue,
+                void                     *rec,
+                size_t                    size,
+                size_t                    count)
+{
+  char    *_rec = rec;
+
+  assert(rec  != NULL);
+  assert(comm != NULL);
+
+  size_t n_bytes = size * count;
+
+  size_t start_id = 0;
+
+  /* Some data might already be buffered in queue */
+
+  if (queue != NULL) {
+    if (queue->buf_idx[2] > queue->buf_idx[1]) {
+
+      start_id = queue->buf_idx[2] - queue->buf_idx[1];
+      size_t n_remain = 0;
+      if (start_id > n_bytes) {
+        n_remain = start_id - n_bytes;
+        start_id = n_bytes;
+      }
+
+      size_t s_id = queue->buf_idx[1];
+      memcpy(rec, queue->buf + s_id, start_id);
+
+      if (n_remain > 0)
+        memmove(queue->buf + s_id,
+                queue->buf + s_id + n_bytes,
+                n_remain);
+      queue->buf_idx[2] = queue->buf_idx[1] + n_remain;
+
+    }
+  }
+
+  /* Read record from socket */
+
+  if (cs_glob_rank_id <= 0) {
+
+    assert(comm->socket > -1);
+
+    while (start_id < n_bytes) {
+
+      size_t end_id = CS_MIN(start_id + SSIZE_MAX, n_bytes);
+      size_t n_loc = end_id - start_id;
+
+      if (comm->trace != NULL) {
+        fprintf(comm->trace, "-- reading up to %d bytes, "
+                " %d of %d bytes already buffered...\n",
+                (int)n_loc, (int)start_id, (int)n_bytes);
+      }
+
+      ssize_t ret = read(comm->socket, _rec + start_id, n_loc);
+
+      if (ret < 1)
+        bft_error(__FILE__, __LINE__, errno,
+                  _("Communication %s:\n"
+                    "Error receiving data through socket."),
+                  comm->port_name);
+      else if (comm->trace != NULL) {
+        fprintf(comm->trace, "   read %d bytes: [", (int)ret);
+        _trace_buf(comm->trace, _rec + start_id, ret);
+        fprintf(comm->trace, "]\n");
+        fflush(comm->trace);
+      }
+
+      start_id += ret;
+
+    }
+
+    if (comm->trace != NULL && size > 1) {
+      for (size_t i = 0; i < count; i++) {
+        fprintf(comm->trace, "    ");
+        for (size_t j = 0; j < size; j++)
+          fprintf(comm->trace, " %x", (unsigned)_rec[i*size + j]);
+        fprintf(comm->trace, "\n");
+      }
+    }
+
+    if (comm->swap_endian == true && size > 1)
+      _swap_endian(rec, rec, size, count);
+  }
+
+#if defined(HAVE_MPI)
+  if (cs_glob_rank_id >= 0) {
+    MPI_Bcast(rec, n_bytes, MPI_BYTE, 0, cs_glob_mpi_comm);
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------
@@ -406,19 +516,32 @@ _comm_write_sock(cs_control_comm_t  *comm,
 
   size_t n_bytes = size * count;
 
-  if (comm->trace != NULL) {
-    fprintf(comm->trace, "-- write %d values of size %d: [",
-            (int)count, (int)size);
-    _trace_buf(comm->trace, _rec, n_bytes);
-    fprintf(comm->trace, "]...\n");
-    fflush(comm->trace);
-  }
-
   /* Convert if "little-endian" */
 
   if (comm->swap_endian == true && size != 1) {
     BFT_MALLOC(_rec_swap, n_bytes, char);
     _swap_endian(_rec_swap, rec, size, count);
+    _rec = _rec_swap;
+  }
+
+  if (comm->trace != NULL) {
+    if (size == 1) {
+      fprintf(comm->trace, "-- write %d bytes: [",
+              (int)count, (int)size);
+      _trace_buf(comm->trace, _rec, n_bytes);
+      fprintf(comm->trace, "]...\n");
+    }
+    else {
+      fprintf(comm->trace, "-- write %d values of size %d:\n",
+              (int)count, (int)size);
+      for (size_t i = 0; i < count; i++) {
+        fprintf(comm->trace, "    ");
+        for (size_t j = 0; j < size; j++)
+          fprintf(comm->trace, " %x", (unsigned)(_rec[i*size + j]));
+        fprintf(comm->trace, "\n");
+      }
+    }
+    fflush(comm->trace);
   }
 
   /* Write record to socket */
@@ -430,10 +553,7 @@ _comm_write_sock(cs_control_comm_t  *comm,
     end_id = CS_MIN(start_id + SSIZE_MAX, n_bytes);
     n_loc = end_id - start_id;
 
-    if (_rec_swap == NULL)
-      ret = write(comm->socket, _rec + start_id, n_loc);
-    else
-      ret = write(comm->socket, _rec_swap + start_id, n_loc);
+    ret = write(comm->socket, _rec + start_id, n_loc);
 
     if (ret < 1) {
       if (comm->errors_are_fatal)
@@ -484,7 +604,7 @@ _comm_read_sock_to_queue_prepare(cs_control_queue_t  *queue,
 
   assert(comm != NULL);
 
-  if (queue->buf_idx[0] > 0) {
+  if (queue->buf_idx[0] < queue->buf_idx[1]) {
     bft_error(__FILE__, __LINE__, errno,
               "%s:\n"
               "  queue must be empty before reading additional data "
@@ -497,7 +617,13 @@ _comm_read_sock_to_queue_prepare(cs_control_queue_t  *queue,
   ssize_t n_prv = queue->buf_idx[2] - queue->buf_idx[1];
   if (n_prv > 0) {
     memmove(queue->buf, queue->buf + queue->buf_idx[1], n_prv);
+    queue->buf_idx[2] -= queue->buf_idx[1];
   }
+  else
+    queue->buf_idx[2] = 0;
+
+  queue->buf_idx[1] = 0;
+  queue->buf_idx[0] = 0;
 
   return (size_t)n_prv;
 }
@@ -520,7 +646,7 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
 
   size_t start_id = queue->buf_idx[2] - queue->buf_idx[1];
 
-  while (true) {
+  while (queue->buf_idx[1] < 1) {
 
     n_loc_max = queue->buf_idx[3] - start_id;
 
@@ -529,7 +655,27 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
               (int)n_loc_max);
     }
 
-    ssize_t  ret = read(comm->socket, queue->buf + start_id, n_loc_max);
+#if CS_CONTROL_TIME_COMM != 0
+    cs_timer_t t0 = cs_timer_time();
+#endif
+
+    ssize_t ret = read(comm->socket, queue->buf + start_id, n_loc_max);
+
+#if CS_CONTROL_TIME_COMM != 0
+    cs_timer_t t1 = cs_timer_time();
+    cs_timer_counter_t td = cs_timer_diff(&t0, &t1);
+#if CS_CONTROL_TIME_COMM > 1
+    bft_printf("%s: read %d bytes in %g seconds\n",
+               __func__, (int)ret, (double)(td.nsec)*1e-9);
+#endif
+    _control_read_t_sum.nsec += td.nsec;
+    if (   _control_read_t_min.nsec == 0
+        || _control_read_t_min.nsec > td.nsec)
+      _control_read_t_min.nsec = td.nsec;
+    if (_control_read_t_max.nsec < td.nsec)
+      _control_read_t_max.nsec = td.nsec;
+    _n_reads += 1;
+#endif
 
     if (comm->trace != NULL) {
       fprintf(comm->trace, "   read %d bytes: [", (int)ret);
@@ -552,41 +698,26 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
       }
     }
 
-    /* Check for end of command (end of line if not escaped
-       by continuation character such as "/" or "," */
-    size_t cut_id = start_id + ret - 1;
-    bool escape = false;
-    queue->buf_idx[2] = cut_id;
-    while (cut_id > 0 && queue->buf[cut_id] != '\0') {
-      if (queue->buf[cut_id] == ',' || queue->buf[cut_id] == '\\')
-        escape = true;
-      else if (queue->buf[cut_id] == '\n') {
-        if (escape == false)
-          break;
-        else
-          escape = false;
+    queue->buf_idx[2] = start_id + ret;
+
+    /* Check for last end of string */
+    for (size_t i = queue->buf_idx[2]; i > start_id; i--) {
+      if (queue->buf[i-1] == '\0') {
+        queue->buf_idx[1] = i;
+        break;
       }
-      cut_id -= 1;
     }
-    queue->buf_idx[1] = cut_id;
-    queue->buf[cut_id] = '\0';
 
     start_id += ret;
 
     /* If we do not have a complete line, continue reading if possible */
-    if (ret == n_loc_max && cut_id < 1) {
-      queue->buf_idx[3] *= 2;
-      BFT_REALLOC(queue->buf, queue->buf_idx[3], char);
+    if (ret == n_loc_max) {
+      if (queue->buf_idx[1] < 1) {
+        queue->buf_idx[3] *= 2;
+        BFT_REALLOC(queue->buf, queue->buf_idx[3], char);
+      }
     }
-    else
-      break;
 
-  }
-
-  if (comm->recv_log != NULL) {
-    for (size_t i = queue->buf_idx[0]; i < queue->buf_idx[1]; i++)
-      fprintf(comm->recv_log, "%c", queue->buf[i]);
-    fprintf(comm->recv_log, "\n");
   }
 }
 
@@ -599,7 +730,7 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
  *   comm     <-> pointer to communicator
  *
  * return:
- *   number of useable elements read (i.e. elements before the last separator)
+ *   number of elements usable prior to next read (i.e. buffered elements)
  *----------------------------------------------------------------------------*/
 
 static size_t
@@ -625,7 +756,7 @@ _comm_read_sock_to_queue_sync(size_t               start_id,
     if (buf[3] < 0)
       comm->connected = false;
 
-    if (buf[2] != (long)queue->buf_idx[3]) {
+    if (buf[2] > (long)queue->buf_idx[3]) {
       queue->buf_idx[3] = buf[2];
       BFT_REALLOC(queue->buf, queue->buf_idx[3], char);
     }
@@ -635,7 +766,8 @@ _comm_read_sock_to_queue_sync(size_t               start_id,
 
     if (queue->buf_idx[2] > start_id) {
       size_t count = queue->buf_idx[2] - start_id;
-      MPI_Bcast(queue->buf, count, MPI_CHAR,  0, cs_glob_mpi_comm);
+      MPI_Bcast(queue->buf + start_id, count, MPI_CHAR, 0,
+                cs_glob_mpi_comm);
     }
 
   }
@@ -758,7 +890,7 @@ _comm_sock_handshake(cs_control_comm_t  *comm,
 
   BFT_MALLOC(str_cmp, len + 1, char);
 
-  _comm_read_sock(comm, str_cmp, 1, len);
+  _comm_read_sock_r0(comm, str_cmp, len);
   str_cmp[len] = '\0';
 
   if (strncmp(str_cmp, magic_string, len)) {
@@ -790,8 +922,6 @@ _comm_initialize(const char             *port_name,
                  const char             *key,
                  cs_control_comm_type_t  type)
 {
-  unsigned  int_endian;
-
   int retval = 0;
 
   cs_control_comm_t *comm = NULL;
@@ -815,7 +945,7 @@ _comm_initialize(const char             *port_name,
 
   comm->swap_endian = false; /* Use "big-endian" mode to communicate */
 
-  int_endian = 0;
+  unsigned int_endian = 0;
   *((char *) (&int_endian)) = '\1';
 
   if (int_endian == 1)
@@ -1086,7 +1216,7 @@ static void
 _control_checkpoint(const char   *cur_line,
                     const char  **s)
 {
-  *s += 11; /* shift in string by lenght of "checkpoint_" part */
+  *s += 11; /* shift in string by length of "checkpoint_" part */
 
   if (strncmp(*s, "time_step ", 10) == 0) {
     int nt;
@@ -1169,6 +1299,9 @@ _control_notebook(const cs_time_step_t   *ts,
   *s += 9; /* shift in string by length of "notebook_" part */
 
   bool ignored = true;
+
+  /* Set specifically at this current time */
+
   if (strncmp(*s, "set ", 4) == 0) {
     char *name;
     double val = 0.;
@@ -1184,14 +1317,15 @@ _control_notebook(const cs_time_step_t   *ts,
       ignored = false;
     }
   }
+
+  /* Get specifically at this current time */
+
   else if (strncmp(*s, "get ", 4) == 0) {
     char *name;
     double val = 0.;
     _read_next_string(true, s, &name);
-    int editable;
-    int is_present = cs_notebook_parameter_is_present(name,
-                                                      &editable);
-    if (is_present > 0) {
+    int id = cs_notebook_parameter_get_id(name);
+    if (id > -1) {
       val = cs_notebook_parameter_value_by_name(name);
       bft_printf("  %-32s \"%s\" get : %12.5g\n",
                  "notebook", name, val);
@@ -1204,8 +1338,66 @@ _control_notebook(const cs_time_step_t   *ts,
         _comm_write_sock(_cs_glob_control_comm, reply, 1, strlen(reply) + 1);
       }
 #endif
-
     }
+  }
+
+  /* Define for systematic exchange */
+
+  else if (strncmp(*s, "add_input ", 10) == 0) {
+    char *name;
+    double val = 0.;
+    _read_next_string(true, s, &name);
+
+    int id = cs_notebook_parameter_get_id(name);
+    int editable = 0;
+    cs_notebook_parameter_is_present(name, &editable);
+    if (! editable)
+      id = -1;
+
+    _n_input_notebook_vars += 1;
+    BFT_REALLOC(_input_notebook_vars, _n_input_notebook_vars, int);
+    _input_notebook_vars[_n_input_notebook_vars - 1] = id;
+
+    if (id < 0)
+      bft_printf("  %-32s \"%s\" input does not match "
+                 "an editable notebook variable\n",
+                 "notebook", name);
+
+    if (_read_next_double(false, cur_line, (const char **)s, &val) == 1) {
+      if (id > -1) {
+        cs_notebook_parameter_set_value(name, val);
+        bft_printf("  %-32s \"%s\" set to %12.5g\n",
+                   "notebook", name, val);
+      }
+    }
+  }
+
+  else if (strncmp(*s, "add_output ", 10) == 0) {
+    char *name;
+    double val = 0.;
+    _read_next_string(true, s, &name);
+
+    int id = cs_notebook_parameter_get_id(name);
+
+    _n_output_notebook_vars += 1;
+    BFT_REALLOC(_output_notebook_vars, _n_output_notebook_vars, int);
+    _output_notebook_vars[_n_output_notebook_vars - 1] = id;
+
+    if (id > -1) {
+      val = cs_notebook_parameter_value_by_name(name);
+      bft_printf("  %-32s \"%s\" get : %12.5g\n",
+                 "notebook", name, val);
+      ignored = false;
+
+#if defined(HAVE_SOCKET)
+      if (_cs_glob_control_comm != NULL) {
+        char reply[20] = "\0";
+        sprintf(reply, "get: %.3f", val);
+        _comm_write_sock(_cs_glob_control_comm, reply, 1, strlen(reply) + 1);
+      }
+#endif
+    }
+
   }
 
   if (ignored)
@@ -1273,26 +1465,26 @@ _control_postprocess(const cs_time_step_t   *ts,
  *   buffer       <-- pointer to file contents buffer
  *   f_size       <-- size of buffer for file and connector
  *   control_comm <-- control communicator, or NULL
+ *   queue        <-- pointer to queue, or NULL
  *
  * returns:
  *   0 if buffer completely handled, index of unhandled part otherwise
  *----------------------------------------------------------------------------*/
 
 static size_t
-_parse_control_buffer(const char         *name,
-                      char               *buffer,
-                      long                f_size,
-                      cs_control_comm_t  *control_comm)
+_parse_control_buffer(const char          *name,
+                      char                *buffer,
+                      long                 f_size,
+                      cs_control_comm_t   *control_comm,
+                      cs_control_queue_t  *queue)
 {
   size_t retval = 0;
 
   int nt_max;
 
   char *s;
-  char *cur_line = NULL, *next_line = NULL;
+  char *cur_line = buffer, *next_line = NULL;
   const cs_time_step_t  *ts = cs_glob_time_step;
-
-  cur_line = buffer;
 
   if (name != NULL)
     bft_printf
@@ -1333,6 +1525,11 @@ _parse_control_buffer(const char         *name,
     /* Check for keywords given in control_file and store the related values */
 
     size_t l = strlen(cur_line);
+
+    if (control_comm != NULL) {
+      if (control_comm->recv_log != NULL)
+        fprintf(control_comm->recv_log, "%s\n", cur_line);
+    }
 
     for (size_t i = 0; i < l; i++) {
       if (cur_line[i] == '#') {
@@ -1443,7 +1640,7 @@ _parse_control_buffer(const char         *name,
       break;
     }
 
-    /* Advance */
+    /* Advance time */
 
     else if (strncmp(s, "advance ", 8) == 0) {
 
@@ -1463,7 +1660,46 @@ _parse_control_buffer(const char         *name,
       }
 #endif
 
+      /* Use binary exchanges for multiple variables here,
+         to minimize number of messages */
+
+      int n_notebook_vals = CS_MAX(_n_input_notebook_vars,
+                                   _n_output_notebook_vars);
+
+      if (n_notebook_vals > 0) {
+        double *notebook_vals = NULL;
+
+        BFT_MALLOC(notebook_vals, n_notebook_vals, double);
+
+        /* Send output variables from previous time step,
+           get input variables for new time step. */
+
+        cs_notebook_get_values(_n_output_notebook_vars,
+                               _output_notebook_vars,
+                               notebook_vals);
+
+#if defined(HAVE_SOCKET)
+        if (control_comm != NULL) {
+          if (_n_output_notebook_vars > 0)
+            _comm_write_sock(control_comm, notebook_vals,
+                             sizeof(double), _n_output_notebook_vars);
+          if (_n_input_notebook_vars > 0)
+            _comm_read_sock(control_comm, queue, notebook_vals,
+                            sizeof(double), _n_input_notebook_vars);
+        }
+#endif
+
+        /* Get input variables */
+
+        cs_notebook_set_values(_n_input_notebook_vars,
+                               _input_notebook_vars,
+                               notebook_vals);
+
+        BFT_FREE(notebook_vals);
+      }
+
       break;
+
     }
 
     /* Unhandled lines */
@@ -1526,6 +1762,12 @@ _parse_control_buffer(const char         *name,
 void
 cs_control_finalize(void)
 {
+  _n_input_notebook_vars = 0;
+  _n_output_notebook_vars = 0;
+
+  BFT_FREE(_input_notebook_vars);
+  BFT_FREE(_output_notebook_vars);
+
   cs_timer_t t0 = cs_timer_time();
 
   _comm_finalize(&_cs_glob_control_comm);
@@ -1538,6 +1780,34 @@ cs_control_finalize(void)
                 _("\n"
                   "Total elapsed time for controller:  %.3f s\n"),
                 _control_t_tot.nsec*1e-9);
+
+  if (_control_comm_t_tot.nsec > 0)
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "Useful elapsed time for controller:  %.3f s\n"),
+                  _control_comm_t_tot.nsec*1e-9);
+
+  if (_control_recv_t_tot.nsec > 0) {
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "Communication times for controller:\n"
+                    "                            send:    %.3f s\n"
+                    "                            receive: %.3f s\n"),
+                  _control_send_t_tot.nsec*1e-9,
+                  _control_recv_t_tot.nsec*1e-9);
+    if (_n_reads > 0)
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    _("\n"
+                      "Communication times detail:\n"
+                      "                            reads:   %lu\n"
+                      "                            read time min: %.3e s\n"
+                      "                                      max: %.3e s\n"
+                      "                                      mean: %.3e s\n"),
+                    (unsigned long)_n_reads,
+                    _control_read_t_min.nsec*1e-9,
+                    _control_read_t_max.nsec*1e-9,
+                    _control_read_t_sum.nsec/_n_reads*1e-9);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1550,6 +1820,8 @@ cs_control_finalize(void)
 void
 cs_control_check_file(void)
 {
+  bool time_comm = (_cs_glob_control_comm != NULL) ? true : false;
+
   cs_timer_t t0 = cs_timer_time();
 
   long f_size = -1;
@@ -1625,7 +1897,7 @@ cs_control_check_file(void)
 
     /* Now all ranks have required buffer */
 
-    _parse_control_buffer("control_file", buffer, f_size, NULL);
+    _parse_control_buffer("control_file", buffer, f_size, NULL, NULL);
 
     BFT_FREE(buffer);
   }
@@ -1643,36 +1915,43 @@ cs_control_check_file(void)
 #endif
   }
 
-  if (   _cs_glob_control_queue != NULL
-      && _control_advance_steps < 1) {
+  if (_cs_glob_control_queue != NULL) {
 
-    /* If some commands are already queued, handle them */
+    while (_control_advance_steps < 1) {
 
-    if (_cs_glob_control_queue->buf_idx[0] > 0) {
-      size_t s_id = _cs_glob_control_queue->buf_idx[0];
-      size_t e_id = _cs_glob_control_queue->buf_idx[1];
-      _cs_glob_control_queue->buf_idx[0]
-        = _parse_control_buffer(NULL,
-                                _cs_glob_control_queue->buf + s_id,
-                                e_id - s_id,
-                                _cs_glob_control_comm);
-    }
+      /* If the queue is empty, receive new commands */
 
-    /* If the queue is empty, receive new commands */
+      if (   _cs_glob_control_queue->buf_idx[0]
+          >= _cs_glob_control_queue->buf_idx[1]) {
 
-    if (_cs_glob_control_queue->buf_idx[0] == 0) {
-      while (_control_advance_steps < 1) {
         size_t n = cs_control_comm_read_to_queue();
+
         if (n == 0 && _cs_glob_control_comm == NULL) {
           _queue_finalize(&_cs_glob_control_queue);
           break;
         }
-        _cs_glob_control_queue->buf_idx[0]
-          = _parse_control_buffer(NULL,
-                                  _cs_glob_control_queue->buf,
-                                  _cs_glob_control_queue->buf_idx[1],
-                                  _cs_glob_control_comm);
+
       }
+
+      /* Handle queued elements */
+
+      while (  _cs_glob_control_queue->buf_idx[0]
+             < _cs_glob_control_queue->buf_idx[1]) {
+
+        size_t idx = _parse_control_buffer(NULL,
+                                           _cs_glob_control_queue->buf,
+                                           _cs_glob_control_queue->buf_idx[1],
+                                           _cs_glob_control_comm,
+                                           _cs_glob_control_queue);
+
+        if (idx == 0)
+          _cs_glob_control_queue->buf_idx[0]
+            = _cs_glob_control_queue->buf_idx[1];
+        else
+          _cs_glob_control_queue->buf_idx[0] = idx;
+
+      }
+
     }
 
   }
@@ -1686,6 +1965,9 @@ cs_control_check_file(void)
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&_control_t_tot, &t0, &t1);
+
+  if (time_comm)
+    cs_timer_counter_add_diff(&_control_comm_t_tot, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1723,8 +2005,7 @@ cs_control_comm_initialize(const char              *port_name,
 void
 cs_control_comm_finalize(void)
 {
-  if (cs_glob_rank_id <= 0)
-    _comm_finalize(&_cs_glob_control_comm);
+  _comm_finalize(&_cs_glob_control_comm);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1744,6 +2025,8 @@ cs_control_comm_write(const void  *rec,
 {
   cs_control_comm_t *comm = _cs_glob_control_comm;
 
+  cs_timer_t t0 = cs_timer_time();
+
   if (cs_glob_rank_id <= 0) {
     assert(comm != NULL);
 
@@ -1752,6 +2035,9 @@ cs_control_comm_write(const void  *rec,
       _comm_write_sock(comm, rec, size, count);
 #endif
   }
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_control_send_t_tot, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1761,7 +2047,7 @@ cs_control_comm_write(const void  *rec,
  * The function updates a pointer (view) to the data.
  *
  * \return number of useable elements read
- *         (i.e. elements before the last separator)
+ *         (i.e. text elements before next read is required)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1772,20 +2058,12 @@ cs_control_comm_read_to_queue(void)
   cs_control_queue_t *queue = _cs_glob_control_queue;
   cs_control_comm_t *comm = _cs_glob_control_comm;
 
+  cs_timer_t t0 = cs_timer_time();
+
   /* If no communicator, simply update queue for possible
      remaining operations */
 
   if (comm == NULL) {
-    if (queue != NULL) {
-      if (queue->buf_idx[0] > 0) {
-        ssize_t n_prv = queue->buf_idx[1] - queue->buf_idx[0];
-        if (n_prv > 0) {
-          memmove(queue->buf, queue->buf + queue->buf_idx[0], n_prv);
-          queue->buf_idx[0] = 0;
-        }
-        queue->buf_idx[1] = n_prv;
-      }
-    }
     return retval;
   }
   else if (queue != NULL) {
@@ -1802,25 +2080,8 @@ cs_control_comm_read_to_queue(void)
     _cs_glob_control_comm = comm;
   }
 
-#if defined(HAVE_MPI)
-  if (cs_glob_rank_id >= 0) {
-    int count = 4;
-    cs_datatype_t dtype = CS_UINT64;
-    size_t buf_size = queue->buf_idx[3];
-    if (sizeof(size_t) != 8) {
-      if (sizeof(size_t) == 4)
-        dtype = CS_UINT32;
-      else {
-        dtype = CS_CHAR;
-        count *= sizeof(size_t);
-      }
-    }
-    cs_parall_bcast(0, count, dtype, queue->buf_idx);
-    if (buf_size != queue->buf_idx[3])
-      BFT_REALLOC(queue->buf, queue->buf_idx[3], char);
-    cs_parall_bcast(0, queue->buf_idx[1], CS_CHAR, queue->buf_idx);
-  }
-#endif
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_control_recv_t_tot, &t0, &t1);
 
   return retval;
 }
