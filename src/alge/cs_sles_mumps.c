@@ -739,12 +739,30 @@ _parall_msr_sym_dmumps(int                   verbosity,
   cs_parall_counter(&n_g_rows, 1);
   dmumps->n = n_g_rows;  /* Global number of rows */
 
-  /* Allocate local arrays */
+  /* Count extra-diagonal entries */
 
-  if (cs_matrix_is_symmetric(a)) /* storage is already symmetric */
+  if (cs_matrix_is_symmetric(a)) { /* storage is already symmetric */
+
     dmumps->nnz_loc = n_rows + a_row_idx[n_rows];
-  else
-    dmumps->nnz_loc = n_rows + a_row_idx[n_rows]/2;
+
+  }
+  else {
+
+    cs_lnum_t  count = 0;
+    for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
+
+      const cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
+      for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++)
+        if (row_g_id[a_col_ids[i]] + 1 < row_gnum)
+          count++;
+
+    } /* Loop on rows */
+
+    dmumps->nnz_loc = n_rows + count;
+
+  }
+
+  /* Allocate local arrays */
 
   BFT_MALLOC(dmumps->irn_loc, dmumps->nnz_loc, MUMPS_INT);
   BFT_MALLOC(dmumps->jcn_loc, dmumps->nnz_loc, MUMPS_INT);
@@ -791,9 +809,10 @@ _parall_msr_sym_dmumps(int                   verbosity,
       const cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
       for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++) {
 
-        if (a_col_ids[i] < row_id) {
+        const cs_gnum_t  col_gnum = row_g_id[a_col_ids[i]] + 1;
+        if (col_gnum < row_gnum) {
           _irn[count] = (MUMPS_INT)row_gnum;
-          _jcn[count] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
+          _jcn[count] = (MUMPS_INT)col_gnum;
           _a[count] = (double)x_val[i];
           count++;
         }
@@ -802,7 +821,7 @@ _parall_msr_sym_dmumps(int                   verbosity,
 
     } /* Loop on rows */
 
-  } /* not a symmetric storage */
+  } /* Not a symmetric storage */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1347,12 +1366,30 @@ _parall_msr_sym_smumps(int                   verbosity,
   cs_parall_counter(&n_g_rows, 1);
   smumps->n = n_g_rows;  /* Global number of rows */
 
-  /* Allocate local arrays */
+  /* Count extra-diagonal entries */
 
-  if (cs_matrix_is_symmetric(a)) /* storage is already symmetric */
+  if (cs_matrix_is_symmetric(a)) { /* storage is already symmetric */
+
     smumps->nnz_loc = (MUMPS_INT8)(n_rows + a_row_idx[n_rows]);
-  else
-    smumps->nnz_loc = (MUMPS_INT8)(n_rows + a_row_idx[n_rows]/2);
+
+  }
+  else {
+
+    cs_lnum_t  count = 0;
+    for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
+
+      const cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
+      for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++)
+        if (row_g_id[a_col_ids[i]] + 1 < row_gnum)
+          count++;
+
+    } /* Loop on rows */
+
+    smumps->nnz_loc = (MUMPS_INT8)(n_rows + count);
+
+  }
+
+  /* Allocate local arrays */
 
   BFT_MALLOC(smumps->irn_loc, smumps->nnz_loc, MUMPS_INT);
   BFT_MALLOC(smumps->jcn_loc, smumps->nnz_loc, MUMPS_INT);
@@ -1393,15 +1430,16 @@ _parall_msr_sym_smumps(int                   verbosity,
   }
   else { /* Keep only the lower triangular block */
 
-    cs_lnum_t  count = n_rows;
+    cs_lnum_t  count = 0;
     for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
 
       const cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
       for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++) {
 
-        if (a_col_ids[i] < row_id) {
+        const cs_gnum_t  col_gnum = row_g_id[a_col_ids[i]] + 1;
+        if (col_gnum < row_gnum) {
           _irn[count] = (MUMPS_INT)row_gnum;
-          _jcn[count] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
+          _jcn[count] = (MUMPS_INT)col_gnum;
           _a[count] = (float)x_val[i];
           count++;
         }
@@ -1410,7 +1448,7 @@ _parall_msr_sym_smumps(int                   verbosity,
 
     } /* Loop on rows */
 
-  } /* not a symmetric storage */
+  } /* Not a symmetric storage */
 }
 
 /*----------------------------------------------------------------------------*/
