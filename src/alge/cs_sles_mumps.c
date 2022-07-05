@@ -718,7 +718,6 @@ _parall_msr_sym_dmumps(int                   verbosity,
   _init_dmumps_settings(verbosity, dmumps); /* default settings */
 
   dmumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
-  dmumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
 
   /* Retrieve local arrays associated to the current matrix */
 
@@ -830,7 +829,6 @@ _native_sym_dmumps(int                   verbosity,
   _init_dmumps_settings(verbosity, dmumps); /* default settings */
 
   dmumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
-  dmumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
 
   /* Retrieve local arrays associated to the current matrix */
 
@@ -1248,7 +1246,6 @@ _msr_sym_smumps(int                   verbosity,
   _init_smumps_settings(verbosity, smumps); /* default settings */
 
   smumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
-  smumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
 
   /* Retrieve local arrays associated to the current matrix */
 
@@ -1329,8 +1326,6 @@ _parall_msr_sym_smumps(int                   verbosity,
   _init_smumps_settings(verbosity, smumps); /* default settings */
 
   smumps->ICNTL(18) = 3;   /* 3 = distributed matrix is given */
-  smumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
-  smumps->ICNTL(6) = 0;    /* No column permutation */
 
   /* Retrieve local arrays associated to the current matrix */
 
@@ -1441,7 +1436,6 @@ _native_sym_smumps(int                   verbosity,
   _init_smumps_settings(verbosity, smumps); /* default settings */
 
   smumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
-  smumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
 
   /* Retrieve local arrays associated to the current matrix */
 
@@ -1900,6 +1894,7 @@ cs_sles_mumps_setup(void               *context,
 #else
     /* Not used in this case and set to the default value given by the MUMPS
        documentation */
+
     sd->dmumps->comm_fortran = USE_COMM_WORLD;
 #endif
 
