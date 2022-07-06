@@ -28,13 +28,6 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * MUMPS headers
- *----------------------------------------------------------------------------*/
-
-#include <dmumps_c.h>
-#include <smumps_c.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -82,16 +75,14 @@ BEGIN_C_DECLS
  *
  * \param[in]      slesp     pointer to the related cs_param_sles_t structure
  * \param[in, out] context   pointer to optional (untyped) value or structure
- * \param[in, out] dmumps    pointer to DMUMPS_STRUC_C (double-precision)
- * \param[in, out] smumps    pointer to SMUMPS_STRUC_C (single-precision)
+ * \param[in, out] mumps     pointer to DMUMPS_STRUC_C or SMUMPS_STRUC_C
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_sles_mumps_setup_hook_t) (const cs_param_sles_t   *slesp,
                               void                    *context,
-                              DMUMPS_STRUC_C          *dmumps,
-                              SMUMPS_STRUC_C          *smumps);
+                              void                    *mumps);
 
 /* MUMPS solver context (opaque) */
 
@@ -107,25 +98,28 @@ typedef struct _cs_sles_mumps_t  cs_sles_mumps_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Function pointer for user settings of a MUMPS solver.
- *        This function is called at the end of the setup stage.
+ * \brief Function pointer for advanced user settings of a MUMPS solver.
+ *        This function is called two times during the setup stage.
+ *        1. Before the analysis step
+ *        2. Before the factorization step
+ *
+ * One can recover the MUMPS step through the "job" member.
+ * MUMPS_JOB_ANALYSIS or MUMPS_JOB_FACTORIZATION
  *
  * Note: if the context pointer is non-NULL, it must point to valid data
  * when the selection function is called so that structure should
  * not be temporary (i.e. local);
  *
- * \param[in]      slesp      pointer to the related cs_param_sles_t structure
- * \param[in, out] context    pointer to optional (untyped) value or structure
- * \param[in, out] dmumps     pointer to DMUMPS_STRUC_C (double-precision)
- * \param[in, out] smumps     pointer to SMUMPS_STRUC_C (single-precision)
+ * \param[in]      slesp    pointer to the related cs_param_sles_t structure
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] pmumps   pointer to DMUMPS_STRUC_C or SMUMPS_STRUC_C struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
                         void                    *context,
-                        DMUMPS_STRUC_C          *dmumps,
-                        SMUMPS_STRUC_C          *smumps);
+                        void                    *pmumps);
 
 /*=============================================================================
  * Public function prototypes

@@ -42,6 +42,13 @@
 #endif
 
 /*----------------------------------------------------------------------------
+ * MUMPS headers
+ *----------------------------------------------------------------------------*/
+
+#include <dmumps_c.h>
+#include <smumps_c.h>
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -104,6 +111,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* MUMPS code to detect the calculation step */
+
 #define MUMPS_JOB_END             -2
 #define MUMPS_JOB_INIT            -1
 #define MUMPS_JOB_ANALYSIS         1
@@ -111,26 +119,12 @@ BEGIN_C_DECLS
 #define MUMPS_JOB_SOLVE            3
 
 /* Default number for MPI_COMM_WORLD */
+
 #define USE_COMM_WORLD         -987654
 
 /*=============================================================================
  * Local Structure Definitions
  *============================================================================*/
-
-/* Basic per linear system options and logging */
-/*---------------------------------------------*/
-
-typedef struct _cs_sles_mumps_setup_t {
-
-  /* single precision structure */
-
-  SMUMPS_STRUC_C      *smumps;
-
-  /* double precision structure */
-
-  DMUMPS_STRUC_C      *dmumps;
-
-} cs_sles_mumps_setup_t;
 
 struct _cs_sles_mumps_t {
 
@@ -151,9 +145,11 @@ struct _cs_sles_mumps_t {
   void                        *hook_context;  /* Optional user context */
   cs_sles_mumps_setup_hook_t  *setup_hook;    /* Post setup function */
 
-  /* Setup data context */
+  /* MUMPS structure: either a pointer to SMUMPS_STRUC_C structure in case of a
+   * single-precision settings or a pointer to a DMUMPS_STRUC_C structure in
+   * case of a double-precision settings */
 
-  cs_sles_mumps_setup_t       *setup_data;
+  void                        *mumps_struct;
 
 };
 
@@ -191,6 +187,42 @@ _have_perio(const cs_halo_t     *halo)
               __func__);
 
   return have_perio;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if the MUMPS solver is defined as a double-precision or a
+ *        single-precision solver.
+ *
+ * \param[in]  slesp   pointer to a set of parameters for SLES
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_is_dmumps(const cs_param_sles_t     *slesp)
+{
+  assert(slesp != NULL);
+
+  switch (slesp->solver) {
+
+  case CS_PARAM_ITSOL_MUMPS:
+  case CS_PARAM_ITSOL_MUMPS_LDLT:
+    return true;
+
+  case CS_PARAM_ITSOL_MUMPS_FLOAT:
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
+    return false;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: MUMPS not defined as solver for system \"%s\".\n",
+              __func__, slesp->name);
+    break;
+  }
+
+  return false;;
 }
 
 /*============================================================================
@@ -1579,30 +1611,32 @@ _native_sym_smumps(int                   verbosity,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Function pointer for user settings of a MUMPS solver.
- *        This function is called at the end of the setup stage.
+ * \brief Function pointer for advanced user settings of a MUMPS solver.
+ *        This function is called two times during the setup stage.
+ *        1. Before the analysis step
+ *        2. Before the factorization step
+ *
+ * One can recover the MUMPS step through the "job" member.
+ * MUMPS_JOB_ANALYSIS or MUMPS_JOB_FACTORIZATION
  *
  * Note: if the context pointer is non-NULL, it must point to valid data
  * when the selection function is called so that structure should
  * not be temporary (i.e. local);
  *
- * \param[in]      slesp      pointer to the related cs_param_sles_t structure
- * \param[in, out] context    pointer to optional (untyped) value or structure
- * \param[in, out] dmumps     pointer to DMUMPS_STRUC_C (double-precision)
- * \param[in, out] smumps     pointer to SMUMPS_STRUC_C (single-precision)
+ * \param[in]      slesp    pointer to the related cs_param_sles_t structure
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] pmumps   pointer to DMUMPS_STRUC_C or SMUMPS_STRUC_C struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
                         void                    *context,
-                        DMUMPS_STRUC_C          *dmumps,
-                        SMUMPS_STRUC_C          *smumps)
+                        void                    *pmumps)
 {
   CS_UNUSED(slesp);
   CS_UNUSED(context);
-  CS_UNUSED(dmumps);
-  CS_UNUSED(smumps);
+  CS_UNUSED(pmumps);
 }
 
 /*============================================================================
@@ -1695,9 +1729,9 @@ cs_sles_mumps_create(const cs_param_sles_t       *slesp,
   c->hook_context = context;
   c->setup_hook = setup_hook;
 
-  /* Setup data */
+  /* Setup data structure */
 
-  c->setup_data = NULL;
+  c->mumps_struct = NULL;
 
   return c;
 }
@@ -1754,61 +1788,62 @@ cs_sles_mumps_free(void  *context)
   if (c == NULL)
     return;
 
-  cs_sles_mumps_setup_t *sd = c->setup_data;
+  if (c->mumps_struct != NULL) {
 
-  if (sd != NULL) {
+    if (_is_dmumps(c->sles_param)) {
 
-    if (sd->dmumps != NULL) {
+      DMUMPS_STRUC_C  *dmumps = c->mumps_struct;
 
-      sd->dmumps->job = MUMPS_JOB_END;
-      dmumps_c(sd->dmumps);
+      dmumps->job = MUMPS_JOB_END;
+      dmumps_c(dmumps);
 
       if (cs_glob_n_ranks == 1) {
 
-        BFT_FREE(sd->dmumps->irn);
-        BFT_FREE(sd->dmumps->jcn);
-        BFT_FREE(sd->dmumps->a);
+        BFT_FREE(dmumps->irn);
+        BFT_FREE(dmumps->jcn);
+        BFT_FREE(dmumps->a);
 
       }
       else {
 
-        BFT_FREE(sd->dmumps->irn_loc);
-        BFT_FREE(sd->dmumps->jcn_loc);
-        BFT_FREE(sd->dmumps->a_loc);
+        BFT_FREE(dmumps->irn_loc);
+        BFT_FREE(dmumps->jcn_loc);
+        BFT_FREE(dmumps->a_loc);
 
       }
 
-      BFT_FREE(sd->dmumps);
+      BFT_FREE(dmumps);
 
     }
+    else {
 
-    if (sd->smumps != NULL) {
+      SMUMPS_STRUC_C  *smumps = c->mumps_struct;
 
-      sd->smumps->job = MUMPS_JOB_END;
-      smumps_c(sd->smumps);
+      smumps->job = MUMPS_JOB_END;
+      smumps_c(smumps);
 
       if (cs_glob_n_ranks == 1) {
 
-        BFT_FREE(sd->smumps->irn);
-        BFT_FREE(sd->smumps->jcn);
-        BFT_FREE(sd->smumps->a);
+        BFT_FREE(smumps->irn);
+        BFT_FREE(smumps->jcn);
+        BFT_FREE(smumps->a);
 
       }
       else {
 
-        BFT_FREE(sd->smumps->irn_loc);
-        BFT_FREE(sd->smumps->jcn_loc);
-        BFT_FREE(sd->smumps->a_loc);
+        BFT_FREE(smumps->irn_loc);
+        BFT_FREE(smumps->jcn_loc);
+        BFT_FREE(smumps->a_loc);
 
       }
 
-      BFT_FREE(sd->smumps);
+      BFT_FREE(smumps);
 
     }
 
-    BFT_FREE(c->setup_data);
+    c->mumps_struct = NULL;
 
-  }
+  } /* MUMPS structure is not freed */
 
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(c->t_setup), &t0, &t1);
@@ -1830,6 +1865,7 @@ cs_sles_mumps_destroy(void   **context)
   if (c != NULL) {
 
     /* Free structure */
+
     cs_sles_mumps_free(c);
     BFT_FREE(c);
     *context = c;
@@ -1897,18 +1933,13 @@ cs_sles_mumps_setup(void               *context,
   /* Begin the setup */
 
   cs_sles_mumps_t  *c = context;
-  cs_sles_mumps_setup_t  *sd = c->setup_data;
 
-  if (sd == NULL) {
-    BFT_MALLOC(c->setup_data, 1, cs_sles_mumps_setup_t);
-    sd = c->setup_data;
-  }
+  c->mumps_struct = NULL;        /* Not used anymore */
 
   /* 1. Initialize the MUMPS structure */
   /* --------------------------------- */
 
-  if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS ||
-      c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_LDLT) {
+  if (_is_dmumps(c->sles_param)) {
 
     /* Sanity checks: DMUMPS_COMPLEX = DMUMPS_REAL = double
      * (see mumps_c_types.h) */
@@ -1916,31 +1947,33 @@ cs_sles_mumps_setup(void               *context,
     assert(sizeof(double) == sizeof(DMUMPS_COMPLEX));
     assert(sizeof(double) == sizeof(DMUMPS_REAL));
 
-    sd->smumps = NULL;        /* Not used anymore */
+    DMUMPS_STRUC_C  *dmumps = NULL;
+    BFT_MALLOC(dmumps, 1, DMUMPS_STRUC_C);
 
-    BFT_MALLOC(sd->dmumps, 1, DMUMPS_STRUC_C);
-
-    sd->dmumps->job = MUMPS_JOB_INIT;
-    sd->dmumps->par = 1;      /* all ranks are working */
-    sd->dmumps->sym = 0;
+    dmumps->job = MUMPS_JOB_INIT;
+    dmumps->par = 1;      /* all ranks are working */
+    dmumps->sym = 0;
 
     if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_LDLT)
-      sd->dmumps->sym = 2;
+      dmumps->sym = 2;
 
 #if defined(HAVE_MPI)
-    sd->dmumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
+    dmumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
 #else
     /* Not used in this case and set to the default value given by the MUMPS
        documentation */
 
-    sd->dmumps->comm_fortran = USE_COMM_WORLD;
+    dmumps->comm_fortran = USE_COMM_WORLD;
 #endif
 
-    dmumps_c(sd->dmumps); /* first call to MUMPS */
+    dmumps_c(dmumps); /* first call to MUMPS: Initialization */
+
+    /* Set the MUMPS pointer */
+
+    c->mumps_struct = dmumps;
 
   }
-  else if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_FLOAT ||
-           c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT) {
+  else {
 
     /* Sanity checks: SMUMPS_COMPLEX = SMUMPS_REAL = float
      * (see mumps_c_types.h) */
@@ -1948,31 +1981,32 @@ cs_sles_mumps_setup(void               *context,
     assert(sizeof(float) == sizeof(SMUMPS_COMPLEX));
     assert(sizeof(float) == sizeof(SMUMPS_REAL));
 
-    sd->dmumps = NULL;        /* Not used anymore */
+    SMUMPS_STRUC_C  *smumps = NULL;
+    BFT_MALLOC(smumps, 1, SMUMPS_STRUC_C);
 
-    BFT_MALLOC(sd->smumps, 1, SMUMPS_STRUC_C);
-
-    sd->smumps->job = MUMPS_JOB_INIT;
-    sd->smumps->par = 1;       /* all ranks are working */
-    sd->smumps->sym = 0;
+    smumps->job = MUMPS_JOB_INIT;
+    smumps->par = 1;       /* all ranks are working */
+    smumps->sym = 0;
 
     if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT)
-      sd->smumps->sym = 2;
+      smumps->sym = 2;
 
 #if defined(HAVE_MPI)
-    sd->smumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
+    smumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
 #else
     /* Not used in this case and set to the default value given by the MUMPS
        documentation */
-    sd->smumps->comm_fortran = USE_COMM_WORLD;
+
+    smumps->comm_fortran = USE_COMM_WORLD;
 #endif
 
-    smumps_c(sd->smumps); /* first call to MUMPS */
+    smumps_c(smumps); /* first call to MUMPS: Initialization */
+
+    /* Set the MUMPS pointer */
+
+    c->mumps_struct = smumps;
 
   }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid type of solver for the MUMPS library\n", __func__);
 
   /* 2. Fill the MUMPS structure before the analysis step */
   /* ---------------------------------------------------- */
@@ -1985,9 +2019,9 @@ cs_sles_mumps_setup(void               *context,
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _parall_msr_dmumps(verbosity, a, sd->dmumps);
+        _parall_msr_dmumps(verbosity, a, c->mumps_struct);
       else if (cs_mat_type == CS_MATRIX_NATIVE)
-        _parall_native_dmumps(verbosity, a, sd->dmumps);
+        _parall_native_dmumps(verbosity, a, c->mumps_struct);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format in parallel", __func__);
@@ -1996,9 +2030,9 @@ cs_sles_mumps_setup(void               *context,
     else { /* Sequential computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _msr_dmumps(verbosity, a, sd->dmumps);
+        _msr_dmumps(verbosity, a, c->mumps_struct);
       else if (cs_mat_type == CS_MATRIX_NATIVE)
-        _native_dmumps(verbosity, a, sd->dmumps);
+        _native_dmumps(verbosity, a, c->mumps_struct);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
@@ -2010,9 +2044,7 @@ cs_sles_mumps_setup(void               *context,
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _parall_msr_sym_dmumps(verbosity, a, sd->dmumps);
-      /* else if (cs_mat_type == CS_MATRIX_NATIVE) */
-      /*   _parall_native_sym_dmumps(verbosity, a, sd->dmumps); */
+        _parall_msr_sym_dmumps(verbosity, a, c->mumps_struct);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format in parallel", __func__);
@@ -2021,9 +2053,9 @@ cs_sles_mumps_setup(void               *context,
     else { /* Sequential computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _msr_sym_dmumps(verbosity, a, sd->dmumps);
+        _msr_sym_dmumps(verbosity, a, c->mumps_struct);
       else if (cs_mat_type == CS_MATRIX_NATIVE)
-        _native_sym_dmumps(verbosity, a, sd->dmumps);
+        _native_sym_dmumps(verbosity, a, c->mumps_struct);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
@@ -2035,7 +2067,7 @@ cs_sles_mumps_setup(void               *context,
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _parall_msr_smumps(verbosity, a, sd->smumps);
+        _parall_msr_smumps(verbosity, a, c->mumps_struct);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format in parallel", __func__);
@@ -2044,9 +2076,9 @@ cs_sles_mumps_setup(void               *context,
     else { /* Sequential computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _msr_smumps(verbosity, a, sd->smumps);
+        _msr_smumps(verbosity, a, c->mumps_struct);
       else if (cs_mat_type == CS_MATRIX_NATIVE)
-        _native_smumps(verbosity, a, sd->smumps);
+        _native_smumps(verbosity, a, c->mumps_struct);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
@@ -2058,9 +2090,7 @@ cs_sles_mumps_setup(void               *context,
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _parall_msr_sym_smumps(verbosity, a, sd->smumps);
-      /* else if (cs_mat_type == CS_MATRIX_NATIVE) */
-      /*   _parall_native_sym_smumps(a, sd->smumps); */
+        _parall_msr_sym_smumps(verbosity, a, c->mumps_struct);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format in parallel", __func__);
@@ -2069,9 +2099,9 @@ cs_sles_mumps_setup(void               *context,
     else { /* Sequential computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
-        _msr_sym_smumps(verbosity, a, sd->smumps);
+        _msr_sym_smumps(verbosity, a, c->mumps_struct);
       else if (cs_mat_type == CS_MATRIX_NATIVE)
-        _native_sym_smumps(verbosity, a, sd->smumps);
+        _native_sym_smumps(verbosity, a, c->mumps_struct);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid matrix format", __func__);
@@ -2086,64 +2116,77 @@ cs_sles_mumps_setup(void               *context,
 
   } /* End of switch */
 
-  if (sd->smumps == NULL) {
-
-    sd->dmumps->job = MUMPS_JOB_ANALYSIS;
-
-    /* Window to enable advanced user settings (before analysis) */
-    if (c->setup_hook != NULL)
-      c->setup_hook(c->sles_param, c->hook_context, sd->dmumps, sd->smumps);
-
-    dmumps_c(sd->dmumps);
-
-  }
-  else {
-
-    assert(sd->smumps != NULL);
-    sd->smumps->job = MUMPS_JOB_ANALYSIS;
-
-    /* Window to enable advanced user settings (before analysis) */
-    if (c->setup_hook != NULL)
-      c->setup_hook(c->sles_param, c->hook_context, sd->dmumps, sd->smumps);
-
-    smumps_c(sd->smumps);
-
-  }
-
-  /* 3. Factorization */
-  /* ---------------- */
+  /* 3. Analysis and factorization */
+  /* ----------------------------- */
 
   MUMPS_INT  infog1, infog2;
 
-  if (sd->smumps == NULL) {
+  if (_is_dmumps(c->sles_param)) {
 
-    sd->dmumps->job = MUMPS_JOB_FACTORIZATION;
+    DMUMPS_STRUC_C  *dmumps = c->mumps_struct;
+
+    /* Analysis step */
+    /* ------------- */
+
+    dmumps->job = MUMPS_JOB_ANALYSIS;
+
+    /* Window to enable advanced user settings (before analysis) */
+
+    if (c->setup_hook != NULL)
+      c->setup_hook(c->sles_param, c->hook_context, dmumps);
+
+    dmumps_c(dmumps);
+
+    /* Factorization step */
+    /* ------------------ */
+
+    dmumps->job = MUMPS_JOB_FACTORIZATION;
 
     /* Window to enable advanced user settings (before factorization) */
-    if (c->setup_hook != NULL)
-      c->setup_hook(c->sles_param, c->hook_context, sd->dmumps, sd->smumps);
 
-    dmumps_c(sd->dmumps);
+    if (c->setup_hook != NULL)
+      c->setup_hook(c->sles_param, c->hook_context, dmumps);
+
+    dmumps_c(dmumps);
 
     /* Feedback */
-    infog1 = sd->dmumps->INFOG(1);
-    infog2 = sd->dmumps->INFOG(2);
+
+    infog1 = dmumps->INFOG(1);
+    infog2 = dmumps->INFOG(2);
 
   }
   else {
 
-    assert(sd->smumps != NULL);
-    sd->smumps->job = MUMPS_JOB_FACTORIZATION;
+    SMUMPS_STRUC_C  *smumps = c->mumps_struct;
+
+    /* Analysis step */
+    /* ------------- */
+
+    smumps->job = MUMPS_JOB_ANALYSIS;
+
+    /* Window to enable advanced user settings (before analysis) */
+
+    if (c->setup_hook != NULL)
+      c->setup_hook(c->sles_param, c->hook_context, smumps);
+
+    smumps_c(smumps);
+
+    /* Factorization step */
+    /* ------------------ */
+
+    smumps->job = MUMPS_JOB_FACTORIZATION;
 
     /* Window to enable advanced user settings (before factorization) */
-    if (c->setup_hook != NULL)
-      c->setup_hook(c->sles_param, c->hook_context, sd->dmumps, sd->smumps);
 
-    smumps_c(sd->smumps);
+    if (c->setup_hook != NULL)
+      c->setup_hook(c->sles_param, c->hook_context, smumps);
+
+    smumps_c(smumps);
 
     /* Feedback */
-    infog1 = sd->smumps->INFOG(1);
-    infog2 = sd->smumps->INFOG(2);
+
+    infog1 = smumps->INFOG(1);
+    infog2 = smumps->INFOG(2);
 
   }
 
@@ -2218,52 +2261,45 @@ cs_sles_mumps_solve(void                *context,
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
 
-  cs_timer_t t0;
-  t0 = cs_timer_time();
+  cs_sles_mumps_t  *c = context;
+
+  if (c->mumps_struct == NULL)
+    cs_sles_mumps_setup(c, name, a, verbosity);
 
   MUMPS_INT  infog1 = 0;
-  cs_sles_mumps_t  *c = context;
-  cs_sles_mumps_setup_t  *sd = c->setup_data;
-
-  if (sd == NULL) {
-    cs_sles_mumps_setup(c, name, a, verbosity);
-    sd = c->setup_data;
-  }
+  cs_timer_t t0;
+  t0 = cs_timer_time();
 
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
 
   cs_fp_exception_disable_trap();
 
-  switch (c->sles_param->solver) {
+  if (_is_dmumps(c->sles_param)) {
 
     /* MUMPS with double-precision arrays */
     /* ---------------------------------- */
 
-  case CS_PARAM_ITSOL_MUMPS:
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
+    DMUMPS_STRUC_C  *dmumps = c->mumps_struct;
+    assert(dmumps != NULL);
 
-    /* Sanity checks */
+    /* 1. Build the RHS */
 
-    assert(sd->dmumps != NULL);
-    assert(sizeof(double) == sizeof(cs_real_t));
+    if (cs_glob_n_ranks == 1) { /* Sequential run */
 
-    /* Build the RHS */
-    if (cs_glob_n_ranks == 1) { /* sequential run */
-
-      assert(n_rows == sd->dmumps->n);
-      sd->dmumps->nrhs = 1;
+      assert(n_rows == dmumps->n);
+      dmumps->nrhs = 1;
       memcpy(vx, rhs, n_rows*sizeof(double));
-      sd->dmumps->rhs = vx;
+      dmumps->rhs = vx;
 
     }
-    else { /* parallel computation */
+    else { /* Parallel computation */
 
       assert(cs_glob_n_ranks > 1);
 
       /* Gather on the rank 0 (= host rank for MUMPS) the global RHS array */
 
       int  root_rank = 0;
-      MUMPS_INT  n_g_rows = sd->dmumps->n;
+      MUMPS_INT  n_g_rows = dmumps->n;
 
       double  *glob_rhs = NULL;
       if (cs_glob_rank_id == root_rank)
@@ -2271,21 +2307,21 @@ cs_sles_mumps_solve(void                *context,
 
       cs_parall_gather_r(root_rank, n_rows, n_g_rows, rhs, glob_rhs);
 
-      sd->dmumps->rhs = glob_rhs;
+      dmumps->rhs = glob_rhs;
 
     }
 
-    /* Resolution */
+    /* 2. Resolution */
 
-    sd->dmumps->job = MUMPS_JOB_SOLVE;
-    dmumps_c(sd->dmumps);
-    infog1 = sd->dmumps->INFOG(1);     /* feedback */
-    *residue = sd->dmumps->RINFOG(11); /* scaled residual */
+    dmumps->job = MUMPS_JOB_SOLVE;
+    dmumps_c(dmumps);
+    infog1 = dmumps->INFOG(1);     /* feedback */
+    *residue = dmumps->RINFOG(11); /* scaled residual */
 
-    /* Post-resolution operations */
+    /* 3. Post-resolution operations */
 
     if (cs_glob_n_ranks == 1)
-      sd->dmumps->rhs = NULL;
+      dmumps->rhs = NULL;
 
     else {
 
@@ -2295,39 +2331,38 @@ cs_sles_mumps_solve(void                *context,
        */
 
       int  root_rank = 0;
-      MUMPS_INT  n_g_rows = sd->dmumps->n;
-      double  *glob_rhs = sd->dmumps->rhs;
+      MUMPS_INT  n_g_rows = dmumps->n;
+      double  *glob_rhs = dmumps->rhs;
 
       cs_parall_scatter_r(root_rank, n_rows, n_g_rows, glob_rhs, vx);
 
       if (cs_glob_rank_id == root_rank)
         BFT_FREE(glob_rhs);
-      sd->dmumps->rhs = NULL;
+      dmumps->rhs = NULL;
 
     }
-    break; /* double-precision */
+
+  }
+  else {
 
     /* MUMPS with single-precision arrays */
     /* ---------------------------------- */
 
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
-  case CS_PARAM_ITSOL_MUMPS_FLOAT:
+    SMUMPS_STRUC_C  *smumps = c->mumps_struct;
+    assert(smumps != NULL);
 
-    /* Sanity checks */
+    /* 1. Build the RHS */
 
-    assert(sd->smumps != NULL);
+    if (cs_glob_n_ranks == 1) { /* Sequential run */
 
-    /* Build the RHS */
-
-    if (cs_glob_n_ranks == 1) { /* sequential run */
-
-      assert(n_rows == sd->smumps->n);
-      sd->smumps->nrhs = 1;
-      BFT_MALLOC(sd->smumps->rhs, n_rows, float);
+      assert(n_rows == smumps->n);
+      smumps->nrhs = 1;
+      BFT_MALLOC(smumps->rhs, n_rows, float);
 
       /* The MUMPS structure stores the RHS with the type SMUMPS_COMPLEX */
+
       for (cs_lnum_t i = 0; i < n_rows; i++)
-        sd->smumps->rhs[i] = (float)rhs[i];
+        smumps->rhs[i] = (float)rhs[i];
 
     }
     else {
@@ -2337,54 +2372,56 @@ cs_sles_mumps_solve(void                *context,
       /* Gather on the rank 0 (= host rank for MUMPS) the global RHS array */
 
       int  root_rank = 0;
-      MUMPS_INT  n_g_rows = sd->smumps->n;
+      MUMPS_INT  n_g_rows = smumps->n;
       float  *glob_rhs = NULL;
       if (cs_glob_rank_id == root_rank)
         BFT_MALLOC(glob_rhs, n_g_rows, float);
 
       /* Use vx (an initial guess is not useful for a direct solver) to define
-       * a single-precision rhs */
+       * a single-precision rhs
+       */
+
       float  *_svx = (float *)vx;
 
 #     pragma omp parallel for if (n_rows > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < n_rows; i++)
         _svx[i] = (float)rhs[i];
 
-      cs_parall_gather_f(root_rank, n_rows, n_g_rows, _svx,
-                         glob_rhs);
+      cs_parall_gather_f(root_rank, n_rows, n_g_rows, _svx, glob_rhs);
 
-      sd->smumps->rhs = glob_rhs;
+      smumps->rhs = glob_rhs;
 
     }
 
-    /* Resolution */
+    /* 2. Resolution */
 
-    sd->smumps->job = MUMPS_JOB_SOLVE;
-    smumps_c(sd->smumps);
-    infog1 = sd->smumps->INFOG(1);     /* feedback */
-    *residue = sd->smumps->RINFOG(11); /* scaled residual */
+    smumps->job = MUMPS_JOB_SOLVE;
+    smumps_c(smumps);
+    infog1 = smumps->INFOG(1);     /* feedback */
+    *residue = smumps->RINFOG(11); /* scaled residual */
 
-    /* Post-resolution operations */
+    /* 3. Post-resolution operations */
 
     if (cs_glob_n_ranks == 1) {
 
       /* Solution is stored inside rhs. Copy/cast into vx */
 
       for (cs_lnum_t i = 0; i < n_rows; i++)
-        vx[i] = (cs_real_t)sd->smumps->rhs[i];
+        vx[i] = (cs_real_t)smumps->rhs[i];
 
-      BFT_FREE(sd->smumps->rhs);
+      BFT_FREE(smumps->rhs);
 
     }
     else {
 
       /* Scatter operation (solution is stored in the RHS array).
        * Elements in glob_rhs belonging to a distant rank are sent back to
-       * this rank. */
+       * this rank.
+       */
 
       int  root_rank = 0;
-      MUMPS_INT  n_g_rows = sd->smumps->n;
-      float  *glob_rhs = sd->smumps->rhs;
+      MUMPS_INT  n_g_rows = smumps->n;
+      float  *glob_rhs = smumps->rhs;
       float  *_svx = (float *)vx;
 
       cs_parall_scatter_f(root_rank, n_rows, n_g_rows, glob_rhs, _svx);
@@ -2398,14 +2435,9 @@ cs_sles_mumps_solve(void                *context,
 
     }
 
-    sd->smumps->rhs = NULL;
+    smumps->rhs = NULL;
 
-    break; /* single-precision */
-
-  default:
-    bft_error(__FILE__, __LINE__, 0, " %s: Invalid solver.\n", __func__);
-
-  }
+  } /* Single or double-precision algorithm */
 
   cs_fp_exception_restore_trap();
 
