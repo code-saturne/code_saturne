@@ -85,6 +85,10 @@ cs_sles_petsc_library_info(cs_log_t  log_type);
 #include "cs_sles_amgx.h"
 #endif
 
+#if defined(HAVE_MUMPS)
+#include "cs_sles_mumps.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -139,6 +143,10 @@ _ext_library_version_info(bool  log)
   n_ext += 1;
 #endif
 
+#if defined(HAVE_MUMPS)
+  n_ext += 1;
+#endif
+
 #if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
   n_ext += 1;
 #endif
@@ -162,6 +170,9 @@ _ext_library_version_info(bool  log)
 #endif
 #if defined(HAVE_AMGX)
     cs_sles_amgx_library_info(log_id);
+#endif
+#if defined(HAVE_MUMPS)
+    cs_sles_mumps_library_info(log_id);
 #endif
 
 #if    defined(HAVE_METIS)  || defined(HAVE_PARMETIS) \

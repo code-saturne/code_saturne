@@ -298,6 +298,17 @@ cs_sles_mumps_log(const void  *context,
                   cs_log_t     log_type);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print information on MUMPS library.
+ *
+ * \param[in]  log_type  log type
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_mumps_library_info(cs_log_t  log_type);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
