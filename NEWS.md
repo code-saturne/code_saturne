@@ -3,6 +3,9 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- Ensure EOS is correctly detected on some systems by forcing the "-std=c++11"
+  flag in the configure test.
+
 - Fix crash when computing `iescor` error indicator.
 
 Release 7.2.0 (June 30 2022)

@@ -95,6 +95,8 @@ if test "x$with_eos" != "xno" ; then
     EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_6"
   fi
 
+  EOS_CPPFLAGS+=" -std=c++11"
+
   # check for pre-v1.8.0
   # This test is necessary because starting from 1.8.0 definition of mixing
   # in EOS changed.
@@ -113,7 +115,7 @@ if test "x$with_eos" != "xno" ; then
   AC_MSG_CHECKING([for EOS library)])
 
   cs_eos_lbase="${EOS_LIBS}"
-  
+
   for cs_eos_ladd in "$cs_eos_l0" "$cs_eos_l1"
   do
     if test "x$cs_have_eos" = "xno" ; then
