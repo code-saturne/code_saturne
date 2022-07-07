@@ -1029,8 +1029,34 @@ class MainFieldsModel(Variables, Model):
                                                     "uninfluenced_part", support="boundary")
 
     @Variables.noUndo
+    def detectFlowType(self):
+        """
+        Detect the type of flow set by the user.
+        This method is similar to but different from getPredefinedFlow.
+        Similar: because it determines a flow type (stored and set by the user in the case of getPredefinedFlow).
+        Different: because it is not associated with locked input options.
+        This method is used to determine the default values in the flow modeling.
+        For now this method is implemented only for two-phase flow.
+        """
+        id_list = self.getFieldIdList()
+        if len(id_list) != 2:
+            return "unknown"
+        # Discriminate between stratified / multiphase flow and dispersed flows
+        if self.getCriterion(id_list[1]) == "continuous":
+            return "free_surface"
+        else:
+            if self.getFieldNature(id_list[1]) == "solid":
+                return "particles_flow"
+            elif self.getFieldNature(id_list[1]) == "liquid":
+                return "droplet_flow"
+            elif self.getFieldNature(id_list[1]) == "gas":
+                return "boiling_flow" # TODO rename into bubbly_flow (need to check backward compatibility issues)
+        return "unknown"
+
+    @Variables.noUndo
     def getPredefinedFlow(self):
         """
+        Retrieve the predefined flow set by the user.
         """
         node = self.XMLNodethermo.xmlGetNode('predefined_flow')
         if node is None:

@@ -709,7 +709,7 @@ class XMLinitNeptune(BaseXmlInit):
 
                 # For previous cases, force a drag model
                 if force_model == "none":
-                    force_model = forces_xml_model.defaultValuesContinuous()['continuousdragmodel']
+                    force_model = forces_xml_model.defaultValues()['continuousdragmodel']
                 if flow_choice == "multiregime":
                     force_model = "G_Large_Interface_Model"
 

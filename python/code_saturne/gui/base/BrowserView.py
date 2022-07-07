@@ -932,7 +932,6 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
         if ncfd_fields > 1:
             from code_saturne.model.MainFieldsModel import MainFieldsModel
-            from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
             predefined_flow = MainFieldsModel(case).getPredefinedFlow()
             heat_mass_transfer = MainFieldsModel(case).getHeatMassTransferStatus()
 

@@ -55,10 +55,9 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
         self.__availableturbulentedispersionModelsList = ["none", "LLB_model", "GTD_model"]
         self.__availablewallforcesModelList = ["none", "antal", "tomiyama"]
-        self.__availableContinuousDragModelList = ["Large_Interface_Model", "G_Large_Interface_Model",
+        self.__availableContinuousDragModelList = ["none", "Large_Interface_Model", "G_Large_Interface_Model",
                                                    "Large_Bubble_Model"]
-        self.__availableGasDispersedDragModelList = ["ishii", "Wen_Yu"]
-        self.__availableSolidLiquidDispersedDragModelList = ["Gobin"]
+        self.__availableDispersedDragModelList = ["none", "ishii", "Wen_Yu", "Gobin"]
 
         self.__availableAddedMassModelsLists = ["none", "standard", "zuber"]
         self.__availableLiftModelsLists = ["none", "coef_cst", "Tomiyama_SMD", "Zeng_Baalbaki"]
@@ -128,17 +127,13 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         # field A is continuous and field B is dispersed
         self.isInList(fieldaId,self.getContinuousFieldList())
         self.isInList(fieldbId,self.getDispersedFieldList())
-
-        if (self.getFieldNature(fieldaId) == "liquid") and (self.getFieldNature(fieldbId) == "solid") :
-            return self.__availableSolidLiquidDispersedDragModelList
-        else :
-            predefined_flow = self.getPredefinedFlow()
-            if predefined_flow == "boiling_flow":
-                return ["ishii"]
-            elif predefined_flow == "droplet_flow":
-                return ["Wen_Yu"]
-            else:
-                return self.__availableGasDispersedDragModelList
+        predefined_flow = self.getPredefinedFlow()
+        if predefined_flow == "boiling_flow":
+            return ["ishii"]
+        elif predefined_flow == "droplet_flow":
+            return ["Wen_Yu"]
+        else:
+            return self.__availableDispersedDragModelList
 
 
     def getAvailableAddedMassModels(self) :
@@ -154,73 +149,57 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         return self.__availableLiftModelsLists
 
-
     def defaultValues(self):
         default = {}
-        predefined_flow = self.getPredefinedFlow()
+        flow_type = self.getPredefinedFlow()
+        if flow_type == "None":
+            flow_type = self.detectFlowType()
 
-        default['gasdisperseddragmodel'] = 'ishii'
-        default['liquidsoliddisperseddragmodel'] = 'Gobin'
-        default['addedmassmodel'] = 'zuber'
-        default['liftmodel'] = 'Tomiyama_SMD'
+        default['disperseddragmodel'] = 'none'
+        default['liftmodel'] = 'none'
+        default['addedmassmodel'] = 'none'
         default['turbulent_dispersion_model'] = "none"
-        default['wallforcemodel'] = 'tomiyama'
-        default['nowallforcemodel'] = 'none'
+        default['wallforcemodel'] = 'none'
 
-        if predefined_flow == "boiling_flow":
+        default['continuousdragmodel'] = 'none'
+        default['BubblesForLIM']       = 'off'
+        default['InterfaceSharpening'] = 'none'
+        default["SurfaceTension"] = "none"
+
+        if flow_type == "boiling_flow":
+            default['disperseddragmodel'] = "ishii"
+            default['liftmodel'] = "Tomiyama_SMD"
+            default['addedmassmodel'] = "zuber"
+            default['wallforcemodel'] = "tomiyama"
             GTD_condition_1 = (self.turb_m.getTurbulenceModel("1") in
                                ["k-epsilon",
                                 "k-epsilon_linear_production",
                                 "rij-epsilon_ssg'",
                                 "rij-epsilon_ebrsm"])
-
             GTD_condition_2 = (self.turb_m.getTurbulenceModel("2") == "none")
             if GTD_condition_1 and GTD_condition_2:
                 default['turbulent_dispersion_model'] = "GTD_model"
-        elif predefined_flow == "droplet_flow":
-            default['gasdisperseddragmodel'] = "Wen_Yu"
+        elif flow_type == "droplet_flow":
+            default['disperseddragmodel'] = "Wen_Yu"
             default['liftmodel'] = "Zeng_Baalbaki"
-            default['addedmassmodel'] = "none"
-            default['wallforcemodel'] = "none"
-        elif predefined_flow == "particles_flow":
-            default['gasdisperseddragmodel'] = 'ishii'
-            default['liftmodel'] = "Zeng_Baalbaki"
-            default['wallforcemodel'] = 'none'
-        else:
-            pass
-
-        return default
-
-
-    def defaultValuesContinuous(self):
-        default = {}
-        predefined_flow = self.getPredefinedFlow()
-
-        default['continuousdragmodel']           = 'Large_Interface_Model'
-        default['BubblesForLIM']                 = 'off'
-        default['InterfaceSharpening'] = 'none'
-        default["SurfaceTension"] = "none"
-
-        if predefined_flow == "free_surface":
-            pass
-        elif predefined_flow == "multiregime":
+        elif flow_type == "particles_flow":
+            default['disperseddragmodel'] = 'Gobin'
+        elif flow_type == "free_surface":
+            default['continuousdragmodel'] = "Large_Interface_Model"
+        elif flow_type == "multiregime":
             default['continuousdragmodel'] = "G_Large_Interface_Model"
             default['BubblesForLIM'] = "on"
-        else:
-            pass
 
         return default
+
 
     def setDefaultParameters(self, field_id_a, field_id_b):
         predefined_flow = self.getPredefinedFlow()
+        default = self.defaultValues()
 
         # Dispersed models
         if predefined_flow in ["boiling_flow", "droplet_flow", "particles_flow"]:
-            default = self.defaultValues()
-            if (self.getFieldNature(field_id_a) == "liquid") and (self.getFieldNature(field_id_b) == "solid"):
-                self.setDragModel(field_id_a, field_id_b, default["liquidsoliddisperseddragmodel"])
-            else:
-                self.setDragModel(field_id_a, field_id_b, default["gasdisperseddragmodel"])
+            self.setDragModel(field_id_a, field_id_b, default["disperseddragmodel"])
             self.setLiftModel(field_id_a, field_id_b, default["liftmodel"])
             self.setAddMassModel(field_id_a, field_id_b, default["addedmassmodel"])
             self.setTurbDispModel(field_id_a, field_id_b, default["turbulent_dispersion_model"])
@@ -228,7 +207,6 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
         # Continuous models
         elif predefined_flow in ["free_surface", "multiregime"]:
-            default = self.defaultValuesContinuous()
             self.setContinuousCouplingModel(field_id_a, field_id_b, default["continuousdragmodel"])
             self.setBubblesForLIMStatus(field_id_a, field_id_b, default["BubblesForLIM"])
             self.setInterfaceSharpeningModel(field_id_a, field_id_b, default["InterfaceSharpening"])
@@ -249,40 +227,6 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
             couple=[node['field_id_a'], node['field_id_b']]
             lst.append(couple)
         return lst
-
-    def __updatedrag(self, fieldaId, fieldbId) :
-        """
-        update drag model after fieldIdChange
-        """
-        model = ""
-        model = self.defaultValues()['gasdisperseddragmodel']
-        if (self.getFieldNature(fieldaId) == "liquid") and (self.getFieldNature(fieldbId == "solid")):
-            model = self.defaultValues()['liquidsoliddisperseddragmodel']
-        self.setDragModel(fieldaId, fieldbId, model)
-        if model != "none" :
-            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldbId, "drag_coefficient", "drag_coef"+str(fieldbId))
-        else :
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldbId, "drag_coefficient")
-
-
-    def __updateWallForce(self, fieldaId, fieldbId) :
-        """
-        update wall force after fieldIdChange
-        """
-        model = self.getWallForceModel(fieldaId, fieldbId)
-        if model not in self.getAvailableWallForcesModelList(fieldaId, fieldbId) :
-            model = self.getAvailableWallForcesModelList(fieldaId, fieldbId)[0]
-            self.setWallForceModel(fieldaId, fieldbId, model)
-
-
-    def __updateTurbulentDispersion(self, fieldaId, fieldbId) :
-        """
-        update turbulent dispersion after fieldIdChange
-        """
-        model = self.getTurbDispModel(fieldaId, fieldbId)
-        if model not in self.getAvailableTurbulenteDispersionModelList(fieldaId, fieldbId) :
-            model = self.getAvailableTurbulenteDispersionModelList(fieldaId, fieldbId)[0]
-            self.setTurbDispModel(fieldaId, fieldbId, model)
 
 
     @Variables.undoGlobal
@@ -309,9 +253,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('drag_model')
         if childNode is None :
-            model = self.defaultValues()['gasdisperseddragmodel']
-            if (self.getFieldNature(fieldaId) == "liquid") and (self.getFieldNature(fieldbId) == "solid"):
-                model = self.defaultValues()['liquidsoliddisperseddragmodel']
+            model = self.defaultValues()['disperseddragmodel']
             self.setDragModel(fieldaId, fieldbId, model)
         model = node.xmlGetNode('drag_model')['model']
         return model
@@ -386,10 +328,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         node = self.XMLInterForce.xmlInitChildNode('force', field_id_a=fieldaId, field_id_b=fieldbId)
         childNode = node.xmlGetNode('wall_force_model')
         if childNode is None :
-            if len(self.getAvailableWallForcesModelList(fieldaId, fieldbId)) > 1:
-                model = self.defaultValues()['wallforcemodel']
-            else:
-                model = self.defaultValues()['nowallforcemodel']
+            model = self.defaultValues()["wallforcemodel"]
             self.setWallForceModel(fieldaId, fieldbId, model)
         model = node.xmlGetNode('wall_force_model')['model']
         return model
@@ -471,7 +410,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         # separate_phases model has been removed from the GUI!
         # Hence if the test leads to separate phases we set the model to none...
         if ChildNode is None:
-            model = self.defaultValuesContinuous()['continuousdragmodel']
+            model = self.defaultValues()['continuousdragmodel']
             self.setContinuousCouplingModel(field_id_a, field_id_b, model)
             ChildNode = self.XMLInterForce.xmlGetChildNode('continuous_field_momentum_transfer', field_id_a=field_id_a,
                                                            field_id_b=field_id_b)
@@ -535,7 +474,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
                                                        field_id_b=field_id_b)
         ChildNode = node.xmlGetChildNode('BubblesForLIM')
         if ChildNode is None:
-            status = self.defaultValuesContinuous()['BubblesForLIM']
+            status = self.defaultValues()['BubblesForLIM']
             self.setBubblesForLIMStatus(field_id_a, field_id_b, status)
         status = node.xmlGetString('BubblesForLIM')
         return status
@@ -554,7 +493,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
                                                   field_id_b=field_id_b)
         ChildNode = node.xmlGetChildNode('InterfaceSharpening')
         if ChildNode is None:
-            status = self.defaultValuesContinuous()['InterfaceSharpening']
+            status = self.defaultValues()['InterfaceSharpening']
             self.setInterfaceSharpeningModel(field_id_a, field_id_b, status)
         status = node.xmlGetString('InterfaceSharpening')
         return status
@@ -575,7 +514,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         st_node = node.xmlGetChildNode('SurfaceTension')
         if st_node is None:
             st_node = node.xmlInitChildNode('SurfaceTension')
-            model = self.defaultValuesContinuous()['SurfaceTension']
+            model = self.defaultValues()['SurfaceTension']
             self.setSurfaceTensionModel(field_id_a, field_id_b, model)
         model = st_node.xmlGetString('model')
         return model
