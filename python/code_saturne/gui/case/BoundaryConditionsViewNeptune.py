@@ -171,7 +171,6 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
 
         Ui_BoundaryConditions.__init__(self)
         self.setupUi(self)
-        self.create_widgets()
 
         self.case = case
         self.case.undoStopGlobal()
@@ -196,21 +195,10 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         self.particlesWidget.setup(self.case)
 
         self.__hideAllWidgets()
+
         self.__slotSelectBoundary()
 
         self.case.undoStartGlobal()
-
-    def create_widgets(self):
-        """ Create widgets in a programmatic way (elements should progressively be
-        translated in python, and eventually moved in a separate python file
-        (cf. initiative local 2021)"""
-        layout = QGridLayout()
-        self.BackflowSeparator.setLayout(layout)
-        # Group backflow parameters into the backflow groupbox
-        layout.addWidget(self.EnergyWidget, 0, 0, 1, 1)
-        layout.addWidget(self.FractionWidget, 1, 0, 1, 1)
-        layout.addWidget(self.NonCondensableWidget, 2, 0, 1, 1)
-        layout.addWidget(self.ScalarWidget, 3, 0, 1, 1)
 
     def __initializeFieldTable(self):
         self.tableModelFields = StandardItemModelMainFields(self.mdl)
@@ -359,7 +347,14 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
             self.InterfacialAreaWidget.hideWidget()
             self.ScalarWidget.setup(self.case, self.__currentField)
             self.ScalarWidget.showWidget(boundary)
+            # Group backflow parameters into the backflow groupbox
             self.BackflowSeparator.show()
+            layout = QGridLayout()
+            layout.addWidget(self.EnergyWidget, 0, 0, 1, 1)
+            layout.addWidget(self.FractionWidget, 1, 0, 1, 1)
+            layout.addWidget(self.NonCondensableWidget, 2, 0, 1, 1)
+            layout.addWidget(self.ScalarWidget, 3, 0, 1, 1)
+            self.BackflowSeparator.setLayout(layout)
 
         self.WallWidget.hideWidget()
 
