@@ -62,6 +62,7 @@ from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
+from code_saturne.model.InterfacialAreaModel import InterfacialAreaModel
 from code_saturne.model.NeptuneWallTransferModel import NeptuneWallTransferModel
 from code_saturne.model.InterfacialEnthalpyModel import InterfacialEnthalpyModel
 from code_saturne.model.HgnModel import HgnModel
@@ -754,7 +755,12 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                                           QMessageBox.Yes | QMessageBox.No)
             if choice == QMessageBox.Yes:
                 self.nept.setPredefinedFlow(model)
+                #TODO : the setDefaultParameters method should be moved to setPredefinedFlow
+                # For now, this is not possible as it would introduce circular dependencies
+                # (InterfacialForcesModel and InterfacialAreaModel are children of MainFieldsModel)
                 InterfacialForcesModel(self.case).setDefaultParameters("1", "2")
+                InterfacialAreaModel(self.case).setDefaultParameters("1")
+                InterfacialAreaModel(self.case).setDefaultParameters("2")
             else:
                 self.modelNeptuneCFD.setItem(str_model=model_p)
                 return

@@ -43,6 +43,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         """
         #
         # XML file parameters
+        print("DEBUG - in InterfacialAreaModel.__init__")
         MainFieldsModel.__init__(self, case)
         self.case              = case
         self.XMLclosure        = self.case.xmlGetNode('closure_modeling')
@@ -57,18 +58,37 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
     def defaultValues(self):
         default = {}
 
+        default['areamodel'] = "constant"
         default['diameter'] = 0.001
+        default['sourceterm'] = "no_coalescence_no_fragmentation"
         default['mindiam'] = 1.e-6
         default['maxdiam'] = 0.1
-        default['coupling'] = "uncoupled"
-        default['areamodel'] = "constant"
-        default['sourcetermgas'] = "no_coalescence_no_fragmentation"
-        default['sourcetermsolid'] = "no_coalescence_no_fragmentation"
-        default['areamodel'] = "interfacial_area_transport"
-        default['sourcetermgas'] = "ruyer_seiler"
+
+        flow_type = self.getPredefinedFlow()
+        if flow_type == "None":
+            flow_type = self.detectFlowType()
+
+        if flow_type in ["boiling_flow", "droplet_flow", "multiregime_flow"]:
+            default['areamodel'] = "interfacial_area_transport"
+            default['sourceterm'] = "ruyer_seiler"
 
         return default
 
+    def setDefaultParameters(self, field_id):
+        """
+        Reset all parameters to default when activating a predefined flow (non user)
+        """
+        predefined_flow = self.getPredefinedFlow()
+        if predefined_flow == "None":
+            return
+
+        default = self.defaultValues()
+        self.setAreaModel(field_id, default['areamodel'])
+        self.setInitialDiameter(field_id, default['diameter'])
+        if default['areamodel'] == "constant":
+            self.setSourceTerm(field_id, default['sourceterm'])
+            self.setMinDiameter(field_id, default['mindiam'])
+            self.setMaxDiameter(field_id, default['maxdiam'])
 
     def getAreaModelList(self) :
         """
@@ -183,10 +203,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         noden = node.xmlGetNode('source_term')
         if noden is None :
             model = ""
-            if self.getFieldNature(fieldId) == "gas" :
-               model = self.defaultValues()['sourcetermgas']
-            else :
-               model = self.defaultValues()['sourcetermsolid']
+            model = self.defaultValues()['sourceterm']
             self.setSourceTerm(fieldId, model)
         model = node.xmlGetNode('source_term')['model']
 
