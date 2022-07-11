@@ -1295,7 +1295,7 @@ if test "x$NVCC" != "x" ; then
   nvccflags_default=""
   nvccflags_default_dbg="-g -G"
   nvccflags_default_opt="-O2"
-  nvccflags_default_prf="-g -lineinfo"
+  nvccflags_default_prf="-O2 -g -lineinfo"
 
 fi
 

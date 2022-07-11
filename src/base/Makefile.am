@@ -193,7 +193,8 @@ cs_headers.h
 if HAVE_CUDA
 pkginclude_HEADERS += \
 cs_base_cuda.h \
-cs_halo_cuda.h
+cs_halo_cuda.h \
+cs_cuda_contrib.h
 endif
 
 # Library source files

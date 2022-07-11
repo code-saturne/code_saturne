@@ -63,8 +63,8 @@ if test "x$cs_have_cuda" != "xno" ; then
 
   # Try to detect available architectures.
   # As of late 2021, we do not care to support CUDA versions older than 9
-  # (and even then,target machines should be at least Volta,
-  # though developping/debugging on local machines using CUDA 9 remains useful).
+  # (and even then,target machines should be at least Volta, though
+  # developping/debugging on local machines using older hardware remains useful).
 
   if test "$CUDA_ARCH_NUM" = ""; then
     # CUDA_ARCH_NUM="60 61 62 70 72 75 80 86"
@@ -83,7 +83,7 @@ if test "x$cs_have_cuda" != "xno" ; then
     rm -f conftest.cu conftest.o
   fi
 
-  NVCCFLAGS="${NVCCFLAGS} --maxrregcount=64 -Xptxas -v"
+  NVCCFLAGS="${NVCCFLAGS} -Xptxas -v"
 
   AC_DEFINE([HAVE_CUDA], 1, [CUDA offload support])
 
