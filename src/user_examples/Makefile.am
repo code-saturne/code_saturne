@@ -53,6 +53,7 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(PETSC_CPPFLAGS) \
 $(HYPRE_CPPFLAGS) \
+$(MUMPS_CPPFLAGS) \
 $(MEDCOUPLING_CPPFLAGS) \
 $(MED_CPPFLAGS) \
 $(HDF5_CPPFLAGS) \
@@ -130,6 +131,7 @@ cs_user_parameters-cdo-solidification.c \
 cs_user_parameters-ctwr.c \
 cs_user_parameters-coupling.c \
 cs_user_parameters-fans.c \
+cs_user_parameters-cdo-linear_solvers.c \
 cs_user_parameters-linear_solvers.c \
 cs_user_parameters-rotation.c \
 cs_user_parameters-volume_mass_injection.c \
