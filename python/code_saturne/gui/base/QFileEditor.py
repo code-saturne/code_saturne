@@ -54,9 +54,10 @@ try:
 except Exception:
     # PyQt4
     from code_saturne.gui.base.QtGui import QMainWindow, QMessageBox, \
-        QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessagBox
+        QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessageBox
 
 import code_saturne.gui.base.resource_base_rc
+from code_saturne.gui.base.SearchBar import SearchBar
 
 #-------------------------------------------------------------------------------
 # Local constants
@@ -426,33 +427,6 @@ class QExpandingMessageBox(QMessageBox):
                                QSizePolicy.Expanding)
 
         return result
-
-#-------------------------------------------------------------------------------
-# QFileEditor class
-#-------------------------------------------------------------------------------
-
-class FormWidget(QtWidgets.QWidget):
-    """
-    Main widget used to include both the browser and the editor zone
-    """
-
-    # ---------------------------------------------------------------
-    def __init__(self, parent, wlist):
-        super(FormWidget, self).__init__(parent)
-
-        self.layout = QtWidgets.QGridLayout(self)
-
-        n = len(wlist) - 1
-        for i, w in enumerate(wlist):
-            if i < n:
-                w.setMaximumWidth(400)
-                self.layout.addWidget(w, i, 0)
-            else:
-                self.layout.addWidget(w, 0, 1, 2, 1)
-
-        self.setLayout(self.layout)
-    # ---------------------------------------------------------------
-
 
 #-------------------------------------------------------------------------------
 # QFileSystemModel with modified header
@@ -833,6 +807,11 @@ class QFileEditor(QMainWindow):
                                  root_dir=self.case_dir,
                                  dir_type=self.case_name,
                                  case_name=self.case_name)
+        dock = QtWidgets.QDockWidget("User files explorer", self)
+        dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
+        dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
+        dock.setWidget(self.explorer.explorer)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
 
         # Explorer
         self.explorer_ref = None
@@ -841,9 +820,15 @@ class QFileEditor(QMainWindow):
                                          root_dir=reference_dir,
                                          dir_type='SHARE',
                                          case_name=self.case_name)
+            dock = QtWidgets.QDockWidget("Reference files explorer", self)
+            dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
+            dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
+            dock.setWidget(self.explorer_ref.explorer)
+            self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
 
         # Editor
         self.textEdit = self._initFileEditor()
+        self.setCentralWidget(self.textEdit)
 
         # Settings
         settings = QtCore.QSettings()
@@ -862,16 +847,14 @@ class QFileEditor(QMainWindow):
         self.filename = ""
         self.file_extension  = ""
 
-        if self.explorer_ref:
-            self.mainWidget = FormWidget(self, [self.explorer.explorer,
-                                                self.explorer_ref.explorer,
-                                                self.textEdit])
-        else:
-            self.mainWidget = FormWidget(self, [self.explorer.explorer,
-                                                self.textEdit])
+        # searchbar
+        self.searchBar = SearchBar(self.textEdit)
 
-        self.setCentralWidget(self.mainWidget)
-    # ---------------------------------------------------------------
+        dock = QtWidgets.QDockWidget("Editor search bar", self)
+        dock.setAllowedAreas(QtCore.Qt.TopDockWidgetArea | QtCore.Qt.BottomDockWidgetArea)
+        dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
+        dock.setWidget(self.searchBar)
+        self.addDockWidget(QtCore.Qt.TopDockWidgetArea, dock)
 
 
     # ---------------------------------------------------------------

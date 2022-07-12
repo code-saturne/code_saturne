@@ -45,6 +45,7 @@ QCouplingEditorView.py \
 QFileEditor.py \
 QtCase.py \
 QtPage.py \
+SearchBar.py \
 Toolbox.py
 
 if HAVE_QT5

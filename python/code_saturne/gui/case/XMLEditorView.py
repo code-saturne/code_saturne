@@ -36,6 +36,7 @@ This module contains the following classes and function:
 
 import sys
 import logging
+import re
 
 #-------------------------------------------------------------------------------
 # Third-party modules
@@ -44,6 +45,7 @@ import logging
 from code_saturne.gui.base.QtCore    import *
 from code_saturne.gui.base.QtGui     import *
 from code_saturne.gui.base.QtWidgets import *
+from code_saturne.gui.base.SearchBar import SearchBar
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -179,7 +181,6 @@ class XMLHighlighter(QSyntaxHighlighter):
 
             startIndex = self.valueStartExpression.indexIn(text, startIndex + commentLength);
 
-
 #-------------------------------------------------------------------------------
 # Dialog to show current XML status
 #-------------------------------------------------------------------------------
@@ -195,6 +196,7 @@ class XMLEditorView(QDialog, Ui_XMLEditor):
 
         Ui_XMLEditor.__init__(self)
         self.setupUi(self)
+        self.create_widgets()
 
         self.symbols  = []
         self.case = case
@@ -217,12 +219,19 @@ class XMLEditorView(QDialog, Ui_XMLEditor):
 
         self.expressionDoc = self.textEditContent.document()
 
+    def create_widgets(self):
+        """
+        Add widgets programmatically
+        """
+        self.searchBar = SearchBar(self.textEditContent)
+        self.layout().addWidget(self.searchBar, 0, 0, 1, -1)
 
     def accept(self):
-        """
-        What to do when user clicks on 'OK'.
-        """
-        QDialog.accept(self)
+
+        if self.searchBar.hasSearchFocus():
+            self.searchBar.find()
+        else:
+            QDialog.accept(self)
         return
 
 
