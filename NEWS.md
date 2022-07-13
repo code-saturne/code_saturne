@@ -1,6 +1,10 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Architectural changes:
+
+- Drop support for older EOS versions (prior to 1.8.0).
+
 Release 7.2.0 (June 30 2022)
 ----------------------------
 
