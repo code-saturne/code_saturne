@@ -3,6 +3,8 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- CUDA: fix incorrect block size computation in some algorithms.
+
 - Ensure EOS is correctly detected on some systems by forcing the "-std=c++11"
   flag in the configure test.
 

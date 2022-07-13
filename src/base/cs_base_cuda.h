@@ -395,7 +395,7 @@ static inline unsigned int
 cs_cuda_grid_size(cs_lnum_t     n,
                   unsigned int  block_size)
 {
-  return (n % block_size) ?  n/block_size : n/block_size + 1;
+  return (n % block_size) ?  n/block_size + 1 : n/block_size;
 }
 
 /*=============================================================================
