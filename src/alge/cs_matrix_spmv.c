@@ -2925,6 +2925,10 @@ _mat_vec_p_l_dist_mkl(const cs_matrix_t  *matrix,
  *
  * Currently, possible variant functions are:
  *
+ *   CS_MATRIX_NATIVE
+ *     default
+ *     cuda            (CUDA-accelerated)
+ *
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     default
  *     cuda            (CUDA-accelerated)
@@ -2961,9 +2965,7 @@ _matrix_spmv_set_func_d(cs_matrix_type_t             m_type,
 
 #if defined(HAVE_CUDA)
 
-#if !defined(HAVE_CUSPARSE_GENERIC_API)
 const char s_cuda[] = "cuda";
-#endif
 
 #if defined(HAVE_CUSPARSE)
 
@@ -2986,6 +2988,9 @@ const char *default_name = s_cuda;
 const char default_name[] = "not_implemented";
 
 #endif /* defined(HAVE_CUDA) */
+
+ if (m_type == CS_MATRIX_NATIVE)
+   default_name = s_cuda;
 
  if (_func_name == NULL)
    _func_name = default_name;
@@ -3063,6 +3068,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
  *     omp             (for OpenMP with compatible numbering)
  *     omp_atomic      (for OpenMP with atomic add)
  *     vector          (For vector machine with compatible numbering)
+ *     cuda            (CUDA-accelerated)
  *
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     default
@@ -3244,6 +3250,25 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       default:
         break;
       }
+    }
+
+    else if (!strcmp(func_name, "cuda")) {
+#if defined(HAVE_CUDA)
+      switch(fill_type) {
+      case CS_MATRIX_SCALAR:
+      case CS_MATRIX_SCALAR_SYM:
+        _spmv[0] = cs_matrix_spmv_cuda_native;
+        _spmv[1] = cs_matrix_spmv_cuda_native;
+        break;
+      case CS_MATRIX_BLOCK_D:
+      case CS_MATRIX_BLOCK_D_66:
+      case CS_MATRIX_BLOCK_D_SYM:
+      default:
+        break;
+      }
+#else
+      retcode = 2;
+#endif
     }
 
     break;

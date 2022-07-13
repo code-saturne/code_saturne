@@ -385,6 +385,23 @@ _variant_build_list(int                             n_fill_types,
 
     }
 
+#if defined(HAVE_CUDA)
+
+    if (cs_get_device_id() > -1)
+      _variant_add("Native, CUDA",
+                   NULL,
+                   CS_MATRIX_NATIVE,
+                   n_fill_types,
+                   fill_types,
+                   op_flag_ae,
+                   "cuda",
+                   NULL,
+                   NULL,
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
+
+#endif /* defined(HAVE_CUDA) */
   }
 
   if (type_filter[CS_MATRIX_CSR]) {
@@ -715,7 +732,7 @@ _matrix_check(int                          n_variants,
   BFT_MALLOC(yr0, n_cols_ext*6, cs_real_t);
 
   CS_MALLOC_HD(da, n_cols_ext*6*6, cs_real_t, cs_alloc_mode);
-  BFT_MALLOC(xa, n_edges*2*6*6, cs_real_t);
+  CS_MALLOC_HD(xa, n_edges*2*6*6, cs_real_t, cs_alloc_mode);
 
   /* Initialize arrays */
 

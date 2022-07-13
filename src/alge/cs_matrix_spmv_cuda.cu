@@ -153,6 +153,117 @@ static cusparseHandle_t  _handle = NULL;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/* \brief Zero range of elements.
+ *
+ * \param[in]   n   number of elements
+ * \param[out]  x   resulting vector
+ */
+/*----------------------------------------------------------------------------*/
+
+__global__ static void
+_zero_range(cs_lnum_t    n,
+            cs_real_t   *__restrict__ x)
+{
+  cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (ii < n)
+    x[ii] = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/* \brief Local diagonal contribution y = Da.x  + y.
+ *
+ * \param[in]   n_rows      number of local rows
+ * \param[in]   n_cols_ext  number of local columns (with ghosts)
+ * \param[in]   d_val       pointer to diagonal matrix values
+ * \param[in]   x           multipliying vector values
+ * \param[out]  y           resulting vector
+ */
+/*----------------------------------------------------------------------------*/
+
+__global__ static void
+_mat_vect_p_l_native_diag(cs_lnum_t         n_rows,
+                          cs_lnum_t         n_cols_ext,
+                          const cs_real_t  *__restrict__ d_val,
+                          const cs_real_t  *__restrict__ x,
+                          cs_real_t        *__restrict__ y)
+{
+  cs_lnum_t ii = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (ii < n_rows)
+    y[ii] = d_val[ii] * x[ii];
+
+  else if (ii < n_cols_ext)
+    y[ii] = 0;
+}
+
+/*----------------------------------------------------------------------------
+ * SpMV extradiagonal terms using native to face-based array and scatter
+ * approach, handling conflicts through atomic add.
+ *
+ * Non-symmetric matrix case.
+ *
+ * parameters:
+ *   n_edges  <-- local number of internal graph edges (mesh faces)
+ *   edges    <-- edges (mesh face -> cells) connectivity
+ *   xa       <-- extradiagonal values
+ *   x        <-- vector
+ *   y        <-> vector
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_mat_vect_p_l_native_exdiag(cs_lnum_t           n_edges,
+                            const cs_lnum_2_t  * __restrict__ edges,
+                            const cs_real_t    *__restrict__ xa,
+                            const cs_real_t    *__restrict__ x,
+                            cs_real_t          *__restrict__ y)
+{
+  cs_lnum_t edge_id = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (edge_id < n_edges) {
+    cs_lnum_t ii = edges[edge_id][0];
+    cs_lnum_t jj = edges[edge_id][1];
+    cs_real_t x_ii = __ldg(x + ii);
+    cs_real_t x_jj = __ldg(x + jj);
+    atomicAdd(&y[ii], xa[edge_id*2]     * x_jj);
+    atomicAdd(&y[jj], xa[edge_id*2 + 1] * x_ii);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * SpMV extradiagonal terms using native to face-based array and scatter
+ * approach, handling conflicts through atomic add.
+ *
+ * Symmetric matrix case.
+ *
+ * parameters:
+ *   n_edges  <-- local number of internal graph edges (mesh faces)
+ *   edges    <-- edges (mesh face -> cells) connectivity
+ *   xa       <-- extradiagonal values
+ *   x        <-- vector
+ *   y        <-> vector
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_mat_vect_p_l_native_exdiag_sym(cs_lnum_t           n_edges,
+                                const cs_lnum_2_t  * __restrict__ edges,
+                                const cs_real_t    *__restrict__ xa,
+                                const cs_real_t    *__restrict__ x,
+                                cs_real_t          *__restrict__ y)
+{
+  cs_lnum_t edge_id = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (edge_id < n_edges) {
+    cs_lnum_t ii = edges[edge_id][0];
+    cs_lnum_t jj = edges[edge_id][1];
+    cs_real_t x_ii = __ldg(x + ii);
+    cs_real_t x_jj = __ldg(x + jj);
+    atomicAdd(&y[ii], xa[edge_id] * x_jj);
+    atomicAdd(&y[jj], xa[edge_id] * x_ii);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 /* \brief Local matrix.vector product y = A.x with CSR matrix arrays.
  *
  * \param[in]   n_rows     number of local rows
@@ -757,16 +868,20 @@ _set_cusparse_map(cs_matrix_t   *matrix)
     bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
               __func__, cusparseGetErrorString(status));
 
+  csm->vecXValues = NULL;  /* Pointer to vector values */
+  csm->vecYValues = NULL;  /* Pointer to vector values */
+  csm->dBuffer = NULL;
+
+  csm->d_e_val = NULL;
+  csm->d_row_index = NULL;
+  csm->d_col_id = NULL;
+
   if (matrix->eb_size == 1) {
 
     cusparseIndexType_t index_dtype
       = (sizeof(cs_lnum_t) == 4) ? CUSPARSE_INDEX_32I : CUSPARSE_INDEX_64I;
     cudaDataType_t val_dtype
       = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
-
-    csm->vecXValues = NULL;  /* Pointer to vector values */
-    csm->vecYValues = NULL;  /* Pointer to vector values */
-    csm->dBuffer = NULL;
 
     status = cusparseCreateCsr(&(csm->matA),
                                matrix->n_rows,
@@ -905,6 +1020,8 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
 #endif
 }
 
+#if defined(HAVE_CUSPARSE_GENERIC_API)
+
 /*----------------------------------------------------------------------------
  * Update matrix cuSPARSE mapping in block diagonal case.
  *
@@ -923,8 +1040,6 @@ _update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
 {
   assert(csm != NULL);
 
-#if defined(HAVE_CUSPARSE_GENERIC_API)
-
   cusparseStatus_t status = CUSPARSE_STATUS_SUCCESS;
   cudaDataType_t val_dtype
     = (sizeof(cs_real_t) == 8) ? CUDA_R_64F : CUDA_R_32F;
@@ -936,7 +1051,7 @@ _update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
     status = cusparseCreateDnMat(&(csm->matX),
                                  matrix->n_cols_ext,
                                  matrix->db_size,
-                                 matrix->db_size, // n_cols_ext, /* leading dimension */
+                                 matrix->db_size,
                                  d_x,
                                  val_dtype,
                                  CUSPARSE_ORDER_ROW);
@@ -955,7 +1070,7 @@ _update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
     status = cusparseCreateDnMat(&(csm->matY),
                                  matrix->n_rows,
                                  matrix->db_size,
-                                 matrix->db_size, //n_rows, /* leading dimension */
+                                 matrix->db_size,
                                  d_y,
                                  val_dtype,
                                  CUSPARSE_ORDER_ROW);
@@ -994,8 +1109,9 @@ _update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
     CS_CUDA_CHECK(cudaMalloc(&(csm->dBuffer), bufferSize));
   }
 
-#endif
 }
+
+#endif // defined(HAVE_CUSPARSE_GENERIC_API)
 
 #endif // defined(HAVE_CUSPARSE)
 
@@ -1046,6 +1162,7 @@ cs_matrix_spmv_cuda_finalize(void)
 void
 cs_matrix_spmv_cuda_set_stream(cudaStream_t  stream)
 {
+  printf("set_stream\n");
   _stream = stream;
 }
 
@@ -1061,6 +1178,109 @@ cudaStream_t
 cs_matrix_spmv_cuda_get_stream(void)
 {
   return _stream;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Matrix.vector product y = A.x with MSR matrix, scalar CUDA version.
+ *
+ * \param[in]   matrix        pointer to matrix structure
+ * \param[in]   exclude_diag  exclude diagonal if true,
+ * \param[in]   sync          synchronize ghost cells if true
+ * \param[in]   d_x           multipliying vector values (on device)
+ * \param[out]  d_y           resulting vector (on device)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
+                           bool                exclude_diag,
+                           bool                sync,
+                           cs_real_t           d_x[restrict],
+                           cs_real_t           d_y[restrict])
+{
+  const cs_matrix_struct_native_t  *ms
+    = (const cs_matrix_struct_native_t *)matrix->structure;
+
+  const cs_matrix_coeff_dist_t  *mc
+    = (const cs_matrix_coeff_dist_t *)matrix->coeffs;
+
+  const cs_real_t *__restrict__ da
+    = (const cs_real_t *)cs_get_device_ptr_const_pf
+                           (const_cast<cs_real_t *>(mc->d_val));
+  const cs_real_t *__restrict__ xa
+    = (const cs_real_t *)cs_get_device_ptr_const_pf
+                           (const_cast<cs_real_t *>(mc->e_val));
+
+  /* Ghost cell communication */
+
+  cs_halo_state_t *hs = NULL;
+  if (sync)
+    hs = _pre_vector_multiply_sync_x_start(matrix, d_x);
+
+  /* Diagonal part of matrix.vector product */
+
+  unsigned int blocksize = 256;
+  unsigned int gridsize = cs_cuda_grid_size(ms->n_cols_ext, blocksize);
+
+  if (!exclude_diag)
+    _mat_vect_p_l_native_diag<<<gridsize, blocksize, 0, _stream>>>
+      (ms->n_rows, ms->n_cols_ext, da, d_x, d_y);
+  else
+    _zero_range<<<gridsize, blocksize, 0, _stream>>>
+      (ms->n_cols_ext, d_y);
+
+  /* Finalize ghost cell comunication if overlap used */
+
+  if (hs != NULL)
+    cs_halo_sync_wait(matrix->halo, d_x, hs);
+
+  cudaStreamSynchronize(_stream);
+
+  /* Non-diagonal terms */
+
+  if (xa != NULL) {
+    gridsize = cs_cuda_grid_size(ms->n_edges, blocksize);
+
+    const cs_lnum_2_t *restrict edges
+      = (const cs_lnum_2_t *)cs_get_device_ptr_const_pf
+                               (const_cast<cs_lnum_2_t *>(ms->edges));
+
+#if 1
+    if (mc->symmetric)
+      _mat_vect_p_l_native_exdiag_sym<<<gridsize, blocksize, 0, _stream>>>
+        (ms->n_edges, edges, xa, d_x, d_y);
+    else
+      _mat_vect_p_l_native_exdiag<<<gridsize, blocksize, 0, _stream>>>
+        (ms->n_edges, edges, xa, d_x, d_y);
+
+#else
+    if (mc->symmetric) {
+      for (cs_lnum_t e_id = 0; e_id < ms->n_edges; e_id++) {
+        cs_lnum_t ii = edges[e_id][0];
+        cs_lnum_t jj = edges[e_id][1];
+        d_y[ii] += xa[e_id] * d_x[jj];
+        d_y[jj] += xa[e_id] * d_x[ii];
+      }
+
+    }
+    else {
+      for (cs_lnum_t e_id = 0; e_id < ms->n_edges; e_id++) {
+        cs_lnum_t ii = edges[e_id][0];
+        cs_lnum_t jj = edges[e_id][1];
+        d_y[ii] += xa[2*e_id] * d_x[jj];
+        d_y[jj] += xa[2*e_id + 1] * d_x[ii];
+      }
+    }
+#endif
+  }
+
+  cudaStreamSynchronize(_stream);
+
+  if (_stream == 0) {
+    cudaStreamSynchronize(0);
+    CS_CUDA_CHECK(cudaGetLastError());
+  }
 }
 
 /*----------------------------------------------------------------------------*/

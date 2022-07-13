@@ -80,6 +80,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *     omp             (for OpenMP with compatible numbering)
  *     omp_atomic      (for OpenMP with atomic add)
  *     vector          (For vector machine with compatible numbering)
+ *     cuda            (CUDA-accelerated)
  *
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     default
