@@ -82,19 +82,6 @@ if test "x$with_eos" != "xno" ; then
 
   eosversion=`${with_eos}/bin/eos --version`
 
-  if test "$eosversion" = "1.3.0"; then
-    EOS_LIBS="-lCCLanguageAPI -lCCEOSAPI"
-    EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_6"
-  fi
-  if test "$eosversion" = "1.4.0"; then
-    EOS_LIBS="-lshared_eos"
-    EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_6"
-  fi
-  if test "$eosversion" = "1.5.0"; then
-    EOS_LIBS="-lshared_eos"
-    EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_6"
-  fi
-
   EOS_CPPFLAGS+=" -std=c++11"
 
   # check for pre-v1.8.0
@@ -102,9 +89,6 @@ if test "x$with_eos" != "xno" ; then
   # in EOS changed.
   AC_MSG_CHECKING([if EOS version >= 1.8.0])
   AS_VERSION_COMPARE(${eosversion}, 1.8.0, [EOS_PRE_V1_8=-1], [EOS_PRE_V1_8=0], [EOS_PRE_V1_8=1])
-  if test "${EOS_PRE_V1_8}" = "-1"; then
-    EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_8"
-  fi
 
   CPPFLAGS="${CPPFLAGS} ${EOS_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${EOS_LDFLAGS}"
@@ -155,6 +139,7 @@ AM_CONDITIONAL(HAVE_EOS, test x$cs_have_eos = xyes)
 
 AC_SUBST(cs_have_eos)
 AC_SUBST(eos_prefix, [${with_eos}])
+AC_SUBST(eosversion)
 AC_SUBST(EOS_CPPFLAGS)
 AC_SUBST(EOS_LDFLAGS)
 AC_SUBST(EOS_LIBS)
