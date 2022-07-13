@@ -1162,7 +1162,6 @@ cs_matrix_spmv_cuda_finalize(void)
 void
 cs_matrix_spmv_cuda_set_stream(cudaStream_t  stream)
 {
-  printf("set_stream\n");
   _stream = stream;
 }
 
