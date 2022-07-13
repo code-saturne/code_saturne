@@ -3823,13 +3823,15 @@ _gkb_cvg_test(cs_gkb_builder_t           *gkb)
  *         computed before calling this function.
  *
  * \param[in, out] uza     pointer to a Uzawa builder structure
+ * \param[in]      prev_res previous residual
  *
  * \return true (one more iteration) otherwise false
  */
 /*----------------------------------------------------------------------------*/
 
 static bool
-_uza_cg_cvg_test(cs_uza_builder_t           *uza)
+_uza_cg_cvg_test(cs_uza_builder_t         *uza,
+                 double                    prev_res)
 {
   /* Increment the number of algo. iterations */
 
@@ -3837,7 +3839,6 @@ _uza_cg_cvg_test(cs_uza_builder_t           *uza)
 
   /* Compute the new residual based on the norm of the divergence constraint */
 
-  const cs_real_t  prev_res = uza->algo->res;
   const double  tau = fmax(uza->algo->param.rtol * uza->algo->normalization,
                            uza->algo->param.atol);
 
@@ -5119,7 +5120,7 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
   sprintf(system_name, "%s:init_guess", eqp->name);
 
   slesp->name = system_name;
-  slesp->eps = fmin(slesp->eps, nslesp->il_algo_param.rtol);
+  slesp->eps = fmin(slesp->eps, 0.5*nslesp->il_algo_param.rtol);
   slesp->n_max_iter = CS_MAX(100, init_max_iter);
 
   cs_param_sles_update_cvg_settings(true, slesp); /* use the field id */
@@ -5209,14 +5210,17 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
 
   memcpy(dk, gk, uza->n_p_dofs*sizeof(cs_real_t));
 
-  uza->algo->normalization = cs_gdot(uza->n_p_dofs, rk, gk);
+  double  beta_denum = cs_gdot(uza->n_p_dofs, rk, gk);
+  uza->algo->normalization = sqrt(beta_denum);
   uza->algo->res0 = uza->algo->normalization;
   uza->algo->res = uza->algo->res0;
+
+  double  prev_res = uza->algo->res0;
 
   /* Main loop knowing g0, r0, d0, u0, p0 */
   /* ------------------------------------ */
 
-  while (_uza_cg_cvg_test(uza)) {
+  while (_uza_cg_cvg_test(uza, prev_res)) {
 
     /* Sensitivity step: Compute wk as the solution of A.wk = B^t.dk */
 
@@ -5313,9 +5317,11 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
     /* Conjugate gradient direction: update dk */
 
     double  beta_num = cs_gdot(uza->n_p_dofs, rk, gk);
-    double  beta_factor = beta_num/uza->algo->res;
+    double  beta_factor = beta_num/beta_denum;
+    beta_denum = beta_num; /* Next time it is used at the denumerator */
 
-    uza->algo->res = beta_num;
+    prev_res = uza->algo->res;
+    uza->algo->res = sqrt(beta_num);
 
     /* dk <-- gk + beta_factor * dk */
 
