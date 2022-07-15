@@ -21,6 +21,93 @@
 !-------------------------------------------------------------------------------
 !> \file rayso.f90
 !>
+!-------------------------------------------------------------------------------
+!> \brief Compute reflexion and transmission
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role
+!______________________________________________________________________________!
+!> \param[in]   pioc        Albedo of simple diffusion for cloud (water)
+!> \param[in]   piaero      Albedo of simple diffusion for aerosol
+!> \param[in]   gasym       Asymmetry factor for clouds
+!> \param[in]   gaero       Asymmetry factor for aerosols
+!> \param[in]   tauc        Optical depth for clouds
+!> \param[in]   taua        Optical depth for aersols
+!> \param[out]  ref         Reflexion
+!> \param[out]  tra         Transmission
+!> \param[in]   epsc        clipping threshold
+!> \param[in]   dqqv        Optical depth for Water vapor
+!_______________________________________________________________________________
+
+subroutine reftra  &
+    (pioc, piaero, gasym, gaero, tauc, taua, &
+    ref, tra, epsc,dqqv)
+
+  !===========================================================================
+
+  implicit none
+
+  ! Arguments
+
+  double precision, intent(in) :: pioc, piaero,  gasym, gaero
+  double precision, intent(in) :: tauc, taua,  dqqv, epsc
+  double precision, intent(inout) :: ref, tra
+
+  ! Local
+  double precision ::gas, fas, kt, gama1, gama2, tln
+  double precision :: drt, extlnp, extlnm
+  double precision :: pic, tau
+
+  !===========================================================================
+
+  tau = tauc +taua + dqqv
+  ! For 0 optical depth
+  if (tau .lt. epsc) then
+    ref = 0.d0
+    tra = 1.d0
+  else
+
+    ! Pure diffusion atmosphere (pioc=1)
+    if (pioc.ge.(1.d0-epsc)) then !TODO check .and. (taua .le. epsc))
+      gama1=(sqrt(3.d0)/2.d0)*(1.d0-gasym)
+      ref = gama1*tau/(1.d0+gama1*tau)
+      tra = 1.d0/(1.d0+gama1*tau)
+
+    else
+      pic =(pioc*tauc+piaero*taua)/tau
+      ! Pure absorbing atmosphere (pioc=0)
+      if (pic .lt. epsc) then
+        gama1=dsqrt(3.d0)
+        ref = 0.d0
+        tra = dexp(-gama1*tau)
+      else
+
+        gas=(pioc*tauc*gasym+piaero*taua*gaero)&
+          /(pic*tau)
+
+        fas=gas*gas
+        tau=(1.d0-pic*fas)*tau
+        pic=pic*(1.d0-fas)/(1.d0-pic*fas)
+        gas=(gas-fas)/(1.d0-fas)
+        gama1=(dsqrt(3.d0)/2.d0)*(2.d0-pic*(1.d0+gas))
+        gama2=(dsqrt(3.d0)*pic/2.d0)*(1.d0-gas)
+        kt=dsqrt(gama1*gama1-gama2*gama2)
+        tln=kt*tau
+        extlnp=dexp(tln)
+        extlnm=dexp(-tln)
+        drt=(kt+gama1)*extlnp+(kt-gama1)*extlnm
+        ref=gama2*(extlnp-extlnm)/drt
+        tra=2.d0*kt/drt
+      endif
+
+    endif
+
+  endif
+
+end subroutine reftra
+
+!-------------------------------------------------------------------------------
 !> \brief Compute solar fluxes for both clear and cloudy atmosphere following
 !> Lacis and Hansen (1974). The multiple diffusion is taken into account by an
 !> addition method and overlapping between water vapor and liquid water with k
@@ -1200,90 +1287,3 @@ contains
   !-----------------------------------------------------------------------------
 
 end subroutine rayso
-
-!-------------------------------------------------------------------------------
-!> \brief Compute reflexion and transmission
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role
-!______________________________________________________________________________!
-!> \param[in]   pioc        Albedo of simple diffusion for cloud (water)
-!> \param[in]   piaero      Albedo of simple diffusion for aerosol
-!> \param[in]   gasym       Asymmetry factor for clouds
-!> \param[in]   gaero       Asymmetry factor for aerosols
-!> \param[in]   tauc        Optical depth for clouds
-!> \param[in]   taua        Optical depth for aersols
-!> \param[out]  ref         Reflexion
-!> \param[out]  tra         Transmission
-!> \param[in]   epsc        clipping threshold
-!> \param[in]   dqqv        Optical depth for Water vapor
-!_______________________________________________________________________________
-
-subroutine reftra  &
-    (pioc, piaero, gasym, gaero, tauc, taua, &
-    ref, tra, epsc,dqqv)
-
-  !===========================================================================
-
-  implicit none
-
-  ! Arguments
-
-  double precision, intent(in) :: pioc, piaero,  gasym, gaero
-  double precision, intent(in) :: tauc, taua,  dqqv, epsc
-  double precision, intent(inout) :: ref, tra
-
-  ! Local
-  double precision ::gas, fas, kt, gama1, gama2, tln
-  double precision :: drt, extlnp, extlnm
-  double precision :: pic, tau
-
-  !===========================================================================
-
-  tau = tauc +taua + dqqv
-  ! For 0 optical depth
-  if (tau .lt. epsc) then
-    ref = 0.d0
-    tra = 1.d0
-  else
-
-    ! Pure diffusion atmosphere (pioc=1)
-    if (pioc.ge.(1.d0-epsc)) then !TODO check .and. (taua .le. epsc))
-      gama1=(sqrt(3.d0)/2.d0)*(1.d0-gasym)
-      ref = gama1*tau/(1.d0+gama1*tau)
-      tra = 1.d0/(1.d0+gama1*tau)
-
-    else
-      pic =(pioc*tauc+piaero*taua)/tau
-      ! Pure absorbing atmosphere (pioc=0)
-      if (pic .lt. epsc) then
-        gama1=dsqrt(3.d0)
-        ref = 0.d0
-        tra = dexp(-gama1*tau)
-      else
-
-        gas=(pioc*tauc*gasym+piaero*taua*gaero)&
-          /(pic*tau)
-
-        fas=gas*gas
-        tau=(1.d0-pic*fas)*tau
-        pic=pic*(1.d0-fas)/(1.d0-pic*fas)
-        gas=(gas-fas)/(1.d0-fas)
-        gama1=(dsqrt(3.d0)/2.d0)*(2.d0-pic*(1.d0+gas))
-        gama2=(dsqrt(3.d0)*pic/2.d0)*(1.d0-gas)
-        kt=dsqrt(gama1*gama1-gama2*gama2)
-        tln=kt*tau
-        extlnp=dexp(tln)
-        extlnm=dexp(-tln)
-        drt=(kt+gama1)*extlnp+(kt-gama1)*extlnm
-        ref=gama2*(extlnp-extlnm)/drt
-        tra=2.d0*kt/drt
-      endif
-
-    endif
-
-  endif
-
-end subroutine reftra
-
