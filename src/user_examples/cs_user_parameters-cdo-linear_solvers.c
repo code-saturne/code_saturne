@@ -205,6 +205,103 @@ cs_user_parameters(cs_domain_t    *domain)
     cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-5");
   }
   /*! [cdo_sles_navsto_gkb_kcycle] */
+
+  /*! [cdo_sles_navsto_uzacg] */
+  {
+    /* Parameters related to the Navier-Stokes settings. General strategy. */
+
+    cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
+
+    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "uzawa_cg");
+    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_RTOL, "1e-6");
+    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_ATOL, "1e-14");
+
+    cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
+
+    /* Linear algebra settings */
+
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+
+    /* Set the inner solver for the velocity block */
+
+#if defined(HAVE_HYPRE)
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fgmres");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-1");
+#else
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fcg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-4");
+#endif
+
+  /*===============================
+    Set the Schur complement solver
+    =============================== */
+
+    /* Available approximations are:
+     *
+     *  CS_PARAM_SCHUR_DIAG_INVERSE,
+     *  CS_PARAM_SCHUR_LUMPED_INVERSE,
+     *  CS_PARAM_SCHUR_MASS_SCALED,
+     */
+
+    nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_MASS_SCALED;
+
+  }
+  /*! [cdo_sles_navsto_uzacg] */
+
+  /*! [cdo_sles_navsto_minres] */
+  {
+    /* Parameters related to the Stokes settings.
+       MINRES is not possible with a non-symmetric saddle-point system
+       General strategy. */
+
+    cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
+
+    cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "minres");
+    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_RTOL, "1e-9");
+    cs_navsto_param_set(nsp, CS_NSKEY_IL_ALGO_ATOL, "1e-14");
+
+    cs_equation_param_t  *mom_eqp = cs_equation_param_by_name("momentum");
+
+    /* Linear algebra settings */
+
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SLES_VERBOSITY, "2");
+
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL, "fcg");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND, "amg");
+
+#if defined(HAVE_PETSC)
+    cs_equation_param_set(mom_eqp, CS_EQKEY_PRECOND_BLOCK_TYPE, "diag");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "boomer");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-1");
+
+    /* Must be set after the previous line to switch to PETSC in order to be
+       able to use a block preconditioning for the velocity block */
+
+    cs_equation_param_set(mom_eqp, CS_EQKEY_SOLVER_FAMILY, "petsc");
+
+#else  /* PETSc not installed */
+    cs_equation_param_set(mom_eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
+    cs_equation_param_set(mom_eqp, CS_EQKEY_ITSOL_EPS, "1e-4");
+#endif
+
+  /*===============================
+    Set the Schur complement solver
+    =============================== */
+
+    /* Available approximations are:
+     *
+     *  CS_PARAM_SCHUR_DIAG_INVERSE,
+     *  CS_PARAM_SCHUR_LUMPED_INVERSE,
+     *  CS_PARAM_SCHUR_MASS_SCALED  --> Good choice for the Stokes eq.
+     */
+
+    nsp->sles_param->schur_approximation = CS_PARAM_SCHUR_MASS_SCALED;
+  }
+  /*! [cdo_sles_navsto_minres] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -226,6 +323,12 @@ cs_user_parameters(cs_domain_t    *domain)
 void
 cs_user_linear_solvers(void)
 {
+  /*! [linear_solver_immediate_exit] */
+  /* Redefine the threshold under which an immediate exit occurs */
+
+  cs_sles_set_epzero(1e-15);
+  /*! [linear_solver_immediate_exit] */
+
   /*! [linear_solver_kcycle] */
   {
     /* Retrieve the set of SLES parameters for the "momentum equation */
