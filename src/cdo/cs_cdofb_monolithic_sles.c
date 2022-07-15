@@ -5299,9 +5299,9 @@ cs_cdofb_monolithic_uzawa_cg_solve(const cs_navsto_param_t       *nsp,
      *  - gk     = gk   - rho_factor * zk
      */
 
-    double rho_factor_denum = cs_gdot(uza->n_p_dofs, dk, dwk);
+    double rho_factor_denum = cs_gdot(uza->n_p_dofs, gk, dwk);
     assert(fabs(rho_factor_denum) > 0);
-    double  rho_factor = cs_gdot(uza->n_p_dofs, rk, dk) / rho_factor_denum;
+    double  rho_factor = cs_gdot(uza->n_p_dofs, rk, gk) / rho_factor_denum;
 
 #   pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
     for (cs_lnum_t iu = 0; iu < uza->n_u_dofs; iu++)
