@@ -252,7 +252,6 @@ endif
 !     est incompatible avec
 !       - estimateurs
 !       - ipucou
-!       - iphydr et icalhy
 !       - dt variable en espace ou en temps et stationnaire
 !     Ici on s'arrete si on n'est pas dans le cas du schema std
 
@@ -265,7 +264,6 @@ if ( (abs(vcopt%thetav-1.0d0).gt.1.d-3).or.               &
      (    thetvi       .gt.0.d0 ).or.                     &
      (    iviext       .gt.0    )    ) then
   if (indest.eq.1.or.ipucou.eq.1.or.                      &
-                     iphydr.eq.2.or.                      &
       idtvar.eq.1.or.idtvar.eq.2.or.idtvar.lt.0) then
     write(nfecra,2140)                                    &
          vcopt%thetav,                                    &
@@ -991,8 +989,6 @@ endif
 '@  one of the following option (which has been activated ):',  /,&
 '@    - Error estimation (IESCAL)',                             /,&
 '@    - reinforced U-P coupling (IPUCOU)',                      /,&
-'@    - specific treatment of hydrostatic pressure',            /,&
-'@      contribution  (IPHYDR et ICALHY)',                      /,&
 '@    - time-step variable with space or iteration or',         /,&
 '@      steady-state   algorithm(IDTVAR)',                      /,&
 '@',                                                            /,&
