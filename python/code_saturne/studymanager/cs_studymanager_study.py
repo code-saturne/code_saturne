@@ -34,6 +34,7 @@ import string
 import time
 import logging
 import fnmatch
+from collections import OrderedDict
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -2077,11 +2078,6 @@ class Studies(object):
 
         return attached_files
 
-    #---------------------------------------------------------------------------
-
-    def getlabel(self):
-        return self.labels
-
 #-------------------------------------------------------------------------------
 # class dependency_graph
 #-------------------------------------------------------------------------------
@@ -2091,7 +2087,11 @@ class dependency_graph(object):
     def __init__(self):
         """ Initializes a dependency graph object to an empty dictionary
         """
-        self.graph_dict = {}
+        self.graph_dict = OrderedDict()
+        # maximum number of level in the graph
+        self.max_level = 0
+        # maximum number of proc used in a case of the graph
+        self.max_proc = 0
 
     def add_dependency(self, dependency):
         """ Defines dependency between two cases as an edge in the graph
@@ -2118,6 +2118,7 @@ class dependency_graph(object):
                         # cases with dependency are level > 0 and connected to the dependency
                         self.add_dependency((case, neighbor))
                         case.level = neighbor.level + 1
+                        self.max_level = max([self.max_level, case.level])
                         break
                 if case.level is None:
                     msg = "Problem in graph construction : dependency " \
@@ -2126,6 +2127,8 @@ class dependency_graph(object):
             else:
                 # cases with no dependency are level 0
                 case.level = 0
+
+            self.max_proc = max([self.max_proc, case.n_procs])
 
     def nodes(self):
         """ returns the cases of the dependency graph """
@@ -2146,21 +2149,21 @@ class dependency_graph(object):
         for node in self.graph_dict:
             keep_node = True
             if filter_level is not None:
-                keep_node = node.level is int(filter_level)
+                keep_node_l = node.level is int(filter_level)
             if filter_n_procs is not None:
-                keep_node = node.n_procs is int(filter_n_procs)
-            if keep_node:
+                keep_node_p = node.n_procs is int(filter_n_procs)
+            if keep_node_l and keep_node_p:
                 sub_graph.add_node(node)
         return sub_graph
 
     def __str__(self):
         res = "\nList of cases: "
         for node in self.nodes():
-            res += str(node) + " "
+            res += str(node.title) + " "
         res += "\nList of dependencies: "
         for dependency in self.dependencies():
             (node1, node2) = dependency
-            res += '\n' + str(node1.name) + ' depends on ' + str(node2.name)
+            res += '\n' + str(node1.title) + ' depends on ' + str(node2.title)
         return res
 
 #-------------------------------------------------------------------------------

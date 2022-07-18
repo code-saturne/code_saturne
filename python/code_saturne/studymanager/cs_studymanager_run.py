@@ -51,7 +51,7 @@ log.setLevel(logging.NOTSET)
 
 #-------------------------------------------------------------------------------
 
-def run_studymanager_command(_c, _log, pythondir = None):
+def run_studymanager_command(_c, _log):
     """
     Run command with arguments.
     Redirection of the stdout or stderr of the command.
@@ -76,11 +76,6 @@ def run_studymanager_command(_c, _log, pythondir = None):
     cmd = separate_args(_c)
 
     env = os.environ.copy()
-
-    if pythondir:
-        pythondir = enquote_arg(pythondir)
-        pythonpath = pythondir + ':' + env.get("PYTHONPATH", '')
-        env.update([("PYTHONPATH", pythonpath)])
 
     try:
         t1 = time.time()
