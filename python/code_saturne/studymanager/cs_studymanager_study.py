@@ -551,13 +551,10 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def run(self, resource_name=None):
+    def build_run_cmd(self, resource_name=None):
         """
-        Check if a run with same result subdirectory name exists
-        and launch run if not.
+        Define run command with specified options.
         """
-        home = os.getcwd()
-        os.chdir(os.path.join(self.__dest, self.label))
 
         e = os.path.join(self.pkg.get_dir('bindir'), self.exe)
 
@@ -581,6 +578,34 @@ class Case(object):
 
         if resource_name:
             run_cmd += " --with-resource " + resource_name
+
+        return run_cmd
+
+    #---------------------------------------------------------------------------
+
+    def build_run_batch(self, resource_name=None):
+        """
+        Launch run in RESU/run_id subdirectory in an batch mode.
+        """
+        run_cmd_batch = "cd " + self.run_dir + os.linesep
+
+        run_cmd_batch += self.build_run_cmd(resource_name)
+
+        # append run_case.log in run_dir
+        run_cmd_batch += " >> run_case.log 2>&1" + os.linesep + os.linesep
+
+        return run_cmd_batch
+
+    #---------------------------------------------------------------------------
+
+    def run(self, resource_name=None):
+        """
+        Launch run in RESU/run_id subdirectory.
+        """
+        home = os.getcwd()
+        os.chdir(self.run_dir)
+
+        run_cmd = self.build_run_cmd(resource_name)
 
         # append run_case.log in run_dir
         file_name = os.path.join(self.run_dir, "run_case.log")
@@ -833,6 +858,7 @@ class Study(object):
         @param with_tags: list of tags given at the command line
         @type without_tags: C{List}
         @param without_tags: list of tags given at the command line
+        @param resource_config: name of the compute resource: C{String}
         """
         # Initialize attributes
         self.__package  = pkg
@@ -993,29 +1019,31 @@ class Studies(object):
 
         # Store options
 
-        self.__pkg            = pkg
-        self.__create_xml     = options.create_xml
-        self.__update_smgr    = options.update_smgr
-        self.__update_setup   = options.update_setup
-        self.__force_rm       = options.remove_existing
-        self.__disable_ow     = options.disable_overwrite
-        self.__debug          = options.debug
-        self.__n_procs        = options.n_procs
-        self.__filter_level   = options.filter_level
-        self.__filter_n_procs = options.filter_n_procs
+        self.__pkg               = pkg
+        self.__create_xml        = options.create_xml
+        self.__update_smgr       = options.update_smgr
+        self.__update_setup      = options.update_setup
+        self.__force_rm          = options.remove_existing
+        self.__disable_ow        = options.disable_overwrite
+        self.__debug             = options.debug
+        self.__n_procs           = options.n_procs
+        self.__filter_level      = options.filter_level
+        self.__filter_n_procs    = options.filter_n_procs
         # Use the provided resource name if forced
-        self.__resource_name  = options.resource_name
-        self.__quiet          = options.quiet
-        self.__running        = options.runcase
-        self.__n_iter         = options.n_iterations
-        self.__compare        = options.compare
-        self.__ref            = options.reference
-        self.__postpro        = options.post
-        self.__default_fmt    = options.default_fmt
+        self.__resource_name     = options.resource_name
+        self.__quiet             = options.quiet
+        self.__running           = options.runcase
+        self.__n_iter            = options.n_iterations
+        self.__compare           = options.compare
+        self.__ref               = options.reference
+        self.__postpro           = options.post
+        self.__slurm_batch_size  = options.slurm_batch_size
+        self.__slurm_batch_wtime = options.slurm_batch_wtime
+        self.__default_fmt       = options.default_fmt
         # do not use tex in matplotlib (built-in mathtext is used instead)
-        self.__dis_tex        = options.disable_tex
+        self.__dis_tex           = options.disable_tex
         # tex reports compilation with pdflatex
-        self.__pdflatex       = not options.disable_pdflatex
+        self.__pdflatex          = not options.disable_pdflatex
 
         # Query install configuration and current environment
         # (add number of procs based on resources to install
@@ -1535,6 +1563,7 @@ class Studies(object):
         self.reporting("  o Run all cases")
 
         for case in self.graph.graph_dict:
+
             self.check_prepro(case)
             if self.__running:
                 if case.compute == 'on' and case.is_compiled != "KO":
@@ -1583,6 +1612,172 @@ class Studies(object):
                                        case.title)
 
                     self.__log_file.flush()
+
+        os.chdir(home)
+
+        self.reporting('')
+
+    #---------------------------------------------------------------------------
+
+    def run_slurm_batches(self):
+        """
+        Update and run all cases.
+        Warning, if the markup of the case is repeated in the xml file of parameters,
+        the run of the case is also repeated.
+        """
+
+        slurm_batch_template = """#!/bin/sh
+#SBATCH --ntasks={0}
+#SBATCH --time={1}:00:00
+#SBATCH --output=vnv_{2}
+#SBATCH --error=vnv_{2}
+#SBATCH --job-name=saturne_vnv_{2}
+"""
+        cur_batch_id = 0
+        job_id_list = []
+
+        home = os.getcwd()
+
+        self.reporting("  o Run all cases in slurm batch mode")
+
+        # loop on level (0 means without dependency)
+        for level in range(self.graph.max_level+1):
+
+            # job id list for the current level
+            cur_job_id_list = []
+
+            # loop on number of processor
+            for nproc in range(self.graph.max_proc):
+
+                batch_cmd = ""
+                cur_batch_size = 0
+
+                # loop on cases of the sub graph
+                for case in self.graph.extract_sub_graph(level,nproc+1).graph_dict:
+
+                    self.check_prepro(case)
+                    if self.__running:
+                        if case.compute == 'on' and case.is_compiled != "KO":
+
+                            if self.__n_iter is not None:
+                                os.chdir(case.run_dir)
+                                # Create a control_file in run folder
+                                if not os.path.exists('control_file'):
+                                    control_file = open('control_file','w')
+                                    control_file.write("time_step_limit "
+                                                      + str(self.__n_iter) + "\n")
+                                    # Flush to ensure that control_file content is seen
+                                    # when control_file is copied to the run directory on all systems
+                                    control_file.flush()
+                                    control_file.close
+                                os.chdir(home)
+
+                            self.reporting('    - running %s ...' % case.title,
+                                           stdout=True, report=False, status=True)
+
+                            # append content of batch command with run of the case
+                            batch_cmd += case.build_run_batch()
+                            cur_batch_size += 1
+
+                            # submit once batch size is reached
+                            if cur_batch_size >= self.__slurm_batch_size:
+                                slurm_batch_name = "slurm_batch_file_" + \
+                                                   str(cur_batch_id) + ".sh"
+                                slurm_batch_file = open(slurm_batch_name, mode='w')
+
+                                # fill file with template
+                                cmd = slurm_batch_template.format(nproc+1,
+                                                                  self.__slurm_batch_wtime,
+                                                                  cur_batch_id)
+
+                                # add exclusive option to batch template for
+                                # computation with at least 6 processors
+                                if nproc+1 > 5:
+                                    cmd += "#SBATCH --exclusive"
+                                cmd += "\n"
+
+                                slurm_batch_file.write(cmd)
+
+                                # fill file with batch command for several cases
+                                slurm_batch_file.write(batch_cmd)
+                                slurm_batch_file.flush()
+
+                                # submit batch
+                                if level < 1:
+                                    output = subprocess.check_output(['sbatch',
+                                             slurm_batch_name])
+                                else:
+                                    # list of dependency id should be in the
+                                    # :id1:id2:id3 format 
+                                    list_id = ""
+                                    for item in job_id_list:
+                                        list_id += ":" + str(item)
+                                    output = subprocess.check_output(['sbatch',
+                                             "--dependency=afterany"
+                                             + list_id, slurm_batch_name])
+
+                                # find job id with regex and store it
+                                msg = output.decode('utf-8').strip()
+                                match = re.search('\d{8}', msg)
+                                job_id = match.group()
+                                cur_job_id_list.append(job_id)
+                                self.reporting('    - job submission %s ...' % msg,
+                                               stdout=True, report=True,
+                                               status=True)
+
+                                batch_cmd = ""
+                                cur_batch_id += 1
+                                cur_batch_size = 0
+                                slurm_batch_file.close()
+
+                if cur_batch_size > 0:
+                    slurm_batch_name = "slurm_batch_file_" + \
+                                       str(cur_batch_id) + ".sh"
+                    slurm_batch_file = open(slurm_batch_name, mode='w')
+
+                    # fill file with template
+                    cmd = slurm_batch_template.format(nproc+1,
+                                                      self.__slurm_batch_wtime,
+                                                      cur_batch_id)
+                    # add exclusive option to batch template for
+                    # computation with at least 6 processors
+                    if nproc+1 > 5:
+                        cmd += "#SBATCH --exclusive"
+                    cmd += "\n"
+                    slurm_batch_file.write(cmd)
+
+                    # fill file with batch command for several cases
+                    slurm_batch_file.write(batch_cmd)
+                    slurm_batch_file.flush()
+
+                    # submit batch
+                    if level < 1:
+                        output = subprocess.check_output(['sbatch',
+                                 slurm_batch_name])
+                    else:
+                        # list of dependency id should be in the
+                        # :id1:id2:id3 format 
+                        list_id = ""
+                        for item in job_id_list:
+                            list_id += ":" + str(item)
+                        output = subprocess.check_output(['sbatch',
+                                 "--dependency=afterany"
+                                 + list_id, slurm_batch_name])
+
+                    # find job id with regex and store it
+                    msg = output.decode('utf-8').strip()
+                    match = re.search('\d{8}', msg)
+                    job_id = match.group()
+                    cur_job_id_list.append(job_id)
+                    self.reporting('    - job submission %s ...' % msg,
+                                   stdout=True, report=True, status=True)
+
+                    batch_cmd = ""
+                    cur_batch_id += 1
+                    cur_batch_size = 0
+                    slurm_batch_file.close()
+
+            job_id_list = cur_job_id_list
 
         os.chdir(home)
 

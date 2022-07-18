@@ -98,6 +98,10 @@ Majors command-line options are detailed here:
 - `--without-tags=WITHOUT_TAGS`: exclude any run with one of specified
   tags (separated by commas)
 - `--create-xml`: create xml from study (current directory has to be a study)
+- `--slurm-batch-size=SIZE`: submit batch of cases (number is SIZE) using slurm.
+  Cases are sorted by number of processors and level of dependency.
+- `--slurm-batch-wtime=M` specify the wall time limit in hours in slurm batch
+  mode (3 hours by default)
 
 Examples
 --------
@@ -137,6 +141,12 @@ Examples
   $ code_saturne smgr -f smgr_ribs.xml -r -n 2 --with-tags=coarse,hr
   --dest=../RUNS/RIBS --repo=..
   ```
+- submit "coarse" cases on cluster per block of 4 using slurm:
+  ```
+  $ code_saturne smgr -f smgr.xml -r --with-tags=coarse
+  --slurm-batch-size=4
+  ```
+
 ### Note
 
 `report_figures.pdf` is generated only if the option `-p, --post` is present in
@@ -296,6 +306,25 @@ the __destination__ `RESU/<run_id>` directory.
     `domain` argument should be modified directly, rather than modifying the
     `setup.xml` file, as the matching values have already been read and assigned
     to `domain` at this point.
+
+Submission on cluster using SLURM
+---------------------------------
+
+On a cluster using the SLURM resource manager, SMGR can be configured to
+submit batches of cases rather than running them in succession.
+All cases are automatically sorted by number of processors and level of dependency,
+and grouped by blocks of _N_ cases of similar characteristics (to avoid submitting
+too many small jobs).
+Job-dependencies are defined automatically such that blocks of dependency level
+`M` will wait until all blocks of level `M-1` are successfully finished.
+
+This is activated by defining `N > 0` using the following command-line option:
+`--slurm-batch-size=N`
+`--slurm-batch-wtime=M` can also be used to specify the wall time limit in hours
+of submissions (3 hours by default).
+
+Warning: for EDF users, the `wckey` argument should be defined in the user
+environnement with the following command: `export SBATCH_WCKEY=<key>`.
 
 Compare checkpoint files
 ------------------------

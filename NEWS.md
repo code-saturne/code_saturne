@@ -21,6 +21,12 @@ Architectural changes:
 
 - Drop support for older EOS versions (prior to 1.8.0).
 
+Studymanager:
+
+- New option (--slurm-batch-size=N with N>0) to submit batches of cases using
+  the SLURM resource manager on cluster. Cases are sorted by number of
+  processors and level of dependency.
+
 Release 7.2.0 (June 30 2022)
 ----------------------------
 

@@ -165,6 +165,12 @@ def process_cmd_line(argv, pkg):
     parser.add_option("--with-resource", dest="resource_name", default=None,
                       help="use resource settings based on given name")
 
+    parser.add_option("--slurm-batch-size", dest="slurm_batch_size", default=0,
+                      type="int", help="number of cases per batch with slurm")
+
+    parser.add_option("--slurm-batch-wtime", dest="slurm_batch_wtime", default=3,
+                      type="int", help="wall time in hours used in slurm batch mode")
+
     if len(argv)==0:
         parser.print_help(sys.stderr)
         sys.exit(1)
@@ -372,7 +378,10 @@ def run_studymanager(pkg, options):
         print(" run_studymanager() >> Starts running...")
 
     if options.runcase:
-        studies.run()
+        if options.slurm_batch_size < 1:
+            studies.run()
+        else:
+            studies.run_slurm_batches()
 
     if options.debug:
         print(" run_studymanager() >> Exits runs")
