@@ -39,11 +39,10 @@ import fnmatch
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.base.cs_exec_environment import get_shell_type, enquote_arg
 from code_saturne.base.cs_compile import files_to_compile, compile_and_link
 from code_saturne.base import cs_create
 from code_saturne.base.cs_create import set_executable, create_local_launcher
-from code_saturne.base import cs_run_conf
+from code_saturne.base import cs_exec_environment, cs_run_conf
 
 from code_saturne.model import XMLengine
 from code_saturne.studymanager.cs_studymanager_pathes_model import PathesModel
@@ -159,7 +158,16 @@ def isCase(dirpath):
 #===============================================================================
 
 class Case(object):
-    def __init__(self, pkg, rlog, diff, parser, study, data, repo, dest):
+    def __init__(self,
+                 pkg,
+                 rlog,
+                 diff,
+                 parser,
+                 study,
+                 data,
+                 repo,
+                 dest,
+                 resource_config=None):
         """
         @type data: C{Dictionary}
         @param data: contains all keyword and value read in the parameters file
@@ -237,6 +245,65 @@ class Case(object):
 
         self.exe = os.path.join(pkg.get_dir('bindir'),
                                 pkg.name + pkg.config.shext)
+
+        # Query number of processes
+
+        if not self.n_procs:
+            if run_conf == None:
+                run_config_path = os.path.join(self.__repo, self.label,
+                                               "DATA", "run.cfg")
+                if os.path.isfile(run_config_path):
+                    run_conf = cs_run_conf.run_conf(run_config_path,
+                                                    package=self.pkg)
+
+            if resource_config:
+                self.n_procs = self.__query_n_procs__(run_conf,
+                                                      resource_config)
+            else:   # Should not occur in standard use
+                self.n_procs = 1
+
+    #---------------------------------------------------------------------------
+
+    def __query_n_procs__(self, run_conf, resource_config):
+        """
+        Determine number of processes required for a given case
+        based on its run.cfg and install configurations.
+        """
+
+        n_procs = None
+
+        if run_conf == None:
+            return resource_config['resource_n_procs']
+
+        resource_name = resource_config['resource_name']
+        if resource_name:
+            resource_name = resource_name.lower()
+
+        if not resource_name or not resource_name in run_conf.sections:
+            resource_name = resource_config['batch']
+            if resource_name:
+                resource_name = os.path.basename(resource_name).lower()
+            if not resource_name or not resource_name in run_conf.sections:
+                resource_name = 'job_defaults'
+
+        n_procs = run_conf.get(resource_name, 'n_procs')
+        if n_procs == None:
+            self.job_header_lines = None
+            if self.batch.rm_type:
+                job_header = run_conf.get(resource_name, 'job_header')
+                if job_header != None:
+                    job_header_lines = job_header.split(os.linesep)
+            if job_header_lines != None:
+                batch = cs_batch.batch(self.pkg)
+                n_procs = batch.get_n_procs(job_header_lines)
+
+        if n_procs == None:
+            n_procs = run_conf.get('job_defaults', 'n_procs')
+
+        if n_procs:
+            n_procs = int(n_procs)
+
+        return n_procs
 
     #---------------------------------------------------------------------------
 
@@ -555,7 +622,7 @@ class Case(object):
 
         l = subprocess.Popen(cmd,
                              shell=True,
-                             executable=get_shell_type(),
+                             executable=cs_exec_environment.get_shell_type(),
                              stdout=subprocess.PIPE,
                              universal_newlines=True).stdout
         lines = l.readlines()
@@ -727,7 +794,7 @@ class Study(object):
     Create, run and compare all cases for a given study.
     """
     def __init__(self, pkg, parser, study, exe, dif, rlog, n_procs=None,
-                 with_tags=None, without_tags=None):
+                 with_tags=None, without_tags=None, resource_config=None):
         """
         Constructor.
           1. initialize attributes,
@@ -816,7 +883,8 @@ class Study(object):
                              self.label,
                              data,
                              self.__repo,
-                             self.__dest)
+                             self.__dest,
+                             resource_config=resource_config)
                     self.cases.append(c)
                     self.case_labels.append(c.label)
 
@@ -929,6 +997,22 @@ class Studies(object):
         self.__dis_tex        = options.disable_tex
         # tex reports compilation with pdflatex
         self.__pdflatex       = not options.disable_pdflatex
+
+        # Query install configuration and current environment
+        # (add number of procs based on resources to install
+        # configuration).
+
+        resource_config = cs_run_conf.get_install_config_info(pkg)
+        if self.__resource_name:
+            resource_config['resource_name'] = self.__resource_name
+
+        exec_env = cs_exec_environment.exec_environment(pkg,
+                                                        wdir=None,
+                                                        n_procs=options.n_procs,
+                                                        n_procs_default=None,
+                                                        n_threads=None)
+
+        resource_config['resource_n_procs'] = exec_env.resources.n_procs
 
         # Create file of parameters
 
@@ -1098,7 +1182,8 @@ class Studies(object):
                                            exe, dif, self.__log_file, \
                                            options.n_procs, \
                                            self.__with_tags, \
-                                           self.__without_tags,)] )
+                                           self.__without_tags,
+                                           resource_config=resource_config)] )
             if options.debug:
                 self.reporting(" Append study:" + l, report=False)
 
@@ -1290,7 +1375,7 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def dump_graph(self):
+    def dump_graph(self, resource_name=None):
         """
         Dump dependency graph based on all studies and all cases.
         Can be limited to a sub graph is filters an tags are given

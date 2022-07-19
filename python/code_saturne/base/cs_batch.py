@@ -830,6 +830,27 @@ class batch:
 
     #---------------------------------------------------------------------------
 
+    def get_n_procs(self, lines):
+        """
+        Query number of processes defined by a job header.
+        """
+
+        n_procs = None
+
+        self.parse_lines(lines)
+
+        if self.params['job_procs']:
+            n_procs = int(self.params['job_procs'])
+
+        elif self.params['job_ppn']:
+            n_procs = int(self.params['job_ppn'])
+            if self.params['job_nodes']:
+                n_procs *= int(self.params['job_nodes'])
+
+        return n_procs
+
+    #---------------------------------------------------------------------------
+
     def get_help_text(self, package=None):
         """
         Read batch help text based on configuration
