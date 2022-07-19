@@ -347,14 +347,17 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
             self.InterfacialAreaWidget.hideWidget()
             self.ScalarWidget.setup(self.case, self.__currentField)
             self.ScalarWidget.showWidget(boundary)
+
             # Group backflow parameters into the backflow groupbox
+            # Layout needs to be created only once, otherwise it leads
+            # to errors
+            if self.BackflowSeparator.layout() is None:
+                layout = QGridLayout(self.BackflowSeparator)
+                layout.addWidget(self.EnergyWidget, 0, 0, 1, 1)
+                layout.addWidget(self.FractionWidget, 1, 0, 1, 1)
+                layout.addWidget(self.NonCondensableWidget, 2, 0, 1, 1)
+                layout.addWidget(self.ScalarWidget, 3, 0, 1, 1)
             self.BackflowSeparator.show()
-            layout = QGridLayout()
-            layout.addWidget(self.EnergyWidget, 0, 0, 1, 1)
-            layout.addWidget(self.FractionWidget, 1, 0, 1, 1)
-            layout.addWidget(self.NonCondensableWidget, 2, 0, 1, 1)
-            layout.addWidget(self.ScalarWidget, 3, 0, 1, 1)
-            self.BackflowSeparator.setLayout(layout)
 
         self.WallWidget.hideWidget()
 

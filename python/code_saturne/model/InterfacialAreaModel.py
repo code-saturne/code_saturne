@@ -43,7 +43,6 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         """
         #
         # XML file parameters
-        print("DEBUG - in InterfacialAreaModel.__init__")
         MainFieldsModel.__init__(self, case)
         self.case              = case
         self.XMLclosure        = self.case.xmlGetNode('closure_modeling')
