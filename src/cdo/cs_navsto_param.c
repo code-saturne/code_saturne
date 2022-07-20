@@ -1182,8 +1182,10 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UPPER_SCHUR_GCR;
     else if (strcmp(val, "uzawa_al") == 0 || strcmp(val, "alu") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_AL;
-    else if (strcmp(val, "uzawa_cg") == 0 || strcmp(val, "uzapcg") == 0)
+    else if (strcmp(val, "uzawa_cg") == 0 || strcmp(val, "uzapcg") == 0) {
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_CG;
+      cs_sles_set_epzero(1e-15);
+    }
     else if (strcmp(val, "uza_schur_gcr") == 0 ||
              strcmp(val, "uzawa_schur_gcr") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_SCHUR_GCR;
