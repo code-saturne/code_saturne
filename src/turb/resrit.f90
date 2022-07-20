@@ -231,6 +231,9 @@ do iel = 1, ncelet
   enddo
 enddo
 
+! ONLY C version avalaible
+call user_source_terms(f_id, smbrut, fimp)
+
 ! Find the corresponding variance of the scalar iscal
 itt = -1
 if ((abs(gx)+abs(gy)+abs(gz)).gt.0) then
