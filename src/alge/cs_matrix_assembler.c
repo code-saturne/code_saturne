@@ -1377,7 +1377,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
       _complete_distant(ma, ma->coeff_recv_size, recv_data);
 
     /* Now we build the mapping from received terms to their positions
-       in the array. For indexing, we implicitely consider that each row
+       in the array. For indexing, we implicitly consider that each row
        is built of 2 sub-rows, with the local columns first, and distant
        columns second. */
 
@@ -1415,8 +1415,11 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
 
           /* special case for separate diagonal, other cases require insertion */
 
+          /* Special case for separate diagonal, other cases require
+             insertion */
+
           if (   ma->coeff_recv_col_idx[i] < 0
-              && (!ma->separate_diag || l_c_id != l_r_id)) {
+              && (ma->separate_diag || l_c_id != l_r_id)) {
 
             if (n_l_insert >= n_l_insert_max) {
               n_l_insert_max = CS_MAX(n_l_insert_max*2, 16);
