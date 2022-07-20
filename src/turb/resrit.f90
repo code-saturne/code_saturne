@@ -464,9 +464,9 @@ if (iand(vcopt_ut%idften, ANISOTROPIC_RIGHT_DIFFUSION).ne.0) then
     do isou = 1, 6
       if (isou.le.3) then
         viscce(isou,iel) = 0.5d0*(viscl(iel)*(1.d0+1.d0/prdtl))    &
-                         + ctheta(iscal)*visten(isou,iel)/csrij
+                         + vcopt%idifft*ctheta(iscal)*visten(isou,iel)/csrij
       else
-        viscce(isou,iel) = ctheta(iscal)*visten(isou,iel)/csrij
+        viscce(isou,iel) = vcopt%idifft*ctheta(iscal)*visten(isou,iel)/csrij
       endif
     enddo
   enddo
