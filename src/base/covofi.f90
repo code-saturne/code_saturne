@@ -923,6 +923,7 @@ if (itspdv.eq.1) then
             .and.prod*cprovol.lt.0.d0) then
             rovsdt(iel) = rovsdt(iel)  &
                         - prod * cprovol / cvar_var(iel)
+            smbrs(iel) = smbrs(iel) + prod * cprovol
           endif
         enddo
 
