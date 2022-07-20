@@ -40,7 +40,7 @@ import fnmatch
 #-------------------------------------------------------------------------------
 
 from code_saturne.base.cs_compile import files_to_compile, compile_and_link
-from code_saturne.base import cs_create
+from code_saturne.base import cs_create, cs_batch
 from code_saturne.base.cs_create import set_executable, create_local_launcher
 from code_saturne.base import cs_exec_environment, cs_run_conf
 
@@ -273,35 +273,35 @@ class Case(object):
         n_procs = None
 
         if run_conf == None:
-            return resource_config['resource_n_procs']
+            return int(resource_config['resource_n_procs'])
 
         resource_name = resource_config['resource_name']
         if resource_name:
             resource_name = resource_name.lower()
 
         if not resource_name or not resource_name in run_conf.sections:
-            resource_name = resource_config['batch']
-            if resource_name:
-                resource_name = os.path.basename(resource_name).lower()
+            resource_name = resource_config['batch_name']
             if not resource_name or not resource_name in run_conf.sections:
                 resource_name = 'job_defaults'
 
         n_procs = run_conf.get(resource_name, 'n_procs')
         if n_procs == None:
             self.job_header_lines = None
-            if self.batch.rm_type:
+            if resource_config['batch']:
                 job_header = run_conf.get(resource_name, 'job_header')
                 if job_header != None:
                     job_header_lines = job_header.split(os.linesep)
-            if job_header_lines != None:
-                batch = cs_batch.batch(self.pkg)
-                n_procs = batch.get_n_procs(job_header_lines)
+                    if job_header_lines != None:
+                        batch = cs_batch.batch(self.pkg)
+                        n_procs = batch.get_n_procs(job_header_lines)
 
         if n_procs == None:
             n_procs = run_conf.get('job_defaults', 'n_procs')
 
-        if n_procs:
-            n_procs = int(n_procs)
+        if not n_procs:
+            n_procs = resource_config['resource_n_procs']
+
+        n_procs = int(n_procs)
 
         return n_procs
 
@@ -1013,6 +1013,16 @@ class Studies(object):
                                                         n_threads=None)
 
         resource_config['resource_n_procs'] = exec_env.resources.n_procs
+        if not resource_config['resource_n_procs']:
+            resource_config['resource_n_procs'] = 1
+
+        rm_template = resource_config['batch']
+        if rm_template:
+            rm_template = os.path.basename(rm_template).lower()
+            i = rm_template.rfind(".")
+            if i > -1:
+                rm_template = rm_template[i+1:]
+        resource_config['batch_name'] = rm_template
 
         # Create file of parameters
 
@@ -1375,7 +1385,7 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
-    def dump_graph(self, resource_name=None):
+    def dump_graph(self):
         """
         Dump dependency graph based on all studies and all cases.
         Can be limited to a sub graph is filters an tags are given

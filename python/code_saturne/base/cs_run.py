@@ -478,6 +478,9 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
         resource_name = i_c['batch']
         if resource_name:
             resource_name = os.path.basename(resource_name).lower()
+            i = resource_name.rfind(".")
+            if i > -1:
+                resource_name = resource_name[i+1:]
     if not resource_name or not resource_name in run_conf.sections:
         resource_name = 'job_defaults'
 
