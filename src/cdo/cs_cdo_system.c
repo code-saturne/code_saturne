@@ -475,9 +475,10 @@ _assign_ifs_rset(bool                               forced,
  * \brief  Allocate and define a new cs_matrix_assembler_t structure.
  *         Case of structures with interlaced DoFs.
  *
- * \param[in]  stride   number of DoFs by "x" entity
- * \param[in]  x2x      pointer to a cs_adjacency_t structure
- * \param[in]  rs       pointer to a range set structure
+ * \param[in]  stride    number of DoFs by "x" entity
+ * \param[in]  x2x       pointer to a cs_adjacency_t structure
+ * \param[in]  rs        pointer to a range set structure
+ * \param[in]  sep_diag  true if the diagonal is treated as separate (e.g. MSR)
  *
  * \return a pointer to a new allocated cs_matrix_assembler_t structure
  */
@@ -486,7 +487,8 @@ _assign_ifs_rset(bool                               forced,
 static cs_matrix_assembler_t *
 _build_interlaced_ma(int                      stride,
                      const cs_adjacency_t    *x2x,
-                     const cs_range_set_t    *rs)
+                     const cs_range_set_t    *rs,
+                     bool                     sep_diag)
 {
   cs_gnum_t  *grows = NULL, *gcols = NULL;
 
@@ -494,7 +496,8 @@ _build_interlaced_ma(int                      stride,
      separately. This corresponds to a MSR matrix storage. This is always the
      case in CDO schemes */
 
-  cs_matrix_assembler_t  *ma = cs_matrix_assembler_create(rs->l_range, true);
+  cs_matrix_assembler_t  *ma = cs_matrix_assembler_create(rs->l_range,
+                                                          sep_diag);
 
   /* First loop to count the max. size of the temporary buffers */
 
@@ -598,9 +601,10 @@ _build_interlaced_ma(int                      stride,
  * \brief  Allocate and define a new cs_matrix_assembler_t structure.
  *         Case of structures with no interlaced DoFs.
  *
- * \param[in]  stride   number of DoFs by "x" entity
- * \param[in]  x2x      pointer to a cs_adjacency_t structure
- * \param[in]  rs       pointer to a range set structure
+ * \param[in]  stride    number of DoFs by "x" entity
+ * \param[in]  x2x       pointer to a cs_adjacency_t structure
+ * \param[in]  rs        pointer to a range set structure
+ * \param[in]  sep_diag  true if the diagonal is treated as separate (e.g. MSR)
  *
  * \return a pointer to a new allocated cs_matrix_assembler_t structure
  */
@@ -609,7 +613,8 @@ _build_interlaced_ma(int                      stride,
 static cs_matrix_assembler_t *
 _build_no_interlaced_ma(int                      stride,
                         const cs_adjacency_t    *x2x,
-                        const cs_range_set_t    *rs)
+                        const cs_range_set_t    *rs,
+                        bool                     sep_diag)
 {
   cs_gnum_t  *grows = NULL, *gcols = NULL, *g_r_ids = NULL, *g_c_ids = NULL;
 
@@ -617,7 +622,8 @@ _build_no_interlaced_ma(int                      stride,
      separately. This corresponds to a MSR matrix storage. This is always the
      case in CDO schemes */
 
-  cs_matrix_assembler_t  *ma = cs_matrix_assembler_create(rs->l_range, true);
+  cs_matrix_assembler_t  *ma = cs_matrix_assembler_create(rs->l_range,
+                                                          sep_diag);
 
   /* First loop to count the max. size of the temporary buffers */
 
@@ -762,6 +768,9 @@ _assign_ma_ms(bool                           forced,
   assert(x2x != NULL);
 
   const cs_cdo_system_block_info_t  bi = b->info;
+  bool  sep_diag = true; /* By default, the diagonal terms are treated
+                            separately since the MSR format is the default
+                            one */
 
   switch (b->type) {
 
@@ -779,6 +788,9 @@ _assign_ma_ms(bool                           forced,
 
       }
 
+      if (bi.matrix_class == CS_CDO_SYSTEM_MATRIX_HYPRE)
+        sep_diag = false;
+
       if (db->matrix_assembler == NULL) {
 
         assert(db->matrix_structure == NULL);
@@ -790,13 +802,14 @@ _assign_ma_ms(bool                           forced,
         if (bi.unrolled) {
 
           if (bi.interlaced)
-            ma = _build_interlaced_ma(bi.stride, x2x, db->range_set);
+            ma = _build_interlaced_ma(bi.stride, x2x, db->range_set, sep_diag);
           else
-            ma = _build_no_interlaced_ma(bi.stride, x2x, db->range_set);
+            ma = _build_no_interlaced_ma(bi.stride, x2x, db->range_set,
+                                         sep_diag);
 
         }
         else
-          ma = _build_interlaced_ma(1, x2x, db->range_set);
+          ma = _build_interlaced_ma(1, x2x, db->range_set, sep_diag);
 
         db->matrix_assembler = ma;
 
@@ -831,9 +844,9 @@ _assign_ma_ms(bool                           forced,
 
         cs_matrix_assembler_t  *ma = NULL;
         if (bi.interlaced)
-          ma = _build_interlaced_ma(bi.stride, x2x, sb->range_set);
+          ma = _build_interlaced_ma(bi.stride, x2x, sb->range_set, sep_diag);
         else
-          ma = _build_no_interlaced_ma(bi.stride, x2x, sb->range_set);
+          ma = _build_no_interlaced_ma(bi.stride, x2x, sb->range_set, sep_diag);
 
         sb->matrix_assembler = ma;
 
