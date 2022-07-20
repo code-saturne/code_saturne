@@ -1413,10 +1413,7 @@ _process_assembly_data(cs_matrix_assembler_t  *ma,
                                                           l_c_id,
                                                           col_id);
 
-          /* special case for separate diagonal, other cases require insertion */
-
-          /* Special case for separate diagonal, other cases require
-             insertion */
+          /* Special case for separate diagonal, other cases require insertion */
 
           if (   ma->coeff_recv_col_idx[i] < 0
               && (ma->separate_diag || l_c_id != l_r_id)) {
