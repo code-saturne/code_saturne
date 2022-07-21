@@ -1,6 +1,11 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Bug fixes:
+
+- Restart from different mesh: fix values shift in variable exchange when
+  some points are not located (updated PLE library).
+
 Architectural changes:
 
 - FMI: modified FMU client and code_saturne controller communication
