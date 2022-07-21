@@ -24,12 +24,13 @@
 #-------------------------------------------------------------------------------
 
 import configparser
-import datetime
+import datetime, time
 import os
 import os.path
 import platform
 import sys
 import stat
+from enum import Enum
 
 from code_saturne.base import cs_exec_environment, cs_run_conf
 
@@ -37,9 +38,32 @@ from code_saturne.base.cs_case_domain import *
 
 homard_prefix = None
 
+kib_unit_mult = {'K': 1.,
+                 'M': 1024.,
+                 'G': 1024. ** 2,
+                 'T': 1024. ** 3,
+                 'P': 1024. ** 4,
+                 'E': 1024. ** 5}
+
 #===============================================================================
-# Utility functions
+# Utility classes and functions
 #===============================================================================
+
+class case_state(Enum):
+    "Enumeration for case state handling"
+
+    UNKNOWN = -6
+    STAGING = -5
+    STAGED = -4
+    PREPROCESSED = -3
+    COMPUTED = -2
+    FINALIZING = -1
+    FINALIZED = 0
+    RUNNING = 1
+    EXCEEDED_TIME_LIMIT = 2
+    FAILED = 3
+
+#-------------------------------------------------------------------------------
 
 def check_exec_dir_stamp(d):
 
@@ -177,6 +201,197 @@ def get_case_dir(case=None, param=None, coupling=None, id=None):
     # Return casedir or None
 
     return casedir, staging_dir
+
+#-------------------------------------------------------------------------------
+
+def get_case_state(run_dir, coupling=False, run_timeout=3600):
+
+    """
+    Check if a run has completed successfully.
+    Returns a code (of case_state enumeration type)
+    and a dictionary with additional information.
+
+    As the required data is not stored in a single datebase or file, this is
+    based upon checking the existence and partial parsing of various
+    log files (error*, run_status*, preprocesso*.log, performance.log).
+    If the formatting of these files is modified, less precise information
+    might be returned.
+
+    Also, to account for computation which migh be indicated as running but
+    may have been killed by the system or resource manager, a timout
+    value (default 3600 seconds) may be used to compare the run_status.running
+    file's last timestamp and the current timestap.
+    """
+
+    # Initialize status
+
+    state = case_state.UNKNOWN
+
+    info = {'message': "",
+            'compute_time': None,
+            'compute_time_usage': None,
+            'compute_mem': None,
+            'preprocess_time': None,
+            'preprocess_mem': None,
+            'mpi_ranks': None,
+            'omp_threads': None}
+
+    # For special case with coupled domains, loop on domains,
+    # and return highest state values
+
+    if coupling:
+        run_config_path = os.path.join(run_dir, 'run.cfg')
+        if os.path.isfile(run_config_path):
+            run_conf = cs_run_conf.run_conf(run_config_path)
+        coupled_domains = run_conf.get_coupling_parameters()
+        if coupled_domains:
+            for d in coupled_domains.split(":"):
+                rc, s = get_case_state(os.path.join(run_dir, d))
+
+            return state, info
+
+    # General case: try to analyze run directory
+
+    states = [('finished', case_state.COMPUTED),
+              ('saving', case_state.FINALIZING),
+              ('running', case_state.RUNNING),
+              ('preparing', case_state.STAGING),
+              ('prepared', case_state.STAGED),
+              ('preprocessing', case_state.RUNNING),
+              ('ready', case_state.PREPROCESSED),
+              ('failed', case_state.FAILED),
+              ('exceeded_time_limit', case_state.EXCEEDED_TIME_LIMIT)]
+
+    for s in states:
+        if os.path.isfile(os.path.join(run_dir, 'run_status.' + s[0])):
+            state = s[1]
+            info['message'] = state.name
+            break
+
+    # Now try to check preprocessing time and memory use.
+
+    i = 0
+    p_time = 0.
+    p_mem_max = 0.
+
+    while True:
+        if i == 0:
+            name = 'preprocessor.log'
+        else:
+            name = 'preprocessor_{0:02d}.log'.format(i)
+        p_log = os.path.join(run_dir, name)
+
+        if os.path.isfile(p_log):
+            try:
+                f = open(p_log)
+                lines = f.readlines()
+                for l in lines[-25:]:
+                    if l[:8] == '  Total ':
+                        if l[:12] == '  Total time':
+                            j = l.find(':')
+                            p_time += float(l[j+1:])
+                            info['preprocess_time'] = p_time
+                        elif l[:20] == '  Total memory used:':
+                            p_tpl = l[20:].lstrip().split(' ')
+                            p_mem = float(p_tpl[0]) * kib_unit_mult[p_tpl[1][0]]
+                            p_mem_max = max(p_mem_max, p_mem)
+                            info['preprocess_mem'] = p_mem_max
+                f.close
+
+            except Exception:
+                import traceback
+                exc_info = sys.exc_info()
+                bt = traceback.format_exception(*exc_info)
+                print(bt)
+                pass
+
+        elif i > 0:
+            break
+
+        i += 1
+
+    # Check fpr presence of error file(s)
+
+    if os.path.isfile(os.path.join(run_dir, 'error')):
+        state = case_state.FAILED
+
+    # Now try to check elapsed time.
+
+    p_log = os.path.join(run_dir, 'performance.log')
+
+    if os.path.isfile(p_log):
+
+        c_mem_max = None
+
+        try:
+            f = open(p_log)
+            lines = f.readlines()
+            t_mem = -1000
+
+            for l in lines[:40]:
+                if l[:12] == '  MPI ranks:':
+                    info['mpi_ranks'] = int(l[12:].strip())
+                if l[:17] == '  OpenMP threads:':
+                    info['omp_threads'] = int(l[17:].strip())
+
+            for l in lines[-40:]:
+                if l[:15] == '  Elapsed time:':
+                    info['compute_time'] = float(l[15:].strip().split(' ')[0])
+                if l[:17] == '  Total CPU time:':
+                    info['compute_time_usage'] = float(l[17:].strip().split(' ')[0])
+                if l[:20] == '  Total memory used:':
+                    c_mem_max = l[20:].strip().split()
+                    t_mem = 0
+                if t_mem == 2:
+                    j = l.find('local maximum:')
+                    if j > -1:
+                        c_mem_max = l[j+14:].strip().split()
+                t_mem += 1
+
+                if c_mem_max:
+                    m_0 = float(c_mem_max[0])
+                    m_1 = c_mem_max[1][0]
+                    info['compute_mem'] = m_0 * kib_unit_mult[m_1]
+
+        except Exception:
+            import traceback
+            exc_info = sys.exc_info()
+            bt = traceback.format_exception(*exc_info)
+            print(bt)
+            pass
+        f.close
+
+        if state == case_state.UNKNOWN:
+            if info['compute_time']:
+                state = case_state.FINALIZED
+            else:
+                state = case_state.RUNNING
+
+    if state == case_state.UNKNOWN:
+        for m in ('mesh_input.csm', 'mesh_input'):
+            if os.path.exists(os.path.join(run_dir, m)):
+                state = case_state.PREPROCESSED
+
+    # If computation seems to be running, check if this is really
+    # true (it may have been killed). There is no simple and robust way
+    # to do this, except saving and cheking pids or batch job states,
+    # but we can at least check when 'run_status.running' has last been
+    # updated.
+
+    if state == case_state.RUNNING:
+        try:
+            m_time = os.path.getmtime(os.path.join(run_dir, 'run_status.running'))
+            c_time = time.time()
+            print(c_time - m_time)
+            if c_time - m_time > run_timeout:
+                state = case_state.FAILED
+                info['message'] = 'Seems to have been killed or not progressing anymore'
+        except Exception:
+            pass
+
+    # FIXME check run state
+
+    return state, info
 
 
 #===============================================================================
