@@ -69,6 +69,7 @@ AC_ARG_WITH(eos-lib,
 if test "x$with_eos" != "xno" ; then
 
   saved_CPPFLAGS="$CPPFLAGS"
+  saved_CXXFLAGS="$CXXFLAGS"
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
@@ -82,7 +83,6 @@ if test "x$with_eos" != "xno" ; then
 
   eosversion=`${with_eos}/bin/eos --version`
 
-  EOS_CPPFLAGS+=" -std=c++11"
 
   # check for pre-v1.8.0
   # This test is necessary because starting from 1.8.0 definition of mixing
@@ -90,7 +90,8 @@ if test "x$with_eos" != "xno" ; then
   AC_MSG_CHECKING([if EOS version >= 1.8.0])
   AS_VERSION_COMPARE(${eosversion}, 1.8.0, [EOS_PRE_V1_8=-1], [EOS_PRE_V1_8=0], [EOS_PRE_V1_8=1])
 
-  CPPFLAGS="${CPPFLAGS} ${EOS_CPPFLAGS}"
+  CXXFLAGS="${CXXFLAGS} -std=c++11"
+  CPPFLAGS="${CPPFLAGS}  ${EOS_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${EOS_LDFLAGS}"
 
   # Check that EOS files exist
@@ -126,10 +127,12 @@ if test "x$with_eos" != "xno" ; then
   fi
 
   CPPFLAGS="$saved_CPPFLAGS"
+  CXXFLAGS="$saved_CXXFLAGS"
   LDFLAGS="$saved_LDFLAGS"
   LIBS="$saved_LIBS"
 
   unset saved_CPPFLAGS
+  unset saved_CXXFLAGS
   unset saved_LDFLAGS
   unset saved_LIBS
 
