@@ -3,6 +3,9 @@ Release 7.0.5 (not released yet)
 
 Bug fixes:
 
+- Restart from different mesh: fix values shift in variable exchange when
+  some points are not located (updated PLE library).
+
 - Do not hide the notebook page when the user chooses preprocessing mode,
   since notebook parameters can be used in the "cs_user_mesh" functions.
 

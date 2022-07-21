@@ -6,7 +6,7 @@
   This file is part of the "Parallel Location and Exchange" library,
   intended to provide mesh or particle-based code coupling services.
 
-  Copyright (C) 2005-2021  EDF S.A.
+  Copyright (C) 2005-2022  EDF S.A.
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -2129,6 +2129,8 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
 
   PLE_MALLOC(loc_v_buf, n_points_loc_max*size*stride, char);
 
+  const ple_lnum_t *il = this_locator->interior_list;
+
   /* Loop on MPI ranks */
   /*-------------------*/
 
@@ -2195,27 +2197,48 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
 
       if (loc_v_flag > 0) {
         if (local_list == NULL) {
-          int k;
-          size_t l;
           const size_t nbytes = stride*size;
-          for (k = 0; k < n_points_loc; k++) {
-            char *local_v_p = (char *)local_var + _local_point_ids[k]*nbytes;
-            const char *loc_v_buf_p = (const char *)loc_v_buf + k*nbytes;
-            for (l = 0; l < nbytes; l++)
-              local_v_p[l] = loc_v_buf_p[l];
+          if (this_locator->n_exterior == 0) {
+            for (int k = 0; k < n_points_loc; k++) {
+              char *local_v_p = (char *)local_var + _local_point_ids[k]*nbytes;
+              const char *loc_v_buf_p = (const char *)loc_v_buf + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                local_v_p[l] = loc_v_buf_p[l];
+            }
+          }
+          else {
+            for (int k = 0; k < n_points_loc; k++) {
+              char *local_v_p =   (char *)local_var
+                                + il[_local_point_ids[k]]*nbytes;
+              const char *loc_v_buf_p = (const char *)loc_v_buf + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                local_v_p[l] = loc_v_buf_p[l];
+            }
           }
         }
         else {
-          int k;
-          size_t l;
-          const size_t nbytes = stride*size;
-          const ple_lnum_t idb = this_locator->point_id_base;
-          for (k = 0; k < n_points_loc; k++) {
-            char *local_v_p =   (char *)local_var
-                              + (local_list[_local_point_ids[k]] - idb)*nbytes;
-            const char *loc_v_buf_p = (const char *)loc_v_buf + k*nbytes;
-            for (l = 0; l < nbytes; l++)
-              local_v_p[l] = loc_v_buf_p[l];
+          if (this_locator->n_exterior == 0) {
+            const size_t nbytes = stride*size;
+            const ple_lnum_t idb = this_locator->point_id_base;
+            for (int k = 0; k < n_points_loc; k++) {
+              char *local_v_p =   (char *)local_var
+                                + (local_list[_local_point_ids[k]] - idb)*nbytes;
+              const char *loc_v_buf_p = (const char *)loc_v_buf + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                local_v_p[l] = loc_v_buf_p[l];
+            }
+          }
+          else {
+            const size_t nbytes = stride*size;
+            const ple_lnum_t idb = this_locator->point_id_base;
+            for (int k = 0; k < n_points_loc; k++) {
+              char *local_v_p =   (char *)local_var
+                                +  (local_list[il[_local_point_ids[k]]] - idb)
+                                  *nbytes;
+              const char *loc_v_buf_p = (const char *)loc_v_buf + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                local_v_p[l] = loc_v_buf_p[l];
+            }
           }
         }
       }
@@ -2225,29 +2248,49 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
 
       if (loc_v_flag > 0) {
         if (local_list == NULL) {
-          int k;
-          size_t l;
-          const size_t nbytes = stride*size;
-          for (k = 0; k < n_points_loc; k++) {
-            const char *local_v_p
-              = (const char *)local_var + _local_point_ids[k]*nbytes;
-            char *loc_v_buf_p = (char *)loc_v_buf + k*nbytes;
-            for (l = 0; l < nbytes; l++)
-              loc_v_buf_p[l] = local_v_p[l];
+          if (this_locator->n_exterior == 0) {
+            const size_t nbytes = stride*size;
+            for (int k = 0; k < n_points_loc; k++) {
+              const char *local_v_p
+                = (const char *)local_var + _local_point_ids[k]*nbytes;
+              char *loc_v_buf_p = (char *)loc_v_buf + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                loc_v_buf_p[l] = local_v_p[l];
+            }
+          }
+          else {
+            const size_t nbytes = stride*size;
+            for (int k = 0; k < n_points_loc; k++) {
+              const char *local_v_p
+                = (const char *)local_var + il[_local_point_ids[k]]*nbytes;
+              char *loc_v_buf_p = (char *)loc_v_buf + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                loc_v_buf_p[l] = local_v_p[l];
+            }
           }
         }
         else {
-          int k;
-          size_t l;
           const size_t nbytes = stride*size;
           const ple_lnum_t idb = this_locator->point_id_base;
-          for (k = 0; k < n_points_loc; k++) {
-            const char *local_v_p
-              = (const char *)local_var
-                + (local_list[_local_point_ids[k]] - idb)*nbytes;
-            char *loc_v_buf_p = (char *)loc_v_buf + k*nbytes;
-            for (l = 0; l < nbytes; l++)
-              loc_v_buf_p[l] = local_v_p[l];
+          if (this_locator->n_exterior == 0) {
+            for (int k = 0; k < n_points_loc; k++) {
+              const char *local_v_p
+                = (const char *)local_var
+                  + (local_list[_local_point_ids[k]] - idb)*nbytes;
+              char *loc_v_buf_p = (char *)loc_v_buf + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                loc_v_buf_p[l] = local_v_p[l];
+            }
+          }
+          else {
+            for (int k = 0; k < n_points_loc; k++) {
+              const char *local_v_p
+                = (const char *)local_var
+                  + (local_list[il[_local_point_ids[k]]] - idb)*nbytes;
+              char *loc_v_buf_p = (char *)loc_v_buf + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                loc_v_buf_p[l] = local_v_p[l];
+            }
           }
         }
       }
@@ -2300,7 +2343,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
                                  size_t             stride,
                                  _Bool              reverse)
 {
-  int i, dist_v_count, loc_v_count, size;
+  int dist_v_count, loc_v_count, size;
   int dist_rank;
   ple_lnum_t n_points_loc, n_points_loc_tot, n_points_dist;
   size_t dist_v_idx;
@@ -2341,12 +2384,14 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
   PLE_MALLOC(loc_v_buf, n_points_loc_tot*size*stride, char);
 
+  const ple_lnum_t *il = this_locator->interior_list;
+
   /* First loop on distant ranks for argument checks */
   /*-------------------------------------------------*/
 
   _locator_trace_start_comm(_ple_locator_log_start_p_comm, comm_timing);
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (int i = 0; i < this_locator->n_intersects; i++) {
 
     dist_rank = this_locator->intersect_rank[i];
 
@@ -2372,7 +2417,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
   PLE_FREE(dist_v_flag);
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (int i = 0; i < this_locator->n_intersects; i++) {
 
     dist_rank = this_locator->intersect_rank[i];
 
@@ -2396,7 +2441,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
     loc_v_ptr = loc_v_buf;
 
-    for (i = 0; i < this_locator->n_intersects; i++) {
+    for (int i = 0; i < this_locator->n_intersects; i++) {
 
       dist_rank = this_locator->intersect_rank[i];
 
@@ -2443,7 +2488,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
   loc_v_ptr = loc_v_buf;
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (int i = 0; i < this_locator->n_intersects; i++) {
 
     const ple_lnum_t *_local_point_ids
       = this_locator->local_point_ids + this_locator->local_points_idx[i];
@@ -2487,27 +2532,46 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
       if (loc_v_flag[i] > 0) {
         if (local_list == NULL) {
-          int k;
-          size_t l;
           const size_t nbytes = stride*size;
-          for (k = 0; k < n_points_loc; k++) {
-            char *local_v_p = (char *)local_var + _local_point_ids[k]*nbytes;
-            const char *loc_v_buf_p = (const char *)loc_v_ptr + k*nbytes;
-            for (l = 0; l < nbytes; l++)
-              local_v_p[l] = loc_v_buf_p[l];
+          if (this_locator->n_exterior == 0) {
+            for (ple_lnum_t k = 0; k < n_points_loc; k++) {
+              char *local_v_p = (char *)local_var + _local_point_ids[k]*nbytes;
+              const char *loc_v_buf_p = (const char *)loc_v_ptr + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                local_v_p[l] = loc_v_buf_p[l];
+            }
+          }
+          else {
+            for (ple_lnum_t k = 0; k < n_points_loc; k++) {
+              char *local_v_p =   (char *)local_var
+                                + il[_local_point_ids[k]]*nbytes;
+              const char *loc_v_buf_p = (const char *)loc_v_ptr + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                local_v_p[l] = loc_v_buf_p[l];
+            }
           }
         }
         else {
-          int k;
-          size_t l;
           const size_t nbytes = stride*size;
           const ple_lnum_t idb = this_locator->point_id_base;
-          for (k = 0; k < n_points_loc; k++) {
-            char *local_v_p =   (char *)local_var
-                              + (local_list[_local_point_ids[k]] - idb)*nbytes;
-            const char *loc_v_buf_p = (const char *)loc_v_ptr + k*nbytes;
-            for (l = 0; l < nbytes; l++)
-              local_v_p[l] = loc_v_buf_p[l];
+          if (this_locator->n_exterior == 0) {
+            for (ple_lnum_t k = 0; k < n_points_loc; k++) {
+              char *local_v_p =   (char *)local_var
+                                + (local_list[_local_point_ids[k]] - idb)*nbytes;
+              const char *loc_v_buf_p = (const char *)loc_v_ptr + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                local_v_p[l] = loc_v_buf_p[l];
+            }
+          }
+          else {
+            for (ple_lnum_t k = 0; k < n_points_loc; k++) {
+              char *local_v_p =   (char *)local_var
+                                +  (local_list[il[_local_point_ids[k]]] - idb)
+                                  *nbytes;
+              const char *loc_v_buf_p = (const char *)loc_v_ptr + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                local_v_p[l] = loc_v_buf_p[l];
+            }
           }
         }
       }
@@ -2517,29 +2581,48 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
       if (loc_v_flag[i] > 0) {
         if (local_list == NULL) {
-          int k;
-          size_t l;
           const size_t nbytes = stride*size;
-          for (k = 0; k < n_points_loc; k++) {
-            const char *local_v_p
-              = (const char *)local_var + _local_point_ids[k]*nbytes;
-            char *loc_v_buf_p = (char *)loc_v_ptr + k*nbytes;
-            for (l = 0; l < nbytes; l++)
-              loc_v_buf_p[l] = local_v_p[l];
+          if (this_locator->n_exterior == 0) {
+            for (ple_lnum_t k = 0; k < n_points_loc; k++) {
+              const char *local_v_p
+                = (const char *)local_var + _local_point_ids[k]*nbytes;
+              char *loc_v_buf_p = (char *)loc_v_ptr + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                loc_v_buf_p[l] = local_v_p[l];
+            }
+          }
+          else {
+            for (ple_lnum_t k = 0; k < n_points_loc; k++) {
+              const char *local_v_p
+                = (const char *)local_var + il[_local_point_ids[k]]*nbytes;
+              char *loc_v_buf_p = (char *)loc_v_ptr + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                loc_v_buf_p[l] = local_v_p[l];
+            }
           }
         }
         else {
-          int k;
-          size_t l;
           const size_t nbytes = stride*size;
           const ple_lnum_t idb = this_locator->point_id_base;
-          for (k = 0; k < n_points_loc; k++) {
-            const char *local_v_p
-              = (const char *)local_var
-                + (local_list[_local_point_ids[k]] - idb)*nbytes;
-            char *loc_v_buf_p = (char *)loc_v_ptr + k*nbytes;
-            for (l = 0; l < nbytes; l++)
-              loc_v_buf_p[l] = local_v_p[l];
+          if (this_locator->n_exterior == 0) {
+            for (ple_lnum_t k = 0; k < n_points_loc; k++) {
+              const char *local_v_p
+                = (const char *)local_var
+                  + (local_list[_local_point_ids[k]] - idb)*nbytes;
+              char *loc_v_buf_p = (char *)loc_v_ptr + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                loc_v_buf_p[l] = local_v_p[l];
+            }
+          }
+          else {
+            for (ple_lnum_t k = 0; k < n_points_loc; k++) {
+              const char *local_v_p
+                = (const char *)local_var
+                  + (local_list[il[_local_point_ids[k]]] - idb)*nbytes;
+              char *loc_v_buf_p = (char *)loc_v_ptr + k*nbytes;
+              for (size_t l = 0; l < nbytes; l++)
+                loc_v_buf_p[l] = local_v_p[l];
+            }
           }
         }
       }
@@ -2559,7 +2642,7 @@ _exchange_point_var_distant_asyn(ple_locator_t     *this_locator,
 
     loc_v_ptr = loc_v_buf;
 
-    for (i = 0; i < this_locator->n_intersects; i++) {
+    for (int i = 0; i < this_locator->n_intersects; i++) {
 
       dist_rank = this_locator->intersect_rank[i];
 
@@ -2691,6 +2774,96 @@ _exchange_point_var_local(ple_locator_t     *this_locator,
           = (const char *)local_var + (local_list[i] - idb)*nbytes;
         char *distant_var_p = (char *)distant_var + i*nbytes;
         for (j = 0; j < nbytes; j++)
+          distant_var_p[j] = local_var_p[j];
+      }
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Distribute variable defined on "distant points" to the original ("local")
+ * points.
+ *
+ * The exchange is symmetric if both variables are defined, receive
+ * only if distant_var is NULL, or send only if local_var is NULL.
+ *
+ * parameters:
+ *   this_locator  <-- pointer to locator structure
+ *   distant_var   <-> variable defined on distant points (ready to send)
+ *   local_var     <-> variable defined on local points (received)
+ *   local_list    <-- optional indirection list for local_var
+ *   type_size     <-- sizeof (float or double) variable type
+ *   stride        <-- dimension (1 for scalar, 3 for interlaced vector)
+ *   reverse       <-- if true, exchange is reversed
+ *                     (receive values associated with distant points
+ *                     from the processes owning the original points)
+ *----------------------------------------------------------------------------*/
+
+static void
+_exchange_point_var_local_incomplete(ple_locator_t     *this_locator,
+                                     void              *distant_var,
+                                     void              *local_var,
+                                     const ple_lnum_t  *local_list,
+                                     size_t             type_size,
+                                     size_t             stride,
+                                     _Bool              reverse)
+{
+  const size_t nbytes = stride*type_size;
+
+  const ple_lnum_t *il = this_locator->interior_list;
+
+  /* Initialization */
+
+  if (this_locator->n_interior == 0)
+    return;
+
+  ple_lnum_t n_points_loc =   this_locator->local_points_idx[1]
+                            - this_locator->local_points_idx[0];
+
+  assert(n_points_loc == (  this_locator->distant_points_idx[1]
+                          - this_locator->distant_points_idx[0]));
+
+  /* Exchange information */
+
+  if (reverse == false) {
+
+    if (local_list == NULL) {
+      for (ple_lnum_t i = 0; i < n_points_loc; i++) {
+        char *local_var_p = (char *)local_var + il[i]*nbytes;
+        const char *distant_var_p = (const char *)distant_var + i*nbytes;
+        for (size_t j = 0; j < nbytes; j++)
+          local_var_p[j] = distant_var_p[j];
+      }
+    }
+    else {
+      const ple_lnum_t idb = this_locator->point_id_base;
+      for (ple_lnum_t i = 0; i < n_points_loc; i++) {
+        char *local_var_p = (char *)local_var + (local_list[il[i]] - idb)*nbytes;
+        const char *distant_var_p = (const char *)distant_var + i*nbytes;
+        for (size_t j = 0; j < nbytes; j++)
+          local_var_p[j] = distant_var_p[j];
+      }
+    }
+
+  }
+  else { /* if (reverse == true) */
+
+    if (local_list == NULL)
+      for (ple_lnum_t i = 0; i < n_points_loc; i++) {
+        const char *local_var_p = (char *)local_var + il[i]*nbytes;
+        char *distant_var_p = (const char *)distant_var + i*nbytes;
+        for (size_t j = 0; j < nbytes; j++)
+          distant_var_p[j] = local_var_p[j];
+      }
+
+    else {
+      const ple_lnum_t idb = this_locator->point_id_base;
+      for (ple_lnum_t i = 0; i < n_points_loc; i++) {
+        const char *local_var_p
+          = (const char *)local_var + (local_list[il[i]] - idb)*nbytes;
+        char *distant_var_p = (char *)distant_var + i*nbytes;
+        for (size_t j = 0; j < nbytes; j++)
           distant_var_p[j] = local_var_p[j];
       }
     }
@@ -3535,14 +3708,24 @@ ple_locator_exchange_point_var(ple_locator_t     *this_locator,
 
 #endif /* defined(PLE_HAVE_MPI) */
 
-  if (!mpi_flag)
-    _exchange_point_var_local(this_locator,
-                              distant_var,
-                              local_var,
-                              local_list,
-                              type_size,
-                              stride,
-                              _reverse);
+  if (!mpi_flag) {
+    if (this_locator->n_exterior == 0)
+      _exchange_point_var_local(this_locator,
+                                distant_var,
+                                local_var,
+                                local_list,
+                                type_size,
+                                stride,
+                                _reverse);
+    else
+      _exchange_point_var_local_incomplete(this_locator,
+                                           distant_var,
+                                           local_var,
+                                           local_list,
+                                           type_size,
+                                           stride,
+                                           _reverse);
+  }
 
   /* Finalize timing */
 

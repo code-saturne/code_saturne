@@ -11,6 +11,9 @@ Changes:
 Bug fixes:
 ----------
 
+- PLE locator: fix values shift in variable exchange when some points
+  are not located.
+
 - Fix PLE locator variable exchange in asynchronous reverse mode.
 
 - Really fix PLE locator for local cases when points fall outside domain.
