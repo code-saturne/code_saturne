@@ -4,6 +4,9 @@ Release 2.0.4 (unreleased)
 Bug fixes:
 ----------
 
+- PLE locator: fix values shift in variable exchange when some points
+  are not located.
+
 - Fix detection of GCC compiler with some Cray versions.
 
 Changes:
