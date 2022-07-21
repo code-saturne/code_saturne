@@ -385,28 +385,46 @@ class Case(object):
                     self.kw_args += " "  # workaround for arg-parser issue
                 cmd += " --kw-args " + '"' + self.kw_args + '"'
 
-            # create run_case.log in dest/STUDY/CASE
-            file_name = os.path.join(self.__dest, "run_case.log")
-            log_run = open(file_name, mode='w')
+            # Check if case has already been prepared in dest/STUDY/CASE
+
+            have_case_log = False
+            if os.path.isfile(os.path.join(self.run_dir, "run_case.log")):
+                have_case_log = True
+
+            have_status_prepared = False
+            if os.path.isfile(os.path.join(self.run_dir, "run_status.prepared")):
+                have_status_prepared = True
+
+            # Create log file in dest
+            log_path = os.path.join(self.__dest, "run_" + self.label
+                                    + "_" + self.run_id + ".log")
+
+            log_run = open(log_path, mode='w')
 
             retval, t = run_studymanager_command(cmd, log_run)
 
-            # move run_case.log in run_dir
+            # move log file tog run_dir
             if os.path.isdir(self.run_dir):
-                os.replace(file_name, os.path.join(self.run_dir,
-                                                   "run_case.log"))
-            else:
-                err_file = os.path.join(self.__dest, "run_" + self.label
-                         + "_" + self.run_id + ".log")
-                os.replace(file_name, err_file)
+                new_log_path = os.path.join(self.run_dir, "run_case.log")
+                os.replace(log_path, new_log_path)
+                log_path = new_log_path
 
         if retval == 0:
             log_lines += ['      * prepare run folder: ' + self.title]
 
         else:
-            log_lines += ['      * prepare run folder: %s --> FAILED'
-                          % self.title]
-            log_lines += ['        - see run_CASE_run_id.log in dest/STUDY']
+            fail_info = 'FAILED'
+            if have_case_log:
+                if have_status_prepared:
+                    fail_info = 'FAILED (already prepared)'
+                else:
+                    fail_info = 'FAILED (already present)'
+            log_lines += ['      * prepare run folder: {0} --> {1}'.format(self.title, fail_info)]
+            if not have_status_prepared:
+                log_lines += ['        - see ' + log_path]
+
+            # TODO: we could allow run when the status is "prepared"
+            # (so simply indent the following lines)
             self.compute = "off"
             self.post = "off"
             self.compare = "off"
