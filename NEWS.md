@@ -3,6 +3,9 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- Restart from different mesh: fix values shift in variable exchange when
+  some points are not located (updated PLE library).
+
 - CUDA: fix incorrect block size computation in some algorithms.
 
 - Ensure EOS is correctly detected on some systems by forcing the "-std=c++11"
