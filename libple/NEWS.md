@@ -1,3 +1,12 @@
+Release 2.0.4 (unreleased)
+==========================
+
+Bug fixes:
+----------
+
+- PLE locator: fix values shift in variable exchange when some points
+  are not located.
+
 Release 2.0.3 (November 8, 2021)
 ================================
 

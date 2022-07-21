@@ -3,6 +3,9 @@ Release 7.1.2 (not released yet)
 
 Bug fixes:
 
+- Restart from different mesh: fix values shift in variable exchange when
+  some points are not located (updated PLE library).
+
 - boundary layer insertion: fixed nodes were ignored, leading to a modification
   of the outer geometry (issue #400).
 
