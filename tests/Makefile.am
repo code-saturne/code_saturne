@@ -26,10 +26,10 @@
 
 if HAVE_INTERNAL_PLE
   CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
-  LDFLAGS_PLE = -L"$(top_builddir)/libple/src"
+  LDFLAGS_PLE = -L"$(top_builddir)/libple/src" -R"$(abs_top_builddir)/libple/src"
 else
   CPPFLAGS_PLE = $(PLE_CPPFLAGS)
-  LDFLAGS_PLE = $(PLE_LDFLAGS)
+  LDFLAGS_PLE = $(PLE_LDFLAGS) $(PLERUNPATH)
 endif
 LIBS_PLE = $(PLE_LIBS)
 
