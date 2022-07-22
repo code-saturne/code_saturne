@@ -3,6 +3,9 @@ Release 7.0.7 (not released yet)
 
 Bug fixes:
 
+- Fix occasional zone name corruption when number of zones/mesh locations
+  is increased from 2^n to 2^n+1.
+
 - Fix electric arcs rescaling by plane computation issue in some parallel
   partitioning configurations.
 

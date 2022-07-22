@@ -77,9 +77,11 @@ struct _cs_map_name_to_id_t {
   size_t      size;             /* Number of entries */
   size_t      max_size;         /* Maximum number of entries */
 
-  size_t      max_keys_size;    /* Maximum size for keys buffer */
-  size_t      keys_size;        /* Size of keys buffer */
-  char       *keys;             /* Key buffer */
+  unsigned    n_key_blocks;
+  char      **key_blocks;       /* Key buffer (pointers to available space
+                                   and end-of buffer occupy first bytes).
+                                   Each block is at least twice as large
+                                   as the previous one */
 
   char      **key;              /* Pointer to keys */
   int        *id;               /* Matching id */
@@ -131,26 +133,38 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
     }
   }
 
-  if (m->keys_size + key_size >= m->max_keys_size) {
+  /* Check for buffer space */
 
-    size_t min_size = m->keys_size + key_size;
-    size_t prev_size = m->max_keys_size;
-    char *old_addr = m->keys;
-    ptrdiff_t addr_shift = 0;
+  assert(m->n_key_blocks > 0);
 
-    m->max_keys_size*= 2;
-    if (m->max_keys_size < min_size)
-      m->max_keys_size = min_size;
+  char *key_block = m->key_blocks[m->n_key_blocks - 1];
 
-    BFT_REALLOC(m->keys, m->max_keys_size, char);
-    addr_shift = m->keys - old_addr;
+  char *s = ((char **)key_block)[0];
+  char *e = ((char **)key_block)[1];
 
-    for (i = 0; i < m->size; i++) {
-      m->key[i] += addr_shift;
-    }
+  if (s + key_size > e) {
 
-    for (i = prev_size; i < m->max_keys_size; i++)
-      m->keys[i] = '\0';
+    /* The new block should be twice as large as the current one
+       (to limit reallocations and fragmenting), and be able to contain at
+       least several keys of similar size as the current one. */
+    const size_t n_keys_mini = 8;
+    size_t b_size = e - key_block;
+    while (b_size < (key_size * n_keys_mini) + 2*sizeof(char*))
+      b_size *= 2;
+
+    BFT_MALLOC(key_block, b_size, char);
+    memset(key_block, 0, b_size);
+
+    BFT_REALLOC(m->key_blocks, m->n_key_blocks+1, char *);
+    m->key_blocks[m->n_key_blocks] = key_block;
+    m->n_key_blocks++;
+
+    s = key_block + CS_ALIGN_SIZE(2*sizeof(char *));
+    e = key_block + b_size;
+
+    ((char **)key_block)[0] = s;
+    ((char **)key_block)[1] = e;
+
   }
 
   /* Shift previous data */
@@ -163,13 +177,14 @@ _name_to_id_insert_key(cs_map_name_to_id_t  *m,
 
   /* Insert data */
 
-  strcpy(m->keys + m->keys_size, key);
+  strcpy(s, key);
 
-  m->key[index] = m->keys + m->keys_size;
+  m->key[index] = s;
   m->id[index] = id;
   m->reverse_id[m->size] = index;
 
-  m->keys_size += key_size;
+  s += key_size;
+  ((char **)key_block)[0] = s;
 
   m->size += 1;
 }
@@ -201,10 +216,23 @@ cs_map_name_to_id_create(void)
   m->size = 0;
   m->max_size = 8;
 
-  m->max_keys_size = 128;
-  m->keys_size = 0;
+  m->n_key_blocks = 1;
+  BFT_MALLOC(m->key_blocks, 1, char *);
 
-  BFT_MALLOC(m->keys, m->max_keys_size, char);
+  const size_t b_size = 128;
+  char *key_block;
+
+  BFT_MALLOC(key_block, b_size, char);
+  memset(key_block, 0, b_size);
+
+  char *s = key_block + CS_ALIGN_SIZE(2*sizeof(char *));
+  char *e = key_block + b_size;
+
+  ((char **)key_block)[0] = s;
+  ((char **)key_block)[1] = e;
+
+  m->key_blocks[0] = key_block;
+  m->n_key_blocks = 1;
 
   BFT_MALLOC(m->key, m->max_size, char *);
   BFT_MALLOC(m->id, m->max_size, int);
@@ -233,7 +261,9 @@ cs_map_name_to_id_destroy(cs_map_name_to_id_t **m)
       BFT_FREE(_m->id);
       BFT_FREE(_m->key);
 
-      BFT_FREE(_m->keys);
+      for (size_t i = 0; i < _m->n_key_blocks; i++)
+        BFT_FREE(_m->key_blocks[i]);
+      BFT_FREE(_m->key_blocks);
 
       BFT_FREE(*m);
 
