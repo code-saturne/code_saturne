@@ -120,6 +120,10 @@ static cs_atmo_option_t  _atmo_option = {
   .latitude = 1e12,
   .x_l93= 1e12,
   .y_l93 = 1e12,
+  .nbmetd = 0,
+  .nbmett = 0,
+  .nbmetm = 0,
+  .nbmaxt = 0,
   .domain_orientation = 0.,
   .compute_z_ground = false,
   .open_bcs_treatment = 0,
@@ -149,10 +153,10 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_t2 = 0.,
   .meteo_tstar = 0.,
   .meteo_psea = 101325.,
-  .nbmetd = 0,
-  .nbmett = 0,
-  .nbmetm = 0,
-  .nbmaxt = 0,
+  .meteo_phim_s = 0,
+  .meteo_phih_s = 0,
+  .meteo_phim_u = 0,
+  .meteo_phih_u = 0,
   .z_dyn_met  = NULL,
   .z_temp_met = NULL,
   .u_met      = NULL,
@@ -284,267 +288,6 @@ cs_f_atmo_chem_initialize_species_to_fid(int *species_fid);
 
 void
 cs_f_atmo_chem_finalize(void);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Return the name of the meteo file
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   name_max <-- maximum name length
- *   name     --> pointer to associated length
- *   name_len --> length of associated length
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_atmo_get_meteo_file_name(int           name_max,
-                              const char  **name,
-                              int          *name_len)
-{
-  *name = _atmo_option.meteo_file_name;
-  *name_len = strlen(*name);
-
-  if (*name_len > name_max) {
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Error retrieving meteo file  (\"%s\"):\n"
-         "Fortran caller name length (%d) is too small for name \"%s\"\n"
-         "(of length %d)."),
-       _atmo_option.meteo_file_name, name_max, *name, *name_len);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Return the name of the chemistry concentration file
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   name_max <-- maximum name length
- *   name     --> pointer to associated length
- *   name_len --> length of associated length
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_atmo_get_chem_conc_file_name(int           name_max,
-                                  const char  **name,
-                                  int          *name_len)
-{
-  *name = _atmo_chem.chem_conc_file_name;
-  *name_len = strlen(*name);
-
-  if (*name_len > name_max) {
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Error retrieving chemistry concentration file  (\"%s\"):\n"
-         "Fortran caller name length (%d) is too small for name \"%s\"\n"
-         "(of length %d)."),
-       _atmo_chem.chem_conc_file_name, name_max, *name, *name_len);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Return the name of the aerosol concentration file
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   name_max <-- maximum name length
- *   name     --> pointer to associated length
- *   name_len --> length of associated length
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_atmo_get_aero_conc_file_name(int           name_max,
-                                  const char  **name,
-                                  int          *name_len)
-{
-  *name = _atmo_chem.aero_conc_file_name;
-  *name_len = strlen(*name);
-
-  if (*name_len > name_max) {
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Error retrieving chemistry concentration file  (\"%s\"):\n"
-         "Fortran caller name length (%d) is too small for name \"%s\"\n"
-         "(of length %d)."),
-       _atmo_chem.aero_conc_file_name, name_max, *name, *name_len);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Access pointers for Fortran mapping.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_atmo_get_pointers(cs_real_t              **ps,
-                       int                    **syear,
-                       int                    **squant,
-                       int                    **shour,
-                       int                    **smin,
-                       cs_real_t              **ssec,
-                       cs_real_t              **longitude,
-                       cs_real_t              **latitude,
-                       cs_real_t              **x_l93,
-                       cs_real_t              **y_l93,
-                       bool                   **compute_z_ground,
-                       int                    **open_bcs_treatment,
-                       int                    **sedimentation_model,
-                       int                    **deposition_model,
-                       int                    **nucleation_model,
-                       int                    **subgrid_model,
-                       int                    **distribution_model,
-                       int                    **model,
-                       int                    **n_species,
-                       int                    **n_reactions,
-                       bool                   **chemistry_with_photolysis,
-                       cs_atmo_aerosol_type_t **aerosol_model,
-                       bool                   **frozen_gas_chem,
-                       bool                   **init_gas_with_lib,
-                       bool                   **init_aero_with_lib,
-                       int                    **n_layer,
-                       int                    **n_size,
-                       int                    **meteo_profile,
-                       int                    **nbmetd,
-                       int                    **nbmett,
-                       int                    **nbmetm,
-                       int                    **nbmaxt,
-                       cs_real_t              **meteo_zi)
-{
-  *ps        = &(_atmo_constants.ps);
-  *syear     = &(_atmo_option.syear);
-  *squant    = &(_atmo_option.squant);
-  *shour     = &(_atmo_option.shour);
-  *smin      = &(_atmo_option.smin);
-  *ssec      = &(_atmo_option.ssec);
-  *longitude = &(_atmo_option.longitude);
-  *latitude  = &(_atmo_option.latitude);
-  *x_l93 = &(_atmo_option.x_l93);
-  *y_l93 = &(_atmo_option.y_l93);
-  *compute_z_ground = &(_atmo_option.compute_z_ground);
-  *open_bcs_treatment = &(_atmo_option.open_bcs_treatment);
-  *sedimentation_model = &(_atmo_option.sedimentation_model);
-  *deposition_model = &(_atmo_option.deposition_model);
-  *nucleation_model = &(_atmo_option.nucleation_model);
-  *subgrid_model = &(_atmo_option.subgrid_model);
-  *distribution_model = &(_atmo_option.distribution_model);
-  *meteo_profile = &(_atmo_option.meteo_profile);
-  *nbmetd     = &(_atmo_option.nbmetd);
-  *nbmett     = &(_atmo_option.nbmett);
-  *nbmetm     = &(_atmo_option.nbmetm);
-  *nbmaxt     = &(_atmo_option.nbmaxt);
-  *meteo_zi   = &(_atmo_option.meteo_zi);
-  *model = &(_atmo_chem.model);
-  *n_species = &(_atmo_chem.n_species);
-  *n_reactions = &(_atmo_chem.n_reactions);
-  *chemistry_with_photolysis = &(_atmo_chem.chemistry_with_photolysis);
-  *aerosol_model = &(_atmo_chem.aerosol_model);
-  *frozen_gas_chem = &(_atmo_chem.frozen_gas_chem);
-  *init_gas_with_lib = &(_atmo_chem.init_gas_with_lib);
-  *init_aero_with_lib = &(_atmo_chem.init_aero_with_lib);
-  *n_layer = &(_atmo_chem.n_layer);
-  *n_size = &(_atmo_chem.n_size);
-}
-
-void
-cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
-                                   cs_real_t **molar_mass,
-                                   int       **chempoint)
-{
-  if (_atmo_chem.species_to_scalar_id == NULL)
-    BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
-  if (_atmo_chem.species_to_field_id == NULL)
-    BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
-  if (_atmo_chem.molar_mass == NULL)
-    BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
-  if (_atmo_chem.chempoint == NULL)
-    BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
-
-  *species_to_scalar_id = (_atmo_chem.species_to_scalar_id);
-  *molar_mass = (_atmo_chem.molar_mass);
-  *chempoint = (_atmo_chem.chempoint);
-}
-
-void
-cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
-                              cs_real_t **z_temp_met,
-                              cs_real_t **u_met,
-                              cs_real_t **v_met,
-                              cs_real_t **time_met,
-                              cs_real_t **hyd_p_met,
-                              cs_real_t **pot_t_met,
-                              int         dim_u_met[2],
-                              int         dim_hyd_p_met[2],
-                              int         dim_pot_t_met[2])
-{
-  int n_level = 0, n_level_t = 0;
-  int n_times = 0;
-  if (_atmo_option.meteo_profile) {
-    n_level = CS_MAX(1, _atmo_option.nbmetd);
-    n_level_t = CS_MAX(1, _atmo_option.nbmaxt);
-    n_times = CS_MAX(1, _atmo_option.nbmetm);
-  }
-
-  if (_atmo_option.z_dyn_met == NULL)
-    BFT_MALLOC(_atmo_option.z_dyn_met, n_level, cs_real_t);
-  if (_atmo_option.z_temp_met == NULL)
-    BFT_MALLOC(_atmo_option.z_temp_met, _atmo_option.nbmaxt, cs_real_t);
-  if (_atmo_option.u_met == NULL)
-    BFT_MALLOC(_atmo_option.u_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.v_met == NULL)
-    BFT_MALLOC(_atmo_option.v_met, n_level*n_times, cs_real_t);
-  if (_atmo_option.time_met == NULL)
-    BFT_MALLOC(_atmo_option.time_met, _atmo_option.nbmetm, cs_real_t);
-  if (_atmo_option.hyd_p_met == NULL)
-    BFT_MALLOC(_atmo_option.hyd_p_met,
-               _atmo_option.nbmetm*_atmo_option.nbmaxt, cs_real_t);
-  if (_atmo_option.pot_t_met == NULL)
-    BFT_MALLOC(_atmo_option.pot_t_met, n_level_t*n_times, cs_real_t);
-
-  *u_met           = _atmo_option.u_met;
-  *v_met           = _atmo_option.v_met;
-  *hyd_p_met       = _atmo_option.hyd_p_met;
-  *pot_t_met       = _atmo_option.pot_t_met;
-  dim_u_met[0]     = _atmo_option.nbmetd;
-  dim_u_met[1]     = _atmo_option.nbmetm;
-  dim_hyd_p_met[0] = _atmo_option.nbmaxt;
-  dim_hyd_p_met[1] = _atmo_option.nbmetm;
-  dim_pot_t_met[0] = _atmo_option.nbmaxt;
-  dim_pot_t_met[1] = _atmo_option.nbmetm;
-
-  *z_dyn_met  = _atmo_option.z_dyn_met;
-  *z_temp_met = _atmo_option.z_temp_met;
-  *time_met   = _atmo_option.time_met;
-}
-
-void
-cs_f_atmo_chem_initialize_species_to_fid(int *species_fid)
-{
-  assert(species_fid != NULL);
-  assert(_atmo_chem.species_to_field_id != NULL);
-
-  for (int i = 0; i < _atmo_chem.n_species; i++)
-    _atmo_chem.species_to_field_id[i] = species_fid[i];
-}
-
-void
-cs_f_atmo_chem_finalize(void)
-{
-  if (_atmo_chem.aerosol_model != CS_ATMO_AEROSOL_OFF)
-    cs_atmo_aerosol_finalize();
-
-  BFT_FREE(_atmo_chem.species_to_scalar_id);
-  BFT_FREE(_atmo_chem.species_to_field_id);
-  BFT_FREE(_atmo_chem.molar_mass);
-  BFT_FREE(_atmo_chem.chempoint);
-  BFT_FREE(_atmo_chem.spack_file_name);
-  BFT_FREE(_atmo_chem.aero_file_name);
-  BFT_FREE(_atmo_chem.chem_conc_file_name);
-}
 
 /*============================================================================
  * Private function definitions
@@ -898,6 +641,411 @@ _convert_from_wgs84_to_l93(void)
   cs_glob_atmo_option->y_l93= (ys-(c*exp(-n*(lat_iso)))
                                *cos(n*(cs_glob_atmo_option->longitude-3)
                                     *cs_math_pi/180));
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Universal functions, for neutral
+ *        (derivative function)
+ *  \return coef
+ *
+ * \param[in]  z             altitude
+ * \param[in]  dlmo          Inverse Monin Obukhov length
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+_mo_phim_n(cs_real_t              z,
+           cs_real_t              dlmo)
+{
+  return 1.0;
+}
+
+cs_real_t
+_mo_phih_n(cs_real_t              z,
+           cs_real_t              dlmo)
+{
+  return 1.;
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Universal functions of Cheng and Brutsaert 2005, for stable
+ *        (derivative function)
+ *
+ * \param[in]  z             altitude
+ * \param[in]  dlmo          inverse Monin Obukhov length
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+_mo_phim_s(cs_real_t              z,
+           cs_real_t              dlmo)
+{
+  cs_real_t a = 6.1;
+  cs_real_t b = 2.5;
+  cs_real_t x = z * dlmo;
+
+  return 1. + a*(x+(pow(x,b))*( pow(1.+pow(x,b),(1.-b)/b) ))
+         / (x+ pow(1.+ pow(x,b),1./b));
+}
+
+cs_real_t
+_mo_phih_s(cs_real_t              z,
+           cs_real_t              dlmo)
+{
+  cs_real_t a = 5.3;
+  cs_real_t b = 1.1;
+  cs_real_t x = z * dlmo;
+
+  return 1.+a*(x+(pow(x,b))*(pow((1.+pow(x,b)), ((1.-b)/b))))
+         / (x + pow((1.+pow(x,b)),1./b));
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Universal functions of Hogstrom 1988, for unstable
+ *        (derivative function)
+ *
+ * \param[in]  z             altitude
+ * \param[in]  dlmo          inverse Monin Obukhov length
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+_mo_phim_u(cs_real_t              z,
+           cs_real_t              dlmo)
+{
+  cs_real_t a = 1.;
+  cs_real_t b = 19.3;
+  cs_real_t e = -0.25;
+  cs_real_t x = z * dlmo;
+
+  return a*pow((1.-b*x),e);
+}
+
+cs_real_t
+_mo_phih_u(cs_real_t              z,
+           cs_real_t              dlmo)
+{
+  cs_real_t a = 0.95;
+  cs_real_t b = 11.6;
+  cs_real_t e = -0.5;
+  cs_real_t x = z * dlmo;
+
+  return a*pow(1.-b*x, e);
+}
+
+/*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Universal function phim for neutral, stable and unstable
+ *
+ * \param[in]  z             altitude
+ * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \return                   factor
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_mo_phim(cs_real_t              z,
+           cs_real_t              dlmo)
+{
+  cs_real_t dlmoneutral = 1.e-12;
+  cs_real_t coef;
+
+  if (CS_ABS(dlmo) < dlmoneutral)
+    coef = _mo_phim_n(z,dlmo);
+  else if (dlmo >= 0.)
+    coef = _mo_phim_s(z,dlmo);
+  else
+    coef = _mo_phim_u(z,dlmo);
+
+  return coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Universal function phih for neutral, stable and unstable
+ *
+ * \param[in]  z             altitude
+ * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \return                   factor
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_mo_phih(cs_real_t              z,
+           cs_real_t              dlmo)
+{
+  cs_real_t dlmoneutral = 1.e-12;
+  cs_real_t coef;
+
+  if (CS_ABS(dlmo) < dlmoneutral)
+    coef = _mo_phih_n(z,dlmo);
+  else if (dlmo >= 0.)
+    coef = _mo_phih_s(z,dlmo);
+  else
+    coef = _mo_phih_u(z,dlmo);
+
+  return coef;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the name of the meteo file
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   name_max <-- maximum name length
+ *   name     --> pointer to associated length
+ *   name_len --> length of associated length
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_atmo_get_meteo_file_name(int           name_max,
+                              const char  **name,
+                              int          *name_len)
+{
+  *name = _atmo_option.meteo_file_name;
+  *name_len = strlen(*name);
+
+  if (*name_len > name_max) {
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error retrieving meteo file  (\"%s\"):\n"
+         "Fortran caller name length (%d) is too small for name \"%s\"\n"
+         "(of length %d)."),
+       _atmo_option.meteo_file_name, name_max, *name, *name_len);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Return the name of the chemistry concentration file
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   name_max <-- maximum name length
+ *   name     --> pointer to associated length
+ *   name_len --> length of associated length
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_atmo_get_chem_conc_file_name(int           name_max,
+                                  const char  **name,
+                                  int          *name_len)
+{
+  *name = _atmo_chem.chem_conc_file_name;
+  *name_len = strlen(*name);
+
+  if (*name_len > name_max) {
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error retrieving chemistry concentration file  (\"%s\"):\n"
+         "Fortran caller name length (%d) is too small for name \"%s\"\n"
+         "(of length %d)."),
+       _atmo_chem.chem_conc_file_name, name_max, *name, *name_len);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Return the name of the aerosol concentration file
+ *
+ * This function is intended for use by Fortran wrappers.
+ *
+ * parameters:
+ *   name_max <-- maximum name length
+ *   name     --> pointer to associated length
+ *   name_len --> length of associated length
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_atmo_get_aero_conc_file_name(int           name_max,
+                                  const char  **name,
+                                  int          *name_len)
+{
+  *name = _atmo_chem.aero_conc_file_name;
+  *name_len = strlen(*name);
+
+  if (*name_len > name_max) {
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Error retrieving chemistry concentration file  (\"%s\"):\n"
+         "Fortran caller name length (%d) is too small for name \"%s\"\n"
+         "(of length %d)."),
+       _atmo_chem.aero_conc_file_name, name_max, *name, *name_len);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Access pointers for Fortran mapping.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_atmo_get_pointers(cs_real_t              **ps,
+                       int                    **syear,
+                       int                    **squant,
+                       int                    **shour,
+                       int                    **smin,
+                       cs_real_t              **ssec,
+                       cs_real_t              **longitude,
+                       cs_real_t              **latitude,
+                       cs_real_t              **x_l93,
+                       cs_real_t              **y_l93,
+                       bool                   **compute_z_ground,
+                       int                    **open_bcs_treatment,
+                       int                    **sedimentation_model,
+                       int                    **deposition_model,
+                       int                    **nucleation_model,
+                       int                    **subgrid_model,
+                       int                    **distribution_model,
+                       int                    **model,
+                       int                    **n_species,
+                       int                    **n_reactions,
+                       bool                   **chemistry_with_photolysis,
+                       cs_atmo_aerosol_type_t **aerosol_model,
+                       bool                   **frozen_gas_chem,
+                       bool                   **init_gas_with_lib,
+                       bool                   **init_aero_with_lib,
+                       int                    **n_layer,
+                       int                    **n_size,
+                       int                    **meteo_profile,
+                       int                    **nbmetd,
+                       int                    **nbmett,
+                       int                    **nbmetm,
+                       int                    **nbmaxt,
+                       cs_real_t              **meteo_zi)
+{
+  *ps        = &(_atmo_constants.ps);
+  *syear     = &(_atmo_option.syear);
+  *squant    = &(_atmo_option.squant);
+  *shour     = &(_atmo_option.shour);
+  *smin      = &(_atmo_option.smin);
+  *ssec      = &(_atmo_option.ssec);
+  *longitude = &(_atmo_option.longitude);
+  *latitude  = &(_atmo_option.latitude);
+  *x_l93 = &(_atmo_option.x_l93);
+  *y_l93 = &(_atmo_option.y_l93);
+  *compute_z_ground = &(_atmo_option.compute_z_ground);
+  *open_bcs_treatment = &(_atmo_option.open_bcs_treatment);
+  *sedimentation_model = &(_atmo_option.sedimentation_model);
+  *deposition_model = &(_atmo_option.deposition_model);
+  *nucleation_model = &(_atmo_option.nucleation_model);
+  *subgrid_model = &(_atmo_option.subgrid_model);
+  *distribution_model = &(_atmo_option.distribution_model);
+  *meteo_profile = &(_atmo_option.meteo_profile);
+  *nbmetd     = &(_atmo_option.nbmetd);
+  *nbmett     = &(_atmo_option.nbmett);
+  *nbmetm     = &(_atmo_option.nbmetm);
+  *nbmaxt     = &(_atmo_option.nbmaxt);
+  *meteo_zi   = &(_atmo_option.meteo_zi);
+  *model = &(_atmo_chem.model);
+  *n_species = &(_atmo_chem.n_species);
+  *n_reactions = &(_atmo_chem.n_reactions);
+  *chemistry_with_photolysis = &(_atmo_chem.chemistry_with_photolysis);
+  *aerosol_model = &(_atmo_chem.aerosol_model);
+  *frozen_gas_chem = &(_atmo_chem.frozen_gas_chem);
+  *init_gas_with_lib = &(_atmo_chem.init_gas_with_lib);
+  *init_aero_with_lib = &(_atmo_chem.init_aero_with_lib);
+  *n_layer = &(_atmo_chem.n_layer);
+  *n_size = &(_atmo_chem.n_size);
+}
+
+void
+cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
+                                   cs_real_t **molar_mass,
+                                   int       **chempoint)
+{
+  if (_atmo_chem.species_to_scalar_id == NULL)
+    BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
+  if (_atmo_chem.species_to_field_id == NULL)
+    BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
+  if (_atmo_chem.molar_mass == NULL)
+    BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
+  if (_atmo_chem.chempoint == NULL)
+    BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
+
+  *species_to_scalar_id = (_atmo_chem.species_to_scalar_id);
+  *molar_mass = (_atmo_chem.molar_mass);
+  *chempoint = (_atmo_chem.chempoint);
+}
+
+void
+cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
+                              cs_real_t **z_temp_met,
+                              cs_real_t **u_met,
+                              cs_real_t **v_met,
+                              cs_real_t **time_met,
+                              cs_real_t **hyd_p_met,
+                              cs_real_t **pot_t_met,
+                              int         dim_u_met[2],
+                              int         dim_hyd_p_met[2],
+                              int         dim_pot_t_met[2])
+{
+  int n_level = 0, n_level_t = 0;
+  int n_times = 0;
+  if (_atmo_option.meteo_profile) {
+    n_level = CS_MAX(1, _atmo_option.nbmetd);
+    n_level_t = CS_MAX(1, _atmo_option.nbmaxt);
+    n_times = CS_MAX(1, _atmo_option.nbmetm);
+  }
+
+  if (_atmo_option.z_dyn_met == NULL)
+    BFT_MALLOC(_atmo_option.z_dyn_met, n_level, cs_real_t);
+  if (_atmo_option.z_temp_met == NULL)
+    BFT_MALLOC(_atmo_option.z_temp_met, _atmo_option.nbmaxt, cs_real_t);
+  if (_atmo_option.u_met == NULL)
+    BFT_MALLOC(_atmo_option.u_met, n_level*n_times, cs_real_t);
+  if (_atmo_option.v_met == NULL)
+    BFT_MALLOC(_atmo_option.v_met, n_level*n_times, cs_real_t);
+  if (_atmo_option.time_met == NULL)
+    BFT_MALLOC(_atmo_option.time_met, _atmo_option.nbmetm, cs_real_t);
+  if (_atmo_option.hyd_p_met == NULL)
+    BFT_MALLOC(_atmo_option.hyd_p_met,
+               _atmo_option.nbmetm*_atmo_option.nbmaxt, cs_real_t);
+  if (_atmo_option.pot_t_met == NULL)
+    BFT_MALLOC(_atmo_option.pot_t_met, n_level_t*n_times, cs_real_t);
+
+  *u_met           = _atmo_option.u_met;
+  *v_met           = _atmo_option.v_met;
+  *hyd_p_met       = _atmo_option.hyd_p_met;
+  *pot_t_met       = _atmo_option.pot_t_met;
+  dim_u_met[0]     = _atmo_option.nbmetd;
+  dim_u_met[1]     = _atmo_option.nbmetm;
+  dim_hyd_p_met[0] = _atmo_option.nbmaxt;
+  dim_hyd_p_met[1] = _atmo_option.nbmetm;
+  dim_pot_t_met[0] = _atmo_option.nbmaxt;
+  dim_pot_t_met[1] = _atmo_option.nbmetm;
+
+  *z_dyn_met  = _atmo_option.z_dyn_met;
+  *z_temp_met = _atmo_option.z_temp_met;
+  *time_met   = _atmo_option.time_met;
+}
+
+void
+cs_f_atmo_chem_initialize_species_to_fid(int *species_fid)
+{
+  assert(species_fid != NULL);
+  assert(_atmo_chem.species_to_field_id != NULL);
+
+  for (int i = 0; i < _atmo_chem.n_species; i++)
+    _atmo_chem.species_to_field_id[i] = species_fid[i];
+}
+
+void
+cs_f_atmo_chem_finalize(void)
+{
+  if (_atmo_chem.aerosol_model != CS_ATMO_AEROSOL_OFF)
+    cs_atmo_aerosol_finalize();
+
+  BFT_FREE(_atmo_chem.species_to_scalar_id);
+  BFT_FREE(_atmo_chem.species_to_field_id);
+  BFT_FREE(_atmo_chem.molar_mass);
+  BFT_FREE(_atmo_chem.chempoint);
+  BFT_FREE(_atmo_chem.spack_file_name);
+  BFT_FREE(_atmo_chem.aero_file_name);
+  BFT_FREE(_atmo_chem.chem_conc_file_name);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2163,7 +2311,11 @@ cs_atmo_log_setup(void)
          "    P sea:     %12f [Pa]\n"
          "    T0:        %12f [K]\n"
          "    Tstar:     %12f [K]\n"
-         "    BL height: %12f [m]\n\n"),
+         "    BL height: %12f [m]\n"
+         "    phim_s:    %d\n"
+         "    phih_s:    %d\n"
+         "    phim_u:    %d\n"
+         "    phih_u:    %d\n\n"),
        cs_glob_atmo_option->meteo_z0,
        cs_glob_atmo_option->meteo_dlmo,
        cs_glob_atmo_option->meteo_ustar0,
@@ -2173,7 +2325,11 @@ cs_atmo_log_setup(void)
        cs_glob_atmo_option->meteo_psea,
        cs_glob_atmo_option->meteo_t0,
        cs_glob_atmo_option->meteo_tstar,
-       cs_glob_atmo_option->meteo_zi);
+       cs_glob_atmo_option->meteo_zi,
+       cs_glob_atmo_option->meteo_phim_s,
+       cs_glob_atmo_option->meteo_phih_s,
+       cs_glob_atmo_option->meteo_phim_u,
+       cs_glob_atmo_option->meteo_phih_u);
   }
 
 }

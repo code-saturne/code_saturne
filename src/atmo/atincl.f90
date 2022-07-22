@@ -607,6 +607,30 @@ double precision, save:: zaero
 
     !=============================================================================
 
+    ! Derivative functions
+
+    function cs_mo_phim(z,dlmo) result(coef) &
+        bind(C, name='cs_mo_phim')
+      use, intrinsic :: iso_c_binding
+
+      implicit none
+
+      real(c_double), value :: z,dlmo
+      real(c_double) :: coef
+
+    end function cs_mo_phim
+
+    function cs_mo_phih(z,dlmo) result(coef) &
+        bind(C, name='cs_mo_phih')
+      use, intrinsic :: iso_c_binding
+
+      implicit none
+
+      real(c_double), value :: z,dlmo
+      real(c_double) :: coef
+
+    end function cs_mo_phih
+
   end interface
 
 contains
@@ -932,38 +956,6 @@ end subroutine finalize_meteo
 !> \param[in]  dlmo          inverse Monin Obukhov length
 !> \param[out] coef          function
 
-subroutine mo_phim_s (z,dlmo,coef)
-
-  implicit none
-
-  double precision z,dlmo,coef
-
-  double precision a,b,x
-
-  a=6.1d0
-  b=2.5d0
-  x=z * dlmo
-
-  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1.d0/b))
-
-end subroutine mo_phim_s
-
-subroutine mo_phih_s (z,dlmo,coef)
-
-  implicit none
-
-  double precision z,dlmo,coef
-
-  double precision a,b,x
-
-  a=5.3d0
-  b=1.1d0
-  x=z * dlmo
-
-  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1.d0/b))
-
-end subroutine mo_phih_s
-
 ! Integrated version from z0 to z
 
 subroutine mo_psim_s (z,z0,dlmo,coef)
@@ -1008,40 +1000,6 @@ end subroutine mo_psih_s
 !> \param[in]  z             altitude
 !> \param[in]  dlmo             Monin Obukhov length
 !> \param[out] coef          function
-
-subroutine mo_phim_u (z,dlmo,coef)
-
-  implicit none
-
-  double precision z,dlmo,coef
-
-  double precision a,b,e,x
-
-  a=1.d0
-  b=19.3d0
-  e=-0.25d0
-  x=z * dlmo
-
-  coef=a*(1.d0-b*x)**e
-
-end subroutine mo_phim_u
-
-subroutine mo_phih_u (z,dlmo,coef)
-
-  implicit none
-
-  double precision z,dlmo,coef
-
-  double precision a,b,e,x
-
-  a=0.95d0
-  b=11.6d0
-  e=-0.5d0
-  x=z * dlmo
-
-  coef=a*(1.d0-b*x)**e
-
-end subroutine mo_phih_u
 
 ! Integrated version from z0 to z
 
@@ -1097,26 +1055,6 @@ end subroutine mo_psih_u
 !> \param[in]  dlmo          Inverse Monin Obukhov length
 !> \param[out] coef          function
 
-subroutine mo_phim_n (z,dlmo,coef)
-
-  implicit none
-
-  double precision z,dlmo,coef
-
-  coef=1.d0
-
-end subroutine mo_phim_n
-
-subroutine mo_phih_n (z,dlmo,coef)
-
-  implicit none
-
-  double precision z,dlmo,coef
-
-  coef=1.d0
-
-end subroutine mo_phih_n
-
 ! Integrated version from z0 to z
 
 subroutine mo_psim_n (z,z0,dlmo,coef)
@@ -1140,48 +1078,6 @@ subroutine mo_psih_n (z,z0,dlmo,coef)
 end subroutine mo_psih_n
 
 ! Switch universal functions
-
-! Derivative function
-
-function cs_mo_phim(z,dlmo) result(coef) &
-    bind(C, name='cs_mo_phim')
-  use, intrinsic :: iso_c_binding
-
-  implicit none
-
-  real(c_double), value :: z,dlmo
-  real(c_double) :: coef
-  double precision :: dlmoneutral = 1.d-12
-
-  if (abs(dlmo).lt.dlmoneutral) then
-    call mo_phim_n(z,dlmo,coef)
-  elseif (dlmo.ge.0.d0) then
-    call mo_phim_s(z,dlmo,coef)
-  else
-    call mo_phim_u(z,dlmo,coef)
-  endif
-
-end function cs_mo_phim
-
-function cs_mo_phih(z,dlmo) result(coef) &
-    bind(C, name='cs_mo_phih')
-  use, intrinsic :: iso_c_binding
-
-  implicit none
-
-  real(c_double), value :: z,dlmo
-  real(c_double) :: coef
-  double precision :: dlmoneutral = 1.d-12
-
-  if (abs(dlmo).lt.dlmoneutral) then
-    call mo_phih_n(z,dlmo,coef)
-  elseif (dlmo.ge.0.d0) then
-    call mo_phih_s(z,dlmo,coef)
-  else
-    call mo_phih_u(z,dlmo,coef)
-  endif
-
-end function cs_mo_phih
 
 ! Integrated version from z0 to z
 

@@ -207,6 +207,16 @@ typedef struct {
   cs_real_t meteo_tstar;
   /*! Meteo pressure at sea level */
   cs_real_t meteo_psea;
+
+  /*! Universal function Phi_m for stable condition */
+  int meteo_phim_s;
+  /*! Universal function Phi_h for stable condition */
+  int meteo_phih_s;
+  /*! Universal function Phi_m for unstable condition */
+  int meteo_phim_u;
+  /*! Universal function Phi_h for unstable condition */
+  int meteo_phih_u;
+
   /* meteo u profiles */
   cs_real_t *u_met;
   /* meteo v profiles */
