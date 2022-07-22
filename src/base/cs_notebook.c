@@ -155,7 +155,6 @@ _entry_create(const char  *name,
               bool         editable)
 {
   size_t l = strlen(name);
-  const char *addr_0 = NULL, *addr_1 = NULL;
 
   /* Check that the name is not already used */
   int id = cs_map_name_to_id_try(_entry_map, name);
@@ -171,24 +170,11 @@ _entry_create(const char  *name,
   if (_entry_map == NULL)
     _entry_map = cs_map_name_to_id_create();
 
-  else
-    addr_0 = cs_map_name_to_id_reverse(_entry_map, 0);
-
   if (l == 0)
     bft_error(__FILE__, __LINE__, 0, _("Defining an entry requires a name."));
 
   /* Insert the entry in map */
   int entry_id = cs_map_name_to_id(_entry_map, name);
-
-  /* Move name pointers of previous entries if necessary */
-  addr_1 = cs_map_name_to_id_reverse(_entry_map, 0);
-
-  if (addr_1 != addr_0) {
-    int i;
-    ptrdiff_t addr_shift = addr_1 - addr_0;
-    for (i = 0; i < entry_id; i++)
-      _entries[i]->name += addr_shift;
-  }
 
   if (entry_id == _n_entries)
     _n_entries = entry_id + 1;

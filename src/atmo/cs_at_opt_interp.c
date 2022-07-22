@@ -524,16 +524,12 @@ _assembly_adding_obs_covariance(cs_measures_set_t  *ms,
 cs_at_opt_interp_t *
 cs_at_opt_interp_create(const char   *name)
 {
-  const char *addr_0 = NULL, *addr_1 = NULL;
-
   cs_at_opt_interp_t *oi =  NULL;
 
   /* Initialize if necessary */
 
   if (_opt_interps_map == NULL)
     _opt_interps_map = cs_map_name_to_id_create();
-  else
-    addr_0 = cs_map_name_to_id_reverse(_opt_interps_map, 0);
 
   if (strlen(name) == 0)
     bft_error(__FILE__, __LINE__, 0,
@@ -542,18 +538,6 @@ cs_at_opt_interp_create(const char   *name)
   /* Find or insert entry in map */
 
   int opt_interp_id = cs_map_name_to_id(_opt_interps_map, name);
-
-  /* Move name pointers of previous measure set if necessary
-     (i.e. reallocation of map names array) */
-
-  addr_1 = cs_map_name_to_id_reverse(_opt_interps_map, 0);
-
-  if (addr_1 != addr_0) {
-    int i;
-    ptrdiff_t addr_shift = addr_1 - addr_0;
-    for (i = 0; i < opt_interp_id; i++)
-      (_opt_interps + i)->name += addr_shift;
-  }
 
   bool reall = true;
   if (opt_interp_id == _n_opt_interps) {

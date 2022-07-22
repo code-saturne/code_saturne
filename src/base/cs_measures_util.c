@@ -314,16 +314,12 @@ cs_interpol_grid_create(const char   *name)
   bool reall = true;
   int grid_id = -1;
 
-  const char *addr_0 = NULL, *addr_1 = NULL;
-
   cs_interpol_grid_t *ig =  NULL;
 
   /* Initialize if necessary */
 
   if (_grids_map == NULL)
     _grids_map = cs_map_name_to_id_create();
-  else
-    addr_0 = cs_map_name_to_id_reverse(_grids_map, 0);
 
   if (strlen(name) == 0)
     bft_error(__FILE__, __LINE__, 0,
@@ -332,18 +328,6 @@ cs_interpol_grid_create(const char   *name)
   /* Find or insert entry in map */
 
   grid_id = cs_map_name_to_id(_grids_map, name);
-
-  /* Move name pointers of previous grid if necessary
-     (i.e. reallocation of map names array) */
-
-  addr_1 = cs_map_name_to_id_reverse(_grids_map, 0);
-
-  if (addr_1 != addr_0) {
-    int i;
-    ptrdiff_t addr_shift = addr_1 - addr_0;
-    for (i = 0; i < grid_id; i++)
-      (_grids + i)->name += addr_shift;
-  }
 
   if (grid_id == _n_grids) {
     _n_grids = grid_id + 1;
@@ -450,16 +434,12 @@ cs_measures_set_create(const char   *name,
   bool reall = true;
   int measures_set_id = -1;
 
-  const char *addr_0 = NULL, *addr_1 = NULL;
-
   cs_measures_set_t *ms =  NULL;
 
   /* Initialize if necessary */
 
   if (_measures_sets_map == NULL)
     _measures_sets_map = cs_map_name_to_id_create();
-  else
-    addr_0 = cs_map_name_to_id_reverse(_measures_sets_map, 0);
 
   if (strlen(name) == 0)
     bft_error(__FILE__, __LINE__, 0,
@@ -468,18 +448,6 @@ cs_measures_set_create(const char   *name,
   /* Find or insert entry in map */
 
   measures_set_id = cs_map_name_to_id(_measures_sets_map, name);
-
-  /* Move name pointers of previous measure set if necessary
-     (i.e. reallocation of map names array) */
-
-  addr_1 = cs_map_name_to_id_reverse(_measures_sets_map, 0);
-
-  if (addr_1 != addr_0) {
-    int i;
-    ptrdiff_t addr_shift = addr_1 - addr_0;
-    for (i = 0; i < measures_set_id; i++)
-      (_measures_sets + i)->name += addr_shift;
-  }
 
   if (measures_set_id == _n_measures_sets) {
     _n_measures_sets = measures_set_id + 1;

@@ -362,7 +362,6 @@ cs_map_name_to_id_try(const cs_map_name_to_id_t  *m,
   return retval;
 }
 
-
 /*----------------------------------------------------------------------------
  * Return a key name in a map matching a given id.
  *
@@ -388,6 +387,7 @@ cs_map_name_to_id_reverse(const cs_map_name_to_id_t  *m,
 
   return retval;
 }
+
 /*----------------------------------------------------------------------------
  * Return the size of a map.
  *

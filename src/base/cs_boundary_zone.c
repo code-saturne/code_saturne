@@ -169,7 +169,6 @@ static cs_zone_t *
 _zone_define(const char  *name)
 {
   int zone_id = -1;
-  const char *addr_0 = NULL, *addr_1 = NULL;
 
   cs_zone_t *z = _zone_by_name_try(name);
 
@@ -183,9 +182,6 @@ _zone_define(const char  *name)
   if (_zone_map == NULL)
     _zone_map = cs_map_name_to_id_create();
 
-  else
-    addr_0 = cs_map_name_to_id_reverse(_zone_map, 0);
-
   size_t l = 0;
   if (name != NULL)
     l = strlen(name);
@@ -195,17 +191,6 @@ _zone_define(const char  *name)
   /* Insert entry in map */
 
   zone_id = cs_map_name_to_id(_zone_map, name);
-
-  /* Move name pointers of previous zones if necessary
-     (i.e. reallocation of map names array) */
-
-  addr_1 = cs_map_name_to_id_reverse(_zone_map, 0);
-
-  if (addr_1 != addr_0) {
-    ptrdiff_t addr_shift = addr_1 - addr_0;
-    for (int i = 0; i < zone_id; i++)
-      _zones[i]->name += addr_shift;
-  }
 
   if (zone_id == _n_zones)
     _n_zones = zone_id + 1;
