@@ -221,6 +221,10 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
     may have been killed by the system or resource manager, a timout
     value (default 3600 seconds) may be used to compare the run_status.running
     file's last timestamp and the current timestap.
+
+    Caveats: In case of coupled computations, the number of OpenMP threads
+    is not reported, and the number of reported MPI ranks only includes the
+    sum of those assigned to code_saturne-based solvers, not other solvers.
     """
 
     # Initialize status
@@ -241,12 +245,30 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
 
     if coupling:
         run_config_path = os.path.join(run_dir, 'run.cfg')
+        coupled_domains = None
         if os.path.isfile(run_config_path):
             run_conf = cs_run_conf.run_conf(run_config_path)
-        coupled_domains = run_conf.get_coupling_parameters()
+            coupled_domains = run_conf.get_coupling_parameters()
         if coupled_domains:
-            for d in coupled_domains.split(":"):
-                rc, s = get_case_state(os.path.join(run_dir, d))
+            for d in coupled_domains:
+                rc, ic = get_case_state(os.path.join(run_dir, d['domain']))
+                if rc != case_state.UNKNOWN:
+                    state = rc
+                if not info['message']:
+                    info['message'] = ic['message']
+                for k in ('compute_time', 'compute_mem', 'preprocess_mem'):
+                    if ic[k] != None:
+                        if info[k] != None:
+                            info[k] = max(info[k], ic[k])
+                        else:
+                            info[k] = ic[k]
+                for k in ('compute_time_usage', 'preprocess_time',
+                          'preprocess_mem', 'mpi_ranks'):
+                    if ic[k] != None:
+                        if info[k] != None:
+                            info[k] += ic[k]
+                        else:
+                            info[k] = ic[k]
 
             return state, info
 
@@ -310,7 +332,7 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
 
         i += 1
 
-    # Check fpr presence of error file(s)
+    # Check for presence of error file(s)
 
     if os.path.isfile(os.path.join(run_dir, 'error')):
         state = case_state.FAILED
@@ -389,10 +411,7 @@ def get_case_state(run_dir, coupling=False, run_timeout=3600):
         except Exception:
             pass
 
-    # FIXME check run state
-
     return state, info
-
 
 #===============================================================================
 # Main class
