@@ -477,8 +477,10 @@ _add_dir_scripts(const char  *dir_path)
         break;
       }
     }
-    if (ext == NULL)
+    if (ext == NULL) {
+      BFT_FREE(dir_files[i]);
       continue;
+    }
 
     /* Filter: Python files only */
     if (l_ext == 3 && strncmp(ext, ".py", 3) == 0) {
