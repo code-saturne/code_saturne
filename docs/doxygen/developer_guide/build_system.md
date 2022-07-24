@@ -143,8 +143,8 @@ The following logic is also applied in the `build_aux/cs_version.py` script:
     (rather than providing a release date), the version will appear as
     *x.y.(z-1)-patch*.
 
-  Roadmap
-  -------
+Roadmap
+-------
 
   The GNU Autotools provide some nice features, and the code_saturne build
   system represents a large amount of work over multiple years, but this system
@@ -195,3 +195,33 @@ The following logic is also applied in the `build_aux/cs_version.py` script:
 For now, a safe solution seems to be to rewrite some parts of the build system
 in Python, as is already done in quite a few areas (see files in `build-aux`),
 and progressively reduce the reliance on the Autotools.
+
+Specific Automake rules
+-----------------------
+
+### Preprocessor
+
+As the preprocessor is an executable, compilation flags for position-independent
+code are only added for optional plugin code, not the rest of the code.
+This could be easily changed.
+
+### Libraries and plugins
+
+For files which may be compiled into plugins rather than the main libraries
+(such as `preprocessor/pre-post/ecs_ccm.c`), an associated non-installable
+library is defined in the matching directory's Automake (`Makefile.am`)
+rules, so as to force the file's compilation while still letting Automake
+handle its dependencies. This is done because Automake only manages rules for
+programs and libraries, not for individual object files. Another workaround
+would be to use rules for built (generated) sources.
+
+When not using Libtool, Automake assumes archive (`.a`) form libraries, so
+flags for position-independent code are added specifically in the code_saturne
+build configuration (and can be adapted in `config/cs_auto_flags.sh`).
+
+Local targets are then defined so as to build the appropriate libraries,
+using the matching object (`.o`), and not library archive (`.a`) files.
+
+This allows avoiding the use of libtool, while still benefiting from Automake's
+main features (source file dependency tracking, install targets, ...).
+

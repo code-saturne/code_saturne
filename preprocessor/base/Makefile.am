@@ -46,9 +46,9 @@ ecs_maillage_priv.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libbaseecs.la
+noinst_LIBRARIES = libbaseecs.a
 
-libbaseecs_la_SOURCES = \
+libbaseecs_a_SOURCES = \
 ecs_table.c \
 ecs_table_att.c \
 ecs_table_def.c \
@@ -57,6 +57,4 @@ ecs_descr_chaine.c \
 ecs_famille.c \
 ecs_famille_chaine.c \
 ecs_maillage.c
-
-libbaseecs_la_LDFLAGS = -no-undefined
 

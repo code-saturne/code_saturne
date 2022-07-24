@@ -35,6 +35,7 @@
 # cflags_default_prf     # Added to $CFLAGS for profiling      (default: "-g")
 # cflags_default_omp     # Added to $CFLAGS for OpenMP         (default: "")
 # cflags_default_omp_ad  # Added to $CFLAGS for OpenMP offload (default: "")
+# cflags_default_shared  # Added to $CFLAGS for shared libs    (default: "-fPIC -DPIC")
 
 # cxxflags_default       # Base CXXFLAGS                       (default: "")
 # cxxflags_default_dbg   # Added to $CXXFLAGS for debugging    (default: "-g")
@@ -44,6 +45,7 @@
 # cxxflags_default_omp   # Added to $CXXFLAGS for OpenMP       (default: "")
 # cxxflags_default_omp_ad  # Added to $CXXFLAGS for OpenMP offload (default: "")
 # cxxflags_default_std   # C++ standard variant                (default: "")
+# cxxflags_default_shared  # Added to $CXXFLAGS for shared libs (default: "-fPIC -DPIC")
 
 # fcflags_default        # Base FCFLAGS                       (default: "")
 # fcflags_default_dbg    # Added to $FCFLAGS for debugging    (default: "-g")
@@ -51,6 +53,7 @@
 # fcflags_default_hot    # Optimization for specific files    (default: "-O")
 # fcflags_default_prf    # Added to $FCFLAGS for profiling    (default: "-g")
 # fcflags_default_omp    # Added to $FCFLAGS for OpenMP       (default: "")
+# fclags_default_shared  # Added to $FCFLAGS for shared libs  (default: "-fPIC -DPIC")
 #
 # ldflags_default        # Base LDFLAGS                       (default: "")
 # ldflags_default_dbg    # Added to $LDFLAGS for debugging    (default: "-g")
@@ -108,6 +111,32 @@ libs_default=""
 libs_default_dbg=""
 libs_default_opt=""
 libs_default_prf=""
+
+############################
+#                          #
+#  Shared library options  #
+#                          #
+############################
+
+# Options to generate position-independent code for shared libraries.
+# can be modified later if necessary, but usually common to most compilers.
+
+case "$host_os" in
+  darwin*)
+    cflags_default_shared="-fPIC -DPIC"
+    fcflags_default_shared="-fPIC -DPIC"
+    cxxflags_default_shared="-fPIC -DPIC"
+    ldflags_default_shared="-dynamiclib -undefined dynamic_lookup -undefined error"
+    ldflags_default_soname="-install_name @rpath/"
+    ;;
+  *)
+    cflags_default_shared="-fPIC -DPIC"
+    fcflags_default_shared="-fPIC -DPIC"
+    cxxflags_default_shared="-fPIC -DPIC"
+    ldflags_default_shared="-shared"
+    ldflags_default_soname="-Wl,-soname -Wl,"
+    ;;
+esac
 
 ##################
 #                #
@@ -1324,13 +1353,13 @@ if test "x$cs_linker_set" != "xyes" ; then
         libgfortran_dir=`dirname $libgfortran_path`
         unset libgfortran_path
         if test "`echo $libgfortran_dir | cut -c1-4`" != "/usr" ; then
-          ldflags_rpath="${ldflags_rpath}${libgfortran_dir}"
+          ldflags_rpath_add="${ldflags_rpath}${libgfortran_dir}"
         fi
         libgfortran_path=`$FC --print-file-name=libgfortran.so`
         libgfortran_dir=`dirname $libgfortran_path`
         unset libgfortran_path
         if test "`echo $libgfortran_dir | cut -c1-4`" != "/usr" ; then
-          ldflags_rpath="${ldflags_rpath}${libgfortran_dir}"
+          ldflags_rpath_add="${ldflags_rpath}${libgfortran_dir}"
         fi
         unset libgfortran_dir
       fi

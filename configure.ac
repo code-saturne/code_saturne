@@ -266,6 +266,7 @@ if test "x$auto_flags" = "xyes" ; then
   AC_SUBST(FCFLAGS_HOT)
 
   AC_SUBST(LDRPATH)
+
   AC_SUBST(cs_cc_version_string, [${cs_ac_cc_version}])
   AC_SUBST(cs_cxx_version_string, [${cs_ac_cxx_version}])
   AC_SUBST(cs_fc_version_string, [${cs_ac_fc_version}])
@@ -322,10 +323,50 @@ if test "$host_os" = mingw64 ; then
 fi
 AC_SUBST(enable_shared)
 
+# Library extension based on system type
+#---------------------------------------
+
+case "$host_os" in
+  darwin*)
+    SHARED_LIB_EXT=dylib
+    ;;
+  linux*)
+    SHARED_LIB_EXT=so
+    ;;
+  *)
+    AC_MSG_WARN([Not sure how to build shared lib for $target_os; assuming Linux-like])
+    SHARED_LIB_EXT=so
+    ;;
+esac
+
+AC_SUBST(SHARED_LIB_EXT)
+AC_SUBST(LIB_EXT)
+
 # Initialize libtool.
 
 m4_pushdef([cs_lt_init_args], [disable-static, win32-dll, no-pic])
 LT_INIT([disable-static, win32-dll])
+
+# Shared library related settings and flags
+
+if test $enable_shared = yes; then
+  CFLAGS_SHARED="$cflags_default_shared"
+  FCFLAGS_SHARED="$fcflags_default_shared"
+  CXXFLAGS_SHARED="$cxxflags_default_shared"
+
+  LIB_EXT=$SHARED_LIB_EXT
+  LDFLAGS_SHARED="$ldflags_default_shared"
+  LDFLAGS_SONAME="$ldflags_default_soname"
+else
+  LIB_EXT=a
+fi
+
+AC_SUBST(CFLAGS_SHARED)
+AC_SUBST(CXXFLAGS_SHARED)
+AC_SUBST(FCFLAGS_SHARED)
+
+AC_SUBST(LDFLAGS_SHARED)
+AC_SUBST(LDFLAGS_SONAME)
 
 # In static mode, multiple definitions must be allowed for the linker.
 # On some systems, such as Mac OS X in static mode, limitations

@@ -44,9 +44,9 @@ ecs_timer.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libutilecs.la
+noinst_LIBRARIES = libutilecs.a
 
-libutilecs_la_SOURCES = \
+libutilecs_a_SOURCES = \
 ecs_backtrace.c \
 ecs_comm.c \
 ecs_def.c \
@@ -56,6 +56,4 @@ ecs_mem.c \
 ecs_mem_usage.c \
 ecs_tab.c \
 ecs_timer.c
-
-libutilecs_la_LDFLAGS = -no-undefined
 

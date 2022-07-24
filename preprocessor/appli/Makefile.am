@@ -76,9 +76,9 @@ noinst_HEADERS = \
 ecs_cmd.h
 
 cs_preprocess_LDADD = \
-$(top_builddir)/preprocessor/pre-post/libprepostecs.la \
-$(top_builddir)/preprocessor/base/libbaseecs.la \
-$(top_builddir)/preprocessor/util/libutilecs.la $(LTLIBINTL) \
+$(top_builddir)/preprocessor/pre-post/libprepostecs.a \
+$(top_builddir)/preprocessor/base/libbaseecs.a \
+$(top_builddir)/preprocessor/util/libutilecs.a $(LTLIBINTL) \
 $(LDADD_CCM) \
 $(MED_LDFLAGS) $(MEDRUNPATH) $(MED_LIBS) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
