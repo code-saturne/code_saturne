@@ -1207,7 +1207,7 @@ cs_atmo_init_meteo_profiles(void)
   /* All other cases */
   else{
     bft_printf("Lambert coordinates were given, latitude"
-                "and longitude are automatically computed\n");
+                " and longitude are automatically computed\n");
     _convert_from_l93_to_wgs84();
   }
 
