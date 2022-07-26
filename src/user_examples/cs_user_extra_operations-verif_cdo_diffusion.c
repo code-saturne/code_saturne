@@ -258,12 +258,12 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
                              time_step);  /* time step structure */
 
     /* Free */
+
     BFT_FREE(postlabel);
     BFT_FREE(ddip);
     BFT_FREE(rpex);
 
   }
-
 }
 
 /*============================================================================
@@ -298,6 +298,7 @@ cs_user_extra_operations(cs_domain_t          *domain)
               " Invalid equation name. Stop extra operations.");
 
   /* Open a file */
+
   char  *filename = NULL;
   int len = strlen("Resume-.log")+strlen(eqname)+1;
 
@@ -325,7 +326,8 @@ cs_user_extra_operations(cs_domain_t          *domain)
   bft_printf("    Extra operations\n");
   bft_printf("%s", cs_sepline);
 
-  /* Extra-operation depends on the numerical scheme */
+  /* Extra-operations depend on the numerical scheme */
+
   cs_param_space_scheme_t  space_scheme = cs_equation_get_space_scheme(eq);
 
   switch (space_scheme) {
@@ -342,6 +344,7 @@ cs_user_extra_operations(cs_domain_t          *domain)
   printf("\n >> Extra operation for equation: %s\n", eqname);
 
   /* Free */
+
   BFT_FREE(filename);
   fclose(resume);
 

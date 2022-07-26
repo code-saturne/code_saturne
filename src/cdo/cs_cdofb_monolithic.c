@@ -1215,6 +1215,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
        * - Define the divergence operator used in the linear system (div_op is
        *   equal to minus the divergence)
        */
+
       cs_cdofb_navsto_define_builder(cb->t_bc_eval, nsp, cm, csys,
                                      sc->pressure_bc, sc->bf_type, &nsb);
 

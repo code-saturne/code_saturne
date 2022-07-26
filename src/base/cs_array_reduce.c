@@ -1087,7 +1087,6 @@ _cs_real_scatter_norms_1d(cs_lnum_t          n_src_elts,
     }
 
   } /* Block openMP */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1130,7 +1129,7 @@ _cs_real_scatter_norms_1d_filtered(cs_lnum_t          n_src_elts,
     cs_parall_thread_range(n_src_elts, sizeof(cs_real_t), &s_id, &e_id);
 
     const cs_lnum_t _n = e_id - s_id;
-    const cs_lnum_t *_vl = filter_list + s_id;
+    const cs_lnum_t *_fl = filter_list + s_id;
 
     const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
     cs_lnum_t n_sblocks, blocks_in_sblocks;
@@ -1154,7 +1153,7 @@ _cs_real_scatter_norms_1d_filtered(cs_lnum_t          n_src_elts,
 
         /* Loop on source elements */
         for (cs_lnum_t lid = start_id; lid < end_id; lid++) {
-          const cs_lnum_t  id = _vl[lid];
+          const cs_lnum_t  id = _fl[lid];
           for (cs_lnum_t j = src2v_idx[id]; j < src2v_idx[id+1]; j++) {
             const cs_real_t  val = v[src2v_ids[j]];
             const cs_real_t  weight = w[j];
@@ -1186,7 +1185,6 @@ _cs_real_scatter_norms_1d_filtered(cs_lnum_t          n_src_elts,
     }
 
   } /* Block openMP */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2254,6 +2252,7 @@ _cs_real_scatter_norms_3d(cs_lnum_t           n_src_elts,
                           double              ssum[])
 {
   /* Initialize quantities to return */
+
   for (int i = 0; i < 4; i++) vsum[i] = asum[i] = ssum[i] = 0.;
 
 # pragma omp parallel if (n_src_elts > CS_THR_MIN)
@@ -2288,6 +2287,7 @@ _cs_real_scatter_norms_3d(cs_lnum_t           n_src_elts,
         for (int i = 0; i < 12; i++) c[i] = 0;
 
         /* Loop on source elements */
+
         for (cs_lnum_t id = start_id; id < end_id; id++) {
           for (cs_lnum_t j = _idx[id]; j < _idx[id+1]; j++) {
 
@@ -2329,7 +2329,6 @@ _cs_real_scatter_norms_3d(cs_lnum_t           n_src_elts,
     }
 
   } /* Block openMP */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2363,6 +2362,7 @@ _cs_real_scatter_norms_3d_filtered(cs_lnum_t           n_src_elts,
                                    double              ssum[])
 {
   /* Initialize quantities to return */
+
   for (int i = 0; i < 4; i++) vsum[i] = asum[i] = ssum[i] = 0.;
 
 # pragma omp parallel if (n_src_elts > CS_THR_MIN)
@@ -2397,6 +2397,7 @@ _cs_real_scatter_norms_3d_filtered(cs_lnum_t           n_src_elts,
         for (int i = 0; i < 12; i++) c[i] = 0;
 
         /* Loop on source elements */
+
         for (cs_lnum_t lid = start_id; lid < end_id; lid++) {
           const cs_lnum_t  id = _fl[lid];
           for (cs_lnum_t j = src2v_idx[id]; j < src2v_idx[id+1]; j++) {
@@ -2439,7 +2440,6 @@ _cs_real_scatter_norms_3d_filtered(cs_lnum_t           n_src_elts,
     }
 
   } /* Block openMP */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2821,7 +2821,6 @@ cs_array_reduce_sum_l(cs_lnum_t         n_elts,
       bft_error(__FILE__, __LINE__, 0,
                 _("_cs_real_sum_nd_iv not implemented yet\n"));
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2879,7 +2878,6 @@ cs_array_reduce_minmax_l(cs_lnum_t         n_elts,
       bft_error(__FILE__, __LINE__, 0,
                 _("_cs_real_minmax_nd_iv not implemented yet\n"));
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2940,7 +2938,6 @@ cs_array_reduce_simple_stats_l(cs_lnum_t         n_elts,
     else
       _cs_real_sstats_nd(n_elts, dim, v_elt_list, v, vmin, vmax, vsum);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3199,7 +3196,6 @@ cs_array_scatter_reduce_norms_l(cs_lnum_t          n_src_elts,
                 _(" _cs_real_scatter_norms_nd_filtered not implemented yet\n"));
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
