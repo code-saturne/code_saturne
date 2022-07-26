@@ -178,31 +178,16 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
   const cs_adjacency_t  *c2v = connect->c2v;
 
   /* Analyze the discrete solution */
+
   cs_real_t  pdi_min, pdi_max, pdi_wsum, pdi_asum, pdi_ssum;
-  cs_array_reduce_minmax_l(cdoq->n_vertices, 1, NULL, pdi,
-                           &pdi_min, &pdi_max);
 
-  cs_array_scatter_reduce_norms_l(cdoq->n_cells, c2v->idx, c2v->ids,
-                                  NULL, // filter list
-                                  1,    // dim
-                                  cdoq->n_vertices,
-                                  pdi,
-                                  cdoq->dcell_vol,
-                                  &pdi_wsum,
-                                  &pdi_asum,
-                                  &pdi_ssum);
-  /* Parallel treatment */
-  if (cs_glob_n_ranks > 1) {
-
-    cs_real_t  minmax[2] = {-pdi_min, pdi_max};
-    cs_parall_max(2, CS_REAL_TYPE, minmax);
-    pdi_min = -minmax[0], pdi_max = minmax[1];
-
-    cs_real_t  sums[3] = {pdi_wsum, pdi_asum, pdi_ssum};
-    cs_parall_sum(3, CS_REAL_TYPE, sums);
-    pdi_wsum = sums[0], pdi_asum = sums[1], pdi_ssum = sums[2];
-
-  }
+  cs_evaluate_scatter_array_reduction(1, cdoq->n_vertices, pdi,
+                                      c2v, cdoq->dcell_vol,
+                                      &pdi_min,
+                                      &pdi_max,
+                                      &pdi_wsum,
+                                      &pdi_asum,
+                                      &pdi_ssum);
 
   if (cs_glob_rank_id < 1) { /* Only the first rank write something */
 
