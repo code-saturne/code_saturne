@@ -235,6 +235,10 @@ typedef struct {
   cs_real_t *u_met;
   /* meteo v profiles */
   cs_real_t *v_met;
+  /* meteo turbulent kinetic energy profile */
+  cs_real_t *ek_met;
+  /* meteo turbulent dissipation profile */
+  cs_real_t *ep_met;
 
   /* Altitudes of the dynamic profiles */
   cs_real_t *z_dyn_met;

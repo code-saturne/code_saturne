@@ -104,6 +104,7 @@ cs_user_extra_operations-turbomachinery.c \
 cs_user_extra_operations-verif_cdo_diffusion.c \
 cs_user_head_losses.c \
 cs_user_hgn-relax_time_scale.c \
+cs_user_initialization-atmospheric.c \
 cs_user_initialization-base.c \
 cs_user_initialization-electric_arcs.c \
 cs_user_initialization-medcoupling_remapper_3d.c \
@@ -178,7 +179,6 @@ cs_user_extra_operations-force_temperature.f90 \
 cs_user_extra_operations-parallel_operations.f90 \
 cs_user_extra_operations-richards_flux.f90 \
 cs_user_fluid_structure_interaction.f90 \
-cs_user_initialization-atmospheric.f90 \
 cs_user_initialization-compressible.f90 \
 cs_user_initialization-cooling_towers.f90 \
 cs_user_initialization-fuel.f90 \

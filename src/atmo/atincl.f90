@@ -71,10 +71,10 @@ double precision, dimension(:,:), pointer :: vmet
 double precision, allocatable, dimension(:,:) :: wmet
 
 !> meteo turbulent kinetic energy profile (read in the input meteo file)
-double precision, allocatable, dimension(:,:) :: ekmet
+double precision, dimension(:,:), pointer :: ekmet
 
 !> meteo turbulent dissipation profile (read in the input meteo file)
-double precision, allocatable, dimension(:,:) :: epmet
+double precision, dimension(:,:), pointer :: epmet
 
 !> meteo temperature (Celsius) profile (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: ttmet
@@ -464,13 +464,15 @@ double precision, save:: zaero
     !> \brief Return pointers to atmo arrays
 
     subroutine cs_f_atmo_arrays_get_pointers(p_zdmet, p_ztmet, p_umet, p_vmet, &
-         p_tmmet, p_phmet, p_tpmet, dim_pumet, dim_phmet, dim_tpmet)           &
+         p_tmmet, p_phmet, p_tpmet, p_ekmet, p_epmet,dim_pumet, dim_phmet,     &
+         dim_tpmet, dim_ekmet, dim_epmet)                                      &
          bind(C, name='cs_f_atmo_arrays_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), dimension(2) :: dim_phmet, dim_pumet, dim_tpmet
+       integer(c_int), dimension(2) ::  dim_ekmet,  dim_epmet
       type(c_ptr), intent(out) :: p_zdmet, p_ztmet, p_umet, p_vmet, p_tmmet
-      type(c_ptr), intent(out) :: p_phmet, p_tpmet
+      type(c_ptr), intent(out) :: p_phmet, p_tpmet, p_ekmet, p_epmet
     end subroutine cs_f_atmo_arrays_get_pointers
 
     !---------------------------------------------------------------------------
@@ -811,9 +813,10 @@ implicit none
 integer :: imode, n_level, n_times, n_level_t
 
 type(c_ptr) :: c_z_dyn_met, c_z_temp_met, c_u_met, c_v_met, c_time_met
-type(c_ptr) :: c_hyd_p_met, c_pot_t_met
+type(c_ptr) :: c_hyd_p_met, c_pot_t_met, c_ek_met, c_ep_met
 
 integer(c_int), dimension(2) :: dim_hyd_p_met, dim_u_met, dim_pot_t_met
+integer(c_int), dimension(2) :: dim_ek_met, dim_ep_met
 
 if (imeteo.eq.1) then
   call atlecm(0)
@@ -825,8 +828,10 @@ endif
 call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
                                    c_u_met, c_v_met, c_time_met,  &
                                    c_hyd_p_met, c_pot_t_met,      &
+                                   c_ek_met, c_ep_met,            &
                                    dim_u_met, dim_hyd_p_met,      &
-                                   dim_pot_t_met)
+                                   dim_pot_t_met, dim_ek_met,     &
+                                   dim_ep_met)
 
 call c_f_pointer(c_z_dyn_met, zdmet, [nbmetd])
 call c_f_pointer(c_z_temp_met, ztmet, [nbmaxt])
@@ -835,6 +840,8 @@ call c_f_pointer(c_v_met, vmet, [dim_u_met])
 call c_f_pointer(c_time_met, tmmet, [nbmetm])
 call c_f_pointer(c_hyd_p_met, phmet, [dim_hyd_p_met])
 call c_f_pointer(c_pot_t_met, tpmet, [dim_pot_t_met])
+call c_f_pointer(c_ek_met, ekmet, [dim_ek_met])
+call c_f_pointer(c_ep_met, epmet, [dim_ep_met])
 
 ! Allocate additional arrays for Water Microphysics
 
@@ -853,7 +860,6 @@ if (imeteo.gt.0) then
   endif
 
   allocate(wmet(n_level,n_times))
-  allocate(ekmet(n_level,n_times), epmet(n_level,n_times))
   allocate(ttmet(n_level_t,n_times), qvmet(n_level_t,n_times),  &
            ncmet(n_level_t,n_times))
   allocate(pmer(n_times))
@@ -936,7 +942,6 @@ if (imeteo.gt.0) then
     deallocate(mom, mom_met, dpdt_met)
   endif
   deallocate(wmet)
-  deallocate(ekmet, epmet)
   deallocate(ttmet, qvmet, ncmet)
   deallocate(pmer)
   deallocate(xmet, ymet)

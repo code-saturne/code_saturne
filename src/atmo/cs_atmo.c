@@ -163,14 +163,15 @@ static cs_atmo_option_t  _atmo_option = {
   .v_met      = NULL,
   .time_met   = NULL,
   .hyd_p_met  = NULL,
-  .pot_t_met  = NULL
+  .pot_t_met  = NULL,
+  .ek_met     = NULL,
+  .ep_met     = NULL
 };
 
 static const char *_univ_fn_name[] = {N_("Cheng 2005"),
                                       N_("Hogstrom 1988"),
                                       N_("Businger 1971"),
                                       N_("Hartogensis 2007")};
-
 
 /* global atmo constants structure */
 static cs_atmo_constants_t _atmo_constants = {
@@ -280,9 +281,13 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               cs_real_t **time_met,
                               cs_real_t **hyd_p_met,
                               cs_real_t **pot_t_met,
+                              cs_real_t **ek_met,
+                              cs_real_t **ep_met,
                               int         dim_u_met[2],
                               int         dim_hyd_p_met[2],
-                              int         dim_pot_t_met[2]);
+                              int         dim_pot_t_met[2],
+                              int         dim_ek_met[2],
+                              int         dim_ep_met[2]);
 
 void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
@@ -1341,9 +1346,13 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               cs_real_t **time_met,
                               cs_real_t **hyd_p_met,
                               cs_real_t **pot_t_met,
+                              cs_real_t **ek_met,
+                              cs_real_t **ep_met,
                               int         dim_u_met[2],
                               int         dim_hyd_p_met[2],
-                              int         dim_pot_t_met[2])
+                              int         dim_pot_t_met[2],
+                              int         dim_ek_met[2],
+                              int         dim_ep_met[2])
 {
   int n_level = 0, n_level_t = 0;
   int n_times = 0;
@@ -1368,17 +1377,27 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                _atmo_option.nbmetm*_atmo_option.nbmaxt, cs_real_t);
   if (_atmo_option.pot_t_met == NULL)
     BFT_MALLOC(_atmo_option.pot_t_met, n_level_t*n_times, cs_real_t);
+  if (_atmo_option.ek_met == NULL)
+    BFT_MALLOC(_atmo_option.ek_met, n_level*n_times, cs_real_t);
+  if (_atmo_option.ep_met == NULL)
+    BFT_MALLOC(_atmo_option.ep_met, n_level*n_times, cs_real_t);
 
   *u_met           = _atmo_option.u_met;
   *v_met           = _atmo_option.v_met;
   *hyd_p_met       = _atmo_option.hyd_p_met;
   *pot_t_met       = _atmo_option.pot_t_met;
+  *ek_met          = _atmo_option.ek_met;
+  *ep_met          = _atmo_option.ep_met;
   dim_u_met[0]     = _atmo_option.nbmetd;
   dim_u_met[1]     = _atmo_option.nbmetm;
   dim_hyd_p_met[0] = _atmo_option.nbmaxt;
   dim_hyd_p_met[1] = _atmo_option.nbmetm;
   dim_pot_t_met[0] = _atmo_option.nbmaxt;
   dim_pot_t_met[1] = _atmo_option.nbmetm;
+  dim_ek_met[0]    = _atmo_option.nbmetd;
+  dim_ek_met[1]    = _atmo_option.nbmetm;
+  dim_ep_met[0]    = _atmo_option.nbmetd;
+  dim_ep_met[1]    = _atmo_option.nbmetm;
 
   *z_dyn_met  = _atmo_option.z_dyn_met;
   *z_temp_met = _atmo_option.z_temp_met;
@@ -1695,7 +1714,8 @@ cs_atmo_compute_meteo_profiles(void)
 
     /* Potential temperature profile
      * Note: same roughness as dynamics */
-    cpro_met_potemp[cell_id] = theta0 + tstar / kappa * cs_mo_psih(z+z0, z0, dlmo);
+    cpro_met_potemp[cell_id] =   theta0
+                               + tstar / kappa * cs_mo_psih(z+z0, z0, dlmo);
 
     /* Richardson flux number profile */
     // Note : ri_f = z/(Pr_t L) * phih/phim^2 = z/Lmo / phim
@@ -2824,6 +2844,8 @@ cs_atmo_finalize(void)
   BFT_FREE(_atmo_option.time_met);
   BFT_FREE(_atmo_option.hyd_p_met);
   BFT_FREE(_atmo_option.pot_t_met);
+  BFT_FREE(_atmo_option.ek_met);
+  BFT_FREE(_atmo_option.ep_met);
 }
 
 /*----------------------------------------------------------------------------*/
