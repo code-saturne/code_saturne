@@ -86,8 +86,10 @@ cs_turbulence_ml_mu_t(void)
   cs_real_t *visct =  CS_F_(mu_t)->val;
   const cs_real_t *crom = CS_F_(rho)->val;
 
+  cs_field_t *f_lm = cs_field_by_name_try("mixing_length");
+
   const cs_real_t xlomlg = cs_glob_turb_rans_model->xlomlg;
-  const cs_real_t coef = cs_math_pow2(cs_turb_xkappa*xlomlg)*sqrt(2.0);
+  cs_real_t coef = cs_math_pow2(cs_turb_xkappa*xlomlg)*sqrt(2.0);
 
   cs_real_33_t *gradv;
   BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
@@ -100,16 +102,33 @@ cs_turbulence_ml_mu_t(void)
   /* Compute S11^2+S22^2+S33^2+2*(S12^2+S13^2+S23^2),
      then dynamic viscosity */
 
+  if (f_lm == NULL) {
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
-    visct[c_id] =   cs_math_pow2(gradv[c_id][0][0])
-                  + cs_math_pow2(gradv[c_id][1][1])
-                  + cs_math_pow2(gradv[c_id][2][2])
-                  +0.5 * (  cs_math_pow2(gradv[c_id][0][1]+gradv[c_id][1][0])
-                          + cs_math_pow2(gradv[c_id][0][2]+gradv[c_id][2][0])
-                          + cs_math_pow2(gradv[c_id][1][2]+gradv[c_id][2][1]));
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+      visct[c_id] =   cs_math_pow2(gradv[c_id][0][0])
+                    + cs_math_pow2(gradv[c_id][1][1])
+                    + cs_math_pow2(gradv[c_id][2][2])
+                    +0.5 * (  cs_math_pow2(gradv[c_id][0][1]+gradv[c_id][1][0])
+                            + cs_math_pow2(gradv[c_id][0][2]+gradv[c_id][2][0])
+                            + cs_math_pow2(gradv[c_id][1][2]+gradv[c_id][2][1]));
 
-    visct[c_id] = crom[c_id]*coef*sqrt(visct[c_id]);
+      visct[c_id] = crom[c_id]*coef*sqrt(visct[c_id]);
+    }
+  }
+  /* Variable miexing length field */
+  else {
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+      visct[c_id] =   cs_math_pow2(gradv[c_id][0][0])
+                    + cs_math_pow2(gradv[c_id][1][1])
+                    + cs_math_pow2(gradv[c_id][2][2])
+                    +0.5 * (  cs_math_pow2(gradv[c_id][0][1]+gradv[c_id][1][0])
+                            + cs_math_pow2(gradv[c_id][0][2]+gradv[c_id][2][0])
+                            + cs_math_pow2(gradv[c_id][1][2]+gradv[c_id][2][1]));
+
+      coef = cs_math_pow2(cs_turb_xkappa * f_lm->val[c_id])*sqrt(2.0);
+      visct[c_id] = crom[c_id]*coef*sqrt(visct[c_id]);
+    }
   }
 
   /* Free temporary array */
