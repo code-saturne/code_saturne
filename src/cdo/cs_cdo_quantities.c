@@ -1351,6 +1351,33 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute or retrieve the portion of volume surrounding each face of
+ *        a cell. This volume corresponds to a pyramid with base f and apex x_f
+ *        The computed quantity is scanned with the c2f adjacency
+ *
+ * \param[in]  cdoq    pointer to cs_cdo_quantities_t structure
+ * \param[in]  c2f     pointer to the cell --> edges connectivity
+ *
+ * \return the volume associated to each face in each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_cdo_quantities_get_pvol_fc(const cs_cdo_quantities_t    *cdoq,
+                              const cs_adjacency_t         *c2f)
+{
+  if (cdoq == NULL || c2f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: A mandatory structure is not allocated.\n", __func__);
+
+  if (cdoq->pvol_fc == NULL)
+    cs_cdo_quantities_compute_pvol_fc(cdoq, c2f, &(cdoq->pvol_fc));
+
+  return cdoq->pvol_fc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the portion of volume surrounding each face of a cell.
  *        This volume corresponds to a pyramid with base f and apex x_f
  *        The computed quantity is scanned with the c2f adjacency
@@ -1404,6 +1431,35 @@ cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t    *cdoq,
   /* Return pointer */
 
   *p_pvol_fc = pvol_fc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute or retrieve the portion of volume surrounding each edge of
+ *        a cell. This volume corresponds to an octahedron with a vertical
+ *        axis defined by the edge
+ *        The computed quantity is scanned with the c2e adjacency
+ *
+ * \param[in]  cdoq    pointer to cs_cdo_quantities_t structure
+ * \param[in]  c2e     pointer to the cell --> edges connectivity
+ *
+ * \return the volume associated to each edge in each cell
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_cdo_quantities_get_pvol_ec(const cs_cdo_quantities_t    *cdoq,
+                              const cs_adjacency_t         *c2e)
+{
+  if (cdoq == NULL || c2e == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: A mandatory structure is not allocated.\n", __func__);
+
+
+  if (cdoq->pvol_ec == NULL)
+    cs_cdo_quantities_compute_pvol_ec(cdoq, c2e, &(cdoq->pvol_ec));
+
+  return cdoq->pvol_ec;
 }
 
 /*----------------------------------------------------------------------------*/
