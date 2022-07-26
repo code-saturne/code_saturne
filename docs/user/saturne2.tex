@@ -85,7 +85,7 @@ the following informations are given:
 The L1 keywords can be modified through the Graphical Use Interface or
 in the \texttt{cs\_user\_parameters.c} file. L2 and L3 keywords can only be modified through
 the \texttt{cs\_user\_parameters.c} file, even if they do not appear in the version proposed
-as example it the \texttt{SRC/REFERENCE/base} directory.\\
+as example it the \texttt{SRC/USER\_EXAMPLES/cs\_user\_parameters-base.c} file.\\
 It is however recommended not to modify the keywords which do not belong to the L1
 level.
 
@@ -93,9 +93,9 @@ The alphabetical keyword list is displayed in the index, in the end of
 this report.
 
 \minititre{Notes}
-$\bullet\ $The notation ``d'' refers to a double precision real. For
-           instance, 1.8d-2 means 0.018. \\
-$\bullet\ $The notation ``{\tt grand}'' (which can be used in the code)
+$\bullet\ $The notation ``e'' refers to a double precision real. For
+           instance, 1.8e-2 means 0.018. \\
+$\bullet\ $The notation ``{\tt cs\_math\_big\_r}'' (which can be used in the code)
 corresponds to $10^{12}$.
 
 %==================================
@@ -127,7 +127,7 @@ to the dedicated \doxygenfile{group__userfile.html}{\texttt{Doxygen} documentati
 
 The following \doxygenfile{group__time__step__options.html}{\texttt{Doxygen} documentation}
 provides information about the various calculation management options available
-in \CS such as \texttt{ntmabs}, \texttt{ntcabs}, etc.
+in \CS such as \texttt{nt\_max}, \texttt{nt\_cur}, etc.
 
 %==================================
 \subsubsection{Scalar unknowns}
@@ -549,8 +549,8 @@ documentation}.
 %==================================
 
 The electric module is composed of a Joule effect module
-(\texttt{ippmod(ieljou)\index{ieljou}}) and an electric arcs module
-(\texttt{ippmod(ielarc)\index{ielarc}}).
+(\texttt{cs\_glob\_physical\_model\_flag[CS\_JOULE\_EFFECT]\index{CS\_JOULE\_EFFECT}}) and an electric arcs module
+(\texttt{cs\_glob\_physical\_model\_flag[CS\_ELECTRIC\_ARCS]\index{CS\_ELECTRIC\_ARCS}}).
 
 The Joule effect module is designed to take into account the Joule effect
 (for instance in glass furnaces) with real or complex potential in the
