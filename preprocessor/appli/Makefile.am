@@ -25,7 +25,10 @@
 # Relocatable installation
 
 if HAVE_RELOCATABLE
-ORIGINRUNPATH = -R '\$$ORIGIN/../../lib'
+  ORIGINRUNPATH = ${LDRPATH}'\$$ORIGIN/../../lib'
+  PLUGINRUNPATH_R = ${LDRPATH}'\$$ORIGIN/../../lib/'$(PACKAGE)
+else
+  PLUGINRUNPATH_N = ${LDRPATH}$(pkglibdir)
 endif
 
 if HAVE_PLUGINS
@@ -37,7 +40,9 @@ endif
 if HAVE_CCM
 if HAVE_PLUGINS
 else
-  LDADD_CCM = $(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS)
+LDADD_CCM = \
+$(top_builddir)/preprocessor/pre-post/ecs_pre_ccm.o \
+$(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS)
 endif
 endif
 

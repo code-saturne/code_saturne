@@ -56,7 +56,6 @@ m4_define([cs_version_string],
 AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr],[],[https://code-saturne.org])
 AC_CONFIG_SRCDIR([src/apps/cs_solver.c])
 
-# Use the config directory for libtool stuff ...
 AC_CONFIG_AUX_DIR(build-aux)
 AC_CONFIG_MACRO_DIR(m4)
 
@@ -122,6 +121,7 @@ AC_PROG_FC
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AM_PROG_CC_C_O
+AC_PROG_RANLIB
 AC_PROG_SED
 
 if test "x$CC" = "x" ; then
@@ -309,18 +309,20 @@ else
   CPPFLAGS="${CPPFLAGS} -DNDEBUG"
 fi
 
-# We may only turn on processing for libtool now that the basic compiler
-# and linker flags are set (to avoid issues with linkers with different
-# modes such as 32 and 64 bit which may be modified by compiler or
-# linker flags).
+# Shared or static mode (shared by default) ?
 
-# AC_DISABLE_SHARED may not be used inside a test, as it seems to
-# take effect whether the result is true or not (maybe due to a bug),
-# so we directly use autoconf's enable_shared variable.
+AC_ARG_ENABLE(shared,
+  [AS_HELP_STRING([--enable-shared], [build shared libraries])],
+  [
+    case "${enableval}" in
+      yes) enable_shared=yes ;;
+      no)  enable_shared=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-shared]) ;;
+    esac
+  ],
+  [ enable_shared=yes ]
+)
 
-if test "$host_os" = mingw64 ; then
-   enable_shared=no
-fi
 AC_SUBST(enable_shared)
 
 # Library extension based on system type
@@ -342,11 +344,6 @@ esac
 AC_SUBST(SHARED_LIB_EXT)
 AC_SUBST(LIB_EXT)
 
-# Initialize libtool.
-
-m4_pushdef([cs_lt_init_args], [disable-static, win32-dll, no-pic])
-LT_INIT([disable-static, win32-dll])
-
 # Shared library related settings and flags
 
 if test $enable_shared = yes; then
@@ -367,6 +364,8 @@ AC_SUBST(FCFLAGS_SHARED)
 
 AC_SUBST(LDFLAGS_SHARED)
 AC_SUBST(LDFLAGS_SONAME)
+
+AM_CONDITIONAL(ENABLE_SHARED, test x$enable_shared = xyes)
 
 # In static mode, multiple definitions must be allowed for the linker.
 # On some systems, such as Mac OS X in static mode, limitations
@@ -393,24 +392,9 @@ else
       if test "x$auto_flags" = "xyes" ; then
 	case "$cs_ac_cc_version" in
 	  Cray* )
-	    CFLAGS="${CFLAGS} -fPIC"
 	    ;;
 	  *)
 	    LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
-	    ;;
-	esac
-	case "$cs_ac_cxx_version" in
-	  Cray* )
-	    CXXFLAGS="${CXXFLAGS} -fPIC"
-	    ;;
-	  *)
-	    ;;
-	esac
-	case "$cs_ac_fc_version" in
-	  Cray* )
-	    FCFLAGS="${FCFLAGS} -fPIC"
-	    ;;
-	  *)
 	    ;;
 	esac
       fi
@@ -676,6 +660,9 @@ fi
 
 cs_version_short=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
 AC_SUBST(cs_version_short)
+
+cs_version_lib=`$PYTHON ${srcdir}/build-aux/cs_version.py --lib`
+AC_SUBST(cs_version_lib)
 
 #------------------------------------------------------------------------------
 # Optional shared library and plugin support
@@ -1247,32 +1234,6 @@ AC_CONFIG_FILES([Makefile
 #------------------------------------------------------------------------------
 
 AC_OUTPUT
-
-#------------------------------------------------------------------------------
-
-# Libtool configuration bug workaround (problem encountered with compilers
-# which do not recognize "-soname", so that "-Wl,-soname" is needed to pass
-# flags to the linker; Manually setting $wl to "-Wl" in libtool corrects
-# the problem, and so does this workaround borrowed from
-# the HDF5 configure.in, which does it automatically).
-
-if test "x$GCC" != "xyes"; then
-  echo 'fixing $wl in libtool'
-ed - libtool <<EOF 2> /dev/null
-/^wl=""/s//wl="-Wl,"/
-w
-q
-EOF
-fi
-
-# Copy modified version of libtool to avoid issues with " -fPIC -DPIC"
-# insertion in CUDA compiler options. The -no-fpic option cannot be used
-# as pic_mode propagates to sub-libraries.
-
-if test "$cs_have_cuda" = "yes"; then
-  sed -e "s/ -fPIC -DPIC//" libtool > libtool_cuda
-  chmod +x libtool_cuda
-fi
 
 #------------------------------------------------------------------------------
 

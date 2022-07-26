@@ -13,6 +13,9 @@ Bug fixes:
 
 Architectural changes:
 
+- Remove libtool dependency for compiled code.
+  Libtool is still used for Python libraries.
+
 - FMI: modified FMU client and code_saturne controller communication
   protocol to regroup input/output variables exchange and reduce latency.
 

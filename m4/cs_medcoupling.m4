@@ -90,7 +90,7 @@ if test "x$with_medcoupling" != "xno" ; then
     MEDCOUPLING_CPPFLAGS="-I$MEDCOUPLING/include"
     MEDCOUPLING_LDFLAGS="-L$MEDCOUPLING/lib"
     # Add the libdir to the runpath as libtool does not do this for modules
-    MEDCOUPLINGRUNPATH="-R$MEDCOUPLING/lib"
+    MEDCOUPLINGRUNPATH="${LDRPATH}${MEDCOUPLING}/lib"
   fi
 
   AC_LANG_PUSH([C++])

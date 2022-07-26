@@ -27,7 +27,7 @@
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 $(MPI_CPPFLAGS)
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 AM_LDFLAGS =
 
 # Public header files (to be installed)
@@ -42,13 +42,12 @@ cs_bft_headers.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libbft.la
-libbft_la_SOURCES  = \
+noinst_LIBRARIES = libbft.a
+libbft_a_SOURCES  = \
 bft_backtrace.c \
 bft_error.c \
 bft_mem.c \
 bft_mem_usage.c \
 bft_printf.c
 
-libbft_la_LIBADD = $(LTLIBINTL)
-libbft_la_LDFLAGS = -no-undefined
+libbft_a_LIBADD = $(LTLIBINTL)

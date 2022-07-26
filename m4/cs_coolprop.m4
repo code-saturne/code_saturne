@@ -89,7 +89,7 @@ AC_ARG_WITH(coolprop-lib,
              fi
              COOLPROP_LDFLAGS="-L$with_coolprop_lib"
              # Add the libdir to the runpath as CoolProp is not libtoolized
-             COOLPROPRUNPATH="-R$with_coolprop_lib"],
+             COOLPROPRUNPATH="${LDRPATH}${with_coolprop_lib}"],
             [if test "x$with_coolprop" != "xno" -a "x$with_coolprop" != "xyes" \
 	          -a "x$with_coolprop" != "xcheck"; then
                case `uname -m` in
@@ -105,12 +105,12 @@ AC_ARG_WITH(coolprop-lib,
                  unset cp_l_name
                  COOLPROP_LDFLAGS="-L$cp_d_name"
                  # Add the libdir to the runpath as CoolProp is not libtoolized
-                 COOLPROPRUNPATH="-R$cp_d_name"
+                 COOLPROPRUNPATH="${LDRPATH}${cp_d_name}"
                  unset cp_d_name
                else
                  COOLPROP_LDFLAGS="-L$with_coolprop/lib"
                  # Add the libdir to the runpath as CoolProp is not libtoolized
-                 COOLPROPRUNPATH="-R$with_coolprop/lib"
+                 COOLPROPRUNPATH="${LDRPATH}${with_coolprop}/lib"
                fi
              fi])
 

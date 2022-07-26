@@ -68,7 +68,7 @@
 
 # Two other environment variable strings are defined, containing possibly
 # more detailed compiler information:
-#
+
 # cs_ac_cc_version       # C compiler version string, 1 line max.
 # cs_ac_cc_version_full  # C compiler version string, 10 lines max.
 # cs_ac_cxx_version      # C++ compiler version string, 1 line max.
@@ -78,12 +78,19 @@
 
 # The sourcing approach and some tests are borrowed from the HDF5 configure
 # environment.
-#
+
+# Remarks:
+#--------
+
 # We choose to source this script rather than use a more classical m4 macro
 # for this functionality, so that a user may more easily modify
 # default compiler options or port to a new machine without requiring
 # any advanced knowledge of autoconf or m4 macros, or installation of
 # an autoconf environment on the target machine.
+
+# Some associated settings relative to library creation are also done in
+# `build-aux/cs_link_library.py`, which may also need to be adapted for
+# ports to some machines, using different linker options.
 
 # Initialize local variables
 #---------------------------
@@ -125,7 +132,7 @@ case "$host_os" in
   darwin*)
     cflags_default_shared="-fPIC -DPIC"
     fcflags_default_shared="-fPIC -DPIC"
-    cxxflags_default_shared="-fPIC -DPIC"
+    cxxflags_default_shared="--fPIC -DPIC"
     ldflags_default_shared="-dynamiclib -undefined dynamic_lookup -undefined error"
     ldflags_default_soname="-install_name @rpath/"
     ;;

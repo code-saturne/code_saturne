@@ -44,13 +44,13 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
 $(FCMODINCLUDE)$(top_builddir)/src/base \
 $(FCMODINCLUDE)$(top_builddir)/src/user \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
+$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -70,8 +70,8 @@ cs_intprf.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcsatmo.la
-libcsatmo_la_SOURCES = \
+noinst_LIBRARIES = libcsatmo.a
+libcsatmo_a_SOURCES = \
 atini1.f90 \
 atiniv.f90 \
 atleca.f90 \
@@ -112,8 +112,6 @@ solcat.f90 \
 soliva.f90 \
 solmoy.f90 \
 solvar.f90
-
-libcsatmo_la_LDFLAGS = -no-undefined
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

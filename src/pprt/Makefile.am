@@ -47,8 +47,8 @@ $(CPPFLAGS_PLE) \
 $(FREESTEAM_CPPFLAGS) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
+AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
@@ -65,7 +65,7 @@ $(FCMODINCLUDE)$(top_builddir)/src/pprt \
 $(FCMODINCLUDE)$(top_builddir)/src/rayt \
 $(FCMODINCLUDE)$(top_builddir)/src/turb \
 $(FCMODINCLUDE)$(top_builddir)/src/user \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
+$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -78,8 +78,8 @@ cs_physical_model.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcspprt.la
-libcspprt_la_SOURCES = \
+noinst_LIBRARIES = libcspprt.a
+libcspprt_a_SOURCES = \
 cs_combustion_model.c \
 cs_physical_model.c \
 ppini1.f90 \
@@ -96,7 +96,6 @@ pptssc.f90 \
 pptsvv.f90 \
 pptycl.f90 \
 ppvarp.f90
-libcspprt_la_LDFLAGS = -no-undefined
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

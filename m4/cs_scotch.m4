@@ -87,12 +87,12 @@ AC_ARG_WITH(scotch-lib,
              fi
              SCOTCH_LDFLAGS="-L$with_scotch_lib"
              # Add the libdir to the runpath as SCOTCH is not libtoolized
-             SCOTCHRUNPATH="-R$with_scotch_lib"],
+             SCOTCHRUNPATH="${LDRPATH}${with_scotch_lib}"],
             [if test "x$with_scotch" != "xno" -a "x$with_scotch" != "xyes" \
 	          -a "x$with_scotch" != "xcheck"; then
                SCOTCH_LDFLAGS="-L$with_scotch/lib"
                # Add the libdir to the runpath as SCOTCH is not libtoolized
-               SCOTCHRUNPATH="-R$with_scotch/lib"
+               SCOTCHRUNPATH="${LDRPATH}${with_scotch}/lib"
              fi])
 
 

@@ -5,7 +5,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2021 EDF S.A.
+# Copyright (C) 1998-2022 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -330,6 +330,10 @@ if __name__ == '__main__':
             extra = ''
         sys.stdout.write(build_version_string(major, minor, '', extra))
 
+    elif sys.argv[1] == '--lib':
+        major, minor, release, extra = version_from_news(srcdir)
+        sys.stdout.write(build_version_string(major, minor, '', ''))
+
     # Call tools
 
     elif sys.argv[1] in ['--full', '--revision-only', '--verbose',
@@ -408,6 +412,7 @@ Options:
                               version control info
   --short                     print short version string with major, minor,
                               and extras
+  --lib                       print short version string with major and minor
   --revision-only             print version string with version control info only
   --update <template> [path]  build or rebuild output file from template
   --verbose                   print fields on different lines

@@ -199,9 +199,8 @@ cs_user_profile.cxx \
 cs_user_profile.h \
 cs_user_profile_plot.py
 
-noinst_LTLIBRARIES = libcsexample.la
-libcsexample_la_SOURCES = $(examplefiles)
-libcsexample_la_LDFLAGS = -no-undefined
+noinst_LIBRARIES = libcsexample.a
+libcsexample_a_SOURCES = $(examplefiles)
 
 exampledir = $(pkgdatadir)/user_sources/EXAMPLES
 example_DATA = $(examplefiles)

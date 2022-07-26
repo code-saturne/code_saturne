@@ -36,17 +36,17 @@ endif
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
+$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS = -no-undefined
 
 # Library source files
 
-noinst_LTLIBRARIES = libcsmodules.la
+noinst_LIBRARIES = libcsmodules.a
 
 if HAVE_BACKEND
 
-libcsmodules_la_SOURCES = \
+libcsmodules_a_SOURCES = \
 base/paramx.f90 \
 base/mesh.f90 \
 base/field.f90 \
@@ -101,57 +101,109 @@ base/turbomachinery.f90
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
-base/albase.lo: base/cplsat.lo base/optcal.lo base/cs_c_bindings.lo
-base/alstru.lo: base/paramx.lo
-base/cavitation.lo: base/cstphy.lo base/field.lo base/numvar.lo base/optcal.lo\
- base/pointe.lo base/mesh.lo base/paramx.lo base/entsor.lo base/parall.lo \
- base/rotation.lo base/turbomachinery.lo base/vof.lo
-base/vof.lo: base/cstphy.lo base/field.lo base/numvar.lo base/optcal.lo \
- base/pointe.lo base/mesh.lo base/paramx.lo base/entsor.lo base/parall.lo \
- base/rotation.lo base/turbomachinery.lo
-base/cplsat.lo: base/paramx.lo
-base/cstphy.lo: base/paramx.lo
-base/cs_c_bindings.lo: base/paramx.lo base/entsor.lo base/mesh.lo \
- base/period.lo base/field.lo base/cplsat.lo
-base/cs_f_interfaces.lo: base/cs_c_bindings.lo base/paramx.lo base/dimens.lo \
- base/mesh.lo base/optcal.lo base/field.lo lagr/lagran.lo
-base/cs_nz_tagmr.lo: base/optcal.lo base/pointe.lo base/parall.lo \
- base/cs_nz_condensation.lo
-base/cs_tagms.lo: base/mesh.lo
-base/entsor.lo: base/paramx.lo base/field.lo
-base/field_operator.lo: base/paramx.lo base/dimens.lo base/mesh.lo \
- base/optcal.lo base/field.lo
-base/numvar.lo: base/paramx.lo
-base/optcal.lo: base/paramx.lo base/field.lo base/numvar.lo base/cstphy.lo \
- base/cs_c_bindings.lo base/cdomod.lo
-base/pointe.lo: base/paramx.lo base/numvar.lo base/mesh.lo base/parall.lo \
- base/period.lo base/optcal.lo base/entsor.lo lagr/lagran.lo rayt/radiat.lo \
- pprt/ppincl.lo base/albase.lo base/cstnum.lo base/cs_c_bindings.lo
-base/ptrglo.lo: base/paramx.lo base/dimens.lo base/mesh.lo base/numvar.lo \
- base/optcal.lo base/parall.lo base/period.lo base/mesh.lo base/field.lo
-base/rotation.lo: base/paramx.lo
-base/turbomachinery.lo:  base/mesh.lo base/cstphy.lo base/cplsat.lo
-atmo/atincl.lo: pprt/ppppar.lo pprt/ppincl.lo base/mesh.lo atmo/atsoil.lo \
- base/cs_c_bindings.lo atmo/atchem.lo atmo/sshaerosol.lo
-atmo/atchem.lo: pprt/ppppar.lo base/mesh.lo base/entsor.lo base/numvar.lo \
- base/cs_c_bindings.lo
-atmo/atimbr.lo: base/cstphy.lo base/entsor.lo atmo/atincl.lo ctwr/ctincl.lo
-atmo/sshaerosol.lo: pprt/ppppar.lo base/cs_c_bindings.lo atmo/atchem.lo \
- base/mesh.lo
-atmo/spefun.lo: base/entsor.lo
-cogz/coincl.lo: base/paramx.lo pprt/ppppar.lo pprt/ppincl.lo rayt/radiat.lo
-comb/cpincl.lo: pprt/ppppar.lo pprt/ppthch.lo
-comb/cs_coal_incl.lo: pprt/ppppar.lo pprt/ppthch.lo
-comb/cs_fuel_incl.lo: pprt/ppppar.lo pprt/ppthch.lo
-ctwr/ctincl.lo: base/cstphy.lo
-lagr/lagran.lo: base/cstnum.lo base/optcal.lo pprt/ppincl.lo rayt/radiat.lo \
- comb/cpincl.lo pprt/ppppar.lo base/cstphy.lo
-pprt/ppcpfu.lo: pprt/ppthch.lo pprt/ppppar.lo
-pprt/ppincl.lo: pprt/ppppar.lo pprt/ppthch.lo
-pprt/ppthch.lo: base/cstphy.lo
-rayt/radiat.lo: pprt/ppppar.lo pprt/ppincl.lo base/optcal.lo pprt/ppcpfu.lo base/numvar.lo
-darc/darcy_module.lo: base/paramx.lo
-cfbl/cfpoin.lo: pprt/ppincl.lo
+base/albase.$(OBJEXT): base/cplsat.$(OBJEXT) base/optcal.$(OBJEXT) \
+ base/cs_c_bindings.$(OBJEXT)
+
+base/alstru.$(OBJEXT): base/paramx.$(OBJEXT)
+
+base/cavitation.$(OBJEXT): base/cstphy.$(OBJEXT) base/field.$(OBJEXT) \
+ base/numvar.$(OBJEXT) base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \
+ base/mesh.$(OBJEXT) base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
+ base/parall.$(OBJEXT) base/rotation.$(OBJEXT) \
+ base/turbomachinery.$(OBJEXT) base/vof.$(OBJEXT)
+
+base/vof.$(OBJEXT): base/cstphy.$(OBJEXT) base/field.$(OBJEXT) \
+ base/numvar.$(OBJEXT) base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \
+ base/mesh.$(OBJEXT) base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
+ base/parall.$(OBJEXT) base/rotation.$(OBJEXT) base/turbomachinery.$(OBJEXT)
+
+base/cplsat.$(OBJEXT): base/paramx.$(OBJEXT)
+
+base/cstphy.$(OBJEXT): base/paramx.$(OBJEXT)
+
+base/cs_c_bindings.$(OBJEXT): base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
+ base/mesh.$(OBJEXT) base/period.$(OBJEXT) base/field.$(OBJEXT) \
+ base/cplsat.$(OBJEXT)
+
+base/cs_f_interfaces.$(OBJEXT): base/cs_c_bindings.$(OBJEXT) \
+ base/paramx.$(OBJEXT) base/dimens.$(OBJEXT) base/mesh.$(OBJEXT) \
+ base/optcal.$(OBJEXT) base/field.$(OBJEXT) lagr/lagran.$(OBJEXT)
+
+base/cs_nz_tagmr.$(OBJEXT): base/optcal.$(OBJEXT) base/pointe.$(OBJEXT) \
+ base/parall.$(OBJEXT) base/cs_nz_condensation.$(OBJEXT)
+
+base/cs_tagms.$(OBJEXT): base/mesh.$(OBJEXT)
+
+base/entsor.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT)
+
+base/field_operator.$(OBJEXT): base/paramx.$(OBJEXT) base/dimens.$(OBJEXT) \
+ base/mesh.$(OBJEXT) base/optcal.$(OBJEXT) base/field.$(OBJEXT)
+
+base/numvar.$(OBJEXT): base/paramx.$(OBJEXT)
+
+base/optcal.$(OBJEXT): base/paramx.$(OBJEXT) base/field.$(OBJEXT) \
+ base/numvar.$(OBJEXT) base/cstphy.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
+ base/cdomod.$(OBJEXT)
+
+base/pointe.$(OBJEXT): base/paramx.$(OBJEXT) base/numvar.$(OBJEXT) \
+ base/mesh.$(OBJEXT) base/parall.$(OBJEXT) base/period.$(OBJEXT) \
+ base/optcal.$(OBJEXT) base/entsor.$(OBJEXT) lagr/lagran.$(OBJEXT) \
+ rayt/radiat.$(OBJEXT) pprt/ppincl.$(OBJEXT) base/albase.$(OBJEXT) \
+ base/cstnum.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
+
+base/ptrglo.$(OBJEXT): base/paramx.$(OBJEXT) base/dimens.$(OBJEXT) \
+ base/mesh.$(OBJEXT) base/numvar.$(OBJEXT) base/optcal.$(OBJEXT) \
+ base/parall.$(OBJEXT) base/period.$(OBJEXT) base/mesh.$(OBJEXT) \
+ base/field.$(OBJEXT)
+
+base/rotation.$(OBJEXT): base/paramx.$(OBJEXT)
+
+base/turbomachinery.$(OBJEXT): base/mesh.$(OBJEXT) base/cstphy.$(OBJEXT) \
+ base/cplsat.$(OBJEXT)
+
+atmo/atincl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppincl.$(OBJEXT) \
+ base/mesh.$(OBJEXT) atmo/atsoil.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
+ atmo/atchem.$(OBJEXT) atmo/sshaerosol.$(OBJEXT)
+
+atmo/atchem.$(OBJEXT): pprt/ppppar.$(OBJEXT) base/mesh.$(OBJEXT) \
+ base/entsor.$(OBJEXT) base/numvar.$(OBJEXT) \
+ base/cs_c_bindings.$(OBJEXT)
+
+atmo/atimbr.$(OBJEXT): base/cstphy.$(OBJEXT) base/entsor.$(OBJEXT) \
+ atmo/atincl.$(OBJEXT) ctwr/ctincl.$(OBJEXT)
+
+atmo/sshaerosol.$(OBJEXT): pprt/ppppar.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
+ atmo/atchem.$(OBJEXT) base/mesh.$(OBJEXT)
+
+atmo/spefun.$(OBJEXT): base/entsor.$(OBJEXT)
+
+cogz/coincl.$(OBJEXT): base/paramx.$(OBJEXT) pprt/ppppar.$(OBJEXT) \
+ pprt/ppincl.$(OBJEXT) rayt/radiat.$(OBJEXT)
+
+comb/cpincl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
+
+comb/cs_coal_incl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
+
+comb/cs_fuel_incl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
+
+ctwr/ctincl.$(OBJEXT): base/cstphy.$(OBJEXT)
+
+lagr/lagran.$(OBJEXT): base/cstnum.$(OBJEXT) base/optcal.$(OBJEXT) \
+ pprt/ppincl.$(OBJEXT) rayt/radiat.$(OBJEXT) comb/cpincl.$(OBJEXT) \
+ pprt/ppppar.$(OBJEXT) base/cstphy.$(OBJEXT)
+
+pprt/ppcpfu.$(OBJEXT): pprt/ppthch.$(OBJEXT) pprt/ppppar.$(OBJEXT)
+
+pprt/ppincl.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppthch.$(OBJEXT)
+
+pprt/ppthch.$(OBJEXT): base/cstphy.$(OBJEXT)
+
+rayt/radiat.$(OBJEXT): pprt/ppppar.$(OBJEXT) pprt/ppincl.$(OBJEXT) \
+ base/optcal.$(OBJEXT) pprt/ppcpfu.$(OBJEXT) base/numvar.$(OBJEXT)
+
+darc/darcy_module.$(OBJEXT): base/paramx.$(OBJEXT)
+
+cfbl/cfpoin.$(OBJEXT): pprt/ppincl.$(OBJEXT)
 
 # Additional local targets
 

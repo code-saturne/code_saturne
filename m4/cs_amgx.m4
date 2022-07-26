@@ -59,12 +59,12 @@ AC_ARG_WITH(amgx-lib,
              AMGX_LDFLAGS="-L$with_amgx_lib"
              cs_amgx_libpath="$with_amgx_lib"
              # Add the libdir to the runpath as AMGX might not be libtoolized
-             AMGXRUNPATH="-R$with_amgx_lib"],
+             AMGXRUNPATH="${LDRPATH}${with_amgx_lib}"],
             [if test "x$with_amgx" != "xno" -a "x$with_amgx" != "xyes" \
 	          -a "x$with_amgx" != "xcheck"; then
                AMGX_LDFLAGS="-L$with_amgx/lib"
                # Add the libdir to the runpath as AMGX might not be libtoolized
-               AMGXRUNPATH="-R$with_amgx/lib"
+               AMGXRUNPATH="${LDRPATH}${with_amgx}/lib"
                cs_amgx_libpath="$with_amgx/lib"
              fi])
 

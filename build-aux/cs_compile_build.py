@@ -5,7 +5,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2021 EDF S.A.
+# Copyright (C) 1998-2022 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -172,12 +172,12 @@ class compile_build(cs_compile):
         elif flag == 'ldflags':
             tsd = os.path.join(top_builddir, 'src')
             for f in os.listdir(tsd):
-                p = os.path.join(tsd, f, '.libs')
+                p = os.path.join(tsd, f)
                 if os.path.isdir(p):
                     flags.append('-L' + p)
             if self.pkg.config.libs['ple'].variant == 'internal':
                 flags.append('-L' + os.path.join(top_builddir, 'libple', 'src'))
-            l_cwd = '-L' + os.path.join(os.getcwd(), '.libs')
+            l_cwd = '-L' + os.path.join(os.getcwd())
             if not l_cwd in flags:
                 flags.append(l_cwd)
             # Add library paths which may be indirectly required
@@ -194,7 +194,7 @@ class compile_build(cs_compile):
         Determine directory containing library in archive mode.
         """
 
-        return os.path.join(self.top_builddir, "src", "apps", ".libs")
+        return os.path.join(self.top_builddir, "src", "apps")
 
 #===============================================================================
 # Class used to manage install

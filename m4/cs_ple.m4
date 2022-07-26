@@ -59,10 +59,10 @@ AC_ARG_WITH(ple-lib,
             [AS_HELP_STRING([--with-ple-lib=PATH],
                             [specify directory for PLE library])],
             [PLE_LDFLAGS="-L$with_ple_lib"
-             PLE_RUNPATH="-R$with_ple/lib"],
+             PLERUNPATH="${LDRPATH}${with_ple_lib}"],
             [if test "x$with_ple" != "xno" -a "x$with_ple" != "xyes"; then
                PLE_LDFLAGS="-L$with_ple/lib"
-               PLE_RUNPATH="-R$with_ple/lib"
+               PLERUNPATH="${LDRPATH}${with_ple}/lib"
              fi])
 
 AC_ARG_WITH(ple-doc,

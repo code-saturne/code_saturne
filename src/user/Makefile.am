@@ -53,7 +53,7 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
@@ -66,7 +66,7 @@ $(FCMODINCLUDE)$(top_builddir)/src/elec \
 $(FCMODINCLUDE)$(top_builddir)/src/lagr \
 $(FCMODINCLUDE)$(top_builddir)/src/pprt \
 $(FCMODINCLUDE)$(top_builddir)/src/rayt \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
+$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -120,88 +120,45 @@ usatch.f90
 # Special treatment for files existing both in f90 and C:
 cs_user_f_boundary_conditions = $(top_srcdir)/src/user/cs_user_boundary_conditions.f90
 
-cs_f_user_boundary_conditions.o: $(cs_user_f_boundary_conditions)
-	$(FCCOMPILE) -c -o cs_f_user_boundary_conditions.o  $(cs_user_f_boundary_conditions)
-
-cs_f_user_boundary_conditions.obj: $(cs_user_f_boundary_conditions)
-	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_boundary_conditions)`
-
-cs_f_user_boundary_conditions.lo: $(cs_user_f_boundary_conditions)
-	$(LTFCCOMPILE) -c -o cs_f_user_boundary_conditions.o $(cs_user_f_boundary_conditions)
+cs_f_user_boundary_conditions.$(OBJEXT): $(cs_user_f_boundary_conditions)
+	$(FCCOMPILE) -c -o cs_f_user_boundary_conditions.$(OBJEXT)  $(cs_user_f_boundary_conditions)
 
 cs_user_f_parameters = $(top_srcdir)/src/user/cs_user_parameters.f90
 
-cs_f_user_parameters.o: $(cs_user_f_parameters)
-	$(FCCOMPILE) -c -o cs_f_user_parameters.o  $(cs_user_f_parameters)
-
-cs_f_user_parameters.obj: $(cs_user_f_parameters)
-	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_parameters)`
-
-cs_f_user_parameters.lo: $(cs_user_f_parameters)
-	$(LTFCCOMPILE) -c -o cs_f_user_parameters.o $(cs_user_f_parameters)
+cs_f_user_parameters.$(OBJEXT): $(cs_user_f_parameters)
+	$(FCCOMPILE) -c -o cs_f_user_parameters.$(OBJEXT)  $(cs_user_f_parameters)
 
 cs_user_f_extra_operations = $(top_srcdir)/src/user/cs_user_extra_operations.f90
 
-cs_f_user_extra_operations.o: $(cs_user_f_extra_operations)
-	$(FCCOMPILE) -c -o cs_f_user_extra_operations.o  $(cs_user_f_extra_operations)
-
-cs_f_user_extra_operations.obj: $(cs_user_f_extra_operations)
-	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_extra_operations)`
-
-cs_f_user_extra_operations.lo: $(cs_user_f_extra_operations)
-	$(LTFCCOMPILE) -c -o cs_f_user_extra_operations.o $(cs_user_f_extra_operations)
+cs_f_user_extra_operations.$(OBJEXT): $(cs_user_f_extra_operations)
+	$(FCCOMPILE) -c -o cs_f_user_extra_operations.$(OBJEXT)  $(cs_user_f_extra_operations)
 
 cs_user_f_initialization = $(top_srcdir)/src/user/cs_user_initialization.f90
 
-cs_f_user_initialization.o: $(cs_user_f_initialization)
-	$(FCCOMPILE) -c -o cs_f_user_initialization.o  $(cs_user_f_initialization)
-
-cs_f_user_initialization.obj: $(cs_user_f_initialization)
-	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_initialization)`
-
-cs_f_user_initialization.lo: $(cs_user_f_initialization)
-	$(LTFCCOMPILE) -c -o cs_f_user_initialization.o $(cs_user_f_initialization)
+cs_f_user_initialization.$(OBJEXT): $(cs_user_f_initialization)
+	$(FCCOMPILE) -c -o cs_f_user_initialization.$(OBJEXT)  $(cs_user_f_initialization)
 
 cs_user_f_physical_properties = $(top_srcdir)/src/user/cs_user_physical_properties.f90
 
-cs_f_user_physical_properties.o: $(cs_user_f_physical_properties)
-	$(FCCOMPILE) -c -o cs_f_user_physical_properties.o  $(cs_user_f_physical_properties)
-
-cs_f_user_physical_properties.obj: $(cs_user_f_physical_properties)
-	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_physical_properties)`
-
-cs_f_user_physical_properties.lo: $(cs_user_f_physical_properties)
-	$(LTFCCOMPILE) -c -o cs_f_user_physical_properties.o $(cs_user_f_physical_properties)
+cs_f_user_physical_properties.$(OBJEXT): $(cs_user_f_physical_properties)
+	$(FCCOMPILE) -c -o cs_f_user_physical_properties.$(OBJEXT)  $(cs_user_f_physical_properties)
 
 cs_user_f_source_terms = $(top_srcdir)/src/user/cs_user_source_terms.f90
 
-cs_f_user_source_terms.o: $(cs_user_f_source_terms)
-	$(FCCOMPILE) -c -o cs_f_user_source_terms.o  $(cs_user_f_source_terms)
-
-cs_f_user_source_terms.obj: $(cs_user_f_source_terms)
-	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_source_terms)`
-
-cs_f_user_source_terms.lo: $(cs_user_f_source_terms)
-	$(LTFCCOMPILE) -c -o cs_f_user_source_terms.o $(cs_user_f_source_terms)
+cs_f_user_source_terms.$(OBJEXT): $(cs_user_f_source_terms)
+	$(FCCOMPILE) -c -o cs_f_user_source_terms.$(OBJEXT)  $(cs_user_f_source_terms)
 
 cs_user_f_porosity = $(top_srcdir)/src/user/cs_user_porosity.f90
 
-cs_f_user_porosity.o: $(cs_user_f_porosity)
-	$(FCCOMPILE) -c -o cs_f_user_porosity.o  $(cs_user_f_porosity)
+cs_f_user_porosity.$(OBJEXT): $(cs_user_f_porosity)
+	$(FCCOMPILE) -c -o cs_f_user_porosity.$(OBJEXT)  $(cs_user_f_porosity)
 
-cs_f_user_porosity.obj: $(cs_user_f_porosity)
-	$(FCCOMPILE) -c -o `$(CYGPATH_W) '$<' $(cs_user_f_porosity)`
-
-cs_f_user_porosity.lo: $(cs_user_f_porosity)
-	$(LTFCCOMPILE) -c -o cs_f_user_porosity.o $(cs_user_f_porosity)
-
-noinst_LTLIBRARIES = libcsuser.la
-libcsuser_la_SOURCES = $(userfiles)
-libcsuser_la_LIBADD = cs_f_user_parameters.lo cs_f_user_extra_operations.lo \
-cs_f_user_initialization.lo cs_f_user_physical_properties.lo \
-cs_f_user_source_terms.lo cs_f_user_boundary_conditions.lo \
-cs_f_user_porosity.lo
-libcsuser_la_LDFLAGS = -no-undefined
+noinst_LIBRARIES = libcsuser.a
+libcsuser_a_SOURCES = $(userfiles)
+libcsuser_a_LIBADD = cs_f_user_parameters.$(OBJEXT) cs_f_user_extra_operations.$(OBJEXT) \
+cs_f_user_initialization.$(OBJEXT) cs_f_user_physical_properties.$(OBJEXT) \
+cs_f_user_source_terms.$(OBJEXT) cs_f_user_boundary_conditions.$(OBJEXT) \
+cs_f_user_porosity.$(OBJEXT)
 
 userdir = $(pkgdatadir)/user_sources/REFERENCE
 user_DATA = $(userfiles) cs_user_modules.f90 \

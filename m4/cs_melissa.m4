@@ -52,12 +52,12 @@ AC_ARG_WITH(zeromq-lib,
              fi
              ZEROMQ_LDFLAGS="-L$with_zeromq_lib"
              # Add the libdir to the runpath as ZeroMQ is not libtoolized
-             ZEROMQRUNPATH="-R$with_zeromq_lib"],
+             ZEROMQRUNPATH="${LDRPATH}${with_zeromq_lib}"],
             [if test "x$with_zeromq" != "xno" -a "x$with_zeromq" != "xyes" \
 	          -a "x$with_zeromq" != "xcheck"; then
                ZEROMQ_LDFLAGS="-L$with_zeromq/lib"
                # Add the libdir to the runpath as zeromq is not libtoolized
-               ZEROMQRUNPATH="-R$with_zeromq/lib"
+               ZEROMQRUNPATH="${LDRPATH}${with_zeromq}/lib"
              fi])
 
 # Configure options for Melissa paths
@@ -91,12 +91,12 @@ AC_ARG_WITH(melissa-lib,
              fi
              MELISSA_LDFLAGS="-L$with_melissa_lib"
              # Add the libdir to the runpath as melissa is not libtoolized
-             MELISSARUNPATH="-R$with_melissa_lib"],
+             MELISSARUNPATH="${LDRPATH}${with_melissa_lib}"],
             [if test "x$with_melissa" != "xno" -a "x$with_melissa" != "xyes" \
 	          -a "x$with_melissa" != "xcheck"; then
                MELISSA_LDFLAGS="-L$with_melissa/lib"
                # Add the libdir to the runpath as melissa is not libtoolized
-               MELISSARUNPATH="-R$with_melissa/lib"
+               MELISSARUNPATH="${LDRPATH}${with_melissa}/lib"
              fi])
 
 AC_ARG_ENABLE(melissa-as-plugin,

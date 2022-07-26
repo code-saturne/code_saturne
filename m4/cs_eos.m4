@@ -58,12 +58,12 @@ AC_ARG_WITH(eos-lib,
              fi
              EOS_LDFLAGS="-L$with_eos_lib"
              # Add the libdir to the runpath as EOS is not libtoolized
-             EOSRUNPATH="-R$with_eos_lib"],
+             EOSRUNPATH="${LDRPATH}${with_eos_lib}"],
             [if test "x$with_eos" != "xno" -a "x$with_eos" != "xyes" \
 	          -a "x$with_eos" != "xcheck"; then
                EOS_LDFLAGS="-L$with_eos/lib"
                # Add the libdir to the runpath as EOS is not libtoolized
-               EOSRUNPATH="-R$with_eos/lib"
+               EOSRUNPATH="${LDRPATH}${with_eos}/lib"
              fi])
 
 if test "x$with_eos" != "xno" ; then

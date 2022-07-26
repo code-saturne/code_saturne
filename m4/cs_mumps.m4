@@ -59,7 +59,7 @@ if test "x$with_mumps" != "xno" ; then
   else
     MUMPS_LIBS="${MUMPS_LIBS} -lgfortran -lm"
   fi
-  MUMPSRUNPATH="-R${with_mumps}/lib"
+  MUMPSRUNPATH="${LDRPATH}${with_mumps}/lib"
 
   AC_MSG_NOTICE([MUMPS_CPP=${MUMPS_CPPFLAGS}])
   AC_MSG_NOTICE([MUMPS_LD=${MUMPS_LDFLAGS}])

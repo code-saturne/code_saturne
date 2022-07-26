@@ -350,6 +350,7 @@ cs_thermal_table_set(const char                        *material,
     strcat(cs_glob_thermal_table->method, method);
     cs_glob_thermal_table->type = 2;
 #if defined(HAVE_EOS)
+#if defined(HAVE_DLOPEN)
     {
       const char _reference_default[] = "";
       const char *_reference = (reference != NULL) ? reference : _reference_default;
@@ -373,6 +374,10 @@ cs_thermal_table_set(const char                        *material,
                      _reference);
     }
 #else
+    bft_error(__FILE__, __LINE__, 0,
+              "EOS only available if when dlloader is enabled in code_saturne.");
+#endif
+#else
     CS_UNUSED(reference);
 #endif
   }
@@ -390,7 +395,7 @@ void
 cs_thermal_table_finalize(void)
 {
   if (cs_glob_thermal_table != NULL) {
-#if defined(HAVE_EOS)
+#if defined(HAVE_EOS) && defined(HAVE_PLUGINS)
     if (cs_glob_thermal_table->type == 2) {
       _cs_eos_destroy();
       cs_base_dlclose("cs_eos", _cs_eos_dl_lib);
@@ -490,7 +495,7 @@ cs_phys_prop_compute(cs_phys_prop_type_t          property,
                            var2_c,
                            val);
   }
-#if defined(HAVE_EOS)
+#if defined(HAVE_EOS) && defined(HAVE_PLUGINS)
   else if (cs_glob_thermal_table->type == 2) {
     _cs_phys_prop_eos(cs_glob_thermal_table->thermo_plane,
                       property,

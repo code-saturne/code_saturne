@@ -67,12 +67,12 @@ AC_ARG_WITH(metis-lib,
              fi
              METIS_LDFLAGS="-L$with_metis_lib"
              # Add the libdir to the runpath as METIS is not libtoolized
-             METISRUNPATH="-R$with_metis_lib"],
+             METISRUNPATH="${LDRPATH}${with_metis_lib}"],
             [if test "x$with_metis" != "xno" -a "x$with_metis" != "xyes" \
 	          -a "x$with_metis" != "xcheck"; then
                METIS_LDFLAGS="-L$with_metis/lib"
                # Add the libdir to the runpath as METIS is not libtoolized
-               METISRUNPATH="-R$with_metis/lib"
+               METISRUNPATH="${LDRPATH}${with_metis}/lib"
              fi])
 
 

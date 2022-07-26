@@ -59,12 +59,12 @@ AC_ARG_WITH(hypre-lib,
              HYPRE_LDFLAGS="-L$with_hypre_lib"
              cs_hypre_libpath="$with_hypre_lib"
              # Add the libdir to the runpath as HYPRE might not be libtoolized
-             HYPRERUNPATH="-R$with_hypre_lib"],
+             HYPRERUNPATH="${LDRPATH}${with_hypre_lib}"],
             [if test "x$with_hypre" != "xno" -a "x$with_hypre" != "xyes" \
 	          -a "x$with_hypre" != "xcheck"; then
                HYPRE_LDFLAGS="-L$with_hypre/lib"
                # Add the libdir to the runpath as HYPRE might not be libtoolized
-               HYPRERUNPATH="-R$with_hypre/lib"
+               HYPRERUNPATH="${LDRPATH}${with_hypre}/lib"
                cs_hypre_libpath="$with_hypre/lib"
              fi])
 

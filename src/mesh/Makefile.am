@@ -41,7 +41,7 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -89,10 +89,10 @@ cs_stl.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcsmesh.la \
-                     libcspartition.la
+noinst_LIBRARIES = libcsmesh.a \
+                   libcspartition.a
 
-libcsmesh_la_SOURCES = \
+libcsmesh_a_SOURCES = \
 cs_geom.c \
 cs_join.c \
 cs_join_intersect.c \
@@ -130,12 +130,8 @@ cs_mesh_warping.c \
 cs_mesh_smoother.c \
 cs_stl.c
 
-libcsmesh_la_LDFLAGS = -no-undefined
-
 # Partitioner (may require extra headers)
 
-libcspartition_la_CPPFLAGS = $(AM_CPPFLAGS) \
+libcspartition_a_CPPFLAGS = $(AM_CPPFLAGS) \
 $(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
-libcspartition_la_SOURCES = cs_partition.c
-libcspartition_la_LDFLAGS = -no-undefined
-
+libcspartition_a_SOURCES = cs_partition.c

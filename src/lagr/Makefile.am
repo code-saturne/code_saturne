@@ -47,7 +47,7 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -92,8 +92,8 @@ cs_lagr_headers.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcslagr.la
-libcslagr_la_SOURCES = \
+noinst_LIBRARIES = libcslagr.a
+libcslagr_a_SOURCES = \
 cs_lagr_clogging.c \
 cs_lagr_agglo.c \
 cs_lagr_fragmentation.c \
@@ -127,8 +127,6 @@ cs_lagr_sde.c \
 cs_lagr_sde_model.c \
 cs_lagr_lec.c \
 cs_lagr_log.c
-
-libcslagr_la_LDFLAGS = -no-undefined
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

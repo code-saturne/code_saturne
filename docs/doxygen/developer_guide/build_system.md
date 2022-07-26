@@ -32,7 +32,7 @@ The code_saturne build system is based mostly on the
 and provides a traditional `configure`, `make`, `make install` sequence).
 
 Those tools have their sets of advantages and disadvantages, but are very
-well documented. An very practical feature, not available in such a natural
+well documented. A very practical feature, not available in such a natural
 form in some other build frameworks, is the possibility to provide a
 quick and complete list of available options using `configure --help`.
 
@@ -80,12 +80,11 @@ Specific adaptations
 
 - Libtool has some nice features relative to building and organizing
   libraries, but unfortunately decides that it is always right, even when
-  it is wrong. There are no options to override some of its settings. So to
-  avoid a long series of issues related to libtool, its use must be avoided
-  when linking the final executable. This is detailed in a section below.
-
-- In addition, `libtool` does not handle some compiler options, such
-  as the CUDA compiler. To allow building CUDA code with dynamic libraries,
+  it is wrong. In addition, it does not handle some compilers or
+  languages, such as CUDA. So Libtool has been removed from the
+  code_saturne build system as of August 2022 (for version 7.3).
+  Shared libraries are now handled through addtional Automake
+  rules and a `build-aux/cs_link_library.py` helper script.
 
 - Since code_saturne allows for user-defined functions and subroutines,
   a specific solution is required for those.
@@ -194,7 +193,30 @@ Roadmap
 
 For now, a safe solution seems to be to rewrite some parts of the build system
 in Python, as is already done in quite a few areas (see files in `build-aux`),
-and progressively reduce the reliance on the Autotools.
+and progressively reduce the reliance on the Autotools (now reduced to
+Autconf and Automake).
+
+Automake could be replaced by hand-coded Makefiles, using `configure`
+to transform `Makefile.in` templates in the source tree to `Makefiles`
+in the build tree (so as to keep the essential possibility of using
+out-of-tree builds). Dependency rules would need to be generated in a
+manner similar to that used by Automake, but could be extended to
+automatic Fortran dependencies (though automatic handling of Fortran
+binding dependencies would remain tricky).
+
+A first step would be to reduce the number of Makefile templates by using
+a single Makefile for a whole subtree, rather than recursive Makefiles.
+As such, a few Makefiles coud be handled at the `preprocessor`, `src`,
+and `doc` levels, for clarity and to avoid duplicating local rules.
+Makefiles at an even higher level could be interesting, but to keed the
+possibility of building only a specific subsystem at a time (useful when
+developing), specific target names for the various sub-systems would need
+to be used.
+
+Autoconf could be replaced incrementally by Python code. Most tests and *m4*
+macros would actually be clearer in Python, but some tests from Automake, such
+as determining C/C++ type sizes even when cross-compiling, may require
+additional work.
 
 Specific Automake rules
 -----------------------
@@ -208,7 +230,7 @@ This could be easily changed.
 ### Libraries and plugins
 
 For files which may be compiled into plugins rather than the main libraries
-(such as `preprocessor/pre-post/ecs_ccm.c`), an associated non-installable
+(such as `src/base/fvm/fvm_to_catalyst.cxx`), an associated non-installable
 library is defined in the matching directory's Automake (`Makefile.am`)
 rules, so as to force the file's compilation while still letting Automake
 handle its dependencies. This is done because Automake only manages rules for
@@ -218,6 +240,10 @@ would be to use rules for built (generated) sources.
 When not using Libtool, Automake assumes archive (`.a`) form libraries, so
 flags for position-independent code are added specifically in the code_saturne
 build configuration (and can be adapted in `config/cs_auto_flags.sh`).
+
+To build libraries, a `build-aux/cs_link_library.py` helper script is used.
+This script assumes knowledge of some linker options, so to port or update on
+various (especially non-Linux) systems, it may need to be adapted and extended.
 
 Local targets are then defined so as to build the appropriate libraries,
 using the matching object (`.o`), and not library archive (`.a`) files.

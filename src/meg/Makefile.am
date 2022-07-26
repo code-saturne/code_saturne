@@ -53,20 +53,7 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-
-AM_FCFLAGS = \
-$(FCMODINCLUDE)$(top_builddir)/src \
-$(FCMODINCLUDE)$(top_builddir)/src/atmo \
-$(FCMODINCLUDE)$(top_builddir)/src/cfbl \
-$(FCMODINCLUDE)$(top_builddir)/src/cogz \
-$(FCMODINCLUDE)$(top_builddir)/src/comb \
-$(FCMODINCLUDE)$(top_builddir)/src/ctwr \
-$(FCMODINCLUDE)$(top_builddir)/src/elec \
-$(FCMODINCLUDE)$(top_builddir)/src/lagr \
-$(FCMODINCLUDE)$(top_builddir)/src/pprt \
-$(FCMODINCLUDE)$(top_builddir)/src/rayt \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -86,7 +73,6 @@ cs_meg_post_profile.c \
 cs_meg_source_terms.c \
 cs_meg_volume_function.c
 
-noinst_LTLIBRARIES = libcsmeg.la
-libcsmeg_la_SOURCES = $(megfiles)
-libcsmeg_la_LDFLAGS = -no-undefined
+noinst_LIBRARIES = libcsmeg.a
+libcsmeg_a_SOURCES = $(megfiles)
 

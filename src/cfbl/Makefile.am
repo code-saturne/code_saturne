@@ -40,7 +40,7 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
@@ -57,7 +57,7 @@ $(FCMODINCLUDE)$(top_builddir)/src/pprt \
 $(FCMODINCLUDE)$(top_builddir)/src/rayt \
 $(FCMODINCLUDE)$(top_builddir)/src/turb \
 $(FCMODINCLUDE)$(top_builddir)/src/user \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
+$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -73,8 +73,8 @@ cs_cfbl_headers.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcscfbl.la
-libcscfbl_la_SOURCES = \
+noinst_LIBRARIES = libcscfbl.a
+libcscfbl_a_SOURCES = \
 cfdivs.f90 \
 cfdttv.f90 \
 cfener.f90 \
@@ -93,8 +93,6 @@ cs_cf_thermo.c \
 cs_hgn_thermo.c \
 cs_hgn_phase_thermo.c \
 cs_hgn_source_terms_step.c
-
-libcscfbl_la_LDFLAGS = -no-undefined
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

@@ -28,8 +28,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/uti
 $(HDF5_CPPFLAGS) $(HDF5_CPPFLAGS_MPI) \
 $(MED_CPPFLAGS) $(CGNS_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-AM_LDFLAGS = \
-$(MED_LDFLAGS) $(CGNS_LDFLAGS) $(HDF5_LDFLAGS) $(HDF5_LDFLAGS_MPI)
 
 # Headers
 
@@ -98,30 +96,27 @@ local_libraries_add =
 
 if HAVE_CCM
 
-libecs_ccm_a_CPPFLAGS = \
+ecs_pre_ccm_CPPFLAGS = \
 -I$(top_srcdir)/preprocessor/base -I$(top_srcdir)/preprocessor/util \
 $(CCM_CPPFLAGS) $(CCM_CXXFLAGS) $(MPI_CPPFLAGS)
-libecs_ccm_a_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
-libecs_ccm_a_SOURCES = ecs_pre_ccm.c
-noinst_LIBRARIES += libecs_ccm.a
+ecs_pre_ccm_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
+
+ecs_pre_ccm = $(top_srcdir)/preprocessor/pre-post/ecs_pre_ccm.c
+ecs_pre_ccm.o: $(ecs_pre_ccm)
+	$(CC) -c $(DEFS) $(DEFAULT_INCLUDES) $(ecs_pre_ccm_CPPFLAGS) $(ecs_pre_ccm_CFLAGS) $(CFLAGS) $(ecs_pre_ccm)
 
 if HAVE_PLUGINS
 
-LDADD_CCM = $(CCM_LDFLAGS) $(CCM_LIBS) $(CCMRUNPATH)
-
-ecs_ccm.${SHARED_LIB_EXT}: ${ecs_ccm_objs}
-	@echo "Building ecs_ccm plugin ..."
+ecs_ccm.${SHARED_LIB_EXT}: ecs_pre_ccm.o
+	@echo "Building ecs_ccm plugin..."
 	rm -f $@
-	rm -rf ${libple_soname_major}
-	${CC} -o ecs_ccm.${SHARED_LIB_EXT} ${ecs_ccm_objs} libecs_ccm_a-ecs_pre_ccm.o ${CFLAGS_SHARED} ${LDFLAGS_SHARED} ${LDFLAGS} ${ecs_ccm_a} ${LDADD_CCM} $(AM_LIBS)
-
-# ecs_ccm_objs = libecs_ccm_a-ecs_pre_ccm.o
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CC} -o $@ ${LDFLAGS_SHARED} ${CFLAGS_SHARED} ecs_pre_ccm.o ${LDFLAGS} $(CCM_LDFLAGS) $(CCM_LIBS) $(CCMRUNPATH)
 
 local_libraries_add += ecs_ccm.${SHARED_LIB_EXT}
 
 else
 
-libprepostecs_a_LIBADD += libecs_ccm.a
+libprepostecs_a_LIBADD += ecs_pre_ccm.o
 
 endif
 
@@ -132,7 +127,12 @@ endif
 all-local: ${local_libraries_add}
 
 clean-local:
-	-rm -f ecs_ccm.${SHARED_LIB_EXT}
+	@list=; for p in ${local_libraries_add}; do \
+	  if test -f $$p; then \
+	    echo "rm -f $$p"; \
+	    rm -f $$p; \
+	  else :; fi; \
+	done
 
 install-exec-local: ${local_libraries_add}
 	@list=; for p in ${local_libraries_add}; do \

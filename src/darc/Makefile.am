@@ -41,7 +41,7 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
@@ -59,7 +59,7 @@ $(FCMODINCLUDE)$(top_builddir)/src/pprt \
 $(FCMODINCLUDE)$(top_builddir)/src/rayt \
 $(FCMODINCLUDE)$(top_builddir)/src/turb \
 $(FCMODINCLUDE)$(top_builddir)/src/user \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
+$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -72,13 +72,12 @@ cs_darc_headers.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcsdarc.la
-libcsdarc_la_SOURCES = \
+noinst_LIBRARIES = libcsdarc.a
+libcsdarc_a_SOURCES = \
 daini1.f90 \
 richards.f90 \
 cs_gwf_parameters.c \
 cs_gwf_physical_properties.c
-libcsdarc_la_LDFLAGS = -no-undefined
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

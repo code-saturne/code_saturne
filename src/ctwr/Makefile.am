@@ -42,7 +42,7 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
@@ -57,7 +57,7 @@ $(FCMODINCLUDE)$(top_builddir)/src/lagr \
 $(FCMODINCLUDE)$(top_builddir)/src/pprt \
 $(FCMODINCLUDE)$(top_builddir)/src/rayt \
 $(FCMODINCLUDE)$(top_builddir)/src/turb \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
+$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -69,15 +69,14 @@ cs_ctwr_headers.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcsctwr.la
-libcsctwr_la_SOURCES = \
+noinst_LIBRARIES = libcsctwr.a
+libcsctwr_a_SOURCES = \
 cs_ctwr.c \
 cs_ctwr_bcond.f90 \
 ctini1.f90 \
 ctiniv.f90 \
 ctphyv.f90 \
 ctvarp.f90
-libcsctwr_la_LDFLAGS = -no-undefined
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

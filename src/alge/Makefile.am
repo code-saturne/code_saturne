@@ -30,10 +30,6 @@ else
   CPPFLAGS_PLE = $(PLE_CPPFLAGS)
 endif
 
-# Libtool modified for CUDA
-
-LIBTOOL_CUDA = $(SHELL) $(top_builddir)/libtool_cuda
-
 # Main part
 
 AM_CPPFLAGS = \
@@ -45,13 +41,13 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_LDFLAGS =
 
 # Conditionally compiled extensions
 
-libcsalge_petsc_la_CPPFLAGS =\
+libcsalge_petsc_a_CPPFLAGS =\
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
@@ -59,7 +55,7 @@ libcsalge_petsc_la_CPPFLAGS =\
 $(PETSC_CPPFLAGS) $(MPI_CPPFLAGS)
 
 if HAVE_MUMPS
-  libcsalge_mumps_la_CPPFLAGS =\
+  libcsalge_mumps_a_CPPFLAGS =\
   -I$(top_srcdir)/src/base \
   -I$(top_srcdir)/src/bft \
   -I$(top_srcdir)/src/fvm \
@@ -67,26 +63,19 @@ if HAVE_MUMPS
   $(MUMPS_CPPFLAGS) $(MPI_CPPFLAGS)
 endif
 
-libcsalge_amgx_la_CPPFLAGS =\
+libcsalge_amgx_a_CPPFLAGS =\
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 $(AMGX_CPPFLAGS) $(MPI_CPPFLAGS)
 
-libcsalge_hypre_la_CPPFLAGS =\
+libcsalge_hypre_a_CPPFLAGS =\
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
-
-libcsalge_extension_la_CPPFLAGS =\
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
-$(PETSC_CPPFLAGS)  $(MUMPS_CPPFLAGS) $(MPI_CPPFLAGS)
 
 # Public header files (to be installed)
 
@@ -157,13 +146,13 @@ endif
 
 # Library source files
 
-noinst_LTLIBRARIES = libcsalge.la
+noinst_LIBRARIES = libcsalge.a
 
-libcsalge_la_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_HOT)
-libcsalge_la_FCFLAGS = \
+libcsalge_a_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_HOT) $(CFLAGS_SHARED)
+libcsalge_a_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
-$(FCFLAGS_DBG) $(FCFLAGS_HOT)
-libcsalge_la_SOURCES = \
+$(FCFLAGS_DBG) $(FCFLAGS_HOT) $(FCFLAGS_SHARED)
+libcsalge_a_SOURCES = \
 cs_bad_cells_regularisation.c \
 cs_balance.c \
 cs_balance_by_zone.c \
@@ -191,11 +180,10 @@ cs_sles_default.c \
 cs_sles_it.c \
 cs_sles_it_priv.c \
 cs_sles_pc.c
-libcsalge_la_LDFLAGS = -no-undefined
-libcsalge_la_LIBADD =
+libcsalge_a_LIBADD =
 
 if HAVE_CUDA
-libcsalge_la_SOURCES += \
+libcsalge_a_SOURCES += \
 cs_benchmark_cuda.cu \
 cs_blas_cuda.cu \
 cs_gradient_cuda.cu \
@@ -204,51 +192,51 @@ cs_sles_it_cuda.cu \
 cs_sles_pc_cuda.cu
 endif
 
-noinst_LTLIBRARIES += libcsalge_extension.la
-libcsalge_la_LIBADD += libcsalge_extension.la
-libcsalge_extension_la_CPPFLAGS = \
+noinst_LIBRARIES += libcsalge_extension.a
+libcsalge_extension_a_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 $(PETSC_CPPFLAGS) $(MUMPS_CPPFLAGS) $(AMGX_CPPFLAGS) $(HYPRE_CPPFLAGS) $(MPI_CPPFLAGS)
-libcsalge_extension_la_SOURCES = \
-cs_param_sles.c
+libcsalge_extension_a_SOURCES = cs_param_sles.c
+libcsalge_a_LIBADD += libcsalge_extension_a-cs_param_sles.$(OBJEXT)
 
 if HAVE_PETSC
-noinst_LTLIBRARIES += libcsalge_petsc.la
-libcsalge_la_LIBADD += libcsalge_petsc.la
-libcsalge_petsc_la_SOURCES = \
+noinst_LIBRARIES += libcsalge_petsc.a
+libcsalge_petsc_a_SOURCES = \
 cs_matrix_petsc.c \
 cs_sles_petsc.c
+libcsalge_a_LIBADD += \
+libcsalge_petsc_a-cs_matrix_petsc.$(OBJEXT) \
+libcsalge_petsc_a-cs_sles_petsc.$(OBJEXT)
 endif
 
 if HAVE_MUMPS
-noinst_LTLIBRARIES += libcsalge_mumps.la
-libcsalge_la_LIBADD += libcsalge_mumps.la
-libcsalge_mumps_la_SOURCES = \
+noinst_LIBRARIES += libcsalge_mumps.a
+libcsalge_mumps_a_SOURCES = \
 cs_sles_mumps.c
-libcsalge_mumps_la_LIBADD = \
-$(MUMPS_LDFLAGS) $(MUMPSRUNPATH) $(MUMPS_LIBS)
-libcsalge_mumps_la_LDFLAGS = -no-undefined
+libcsalge_a_LIBADD += libcsalge_mumps_a-cs_sles_mumps.$(OBJEXT)
 endif
 
 if HAVE_HYPRE
-noinst_LTLIBRARIES += libcsalge_hypre.la
-libcsalge_la_LIBADD += libcsalge_hypre.la
-libcsalge_hypre_la_SOURCES = \
+noinst_LIBRARIES += libcsalge_hypre.a
+libcsalge_hypre_a_SOURCES = \
 cs_matrix_hypre.c \
 cs_sles_hypre.c
+libcsalge_a_LIBADD += \
+libcsalge_hypre_a-cs_matrix_hypre.$(OBJEXT) \
+libcsalge_hypre_a-cs_sles_hypre.$(OBJEXT)
 endif
 
 if HAVE_AMGX
-noinst_LTLIBRARIES += libcsalge_amgx.la
-libcsalge_la_LIBADD += libcsalge_amgx.la
-libcsalge_amgx_la_SOURCES = cs_sles_amgx.c
+noinst_LIBRARIES += libcsalge_amgx.a
+libcsalge_amgx_a_SOURCES = cs_sles_amgx.c
+libcsalge_a_LIBADD += libcsalge_amgx_a-cs_sles_amgx.$(OBJEXT)
 endif
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
 
-.cu.lo:
-	$(LIBTOOL_CUDA) --tag=CC --mode=compile $(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<
+.cu.$(OBJEXT):
+	$(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/alge -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_SHARED) -c -o $@ $<

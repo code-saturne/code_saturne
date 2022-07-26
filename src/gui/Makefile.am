@@ -52,7 +52,7 @@ AM_CPPFLAGS = \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -74,11 +74,11 @@ cs_gui_headers.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcsgui.la
+noinst_LIBRARIES = libcsgui.a
 
 ###
 
-libcsgui_la_SOURCES = \
+libcsgui_a_SOURCES = \
 cs_gui.c \
 cs_gui_boundary_conditions.c \
 cs_gui_conjugate_heat_transfer.c \

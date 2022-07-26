@@ -58,12 +58,12 @@ AC_ARG_WITH(freesteam-lib,
              fi
              FREESTEAM_LDFLAGS="-L$with_freesteam_lib"
              # Add the libdir to the runpath as freesteam is not libtoolized
-             FREESTEAMRUNPATH="-R$with_freesteam_lib"],
+             FREESTEAMRUNPATH="${LDRPATH}${with_freesteam_lib}"],
             [if test "x$with_freesteam" != "xno" -a "x$with_freesteam" != "xyes" \
 	          -a "x$with_freesteam" != "xcheck"; then
                FREESTEAM_LDFLAGS="-L$with_freesteam/lib"
                # Add the libdir to the runpath as freesteam is not libtoolized
-               FREESTEAMRUNPATH="-R$with_freesteam/lib"
+               FREESTEAMRUNPATH="${LDRPATH}${with_freesteam}/lib"
              fi])
 
 if test "x$with_freesteam" != "xno" ; then

@@ -57,12 +57,12 @@ AC_ARG_WITH(blas-lib,
              fi
              BLAS_LDFLAGS="-L$with_blas_lib"
              # Add the libdir to the runpath as BLAS may not be libtoolized
-             BLASRUNPATH="-R$with_blas_lib"],
+             BLASRUNPATH="${LDRPATH}${with_blas_lib}"],
             [if test "x$with_blas" != "xno" -a "x$with_blas" != "xyes" \
 	          -a "x$with_blas" != "xcheck"; then
                BLAS_LDFLAGS="-L$with_blas/lib"
                # Add the libdir to the runpath as BLAS may not be libtoolized
-               BLASRUNPATH="-R$with_blas/lib"
+               BLASRUNPATH="${LDRPATH}${with_blas}/lib"
              fi])
 
 AC_ARG_WITH(blas-type,

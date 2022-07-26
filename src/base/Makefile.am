@@ -55,8 +55,8 @@ $(CPPFLAGS_PLE) \
 $(FREESTEAM_CPPFLAGS) \
 $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
+AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_FCFLAGS = \
 $(FCMODINCLUDE)$(top_builddir)/src \
@@ -73,7 +73,7 @@ $(FCMODINCLUDE)$(top_builddir)/src/pprt \
 $(FCMODINCLUDE)$(top_builddir)/src/rayt \
 $(FCMODINCLUDE)$(top_builddir)/src/turb \
 $(FCMODINCLUDE)$(top_builddir)/src/user \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
+$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -199,23 +199,27 @@ endif
 
 # Library source files
 
-noinst_LTLIBRARIES = libcscorep.la libcscore.la \
-		     libcsbase.la libcsrenumber.la
+noinst_LIBRARIES = \
+libcscore.a \
+libcsbase.a libcsrenumber.a
 
 # Core library.
-# We use a helper library containing only cs_base.c, so as to pass
+# We use a specific rule for cs_base.c, so as to pass
 # it localedir and pkgdatadir info.
 
-libcscorep_la_CPPFLAGS = \
+cs_base_CPPFLAGS = \
 -DLOCALEDIR=\"'$(localedir)'\" \
 -DPKGDATADIR=\"'$(pkgdatadir)'\" \
 -DPKGLIBDIR=\"'$(pkglibdir)'\" \
 $(AM_CPPFLAGS)
 
-libcscorep_la_SOURCES = cs_base.c
-libcscorep_la_LDFLAGS = -no-undefined
+cs_base = $(top_srcdir)/src/base/cs_base.c
+cs_base.$(OBJEXT): $(cs_base)
+	$(CC) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_base_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(cs_base)
 
-libcscore_la_SOURCES = \
+libcscore_a_LIBADD = cs_base.$(OBJEXT)
+
+libcscore_a_SOURCES = \
 cs_all_to_all.c \
 cs_block_dist.c \
 cs_block_to_part.c \
@@ -235,20 +239,18 @@ cs_part_to_block.c \
 cs_system_info.c \
 cs_timer.c \
 cs_tree.c
-libcscore_la_LDFLAGS = -no-undefined
-libcscore_la_LIBADD = libcscorep.la $(top_builddir)/src/fvm/libfvm.la
 
 if HAVE_ACCEL
-libcscore_la_SOURCES += cs_base_accel.cxx
+libcscore_a_SOURCES += cs_base_accel.cxx
 endif
 
 if HAVE_CUDA
-libcscore_la_SOURCES += \
+libcscore_a_SOURCES += \
 cs_base_cuda.cu \
 cs_halo_cuda.cu
 endif
 
-libcsbase_la_SOURCES = \
+libcsbase_a_SOURCES = \
 addfld.f90 \
 altycl.f90 \
 calhyd.f90 \
@@ -417,19 +419,21 @@ vericl.f90 \
 verini.f90 \
 verlon.f90 \
 visecv.f90
-libcsbase_la_LDFLAGS = -no-undefined
-libcsbase_la_LIBADD =
+
+libcsbase_a_LIBADD =
+local_libraries_add =
 
 # Renumbering (may require extra headers)
 
-libcsrenumber_la_CPPFLAGS = $(AM_CPPFLAGS) \
+libcsrenumber_a_CPPFLAGS = $(AM_CPPFLAGS) \
 $(METIS_CPPFLAGS) $(SCOTCH_CPPFLAGS)
-libcsrenumber_la_SOURCES = cs_renumber.c
-libcsrenumber_la_LDFLAGS = -no-undefined
+libcsrenumber_a_SOURCES = cs_renumber.c
 
 # Conditionally compiled extensions
-lib_LTLIBRARIES =
-pkglib_LTLIBRARIES =
+lib_LIBRARIES =
+pkglib_LIBRARIES =
+
+# MEDCoupling wrappers, plugin or linked-in.
 
 pkginclude_HEADERS += \
 cs_medcoupling_mesh.hxx \
@@ -439,9 +443,7 @@ cs_medcoupling_intersector.h \
 cs_paramedmem_coupling.h \
 cs_paramedmem_remapper.h
 
-if HAVE_PLUGIN_MEDCOUPLING
-
-cs_medcoupling_la_CPPFLAGS = \
+libcs_medcoupling_a_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
@@ -452,9 +454,8 @@ $(MEDCOUPLING_CPPFLAGS) \
 $(MED_CPPFLAGS) \
 $(HDF5_CPPFLAGS) \
 $(MPI_CPPFLAGS)
-pkglib_LTLIBRARIES += cs_medcoupling.la
 
-cs_medcoupling_la_SOURCES = \
+libcs_medcoupling_a_SOURCES = \
 cs_medcoupling_utils.cxx \
 cs_medcoupling_mesh.cxx \
 cs_medcoupling_remapper.cxx \
@@ -462,98 +463,139 @@ cs_medcoupling_intersector.cxx \
 cs_paramedmem_coupling.cxx \
 cs_paramedmem_remapper.cxx
 
-cs_medcoupling_la_LDFLAGS = -module -avoid-version
-cs_medcoupling_la_LIBADD = \
+noinst_LIBRARIES += libcs_medcoupling.a
+
+if HAVE_PLUGIN_MEDCOUPLING
+
+local_libraries_add += cs_medcoupling.${SHARED_LIB_EXT}
+LDADD_MEDCOUPLING = \
 $(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
 $(MEDCOUPLINGRUNPATH)
+
+cs_medcoupling.${SHARED_LIB_EXT}: libcs_medcoupling.a
+	@echo "Building cs_medcoupling plugin..."
+	rm -f $@ ; \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} -o $@ libcs_medcoupling.a ${LDFLAGS_SHARED} ${LDFLAGS} ${LDADD_MEDCOUPLING} $(AM_LIBS)
+
+local_libraries_add += cs_medcoupling.${SHARED_LIB_EXT}
 
 else
 
-libcs_medcoupling_la_CPPFLAGS = \
--I$(top_srcdir)/src/alge \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/bft \
-$(CPPFLAGS_PLE) \
-$(MEDCOUPLING_CPPFLAGS) \
-$(MED_CPPFLAGS) \
-$(HDF5_CPPFLAGS) \
-$(MPI_CPPFLAGS)
-
-libcs_medcoupling_la_SOURCES = \
-cs_medcoupling_utils.cxx \
-cs_medcoupling_mesh.cxx \
-cs_medcoupling_remapper.cxx \
-cs_medcoupling_intersector.cxx \
-cs_paramedmem_coupling.cxx \
-cs_paramedmem_remapper.cxx
-
-libcs_medcoupling_la_LIBADD = \
-$(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
-$(MEDCOUPLINGRUNPATH)
-noinst_LTLIBRARIES += libcs_medcoupling.la
-libcsbase_la_LIBADD += libcs_medcoupling.la
+libcsbase_a_LIBADD += \
+libcs_medcoupling_a-cs_medcoupling_intersector.$(OBJEXT) \
+libcs_medcoupling_a-cs_medcoupling_mesh.$(OBJEXT) \
+libcs_medcoupling_a-cs_medcoupling_remapper.$(OBJEXT) \
+libcs_medcoupling_a-cs_medcoupling_utils.$(OBJEXT) \
+libcs_medcoupling_a-cs_paramedmem_coupling.$(OBJEXT) \
+libcs_medcoupling_a-cs_paramedmem_remapper.$(OBJEXT)
 
 endif
 
+# EOS (Equations of State) support, always as plugin.
+
 if HAVE_EOS
 
-cs_eos_la_CPPFLAGS = \
+libcs_eos_a_CPPFLAGS = \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 $(EOS_CPPFLAGS) $(MPI_CPPFLAGS)
-cs_eos_la_LIBADD = \
-$(EOS_LDFLAGS) $(EOS_LIBS) $(EOSRUNPATH)
+
 pkginclude_HEADERS += cs_eos.hxx
-pkglib_LTLIBRARIES += cs_eos.la
-cs_eos_la_SOURCES = cs_eos.cxx
-cs_eos_la_LDFLAGS = -module -avoid-version
+noinst_LIBRARIES += libcs_eos.a
+libcs_eos_a_SOURCES = cs_eos.cxx
+
+local_libraries_add += cs_eos.${SHARED_LIB_EXT}
+LDADD_EOS = \
+$(EOS_LDFLAGS) $(EOS_LIBS) $(EOSRUNPATH)
+
+cs_eos.${SHARED_LIB_EXT}: libcs_eos.a
+	@echo "Building cs_eos plugin..."
+	rm -f $@ ; \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} -o $@ libcs_eos_a-cs_eos.$(OBJEXT) ${LDFLAGS_SHARED} ${LDFLAGS} ${LDADD_EOS} $(AM_LIBS)
+
+local_libraries_add += cs_eos.${SHARED_LIB_EXT}
 
 endif
+
+# Coolprop library, plugin or linked-in.
 
 if HAVE_COOLPROP
 
-if HAVE_PLUGINS
-
-cs_coolprop_la_CPPFLAGS = \
+cs_coolprop_CPPFLAGS = \
 -I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
 $(COOLPROP_CPPFLAGS) $(MPI_CPPFLAGS)
-cs_coolprop_la_LIBADD = \
+pkginclude_HEADERS += cs_coolprop.hxx
+
+cs_coolprop = $(top_srcdir)/src/base/cs_coolprop.cxx
+cs_coolprop.$(OBJEXT): $(cs_coolprop)
+	$(CXX) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_coolprop_CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) ${cs_coolprop}
+
+if HAVE_PLUGINS
+
+local_libraries_add += cs_coolprop.${SHARED_LIB_EXT}
+LDADD_COOLPROP = \
 $(COOLPROP_LDFLAGS) $(COOLPROP_LIBS) \
 $(COOLPROPRUNPATH)
-pkginclude_HEADERS += cs_coolprop.hxx
-pkglib_LTLIBRARIES += cs_coolprop.la
-cs_coolprop_la_SOURCES = cs_coolprop.cxx
-cs_coolprop_la_LDFLAGS = -module -avoid-version
+
+cs_coolprop.${SHARED_LIB_EXT}: cs_coolprop.$(OBJEXT)
+	@echo "Building cs_coolprop plugin..."
+	rm -f $@ ; \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} -o $@ cs_coolprop.$(OBJEXT) ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${LDADD_COOLPROP} $(AM_LIBS)
+
+local_libraries_add += cs_coolprop.${SHARED_LIB_EXT}
 
 else
 
-libcs_coolprop_la_CPPFLAGS = \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/fvm \
--I$(top_srcdir)/src/mesh \
--I$(top_srcdir)/src/bft \
-$(COOLPROP_CPPFLAGS) $(MPI_CPPFLAGS)
-pkginclude_HEADERS += cs_coolprop.hxx
-libcs_coolprop_la_LIBADD = \
-$(COOLPROP_LDFLAGS) $(COOLPROP_LIBS) \
-$(COOLPROPRUNPATH)
-libcs_coolprop_la_SOURCES = cs_coolprop.cxx
-noinst_LTLIBRARIES += libcs_coolprop.la
-libcsbase_la_LIBADD += libcs_coolprop.la
+libcsbase_a_LIBADD += cs_coolprop.$(OBJEXT)
 
 endif
 
 endif
+
+# Rules for CUDA (not known by Automake)
+
+.cu.$(OBJEXT):
+	$(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_SHARED) -c -o $@ $<
+
+# Additional rules
+
+all-local: ${local_libraries_add}
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod
+	@list=; for p in ${local_libraries_add}; do \
+	  if test -f $$p; then \
+	    echo "rm -f $$p"; \
+	    rm -f $$p; \
+	  else :; fi; \
+	done
 
-.cu.lo:
-	$(LIBTOOL_CUDA) --tag=CC --mode=compile $(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<
+install-exec-local: ${local_libraries_add}
+	@list=; for p in ${local_libraries_add}; do \
+	  if test -f $$p; then \
+	    list="$$list $$p"; \
+	  else :; fi; \
+	done; \
+	test -z "$$list" -a -n "$(pkglibdir)" || { \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(pkglibdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(pkglibdir)" || exit 1; \
+	  echo " cp -fp $$list '$(DESTDIR)$(pkglibdir)'"; \
+	  cp -fpP $$list "$(DESTDIR)$(pkglibdir)"; \
+	}
+
+uninstall-local:
+	@list=; for p in ${local_libraries_add}; do \
+	  if test -f $$p; then \
+	    list="$$list $$p"; \
+	  else :; fi; \
+	done; \
+	for p in $$list; do \
+	  echo " rm -f '$(DESTDIR)$(pkglibdir)/$$p'"; \
+	  rm -f "$(DESTDIR)$(pkglibdir)/$$p"; \
+	done; \
+	rmdir "$(DESTDIR)$(pkglibdir)" || exit 0

@@ -29,19 +29,19 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/mesh \
 $(MPI_CPPFLAGS)
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
-AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
+AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 AM_LDFLAGS = $(CCM_LDFLAGS) $(CGNS_LDFLAGS) $(MED_LDFLAGS) \
 $(HDF5_LDFLAGS) $(MPI_LDFLAGS)
 
 # Conditionally compiled extensions
 
-libfvm_cgns_la_CPPFLAGS =\
+libfvm_cgns_a_CPPFLAGS =\
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/mesh \
 $(CGNS_CPPFLAGS) $(MPI_CPPFLAGS)
-libfvm_med_la_CPPFLAGS = \
+libfvm_med_a_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/mesh \
@@ -97,13 +97,13 @@ fvm_writer_priv.h
 
 # Library source files
 
-lib_LTLIBRARIES =
-pkglib_LTLIBRARIES =
-noinst_LTLIBRARIES = libfvm.la libfvm_filters.la
-libfvm_la_LIBADD = $(LTLIBINTL)
-libfvm_filters_la_LIBADD =
+lib_LIBRARIES =
+pkglib_LIBRARIES =
+noinst_LIBRARIES = libfvm.a libfvm_filters.a
+libfvm_a_LIBADD = $(LTLIBINTL)
+libfvm_filters_a_LIBADD =
 
-libfvm_la_SOURCES = \
+libfvm_a_SOURCES = \
 fvm_box.c \
 fvm_box_tree.c \
 fvm_convert_array.c \
@@ -129,7 +129,9 @@ fvm_tesselation.c \
 fvm_trace.c \
 fvm_triangulate.c
 
-libfvm_filters_la_SOURCES = \
+local_libraries_add =
+
+libfvm_filters_a_SOURCES = \
 fvm_to_ensight.c \
 fvm_to_ensight_case.c \
 fvm_to_histogram.c \
@@ -139,63 +141,59 @@ fvm_writer.c \
 fvm_writer_helper.c
 
 if HAVE_CCM
-noinst_LTLIBRARIES += libfvm_ccm.la
-libfvm_ccm_la_CPPFLAGS =\
+noinst_LIBRARIES += libfvm_ccm.a
+libfvm_ccm_a_CPPFLAGS =\
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/mesh \
 $(CFLAGS_DBG) $(CFLAGS_OPT) \
 $(CCM_CPPFLAGS) $(MPI_CPPFLAGS)
-libfvm_filters_la_LIBADD += libfvm_ccm.la
-libfvm_ccm_la_SOURCES = fvm_to_ccm.c
+libfvm_ccm_a_SOURCES = fvm_to_ccm.c
+libfvm_filters_a_LIBADD += libfvm_ccm_a-fvm_to_ccm.$(OBJEXT)
 endif
 
 if HAVE_CGNS
-noinst_LTLIBRARIES += libfvm_cgns.la
-libfvm_filters_la_LIBADD += libfvm_cgns.la
-libfvm_cgns_la_SOURCES = fvm_to_cgns.c
+noinst_LIBRARIES += libfvm_cgns.a
+libfvm_cgns_a_SOURCES = fvm_to_cgns.c
+libfvm_filters_a_LIBADD += libfvm_cgns_a-fvm_to_cgns.$(OBJEXT)
 endif
 
 if HAVE_MED
-noinst_LTLIBRARIES += libfvm_med.la
-libfvm_filters_la_LIBADD += libfvm_med.la
-libfvm_med_la_SOURCES = fvm_to_med.c
+noinst_LIBRARIES += libfvm_med.a
+libfvm_med_a_SOURCES = fvm_to_med.c
+libfvm_filters_a_LIBADD += libfvm_med_a-fvm_to_med.$(OBJEXT)
 endif
 
 if HAVE_MEDCOUPLING
 
-if HAVE_PLUGIN_MEDCOUPLING
-
-fvm_medcoupling_la_CPPFLAGS = \
+libfvm_medcoupling_a_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/mesh \
-$(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
 $(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
-pkglib_LTLIBRARIES += fvm_medcoupling.la
+libfvm_medcoupling_a_CXXFLAGS = \
+$(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
+$(MEDCOUPLING_CXXFLAGS) $(CXXFLAGS_SHARED)
+libfvm_medcoupling_a_SOURCES = fvm_to_medcoupling.cxx
+noinst_LIBRARIES += libfvm_medcoupling.a
 
-fvm_medcoupling_la_SOURCES = fvm_to_medcoupling.cxx
-fvm_medcoupling_la_LDFLAGS = -module -avoid-version
-fvm_medcoupling_la_LIBADD = \
+if HAVE_PLUGIN_MEDCOUPLING
+
+local_libraries_add += fvm_medcoupling.${SHARED_LIB_EXT}
+LDADD_MEDCOUPLING = \
 $(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
 $(MEDCOUPLINGRUNPATH)
+
+fvm_medcoupling.${SHARED_LIB_EXT}: libfvm_medcoupling.a
+	@echo "Building fvm_medcoupling plugin..."
+	rm -f $@ ; \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} -o $@ libfvm_medcoupling.a ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${LDADD_MEDCOUPLING} $(AM_LIBS)
+
+local_libraries_add += fvm_medcoupling.${SHARED_LIB_EXT}
 
 else
 
-libfvm_medcoupling_la_CPPFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/mesh \
-$(MEDCOUPLING_CPPFLAGS) $(MPI_CPPFLAGS)
-libfvm_medcoupling_la_CXXFLAGS = \
-$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
-$(MEDCOUPLING_CXXFLAGS)
-libfvm_medcoupling_la_LIBADD = \
-$(MEDCOUPLING_LDFLAGS) $(MEDCOUPLING_LIBS) \
-$(MEDCOUPLINGRUNPATH)
-libfvm_medcoupling_la_SOURCES = fvm_to_medcoupling.cxx
-noinst_LTLIBRARIES += libfvm_medcoupling.la
-libfvm_filters_la_LIBADD += libfvm_medcoupling.la
+libfvm_filters_a_LIBADD += libfvm_medcoupling_a-fvm_to_medcoupling.$(OBJEXT)
 
 endif
 
@@ -205,41 +203,37 @@ endif
 
 if HAVE_CATALYST
 
-if HAVE_PLUGIN_CATALYST
-
-fvm_catalyst_la_CPPFLAGS = \
+libfvm_catalyst_a_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/mesh \
 $(CATALYST_CPPFLAGS) $(MPI_CPPFLAGS)
-fvm_catalyst_la_CXXFLAGS = \
+libfvm_catalyst_a_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
-$(CATALYST_CXXFLAGS)
-fvm_catalyst_la_LIBADD = \
+$(CATALYST_CXXFLAGS) $(CXXFLAGS_SHARED)
+$(CATALYSTRUNPATH)
+libfvm_catalyst_a_SOURCES = fvm_to_catalyst.cxx \
+                            fvm_to_vtk_histogram.cxx
+noinst_LIBRARIES += libfvm_catalyst.a
+
+if HAVE_PLUGIN_CATALYST
+
+LDADD_CATALYST = \
 $(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
 $(CATALYSTRUNPATH)
-fvm_catalyst_la_SOURCES = fvm_to_catalyst.cxx \
-                          fvm_to_vtk_histogram.cxx
-pkglib_LTLIBRARIES += fvm_catalyst.la
-fvm_catalyst_la_LDFLAGS = -module -avoid-version
+
+fvm_catalyst.${SHARED_LIB_EXT}: libfvm_catalyst.a
+	@echo "Building fvm_catalyst plugin..."
+	rm -f $@ ; \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CXX} -o $@ libfvm_catalyst.a ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${LDADD_CATALYST} $(AM_LIBS)
+
+local_libraries_add += fvm_catalyst.${SHARED_LIB_EXT}
 
 else
 
-libfvm_catalyst_la_CPPFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/mesh \
-$(CATALYST_CPPFLAGS) $(MPI_CPPFLAGS)
-libfvm_catalyst_la_CXXFLAGS = \
-$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
-$(CATALYST_CXXFLAGS)
-libfvm_catalyst_la_LIBADD = \
-$(CATALYST_LDFLAGS) $(CATALYST_LIBS) \
-$(CATALYSTRUNPATH)
-libfvm_catalyst_la_SOURCES = fvm_to_catalyst.cxx \
-                             fvm_to_vtk_histogram.cxx
-noinst_LTLIBRARIES += libfvm_catalyst.la
-libfvm_filters_la_LIBADD += libfvm_catalyst.la
+libfvm_filters_a_LIBADD += \
+libfvm_catalyst_a-fvm_to_catalyst.$(OBJEXT) \
+libfvm_catalyst_a-fvm_to_vtk_histogram.$(OBJEXT)
 
 endif
 
@@ -249,43 +243,71 @@ endif
 
 if HAVE_MELISSA
 
-if HAVE_PLUGIN_MELISSA
-
-fvm_melissa_la_CPPFLAGS = \
+libfvm_melissa_a_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/bft \
 -I$(top_srcdir)/src/mesh \
 $(MELISSA_CPPFLAGS) $(MPI_CPPFLAGS)
-fvm_melissa_la_CXXFLAGS = \
+libfvm_melissa_a_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
-$(MELISSA_CXXFLAGS)
-fvm_melissa_la_LIBADD = \
+$(MELISSA_CXXFLAGS) $(CXXFLAGS_SHARED)
+libfvm_melissa_a_SOURCES = fvm_to_melissa.c
+noinst_LIBRARIES += libfvm_melissa.a
+
+if HAVE_PLUGIN_MELISSA
+
+LDADD_MELISSA = \
 $(MELISSA_LDFLAGS) $(MELISSA_LIBS) \
 $(MELISSARUNPATH)
-fvm_melissa_la_SOURCES = fvm_to_melissa.c
-pkglib_LTLIBRARIES += fvm_melissa.la
-fvm_melissa_la_LDFLAGS = -module -avoid-version
+
+fvm_melissa.${SHARED_LIB_EXT}: libfvm_melissa.a
+	@echo "Building fvm_melissa plugin..."
+	rm -f $@ ; \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} -o $@ libfvm_melissa.a ${LDFLAGS_SHARED} ${LDFLAGS} ${LDADD_MELISSA} $(AM_LIBS)
+
+local_libraries_add += fvm_melissa.${SHARED_LIB_EXT}
 
 else
 
-libfvm_melissa_la_CPPFLAGS = \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/mesh \
-$(MELISSA_CPPFLAGS) $(MPI_CPPFLAGS)
-libfvm_melissa_la_CXXFLAGS = \
-$(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
-$(MELISSA_CXXFLAGS)
-libfvm_melissa_la_LIBADD = \
-$(MELISSA_LDFLAGS) $(MELISSA_LIBS) \
-$(MELISSARUNPATH)
-libfvm_melissa_la_SOURCES = fvm_to_melissa.c
-noinst_LTLIBRARIES += libfvm_melissa.la
-libfvm_filters_la_LIBADD += libfvm_melissa.la
+libfvm_filters_a_LIBADD += libfvm_melissa_a-fvm_to_melissa.$(OBJEXT)
 
 endif
 
 endif
 
-libfvm_la_LDFLAGS = -no-undefined
-libfvm_filters_la_LDFLAGS = -no-undefined
+# Additional rules
+
+all-local: ${local_libraries_add}
+
+clean-local:
+	@list=; for p in ${local_libraries_add}; do \
+	  if test -f $$p; then \
+	    echo "rm -f $$p"; \
+	    rm -f $$p; \
+	  else :; fi; \
+	done
+
+install-exec-local: ${local_libraries_add}
+	@list=; for p in ${local_libraries_add}; do \
+	  if test -f $$p; then \
+	    list="$$list $$p"; \
+	  else :; fi; \
+	done; \
+	test -z "$$list" -a -n "$(pkglibdir)" || { \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(pkglibdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(pkglibdir)" || exit 1; \
+	  echo " cp -fp $$list '$(DESTDIR)$(pkglibdir)'"; \
+	  cp -fpP $$list "$(DESTDIR)$(pkglibdir)"; \
+	}
+
+uninstall-local:
+	@list=; for p in ${local_libraries_add}; do \
+	  if test -f $$p; then \
+	    list="$$list $$p"; \
+	  else :; fi; \
+	done; \
+	for p in $$list; do \
+	  echo " rm -f '$(DESTDIR)$(pkglibdir)/$$p'"; \
+	  rm -f "$(DESTDIR)$(pkglibdir)/$$p"; \
+	done; \
+	rmdir "$(DESTDIR)$(pkglibdir)" || exit 0

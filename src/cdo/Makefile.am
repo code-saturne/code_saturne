@@ -41,13 +41,13 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) $(MPI_CPPFLAGS)
 
-AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
+AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
 
 AM_LDFLAGS =
 
 # Conditionally compiled files relying on PETSc/MUMPS libraries
 
-libcscdo_extension_la_CPPFLAGS =\
+libcscdo_extension_a_CPPFLAGS =\
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/bft  \
 -I$(top_srcdir)/src/fvm  \
@@ -145,8 +145,8 @@ cs_cdo_headers.h
 
 # Library source files
 
-noinst_LTLIBRARIES = libcscdo.la
-libcscdo_la_SOURCES = \
+noinst_LIBRARIES = libcscdo.a
+libcscdo_a_SOURCES = \
 cs_advection_field.c \
 cs_basis_func.c \
 cs_cdo_advection.c \
@@ -216,19 +216,23 @@ cs_xdef.c \
 cs_xdef_cw_eval.c \
 cs_xdef_eval.c
 
-libcscdo_la_LDFLAGS = -no-undefined
+libcscdo_a_LIBADD =
 
-libcscdo_la_LIBADD =
-
-noinst_LTLIBRARIES += libcscdo_extension.la
-libcscdo_la_LIBADD += libcscdo_extension.la
-libcscdo_extension_la_SOURCES = \
+noinst_LIBRARIES += libcscdo_extension.a
+libcscdo_extension_a_SOURCES = \
 cs_cdofb_ac.c \
 cs_cdofb_monolithic_sles.c \
 cs_cdofb_predco.c \
 cs_equation_system_sles.c \
 cs_navsto_param.c \
 cs_navsto_sles.c
+libcscdo_a_LIBADD += \
+libcscdo_extension_a-cs_cdofb_ac.$(OBJEXT) \
+libcscdo_extension_a-cs_cdofb_monolithic_sles.$(OBJEXT) \
+libcscdo_extension_a-cs_cdofb_predco.$(OBJEXT) \
+libcscdo_extension_a-cs_equation_system_sles.$(OBJEXT) \
+libcscdo_extension_a-cs_navsto_param.$(OBJEXT) \
+libcscdo_extension_a-cs_navsto_sles.$(OBJEXT)
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

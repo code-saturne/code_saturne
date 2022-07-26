@@ -47,11 +47,6 @@ else
   echo "running autoconf"
   autoconf
 
-  if [ ! -f config/ltmain.sh ]; then
-    echo "running libtoolize"
-    libtoolize --force --copy
-  fi
-
   echo "running autoheader"
   autoheader
 

@@ -39,7 +39,7 @@ $(FCMODINCLUDE)$(top_builddir)/src/pprt \
 $(FCMODINCLUDE)$(top_builddir)/src/rayt \
 $(FCMODINCLUDE)$(top_builddir)/src/turb \
 $(FCMODINCLUDE)$(top_builddir)/src/user \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT)
+$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -49,8 +49,8 @@ pkginclude_HEADERS =
 
 # Library source files
 
-noinst_LTLIBRARIES = libcscomb.la
-libcscomb_la_SOURCES = \
+noinst_LIBRARIES = libcscomb.a
+libcscomb_a_SOURCES = \
 cs_coal_bcond.f90 \
 cplin1.f90 \
 cplini.f90 \
@@ -107,8 +107,7 @@ cs_fuel_varini.f90 \
 cs_fuel_varpos.f90 \
 cs_fuel_verify.f90 \
 cs_gascomb.f90 \
-cs_physical_properties_combustion_drift.f90 
-libcscomb_la_LDFLAGS = -no-undefined
+cs_physical_properties_combustion_drift.f90
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod
