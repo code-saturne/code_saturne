@@ -88,7 +88,7 @@ cs_reco_conf_vtx_dofs(const cs_cdo_connect_t     *connect,
   double  *crec = *p_crec, *frec = *p_frec;
 
   const cs_adjacency_t  *c2v = connect->c2v;
-  const double  *dcv = quant->dcell_vol;
+  const double  *dcv = quant->pvol_vc;
   const cs_adjacency_t  *f2e = connect->f2e;
   const cs_adjacency_t  *e2v = connect->e2v;
 
@@ -182,7 +182,7 @@ cs_reco_pv_at_cell_centers(const cs_adjacency_t        *c2v,
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     const double  invvol = 1/quant->cell_vol[c_id];
-    const cs_real_t  *dcvol = quant->dcell_vol;
+    const cs_real_t  *dcvol = quant->pvol_vc;
 
     cs_real_t  reco_val = 0;
     for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++) {
@@ -226,7 +226,7 @@ cs_reco_vect_pv_at_cell_centers(const cs_adjacency_t        *c2v,
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     const double  invvol = 1/quant->cell_vol[c_id];
-    const cs_real_t  *dcvol = quant->dcell_vol;
+    const cs_real_t  *dcvol = quant->pvol_vc;
 
     cs_real_t  reco_val[3] = {0, 0, 0};
     for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++) {
@@ -450,7 +450,7 @@ cs_reco_pv_at_cell_center(cs_lnum_t                    c_id,
   assert(c2v != NULL && quant != NULL && c_id > -1);
 
   const double  invvol = 1/quant->cell_vol[c_id];
-  const cs_real_t  *dcvol = quant->dcell_vol;
+  const cs_real_t  *dcvol = quant->pvol_vc;
 
   for (cs_lnum_t jv = c2v->idx[c_id]; jv < c2v->idx[c_id+1]; jv++) {
 
@@ -489,7 +489,7 @@ cs_reco_vect_pv_from_pc(const cs_adjacency_t        *c2v,
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-      const cs_real_t  vc_vol = quant->dcell_vol[j];
+      const cs_real_t  vc_vol = quant->pvol_vc[j];
       cs_real_t  *rval = reco_val + 3*c2v->ids[j];
 
       rval[0] += vc_vol * val[3*c_id];

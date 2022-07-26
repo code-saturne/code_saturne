@@ -371,7 +371,7 @@ _pvsp_by_qov(const cs_real_t    quantity_val,
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_lnum_t  n_cells = quant->n_cells;
   const cs_lnum_t  n_vertices = quant->n_vertices;
-  const cs_real_t  *dc_vol = quant->dcell_vol;
+  const cs_real_t  *dc_vol = quant->pvol_vc;
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
 
   cs_lnum_t  *v_tags = NULL;
@@ -447,7 +447,7 @@ _pvcsp_by_qov(const cs_real_t    quantity_val,
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
   const cs_lnum_t  n_cells = quant->n_cells;
   const cs_lnum_t  n_vertices = quant->n_vertices;
-  const cs_real_t  *dc_vol = quant->dcell_vol;
+  const cs_real_t  *dc_vol = quant->pvol_vc;
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
 
   cs_lnum_t  *v_tags = NULL;
@@ -566,9 +566,9 @@ _dcsd_by_analytic(cs_real_t                        time_eval,
         cs_real_3_t  xe;
         for (int k = 0; k < 3; k++) xe[k] = 0.5 * (xv1[k] + xv2[k]);
 
-        compute_integral(time_eval, xv1, xe, xf, xc, quant->dcell_vol[v1],
+        compute_integral(time_eval, xv1, xe, xf, xc, quant->pvol_vc[v1],
                          ana, input, values + v1);
-        compute_integral(time_eval, xv2, xe, xf, xc, quant->dcell_vol[v2],
+        compute_integral(time_eval, xv2, xe, xf, xc, quant->pvol_vc[v2],
                          ana, input, values + v2);
 
       } /* Loop on edges */
@@ -631,9 +631,9 @@ _dcvd_by_analytic(cs_real_t                        time_eval,
         cs_real_3_t  xe;
         for (int k = 0; k < 3; k++) xe[k] = 0.5 * (xv1[k] + xv2[k]);
 
-        compute_integral(time_eval, xv1, xe, xf, xc, quant->dcell_vol[v1],
+        compute_integral(time_eval, xv1, xe, xf, xc, quant->pvol_vc[v1],
                          ana, input, values + dim*v1);
-        compute_integral(time_eval, xv2, xe, xf, xc, quant->dcell_vol[v2],
+        compute_integral(time_eval, xv2, xe, xf, xc, quant->pvol_vc[v2],
                          ana, input, values + dim*v2);
 
       }  /* Loop on edges */
@@ -1035,7 +1035,7 @@ _dcsd_by_value(const cs_real_t    const_val,
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
   const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  const cs_real_t  *dual_vol = quant->dcell_vol; /* scan by c2v */
+  const cs_real_t  *dual_vol = quant->pvol_vc; /* scan by c2v */
 
   if (elt_ids == NULL) {
 
@@ -1075,7 +1075,7 @@ _dcvd_by_value(const cs_real_t    const_vec[3],
                cs_real_t          values[])
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
-  const cs_real_t  *dual_vol = cs_cdo_quant->dcell_vol; /* scan by c2v */
+  const cs_real_t  *dual_vol = cs_cdo_quant->pvol_vc; /* scan by c2v */
 
   if (elt_ids == NULL) {
 
@@ -2867,7 +2867,7 @@ cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
   else if (cs_flag_test(array_loc, cs_flag_primal_vtx)) {
 
     const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
-    const cs_real_t  *dc_vol = quant->dcell_vol;
+    const cs_real_t  *dc_vol = quant->pvol_vc;
 
 #   pragma omp parallel for reduction(+:result)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)

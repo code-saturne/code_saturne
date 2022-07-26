@@ -248,7 +248,7 @@ _compute_adv_vector_at_vertices(const cs_cdo_quantities_t  *quant,
 
           for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-            const cs_real_t  vc_vol = quant->dcell_vol[j];
+            const cs_real_t  vc_vol = quant->pvol_vc[j];
             cs_real_t  *_val = vtx_values + 3*c2v->ids[j];
 
             _val[0] += vc_vol * cell_vector[0];
@@ -273,7 +273,7 @@ _compute_adv_vector_at_vertices(const cs_cdo_quantities_t  *quant,
 
           for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-            const cs_real_t  vc_vol = quant->dcell_vol[j];
+            const cs_real_t  vc_vol = quant->pvol_vc[j];
             cs_real_t  *_val = vtx_values + 3*c2v->ids[j];
 
             _val[0] += vc_vol * cell_vector[0];
@@ -329,7 +329,7 @@ _compute_adv_vector_at_vertices(const cs_cdo_quantities_t  *quant,
 
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 
-          const cs_real_t  vc_vol = quant->dcell_vol[j];
+          const cs_real_t  vc_vol = quant->pvol_vc[j];
           cs_real_t  *_val = vtx_values + 3*c2v->ids[j];
 
           _val[0] += vc_vol * cell_vector[0];

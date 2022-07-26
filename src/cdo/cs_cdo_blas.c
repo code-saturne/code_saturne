@@ -661,7 +661,7 @@ cs_cdo_blas_dotprod_pvsp(const cs_real_t        *a,
                          const cs_real_t        *b)
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
-  const cs_real_t  *w_c2v = cs_cdo_quant->dcell_vol;
+  const cs_real_t  *w_c2v = cs_cdo_quant->pvol_vc;
 
   _sanity_checks(__func__, c2v, w_c2v);
 
@@ -748,7 +748,7 @@ cs_real_t
 cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array)
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
-  const cs_real_t  *w_c2v = cs_cdo_quant->dcell_vol;
+  const cs_real_t  *w_c2v = cs_cdo_quant->pvol_vc;
 
   _sanity_checks(__func__, c2v, w_c2v);
 
@@ -775,7 +775,7 @@ cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t        *a,
                                   const cs_real_t        *b)
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
-  const cs_real_t  *w_c2v = cs_cdo_quant->dcell_vol;
+  const cs_real_t  *w_c2v = cs_cdo_quant->pvol_vc;
 
   _sanity_checks(__func__, c2v, w_c2v);
 
@@ -864,7 +864,7 @@ double
 cs_cdo_blas_square_norm_2pvsp(const cs_real_t        *array)
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
-  const cs_real_t  *w_c2v = cs_cdo_quant->dcell_vol;
+  const cs_real_t  *w_c2v = cs_cdo_quant->pvol_vc;
 
   _sanity_checks(__func__, c2v, w_c2v);
 
@@ -904,7 +904,7 @@ cs_cdo_blas_dotprod_2pvsp(const cs_real_t        *a,
                           const cs_real_t        *b)
 {
   const cs_adjacency_t  *c2v = cs_cdo_connect->c2v;
-  const cs_real_t  *w_c2v = cs_cdo_quant->dcell_vol;
+  const cs_real_t  *w_c2v = cs_cdo_quant->pvol_vc;
 
   _sanity_checks(__func__, c2v, w_c2v);
 

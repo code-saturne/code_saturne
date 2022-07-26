@@ -977,7 +977,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     if (build_flag & CS_FLAG_COMP_PVQ) {
 
-      const double  *wvc = quant->dcell_vol + c2v_idx[0];
+      const double  *wvc = quant->pvol_vc + c2v_idx[0];
       const double  invvol = 1/cm->vol_c;
       for (short int v = 0; v < cm->n_vc; v++)
         cm->wvc[v] = invvol * wvc[v];

@@ -3055,7 +3055,7 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
 
         cs_real_t  int_cell = 0.;
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          int_cell += cdoq->dcell_vol[j] * p_v[c2v->ids[j]];
+          int_cell += cdoq->pvol_vc[j] * p_v[c2v->ids[j]];
 
         *result += int_cell;
 
@@ -3079,7 +3079,7 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
 
         cs_real_t  int_cell = 0.25*cdoq->cell_vol[c_id]*p_c[c_id];
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          int_cell += 0.75*cdoq->dcell_vol[j] * p_v[c2v->ids[j]];
+          int_cell += 0.75*cdoq->pvol_vc[j] * p_v[c2v->ids[j]];
 
         *result += int_cell;
 

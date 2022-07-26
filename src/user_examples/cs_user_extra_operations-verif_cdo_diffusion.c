@@ -182,7 +182,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
   cs_real_t  pdi_min, pdi_max, pdi_wsum, pdi_asum, pdi_ssum;
 
   cs_evaluate_scatter_array_reduction(1, cdoq->n_vertices, pdi,
-                                      c2v, cdoq->dcell_vol,
+                                      c2v, cdoq->pvol_vc,
                                       &pdi_min,
                                       &pdi_max,
                                       &pdi_wsum,

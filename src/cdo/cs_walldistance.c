@@ -230,9 +230,9 @@ _compute_poisson_cdovb(const cs_cdo_connect_t     *connect,
 
       cs_lnum_t  v_id = c2v->ids[i];
 
-      dualcell_vol[v_id] += cdoq->dcell_vol[i];
+      dualcell_vol[v_id] += cdoq->pvol_vc[i];
       for (int k = 0; k < 3; k++)
-        vtx_gradient[v_id][k] += cdoq->dcell_vol[i]*cell_gradient[k];
+        vtx_gradient[v_id][k] += cdoq->pvol_vc[i]*cell_gradient[k];
 
     } /* Loop on cell vertices */
 

@@ -192,6 +192,7 @@ _create_cdo_quantities(void)
   cdoq->n_vertices = 0;
   cdoq->n_g_vertices = 0;
   cdoq->dcell_vol = NULL;
+  cdoq->pvol_vc = NULL;
 
   /* Shared pointers are not initialized at this stage */
 
@@ -702,7 +703,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
 
   /* Allocate and initialize arrays */
 
-  BFT_MALLOC(quant->dcell_vol, topo->c2v->idx[quant->n_cells], double);
+  BFT_MALLOC(quant->pvol_vc, topo->c2v->idx[quant->n_cells], double);
 
 # pragma omp parallel for shared(quant, topo, c2f, f2e) \
   CS_CDO_OMP_SCHEDULE
@@ -717,7 +718,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
 
     /* Initialize */
 
-    double  *vol_vc = quant->dcell_vol + c2v_idx[0];
+    double  *vol_vc = quant->pvol_vc + c2v_idx[0];
     for (short int v = 0; v < n_vc; v++) vol_vc[v] = 0.0;
 
     for (cs_lnum_t jf = c2f->idx[c_id]; jf < c2f->idx[c_id+1]; jf++) {
@@ -757,6 +758,8 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
     } /* Loop on cell faces */
 
   } /* Loop on cells */
+
+  quant->dcell_vol = quant->pvol_vc;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1214,7 +1217,9 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *cdoq)
   /* Vertex-related quantities
    * vtx_coord is free when the structure cs_mesh_t is destroyed */
 
-  BFT_FREE(cdoq->dcell_vol);
+  BFT_FREE(cdoq->pvol_vc);
+  cdoq->dcell_vol = NULL; /* deprecated but may be used in user extra
+                             operations */
 
   BFT_FREE(cdoq);
 
@@ -1547,7 +1552,7 @@ cs_cdo_quantities_compute_dual_volumes(const cs_cdo_quantities_t   *cdoq,
 
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++)
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-      dual_vol[c2v->ids[j]] += cdoq->dcell_vol[j];
+      dual_vol[c2v->ids[j]] += cdoq->pvol_vc[j];
 }
 
 /*----------------------------------------------------------------------------*/

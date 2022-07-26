@@ -2256,7 +2256,7 @@ _tpf_updates(const cs_mesh_t             *mesh,
 
       cs_real_t  _sat = 0;
       for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-        _sat += mc->l_saturation_submesh[j] * quant->dcell_vol[j];
+        _sat += mc->l_saturation_submesh[j] * quant->pvol_vc[j];
       l_sat[c_id] = _sat/quant->cell_vol[c_id];
 
     } /* Loop on cells */

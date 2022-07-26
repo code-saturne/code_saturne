@@ -721,7 +721,7 @@ _update_precipitation_vb(cs_gwf_tracer_t             *tracer,
     field_val[c_id] = 0;
 
     for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-      field_val[c_id] += quant->dcell_vol[j]*c_p[j];
+      field_val[c_id] += quant->pvol_vc[j]*c_p[j];
     field_val[c_id] = field_val[c_id]/quant->cell_vol[c_id];
 
   } /* Loop on cells */
@@ -871,7 +871,7 @@ _integrate_saturated_tracer(const cs_cdo_connect_t                  *connect,
 
         cs_real_t  _int_value = 0.;
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
-          _int_value += cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
+          _int_value += cdoq->pvol_vc[j] * v_vals[c2v->ids[j]];
         }
 
         int_value += (sat_moisture + tc->rho_kd[s]) * _int_value;
@@ -900,7 +900,7 @@ _integrate_saturated_tracer(const cs_cdo_connect_t                  *connect,
 
         cs_real_t  _int_value = 0.25*cdoq->cell_vol[c_id]*c_vals[c_id];
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          _int_value += 0.75 * cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
+          _int_value += 0.75 * cdoq->pvol_vc[j] * v_vals[c2v->ids[j]];
 
         int_value += (sat_moisture + tc->rho_kd[s]) * _int_value;
 
@@ -969,7 +969,7 @@ _integrate_tracer(const cs_cdo_connect_t                  *connect,
 
         cs_real_t  _int_value = 0.;
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
-          _int_value += cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
+          _int_value += cdoq->pvol_vc[j] * v_vals[c2v->ids[j]];
         }
 
         int_value +=
@@ -997,7 +997,7 @@ _integrate_tracer(const cs_cdo_connect_t                  *connect,
 
         cs_real_t  _int_value = 0.25*cdoq->cell_vol[c_id]*c_vals[c_id];
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
-          _int_value += 0.75 * cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
+          _int_value += 0.75 * cdoq->pvol_vc[j] * v_vals[c2v->ids[j]];
 
         int_value +=
           (moisture_val[c_id] + tc->rho_kd[c2s[c_id]]) * _int_value;
