@@ -180,9 +180,9 @@ _synchronize_reduction(int              dim,
   if (cs_glob_n_ranks < 2)
     return; /* Nothing to do */
 
-  /* Min/Max */
-
   if (dim == 1) {
+
+    /* Min/Max */
 
     cs_real_t  minmax[2] = {-min[0], max[0]};
     cs_parall_max(2, CS_REAL_TYPE, minmax);
@@ -190,24 +190,7 @@ _synchronize_reduction(int              dim,
     min[0] = -minmax[0];
     max[0] = minmax[1];
 
-  }
-  else {
-
-    assert(dim == 3);
-    cs_real_t  minmax[8];
-    for (int i = 0; i < 4; i++)
-      minmax[i] = -min[i], minmax[4+i] = max[i];
-
-    cs_parall_max(8, CS_REAL_TYPE, minmax);
-
-    for (int i = 0; i < 4; i++)
-      min[i] = -minmax[i], max[i] = minmax[4+i];
-
-  }
-
-  /* Sums */
-
-  if (dim == 1) {
+    /* Sums */
 
     cs_real_t  sums[3] = {wsum[0], asum[0], ssum[0]};
     cs_parall_sum(3, CS_REAL_TYPE, sums);
@@ -217,9 +200,19 @@ _synchronize_reduction(int              dim,
     ssum[0] = sums[2];
 
   }
-  else {
+  else if (dim == 3) {
 
-    assert(dim == 3);
+    /* Min/Max */
+
+    cs_real_t  minmax[8];
+    for (int i = 0; i < 4; i++)
+      minmax[i] = -min[i], minmax[4+i] = max[i];
+
+    cs_parall_max(8, CS_REAL_TYPE, minmax);
+
+    for (int i = 0; i < 4; i++)
+      min[i] = -minmax[i], max[i] = minmax[4+i];
+
     cs_real_t  sums[12];
     for (int i = 0; i < 4; i++)
       sums[i] = wsum[i], sums[4+i] = asum[i], sums[8+i] = ssum[i];
@@ -230,6 +223,10 @@ _synchronize_reduction(int              dim,
       wsum[i] = sums[i], asum[i] = sums[4+i], ssum[i] = sums[8+i];
 
   }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid dimension (=%d). Expected 1 or 3.\n",
+              __func__, dim);
 }
 
 /*----------------------------------------------------------------------------*/
