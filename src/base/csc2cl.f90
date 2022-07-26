@@ -283,8 +283,8 @@ do ivar = 1, nvcp
 
       if (ivar.eq.ipr) then
 
-        icodcl(ifac,ivar  ) = 1
-        rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip + p0
+        icodcl(ifac,ivar  ) = -1
+        rcodcl(ifac,ivar,1) = (1.d0-pondj)*xjp + pondj*xip
 
       else if (ivar.eq.iu.or.ivar.eq.iv.or.ivar.eq.iw) then
 
