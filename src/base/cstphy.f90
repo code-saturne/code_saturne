@@ -327,13 +327,13 @@ module cstphy
   !> for the v2f and the \f$k-\omega\f$ models.
   !> Useful if and only if \ref iturb= 20,
   !> 21, 30 or 31 (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$)
-  double precision, save :: ce1
+  real(c_double), pointer, save :: ce1
 
   !> constant \f$C_{\varepsilon 2}\f$ for the \f$k-\varepsilon\f$ and
   !> \f$R_{ij}-\varepsilon\f$ LRR models.
   !> Useful if and only if \ref optcal::iturb "iturb"= 20, 21 or 30
   !> (\f$k-\varepsilon\f$ or \f$R_{ij}-\varepsilon\f$ LRR)
-  double precision, save :: ce2
+  real(c_double), pointer, save :: ce2
 
   !> constant \f$C_{NL1}\f$ for the \f$k-\varepsilon\f$
   !> model from Baglietto et al. (quadratric)
@@ -723,13 +723,13 @@ module cstphy
   !> coefficient of turbulent AFM flow model
   double precision, save :: etaafm
   !> coefficient of turbulent DFM flow model
-  double precision, save :: c1trit
+  real(c_double), pointer, save :: c1trit
   !> coefficient of turbulent DFM flow model
-  double precision, save :: c2trit
+  real(c_double), pointer, save :: c2trit
   !> coefficient of turbulent DFM flow model
-  double precision, save :: c3trit
+  real(c_double), pointer, save :: c3trit
   !> coefficient of turbulent DFM flow model
-  double precision, save :: c4trit
+  real(c_double), pointer, save :: c4trit
   !> constant of GGDH and AFM on the thermal scalar
   double precision, save :: cthafm
   !> constant of GGDH and AFM on the thermal scalar
@@ -842,13 +842,15 @@ module cstphy
     ! turbulence model
 
     subroutine cs_f_turb_model_constants_get_pointers(cmu, cmu025, crij1, crij2, &
-        csmago, xlesfd, smagmx, smagmn, cwale, xlesfl, ales, bles, cdries) &
+        csmago, xlesfd, smagmx, smagmn, cwale, xlesfl, ales, bles, cdries, &
+        ce1, ce2, c1trit, c2trit, c3trit, c4trit) &
       bind(C, name='cs_f_turb_model_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: cmu  , cmu025 , crij1 , crij2
       type(c_ptr), intent(out) :: csmago, xlesfd, smagmx, smagmn
       type(c_ptr), intent(out) :: cwale, xlesfl, ales, bles, cdries
+      type(c_ptr), intent(out) :: ce1, ce2, c1trit, c2trit, c3trit, c4trit
     end subroutine cs_f_turb_model_constants_get_pointers
 
     !---------------------------------------------------------------------------
@@ -978,12 +980,19 @@ contains
     type(c_ptr) :: c_cmu, c_cmu025, c_crij1, c_crij2
     type(c_ptr) :: c_csmago, c_xlesfd, c_smagmx, c_smagmn, c_cwale
     type(c_ptr) :: c_xlesfl, c_ales, c_bles, c_cdries
+    type(c_ptr) :: c_ce1, c_ce2, c_c1trit, c_c2trit, c_c3trit, c_c4trit
 
     call cs_f_turb_model_constants_get_pointers(c_cmu, c_cmu025, c_crij1,    &
                                                 c_crij2, c_csmago, c_xlesfd, &
                                                 c_smagmx, c_smagmn, c_cwale, &
                                                 c_xlesfl, c_ales, c_bles,    &
-                                                c_cdries  )
+                                                c_cdries,                    &
+                                                c_ce1   , &
+                                                c_ce2   , &
+                                                c_c1trit, &
+                                                c_c2trit, &
+                                                c_c3trit, &
+                                                c_c4trit)
 
     call c_f_pointer(c_cmu    , cmu   )
     call c_f_pointer(c_cmu025 , cmu025)
@@ -998,6 +1007,12 @@ contains
     call c_f_pointer(c_ales  , ales  )
     call c_f_pointer(c_bles  , bles  )
     call c_f_pointer(c_cdries, cdries)
+    call c_f_pointer(c_ce1   , ce1   )
+    call c_f_pointer(c_ce2   , ce2   )
+    call c_f_pointer(c_c1trit, c1trit)
+    call c_f_pointer(c_c2trit, c2trit)
+    call c_f_pointer(c_c3trit, c3trit)
+    call c_f_pointer(c_c4trit, c4trit)
 
   end subroutine turb_model_constants_init
 

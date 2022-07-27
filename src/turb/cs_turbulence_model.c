@@ -384,7 +384,7 @@ const cs_turb_les_model_t  *cs_glob_turb_les_model = &_turb_les_model;
  *  (mixing length, \f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$,
  * LES, v2f or \f$k-\omega\f$).
  */
-const double cs_turb_xkappa = 0.42;
+double cs_turb_xkappa = 0.42;
 
 /*!
  * Van Driest constant. (= 25.6)
@@ -393,7 +393,7 @@ const double cs_turb_xkappa = 0.42;
  * "cs_glob_wall_functions::iwallf" = CS_WALL_F_2SCALES_VDRIEST.
  *  (Two scales log law at the wall using Van Driest mixing length expression).
  */
-const double cs_turb_vdriest = 25.6;
+double cs_turb_vdriest = 25.6;
 
 /*!
  * Constant of logarithmic smooth law function:
@@ -404,7 +404,7 @@ const double cs_turb_vdriest = 25.6;
  * Useful if and only if \ref iturb >= 10 (mixing length, \f$k-\varepsilon\f$,
  * \f$R_{ij}-\varepsilon\f$, LES, v2f or \f$k-\omega\f$).
  */
-const double cs_turb_cstlog = 5.2;
+double cs_turb_cstlog = 5.2;
 
 /*!
  * Constant of logarithmic rough law function:
@@ -415,7 +415,7 @@ const double cs_turb_cstlog = 5.2;
  * Useful if and only if \ref iturb >= 10 (mixing length, \f$k-\varepsilon\f$,
  * \f$R_{ij}-\varepsilon\f$, LES, v2f or \f$k-\omega\f$).
  */
-const double cs_turb_cstlog_rough = 8.5;
+double cs_turb_cstlog_rough = 8.5;
 
 /*!
  * Constant \f$ \alpha \f$ for logarithmic law function switching from rough
@@ -429,10 +429,10 @@ const double cs_turb_cstlog_rough = 8.5;
 double cs_turb_cstlog_alpha;
 
 /*! Werner and Wengle coefficient */
-const double cs_turb_apow = 8.3;
+double cs_turb_apow = 8.3;
 
 /*! Werner and Wengle coefficient */
-const double cs_turb_bpow = 1.0/7.0;
+double cs_turb_bpow = 1.0/7.0;
 
 /*! Werner and Wengle coefficient */
 double cs_turb_dpow = -1.;
@@ -497,7 +497,7 @@ double cs_turb_crij3 = 0.55;
  * "cs_turb_rans_model_t::irijec"=1
  * (\f$R_{ij}-\varepsilon\f$ LRR).
  */
-const double cs_turb_crijp1 = 0.50;
+double cs_turb_crijp1 = 0.50;
 
 /*!
  * Constant \f$C_2^\prime\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model,
@@ -505,67 +505,67 @@ const double cs_turb_crijp1 = 0.50;
  * Useful if and only if \ref iturb=30 and \ref cs_turb_rans_model_t::irijec=1
  * (\f$R_{ij}-\varepsilon\f$ LRR).
  */
-const double cs_turb_crijp2 = 0.30;
+double cs_turb_crijp2 = 0.30;
 
 /*!
  * Constant \f$C_{\varepsilon 2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
  * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
-const double cs_turb_cssge2 = 1.83;
+double cs_turb_cssge2 = 1.83;
 
 /*!
  * Constant \f$C_{s1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
  * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
-const double cs_turb_cssgs1 = 1.70;
+double cs_turb_cssgs1 = 1.70;
 
 /*!
  * Constant \f$C_{s2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
  * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
-const double cs_turb_cssgs2 = -1.05;
+double cs_turb_cssgs2 = -1.05;
 
 /*!
  * Constant \f$C_{r1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
  * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
-const double cs_turb_cssgr1 = 0.90;
+double cs_turb_cssgr1 = 0.90;
 
 /*!
  * Constant \f$C_{r2}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
  * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
-const double cs_turb_cssgr2 = 0.80;
+double cs_turb_cssgr2 = 0.80;
 
 /*!
  * Constant \f$C_{r3}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
  * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
-const double cs_turb_cssgr3 = 0.65;
+double cs_turb_cssgr3 = 0.65;
 
 /*!
  * constant \f$C_{r4}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
  * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
-const double cs_turb_cssgr4 = 0.625;
+double cs_turb_cssgr4 = 0.625;
 
 /*!
  * Constant \f$C_{r1}\f$ for the \f$R_{ij}-\varepsilon\f$ SSG model.
  * Useful if and only if \ref iturb=31 (\f$R_{ij}-\varepsilon\f$ SSG).
  */
-const double cs_turb_cssgr5 = 0.20;
+double cs_turb_cssgr5 = 0.20;
 
 /*! Constant of the Rij-epsilon EBRSM. */
-const double cs_turb_cebms1 = 1.70;
+double cs_turb_cebms1 = 1.70;
 
 /*! Constant of the Rij-epsilon EBRSM. */
-const double cs_turb_cebms2 = 0.;
+double cs_turb_cebms2 = 0.;
 
-const double cs_turb_cebmr1 = 0.90;
-const double cs_turb_cebmr2 = 0.80;
-const double cs_turb_cebmr3 = 0.65;
-const double cs_turb_cebmr4 = 0.625;
-const double cs_turb_cebmr5 = 0.20;
+double cs_turb_cebmr1 = 0.90;
+double cs_turb_cebmr2 = 0.80;
+double cs_turb_cebmr3 = 0.65;
+double cs_turb_cebmr4 = 0.625;
+double cs_turb_cebmr5 = 0.20;
 
 /*!
  * Constant \f$C_s\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
@@ -574,86 +574,85 @@ const double cs_turb_cebmr5 = 0.20;
 double cs_turb_csrij;
 
 /*! Constant of the Rij-epsilon EBRSM. */
-const double cs_turb_cebme2 = 1.83;
+double cs_turb_cebme2 = 1.83;
 
 /*! Constant of the Rij-epsilon EBRSM. */
-const double cs_turb_cebmmu = 0.22;
+double cs_turb_cebmmu = 0.22;
 
 /*! Constant of the Rij-epsilon EBRSM. */
-const double cs_turb_xcl = 0.122;
+double cs_turb_xcl = 0.122;
 
 /*! Constant in the expression of Ce1' for the Rij-epsilon EBRSM. */
-const double cs_turb_xa1 = 0.1;
+double cs_turb_xa1 = 0.1;
 
 /*! Constant of the Rij-epsilon EBRSM. */
-const double cs_turb_xct = 6.0;
+double cs_turb_xct = 6.0;
 
 /*! Constant of the Rij-epsilon EBRSM. */
-const double cs_turb_xceta = 80.0;
+double cs_turb_xceta = 80.0;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-const double cs_turb_cpale1 = 1.44;
+double cs_turb_cpale1 = 1.44;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-const double cs_turb_cpale2 = 1.83;
+double cs_turb_cpale2 = 1.83;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-const double cs_turb_cpale3 = 2.3;
+double cs_turb_cpale3 = 2.3;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-const double cs_turb_cpale4 = 0.4;
+double cs_turb_cpale4 = 0.4;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-const double cs_turb_cpalc1 = 1.7;
+double cs_turb_cpalc1 = 1.7;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-const double cs_turb_cpalc2 = 0.9;
+double cs_turb_cpalc2 = 0.9;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-const double cs_turb_cpalct = 4.0;
+double cs_turb_cpalct = 4.0;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-const double cs_turb_cpalcl = 0.164;
+double cs_turb_cpalcl = 0.164;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-const double cs_turb_cpalet = 75.0;
+double cs_turb_cpalet = 75.0;
 
 /*!
  * Constant \f$\sigma_{k1}\f$ for the \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60.
  */
-const double cs_turb_ckwsk1 = 1.0/0.85;
+double cs_turb_ckwsk1 = 1.0/0.85;
 
 /*!
  * Constant \f$\sigma_{k2}\f$ for the \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60.
  */
-const double cs_turb_ckwsk2 = 1.0;
+double cs_turb_ckwsk2 = 1.0;
 
 /*!
  * Constant \f$\sigma_{\omega 1}\f$ for the \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
  */
-const double cs_turb_ckwsw1 = 2.0;
+double cs_turb_ckwsw1 = 2.0;
 
 /*!
  * Constant \f$\sigma_{\omega 2}\f$ for the \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
  */
-const double cs_turb_ckwsw2 = 1.0/0.856;
+double cs_turb_ckwsw2 = 1.0/0.856;
 
 /*!
  * Constant \f$\beta_1\f$ for the \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
  */
-const double cs_turb_ckwbt1 = 0.075;
+double cs_turb_ckwbt1 = 0.075;
 
 /*!
  * Constant \f$\beta_2\f$ for the \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
  */
-const double cs_turb_ckwbt2 = 0.0828;
-
+double cs_turb_ckwbt2 = 0.0828;
 
 /*!
  * \f$\frac{\beta_1}{C_\mu}-\frac{\kappa^2}{\sqrt{C_\mu}\sigma_{\omega 1}}\f$.
@@ -682,14 +681,14 @@ double cs_turb_ckwgm2 = -1.;
  * Constant \f$a_1\f$ for the \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
  */
-const double cs_turb_ckwa1 = 0.31;
+double cs_turb_ckwa1 = 0.31;
 
 /*!
  * Constant \f$ c_1 \f$ for the \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST).
  * Specific constant of k-omega SST.
  */
-const double cs_turb_ckwc1 = 10.0;
+double cs_turb_ckwc1 = 10.0;
 
 /*!
  * Constant \f$ C_{DDES} \f$ for the \f$k-\omega\f$ SST model.
@@ -701,32 +700,32 @@ double cs_turb_cddes = -1.;
  * Constant \f$ C_{SAS}\f$ for the hybrid \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=3.
  */
-const double cs_turb_csas = 0.11;
+double cs_turb_csas = 0.11;
 
 /*! constant \f$ C_{DDES}\f$ for the hybrid \f$k-\omega\f$ SST model.
  * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=3.
  */
-const double cs_turb_csas_eta2 = 3.51;
+double cs_turb_csas_eta2 = 3.51;
 
 /*!
  * Specific constant of Spalart-Allmaras.
  */
-const double cs_turb_csab1 = 0.1355;
+double cs_turb_csab1 = 0.1355;
 
 /*!
  * Specific constant of Spalart-Allmaras.
  */
-const double cs_turb_csab2 = 0.622;
+double cs_turb_csab2 = 0.622;
 
 /*!
  * Specific constant of Spalart-Allmaras.
  */
-const double cs_turb_csasig = 2.0/3.0;
+double cs_turb_csasig = 2.0/3.0;
 
 /*!
  * Specific constant of Spalart-Allmaras.
  */
-const double cs_turb_csav1 = 7.1;
+double cs_turb_csav1 = 7.1;
 
 /*!
  * Specific constant of Spalart-Allmaras.
@@ -736,57 +735,57 @@ double cs_turb_csaw1 = -1.;
 /*!
  * Specific constant of Spalart-Allmaras.
  */
-const double cs_turb_csaw2 = 0.3;
+double cs_turb_csaw2 = 0.3;
 
 /*!
  * Specific constant of Spalart-Allmaras.
  */
-const double cs_turb_csaw3 = 2.0;
+double cs_turb_csaw3 = 2.0;
 
 /*!
  * Constant of the Spalart-Shur rotation/curvature correction.
  */
-const double cs_turb_cssr1 = 1.0;
+double cs_turb_cssr1 = 1.0;
 
 /*!
  * Constant of the Spalart-Shur rotation/curvature correction.
  */
-const double cs_turb_cssr2 = 2.0;
+double cs_turb_cssr2 = 2.0;
 
 /*!
  * Constant of the Spalart-Shur rotation/curvature correction.
  */
-const double cs_turb_cssr3 = 1.0;
+double cs_turb_cssr3 = 1.0;
 
 /*!
  * Constants of the Cazalbou rotation/curvature correction.
  */
-const double cs_turb_ccaze2 = 1.83;
+double cs_turb_ccaze2 = 1.83;
 
 /*!
  * Constants of the Cazalbou rotation/curvature correction.
  */
-const double cs_turb_ccazsc = 0.119;
+double cs_turb_ccazsc = 0.119;
 
 /*!
  * Constants of the Cazalbou rotation/curvature correction.
  */
-const double cs_turb_ccaza = 4.3;
+double cs_turb_ccaza = 4.3;
 
 /*!
  * Constants of the Cazalbou rotation/curvature correction.
  */
-const double cs_turb_ccazb = 5.130;
+double cs_turb_ccazb = 5.130;
 
 /*!
  * Constants of the Cazalbou rotation/curvature correction.
  */
-const double cs_turb_ccazc = 0.453;
+double cs_turb_ccazc = 0.453;
 
 /*!
  * Constants of the Cazalbou rotation/curvature correction.
  */
-const double cs_turb_ccazd = 0.682;
+double cs_turb_ccazd = 0.682;
 
 /*!
  * Constant used in the definition of LES filtering diameter:
@@ -796,7 +795,7 @@ const double cs_turb_ccazd = 0.682;
  * \f$\overline{\Delta}=xlesfl(ales*|\Omega_i|)^{bles}\f$\n
  * Useful if and only if \ref iturb = 40 or 41
  */
-const double cs_turb_xlesfl = 2.0;
+double cs_turb_xlesfl = 2.0;
 
 /*!
  * Constant used to define, for each cell \f$\Omega_i\f$, the width of
@@ -805,7 +804,7 @@ const double cs_turb_xlesfl = 2.0;
  *
  * Useful if and only if \ref iturb = 40 or 41.
  */
-const double cs_turb_ales = 1.0;
+double cs_turb_ales = 1.0;
 
 /*!
  * Constant used to define, for each cell \f$Omega_i\f$, the width of
@@ -814,7 +813,7 @@ const double cs_turb_ales = 1.0;
  *
  * Useful if and only if \ref iturb = 40 or 41.
  */
-const double cs_turb_bles = 1.0/3.0;
+double cs_turb_bles = 1.0/3.0;
 
 /*!
  * Smagorinsky constant used in the Smagorinsky model for LES.
@@ -873,53 +872,53 @@ double cs_turb_cdries = 26.0;
  * Constant \f$a_1\f$ for the v2f \f$\varphi\f$-model.
  * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
  */
-const double cs_turb_cv2fa1 = 0.05;
+double cs_turb_cv2fa1 = 0.05;
 
 /*!
  * Constant \f$C_{\varepsilon 2}\f$ for the v2f \f$\varphi\f$-model.
  * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
  */
-const double cs_turb_cv2fe2 = 1.85;
+double cs_turb_cv2fe2 = 1.85;
 
 /*!
  * Constant \f$C_1\f$ for the v2f \f$\varphi\f$-model.
  * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
  */
-const double cs_turb_cv2fc1 = 1.4;
+double cs_turb_cv2fc1 = 1.4;
 
 /*!
  * Constant \f$C_2\f$ for the v2f \f$\varphi\f$-model.
  * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
  */
-const double cs_turb_cv2fc2 = 0.3;
+double cs_turb_cv2fc2 = 0.3;
 
 /*!
  * Constant \f$C_T\f$ for the v2f \f$\varphi\f$-model.
  * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
  */
-const double cs_turb_cv2fct = 6.0;
+double cs_turb_cv2fct = 6.0;
 
 /*!
  * Constant \f$C_L\f$ for the v2f \f$\varphi\f$-model.
  * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
  */
-const double cs_turb_cv2fcl = 0.25;
+double cs_turb_cv2fcl = 0.25;
 
 /*!
  * Constant \f$C_\eta\f$ for the v2f \f$\varphi\f$-model.
  * Useful if and only if \ref iturb=50 (v2f \f$\varphi\f$-model).
  */
-const double cs_turb_cv2fet = 110.0;
+double cs_turb_cv2fet = 110.0;
 
 /*!
  * Constants for the Baglietto et al. quadratic k-epsilon model.
  * Useful if and only if \ref iturb = CS_TURB_K_EPSILON_QUAD
  */
-const double cs_turb_cnl1 = 0.8;
-const double cs_turb_cnl2 = 11.;
-const double cs_turb_cnl3 = 4.5;
-const double cs_turb_cnl4 = 1e3;
-const double cs_turb_cnl5 = 1.;
+double cs_turb_cnl1 = 0.8;
+double cs_turb_cnl2 = 11.;
+double cs_turb_cnl3 = 4.5;
+double cs_turb_cnl4 = 1e3;
+double cs_turb_cnl5 = 1.;
 
 /*!
  * Constant of the WALE LES method.
@@ -929,42 +928,42 @@ double cs_turb_cwale = 0.25;
 /*!
  * Coefficient of turbulent AFM flow model.
  */
-const double cs_turb_xiafm = 0.7;
+double cs_turb_xiafm = 0.7;
 
 /*!
  * Coefficient of turbulent AFM flow model.
  */
-const double cs_turb_etaafm = 0.4;
+double cs_turb_etaafm = 0.4;
 
 /*!
  * Coefficient of turbulent DFM flow model.
  */
-const double cs_turb_c1trit = 4.15;
+double cs_turb_c1trit = 4.15;
 
 /*!
  * Coefficient of turbulent DFM flow model.
  */
-const double cs_turb_c2trit = 0.55;
+double cs_turb_c2trit = 0.55;
 
 /*!
  * Coefficient of turbulent DFM flow model.
  */
-const double cs_turb_c3trit= 0.5;
+double cs_turb_c3trit= 0.5;
 
 /*!
  * Coefficient of turbulent DFM flow model.
  */
-const double cs_turb_c4trit = 0.;
+double cs_turb_c4trit = 0.;
 
 /*!
  * Constant of GGDH and AFM on the thermal scalar.
  */
-const double cs_turb_cthafm = 0.236;
+double cs_turb_cthafm = 0.236;
 
 /*!
  * Constant of GGDH and AFM on the thermal scalar.
  */
-const double cs_turb_cthdfm = 0.31;
+double cs_turb_cthdfm = 0.31;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -1014,11 +1013,16 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **smagmx,
                                        double  **smagmn,
                                        double  **cwale,
-                                       const double  **xlesfl,
-                                       const double  **ales,
-                                       const double  **bles,
-                                       double  **cdries
-                                       );
+                                       double  **xlesfl,
+                                       double  **ales,
+                                       double  **bles,
+                                       double  **cdries,
+                                       double  **ce1   ,
+                                       double  **ce2   ,
+                                       double  **c1trit,
+                                       double  **c2trit,
+                                       double  **c3trit,
+                                       double  **c4trit);
 
 /*============================================================================
  * Private function definitions
@@ -1169,6 +1173,7 @@ cs_f_turb_reference_values(double  **almax,
  *   ales   --> pointer to cs_turb_ales
  *   bles   --> pointer to cs_turb_bles
  *   cdries --> pointer to cs_turb_cdries
+ *   and so on
  *----------------------------------------------------------------------------*/
 
 void
@@ -1181,10 +1186,16 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **smagmx,
                                        double  **smagmn,
                                        double  **cwale,
-                                       const double  **xlesfl,
-                                       const double  **ales,
-                                       const double  **bles,
-                                       double  **cdries)
+                                       double  **xlesfl,
+                                       double  **ales,
+                                       double  **bles,
+                                       double  **cdries,
+                                       double  **ce1   ,
+                                       double  **ce2   ,
+                                       double  **c1trit,
+                                       double  **c2trit,
+                                       double  **c3trit,
+                                       double  **c4trit)
 {
   *cmu    = &cs_turb_cmu;
   *cmu025 = &cs_turb_cmu025;
@@ -1200,6 +1211,12 @@ cs_f_turb_model_constants_get_pointers(double  **cmu,
   *ales  = &cs_turb_ales;
   *bles  = &cs_turb_bles;
   *cdries= &cs_turb_cdries;
+  *ce1   = &cs_turb_ce1;
+  *ce2   = &cs_turb_ce2;
+  *c1trit= &cs_turb_c1trit;
+  *c2trit= &cs_turb_c2trit;
+  *c3trit= &cs_turb_c3trit;
+  *c4trit= &cs_turb_c4trit;
 }
 
 /*============================================================================

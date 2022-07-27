@@ -656,8 +656,6 @@ cpow    = apow**(2.d0/(1.d0-bpow))
 dpow    = 1.d0/(1.d0+bpow)
 
 !   pour le k-epsilon
-ce1     = 1.44d0
-ce2     = 1.92d0
 ce4     = 1.20d0
 
 !   pour le k-epsilon quadratic (Baglietto)
@@ -765,12 +763,6 @@ do iscal = 1, nscamx
   iclvfl(iscal) = -1
   rvarfl(iscal) = 0.8d0
 enddo
-
-! For the turbulent fluxes of the scalar
-c1trit = 4.15d0
-c2trit = 0.55d0
-c3trit = 0.5d0
-c4trit = 0.d0
 
 ! For the AFM model (Algebraic flux model)
 xiafm  = 0.7d0
