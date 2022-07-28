@@ -152,7 +152,7 @@ $\Gamma$ est le terme source de masse\footnote{Dans ce cas, l'\'equation de cont
 utilisateur (sous-programme \fort{cs\_user\_turbulence\_source\_terms}) \'eventuel avec une d\'ecomposition
 permettant d'impliciter la partie $\alpha_{R_{ij}}\,R_{ij}$ si $\alpha_{R_{ij}} \geqslant 0$.
 
-De m\^eme, on r\'esout une \'equation de convection/diffusion/termes sources pour la dissipation $\varepsilon$. Cette \'equation est tr\`es semblable \`a celle du mod\`ele $k-\varepsilon$ (voir \fort{turbke}), seuls les termes de viscosit\'e turbulente et de gravit\'e changent. On r\'esout :
+De m\^eme, on r\'esout une \'equation de convection/diffusion/termes sources pour la dissipation $\varepsilon$. Cette \'equation est tr\`es semblable \`a celle du mod\`ele $k-\varepsilon$ (voir \fort{cs\_turbulence\_ke}), seuls les termes de viscosit\'e turbulente et de gravit\'e changent. On r\'esout :
 
 \begin{equation}
 \begin{array} {ll}
@@ -939,7 +939,7 @@ harmonique aux faces. Est-ce que ceci est valable puisque les interpolations
 utilis\'ees lors du calcul de la partie explicite de $\tens{A}\,\grad{\phi}$
 sont des moyennes arithm\'etiques ?}
 \item {Les techniques adopt\'ees lors du clipping sont \`a revoir.}
-\item {On utilise dans le cadre du mod\`ele $\displaystyle R_{ij}-\varepsilon $ une semi-implicitation de termes comme $\displaystyle \phi_{ij,1}$ ou $\displaystyle -\rho\,C_{\varepsilon_2}\,\frac{\varepsilon}{k}\,\varepsilon$. On peut envisager le m\^eme type d'implicitation dans \fort{turbke} m\^eme en pr\'esence du couplage $\displaystyle k-\varepsilon$.}
+\item {On utilise dans le cadre du mod\`ele $\displaystyle R_{ij}-\varepsilon $ une semi-implicitation de termes comme $\displaystyle \phi_{ij,1}$ ou $\displaystyle -\rho\,C_{\varepsilon_2}\,\frac{\varepsilon}{k}\,\varepsilon$. On peut envisager le m\^eme type d'implicitation dans \fort{cs\_turbulence\_ke} m\^eme en pr\'esence du couplage $\displaystyle k-\varepsilon$.}
 \item L'adoption d'une r\'esolution d\'ecoupl\'ee fait perdre l'invariance par rotation.
 \item La formulation et l'implantation des conditions aux limites de paroi
 devront \^etre v\'erifi\'ees. En effet, il semblerait que, dans certains cas, des ph\'enom\`enes

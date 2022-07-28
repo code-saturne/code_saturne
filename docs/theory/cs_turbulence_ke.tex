@@ -20,17 +20,17 @@
 
 %-------------------------------------------------------------------------------
 
-\programme{turbke}\label{ap:turbke}
+\programme{cs\_turbulence\_ke}\label{ap:turbke}
 
-\hypertarget{turbke}{}
+\hypertarget{cs\_turbulence\_ke}{}
 
 \vspace{1cm}
 %-------------------------------------------------------------------------------
-\section*{Fonction}
+\section*{Function}
 %-------------------------------------------------------------------------------
-Le but de ce sous-programme est de r\'esoudre le syst\`eme des \'equations de
-$k$ et $\varepsilon$ de mani\`ere semi-coupl\'ee.\\
-Le syst\`eme d'\'equations r\'esolu est le suivant :
+The purpose of this function is to solve the system of \'equations of
+$k$ and $\varepsilon$ in a semi-coupl\'ed manner.\\
+The system of equations solved is the following:
 
 \begin{equation}
 \left\{\begin{array}{l}
@@ -53,7 +53,7 @@ C_{\varepsilon_1}\frac{\varepsilon}{k}\left[\mathcal{P}
 \end{array}\right.
 \end{equation}
 
-$\mathcal{P}$ est le terme de production par cisaillement moyen :
+$\mathcal{P}$ is the term of production by mean shear stress:
 \begin{displaymath}
 \begin{array}{rcl}
 \mathcal{P} & = & \displaystyle -\rho R_{ij}\frac{\partial u_i}{\partial x_j}
@@ -78,45 +78,41 @@ $\mathcal{P}$ est le terme de production par cisaillement moyen :
 \end{array}
 \end{displaymath}
 
-$\mathcal{G}$ est le terme de production par gravit\'e :
+$\mathcal{G}$ is the gravity production term:
 $\displaystyle
 \mathcal{G}=-\frac{1}{\rho}\frac{\mu_t}{\sigma_t}
 \frac{\partial\rho}{\partial x_i}g_i$
 
-La viscosit\'e turbulente est
+The turbulent viscosity is
 $\displaystyle \mu_t=\rho C_\mu\frac{k^2}{\varepsilon}$.
 
-Les constantes sont :\\
+The constants are:\\
 $C_\mu=0,09$ ;
 $C_{\varepsilon_2}=1,92$ ; $\sigma_k=1$ ; $\sigma_\varepsilon=1,3$\\
-$C_{\varepsilon_3}=0$ si $\mathcal{G}\geqslant0$ (stratification instable) et
+$C_{\varepsilon_3}=0$ si $\mathcal{G}\geqslant0$ (stratification unstable) et
 $C_{\varepsilon_3}=1$ si $\mathcal{G}\leqslant0$ (stratification stable).
 
-$\Gamma$ est un \'eventuel terme source de masse (tel que l'\'equation de
-conservation de masse devienne
+$\Gamma$ is a possible mass source term (such that the mass conservation equation becomes
 $\displaystyle \frac{\partial \rho}{\partial t}+\dive(\rho\vect{u})=\Gamma$).
-$\varphi_i$ ($\varphi=k$ ou $\varepsilon$) est la valeur de $\varphi$
-associ\'ee \`a la masse inject\'ee ou retir\'ee. Dans le cas o\`u on retire de
-la masse ($\Gamma<0$), on a forc\'ement $\varphi_i=\varphi$. De m\^eme, quand on
-injecte de la masse, on sp\'ecifie souvent aussi $\varphi_i=\varphi$. Dans ces
-deux cas, le terme dispara\^\i t de l'\'equation. Dans la suite du document, on
-qualifiera d'{\em injection forc\'ee} les cas o\`u on a $\Gamma>0$ et
+$\varphi_i$ ($\varphi=k$ or $\varepsilon$) is the value of $\varphi$
+associated with the injected or extracted mass. In the case where we remove
+mass ($\Gamma<0$), we necessarily have $\varphi_i=\varphi$.
+Similarly, when we inject mass, we also often specifies $\varphi_i=\varphi$.y
+In these two cases, the term disappears from the equation. In the following sections,
+we will qualify as {\em forced injection} the cases where we have $\Gamma>0$ and
 $\varphi_i\ne\varphi$.
 
-$\alpha_k$, $\beta_k$, $\alpha_\varepsilon$, $\beta_\varepsilon$ sont des termes
-sources utilisateur \'eventuels, conduisant \`a une implicitation partielle, impos\'es le cas
-\'ech\'eant par le sous-programme \fort{ustske}.
-
-See the \doxygenfile{turbke_8f90.html}{programmers reference of the dedicated subroutine} for further details.
+$\alpha_k$, $\beta_k$, $\alpha_\varepsilon$, $\beta_\varepsilon$ are possible
+user source terms, leading to partial implication,
+imposed if necessary by the function \fort{cs\_user\_source\_terms}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discr\'etisation}
+\section*{Discretization}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-La r\'esolution se fait en trois \'etapes, afin de coupler partiellement les
-deux variables $k$ et $\varepsilon$. Pour simplifier, r\'e\'ecrivons le
-syst\`eme de la fa\c con suivante :
+The resolution is done in three steps, in order to partially couple the two variables
+$k$ and $\varepsilon$. For simplicty, let us rewrite the system as follows:
 
 \begin{equation}
 \left\{\begin{array}{l}
@@ -131,12 +127,12 @@ D(\varepsilon) + S_\varepsilon(k,\varepsilon)
 \end{array}\right.
 \end{equation}
 
-$D$ est l'op\'erateur de convection/diffusion.
-$S_k$ (resp. $S_\varepsilon$) est le terme source de $k$ (resp. $\varepsilon$).
+$D$ is the convection/diffusion operator.
+$S_k$ (resp. $S_\varepsilon$) is the source term of $k$ (resp. $\varepsilon$).
 
-\minititre{Premi\`ere phase : bilan explicite}
+\minititre{First step: explicit balance}
 
-On r\'esout le bilan explicite :
+We solve the explicit balance:
 \begin{equation}
 \left\{\begin{array}{l}
 \displaystyle
@@ -152,11 +148,11 @@ D(\varepsilon^{(n)}) + S_\varepsilon(k^{(n)},\varepsilon^{(n)})
 \end{array}\right.
 \end{equation}
 
-(le terme en $\Gamma$ n'est pris en compte que dans le cas de l'injection forc\'ee)
+(the term in $\Gamma$ is only taken into account in the case of forced injection)
 
-\minititre{Deuxi\`eme phase : couplage des termes sources}
+\minititre{Second step: coupling of source terms}
 
-On implicite les termes sources de mani\`ere coupl\'ee :
+The source terms are implicit in a coupled way:
 \begin{equation}
 \left\{\begin{array}{l}
 \displaystyle
@@ -171,7 +167,7 @@ D(\varepsilon^{(n)}) + S_\varepsilon(k_{ts},\varepsilon_{ts})
 +\alpha_\varepsilon \varepsilon^{(n)} +\beta_\varepsilon
 \end{array}\right.
 \end{equation}
-soit
+so:
 \begin{equation}
 \left\{\begin{array}{l}
 \displaystyle
@@ -185,12 +181,12 @@ soit
 \end{array}\right.
 \end{equation}
 
-Le terme en $\dive(\rho\vect{u})$ n'est pas implicit\'e car il est li\'e au
-terme $D$ pour assurer que la matrice d'implicitation sera \`a diagonale
-dominante. Le terme en $\Gamma$ et les termes sources utilisateur ne sont
-pas implicit\'es non plus, mais ils le seront dans la troisi\`eme phase.
+The term in $\dive(\rho\vect{u})$ is not  implicit because it is linked to the
+$D$ terms to ensure that the implication matrix
+will be diagonally dominant. The term in $\Gamma$ and the user source
+terms are not implicit either more, but they will be in the third step.
 
-Et on \'ecrit (pour $\varphi=k$ ou $\varepsilon$)
+And we write (for $\varphi=k$ or $\varepsilon$)
 \begin{equation}
 S_\varphi(k_{ts},\varepsilon_{ts})-S_\varphi(k^{(n)},\varepsilon^{(n)})
 =(k_{ts}-k^{(n)})
@@ -199,7 +195,7 @@ S_\varphi(k_{ts},\varepsilon_{ts})-S_\varphi(k^{(n)},\varepsilon^{(n)})
 \left.\frac{\partial S_\varphi}{\partial \varepsilon}\right|_{k^{(n)},\varepsilon^{(n)}}
 \end{equation}
 
-On r\'esout donc finalement le syst\`eme $2\times 2$ :
+So we finally solve the system $2\times 2$:
 \begin{equation}
 \left(\begin{array}{cc}
 \displaystyle \frac{\rho^{(n)}}{\Delta t}
@@ -223,9 +219,9 @@ On r\'esout donc finalement le syst\`eme $2\times 2$ :
 
 \vspace*{0.2cm}
 
-\minititre{Troisi\`eme phase : implicitation de la convection/diffusion}
+\minititre{Third step: implicit convection/diffusion}
 
-On r\'esout le syst\`eme :
+We solve the system:
 \begin{equation}
 \left\{\begin{array}{l}
 \displaystyle
@@ -259,16 +255,15 @@ D(\varepsilon^{(n+1)})-D(\varepsilon^{(n)})
 \end{array}\right.
 \end{equation}
 
-Le terme en $\Gamma$ n'est l\`a encore pris en compte que dans le cas de
-l'injection forc\'ee. Le terme en $\alpha$ n'est pris en compte que si $\alpha$ est
-n\'egatif, pour \'eviter d'affaiblir la diagonale de la matrice qu'on va
-inverser.
+The term in $\Gamma$ is not yet taken into account except in the case of
+forced injection. The term in $\alpha$ is only taken into account if $\alpha$ is
+negative, to avoid weakening the diagonal of the matrix that we are going to
+invert.
 
-
-\minititre{Pr\'ecisions sur le couplage}
-Lors de la phase de couplage, afin de privil\'egier la stabilit\'e et la
-r\'ealisabilit\'e du r\'esultat, tous les termes ne sont pas pris en
-compte. Plus pr\'ecis\'ement, on peut \'ecrire :
+\minititre{Coupling details}
+During the coupling step, in order to favor stability and
+realizability of the result, not all terms are taken into account
+account. More precisely, we can write:
 
 \begin{equation}
 \left\{\begin{array}{l}
@@ -286,17 +281,17 @@ S_\varepsilon =
 \end{array}\right.
 \end{equation}
 
-en notant
+Noting
 $\displaystyle\tilde{\mathcal{P}}
 = \left(\frac{\partial u_i}{\partial x_j} +
 \frac{\partial u_j}{\partial x_i}\right)\frac{\partial u_i}{\partial x_j}
 -\frac{2}{3}(\dive\vect{u})^2$\\
-et
+and
 $\displaystyle\tilde{\mathcal{G}}
 = -\frac{1}{\rho\sigma_t}
 \frac{\partial\rho}{\partial x_i}g_i$
 
-On a donc en th\'eorie
+We therefore have in theory
 \begin{equation}
 \left\{\begin{array}{l}
 \displaystyle \frac{\partial S_k}{\partial k}=
@@ -313,10 +308,10 @@ On a donc en th\'eorie
 \end{array}\right.
 \end{equation}
 
-En pratique, on va chercher \`a assurer $k_{ts}>0$ et $\varepsilon_{ts}>0$. En se
-basant sur un calcul simplifi\'e, ainsi que sur le retour d'exp\'erience
-d'ESTET, on montre qu'il est pr\'ef\'erable de ne pas prendre en compte
-certains termes. Au final, on r\'ealise le couplage suivant :
+In practice, we will try to ensure $k_{ts}>0$ and $\varepsilon_{ts}>0$. In itself
+based on a simplified calculation, as well as on feedback
+of ESTET, we show that it is preferable not to take into account
+certain terms. In the end, we realize the following coupling:
 
 \begin{equation}
 \left(\begin{array}{cc}
@@ -331,7 +326,7 @@ A_{21}&A_{22}
 \displaystyle\frac{\varepsilon_e-\varepsilon^{(n)}}{\Delta t}
 \end{array}\right)
 \end{equation}
-avec
+with
 \begin{equation}
 \left\{\begin{array}{l}
 \displaystyle A_{11}=\frac{1}{\Delta t}
@@ -349,20 +344,20 @@ avec
 \end{array}\right.
 \end{equation}
 
-(par d\'efinition de $C_{\varepsilon_3}$,
+(by definition of $C_{\varepsilon_3}$,
 $\tilde{\mathcal{P}}+(1-C_{\varepsilon_3})\tilde{\mathcal{G}}$
-est toujours positif)
+is always positive)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Mise en \oe uvre}
+\section*{Implementation}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\etape{Calcul du terme de production}
-On appelle trois fois \fort{grdcel} pour calculer les gradients de $u$, $v$ et
-$w$. Au final, on a \\
-$\displaystyle \var{TINSTK}=
+\etape{Calculation of the production term}
+We call \fort{cs\_field\_gradient\_vector} to calculate the gradients of velocity.
+In the end, we have \\
+$\displaystyle \var{tinstk}=
 2\left(\frac{\partial u}{\partial x}\right)^2+
 2\left(\frac{\partial v}{\partial y}\right)^2+
 2\left(\frac{\partial w}{\partial z}\right)^2+
@@ -370,108 +365,105 @@ $\displaystyle \var{TINSTK}=
 \left(\frac{\partial u}{\partial z}+\frac{\partial w}{\partial x}\right)^2+
 \left(\frac{\partial v}{\partial z}+\frac{\partial w}{\partial y}\right)^2$\\
 et\\
-$\displaystyle \var{DIVU}=
+$\displaystyle \var{divu}=
 \frac{\partial u}{\partial x}+\frac{\partial v}{\partial y}
 +\frac{\partial w}{\partial z}$
 
-(le terme $div(\vect{u})$ n'est pas calcul\'e par \fort{divmas}, pour
-correspondre exactement \`a la trace du tenseur des d\'eformations qui est
-calcul\'e pour la production)
+(the term $div(\vect{u})$ is not calculated by \fort{cs\_divergence}, for
+correspond exactly to the trace of the strain tensor which is
+calculated for production)
 
-
-\etape{Lecture des termes sources utilisateur}
-Appel de \fort{cs\_user\_turbulence\_source\_terms} pour charger les termes sources utilisateurs. Ils sont
-stock\'es dans les tableaux suivants :\\
+\etape{Reading user source terms}
+Call \fort{cs\_user\_source\_terms} to load user source terms. They are
+stored in the following tables:\\
 $\var{W7}=\Omega\beta_k$\\
 $\var{W8}=\Omega\beta_\varepsilon$\\
-$\var{DAM}=\Omega\alpha_k$\\
-$\var{W9}=\Omega\alpha_\varepsilon$
+$\var{usimpk}=\Omega\alpha_k$\\
+$\var{usimpe}=\Omega\alpha_\varepsilon$
 
-Puis on ajoute le terme en $(div\vect{u})^2$ \`a \var{TINSTK}. On a donc \\
+Then we add the term in $(div\vect{u})^2$ \` to \var{TINSTK}. So we have \\
 $\var{TINSTK}=\tilde{\mathcal{P}}$
 
-\etape{Calcul du terme de gravit\'e}
-Calcul uniquement si $\var{IGRAKE}=1$.\\
-On appelle \fort{grdcel} pour \var{ROM}, avec comme conditions aux limites
-$\var{COEFA}=\var{ROMB}$ et \mbox{$\var{COEFB}=\var{VISCB}=0$}.\\
-$\var{PRDTUR}=\sigma_t$ est mis \`a 1 si on n'a pas de scalaire temp\'erature.
+\etape{Calculation of the gravity term}
+Calculation only if $\var{igrake}=1$.\\
+We call \fort{cs\_gradient\_scalar} for \var{rom}, with boundary conditions
+$\var{coefa}=\var{romb}$ and \mbox{$\var{coefb}=\var{viscb}=0$}.\\
+$\var{prdtur}=\sigma_t$ is set to 1 if there is no temperature scalar.
 
-$\tilde{\mathcal{G}}$ est calcul\'e et les termes sources sont mis \`a jour :\\
-$\var{TINSTK}=\tilde{\mathcal{P}}+\tilde{\mathcal{G}}$\\
-$\var{TINSTE}=\tilde{\mathcal{P}}+\Max\left[\tilde{\mathcal{G}},0\right]
+$\tilde{\mathcal{G}}$ is calculated and the source terms are updated:\\
+$\var{tinstk}=\tilde{\mathcal{P}}+\tilde{\mathcal{G}}$\\
+$\var{tinste}=\tilde{\mathcal{P}}+\Max\left[\tilde{\mathcal{G}},0\right]
 =\tilde{\mathcal{P}}+(1-C_{\varepsilon_3})\tilde{\mathcal{G}}$
 
-Si $\var{IGRAKE}=0$, on a simplement\\
-$\var{TINSTK}=\var{TINSTE}=\tilde{\mathcal{P}}$
+If $\var{igrake}=0$, we simply have\\
+$\var{tinstk}=\var{tinste}=\tilde{\mathcal{P}}$
 
-\etape{Calcul du terme d'accumulation de masse}
-On stocke
+\etape{Calculation of the mass accumulation term}
+We store
 $\displaystyle \var{W1}=\Omega\dive(\rho\vect{u})$
-calcul\'e par \fort{divmas} (pour correspondre aux termes de convection de la
-matrice).
+calculated by \fort{divmas} (to correspond to the convection terms of the
+matrix).
 
-\etape{Calcul des termes sources explicites}
-On affecte les termes sources explicites de $k$ et $\varepsilon$ pour la
-premi\`ere \'etape.\\
-$\displaystyle\var{SMBRK}=\Omega\left(\mu_t(\tilde{\mathcal{P}}+\tilde{\mathcal{G}})
+\etape{Calculation of explicit source terms}
+We assign the explicit source terms of $k$ and $\varepsilon$ for the
+first step.\\
+$\displaystyle\var{smbrk}=\Omega\left(\mu_t(\tilde{\mathcal{P}}+\tilde{\mathcal{G}})
 -\frac{2}{3}\rho^{(n)} k^{(n)}\dive{\vect{u}}
 -\rho^{(n)} \varepsilon^{(n)}\right)+\Omega k^{(n)}\dive(\rho\vect{u})$\\
-$\displaystyle\var{SMBRE}=\Omega\frac{\varepsilon^{(n)}}{k^{(n)}}
+$\displaystyle\var{smbre}=\Omega\frac{\varepsilon^{(n)}}{k^{(n)}}
 \left(C_{\varepsilon_1}\left(
 \mu_t(\tilde{\mathcal{P}}+(1-C_{\varepsilon_3})\tilde{\mathcal{G}})
 -\frac{2}{3}\rho^{(n)} k^{(n)}\dive{\vect{u}}\right)
 -C_{\varepsilon_2}\rho^{(n)}\varepsilon^{(n)}\right)
 +\Omega\varepsilon^{(n)}\dive(\rho\vect{u})$
 
-soit $\var{SMBRK}=\Omega S_k^{(n)}+\Omega k^{(n)}\dive(\rho\vect{u})$
-et $\var{SMBRE}=\Omega S_\varepsilon^{(n)}+\Omega\varepsilon^{(n)}\dive(\rho\vect{u})$.
+then $\var{smbrk}=\Omega S_k^{(n)}+\Omega k^{(n)}\dive(\rho\vect{u})$
+and $\var{smbre}=\Omega S_\varepsilon^{(n)}+\Omega\varepsilon^{(n)}\dive(\rho\vect{u})$.
 
 
-\etape{Calcul des termes sources utilisateur}
-On ajoute les termes sources utilisateur explicites \`a \var{SMBRK} et
-\var{SMBRE}, soit :\\
-$\var{SMBRK}=\Omega S_k^{(n)}+\Omega k^{(n)}\dive(\rho\vect{u})+\Omega\alpha_k k^{(n)} +\Omega\beta_k$\\
-$\var{SMBRE}=\Omega S_\varepsilon^{(n)}+\Omega\varepsilon^{(n)}\dive(\rho\vect{u})
+\etape{Calculation of user source terms}
+We add the explicit user source terms to \var{smbrk} and
+\var{smber}:\\
+$\var{smbrk}=\Omega S_k^{(n)}+\Omega k^{(n)}\dive(\rho\vect{u})+\Omega\alpha_k k^{(n)} +\Omega\beta_k$\\
+$\var{smbre}=\Omega S_\varepsilon^{(n)}+\Omega\varepsilon^{(n)}\dive(\rho\vect{u})
 +\Omega\alpha_\varepsilon \varepsilon^{(n)} +\Omega\beta_\varepsilon$
 
-Les tableaux \var{W7} et \var{W8} sont lib\'er\'es, \var{DAM} et \var{W9} sont
-conserv\'es pour \^etre utilis\'es dans la troisi\`eme phase de r\'esolution.
+Arrays \var{w7} and \var{w8} are freed, \var{usimpk} and \var{usimpe} are
+retained for use in the third step of resolution.
 
-\etape{Calcul des termes de convection/diffusion explicites}
-\fort{bilsc2} est appel\'e deux fois, pour $k$ et pour $\varepsilon$, afin
-d'ajouter \`a \var{SMBRK} et \var{SMBRE} les termes de convection/diffusion
-explicites $D(k^{(n)})$ et $D(\varepsilon^{(n)})$. Ces termes sont d'abord
-stock\'es dans \var{W7} et \var{W8}, pour \^etre conserv\'es et r\'eutilis\'es
-dans la troisi\`eme phase de r\'esolution.
+\etape{Computation of explicit convection/diffusion terms}
+\fort{cs\_balance\_scalar} est called twice, for $k$ et for $\varepsilon$, so
+as to add to \var{smbrk} and \var{smbre} the explicit convection/diffusion terms
+explicites $D(k^{(n)})$ et $D(\varepsilon^{(n)})$. These termes are first
+stored in \var{w7} and \var{w8}, to be reused in the third resolution stage.
 
+\etape{Mass source terms}
+In the case of a forced injection of matter, we call \fort{ cs\_mass\_source\_terms}
+twice to add the terms in
+$\Omega \Gamma (k_i-k^{(n)})$ and
+$\Omega \Gamma (\varepsilon_i-\varepsilon^{(n)})$ to \var{smbrk} and
+\var{smber}. The implicit part ($\Omega\Gamma$) is stored in the
+variables \var{w2} and \var{w3}, which will be used during the third
+step (the two variables are indeed necessary, in case we have a
+forced injection on $k$ and not on $\varepsilon$, for example).
 
-\etape{Termes source de masse}
-Dans le cas d'une injection forc\'ee de mati\`ere, on passe deux fois dans
-\fort{catsma} pour ajouter les termes en
-$\Omega \Gamma (k_i-k^{(n)})$ et
-$\Omega \Gamma (\varepsilon_i-\varepsilon^{(n)})$ \`a \var{SMBRK} et
-\var{SMBRE}. La partie implicite ($\Omega\Gamma$) est stock\'ee dans les
-variables \var{W2} et \var{W3}, qui seront utilis\'ees lors de la troisi\`eme
-phase (les deux variables sont bien n\'ecessaires, au cas o\`u on aurait une
-injection forc\'ee sur $k$ et pas sur $\varepsilon$, par exemple).
+\etape{End of the first step}
+This completes the first step. We have\\
+$\displaystyle \var{smbrk}=\Omega \rho^{(n)}\frac{k_e-k^{(n)}}{\Delta t}$\\
+$\displaystyle \var{smbre}=\Omega \rho^{(n)}\frac{\varepsilon_e-\varepsilon^{(n)}}{\Delta t}$
 
-\etape{Fin de la premi\`ere phase}
-Ceci termine la premi\`ere phase. On a \\
-$\displaystyle \var{SMBRK}=\Omega \rho^{(n)}\frac{k_e-k^{(n)}}{\Delta t}$\\
-$\displaystyle \var{SMBRE}=\Omega \rho^{(n)}\frac{\varepsilon_e-\varepsilon^{(n)}}{\Delta t}$
+\etape{Coupling step}
+(only if $\var{ikecou}=1$)
 
-\etape{Phase de couplage}
-(uniquement si $\var{IKECOU}=1$)
-
-On renormalise \var{SMBRK} et \var{SMBRE} qui deviennent les seconds membres du
-syst\`eme de couplage.\\
-$\displaystyle \var{SMBRK}=\frac{1}{\Omega\rho^{(n)}}\var{SMBRK}
+We renormalize \var{smbrk} and \var{smbre} which become the second members of the
+coupling system.\\
+$\displaystyle \var{smbrk}=\frac{1}{\Omega\rho^{(n)}}\var{smbrk}
 =\frac{k_e-k^{(n)}}{\Delta t}$\\
-$\displaystyle \var{SMBRE}=\frac{1}{\Omega\rho^{(n)}}\var{SMBRE}
+$\displaystyle \var{smbre}=\frac{1}{\Omega\rho^{(n)}}\var{smbre}
 =\frac{\varepsilon_e-\varepsilon^{(n)}}{\Delta t}$\\
-et $\displaystyle \var{DIVP23}=\frac{2}{3}\Max\left[\dive(\vect{u}),0\right]$.
+and $\displaystyle \var{divp23}=\frac{2}{3}\Max\left[\dive(\vect{u}),0\right]$.
 
-On remplit la matrice de couplage\\
+We set the coupling matrix\\
 $\displaystyle \var{A11}=\frac{1}{\Delta t}
 -2 C_\mu\frac{k^{(n)}}{\varepsilon^{(n)}}
 \Min\left[\left(\tilde{\mathcal{P}}+\tilde{\mathcal{G}}\right),0\right]
@@ -485,47 +477,43 @@ $\displaystyle \var{A22}=\frac{1}{\Delta t}
 +\frac{2}{3}C_{\varepsilon_1}\Max\left[\dive(\vect{u}),0\right]
 +2 C_{\varepsilon_2}\frac{\varepsilon^{(n)}}{k^{(n)}}$
 
-On inverse le syst\`eme $2\times 2$, et on r\'ecup\`ere :\\
-$\displaystyle \var{DELTK}=k_{ts}-k^{(n)}$\\
-$\displaystyle \var{DELTE}=\varepsilon_{ts}-\varepsilon^{(n)}$
+We invert the system $2\times 2$, and we get:\\
+$\displaystyle \var{deltk}=k_{ts}-k^{(n)}$\\
+$\displaystyle \var{delte}=\varepsilon_{ts}-\varepsilon^{(n)}$
 
-\etape{Fin de la deuxi\`eme phase}
-On met \`a jour les variables \var{SMBRK} et \var{SMBRE}.\\
-$\displaystyle \var{SMBRK}=\Omega \rho^{(n)}\frac{k_{ts}-k^{(n)}}{\Delta t}$\\
-$\displaystyle \var{SMBRE}=
+\etape{End of the second step}
+We update the variables \var{smbrk} and \var{smbre}.\\
+$\displaystyle \var{smbrk}=\Omega \rho^{(n)}\frac{k_{ts}-k^{(n)}}{\Delta t}$\\
+$\displaystyle \var{smbre}=
 \Omega \rho^{(n)}\frac{\varepsilon_{ts}-\varepsilon^{(n)}}{\Delta t}$
+If we do not couple ($\var{ikecou}=0$), these two variables keep
+the same value as at the end of the first step.
 
-Dans le cas o\`u on ne couple pas ($\var{IKECOU}=0$), ces deux variables gardent
-la m\^eme valeur qu'\`a la fin de la premi\`ere \'etape.
-
-\etape{Calcul des termes implicites}
-On retire \`a \var{SMBRK} et \var{SMBRE} la partie en convection diffusion au
-temps $n$, qui \'etait stock\'ee dans \var{W7} et \var{W8}.\\
+\etape{Calculation of implicit terms}
+We remove from \var{SMBRK} and \var{SMBRE} the part in convection diffusion at
+time $n$, which was stored in \var{W7} and \var{W8}.\\
 $\displaystyle \var{SMBRK}=\Omega \rho^{(n)}\frac{k_{ts}-k^{(n)}}{\Delta t}
 -\Omega D(k^{(n)})$\\
 $\displaystyle \var{SMBRE}=
 \Omega \rho^{(n)}\frac{\varepsilon_{ts}-\varepsilon^{(n)}}{\Delta t}
 -\Omega D(\varepsilon^{(n)})$
 
+We calculate the implicit terms, excluding convection/diffusion, which correspond
+diagonal matrix.\\
 
-On calcule les termes implicites, hors convection/diffusion, qui correspondent
-\`a la diagonale de la matrice.\\
-$\displaystyle \var{TINSTK}=\frac{\Omega \rho^{(n)}}{\Delta t}
+$\displaystyle \var{tinstk}=\frac{\Omega \rho^{(n)}}{\Delta t}
 -\Omega\dive(\rho\vect{u})+\Omega\Gamma+\Omega\Max[-\alpha_k,0]$\\
-$\displaystyle \var{TINSTE}=\frac{\Omega \rho^{(n)}}{\Delta t}
+$\displaystyle \var{tinste}=\frac{\Omega \rho^{(n)}}{\Delta t}
 -\Omega\dive(\rho\vect{u})+\Omega\Gamma+\Omega\Max[-\alpha_\varepsilon,0]$\\
-($\Gamma$ n'est pris en compte qu'en injection forc\'ee, c'est-\`a-dire qu'il
-est forc\'ement positif et ne risque pas d'affaiblir la diagonale de la matrice).
+($\Gamma$ is only taken into account in forced injection, i.e. it
+is necessarily positive and does not risk weakening the diagonal of the matrix).
 
-\etape{R\'esolution finale}
-On passe alors deux fois dans \fort{codits}, pour $k$ et $\varepsilon$,
-pour r\'esoudre les \'equations du type :
+\etape{Final Resolution}
+We then pass twice in the function \fort{cs\_equation\_iterative\_solve\_scalar}, for $k$ and $\varepsilon$,
+to solve equations of the type:
 
-$\var{TINST}\times(\varphi^{(n+1)}-\varphi^{(n)}) = D(\varphi^{(n+1)})+\var{SMBR}$.
+$\var{tinst}\times(\varphi^{(n+1)}-\varphi^{(n)}) = D(\varphi^{(n+1)})+\var{smbr}$.
 
-\etape{clipping final}
-On passe enfin dans la routine \fort{clipke} pour faire un clipping \'eventuel
-de $k^{(n+1)}$ et $\varepsilon^{(n+1)}$.
-
-
-
+\etape{Final clipping}
+We finally pass in the function \fort{cs\_turbulence\_ke\_clip} to clip
+clip $k^{(n+1)}$ et $\varepsilon^{(n+1)}$ if necessary.

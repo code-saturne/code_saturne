@@ -30,7 +30,7 @@ subroutine. The full list of the subroutines described here is the
 following: \fort{bilsc2} \fort{clptur} \fort{clsyvt} \fort{codits} %
 \fort{condli} \fort{covofi} \fort{gradmc} \fort{gradrc} \fort{inimas} %
 \fort{itrmas} \fort{matrix} \fort{navstv} \fort{predvv} %
-\fort{resopv} \fort{turbke} \fort{turrij} \fort{viscfa} \fort{visort} %
+\fort{resopv} \fort{cs\_turbulence\_ke} \fort{turrij} \fort{viscfa} \fort{visort} %
 \fort{visecv}.
 
 The table~\ref{Base_Introd_simple_calling_tree} presents their sequence within a time
@@ -104,7 +104,7 @@ rate\newline
 \hspace*{1,5cm} \textbf{Velocity correction}\newline
 \hspace*{3,2cm} \hspace*{1cm}standard method\newline
 \underline{\textbf{$k-\varepsilon$ model}}\newline
-\hspace*{1cm}\fort{turbke}\newline
+\hspace*{1cm}\fort{cs\_turbulence\_ke}\newline
 \hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}preliminary steps before...\newline
 \hspace*{1,5cm}\fort{bilsc2} \hspace*{1,5cm}...source terms coupling\newline
 \hspace*{1,5cm}\fort{viscfa} \hspace*{1cm}calculation of the viscosity at

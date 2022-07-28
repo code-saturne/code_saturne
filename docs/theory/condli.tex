@@ -30,22 +30,22 @@
 \section*{Function}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Boundary conditions are required in at least three principal cases~:
+Boundary conditions are required in at least three principal cases:
 \begin{itemize}
 \item calculation of the convection terms (first order derivative in space) at
-the boundary~: the calculation uses a flux at the boundary and requires the
+the boundary: the calculation uses a flux at the boundary and requires the
 value of the convected variable at the boundary when the latter is entering
 the domain in the sens of the characteristic curves of the system (in the sens
-of the velocity, in the case of the single equation of a simple scalar~:
+of the velocity, in the case of the single equation of a simple scalar:
  sufficient interpretation in the current framework of
 \CS\footnote{except with the compressible module, see. \fort{cfxtcl}})~;
 \item calculation of the diffusion terms (second order derivative
-in space)~:
+in space):
 a method to determine the value of the first order spatial derivatives
 at the boundary is then required
  (more exactly, the terms that depend upon it are required,
- such as the stresses of the thermal fluxes at the wall)~:
-\item calculation of the cell  gradients~: the variable at the boundary faces
+ such as the stresses of the thermal fluxes at the wall):
+\item calculation of the cell  gradients: the variable at the boundary faces
  are required (more generally, the discrete terms of the equations which depend
 upon the gradient inside boundary cells are required, such as the transpose
 gradient terms in the Navier-Stokes equations).
@@ -64,7 +64,7 @@ the user has to define the boundary conditions at every boundary face
 (\fort{usclim}).
 
 
-The subroutine \fort{condli} transforms the data provided by the user
+The \fort{condli} subroutine transforms the data provided by the user
 (in \fort{usclim}) into an internal format of representation of the boundary
  conditions. Verifications of the completeness and coherence are also
 performed (in \fort{vericl}). More particularly, the smooth-wall boundary conditions
@@ -72,7 +72,7 @@ performed (in \fort{vericl}). More particularly, the smooth-wall boundary condit
 and the symmetry boundary conditions for the velocities and
 the Reynolds stress tensor (\fort{clsyvt}) are treated in dedicated subroutines.
 
-The subroutine \fort{condli}
+The \fort{condli} subroutine
 provides as an output pairs of coefficients
 $A_b$ and $B_b$
 for each variable~$f$ and for each boudary face.
@@ -95,307 +95,272 @@ See the \doxygenfile{condli_8f90.html}{programmers reference of the dedicated su
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Discretisation}
+\section*{Discretization}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \etape{Notation}
 %%%%%%%%%%%%%%%%
-On d\'esignera dans la suite par {\it VarScalaire} toute variable
+In the following, we will denote by {\it VarScalaire} any variable
 \begin{itemize}
-\item [-] autre que la
-vitesse, la pression, les grandeurs turbulentes $k$, $\varepsilon$,
-$R_{ij}$, $\varphi$, $\bar{f}$ et $\omega$,
-\item [-] solution d'une \'equation de convection-diffusion.
+\item [-] other than the
+velocity, pressure, turbulent quantities $k$, $\varepsilon$,
+$R_{ij}$, $\varphi$, $\bar{f}$ and $\omega$,
+
+\item [-] solution of a convection-diffusion equation.
 \end{itemize}
-La d\'enomination {\it VarScalaire} pourra en particulier d\'esigner
-la temp\'erature, un scalaire
-passif, une fraction massique ou (sauf mention contraire explicite) la variance des fluctuations
-d'une autre {\it VarScalaire}. Les variables d'\'etat d\'eduites (masse
-volumique, viscosit\'e...) ne seront pas d\'esign\'ees par {\it VarScalaire}.
+The denomination {\it VarScalaire} may in particular designate
+the temperature, a passive scalar,
+a mass fraction or (unless explicitly stated otherwise) the variance of fluctuations
+of another {\it VarScalar}. The inferred state variables (mass
+volumetric, viscosity...) will not be denoted by {\it VarScalar}.
 
 
-\etape{Repr\'esentation des conditions aux limites standard dans \fort{usclim} \vspace{0,3cm}}
+\etape{Representation of standard boundary conditions in \fort{cs\_user\_boundary\_conditions} \vspace{0,3cm}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Des conditions aux limites standardis\'ees peuvent \^etre fournies par
-l'utilisateur dans \fort{usclim}. Il est pour cela n\'ecessaire d'affecter un
-type aux
-faces de bord des cellules concern\'ees\footnote{L'affectation d'un type se fait
-en renseignant le tableau
-\var{ITYPFB}.}. Les conditions pr\'evues par d\'efaut sont les suivantes~:
-
-
+Standard boundary conditions can be provided by
+the user in \fort{cs\_user\_boundary\_conditions}. For this, it is necessary to assign a
+type to boundary faces \footnote{The assignment of a type is done
+by filling in the table
+\var{BC\_TYPE}.}. The default conditions are as follows:
 
 \begin{itemize}
-\item [$\bullet$] {\bf Entr\'ee}~: correspond \`a une condition de Dirichlet sur
-toutes les variables transport\'ees (vitesse, variables turbulentes,
-{\it VarScalaires}...), et \`a
-une condition de Neumann homog\`ene (flux nul) sur la pression.
-\item [$\bullet$] {\bf Sortie}~:
+\item [$\bullet$] {\bf CS\_INLET}: corresponds to a Dirichlet condition on
+all the variables transported (velocity, turbulent variables,
+{\it VarScalaires}...), and
+a homogeneous Neumann condition (zero flow) on the pressure.
+
+\item [$\bullet$] {\bf CS\_OUTLET}:
         \begin{itemize}
-        \item [-] lorsque le flux de masse est effectivement dirig\'e vers
-l'ext\'erieur du domaine, ce choix correspond \`a une condition de Neumann
-homog\`ene sur toutes les variables transport\'ees et \`a
-$\displaystyle\frac{\partial^2P}{\partial \vect{n}\partial\vect{\tau}_i}=0$, pris en compte sous forme
-de Dirichlet pour la pression
-($\vect{n}$ et $(\vect{\tau}_i)_{i \in \{1,2\}}$
-d\'esignent respectivement le vecteur normal de la face de sortie consid\'er\'ee
-et deux vecteurs norm\'es, orthogonaux entre eux et dans le plan de la face de
-sortie). Cette condition est appliqu\'ee de
-mani\`ere explicite en utilisant le champ de pression et son gradient
-au pas de temps pr\'ec\'edent.
-En outre, la pression \'etant d\'efinie \`a une
-constante pr\`es, elle est recal\'ee en un point de
-sortie pour y conserver la valeur \var{P0} (on \'evite ainsi toute d\'erive
-vers des valeurs tr\`es grandes relativement \`a l'\'ecart maximal de
-pression sur le domaine)\footnote{Lorsqu'il n'y a pas de sortie, le spectre des
-valeurs propres de la matrice est d\'ecal\'e d'une valeur constante
-afin de rendre le syst\`eme inversible~: voir \fort{matrix}.}.
-        \item [-] lorsque le flux de masse est dirig\'e vers l'int\'erieur du
-domaine, situation peu souhaitable {\it a priori}\footnote{Un message indique
-\`a l'utilisateur combien de faces de sortie voient un flux de masse entrer dans
-le domaine.
+        \item [-] when the mass flow is effectively directed outwards
+of the domain, this choice corresponds to a homogeneous Neumann condition
+on all the transported variables and\\
+$\displaystyle\frac{\partial^2P}{\partial \vect{n}\partial\vect{\tau}_i}=0$, taken into account as
+of Dirichlet for the pressure
+($\vect{n}$ and $(\vect{\tau}_i)_{i \in \{1,2\}}$
+denote respectively the normal vector of the exit face considered
+and two normed vectors, orthogonal to each other and in the plane of the exit face).
+This condition is explicit using the pressure field and its gradient
+at the previous time step.
+Moreover, the pressure being defined to a constant, it is readjusted to a point of
+output to store the value \var{P0} (this avoids any drift towards very large values
+relatively to the maximum pressure difference on the domain)\footnote{When there is not output,
+the spectrum of eigen values of the matrix is shifted by a constant value
+in order to make the system invertible: see \fort{cs\_matrix\_wrapper\_scalar}.}.
+        \item [-] when the mass flow is directed inwards, an
+undesirable situation {\it a priori}\footnote{A message indicates
+to the user how many exit faces see a mass flow entering into the domain (i.e. a backflow).
 },
-on impose une condition de
-Dirichlet homog\`ene sur la vitesse (pas sur le flux de masse),
-\`a d\'efaut de conna\^\i tre sa valeur en aval du domaine. La pression est
-trait\'ee comme dans le cas pr\'ec\'edent o\`u le flux de masse est
-dirig\'e vers l'ext\'erieur du domaine. Pour les variables autres que
-la vitesse et la pression, deux cas se
-pr\'esentent~:
+
+A Homogeneous Dirichlet condition is imposed on the on velocity (not on the mass flux),
+its value downstream of the domain being unknown. The pressure is
+treated as in the previous case where the mass flux is
+directed outwards of the domain. For variables other than
+velocity and pressure, two cases can occur:
         \begin{itemize}
-        \item[-] on peut imposer une condition de Dirichlet
-                 pour repr\'esenter la valeur du scalaire introduit dans le domaine par
-                 les faces de bord concern\'ees.
-        \item[-] on peut imposer, comme lorsque
-                 le flux de masse est sortant, une condition de Neumann homog\`ene
-                 (ceci n'est pas une situation souhaitable, puisque l'information
-                 port\'ee sur les faces de bord provient alors de {\it l'aval} de
-                 l'\'ecoulement local). C'est le cas par d\'efaut si l'on ne donne pas
-                 de valeur pour le Dirichlet.
+        \item[-] one can impose a condition of Dirichlet to represent the value of the scalar introduced into the field by the faces of boundary concerned.
+        \item[-] one can impose, as when the mass flux is outgoing, a homogeneous Neumann condition (this is not a desirable situation, since the information carried on the boundary faces then comes from {\it the downstream} of the local flow). This is the case by default if no value is given for the Dirichlet.
         \end{itemize}
 \end{itemize}
-\item [$\bullet$] {\bf Paroi}~: on se reportera \`a \fort{clptur} (ou \`a \fort{clptrg} pour les
-parois rugueuses) pour une description du
-traitement des conditions aux limites de paroi (suppos\'ees imperm\'eables au
-fluide). Bri\`evement, on peut dire ici
-qu'une approche par lois de paroi est utilis\'ee afin d'imposer la contrainte
-tangentielle sur la vitesse. La paroi peut \^etre d\'efilante\footnote{On doit alors fournir
-les composantes de la vitesse de la paroi.}. Les {\it VarScalaires} re\c coivent par
-d\'efaut une condition de Neumann homog\`ene (flux nul). Si l'on souhaite
-imposer une valeur en paroi pour ces variables (par exemple, dans le cas d'une
-paroi \`a temp\'erature impos\'ee)  une loi de similitude est utilis\'ee
-pour d\'eterminer le flux au bord en tenant compte de la couche limite.
-Dans le cas des couplages avec \syrthes, \CS
-re\c coit une temp\'erature de paroi et fournit un flux thermique. La condition
-de pression standard est une condition de Neumann homog\`ene.
-\item [$\bullet$] {\bf Sym\'etrie}~: correspond \`a des conditions de Neumann homog\`enes pour les
-grandeurs scalaires et \`a des conditions  de sym\'etrie classiques pour les vecteurs
-(vitesse) et les tenseurs (tensions de Reynolds)~: voir \fort{clsyvt}.
+\item [$\bullet$] {\bf CS\_SMOOTHWALL}: refer to \fort{clptur} (or to \fort{clptrg} for rough walls) for a description of the treatment of the boundary conditions of the wall (assumed to be impermeable to
+fluid). Briefly, we can say here
+that a wall law approach is used to impose the constraint
+tangential on speed. The wall may slide\footnote{We must then provide
+the components of the wall velocity.}. The {\it VarScalars} are assigned
+a homogeneous Neumann condition (zero flow) by default.
+To impose a wall value for these variables (for example, in the case of a
+wall at imposed temperature) a law of similarity is used
+to determine the boundary flux taking into account the boundary layer.
+In the case of couplings with \syrthes, \CS
+receives a wall temperature and sends a heat flux (decomposed as a pseudo interior temperature
+and exchange coefficient to allow relaxation).
+The standard pressure condition is a homogeneous Neumann condition.
+\item [$\bullet$] {\bf CS\_SYMMETRY}: corresponds to homogeneous Neumann conditions for scalar quantities and to classical symmetry conditions for vectors (velocity) and tensors (Reynolds voltages): see \fort{clsyvt}.
+\end{itemize}
+
+\etape{Representation of specific boundary conditions in \fort{cs\_user\_boundary\_conditions}\vspace{0,3cm}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We have seen that the assignment to a boundary face of a standard type
+(entrance, exit, wall, symmetry) makes it possible to apply coherent
+boundary conditions to all variables in a simple manner for the usual
+types of physical boundaries.
+
+It is also possible to define specific boundary conditions in
+\fort{cs\_user\_boundary\_conditions}, for each boundary face and each variable
+\footnote{Such conditions are direclty defined through the
+\var{icodcl} and \var{rcodcl} arrays for each face and variable: examples are provided in
+\fort{cs\_user\_boundary\_conditions}.}
+(these, like the standard conditions, ultimately amount to mixed-type conditions).
+
+The two approaches are compatible and often combined.
+Indeed, the standard (default) boundary conditions
+can be overridden by the user where necessary, and the defaults used elsewhere.
+In any case, it should be ensured that a boundary condition has been defined for each
+boundary face and variable.
+
+Compatibility conditions also exist between the different
+variables~(see \fort{vericl}):
+\begin{itemize}
+\item [-] between, wall, symmetry or free exit, it is important that all the
+velocity components have the same type of condition~;
+\item [-] when the velocity receives an exit condition, it is important
+that the pressure is assigned a Dirichlet-like condition. For more
+details, refer to the paragraph relating to the exit condition for
+pressure, page \pageref{Base_Condli_Sortie_Pression};
+\item [-] when one of the velocity or turbulence variables
+is assigned a wall condition, so must all such variables;
+\item [-] when one of the $velocity or R_{ij}$ components is assigned a symmetry
+condition, it should be the case for all components;
+\item [-] when a {\it VarScalar} receives a wall condition, the
+velocity must have the same type of condition.
 \end{itemize}
 
 \newpage
 
-\etape{Repr\'esentation des conditions aux limites sp\'ecifiques dans \fort{usclim}\vspace{0,3cm}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-On a vu que l'affectation \`a une face de bord d'un type standard
-(entr\'ee, sortie, paroi, sym\'etrie) permettait d'appliquer simplement
-\`a l'ensemble des variables un assortiment de conditions aux limites
-coh\'erentes entre elles pour les types usuels de fronti\`ere physique.
-
-Une solution consiste \`a d\'efinir dans \fort{usclim},
-pour chaque face de bord et chaque variable, des conditions aux limites
-sp\'ecifiques\footnote{Les conditions
-aux limites sp\'ecifiques sont cod\'ees en
-renseignant directement les tableaux \var{ICODCL} et \var{RCODCL} pour chaque face de
-bord et chaque variable~: des exemples sont fournis dans \fort{usclim}.}
-(celles-ci, comme les conditions standards, se ram\`enent
-finalement \`a des conditions de type mixte).
-
-Les deux approches ne sont pas n\'ecessairement incompatibles et peuvent m\^eme
-se r\'ev\'eler compl\'ementaires. En effet, les conditions aux limites standards
-peuvent \^etre surcharg\'ees par l'utilisateur pour une ou plusieurs
-variables donn\'ees. Il convient cependant de s'assurer que, d'une fa\c con ou
-d'une autre, une condition \`a la limite a \'et\'e d\'efinie pour chaque face
-de bord et chaque variable.
-
-Des conditions de compatibilit\'e existent \'egalement entre les diff\'erentes
-variables~(voir \fort{vericl}): \begin{itemize}
-\item [-] en entr\'ee, paroi, sym\'etrie ou sortie libre, il est important que toutes les
-composantes de la vitesse aient le m\^eme type de condition~;
-\item [-] lorsque la vitesse re\c coit une condition de sortie, il est important
-que la pression re\c coive une condition de type Dirichlet. Pour plus de
-d\'etails, on se reportera au paragraphe relatif \`a la condition de sortie pour
-la pression, page \pageref{Base_Condli_Sortie_Pression}~;
-\item [-] lorsqu'une des variables de vitesse ou de turbulence
-re\c coit une condition de paroi, il doit en \^etre de m\^eme pour toutes~;
-\item [-] lorsqu'une des composantes $R_{ij}$ re\c coit une condition de sym\'etrie,
-il doit en \^etre de m\^eme pour toutes~;
-\item [-] lorsqu'une {\it VarScalaire} re\c coit une condition de paroi, la
-vitesse doit avoir le m\^eme type de condition.
-\end{itemize}
-
-\newpage
-\etape{Repr\'esentation interne des conditions aux limites}
+\etape{Internal representation of boundary conditions}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-{\bf Objectif}
+{\bf Objective}
 
-Les conditions fournies par l'utilisateur sont
-retraduites sous forme de couples de coefficients $A_b$ et $B_b$
-pour chaque variable~$f$ et chaque face de bord. Ces coefficients
-sont utilis\'es pour le calcul des
-termes discrets intervenant dans les \'equations \`a r\'esoudre et
-permettent en particulier de d\'eterminer une valeur de face
-de bord $f_{b,int}$. Il est important d'insister d\`es \`a pr\'esent sur le fait
-que cette valeur est, de mani\`ere g\'en\'erale, une simple valeur num\'erique
-qui ne refl\`ete pas n\'ecessairement une r\'ealit\'e physique (en particulier
- aux parois, pour les grandeurs affect\'ees par la couche limite turbulente).
-On d\'etaille ci-dessous le calcul de $A_b$, $B_b$ et de $f_{b,int}$.
+The conditions defined by the user are
+converted in the form of pairs of coefficients $A_b$ and $B_b$
+for each variable~$f$ and boundary face. These coefficients
+are used for the calculation of
+discrete terms intervening in the solved equation and
+make it possible in particular to determine a boundary face value
+$f_{b,int}$. It is important to insist on the fact
+that this value is, in general, a simple numerical value
+which does not necessarily reflect a physical reality (in particular
+ to the walls, for the quantities affected by the turbulent boundary layer).
+We detail the calculation of $A_b$, $B_b$ and $f_{b,int}$ below.
 
 {\bf Notations}
 \begin{itemize}
 
-\item[-] On consid\`ere l'\'equation (\ref{Base_Condli_eq_conv_diff_condli})
-portant sur le scalaire $f$, dans laquelle
-$\rho$ repr\'esente la masse volumique, $\vect{u}$ la vitesse, $\alpha$ la
-conductivit\'e et
-$S$ les termes sources additionnels. $C$ est d\'efini plus bas.
+\item[-] We consider the equation (\ref{Base_Condli_eq_conv_diff_condli})
+on the scalar $f$, in which
+$\rho$ represents the density, $\vect{u}$ the velocity, $\alpha$ the
+conductivity and $S$ additional source terms. $C$ is defined below.
 \begin{equation}\label{Base_Condli_eq_conv_diff_condli}
 \displaystyle\rho\frac{\partial f}{\partial t} + div(\rho \vect{u} f)=div\left(\displaystyle\frac{\alpha}{C}\, \grad f\right)+S
 \end{equation}
 
-\item[-] Le coefficient $\alpha$ repr\'esente la somme des
-conductivit\'es mol\'eculaire et turbulente (selon les mod\`eles utilis\'es), soit
-$\alpha=\alpha_m+\alpha_t$, avec, pour une mod\'elisation de type viscosit\'e
-turbulente, $\displaystyle\alpha_t=C\,\frac{\mu_t}{\sigma_t}$, o\`u $\sigma_t$ est le nombre de
-Prandtl turbulent\footnote{Le nombre de Prandtl turbulent est sans dimension et,
-dans certains cas usuels, pris \'egal \`a $0,7$.}.
+\item[-] The coefficient $\alpha$ represents the sum of the
+molecular and turbulent conductivities (depending on the models used), or
+$\alpha=\alpha_m+\alpha_t$, with, for a turbulent viscosity based modeling,
+$\displaystyle\alpha_t=C\,\frac{\mu_t}{\sigma_t}$, where $\sigma_t$ is the
+turbulent Prandtl number\footnote{The turbulent Prandtl number is dimensionless and,
+in some usual cases, taken as equal to $0.7$.}.
 
-\item[-] Le coefficient  $C_p$ repr\'esente la chaleur sp\'ecifique, d'unit\'e
-                      $m^{2}\,s^{-2}\,K^{-1}=J\,kg^{-1}\,K^{-1}$.
+\item[-] The coefficient $C_p$ represents the specific heat, with unit $m^{2}\,s^{-2}\,K^{-1}=J\,kg^{-1}\,K^{ -1}$.
 
-\item[-] On note $\lambda$  la conductivit\'e thermique, d'unit\'e
+\item[-] We note $\lambda$ the thermal conductivity, with unit
 $kg\,m\,s^{-3}\,K^{-1}=W\,m^{-1}\,K^{-1}$.
 
-\item[-] Il convient de pr\'eciser que $C=1$ pour toutes les variables hormis
-pour la temp\'erature, cas dans lequel on a\footnote{Plus exactement, on a
-$C=C_p$ pour toutes les {\it VarScalaires} $f$ que l'on souhaite traiter comme la
-temp\'erature pour les conditions aux limites. Ces {\it VarScalaires} sont
-rep\'erables par l'utilisateur au moyen de l'indicateur \var{ISCSTH=1}. Par
-d\'efaut cet indicateur est positionn\'e \`a la valeur 0 pour toutes les
-{\it VarScalaires} (qui sont alors trait\'ees comme des scalaires passifs
-avec $C=1$) hormis pour la variable
-thermique \'eventuelle (\var{ISCALT}$^\text{i\`eme}$ {\it VarScalaire}), pour laquelle on a
-\var{ISCSTH=1}~: on suppose par d\'efaut que la variable thermique est la temp\'erature et non
-l'enthalpie. Si l'on souhaite r\'esoudre en enthalpie, il faut positionner
-\var{ISCSTH} \`a la valeur 2 pour la variable thermique. Pour le compressible,
-la variable thermique est l'énergie, identifiée par \var{ISCSTH=3}. On se
-reportera à \fort{cfxtcl} pour le traitement des conditions aux limites.}
-$C=C_p$. Dans le code, c'est la valeur de
-$\displaystyle\frac{\alpha_m}{C}$ que l'utilisateur doit fournir (si la propri\'et\'e est
-constante, les valeurs sont affect\'ees dans \fort{usini1} \`a \var{VISCL0} pour
-la vitesse et \`a \var{VISLS0} pour les {\it VarScalaires}~; si la propri\'et\'e
-est variable, ce sont des tableaux \'equivalents qui doivent \^etre renseign\'es
-dans \fort{usphyv}).
+\item[-] It should be specified that $C=1$ for all variables except for the
+temperature, for which $C=C_p$\footnote{More precisely, we have
+$C=C_p$ for all {\it scalar variables} $f$ that we want to consider as the
+temperature for the boundary conditions. These {\it scalar variables} can
+be checked using the \var{is\_temperature} field keyword. By default this
+value is set to 0 for all variables except for the temperature.}.
+In the code, the value which the user must define is
+$\displaystyle\frac{\alpha_m}{C}$ (if the property is constant, values are
+initialized to \var{viscl0} for the velocity and \var{visls0} for {\it scalar variables};
+If the property is variable, equivalent field values must be defined in the GUI or
+in \fort{cs\_user\_physical\_properties.c}).
 
-\item[-] Pour la variance des fluctuations d'une {\it VarScalaire}, la
-conductivit\'e $\alpha$ et le coefficient $C$ sont h\'erit\'es de la
-{\it VarScalaire} associ\'ee.
+\item[-] For the variance of the fluctuations of a {\it scalar variable}, the
+conductivity $\alpha$ and the coefficient $C$ are inherited from the
+associated variable.
 
 \end{itemize}
 
 
-{\bf Condition de type Dirichlet simple}~: lorsque la condition est une condition de Dirichlet simple, on
-obtient naturellement (cas particulier de (\ref{Base_Condli_eq_fbord_condli}))~:
+{\bf Simple Dirichlet condition}: for a simple Dirichlet condition, we
+naturally obtain (special case of(\ref{Base_Condli_eq_fbord_condli})):
 \begin{equation}
-\underbrace{\ \ f_{b,int}\ \ }_{\text{valeur de bord utilis\'ee par le calcul}}
-= \underbrace{\ \ f_{\text{\it r\'eel}}\ \ }_{\text{valeur r\'eelle impos\'ee au bord}}
+\underbrace{\ \ f_{b,int}\ \ }_{\text{boundary value used by the calculation}}
+= \underbrace{\ \ f_{\text{\it real}}\ \ }_{\text{real value imposed on the boundary}}
 \end{equation}
-{\bf Autres cas}~: lorsque la condition \`a la limite porte
-sur la donn\'ee d'un flux, il s'agit
-d'un flux diffusif\footnote{En effet, le flux total sortant du domaine est
-donn\'e par la
-somme du flux convectif (si la variable est effectivement convect\'ee)
-et du flux diffusif. N\'eanmoins, pour les parois
-\'etanches et les sym\'etries, le flux de masse est nul et la condition se
-r\'eduit \`a une contrainte sur le flux diffusif. De plus, pour les
-sorties (flux de masse sortant), la condition \`a la limite ne porte que sur le
-flux diffusif (souvent une condition de Neumann homog\`ene), le flux convectif
-d\'ependant des conditions amont (il n'a donc pas besoin de
-condition \`a la limite). Enfin, aux entr\'ees, c'est le plus souvent une
-condition de Dirichlet simple qui est appliqu\'ee et le flux diffusif s'en d\'eduit.}.
-On a alors~:
+{\bf Other cases}: when the boundary condition is based on a flux,
+this is of a diffusive flow \footnote{Indeed, the total outgoing flow of the domain is
+given by the
+sum of the convective flux (if the variable is actually convected)
+and diffusive flux. However, for solid walls and symmetries, the mass flow is zero and
+the condition reduced to a constraint on the diffusive flux. Moreover, for the
+outlets (exiting mass flow), the boundary condition relates only to the
+diffusive flux (often a homogeneous Neumann condition), convective flux
+dependent on the upstream conditions (therefore it does not need
+boundary conditions). Finally, at the inlets, a simple Dirichlet condition is most often
+used, and the diffusive flux is deduced from it.}.
+We then have:
 \begin{equation}
-\underbrace{\ \ \phi_{int}\ \ }_{\text{flux diffusif transmis au domaine interne}}
-= \underbrace{\ \ \phi_{\text{\it r\'eel}}\ \ }_{\text{flux diffusif r\'eel impos\'e au bord}}
+\underbrace{\ \ \phi_{int}\ \ }_{\text{diffusive flux towards the internal domain}}
+= \underbrace{\ \ \phi_{\text{\it real}}\ \ }_{\text{real diffusive flux imposed on the boundary}}
 \end{equation}
 
-Le flux diffusif r\'eel impos\'e peut \^etre donn\'e
+The imposed real diffusive flux can be given
 \begin{itemize}
-\item [-] directement (condition de Neumann), soit
-$\phi_{\text{\it r\'eel}}=\phi_{\text{\it imp,ext}}$ ou
-\item [-] d\'eduit implicitement de deux informations impos\'ees~: une valeur
-externe $f_{imp,ext}$ et un coefficient d'\'echange $h_{imp,ext}$
-(condition de Dirichlet g\'en\'eralis\'ee).
+\item [-] directly (Neumann condition), or
+$\phi_{\text{\it r\'eel}}=\phi_{\text{\it imp,ext}}$ or
+\item [-] implicitly deduced from two imposed values: an exterior value
+$f_{imp,ext}$ and an exchange coefficient $h_{imp,ext}$
+(generalized Dirichlet condition).
 \end{itemize}
 
 \vspace{1cm}
-Selon le type de condition (Dirichlet ou Neumann) et en prenant pour hypoth\`ese
-la conservation du flux dans la direction normale au bord,
-on peut alors \'ecrire (voir figure \ref{Base_Condli_fig_flux_condli})~:
+Depending on the type of condition (Dirichlet or Neumann) and assuming
+the conservation of the flux normal to the boundary,
+we can write (see figure \ref{Base_Condli_fig_flux_condli}):
 \begin{equation}\label{Base_Condli_eq_flux_condli}
 \begin{array}{l}
     \underbrace{h_{int}(f_{b,int}-f_{I'})}_{\phi_{int}}
   = \underbrace{h_{b}(f_{b,ext}-f_{I'})}_{\phi_{b}}
   = \left\{\begin{array}{ll}
-    \underbrace{h_{imp,ext}(f_{imp,ext}-f_{b,ext})}_{\phi_{\text{\it r\'eel
-impos\'e}}} &\text{(condition de Dirichlet)}\\
-    \underbrace{\phi_{\text{\it imp,ext}}}_{\phi_{\text{\it r\'eel impos\'e}}}
-            &\text{(condition de Neumann)}
+    \underbrace{h_{imp,ext}(f_{imp,ext}-f_{b,ext})}_{\phi_{\text{\it imposed real}}} &\text{(condition of Dirichlet)}\\
+    \underbrace{\phi_{\text{\it imp,ext}}}_{\phi_{\text{\it imposed real}}}
+            &\text{(Neumann condition)}
            \end{array}\right.
 \end{array}
 \end{equation}
 
-Le rapport entre le coefficient  $h_{b}$ et le coefficient $h_{int}$ rend compte
-de l'importance de la travers\'ee de la zone proche du bord et
-rev\^et une importance particuli\`ere dans le
-cas des parois le long desquelles se d\'eveloppe une couche limite (dont les
-propri\'et\'es sont alors prises en compte par $h_{b}$~: se reporter \`a
-\fort{clptur}). Dans le cadre plus simple consid\'er\'e ici, on se limitera au
-cas  $h_{b}=h_{int}$ et $f_{b,ext}=f_{b,int}=f_{b}$.
-La relation (\ref{Base_Condli_eq_flux_condli}) s'\'ecrit alors~:
+The ratio between the coefficient $h_{b}$ and the coefficient $h_{int}$ accounts for
+the importance of crossing the near-boundary zone and is of particular importance in
+the case of walls along which a boundary layer develops (whose properties are then taken
+into account by $h_{b}$: see \fort{clptur}).
+In the simpler framework considered here, we will limit ourselves to
+case $h_{b}=h_{int}$ and $f_{b,ext}=f_{b,int}=f_{b}$.
+The relation (\ref{Base_Condli_eq_flux_condli}) is then written:
 
 \begin{equation}
 \underbrace{h_{int}(f_{b}-f_{I'})}_{\phi_{int}}
   = \left\{\begin{array}{ll}
-    \underbrace{h_{imp,ext}(f_{imp,ext}-f_{b})}_{\phi_{\text{\it r\'eel
-impos\'e}}} &\text{(condition de Dirichlet)}\\
-    \underbrace{\phi_{\text{\it imp,ext}}}_{\phi_{\text{\it r\'eel impos\'e}}}
-            &\text{(condition de Neumann)}
+    \underbrace{h_{imp,ext}(f_{imp,ext}-f_{b})}_{\phi_{\text{\it imposed real}}} &\text{(condition of Dirichlet)}\\
+    \underbrace{\phi_{\text{\it imp,ext}}}_{\phi_{\text{\it imposed real}}}
+            &\text{(condition  Neumann)}
            \end{array}\right.
 \end{equation}
 
-En r\'earrangeant, on obtient la valeur de bord~:
+By rearranging, we get the boundary value:
 \begin{equation}\label{Base_Condli_eq_fbord_condli}
 f_{b}
   = \left\{\begin{array}{cccccl}
     \displaystyle\frac{h_{imp,ext}}{h_{int}+h_{imp,ext}}&f_{imp,ext}&+&
     \displaystyle\frac{h_{int}}{h_{int}+h_{imp,ext}}    &f_{I'}
-                         &\text{(condition de Dirichlet)}\\
+                         &\text{(Dirichlet condition)}\\
     \displaystyle\frac{1}{h_{int}}&\phi_{\text{\it imp,ext}}&+&
     \ &f_{I'}
-            &\text{(condition de Neumann)}
+            &\text{(Neumann condition)}
            \end{array}\right.
 \end{equation}
 
 
-{\bf Conclusion}~: on notera donc les conditions aux limites
-de mani\`ere g\'en\'erale sous la forme~:
+{\bf Conclusion}: we will therefore note the boundary conditions
+in the general form:
 \begin{equation}
 f_{b}=A_b + B_b\,f_{I'}
 \end{equation}
-avec $A_b$ et $B_b$ d\'efinis selon le type des conditions~:
+with $A_b$ et $B_b$ defined according to the type of conditions:
 \begin{equation}
 \begin{array}{c}
 \text{Dirichlet}\left\{\begin{array}{ll}
@@ -409,172 +374,142 @@ avec $A_b$ et $B_b$ d\'efinis selon le type des conditions~:
 \end{array}
 \end{equation}
 
-
 \newpage
 
-{\bf Remarques }
+{\bf Remarks }
 \begin{itemize}
-\item [-] La valeur $f_{I'}$ est calcul\'ee en utilisant le gradient cellule de $f$,
-soit~: $f_{I'}=f_{I}+\vect{II'}\grad{f}_I$.
-\item [-] Il reste \`a pr\'eciser la valeur de $h_{int}$. Il s'agit d'une valeur {\it
-num\'erique}, n'ayant {\it a priori} aucun rapport avec un coefficient d'\'echange
-physique, et d\'ependante du mode de calcul du flux diffusif dans la premi\`ere
-maille de bord. Ainsi~$\displaystyle h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$
-(l'unit\'e s'en d\'eduit naturellement).
-\item [-] On rappelle que dans le code, c'est la valeur de
-$\displaystyle\frac{\alpha_m}{C}$ que l'utilisateur doit fournir. Si la propri\'et\'e est
-constante, les valeurs sont affect\'ees dans \fort{usini1} \`a \var{VISCL0} pour
-la vitesse (viscosit\'e dynamique mol\'eculaire $\mu$ en $kg\,m^{-1}\,s^{-1}$)
-et \`a \var{VISLS0} pour les {\it VarScalaires} (par exemple, pour la
-temp\'erature et l'enthalpie, $\displaystyle\frac{\lambda}{C_p}$ en $kg\,m^{-1}\,s^{-1}$).
-Si la propri\'et\'e est variable en espace ou en temps, ce sont des tableaux \'equivalents
-qui doivent \^etre renseign\'es dans \fort{usphyv}.  En outre, la variance
-des fluctuations d'une {\it VarScalaire} h\'erite automatiquement la valeur
-de $\displaystyle\frac{\alpha_m}{C}$ de la {\it VarScalaire} associ\'ee
-(\CS~1.1 et suivantes).
-\item [-] On rappelle \'egalement, car ce peut \^etre source d'erreur, que dans
-le code, on a~:
+\item [-] The value $f_{I'}$ is calculated using the cell gradient of $f$,
+that is: $f_{I'}=f_{I}+\vect{II'}\grad{f}_I$.
+\item [-] The value of $h_{int}$ must yet be specified. This is a {\it numerical}, value,
+having {\it a priori} no relation to a physical exchange coefficient,
+which depends on the mode of calculation of the diffusive flux in the boundary cell.
+Thus~$\displaystyle h_{int}=\displaystyle\frac{\alpha}{\overline{I'F}}$
+(the unit is naturally deduced).
+\item [-] We also repeat, because it can be a cause of error, that in the code, we have:
         \begin{itemize}
-        \item [-] pour la temp\'erature $\alpha_m=\lambda$ et $C=C_p$
-        \item [-] pour l'enthalpie      $\alpha_m=\displaystyle\frac{\lambda}{C_p}$ et $C=1$
+        \item [-] for the temperature $\alpha_m=\lambda$ et $C=C_p$
+        \item [-] for the enthalpy      $\alpha_m=\displaystyle\frac{\lambda}{C_p}$ et $C=1$
         \end{itemize}
 \end{itemize}
 
-
-{\bf Exemples de cas particuliers}
+{\bf Examples of special cases}
 \begin{itemize}
-\item [-] Dans le cas d'une condition de Dirichlet,
-l'utilisateur est donc conduit \`a
-fournir deux donn\'ees :  $f_{imp,ext}$ et $h_{imp,ext}$.
-Pour obtenir une condition de Dirichlet simple (sans coefficient d'\'echange)
-il suffit d'imposer $h_{imp,ext}=+\infty$. C'est le cas d'utilisation le plus
-courant (en pratique, $h_{imp,ext}=10^{30}$ ).
-\item [-] Dans le cas d'une condition de Neumann, l'utilisateur fournit une seule valeur
-$\phi_{\text{\it imp,ext}}$ (nulle pour les conditions de Neumann homog\`enes).
+\item [-] In the case of a Dirichlet condition,
+the user is therefore led to
+provide two values: $f_{imp,ext}$ and $h_{imp,ext}$.
+To obtain a simple Dirichlet condition (without exchange coefficient)
+just impose $h_{imp,ext}=+\infty$. This is the most commonl case
+(in practice, $h_{imp,ext}=cs\_math\_infinite\_r$ ).
+\item [-] In the case of a Neumann condition, the user provides a single value
+$\phi_{\text{\it imp,ext}}$ (zero for homogeneous Neumann conditions).
+
 \end{itemize}
 
-\newpage
-\etape{Condition de sortie pour la pression\vspace{0,3cm}}\label{Base_Condli_Sortie_Pression}
+\etape{Output condition for pressure\vspace{0,3cm}}\label{Base_Condli_Sortie_Pression}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-On pr\'ecise ici la condition de sortie appliqu\'ee
-\`a la pression dans le cas des sorties standards.
-Il est n\'ecessaire d'imposer une condition de type Dirichlet (accompagn\'ee d'une
-condition
-de type Neumann homog\`ene sur les composantes de la vitesse). On la
-calcule \`a partir des valeurs de la variable au pas de temps pr\'ec\'edent.
+We specify here condition applied to the
+pressure for standard outlets.
+It is necessary to impose a Dirichlet type condition (accompanied by a
+homogeneous Neumann condition on the components of the velocity). We compute it
+based on the values of the variable at the previous time step.
+
 \begin{itemize}
-\item [-] En raisonnant sur une configuration simple (de type canal, avec une sortie
-plane, perpendiculaire \`a l'\'ecoulement),
-on peut faire l'hypoth\`ese que la forme des profils de pression pris
-sur les surfaces parall\`eles \`a la sortie est inchang\'ee aux alentours de
-celle-ci (hypoth\`ese d'un \'ecoulement \'etabli, loin de toute
-perturbation). Dans cette situation, on peut \'ecrire
+\item [-] Reasoning on a simple configuration (a channel, with a flat output,
+perpendicular to the flow), it can be assumed that the shape of the pressure
+profiles taken on the surfaces parallel to the outlet are unchanged around
+this outlet (hypothesis of an established flow, far from any
+perturbation). In this situation, we can write
 $\displaystyle\frac{\partial^2P}{\partial\vect{n}\partial\vect{\tau}_i}=0$
-($\vect{n}$ est le vecteur normal \`a la sortie, $\vect{\tau}_i$ repr\'esente
-une base du plan de sortie).
+($\vect{n}$ is the vector normal to the outlet, $\vect{\tau}_i$ represents
+a basis of the exit plane).
 
-\item [-] Si, de plus,
-on peut supposer que le gradient de pression pris dans la direction
-perpendiculaire aux faces de sortie est uniforme au
-voisinage de celle-ci, le profil \`a imposer en sortie (valeurs $p_b$)
-se d\'eduit du profil
-pris sur un plan amont (valeurs $p_{amont}$) en ajoutant simplement la constante
-$R=d\,\grad{(p)}.\vect{n}$ (o\`u $d$ est la distance entre le plan amont
-et la sortie), soit $p_b=p_{amont}+R$ (le fait que $R$ soit identique pour
-toutes les faces de sortie est important afin de pouvoir l'\'eliminer dans
-l'\'equation (\ref{Base_Condli_eq_psortie_condli}) ci-dessous).
+\item [-] If, moreover,
+it can be assumed that the pressure gradient taken in the direction
+perpendicular to the outlet faces is uniform in its neighborhood,
+the profile to impose at the output (values $p_b$) can be deduced from the profile
+taken on an upstream plane ($p_{upstream}$ values) by simply adding the constant
+$R=d\,\grad{(p)}.\vect{n}$ (where $d$ is the distance between the upstream plane
+and the outlet), or $p_b=p_{upstream}+R$ (the fact that $R$ is identical for
+all outlet faces is important so we can eliminate it in the equation
+(\ref{Base_Condli_eq_psortie_condli}) below).
 
-\item [-] Avec l'hypoth\`ese
-suppl\'ementaire que les points $I'$ relatifs aux faces de sortie sont
-sur un plan parall\`ele \`a la sortie, on peut utiliser les
-valeurs en ces points ($p_{I'}$) pour valeurs amont soit
-$p_{amont}=p_{I'}=p_{I}+\vect{II'}.\grad{p}$.
+\item [-] With the additional assumption that the points $I'$ relative to
+the outlet faces are on a plane parallel to the output, we can use the
+values at these points ($p_{I'}$) for upstream values, so
+$p_{upstream}=p_{I'}=p_{I}+\vect{II'}.\grad{p}$.
 
-\item [-] Par ailleurs, la
-pression \'etant d\'efinie \`a une constante pr\`es (\'ecoulement
-incompressible) on peut fixer sa valeur arbitrairement en un point $A$ (centre
-d'une face de sortie choisie arbitrairement\footnote{premi\`ere face de
-sortie rencontr\'ee en parcourant les faces de bord dans l'ordre naturel induit
-par la num\'erotation interne au code}) \`a $p_0$ (valeur fix\'ee par
-l'utilisateur, \'egale \`a \var{P0} et nulle par d\'efaut),
-et donc d\'ecaler le profil impos\'e en sortie en ajoutant~:\\
-$R_0=p_0-(p_{amont,A}+R)=p_0-(p_{I',A}+R)$.
+\item [-] Furthermore, the
+pressure being defined relative to a constant (incompressible flow)
+one can fix its value arbitrarily at a point $A$
+\footnote{by default, the center of mass of the outlet faces}) to $p_0$ (value fixed by
+user, equal to \var{P0} and null by default),
+and therefore shift the imposed profile at the output by adding:\\
+$R_0=p_0-(p_{upstream,A}+R)=p_0-(p_{I',A}+R)$.
 
-\item [-] On obtient donc finalement~:
+\item [-] So we finally obtain:
 \begin{equation}\label{Base_Condli_eq_psortie_condli}
 \begin{array}{lll}
 p_b&=&p_{I'}+R+R_0\\
    &=&p_{I'}+R+p_0-(p_{I',A}+R)\\
-   &=&p_{I'}+\underbrace{p_0-p_{I',A}}_{\text{valeur constante $R_1$}}\\
+   &=&p_{I'}+\underbrace{p_0-p_{I',A}}_{\text{constant value $R_1$}}\\
    &=&p_{I'}+R_1
 \end{array}
 \end{equation}
 \end{itemize}
-On constate donc que la condition de pression en sortie est une condition de
-Dirichlet dont les valeurs sont \'egales aux valeurs de la pression (prises au
-pas de temps pr\'ec\'edent) sur le plan amont des points $I'$ et recal\'ees pour obtenir \var{P0} en
-un point de sortie arbitraire.
-
+It is therefore noted that the pressure condition at the outlet is Dirichelet condition
+whose values are equal to the pressure values (taken at previous time step) on
+the plane upstream of the points $I'$ and readjusted to obtain \var{P0} in
+an arbitrary exit point.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section*{Points \`a traiter}
+\section*{Remaining issues}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\etape{Repr\'esentation des conditions par une valeur de face}
-Bien que la m\'ethode utilis\'ee permette une simplicit\'e et une
-homog\'en\'eit\'e de traitement de toutes les conditions aux limites,
-elle est relativement
-restrictive au sens o\`u une seule valeur ne suffit pas toujours pour
-repr\'esenter les conditions \`a appliquer lors du calcul de termes
-diff\'erents.
+\etape{Representation of conditions by face value}
+Although the method used allows simplicity and
+homogeneity of treatment of all boundary conditions,
+it is quite restrictive in the sense that a single value is not always sufficient to
+represent the conditions to be applied when calculating different terms.
 
-Ainsi, en $k-\varepsilon$ a-t-il \'et\'e n\'ecessaire, lors du
-calcul des conditions aux limites de paroi, de disposer de deux couples
-($A_b$, $B_b$) afin de prendre en compte les
-conditions \`a appliquer pour le calcul de la contrainte tangentielle
- et celles \`a utiliser  lors du calcul du terme
-de production (et un troisi\`eme jeu de coefficients serait n\'ecessaire pour
-permettre le traitement des gradients intervenant dans les termes de gradient
-transpos\'e, dans \fort{visecv}).
+Thus, in $k-\varepsilon$ it was necessary, when calculating the boundary conditions of the wall,
+to use two ($A_b$, $B_b$) pairs in order to take into account the conditions to apply*
+for the calculation of the shear stress and those to be used when calculating the production
+term (and a third set of coefficients would be necessary for
+allow the treatment of the gradients intervening in the terms of gradient
+transposed, in \fort{visecv}).
 
-Peut-\^etre pourrait-il \^etre utile de mettre en place une m\'ethode
-permettant d'utiliser (au moins en certains points strat\'egiques du code)
-directement des forces, des contraintes ou des flux, sans  passer
-n\'ecessairement par le calcul d'une valeur de face.
+Perhaps it could be useful to set up a method
+allowing to direclty use (at least in some strategic points of the code)
+forces, stresses or fluxes, without requiring a general a face value computation.
 
-\etape{Condition de sortie en pression}
-La condition de pression en sortie se traduit par
-$p_f=p_{I'}+R1$ et le profil obtenu correspond au
-profil amont pris aux points $I'$ et recal\'e pour obtenir $p_0$ en un point
-$A$ arbitraire. Ce type de condition est appliqu\'e sans pr\'ecautions, mais
-n'est pas toujours justifi\'e (une condition de Dirichlet bas\'ee sur la valeur calcul\'ee
-directement aux faces de bord pourrait \^etre plus adapt\'ee).
-Les hypoth\`eses sont en particulier mises en d\'efaut
-dans les cas suivants~:
+\etape{Pressure outlet condition}
+The outlet pressure condition translates to $p_f=p_{I'}+R1$ and the profile obtained
+corresponds to the upstream profile taken at points $I'$ and readjusted to obtain $p_0$ at
+an arbitrary point $A$. This type of condition is applied without precautions, but is not
+always justified (a Dirichlet condition based on the calculated value directly at the boundary
+faces might be more suitable).
+The hypotheses are particularly faulty in the following cases:
 \begin{itemize}
-\item [-] la sortie est proche d'une zone o\`u l'\'ecoulement n'est pas \'etabli
-en espace (ou varie en temps)~;
-\item [-] la sortie n'est pas une surface perpendiculaire \`a l'\'ecoulement~;
-\item [-] le gradient de pression dans la direction normale \`a la sortie n'est
-pas le m\^eme pour toutes les faces de sortie
-(dans le cas de sortie multiples, par exemple, le gradient n'est
-probablement pas le m\^eme au travers de toutes les sorties)~;
-\item [-] les points $I'$ ne sont pas sur une surface parall\`ele \`a la sortie
-(cas des maillage irr\'eguliers par exemple).
+\item [-] the outlet is close to an area where the flow is not established
+in space (or varies in time);
+\item [-] the outlet is not perpendicular to the flow~;
+\item [-] the pressure gradient in the direction normal to the outlet is not
+the same for all output faces (in the case of multiple outputs, for example, the gradient
+is probably not the same across all outputs);
+\item [-] points $I'$ are not on a surface parallel to the output
+(case of irregular meshes for example).
 \end{itemize}
 
-Par ailleurs, en l'absence de condition de sortie, il pourrait peut-\^etre se
-r\'ev\'eler utile de fixer une valeur de r\'ef\'erence sur une cellule donn\'ee
-ou de ramener la moyenne de la pression \`a une valeur de r\'ef\'erence (avec le
-d\'ecalage du spectre, on assure l'inversibilit\'e de la matrice \`a chaque pas
-de temps, mais il
-faudrait v\'erifier si la pression n'est pas susceptible de d\'eriver au cours
-du calcul).
+Moreover, in the absence of an outlet condition, it could perhaps
+prove useful to set a reference value on a given cell
+or to bring the average pressure back to a reference value (with the
+shift of the spectrum, one ensures the invertibility of the matrix at each step
+time, but we should also check whether the pressure is not likely to drift during
+of the calculation).
 
-\etape{Termes non pris en compte}
-Les conditions aux limites actuelles
-semblent causer des difficult\'es lors du traitement du terme
-de gradient transpos\'e de la vitesse dans l'\'equation de Navier-Stokes (terme
-trait\'e de mani\`ere explicite en temps). Il est possible de ``d\'ebrancher'' ce terme en positionnant le mot cl\'e \var{IVISSE} \`a $0$. Sa valeur par
-d\'efaut est $1$ (les termes en gradient transpos\'e sont pris en compte).\\
+\etape{Terms unaccounted for}
+The current boundary conditions seem to cause issues when treating the transposed
+velocity gradient term in the Navier-Stokes equations (handled as explicit term in the
+time scheme). This term can be deactivated setting the \var{ivisse} keyword to $0$
+in the velocity-pressure model.

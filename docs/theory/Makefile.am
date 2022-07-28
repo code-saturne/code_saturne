@@ -35,6 +35,7 @@ bilsc2.tex \
 biblio.tex \
 bndcnd.tex \
 cavitation.tex \
+cs_turbulence_ke.tex \
 cfbase.tex \
 cfener.tex \
 cfmsvl.tex \
@@ -70,7 +71,6 @@ spadis.tex \
 timstp.tex \
 turbul.tex \
 summary.tex \
-turbke.tex \
 turrij.tex \
 viscfa.tex \
 visort.tex \
