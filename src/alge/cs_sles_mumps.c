@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <float.h>
 #include <math.h>
 
 #if defined(HAVE_MPI)
@@ -158,6 +159,8 @@ struct _cs_sles_mumps_t {
  *============================================================================*/
 
 static int  _n_mumps_systems = 0;
+static double  cs_sles_mumps_zero_dthreshold = 100*DBL_MIN;
+static double  cs_sles_mumps_zero_fthreshold = 100*FLT_MIN;
 
 /*============================================================================
  * Static inline private function definitions
@@ -318,7 +321,16 @@ _msr_dmumps(int                   verbosity,
   cs_matrix_get_msr_arrays(a, &a_row_idx, &a_col_ids, &d_val, &x_val);
 
   dmumps->n = (MUMPS_INT)n_rows;
-  dmumps->nnz = (MUMPS_INT8)(n_rows + a_row_idx[n_rows]);
+
+  /* Count number of entries (filtering zero or nearly zero values).
+   * No modification for the diagonal entries. */
+
+  dmumps->nnz = (MUMPS_INT8)(n_rows);
+
+  for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++)
+    for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++)
+      if (fabs(x_val[i]) > cs_sles_mumps_zero_dthreshold)
+        dmumps->nnz += 1;
 
   BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
   BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
@@ -339,6 +351,7 @@ _msr_dmumps(int                   verbosity,
   MUMPS_INT  *_irn = dmumps->irn + n_rows;
   MUMPS_INT  *_jcn = dmumps->jcn + n_rows;
   double  *_a = dmumps->a + n_rows;
+  cs_lnum_t  count = 0;
 
   for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
 
@@ -346,14 +359,20 @@ _msr_dmumps(int                   verbosity,
     for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++) {
       assert(a_col_ids[i] < n_rows);
 
-      _irn[i] = row_num;
-      _jcn[i] = (MUMPS_INT)(a_col_ids[i] + 1);
-      _a[i] = (double)x_val[i];
+      if (fabs(x_val[i]) > cs_sles_mumps_zero_dthreshold) {
+
+        _irn[count] = row_num;
+        _jcn[count] = (MUMPS_INT)(a_col_ids[i] + 1);
+        _a[count] = (double)x_val[i];
+        count++;
+
+      }
 
     } /* Loop on columns */
 
   } /* Loop on rows */
 
+  assert(count + n_rows == dmumps->nnz);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -400,9 +419,17 @@ _parall_msr_dmumps(int                   verbosity,
   cs_parall_counter(&n_g_rows, 1);
   dmumps->n = n_g_rows; /* Global number of rows */
 
-  /* Allocate local arrays */
+  /* Count number of entries (filtering zero or nearly zero values).
+   * No modification for the diagonal entries. */
 
-  dmumps->nnz_loc = (MUMPS_INT8)(n_rows + a_row_idx[n_rows]);
+  dmumps->nnz_loc = (MUMPS_INT8)(n_rows);
+
+  for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++)
+    for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++)
+      if (fabs(x_val[i]) > cs_sles_mumps_zero_dthreshold)
+        dmumps->nnz_loc += 1;
+
+  /* Allocate local arrays */
 
   BFT_MALLOC(dmumps->irn_loc, dmumps->nnz_loc, MUMPS_INT);
   BFT_MALLOC(dmumps->jcn_loc, dmumps->nnz_loc, MUMPS_INT);
@@ -424,20 +451,27 @@ _parall_msr_dmumps(int                   verbosity,
   MUMPS_INT  *_irn = dmumps->irn_loc + n_rows;
   MUMPS_INT  *_jcn = dmumps->jcn_loc + n_rows;
   double  *_a = dmumps->a_loc + n_rows;
+  cs_lnum_t  count = 0;
 
   for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
 
     const cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
     for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++) {
 
-      _irn[i] = (MUMPS_INT)row_gnum;
-      _jcn[i] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
-      _a[i] = (double)x_val[i];
+      if (fabs(x_val[i]) > cs_sles_mumps_zero_dthreshold) {
+
+        _irn[count] = (MUMPS_INT)row_gnum;
+        _jcn[count] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
+        _a[count] = (double)x_val[i];
+        count++;
+
+      }
 
     } /* Loop on columns */
 
   } /* Loop on rows */
 
+  assert(count + n_rows == dmumps->nnz_loc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -662,8 +696,21 @@ _msr_sym_dmumps(int                   verbosity,
   dmumps->n = (MUMPS_INT)n_rows;
   if (cs_matrix_is_symmetric(a)) /* storage is already symmetric */
     dmumps->nnz = n_rows + a_row_idx[n_rows];
-  else
-    dmumps->nnz = n_rows + a_row_idx[n_rows]/2;
+
+  else {
+
+    /* Count number of entries (filtering zero or nearly zero values).
+     * No modification for the diagonal entries. */
+
+    dmumps->nnz = n_rows;
+
+    for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++)
+      for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++)
+        if (a_col_ids[i] < row_id &&
+            fabs(x_val[i]) > cs_sles_mumps_zero_dthreshold)
+          dmumps->nnz += 1;
+
+  }
 
   BFT_MALLOC(dmumps->irn, dmumps->nnz, MUMPS_INT);
   BFT_MALLOC(dmumps->jcn, dmumps->nnz, MUMPS_INT);
@@ -712,7 +759,8 @@ _msr_sym_dmumps(int                   verbosity,
 
         assert(a_col_ids[i] < n_rows);
         MUMPS_INT  col_num = a_col_ids[i] + 1;
-        if (col_num < row_num) {
+        if (col_num < row_num &&
+            fabs(x_val[i]) > cs_sles_mumps_zero_dthreshold) {
           _irn[count] = row_num;
           _jcn[count] = col_num;
           _a[count] = (double)x_val[i];
@@ -722,6 +770,8 @@ _msr_sym_dmumps(int                   verbosity,
       } /* Loop on columns */
 
     } /* Loop on rows */
+
+    assert(count + n_rows == dmumps->nnz);
 
   } /* not a symmetric storage */
 }
@@ -770,7 +820,8 @@ _parall_msr_sym_dmumps(int                   verbosity,
   cs_parall_counter(&n_g_rows, 1);
   dmumps->n = n_g_rows;  /* Global number of rows */
 
-  /* Count extra-diagonal entries */
+  /* Count number of entries (filtering zero or nearly zero values).
+   * No modification for the diagonal entries. */
 
   if (cs_matrix_is_symmetric(a)) { /* storage is already symmetric */
 
@@ -785,7 +836,8 @@ _parall_msr_sym_dmumps(int                   verbosity,
       const cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
       for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++)
         if (row_g_id[a_col_ids[i]] + 1 < row_gnum)
-          count++;
+          if (fabs(x_val[i]) > cs_sles_mumps_zero_dthreshold)
+            count++;
 
     } /* Loop on rows */
 
@@ -841,16 +893,21 @@ _parall_msr_sym_dmumps(int                   verbosity,
       for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++) {
 
         const cs_gnum_t  col_gnum = row_g_id[a_col_ids[i]] + 1;
-        if (col_gnum < row_gnum) {
+        if (col_gnum < row_gnum &&
+            fabs(x_val[i]) > cs_sles_mumps_zero_dthreshold) {
+
           _irn[count] = (MUMPS_INT)row_gnum;
           _jcn[count] = (MUMPS_INT)col_gnum;
           _a[count] = (double)x_val[i];
           count++;
+
         }
 
       } /* Loop on columns */
 
     } /* Loop on rows */
+
+    assert(count + n_rows == dmumps->nnz_loc);
 
   } /* Not a symmetric storage */
 }
@@ -1023,7 +1080,6 @@ _init_smumps_settings(int                 verbosity,
   smumps->ICNTL(5) = 0;    /* 0: assembled / 1: elemental */
   smumps->ICNTL(20) = 0;   /* 0: dense RHS on rank 0 */
   smumps->ICNTL(21) = 0;   /* 0: dense solution array on rank 0 */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1062,7 +1118,15 @@ _msr_smumps(int                   verbosity,
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
 
   smumps->n = (MUMPS_INT)n_rows;
-  smumps->nnz = (MUMPS_INT8)(n_rows + a_row_idx[n_rows]);
+  smumps->nnz = (MUMPS_INT8)(n_rows);
+
+  /* Count number of entries (filtering zero or nearly zero values).
+   * No modification for the diagonal entries. */
+
+  for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++)
+    for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++)
+      if (fabs(x_val[i]) > cs_sles_mumps_zero_fthreshold)
+        smumps->nnz += 1;
 
   BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
   BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
@@ -1083,6 +1147,7 @@ _msr_smumps(int                   verbosity,
   MUMPS_INT  *_irn = smumps->irn + n_rows;
   MUMPS_INT  *_jcn = smumps->jcn + n_rows;
   float  *_a = smumps->a + n_rows;
+  cs_lnum_t  count = 0;
 
   for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
 
@@ -1090,14 +1155,20 @@ _msr_smumps(int                   verbosity,
     for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++) {
       assert(a_col_ids[i] < n_rows);
 
-      _irn[i] = row_num;
-      _jcn[i] = (MUMPS_INT)(a_col_ids[i] + 1);
-      _a[i] = (float)x_val[i];
+      if (fabs(x_val[i]) > cs_sles_mumps_zero_fthreshold) {
+
+        _irn[count] = row_num;
+        _jcn[count] = (MUMPS_INT)(a_col_ids[i] + 1);
+        _a[count] = (float)x_val[i];
+        count++;
+
+      }
 
     } /* Loop on columns */
 
   } /* Loop on rows */
 
+  assert(count + n_rows == smumps->nnz);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1144,9 +1215,17 @@ _parall_msr_smumps(int                   verbosity,
   cs_parall_counter(&n_g_rows, 1);
   smumps->n = (MUMPS_INT)n_g_rows; /* Global number of rows */
 
-  /* Allocate local arrays */
+  /* Count number of entries (filtering zero or nearly zero values).
+   * No modification for the diagonal entries. */
 
-  smumps->nnz_loc = (MUMPS_INT8)(n_rows + a_row_idx[n_rows]);
+  smumps->nnz_loc = (MUMPS_INT8)(n_rows);
+
+  for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++)
+    for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++)
+      if (fabs(x_val[i]) > cs_sles_mumps_zero_fthreshold)
+        smumps->nnz_loc += 1;
+
+  /* Allocate local arrays */
 
   BFT_MALLOC(smumps->irn_loc, smumps->nnz_loc, MUMPS_INT);
   BFT_MALLOC(smumps->jcn_loc, smumps->nnz_loc, MUMPS_INT);
@@ -1168,20 +1247,27 @@ _parall_msr_smumps(int                   verbosity,
   MUMPS_INT  *_irn = smumps->irn_loc + n_rows;
   MUMPS_INT  *_jcn = smumps->jcn_loc + n_rows;
   float  *_a = smumps->a_loc + n_rows;
+  cs_lnum_t  count = 0;
 
   for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
 
     const cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
     for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++) {
 
-      _irn[i] = (MUMPS_INT)row_gnum;
-      _jcn[i] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
-      _a[i] = (float)x_val[i];
+      if (fabs(x_val[i]) > cs_sles_mumps_zero_fthreshold) {
+
+        _irn[count] = (MUMPS_INT)row_gnum;
+        _jcn[count] = (MUMPS_INT)(row_g_id[a_col_ids[i]] + 1);
+        _a[count] = (float)x_val[i];
+        count++;
+
+      }
 
     } /* Loop on columns */
 
   } /* Loop on rows */
 
+  assert(count + n_rows == smumps->nnz_loc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1309,7 +1395,20 @@ _msr_sym_smumps(int                   verbosity,
   const cs_lnum_t  n_rows = cs_matrix_get_n_rows(a);
 
   smumps->n = (MUMPS_INT)n_rows;
-  smumps->nnz = (MUMPS_INT8)(n_rows + a_row_idx[n_rows]);
+  if (cs_matrix_is_symmetric(a)) /* storage is already symmetric */
+    smumps->nnz = n_rows + a_row_idx[n_rows];
+
+  else {
+
+    smumps->nnz = (MUMPS_INT8)(n_rows);
+
+    for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++)
+      for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++)
+        if (a_col_ids[i] < row_id &&
+            fabs(x_val[i]) > cs_sles_mumps_zero_fthreshold)
+          smumps->nnz += 1;
+
+  }
 
   BFT_MALLOC(smumps->irn, smumps->nnz, MUMPS_INT);
   BFT_MALLOC(smumps->jcn, smumps->nnz, MUMPS_INT);
@@ -1331,26 +1430,48 @@ _msr_sym_smumps(int                   verbosity,
   MUMPS_INT  *_jcn = smumps->jcn + n_rows;
   float  *_a = smumps->a + n_rows;
 
-  cs_lnum_t  count = n_rows;
-  for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
+  if (cs_matrix_is_symmetric(a)) { /* storage is already symmetric */
 
-    MUMPS_INT  row_num = (MUMPS_INT)(row_id + 1);
-    for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++) {
+    for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
 
-      assert(a_col_ids[i] < n_rows);
-      MUMPS_INT  col_num = a_col_ids[i] + 1;
-      if (col_num < row_num) {
-        _irn[count] = row_num;
-        _jcn[count] = col_num;
-        _a[count] = (float)x_val[i];
-        count++;
-      }
+      MUMPS_INT  row_num = (MUMPS_INT)(row_id + 1);
+      for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++) {
 
-    } /* Loop on columns */
+        assert(a_col_ids[i] < n_rows);
+        _irn[i] = row_num;
+        _jcn[i] = a_col_ids[i] + 1;
+        _a[i] = (float)x_val[i];
 
-  } /* Loop on rows */
+      } /* Loop on columns */
 
-  /* TODO: optimization when the storage is already symmetric */
+    } /* Loop on rows */
+
+  }
+  else { /* Keep only the lower triangular block */
+
+    cs_lnum_t  count = 0;
+    for (cs_lnum_t row_id = 0; row_id < n_rows; row_id++) {
+
+      MUMPS_INT  row_num = (MUMPS_INT)(row_id + 1);
+      for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++) {
+
+        assert(a_col_ids[i] < n_rows);
+        MUMPS_INT  col_num = a_col_ids[i] + 1;
+        if (col_num < row_num &&
+            fabs(x_val[i]) > cs_sles_mumps_zero_fthreshold) {
+          _irn[count] = row_num;
+          _jcn[count] = col_num;
+          _a[count] = (float)x_val[i];
+          count++;
+        }
+
+      } /* Loop on columns */
+
+    } /* Loop on rows */
+
+    assert(count + n_rows == smumps->nnz);
+
+  } /* not a symmetric storage */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1397,7 +1518,8 @@ _parall_msr_sym_smumps(int                   verbosity,
   cs_parall_counter(&n_g_rows, 1);
   smumps->n = n_g_rows;  /* Global number of rows */
 
-  /* Count extra-diagonal entries */
+  /* Count number of entries (filtering zero or nearly zero values).
+   * No modification for the diagonal entries. */
 
   if (cs_matrix_is_symmetric(a)) { /* storage is already symmetric */
 
@@ -1412,7 +1534,8 @@ _parall_msr_sym_smumps(int                   verbosity,
       const cs_gnum_t  row_gnum = row_g_id[row_id] + 1;
       for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++)
         if (row_g_id[a_col_ids[i]] + 1 < row_gnum)
-          count++;
+          if (fabs(x_val[i]) > cs_sles_mumps_zero_fthreshold)
+            count++;
 
     } /* Loop on rows */
 
@@ -1468,16 +1591,21 @@ _parall_msr_sym_smumps(int                   verbosity,
       for (cs_lnum_t i = a_row_idx[row_id]; i < a_row_idx[row_id+1]; i++) {
 
         const cs_gnum_t  col_gnum = row_g_id[a_col_ids[i]] + 1;
-        if (col_gnum < row_gnum) {
+        if (col_gnum < row_gnum &&
+            fabs(x_val[i]) > cs_sles_mumps_zero_fthreshold) {
+
           _irn[count] = (MUMPS_INT)row_gnum;
           _jcn[count] = (MUMPS_INT)col_gnum;
           _a[count] = (float)x_val[i];
           count++;
+
         }
 
       } /* Loop on columns */
 
     } /* Loop on rows */
+
+    assert(count + n_rows == smumps->nnz_loc);
 
   } /* Not a symmetric storage */
 }
