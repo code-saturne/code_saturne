@@ -647,7 +647,6 @@ _msr_sym_dmumps(int                   verbosity,
   _init_dmumps_settings(verbosity, dmumps); /* default settings */
 
   dmumps->ICNTL(18) = 0;   /* 0: centralized on rank 0 (sequential run) */
-  dmumps->CNTL(1) = 0.0;   /* No pivoting (quicker) */
 
   /* Retrieve local arrays associated to the current matrix */
 
