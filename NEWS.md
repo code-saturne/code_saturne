@@ -1,6 +1,11 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Physical modeling:
+
+- Add some atmospheric universal functions for large scale idealized wind
+  profiles.
+
 Bug fixes:
 
 - Restart from different mesh: fix values shift in variable exchange when

@@ -82,6 +82,20 @@ typedef enum {
 
 } cs_atmo_aerosol_type_t;
 
+/*----------------------------------------------------------------------------
+ * Atmospheric universal funcitons
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_ATMO_UNIV_FN_CHENG = 0,
+  CS_ATMO_UNIV_FN_HOGSTROM = 1,
+  CS_ATMO_UNIV_FN_BUSINGER = 2,
+  CS_ATMO_UNIV_FN_HARTOGENSIS = 3,
+
+} cs_atmo_universal_functions_t;
+
+
 /*============================================================================
  * Type definitions
  *============================================================================*/

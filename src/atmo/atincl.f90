@@ -607,6 +607,8 @@ double precision, save:: zaero
 
     !=============================================================================
 
+    ! Switch universal functions
+
     ! Derivative functions
 
     function cs_mo_phim(z,dlmo) result(coef) &
@@ -630,6 +632,28 @@ double precision, save:: zaero
       real(c_double) :: coef
 
     end function cs_mo_phih
+
+    ! Integrated version from z0 to z
+
+    function cs_mo_psim(z,z0,dlmo) result(coef) &
+        bind(C, name='cs_mo_psim')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(c_double), value :: z,z0,dlmo
+      real(c_double) :: coef
+
+    end function cs_mo_psim
+
+    function cs_mo_psih (z,z0,dlmo) result(coef) &
+        bind(C, name='cs_mo_psih')
+      use, intrinsic :: iso_c_binding
+
+      implicit none
+
+      real(c_double), value :: z,z0,dlmo
+      real(c_double) :: coef
+
+    end function cs_mo_psih
 
   end interface
 
@@ -946,180 +970,6 @@ if (imeteo.gt.0) then
 endif
 
 end subroutine finalize_meteo
-
-!---------------------------------------------------------------------------
-
-!> \brief Universal functions of Cheng and Brutsaert 2005, for stable
-!>        (derivative function)
-
-!> \param[in]  z             altitude
-!> \param[in]  dlmo          inverse Monin Obukhov length
-!> \param[out] coef          function
-
-! Integrated version from z0 to z
-
-subroutine mo_psim_s (z,z0,dlmo,coef)
-
-  implicit none
-
-  double precision z,z0,dlmo,coef
-
-  double precision a,b,x,x0
-
-  a=6.1d0
-  b=2.5d0
-  x=z * dlmo
-  x0=z0 * dlmo
-
-  coef=dlog(z/z0)+a*(dlog(x+(1.d0+x**b)**(1.d0/b))-dlog(x0+(1.d0+x0**b)**(1.d0/b)))
-
-end subroutine mo_psim_s
-
-subroutine mo_psih_s (z,z0,dlmo,coef)
-
-  implicit none
-
-  double precision z,z0,dlmo,coef
-
-  double precision a,b,x,x0
-
-  a=5.3d0
-  b=1.1d0
-  x=z * dlmo
-  x0=z0 * dlmo
-
-  coef=dlog(z/z0)+a*(dlog(x+(1.d0+x**b)**(1.d0/b))-dlog(x0+(1.d0+x0**b)**(1.d0/b)))
-
-end subroutine mo_psih_s
-
-!---------------------------------------------------------------------------
-
-!> \brief Universal functions of Hogstrom 1988, for unstable
-!>        (derivative function)
-
-!> \param[in]  z             altitude
-!> \param[in]  dlmo             Monin Obukhov length
-!> \param[out] coef          function
-
-! Integrated version from z0 to z
-
-subroutine mo_psim_u (z,z0,dlmo,coef)
-
-  implicit none
-
-  double precision z,z0,dlmo,coef
-
-  double precision a,b,e,x,x0,psi,psi0
-
-  a=1.d0
-  b=19.3d0
-  e=0.25d0
-  x=z * dlmo
-  x0=z0 * dlmo
-  psi=(1.d0-b*x)**e
-  psi0=(1.d0-b*x0)**e
-
-  coef=a*(dlog(z/z0)                                &
-          -2.d0*dlog((1.d0+psi)/(1.d0+psi0))        &
-          -dlog((1.d0+psi**2.d0)/(1.d0+psi0**2.d0)) &
-          +2.d0*(datan(psi)-datan(psi0)))
-
-end subroutine mo_psim_u
-
-subroutine mo_psih_u (z,z0,dlmo,coef)
-
-  implicit none
-
-  double precision z,z0,dlmo,coef
-
-  double precision a,b,e,x,x0,psi,psi0
-
-  a=0.95d0
-  b=11.6d0
-  e=0.5d0
-  x=z * dlmo
-  x0=z0 * dlmo
-  psi=(1.d0-b*x)**e
-  psi0=(1.d0-b*x0)**e
-
-  coef=a*(dlog(z/z0)                                &
-          -2.d0*dlog((1.d0+psi)/(1.d0+psi0)))
-end subroutine mo_psih_u
-
-!---------------------------------------------------------------------------
-
-!> \brief Universal functions, for neutral
-!>        (derivative function)
-
-!> \param[in]  z             altitude
-!> \param[in]  dlmo          Inverse Monin Obukhov length
-!> \param[out] coef          function
-
-! Integrated version from z0 to z
-
-subroutine mo_psim_n (z,z0,dlmo,coef)
-
-  implicit none
-
-  double precision z,z0,dlmo,coef
-
-  coef=dlog(z/z0)
-
-end subroutine mo_psim_n
-
-subroutine mo_psih_n (z,z0,dlmo,coef)
-
-  implicit none
-
-  double precision z,z0,dlmo,coef
-
-  coef=dlog(z/z0)
-
-end subroutine mo_psih_n
-
-! Switch universal functions
-
-! Integrated version from z0 to z
-
-function cs_mo_psim(z,z0,dlmo) result(coef) &
-    bind(C, name='cs_mo_psim')
-  use, intrinsic :: iso_c_binding
-  implicit none
-  real(c_double), value :: z,z0,dlmo
-  real(c_double) :: coef
-
-  ! Local variable
-  double precision :: dlmoneutral = 1.d-12
-
-  if (abs(dlmo).lt.dlmoneutral) then
-    call mo_psim_n(z,z0,dlmo,coef)
-  elseif (dlmo.ge.0.d0) then
-    call mo_psim_s(z,z0,dlmo,coef)
-  else
-    call mo_psim_u(z,z0,dlmo,coef)
-  endif
-
-end function cs_mo_psim
-
-function cs_mo_psih (z,z0,dlmo) result(coef) &
-    bind(C, name='cs_mo_psih')
-  use, intrinsic :: iso_c_binding
-
-  implicit none
-
-  real(c_double), value :: z,z0,dlmo
-  real(c_double) :: coef
-  double precision :: dlmoneutral = 1.d-12
-
-  if (abs(dlmo).lt.dlmoneutral) then
-    call mo_psih_n(z,z0,dlmo,coef)
-  elseif (dlmo.ge.0.d0) then
-    call mo_psih_s(z,z0,dlmo,coef)
-  else
-    call mo_psih_u(z,z0,dlmo,coef)
-  endif
-
-end function cs_mo_psih
 
 !---------------------------------------------------------------------------
 

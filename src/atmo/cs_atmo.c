@@ -153,10 +153,10 @@ static cs_atmo_option_t  _atmo_option = {
   .meteo_t2 = 0.,
   .meteo_tstar = 0.,
   .meteo_psea = 101325.,
-  .meteo_phim_s = 0,
-  .meteo_phih_s = 0,
-  .meteo_phim_u = 0,
-  .meteo_phih_u = 0,
+  .meteo_phim_s = 0, /* Cheng 2005 by default */
+  .meteo_phih_s = 0, /* Cheng 2005 by default */
+  .meteo_phim_u = 1, /* Hogstrom 1988 by default */
+  .meteo_phih_u = 1, /* Hogstrom 1988 by default */
   .z_dyn_met  = NULL,
   .z_temp_met = NULL,
   .u_met      = NULL,
@@ -165,6 +165,12 @@ static cs_atmo_option_t  _atmo_option = {
   .hyd_p_met  = NULL,
   .pot_t_met  = NULL
 };
+
+static const char *_univ_fn_name[] = {N_("Cheng 2005"),
+                                      N_("Hogstrom 1988"),
+                                      N_("Businger 1971"),
+                                      N_("Hartogensis 2007")};
+
 
 /* global atmo constants structure */
 static cs_atmo_constants_t _atmo_constants = {
@@ -645,7 +651,7 @@ _convert_from_wgs84_to_l93(void)
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Universal functions, for neutral
- *        (derivative function)
+ *        (derivative function Phi_m and Phi_h)
  *  \return coef
  *
  * \param[in]  z             altitude
@@ -668,10 +674,37 @@ _mo_phih_n(cs_real_t              z,
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Universal functions of Cheng and Brutsaert 2005, for stable
- *        (derivative function)
+/*! \brief Universal functions, for neutral
+ *        (Integrated version from z0 to z)
  *
  * \param[in]  z             altitude
+ * \param[in]  z0            altitude of the starting point integration
+ * \param[in]  dlmo          Inverse Monin Obukhov length
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+_mo_psim_n(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo)
+{
+  return log(z/z0);
+}
+
+cs_real_t
+_mo_psih_n(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo)
+{
+  return log(z/z0);
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Universal functions for stable
+ *        (derivative function Phi_m and Phi_h)
+ *
+ * \param[in]  z             altitude
+ * \param[in]  z0            altitude of the starting point integration
  * \param[in]  dlmo          inverse Monin Obukhov length
  */
 /*----------------------------------------------------------------------------*/
@@ -680,28 +713,98 @@ cs_real_t
 _mo_phim_s(cs_real_t              z,
            cs_real_t              dlmo)
 {
-  cs_real_t a = 6.1;
-  cs_real_t b = 2.5;
   cs_real_t x = z * dlmo;
+  if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_CHENG) {
+    cs_real_t a = 6.1;
+    cs_real_t b = 2.5;
 
-  return 1. + a*(x+(pow(x,b))*( pow(1.+pow(x,b),(1.-b)/b) ))
-         / (x+ pow(1.+ pow(x,b),1./b));
+    return 1. + a*(x+(pow(x,b))*( pow(1.+pow(x,b),(1.-b)/b) ))
+           / (x+ pow(1.+ pow(x,b),1./b));
+  }
+  else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_HOGSTROM) {
+
+    if (x < 0.5) {
+      cs_real_t b = 4.8;
+
+      return 1. + b*x;
+    }
+    else if (x < 10.) {
+      cs_real_t a = 7.9;
+
+      return a - 4.25/x + 1./pow(x,2.);
+    }
+    else {
+      cs_real_t a = 0.7485;
+
+      return a*x;
+    }
+  }
+  else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_BUSINGER) {
+
+    if (x < 0.5) {
+      cs_real_t b = 4.7;
+
+      return 1. + b*x;
+    }
+    else if (x < 10.) {
+      cs_real_t a = 7.85;
+
+      return a - 4.25/x + 1./pow(x,2.);
+    }
+    else {
+      cs_real_t a = 0.7435;
+
+      return a*x;
+    }
+  }
+  else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_HARTOGENSIS) {
+    cs_real_t a = 1.;
+    cs_real_t b = 2./3.;
+    cs_real_t c = 5.;
+    cs_real_t d = 0.35;
+
+    return 1. + x*(a + b*exp(-d*x) - b*d*(x - c/d)*exp(-d*x));
+  }
+
 }
 
 cs_real_t
 _mo_phih_s(cs_real_t              z,
            cs_real_t              dlmo)
 {
-  cs_real_t a = 5.3;
-  cs_real_t b = 1.1;
   cs_real_t x = z * dlmo;
+  if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_CHENG) {
+    cs_real_t a = 5.3;
+    cs_real_t b = 1.1;
 
-  return 1.+a*(x+(pow(x,b))*(pow((1.+pow(x,b)), ((1.-b)/b))))
-         / (x + pow((1.+pow(x,b)),1./b));
+    return 1.+a*(x+(pow(x,b))*(pow((1.+pow(x,b)), ((1.-b)/b))))
+           / (x + pow((1.+pow(x,b)),1./b));
+  }
+  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_HOGSTROM) {
+    cs_real_t a = 0.95;
+    cs_real_t b = 7.8;
+
+    return a + b*x;
+  }
+  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_BUSINGER) {
+    cs_real_t a = 0.74;
+    cs_real_t b = 4.7;
+
+    return a + b*x;
+  }
+  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_HARTOGENSIS) {
+    cs_real_t a = 1.;
+    cs_real_t b = 2./3.;
+    cs_real_t c = 5.;
+    cs_real_t d = 0.35;
+
+    return 1. + x*(a*pow((1. + 2./3. * a * x),0.5)
+        + b*exp(-d*x) - b*d*(x - c/d)*exp(-d*x));
+  }
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Universal functions of Hogstrom 1988, for unstable
+/*! \brief Universal functions for unstable
  *        (derivative function)
  *
  * \param[in]  z             altitude
@@ -713,24 +816,225 @@ cs_real_t
 _mo_phim_u(cs_real_t              z,
            cs_real_t              dlmo)
 {
-  cs_real_t a = 1.;
-  cs_real_t b = 19.3;
-  cs_real_t e = -0.25;
   cs_real_t x = z * dlmo;
 
-  return a*pow((1.-b*x),e);
+  if (cs_glob_atmo_option->meteo_phim_u == CS_ATMO_UNIV_FN_HOGSTROM) {
+    cs_real_t a = 1.;
+    cs_real_t b = 19.3;
+    cs_real_t e = -0.25;
+
+    return a*pow((1.-b*x),e);
+  }
+  else if (cs_glob_atmo_option->meteo_phim_u == CS_ATMO_UNIV_FN_BUSINGER) {
+    cs_real_t a = 1.;
+    cs_real_t b = 15.;
+    cs_real_t e = -0.25;
+
+    return a*pow((1.-b*x),e);
+  }
+
 }
 
 cs_real_t
 _mo_phih_u(cs_real_t              z,
            cs_real_t              dlmo)
 {
-  cs_real_t a = 0.95;
-  cs_real_t b = 11.6;
-  cs_real_t e = -0.5;
   cs_real_t x = z * dlmo;
+  if (cs_glob_atmo_option->meteo_phih_u == CS_ATMO_UNIV_FN_HOGSTROM) {
+    cs_real_t a = 0.95;
+    cs_real_t b = 11.6;
+    cs_real_t e = -0.5;
+
+    return a*pow(1.-b*x, e);
+  }
+  else if (cs_glob_atmo_option->meteo_phih_u == CS_ATMO_UNIV_FN_BUSINGER) {
+  cs_real_t a = 0.74;
+  cs_real_t b = 9.;
+  cs_real_t e = -0.5;
 
   return a*pow(1.-b*x, e);
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Universal functions for stable
+ *        (integral functions Psi_m and Psi_h, integrated version from z0 to z)
+ *
+ * \param[in]  z             altitude
+ * \param[in]  z0            altitude of the starting point integration
+ * \param[in]  dlmo          inverse Monin Obukhov length
+ *
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+_mo_psim_s(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo)
+{
+  cs_real_t x = z * dlmo;
+  cs_real_t x0 = z0 * dlmo;
+  if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_CHENG) {
+    cs_real_t a = 6.1;
+    cs_real_t b = 2.5;
+
+    return log(z/z0) + a*log(x + pow((1. + pow(x,b)),1./b))
+      - a*log(x0 + pow((1. + pow(x0,b)),1./b));
+  }
+  else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_HOGSTROM) {
+
+    if (x < 0.5) {
+      cs_real_t b = 4.8;
+
+      return log(z/z0) + b*(x - x0);
+    }
+    else if (x < 10.) {
+      cs_real_t a = 7.9;
+      cs_real_t b = 4.8;
+      cs_real_t c = 4.1;
+
+      return a*log(2.*x) + 4.25/x - 0.5/pow(x,2.) - log(2.*x0) - b*x0 - c;
+    }
+    else {
+      cs_real_t a = 0.7485;
+      cs_real_t b = 7.9;
+      cs_real_t c = 4.8;
+
+      return a*x + b*log(20.) - 11.165 - log(2.*x0) - c*x0;
+    }
+  }
+  else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_BUSINGER) {
+
+    if (x < 0.5) {
+      cs_real_t b = 4.7;
+
+      return log(z/z0) + b*(x - x0);
+    }
+    else if (x < 10.) {
+      cs_real_t a = 7.85;
+      cs_real_t b = 4.7;
+      cs_real_t c = 4.15;
+
+      return a*log(2.*x) + 4.25/x - 0.5/pow(x,2.) - log(2.*x0) - b*x0 - c;
+    }
+    else {
+      cs_real_t a = 0.7435;
+      cs_real_t b = 7.85;
+      cs_real_t c = 4.7;
+
+      return a*x + b*log(20.) - 11.165 - log(2.*x0) - c*x0;
+    }
+  }
+   else if (cs_glob_atmo_option->meteo_phim_s == CS_ATMO_UNIV_FN_HARTOGENSIS) {
+     cs_real_t a = 1.;
+     cs_real_t b = 2./3.;
+     cs_real_t c = 5.;
+     cs_real_t d = 0.35;
+
+     return log(z/z0) + a*(x - x0)
+       + b*(x - c/d)*exp(-d*x) - b*(x0 - c/d)*exp(-d*x0);
+   }
+}
+
+cs_real_t
+_mo_psih_s(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo)
+{
+  cs_real_t x = z * dlmo;
+  cs_real_t x0 = z0 * dlmo;
+  if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_CHENG) {
+    cs_real_t a = 5.3;
+    cs_real_t b = 1.1;
+
+    return log(z/z0) + a*log(x + pow((1. + pow(x,b)),1./b))
+      - a*log(x0 + pow((1. + pow(x0,b)),1./b));
+  }
+  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_HOGSTROM) {
+    cs_real_t a = 0.95;
+    cs_real_t b = 7.8;
+
+    return a*log(z/z0) + b*(x - x0);
+  }
+  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_BUSINGER) {
+    cs_real_t a = 0.74;
+    cs_real_t b = 4.7;
+
+    return a*log(z/z0) + b*(x - x0);
+  }
+  else if (cs_glob_atmo_option->meteo_phih_s == CS_ATMO_UNIV_FN_HARTOGENSIS) {
+    cs_real_t a = 1.;
+    cs_real_t b = 2./3.;
+    cs_real_t c = 5.;
+    cs_real_t d = 0.35;
+
+    return log(z/z0) + pow((1. + 2./3. * a * x),3./2.)
+      + b*(x - c/d)*exp(-d*x) - pow((1. + 2./3. * a * x0),3./2.)
+      - b*(x0 - c/d)*exp(-d*x0);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Universal functions for unstable
+ *        (integral functions Psi_m and Psi_h, integrated version from z0 to z)
+ *
+ * \param[in]  z             altitude
+ * \param[in]  z0            altitude of the starting point integration
+ * \param[in]  dlmo          inverse Monin Obukhov length
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+_mo_psim_u(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo)
+{
+   if (cs_glob_atmo_option->meteo_phim_u == CS_ATMO_UNIV_FN_HOGSTROM) {
+     cs_real_t b = 19.3;
+     cs_real_t e = 0.25;
+     cs_real_t x = pow((1. - b*z*dlmo), e);
+     cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+
+     return log(z/z0) - 2.*log((1. + x)/(1. + x0))
+       - log((1. + pow(x,2.))/(1. + pow(x0,2.))) + 2.*atan(x) - 2.*atan(x0);
+   }
+   else if (cs_glob_atmo_option->meteo_phim_u == CS_ATMO_UNIV_FN_BUSINGER) {
+     cs_real_t b = 15.;
+     cs_real_t e = 0.25;
+     cs_real_t x = pow((1. - b*z*dlmo), e);
+     cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+
+     return log(z/z0) - 2.*log((1. + x)/(1. + x0))
+       - log((1. + pow(x,2.))/(1. + pow(x0,2.))) + 2.*atan(x) - 2.*atan(x0);
+   }
+}
+
+cs_real_t
+_mo_psih_u(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo)
+{
+   if (cs_glob_atmo_option->meteo_phih_u == CS_ATMO_UNIV_FN_HOGSTROM) {
+     cs_real_t a = 0.95;
+     cs_real_t b = 11.6;
+     cs_real_t e = 0.5;
+     cs_real_t x = pow((1. - b*z*dlmo), e);
+     cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+
+     return a*(log(z/z0) - 2.*log((1. + x)/(1. + x0)));
+   }
+   else if (cs_glob_atmo_option->meteo_phih_u == CS_ATMO_UNIV_FN_BUSINGER) {
+     cs_real_t a = 0.74;
+     cs_real_t b = 9.;
+     cs_real_t e = 0.5;
+     cs_real_t x = pow((1. - b*z*dlmo), e);
+     cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+
+     return a*(log(z/z0) - 2.*log((1. + x)/(1. + x0)));
+   }
 }
 
 /*============================================================================
@@ -787,6 +1091,64 @@ cs_mo_phih(cs_real_t              z,
     coef = _mo_phih_s(z,dlmo);
   else
     coef = _mo_phih_u(z,dlmo);
+
+  return coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Universal function psim for neutral, stable and unstable
+ *
+ * \param[in]  z             altitude
+ * \param[in]  z0            altitude of the starting point integration
+ * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \return                   factor
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_mo_psim(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo)
+{
+  cs_real_t dlmoneutral = 1.e-12;
+  cs_real_t coef;
+
+  if (CS_ABS(dlmo) < dlmoneutral)
+    coef = _mo_psim_n(z, z0, dlmo);
+  else if (dlmo >= 0.)
+    coef = _mo_psim_s(z, z0, dlmo);
+  else
+    coef = _mo_psim_u(z, z0, dlmo);
+
+  return coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Universal function psih for neutral, stable and unstable
+ *
+ * \param[in]  z             altitude
+ * \param[in]  z0            altitude of the starting point integration
+ * \param[in]  dlmo          Inverse Monin Obukhov length
+ * \return                   factor
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_mo_psih(cs_real_t              z,
+           cs_real_t              z0,
+           cs_real_t              dlmo)
+{
+  cs_real_t dlmoneutral = 1.e-12;
+  cs_real_t coef;
+
+  if (CS_ABS(dlmo) < dlmoneutral)
+    coef = _mo_psih_n(z, z0, dlmo);
+  else if (dlmo >= 0.)
+    coef = _mo_psih_s(z, z0, dlmo);
+  else
+    coef = _mo_psih_u(z, z0, dlmo);
 
   return coef;
 }
@@ -2312,10 +2674,10 @@ cs_atmo_log_setup(void)
          "    T0:        %12f [K]\n"
          "    Tstar:     %12f [K]\n"
          "    BL height: %12f [m]\n"
-         "    phim_s:    %d\n"
-         "    phih_s:    %d\n"
-         "    phim_u:    %d\n"
-         "    phih_u:    %d\n\n"),
+         "    phim_s:    %s\n"
+         "    phih_s:    %s\n"
+         "    phim_u:    %s\n"
+         "    phih_u:    %s\n\n"),
        cs_glob_atmo_option->meteo_z0,
        cs_glob_atmo_option->meteo_dlmo,
        cs_glob_atmo_option->meteo_ustar0,
@@ -2326,10 +2688,10 @@ cs_atmo_log_setup(void)
        cs_glob_atmo_option->meteo_t0,
        cs_glob_atmo_option->meteo_tstar,
        cs_glob_atmo_option->meteo_zi,
-       cs_glob_atmo_option->meteo_phim_s,
-       cs_glob_atmo_option->meteo_phih_s,
-       cs_glob_atmo_option->meteo_phim_u,
-       cs_glob_atmo_option->meteo_phih_u);
+       _univ_fn_name[cs_glob_atmo_option->meteo_phim_s],
+       _univ_fn_name[cs_glob_atmo_option->meteo_phih_s],
+       _univ_fn_name[cs_glob_atmo_option->meteo_phim_u],
+       _univ_fn_name[cs_glob_atmo_option->meteo_phih_u]);
   }
 
 }
