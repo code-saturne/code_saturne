@@ -647,6 +647,18 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
   case CS_PARAM_PRECOND_ICC0:
     return  "ICC0";
     break;
+  case CS_PARAM_PRECOND_MUMPS:
+    return  "dMUMPS (LU)";
+    break;
+  case CS_PARAM_PRECOND_MUMPS_FLOAT:
+    return  "sMUMPS (LU)";
+    break;
+  case CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT:
+    return  "sMUMPS (LDLt)";
+    break;
+  case CS_PARAM_PRECOND_MUMPS_LDLT:
+    return  "dMUMPS (LDLt)";
+    break;
   case CS_PARAM_PRECOND_POLY1:
     return  "Neumann.Poly.O1";
     break;

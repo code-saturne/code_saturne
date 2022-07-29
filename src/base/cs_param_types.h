@@ -775,7 +775,7 @@ typedef enum {
  * Variant with GMRES as inner solver.
  *
  * \var CS_PARAM_PRECOND_LU
- * LU factorization (direct solver)
+ * LU factorization (direct solver) with PETSc
  *
  * \var CS_PARAM_PRECOND_ILU0
  * Incomplete LU factorization (fill-in coefficient set to 0)
@@ -784,6 +784,24 @@ typedef enum {
  * Incomplete Cholesky factorization (fill-in coefficient set to 0). This is
  * variant of the ILU0 preconditioner dedicated to symmetric positive definite
  * system
+ *
+ * \var CS_PARAM_PRECOND_MUMPS
+ * Direct solver available with the MUMPS library and used as a preconditioner
+ * Case of a L.U factorization and double-precision
+ *
+ * \var CS_PARAM_PRECOND_MUMPS_FLOAT
+ * Direct solver available with the MUMPS library and used as a preconditioner
+ * Case of a L.U factorization and single-precision
+ *
+ * \var CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT
+ * Direct solver available with the MUMPS library and used as a preconditioner
+ * Case of a L.D.Lt factorization and single-precision
+ * The input matrix should be symmetric.
+ *
+ * \var CS_PARAM_PRECOND_MUMPS_LDLT
+ * Direct solver available with the MUMPS library and used as a preconditioner
+ * Case of a L.D.Lt factorization and double-precision
+ * The input matrix should be symmetric.
  *
  * \var CS_PARAM_PRECOND_POLY1
  * Neumann polynomial preconditioning. Polynoms of order 1.
@@ -800,15 +818,19 @@ typedef enum {
 
   CS_PARAM_PRECOND_NONE,
 
-  CS_PARAM_PRECOND_BJACOB_ILU0, /*!< Only with PETSc */
-  CS_PARAM_PRECOND_BJACOB_SGS,  /*!< Only with PETSc */
+  CS_PARAM_PRECOND_BJACOB_ILU0,        /*!< Only with PETSc */
+  CS_PARAM_PRECOND_BJACOB_SGS,         /*!< Only with PETSc */
   CS_PARAM_PRECOND_AMG,
   CS_PARAM_PRECOND_DIAG,
-  CS_PARAM_PRECOND_GKB_CG,      /*!< Only with PETSc */
-  CS_PARAM_PRECOND_GKB_GMRES,   /*!< Only with PETSc */
-  CS_PARAM_PRECOND_LU,
-  CS_PARAM_PRECOND_ILU0,        /*!< Only with PETSc */
-  CS_PARAM_PRECOND_ICC0,        /*!< Only with PETSc*/
+  CS_PARAM_PRECOND_GKB_CG,             /*!< Only with PETSc */
+  CS_PARAM_PRECOND_GKB_GMRES,          /*!< Only with PETSc */
+  CS_PARAM_PRECOND_LU,                 /*!< Only with PETSc */
+  CS_PARAM_PRECOND_ILU0,               /*!< Only with PETSc */
+  CS_PARAM_PRECOND_ICC0,               /*!< Only with PETSc */
+  CS_PARAM_PRECOND_MUMPS,              /*!< Only with MUMPS */
+  CS_PARAM_PRECOND_MUMPS_FLOAT,        /*!< Only with MUMPS */
+  CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT,   /*!< Only with MUMPS */
+  CS_PARAM_PRECOND_MUMPS_LDLT,         /*!< Only with MUMPS */
   CS_PARAM_PRECOND_POLY1,
   CS_PARAM_PRECOND_POLY2,
   CS_PARAM_PRECOND_SSOR,

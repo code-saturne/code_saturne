@@ -855,6 +855,29 @@ _set_key(cs_equation_param_t   *eqp,
       } /* End of switch */
 
     }
+    else if (strcmp(keyval, "mumps") == 0            ||
+             strcmp(keyval, "mumps_float") == 0      ||
+             strcmp(keyval, "mumps_float_ldlt") == 0 ||
+             strcmp(keyval, "mumps_ldlt") == 0 ) {
+
+      if (cs_param_sles_check_class(CS_PARAM_SLES_CLASS_MUMPS) !=
+          CS_PARAM_SLES_CLASS_MUMPS)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s(): Eq. %s Error detected while setting \"%s\" key.\n"
+                  " MUMPS is not available with your installation.\n"
+                  " Please check your installation settings.\n",
+                  __func__, eqname, "CS_EQKEY_PRECOND");
+
+      if (strcmp(keyval, "mumps") == 0)
+        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS;
+      else if (strcmp(keyval, "mumps_float") == 0)
+        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_FLOAT;
+      else if (strcmp(keyval, "mumps_float_ldlt") == 0)
+        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT;
+      else if (strcmp(keyval, "mumps_ldlt") == 0)
+        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_LDLT;
+
+    }
     else if (strcmp(keyval, "poly1") == 0) {
       eqp->sles_param->precond = CS_PARAM_PRECOND_POLY1;
       eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_CS;

@@ -1725,6 +1725,16 @@ _set_saturne_sles(bool                 use_field_id,
 
     } /* Multigrid as preconditioner */
 
+    else if (slesp->precond == CS_PARAM_PRECOND_MUMPS            ||
+             slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT      ||
+             slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT ||
+             slesp->precond == CS_PARAM_PRECOND_MUMPS_LDLT) {
+
+      pc = cs_sles_mumps_pc_create(slesp);
+      cs_sles_it_transfer_pc(itsol, &pc);
+
+    }
+
   } /* preconditioner is not defined */
 
   /* In case of high verbosity, additional output are generated */
