@@ -762,7 +762,7 @@ typedef struct {
   cs_real_t                      delta_thermal_tolerance;
 
   /*! \var n_max_outer_iter
-   * Stopping crierion related to the maximum number of outer iterations
+   * Stopping criterion related to the maximum number of outer iterations
    * allowed. This outer iteration encompasses the Navier-Stokes system,
    * and (according to the case settings) the turbulence system and/or
    * the thermal system.

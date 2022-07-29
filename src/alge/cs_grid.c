@@ -2576,7 +2576,6 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
    * on the negative coefficient. */
 
   cs_lnum_t m_max = -1;
-
   cs_lnum_t n_remain = f_n_rows;
 
   if (dd_threshold > 0) {
@@ -2596,7 +2595,8 @@ _pairwise_msr(cs_lnum_t         f_n_rows,
           a_max[ii] = CS_MAX(a_max[ii], -xv);
       }
 
-      /* Check if the line seems ignored or not. */
+      /* Check if the line seems ignored or not */
+
       if (d_val[ii] > dd_threshold * sum) {
         a_m[ii] = -1;
         n_remain -= 1;
@@ -2798,9 +2798,7 @@ _automatic_aggregation_pw_msr(const cs_grid_t  *f,
                               cs_lnum_t        *f_c_row)
 {
   const cs_real_t beta = 0.25;
-
   const cs_real_t dd_threshold = (f->level == 0) ? _dd_threshold_pw : -1;
-
   const cs_lnum_t f_n_rows = f->n_rows;
 
   /* Access matrix MSR vectors */
@@ -5481,7 +5479,6 @@ cs_grid_coarsen(const cs_grid_t  *f,
                 double            relaxation_parameter)
 {
   int recurse = 0;
-
   cs_lnum_t isym = 2;
   bool conv_diff = f->conv_diff;
 

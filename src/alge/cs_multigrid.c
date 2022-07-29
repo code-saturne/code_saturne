@@ -1152,7 +1152,7 @@ _cs_multigrid_post_function(void                  *mgh,
 }
 
 /*----------------------------------------------------------------------------
- * Function returning the type name of polynomial preconditioner context.
+ * Function returning the type name of the multigrid preconditioner context.
  *
  * parameters:
  *   context   <-- pointer to preconditioner context
@@ -1195,7 +1195,7 @@ _multigrid_pc_setup(void               *context,
 {
   CS_UNUSED(accel);
 
-  cs_multigrid_setup(context,  name, a, verbosity);
+  cs_multigrid_setup(context, name, a, verbosity);
 
   cs_multigrid_t  *mg = context;
   cs_multigrid_setup_data_t *mgd = mg->setup_data;
@@ -1299,7 +1299,7 @@ _multigrid_pc_tolerance_t(void    *context,
  * Function for application of a Multigrid preconditioner.
  *
  * In cases where it is desired that the preconditioner modify a vector
- * "in place", x_in should be set to NULL, and x_out contain the vector to
+ * "in place", x_in should be set to NULL, and x_out contains the vector to
  * be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
  *
  * parameters:
@@ -3934,13 +3934,17 @@ cs_multigrid_copy(const void  *context)
   cs_multigrid_t *d = NULL;
 
   if (context != NULL) {
+
     const cs_multigrid_t *c = context;
     d = cs_multigrid_create(c->type);
+
     /* Beginning of cs_multigrid_info_t contains settings, the rest logging */
     memcpy(&(d->info), &(c->info),
            offsetof(cs_multigrid_info_t, n_calls));
+
     /* Same here: settings at beginningof structure */
     memcpy(d, c, offsetof(cs_multigrid_t, n_levels_post));
+
   }
 
   return d;
