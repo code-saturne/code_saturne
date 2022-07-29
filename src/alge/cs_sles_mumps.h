@@ -37,6 +37,7 @@
 #include "cs_param_sles.h"
 #include "cs_time_plot.h"
 #include "cs_sles.h"
+#include "cs_sles_pc.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -159,6 +160,19 @@ cs_sles_mumps_define(int                            f_id,
                      const cs_param_sles_t         *slesp,
                      cs_sles_mumps_setup_hook_t    *setup_hook,
                      void                          *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a preconditioner structure relying on MUMPS solver
+ *
+ * \param[in]      slesp         pointer to a cs_param_sles_t structure
+ *
+ * \return  pointer to newly created preconditioner object.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_pc_t *
+cs_sles_mumps_pc_create(const cs_param_sles_t       *slesp);
 
 /*----------------------------------------------------------------------------*/
 /*!

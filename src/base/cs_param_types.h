@@ -806,7 +806,7 @@ typedef enum {
   CS_PARAM_PRECOND_DIAG,
   CS_PARAM_PRECOND_GKB_CG,      /*!< Only with PETSc */
   CS_PARAM_PRECOND_GKB_GMRES,   /*!< Only with PETSc */
-  CS_PARAM_PRECOND_LU,          /*!< Only with PETSc */
+  CS_PARAM_PRECOND_LU,
   CS_PARAM_PRECOND_ILU0,        /*!< Only with PETSc */
   CS_PARAM_PRECOND_ICC0,        /*!< Only with PETSc*/
   CS_PARAM_PRECOND_POLY1,

@@ -127,7 +127,20 @@ BEGIN_C_DECLS
  * Local Structure Definitions
  *============================================================================*/
 
+typedef enum {
+
+  CS_SLES_MUMPS_DOUBLE_LDLT,    /* LDLt factorization with dmumps */
+  CS_SLES_MUMPS_DOUBLE_LU,      /* LU factorization with dmumps */
+  CS_SLES_MUMPS_SINGLE_LDLT,    /* LDLt factorization with smumps */
+  CS_SLES_MUMPS_SINGLE_LU,      /* LU factorization with smumps */
+
+  CS_SLES_MUMPS_N_TYPES
+
+} cs_sles_mumps_type_t;
+
 struct _cs_sles_mumps_t {
+
+  cs_sles_mumps_type_t    type;        /* Type of usage of MUMPS */
 
   /* Performance data */
 
@@ -139,7 +152,12 @@ struct _cs_sles_mumps_t {
   cs_timer_counter_t   t_setup;       /* Total setup (factorization) */
   cs_timer_counter_t   t_solve;       /* Total time used */
 
-  /* Additional setup options */
+  /* Additional setup options when used */
+
+  bool                         is_pc;         /* MUMPS is used as a
+                                                 preconditioner */
+  const cs_matrix_t           *matrix;        /* Only useful when used as
+                                                 preconditioner */
 
   const cs_param_sles_t       *sles_param;    /* set of parameter for SLES */
 
@@ -195,16 +213,67 @@ _have_perio(const cs_halo_t     *halo)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Check if the MUMPS solver is defined as a double-precision or a
- *        single-precision solver.
+ *        single-precision solver and for which kind of factorization
  *
- * \param[in]  slesp   pointer to a set of parameters for SLES
+ * \param[in] slesp   pointer to a SLES parameter structure
  *
- * \return true or false
+ * \return the type of MUMPS usage
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_sles_mumps_type_t
+_set_type(const cs_param_sles_t  *slesp)
+{
+  assert(slesp != NULL);
+
+  switch (slesp->solver) {
+
+  case CS_PARAM_ITSOL_MUMPS:
+    return CS_SLES_MUMPS_DOUBLE_LU;
+  case CS_PARAM_ITSOL_MUMPS_LDLT:
+    return CS_SLES_MUMPS_DOUBLE_LDLT;
+  case CS_PARAM_ITSOL_MUMPS_FLOAT:
+    return CS_SLES_MUMPS_SINGLE_LU;
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
+    return CS_SLES_MUMPS_SINGLE_LDLT;
+
+  default: /* Not a solver. Try as preconditioner */
+    switch(slesp->precond) {
+
+    case CS_PARAM_PRECOND_MUMPS:
+      return CS_SLES_MUMPS_DOUBLE_LU;
+    case CS_PARAM_PRECOND_MUMPS_LDLT:
+      return CS_SLES_MUMPS_DOUBLE_LDLT;
+    case CS_PARAM_PRECOND_MUMPS_FLOAT:
+      return CS_SLES_MUMPS_SINGLE_LU;
+    case CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT:
+      return CS_SLES_MUMPS_SINGLE_LDLT;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: MUMPS not defined as solver or as preconditioner\n"
+                "%s: for the system \"%s\".\n",
+                __func__, __func__, slesp->name);
+    break;
+    }
+
+  }
+
+  return CS_SLES_MUMPS_N_TYPES;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if MUMPS is used as preconditioner
+ *
+ * \param[in] slesp   pointer to a SLES parameter structure
+ *
+ * \return true if MUMPS is used as preconditioner, false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-_is_dmumps(const cs_param_sles_t     *slesp)
+_set_pc_usage(const cs_param_sles_t  *slesp)
 {
   assert(slesp != NULL);
 
@@ -212,25 +281,207 @@ _is_dmumps(const cs_param_sles_t     *slesp)
 
   case CS_PARAM_ITSOL_MUMPS:
   case CS_PARAM_ITSOL_MUMPS_LDLT:
-    return true;
-
   case CS_PARAM_ITSOL_MUMPS_FLOAT:
   case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
     return false;
 
+  default: /* Not a solver. Try as preconditioner */
+    switch(slesp->precond) {
+
+    case CS_PARAM_PRECOND_MUMPS:
+    case CS_PARAM_PRECOND_MUMPS_LDLT:
+    case CS_PARAM_PRECOND_MUMPS_FLOAT:
+    case CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT:
+      return true;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: MUMPS not defined as solver or as preconditioner\n"
+                "%s: for the system \"%s\".\n",
+                __func__, __func__, slesp->name);
+      break;
+    }
+
+  }
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if the MUMPS solver is defined as a double-precision or a
+ *        single-precision solver.
+ *
+ * \param[in] c   pointer to the context structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_is_dmumps(const cs_sles_mumps_t  *c)
+{
+  switch (c->type) {
+
+  case CS_SLES_MUMPS_DOUBLE_LDLT:
+  case CS_SLES_MUMPS_DOUBLE_LU:
+    return true;
+
+  case CS_SLES_MUMPS_SINGLE_LDLT:
+  case CS_SLES_MUMPS_SINGLE_LU:
+    return false;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
-              " %s: MUMPS not defined as solver for system \"%s\".\n",
-              __func__, slesp->name);
+              " %s: Undefined MUMPS type for the system \"%s\".\n",
+              __func__, c->sles_param->name);
     break;
   }
 
-  return false;;
+  return false;
 }
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize the MUMPS structure in case of double-precision
+ *        computation. Default settings.
+ *
+ * \param[in] context   pointer to the preconditioner context
+ * \param[in] logging   if true, logging description; if false, canonical name
+ */
+/*----------------------------------------------------------------------------*/
+
+static const char *
+_mumps_pc_get_type(const void  *context,
+                   bool         logging)
+{
+  CS_UNUSED(context);
+
+  if (logging == false) {
+    static const char t[] = "mumps preconditioner";
+    return t;
+  }
+  else {
+    static const char t[] = N_("MUMPS preconditioner");
+    return _(t);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function for setup of MUMPS as preconditioner
+ *
+ * \param[in, out] context    pointer to preconditioner context
+ * \param[in]      name       pointer to name of associated linear system
+ * \param[in]      a          matrix
+ * \param[in]      accel      use accelerator version ?
+ * \param[in]      verbosity  associated verbosity
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_mumps_pc_setup(void               *context,
+                const char         *name,
+                const cs_matrix_t  *a,
+                bool                accel,
+                int                 verbosity)
+{
+  CS_UNUSED(accel);
+
+  cs_sles_mumps_t  *c = context;
+
+  c->matrix = a;                /* Only a shared pointer */
+
+  cs_sles_mumps_setup(context, name, a, verbosity);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply MUMPS as preconditioner
+ *
+ * In cases where it is desired that the preconditioner modify a vector
+ * "in place", x_in should be set to NULL, and x_out contains the vector to
+ * be modified (\f$x_{out} \leftarrow M^{-1}x_{out})\f$).
+
+ * \param[in, out] context    pointer to preconditioner context
+ * \param[in]      x_in       input_vector
+ * \param[in,out]  x_out      input/output vector
+ *
+ * \return the preconditioner status
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_sles_pc_state_t
+_mumps_pc_apply(void                *context,
+                const cs_real_t     *x_in,
+                cs_real_t           *x_out)
+{
+  int     n_iter;
+  double  residue;
+  cs_real_t  *_rhs = NULL;
+
+  cs_sles_mumps_t  *c = context;
+  assert(c->is_pc && c->matrix != NULL);
+
+  const cs_real_t *rhs = x_in;
+  const cs_param_sles_t  *slesp = c->sles_param;
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(c->matrix);
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(c->matrix) * db_size;
+
+  /* If preconditioner is "in-place", use additional buffer */
+
+  if (x_in == NULL) {
+
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(c->matrix) * db_size;
+    BFT_MALLOC(_rhs, n_cols, cs_real_t);
+
+#   pragma omp parallel for if(n_rows > CS_THR_MIN)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      _rhs[ii] = x_out[ii];
+    rhs = _rhs;
+
+  }
+
+  memset(x_out, 0, n_rows*sizeof(cs_real_t));
+
+  cs_sles_convergence_state_t  cvg = cs_sles_mumps_solve(context,
+                                                         slesp->name,
+                                                         c->matrix,
+                                                         slesp->verbosity,
+                                                         slesp->eps,
+                                                         1.0,
+                                                         &n_iter,
+                                                         &residue,
+                                                         rhs,
+                                                         x_out,
+                                                         0,
+                                                         NULL);
+
+  if (x_in == NULL)
+    BFT_FREE(_rhs);
+
+  cs_sles_pc_state_t state;
+
+  switch(cvg) {
+  case CS_SLES_DIVERGED:
+    state = CS_SLES_PC_DIVERGED;
+    break;
+  case CS_SLES_BREAKDOWN:
+    state = CS_SLES_PC_BREAKDOWN;
+    break;
+  case CS_SLES_CONVERGED:
+    state = CS_SLES_PC_CONVERGED;
+    break;
+  default:
+    state = CS_SLES_PC_MAX_ITERATION;
+  }
+
+  return state;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1823,6 +2074,45 @@ cs_sles_mumps_define(int                            f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create a preconditioner structure relying on MUMPS solver
+ *
+ * \param[in]      slesp         pointer to a cs_param_sles_t structure
+ *
+ * \return  pointer to newly created preconditioner object.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_sles_pc_t *
+cs_sles_mumps_pc_create(const cs_param_sles_t       *slesp)
+{
+  if (slesp == NULL)
+    return NULL;
+
+  assert(slesp->precond == CS_PARAM_PRECOND_MUMPS            ||
+         slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT      ||
+         slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT ||
+         slesp->precond == CS_PARAM_PRECOND_MUMPS_LDLT);
+
+  cs_sles_mumps_t  *c = cs_sles_mumps_create(slesp,
+                                             cs_user_sles_mumps_hook,
+                                             NULL);
+  assert(c->is_pc == true);
+
+  cs_sles_pc_t *pc = cs_sles_pc_define(c,
+                                       _mumps_pc_get_type,
+                                       _mumps_pc_setup,
+                                       NULL, /* tolerance */
+                                       _mumps_pc_apply,
+                                       cs_sles_mumps_free,
+                                       cs_sles_mumps_log,
+                                       cs_sles_mumps_copy,
+                                       cs_sles_mumps_destroy);
+
+  return pc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create MUMPS linear system solver info and context.
  *
  * \param[in]      slesp         pointer to a cs_param_sles_t structure
@@ -1844,6 +2134,9 @@ cs_sles_mumps_create(const cs_param_sles_t       *slesp,
   _n_mumps_systems += 1;
 
   BFT_MALLOC(c, 1, cs_sles_mumps_t);
+
+  c->type = _set_type(slesp);
+
   c->n_setups = 0;
   c->n_solves = 0;
 
@@ -1852,6 +2145,8 @@ cs_sles_mumps_create(const cs_param_sles_t       *slesp,
 
   /* Options */
 
+  c->is_pc = _set_pc_usage(slesp);
+  c->matrix = NULL;
   c->sles_param = slesp;
   c->hook_context = context;
   c->setup_hook = setup_hook;
@@ -1917,7 +2212,7 @@ cs_sles_mumps_free(void  *context)
 
   if (c->mumps_struct != NULL) {
 
-    if (_is_dmumps(c->sles_param)) {
+    if (_is_dmumps(c)) {
 
       DMUMPS_STRUC_C  *dmumps = c->mumps_struct;
 
@@ -2066,7 +2361,7 @@ cs_sles_mumps_setup(void               *context,
   /* 1. Initialize the MUMPS structure */
   /* --------------------------------- */
 
-  if (_is_dmumps(c->sles_param)) {
+  if (_is_dmumps(c)) {
 
     /* Sanity checks: DMUMPS_COMPLEX = DMUMPS_REAL = double
      * (see mumps_c_types.h) */
@@ -2081,7 +2376,7 @@ cs_sles_mumps_setup(void               *context,
     dmumps->par = 1;      /* all ranks are working */
     dmumps->sym = 0;
 
-    if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_LDLT)
+    if (c->type == CS_SLES_MUMPS_DOUBLE_LDLT)
       dmumps->sym = 2;
 
 #if defined(HAVE_MPI)
@@ -2115,7 +2410,7 @@ cs_sles_mumps_setup(void               *context,
     smumps->par = 1;       /* all ranks are working */
     smumps->sym = 0;
 
-    if (c->sles_param->solver == CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT)
+    if (c->type == CS_SLES_MUMPS_SINGLE_LDLT)
       smumps->sym = 2;
 
 #if defined(HAVE_MPI)
@@ -2140,9 +2435,9 @@ cs_sles_mumps_setup(void               *context,
 
   const cs_matrix_type_t  cs_mat_type = cs_matrix_get_type(a);
 
-  switch (c->sles_param->solver) {
+  switch (c->type) {
 
-  case CS_PARAM_ITSOL_MUMPS:
+  case CS_SLES_MUMPS_DOUBLE_LU:
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
@@ -2167,7 +2462,7 @@ cs_sles_mumps_setup(void               *context,
     }
     break;
 
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
+  case CS_SLES_MUMPS_DOUBLE_LDLT:
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
@@ -2190,7 +2485,7 @@ cs_sles_mumps_setup(void               *context,
     }
     break;
 
-  case CS_PARAM_ITSOL_MUMPS_FLOAT:
+  case CS_SLES_MUMPS_SINGLE_LU:
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
@@ -2213,7 +2508,7 @@ cs_sles_mumps_setup(void               *context,
     }
     break;
 
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
+  case CS_SLES_MUMPS_SINGLE_LDLT:
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
@@ -2248,7 +2543,7 @@ cs_sles_mumps_setup(void               *context,
 
   MUMPS_INT  infog1, infog2;
 
-  if (_is_dmumps(c->sles_param)) {
+  if (_is_dmumps(c)) {
 
     DMUMPS_STRUC_C  *dmumps = c->mumps_struct;
 
@@ -2401,7 +2696,7 @@ cs_sles_mumps_solve(void                *context,
 
   cs_fp_exception_disable_trap();
 
-  if (_is_dmumps(c->sles_param)) {
+  if (_is_dmumps(c)) {
 
     /* MUMPS with double-precision arrays */
     /* ---------------------------------- */
@@ -2602,20 +2897,20 @@ cs_sles_mumps_log(const void  *context,
   char sym_type_name[32];
   char storage_type_name[32];
 
-  switch(c->sles_param->solver) {
-  case CS_PARAM_ITSOL_MUMPS:
+  switch(c->type) {
+  case CS_SLES_MUMPS_DOUBLE_LU:
     strncpy(sym_type_name, "non-symmetric", 31);
     strncpy(storage_type_name, "double-precision", 31);
     break;
-  case CS_PARAM_ITSOL_MUMPS_LDLT:
+  case CS_SLES_MUMPS_DOUBLE_LDLT:
     strncpy(sym_type_name, "symmetric", 31);
     strncpy(storage_type_name, "double-precision", 31);
     break;
-  case CS_PARAM_ITSOL_MUMPS_FLOAT:
+  case CS_SLES_MUMPS_SINGLE_LU:
     strncpy(sym_type_name, "non-symmetric", 31);
     strncpy(storage_type_name, "single-precision", 31);
     break;
-  case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
+  case CS_SLES_MUMPS_SINGLE_LDLT:
     strncpy(sym_type_name, "symmetric", 31);
     strncpy(storage_type_name, "single-precision", 31);
     break;
