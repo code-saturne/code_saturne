@@ -293,7 +293,7 @@ cs_opts_define(int         argc,
 #else
       cs_system_info_no_log();
 #endif
-      cs_ext_library_info();
+      cs_ext_library_info_no_log();
       cs_exit(EXIT_SUCCESS);
     }
 
