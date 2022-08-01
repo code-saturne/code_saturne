@@ -46,7 +46,7 @@ $ ./sbin/bootstrap
 $ cd ..
 ```
 In this case, additional tools need to be available:
-• GNU Autotools: Autoconf, Automake, Libtool (2.2 or 2.4).
+• GNU Autotools: Autoconf, Automake.
 • PdfLaTeX
 • Doxygen (1.8.7 or more recent). The path to Doxygen can be specified during
 the configure phase with `configure DOXYGEN=PATH TO DOXYGEN`.
@@ -275,7 +275,7 @@ Regular installation
 ====================
 
 The installation scripts of code_saturne are based on the GNU Autotools,
-(Autoconf, Automake, and Libtool), so it should be familiar for many
+(Autoconf and Automake), so it should be familiar for many
 administrators. A few remarks are given here:
 
 * As with most software with modern build systems, it is recommended
@@ -701,7 +701,7 @@ The list of third-party software usable with code_saturne is provided here:
 * The [SYRTHES](https://www.edf.fr/en/the-edf-group/world-s-largest-power-company/activities/research-and-development/scientific-communities/simulation-softwares?logiciel=10818)
   code may be used for conjugate heat transfer.
 
-For developers, the GNU Autotools (Autoconf, Automake, Libtool)
+For developers, the GNU Autotools (Autoconf and Automake)
 will be necessary. To build the documentation, pdfLaTeX,
 and Doxygen are needed, and dot (from Graphviz) recommended.
 
