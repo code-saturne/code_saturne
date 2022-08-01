@@ -67,9 +67,12 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         if flow_type == "None":
             flow_type = self.detectFlowType()
 
-        if flow_type in ["boiling_flow", "droplet_flow", "multiregime_flow"]:
+        if flow_type in ["boiling_flow", "multiregime_flow"]:
             default['areamodel'] = "interfacial_area_transport"
             default['sourceterm'] = "ruyer_seiler"
+        elif flow_type == "droplet_flow":
+            default['areamodel'] = "interfacial_area_transport"
+            default['sourceterm'] = "no_coalescence_no_fragmentation"
 
         return default
 
