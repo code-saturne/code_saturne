@@ -263,7 +263,7 @@ $(MELISSARUNPATH)
 fvm_melissa.${SHARED_LIB_EXT}: libfvm_melissa.a
 	@echo "Building fvm_melissa plugin..."
 	rm -f $@ ; \
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} -o $@ libfvm_melissa.a ${LDFLAGS_SHARED} ${LDFLAGS} ${LDADD_MELISSA} $(AM_LIBS)
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} --std-search-paths='no' -o $@ libfvm_melissa.a ${LDFLAGS_SHARED} ${LDFLAGS} ${LDADD_MELISSA} $(AM_LIBS)
 
 local_libraries_add += fvm_melissa.${SHARED_LIB_EXT}
 

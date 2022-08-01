@@ -110,7 +110,7 @@ if HAVE_PLUGINS
 ecs_ccm.${SHARED_LIB_EXT}: ecs_pre_ccm.o
 	@echo "Building ecs_ccm plugin..."
 	rm -f $@
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CC} -o $@ ${LDFLAGS_SHARED} ${CFLAGS_SHARED} ecs_pre_ccm.o ${LDFLAGS} $(CCM_LDFLAGS) $(CCM_LIBS) $(CCMRUNPATH)
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CC} --std-search-paths='no' -o $@ ${LDFLAGS_SHARED} ${CFLAGS_SHARED} ecs_pre_ccm.o ${LDFLAGS} $(CCM_LDFLAGS) $(CCM_LIBS) $(CCMRUNPATH)
 
 local_libraries_add += ecs_ccm.${SHARED_LIB_EXT}
 

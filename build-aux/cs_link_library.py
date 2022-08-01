@@ -75,6 +75,15 @@ def parse_cmd_line(argv):
                         action="store_true",
                         help="build archive library")
 
+    h =   "if 'yes', use standard library search paths; " \
+        + "if 'no', only used specified paths, " \
+        + "if 'try', check without paths first."
+
+    parser.add_argument("--std-search-paths", dest="stdlib", type=str,
+                        default='yes',
+                        metavar="<yes/no/try>",
+                        help=h)
+
     parser.add_argument("--echo", dest="echo", default=False,
                         action="store_true",
                         help="echo commands run")
@@ -175,7 +184,8 @@ def build_shared_library(linker,
                          archives,
                          objects,
                          other,
-                         echo=False):
+                         echo=False,
+                         stdlib='yes'):
     """
     Build an archive given the archives and objects list.
     """
@@ -200,7 +210,11 @@ def build_shared_library(linker,
     # this file (or the Python scripts in general), and later
     # removed from `config/cs_auto_flags.sh`.
 
-    cmd = [linker, "-o", output_v, "-nostdlib"]
+    cmd = [linker, "-o", output_v]
+
+    if stdlib != 'yes':
+        cmd.append("-nostdlib")
+
     cmd += ["-Wl,-soname", "-Wl," + o_name_v]
 
     # Add objects from libraries
@@ -235,7 +249,7 @@ def build_shared_library(linker,
     # using GCC, where adding GCC's own `crti.o` and `crtbeginS.o`
     # files is an alternative solution (used by Libtool).
 
-    if retcode != 0:
+    if retcode != 0 and stdlib == 'try':
         cmd.remove("-nostdlib")
         print()
         print("Retry, allowing standard librairies search path for link:")
@@ -296,7 +310,8 @@ if __name__ == '__main__':
                                        options.output_name,
                                        options.version,
                                        archives, objects, other,
-                                       echo=options.echo)
+                                       echo=options.echo,
+                                       stdlib=options.stdlib)
 
     if options.echo:  # Add blank line for readability in echo mode.
         print()
