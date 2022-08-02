@@ -615,7 +615,8 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         h_cput = self.spinBoxDays.value()*24 + self.spinBoxHours.value()
         m_cput = self.spinBoxMinutes.value()
         s_cput = self.spinBoxSeconds.value()
-        self.job_walltime = h_cput*3600 + m_cput*60 + s_cput
+        job_walltime = h_cput*3600 + m_cput*60 + s_cput
+        self.jmdl.batch.params['job_walltime'] = job_walltime
 
 
     @pyqtSlot()
