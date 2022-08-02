@@ -3,6 +3,9 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- Multigrid with pairwise aggregation: fix performance regression
+  in some cases with penalized or many boundary rows.
+
 - GUI: fix update of wall-clock time for batch systems.
 
 - Restart from different mesh: fix values shift in variable exchange when
