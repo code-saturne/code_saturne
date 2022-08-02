@@ -109,10 +109,9 @@ BEGIN_C_DECLS
         effective index-number of the property "specific heat". For each cell
         iel, the value of \f$C_p\f$ is then specified by the user in the
         appropriate subroutine (\ref cs_user_physical_properties for the
-        standard physics).\n Useful if there is
-        1\f$\leqslant\f$N\f$\leqslant\f$\ref dimens::nscal "nscal" so that
-        iscsth(n)=1 (there is a scalar temperature) or with the compressible
-        module for non perfect gases.
+        standard physics).\n
+        Useful if there is at least 1 temperature scalar, or with the
+        compressible module for non perfect gases.
 
   \var  cs_fluid_properties_t::icv
         property index of the isochoric specific heat

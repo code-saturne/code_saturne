@@ -750,14 +750,10 @@ cssr1 = 1.d0
 cssr2 = 2.d0
 cssr3 = 1.d0
 
-! --- Scalaires
-!       On remplira plus tard, selon les modifs utilisateur,
-!         ISCSTH
-!       On donne la valeur par defaut pour les autres
-!       En particulier, on suppose qu'on n'a pas de variance
-!         (field first_moment_id < 0)
-!         qu'on clippe les variances a zero seulement,
-!         qu'on ne clippe pas les scalaires (sauf a +/-GRAND)
+! Scalars
+!  Set default values.
+!  Especially, assume there is no variance
+!    (field first_moment_id < 0) and that variances are clipped to 0 only.
 
 do iscal = 1, nscamx
   iclvfl(iscal) = -1
