@@ -26,8 +26,10 @@
 
 mpi4pypath = '@mpi4pydir@'
 
+import os
+import sys
+
 if mpi4pypath:
-    import sys
     sys.path.insert(0, mpi4pypath)
 
 try:
@@ -49,7 +51,8 @@ class pyple_coupler():
     def __init__(self,
                  run_dir=None,
                  verbosity=1,
-                 logfile = None,
+                 logfile=None,
+                 logdir=None,
                  output_mode="master",
                  use_mpi=True):
 
@@ -67,6 +70,9 @@ class pyple_coupler():
                             User defined name for the logfile.
                             Default is None, leading to the default value of
                             init_log method
+        :param logdir:      string, optional
+                            User defined directory name for the logfile.
+                            Default is None, use the current working directory
         :param output_mode: string, optional
                             Log output mode. Options are "all" or "master"
                             default is "master"
@@ -75,27 +81,24 @@ class pyple_coupler():
         self.name = None
 
         # Read command line arguments
-        import sys
         self._parse_cmd_line(sys.argv)
 
         # Check if we need to change directory
         if run_dir:
             # user imposed directly
-            import os
             os.chdir(run_dir)
 
         else:
             # imposed from from command line arguments (mpmd like launch)
             if self.cmd_line_options.wdir:
                 run_dir = self.cmd_line_options.wdir
-                import os
                 os.chdir(run_dir)
 
-        self.user_options = {'rundir':run_dir,
-                             'verbos':verbosity,
-                             'logfile':logfile,
-                             'output':output_mode,
-                             'use_mpi':use_mpi}
+        self.user_options = {'rundir': run_dir,
+                             'logfile': logfile,
+                             'logdir': logdir,
+                             'output': output_mode,
+                             'use_mpi': use_mpi}
 
         self.verbosity = verbosity
         self.print_info = False
@@ -157,6 +160,8 @@ class pyple_coupler():
                 self.log_name = self.user_options['logfile']
             else:
                 self.log_name = "%s_r%05d_pyple_coupler.log" % (self.name, self.local_rank)
+            if self.user_options['logdir']:
+                self.log_name = os.path.join(self.user_options['logdir'], self.log_name)
 
         if self.print_info:
 
@@ -332,7 +337,7 @@ class pyple_coupler():
                              default is 'TS_MIN'-> compute min time step
         :param end_coupling: bool, optional
                              Flag to force the end of the coupled run.
-                             defualt is False
+                             default is False
         :param app_dt      : float, optional
                              application time step to use for syncing
                              default is 100000000.0
