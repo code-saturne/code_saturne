@@ -355,21 +355,6 @@ fi
 AC_SUBST(SHARED_LIB_EXT)
 AC_SUBST(LIB_EXT)
 
-# Add some preprocessor flags on some systems to work around autotools issues
-#----------------------------------------------------------------------------
-
-if test "x$enable_shared" = "xyes" ; then
-  if test "x$auto_flags" = "xyes" ; then
-    case "$ple_ac_cc_version" in
-      Cray* )
-        CFLAGS="${CFLAGS} -fPIC"
-        ;;
-      *)
-        ;;
-    esac
-  fi
-fi
-
 # Tools for static builds
 
 if test "x$enable_shared" = xno; then
