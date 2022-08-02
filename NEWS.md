@@ -3,6 +3,8 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- GUI: fix update of wall-clock time for batch systems.
+
 - Restart from different mesh: fix values shift in variable exchange when
   some points are not located (updated PLE library).
 
