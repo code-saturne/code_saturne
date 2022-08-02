@@ -210,10 +210,10 @@ cfbl/cfpoin.$(OBJEXT): pprt/ppincl.$(OBJEXT)
 clean-local:
 	-rm -f *__genmod.f90 *.mod
 
-install-exec-local: $(libcsmodules_la_SOURCES)
+install-exec-local: $(libcsmodules_a_SOURCES)
 	@$(NORMAL_INSTALL)
 	test -z "$(pkgincludedir)" || $(MKDIR_P) "$(DESTDIR)$(pkgincludedir)"
-	@list='$(libcsmodules_la_SOURCES)'; test -n "$(pkgincludedir)" || list=; \
+	@list='$(libcsmodules_a_SOURCES)'; test -n "$(pkgincludedir)" || list=; \
 	modlist=`for p in $$list; do echo $$p; done | $(SED) -e 's|.f90|.$(FCMODEXT)|g'`; \
 	files=`for p in $$modlist; do echo $$p; done | $(SED) -e 's|^.*/||'`; \
 	test -n "$$files" || exit 0; \
@@ -227,7 +227,7 @@ install-exec-local: $(libcsmodules_la_SOURCES)
 
 uninstall-local:
 	@$(NORMAL_UNINSTALL)
-	@list='$(libcsmodules_la_SOURCES)'; test -n "$(pkgincludedir)" || list=; \
+	@list='$(libcsmodules_a_SOURCES)'; test -n "$(pkgincludedir)" || list=; \
 	modlist=`for p in $$list; do echo $$p; done | $(SED) -e 's|.f90|.$(FCMODEXT)|g'`; \
 	lcfiles=`for p in $$modlist; do echo $$p; done | $(SED) -e 's|^.*/||'`; \
 	test -d "$(DESTDIR)$(pkgincludedir)" || exit 0; \
