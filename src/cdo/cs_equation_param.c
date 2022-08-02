@@ -2363,9 +2363,6 @@ cs_equation_add_bc_by_value(cs_equation_param_t         *eqp,
 
   }
 
-  if (bc_type == CS_PARAM_BC_WALL_PRESCRIBED)
-    bft_error(__FILE__, __LINE__, 0, "%s: To be done.\n", __func__);
-
   cs_flag_t  meta_flag = (eqp-> space_scheme == CS_SPACE_SCHEME_LEGACY) ?
     (cs_flag_t)bc_type : cs_cdo_bc_get_flag(bc_type);
 

@@ -1523,6 +1523,10 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
   if (cs_equation_find_bc(eqp, z->name) != NULL)  /* Ignore if already set */
     return special_case;
 
+  cs_param_bc_type_t bc_wall_prescribed
+    = (cs_glob_turb_model->iturb > CS_TURB_NONE) ?
+      CS_PARAM_BC_WALL_PRESCRIBED : CS_PARAM_BC_DIRICHLET;
+
   /* BC definition type ? */
 
   if (strcmp(choice, "dirichlet") == 0) {
@@ -1539,7 +1543,7 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
       cs_gui_boundary_const_context_t  *c
         = _add_boundary_const_context(z, value[0]);
       cs_equation_add_bc_by_dof_func(eqp,
-                                     CS_PARAM_BC_DIRICHLET,
+                                     bc_wall_prescribed,
                                      z->name,
                                      cs_flag_boundary_face,
                                      _dof_const_elec_rescaled,
@@ -1560,7 +1564,7 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
           = _add_boundary_meg_context(z, f->name, choice, f->dim);
 
         cs_equation_add_bc_by_dof_func(eqp,
-                                       CS_PARAM_BC_DIRICHLET,
+                                       bc_wall_prescribed,
                                        z->name,
                                        cs_flag_boundary_face,
                                        _dof_meg_elec_rescaled,
@@ -1581,7 +1585,7 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
     assert(f == CS_F_(potr));
 
     cs_equation_add_bc_by_dof_func(eqp,
-                                   CS_PARAM_BC_DIRICHLET,
+                                   bc_wall_prescribed,
                                    z->name,
                                    cs_flag_boundary_face,
                                    _dof_dirichlet_implicit_elec_pot,
@@ -1598,7 +1602,7 @@ _boundary_elec_potential(cs_tree_node_t       *tn_s,
        rather than actual Neumann BC. */
 
     cs_equation_add_bc_by_dof_func(eqp,
-                                   CS_PARAM_BC_DIRICHLET,
+                                   bc_wall_prescribed,
                                    z->name,
                                    cs_flag_boundary_face,
                                    _dof_neumann_implicit,
@@ -1668,6 +1672,10 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
   if (special_case)
     return;
 
+  cs_param_bc_type_t bc_wall_prescribed
+    = (cs_glob_turb_model->iturb > CS_TURB_NONE) ?
+      CS_PARAM_BC_WALL_PRESCRIBED : CS_PARAM_BC_DIRICHLET;
+
   /* Now handle standard scalar BC types */
 
   if (   strcmp(choice, "dirichlet") == 0
@@ -1706,7 +1714,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
         cs_gui_boundary_const_context_t  *c
           = _add_boundary_const_context(z, value[0]);
         cs_equation_add_bc_by_dof_func(eqp,
-                                       CS_PARAM_BC_DIRICHLET,
+                                       bc_wall_prescribed,
                                        z->name,
                                        cs_flag_boundary_face,
                                        _dof_const_t2h,
@@ -1715,7 +1723,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
 
       else
         cs_equation_add_bc_by_value(eqp,
-                                    CS_PARAM_BC_DIRICHLET,
+                                    bc_wall_prescribed,
                                     z->name,
                                     value);
     }
@@ -1738,7 +1746,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
 
       if (f == CS_F_(h) && cs_gui_strcmp(cnv, "temperature"))
         cs_equation_add_bc_by_dof_func(eqp,
-                                       CS_PARAM_BC_DIRICHLET,
+                                       bc_wall_prescribed,
                                        z->name,
                                        cs_flag_boundary_face,
                                        _dof_meg_t2h,
@@ -1746,7 +1754,7 @@ _boundary_scalar(cs_tree_node_t   *tn_bc,
 
       else {
         cs_equation_add_bc_by_dof_func(eqp,
-                                       CS_PARAM_BC_DIRICHLET,
+                                       bc_wall_prescribed,
                                        z->name,
                                        cs_flag_boundary_face,
                                        _dof_meg_profile,

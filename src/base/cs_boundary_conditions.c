@@ -1541,6 +1541,21 @@ cs_boundary_conditions_compute(int     nvar,
         }
         break;
 
+      case CS_PARAM_BC_WALL_PRESCRIBED:
+        _compute_dirichlet_bc(mesh,
+                              boundaries,
+                              f,
+                              eqp,
+                              def,
+                              description,
+                              var_id,
+                              t_eval,
+                              icodcl_m,
+                              icodcl,
+                              rcodcl,
+                              eval_buf);
+        break;
+
       default:
         break;
       }
