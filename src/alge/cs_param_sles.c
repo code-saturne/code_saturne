@@ -1730,7 +1730,12 @@ _set_saturne_sles(bool                 use_field_id,
              slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT ||
              slesp->precond == CS_PARAM_PRECOND_MUMPS_LDLT) {
 
+#if defined(HAVE_MUMPS)
       pc = cs_sles_mumps_pc_create(slesp);
+#else
+      bft_error(__FILE__, __LINE__, 0, "%s: MUMPS not available in this build.",
+                __func__);
+#endif
       cs_sles_it_transfer_pc(itsol, &pc);
 
     }
