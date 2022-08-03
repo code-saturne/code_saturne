@@ -26,7 +26,7 @@
 
 if HAVE_INTERNAL_PLE
   CPPFLAGS_PLE = -I$(top_srcdir)/libple/src -I$(top_builddir)/libple
-  LDFLAGS_PLE = -L"$(top_builddir)/libple/src" -R"$(abs_top_builddir)/libple/src"
+  LDFLAGS_PLE = -L"$(top_builddir)/libple/src" ${LDRPATH}"$(abs_top_builddir)/libple/src"
 else
   CPPFLAGS_PLE = $(PLE_CPPFLAGS)
   LDFLAGS_PLE = $(PLE_LDFLAGS) $(PLERUNPATH)
@@ -94,7 +94,7 @@ bft_printf_test
 
 CPPFLAGS_BFT_TESTS = -I$(top_srcdir)/src/bft
 LDFLAGS_BFT_TESTS =
-LDADD_BFT_TESTS = $(top_builddir)/src/bft/libbft.la
+LDADD_BFT_TESTS = $(top_builddir)/src/bft/libbft.a
 
 bft_backtrace_test_SOURCES  = bft_backtrace_test.c
 bft_backtrace_test_LDFLAGS  = $(LDFLAGS_BFT_TESTS)
@@ -145,8 +145,8 @@ LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
 	$(LDFLAGS_PLE) $(MPI_LDFLAGS) $(CUDA_LDFLAGS)
 
 LDADD_CS_TESTS = \
-	$(top_builddir)/src/base/libcscore.la \
-	$(top_builddir)/src/bft/libbft.la \
+	$(top_builddir)/src/base/libcscore.a \
+	$(top_builddir)/src/bft/libbft.a \
 	$(PLE_LIBS) $(MPI_LIBS) $(CUDA_LIBS) -lm
 
 cs_all_to_all_test_SOURCES  = cs_all_to_all_test.c
@@ -201,7 +201,9 @@ endif
 
 cs_interface_test_SOURCES  = cs_interface_test.c
 cs_interface_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
-cs_interface_test_LDADD    = $(LDADD_CS_TESTS)
+cs_interface_test_LDADD    = \
+$(top_builddir)/src/fvm/libfvm.a \
+$(LDADD_CS_TESTS)
 
 cs_map_test_SOURCES  = cs_map_test.c
 cs_map_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
@@ -228,11 +230,15 @@ cs_rank_neighbors_test_LDADD    = $(LDADD_CS_TESTS)
 
 fvm_selector_test_SOURCES  = fvm_selector_test.c
 fvm_selector_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
-fvm_selector_test_LDADD    = $(LDADD_CS_TESTS)
+fvm_selector_test_LDADD    = \
+$(top_builddir)/src/fvm/libfvm.a \
+$(LDADD_CS_TESTS)
 
 fvm_selector_postfix_test_SOURCES  = fvm_selector_postfix_test.c
 fvm_selector_postfix_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
-fvm_selector_postfix_test_LDADD    = $(LDADD_CS_TESTS)
+fvm_selector_postfix_test_LDADD    = \
+$(top_builddir)/src/fvm/libfvm.a \
+$(LDADD_CS_TESTS)
 
 cs_sizes_test_SOURCES  = cs_sizes_test.c
 cs_sizes_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
@@ -256,5 +262,5 @@ $(top_srcdir)/tests/graphics
 clean-local:
 	-rm -f $(BUILT_SOURCES)
 
-.cu.lo:
-	$(LIBTOOL_CUDA) --tag=CC --mode=compile $(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) -c -o $@ $<
+.cu.$(OBJEXT):
+	$(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_SHARED) -c -o $@ $<
