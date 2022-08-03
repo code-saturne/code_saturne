@@ -31,6 +31,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <float.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -679,13 +680,6 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
     break;
 
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    if (model != CS_NAVSTO_MODEL_STOKES)
-      /* The default strategy when one does not solve the Stokes equations is
-       * set in _navsto_param_sles_create() which is CS_NAVSTO_SLES_UZAWA_AL.
-       * Thus, one adds a slight augmentation of the linear system */
-
-      nsp->gd_scale_coef = 1.0;
-
     nsp->velocity_ic_is_owner = false;
     nsp->velocity_bc_is_owner = false;
     nsp->pressure_ic_is_owner = true;
@@ -1041,8 +1035,16 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       nsp->sles_param->strategy = CS_NAVSTO_SLES_SGS_SCHUR_GCR;
     else if (strcmp(val, "upper_schur_gcr") == 0)
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UPPER_SCHUR_GCR;
-    else if (strcmp(val, "uzawa_al") == 0 || strcmp(val, "alu") == 0)
+    else if (strcmp(val, "uzawa_al") == 0 || strcmp(val, "alu") == 0) {
+
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_AL;
+
+      /* One adds a slight augmentation of the linear system if there is none */
+
+      if (nsp->gd_scale_coef < FLT_MIN)
+        nsp->gd_scale_coef = 1.0;
+
+    }
     else if (strcmp(val, "uzawa_cg") == 0 || strcmp(val, "uzapcg") == 0) {
       nsp->sles_param->strategy = CS_NAVSTO_SLES_UZAWA_CG;
       cs_sles_set_epzero(1e-15);
