@@ -522,7 +522,54 @@ C=\widetilde{\left[\frac{M_{ij}L{ij}}{M_{kl}M_{kl}}\right]}
 
 \page base_setup_source_terms User source terms
 
-Check [pdf user's guide](../../../user/user.pdf) for details.
+Basic User source terms {#cs_ug_source_terms}
+=======================
+*Function called every time step.*
+
+
+Assume, for example, that the user source terms modify the equation of a
+variable \f$\varphi\f$ in the following way:
+\f$\rho\frac{\partial \varphi}{\partial t}+\ldots = \ldots + S_{impl}\times\varphi+S_{expl}\f$
+The example is valid for a velocity component, for a turbulent variable
+(\f$k\f$, \f$\varepsilon$, $R_{ij}\f$, \f$\omega\f$, \f$\varphi\f$ or \f$\overline{f}\f$)
+and for a scalar (or for the average of the square of the fluctuations
+of a scalar), because the syntax of the function **cs_user_source_terms**
+in the cs_user_source_terms.c file is similar.
+
+# For user scalars
+
+The source terms in the transport equations related to the user scalars
+(passive or not, average of the square of the fluctuations of a scalar,
+\...) can be filled in thanks to the GUI or the `cs_user_source_terms`
+user file. Without the GUI, the function `cs_user_source_terms` is used
+to add source terms to the transport equations related to the user
+scalars, this function is called every time step, once for each user
+scalar. The user must provide the arrays `st_imp` and `st_exp` related
+to each scalar. `st_imp` and `st_exp` must be set to 0 for the scalars
+on which it is not wished for the user source term to be applied.
+
+
+With the GUI
+-------------
+The GUI can be used if the source terms are proportional to the volume
+of the cells or the volume of the fluid in the cell.
+
+By example if we have:
+
+\f$\text{\texttt{st\_exp[c\_id]}}= 0.5*\text{\texttt{cell\_vol[c\_id]}}\f$
+
+\f$\text{\texttt{st\_imp[c\_id]}}= -0.75*\text{\texttt{cell\_vol[c\_id]}}\f$
+
+We can define them directly in the GUI
+
+\anchor gui_add_scalar
+\image html gui_add_scalar.png "Adding the scalar"
+
+\anchor gui_select_scalare_source_terms
+\image html gui_select_scalare_source_terms.png "select the scalar source terms"
+
+\anchor gui_term_source_meg
+\image html gui_source_term_meg.png "initialization of source terms"
 
 <!-- ----------------------------------------------------------------------- -->
 
