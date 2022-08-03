@@ -118,6 +118,22 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the \ref cs_equation_param_t structure related to the
+ *         momentum equation according to the type of coupling
+ *
+ * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  context   pointer to a coupling context structure
+ *
+ * \return a pointer to the corresponding \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_navsto_coupling_get_momentum_eqp(const cs_navsto_param_t    *nsp,
+                                    void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate and initialize a context structure when the Navier-Stokes
  *         system is coupled using an Artificial Compressibility approach
  *

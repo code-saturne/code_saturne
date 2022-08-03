@@ -111,17 +111,19 @@ static cs_navsto_system_t  *cs_navsto_system = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the \ref cs_equation_param_t structure related to the
- *         momentum equation according to the type of coupling
+ * \brief  Check if one has to handle non-linearities
  *
  * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  mom_eqp   pointer to a \ref cs_equation_param_t structure related
+ *                       to the momentum equation
  *
- * \return a pointer to the corresponding \ref cs_equation_param_t structure
+ * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-_handle_non_linearities(cs_navsto_param_t    *nsp)
+_handle_non_linearities(const cs_navsto_param_t    *nsp,
+                        const cs_equation_param_t  *mom_eqp)
 {
   if (nsp == NULL)
     return false;
@@ -133,11 +135,11 @@ _handle_non_linearities(cs_navsto_param_t    *nsp)
     return false;
 
   case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
-    if (nsp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_FULL)
+    if (mom_eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_FULL)
       return true;
     else {
-      assert(nsp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED ||
-             nsp->adv_strategy == CS_PARAM_ADVECTION_EXPLICIT);
+      assert(mom_eqp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED ||
+             mom_eqp->adv_strategy == CS_PARAM_ADVECTION_EXPLICIT);
       return false;
     }
     break;
@@ -145,7 +147,7 @@ _handle_non_linearities(cs_navsto_param_t    *nsp)
   default:
     return true;
 
-  }
+  } /* Model */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -854,6 +856,12 @@ cs_navsto_system_init_setup(void)
 
   } /* monitoring */
 
+  /* Check if on has to handle non-linearities */
+
+  cs_equation_param_t  *mom_eqp =
+    cs_navsto_coupling_get_momentum_eqp(nsp, ns->coupling_context);
+  nsp->handle_non_linearities = _handle_non_linearities(nsp, mom_eqp);
+
   /* Setup data according to the type of coupling (add the advection field in
      case of Navier-Stokes equations) */
 
@@ -1054,6 +1062,9 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   /* Settings with respect to the discretization scheme */
 
+  cs_equation_param_t  *mom_eqp =
+    cs_navsto_coupling_get_momentum_eqp(nsp, ns->coupling_context);
+
   switch (nsp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOFB:
@@ -1072,43 +1083,30 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       ns->init_pressure = cs_cdofb_navsto_init_pressure;
       ns->compute_steady = NULL;
 
-      if (_handle_non_linearities(nsp)) {
+      switch (mom_eqp->time_scheme) {
 
-        /* Same function. The difference will be taken care of by mean of a
-         * build sub-function */
-
-        if (nsp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT)
+      case CS_TIME_SCHEME_EULER_IMPLICIT:
+        if (nsp->handle_non_linearities)
           ns->compute = cs_cdofb_ac_compute_implicit_nl;
         else
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Invalid time scheme for the AC and Navier-Stokes",
-                    __func__);
-      }
-      else {
-
-        switch (nsp->time_scheme) {
-
-        case CS_TIME_SCHEME_EULER_IMPLICIT:
           ns->compute = cs_cdofb_ac_compute_implicit;
-          break;
+        break;
 
-        case CS_TIME_SCHEME_THETA:
-        case CS_TIME_SCHEME_CRANKNICO:
-        case CS_TIME_SCHEME_BDF2:
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Time scheme not implemented for the AC coupling",
-                    __func__);
-          break;
+      case CS_TIME_SCHEME_THETA:
+      case CS_TIME_SCHEME_CRANKNICO:
+      case CS_TIME_SCHEME_BDF2:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Time scheme not implemented for the AC coupling",
+                  __func__);
+        break;
 
-        case CS_TIME_SCHEME_STEADY:
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: Invalid time scheme for the AC coupling", __func__);
-          break;
+      case CS_TIME_SCHEME_STEADY:
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid time scheme for the AC coupling", __func__);
+        break;
 
-        } /* Switch */
-
-      } /* If nonlinear */
+      } /* Switch */
 
       cs_cdofb_ac_init_common(quant, connect, time_step);
       break;
@@ -1120,15 +1118,16 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       ns->free_scheme_context = cs_cdofb_monolithic_free_scheme_context;
       ns->init_velocity = NULL;
       ns->init_pressure = cs_cdofb_navsto_init_pressure;
-      if (_handle_non_linearities(nsp))
+
+      if (nsp->handle_non_linearities)
         ns->compute_steady = cs_cdofb_monolithic_steady_nl;
       else
         ns->compute_steady = cs_cdofb_monolithic_steady;
 
-      switch (nsp->time_scheme) {
+      switch (mom_eqp->time_scheme) {
 
       case CS_TIME_SCHEME_STEADY:
-        if (_handle_non_linearities(nsp))
+        if (nsp->handle_non_linearities)
           ns->compute = cs_cdofb_monolithic_steady_nl;
         else
           ns->compute = cs_cdofb_monolithic_steady;
@@ -1137,7 +1136,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       case CS_TIME_SCHEME_EULER_IMPLICIT:
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
-        if (_handle_non_linearities(nsp))
+        if (nsp->handle_non_linearities)
           ns->compute = cs_cdofb_monolithic_nl;
         else
           ns->compute = cs_cdofb_monolithic;
@@ -1164,7 +1163,12 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       ns->init_pressure = cs_cdofb_navsto_init_pressure;
       ns->compute_steady = NULL;
 
-      switch (nsp->time_scheme) {
+      if (nsp->handle_non_linearities)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: The projection coupling algorithm "
+                  "can not be used with a non-linear algorithm", __func__);
+
+      switch (mom_eqp->time_scheme) {
 
       case CS_TIME_SCHEME_STEADY:
         bft_error(__FILE__, __LINE__, 0,

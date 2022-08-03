@@ -99,6 +99,60 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the \ref cs_equation_param_t structure related to the
+ *         momentum equation according to the type of coupling
+ *
+ * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  context   pointer to a coupling context structure
+ *
+ * \return a pointer to the corresponding \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_navsto_coupling_get_momentum_eqp(const cs_navsto_param_t    *nsp,
+                                    void                       *context)
+{
+  cs_equation_param_t  *mom_eqp = NULL;
+
+  if (nsp == NULL)
+    return mom_eqp;
+
+  switch (nsp->coupling) {
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    {
+      cs_navsto_ac_t  *nsc = (cs_navsto_ac_t *)context;
+      mom_eqp = cs_equation_get_param(nsc->momentum);
+    }
+    break;
+
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+    {
+      cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
+      mom_eqp = cs_equation_get_param(nsc->momentum);
+    }
+    break;
+
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    {
+      cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
+      mom_eqp = cs_equation_get_param(nsc->prediction);
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid coupling algorithm\n", __func__);
+    break;
+
+  }
+
+  return mom_eqp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate and initialize a context structure when the Navier-Stokes
  *         system is coupled using an Artificial Compressibility approach
  *
@@ -305,6 +359,11 @@ cs_navsto_monolithic_create_context(cs_param_bc_type_t    bc,
 
   cs_equation_param_set(mom_eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
   cs_equation_param_set(mom_eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+
+  /* Forcing steady state in order to avoid inconsistencies */
+
+  if (nsp->model_flag & CS_NAVSTO_MODEL_STEADY)
+    mom_eqp->time_scheme = CS_TIME_SCHEME_STEADY;
 
   /* Solver settings: Only the linear algebra settings related to the momentum
   *  equation.  The strategy is set in _navsto_param_sles_create() */

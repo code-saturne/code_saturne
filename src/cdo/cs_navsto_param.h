@@ -689,40 +689,11 @@ typedef struct {
 
   cs_real_t                      gd_scale_coef;
 
-  /*! \var time_scheme
-   * Discretization scheme for time
-   *
-   * \var theta
-   * Value of the parameter for the time scheme when a theta-scheme is used
-   *
-   */
-
-  cs_param_time_scheme_t         time_scheme;
-  cs_real_t                      theta;
-
   /*! \var space_scheme
    * Discretization scheme for space
    */
 
   cs_param_space_scheme_t        space_scheme;
-
-  /*! \var adv_form
-   *  Type of formulation for the advection term
-   *
-   *  \var adv_scheme
-   *  Type of scheme for the advection term
-   *
-   *  \var adv_strategy
-   *  Strategy to handle the advection term
-   *
-   *  \var adv_extrapol
-   *  Extrapolation used to estimate the advection field
-   */
-
-  cs_param_advection_form_t      adv_form;
-  cs_param_advection_scheme_t    adv_scheme;
-  cs_param_advection_strategy_t  adv_strategy;
-  cs_param_advection_extrapol_t  adv_extrapol;
 
   /* Boussinesq approximation:
    *
@@ -747,6 +718,12 @@ typedef struct {
    */
 
   cs_quadrature_type_t           qtype;
+
+  /*! \var handle_non_linearities
+   *  True if a non-linear algorithm has to be considered
+   */
+
+  bool                           handle_non_linearities;
 
   /*! \var sles_param
    * Set of choices to control the resolution of the Navier--Stokes system
@@ -904,22 +881,6 @@ typedef struct {
  *  \brief List of available keys for setting the parameters of the
  *         Navier-Stokes system
  *
- * \var CS_NSKEY_ADVECTION_EXTRAPOL
- * Set the extrapolation to use for the estimation of the advection field
- * (cf. \ref cs_param_advection_extrapol_t))
- *
- * \var CS_NSKEY_ADVECTION_FORMULATION
- * Set the type of formulation for the advection term, for example in the Oseen
- * problem. (cf. \ref cs_param_advection_form_t)
- *
- * \var CS_NSKEY_ADVECTION_SCHEME
- * Set the type of scheme for the advection term, for example in the Oseen
- * problem. (cf. \ref cs_param_advection_scheme_t)
- *
- * \var CS_NSKEY_ADVECTION_STRATEGY
- * Set the strategy to handle the advection term
- * (cf. \ref cs_param_advection_strategy_t)
- *
  * \var CS_NSKEY_DOF_REDUCTION
  * Set how the DoFs are defined (similar to \ref CS_EQKEY_DOF_REDUCTION)
  * Enable to set this type of DoFs definition for all related equations
@@ -1003,14 +964,6 @@ typedef struct {
  * Value of the tolerance criterion under which one stops iterating on
  * the Navier-Stokes and thermal systems
  *
- * \var CS_NSKEY_TIME_SCHEME
- * Numerical scheme for the time discretization
- *
- * \var CS_NSKEY_TIME_THETA
- * Set the value of theta. Only useful if CS_NSKEY_TIME_SCHEME is set to
- * "theta_scheme"
- * - Example: "0.75" (keyval must be between 0 and 1)
- *
  * \var CS_NSKEY_VERBOSITY
  * Set the level of details for the specific part related to the Navier-Stokes
  * system
@@ -1018,10 +971,6 @@ typedef struct {
 
 typedef enum {
 
-  CS_NSKEY_ADVECTION_EXTRAPOL,
-  CS_NSKEY_ADVECTION_FORMULATION,
-  CS_NSKEY_ADVECTION_SCHEME,
-  CS_NSKEY_ADVECTION_STRATEGY,
   CS_NSKEY_DOF_REDUCTION,
   CS_NSKEY_GD_SCALE_COEF,
   CS_NSKEY_IL_ALGO_ATOL,
@@ -1042,8 +991,6 @@ typedef enum {
   CS_NSKEY_SLES_STRATEGY,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_THERMAL_TOLERANCE,
-  CS_NSKEY_TIME_SCHEME,
-  CS_NSKEY_TIME_THETA,
   CS_NSKEY_VERBOSITY,
 
   CS_NSKEY_N_KEYS

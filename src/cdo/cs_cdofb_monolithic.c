@@ -2040,7 +2040,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t  *nsp,
 
   sc->steady_build = _steady_build;
 
-  switch (nsp->time_scheme) {
+  switch (mom_eqp->time_scheme) {
 
   case CS_TIME_SCHEME_STEADY:
     sc->build = _steady_build;

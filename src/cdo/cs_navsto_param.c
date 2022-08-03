@@ -113,16 +113,6 @@ _space_scheme_key[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
   };
 
 static const char
-_time_scheme_key[CS_TIME_N_SCHEMES][CS_BASE_STRING_LEN] =
-  { "steady",
-    "euler_implicit",
-    "euler_explicit",
-    "crank_nicolson",
-    "theta_scheme",
-    "bdf2"
-  };
-
-static const char
 _dof_reduction_key[CS_PARAM_N_REDUCTIONS][CS_BASE_STRING_LEN] =
   { "derham",
     "average"
@@ -135,42 +125,6 @@ _quad_type_key[CS_QUADRATURE_N_TYPES][CS_BASE_STRING_LEN] =
     "bary_subdiv",
     "higher",
     "highest"
-  };
-
-static const char
-_adv_extrap_key[CS_PARAM_N_ADVECTION_EXTRAPOLATIONS][CS_BASE_STRING_LEN] =
-  {
-    "none",
-    "taylor",
-    "adams_bashforth"
-  };
-
-static const char
-_adv_formulation_key[CS_PARAM_N_ADVECTION_FORMULATIONS][CS_BASE_STRING_LEN] =
-  {
-    "conservative",
-    "non_conservative",
-    "skew_symmetric"
-  };
-
-static const char
-_adv_scheme_key[CS_PARAM_N_ADVECTION_SCHEMES][CS_BASE_STRING_LEN] =
-  {
-    "centered",
-    "cip",
-    "cip_cw",
-    "hybrid_centered_upwind",
-    "samarskii",
-    "sg",
-    "upwind"
-  };
-
-static const char
-_adv_strategy_key[CS_PARAM_N_ADVECTION_STRATEGIES][CS_BASE_STRING_LEN] =
-  {
-    "fully_implicit",
-    "linearized",
-    "explicit"
   };
 
 /* scaling coefficient used in Notay's transformation devised in
@@ -672,21 +626,6 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   nsp->coupling = algo_coupling;
   nsp->space_scheme = CS_SPACE_SCHEME_CDOFB;
 
-  /* Advection settings */
-
-  nsp->adv_form = CS_PARAM_ADVECTION_FORM_NONCONS;
-  nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
-  nsp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
-  nsp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
-
-  /* Forcing steady state in order to avoid inconsistencies */
-
-  if (model_flag & CS_NAVSTO_MODEL_STEADY)
-    nsp->time_scheme = CS_TIME_SCHEME_STEADY;
-  else
-    nsp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
-  nsp->theta = 1.0;
-
   /* Boussinesq term(s) */
 
   nsp->n_boussinesq_terms = 0;
@@ -695,6 +634,10 @@ cs_navsto_param_create(const cs_boundary_t            *boundaries,
   /* Default level of quadrature */
 
   nsp->qtype = CS_QUADRATURE_BARY;
+
+  /* By default, one assumes a linearization of the non-linearities */
+
+  nsp->handle_non_linearities = false;
 
   /* Resolution parameters (inner linear system then the non-linear system )*/
 
@@ -910,88 +853,6 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
   val[strlen(keyval)] = '\0';
 
   switch(key) {
-
-  case CS_NSKEY_ADVECTION_EXTRAPOL:
-    if (strcmp(val, "none") == 0)
-      nsp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_NONE;
-    else if (strcmp(val, "taylor") == 0)
-      nsp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_TAYLOR_2;
-    else if (strcmp(val, "adams_bashforth") == 0)
-      nsp->adv_extrapol = CS_PARAM_ADVECTION_EXTRAPOL_ADAMS_BASHFORTH_2;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Invalid val %s related to key"
-                  " CS_NSKEY_ADVECTION_EXTRAPOL\n"), __func__, _val);
-    }
-    break;
-
-  case CS_NSKEY_ADVECTION_FORMULATION:
-    if (strcmp(val, "conservative") == 0)
-      nsp->adv_form = CS_PARAM_ADVECTION_FORM_CONSERV;
-    else if (strcmp(val, "non_conservative") == 0)
-      nsp->adv_form = CS_PARAM_ADVECTION_FORM_NONCONS;
-    else if (strcmp(val, "skew_symmetric") == 0)
-      nsp->adv_form = CS_PARAM_ADVECTION_FORM_SKEWSYM;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Invalid val %s related to key"
-                  " CS_NSKEY_ADVECTION_FORMULATION\n"
-                  " Choice between conservative, non_conservative"),
-                __func__, _val);
-    }
-    break;
-
-  case CS_NSKEY_ADVECTION_SCHEME:
-    if (strcmp(val, "upwind") == 0)
-      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
-    else if (strcmp(val, "samarskii") == 0)
-      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SAMARSKII;
-    else if (strcmp(val, "sg") == 0)
-      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
-    else if (strcmp(val, "centered") == 0)
-      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
-    else if (strcmp(val, "mix_centered_upwind") == 0 ||
-             strcmp(val, "hybrid_centered_upwind") == 0)
-      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND;
-    else if (strcmp(val, "cip") == 0) {
-      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
-      /* Automatically switch to a non-conservative formulation */
-      nsp->adv_form = CS_PARAM_ADVECTION_FORM_NONCONS;
-    }
-    else if (strcmp(val, "cip_cw") == 0) {
-      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP_CW;
-      /* Automatically switch to a non-conservative formulation */
-      nsp->adv_form = CS_PARAM_ADVECTION_FORM_NONCONS;
-    }
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Invalid val %s related to key"
-                  " CS_NSKEY_ADVECTION_SCHEME\n"
-                  " Choices between upwind, samarskii, sg, centered, cip,"
-                  " cip_cw, hybrid_centered_upwind, mix_centered_upwind"),
-                __func__, _val);
-    }
-    break;
-
-  case CS_NSKEY_ADVECTION_STRATEGY:
-    if (strcmp(val, "fully_implicit") == 0 ||
-        strcmp(val, "implicit") == 0)
-      nsp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
-    else if (strcmp(val, "implicit_linear") == 0 ||
-             strcmp(val, "linearized") == 0)
-      nsp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_LINEARIZED;
-    else if (strcmp(val, "explicit") == 0)
-      nsp->adv_strategy = CS_PARAM_ADVECTION_EXPLICIT;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Invalid val %s related to key"
-                  " CS_NSKEY_ADVECTION_STRATEGY\n"), __func__, _val);
-    }
-    break;
 
   case CS_NSKEY_DOF_REDUCTION:
     if (strcmp(val, "derham") == 0)
@@ -1273,41 +1134,6 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
        iteration process after the first iteration */
     break;
 
-  case CS_NSKEY_TIME_SCHEME:
-    if (strcmp(val, "euler_implicit") == 0) {
-      nsp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
-      nsp->theta = 1.;
-    }
-    else if (strcmp(val, "euler_explicit") == 0) {
-      nsp->time_scheme = CS_TIME_SCHEME_EULER_EXPLICIT;
-      nsp->theta = 0.;
-    }
-    else if (strcmp(val, "crank_nicolson") == 0) {
-      nsp->time_scheme = CS_TIME_SCHEME_CRANKNICO;
-      nsp->theta = 0.5;
-    }
-    else if (strcmp(val, "theta_scheme") == 0)
-      nsp->time_scheme = CS_TIME_SCHEME_THETA;
-    else if (strcmp(val, "bdf2") == 0)
-      nsp->time_scheme = CS_TIME_SCHEME_BDF2;
-    else {
-      const char *_val = val;
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Invalid value \"%s\" for CS_EQKEY_TIME_SCHEME\n"
-                  " Valid choices are \"euler_implicit\","
-                  " \"euler_explicit\"," " \"crank_nicolson\","
-                  " \"theta_scheme\" and \"bdf2\"."), __func__, _val);
-    }
-    break;
-
-  case CS_NSKEY_TIME_THETA:
-    nsp->theta = atof(val);
-    if (nsp->theta < 0. - cs_math_zero_threshold ||
-        nsp->theta > 1.0 + cs_math_zero_threshold)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid value for theta\n", __func__);
-    break;
-
   case CS_NSKEY_VERBOSITY:
     nsp->verbosity = atoi(val);
     break;
@@ -1342,17 +1168,6 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
 
   cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, ss_key);
 
-  /*  Set the time discretization scheme */
-
-  const char  *ts_key = _time_scheme_key[nsp->time_scheme];
-
-  cs_equation_param_set(eqp, CS_EQKEY_TIME_SCHEME, ts_key);
-  if (nsp->time_scheme == CS_TIME_SCHEME_THETA) {
-    char  cvalue[36]; /* include '\0' */
-    snprintf(cvalue, 35*sizeof(char), "%g", nsp->theta);
-    cs_equation_param_set(eqp, CS_EQKEY_TIME_THETA, cvalue);
-  }
-
   /*  Set the way DoFs are defined */
 
   const char  *dof_key = _dof_reduction_key[nsp->dof_reduction_mode];
@@ -1362,27 +1177,6 @@ cs_navsto_param_transfer(const cs_navsto_param_t    *nsp,
   /*  Set quadratures type */
 
   const char  *quad_key = _quad_type_key[nsp->qtype];
-
-  /* If requested, add advection parameters */
-
-  if ((nsp->model & (CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES |
-                     CS_NAVSTO_MODEL_OSEEN)) > 0) {
-
-    /* If different from default value */
-
-    const char *extrap_key = _adv_extrap_key[nsp->adv_extrapol];
-    cs_equation_param_set(eqp, CS_EQKEY_ADV_EXTRAPOL, extrap_key);
-
-    const char *stra_key = _adv_strategy_key[nsp->adv_strategy];
-    cs_equation_param_set(eqp, CS_EQKEY_ADV_STRATEGY, stra_key);
-
-    const char *form_key = _adv_formulation_key[nsp->adv_form];
-    cs_equation_param_set(eqp, CS_EQKEY_ADV_FORMULATION, form_key);
-
-    const char *scheme_key = _adv_scheme_key[nsp->adv_scheme];
-    cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, scheme_key);
-
-  }
 
   cs_equation_param_set(eqp, CS_EQKEY_BC_QUADRATURE, quad_key);
 }
@@ -1457,22 +1251,8 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   if (cs_navsto_param_is_steady(nsp))
     cs_log_printf(CS_LOG_SETUP, "%s Time status: Steady\n", navsto);
 
-  else {
-
+  else
     cs_log_printf(CS_LOG_SETUP, "%s Time status: Unsteady\n", navsto);
-
-    const char  *time_scheme = cs_param_get_time_scheme_name(nsp->time_scheme);
-    if (time_scheme != NULL) {
-      cs_log_printf(CS_LOG_SETUP, "%s Time scheme: %s", navsto, time_scheme);
-      if (nsp->time_scheme == CS_TIME_SCHEME_THETA)
-        cs_log_printf(CS_LOG_SETUP, " with value %f\n", nsp->theta);
-      else
-        cs_log_printf(CS_LOG_SETUP, "\n");
-    }
-    else
-      bft_error(__FILE__, __LINE__, 0, "%s: Invalid time scheme.", __func__);
-
-  }
 
   const char *space_scheme = cs_param_get_space_scheme_name(nsp->space_scheme);
   if (space_scheme != NULL)
@@ -1492,52 +1272,35 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     bft_error(__FILE__, __LINE__, 0, " %s: Invalid way to define DoFs.",
               __func__);
 
-  if (nsp->model == CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES) {
+  /* Describe if needed the SLES settings for the non-linear algorithm */
 
-    /* Advection treament */
+  if (nsp->handle_non_linearities) {
 
-    cs_log_printf(CS_LOG_SETUP, "%s Advection scheme: %s\n",
-                  navsto, cs_param_get_advection_scheme_name(nsp->adv_scheme));
-    cs_log_printf(CS_LOG_SETUP, "%s Advection formulation: %s\n",
-                  navsto, cs_param_get_advection_form_name(nsp->adv_form));
-    cs_log_printf(CS_LOG_SETUP, "%s Advection strategy: %s\n",
-                  navsto,
-                  cs_param_get_advection_strategy_name(nsp->adv_strategy));
-    cs_log_printf(CS_LOG_SETUP, "%s Advection extrapolation: %s\n",
-                  navsto,
-                  cs_param_get_advection_extrapol_name(nsp->adv_extrapol));
+    const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
 
-    /* Describe if needed the SLES settings for the non-linear algorithm */
+    cs_log_printf(CS_LOG_SETUP, "%s Non-linear algo: %s\n",
+                  navsto, cs_param_get_nl_algo_name(nslesp->nl_algo_type));
+    cs_log_printf(CS_LOG_SETUP, "%s Tolerances of non-linear algo:"
+                  " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
+                  navsto, nslesp->nl_algo_param.rtol,
+                  nslesp->nl_algo_param.atol, nslesp->nl_algo_param.dtol);
+    cs_log_printf(CS_LOG_SETUP, "%s Max of non-linear iterations: %d\n",
+                  navsto, nslesp->nl_algo_param.n_max_algo_iter);
 
-    if (nsp->adv_strategy == CS_PARAM_ADVECTION_IMPLICIT_FULL) {
+    if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
-      const cs_navsto_param_sles_t  *nslesp = nsp->sles_param;
+      const cs_iter_algo_param_aa_t  aap = nslesp->anderson_param;
 
-      cs_log_printf(CS_LOG_SETUP, "%s Non-linear algo: %s\n",
-                    navsto, cs_param_get_nl_algo_name(nslesp->nl_algo_type));
-      cs_log_printf(CS_LOG_SETUP, "%s Tolerances of non-linear algo:"
-                    " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
-                    navsto, nslesp->nl_algo_param.rtol,
-                    nslesp->nl_algo_param.atol, nslesp->nl_algo_param.dtol);
-      cs_log_printf(CS_LOG_SETUP, "%s Max of non-linear iterations: %d\n",
-                    navsto, nslesp->nl_algo_param.n_max_algo_iter);
+      cs_log_printf(CS_LOG_SETUP, "%s Anderson param: max. dir: %d; "
+                    " start: %d; drop. tol: %5.3e; relax: %5.3e\n",
+                    navsto, aap.n_max_dir, aap.starting_iter, aap.max_cond,
+                    aap.beta);
+      cs_log_printf(CS_LOG_SETUP, "%s Anderson param: Dot product type: %s\n",
+                    navsto, cs_param_get_dotprod_type_name(aap.dp_type));
 
-      if (nslesp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+    }
 
-        const cs_iter_algo_param_aa_t  aap = nslesp->anderson_param;
-
-        cs_log_printf(CS_LOG_SETUP, "%s Anderson param: max. dir: %d; "
-                      " start: %d; drop. tol: %5.3e; relax: %5.3e\n",
-                      navsto, aap.n_max_dir, aap.starting_iter, aap.max_cond,
-                      aap.beta);
-        cs_log_printf(CS_LOG_SETUP, "%s Anderson param: Dot product type: %s\n",
-                      navsto, cs_param_get_dotprod_type_name(aap.dp_type));
-
-      }
-
-    } /* A non-linear treatment is requested */
-
-  } /* Navier-Stokes */
+  } /* A non-linear treatment is requested */
 
   /* Describe the strategy to inverse the (inner) linear system */
 
