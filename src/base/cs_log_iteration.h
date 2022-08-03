@@ -135,12 +135,21 @@ cs_log_iteration_clipping_field(int               f_id,
                                 cs_lnum_t         n_clip_min_comp[],
                                 cs_lnum_t         n_clip_max_comp[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize structures used for logging for new iteration.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_prepare(void);
+
 /*----------------------------------------------------------------------------
- * Log L2 time residual for every variable fields.
+ * Log L2 time residual for variable fields.
  *----------------------------------------------------------------------------*/
 
 void
-cs_log_l2residual(void);
+cs_log_iteration_l2residual(void);
 
 /*----------------------------------------------------------------------------*/
 

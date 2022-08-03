@@ -861,6 +861,8 @@ call cs_boundary_zone_build_all(mesh_modified)
 
 call dmtmps(titer1)
 
+call cs_log_iteration_prepare
+
 call tridim(itrale, nvar, nscal, dt)
 
 if ((nfpt1d > 0).AND.(mod(ntcabs,ntlist).eq.0)) call cs_1d_wall_thermal_log()

@@ -148,6 +148,12 @@ do f_id = 0, nfld - 1
 
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
+
+    call field_get_key_struct_solving_info(f_id, sinfo)
+
+    ! Check variable was solved at the current time step
+    if (sinfo%nbivar .lt. 0) cycle
+
     chainc = 'c'
     chain = ' '
     ic = 4
@@ -160,7 +166,7 @@ do f_id = 0, nfld - 1
     chainc(ic:ic+max_name_width) = flabel(1:max_name_width)
     ic=ic+max_name_width
     chain = ' '
-    call field_get_key_struct_solving_info(f_id, sinfo)
+
     write(chain,3000) sinfo%rnsmbr
     chainc(ic:ic+12) = chain(1:12)
     ic=ic+13

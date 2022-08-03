@@ -1653,12 +1653,35 @@ cs_log_iteration_clipping_field(int               f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Log L2 time residual for every variable fields.
+ * \brief Initialize structures used for logging for new iteration.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_log_l2residual(void)
+cs_log_iteration_prepare(void)
+{
+  const int n_fields = cs_field_n_fields();
+
+  int si_k_id = cs_field_key_id("solving_info");
+
+  for (int f_id = 0 ; f_id < n_fields ; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (f->type & CS_FIELD_VARIABLE) {
+      cs_solving_info_t *sinfo
+        = cs_field_get_key_struct_ptr(f, si_k_id);
+      sinfo->n_it = -1;
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Log L2 time residual for variable fields.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_iteration_l2residual(void)
 {
   if (cs_glob_rank_id > 0)
     return;
