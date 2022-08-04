@@ -242,7 +242,7 @@ class Case(object):
                     self.subdomains.append(d['domain'])
 
             self.run_dir = os.path.join(self.__dest, self.label, self.resu,
-                                        self.run_id, self.subdomains[0])
+                                        self.run_id)
 
         self.exe = os.path.join(pkg.get_dir('bindir'),
                                 pkg.name + pkg.config.shext)
@@ -316,6 +316,18 @@ class Case(object):
         e = os.path.join(self.pkg.get_dir('bindir'), self.exe)
         home = os.getcwd()
         os.chdir(self.__dest)
+
+        have_status_prepared = False
+
+        # Create log file in dest (will be moved later and renamed to
+        # run_case.log, but named with run_id here in case of asynchronous
+        # preparation of multiple runs).
+
+        log_path = os.path.join(self.__dest, "run_" + self.label
+                                + "_" + self.run_id + ".log")
+
+        log_run = open(log_path, mode='w')
+
         if self.subdomains:
             if not os.path.isdir(self.label):
                 os.mkdir(self.label)
@@ -345,20 +357,8 @@ class Case(object):
                             self.kw_args += " "  # workaround for arg-parser issue
                         cmd += " --kw-args " + '"' + self.kw_args + '"'
 
-                    # create run_case.log in dest/STUDY (will be moved later)
-                    file_name = os.path.join(self.__dest, "run_case.log")
-                    log_run = open(file_name, mode='w')
 
                     node_retval, t = run_studymanager_command(cmd, log_run)
-
-                    # move run_case.log in run_dir
-                    if os.path.isdir(self.run_dir):
-                        os.replace(file_name, os.path.join(self.run_dir,
-                                                           "run_case.log"))
-                    else:
-                        err_file = os.path.join(self.__dest, "run_" + self.label
-                                 + "_" + self.run_id + ".log")
-                        os.replace(file_name, err_file)
 
                     # negative retcode is kept
                     retval = min(node_retval,retval)
@@ -388,32 +388,23 @@ class Case(object):
 
             # Check if case has already been prepared in dest/STUDY/CASE
 
-            have_case_log = False
-            if os.path.isfile(os.path.join(self.run_dir, "run_case.log")):
-                have_case_log = True
-
-            have_status_prepared = False
             if os.path.isfile(os.path.join(self.run_dir, "run_status.prepared")):
                 have_status_prepared = True
 
-            # Create log file in dest
-            log_path = os.path.join(self.__dest, "run_" + self.label
-                                    + "_" + self.run_id + ".log")
-
-            log_run = open(log_path, mode='w')
-
             retval, t = run_studymanager_command(cmd, log_run)
-
-            # move log file tog run_dir
-            if os.path.isdir(self.run_dir):
-                new_log_path = os.path.join(self.run_dir, "run_case.log")
-                os.replace(log_path, new_log_path)
-                log_path = new_log_path
 
         if retval == 0:
             log_lines += ['      * prepare run folder: ' + self.title]
 
+            # move log file tog run_dir
+            new_log_path = os.path.join(self.run_dir, "run_case.log")
+            os.replace(log_path, new_log_path)
+
         else:
+            have_case_log = False
+            if os.path.isfile(os.path.join(self.run_dir, "run_case.log")):
+                have_case_log = True
+
             fail_info = 'FAILED'
             if have_case_log:
                 if have_status_prepared:
@@ -580,6 +571,31 @@ class Case(object):
             run_cmd += " --with-resource " + resource_name
 
         return run_cmd
+
+    #---------------------------------------------------------------------------
+
+    def add_control_file(self, n_iter):
+        """
+        Add a control file in a run if needed.
+        """
+
+        if self.subdomains:
+            path = os.path.join(self.run_dir,
+                                self.subdomains[0],
+                                'control_file')
+        else:
+            path = os.path.join(self.run_dir,
+                                'control_file')
+
+        # Create a control_file in run folder
+        if not os.path.exists(path):
+            control_file = open(path,'w')
+            control_file.write("time_step_limit " + str(n_iter) + "\n")
+            # Flush to ensure that control_file content is seen
+            # when control_file is copied to the run directory on all systems
+            # Is this useful ? Isn't flush automatic when closing ?
+            control_file.flush()
+            control_file.close
 
     #---------------------------------------------------------------------------
 
@@ -1558,8 +1574,6 @@ class Studies(object):
         the run of the case is also repeated.
         """
 
-        home = os.getcwd()
-
         self.reporting("  o Run all cases")
 
         for case in self.graph.graph_dict:
@@ -1569,15 +1583,7 @@ class Studies(object):
                 if case.compute == 'on' and case.is_compiled != "KO":
 
                     if self.__n_iter is not None:
-                        os.chdir(case.run_dir)
-                        # Create a control_file in run folder
-                        if not os.path.exists('control_file'):
-                            control_file = open('control_file','w')
-                            control_file.write("time_step_limit " + str(self.__n_iter) + "\n")
-                            # Flush to ensure that control_file content is seen
-                            # when control_file is copied to the run directory on all systems
-                            control_file.flush()
-                            control_file.close
+                        case.add_control_file(self.__n_iter)
 
                     self.reporting('    - running %s ...' % case.title,
                                    stdout=True, report=False, status=True)
@@ -1613,8 +1619,6 @@ class Studies(object):
 
                     self.__log_file.flush()
 
-        os.chdir(home)
-
         self.reporting('')
 
     #---------------------------------------------------------------------------
@@ -1635,8 +1639,6 @@ class Studies(object):
 """
         cur_batch_id = 0
         job_id_list = []
-
-        home = os.getcwd()
 
         self.reporting("  o Run all cases in slurm batch mode")
 
@@ -1660,19 +1662,9 @@ class Studies(object):
                         if case.compute == 'on' and case.is_compiled != "KO":
 
                             if self.__n_iter is not None:
-                                os.chdir(case.run_dir)
-                                # Create a control_file in run folder
-                                if not os.path.exists('control_file'):
-                                    control_file = open('control_file','w')
-                                    control_file.write("time_step_limit "
-                                                      + str(self.__n_iter) + "\n")
-                                    # Flush to ensure that control_file content is seen
-                                    # when control_file is copied to the run directory on all systems
-                                    control_file.flush()
-                                    control_file.close
-                                os.chdir(home)
+                                case.add_control_file(self.__n_iter)
 
-                            self.reporting('    - running %s ...' % case.title,
+                            self.reporting('    - will run %s ...' % case.title,
                                            stdout=True, report=False, status=True)
 
                             # append content of batch command with run of the case
@@ -1708,7 +1700,7 @@ class Studies(object):
                                              slurm_batch_name])
                                 else:
                                     # list of dependency id should be in the
-                                    # :id1:id2:id3 format 
+                                    # :id1:id2:id3 format
                                     list_id = ""
                                     for item in job_id_list:
                                         list_id += ":" + str(item)
@@ -1756,7 +1748,7 @@ class Studies(object):
                                  slurm_batch_name])
                     else:
                         # list of dependency id should be in the
-                        # :id1:id2:id3 format 
+                        # :id1:id2:id3 format
                         list_id = ""
                         for item in job_id_list:
                             list_id += ":" + str(item)
@@ -1778,8 +1770,6 @@ class Studies(object):
                     slurm_batch_file.close()
 
             job_id_list = cur_job_id_list
-
-        os.chdir(home)
 
         self.reporting('')
 
