@@ -10,6 +10,11 @@ Bug fixes:
 
 - Restart from different mesh: fix values shift in variable exchange when
   some points are not located (updated PLE library).
+- Fix performance issues with K-cycle and pairwise aggregation and MSR
+  matrices in case of penalized diagonal entries or isolated diagonal
+  values
+- Fix the stopping criterion for Uzawa-CG algorithm (used by CDO
+  schemes for Stokes problems)
 
 Architectural changes:
 
@@ -26,6 +31,28 @@ Studymanager:
 - New option (--slurm-batch-size=N with N>0) to submit batches of cases using
   the SLURM resource manager on cluster. Cases are sorted by number of
   processors and level of dependency.
+
+Numerics:
+
+- Add MUMPS as a preconditioner of a Krylov method
+- Add SPD matrices as a new type of input matrices for MUMPS. This
+  distinction corresponds to the key SYM in MUMPS. Now, "mumps" refers
+  to SYM=0 (not symmetric), "mumps_sym" refers to SYM=2 (general
+  symmetric) and "mumps_ldlt" refers to SYM=1 (SPD matrices). The same
+  behavior applies to the single-precision version.
+- Several optimizations/fixes for MUMPS (zero-value entries are not
+  sent to MUMPS for instance).
+- MUMPS user hook API has been changed
+- Add a scaled pressure mass matrix as a Schur approximation for Uzawa
+  CG algorithm (used by CDO schemes)
+
+CDO:
+
+- Setup: Fix inconsistencies between cs_navsto_param_t and
+  cs_equation_param_t for the momentum equation when settings a
+  Navier-Stokes problem. This may induce a modification of user source
+  files.
+
 
 Release 7.2.0 (June 30 2022)
 ----------------------------
