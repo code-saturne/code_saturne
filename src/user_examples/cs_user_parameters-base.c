@@ -84,15 +84,58 @@ cs_user_model(void)
 {
   /*--------------------------------------------------------------------------*/
 
+  /*! [activate_user_model] */
+
   /* Activate Atmospheric flow model
    *  CS_ATMO_OFF:                module not activated
    *  CS_ATMO_CONSTANT_DENSITY:   standard modelling
    *  CS_ATMO_DRY:                dry atmosphere
    *  CS_ATMO_HUMID:              humid atmosphere (experimental)
    * */
+  cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_DRY;
+
+  /* Activate compressible model
+   *  -1: not active, 0: activated, 1: barotropic version,
+   *   2: homogeneous two phase model, 3: by pressure increment */
+  cs_glob_physical_model_flag[CS_COMPRESSIBLE] = -1;
+
+  /* Activate Eddy Break Up pre-mixed flame combustion model
+   * -1: not active
+   *  0: adiabatic conditions at constant richness
+   *  1: permeatic conditions at constant richness
+   *  2: adiabatic conditions at variable richness
+   *  3: permeatic conditions at variable richness */
+  cs_glob_physical_model_flag[CS_COMBUSTION_EBU] = -1;
+
+  /* Activate 3-pointcombustion model
+   * -1: not active, 0: adiabatic, 1: permeatic */
+  cs_glob_physical_model_flag[CS_COMBUSTION_3PT] = -1;
+
+  /* Activate Libby-Williams pre-mixed flame combustion model
+   * -1: not active
+   *  0: two peak model with: adiabiatic conditions
+   *  1: two peak model with: permeatic conditions
+   *  2: three peak model: with adiabiatic conditions
+   *  3: three peak model: with permeatic conditions
+   *  4: four peak model with: adiabiatic conditions
+   *  5: four peak model with: permeatic conditions*/
+  cs_glob_physical_model_flag[CS_COMBUSTION_LW] = -1;
+
+  /*  Activate gas mix model
+   *  CS_GAS_MIX_OFF                      gas mix model off
+   *  CS_GAS_MIX_AIR_HELIUM               air/helium, helium deduced
+   *  CS_GAS_MIX_AIR_HYDROGEN             air/hydrogen, hydrogen deduced
+   *  CS_GAS_MIX_AIR_STEAM                air/steam, steam deduced
+   *  CS_GAS_MIX_AIR_HELIUM_STEAM         helium/steam, steam deduced
+   *  CS_GAS_MIX_AIR_HYDROGEN_STEAM       hydrogen/steam, steam deduced
+   *  CS_GAS_MIX_HELIUM_AIR               helium/air, O2 from air deduced
+   *  CS_GAS_MIX_USER                     user defined
+   * */
+  cs_glob_physical_model_flag[CS_GAS_MIX] = CS_GAS_MIX_AIR_HELIUM;
+
+  /*! [activate_user_model] */
 
   /*! [atmo_user_model_1] */
-  cs_glob_physical_model_flag[CS_ATMOSPHERIC] = CS_ATMO_DRY;
 
   cs_atmo_set_meteo_file_name("meteo");
 
@@ -236,14 +279,6 @@ cs_user_model(void)
   /*! [atmo_user_model_1] */
 
   /*--------------------------------------------------------------------------*/
-
-  /* Activate compressible model */
-
-  /*! [compressible_user_model_1] */
-  /* -1: not active, 0: activated, 1: barotropic version,
-     2: homogeneous two phase model, 3: by pressure increment */
-  cs_glob_physical_model_flag[CS_COMPRESSIBLE] = -1;
-  /*! [compressible_user_model_1] */
 
   /*--------------------------------------------------------------------------*/
 
@@ -403,13 +438,6 @@ cs_user_model(void)
   /*! [ALE_activation] */
 
   /*--------------------------------------------------------------------------*/
-
-  /*! [gax_mix_activation] */
-
-  cs_gas_mix_type_t gas_mix_type          = CS_GAS_MIX_AIR_HELIUM;
-  cs_glob_physical_model_flag[CS_GAS_MIX] = gas_mix_type;
-
-  /*! [gax_mix_activation] */
 
   /*! [wall_condensation] */
 

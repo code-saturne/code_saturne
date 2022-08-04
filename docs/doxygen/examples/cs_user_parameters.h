@@ -39,11 +39,14 @@
   Several functions are present in the file, each destined to defined
     specific parameters.
 
-
   \section cs_user_parameters_h_cs_user_model  Base model related options
 
   Definition of user variables or properties as well as choices of physical
-  models should be done here, if not already done through the GUI.
+  models should be done here, if not already done through the GUI.;
+
+  Activate user model
+
+  \snippet cs_user_parameters-base.c activate_user_model
 
   Choose a turbulent model among the available models
 

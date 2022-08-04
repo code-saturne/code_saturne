@@ -533,7 +533,7 @@ variable \f$\varphi\f$ in the following way:
 The example is valid for a velocity component, for a turbulent variable
 (\f$k\f$, \f$\varepsilon$, $R_{ij}\f$, \f$\omega\f$, \f$\varphi\f$ or \f$\overline{f}\f$)
 and for a scalar (or for the average of the square of the fluctuations
-of a scalar), because the syntax of the function **cs_user_source_terms**
+of a scalar), because the syntax of the function \ref cs_user_source_terms
 in the cs_user_source_terms.c file is similar.
 
 # For user scalars

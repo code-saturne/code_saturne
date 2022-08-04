@@ -17,6 +17,8 @@
     </tab>
     <tab type="user" visible="yes" url="@ref cs_ug_base_setup" title="Basic modeling setup">
     </tab>
+    <tab type="user" visible="yes" url="@ref cs_ug_advanced_setup" title="Advanced modeling setup">
+    </tab>
     <tab type="user" visible="yes" url="@ref cs_ug_studymanager" title="The STUDYMANAGER tool"/>
     <tab type="usergroup" visible="yes" url="@ref cs_dg_developer_guide" title="Developer guide">
       <tab type="user" visible="yes" url="@ref cs_dg_coding_style" title="Coding style guidelines"/>
