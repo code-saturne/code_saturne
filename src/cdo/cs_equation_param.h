@@ -976,20 +976,27 @@ typedef struct {
  *                       this solver. This is a very robust iterative solver.
  *                       Not the best choice if the system is easy to solve
  * - "minres"        --> Solver of choice for symmetric indefinite systems
- * - "mumps"         --> Direct solver (very robust but memory consumming)
- *                       LU factorization (through PETSc or MUMPS)
- * -  "mumps_float"  --> Direct solver (very robust but memory consumming)
- * or "smumps"           LU factorization (through PETSc or MUMPS).
- *                       Reduction of the memory consumption thanks to the usage
- *                       of float instead of double. This is a recommended
- *                       choice when used inside a preconditioner
- * -  "smumps_ldlt"  --> Direct solver (very robust but memory consumming)
- * or "mumps_float_ldlt" LDLT factorization (through PETSc or MUMPS).
- *                       Reduction of the memory consumption thanks to the
- *                       usage of float instead of double. This is a
- *                       recommended choice when used inside a preconditioner
- * - "mumps_ldlt"    --> Direct solver (very robust but memory consumming)
- *                       LDLT factorization (through PETSc or MUMPS).
+ * - "mumps"         --> Direct solver (MUMPS or PETSc)
+ *                       LU factorization on general matrices
+ * - "mumps_sym"     --> Direct solver (only MUMPS)
+ *                       LU factorization on general symmetric matrices
+ * - "mumps_ldlt"    --> Direct solver (only MUMPS).
+ *                       LDLT factorization for SPD matrices
+ * -  "mumps_float"  --> Direct solver (only MUMPS).
+ * or "smumps"           LU factorization on general matrices.
+ *                       Reduced memory footprint thanks to the usage of float
+ *                       instead of double. Well-suited when embedded inside an
+ *                       iterative process
+ * -  "smumps_ldlt"  --> Direct solver (only MUMPS).
+ * or "mumps_float_ldlt" LDLT factorization for SPD matrices
+ *                       Reduced memory footprint thanks to the usage of float
+ *                       instead of double. Well-suited when embedded inside an
+ *                       iterative process
+ * -  "smumps_sym"   --> Direct solver (only MUMPS).
+ * or "mumps_float_sym"  LU factorization for general symmetric matrices
+ *                       Reduced memory footprint thanks to the usage of float
+ *                       instead of double. Well-suited when embedded inside an
+ *                       iterative process
  * - "sym_gauss_seidel" or "sgs" --> Symmetric Gauss-Seidel algorithm
  * - "user"          --> User-defined iterative solver (rely on the function
  *                       cs_user_sles_it_solver())
@@ -1055,6 +1062,27 @@ typedef struct {
  * - "amg_block"/"block_amg: algebraic multigrid by block (useful for
  *                vector-valued equations). By default, a diagonal block
  *                preconditioning is used if nothing else is set.
+ * - "mumps"         --> Direct solver (only MUMPS)
+ *                       LU factorization on general matrices
+ * - "mumps_sym"     --> Direct solver (only MUMPS)
+ *                       LU factorization on general symmetric matrices
+ * - "mumps_ldlt"    --> Direct solver (only MUMPS).
+ *                       LDLT factorization for SPD matrices
+ * -  "mumps_float"  --> Direct solver (only MUMPS).
+ * or "smumps"           LU factorization on general matrices.
+ *                       Reduced memory footprint thanks to the usage of float
+ *                       instead of double. Well-suited when embedded inside an
+ *                       iterative process
+ * -  "smumps_ldlt"  --> Direct solver (only MUMPS).
+ * or "mumps_float_ldlt" LDLT factorization for SPD matrices
+ *                       Reduced memory footprint thanks to the usage of float
+ *                       instead of double. Well-suited when embedded inside an
+ *                       iterative process
+ * -  "smumps_sym"   --> Direct solver (only MUMPS).
+ * or "mumps_float_sym"  LU factorization for general symmetric matrices
+ *                       Reduced memory footprint thanks to the usage of float
+ *                       instead of double. Well-suited when embedded inside an
+ *                       iterative process
  *
  * \var CS_EQKEY_PRECOND_BLOCK_TYPE
  * Specify the type of block preconditioner associated to a preconditioner.
