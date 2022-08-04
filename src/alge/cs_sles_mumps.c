@@ -2621,8 +2621,11 @@ cs_sles_mumps_setup(void               *context,
                     "\n MUMPS feedback error code: INFOG(1)=%d, INFOG(2)=%d\n",
                     infog1, infog2);
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Error detected during the analysis/factorization step",
-                __func__);
+                "%s: Error detected during the analysis/factorization step.\n"
+                "%s: INFOG(1)=%d; INFOG(2)=%d\n"
+                " Please refer to the MUMPS documentation to get a more"
+                " detailed feedback.\n",
+                __func__, __func__, infog1, infog2);
     }
     else {
       if (verbosity > 1)
@@ -2866,8 +2869,17 @@ cs_sles_mumps_solve(void                *context,
   /* Output */
 
   cs_sles_convergence_state_t cvg = CS_SLES_CONVERGED;
-  if (infog1 < 0)
+  if (infog1 < 0) {
+
     cvg = CS_SLES_BREAKDOWN;
+
+    if (verbosity > 0) {
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT, "%s: MUMPS Feedback: INFOG(1)=%d\n",
+                    __func__, infog1);
+    }
+
+  }
 
   *n_iter = 1;
   c->n_solves += 1;
@@ -2934,15 +2946,26 @@ cs_sles_mumps_log(const void  *context,
   }
   else if (log_type == CS_LOG_PERFORMANCE) {
 
-    cs_log_printf(log_type,
-                  _("\n"
-                    "  Solver type:                   MUMPS\n"
-                    "  Number of setups:              %12d\n"
-                    "  Number of solves:              %12d\n"
-                    "  Total setup time:              %12.3f\n"
-                    "  Total solution time:           %12.3f\n"),
-                  c->n_setups, c->n_solves,
-                  c->t_setup.nsec*1e-9, c->t_solve.nsec*1e-9);
+    if (c->is_pc)
+      cs_log_printf(log_type,
+                    _("\n"
+                      "  Preconditioner type:           MUMPS\n"
+                      "  Number of setups:              %12d\n"
+                      "  Number of solves:              %12d\n"
+                      "  Total setup time:              %12.3f\n"
+                      "  Total solution time:           %12.3f\n"),
+                    c->n_setups, c->n_solves,
+                    c->t_setup.nsec*1e-9, c->t_solve.nsec*1e-9);
+    else
+      cs_log_printf(log_type,
+                    _("\n"
+                      "  Solver type:                   MUMPS\n"
+                      "  Number of setups:              %12d\n"
+                      "  Number of solves:              %12d\n"
+                      "  Total setup time:              %12.3f\n"
+                      "  Total solution time:           %12.3f\n"),
+                    c->n_setups, c->n_solves,
+                    c->t_setup.nsec*1e-9, c->t_solve.nsec*1e-9);
 
   }
 }
