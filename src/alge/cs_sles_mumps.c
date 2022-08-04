@@ -186,11 +186,11 @@ static double  cs_sles_mumps_zero_fthreshold = 100*FLT_MIN;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize the MUMPS structure in case of double-precision
- *        computation.
+ * \brief Check if a periodicity has to be performed during the computation
  *
- * \param[in]      verbosity   level of verbosity requested
- * \param[in, out] dmumps      pointer to DMUMPS_STRUCT_C
+ * \param[in] halo   pointer to a halo structure
+ *
+ * \return true or false
  */
 /*----------------------------------------------------------------------------*/
 
