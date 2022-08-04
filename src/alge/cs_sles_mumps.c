@@ -129,10 +129,12 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_SLES_MUMPS_DOUBLE_LDLT,    /* LDLt factorization with dmumps */
-  CS_SLES_MUMPS_DOUBLE_LU,      /* LU factorization with dmumps */
-  CS_SLES_MUMPS_SINGLE_LDLT,    /* LDLt factorization with smumps */
-  CS_SLES_MUMPS_SINGLE_LU,      /* LU factorization with smumps */
+  CS_SLES_MUMPS_DOUBLE_LDLT,  /* LDLt factorization with dmumps */
+  CS_SLES_MUMPS_DOUBLE_LU,    /* LU factorization with dmumps */
+  CS_SLES_MUMPS_DOUBLE_SYM,   /* LU factorization with dmumps for sym. mat.*/
+  CS_SLES_MUMPS_SINGLE_LDLT,  /* LDLt factorization with smumps */
+  CS_SLES_MUMPS_SINGLE_LU,    /* LU factorization with smumps */
+  CS_SLES_MUMPS_SINGLE_SYM,   /* LU factorization with smumps for sym. mat.*/
 
   CS_SLES_MUMPS_N_TYPES
 
@@ -232,10 +234,14 @@ _set_type(const cs_param_sles_t  *slesp)
     return CS_SLES_MUMPS_DOUBLE_LU;
   case CS_PARAM_ITSOL_MUMPS_LDLT:
     return CS_SLES_MUMPS_DOUBLE_LDLT;
+  case CS_PARAM_ITSOL_MUMPS_SYM:
+    return CS_SLES_MUMPS_DOUBLE_SYM;
   case CS_PARAM_ITSOL_MUMPS_FLOAT:
     return CS_SLES_MUMPS_SINGLE_LU;
   case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
     return CS_SLES_MUMPS_SINGLE_LDLT;
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
+    return CS_SLES_MUMPS_SINGLE_SYM;
 
   default: /* Not a solver. Try as preconditioner */
     switch(slesp->precond) {
@@ -244,10 +250,14 @@ _set_type(const cs_param_sles_t  *slesp)
       return CS_SLES_MUMPS_DOUBLE_LU;
     case CS_PARAM_PRECOND_MUMPS_LDLT:
       return CS_SLES_MUMPS_DOUBLE_LDLT;
+    case CS_PARAM_PRECOND_MUMPS_SYM:
+      return CS_SLES_MUMPS_DOUBLE_SYM;
     case CS_PARAM_PRECOND_MUMPS_FLOAT:
       return CS_SLES_MUMPS_SINGLE_LU;
     case CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT:
       return CS_SLES_MUMPS_SINGLE_LDLT;
+    case CS_PARAM_PRECOND_MUMPS_FLOAT_SYM:
+      return CS_SLES_MUMPS_SINGLE_SYM;
 
     default:
       bft_error(__FILE__, __LINE__, 0,
@@ -280,8 +290,10 @@ _set_pc_usage(const cs_param_sles_t  *slesp)
   switch (slesp->solver) {
 
   case CS_PARAM_ITSOL_MUMPS:
+  case CS_PARAM_ITSOL_MUMPS_SYM:
   case CS_PARAM_ITSOL_MUMPS_LDLT:
   case CS_PARAM_ITSOL_MUMPS_FLOAT:
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
   case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
     return false;
 
@@ -289,8 +301,10 @@ _set_pc_usage(const cs_param_sles_t  *slesp)
     switch(slesp->precond) {
 
     case CS_PARAM_PRECOND_MUMPS:
+    case CS_PARAM_PRECOND_MUMPS_SYM:
     case CS_PARAM_PRECOND_MUMPS_LDLT:
     case CS_PARAM_PRECOND_MUMPS_FLOAT:
+    case CS_PARAM_PRECOND_MUMPS_FLOAT_SYM:
     case CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT:
       return true;
 
@@ -324,10 +338,12 @@ _is_dmumps(const cs_sles_mumps_t  *c)
   switch (c->type) {
 
   case CS_SLES_MUMPS_DOUBLE_LDLT:
+  case CS_SLES_MUMPS_DOUBLE_SYM:
   case CS_SLES_MUMPS_DOUBLE_LU:
     return true;
 
   case CS_SLES_MUMPS_SINGLE_LDLT:
+  case CS_SLES_MUMPS_SINGLE_SYM:
   case CS_SLES_MUMPS_SINGLE_LU:
     return false;
 
@@ -2090,7 +2106,9 @@ cs_sles_mumps_pc_create(const cs_param_sles_t       *slesp)
 
   assert(slesp->precond == CS_PARAM_PRECOND_MUMPS            ||
          slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT      ||
+         slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT_SYM  ||
          slesp->precond == CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT ||
+         slesp->precond == CS_PARAM_PRECOND_MUMPS_SYM        ||
          slesp->precond == CS_PARAM_PRECOND_MUMPS_LDLT);
 
   cs_sles_mumps_t  *c = cs_sles_mumps_create(slesp,
@@ -2374,10 +2392,17 @@ cs_sles_mumps_setup(void               *context,
 
     dmumps->job = MUMPS_JOB_INIT;
     dmumps->par = 1;      /* all ranks are working */
-    dmumps->sym = 0;
 
-    if (c->type == CS_SLES_MUMPS_DOUBLE_LDLT)
+    if (c->type == CS_SLES_MUMPS_DOUBLE_LU)
+      dmumps->sym = 0;
+    else if (c->type == CS_SLES_MUMPS_DOUBLE_LDLT)
+      dmumps->sym = 1;
+    else if (c->type == CS_SLES_MUMPS_DOUBLE_SYM)
       dmumps->sym = 2;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid type of MUMPS settings for double-precision.\n",
+                __func__);
 
 #if defined(HAVE_MPI)
     dmumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
@@ -2410,8 +2435,17 @@ cs_sles_mumps_setup(void               *context,
     smumps->par = 1;       /* all ranks are working */
     smumps->sym = 0;
 
-    if (c->type == CS_SLES_MUMPS_SINGLE_LDLT)
+    if (c->type == CS_SLES_MUMPS_SINGLE_LU)
+      smumps->sym = 0;
+    else if (c->type == CS_SLES_MUMPS_SINGLE_LDLT)
+      smumps->sym = 1;
+    else if (c->type == CS_SLES_MUMPS_SINGLE_SYM)
       smumps->sym = 2;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid type of MUMPS settings for single-precision.\n",
+                __func__);
+
 
 #if defined(HAVE_MPI)
     smumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
@@ -2463,6 +2497,7 @@ cs_sles_mumps_setup(void               *context,
     break;
 
   case CS_SLES_MUMPS_DOUBLE_LDLT:
+  case CS_SLES_MUMPS_DOUBLE_SYM:
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
@@ -2509,6 +2544,7 @@ cs_sles_mumps_setup(void               *context,
     break;
 
   case CS_SLES_MUMPS_SINGLE_LDLT:
+  case CS_SLES_MUMPS_SINGLE_SYM:
     if (cs_glob_n_ranks > 1) { /* Parallel computation */
 
       if (cs_mat_type == CS_MATRIX_MSR)
@@ -2915,7 +2951,11 @@ cs_sles_mumps_log(const void  *context,
     strncpy(storage_type_name, "double-precision", 31);
     break;
   case CS_SLES_MUMPS_DOUBLE_LDLT:
-    strncpy(sym_type_name, "symmetric", 31);
+    strncpy(sym_type_name, "symmetric; SPD", 31);
+    strncpy(storage_type_name, "double-precision", 31);
+    break;
+  case CS_SLES_MUMPS_DOUBLE_SYM:
+    strncpy(sym_type_name, "general symmetric", 31);
     strncpy(storage_type_name, "double-precision", 31);
     break;
   case CS_SLES_MUMPS_SINGLE_LU:
@@ -2923,7 +2963,11 @@ cs_sles_mumps_log(const void  *context,
     strncpy(storage_type_name, "single-precision", 31);
     break;
   case CS_SLES_MUMPS_SINGLE_LDLT:
-    strncpy(sym_type_name, "symmetric", 31);
+    strncpy(sym_type_name, "symmetric; SPD", 31);
+    strncpy(storage_type_name, "single-precision", 31);
+    break;
+  case CS_SLES_MUMPS_SINGLE_SYM:
+    strncpy(sym_type_name, "general symmetric", 31);
     strncpy(storage_type_name, "single-precision", 31);
     break;
 

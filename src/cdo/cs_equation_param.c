@@ -570,12 +570,15 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "minres") == 0)
       eqp->sles_param->solver = CS_PARAM_ITSOL_MINRES;
 
-    else if (strcmp(keyval, "mumps") == 0 ||
-             strcmp(keyval, "mumps_float") == 0 ||
+    else if (strcmp(keyval, "mumps") == 0            ||
+             strcmp(keyval, "mumps_float") == 0      ||
              strcmp(keyval, "mumps_float_ldlt") == 0 ||
-             strcmp(keyval, "smumps") == 0 ||
-             strcmp(keyval, "smumps_ldlt") == 0 ||
-             strcmp(keyval, "mumps_ldlt") == 0) {
+             strcmp(keyval, "mumps_float_sym") == 0  ||
+             strcmp(keyval, "smumps") == 0           ||
+             strcmp(keyval, "smumps_ldlt") == 0      ||
+             strcmp(keyval, "smumps_sym") == 0       ||
+             strcmp(keyval, "mumps_ldlt") == 0       ||
+             strcmp(keyval, "mumps_sym") == 0) {
 
       eqp->sles_param->precond = CS_PARAM_PRECOND_NONE;
 
@@ -583,6 +586,8 @@ _set_key(cs_equation_param_t   *eqp,
 
       if (eqp->sles_param->solver_class == CS_PARAM_SLES_CLASS_CS)
         eqp->sles_param->solver_class = CS_PARAM_SLES_CLASS_MUMPS;
+
+      /* MUMPS or PETSc are valid choices */
 
       cs_param_sles_class_t  ret_class =
         cs_param_sles_check_class(CS_PARAM_SLES_CLASS_MUMPS);
@@ -607,8 +612,13 @@ _set_key(cs_equation_param_t   *eqp,
       else if (strcmp(keyval, "mumps_float_ldlt") == 0 ||
                strcmp(keyval, "smumps_ldlt") == 0)
         eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT;
+      else if (strcmp(keyval, "mumps_float_sym") == 0 ||
+               strcmp(keyval, "smumps_sym") == 0)
+        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_FLOAT_SYM;
       else if (strcmp(keyval, "mumps_ldlt") == 0)
         eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_LDLT;
+      else if (strcmp(keyval, "mumps_sym") == 0)
+        eqp->sles_param->solver = CS_PARAM_ITSOL_MUMPS_SYM;
 
     }
     else if (strcmp(keyval, "sym_gauss_seidel") == 0 ||
@@ -858,7 +868,14 @@ _set_key(cs_equation_param_t   *eqp,
     else if (strcmp(keyval, "mumps") == 0            ||
              strcmp(keyval, "mumps_float") == 0      ||
              strcmp(keyval, "mumps_float_ldlt") == 0 ||
-             strcmp(keyval, "mumps_ldlt") == 0 ) {
+             strcmp(keyval, "mumps_float_sym") == 0  ||
+             strcmp(keyval, "mumps_ldlt") == 0       ||
+             strcmp(keyval, "mumps_sym") == 0        ||
+             strcmp(keyval, "smumps") == 0           ||
+             strcmp(keyval, "smumps_ldlt") == 0      ||
+             strcmp(keyval, "smumps_sym") == 0) {
+
+      /* Only MUMPS is a valid choice */
 
       if (cs_param_sles_check_class(CS_PARAM_SLES_CLASS_MUMPS) !=
           CS_PARAM_SLES_CLASS_MUMPS)
@@ -870,12 +887,19 @@ _set_key(cs_equation_param_t   *eqp,
 
       if (strcmp(keyval, "mumps") == 0)
         eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS;
-      else if (strcmp(keyval, "mumps_float") == 0)
+      else if (strcmp(keyval, "mumps_float") == 0 ||
+               strcmp(keyval, "smumps") == 0)
         eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_FLOAT;
-      else if (strcmp(keyval, "mumps_float_ldlt") == 0)
+      else if (strcmp(keyval, "mumps_float_ldlt") == 0 ||
+               strcmp(keyval, "smumps_ldlt") == 0)
         eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT;
+      else if (strcmp(keyval, "mumps_float_sym") == 0 ||
+               strcmp(keyval, "smumps_sym") == 0)
+        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_FLOAT_SYM;
       else if (strcmp(keyval, "mumps_ldlt") == 0)
         eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_LDLT;
+      else if (strcmp(keyval, "mumps_sym") == 0)
+        eqp->sles_param->precond = CS_PARAM_PRECOND_MUMPS_SYM;
 
     }
     else if (strcmp(keyval, "poly1") == 0) {

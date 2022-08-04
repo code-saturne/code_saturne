@@ -167,8 +167,10 @@ cs_equation_system_sles_init(int                            n_eqs,
 
       if (slesp00->solver != CS_PARAM_ITSOL_MUMPS &&
           slesp00->solver != CS_PARAM_ITSOL_MUMPS_LDLT &&
+          slesp00->solver != CS_PARAM_ITSOL_MUMPS_SYM &&
           slesp00->solver != CS_PARAM_ITSOL_MUMPS_FLOAT &&
-          slesp00->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT)
+          slesp00->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT &&
+          slesp00->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_SYM)
         slesp00->solver = CS_PARAM_ITSOL_MUMPS;
 
       cs_sles_mumps_define(-1,

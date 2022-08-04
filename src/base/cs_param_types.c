@@ -583,8 +583,14 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
     return "MUMPS (LDLT factorization) with float";
     break;
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
+    return "MUMPS (LU factorization; SYM) with float";
+    break;
   case CS_PARAM_ITSOL_MUMPS_LDLT:
     return "MUMPS (LDLT factorization)";
+    break;
+  case CS_PARAM_ITSOL_MUMPS_SYM:
+    return "MUMPS (LU factorization; SYM)";
     break;
   case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
     return "Symmetric.Gauss.Seidel";
@@ -656,8 +662,14 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
   case CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT:
     return  "sMUMPS (LDLt)";
     break;
+  case CS_PARAM_PRECOND_MUMPS_FLOAT_SYM:
+    return  "sMUMPS (LU;SYM)";
+    break;
   case CS_PARAM_PRECOND_MUMPS_LDLT:
     return  "dMUMPS (LDLt)";
+    break;
+  case CS_PARAM_PRECOND_MUMPS_SYM:
+    return  "dMUMPS (LU;SYM)";
     break;
   case CS_PARAM_PRECOND_POLY1:
     return  "Neumann.Poly.O1";

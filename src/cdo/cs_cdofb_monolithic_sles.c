@@ -1790,9 +1790,11 @@ _set_velocity_ksp(const cs_param_sles_t   *slesp,
     break;
 
   case CS_PARAM_ITSOL_MUMPS_LDLT:     /* Direct solver (factorization) */
+  case CS_PARAM_ITSOL_MUMPS_SYM:
   case CS_PARAM_ITSOL_MUMPS_FLOAT:
   case CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT:
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver. Try mumps.",
+  case CS_PARAM_ITSOL_MUMPS_FLOAT_SYM:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver. Try MUMPS.",
               __func__);
     break;
 
@@ -4359,8 +4361,10 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 #if defined(HAVE_MUMPS)
     if (mom_slesp->solver != CS_PARAM_ITSOL_MUMPS &&
         mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_LDLT &&
+        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_SYM &&
         mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT &&
-        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT)
+        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT &&
+        mom_slesp->solver != CS_PARAM_ITSOL_MUMPS_FLOAT_SYM)
       mom_slesp->solver = CS_PARAM_ITSOL_MUMPS;
 
     cs_sles_mumps_define(field_id,

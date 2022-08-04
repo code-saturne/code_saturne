@@ -796,12 +796,20 @@ typedef enum {
  * \var CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT
  * Direct solver available with the MUMPS library and used as a preconditioner
  * Case of a L.D.Lt factorization and single-precision
- * The input matrix should be symmetric.
+ * The input matrix should be symmetric positive definite (SPD).
+ *
+ * \var CS_PARAM_PRECOND_MUMPS_FLOAT_SYM
+ * Direct solver available with the MUMPS library and used as a preconditioner
+ * Case of single-precision factorization. The input matrix should be symmetric
  *
  * \var CS_PARAM_PRECOND_MUMPS_LDLT
  * Direct solver available with the MUMPS library and used as a preconditioner
  * Case of a L.D.Lt factorization and double-precision
- * The input matrix should be symmetric.
+ * The input matrix should be symmetric definite positive (SPD).
+ *
+ * \var CS_PARAM_PRECOND_MUMPS_SYM
+ * Direct solver available with the MUMPS library and used as a preconditioner
+ * Case of double-precision factorization. The input matrix should be symmetric
  *
  * \var CS_PARAM_PRECOND_POLY1
  * Neumann polynomial preconditioning. Polynoms of order 1.
@@ -830,7 +838,9 @@ typedef enum {
   CS_PARAM_PRECOND_MUMPS,              /*!< Only with MUMPS */
   CS_PARAM_PRECOND_MUMPS_FLOAT,        /*!< Only with MUMPS */
   CS_PARAM_PRECOND_MUMPS_FLOAT_LDLT,   /*!< Only with MUMPS */
+  CS_PARAM_PRECOND_MUMPS_FLOAT_SYM,    /*!< Only with MUMPS */
   CS_PARAM_PRECOND_MUMPS_LDLT,         /*!< Only with MUMPS */
+  CS_PARAM_PRECOND_MUMPS_SYM,          /*!< Only with MUMPS */
   CS_PARAM_PRECOND_POLY1,
   CS_PARAM_PRECOND_POLY2,
   CS_PARAM_PRECOND_SSOR,
@@ -907,11 +917,20 @@ typedef enum {
  *
  * \var CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT
  * MUMPS direct solver (LDLT factorization also known as Cholesky
- * factorization). This enables a saving of the memory consumption which is
- * acceptable if one considers a preconditioner
+ * factorization). Only for SPD matrices. This enables a saving of the memory
+ * consumption which is acceptable if one considers a preconditioner
+ *
+ * \var CS_PARAM_ITSOL_MUMPS_FLOAT_SYM
+ * MUMPS direct solver for general symmetric matrices
+ * This enables a saving of the memory consumption which is acceptable if one
+ * considers a preconditioner
  *
  * \var CS_PARAM_ITSOL_MUMPS_LDLT
  * MUMPS direct solver (LDLT factorization also known as Cholesky factorization)
+ * for SPD matrices
+ *
+ * \var CS_PARAM_ITSOL_MUMPS_SYM
+ * MUMPS direct solver for general symmetric matrices
  *
  * \var CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL
  * Symmetric Gauss-Seidel
@@ -942,7 +961,9 @@ typedef enum {
   CS_PARAM_ITSOL_MUMPS,            /*!< Only with PETSc or MUMPS */
   CS_PARAM_ITSOL_MUMPS_FLOAT,      /*!< Only with MUMPS */
   CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT, /*!< Only with MUMPS */
-  CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< Only with PETSc or MUMPS */
+  CS_PARAM_ITSOL_MUMPS_FLOAT_SYM,  /*!< Only with MUMPS */
+  CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< Only MUMPS */
+  CS_PARAM_ITSOL_MUMPS_SYM,        /*!< Only with MUMPS */
   CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL,
   CS_PARAM_ITSOL_USER_DEFINED,
 

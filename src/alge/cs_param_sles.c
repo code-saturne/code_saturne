@@ -101,10 +101,12 @@ BEGIN_C_DECLS
 static inline bool
 _mumps_is_needed(cs_param_itsol_type_t   solver)
 {
-  if (solver == CS_PARAM_ITSOL_MUMPS ||
+  if (solver == CS_PARAM_ITSOL_MUMPS      ||
       solver == CS_PARAM_ITSOL_MUMPS_LDLT ||
-      solver == CS_PARAM_ITSOL_MUMPS_FLOAT ||
-      solver == CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT)
+      solver == CS_PARAM_ITSOL_MUMPS_SYM  ||
+      solver == CS_PARAM_ITSOL_MUMPS_FLOAT      ||
+      solver == CS_PARAM_ITSOL_MUMPS_FLOAT_LDLT ||
+      solver == CS_PARAM_ITSOL_MUMPS_FLOAT_SYM)
     return true;
   else
     return false;
@@ -752,6 +754,7 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
 
   case CS_PARAM_ITSOL_MUMPS:     /* Direct solver (factorization) */
   case CS_PARAM_ITSOL_MUMPS_LDLT:
+  case CS_PARAM_ITSOL_MUMPS_SYM:
 #if defined(PETSC_HAVE_MUMPS)
     KSPSetType(ksp, KSPPREONLY);
 #else
@@ -805,6 +808,7 @@ _petsc_set_krylov_solver(cs_param_sles_t    *slesp,
 
 #if defined(PETSC_HAVE_MUMPS)
   case CS_PARAM_ITSOL_MUMPS:
+  case CS_PARAM_ITSOL_MUMPS_SYM:
     {
       PC  pc;
       KSPGetPC(ksp, &pc);
