@@ -187,7 +187,7 @@ $(MEDCOUPLINGRUNPATH)
 fvm_medcoupling.${SHARED_LIB_EXT}: libfvm_medcoupling.a
 	@echo "Building fvm_medcoupling plugin..."
 	rm -f $@ ; \
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} -o $@ libfvm_medcoupling.a ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${LDADD_MEDCOUPLING} $(AM_LIBS)
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} -o $@ --whole-archive-start libfvm_medcoupling.a --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${LDADD_MEDCOUPLING} $(AM_LIBS)
 
 local_libraries_add += fvm_medcoupling.${SHARED_LIB_EXT}
 
@@ -225,7 +225,7 @@ $(CATALYSTRUNPATH)
 fvm_catalyst.${SHARED_LIB_EXT}: libfvm_catalyst.a
 	@echo "Building fvm_catalyst plugin..."
 	rm -f $@ ; \
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CXX} -o $@ libfvm_catalyst.a ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${LDADD_CATALYST} $(AM_LIBS)
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CXX} -o $@ --whole-archive-start libfvm_catalyst.a --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${LDADD_CATALYST} $(AM_LIBS)
 
 local_libraries_add += fvm_catalyst.${SHARED_LIB_EXT}
 
@@ -263,7 +263,7 @@ $(MELISSARUNPATH)
 fvm_melissa.${SHARED_LIB_EXT}: libfvm_melissa.a
 	@echo "Building fvm_melissa plugin..."
 	rm -f $@ ; \
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} --std-search-paths='no' -o $@ libfvm_melissa.a ${LDFLAGS_SHARED} ${LDFLAGS} ${LDADD_MELISSA} $(AM_LIBS)
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} --std-search-paths='no' -o $@ --whole-archive-start libfvm_melissa.a --whole-archive-end ${LDFLAGS_SHARED} ${LDFLAGS} ${LDADD_MELISSA} $(AM_LIBS)
 
 local_libraries_add += fvm_melissa.${SHARED_LIB_EXT}
 

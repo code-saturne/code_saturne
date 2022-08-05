@@ -63,6 +63,8 @@ def parse_cmd_line(argv):
     description="Link object or library files into a shared library."
     parser = argparse.ArgumentParser(description=description)
 
+    ar_group = parser.add_mutually_exclusive_group()
+
     parser.add_argument("--linker", dest="linker", type=str, default='',
                         metavar="<linker>",
                         help="define linker")
@@ -71,9 +73,18 @@ def parse_cmd_line(argv):
                         metavar="<version>",
                         help="define library version number")
 
-    parser.add_argument("--archive", dest="archive", default=False,
+    ar_group.add_argument("--archive", dest="archive", default=False,
+                          action="store_true",
+                          help="build archive library")
+
+    h = "include every object in subsequent archives (for shared library build)"
+
+    ar_group.add_argument("--whole-archive-start", dest="whole_archives",
+                          nargs="*", help=h)
+
+    parser.add_argument("--whole-archive-end", default=False,
                         action="store_true",
-                        help="build archive library")
+                        help="ends list beginning with --whole-archive-start")
 
     h =   "if 'yes', use standard library search paths; " \
         + "if 'no', only used specified paths, " \
@@ -183,7 +194,7 @@ def build_shared_library(linker,
                          version,
                          archives,
                          objects,
-                         other,
+                         other=[],
                          echo=False,
                          stdlib='yes'):
     """
@@ -225,7 +236,7 @@ def build_shared_library(linker,
             cmd.append(a)
         cmd.append("-Wl,-no-whole-archive")
 
-    # Add objects provided directly
+    # Add external objects and archives provided directly
 
     if objects:
         for o in objects:
@@ -295,9 +306,63 @@ if __name__ == '__main__':
         elif e == '.a':
             archives.append(s)
         else:
-            other.append(s)
+            if s == '-Wl,--end-group':  # Eliminate empty start/end group sequences
+                p = other.pop()
+                if p != '-Wl,--start-group':
+                    other.apend(p)
+                    other.apend(s)
+            else:
+                other.append(s)
 
-    # Archive library case:
+    # Clean duplicates:
+    # - keep last instance for objects and libraries
+    # - keep first instance for paths
+
+    objects.reverse()
+    l_new = []
+    for o in objects:
+        if l_new.count(o) > 0:
+            continue
+        l_new.append(o)
+    objects = l_new
+    objects.reverse()
+
+    archives.reverse()
+    l_new = []
+    for o in archives:
+        if l_new.count(o) > 0:
+            continue
+        l_new.append(o)
+    archives = l_new
+    archives.reverse()
+
+    other.reverse()
+    l_new = []
+    for o in other:
+        if o[:2] == '-l':
+            if l_new.count(o) > 0:
+                continue
+        l_new.append(o)
+    other = l_new
+    other.reverse()
+
+    l_new = []
+    for o in other:
+        if o[:2] == '-L':
+            o = '-L' + os.path.normpath(o[2:])
+            if l_new.count(o) > 0:
+                continue
+        if o[:10] == '-Wl,-rpath':
+            if l_new.count(o[10:]) > 0:
+                continue
+        l_new.append(o)
+    other = l_new
+
+    # Build archive or dynamic library
+    # Remark: For dynamic libraries, archives not in whole_archives are
+    #         assumed to be external dependencies, so grouped with "other".
+    #         For archive libraries, dependencies should not be provided,
+    #         so specifying whole archives is not necessary, and archives
 
     if options.archive:
         retcode = build_archive(options.output_name,
@@ -309,7 +374,9 @@ if __name__ == '__main__':
         retcode = build_shared_library(options.linker,
                                        options.output_name,
                                        options.version,
-                                       archives, objects, other,
+                                       options.whole_archives,
+                                       objects,
+                                       archives + other,
                                        echo=options.echo,
                                        stdlib=options.stdlib)
 

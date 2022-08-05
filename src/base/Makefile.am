@@ -475,7 +475,7 @@ $(MEDCOUPLINGRUNPATH)
 cs_medcoupling.${SHARED_LIB_EXT}: libcs_medcoupling.a
 	@echo "Building cs_medcoupling plugin..."
 	rm -f $@ ; \
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} -o $@ libcs_medcoupling.a ${LDFLAGS_SHARED} ${LDFLAGS} ${LDADD_MEDCOUPLING} $(AM_LIBS)
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CS_LD} -o $@ --whole-archive-start libcs_medcoupling.a --whole-archive-end ${LDFLAGS_SHARED} ${LDFLAGS} ${LDADD_MEDCOUPLING} $(AM_LIBS)
 
 local_libraries_add += cs_medcoupling.${SHARED_LIB_EXT}
 

@@ -188,7 +188,7 @@ if ENABLE_SHARED
 
 libsaturne.${SHARED_LIB_EXT}: ${libsaturne_a_libs}
 	rm -f $@ ; \
-	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ --echo --linker ${CS_LD} --version ${cs_version_lib} ${libsaturne_a_libs} ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${AM_LDFLAGS} ${LDADD_SATURNE} $(AM_LIBS)
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py -o $@ --echo --linker ${CS_LD} --version ${cs_version_lib} --whole-archive-start ${libsaturne_a_libs} --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${AM_LDFLAGS} ${LDADD_SATURNE} $(AM_LIBS)
 
 libcs_solver.${SHARED_LIB_EXT}: libsaturne.${SHARED_LIB_EXT} cs_solver.$(OBJEXT)
 	rm -f $@ ; \
