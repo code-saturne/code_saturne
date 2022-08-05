@@ -59,7 +59,6 @@ BEGIN_C_DECLS
  * Static inline function prototypes
  *============================================================================*/
 
-#if defined(DEBUG) && !defined(NDEBUG)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Check if there is no invalid setting for a homogeneous Dirichlet
@@ -222,7 +221,6 @@ cs_dbg_dump_linear_system(const char        *eqname,
                           const cs_lnum_t    col_id[],
                           const cs_real_t    xval[],
                           const cs_real_t    dval[]);
-#endif  /* DEBUG */
 
 /*----------------------------------------------------------------------------*/
 

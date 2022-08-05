@@ -68,7 +68,6 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
-#if defined(DEBUG) && !defined(NDEBUG)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Function used to select which element deserves a dump or specific
@@ -436,7 +435,6 @@ cs_dbg_dump_linear_system(const char        *eqname,
 
   } /* verbosity */
 }
-#endif  /* Only in debug mode */
 
 /*----------------------------------------------------------------------------*/
 
