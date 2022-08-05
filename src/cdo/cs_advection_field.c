@@ -1138,16 +1138,18 @@ cs_advection_field_create_fields(void)
     int  field_mask = CS_FIELD_PROPERTY | CS_FIELD_CDO;
 
     /* Always add a field attached to cells (it may be used to define the
-       numerical flux for advection, to compute adimensional numbers or to
-       postprocess the advection field in case of definition by flux */
+     * numerical flux for advection, to compute adimensional numbers or to
+     * postprocess the advection field in case of definition by flux).
+     */
 
     if (adv->cell_field_id < 0) {
 
       if (cs_flag_test(adv->status, CS_ADVECTION_FIELD_NAVSTO)) {
 
         /* If this is the advection field related to the Navier-Stokes equations
-           then there is no need to allocate a new buffer. One links to the
-           existing velocity field */
+         * then there is no need to allocate a new buffer. One links to the
+         * existing velocity field.
+         */
 
         adv->cell_field_id = cs_field_id_by_name("velocity");
         assert(adv->cell_field_id > -1);

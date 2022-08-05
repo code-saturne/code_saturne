@@ -487,7 +487,7 @@ cs_sles_it_set_restart_interval(cs_sles_it_t                 *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define the max. number of iterations before stoping the algorithm
+ * \brief Define the max. number of iterations before stopping the algorithm
  *
  * \param[in, out]  context     pointer to iterative solver info and context
  * \param[in]       n_max_iter  max. number of iterations
