@@ -320,17 +320,23 @@ class meg_to_c_interpreter:
             self.notebook[nme] = str(val)
 
         if create_functions and getRunType(self.case) == 'standard':
+
+            from code_saturne.model.LocalizationModel import LocalizationModel
+
+            vlm = LocalizationModel('VolumicZone', self.case)
+            vol_zones = vlm.getZones()
+
             # Volume code
-            self.generate_volume_code()
+            self.generate_volume_code(vol_zones)
 
             # Boundary code
             self.generate_boundary_code()
 
             # Source terms code
-            self.generate_source_terms_code()
+            self.generate_source_terms_code(vol_zones)
 
             # Initialization function
-            self.generate_initialize_code()
+            self.generate_initialize_code(vol_zones)
 
             # Immersed boundaries function
             self.generate_immersed_boundaries_code()
@@ -1267,16 +1273,17 @@ class meg_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def generate_volume_code(self):
+    def generate_volume_code(self, vol_zones=None):
         # Ground water model enabled ?
         gwm = False
 
         from code_saturne.model.LocalizationModel import LocalizationModel
         from code_saturne.model.GroundwaterLawModel import GroundwaterLawModel
 
-        vlm = LocalizationModel('VolumicZone', self.case)
-        vol_zones = vlm.getZones()
-        
+        if vol_zones == None:
+          vlm = LocalizationModel('VolumicZone', self.case)
+          vol_zones = vlm.getZones()
+
         if self.module_name == 'code_saturne':
             from code_saturne.model.FluidCharacteristicsModel \
                 import FluidCharacteristicsModel
@@ -1442,7 +1449,6 @@ class meg_to_c_interpreter:
 
 
         # Porosity for both solvers
-        vlm = LocalizationModel('VolumicZone', self.case)
         from code_saturne.model.PorosityModel import PorosityModel
 
         if not gwm:
@@ -1743,19 +1749,22 @@ class meg_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def generate_source_terms_code(self):
+    def generate_source_terms_code(self, vol_zones=None):
+
+        if vol_zones == None:
+            from code_saturne.model.LocalizationModel import LocalizationModel
+            vlm = LocalizationModel('VolumicZone', self.case)
+            vol_zones = vlm.getZones()
 
         if self.module_name == 'code_saturne':
-            from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.SourceTermsModel import SourceTermsModel
             from code_saturne.model.GroundwaterModel import GroundwaterModel
             from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
 
-            vlm = LocalizationModel('VolumicZone', self.case)
             stm = SourceTermsModel(self.case)
             gwm = GroundwaterModel(self.case)
 
-            for zone in vlm.getZones():
+            for zone in vol_zones:
                 z_id = str(zone.getCodeNumber())
                 zone_name = zone.getLabel()
 
@@ -1808,10 +1817,9 @@ class meg_to_c_interpreter:
             from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.MainFieldsSourceTermsModel import MainFieldsSourceTermsModel
 
-            vlm = LocalizationModel('VolumicZone', self.case)
             stm = MainFieldsSourceTermsModel(self.case)
 
-            for zone in vlm.getZones():
+            for zone in vol_zones:
                 z_id = str(zone.getCodeNumber())
                 zone_name = zone.getLabel()
 
@@ -1829,19 +1837,21 @@ class meg_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def generate_initialize_code(self):
+    def generate_initialize_code(self, vol_zones=None):
+
+        if vol_zones == None:
+            from code_saturne.model.LocalizationModel import LocalizationModel
+            vlm = LocalizationModel('VolumicZone', self.case)
+            vol_zones = vlm.getZones()
 
         if self.module_name == 'code_saturne':
-            from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.InitializationModel import InitializationModel
             from code_saturne.model.CompressibleModel import CompressibleModel
             from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel
             im = InitializationModel(self.case)
             cpm = CompressibleModel(self.case)
 
-            vlm = LocalizationModel('VolumicZone', self.case)
-
-            for zone in vlm.getZones():
+            for zone in vol_zones:
                 if zone.getNature()['initialization'] == 'on':
                     z_id = str(zone.getCodeNumber())
                     zone_name = zone.getLabel()
@@ -1930,19 +1940,17 @@ class meg_to_c_interpreter:
                                                 exp, req, sym, [])
 
         else:
-            from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.MainFieldsModel import MainFieldsModel
             from code_saturne.model.MainFieldsInitializationModel import MainFieldsInitializationModel
             from code_saturne.model.NonCondensableModel import NonCondensableModel
             from code_saturne.model.SpeciesModel import SpeciesModel
 
-            vlm = LocalizationModel('VolumicZone', self.case)
             mfm = MainFieldsModel(self.case)
             mfi = MainFieldsInitializationModel(self.case)
             ncm = NonCondensableModel(self.case)
             spm = SpeciesModel(self.case)
 
-            for zone in vlm.getZones():
+            for zone in vol_zones:
                 if zone.getNature()['initialization'] == 'on':
                     z_id = str(zone.getCodeNumber())
                     zone_name = zone.getLabel()
