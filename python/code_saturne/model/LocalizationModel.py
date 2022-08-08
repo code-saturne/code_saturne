@@ -477,14 +477,15 @@ class LocalizationModel(object):
             else:
                 raise ValueError
 
-    def addZone(self, newZone=None):
+    def addZone(self, newZone=None, checkPresence=True):
         """
         Add a new zone. Management of default values.
         """
         if newZone is None:
             newZone = Zone(self._typeZone, case=self.case)
 
-        zones = self.getZones()
+        if newZone.getLocalization() == newZone.defaultValues()['localization'] or newZone.getLabel() == newZone.defaultValues()['label'] or checkPresence == True:
+          zones = self.getZones()
 
         # Set localization
 
@@ -506,14 +507,14 @@ class LocalizationModel(object):
 
             newZone.setLocalization(newLocalization)
         else:
-            # No control on localization is avaliable
+            # No control on localization is available
             pass
 
         # Set code number
 
         if newZone.getCodeNumber() == newZone.defaultValues()['codeNumber']:
             newZone.setCodeNumber(self.getMaxCodeNumber() + 1)
-        else:
+        elif checkPresence == True:
             codes = []
             for zone in zones:
                 codes.append(zone.getCodeNumber())
@@ -535,7 +536,7 @@ class LocalizationModel(object):
             newLabel = newLabel + str(code-1)
 
             newZone.setLabel(newLabel)
-        else:
+        elif checkPresence == True:
             labels = []
             for zone in zones:
                 labels.append(zone.getLabel())
@@ -705,11 +706,11 @@ class VolumicLocalizationModel(LocalizationModel):
 
 
     @Variables.undoGlobal
-    def addZone(self, zone = None):
+    def addZone(self, zone=None, checkPresence=True):
         """
         Add a new zone in the XML file
         """
-        newZone = LocalizationModel.addZone(self, zone)
+        newZone = LocalizationModel.addZone(self, zone, checkPresence)
 
         # XML file updating
         node = self.__XMLVolumicConditionsNode.xmlInitNode('zone',
@@ -965,11 +966,11 @@ class BoundaryLocalizationModel(LocalizationModel):
 
 
     @Variables.undoGlobal
-    def addZone(self, zone = None):
+    def addZone(self, newZone=None, checkPresence=True):
         """
         Add a new zone in the XML file
         """
-        newZone = LocalizationModel.addZone(self, zone)
+        newZone = LocalizationModel.addZone(self, zone, checkPresence)
 
         # XML file updating
         node = self.__XMLBoundaryConditionsNode.xmlInitNode('boundary',
