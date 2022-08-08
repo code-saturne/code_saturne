@@ -1275,7 +1275,8 @@ class meg_to_c_interpreter:
         from code_saturne.model.GroundwaterLawModel import GroundwaterLawModel
 
         vlm = LocalizationModel('VolumicZone', self.case)
-
+        vol_zones = vlm.getZones()
+        
         if self.module_name == 'code_saturne':
             from code_saturne.model.FluidCharacteristicsModel \
                 import FluidCharacteristicsModel
@@ -1286,7 +1287,7 @@ class meg_to_c_interpreter:
                     exp, req, sca, sym = fcm.getFormulaComponents(fk)
                     self.init_block('vol', 'all_cells', fk,
                                     exp, req, sym, sca)
-                for zone in vlm.getZones():
+                for zone in vol_zones:
                     zname = zone.getLabel()
                     z_id  = str(zone.getCodeNumber())
                     if zname != "all_cells" and \
@@ -1310,7 +1311,7 @@ class meg_to_c_interpreter:
                                                  scalar=s)
                         self.init_block('vol', 'all_cells', dname,
                                         exp, req, sym, sca)
-                        for zone in vlm.getZones():
+                        for zone in vol_zones:
                             zname = zone.getLabel()
                             z_id = str(zone.getCodeNumber())
                             if zname != "all_cells" and \
@@ -1331,7 +1332,7 @@ class meg_to_c_interpreter:
             # GroundWater Flows Law
             glm = None
 
-            for zone in vlm.getZones():
+            for zone in vol_zones:
                 z_id = str(zone.getCodeNumber())
                 zone_name = zone.getLabel()
                 nature_list = zone.getNatureList()
@@ -1385,7 +1386,7 @@ class meg_to_c_interpreter:
                         for fk in authorized_fields:
                             if tm.getPropertyMode(fieldId, fk) == 'user_law':
                                 name = fk + '_' + str(fieldId)
-                                for zone in vlm.getZones():
+                                for zone in vol_zones:
                                     zname = zone.getLabel()
                                     z_id = str(zone.getCodeNumber())
                                     if zone.isNatureActivated('physical_properties'):
@@ -1396,7 +1397,7 @@ class meg_to_c_interpreter:
                         if mfm.getCompressibleStatus(fieldId) == 'on':
                             for fk in compressible_fields:
                                 name = fk + '_' + str(fieldId)
-                                for zone in vlm.getZones():
+                                for zone in vol_zones:
                                     zname = zone.getLabel()
                                     z_id = str(zone.getCodeNumber())
                                     if zone.isNatureActivated('physical_properties'):
@@ -1407,7 +1408,7 @@ class meg_to_c_interpreter:
                         # Temperature as a function of enthalpy
                         if mfm.getEnergyResolution(fieldId) == 'on':
                             name = 'temperature_' + str(fieldId)
-                            for zone in vlm.getZones():
+                            for zone in vol_zones:
                                 zname = zone.getLabel()
                                 z_id = str(zone.getCodeNumber())
                                 if zone.isNatureActivated('physical_properties'):
@@ -1431,7 +1432,7 @@ class meg_to_c_interpreter:
 
             if user_gas_liq_fields:
                 for fk in gas_liq_fields:
-                    for zone in vlm.getZones():
+                    for zone in vol_zones:
                         zname = zone.getLabel()
                         z_id = str(zone.getCodeNumber())
                         if zone.isNatureActivated('physical_properties'):
@@ -1446,7 +1447,7 @@ class meg_to_c_interpreter:
 
         if not gwm:
             prm = PorosityModel(self.case)
-            for zone in vlm.getZones():
+            for zone in vol_zones:
                 z_id = zone.getCodeNumber()
                 zone_name = zone.getLabel()
                 nature_list = zone.getNatureList()
