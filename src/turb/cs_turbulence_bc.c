@@ -977,6 +977,71 @@ cs_turbulence_bc_inlet_k_eps(cs_lnum_t   face_id,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set inlet boundary condition values for turbulence variables based
+ *        on a diameter \f$ D_H \f$ and the reference velocity \f$ U_{ref} \f$
+ *        for a circular duct flow with smooth wall, only if not already set.
+ *
+ * Apart from assigning values where not already initialized, this function
+ * is similar to \ref cs_turbulence_bc_inlet_hyd_diam.
+ *
+ * \param[in]     face_id    boundary face id
+ * \param[in]     uref2      square of the reference flow velocity
+ * \param[in]     dh         hydraulic diameter \f$ D_H \f$
+ * \param[in]     rho        mass density \f$ \rho \f$
+ * \param[in]     mu         dynamic viscosity \f$ \nu \f$
+ * \param[out]    rcodcl     boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_set_uninit_inlet_hyd_diam(cs_lnum_t   face_id,
+                                           double      uref2,
+                                           double      dh,
+                                           double      rho,
+                                           double      mu,
+                                           double     *rcodcl)
+{
+  double ustar2, k, eps;
+
+  _ke_hyd_diam(uref2, dh, rho, mu, &ustar2, &k, &eps);
+
+  _set_uninit_inlet_bc(face_id, k, eps, NULL, NULL, rcodcl);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set inlet boundary condition values for turbulence variables based
+ *        on a diameter \f$ D_H \f$, a turbulent intensity \f$ I \f$
+ *        and the reference velocity \f$ U_{ref} \f$
+ *        for a circular duct flow with smooth wall, only if not already set.
+ *
+ * Apart from assigning values where not already initialized, this function
+ * is similar to \ref cs_turbulence_bc_inlet_turb_intensity.
+ *
+ * \param[in]     face_id       boundary face id
+ * \param[in]     uref2         square of the reference flow velocity
+ * \param[in]     t_intensity   turbulent intensity \f$ I \f$
+ * \param[in]     dh            hydraulic diameter \f$ D_H \f$
+ * \param[out]    rcodcl        boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_set_uninit_inlet_turb_intensity(cs_lnum_t   face_id,
+                                                 double      uref2,
+                                                 double      t_intensity,
+                                                 double      dh,
+                                                 double     *rcodcl)
+{
+  double k, eps;
+
+  _ke_turb_intensity(uref2, t_intensity, dh, &k, &eps);
+
+  _set_uninit_inlet_bc(face_id, k, eps, NULL, NULL, rcodcl);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set inlet boundary condition values for turbulence variables based
  *        on given k and epsilon values only if not already initialized.
  *
  * \param[in]     face_id    boundary face id

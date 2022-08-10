@@ -3,6 +3,10 @@ Release 7.2.1 (not released yet)
 
 Bug fixes:
 
+- GUI: standard turbulence BC's should not overwrite user definitions
+  with the `cs_equation_add_bc_by_` series functions or mapped
+  inlet-based values. Fixes issue #405.
+
 - Multigrid with pairwise aggregation: fix performance regression
   in some cases with penalized or many boundary rows.
 
