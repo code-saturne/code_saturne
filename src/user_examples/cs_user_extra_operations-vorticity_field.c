@@ -1,7 +1,9 @@
 /*============================================================================
- * This function is called at the end of each time step, and has a very
- *  general purpose
- *  (i.e. anything that does not have another dedicated user function)
+ * General-purpose user-defined functions called before time stepping, at
+ * the end of each time step, and after time-stepping.
+ *
+ * These can be used for operations which do not fit naturally in any other
+ * dedicated user function.
  *============================================================================*/
 
 /* VERS */

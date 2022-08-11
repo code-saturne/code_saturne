@@ -29,7 +29,7 @@
 !> \file cs_user_boundary_conditions.f90
 !>
 !> \brief User subroutine which fills boundary conditions arrays
-!> (\c icodcl, \c rcodcl) for unknown variables.
+!> (\c icodcl, \c rcodcl) for solved variables.
 !>
 !> See \ref cs_user_boundary_conditions_examples for examples.
 !>
@@ -357,7 +357,7 @@
 !>
 !> Please refer to the
 !> <a href="../../theory.pdf#boundary"><b>boundary conditions</b></a>
-!> section of the theory guide for more informations.
+!> section of the theory guide for more information.
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
