@@ -22,6 +22,10 @@ Bug fixes:
 
 - Fix crash when computing `iescor` error indicator.
 
+Architectural changes:
+
+- Build: fix `--disable-openmp` configure option.
+
 Release 7.2.0 (June 30 2022)
 ----------------------------
 
