@@ -37,6 +37,10 @@ Bug fixes:
 - Studymanager: fix crash on XML updtate when case DATA folders contain
   binary files.
 
+Architectural changes:
+
+- Build: fix `--disable-openmp` configure option.
+
 Release 7.1.1 (March 16 2022)
 -----------------------------
 
