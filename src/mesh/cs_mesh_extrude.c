@@ -450,7 +450,7 @@ _build_face_edges(cs_mesh_t         *m,
 
      We initialize all edge group classes to -1 (impossible value)
      so as to use cs_interface_set_max in parallel to ensure
-     synchronization of actually selection boundary group classes.
+     synchronization of actually selected boundary group classes.
      Values remaining at -1 after syncronization are assigned a default.
   */
 
