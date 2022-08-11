@@ -28,6 +28,8 @@ if test $? = 0 ; then
 
 else
 
+  mkdir -p build-aux
+
   echo "running aclocal"
   aclocal -I config
 
