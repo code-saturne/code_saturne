@@ -2313,7 +2313,7 @@ class dependency_graph(object):
                 # cases with no dependency are level 0
                 case.level = 0
 
-            self.max_proc = max([self.max_proc, case.n_procs])
+            self.max_proc = max([self.max_proc, int(case.n_procs)])
 
     def nodes(self):
         """ returns the cases of the dependency graph """
