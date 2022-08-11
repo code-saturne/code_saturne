@@ -966,7 +966,7 @@ class BoundaryLocalizationModel(LocalizationModel):
 
 
     @Variables.undoGlobal
-    def addZone(self, newZone=None, checkPresence=True):
+    def addZone(self, zone=None, checkPresence=True):
         """
         Add a new zone in the XML file
         """
