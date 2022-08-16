@@ -54,7 +54,7 @@ class FansModel(Variables, Model):
 
     def __init__(self, case):
         """
-        Constuctor.
+        Constructor.
         """
         #
         # XML file parameters
@@ -173,7 +173,7 @@ class FansStatus(Variables, Model):
 
     def __init__(self, case):
         """
-        Constuctor.
+        Constructor.
         """
         self.case = case
 

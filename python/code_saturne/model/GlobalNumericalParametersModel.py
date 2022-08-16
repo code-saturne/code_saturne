@@ -36,7 +36,7 @@ class GlobalNumericalParametersModel(Model):
 
     def __init__(self, case):
         """
-        Constuctor.
+        Constructor.
         """
         #
         # XML file parameters

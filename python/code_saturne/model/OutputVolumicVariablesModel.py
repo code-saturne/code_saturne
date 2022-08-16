@@ -50,7 +50,7 @@ class OutputVolumicVariablesModel(Variables, Model):
 
     def __init__(self, case):
         """
-        Constuctor.
+        Constructor.
         """
         self.case = case
         self.node_models    = self.case.xmlGetNode('thermophysical_models')

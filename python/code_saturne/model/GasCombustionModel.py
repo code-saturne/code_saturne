@@ -548,7 +548,7 @@ class ThermochemistryData(Model):
     def __init__(self, case):
 
         """
-        Constuctor.
+        Constructor.
         """
         self.case = case
 

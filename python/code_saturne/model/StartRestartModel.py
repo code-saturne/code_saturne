@@ -132,7 +132,7 @@ class StartRestartModel(Model):
     """
     def __init__(self, case):
         """
-        Constuctor.
+        Constructor.
         """
         self.case = case
         node_magt = self.case.xmlInitNode('calculation_management')

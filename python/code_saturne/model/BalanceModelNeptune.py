@@ -55,7 +55,7 @@ class BalanceModelNeptune(BalanceModel, Variables, Model):
 
     def __init__(self, case):
         """
-        Constuctor.
+        Constructor.
         """
         BalanceModel.__init__(self, case)
 

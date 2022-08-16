@@ -38,7 +38,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
 
     def __init__(self, case):
         """
-        Constuctor.
+        Constructor.
         """
         #
         # XML file parameters

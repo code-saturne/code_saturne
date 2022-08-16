@@ -55,7 +55,7 @@ class PerformanceTuningModel(Model):
     """
     def __init__(self, case):
         """
-        Constuctor.
+        Constructor.
         """
         self.case = case
         self.node_mgt = self.case.xmlInitNode('calculation_management')

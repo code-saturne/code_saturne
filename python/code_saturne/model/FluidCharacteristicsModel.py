@@ -182,7 +182,7 @@ class FluidCharacteristicsModel(Variables, Model):
     Class to manipulate Molecular Properties in xml file.
     """
     def __init__(self, case):
-        """FluidCharacteristicsModel Constuctor."""
+        """FluidCharacteristicsModel Constructor."""
         self.case = case
         self.node_models = self.case.xmlGetNode('thermophysical_models')
         self.node_prop   = self.case.xmlGetNode('physical_properties')
