@@ -750,24 +750,18 @@ do ii = 1, nscal
       if (b_f_id .ge. 0) then
         do ifac = 1 , nfabor
           iel = ifabor(ifac)
-          bvar_s(ifac) = cvar_s(iel) &
-                       + vcopt%ircflu                &
-                       * (                           &
-                         + grad(1,iel)*diipb(1,ifac) &
-                         + grad(2,iel)*diipb(2,ifac) &
-                         + grad(3,iel)*diipb(3,ifac) &
-                         )
+          bvar_s(ifac) =   cvar_s(iel) &
+                         + (  grad(1,iel)*diipb(1,ifac) &
+                            + grad(2,iel)*diipb(2,ifac) &
+                            + grad(3,iel)*diipb(3,ifac))
         enddo
       else
         do ifac = 1 , nfabor
           iel = ifabor(ifac)
-          theipb(ifac) = cvar_s(iel) &
-                       + vcopt%ircflu                &
-                       * (                           &
-                         + grad(1,iel)*diipb(1,ifac) &
-                         + grad(2,iel)*diipb(2,ifac) &
-                         + grad(3,iel)*diipb(3,ifac) &
-                         )
+          theipb(ifac) =   cvar_s(iel) &
+                         + (  grad(1,iel)*diipb(1,ifac) &
+                            + grad(2,iel)*diipb(2,ifac) &
+                            + grad(3,iel)*diipb(3,ifac))
         enddo
       endif
 
@@ -810,10 +804,10 @@ do ii = 1, nscal
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
         do isou = 1, 3
-          bvar_v(isou,ifac) = cvar_v(isou,iel) &
-                             + gradv(1,isou,iel)*diipb(1,ifac) &
-                             + gradv(2,isou,iel)*diipb(2,ifac) &
-                             + gradv(3,isou,iel)*diipb(3,ifac)
+          bvar_v(isou,ifac) =   cvar_v(isou,iel) &
+                              + (  gradv(1,isou,iel)*diipb(1,ifac) &
+                                 + gradv(2,isou,iel)*diipb(2,ifac) &
+                                 + gradv(3,isou,iel)*diipb(3,ifac))
         enddo
       enddo
 
@@ -865,9 +859,11 @@ endif
 
 ! ---> compute the velocity in i' for boundary cells
 
+call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
+
 if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.iforbr.ge.0) then
 
-  if (ntcabs.gt.1) then
+  if (ntcabs.gt.1 .and. vcopt%ircflu.eq.1) then
 
     ! allocate a temporary array
     allocate(gradv(3,3,ncelet))
@@ -877,18 +873,13 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.iforbr.ge.0) then
 
     call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
-    call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
-
-    do isou = 1, 3
-      do ifac = 1, nfabor
-        iel = ifabor(ifac)
-        velipb(ifac,isou) =  vela(isou,iel)                      &
-                            + vcopt%ircflu                       &
-                            * (                                  &
-                              + gradv(1,isou,iel)*diipb(1,ifac)  &
-                              + gradv(2,isou,iel)*diipb(2,ifac)  &
-                              + gradv(3,isou,iel)*diipb(3,ifac)  &
-                              )
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      do isou = 1, 3
+        velipb(ifac,isou) =   vela(isou,iel)                      &
+                            + (  gradv(1,isou,iel)*diipb(1,ifac)  &
+                               + gradv(2,isou,iel)*diipb(2,ifac)  &
+                               + gradv(3,isou,iel)*diipb(3,ifac))
       enddo
     enddo
 
@@ -898,13 +889,11 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.iforbr.ge.0) then
   !     in i is stored instead of the value in i'
   else
 
-    do isou = 1, 3
-
-      do ifac = 1, nfabor
-        iel = ifabor(ifac)
+    do ifac = 1, nfabor
+      iel = ifabor(ifac)
+      do isou = 1, 3
         velipb(ifac,isou) = vela(isou,iel)
       enddo
-
     enddo
 
   endif
@@ -918,14 +907,14 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
   ! allocate a work array to store rij values at boundary faces
   allocate(rijipb(nfabor,6))
 
-  if (ntcabs.gt.1.and.irijrb.eq.1) then
+  call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
+
+  if (ntcabs.gt.1 .and. irijrb.eq.1 .and. vcopt%ircflu .eq. 1) then
 
     call field_get_val_v(ivarfl(irij), cvar_ts)
 
     inc = 1
     iprev = 1
-
-    call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
 
     ! allocate a temporary array
     allocate(gradts(6,3,ncelet))
@@ -936,14 +925,15 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
       iel = ifabor(ifac)
       do isou = 1, 6
         rijipb(ifac,isou) =   cvar_ts(isou,iel)                     &
-                            + vcopt%ircflu                          &
-                            * (  gradts(isou,1,iel)*diipb(1,ifac)   &
+                            + (  gradts(isou,1,iel)*diipb(1,ifac)   &
                                + gradts(isou,2,iel)*diipb(2,ifac)   &
                                + gradts(isou,3,iel)*diipb(3,ifac))
       enddo
     enddo
 
-    ! nb: at the first time step, coefa and coefb are unknown, so the walue
+    deallocate(gradts)
+
+    ! nb: at the first time step, coefa and coefb are unknown, so the value
     !     in i is stored instead of the value in i'
   else
 
