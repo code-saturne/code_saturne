@@ -263,9 +263,6 @@ class MainFieldsModel(Variables, Model):
         if self.getCompressibleStatus(fieldNumber) == "on":
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodp", "drodp_"+field_name)
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodh", "drodh_"+field_name)
-        if self.getFieldNature(fieldNumber) == "solid":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "emissivity", "emissivity_"+field_name)
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "elasticity", "elasticity_"+field_name)
         if self.getEnergyResolution(fieldNumber) == "on":
            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "temperature", "temp_"+field_name, post = True)
         if self.getCriterion(fieldNumber) == "dispersed" or self.getPredefinedFlow() == "multiregime":
@@ -545,12 +542,7 @@ class MainFieldsModel(Variables, Model):
             oldstatus = childNode['choice']
             if phase != oldstatus:
                if phase == "solid":
-                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "emissivity", "emissivity_"+field_name)
-                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "elasticity", "elasticity_"+field_name)
                   self.setCriterion(fieldId, "dispersed")
-               else :
-                  Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "emissivity")
-                  Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "elasticity")
 
         childNode.xmlSetAttribute(choice = phase)
         self.updateXML()

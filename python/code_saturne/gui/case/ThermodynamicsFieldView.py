@@ -584,22 +584,16 @@ temperature = enthalpy / 1000;
         validatorMu = DoubleValidator(self.lineEditViscosity, min = 0.0)
         validatorCp = DoubleValidator(self.lineEditSpecificHeat, min = 0.0)
         validatorAl = DoubleValidator(self.lineEditThermalConductivity, min = 0.0)
-        validatorEm = DoubleValidator(self.lineEditEmissivity, min = 0.0)
-        validatorEc = DoubleValidator(self.lineEditElastCoef, min = 0.0)
 
         validatorRho.setExclusiveMin(True)
         validatorMu.setExclusiveMin(True)
         validatorCp.setExclusiveMin(True)
         validatorAl.setExclusiveMin(True)
-        validatorEm.setExclusiveMin(False)
-        validatorEc.setExclusiveMin(False)
 
         self.lineEditDensity.setValidator(validatorRho)
         self.lineEditViscosity.setValidator(validatorMu)
         self.lineEditSpecificHeat.setValidator(validatorCp)
         self.lineEditThermalConductivity.setValidator(validatorAl)
-        self.lineEditEmissivity.setValidator(validatorEm)
-        self.lineEditElastCoef.setValidator(validatorEc)
 
         # Connections
 
@@ -607,13 +601,10 @@ temperature = enthalpy / 1000;
         self.lineEditViscosity.textChanged[str].connect(self.slotMu)
         self.lineEditSpecificHeat.textChanged[str].connect(self.slotCp)
         self.lineEditThermalConductivity.textChanged[str].connect(self.slotAl)
-        self.lineEditEmissivity.textChanged[str].connect(self.slotEmissivity)
-        self.lineEditElastCoef.textChanged[str].connect(self.slotElastCoef)
         self.pushButtonDensity.clicked.connect(self.slotFormulaRho)
         self.pushButtonViscosity.clicked.connect(self.slotFormulaMu)
         self.pushButtonSpecificHeat.clicked.connect(self.slotFormulaCp)
         self.pushButtonThermalConductivity.clicked.connect(self.slotFormulaAl)
-        self.checkBoxRadiativeTransfer.clicked.connect(self.slotRadTrans)
 
         self.comboBoxes = {}
         self.comboBoxes['Rho']     = self.comboBoxDensity
@@ -792,14 +783,6 @@ temperature = enthalpy / 1000;
                 self.lineEditThermalConductivity.setEnabled(is_main_zone)
 
             self.groupBoxCompressible.hide()
-            if self.mdl.getFieldNature(fieldId) == "solid":
-                self.groupBoxSolidProp.show()
-                self.lineEditEmissivity.setText(str(self.mdl.getInitialValue(fieldId, 'emissivity')))
-                self.lineEditElastCoef.setText(str(self.mdl.getInitialValue(fieldId, 'elasticity')))
-                isRadiativeTransfer  = self.mdl.getRadiativeTransferStatus(fieldId) == "on"
-                self.checkBoxRadiativeTransfer.setChecked(isRadiativeTransfer)
-            else :
-                self.groupBoxSolidProp.hide()
 
             list = [('density', 'Density'),
                     ('molecular_viscosity', 'Viscosity'),
@@ -911,28 +894,6 @@ temperature = enthalpy / 1000;
         if self.lineEditThermalConductivity.validator().state == QValidator.Acceptable:
             al = float(text)
             self.mdl.setInitialValueCond(fieldId,al)
-
-
-    @pyqtSlot(str)
-    def slotEmissivity(self, text):
-        """
-        Update the thermal conductivity
-        """
-        fieldId = self.currentFluid
-        if self.lineEditEmissivity.validator().state == QValidator.Acceptable:
-            em = float(text)
-            self.mdl.setInitialValueEmissivity(fieldId,em)
-
-
-    @pyqtSlot(str)
-    def slotElastCoef(self, text):
-        """
-        Update the thermal conductivity
-        """
-        fieldId = self.currentFluid
-        if self.lineEditElastCoef.validator().state == QValidator.Acceptable:
-            ec = float(text)
-            self.mdl.setInitialValueElastCoef(fieldId,ec)
 
 
     @pyqtSlot()
@@ -1053,17 +1014,6 @@ temperature = enthalpy / 1000;
             self.mdl.setFormula(str(fieldId), 'thermal_conductivity', result, zone=self.zone_id)
             self.pushButtonThermalConductivity.setStyleSheet("background-color: green")
             self.pushButtonThermalConductivity.setToolTip(exp)
-
-    @pyqtSlot(bool)
-    def slotRadTrans(self, checked):
-        """
-        check box for radiative transfer
-        """
-        fieldId = self.currentFluid
-        status = 'off'
-        if checked:
-            status = 'on'
-        self.mdl.setRadiativeTransferStatus(fieldId, status)
 
 
     @pyqtSlot()

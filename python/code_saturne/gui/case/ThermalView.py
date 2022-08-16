@@ -58,6 +58,7 @@ from code_saturne.model.CompressibleModel import CompressibleModel
 from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 from code_saturne.gui.case.ThermalRadiationAdvancedDialogForm import Ui_ThermalRadiationAdvancedDialogForm
 from code_saturne.model.ThermalRadiationModel import ThermalRadiationModel
+from code_saturne.model.ThermalParticlesRadiationModel import ThermalParticlesRadiationModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 
 #-------------------------------------------------------------------------------
@@ -227,8 +228,12 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         if self.case.module_name() != 'code_saturne':
             self.comboBoxThermal.setEnabled(False)
-
+            if (MainFieldsModel(self.case).getSolidFieldIdList() != []) :
+                self.groupBoxParticlesRadiation.show()
+            else:
+                self.groupBoxParticlesRadiation.hide()
         else:
+            self.groupBoxParticlesRadiation.hide()
             if ElectricalModel(self.case).getElectricalModel() != 'off':
                 self.comboBoxThermal.setEnabled(False)
 
@@ -251,10 +256,13 @@ class ThermalView(QWidget, Ui_ThermalForm):
         model = self.thermal.getThermalScalarModel()
         self.modelThermal.setItem(str_model=model)
 
-        # Radiation model
+        # Fluid Radiation model
         #----------------
+        self.__setFluidRadiation__(model)
 
-        self.__setRadiation__(model)
+        # inter-particles radiation model
+        self.partRadiationModel = ThermalParticlesRadiationModel(self.case)
+        self.__setParticlesRadiation__()
 
         # Soot model
         #----------------
@@ -269,7 +277,57 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.case.undoStartGlobal()
 
 
-    def __setRadiation__(self, model):
+    def __setParticlesRadiation__(self):
+        """
+        Setup particles radiation view
+        """
+
+        # Validators
+        validator = DoubleValidator(self.lineEditElastCoef, min=0.0)
+        validator.setExclusiveMin(False)
+        self.lineEditElastCoef.setValidator(validator)
+
+        validator = DoubleValidator(self.lineEditEmissivity, min=0.0)
+        validator.setExclusiveMin(False)
+        self.lineEditEmissivity.setValidator(validator)
+
+        self.groupBoxParticlesRadiation.toggled[bool].connect(self.slotActivateParticlesRadiation)
+        self.lineEditElastCoef.textChanged[str].connect(self.slotSetElasticity)
+        self.lineEditEmissivity.textChanged[str].connect(self.slotSetEmissivity)
+
+        # Initialization from XML model
+        if self.partRadiationModel.isActivated == "on":
+            self.groupBoxParticlesRadiation.setChecked(True)
+        else:
+            self.groupBoxParticlesRadiation.setChecked(False)
+            self.slotActivateParticlesRadiation(False)
+        self.lineEditElastCoef.setText(self.partRadiationModel.elasticity)
+        self.lineEditEmissivity.setText(self.partRadiationModel.emissivity)
+
+
+    def slotActivateParticlesRadiation(self, status):
+        if status:
+            self.partRadiationModel.isActivated = "on"
+            self.lineEditElastCoef.show()
+            self.lineEditEmissivity.show()
+            self.labelElastCoef.show()
+            self.labelEmissivity.show()
+        else:
+            self.partRadiationModel.isActivated = "off"
+            self.lineEditElastCoef.hide()
+            self.lineEditEmissivity.hide()
+            self.labelElastCoef.hide()
+            self.labelEmissivity.hide()
+
+    def slotSetElasticity(self, value):
+        if self.lineEditElastCoef.validator().state == QValidator.Acceptable:
+            self.partRadiationModel.elasticity = value
+
+    def slotSetEmissivity(self, value):
+        if self.lineEditEmissivity.validator().state == QValidator.Acceptable:
+            self.partRadiationModel.emissivity = value
+
+    def __setFluidRadiation__(self, model):
         """
         Update for radiation model
         """
@@ -301,7 +359,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         # Connections
 
-        self.comboBoxRadModel.activated[str].connect(self.slotRadiativeTransfer)
+        self.comboBoxRadModel.activated[str].connect(self.slotFluidRadiativeTransfer)
         self.checkBoxRadRestart.stateChanged.connect(self.slotRadRestart)
         self.comboBoxQuadrature.activated[str].connect(self.slotDirection)
         self.lineEditNdirec.textChanged[str].connect(self.slotNdirec)
@@ -335,12 +393,13 @@ class ThermalView(QWidget, Ui_ThermalForm):
         # For multiphase flows, only droplet laden gas flows are accepted
         if self.case.module_name() != 'code_saturne':
             mfm = MainFieldsModel(self.case)
-            if mfm.getPredefinedFlow() != 'droplet_flow' and mfm.getPredefinedFlow() != 'multiregime':
+            predefined_flow = mfm.getPredefinedFlow()
+            if predefined_flow not in ["droplet_flow", "multiregime_flow", "user_flow"]:
                 self.modelRadModel.setItem(str_model='off')
                 self.modelRadModel.disableItem(str_model='dom')
                 self.modelRadModel.disableItem(str_model='p-1')
 
-        self.slotRadiativeTransfer()
+        self.slotFluidRadiativeTransfer()
 
         if self.rmdl.getRestart() == 'on':
             self.checkBoxRadRestart.setChecked(True)
@@ -410,12 +469,12 @@ class ThermalView(QWidget, Ui_ThermalForm):
         th = self.modelThermal.dicoV2M[str(text)]
         self.thermal.setThermalModel(th)
 
-        self.__setRadiation__(th)
+        self.__setFluidRadiation__(th)
         self.browser.configureTree(self.case)
 
 
     @pyqtSlot(str)
-    def slotRadiativeTransfer(self):
+    def slotFluidRadiativeTransfer(self):
         """
         """
         self.gas = GasCombustionModel(self.case)

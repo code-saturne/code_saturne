@@ -78,9 +78,6 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         default['molecular_viscosity']  = 0.0000456
         default['specific_heat']        = 4000
         default['thermal_conductivity'] = 1.e-5
-        default['emissivity'] = 0.
-        default['elasticity'] = 0.9
-        default['radiative'] = "off"
         default['material'] = "user_material"
         default['method'] = "user_properties"
         default['user_property'] = "constant"
@@ -375,7 +372,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         """
         Return initial value of the markup tag : 'density', or
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
-        'surface_tension', 'emissivity' or 'elasticity'
+        'surface_tension'
         """
         fieldIdList = self.getFieldIdList()
         fieldIdList.append('none')
@@ -383,7 +380,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
 
         lst = ('density', 'molecular_viscosity',
                 'specific_heat', 'thermal_conductivity',
-                'surface_tension', 'emissivity','elasticity')
+                'surface_tension')
         self.isInList(tag, lst)
         node = self.get_property_node(fieldId, tag)
         pp = node.xmlGetDouble('initial_value')
@@ -397,18 +394,17 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         """
         Put initial value for the markup tag : 'density', or
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
-        'surface_tension', 'emissivity' or 'elasticity'
+        'surface_tension'
         """
         fieldIdList = self.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(fieldId),fieldIdList)
         lst = ('density', 'molecular_viscosity',
                 'specific_heat', 'thermal_conductivity',
-                'surface_tension', 'emissivity','elasticity')
+                'surface_tension')
         self.isInList(tag, lst)
         self.isFloat(val)
-        if tag != 'emissivity' and tag != 'elasticity':
-            self.isGreater(val, 0.)
+        self.isGreater(val, 0.)
         node = self.get_property_node(fieldId, tag)
         node.xmlSetData('initial_value', val)
 
@@ -453,26 +449,6 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         self.setInitialValue(fieldId, 'thermal_conductivity', val)
 
     @Variables.noUndo
-    def getInitialValueEmissivity(self, fieldId):
-        """Return initial value of emissivity"""
-        return self.getInitialValue(fieldId, 'emissivity')
-
-    @Variables.undoLocal
-    def setInitialValueEmissivity(self, fieldId, val):
-        """Put initial value for emissivity"""
-        self.setInitialValue(fieldId, 'emissivity', val)
-
-    @Variables.noUndo
-    def getInitialValueElastCoef(self, fieldId):
-        """Return initial value of elasticity coefficient"""
-        return self.getInitialValue(fieldId, 'elasticity')
-
-    @Variables.undoLocal
-    def setInitialValueElastCoef(self, fieldId, val):
-        """Put initial value for elasticity coefficient"""
-        self.setInitialValue(fieldId, 'elasticity', val)
-
-    @Variables.noUndo
     def getFormula(self, fieldId, tag, zone="1"):
         """
         Return a formula for properties
@@ -512,32 +488,6 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
                 node = node.xmlInitChildNode("zone", zone_id=zone)
 
         node.xmlSetData('formula', strg)
-
-    @Variables.undoLocal
-    def setRadiativeTransferStatus(self, fieldId, status):
-        """
-        set status for radiative resolution transfer
-        """
-        self.check_field_id(fieldId)
-        self.isOnOff(status)
-
-        node = self.get_field_node(fieldId)
-        childNode = node.xmlInitChildNode('particles_radiative_transfer')
-        childNode.xmlSetAttribute(status = status)
-
-    @Variables.noUndo
-    def getRadiativeTransferStatus(self, fieldId):
-        """
-        return status for radiative resolution transfer
-        """
-        self.check_field_id(fieldId)
-        node = self.get_field_node(fieldId)
-        nodeh = node.xmlGetNode('particles_radiative_transfer')
-        if nodeh is None:
-            rad = self.defaultValues(fieldId)['radiative']
-            self.setRadiativeTransferStatus(fieldId, rad)
-        rad = node.xmlGetNode('particles_radiative_transfer')['status']
-        return rad
 
     @Variables.noUndo
     def getPropertyMode(self, fieldId, tag):
@@ -1149,7 +1099,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         """
         Return initial value of the markup tag : 'density', or
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
-        'surface_tension', 'emissivity' or 'elasticity'
+        'surface_tension'
         """
         fieldIdList = self.getFieldIdList()
         fieldIdList.append('none')
@@ -1169,7 +1119,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         """
         Put initial value for the markup tag : 'density', or
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
-        'surface_tension', 'emissivity' or 'elasticity'
+        'surface_tension'
         """
         fieldIdList = self.getFieldIdList()
         fieldIdList.append('none')
@@ -1178,8 +1128,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
 
         self.isInList(tag, self.propertiesFormulaList())
         self.isFloat(val)
-        if tag != 'emissivity' and tag != 'elasticity':
-            self.isGreater(val, 0.)
+        self.isGreater(val, 0.)
         node = self.XMLNodeproperty.xmlInitChildNode('property', field_id_a=field_id_a, field_id_b=field_id_b, name=tag)
         node.xmlSetData('initial_value', val)
 
@@ -1356,8 +1305,6 @@ class ThermodynamicsTestCase(ModelTest):
         mdl.setInitialValue('2','specific_heat',6.23)
         mdl.setInitialValue('2','thermal_conductivity',885.21)
         mdl.setInitialValue('none','surface_tension',0.075)
-        mdl.setInitialValue('2','emissivity',15446.2)
-        mdl.setInitialValue('2','elasticity',22.2)
         doc = '''<properties>
                          <property choice="" field_id="1" label="Temperature" name="temperature">
                                  <listing_printing status="on"/>
@@ -1386,20 +1333,6 @@ class ThermodynamicsTestCase(ModelTest):
                          <property choice="" field_id="2" label="Diam2" name="Diameter">
                                  <listing_printing status="on"/>
                                  <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="" field_id="2" label="emissivity2" name="emissivity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                                 <initial_value>
-                                         15446.2
-                                 </initial_value>
-                         </property>
-                         <property choice="" field_id="2" label="elasticity2" name="elasticity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                                 <initial_value>
-                                         22.2
-                                 </initial_value>
                          </property>
                          <property choice="" field_id="2" label="temp2" name="temperature">
                                  <listing_printing status="on"/>
@@ -1455,10 +1388,6 @@ class ThermodynamicsTestCase(ModelTest):
             'Could not get InitialValue specific_heat'
         assert mdl.getInitialValue('2','thermal_conductivity') == 885.21,\
             'Could not get InitialValue thermal_conductivity'
-        assert mdl.getInitialValue('2','emissivity') == 15446.2,\
-            'Could not get InitialValue emissivity'
-        assert mdl.getInitialValue('2','elasticity') == 22.2,\
-            'Could not get InitialValue elasticity'
         assert mdl.getInitialValue('none','surface_tension') == 0.075,\
             'Could not get InitialValue surface_tension'
 
@@ -1667,160 +1596,6 @@ class ThermodynamicsTestCase(ModelTest):
             'Could not get InitialValueTens'
 
 
-    def checkGetandSetInitialValueEmissivity(self):
-        """Check whether the ThermodynamicsModel class could set and get InitialValueEmissivity"""
-        MainFieldsModel(self.case).addField()
-        MainFieldsModel(self.case).addDefinedField('2', 'field2', 'dispersed', 'solid', 'on', 'on', 'off', 2)
-        mdl = ThermodynamicsModel(self.case)
-        mdl.setInitialValueEmissivity('2',0.008)
-        doc = '''<properties>
-                         <property choice="" field_id="1" label="Temperature" name="temperature">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="1" label="density1" name="density">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="" field_id="1" label="mass_trans1" name="mass_trans">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="" field_id="2" label="Diam2" name="Diameter">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="" field_id="2" label="emissivity2" name="emissivity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                                 <initial_value>
-                                         0.008
-                                 </initial_value>
-                         </property>
-                         <property choice="" field_id="2" label="elasticity2" name="elasticity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="" field_id="2" label="temp2" name="temperature">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="2" label="density2" name="density">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="2" label="molecular_viscosity_2" name="molecular_viscosity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="2" label="specific_heat_2" name="specific_heat">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="2" label="thermal_conductivity_2" name="thermal_conductivity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="" field_id="2" label="mass_trans2" name="mass_trans">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                 </properties>'''
-        assert mdl.XMLNodeproperty == self.xmlNodeFromString(doc),\
-            'Could not set InitialValueEmissivity'
-        assert mdl.getInitialValueEmissivity('2') == 0.008,\
-            'Could not get InitialValueEmissivity'
-
-
-    def checkGetandSetInitialValueElastCoef(self):
-        """Check whether the ThermodynamicsModel class could set and get InitialValueElastCoef"""
-        MainFieldsModel(self.case).addField()
-        MainFieldsModel(self.case).addDefinedField('2', 'field2', 'dispersed', 'solid', 'on', 'on', 'off', 2)
-        mdl = ThermodynamicsModel(self.case)
-        mdl.setInitialValueElastCoef('2',0.42)
-        doc = '''<properties>
-                         <property choice="" field_id="1" label="Temperature" name="temperature">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="1" label="density1" name="density">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="1" label="molecular_viscosity_1" name="molecular_viscosity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="1" label="specific_heat_1" name="specific_heat">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="1" label="thermal_conductivity_1" name="thermal_conductivity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="" field_id="1" label="mass_trans1" name="mass_trans">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="" field_id="2" label="Diam2" name="Diameter">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="" field_id="2" label="emissivity2" name="emissivity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="" field_id="2" label="elasticity2" name="elasticity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                                 <initial_value>
-                                         0.42
-                                 </initial_value>
-                         </property>
-                         <property choice="" field_id="2" label="temp2" name="temperature">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="2" label="density2" name="density">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="2" label="molecular_viscosity_2" name="molecular_viscosity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="2" label="specific_heat_2" name="specific_heat">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="constant" field_id="2" label="thermal_conductivity_2" name="thermal_conductivity">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                         <property choice="" field_id="2" label="mass_trans2" name="mass_trans">
-                                 <listing_printing status="on"/>
-                                 <postprocessing_recording status="on"/>
-                         </property>
-                 </properties>'''
-        assert mdl.XMLNodeproperty == self.xmlNodeFromString(doc),\
-            'Could not set InitialValueElastCoef'
-        assert mdl.getInitialValueElastCoef('2') == 0.42,\
-            'Could not get InitialElastValueCoef'
-
-
     def checkGetandSetFormula(self):
         """Check whether the ThermodynamicsModel class could set and get Formula"""
         MainFieldsModel(self.case).addField()
@@ -1859,28 +1634,6 @@ class ThermodynamicsTestCase(ModelTest):
             'Could not set Formula'
         assert mdl.getFormula('1', 'density') == '2.123',\
             'Could not get Formula'
-
-
-    def checkGetandSetRadiativeTransferStatus(self):
-        """Check whether the ThermodynamicsModel class could set and get RadiativeTransferStatus"""
-        MainFieldsModel(self.case).addField()
-        mdl = ThermodynamicsModel(self.case)
-        mdl.setRadiativeTransferStatus('1','on')
-        doc = '''<fields>
-                         <field field_id="1" label="Field1">
-                                 <type choice="continuous"/>
-                                 <carrier_field field_id="off"/>
-                                 <phase choice="liquid"/>
-                                 <hresolution status="on"/>
-                                 <compressible status="off"/>
-                                 <particles_radiative_transfer status="on"/>
-                         </field>
-                 </fields>'''
-        assert mdl.getXMLNodefieldsNode() == self.xmlNodeFromString(doc),\
-            'Could not set RadiativeTransferStatus'
-        assert mdl.getRadiativeTransferStatus('1') == 'on',\
-            'Could not get RadiativeTransferStatus'
-
 
     def checkGetandSetPropertyMode(self):
         """Check whether the ThermodynamicsModel class could set and get PropertyMode"""

@@ -791,12 +791,42 @@ class XMLinitNeptune(BaseXmlInit):
                 p_node = node.xmlInitChildNode('variable', choice='dpdndtau', name='pressure')
                 p_node.xmlSetData('value', str(p_val))
 
+    def __backwardCompatibilityFrom_7_2(self):
+        """
+        Change XML in order to ensure backward compatibility with 7.2
+        * Read particles radiation properties from thermophysical_models/properties and
+          move them to thermophysical_models/interparticles_radiative_transfer
+        """
+        tm_node = self.case.xmlGetNode("thermophysical_models")
+        particles_rad_node = tm_node.xmlGetNode("interparticles_radiative_transfer")
+        if particles_rad_node == None:
+            particles_rad_node = tm_node.xmlInitNode("interparticles_radiative_transfer")
+        for child_name in ["elasticity", "emissivity", "status"]:
+            particles_rad_node.xmlGetChildNode(child_name)
+            if particles_rad_node.xmlGetChildNode(child_name) == None:
+                value = None
+                if child_name != "status":
+                    props_node = tm_node.xmlGetNode("properties")
+                    legacy_node = props_node.xmlGetChildNode("property", name=child_name)
+                    value = legacy_node.xmlGetDouble("initial_value") if (legacy_node != None) else None
+                else: #status is stored in a different way
+                    fields_node = tm_node.xmlGetNode("fields")
+                    for field_node in fields_node.xmlGetChildNodeList("field"):
+                        legacy_node = field_node.xmlGetChildNode("particles_radiative_transfer")
+                        if legacy_node:
+                            value = legacy_node.xmlGetAttribute("status")
+
+                if value != None:
+                    particles_rad_node.xmlInitNode(child_name)
+                    particles_rad_node.xmlSetData(child_name, value)
+
 
     def _backwardCompatibilityCurrentVersion(self):
         """
         Change XML in order to ensure backward compatibility.
         """
         self.__backwardCompatibilityFrom_7_1()
+        self.__backwardCompatibilityFrom_7_2()
 #-------------------------------------------------------------------------------
 # XMLinit test case
 #-------------------------------------------------------------------------------

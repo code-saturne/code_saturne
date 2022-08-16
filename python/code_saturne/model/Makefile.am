@@ -95,6 +95,7 @@ dist_model_PYTHON = \
   SpeciesModel.py \
   StartRestartModel.py \
   ThermalRadiationModel.py \
+  ThermalParticlesRadiationModel.py \
   ThermalScalarModel.py \
   ThermodynamicsModel.py \
   TimeAveragesModel.py \
