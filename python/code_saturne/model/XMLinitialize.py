@@ -94,12 +94,15 @@ class BaseXmlInit(Variables):
         Simplify version history number, replacing "alpha" or "beta"
         version with previous version  to force ensuring of backward
         compatibility.
+        Not-yet released versions may appear here, as long as the
+        planned release order is correct.
         """
         known_versions = ["3.0", "3.1", "3.2", "3.3",
                           "4.0", "4.1", "4.2", "4.3",
                           "5.0", "5.1", "5.2", "5.3",
                           "6.0", "6.1", "6.2", "6.3",
-                          "7.0", "7.1"]
+                          "7.0", "7.1", "7.2", "7.3",
+                          "8.0"]
         j = -2
         for i in range(0, len(known_versions)):
             if vers.find(known_versions[i]) == 0:
@@ -342,6 +345,15 @@ class XMLinit(BaseXmlInit):
                 self.__backwardCompatibilityFrom_6_1()
             if from_vers[:3] < "6.3.0":
                 self.__backwardCompatibilityFrom_6_2()
+            self.__backwardCompatibilityFrom_6_3()
+
+        if from_vers[:3] < "8.0.0":
+            if from_vers[:3] < "7.1.0":
+                self.__backwardCompatibilityFrom_7_0()
+            if from_vers[:3] < "7.2.0":
+                self.__backwardCompatibilityFrom_7_1()
+            if from_vers[:3] < "7.3.0":
+                self.__backwardCompatibilityFrom_7_2()
 
 
     def __backwardCompatibilityBefore_3_0(self):
@@ -428,7 +440,7 @@ class XMLinit(BaseXmlInit):
                 node.xmlRemoveNode()
                 compt = compt + 1
         if compt != 0:
-            print("Profiles have been removed from your files due to  incompatibility")
+            print("Profiles have been removed from your files due to incompatibility")
             print("You must re-create them")
 
         # restart
@@ -1919,10 +1931,9 @@ class XMLinit(BaseXmlInit):
         """
         Change XML in order to ensure backward compatibility.
         """
-
         return
 
-    def _backwardCompatibilityCurrentVersion(self):
+    def __backwardCompatibilityFrom_6_3(self):
         """
         Change XML in order to ensure backward compatibility.
         """
@@ -1942,7 +1953,7 @@ class XMLinit(BaseXmlInit):
         for node in XMLVolumicNode.xmlGetChildNodeList('zone', 'label', 'id'):
             if not node['physical_properties']:
                 # The 'all_cells' zone is always used for physical properties
-                # for the v7.0
+                # for v7.0
                 if node['label'] == "all_cells":
                     node['physical_properties'] = 'on'
                 else:
@@ -1964,6 +1975,30 @@ class XMLinit(BaseXmlInit):
                                     if name == key:
                                         n["name"] = rename[key]
                         node['name'] = rename[attr]
+
+    def __backwardCompatibilityFrom_7_0(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        return
+
+    def __backwardCompatibilityFrom_7_1(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        return
+
+    def __backwardCompatibilityFrom_7_2(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        return
+
+    def _backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+        return
 
 #-------------------------------------------------------------------------------
 # End of XMLinit
