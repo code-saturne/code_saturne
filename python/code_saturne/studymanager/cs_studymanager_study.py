@@ -1614,8 +1614,8 @@ class Studies(object):
                     else:
                         self.reporting('    - run %s --> FAILED (%s)' \
                                        % (case.title, is_time))
-                        self.reporting('      * see run_case.log in dest/' + \
-                                       case.title)
+                        self.reporting('      * see run_case.log in ' + \
+                                       case.run_dir)
 
                     self.__log_file.flush()
 
