@@ -933,15 +933,15 @@ class BrowserView(QWidget, Ui_BrowserForm):
         if ncfd_fields > 1:
             from code_saturne.model.MainFieldsModel import MainFieldsModel
             predefined_flow = MainFieldsModel(case).getPredefinedFlow()
-            heat_mass_transfer = MainFieldsModel(case).getHeatMassTransferStatus()
+            phase_change_transfer = MainFieldsModel(case).getPhaseChangeTransferStatus()
 
             if (len(MainFieldsModel(case).getSolidFieldIdList()) > 0):
                 m_ncfd['particles_interactions'] = True
 
             m_ncfd['itf_area'] = True
             m_ncfd['non_condens'] = True
-            m_ncfd["itf_h_transfer"] = {"on": True, "off": False}[heat_mass_transfer]
-            m_ncfd['wall_transfer'] = {"on": True, "off": False}[heat_mass_transfer]
+            m_ncfd["itf_h_transfer"] = {"on": True, "off": False}[phase_change_transfer] or m_ncfd['particles_interactions']
+            m_ncfd['wall_transfer'] = {"on": True, "off": False}[phase_change_transfer]
 
             if predefined_flow == "free_surface":
                 m_ncfd['itf_area'] = False

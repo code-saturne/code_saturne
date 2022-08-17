@@ -674,11 +674,11 @@ class XMLinitNeptune(BaseXmlInit):
 
         # Obtain heat and mass transfer status by checking existence of interfacial enthalpy transfer couple
         interfacial_enthalpy_node = self.case.xmlGetNode("interfacial_enthalpy")
-        heat_mass_transfer_status = "off"
+        phase_change_transfer_status = "off"
         if (interfacial_enthalpy_node != None):
             if interfacial_enthalpy_node.xmlGetChildNodeList("enthalpy") != []:
-                heat_mass_transfer_status = "on"
-        main_xml_model.setHeatMassTransferStatus(heat_mass_transfer_status)
+                phase_change_transfer_status = "on"
+        main_xml_model.setPhaseChangeTransferStatus(phase_change_transfer_status)
 
         flow_node = self.case.xmlGetNode("predefined_flow")
         flow_choice = "None"
@@ -736,13 +736,13 @@ class XMLinitNeptune(BaseXmlInit):
         if cfc_node != None:
             cfc_model = cfc_node.xmlGetAttribute("model")
             if cfc_model == "separate_phase_cond":
-                main_xml_model.setHeatMassTransferStatus("on")
+                main_xml_model.setPhaseChangeTransferStatus("on")
 
         # Set wall transfer model type
         mass_transfer_node = self.case.xmlGetNode("mass_transfer_model")
         if mass_transfer_node != None:
             walltm_node = mass_transfer_node.xmlGetNode("wall_transfer_type")
-            if (walltm_node is None) and (heat_mass_transfer_status == "on"):
+            if (walltm_node is None) and (phase_change_transfer_status == "on"):
                 if flow_choice in ["free_surface", "boiling_flow", "multiregime"]:
                     walltm = "nucleate_boiling"
                     NucleateBoilingModel(self.case).resetToDefaultValues()
@@ -796,8 +796,11 @@ class XMLinitNeptune(BaseXmlInit):
         Change XML in order to ensure backward compatibility with 7.2
         * Read particles radiation properties from thermophysical_models/properties and
           move them to thermophysical_models/interparticles_radiative_transfer
+        * phase_change_transfer was renamed into phase_change_transfer
         """
         tm_node = self.case.xmlGetNode("thermophysical_models")
+
+        # Read legacy particle radiation properties
         particles_rad_node = tm_node.xmlGetNode("interparticles_radiative_transfer")
         if particles_rad_node == None:
             particles_rad_node = tm_node.xmlInitNode("interparticles_radiative_transfer")
@@ -819,6 +822,14 @@ class XMLinitNeptune(BaseXmlInit):
                 if value != None:
                     particles_rad_node.xmlInitNode(child_name)
                     particles_rad_node.xmlSetData(child_name, value)
+
+        # Rename phase_change_transfer into phase_change_transfer
+        legacy_node = tm_node.xmlGetNode("heat_mass_transfer")
+        if legacy_node != None:
+            main_xml_model = MainFieldsModel(self.case)
+            main_xml_model.setPhaseChangeTransferStatus(legacy_node.xmlGetAttribute("status"))
+            legacy_node.xmlRemoveNode()
+
 
 
     def _backwardCompatibilityCurrentVersion(self):

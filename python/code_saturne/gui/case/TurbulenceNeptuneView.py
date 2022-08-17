@@ -500,7 +500,7 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         # Combo models
         self.modelContinuousCoupling = ComboModel(self.comboBoxContinuousCoupling, 1, 1)
         self.modelContinuousCoupling.addItem(self.tr('none'), 'none')
-        if self.mdl.getHeatMassTransferStatus() == "off":
+        if self.mdl.getPhaseChangeTransferStatus() == "off":
             self.modelContinuousCoupling.addItem(self.tr("separate phases"), "separate_phase")
         else:
             self.modelContinuousCoupling.addItem(self.tr("separate phases + cond"), "separate_phase_cond")

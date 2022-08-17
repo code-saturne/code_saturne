@@ -768,9 +768,15 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.checkBoxALE.hide()
         self.checkBoxFans.hide()
 
-        heat_mass_transfer = self.nept.getHeatMassTransferStatus()
-        check_state = {"on": Qt.Checked, "off": Qt.Unchecked}[heat_mass_transfer]
-        self.checkBoxNeptuneHeatMass.setCheckState(check_state)
+        if model == "particles_flow":
+            self.checkBoxNeptuneHeatMass.setCheckState(Qt.Unchecked)
+            self.nept.setPhaseChangeTransferStatus("off")
+            self.checkBoxNeptuneHeatMass.setEnabled(False)
+        else:
+            phase_change_transfer = self.nept.getPhaseChangeTransferStatus()
+            check_state = {"on": Qt.Checked, "off": Qt.Unchecked}[phase_change_transfer]
+            self.checkBoxNeptuneHeatMass.setEnabled(True)
+            self.checkBoxNeptuneHeatMass.setCheckState(check_state)
 
         self.browser.configureTree(self.case)
 
@@ -778,11 +784,11 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
     def slotNeptuneHeatMass(self, val):
         predefined_flow = self.nept.getPredefinedFlow()
         if val == 0:
-            self.nept.setHeatMassTransferStatus("off")
+            self.nept.setPhaseChangeTransferStatus("off")
             NeptuneWallTransferModel(self.case).clear()
             InterfacialEnthalpyModel(self.case).deleteLiquidVaporEnthalpyTransfer()
         else:
-            self.nept.setHeatMassTransferStatus("on")
+            self.nept.setPhaseChangeTransferStatus("on")
             for field_id in self.nept.getFieldIdList():
                 self.nept.setEnergyResolution(field_id, "on")
                 if self.nept.getEnergyModel(field_id) == "off":

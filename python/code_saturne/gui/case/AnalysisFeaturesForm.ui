@@ -235,7 +235,7 @@
                                  </string>
                              </property>
                              <property name="text">
-                                 <string>Activate heat and mass transfer</string>
+                                 <string>Activate phase change heat and mass transfer terms</string>
                              </property>
                          </widget>
                      </item>

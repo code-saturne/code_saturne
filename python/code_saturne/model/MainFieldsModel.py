@@ -135,7 +135,7 @@ class MainFieldsModel(Variables, Model):
         default = {}
         default['id']                         = ""
         default['label']                      = "defaultLabel"
-        if self.getHeatMassTransferStatus() == "on":
+        if self.getPhaseChangeTransferStatus() == "on":
             default['enthalpyResolutionStatus']   = "on"
             default['enthalpyResolutionModel']    = "total_enthalpy"
         else:
@@ -146,7 +146,7 @@ class MainFieldsModel(Variables, Model):
         default['carrierField']               = "off"
         default['compressibleStatus']         = "off"
         default['defaultPredefinedFlow'] = "None"
-        default["heatMassTransfer"] = "off"
+        default["phaseChangeTransfer"] = "off"
 
         return default
 
@@ -828,7 +828,7 @@ class MainFieldsModel(Variables, Model):
         Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, "none",
                                                     "surface_tension", "Surf_tens")
         energyModel = "total_enthalpy"
-        if self.getHeatMassTransferStatus() == "off":
+        if self.getPhaseChangeTransferStatus() == "off":
             energyModel = "off"
         if flow_choice == "particles_flow":
             energyModel = "specific_enthalpy"
@@ -885,8 +885,8 @@ class MainFieldsModel(Variables, Model):
                 self._deleteFieldsProperties()
             else:
                 # Recreate fields in previous flow choice is "particles_flow"
-                status = self.getHeatMassTransferStatus()
-                self.setHeatMassTransferStatus(status)
+                status = self.getPhaseChangeTransferStatus()
+                self.setPhaseChangeTransferStatus(status)
 
         else :
             GlobalNumericalParametersModel(self.case).setVelocityPredictorAlgo(
@@ -1057,9 +1057,9 @@ class MainFieldsModel(Variables, Model):
         return node['choice']
 
     @Variables.noUndo
-    def setHeatMassTransferStatus(self, status):
+    def setPhaseChangeTransferStatus(self, status):
         self.isOnOff(status)
-        node = self.XMLNodethermo.xmlInitChildNode('heat_mass_transfer')
+        node = self.XMLNodethermo.xmlInitChildNode('phase_change_transfer')
         node.xmlSetAttribute(status=status)
         if status == "on":
             self._createSaturationProperties()
@@ -1068,11 +1068,11 @@ class MainFieldsModel(Variables, Model):
             self._deleteFieldsProperties()
 
     @Variables.noUndo
-    def getHeatMassTransferStatus(self):
-        node = self.XMLNodethermo.xmlGetNode('heat_mass_transfer')
+    def getPhaseChangeTransferStatus(self):
+        node = self.XMLNodethermo.xmlGetNode('phase_change_transfer')
         if node is None:
-            self.setHeatMassTransferStatus(self.defaultValues()['heatMassTransfer'])
-            node = self.XMLNodethermo.xmlGetNode('heat_mass_transfer')
+            self.setPhaseChangeTransferStatus(self.defaultValues()['phaseChangeTransfer'])
+            node = self.XMLNodethermo.xmlGetNode('phase_change_transfer')
         return node["status"]
 
     @Variables.noUndo

@@ -381,7 +381,7 @@ class StandardItemModelMainFields(QStandardItemModel):
         elif index.column() == 5:
             if self.mdl.getPredefinedFlow() != "None" \
                     and self.mdl.getPredefinedFlow() != "particles_flow" \
-                    and self.mdl.getHeatMassTransferStatus() == "on":
+                    and self.mdl.getPhaseChangeTransferStatus() == "on":
                 return Qt.ItemIsSelectable
             else:
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable

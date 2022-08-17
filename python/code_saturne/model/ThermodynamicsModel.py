@@ -207,7 +207,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
     def checkIdenticalMaterialsRequirements(self):
         force_identical_materials = (self.getPredefinedFlow() in ["free_surface", "boiling_flow", "droplet_flow",
                                                                   "multiregime"]) \
-                                    and (self.getHeatMassTransferStatus() == "on")
+                                    and (self.getPhaseChangeTransferStatus() == "on")
         return force_identical_materials
 
     @Variables.noUndo
