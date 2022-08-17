@@ -1955,10 +1955,8 @@ void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
     _imrgra = 1;
   else if (cs_gui_strcmp(choice, "green_lsq"))
     _imrgra = 4;
-  else if (cs_gui_strcmp(choice, "green_vtx"))
-    _imrgra = 7;
 
-  if (_imrgra != 0 && _imrgra != 7) {
+  if (_imrgra != 0) {
     choice = cs_tree_node_get_tag(cs_tree_get_node(tn_n,
                                                    "extended_neighborhood"),
                                   "choice");
