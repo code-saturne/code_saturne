@@ -432,8 +432,9 @@ The factor $ \frac{1}{2}$ is used for numerical stability reasons.
 The aim of the present section is to describe the algorithms available in \CS
 to compute the cell gradient for scalar or vector fields. The first one uses an
 iterative process to handle with non-orthogonalities. It is robust but requires
-computational effort. The second one, the least square method, minimizes a
-function. It is quick, but less accurate.
+computational effort. The second one, the least squares method, minimizes a
+function. It is faster, but less accurate. On irregular meshes, it leads to
+smoother gradients,
 
 For both methods, the adaptation to gradients of vectorial fields is also presented.
 
@@ -870,11 +871,11 @@ been motivated to minimize truncation errors.
 \end{remark}
 
 %-------------------------------------------------------------------------------
-\subsection{Least-square method}\label{sec:spadis:least_square_gradient}
+\subsection{Least-squares method}\label{sec:spadis:least_squares_gradient}
 %
 Notations of the geometrical quantities are recalled in \figurename~\ref{fig:geom_gradrc}.
 The aim of the present algorithm is to compute the cell gradient $\grad_{\celli} \varia $ of the scalar field $\varia$
-using a least square method.
+using a least squares method.
 The idea is to evaluate the gradient of the variable at the cell faces using the value of the gradient at the cell centres.
 The method is not expected to be as robust as the \emph{iterative} process presented in \S~\ref{sec:spadis:iteratif_gradient},
 but much more efficient.
@@ -1094,14 +1095,14 @@ the stencil is the set of neighbour cells used in the cell gradient computation.
 
 \begin{figure}[!htp]
 \centerline{\includegraphics[height=8cm]{support}}
-\caption{Available stencils for computing the gradient with the least square method.\label{fig:spadis:gradmc_support}}
+\caption{Available stencils for computing the gradient with the least squares method.\label{fig:spadis:gradmc_support}}
 \end{figure}
 
 
 %-------------------------------------------------------------------------------
-\subsection{Least-square method for vectorial fields}\label{sec:spadis:least_square_gradient_vectors}
+\subsection{Least-squares method for vectorial fields}\label{sec:spadis:least_squares_gradient_vectors}
 %
-In this section, the adaptation of the calculation presented in \S~\ref{sec:spadis:least_square_gradient} is adapted to
+In this section, the adaptation of the calculation presented in \S~\ref{sec:spadis:least_squares_gradient} is adapted to
 vectorial fields. Some minor modifications are required, especially for the boundary condition treatment, but the core of the
 formulae are the very similar. The notations of the geometrical quantities are recalled in \figurename~\ref{fig:geom_gradrc}.
 
