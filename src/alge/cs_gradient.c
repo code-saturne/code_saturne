@@ -1223,8 +1223,13 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
@@ -1470,22 +1475,21 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
              f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              f_id++) {
 
-          if (cpl == NULL || !coupled_faces[f_id]) {
+          if (coupled_faces[f_id * cpl_stride])
+            continue;
 
-            cs_lnum_t ii = b_face_cells[f_id];
+          cs_lnum_t ii = b_face_cells[f_id];
 
-            /*
-               Remark: for the cell \f$ \celli \f$ we remove
-                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-             */
+          /*
+            Remark: for the cell \f$ \celli \f$ we remove
+                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+          */
 
-            cs_real_t pfac =   inc*coefap[f_id]
-                             + (coefbp[f_id]-1.0)*pvar[ii];
+          cs_real_t pfac =   inc*coefap[f_id]
+                           + (coefbp[f_id]-1.0)*pvar[ii];
 
-            for (cs_lnum_t j = 0; j < 3; j++)
-              grad[ii][j] += pfac * b_f_face_normal[f_id][j];
-
-          } /* face without internal coupling */
+          for (cs_lnum_t j = 0; j < 3; j++)
+            grad[ii][j] += pfac * b_f_face_normal[f_id][j];
 
         } /* loop on faces */
 
@@ -1708,8 +1712,13 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   if (cocg == NULL)
     cocg = _compute_cell_cocg_it(m, fvq, cpl, gq);
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
@@ -2008,30 +2017,29 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                f_id++) {
 
-            if (cpl == NULL || !coupled_faces[f_id]) {
+            if (coupled_faces[f_id * cpl_stride])
+              continue;
 
-              cs_lnum_t c_id = b_face_cells[f_id];
+            cs_lnum_t c_id = b_face_cells[f_id];
 
-              /*
-                Remark: for the cell \f$ \celli \f$ we remove
-                \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-              */
+            /*
+              Remark: for the cell \f$ \celli \f$ we remove
+              \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+            */
 
-              /* Reconstruction part */
-              cs_real_t pfac
-                =      coefap[f_id] * inc
-                     + coefbp[f_id]
-                       * (  diipb[f_id][0] * grad[c_id][0]
-                          + diipb[f_id][1] * grad[c_id][1]
-                          + diipb[f_id][2] * grad[c_id][2]);
+            /* Reconstruction part */
+            cs_real_t pfac
+              =      coefap[f_id] * inc
+                   + coefbp[f_id]
+                     * (  diipb[f_id][0] * grad[c_id][0]
+                        + diipb[f_id][1] * grad[c_id][1]
+                        + diipb[f_id][2] * grad[c_id][2]);
 
-              pfac += (coefbp[f_id] -1.0) * pvar[c_id];
+            pfac += (coefbp[f_id] -1.0) * pvar[c_id];
 
-              rhs[c_id][0] += pfac * b_f_face_normal[f_id][0];
-              rhs[c_id][1] += pfac * b_f_face_normal[f_id][1];
-              rhs[c_id][2] += pfac * b_f_face_normal[f_id][2];
-
-            } /* face without internal coupling */
+            rhs[c_id][0] += pfac * b_f_face_normal[f_id][0];
+            rhs[c_id][1] += pfac * b_f_face_normal[f_id][1];
+            rhs[c_id][2] += pfac * b_f_face_normal[f_id][2];
 
           } /* loop on faces */
 
@@ -2175,9 +2183,13 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
   }
 
-  const bool *coupled_faces = NULL;
-  if (ce != NULL)
-    coupled_faces = ce->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (ce != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)ce->coupled_faces;
+  }
 
   /* Initialization */
 
@@ -2283,22 +2295,21 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
            f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            f_id++) {
 
-        if (ce == NULL || !coupled_faces[f_id]) {
+        if (coupled_faces[f_id * cpl_stride])
+          continue;
 
-          cs_lnum_t ii = b_face_cells[f_id];
+        cs_lnum_t ii = b_face_cells[f_id];
 
-          cs_real_3_t normal;
-          /* Normal is vector 0 if the b_face_normal norm is too small */
-          cs_math_3_normalise(b_face_normal[f_id], normal);
+        cs_real_3_t normal;
+        /* Normal is vector 0 if the b_face_normal norm is too small */
+        cs_math_3_normalise(b_face_normal[f_id], normal);
 
-          cocg[ii][0] += normal[0] * normal[0];
-          cocg[ii][1] += normal[1] * normal[1];
-          cocg[ii][2] += normal[2] * normal[2];
-          cocg[ii][3] += normal[0] * normal[1];
-          cocg[ii][4] += normal[1] * normal[2];
-          cocg[ii][5] += normal[0] * normal[2];
-
-        } /* face without internal coupling */
+        cocg[ii][0] += normal[0] * normal[0];
+        cocg[ii][1] += normal[1] * normal[1];
+        cocg[ii][2] += normal[2] * normal[2];
+        cocg[ii][3] += normal[0] * normal[1];
+        cocg[ii][4] += normal[1] * normal[2];
+        cocg[ii][5] += normal[0] * normal[2];
 
       } /* loop on faces */
 
@@ -2357,7 +2368,7 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
 
   /* Compute if not present yet.
    *
-   * TODO: when using accelerators, this imples a first computation will be
+   * TODO: when using accelerators, this implies a first computation will be
    *       run on the host. This will usually be amortized, but could be
    *       further improved. */
 
@@ -2521,7 +2532,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                      halo_type,
                      accel,
                      fvq,
-                     cpl,
+                     NULL,  /* cpl, handled locally here */
                      &cocg,
                      &cocgb);
 
@@ -2550,8 +2561,13 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
 #endif
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
   /*---------------------------------------------------------------------*/
@@ -2569,6 +2585,11 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
         cocg[c_id][ll] = cocgb[ii][ll];
     }
 
+    /* Contribution for internal coupling */
+    if (cpl != NULL)
+      cs_internal_coupling_lsq_cocg_contribution(cpl, cocg);
+
+    /* Contribution from regular boundary faces */
     for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
 #     pragma omp parallel for
@@ -2578,26 +2599,25 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
              f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              f_id++) {
 
-          if (cpl == NULL || !coupled_faces[f_id]) {
+          if (coupled_faces[f_id * cpl_stride])
+            continue;
 
-            cs_lnum_t ii = b_face_cells[f_id];
+          cs_lnum_t ii = b_face_cells[f_id];
 
-            cs_real_t umcbdd = (1. - coefbp[f_id]) / b_dist[f_id];
-            cs_real_t udbfs = 1. / b_face_surf[f_id];
+          cs_real_t umcbdd = (1. - coefbp[f_id]) / b_dist[f_id];
+          cs_real_t udbfs = 1. / b_face_surf[f_id];
 
-            cs_real_t dddij[3];
-            for (cs_lnum_t ll = 0; ll < 3; ll++)
-              dddij[ll] =   udbfs * b_face_normal[f_id][ll]
-                          + umcbdd * diipb[f_id][ll];
+          cs_real_t dddij[3];
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            dddij[ll] =   udbfs * b_face_normal[f_id][ll]
+                        + umcbdd * diipb[f_id][ll];
 
-            cocg[ii][0] += dddij[0]*dddij[0];
-            cocg[ii][1] += dddij[1]*dddij[1];
-            cocg[ii][2] += dddij[2]*dddij[2];
-            cocg[ii][3] += dddij[0]*dddij[1];
-            cocg[ii][4] += dddij[1]*dddij[2];
-            cocg[ii][5] += dddij[0]*dddij[2];
-
-          }  /* face without internal coupling */
+          cocg[ii][0] += dddij[0]*dddij[0];
+          cocg[ii][1] += dddij[1]*dddij[1];
+          cocg[ii][2] += dddij[2]*dddij[2];
+          cocg[ii][3] += dddij[0]*dddij[1];
+          cocg[ii][4] += dddij[1]*dddij[2];
+          cocg[ii][5] += dddij[0]*dddij[2];
 
         } /* loop on faces */
 
@@ -2739,26 +2759,25 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
              f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              f_id++) {
 
-          if (cpl == NULL || !coupled_faces[f_id]) {
+          if (coupled_faces[f_id * cpl_stride])
+            continue;
 
-            cs_lnum_t ii = b_face_cells[f_id];
+          cs_lnum_t ii = b_face_cells[f_id];
 
-            cs_real_t unddij = 1. / b_dist[f_id];
-            cs_real_t udbfs = 1. / b_face_surf[f_id];
-            cs_real_t umcbdd = (1. - coefbp[f_id]) * unddij;
+          cs_real_t unddij = 1. / b_dist[f_id];
+          cs_real_t udbfs = 1. / b_face_surf[f_id];
+          cs_real_t umcbdd = (1. - coefbp[f_id]) * unddij;
 
-            cs_real_t dsij[3];
-            for (cs_lnum_t ll = 0; ll < 3; ll++)
-              dsij[ll] =   udbfs * b_face_normal[f_id][ll]
-                         + umcbdd*diipb[f_id][ll];
+          cs_real_t dsij[3];
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            dsij[ll] =   udbfs * b_face_normal[f_id][ll]
+                       + umcbdd*diipb[f_id][ll];
 
-            cs_real_t pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)
-                             * rhsv[ii][3]) * unddij;
+          cs_real_t pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)
+                           * rhsv[ii][3]) * unddij;
 
-            for (cs_lnum_t ll = 0; ll < 3; ll++)
-              rhsv[ii][ll] += dsij[ll] * pfac;
-
-          } /* face without internal coupling */
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhsv[ii][ll] += dsij[ll] * pfac;
 
         } /* loop on faces */
 
@@ -3033,8 +3052,13 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
     = (const cs_real_3_t *restrict)fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   cs_real_4_t  *restrict rhsv;
   BFT_MALLOC(rhsv, n_cells_ext, cs_real_4_t);
@@ -3144,39 +3168,38 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
            f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            f_id++) {
 
-        if (cpl == NULL || !coupled_faces[f_id]) {
+        if (coupled_faces[f_id * cpl_stride])
+          continue;
 
-          cs_real_t dsij[3];
+        cs_real_t dsij[3];
 
-          cs_lnum_t ii = b_face_cells[f_id];
+        cs_lnum_t ii = b_face_cells[f_id];
 
-          cs_real_t umcbdd = (1. - coefbp[f_id]) / b_dist[f_id];
-          cs_real_t udbfs = 1. / b_face_surf[f_id];
+        cs_real_t umcbdd = (1. - coefbp[f_id]) / b_dist[f_id];
+        cs_real_t udbfs = 1. / b_face_surf[f_id];
 
-          cs_real_t unddij = 1. / b_dist[f_id];
+        cs_real_t unddij = 1. / b_dist[f_id];
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            dsij[ll] =   udbfs * b_face_normal[f_id][ll]
-                       + umcbdd*diipb[f_id][ll];
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          dsij[ll] =   udbfs * b_face_normal[f_id][ll]
+                     + umcbdd*diipb[f_id][ll];
 
-          /* cocg contribution */
+        /* cocg contribution */
 
-          cocg[ii][0] += dsij[0]*dsij[0];
-          cocg[ii][1] += dsij[1]*dsij[1];
-          cocg[ii][2] += dsij[2]*dsij[2];
-          cocg[ii][3] += dsij[0]*dsij[1];
-          cocg[ii][4] += dsij[1]*dsij[2];
-          cocg[ii][5] += dsij[0]*dsij[2];
+        cocg[ii][0] += dsij[0]*dsij[0];
+        cocg[ii][1] += dsij[1]*dsij[1];
+        cocg[ii][2] += dsij[2]*dsij[2];
+        cocg[ii][3] += dsij[0]*dsij[1];
+        cocg[ii][4] += dsij[1]*dsij[2];
+        cocg[ii][5] += dsij[0]*dsij[2];
 
-          /* RHS contribution */
+        /* RHS contribution */
 
-          cs_real_t pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)*rhsv[ii][3])
-                           * unddij;
+        cs_real_t pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)*rhsv[ii][3])
+                         * unddij;
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += dsij[ll] * pfac;
-
-        } /* face without internal coupling */
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          rhsv[ii][ll] += dsij[ll] * pfac;
 
       } /* loop on faces */
 
@@ -3294,8 +3317,13 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   const cs_real_33_t *restrict corr_grad_lin
     = (const cs_real_33_t *restrict)fvq->corr_grad_lin;
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
@@ -3520,7 +3548,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
             cs_math_sym_33_inv_cramer(sum, inv_sum);
 
             ktpond =   weight[f_id] / 3.0
-                     * (   inv_sum[0]*_c_weight[c_id1][0]
+                     * (  inv_sum[0]*_c_weight[c_id1][0]
                         + inv_sum[1]*_c_weight[c_id1][1]
                         + inv_sum[2]*_c_weight[c_id1][2]
                         + 2.0 * (  inv_sum[3]*_c_weight[c_id1][3]
@@ -3573,29 +3601,28 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
              f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              f_id++) {
 
-          if (cpl == NULL || !coupled_faces[f_id]) {
+          if (coupled_faces[f_id * cpl_stride])
+            continue;
 
-            cs_lnum_t c_id = b_face_cells[f_id];
+          cs_lnum_t c_id = b_face_cells[f_id];
 
-            /*
-               Remark: for the cell \f$ \celli \f$ we remove
-                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-             */
+          /*
+            Remark: for the cell \f$ \celli \f$ we remove
+                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+          */
 
-            cs_real_t pfac =   inc*coefap[f_id]
-                             + (coefbp[f_id]-1.0)*c_var[c_id];
+          cs_real_t pfac =   inc*coefap[f_id]
+                           + (coefbp[f_id]-1.0)*c_var[c_id];
 
-            /* Reconstruction part */
-            cs_real_t
-              rfac =   coefbp[f_id]
-                     * (  diipb[f_id][0] * r_grad[c_id][0]
-                        + diipb[f_id][1] * r_grad[c_id][1]
-                        + diipb[f_id][2] * r_grad[c_id][2]);
+          /* Reconstruction part */
+          cs_real_t
+            rfac =   coefbp[f_id]
+                   * (  diipb[f_id][0] * r_grad[c_id][0]
+                      + diipb[f_id][1] * r_grad[c_id][1]
+                      + diipb[f_id][2] * r_grad[c_id][2]);
 
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              grad[c_id][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
-            }
-
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            grad[c_id][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
           }
 
         } /* loop on faces */
@@ -3644,9 +3671,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
  * parameters:
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
- *   cpl            <-- structure associated with internal coupling, or NULL
  *   halo_type      <-- halo type (extended or not)
- *   recompute_cocg <-- flag to recompute cocg
  *   nswrgp         <-- number of sweeps for gradient reconstruction
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   bc_coeff_a     <-- B.C. coefficients for boundary face normals
@@ -3733,9 +3758,7 @@ _lsq_scalar_b_face_val(const cs_mesh_t             *m,
  * parameters:
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
- *   cpl            <-- structure associated with internal coupling, or NULL
  *   halo_type      <-- halo type (extended or not)
- *   recompute_cocg <-- flag to recompute cocg
  *   nswrgp         <-- number of sweeps for gradient reconstruction
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   f_ext          <-- exterior force generating pressure
@@ -3920,7 +3943,7 @@ _lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
 
       cs_real_t normal[3];
       /* Normal is vector 0 if the b_face_normal norm is too small */
-      cs_math_3_normalise(b_face_normal[f_id], normal);
+      cs_math_3_normalize(b_face_normal[f_id], normal);
 
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         dsij[ll] = normal[ll] + umcbdd*diipb[f_id][ll];
@@ -4057,8 +4080,13 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
   const cs_real_3_t *restrict b_face_cog
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
@@ -4277,29 +4305,28 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
              f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              f_id++) {
 
-          if (cpl == NULL || !coupled_faces[f_id]) {
+          if (coupled_faces[f_id * cpl_stride])
+            continue;
 
-            cs_lnum_t c_id = b_face_cells[f_id];
+          cs_lnum_t c_id = b_face_cells[f_id];
 
-            cs_real_t poro = b_poro_duq[is_porous*f_id];
-            /*
-               Remark: for the cell \f$ \celli \f$ we remove
-                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-             */
+          cs_real_t poro = b_poro_duq[is_porous*f_id];
 
-            cs_real_t pfac = b_f_var[f_id] - c_var[c_id];
+          /*
+            Remark: for the cell \f$ \celli \f$ we remove
+                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+          */
 
-            pfac +=
-                bc_coeff_b[f_id]
-              * ( (b_face_cog[f_id][0] - cell_cen[c_id][0])*f_ext[c_id][0]
-                + (b_face_cog[f_id][1] - cell_cen[c_id][1])*f_ext[c_id][1]
-                + (b_face_cog[f_id][2] - cell_cen[c_id][2])*f_ext[c_id][2]
-                + poro);
+          cs_real_t pfac = b_f_var[f_id] - c_var[c_id];
 
-            for (cs_lnum_t j = 0; j < 3; j++)
-              grad[c_id][j] += pfac * b_f_face_normal[f_id][j];
+          pfac +=  bc_coeff_b[f_id]
+                  * (  (b_face_cog[f_id][0] - cell_cen[c_id][0])*f_ext[c_id][0]
+                     + (b_face_cog[f_id][1] - cell_cen[c_id][1])*f_ext[c_id][1]
+                     + (b_face_cog[f_id][2] - cell_cen[c_id][2])*f_ext[c_id][2]
+                     + poro);
 
-          } /* face without internal coupling */
+          for (cs_lnum_t j = 0; j < 3; j++)
+            grad[c_id][j] += pfac * b_f_face_normal[f_id][j];
 
         } /* loop on faces */
 
@@ -4358,21 +4385,20 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
              f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
              f_id++) {
 
-          if (cpl == NULL || !coupled_faces[f_id]) {
+          if (coupled_faces[f_id * cpl_stride])
+            continue;
 
-            cs_lnum_t ii = b_face_cells[f_id];
+          cs_lnum_t ii = b_face_cells[f_id];
 
-            /*
-               Remark: for the cell \f$ \celli \f$ we remove
-                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-             */
+          /*
+            Remark: for the cell \f$ \celli \f$ we remove
+                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+          */
 
-            cs_real_t pfac = b_f_var[f_id] - c_var[ii];
+          cs_real_t pfac = b_f_var[f_id] - c_var[ii];
 
-            for (cs_lnum_t j = 0; j < 3; j++)
-              grad[ii][j] += pfac * b_f_face_normal[f_id][j];
-
-          } /* face without internal coupling */
+          for (cs_lnum_t j = 0; j < 3; j++)
+            grad[ii][j] += pfac * b_f_face_normal[f_id][j];
 
         } /* loop on faces */
 
@@ -4951,8 +4977,13 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   /* Computation without reconstruction */
   /*------------------------------------*/
@@ -5029,23 +5060,23 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
            f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            f_id++) {
 
-        if (cpl == NULL || !coupled_faces[f_id]) {
+        if (coupled_faces[f_id * cpl_stride])
+          continue;
 
-          cs_lnum_t c_id = b_face_cells[f_id];
+        cs_lnum_t c_id = b_face_cells[f_id];
 
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            cs_real_t pfac = inc*coefav[f_id][i];
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          cs_real_t pfac = inc*coefav[f_id][i];
 
-            for (cs_lnum_t k = 0; k < 3; k++) {
-              if (i == k)
-                pfac += (coefbv[f_id][i][k] - 1.0) * pvar[c_id][k];
-              else
-                pfac += coefbv[f_id][i][k] * pvar[c_id][k];
-            }
-
-            for (cs_lnum_t j = 0; j < 3; j++)
-              grad[c_id][i][j] += pfac * b_f_face_normal[f_id][j];
+          for (cs_lnum_t k = 0; k < 3; k++) {
+            if (i == k)
+              pfac += (coefbv[f_id][i][k] - 1.0) * pvar[c_id][k];
+            else
+              pfac += coefbv[f_id][i][k] * pvar[c_id][k];
           }
+
+          for (cs_lnum_t j = 0; j < 3; j++)
+            grad[c_id][i][j] += pfac * b_f_face_normal[f_id][j];
         }
 
       } /* loop on faces */
@@ -5141,8 +5172,13 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   const cs_real_33_t *restrict corr_grad_lin
     = (const cs_real_33_t *restrict)fvq->corr_grad_lin;
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   /* Initialize gradient */
   /*---------------------*/
@@ -5231,35 +5267,37 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
            f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            f_id++) {
 
-        if (cpl == NULL || !coupled_faces[f_id]) {
-          cs_lnum_t c_id = b_face_cells[f_id];
+        if (coupled_faces[f_id * cpl_stride])
+          continue;
 
-          /*
-             Remark: for the cell \f$ \celli \f$ we remove
-                     \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-           */
+        cs_lnum_t c_id = b_face_cells[f_id];
 
-          for (cs_lnum_t i = 0; i < 3; i++) {
+        /*
+          Remark: for the cell \f$ \celli \f$ we remove
+                  \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+        */
 
-            cs_real_t pfac = inc*coefav[f_id][i];
+        for (cs_lnum_t i = 0; i < 3; i++) {
 
-            for (cs_lnum_t k = 0; k < 3; k++)
-              pfac += coefbv[f_id][i][k] * pvar[c_id][k];
+          cs_real_t pfac = inc*coefav[f_id][i];
 
-            pfac -= pvar[c_id][i];
+          for (cs_lnum_t k = 0; k < 3; k++)
+            pfac += coefbv[f_id][i][k] * pvar[c_id][k];
 
-            /* Reconstruction part */
-            cs_real_t rfac = 0.;
-            for (cs_lnum_t k = 0; k < 3; k++) {
-              cs_real_t vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
-                                 + r_grad[c_id][k][1] * diipb[f_id][1]
-                                 + r_grad[c_id][k][2] * diipb[f_id][2];
-              rfac += coefbv[f_id][i][k] * vecfac;
-            }
+          pfac -= pvar[c_id][i];
 
-            for (cs_lnum_t j = 0; j < 3; j++)
-              grad[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
+          /* Reconstruction part */
+          cs_real_t rfac = 0.;
+          for (cs_lnum_t k = 0; k < 3; k++) {
+            cs_real_t vecfac =   r_grad[c_id][k][0] * diipb[f_id][0]
+                               + r_grad[c_id][k][1] * diipb[f_id][1]
+                               + r_grad[c_id][k][2] * diipb[f_id][2];
+            rfac += coefbv[f_id][i][k] * vecfac;
           }
+
+          for (cs_lnum_t j = 0; j < 3; j++)
+            grad[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
+
         }
 
       } /* loop on faces */
@@ -5388,8 +5426,13 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
   if (cocg == NULL)
     cocg = _compute_cell_cocg_it(m, fvq, cpl, gq);
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
 
@@ -5491,36 +5534,36 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
                f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
                f_id++) {
 
-            if (cpl == NULL || !coupled_faces[f_id]) {
+            if (coupled_faces[f_id * cpl_stride])
+              continue;
 
-              cs_lnum_t c_id = b_face_cells[f_id];
+            cs_lnum_t c_id = b_face_cells[f_id];
 
-              for (cs_lnum_t i = 0; i < 3; i++) {
+            for (cs_lnum_t i = 0; i < 3; i++) {
 
-                /*
-                   Remark: for the cell \f$ \celli \f$ we remove
-                    \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-                 */
+              /*
+                Remark: for the cell \f$ \celli \f$ we remove
+                \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+              */
 
-                cs_real_t pfac = inc*coefav[f_id][i];
+              cs_real_t pfac = inc*coefav[f_id][i];
 
-                for (cs_lnum_t k = 0; k < 3; k++) {
-                  /* Reconstruction part */
-                  cs_real_t vecfac =   grad[c_id][k][0] * diipb[f_id][0]
-                                     + grad[c_id][k][1] * diipb[f_id][1]
-                                     + grad[c_id][k][2] * diipb[f_id][2];
-                  pfac += coefbv[f_id][i][k] * vecfac;
+              for (cs_lnum_t k = 0; k < 3; k++) {
+                /* Reconstruction part */
+                cs_real_t vecfac =   grad[c_id][k][0] * diipb[f_id][0]
+                                   + grad[c_id][k][1] * diipb[f_id][1]
+                                   + grad[c_id][k][2] * diipb[f_id][2];
+                pfac += coefbv[f_id][i][k] * vecfac;
 
-                  if (i == k)
-                    pfac += (coefbv[f_id][i][k] - 1.0) * pvar[c_id][k];
-                  else
-                    pfac += coefbv[f_id][i][k] * pvar[c_id][k];
-                }
-
-                for (cs_lnum_t j = 0; j < 3; j++)
-                  rhs[c_id][i][j] += pfac * b_f_face_normal[f_id][j];
-
+                if (i == k)
+                  pfac += (coefbv[f_id][i][k] - 1.0) * pvar[c_id][k];
+                else
+                  pfac += coefbv[f_id][i][k] * pvar[c_id][k];
               }
+
+              for (cs_lnum_t j = 0; j < 3; j++)
+                rhs[c_id][i][j] += pfac * b_f_face_normal[f_id][j];
+
             }
 
           } /* loop on faces */
@@ -5887,12 +5930,8 @@ _complete_cocg_lsq(cs_lnum_t                     c_id,
                    const cs_cocg_t               cocg[6],
                    cs_real_t                     cocgb[restrict 3][3])
 {
-  /* Short variable accesses */
-
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
-
-  cs_lnum_t s_id, e_id;
 
   /* initialize cocgb */
 
@@ -5906,13 +5945,17 @@ _complete_cocg_lsq(cs_lnum_t                     c_id,
   cocgb[2][1] = cocg[4];
   cocgb[2][2] = cocg[2];
 
-  /* Contribution from boundary faces */
+  /* Contribution from boundary faces.
+
+     Note that for scalars, the matching part involves a sum of face normals
+     and a term in (coefb -1)*diipb, but coefb is not scalar for vector fields,
+     so things need to be handled a bit differently here. */
 
   const cs_lnum_t  *restrict cell_b_faces
     = (const cs_lnum_t  *restrict)(madj->cell_b_faces);
 
-  s_id = madj->cell_b_faces_idx[c_id];
-  e_id = madj->cell_b_faces_idx[c_id+1];
+  cs_lnum_t s_id = madj->cell_b_faces_idx[c_id];
+  cs_lnum_t e_id = madj->cell_b_faces_idx[c_id+1];
 
   for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -5920,7 +5963,7 @@ _complete_cocg_lsq(cs_lnum_t                     c_id,
 
     cs_real_3_t normal;
     /* Normal is vector 0 if the b_face_normal norm is too small */
-    cs_math_3_normalise(b_face_normal[f_id], normal);
+    cs_math_3_normalize(b_face_normal[f_id], normal);
 
     for (cs_lnum_t ii = 0; ii < 3; ii++) {
       for (cs_lnum_t jj = 0; jj < 3; jj++)
@@ -6018,7 +6061,7 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     c_id,
 
     cs_real_3_t nb;
     /* Normal is vector 0 if the b_face_normal norm is too small */
-    cs_math_3_normalise(b_face_normal[f_id], nb);
+    cs_math_3_normalize(b_face_normal[f_id], nb);
 
     cs_real_t db = 1./b_dist[f_id];
     cs_real_t db2 = db*db;
@@ -6314,8 +6357,13 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 
   BFT_MALLOC(rhs, n_cells_ext, cs_real_33_t);
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   /* Compute Right-Hand Side */
   /*-------------------------*/
@@ -6433,30 +6481,30 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
            f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            f_id++) {
 
-        if (cpl == NULL || !coupled_faces[f_id]) {
+        if (coupled_faces[f_id * cpl_stride])
+          continue;
 
-          cs_lnum_t c_id1 = b_face_cells[f_id];
+        cs_lnum_t c_id1 = b_face_cells[f_id];
 
-          cs_real_t n_d_dist[3];
-          /* Normal is vector 0 if the b_face_normal norm is too small */
-          cs_math_3_normalise(b_face_normal[f_id], n_d_dist);
+        cs_real_t n_d_dist[3];
+        /* Normal is vector 0 if the b_face_normal norm is too small */
+        cs_math_3_normalize(b_face_normal[f_id], n_d_dist);
 
-          cs_real_t d_b_dist = 1. / b_dist[f_id];
+        cs_real_t d_b_dist = 1. / b_dist[f_id];
 
-          /* Normal divided by b_dist */
-          for (cs_lnum_t i = 0; i < 3; i++)
-            n_d_dist[i] *= d_b_dist;
+        /* Normal divided by b_dist */
+        for (cs_lnum_t i = 0; i < 3; i++)
+          n_d_dist[i] *= d_b_dist;
 
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            cs_real_t pfac = (coefav[f_id][i]*inc
-                 + ( coefbv[f_id][0][i] * pvar[c_id1][0]
-                   + coefbv[f_id][1][i] * pvar[c_id1][1]
-                   + coefbv[f_id][2][i] * pvar[c_id1][2]
-                   -                      pvar[c_id1][i]));
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          cs_real_t pfac =   coefav[f_id][i]*inc
+                           + (  coefbv[f_id][0][i] * pvar[c_id1][0]
+                              + coefbv[f_id][1][i] * pvar[c_id1][1]
+                              + coefbv[f_id][2][i] * pvar[c_id1][2]
+                              - pvar[c_id1][i]);
 
             for (cs_lnum_t j = 0; j < 3; j++)
               rhs[c_id1][i][j] += n_d_dist[j] * pfac;
-          }
         }
 
       } /* loop on faces */
@@ -6596,8 +6644,13 @@ _lsq_vector_b_face_val(const cs_mesh_t               *m,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   cs_real_3_t  *_bc_coeff_a = NULL;
 
@@ -6637,22 +6690,22 @@ _lsq_vector_b_face_val(const cs_mesh_t               *m,
 
       cs_lnum_t f_id = cell_b_faces[i];
 
-      if (cpl == NULL || !coupled_faces[f_id]) {
+      if (coupled_faces[f_id * cpl_stride])
+        continue;
 
-        const cs_real_t *_c_var = c_var[c_id];
-        cs_real_t pip[3];
-        for (cs_lnum_t k = 0; k < 3; k++) {
-          pip[k] =   _c_var[k]
-                   + cs_math_3_dot_product(diipb[f_id], gradc[k]);
-        }
-        for (cs_lnum_t k = 0; k < 3; k++) {
-          b_f_var[f_id][k] =   inc * bc_coeff_a[f_id][k]
-                             + bc_coeff_b[f_id][0][k] * pip[0]
-                             + bc_coeff_b[f_id][1][k] * pip[1]
-                             + bc_coeff_b[f_id][2][k] * pip[2];
-        }
-
+      const cs_real_t *_c_var = c_var[c_id];
+      cs_real_t pip[3];
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        pip[k] =   _c_var[k]
+                 + cs_math_3_dot_product(diipb[f_id], gradc[k]);
       }
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        b_f_var[f_id][k] =   inc * bc_coeff_a[f_id][k]
+                           + (  bc_coeff_b[f_id][0][k] * pip[0]
+                              + bc_coeff_b[f_id][1][k] * pip[1]
+                              + bc_coeff_b[f_id][2][k] * pip[2]);
+      }
+
     }
 
   }
@@ -6714,8 +6767,13 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
   const cs_real_3_t *restrict b_f_face_normal
     = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
 
-  bool  *coupled_faces = (cpl == NULL) ?
-    NULL : (bool *)cpl->coupled_faces;
+  cs_lnum_t   cpl_stride = 0;
+  const bool _coupled_faces[1] = {false};
+  const bool  *coupled_faces = _coupled_faces;
+  if (cpl != NULL) {
+    cpl_stride = 1;
+    coupled_faces = (const bool *)cpl->coupled_faces;
+  }
 
   /* Initialize gradient
      ------------------- */
@@ -6850,25 +6908,24 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
            f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            f_id++) {
 
-        if (cpl == NULL || !coupled_faces[f_id]) {
+        if (coupled_faces[f_id * cpl_stride])
+          continue;
 
-          cs_lnum_t ii = b_face_cells[f_id];
+        cs_lnum_t ii = b_face_cells[f_id];
 
-          /*
-            Remark: for the cell \f$ \celli \f$ we remove
-            \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-          */
+        /*
+          Remark: for the cell \f$ \celli \f$ we remove
+          \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+        */
 
-          for (cs_lnum_t k = 0; k < 3; k++) {
+        for (cs_lnum_t k = 0; k < 3; k++) {
 
-            cs_real_t pfac = b_f_var[f_id][k] - c_var[ii][k];
+          cs_real_t pfac = b_f_var[f_id][k] - c_var[ii][k];
 
-            for (cs_lnum_t l = 0; l < 3; l++)
-              grad[ii][k][l] += pfac * b_f_face_normal[f_id][l];
+          for (cs_lnum_t l = 0; l < 3; l++)
+            grad[ii][k][l] += pfac * b_f_face_normal[f_id][l];
 
-          }
-
-        } /* face without internal coupling */
+        }
 
       } /* loop on faces */
 
@@ -7085,7 +7142,7 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
 
         cs_real_3_t n_d_dist;
         /* Normal is vector 0 if the b_face_normal norm is too small */
-        cs_math_3_normalise(b_face_normal[f_id], n_d_dist);
+        cs_math_3_normalize(b_face_normal[f_id], n_d_dist);
 
         cs_real_t d_b_dist = 1. / b_dist[f_id];
 
@@ -9842,7 +9899,7 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
 
       cs_real_t  n_d_dist[3];
       /* Normal is vector 0 if the b_face_normal norm is too small */
-      cs_math_3_normalise(b_face_normal[f_id], n_d_dist);
+      cs_math_3_normalize(b_face_normal[f_id], n_d_dist);
 
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++)
@@ -10142,7 +10199,7 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
 
       cs_real_t  n_d_dist[3];
       /* Normal is vector 0 if the b_face_normal norm is too small */
-      cs_math_3_normalise(b_face_normal[f_id], n_d_dist);
+      cs_math_3_normalize(b_face_normal[f_id], n_d_dist);
 
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++)

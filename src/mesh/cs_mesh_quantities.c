@@ -1767,15 +1767,15 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
     if (cs_glob_mesh_quantities_flag & CS_FACE_DISTANCE_CLIP) {
 
       /* Min value between IF and
-       * (Omega_i)/S which is exactly the distance for tetras */
-      double distmax = CS_MIN(
-          cs_math_3_distance(cell_cen[cell_id], b_face_cog[face_id]),
-          cell_vol[cell_id]/cs_math_3_norm(face_nomal));
+       * (Omega_i)/S which is exactly the distance for tetrahedra */
+      double distmax = fmin(cs_math_3_distance(cell_cen[cell_id],
+                                               b_face_cog[face_id]),
+                            cell_vol[cell_id]/cs_math_3_norm(face_nomal));
 
       double critmin = 0.01;
       if (b_dist[face_id] < critmin * distmax) {
         w_count++;
-        b_dist[face_id] = CS_MAX(b_dist[face_id], critmin * distmax);
+        b_dist[face_id] = fmax(b_dist[face_id], critmin * distmax);
       }
 
     }

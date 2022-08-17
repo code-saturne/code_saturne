@@ -1501,6 +1501,8 @@ cs_internal_coupling_iterative_scalar_gradient(
        Scope of this modification is local */
     for (cs_lnum_t ii = 0; ii < n_local; ii++)
       r_weight[ii] = 1.0 - (1.0-g_weight[ii]) * r_weight[ii];
+
+    g_weight = r_weight;
   }
 
   /* Compute rhs */
@@ -1528,10 +1530,7 @@ cs_internal_coupling_iterative_scalar_gradient(
     pfaci *= offset_vect[ii][0]*(grad_local[ii][0]+grad[cell_id][0])
             +offset_vect[ii][1]*(grad_local[ii][1]+grad[cell_id][1])
             +offset_vect[ii][2]*(grad_local[ii][2]+grad[cell_id][2]);
-    if (c_weight != NULL)
-      pfaci += (1.0-r_weight[ii]) * (pvar_local[ii] - pvar[cell_id]);
-    else
-      pfaci += (1.0-g_weight[ii]) * (pvar_local[ii] - pvar[cell_id]);
+    pfaci += (1.0-g_weight[ii]) * (pvar_local[ii] - pvar[cell_id]);
 
     for (cs_lnum_t j = 0; j < 3; j++)
       rhs[cell_id][j] += pfaci * b_f_face_normal[face_id][j];
@@ -1606,6 +1605,8 @@ cs_internal_coupling_iterative_vector_gradient(
        Scope of this modification is local */
     for (cs_lnum_t ii = 0; ii < n_local; ii++)
       r_weight[ii] = 1.0 - (1.0-g_weight[ii]) * r_weight[ii];
+
+    g_weight = r_weight;
   }
 
   /* Compute rhs */
@@ -1635,10 +1636,7 @@ cs_internal_coupling_iterative_vector_gradient(
       pfaci *= offset_vect[ii][0]*(grad_local[ii][i][0]+grad[cell_id][i][0])
               +offset_vect[ii][1]*(grad_local[ii][i][1]+grad[cell_id][i][1])
               +offset_vect[ii][2]*(grad_local[ii][i][2]+grad[cell_id][i][2]);
-      if (c_weight != NULL)
-        pfaci += (1.0-r_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
-      else
-        pfaci += (1.0-g_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
+      pfaci += (1.0-g_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
 
       for (cs_lnum_t j = 0; j < 3; j++)
         rhs[cell_id][i][j] += pfaci * b_f_face_normal[face_id][j];
@@ -1715,6 +1713,8 @@ cs_internal_coupling_iterative_tensor_gradient(
        Scope of this modification is local */
     for (cs_lnum_t ii = 0; ii < n_local; ii++)
       r_weight[ii] = 1.0 - (1.0-g_weight[ii]) * r_weight[ii];
+
+    g_weight = r_weight;
   }
 
   /* Compute rhs */
@@ -1743,10 +1743,7 @@ cs_internal_coupling_iterative_tensor_gradient(
       pfaci *= offset_vect[ii][0]*(grad_local[ii][i][0]+grad[cell_id][i][0])
               +offset_vect[ii][1]*(grad_local[ii][i][1]+grad[cell_id][i][1])
               +offset_vect[ii][2]*(grad_local[ii][i][2]+grad[cell_id][i][2]);
-      if (c_weight != NULL)
-        pfaci += (1.0-r_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
-      else
-        pfaci += (1.0-g_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
+      pfaci += (1.0-g_weight[ii]) * (pvar_local[ii][i] - pvar[cell_id][i]);
 
       for (cs_lnum_t j = 0; j < 3; j++)
         rhs[cell_id][i][j] += pfaci * b_f_face_normal[face_id][j];
@@ -2127,7 +2124,8 @@ cs_internal_coupling_lsq_vector_gradient(
                                                6,
                                                c_weight,
                                                weight);
-    } else {
+    }
+    else {
       BFT_MALLOC(weight, n_local, cs_real_t);
       _compute_physical_face_weight(cpl,
                                     c_weight, /* diffusivity */
@@ -2143,7 +2141,7 @@ cs_internal_coupling_lsq_vector_gradient(
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       dc[ll] = ci_cj_vect[ii][ll];
 
-    if (tensor_diff) {//FIXME
+    if (tensor_diff) { //FIXME
       /* (P_j - P_i)*/
       for (cs_lnum_t i = 0; i < 3; i++) {
         cs_real_t p_diff = (pvar_local[ii][i] - pvar[cell_id][i]);
@@ -2155,7 +2153,8 @@ cs_internal_coupling_lsq_vector_gradient(
                                g_weight[ii],
                                rhs[cell_id][i]);
       }
-    } else if (scalar_diff) {
+    }
+    else if (scalar_diff) {
 
       for (cs_lnum_t i = 0; i < 3; i++) {
         /* (P_j - P_i) / ||d||^2 */
@@ -2170,7 +2169,8 @@ cs_internal_coupling_lsq_vector_gradient(
         for (cs_lnum_t j = 0; j < 3; j++)
           rhs[cell_id][i][j] +=  weight[ii] * fctb[j];
       }
-    } else {
+    }
+    else {
       for (cs_lnum_t i = 0; i < 3; i++) {
         /* (P_j - P_i) / ||d||^2 */
         pfac = (pvar_local[ii][i] - pvar[cell_id][i])
@@ -2187,6 +2187,7 @@ cs_internal_coupling_lsq_vector_gradient(
     }
 
   }
+
   /* Free memory */
   if (c_weight != NULL) BFT_FREE(weight);
   BFT_FREE(pvar_local);
