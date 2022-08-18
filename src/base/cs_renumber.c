@@ -2602,8 +2602,7 @@ _renum_i_faces_no_share_cell_in_block(cs_mesh_t    *mesh,
  *   n_b_threads     <-- number of threads required for boundary faces
  *   min_subset_size <-- minimum size of subset associated to a thread
  *   new_to_old_b    <-- interior faces renumbering array
- *   n_b_groups      --> number of groups of boundary faces
- *   b_group_index   --> group/thread index
+ *   b_group_index   --> group/thread index (1 group only)
  *
  * returns:
  *   0 on success, -1 otherwise
@@ -2614,7 +2613,6 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
                                            int          n_b_threads,
                                            cs_lnum_t    min_subset_size,
                                            cs_lnum_t    new_to_old_b[],
-                                           int         *n_b_groups,
                                            cs_lnum_t  **b_group_index)
 {
   int t_id;
@@ -2623,8 +2621,6 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
   int retval = 0;
 
   /* Initialization */
-
-  *n_b_groups = 1;
 
   BFT_MALLOC(*b_group_index, n_b_threads*2, cs_lnum_t);
 
@@ -5079,7 +5075,6 @@ _renumber_i_faces(cs_mesh_t  *mesh)
 static void
 _renumber_b_faces(cs_mesh_t  *mesh)
 {
-  int  n_b_groups = 1;
   cs_lnum_t  ii;
   cs_lnum_t  *new_to_old_b = NULL;
   cs_lnum_t  *b_group_index = NULL;
@@ -5123,7 +5118,6 @@ _renumber_b_faces(cs_mesh_t  *mesh)
                                                         n_b_threads,
                                                         _min_b_subset_size,
                                                         new_to_old_b,
-                                                        &n_b_groups,
                                                         &b_group_index);
     break;
 
@@ -5146,7 +5140,6 @@ _renumber_b_faces(cs_mesh_t  *mesh)
   /*-----------------------*/
 
   if (retval != 0) {
-    n_b_groups = 1;
     n_b_threads = 1;
   }
   else
@@ -5161,7 +5154,7 @@ _renumber_b_faces(cs_mesh_t  *mesh)
       b_group_index[1] = mesh->n_b_faces;
     }
     mesh->b_face_numbering = cs_numbering_create_threaded(n_b_threads,
-                                                          n_b_groups,
+                                                          1,
                                                           b_group_index);
     if (n_b_threads == 1)
       mesh->b_face_numbering->type = CS_NUMBERING_DEFAULT;

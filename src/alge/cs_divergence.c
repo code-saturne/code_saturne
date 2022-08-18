@@ -404,7 +404,6 @@ cs_mass_flux(const cs_mesh_t             *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
   const int n_b_threads = m->b_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
@@ -729,27 +728,25 @@ cs_mass_flux(const cs_mesh_t             *m,
 
     /* Boundary faces */
 
-    for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-            face_id++) {
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[t_id*2];
+           face_id < b_group_index[t_id*2 + 1];
+           face_id++) {
 
-          /* u, v, w Components */
-          for (int isou = 0; isou < 3; isou++) {
-            double pfac = inc*coefaq[face_id][isou];
+        /* u, v, w Components */
+        for (int isou = 0; isou < 3; isou++) {
+          double pfac = inc*coefaq[face_id][isou];
 
-            /* coefbv is a matrix */
-            for (int jsou = 0; jsou < 3; jsou++) {
-              pfac += coefbv[face_id][jsou][isou]*f_momentum[face_id][jsou];
-            }
-            pfac *= b_f_face_factor[is_p*face_id];
-
-            b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
+          /* coefbv is a matrix */
+          for (int jsou = 0; jsou < 3; jsou++) {
+            pfac += coefbv[face_id][jsou][isou]*f_momentum[face_id][jsou];
           }
+          pfac *= b_f_face_factor[is_p*face_id];
 
+          b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
         }
+
       }
     }
 
@@ -824,45 +821,42 @@ cs_mass_flux(const cs_mesh_t             *m,
 
     /* Mass flow through boundary faces */
 
-    for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-            face_id++) {
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[t_id*2];
+           face_id < b_group_index[t_id*2 + 1];
+           face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id];
-          double diipbx = diipb[face_id][0];
-          double diipby = diipb[face_id][1];
-          double diipbz = diipb[face_id][2];
+        cs_lnum_t ii = b_face_cells[face_id];
+        double diipbx = diipb[face_id][0];
+        double diipby = diipb[face_id][1];
+        double diipbz = diipb[face_id][2];
 
-          /* Terms along U, V, W */
-          for (int isou = 0; isou < 3; isou++) {
+        /* Terms along U, V, W */
+        for (int isou = 0; isou < 3; isou++) {
 
-            double pfac = inc*coefaq[face_id][isou];
+          double pfac = inc*coefaq[face_id][isou];
 
-            /* coefu is a matrix */
-            for (int jsou = 0; jsou < 3; jsou++) {
+          /* coefu is a matrix */
+          for (int jsou = 0; jsou < 3; jsou++) {
 
-              double pip = f_momentum[face_id][jsou]
-                + grdqdm[ii][jsou][0]*diipbx
-                + grdqdm[ii][jsou][1]*diipby
-                + grdqdm[ii][jsou][2]*diipbz;
+            double pip = f_momentum[face_id][jsou]
+              + grdqdm[ii][jsou][0]*diipbx
+              + grdqdm[ii][jsou][1]*diipby
+              + grdqdm[ii][jsou][2]*diipbz;
 
-              pfac += coefbv[face_id][jsou][isou]*pip;
-
-            }
-
-            pfac *= b_f_face_factor[is_p*face_id];
-
-            b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
+            pfac += coefbv[face_id][jsou][isou]*pip;
 
           }
 
+          pfac *= b_f_face_factor[is_p*face_id];
+
+          b_massflux[face_id] += pfac*b_f_face_normal[face_id][isou];
+
         }
+
       }
     }
-
 
     /* Deallocation */
     BFT_FREE(grdqdm);
@@ -959,7 +953,6 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
   const int n_b_threads = m->b_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
@@ -1239,28 +1232,26 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
 
     /* Boundary faces */
 
-    for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-            face_id++) {
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[t_id*2];
+           face_id < b_group_index[t_id*2 + 1];
+           face_id++) {
 
-          cs_real_6_t f_mass_var;
+        cs_real_6_t f_mass_var;
 
-          /* var_f = a + b * var_i */
-          for (int isou = 0; isou < 6; isou++)
-            f_mass_var[isou] = inc*coefaq[face_id][isou];
+        /* var_f = a + b * var_i */
+        for (int isou = 0; isou < 6; isou++)
+          f_mass_var[isou] = inc*coefaq[face_id][isou];
 
-          cs_math_66_6_product_add(coefbv[face_id],
-                                   b_mass_var[face_id],
-                                   f_mass_var);
+        cs_math_66_6_product_add(coefbv[face_id],
+                                 b_mass_var[face_id],
+                                 f_mass_var);
 
-          cs_math_sym_33_3_product_add(f_mass_var,
-                                       b_f_face_normal[face_id],
-                                       b_massflux[face_id]);
+        cs_math_sym_33_3_product_add(f_mass_var,
+                                     b_f_face_normal[face_id],
+                                     b_massflux[face_id]);
 
-        }
       }
     }
 
@@ -1329,40 +1320,36 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
 
     /* Mass flow through boundary faces */
 
-    for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-            face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-            face_id++) {
+#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[t_id*2];
+           face_id < b_group_index[t_id*2 + 1];
+           face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id];
+        cs_lnum_t ii = b_face_cells[face_id];
 
-          cs_real_6_t f_mass_var;
+        cs_real_6_t f_mass_var;
 
-          /* var_f = a + b * var_I' */
-          for (int isou = 0; isou < 6; isou++)
-            f_mass_var[isou] = inc*coefaq[face_id][isou];
+        /* var_f = a + b * var_I' */
+        for (int isou = 0; isou < 6; isou++)
+          f_mass_var[isou] = inc*coefaq[face_id][isou];
 
+        /* Add the reconstruction to get value in I' */
+        for (int jsou = 0; jsou < 6; jsou++)
+          b_mass_var[face_id][jsou] += c_grad_mvar[ii][jsou][0]*diipb[face_id][0]
+                                     + c_grad_mvar[ii][jsou][1]*diipb[face_id][1]
+                                     + c_grad_mvar[ii][jsou][2]*diipb[face_id][2];
 
-          /* Add the reconstruction to get value in I' */
-          for (int jsou = 0; jsou < 6; jsou++)
-              b_mass_var[face_id][jsou] += c_grad_mvar[ii][jsou][0]*diipb[face_id][0]
-                + c_grad_mvar[ii][jsou][1]*diipb[face_id][1]
-                + c_grad_mvar[ii][jsou][2]*diipb[face_id][2];
+        cs_math_66_6_product_add(coefbv[face_id],
+                                 b_mass_var[face_id],
+                                 f_mass_var);
 
-          cs_math_66_6_product_add(coefbv[face_id],
-                                   b_mass_var[face_id],
-                                   f_mass_var);
+        cs_math_sym_33_3_product_add(f_mass_var,
+                                     b_f_face_normal[face_id],
+                                     b_massflux[face_id]);
 
-          cs_math_sym_33_3_product_add(f_mass_var,
-                                       b_f_face_normal[face_id],
-                                       b_massflux[face_id]);
-
-        }
       }
     }
-
 
     /* Deallocation */
     BFT_FREE(c_grad_mvar);
@@ -1420,7 +1407,6 @@ cs_divergence(const cs_mesh_t          *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
   const int n_b_threads = m->b_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
@@ -1480,21 +1466,17 @@ cs_divergence(const cs_mesh_t          *m,
     3. Integration on border faces
     ==========================================================================*/
 
-  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+# pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+  for (int t_id = 0; t_id < n_b_threads; t_id++) {
+    for (cs_lnum_t face_id = b_group_index[t_id*2];
+         face_id < b_group_index[t_id*2 + 1];
+         face_id++) {
 
-#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-           face_id++) {
+      cs_lnum_t ii = b_face_cells[face_id];
+      diverg[ii] += b_massflux[face_id];
 
-        cs_lnum_t ii = b_face_cells[face_id];
-        diverg[ii] += b_massflux[face_id];
-
-      }
     }
-
-  } /* Loop on openMP groups */
+  }
 
 }
 
@@ -1527,7 +1509,6 @@ cs_tensor_divergence(const cs_mesh_t            *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
   const int n_b_threads = m->b_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
@@ -1589,19 +1570,17 @@ cs_tensor_divergence(const cs_mesh_t            *m,
     3. Integration on border faces
     ==========================================================================*/
 
-  for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-           face_id++) {
+# pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
+  for (int t_id = 0; t_id < n_b_threads; t_id++) {
+    for (cs_lnum_t face_id = b_group_index[t_id*2];
+         face_id < b_group_index[t_id*2 + 1];
+         face_id++) {
 
-        cs_lnum_t ii = b_face_cells[face_id];
-        for (int isou = 0; isou < 3; isou++) {
-          diverg[ii][isou] += b_massflux[face_id][isou];
-        }
-
+      cs_lnum_t ii = b_face_cells[face_id];
+      for (int isou = 0; isou < 3; isou++) {
+        diverg[ii][isou] += b_massflux[face_id][isou];
       }
+
     }
   }
 

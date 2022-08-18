@@ -569,7 +569,6 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
   const int n_b_threads = m->b_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
@@ -631,19 +630,17 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
 
   if (idiffp) {
 
-    for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for firstprivate(thetap, idiffp)        \
-                          if (m->n_b_faces > CS_THR_MIN)
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             face_id++) {
+#   pragma omp parallel for firstprivate(thetap, idiffp)        \
+                        if (m->n_b_faces > CS_THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[t_id*2];
+           face_id < b_group_index[t_id*2 + 1];
+           face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id];
+        cs_lnum_t ii = b_face_cells[face_id];
 
-          da[ii] += thetap*b_visc[face_id]*cofbfp[face_id];
+        da[ii] += thetap*b_visc[face_id]*cofbfp[face_id];
 
-        }
       }
     }
 
@@ -716,7 +713,6 @@ cs_matrix_scalar(const cs_mesh_t          *m,
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
   const int n_b_threads = m->b_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
@@ -787,26 +783,24 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
     /* 4. Contribution of border faces to the diagonal */
 
-    for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
-                          if (m->n_b_faces > CS_THR_MIN)
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             face_id++) {
+#   pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
+                        if (m->n_b_faces > CS_THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[t_id*2];
+           face_id < b_group_index[t_id*2 + 1];
+           face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id];
+        cs_lnum_t ii = b_face_cells[face_id];
 
-          double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
+        double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
 
-          /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
-           *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
-           *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
-           */
-          da[ii] += iconvp*(flui*thetap*(coefbp[face_id]-1.)
-                           -(1.-thetap)*b_massflux[face_id])
-                  + idiffp*thetap*b_visc[face_id]*cofbfp[face_id];
-        }
+        /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+         */
+        da[ii] += iconvp*(flui*thetap*(coefbp[face_id]-1.)
+                         -(1.-thetap)*b_massflux[face_id])
+                + idiffp*thetap*b_visc[face_id]*cofbfp[face_id];
       }
     }
 
@@ -859,26 +853,24 @@ cs_matrix_scalar(const cs_mesh_t          *m,
 
     /* 4. Contribution of boundary faces to the diagonal */
 
-    for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#     pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
-                 if (m->n_b_faces > CS_THR_MIN)
-      for (int t_id = 0; t_id < n_b_threads; t_id++) {
-        for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             face_id++) {
+#   pragma omp parallel for firstprivate(thetap, iconvp, idiffp) \
+                        if (m->n_b_faces > CS_THR_MIN)
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[t_id*2];
+           face_id < b_group_index[t_id*2 + 1];
+           face_id++) {
 
-          cs_lnum_t ii = b_face_cells[face_id];
+        cs_lnum_t ii = b_face_cells[face_id];
 
-          double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
+        double flui = 0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
 
-          /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
-           *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
-           *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
-           */
-          da[ii] += iconvp*xcpp[ii]*(flui*thetap*(coefbp[face_id]-1.)
-                                    -(1.-thetap)*b_massflux[face_id])
-                  + idiffp*thetap*b_visc[face_id]*cofbfp[face_id];
-        }
+        /* D_ii = theta (m_f)^+ + theta B (m_f)^- - m_f
+         *      = (theta B -1)*(m_f)^- - (1-theta)*(m_f)^+
+         *      = theta*(B -1)*(m_f)^- - (1-theta)*m_f
+         */
+        da[ii] += iconvp*xcpp[ii]*(flui*thetap*(coefbp[face_id]-1.)
+                                  -(1.-thetap)*b_massflux[face_id])
+                + idiffp*thetap*b_visc[face_id]*cofbfp[face_id];
       }
     }
 
@@ -1609,7 +1601,6 @@ cs_matrix_time_step(const cs_mesh_t          *m,
   const int n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
   const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_groups = m->b_face_numbering->n_groups;
   const int n_b_threads = m->b_face_numbering->n_threads;
   const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
@@ -1691,22 +1682,20 @@ cs_matrix_time_step(const cs_mesh_t          *m,
 
   /* 4. Contribution of border faces to the diagonal */
 
-  for (int g_id = 0; g_id < n_b_groups; g_id++) {
-#   pragma omp parallel for if (m->n_b_faces > CS_THR_MIN)
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-           face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-           face_id++) {
+# pragma omp parallel for if (m->n_b_faces > CS_THR_MIN)
+  for (int t_id = 0; t_id < n_b_threads; t_id++) {
+    for (cs_lnum_t face_id = b_group_index[t_id*2];
+         face_id < b_group_index[t_id*2 + 1];
+         face_id++) {
 
-        cs_lnum_t ii = b_face_cells[face_id];
+      cs_lnum_t ii = b_face_cells[face_id];
 
-        double flui =  0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
-        double fluj = -0.5*(b_massflux[face_id] + fabs(b_massflux[face_id]));
+      double flui =  0.5*(b_massflux[face_id] - fabs(b_massflux[face_id]));
+      double fluj = -0.5*(b_massflux[face_id] + fabs(b_massflux[face_id]));
 
-        da[ii] +=   iconvp*(-fluj + flui*coefbp[face_id])
-                  + idiffp*b_visc[face_id]*cofbfp[face_id];
+      da[ii] +=   iconvp*(-fluj + flui*coefbp[face_id])
+                + idiffp*b_visc[face_id]*cofbfp[face_id];
 
-      }
     }
   }
 }
