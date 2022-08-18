@@ -765,27 +765,12 @@ if test -f ${srcdir}/neptune_cfd/configure; then
   fi
 fi
 
-# Check if we need to force link with C++
-cs_have_link_cxx=no
-if test x$cs_have_neptune_cfd = xyes ; then
-  cs_have_link_cxx=yes
-elif test x$cs_have_accel = xyes; then
-  cs_have_link_cxx=yes
-elif test x$cs_have_med_link_cxx = xyes ; then
-  cs_have_link_cxx=yes
-elif test x$cs_have_medcoupling = xyes -o x$cs_have_paramedmem = xyes ; then
-  if test x$enable_shared = xno -o x$cs_have_plugin_medcoupling = xno ; then
-    cs_have_link_cxx=yes
-  fi
-elif test x$cs_have_eos = xyes ; then
-  cs_have_link_cxx=yes
-elif test x$cs_have_coolprop = xyes ; then
-  cs_have_link_cxx=yes
-elif test x$cs_have_catalyst = xyes ; then
-  if test x$enable_shared = xno -o x$cs_have_plugin_catalyst = xno ; then
-    cs_have_link_cxx=yes
-  fi
+# Check if we need to force preprocessor link with C++
+cs_pp_have_link_cxx=no
+if test x$cs_have_med_link_cxx = xyes ; then
+  cs_pp_have_link_cxx=yes
 fi
+
 if test x$user_CS_LD != "x" ; then
   CS_LD=$user_CS_LD
 elif test $cs_have_link_cxx = yes ; then
@@ -794,7 +779,7 @@ else
   CS_LD=$CC
 fi
 AC_SUBST(CS_LD)
-AM_CONDITIONAL(HAVE_LINK_CXX, test x$cs_have_link_cxx = xyes)
+AM_CONDITIONAL(HAVE_PP_LINK_CXX, test x$cs_pp_have_link_cxx = xyes)
 
 #------------------------------------------------------------------------------
 # Enables code_saturne front-end

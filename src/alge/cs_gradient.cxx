@@ -79,8 +79,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional Doxygen documentation
  *============================================================================*/
@@ -174,57 +172,9 @@ static int _gradient_stat_id = -1;
 static int                        _n_gradient_quantities = 0;
 static cs_gradient_quantities_t  *_gradient_quantities = NULL;
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
+/* Multithread assembly algorithm selection */
 
-void
-cs_f_gradient_s(int               f_id,
-                int               imrgra,
-                int               inc,
-                int               n_r_sweeps,
-                int               iwarnp,
-                int               imligp,
-                cs_real_t         epsrgp,
-                cs_real_t         climgp,
-                const cs_real_t   coefap[],
-                const cs_real_t   coefbp[],
-                cs_real_t         pvar[],
-                cs_real_3_t       grad[]);
-
-void
-cs_f_gradient_potential(int               f_id,
-                        int               imrgra,
-                        int               inc,
-                        int               n_r_sweeps,
-                        int               iphydp,
-                        int               iwarnp,
-                        int               imligp,
-                        cs_real_t         epsrgp,
-                        cs_real_t         climgp,
-                        cs_real_3_t       f_ext[],
-                        const cs_real_t   coefap[],
-                        const cs_real_t   coefbp[],
-                        cs_real_t         pvar[],
-                        cs_real_3_t       grad[]);
-
-void
-cs_f_gradient_weighted_s(int               f_id,
-                         int               imrgra,
-                         int               inc,
-                         int               n_r_sweeps,
-                         int               iphydp,
-                         int               iwarnp,
-                         int               imligp,
-                         cs_real_t         epsrgp,
-                         cs_real_t         climgp,
-                         cs_real_3_t       f_ext[],
-                         const cs_real_t   coefap[],
-                         const cs_real_t   coefbp[],
-                         cs_real_t         pvar[],
-                         cs_real_t         c_weight[],
-                         cs_real_3_t       grad[]);
+const cs_e2n_sum_t _e2n_sum_type = CS_E2N_SUM_STORE_THEN_GATHER;
 
 /*============================================================================
  * Private function definitions
@@ -1227,6 +1177,16 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
     coupled_faces = (const bool *)cpl->coupled_faces;
   }
 
+  const cs_real_t *c_weight_s = NULL;
+  const cs_real_6_t *c_weight_t = NULL;
+
+  if (c_weight != NULL) {
+    if (w_stride == 1)
+      c_weight_s = c_weight;
+    else if (w_stride == 6)
+      c_weight_t = (const cs_real_6_t *)c_weight;
+  }
+
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
@@ -1277,29 +1237,28 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
           cs_real_t ktpond = weight[f_id]; /* no cell weighting */
           /* if cell weighting is active */
-          if (w_stride == 1 && c_weight != NULL) {
-            ktpond = weight[f_id] * c_weight[ii]
-                      / (      weight[f_id] * c_weight[ii]
-                         + (1.0-weight[f_id])* c_weight[jj]);
+          if (c_weight_s != NULL) {
+            ktpond = weight[f_id] * c_weight_s[ii]
+                      / (       weight[f_id] * c_weight_s[ii]
+                         + (1.0-weight[f_id])* c_weight_s[jj]);
           }
-          else if (w_stride == 6 && c_weight != NULL) {
+          else if (c_weight_t != NULL) {
             cs_real_t sum[6];
             cs_real_t inv_sum[6];
 
-            const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t kk = 0; kk < 6; kk++)
-              sum[kk] = weight[f_id]*_c_weight[ii][kk]
-                 +(1.0-weight[f_id])*_c_weight[jj][kk];
+              sum[kk] = weight[f_id]*c_weight_t[ii][kk]
+                 +(1.0-weight[f_id])*c_weight_t[jj][kk];
 
             cs_math_sym_33_inv_cramer(sum, inv_sum);
 
             ktpond = weight[f_id] / 3.0
-                     * (  inv_sum[0]*_c_weight[ii][0]
-                        + inv_sum[1]*_c_weight[ii][1]
-                        + inv_sum[2]*_c_weight[ii][2]
-                        + 2.0 * (  inv_sum[3]*_c_weight[ii][3]
-                                 + inv_sum[4]*_c_weight[ii][4]
-                                 + inv_sum[5]*_c_weight[ii][5]));
+                     * (  inv_sum[0]*c_weight_t[ii][0]
+                        + inv_sum[1]*c_weight_t[ii][1]
+                        + inv_sum[2]*c_weight_t[ii][2]
+                        + 2.0 * (  inv_sum[3]*c_weight_t[ii][3]
+                                 + inv_sum[4]*c_weight_t[ii][4]
+                                 + inv_sum[5]*c_weight_t[ii][5]));
           }
 
           cs_real_2_t poro = {
@@ -1405,28 +1364,27 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
           cs_real_t ktpond = weight[f_id]; /* no cell weighting */
           /* if cell weighting is active */
           if (w_stride == 1 && c_weight != NULL) {
-            ktpond = weight[f_id] * c_weight[ii]
-                      / (      weight[f_id] * c_weight[ii]
-                         + (1.0-weight[f_id])* c_weight[jj]);
+            ktpond = weight[f_id] * c_weight_s[ii]
+                      / (      weight[f_id] * c_weight_s[ii]
+                         + (1.0-weight[f_id])* c_weight_s[jj]);
           }
           else if (w_stride == 6 && c_weight != NULL) {
             cs_real_t sum[6];
             cs_real_t inv_sum[6];
 
-            const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t kk = 0; kk < 6; kk++)
-              sum[kk] = weight[f_id]*_c_weight[ii][kk]
-                 +(1.0-weight[f_id])*_c_weight[jj][kk];
+              sum[kk] = weight[f_id]*c_weight_t[ii][kk]
+                 +(1.0-weight[f_id])*c_weight_t[jj][kk];
 
             cs_math_sym_33_inv_cramer(sum, inv_sum);
 
             ktpond =   weight[f_id] / 3.0
-                     * (  inv_sum[0]*_c_weight[ii][0]
-                        + inv_sum[1]*_c_weight[ii][1]
-                        + inv_sum[2]*_c_weight[ii][2]
-                        + 2.0*(  inv_sum[3]*_c_weight[ii][3]
-                               + inv_sum[4]*_c_weight[ii][4]
-                               + inv_sum[5]*_c_weight[ii][5]));
+                     * (  inv_sum[0]*c_weight_t[ii][0]
+                        + inv_sum[1]*c_weight_t[ii][1]
+                        + inv_sum[2]*c_weight_t[ii][2]
+                        + 2.0*(  inv_sum[3]*c_weight_t[ii][3]
+                               + inv_sum[4]*c_weight_t[ii][4]
+                               + inv_sum[5]*c_weight_t[ii][5]));
           }
 
           /*
@@ -1707,6 +1665,16 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     coupled_faces = (const bool *)cpl->coupled_faces;
   }
 
+  const cs_real_t *c_weight_s = NULL;
+  const cs_real_6_t *c_weight_t = NULL;
+
+  if (c_weight != NULL) {
+    if (w_stride == 1)
+      c_weight_s = c_weight;
+    else if (w_stride == 6)
+      c_weight_t = (const cs_real_6_t *)c_weight;
+  }
+
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
@@ -1781,29 +1749,28 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
             cs_real_t ktpond = weight[f_id]; /* no cell weighting */
             /* if cell weighting is active */
-            if (w_stride == 1 && c_weight != NULL) {
-              ktpond = weight[f_id] * c_weight[c_id1]
-                        / (       weight[f_id] * c_weight[c_id1]
-                           + (1.0-weight[f_id])* c_weight[c_id2]);
+            if (c_weight_s != NULL) {
+              ktpond = weight[f_id] * c_weight_s[c_id1]
+                        / (       weight[f_id] * c_weight_s[c_id1]
+                           + (1.0-weight[f_id])* c_weight_s[c_id2]);
             }
-            else if (w_stride == 6 && c_weight != NULL) {
+            else if (c_weight_t != NULL) {
               cs_real_t sum[6];
               cs_real_t inv_sum[6];
 
-              const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
               for (cs_lnum_t ii = 0; ii < 6; ii++)
-                sum[ii] =        weight[f_id]*_c_weight[c_id1][ii]
-                          + (1.0-weight[f_id])*_c_weight[c_id2][ii];
+                sum[ii] =        weight[f_id] *c_weight_t[c_id1][ii]
+                          + (1.0-weight[f_id])*c_weight_t[c_id2][ii];
 
               cs_math_sym_33_inv_cramer(sum, inv_sum);
 
               ktpond =   weight[f_id] / 3.0
-                       * (  inv_sum[0]*_c_weight[c_id1][0]
-                          + inv_sum[1]*_c_weight[c_id1][1]
-                          + inv_sum[2]*_c_weight[c_id1][2]
-                          + 2.0 * (  inv_sum[3]*_c_weight[c_id1][3]
-                                   + inv_sum[4]*_c_weight[c_id1][4]
-                                   + inv_sum[5]*_c_weight[c_id1][5]));
+                       * (  inv_sum[0]*c_weight_t[c_id1][0]
+                          + inv_sum[1]*c_weight_t[c_id1][1]
+                          + inv_sum[2]*c_weight_t[c_id1][2]
+                          + 2.0 * (  inv_sum[3]*c_weight_t[c_id1][3]
+                                   + inv_sum[4]*c_weight_t[c_id1][4]
+                                   + inv_sum[5]*c_weight_t[c_id1][5]));
             }
 
             cs_real_2_t poro = {
@@ -1941,29 +1908,28 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
             cs_real_t ktpond = weight[f_id]; /* no cell weighting */
             /* if cell weighting is active */
-            if (w_stride == 1 && c_weight != NULL) {
-              ktpond =   weight[f_id] * c_weight[c_id1]
-                       / (       weight[f_id] * c_weight[c_id1]
-                          + (1.0-weight[f_id])* c_weight[c_id2]);
+            if (c_weight_s != NULL) {
+              ktpond =   weight[f_id] * c_weight_s[c_id1]
+                       / (       weight[f_id] * c_weight_s[c_id1]
+                          + (1.0-weight[f_id])* c_weight_s[c_id2]);
             }
-            else if (w_stride == 6 && c_weight != NULL) {
+            else if (c_weight_t != NULL) {
               cs_real_t sum[6];
               cs_real_t inv_sum[6];
 
-              const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
               for (cs_lnum_t ii = 0; ii < 6; ii++)
-                sum[ii] = weight[f_id]*_c_weight[c_id1][ii]
-                   +(1.0-weight[f_id])*_c_weight[c_id2][ii];
+                sum[ii] = weight[f_id]*c_weight_t[c_id1][ii]
+                   +(1.0-weight[f_id])*c_weight_t[c_id2][ii];
 
               cs_math_sym_33_inv_cramer(sum, inv_sum);
 
               ktpond =   weight[f_id] / 3.0
-                       * (  inv_sum[0]*_c_weight[c_id1][0]
-                          + inv_sum[1]*_c_weight[c_id1][1]
-                          + inv_sum[2]*_c_weight[c_id1][2]
-                          + 2.0 * (  inv_sum[3]*_c_weight[c_id1][3]
-                                   + inv_sum[4]*_c_weight[c_id1][4]
-                                   + inv_sum[5]*_c_weight[c_id1][5]));
+                       * (  inv_sum[0]*c_weight_t[c_id1][0]
+                          + inv_sum[1]*c_weight_t[c_id1][1]
+                          + inv_sum[2]*c_weight_t[c_id1][2]
+                          + 2.0 * (  inv_sum[3]*c_weight_t[c_id1][3]
+                                   + inv_sum[4]*c_weight_t[c_id1][4]
+                                   + inv_sum[5]*c_weight_t[c_id1][5]));
             }
 
             pfaci += (1.0-ktpond) * (pvar[c_id2] - pvar[c_id1]);
@@ -2389,11 +2355,11 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
 
   if (accel) {
     cs_sync_h2d(*cocg);
-    *cocg = cs_get_device_ptr(*cocg);
+    *cocg = (cs_cocg_6_t *)cs_get_device_ptr(*cocg);
 
     if (cocgb != NULL) {
       cs_sync_h2d(*cocgb);
-      *cocgb = cs_get_device_ptr(*cocgb);
+      *cocgb = (cs_cocg_6_t *)cs_get_device_ptr(*cocgb);
     }
   }
 }
@@ -2788,6 +2754,9 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
  * Compute cell gradient by least-squares reconstruction with a volume force
  * generating a hydrostatic pressure component.
  *
+ * template parameters:
+ *   e2n           type of assembly algorithm used
+ *
  * parameters:
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
@@ -2800,12 +2769,13 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
- *   c_weight       <-- weighted gradient coefficient variable,
+ *   c_weight_s     <-- weighted gradient coefficient variable,
  *                      or NULL
  *   grad           --> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *----------------------------------------------------------------------------*/
 
+template <const cs_e2n_sum_t e2n>
 static void
 _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
                            const cs_mesh_quantities_t     *fvq,
@@ -2816,15 +2786,12 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
                            const cs_real_t                 coefap[],
                            const cs_real_t                 coefbp[],
                            const cs_real_t                 pvar[],
-                           const cs_real_t       *restrict c_weight,
+                           const cs_real_t       *restrict c_weight_s,
                            cs_real_3_t           *restrict grad)
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
   const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
   const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells
@@ -2912,14 +2879,19 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 
   /* Contribution from interior faces */
 
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+  if (e2n != CS_E2N_SUM_GATHER) {
 
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+    const cs_lnum_t n_i_faces = m->n_i_faces;
+    cs_real_3_t *f_ctb = NULL;
 
-      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-           f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-           f_id++) {
+    if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+      BFT_MALLOC(f_ctb, n_i_faces, cs_real_3_t);
+    }
+
+    if (c_weight_s != NULL) {  /* With cell weighting */
+
+#     pragma omp parallel for if(n_i_faces < CS_THR_MIN)
+      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
         cs_lnum_t ii = i_face_cells[f_id][0];
         cs_lnum_t jj = i_face_cells[f_id][1];
@@ -2927,9 +2899,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
         cs_real_2_t poro = {i_poro_duq_0[is_porous*f_id],
                             i_poro_duq_1[is_porous*f_id]};
 
-        cs_real_t pond = weight[f_id];
-
-        cs_real_t pfac, dc[3], fctb[4];
+        cs_real_t pfac, dc[3];
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
@@ -2945,32 +2915,166 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
                   - poro[1])
                 / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          fctb[ll] = dc[ll] * pfac;
+        cs_real_t pond = weight[f_id];
 
-        if (c_weight != NULL) {
-          cs_real_t denom = 1. / (  pond       *c_weight[ii]
-                                  + (1. - pond)*c_weight[jj]);
+        pfac /=   (  pond       *c_weight_s[ii]
+                   + (1. - pond)*c_weight_s[jj]);
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += c_weight[jj] * denom * fctb[ll];
+        if (e2n == CS_E2N_SUM_SCATTER) {
+          cs_real_t fctb[3];
 
           for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[jj][ll] += c_weight[ii] * denom * fctb[ll];
+            fctb[ll] = dc[ll] * pfac;
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhsv[ii][ll] += c_weight_s[jj] * fctb[ll];
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhsv[jj][ll] += c_weight_s[ii] * fctb[ll];
         }
-        else { // no cell weighting
+        else if (e2n == CS_E2N_SUM_SCATTER_ATOMIC) {
+          cs_real_t fctb[3];
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            fctb[ll] = dc[ll] * pfac;
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            #pragma omp atomic
+            rhsv[ii][ll] += c_weight_s[jj] * fctb[ll];
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            #pragma omp atomic
+            rhsv[jj][ll] += c_weight_s[ii] * fctb[ll];
+        }
+        else if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            f_ctb[f_id][ll] = dc[ll] * pfac;
+        }
+      }
+
+    }
+    else { /* Without cell weights */
+
+#     pragma omp parallel for if(n_i_faces < CS_THR_MIN)
+      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+        cs_lnum_t ii = i_face_cells[f_id][0];
+        cs_lnum_t jj = i_face_cells[f_id][1];
+
+        cs_real_2_t poro = {i_poro_duq_0[is_porous*f_id],
+                            i_poro_duq_1[is_porous*f_id]};
+
+        cs_real_t pfac, dc[3];
+
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+
+        pfac =   (  rhsv[jj][3] - rhsv[ii][3]
+                  + (cell_cen[ii][0] - i_face_cog[f_id][0]) * f_ext[ii][0]
+                  + (cell_cen[ii][1] - i_face_cog[f_id][1]) * f_ext[ii][1]
+                  + (cell_cen[ii][2] - i_face_cog[f_id][2]) * f_ext[ii][2]
+                  + poro[0]
+                  - (cell_cen[jj][0] - i_face_cog[f_id][0]) * f_ext[jj][0]
+                  - (cell_cen[jj][1] - i_face_cog[f_id][1]) * f_ext[jj][1]
+                  - (cell_cen[jj][2] - i_face_cog[f_id][2]) * f_ext[jj][2]
+                  - poro[1])
+                / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        if (e2n == CS_E2N_SUM_SCATTER) {
+          cs_real_t fctb[3];
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            fctb[ll] = dc[ll] * pfac;
+
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             rhsv[ii][ll] += fctb[ll];
 
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             rhsv[jj][ll] += fctb[ll];
         }
+        else if (e2n == CS_E2N_SUM_SCATTER_ATOMIC) {
+          cs_real_t fctb[3];
 
-      } /* loop on faces */
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            fctb[ll] = dc[ll] * pfac;
 
-    } /* loop on threads */
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            #pragma omp atomic
+            rhsv[ii][ll] += fctb[ll];
 
-  } /* loop on thread groups */
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            #pragma omp atomic
+            rhsv[jj][ll] += fctb[ll];
+        }
+        else if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            f_ctb[f_id][ll] = dc[ll] * pfac;
+        }
+      }
+
+    } /* End of loop on faces */
+
+    /* Assembly for 2-stage algorithm */
+
+    if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+
+      const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+      const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
+      const cs_lnum_t *c2c = ma->cell_cells;
+      const cs_lnum_t *c2f = ma->cell_i_faces;
+      if (c2f == NULL) {
+        cs_mesh_adjacencies_update_cell_i_faces();
+        c2f = ma->cell_i_faces;
+      }
+
+      if (c_weight_s == NULL) {
+
+#       pragma omp parallel for
+        for (cs_lnum_t c_id_0 = 0; c_id_0 < n_cells; c_id_0++) {
+
+          const cs_lnum_t s_id = c2c_idx[c_id_0];
+          const cs_lnum_t e_id = c2c_idx[c_id_0+1];
+
+          for (cs_lnum_t i = s_id; i < e_id; i++) {
+            const cs_lnum_t f_id = c2f[i];
+
+            for (cs_lnum_t ll = 0; ll < 3; ll++)
+              rhsv[c_id_0][ll] += f_ctb[f_id][ll];
+          }
+
+        }
+
+      }
+      else {
+
+#       pragma omp parallel for
+        for (cs_lnum_t c_id_0 = 0; c_id_0 < n_cells; c_id_0++) {
+
+          const cs_lnum_t s_id = c2c_idx[c_id_0];
+          const cs_lnum_t e_id = c2c_idx[c_id_0+1];
+
+          for (cs_lnum_t i = s_id; i < e_id; i++) {
+            const cs_lnum_t f_id = c2f[i];
+            const cs_real_t w = c_weight_s[c2c[i]];
+
+            for (cs_lnum_t ll = 0; ll < 3; ll++)
+              rhsv[c_id_0][ll] += (w * f_ctb[f_id][ll]);
+          }
+
+        }
+
+      }
+
+      BFT_FREE(f_ctb);
+
+    }  /* End of assembly for 2-stage algorithm */
+
+  } /* Test on e2n (template argument for algorithm type) */
+
+  else if (e2n == CS_E2N_SUM_GATHER) {
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: no implementation with ie2n == SUM_GATHER.", __func__);
+  }
 
   /* Contribution from extended neighborhood;
      We assume that the middle of the segment joining cell centers
@@ -3100,7 +3204,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
- *   c_weight       <-- weighted gradient coefficient variable,
+ *   c_weight_t     <-- weighted gradient coefficient variable,
  *                      or NULL
  *   grad           <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
@@ -3114,7 +3218,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
                          const cs_real_t                coefap[],
                          const cs_real_t                coefbp[],
                          const cs_real_t                pvar[],
-                         const cs_real_t                c_weight[restrict][6],
+                         const cs_real_t                c_weight_t[restrict][6],
                          cs_real_t                      grad[restrict][3])
 {
   const cs_lnum_t n_cells = m->n_cells;
@@ -3196,8 +3300,8 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
 
         /* cocg contribution */
 
-        _compute_ani_weighting_cocg(c_weight[ii],
-                                    c_weight[jj],
+        _compute_ani_weighting_cocg(c_weight_t[ii],
+                                    c_weight_t[jj],
                                     dc,
                                     pond,
                                     dc_i,
@@ -3225,8 +3329,8 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
         /* (P_j - P_i)*/
         cs_real_t p_diff = (rhsv[jj][3] - rhsv[ii][3]);
 
-        _compute_ani_weighting(c_weight[ii],
-                               c_weight[jj],
+        _compute_ani_weighting(c_weight_t[ii],
+                               c_weight_t[jj],
                                p_diff,
                                dc,
                                pond,
@@ -3242,9 +3346,9 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
 
   if (cpl != NULL) {
     cs_internal_coupling_lsq_cocg_weighted
-      (cpl, (const cs_real_t *)c_weight, cocg);
+      (cpl, (const cs_real_t *)c_weight_t, cocg);
     cs_internal_coupling_lsq_scalar_gradient
-      (cpl, (const cs_real_t *)c_weight, 6, rhsv);
+      (cpl, (const cs_real_t *)c_weight_t, 6, rhsv);
   }
 
   /* Contribution from boundary faces */
@@ -3410,6 +3514,16 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
     coupled_faces = (const bool *)cpl->coupled_faces;
   }
 
+  const cs_real_t *c_weight_s = NULL;
+  const cs_real_6_t *c_weight_t = NULL;
+
+  if (c_weight != NULL) {
+    if (w_stride == 1)
+      c_weight_s = c_weight;
+    else if (w_stride == 6)
+      c_weight_t = (const cs_real_6_t *)c_weight;
+  }
+
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
@@ -3462,28 +3576,27 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
           cs_real_t ktpond = weight[f_id]; /* no cell weighting */
           /* if cell weighting is active */
-          if (w_stride == 1 && c_weight != NULL) {
-            ktpond =   weight[f_id] * c_weight[c_id1]
-                     / (       weight[f_id] * c_weight[c_id1]
-                        + (1.0-weight[f_id])* c_weight[c_id2]);
+          if (c_weight_s != NULL) {
+            ktpond =   weight[f_id] * c_weight_s[c_id1]
+                     / (       weight[f_id] * c_weight_s[c_id1]
+                        + (1.0-weight[f_id])* c_weight_s[c_id2]);
           }
-          else if (w_stride == 6 && c_weight != NULL) {
+          else if (c_weight_t != NULL) {
             cs_real_t sum[6], inv_sum[6];
 
-            const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t ii = 0; ii < 6; ii++)
-              sum[ii] = weight[f_id]*_c_weight[c_id1][ii]
-                 +(1.0-weight[f_id])*_c_weight[c_id2][ii];
+              sum[ii] =       weight[f_id] *c_weight_t[c_id1][ii]
+                        +(1.0-weight[f_id])*c_weight_t[c_id2][ii];
 
             cs_math_sym_33_inv_cramer(sum, inv_sum);
 
             ktpond =   weight[f_id] / 3.0
-                     * (  inv_sum[0]*_c_weight[c_id1][0]
-                        + inv_sum[1]*_c_weight[c_id1][1]
-                        + inv_sum[2]*_c_weight[c_id1][2]
-                        + 2.0 * (  inv_sum[3]*_c_weight[c_id1][3]
-                                 + inv_sum[4]*_c_weight[c_id1][4]
-                                 + inv_sum[5]*_c_weight[c_id1][5]));
+                     * (  inv_sum[0]*c_weight_t[c_id1][0]
+                        + inv_sum[1]*c_weight_t[c_id1][1]
+                        + inv_sum[2]*c_weight_t[c_id1][2]
+                        + 2.0 * (  inv_sum[3]*c_weight_t[c_id1][3]
+                                 + inv_sum[4]*c_weight_t[c_id1][4]
+                                 + inv_sum[5]*c_weight_t[c_id1][5]));
           }
 
           cs_real_2_t poro = {
@@ -3612,28 +3725,27 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 
           cs_real_t ktpond = weight[f_id]; /* no cell weighting */
           /* if cell weighting is active */
-          if (w_stride == 1 && c_weight != NULL) {
-            ktpond =   weight[f_id] * c_weight[c_id1]
-                     / (      weight[f_id] * c_weight[c_id1]
-                        + (1.0-weight[f_id])* c_weight[c_id2]);
+          if (c_weight_s != NULL) {
+            ktpond =   weight[f_id] * c_weight_s[c_id1]
+                     / (       weight[f_id] *c_weight_s[c_id1]
+                        + (1.0-weight[f_id])*c_weight_s[c_id2]);
           }
-          else if (w_stride == 6 && c_weight != NULL) {
+          else if (c_weight_t != NULL) {
             cs_real_t sum[6], inv_sum[6];
 
-            const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t ii = 0; ii < 6; ii++)
-              sum[ii] =        weight[f_id]*_c_weight[c_id1][ii]
-                        + (1.0-weight[f_id])*_c_weight[c_id2][ii];
+              sum[ii] =        weight[f_id] *c_weight_t[c_id1][ii]
+                        + (1.0-weight[f_id])*c_weight_t[c_id2][ii];
 
             cs_math_sym_33_inv_cramer(sum, inv_sum);
 
             ktpond =   weight[f_id] / 3.0
-                     * (  inv_sum[0]*_c_weight[c_id1][0]
-                        + inv_sum[1]*_c_weight[c_id1][1]
-                        + inv_sum[2]*_c_weight[c_id1][2]
-                        + 2.0 * (  inv_sum[3]*_c_weight[c_id1][3]
-                                 + inv_sum[4]*_c_weight[c_id1][4]
-                                 + inv_sum[5]*_c_weight[c_id1][5]));
+                     * (  inv_sum[0]*c_weight_t[c_id1][0]
+                        + inv_sum[1]*c_weight_t[c_id1][1]
+                        + inv_sum[2]*c_weight_t[c_id1][2]
+                        + 2.0 * (  inv_sum[3]*c_weight_t[c_id1][3]
+                                 + inv_sum[4]*c_weight_t[c_id1][4]
+                                 + inv_sum[5]*c_weight_t[c_id1][5]));
           }
 
           /*
@@ -5286,7 +5398,7 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     c_id,
                           const int                     inc,
                           const cs_mesh_adjacencies_t  *madj,
                           const cs_mesh_quantities_t   *fvq,
-                          cs_lnum_t              _33_9_idx[const restrict 9][2],
+                          const cs_lnum_t              _33_9_idx[9][2],
                           const cs_real_3_t            *restrict pvar,
                           const cs_real_3_t            *restrict coefav,
                           const cs_real_33_t           *restrict coefbv,
@@ -5444,7 +5556,7 @@ _compute_cocgb_rhsb_lsq_t(cs_lnum_t                     c_id,
                           const int                     inc,
                           const cs_mesh_adjacencies_t  *madj,
                           const cs_mesh_quantities_t   *fvq,
-                          cs_lnum_t            _63_18_idx[const restrict 18][2],
+                          const cs_lnum_t               _63_18_idx[18][2],
                           const cs_real_6_t            *restrict pvar,
                           const cs_real_6_t            *restrict coefat,
                           const cs_real_66_t           *restrict coefbt,
@@ -6383,7 +6495,7 @@ _gradient_scalar(const char                    *var_name,
                  int                            hyd_p_flag,
                  int                            w_stride,
                  int                            verbosity,
-                 int                            clip_mode,
+                 cs_gradient_limit_t            clip_mode,
                  double                         epsilon,
                  double                         clip_coeff,
                  const cs_real_3_t             *f_ext,
@@ -6493,18 +6605,34 @@ _gradient_scalar(const char                    *var_name,
                                var,
                                (const cs_real_6_t *)c_weight,
                                grad);
-    else if (hyd_p_flag)
-      _lsq_scalar_gradient_hyd_p(mesh,
-                                 fvq,
-                                 halo_type,
-                                 recompute_cocg,
-                                 inc,
-                                 (const cs_real_3_t *)f_ext,
-                                 bc_coeff_a,
-                                 bc_coeff_b,
-                                 var,
-                                 c_weight,
-                                 grad);
+    else if (hyd_p_flag) {
+      if (cs_glob_n_threads == 1)
+        _lsq_scalar_gradient_hyd_p<CS_E2N_SUM_SCATTER>
+          (mesh,
+           fvq,
+           halo_type,
+           recompute_cocg,
+           inc,
+           (const cs_real_3_t *)f_ext,
+           bc_coeff_a,
+           bc_coeff_b,
+           var,
+           c_weight,
+           grad);
+      else
+        _lsq_scalar_gradient_hyd_p<_e2n_sum_type>
+          (mesh,
+           fvq,
+           halo_type,
+           recompute_cocg,
+           inc,
+           (const cs_real_3_t *)f_ext,
+           bc_coeff_a,
+           bc_coeff_b,
+           var,
+           c_weight,
+           grad);
+    }
 
     else
       _lsq_scalar_gradient(mesh,
@@ -6542,18 +6670,34 @@ _gradient_scalar(const char                    *var_name,
                                  var,
                                  (const cs_real_6_t *)c_weight,
                                  r_grad);
-      else if (hyd_p_flag)
-        _lsq_scalar_gradient_hyd_p(mesh,
-                                   fvq,
-                                   halo_type,
-                                   recompute_cocg,
-                                   inc,
-                                   f_ext,
-                                   bc_coeff_a,
-                                   bc_coeff_b,
-                                   var,
-                                   c_weight,
-                                   r_grad);
+      else if (hyd_p_flag) {
+        if (cs_glob_n_threads == 1)
+          _lsq_scalar_gradient_hyd_p<CS_E2N_SUM_SCATTER>
+            (mesh,
+             fvq,
+             halo_type,
+             recompute_cocg,
+             inc,
+             f_ext,
+             bc_coeff_a,
+             bc_coeff_b,
+             var,
+             c_weight,
+             r_grad);
+        else
+          _lsq_scalar_gradient_hyd_p<_e2n_sum_type>
+            (mesh,
+             fvq,
+             halo_type,
+             recompute_cocg,
+             inc,
+             f_ext,
+             bc_coeff_a,
+             bc_coeff_b,
+             var,
+             c_weight,
+             r_grad);
+      }
 
       else
         _lsq_scalar_gradient(mesh,
@@ -7411,6 +7555,60 @@ _gradient_tensor(const char                *var_name,
   BFT_FREE(_bc_coeff_b);
 }
 
+BEGIN_C_DECLS
+
+/*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_gradient_s(int               f_id,
+                int               imrgra,
+                int               inc,
+                int               n_r_sweeps,
+                int               iwarnp,
+                int               imligp,
+                cs_real_t         epsrgp,
+                cs_real_t         climgp,
+                const cs_real_t   coefap[],
+                const cs_real_t   coefbp[],
+                cs_real_t         pvar[],
+                cs_real_3_t       grad[]);
+
+void
+cs_f_gradient_potential(int               f_id,
+                        int               imrgra,
+                        int               inc,
+                        int               n_r_sweeps,
+                        int               iphydp,
+                        int               iwarnp,
+                        int               imligp,
+                        cs_real_t         epsrgp,
+                        cs_real_t         climgp,
+                        cs_real_3_t       f_ext[],
+                        const cs_real_t   coefap[],
+                        const cs_real_t   coefbp[],
+                        cs_real_t         pvar[],
+                        cs_real_3_t       grad[]);
+
+void
+cs_f_gradient_weighted_s(int               f_id,
+                         int               imrgra,
+                         int               inc,
+                         int               n_r_sweeps,
+                         int               iphydp,
+                         int               iwarnp,
+                         int               imligp,
+                         cs_real_t         epsrgp,
+                         cs_real_t         climgp,
+                         cs_real_3_t       f_ext[],
+                         const cs_real_t   coefap[],
+                         const cs_real_t   coefbp[],
+                         cs_real_t         pvar[],
+                         cs_real_t         c_weight[],
+                         cs_real_3_t       grad[]);
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -7475,7 +7673,7 @@ cs_f_gradient_s(int               f_id,
                      0,             /* iphydp */
                      1,             /* w_stride */
                      iwarnp,
-                     imligp,
+                     (cs_gradient_limit_t)imligp,
                      epsrgp,
                      climgp,
                      NULL,          /* f_ext */
@@ -7548,7 +7746,7 @@ cs_f_gradient_potential(int               f_id,
                      iphydp,
                      1,             /* w_stride */
                      iwarnp,
-                     imligp,
+                     (cs_gradient_limit_t)imligp,
                      epsrgp,
                      climgp,
                      f_ext,
@@ -7622,7 +7820,7 @@ cs_f_gradient_weighted_s(int               f_id,
                      iphydp,
                      1,             /* w_stride */
                      iwarnp,
-                     imligp,
+                     (cs_gradient_limit_t)imligp,
                      epsrgp,
                      climgp,
                      f_ext,
@@ -7708,7 +7906,7 @@ void CS_PROCF (cgdvec, CGDVEC)
                      *inc,
                      *n_r_sweeps,
                      *iwarnp,
-                     *imligp,
+                     (cs_gradient_limit_t)(*imligp),
                      *epsrgp,
                      *climgp,
                      coefav,

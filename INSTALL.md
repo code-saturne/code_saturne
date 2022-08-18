@@ -161,9 +161,9 @@ Using the `setup` file
 As already mentioned, this file is generated the first time the script is
 run in a given directory.
 
-The C, Fortran, and optional C++ compilers to be used can be specified next
-to the CompC and CompF keywords. The Python interpreter and MPI C and
-C++ compiler wrappers can also be specified.
+The C, Fortran, and C++ compilers to be used can be specified next
+to the `compC`, `compCxx`, and `compF` keywords. The Python interpreter and
+MPI C and C++ compiler wrappers can also be specified.
 
 If the *use_arch* variable is set to *yes*, then the *arch* keyword refers
 to the architecture of the machine. If left blank, the name will

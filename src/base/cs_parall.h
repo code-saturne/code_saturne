@@ -37,6 +37,35 @@
 
 BEGIN_C_DECLS
 
+/*============================================================================
+ * General types and macros used throughout code_saturne
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Variable value type.
+ *----------------------------------------------------------------------------*/
+
+/*! Algorithm classes for indirect sums from a graph's edges to its nodes,
+  such as face-to cell sums. */
+
+typedef enum {
+
+  CS_E2N_SUM_SCATTER,           /*!< Iterate on edges and scatter values to
+                                  nodes, assuming no data races
+                                  (serial / single thread mode). */
+  CS_E2N_SUM_SCATTER_ATOMIC,    /*!< Iterate on edges and scatter values to
+                                  nodes, using atomic sums. */
+  CS_E2N_SUM_GATHER,            /*!< Iterate on nodes and gather (indexed)
+                                  edge values */
+  CS_E2N_SUM_STORE_THEN_GATHER  /*!< 2-step algorithm:
+                                  - Iterate on edges for most compute-intensive
+                                    operations, and store on temporary array.
+                                    the results in a matching array, then
+                                  - Iterate on nodes to gather (indexed)
+                                    intermediate edge values. */
+
+} cs_e2n_sum_t;
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

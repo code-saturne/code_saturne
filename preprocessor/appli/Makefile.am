@@ -60,7 +60,7 @@ AM_LDFLAGS = $(ORIGINRUNPATH) $(PLUGINRUNPATH)
 
 pkglibexec_PROGRAMS = cs_preprocess
 
-if HAVE_LINK_CXX
+if HAVE_PP_LINK_CXX
 # Dummy C++ source to cause C++ linking.
 nodist_EXTRA_cs_preprocess_SOURCES = dummy.cxx
 cs_preprocess_LINK = $(CXXLINK)

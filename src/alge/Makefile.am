@@ -42,6 +42,7 @@ $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS) $(BLAS_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)
+AM_CXXFLAGS = $(CXXFLAGS_STD) $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) $(CXXFLAGS_SHARED)
 
 AM_LDFLAGS =
 
@@ -164,7 +165,7 @@ cs_cell_to_vertex.c \
 cs_convection_diffusion.c \
 cs_divergence.c \
 cs_face_viscosity.c \
-cs_gradient.c \
+cs_gradient.cxx \
 cs_grid.c \
 cs_matrix.c \
 cs_matrix_assembler.c \
