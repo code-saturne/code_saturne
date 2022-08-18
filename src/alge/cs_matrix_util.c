@@ -2029,7 +2029,7 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
   cs_lnum_t  db_size = 3, db_size_2 = 3*3;
   cs_lnum_t  eb_size = 1;
 
-  const int n_tests = 7;
+  const int n_tests = 6;
   const char *name[] = {"matrix_native",
                         "matrix_native_sym",
                         "matrix_native_block",
