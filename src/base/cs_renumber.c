@@ -164,10 +164,10 @@ BEGIN_C_DECLS
   \var CS_RENUMBER_B_FACES_THREAD
        Renumber for threads, with one block per thread, and no cell
        referenced by faces in different threads blocks.
-  \var CS_RENUMBER_I_FACES_SIMD
+  \var CS_RENUMBER_B_FACES_SIMD
        Renumber to allow SIMD operations in boundary face->cell gather
        operations.
-  \var CS_RENUMBER_I_FACES_NONE
+  \var CS_RENUMBER_B_FACES_NONE
        No interior face renumbering.
 
   \enum cs_renumber_vertices_type_t
