@@ -100,7 +100,7 @@ integer          ii, jj, iok, iok1, iok2, iisct, idfm, iggafm, iebdfm
 integer          nn, isou, iz
 integer          mbrom, ifcvsl, iscacp
 integer          idftnp
-integer          iprev , inc, iccocg
+integer          iprev , inc
 integer          kturt, turb_flux_model, turb_flux_model_type
 
 double precision xk, xe, xrom, vismax(nscamx), vismin(nscamx)
@@ -423,9 +423,8 @@ elseif (itytur.eq.3) then
     ! Compute the gradient of Alpha
     iprev  = 1
     inc    = 1
-    iccocg = 1
 
-    call field_gradient_scalar(ivarfl(ial), iprev, 0, inc, iccocg, grad)
+    call field_gradient_scalar(ivarfl(ial), iprev, inc, grad)
   endif
 
   do iel = 1, ncel

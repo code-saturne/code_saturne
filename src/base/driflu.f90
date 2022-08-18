@@ -87,7 +87,7 @@ double precision divflu(ncelet)
 
 integer          ivar
 integer          ifac  , iel
-integer          init  , inc   , iccocg
+integer          init  , inc
 integer          ifcvsl, iflmas, iflmab
 integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, imvisp
@@ -382,7 +382,6 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     iphydp = 0
     inc    = 1
-    iccocg = 1
     imrgrp = vcopt%imrgra
     nswrgp = vcopt%nswrgr
     imligp = vcopt%imligr
@@ -420,7 +419,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     ! The computed convective flux has the dimension of rho*velocity
     call itrmas &
-   ( f_id0  , init , inc , imrgrp , iccocg , nswrgp , imligp , iphydp ,      &
+   ( f_id0  , init , inc , imrgrp , nswrgp , imligp , iphydp ,               &
      0      , iwarnp ,                                                       &
      epsrgp , climgp , extrap ,                                              &
      rvoid  ,                                                                &

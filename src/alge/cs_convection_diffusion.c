@@ -268,13 +268,11 @@ _beta_limiter_denom(const int              f_id,
     cs_field_gradient_scalar(f,
                              false, /* use_previous_t */
                              inc,
-                             true, /* _recompute_cocg */
                              grdpa);
 
     cs_field_gradient_scalar(f,
                              true, /* use_previous_t */
                              inc,
-                             true, /* _recompute_cocg */
                              grdpaa);
 
   }
@@ -615,7 +613,6 @@ void CS_PROCF (itrmas, ITRMAS)
  const int       *const   init,
  const int       *const   inc,
  const int       *const   imrgra,
- const int       *const   iccocg,
  const int       *const   nswrgp,
  const int       *const   imligp,
  const int       *const   iphydp,
@@ -648,7 +645,6 @@ void CS_PROCF (itrmas, ITRMAS)
                               *init,
                               *inc,
                               *imrgra,
-                              *iccocg,
                               *nswrgp,
                               *imligp,
                               *iphydp,
@@ -679,7 +675,6 @@ void CS_PROCF (itrmav, ITRMAV)
  const int       *const   init,
  const int       *const   inc,
  const int       *const   imrgra,
- const int       *const   iccocg,
  const int       *const   nswrgp,
  const int       *const   imligp,
  const int       *const   ircflp,
@@ -715,7 +710,6 @@ void CS_PROCF (itrmav, ITRMAV)
                                           *init,
                                           *inc,
                                           *imrgra,
-                                          *iccocg,
                                           *nswrgp,
                                           *imligp,
                                           *ircflp,
@@ -749,7 +743,6 @@ void CS_PROCF (itrgrp, ITRGRP)
  const int       *const   init,
  const int       *const   inc,
  const int       *const   imrgra,
- const int       *const   iccocg,
  const int       *const   nswrgp,
  const int       *const   imligp,
  const int       *const   iphydp,
@@ -781,7 +774,6 @@ void CS_PROCF (itrgrp, ITRGRP)
                          *init,
                          *inc,
                          *imrgra,
-                         *iccocg,
                          *nswrgp,
                          *imligp,
                          *iphydp,
@@ -811,7 +803,6 @@ void CS_PROCF (itrgrv, ITRGRV)
  const int       *const   init,
  const int       *const   inc,
  const int       *const   imrgra,
- const int       *const   iccocg,
  const int       *const   nswrgp,
  const int       *const   imligp,
  const int       *const   ircflp,
@@ -846,7 +837,6 @@ void CS_PROCF (itrgrv, ITRGRV)
                                      *init,
                                      *inc,
                                      *imrgra,
-                                     *iccocg,
                                      *nswrgp,
                                      *imligp,
                                      *ircflp,
@@ -1714,10 +1704,6 @@ cs_beta_limiter_building(int              f_id,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
- *                                   (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
@@ -1748,7 +1734,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                const cs_var_cal_opt_t    var_cal_opt,
                                int                       icvflb,
                                int                       inc,
-                               int                       iccocg,
                                int                       imasac,
                                cs_real_t       *restrict pvar,
                                const cs_real_t *restrict pvara,
@@ -1821,8 +1806,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   int iupwin = 0;
   int w_stride = 1;
-
-  bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_t *coface = NULL, *cofbce = NULL;
 
@@ -1983,7 +1966,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    recompute_cocg,
                                     nswrgp,
                                     0, /* hyd_p_flag */
                                     w_stride,
@@ -3147,10 +3129,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
- *                                   (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
@@ -3174,7 +3152,6 @@ cs_face_convection_scalar(int                       idtvar,
                           const cs_var_cal_opt_t    var_cal_opt,
                           int                       icvflb,
                           int                       inc,
-                          int                       iccocg,
                           int                       imasac,
                           cs_real_t       *restrict pvar,
                           const cs_real_t *restrict pvara,
@@ -3243,8 +3220,6 @@ cs_face_convection_scalar(int                       idtvar,
 
   int iupwin = 0;
   int w_stride = 1;
-
-  bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_t *coface = NULL, *cofbce = NULL;
 
@@ -3393,7 +3368,6 @@ cs_face_convection_scalar(int                       idtvar,
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    recompute_cocg,
                                     nswrgp,
                                     0, /* hyd_p_flag */
                                     w_stride,
@@ -6886,10 +6860,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
- *                                 (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
@@ -6917,7 +6887,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                 int                       f_id,
                                 const cs_var_cal_opt_t    var_cal_opt,
                                 int                       inc,
-                                int                       iccocg,
                                 int                       imasac,
                                 cs_real_t       *restrict pvar,
                                 const cs_real_t *restrict pvara,
@@ -6991,8 +6960,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
   cs_gnum_t n_upwind;
   int iupwin;
   int w_stride = 1;
-
-  bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_3_t *grad;
   cs_real_3_t *gradup = NULL;
@@ -7143,7 +7110,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    recompute_cocg,
                                     nswrgp,
                                     0, /* hyd_p_flag */
                                     w_stride,
@@ -8215,10 +8181,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
-                                (for iterativ gradients)
- *                               - 0 otherwise
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     coefap        boundary condition array for the variable
@@ -8247,7 +8209,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                                 int                       f_id,
                                 const cs_var_cal_opt_t    var_cal_opt,
                                 int                       inc,
-                                int                       iccocg,
                                 cs_real_t       *restrict pvar,
                                 const cs_real_t *restrict pvara,
                                 const cs_real_t           coefap[],
@@ -8306,8 +8267,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   char var_name[64];
 
   int w_stride = 1;
-
-  bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
@@ -8456,7 +8415,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    recompute_cocg,
                                     nswrgp,
                                     0, /* hyd_p_flag */
                                     w_stride,
@@ -10810,10 +10768,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
  *                               - 1 least squares gradient
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
- *                                 (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -10856,7 +10810,6 @@ cs_face_diffusion_potential(const int                 f_id,
                             int                       init,
                             int                       inc,
                             int                       imrgra,
-                            int                       iccocg,
                             int                       nswrgp,
                             int                       imligp,
                             int                       iphydp,
@@ -10901,8 +10854,6 @@ cs_face_diffusion_potential(const int                 f_id,
 
   char var_name[64];
   int w_stride = 1;
-
-  bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_3_t *grad;
   cs_field_t *f;
@@ -11038,7 +10989,6 @@ cs_face_diffusion_potential(const int                 f_id,
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    recompute_cocg,
                                     nswrgp,
                                     iphydp,
                                     w_stride,
@@ -11145,10 +11095,6 @@ cs_face_diffusion_potential(const int                 f_id,
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
  *                               - 1 least squares gradient
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
-                                    (for iterativ gradients)
- *                               - 0 otherwise
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -11200,7 +11146,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
                                         int                       init,
                                         int                       inc,
                                         int                       imrgra,
-                                        int                       iccocg,
                                         int                       nswrgp,
                                         int                       imligp,
                                         int                       ircflp,
@@ -11255,8 +11200,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
 
   char var_name[64];
   int w_stride = 6;
-
-  bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
@@ -11451,7 +11394,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    recompute_cocg,
                                     nswrgp,
                                     iphydp,
                                     w_stride,
@@ -11635,10 +11577,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
  *                               - 1 least squares gradient
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
- *                                 (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -11680,7 +11618,6 @@ cs_diffusion_potential(const int                 f_id,
                        int                       init,
                        int                       inc,
                        int                       imrgra,
-                       int                       iccocg,
                        int                       nswrgp,
                        int                       imligp,
                        int                       iphydp,
@@ -11727,8 +11664,6 @@ cs_diffusion_potential(const int                 f_id,
   char var_name[64];
   int mass_flux_rec_type = cs_glob_velocity_pressure_param->irecmf;
   int w_stride = 1;
-
-  bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_3_t *grad;
   cs_field_t *f;
@@ -11875,7 +11810,6 @@ cs_diffusion_potential(const int                 f_id,
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    recompute_cocg,
                                     nswrgp,
                                     iphydp,
                                     w_stride,
@@ -11999,10 +11933,6 @@ cs_diffusion_potential(const int                 f_id,
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
  *                               - 1 least squares gradient
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
-                                     (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -12053,7 +11983,6 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                                    int                       init,
                                    int                       inc,
                                    int                       imrgra,
-                                   int                       iccocg,
                                    int                       nswrgp,
                                    int                       imligp,
                                    int                       ircflp,
@@ -12106,8 +12035,6 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
 
   char var_name[64];
   int w_stride = 6;
-
-  bool recompute_cocg = (iccocg) ? true : false;
 
   cs_real_6_t *viscce = NULL;
   cs_real_6_t *w2 = NULL;
@@ -12308,7 +12235,6 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                                     gradient_type,
                                     halo_type,
                                     inc,
-                                    recompute_cocg,
                                     nswrgp,
                                     iphydp,
                                     w_stride,

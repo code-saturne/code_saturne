@@ -170,7 +170,7 @@ double precision da_uu (6, ncelet)
 ! Local variables
 
 integer          f_id  , iel   , ielpdc, ifac  , isou  , itypfl, n_fans
-integer          iccocg, inc   , iprev , init  , ii    , jj
+integer          inc   , iprev , init  , ii    , jj
 integer          imrgrp, nswrgp, imligp, iwarnp
 integer          idftnp
 integer          nswrsp, imvisp
@@ -499,7 +499,6 @@ else
   cpro_gradp => grad
 endif
 
-iccocg = 1
 inc    = 1
 
 ! Take the latest pressure field
@@ -564,8 +563,8 @@ call grdpor(inc)
 
 ! Pressure gradient
 if (iprcdo.eq.0) then
-  call field_gradient_potential(ivarfl(ipr), iprev, 0, inc,         &
-                                iccocg, iphydr,                     &
+  call field_gradient_potential(ivarfl(ipr), iprev, inc,      &
+                                iphydr,                       &
                                 frcxt, cpro_gradp)
 endif
 
@@ -769,11 +768,10 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   ! Allocate a work array for the gradient calculation
   allocate(grad(3,ncelet))
 
-  iccocg = 1
   iprev  = 1
   inc    = 1
 
-  call field_gradient_scalar(ivarfl(ik), iprev, 0, inc, iccocg, grad)
+  call field_gradient_scalar(ivarfl(ik), iprev, inc, grad)
 
   d2s3 = 2.d0/3.d0
 

@@ -502,7 +502,6 @@ _smoothe(const cs_mesh_t              *m,
                      gradient_type,
                      halo_type,
                      1,     /* inc */
-                     true,  /* iccocg */
                      eqp_volf->nswrgr,
                      0,
                      0,
@@ -1008,7 +1007,6 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      gradient_type,
                      halo_type,
                      1,     /* inc */
-                     true,  /* iccocg */
                      eqp_volf->nswrgr,
                      0,
                      0,
@@ -1175,7 +1173,6 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
   cs_field_gradient_scalar(CS_F_(void_f),
                            true,           // use_previous_t
                            1,              // inc
-                           true,           // _recompute_cocg
                            voidf_grad);
 
   /* Stabilization factor */

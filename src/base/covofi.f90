@@ -150,7 +150,7 @@ logical          lprev
 character(len=80) :: chaine, fname
 integer          ivar
 integer          ii, ifac , iel, isou
-integer          iprev , inc   , iccocg, ibcl
+integer          iprev , inc   , ibcl
 integer          ivarsc
 integer          iiscav, iscacp
 integer          ifcvsl, iflmas, iflmab, f_oi_id
@@ -815,7 +815,6 @@ if (itspdv.eq.1) then
 
     iprev = 1
     inc = 1
-    iccocg = 1
 
     ! Homogeneous Neumann on convective inlet on the production term for the
     ! variance
@@ -843,7 +842,7 @@ if (itspdv.eq.1) then
     climgp = vcopt_varsc%climgr
 
     call gradient_s                                                          &
-     ( ivarfl(ivarsc)  , imrgrp , inc    , iccocg , nswrgp , imligp ,        &
+     ( ivarfl(ivarsc)  , imrgrp , inc    , nswrgp , imligp ,                 &
        iwarnp          , epsrgp , climgp ,                                   &
        cvara_varsca    , coefa_p, coefb_p,                                   &
        grad )

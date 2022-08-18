@@ -114,7 +114,7 @@ double precision, pointer, dimension(:)   :: dt
 
 ! Local variables
 
-integer iccocg, inc   , iel, isou, init
+integer inc   , iel, isou, init
 integer imrgrp, nswrgp, imligp, iwarnp
 integer imucpp, ircflp, isweep, isym, lchain
 integer ndircp, niterf, nswmpr
@@ -345,7 +345,6 @@ enddo
 
 relaxp = vcopt_p%relaxv ! relaxation for loop over isweep
 isweep = 1 ! counter for non-orthogonalities
-iccocg = 1 ! no calculation of cocg. What does it mean?
 init = 1 ! it is an initialization of the residue
 inc  = 1 ! 0 increment, 1 otherwise
 imrgrp = vcopt_p%imrgra
@@ -361,7 +360,7 @@ extrap = 0
 if (darcy_anisotropic_permeability.eq.0) then
 
   call itrgrp &
-( ivarfl(ipr), init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr , &
+( ivarfl(ipr), init   , inc    , imrgrp , nswrgp , imligp , iphydr ,          &
   iwgrp  , iwarnp ,                                                           &
   epsrgp , climgp , extrap ,                                                  &
   rvoid  ,                                                                    &
@@ -375,16 +374,16 @@ if (darcy_anisotropic_permeability.eq.0) then
 else if (darcy_anisotropic_permeability.eq.1) then
 
   call itrgrv &
-( ivarfl(ipr), init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp ,        &
-  iphydr , iwgrp  , iwarnp ,                                                         &
-  epsrgp , climgp , extrap ,                                                         &
-  rvoid  ,                                                                           &
-  cvar_pr   ,                                                                        &
-  coefa_p  , coefb_p  ,                                                              &
-  coefaf_p , coefbf_p ,                                                              &
-  viscf  , viscb  ,                                                                  &
-  cpro_permeability_6 ,                                                              &
-  weighf , weighb ,                                                                  &
+( ivarfl(ipr), init   , inc    , imrgrp , nswrgp , imligp , ircflp ,          &
+  iphydr , iwgrp  , iwarnp ,                                                  &
+  epsrgp , climgp , extrap ,                                                  &
+  rvoid  ,                                                                    &
+  cvar_pr   ,                                                                 &
+  coefa_p  , coefb_p  ,                                                       &
+  coefaf_p , coefbf_p ,                                                       &
+  viscf  , viscb  ,                                                           &
+  cpro_permeability_6 ,                                                       &
+  weighf , weighb ,                                                           &
   rhs   )
 
 endif
@@ -474,14 +473,13 @@ do while ( (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) &
     enddo
   endif
 
-  iccocg = 1
   init = 1
   inc  = 1
 
   if (darcy_anisotropic_permeability.eq.0) then
 
     call itrgrp &
-  ( ivarfl(ipr), init  , inc , imrgrp , iccocg , nswrgp , imligp , iphydr ,  &
+  ( ivarfl(ipr), init  , inc , imrgrp , nswrgp , imligp , iphydr ,           &
     iwgrp  , iwarnp ,                                                        &
     epsrgp , climgp , extrap ,                                               &
     rvoid  ,                                                                 &
@@ -495,7 +493,7 @@ do while ( (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) &
   else if (darcy_anisotropic_permeability.eq.1) then
 
     call itrgrv &
-    ( ivarfl(ipr), init, inc, imrgrp, iccocg, nswrgp, imligp, ircflp,        &
+    ( ivarfl(ipr), init, inc, imrgrp, nswrgp, imligp, ircflp,                &
       iphydr, iwgrp, iwarnp, epsrgp , climgp, extrap, rvoid,                 &
       cvar_pr, coefa_p, coefb_p, coefaf_p, coefbf_p,                         &
       viscf, viscb,                                                          &
@@ -553,7 +551,6 @@ deallocate(dam, xam, rhs)
 ! 3. Updating of mass fluxes
 !===============================================================================
 
-iccocg = 1
 init = 1
 inc = 1
 imrgrp = vcopt_p%imrgra
@@ -571,7 +568,7 @@ extrap = 0
 if (darcy_anisotropic_permeability.eq.0) then
 
   call itrmas &
- ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr , &
+ ( f_id0  , init   , inc    , imrgrp , nswrgp , imligp , iphydr , &
    iwgrp  , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                     &
    rvoid  ,                                                       &
@@ -583,26 +580,25 @@ if (darcy_anisotropic_permeability.eq.0) then
 
   ! The last increment is not reconstructed to fullfill exactly the continuity
   ! equation (see theory guide).
-  iccocg = 0
   nswrgp = 0
   inc = 0
   init = 0
 
   call itrmas &
- ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
-   iwgrp  , iwarnp ,                                                           &
-   epsrgp , climgp , extrap ,                                                  &
-   rvoid  ,                                                                    &
-   dpvar  ,                                                                    &
-   coefa_p , coefb_p , coefaf_p , coefbf_p ,                                   &
-   viscf  , viscb  ,                                                           &
-   cpro_permeability,                                                          &
+ ( f_id0  , init   , inc    , imrgrp ,  nswrgp , imligp , iphydr ,       &
+   iwgrp  , iwarnp ,                                                     &
+   epsrgp , climgp , extrap ,                                            &
+   rvoid  ,                                                              &
+   dpvar  ,                                                              &
+   coefa_p , coefb_p , coefaf_p , coefbf_p ,                             &
+   viscf  , viscb  ,                                                     &
+   cpro_permeability,                                                    &
    imasfl , bmasfl )
 
 else if (darcy_anisotropic_permeability.eq.1) then
 
   call itrmav &
- ( f_id0, init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
+ ( f_id0, init   , inc    , imrgrp , nswrgp , imligp , ircflp ,          &
    iphydr , iwgrp  , iwarnp ,                                            &
    epsrgp , climgp , extrap ,                                            &
    rvoid  ,                                                              &
@@ -615,14 +611,13 @@ else if (darcy_anisotropic_permeability.eq.1) then
 
   ! The last increment is not reconstructed to fullfill exactly the continuity
   ! equation (see theory guide).
-  iccocg = 0
   nswrgp = 0
   inc = 0
   init = 0
   ircflp = 0
 
   call itrmav &
- ( f_id0, init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp ,  &
+ ( f_id0, init   , inc    , imrgrp , nswrgp , imligp , ircflp ,           &
    iphydr , iwgrp  , iwarnp ,                                             &
    epsrgp , climgp , extrap ,                                             &
    rvoid  ,                                                               &
@@ -650,7 +645,6 @@ if (irangp.ge.0.or.iperio.eq.1) then
   call synsca(cvar_pr)
 endif
 
-iccocg = 1
 inc = 1
 iprev  = 0
 
@@ -658,8 +652,7 @@ allocate(gradp(3,ncelet))
 
 ! We use gradient_scalar instead of potential because iphydr is
 ! not taken into account in case of Darcy calculation.
-call field_gradient_scalar(ivarfl(ipr), iprev, 0, inc,    &
-                           iccocg, gradp)
+call field_gradient_scalar(ivarfl(ipr), iprev, inc, gradp)
 
 ! Computation of velocity
 if (darcy_anisotropic_permeability.eq.1) then

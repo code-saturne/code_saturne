@@ -106,7 +106,7 @@ double precision vela  (3  ,ncelet)
 ! Local variables
 
 integer          ifac  , iel, ischcp, idftnp, ircflp
-integer          init  , inc   , iccocg, isstpp
+integer          init  , inc   , isstpp
 integer          imrgrp, nswrgp, imligp, iwarnp, iconvp, idiffp, imvisp
 integer          icvflb, f_id0
 integer          isou  , jsou
@@ -242,7 +242,6 @@ if (itsqdm.ne.0) then
 
   init   = 1
   inc    = 1
-  iccocg = 1
   iflmb0 = 1
   imrgrp = vcopt_u%imrgra
   nswrgp = vcopt_u%nswrgr
@@ -417,7 +416,6 @@ enddo
 init   = 1
 ! As mentioned above, for homogeneous Neumann
 inc    = 0
-iccocg = 1
 iflmb0 = 1
 ! Reconstruction is useless here
 nswrgp = 0 ! FIXME

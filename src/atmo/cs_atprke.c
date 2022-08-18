@@ -276,7 +276,6 @@ _dry_atmosphere(const cs_real_t  cromo[],
   cs_field_gradient_scalar(f_thm,
                            true, // use_previous_t
                            1,    // inc
-                           true, // iccocg
                            grad);
 
   /* Production and gravity terms
@@ -437,7 +436,6 @@ _humid_atmosphere(const cs_real_t  cromo[],
   cs_field_gradient_scalar(f_thm,
                            true, // use_previous_t
                            1,    // inc
-                           true, // iccocg
                            grad);
 
   /* Production and gravity terms
@@ -464,7 +462,6 @@ _humid_atmosphere(const cs_real_t  cromo[],
   cs_field_gradient_scalar(cs_field_by_name("ym_water"),
                            true, // use_previous_t
                            1,    // inc
-                           true, // iccocg
                            grad);
 
   /* Production and gravity terms

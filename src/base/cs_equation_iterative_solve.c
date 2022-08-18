@@ -251,7 +251,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  int isym, inc, isweep, niterf, iccocg, nswmod;
+  int isym, inc, isweep, niterf, nswmod;
   int lvar, imasac, key_sinfo_id;
   double residu, rnorm, ressol;
   double thetex, nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk;
@@ -365,7 +365,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /* If thetex = 0, no need to do more */
   if (fabs(thetex) > cs_math_epzero) {
     inc    = 1;
-    iccocg = 1;
 
     /* The added convective scalar mass flux is:
        (thetex*Y_\face-imasac*Y_\celli)*mf.
@@ -380,7 +379,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       imucpp,
                       imasac,
                       inc,
-                      iccocg,
                       var_cal_opt,
                       NULL, /* pvar == pvara */
                       pvara,
@@ -431,12 +429,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* Incrementation and rebuild of right hand side */
 
-  /* We entered with an explicit RHS based on PVARA.
-     If we initialize with PVAR with something else than PVARA
-     we must correc the RHS (this is the case when iterating on navsto) */
-
-  iccocg = 1;
-
   /* The added convective scalar mass flux is:
      (thetap*Y_\face-imasac*Y_\celli)*mf.
      When building the implicit part of the rhs, one
@@ -448,7 +440,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                     imucpp,
                     imasac,
                     inc,
-                    iccocg,
                     var_cal_opt,
                     pvar,
                     pvara,
@@ -618,7 +609,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                         imucpp,
                         imasac,
                         inc,
-                        iccocg,
                         var_cal_opt,
                         dpvar,
                         NULL, /* dpvara == dpvar */
@@ -713,8 +703,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     /* --- Update the right hand side And compute the new residual */
 
-    iccocg = 0;
-
     if (iswdyp <= 0) {
 #     pragma omp parallel for
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
@@ -756,7 +744,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       imucpp,
                       imasac,
                       inc,
-                      iccocg,
                       var_cal_opt,
                       pvar,
                       pvara,
@@ -854,7 +841,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       }
 
       inc  = 1;
-      iccocg = 1;
       imasac = 0; /* mass accumluation not taken into account */
 
       cs_face_convection_scalar(idtvar,
@@ -862,7 +848,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                 *var_cal_opt,
                                 icvflb,
                                 inc,
-                                iccocg,
                                 imasac,
                                 prev_s_pvar,
                                 pvara,
@@ -879,7 +864,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
          balance equation */
 
       inc  = 0;
-      iccocg = 0;
 
       cs_var_cal_opt_t var_cal_opt_loc;
       int k_id = cs_field_key_id("var_cal_opt");
@@ -893,7 +877,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                 var_cal_opt_loc,
                                 icvflb,
                                 inc,
-                                iccocg,
                                 imasac,
                                 dpvar,
                                 pvara,
@@ -929,7 +912,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       smbrp[iel] = smbini[iel] - rovsdt[iel]*dpvar[iel];
 
     inc    = 1;
-    iccocg = 1;
 
     /* Without relaxation even for a stationnary computation */
 
@@ -938,7 +920,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       imucpp,
                       imasac,
                       inc,
-                      iccocg,
                       var_cal_opt,
                       pvar,
                       pvara,

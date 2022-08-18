@@ -264,7 +264,6 @@ cs_rad_transfer_pun(int              iband,
   /* Radiative flux density Q */
 
   int inc = 1;
-  int iccocg = 1;
   int imligp =  -1;
   int iwarnp = cs_glob_rad_transfer_params->verbosity;
   cs_real_t epsrgp = 1e-08;
@@ -284,7 +283,6 @@ cs_rad_transfer_pun(int              iband,
                      gradient_type,
                      halo_type,
                      inc,
-                     iccocg,
                      nswrgp,
                      0,             /* ignored */
                      hyd_p_flag,

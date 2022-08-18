@@ -4915,7 +4915,6 @@ void CS_PROCF (itrmas, ITRMAS)
  const int       *const   init,
  const int       *const   inc,
  const int       *const   imrgra,
- const int       *const   iccocg,
  const int       *const   nswrgp,
  const int       *const   imligp,
  const int       *const   iphydp,
@@ -4947,7 +4946,6 @@ void CS_PROCF (itrmav, ITRMAV)
  const int       *const   init,
  const int       *const   inc,
  const int       *const   imrgra,
- const int       *const   iccocg,
  const int       *const   nswrgp,
  const int       *const   imligp,
  const int       *const   ircflp,
@@ -4982,7 +4980,6 @@ void CS_PROCF (itrgrp, ITRGRP)
  const int       *const   init,
  const int       *const   inc,
  const int       *const   imrgra,
- const int       *const   iccocg,
  const int       *const   nswrgp,
  const int       *const   imligp,
  const int       *const   iphydp,
@@ -5013,7 +5010,6 @@ void CS_PROCF (itrgrv, ITRGRV)
  const int       *const   init,
  const int       *const   inc,
  const int       *const   imrgra,
- const int       *const   iccocg,
  const int       *const   nswrgp,
  const int       *const   imligp,
  const int       *const   ircflp,
@@ -5233,10 +5229,6 @@ cs_beta_limiter_building(int              f_id,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
- *                                   (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
@@ -5267,7 +5259,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                const cs_var_cal_opt_t    var_cal_opt,
                                int                       icvflb,
                                int                       inc,
-                               int                       iccocg,
                                int                       imasac,
                                cs_real_t       *restrict pvar,
                                const cs_real_t *restrict pvara,
@@ -5302,10 +5293,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
- *                                   (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
@@ -5329,7 +5316,6 @@ cs_face_convection_scalar(int                       idtvar,
                           const cs_var_cal_opt_t    var_cal_opt,
                           int                       icvflb,
                           int                       inc,
-                          int                       iccocg,
                           int                       imasac,
                           cs_real_t       *restrict pvar,
                           const cs_real_t *restrict pvara,
@@ -5514,10 +5500,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
- *                                 (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
@@ -5545,7 +5527,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
                                 int                       f_id,
                                 const cs_var_cal_opt_t    var_cal_opt,
                                 int                       inc,
-                                int                       iccocg,
                                 int                       imasac,
                                 cs_real_t       *restrict pvar,
                                 const cs_real_t *restrict pvara,
@@ -5583,10 +5564,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
-                                (for iterativ gradients)
- *                               - 0 otherwise
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     coefap        boundary condition array for the variable
@@ -5615,7 +5592,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
                                 int                       f_id,
                                 const cs_var_cal_opt_t    var_cal_opt,
                                 int                       inc,
-                                int                       iccocg,
                                 cs_real_t       *restrict pvar,
                                 const cs_real_t *restrict pvara,
                                 const cs_real_t           coefap[],
@@ -5849,10 +5825,6 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
  *                               - 1 least square gradient
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
- *                                 (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -5895,7 +5867,6 @@ cs_face_diffusion_potential(const int                 f_id,
                             int                       init,
                             int                       inc,
                             int                       imrgra,
-                            int                       iccocg,
                             int                       nswrgp,
                             int                       imligp,
                             int                       iphydp,
@@ -5939,10 +5910,6 @@ cs_face_diffusion_potential(const int                 f_id,
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
  *                               - 1 least square gradient
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
-                                    (for iterativ gradients)
- *                               - 0 otherwise
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -5994,7 +5961,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
                                         int                       init,
                                         int                       inc,
                                         int                       imrgra,
-                                        int                       iccocg,
                                         int                       nswrgp,
                                         int                       imligp,
                                         int                       ircflp,
@@ -6039,10 +6005,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
  *                               - 1 least square gradient
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
- *                                 (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -6084,7 +6046,6 @@ cs_diffusion_potential(const int                 f_id,
                        int                       init,
                        int                       inc,
                        int                       imrgra,
-                       int                       iccocg,
                        int                       nswrgp,
                        int                       imligp,
                        int                       iphydp,
@@ -6129,10 +6090,6 @@ cs_diffusion_potential(const int                 f_id,
  * \param[in]     imrgra        indicator
  *                               - 0 iterative gradient
  *                               - 1 least square gradient
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix
-                                     (for iterativ gradients)
- *                               - 0 otherwise
  * \param[in]     nswrgp        number of reconstruction sweeps for the
  *                               gradients
  * \param[in]     imligp        clipping gradient method
@@ -6183,7 +6140,6 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                                    int                       init,
                                    int                       inc,
                                    int                       imrgra,
-                                   int                       iccocg,
                                    int                       nswrgp,
                                    int                       imligp,
                                    int                       ircflp,

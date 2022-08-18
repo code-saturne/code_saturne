@@ -100,7 +100,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 integer          ivar   , ivarsc , ivarut, f_id0
 integer          iel, ifac
 integer          icha
-integer          inc , iccocg , imrgrp , nswrgp , imligp , iwarnp
+integer          inc , imrgrp , nswrgp , imligp , iwarnp
 
 double precision xk , xe , rhovst
 double precision epsrgp , climgp
@@ -170,7 +170,6 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
      .or. iturb.eq.50 .or. iturb.eq.60 ) then
 
   inc = 1
-  iccocg = 1
   if (ivarsc.gt.0) then
     ivarut = ivarsc
   else
@@ -243,7 +242,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
   f_id0 = -1
 
   call gradient_s                                                 &
- ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
+ ( f_id0  , imrgrp , inc    , nswrgp , imligp ,                   &
    iwarnp , epsrgp , climgp ,                                     &
    w7     , coefap , coefbp ,                                     &
    grad   )

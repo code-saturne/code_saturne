@@ -155,7 +155,6 @@ _porcel(cs_real_t         mdiam[],
   cs_field_gradient_scalar(f_wall_dist,
                            false, /* use_previous_t */
                            1,     /* inc */
-                           true,  /* recompute_cocg */
                            q);
 
   /* Normalisation (caution, gradient can be zero sometimes) */

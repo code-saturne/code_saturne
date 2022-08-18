@@ -100,7 +100,7 @@ double precision vela  (3  ,ncelet)
 
 character(len=80) :: chaine
 integer          ifac  , iel
-integer          init  , inc   , iccocg, ii, jj
+integer          init  , inc   , ii, jj
 integer          iflmas, iflmab
 integer          iphydp, icvflb
 integer          imrgrp, nswrgp, imligp, iwarnp
@@ -400,7 +400,6 @@ endif
 ! Computation of [dt (grad P).n] by itrmas
 init   = 1
 inc    = 1
-iccocg = 1
 iphydp = 0
 ! festx,y,z    = rvoid
 ! viscf, viscb = arithmetic mean at faces
@@ -408,7 +407,7 @@ iphydp = 0
 ! This flux is stored as the mass flux of the energy
 
 call itrmas                                                                    &
-( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp ,               &
+( f_id0  , init   , inc    , imrgrp , nswrgp , imligp ,                        &
   iphydp , 0      , iwarnp ,                                                   &
   epsrgp , climgp , extrap ,                                                   &
   rvoid  ,                                                                     &

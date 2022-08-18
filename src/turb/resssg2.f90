@@ -113,7 +113,7 @@ integer          ii    , jj    , kk    , iii   , jjj
 integer          iwarnp
 integer          imvisp
 integer          st_prv_id
-integer          iprev , inc, iccocg, ll
+integer          iprev , inc, ll
 integer          t2v(3,3)
 integer          iv2t(6), jv2t(6)
 integer          key_t_ext_id, f_id, rot_id
@@ -268,9 +268,8 @@ if (iturb.eq.32) then
   ! Compute the gradient of Alpha
   iprev  = 1
   inc    = 1
-  iccocg = 1
 
-  call field_gradient_scalar(ivarfl(ial), iprev, 0, inc, iccocg, grad)
+  call field_gradient_scalar(ivarfl(ial), iprev, inc, grad)
 
 endif
 

@@ -327,7 +327,7 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
     bft_error(__FILE__, __LINE__, 0,
               "%s: nbprec2 = %d >= 1000000\n"
               "(maximum number of precipitated particles exceeded).",
-              __func__, (int)nbprec2);
+              __func__);
   }
 
   cs_lnum_t *cell;

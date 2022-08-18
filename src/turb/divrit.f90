@@ -83,7 +83,7 @@ double precision smbrs(ncelet)
 ! Local variables
 
 integer          ifac, init, inc, iprev
-integer          iccocg,iflmb0
+integer          iflmb0
 integer          imrgrp, nswrgp, imligp, iwarnp
 integer          itypfl
 integer          ivar , iel, ii, jj
@@ -159,10 +159,9 @@ call field_get_key_double(ivarfl(isca(iscal)), kvisl0, visls_0)
 ivar = isca(iscal)
 
 iprev = 1
-iccocg = 1
 inc = 1
 
-call field_gradient_scalar(ivarfl(ivar), iprev, 0, inc, iccocg, gradt)
+call field_gradient_scalar(ivarfl(ivar), iprev, inc, gradt)
 
 ! Get the turbulent flux model
 call field_get_key_id('turbulent_flux_model', kturt)
@@ -184,12 +183,11 @@ if (turb_flux_model.eq.11 .or. turb_flux_model.eq.21 .or. turb_flux_model.eq.31)
   call field_get_val_s(f_id_al, cvar_al)
 
   iprev = 0
-  iccocg = 1
   inc = 1
 
   allocate(grad_al(3,ncelet))
 
-  call field_gradient_scalar(f_id_al, iprev, 0, inc, iccocg, grad_al)
+  call field_gradient_scalar(f_id_al, iprev, inc, grad_al)
 
 endif
 
@@ -199,7 +197,7 @@ inc    = 1
 
 ! WARNING: gradv(xyz, uvw, iel)
 
-call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
+call field_gradient_vector(ivarfl(iu), iprev, inc, gradv)
 
 ! Find the variance of the thermal scalar
 itt = -1

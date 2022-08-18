@@ -493,7 +493,6 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
       cs_field_gradient_scalar(fld,
                                false,     /* use previous t   */
                                1,         /* not on increment */
-                               true,      /* recompute_cocg   */
                                grads);
 
       /* compute grad (<rho.Y>/<rho>) */
@@ -521,7 +520,6 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
                          gradient_type,
                          halo_type,
                          1,     /* inc */
-                         true,  /* iccocg */
                          eqp_fld->nswrgr,
                          0,
                          0,

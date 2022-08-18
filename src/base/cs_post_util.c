@@ -551,11 +551,9 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 
   bool use_previous_t = false;
   int inc = 1;
-  int recompute_cocg = 1;
   cs_field_gradient_potential(CS_F_(p),
                               use_previous_t,
                               inc,
-                              recompute_cocg,
                               hyd_p_flag,
                               f_ext,
                               gradp);
@@ -584,11 +582,9 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 
     use_previous_t = false;
     inc = 1;
-    recompute_cocg = 1;
     cs_field_gradient_scalar(CS_F_(k),
                              use_previous_t,
                              inc,
-                             recompute_cocg,
                              gradk);
 
     for (cs_lnum_t iloc = 0 ; iloc < n_b_faces; iloc++) {
@@ -935,7 +931,6 @@ cs_post_field_cell_to_b_face_values(const cs_field_t  *f,
     cs_field_gradient_scalar(f,
                              true, /* use_previous_t */
                              1,    /* not an increment */
-                             true, /* recompute_cocg */
                              grad);
 
     for (cs_lnum_t ii = 0; ii < n_loc_b_faces; ii++) {

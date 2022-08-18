@@ -114,7 +114,7 @@ double precision rcodcl(ndimfb,nvar,3)
 ! Local variables
 
 integer          ifac, ivar, iel
-integer          iok, inc, iccocg, iprev, ideb, ifin, inb, isum
+integer          iok, inc, iprev, ideb, ifin, inb, isum
 integer          ityp, ii, jj, iflmab
 integer          ifadir
 integer          iut  , ivt   , iwt, ialt, iscal
@@ -681,13 +681,11 @@ if (itbslb.gt.0.and.iilagr.ne.3) then
 
   iprev = 1
   inc = 1
-  iccocg = 1
 
   call grdpor(inc)
 
-  call field_gradient_potential(ivarfl(ipr), iprev, 0, inc,      &
-                                iccocg, iphydr,                  &
-                                frcxt, grad)
+  call field_gradient_potential(ivarfl(ipr), iprev, inc,      &
+                                iphydr, frcxt, grad)
 
   ! Put in pripb the value at F of the
   ! total pressure, computed from P* shifted from the ro0*g.(X-Xref)

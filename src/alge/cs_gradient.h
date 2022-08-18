@@ -162,7 +162,6 @@ cs_gradient_free_quantities(void);
  * \param[in]       gradient_type  gradient type
  * \param[in]       halo_type      halo type
  * \param[in]       inc            if 0, solve on increment; 1 otherwise
- * \param[in]       recompute_cocg should COCG FV quantities be recomputed ?
  * \param[in]       n_r_sweeps     if > 1, number of reconstruction sweeps
  *                                 (only used by CS_GRADIENT_GREEN_ITER)
  * \param[in]       tr_dim         ignored
@@ -188,7 +187,6 @@ cs_gradient_scalar(const char                    *var_name,
                    cs_gradient_type_t             gradient_type,
                    cs_halo_type_t                 halo_type,
                    int                            inc,
-                   bool                           recompute_cocg,
                    int                            n_r_sweeps,
                    int                            tr_dim,
                    int                            hyd_p_flag,
@@ -296,7 +294,6 @@ cs_gradient_tensor(const char                *var_name,
  * \param[in]   gradient_type   gradient type
  * \param[in]   halo_type       halo type
  * \param[in]   inc             if 0, solve on increment; 1 otherwise
- * \param[in]   recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[in]   n_r_sweeps      if > 1, number of reconstruction sweeps
  *                              (only used by CS_GRADIENT_GREEN_ITER)
  * \param[in]   hyd_p_flag      flag for hydrostatic pressure
@@ -321,7 +318,6 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                                 cs_gradient_type_t          gradient_type,
                                 cs_halo_type_t              halo_type,
                                 int                         inc,
-                                bool                        recompute_cocg,
                                 int                         n_r_sweeps,
                                 int                         hyd_p_flag,
                                 int                         w_stride,

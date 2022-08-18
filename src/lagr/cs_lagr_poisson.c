@@ -456,7 +456,6 @@ cs_lagr_poisson(const int  itypfb[])
                      gradient_type,
                      halo_type,
                      1,               /* inc */
-                     1,               /* recompute_cocg */
                      100,             /* n_r_sweeps */
                      0,               /* ignored */
                      0,               /* hyd_p_flag */

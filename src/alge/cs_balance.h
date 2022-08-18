@@ -82,9 +82,6 @@ BEGIN_C_DECLS
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
  *                               - 1 otherwise
- * \param[in]     iccocg        indicator
- *                               - 1 re-compute cocg matrix (for iterative gradients)
- *                               - 0 otherwise
  * \param[in]     var_cal_opt   pointer to a cs_var_cal_opt_t structure which
  *                              contains variable calculation options
  * \param[in]     pvar          solved variable (current time step)
@@ -125,7 +122,6 @@ cs_balance_scalar(int                idtvar,
                   int                imucpp,
                   int                imasac,
                   int                inc,
-                  int                iccocg,
                   cs_var_cal_opt_t  *var_cal_opt,
                   cs_real_t          pvar[],
                   const cs_real_t    pvara[],

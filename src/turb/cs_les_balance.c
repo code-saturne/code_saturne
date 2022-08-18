@@ -390,7 +390,6 @@ _les_balance_laplacian(cs_real_t   *wa,
                                  _eqp,
                                  0,           /* icvflb (not used) */
                                  1,           /* inc */
-                                 true,        /* recompute cocg */
                                  1,           /* imasac (not used) */
                                  wa,          /* pvar */
                                  NULL,        /* pvara (not used) */
@@ -550,7 +549,6 @@ _les_balance_compute_gradients(void)
                        gradient_type,
                        halo_type,
                        inc,
-                       true,
                        eqp->nswrgr,
                        0,
                        0,
@@ -591,7 +589,6 @@ _les_balance_compute_gradients(void)
         cs_field_gradient_scalar(f,
                                  false, /* use_previous_t */
                                  inc,
-                                 true, /* _recompute_cocg */
                                  (cs_real_3_t *)_gradt[iii]->val);
          iii++;
       }
@@ -3160,7 +3157,6 @@ cs_les_balance_compute_rij(void)
                        gradient_type,
                        halo_type,
                        inc,
-                       true,
                        eqp->nswrgr,
                        0,
                        0,
@@ -3660,7 +3656,6 @@ cs_les_balance_compute_tui(void)
                          gradient_type,
                          halo_type,
                          1,
-                         true,
                          eqp->nswrgr,
                          0,
                          0,

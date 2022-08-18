@@ -183,7 +183,6 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
 
     int tr_dim = 0;
     cs_lnum_t inc = 1;
-    cs_lnum_t iccocg = 1;
     cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
     cs_var_cal_opt_t var_cal_opt;
@@ -236,7 +235,6 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
                        gradient_type,
                        halo_type,
                        inc,
-                       iccocg,
                        var_cal_opt.nswrgr,
                        tr_dim,
                        hyd_p_flag,
@@ -368,7 +366,6 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
       cs_field_gradient_scalar(lagr_time,
                                0, /* use_previous_t */
                                1, /* inc: not an increment */
-                               true, /* _recompute_cocg */
                                grad_lagr_time);
 
   }

@@ -98,7 +98,7 @@ double precision trafbr(nfbrps*3)
 character(len=80) :: name80
 
 logical          ientla, ivarpr
-integer          inc   , iccocg
+integer          inc
 integer          ifac  , iloc  , ivar
 integer          ipp   , idimt , kk   , ll, iel
 integer          fldid, fldprv, keycpl, iflcpl
@@ -484,9 +484,8 @@ if (numtyp.eq.-1) then
 
       inc = 1
       iprev = 0
-      iccocg = 1
 
-      call field_gradient_scalar(f_id, iprev, 0, inc, iccocg, grad)
+      call field_gradient_scalar(f_id, iprev, inc, grad)
 
       idimt  = 3
       ientla = .true.
@@ -508,9 +507,8 @@ if (numtyp.eq.-1) then
 
       inc = 1
       iprev = 0
-      iccocg = 1
 
-      call field_gradient_scalar(f_id, iprev, 0, inc, iccocg, grad)
+      call field_gradient_scalar(f_id, iprev, inc, grad)
 
       call field_get_key_int (f_id, kivisl, ifcsii)
       if (ifcsii .ge. 0) then

@@ -108,7 +108,7 @@ integer          ifac, iel, icfmax(1), icfmin(1), idiff0, iconv0, isym, flid
 integer          modntl
 integer          iflmas, iflmab
 integer          icou, ifou , icoucf
-integer          inc, iccocg
+integer          inc
 integer          imrgrp, nswrgp, imligp, imvisp
 integer          f_id
 integer          nbrval, nclptr
@@ -311,10 +311,9 @@ if (idtvar.ge.0) then
 
     f_id = -1
     inc   = 1
-    iccocg = 1
 
     call gradient_s &
- ( f_id   , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
+ ( f_id   , imrgrp , inc    , nswrgp , imligp ,                   &
    iwarnp , epsrgp , climgp ,                                     &
    crom, brom, coefbr ,                                           &
    grad )

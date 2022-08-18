@@ -204,7 +204,7 @@ double precision, pointer, dimension(:) :: visvdr, hbord, theipb
 integer          ifac  , iel   , ivar
 integer          isou  , jsou  , ii
 integer          ihcp  , iscal
-integer          inc   , iprev , iccocg
+integer          inc   , iprev
 integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
 integer          iscacp, ifcvsl
@@ -739,11 +739,8 @@ do ii = 1, nscal
 
       inc = 1
       iprev = 1
-      iccocg = 1
 
-      call field_gradient_scalar(ivarfl(ivar), iprev, 0, inc,  &
-                                 iccocg,                       &
-                                 grad)
+      call field_gradient_scalar(ivarfl(ivar), iprev, inc, grad)
 
       call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
@@ -799,7 +796,7 @@ do ii = 1, nscal
 
       inc = 1
       iprev = 1
-      call field_gradient_vector(ivarfl(ivar), iprev, 0, inc, gradv)
+      call field_gradient_vector(ivarfl(ivar), iprev, inc, gradv)
 
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
@@ -871,7 +868,7 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.iforbr.ge.0) then
     inc = 1
     iprev = 1
 
-    call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
+    call field_gradient_vector(ivarfl(iu), iprev, inc, gradv)
 
     do ifac = 1, nfabor
       iel = ifabor(ifac)
@@ -919,7 +916,7 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
     ! allocate a temporary array
     allocate(gradts(6,3,ncelet))
 
-    call field_gradient_tensor(ivarfl(irij), iprev, 0, inc, gradts)
+    call field_gradient_tensor(ivarfl(irij), iprev, inc, gradts)
 
     do ifac = 1 , nfabor
       iel = ifabor(ifac)

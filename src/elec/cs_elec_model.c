@@ -1391,7 +1391,6 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     cs_field_gradient_scalar(CS_F_(potr),
                              false, /* use_previous_t */
                              1,    /* inc */
-                             true, /* recompute_cocg */
                              grad);
 
     /* compute electric field E = - grad (potR) */
@@ -1484,7 +1483,6 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       cs_field_gradient_scalar(CS_F_(poti),
                                false, /* use_previous_t */
                                1,    /* inc */
-                               true, /* recompute_cocg */
                                grad);
 
       /* compute electric field E = - grad (potI) */

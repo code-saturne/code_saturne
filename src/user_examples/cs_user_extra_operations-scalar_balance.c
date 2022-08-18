@@ -195,7 +195,6 @@ cs_user_extra_operations(cs_domain_t     *domain)
     cs_field_gradient_scalar(h,
                              true, /* use_previous_t */
                              1, /* inc */
-                             true, /* _recompute_cocg */
                              grad);
 
     for (face_id = 0; face_id < n_b_faces; face_id++) {

@@ -103,7 +103,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 character(len=80) :: chaine
 integer          ivar, iel, ifac, t_dif_id, key_turb_diff, ifcvsl
 integer          imrgrp, nswrgp, imligp, iwarnp
-integer          iprev, inc, iccocg
+integer          iprev, inc
 
 double precision  epsrgp, climgp
 double precision  cexp, cimp, delta_les
@@ -186,7 +186,6 @@ if (iturb.eq.41) then
 
       iprev = 1
       inc = 1
-      iccocg = 1
 
       ! Homogeneous Neumann on convective inlet on the production term for the
       ! variance
@@ -214,7 +213,7 @@ if (iturb.eq.41) then
       climgp = vcopt_fm%climgr
 
       call gradient_s                                                         &
-        ( ivarfl(isca(ifm))  , imrgrp , inc    , iccocg , nswrgp , imligp ,   &
+        ( ivarfl(isca(ifm))  , imrgrp , inc    , nswrgp , imligp ,            &
         iwarnp          , epsrgp , climgp ,                                   &
         cvara_fm        , coefa_p, coefb_p,                                   &
         grad )

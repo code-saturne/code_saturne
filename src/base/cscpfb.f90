@@ -88,7 +88,7 @@ double precision rvdis(nptdis,nvcpto)
 
 integer          ipt    , iel    , isou
 integer          ivar   , iscal
-integer          inc    , iccocg , iprev
+integer          inc    , iprev
 integer          ipos
 integer          itytu0
 
@@ -137,7 +137,6 @@ endif
 
 iprev  = 0
 inc    = 1
-iccocg = 1
 
 ! Allocate temporary arrays
 
@@ -177,7 +176,7 @@ ipos = 0
 ! 1.  Prepare for velocity
 !=========================================================================
 
-call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
+call field_gradient_vector(ivarfl(iu), iprev, inc, gradv)
 
 do isou = 1, 3
 
@@ -258,7 +257,7 @@ enddo
 
 ipos = ipos + 1
 
-call field_gradient_scalar(ivarfl(ipr), iprev, 0, inc, iccocg, grad)
+call field_gradient_scalar(ivarfl(ipr), iprev, inc, grad)
 
 ! For a specific face to face coupling, geometric assumptions are made
 
@@ -323,7 +322,7 @@ if (itytur.eq.2) then
 !          3.1.1. INTERPOLATION EN J'
 !=======================================================================
 
-  call field_gradient_scalar(ivarfl(ik), iprev, 0, inc, iccocg, grad)
+  call field_gradient_scalar(ivarfl(ik), iprev, inc, grad)
 
   do ipt = 1, nptdis
 
@@ -341,7 +340,7 @@ if (itytur.eq.2) then
 
   ! Prepare data: interpolate epsilon at J'
 
-  call field_gradient_scalar(ivarfl(iep), iprev, 0, inc, iccocg, grad)
+  call field_gradient_scalar(ivarfl(iep), iprev, inc, grad)
 
   do ipt = 1, nptdis
 
@@ -505,7 +504,7 @@ elseif (itytur.eq.3) then
   ! allocate a temporary array
   allocate(gradts(6,3,ncelet))
 
-  call field_gradient_tensor(ivarfl(irij), iprev, 0, inc, gradts)
+  call field_gradient_tensor(ivarfl(irij), iprev, inc, gradts)
 
   do ipt = 1, nptdis
 
@@ -543,7 +542,7 @@ elseif (itytur.eq.3) then
 
   ! Prepare data: interpolation of epsilon at J'
 
-  call field_gradient_scalar(ivarfl(iep), iprev, 0, inc, iccocg, grad)
+  call field_gradient_scalar(ivarfl(iep), iprev, inc, grad)
 
   do ipt = 1, nptdis
 
@@ -673,7 +672,7 @@ elseif (iturb.eq.50) then
 
   !         Prepare data: interpolation of k at J'
 
-  call field_gradient_scalar(ivarfl(ik), iprev, 0, inc, iccocg, grad)
+  call field_gradient_scalar(ivarfl(ik), iprev, inc, grad)
 
   do ipt = 1, nptdis
 
@@ -691,7 +690,7 @@ elseif (iturb.eq.50) then
 
   ! Prepare data: interpolation of epsilon at J'
 
-  call field_gradient_scalar(ivarfl(iep), iprev, 0, inc, iccocg,  grad)
+  call field_gradient_scalar(ivarfl(iep), iprev, inc, grad)
 
   do ipt = 1, nptdis
 
@@ -709,7 +708,7 @@ elseif (iturb.eq.50) then
 
   !         Prepare data: interpolation of Phi at J'
 
-  call field_gradient_scalar(ivarfl(iphi), iprev, 0, inc, iccocg, grad)
+  call field_gradient_scalar(ivarfl(iphi), iprev, inc, grad)
 
   do ipt = 1, nptdis
 
@@ -727,7 +726,7 @@ elseif (iturb.eq.50) then
 
   !         Prepare data: interpolation of F-bar at J'
 
-  call field_gradient_scalar(ivarfl(ifb), iprev, 0, inc, iccocg, grad)
+  call field_gradient_scalar(ivarfl(ifb), iprev, inc, grad)
 
   do ipt = 1, nptdis
 
@@ -802,7 +801,7 @@ elseif (iturb.eq.60) then
 
   !         Prepare data: interpolation of k at J'
 
-  call field_gradient_scalar(ivarfl(ik), iprev, 0, inc, iccocg, grad)
+  call field_gradient_scalar(ivarfl(ik), iprev, inc, grad)
 
   do ipt = 1, nptdis
 
@@ -820,7 +819,7 @@ elseif (iturb.eq.60) then
 
   !         Prepare data: interpolation of omega at J'
 
-  call field_gradient_scalar(ivarfl(iomg), iprev, 0, inc, iccocg, grad)
+  call field_gradient_scalar(ivarfl(iomg), iprev, inc, grad)
 
   do ipt = 1, nptdis
 
@@ -984,7 +983,7 @@ if (nscal.gt.0) then
 
 ! --- Calcul du gradient du scalaire pour interpolation
 
-    call field_gradient_scalar(ivarfl(ivar), iprev, 0, inc, iccocg, grad)
+    call field_gradient_scalar(ivarfl(ivar), iprev, inc, grad)
 
     do ipt = 1, nptdis
 

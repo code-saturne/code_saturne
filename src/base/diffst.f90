@@ -77,7 +77,7 @@ integer          nscal , iterns
 ! Local variables
 
 integer          ivar  , iel   , ifac  , iscal, f_id0
-integer          iccocg, inc
+integer          inc
 integer          iconvp, idiffp, imvisp
 integer          ischcp, isstpp
 integer          iscacp, ifcvsl, iflmas, iflmab
@@ -173,7 +173,6 @@ do iscal = 1, nscal
   imasac = 0
   idiffp = 1
   inc    = 1
-  iccocg = 1
   idftnp = ISOTROPIC_DIFFUSION !FIXME when activating GGDH
   thetex = 1.d0
   ! all boundary convective flux with upwind
@@ -267,7 +266,7 @@ do iscal = 1, nscal
   c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
   call cs_balance_scalar &
-  ( idtvar , f_id0  , imucpp , imasac , inc    , iccocg ,                   &
+  ( idtvar , f_id0  , imucpp , imasac , inc    ,                            &
     c_k_value       , cvar_scal       , cvar_scal       , coefap , coefbp , &
     cofafp , cofbfp , imasfl , bmasfl , viscf  , viscb  ,                   &
     rvoid  , xcpp   , rvoid  , rvoid  , icvflb , ivoid  ,                   &

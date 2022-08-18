@@ -86,7 +86,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 integer           iel    , ifac   , f_id0
 integer           icla
-integer           inc    , iccocg , imrgrp , nswrgp , imligp , iwarnp
+integer           inc    , imrgrp , nswrgp , imligp , iwarnp
 
 double precision xk     , xe     , rhovst
 double precision epsrgp , climgp
@@ -153,8 +153,6 @@ endif
 if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
      itytur.eq.3 .or. iturb.eq.60      ) then
   inc = 1
-  iccocg = 1
-!
 
   call field_get_key_struct_var_cal_opt(ivarfl(isca(ifvap)), vcopt)
   imrgrp = vcopt%imrgra
@@ -205,7 +203,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 !              n'est pas Rij)
   f_id0  = -1
   call gradient_s                                                 &
- ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
+ ( f_id0  , imrgrp , inc    , nswrgp , imligp ,                   &
    iwarnp , epsrgp , climgp ,                                     &
    f1f2   , coefap , coefbp ,                                     &
    grad   )

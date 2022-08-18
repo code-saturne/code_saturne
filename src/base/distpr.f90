@@ -79,7 +79,7 @@ integer          iterns
 
 integer          ndircp, imvisp
 integer          iel   , ifac
-integer          inc   , iccocg, f_id, f_id_pre
+integer          inc   , f_id, f_id_pre
 integer          mmprpl, nswrsp
 integer          imucpp
 integer          icvflb, iescap, ircflp
@@ -342,9 +342,8 @@ allocate(grad(3,ncelet))
 ! Compute current gradient
 
 inc    = 1
-iccocg = 1
 
-call field_gradient_scalar(f_id, 0, 0, inc, iccocg, grad)
+call field_gradient_scalar(f_id, 0, inc, grad)
 
 counter = 0
 do iel = 1, ncel

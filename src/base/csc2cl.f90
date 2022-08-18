@@ -118,7 +118,7 @@ double precision dofcpl(3,nfbcpl)
 ! Local variables
 
 integer          ifac, iel, isou, icscp
-integer          inc, iccocg, iprev
+integer          inc, iprev
 integer          ivar, iflmab
 integer          ipt
 
@@ -173,21 +173,17 @@ do ivar = 1, nvcp
 
   iprev  = 0
   inc    = 1
-  iccocg = 1
 
   isou = 0 ! set for iu, iv, iw only
 
   if (ivar.ne.iu .and. ivar.ne.iv .and. ivar.ne.iw) then
 
     call field_get_val_s(ivarfl(ivar), cvar_var)
-    call field_gradient_scalar(ivarfl(ivar), iprev, 0, inc,   &
-                               iccocg,                        &
-                               grad)
+    call field_gradient_scalar(ivarfl(ivar), iprev, inc, grad)
 
   else if (ivar.eq.iu) then
 
-    call field_gradient_vector(ivarfl(iu), iprev, 0, inc,  &
-                               gradv)
+    call field_gradient_vector(ivarfl(iu), iprev, inc, gradv)
 
   endif
 

@@ -1009,7 +1009,6 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_field_gradient_scalar(f,
                            true, /* use_previous_t */
                            1, /* inc */
-                           true, /* _recompute_cocg */
                            grad);
 
   if (false) { //FIXME
@@ -2752,7 +2751,6 @@ cs_flux_through_surface(const char         *scalar_name,
   cs_field_gradient_scalar(f,
                            true, /* use_previous_t */
                            1, /* inc */
-                           true, /* _recompute_cocg */
                            grad);
 
   /* Compute the gradient for convective scheme

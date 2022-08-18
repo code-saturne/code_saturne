@@ -249,7 +249,6 @@ contains
 subroutine gaussian()
 double precision, dimension(:,:), allocatable :: dtlsd
 double precision, dimension(:,:), allocatable :: dqsd
-integer    iccocg
 integer    inc
 
 double precision a_const
@@ -267,14 +266,13 @@ rvap = rair*rvsra
 allocate(dtlsd(3,ncelet))
 allocate(dqsd(3,ncelet))
 
-iccocg = 1
 inc = 1
 
 ! computation of grad(theta_l)
-call field_gradient_scalar(ivarfl(isca(iscalt)), 1, 0, inc, iccocg, dtlsd)
+call field_gradient_scalar(ivarfl(isca(iscalt)), 1, inc, dtlsd)
 
 ! computation of grad(qw)
-call field_gradient_scalar(ivarfl(isca(iymw)), 1, 0, inc, iccocg, dqsd)
+call field_gradient_scalar(ivarfl(isca(iymw)), 1, inc, dqsd)
 
 call field_get_val_s(ivarfl(ik), cvar_k)
 call field_get_val_s(ivarfl(iep), cvar_ep)

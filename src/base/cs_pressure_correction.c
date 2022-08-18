@@ -850,7 +850,6 @@ _pressure_correction_fv(int        iterns,
   cs_field_gradient_potential(f_p,
                               0,   /* iprev */
                               1,   /* inc, not by increment */
-                              1,   /* iccocg */
                               vp_param->iphydr,
                               frcxt,
                               gradp);
@@ -1124,7 +1123,6 @@ _pressure_correction_fv(int        iterns,
                                   0,  /* init */
                                   1,  /* inc */
                                   eqp_p->imrgra,
-                                  1,  /* iccocg */
                                   eqp_p->nswrgr,
                                   eqp_p->imligr,
                                   vp_param->iphydr,
@@ -1207,7 +1205,6 @@ _pressure_correction_fv(int        iterns,
                                               0,  /* init */
                                               1,  /* inc */
                                               eqp_p->imrgra,
-                                              1,  /* iccocg */
                                               eqp_p->nswrgr,
                                               eqp_p->imligr,
                                               eqp_p->ircflu,
@@ -1601,7 +1598,6 @@ _pressure_correction_fv(int        iterns,
                              1,  /* init */
                              inc,
                              eqp_p->imrgra,
-                             1,  /* iccocg */
                              eqp_p->nswrgr,
                              eqp_p->imligr,
                              vp_param->iphydr,
@@ -1624,7 +1620,6 @@ _pressure_correction_fv(int        iterns,
                                          1,  /* init */
                                          inc,
                                          eqp_p->imrgra,
-                                         1,  /* iccocg */
                                          eqp_p->nswrgr,
                                          eqp_p->imligr,
                                          eqp_p->ircflu,
@@ -1736,7 +1731,6 @@ _pressure_correction_fv(int        iterns,
       if (   vp_param->iphydr == 1
           || vp_param->iifren == 1)
         inc = 1;    /* not by increment */
-      int iccocg = 1;
 
       if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION)
         cs_diffusion_potential(-1,
@@ -1745,7 +1739,6 @@ _pressure_correction_fv(int        iterns,
                                init,
                                inc,
                                eqp_p->imrgra,
-                               iccocg,
                                eqp_p->nswrgr,
                                eqp_p->imligr,
                                vp_param->iphydr,
@@ -1768,7 +1761,6 @@ _pressure_correction_fv(int        iterns,
                                            init,
                                            inc,
                                            eqp_p->imrgra,
-                                           iccocg,
                                            eqp_p->nswrgr,
                                            eqp_p->imligr,
                                            eqp_p->ircflu,
@@ -1889,7 +1881,6 @@ _pressure_correction_fv(int        iterns,
      * --------------------------------------------------------- */
 
     {
-      int iccocg = 1;
       int init = 1;
       int inc = 0;  /* by increment */
       if (   vp_param->iphydr == 1
@@ -1904,7 +1895,6 @@ _pressure_correction_fv(int        iterns,
                                1,  /* init */
                                inc,
                                eqp_p->imrgra,
-                               1,  /* iccocg */
                                eqp_p->nswrgr,
                                eqp_p->imligr,
                                vp_param->iphydr,
@@ -1927,7 +1917,6 @@ _pressure_correction_fv(int        iterns,
                                            init,
                                            inc,
                                            eqp_p->imrgra,
-                                           iccocg,
                                            eqp_p->nswrgr,
                                            eqp_p->imligr,
                                            eqp_p->ircflu,
@@ -2041,7 +2030,6 @@ _pressure_correction_fv(int        iterns,
                                   0,  /* init */
                                   inc,
                                   eqp_p->imrgra,
-                                  1,  /* iccocg */
                                   eqp_p->nswrgr,
                                   eqp_p->imligr,
                                   vp_param->iphydr,
@@ -2063,7 +2051,6 @@ _pressure_correction_fv(int        iterns,
                                               0,  /* init */
                                               inc,
                                               eqp_p->imrgra,
-                                              1,  /* iccocg */
                                               eqp_p->nswrgr,
                                               eqp_p->imligr,
                                               eqp_p->ircflu,
@@ -2092,7 +2079,6 @@ _pressure_correction_fv(int        iterns,
                                   0,  /* init */
                                   0,  /* inc */
                                   eqp_p->imrgra,
-                                  0,  /* iccocg */
                                   0,  /* nswrgr (no reconstruction) */
                                   eqp_p->imligr,
                                   vp_param->iphydr,
@@ -2114,7 +2100,6 @@ _pressure_correction_fv(int        iterns,
                                               0,  /* init */
                                               0,  /* inc */
                                               eqp_p->imrgra,
-                                              0,  /* iccocg */
                                               0,  /* nswrgr (no reconstruction) */
                                               eqp_p->imligr,
                                               0,  /* ircflu */
@@ -2191,7 +2176,6 @@ _pressure_correction_fv(int        iterns,
                        gradient_type,
                        halo_type,
                        1,             /* inc */
-                       true,          /* recompute_cocg */
                        eqp_u->nswrgr,
                        0,             /* ignored */
                        0,             /* iphydp */
@@ -2360,7 +2344,6 @@ _pressure_correction_fv(int        iterns,
                       0,     /* imucpp */
                       1,     /* imasac */
                       1,     /* inc */
-                      1,     /* iccocg */
                       &eqp_loc,
                       phi, phi,
                       coefa_dp2, coefb_p,
@@ -2443,7 +2426,6 @@ _pressure_correction_fv(int        iterns,
                                   0,  /* init */
                                   1,  /* inc */
                                   eqp_p->imrgra,
-                                  1,  /* iccocg */
                                   eqp_p->nswrgr,
                                   eqp_p->imligr,
                                   vp_param->iphydr,
@@ -2466,7 +2448,6 @@ _pressure_correction_fv(int        iterns,
                                               0,  /* init */
                                               1,  /* inc */
                                               eqp_p->imrgra,
-                                              1,  /* iccocg */
                                               eqp_p->nswrgr,
                                               eqp_p->imligr,
                                               eqp_p->ircflu,
@@ -2495,7 +2476,6 @@ _pressure_correction_fv(int        iterns,
                                   0,  /* init */
                                   0,  /* inc */
                                   eqp_p->imrgra,
-                                  0,  /* iccocg */
                                   0,  /* nswrgr (no reconstruction) */
                                   eqp_p->imligr,
                                   vp_param->iphydr,
@@ -2518,7 +2498,6 @@ _pressure_correction_fv(int        iterns,
                                               0,  /* init */
                                               0,  /* inc */
                                               eqp_p->imrgra,
-                                              0,  /* iccocg */
                                               0,  /* nswrgr (no reconstruction) */
                                               eqp_p->imligr,
                                               0,  /* ircflu */

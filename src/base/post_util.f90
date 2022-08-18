@@ -189,7 +189,7 @@ double precision, dimension(nfbrps), intent(out)   :: bnussl
 
 ! Local variables
 
-integer ::         inc, iccocg
+integer ::         inc
 integer ::         iel, ifac, iloc, ivar
 integer ::         ifcvsl, itplus, itstar
 
@@ -255,9 +255,8 @@ if (itstar.ge.0 .and. itplus.ge.0) then
     allocate(grad(3,ncelet))
 
     inc = 1
-    iccocg = 1
 
-    call field_gradient_scalar(ivarfl(ivar), 0, 0, inc, iccocg, grad)
+    call field_gradient_scalar(ivarfl(ivar), 0, inc, grad)
 
     ! Compute reconstructed temperature
 

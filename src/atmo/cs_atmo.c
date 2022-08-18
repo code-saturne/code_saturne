@@ -498,7 +498,6 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                          1, /* init */
                          1, /* inc */
                          eqp_p->imrgra,
-                         1, /* iccocg */
                          eqp_p->nswrgr,
                          eqp_p->imligr,
                          1, /* iphydp */
@@ -553,7 +552,6 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                            1, /* init */
                            1, /* inc */
                            eqp_p->imrgra,
-                           1, /* iccocg */
                            eqp_p->nswrgr,
                            eqp_p->imligr,
                            1, /* iphydp */

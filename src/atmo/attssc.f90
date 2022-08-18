@@ -330,7 +330,7 @@ contains
 
     double precision climgp, epsrgp, depo
 
-    integer    iccocg, ii, iifld, imligp, inc, iwarnp, imrgrp, nswrgp, ifac, iel
+    integer    ii, iifld, imligp, inc, iwarnp, imrgrp, nswrgp, ifac, iel
     double precision, dimension(:), allocatable :: local_coefa, local_coefb
     double precision, dimension(:), allocatable :: local_field, sed_vel
     double precision, dimension(:), allocatable :: pres
@@ -405,7 +405,6 @@ contains
     endif ! moddep.gt.0
 
     ! options for gradient calculation
-    iccocg = 1
     inc = 1
     iifld = -1
     call field_get_key_struct_var_cal_opt(ivarfl(isca(iymw)), vcopt)
@@ -439,7 +438,7 @@ contains
     enddo
 
     call gradient_s                                                 &
-   ( iifld  , imrgrp , inc    , iccocg , nswrgp ,imligp,            &
+   ( iifld  , imrgrp , inc    , nswrgp , imligp,                    &
      iwarnp , epsrgp , climgp ,                                     &
      local_field     , local_coefa , local_coefb ,                  &
      grad1   )
@@ -455,7 +454,7 @@ contains
     enddo
 
     call gradient_s                                                 &
-   ( iifld  , imrgrp , inc    , iccocg , nswrgp ,imligp,            &
+   ( iifld  , imrgrp , inc    , nswrgp , imligp,                    &
      iwarnp , epsrgp , climgp ,                                     &
      local_field     , local_coefa , local_coefb ,                  &
      grad2   )

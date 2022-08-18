@@ -96,7 +96,7 @@ double precision rhs(ncelet)
 
 character(len=80) :: chaine
 integer          lchain
-integer          f_id, iccocg, inc   , init  , isym
+integer          f_id, inc   , init  , isym
 integer          iel   , ical, ifac
 integer          nswmpr
 integer          isweep, niterf
@@ -262,7 +262,6 @@ call matrix &
 
 init   = 1
 inc    = 0
-iccocg = 1
 nswrgp = vcopt_pr%nswrgr
 imligp = vcopt_pr%imligr
 iwarnp = vcopt_pr%iwarni
@@ -306,7 +305,6 @@ do isweep = 1, nswmpr
   !      rhs^{k+1} = - div(fext^n+1) - D(1, p_h^{k+1})
   !-------------------------------------------------------------
 
-    iccocg = 1
     init = 1 ! re-init rhs to 0 if init = 1
     inc  = 1
     imrgrp = vcopt_pr%imrgra
@@ -321,7 +319,7 @@ do isweep = 1, nswmpr
 
     call itrgrp &
     !==========
- ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,     &
+ ( f_id0  , init   , inc    , imrgrp , nswrgp , imligp , iphydp ,              &
    iwgrp  , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    next_fext,                                                                  &

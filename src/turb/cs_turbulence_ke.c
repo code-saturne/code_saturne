@@ -525,7 +525,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
     cs_field_gradient_scalar(CS_F_(alp_bl),
                              false,  /* use_previous_t */
                              1,      /* inc */
-                             true,   /* iccocg */
                              grad);
 
     cvar_ep = f_eps->val;
@@ -891,7 +890,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
       cs_field_gradient_scalar(f_thm,
                                true,
                                1,    /* inc */
-                               true, /* iccocg */
                                grad);
 
       /* FIXME make it dependant on the scalar and use is_buoyant field */
@@ -926,7 +924,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                          gradient_type,
                          halo_type,
                          1,     /* inc */
-                         true,  /* iccocg */
                          eqp_k->nswrgr,
                          0,
                          0,
@@ -1039,7 +1036,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                            1,     /* init */
                            1,     /* inc */
                            eqp_k->imrgra,
-                           true,  /* iccocg */
                            eqp_k->nswrgr,
                            eqp_k->imligr,
                            0,     /* iphydp */
@@ -1135,7 +1131,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                        gradient_type,
                        halo_type,
                        1,     /* inc */
-                       true,  /* iccocg */
                        eqp_k->nswrgr,
                        0,
                        0,
@@ -1168,7 +1163,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                        gradient_type,
                        halo_type,
                        1,     /* inc */
-                       true,  /* iccocg */
                        eqp_k->nswrgr,
                        0,
                        0,
@@ -1592,7 +1586,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                       0,     /* imucpp */
                       1,     /* imasac */
                       1,     /* inc */
-                      true,  /* iccocg */
                       &eqp_k_loc,
                       cvara_k,
                       cvara_k,
@@ -1661,7 +1654,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                       0,    /* imucpp */
                       1,    /* imasac */
                       1,    /* inc */
-                      true, /* iccocg */
                       &eqp_eps_loc,
                       cvara_ep,
                       cvara_ep,

@@ -75,7 +75,7 @@ double precision smbr(6,ncelet)
 
 integer          iel   , ii    , jj    , kk    , mm
 integer          iskm  , iski  , iskj
-integer          inc   , iccocg, f_id
+integer          inc   , f_id
 integer          key_t_ext_id
 integer          iroext
 
@@ -164,14 +164,13 @@ d2s3   = 2.d0/3.d0
 !       Calculation of gradient
 
 inc    = 1
-iccocg = 1
 
 call field_get_id("wall_distance", f_id)
 
 call field_get_val_s(f_id, w_dist)
 
 ! Current gradient: iprev = 0
-call field_gradient_scalar(f_id, 0, 0, inc, iccocg, grad)
+call field_gradient_scalar(f_id, 0, inc, grad)
 
 ! Normalization (warning, the gradient may be sometimes equal to 0)
 do iel = 1 ,ncel

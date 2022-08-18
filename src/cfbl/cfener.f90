@@ -114,7 +114,7 @@ double precision epsrgp, climgp
 double precision sclnor
 double precision turb_schmidt, visls_0
 
-integer          inc    , iccocg , imucpp , idftnp , iswdyp
+integer          inc    , imucpp , idftnp , iswdyp
 integer          f_id0  , ii, jj
 integer          iel1  , iel2
 integer          iterns
@@ -452,7 +452,6 @@ if (vcopt_e%idiff.ge. 1) then
 
   iii = iu
   inc = 1
-  iccocg = 1
   imrgrp = vcopt_u%imrgra
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
@@ -473,7 +472,7 @@ if (vcopt_e%idiff.ge. 1) then
 !              that the variable is not Rij)
   f_id0 = -1
   call gradient_s                                                   &
-   ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
+   ( f_id0  , imrgrp , inc    , nswrgp , imligp ,                   &
      iwarnp , epsrgp , climgp ,                                     &
      w7     , coefap , coefbp ,                                     &
      grad   )
@@ -547,8 +546,7 @@ if (vcopt_e%idiff.ge. 1) then
       cvk = cpk - cs_physical_constants_r/mk
 
       use_previous = 0
-      call field_gradient_scalar(ivarfl(ivarsp), use_previous, 0, inc, &
-                                 iccocg, grad)
+      call field_gradient_scalar(ivarfl(ivarsp), use_previous, inc, grad)
 
       do ifac = 1, nfac
 
@@ -659,8 +657,7 @@ if (vcopt_e%idiff.ge. 1) then
     allocate(grad_dd(nfabor), btemp(nfabor))
 
     use_previous = 0
-    call field_gradient_scalar(ivarfl(isca(itempk)), use_previous, 0, inc,&
-                               iccocg, grad)
+    call field_gradient_scalar(ivarfl(isca(itempk)), use_previous, inc, grad)
 
     do ifac = 1, nfabor
       grad_dd(ifac) = 0.d0
@@ -683,8 +680,7 @@ if (vcopt_e%idiff.ge. 1) then
       cvk = cpk - cs_physical_constants_r/mk
 
       use_previous = 0
-      call field_gradient_scalar(ivarfl(ivarsp), use_previous, 0, inc, &
-                                 iccocg, grad)
+      call field_gradient_scalar(ivarfl(ivarsp), use_previous, inc, grad)
 
       do ifac = 1, nfabor
         if (ifbet(ifac).eq.0) then

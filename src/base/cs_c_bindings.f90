@@ -2232,7 +2232,7 @@ module cs_c_bindings
     ! Interface to C function cs_balance_scalar
 
     subroutine cs_balance_scalar(idtvar, f_id , imucpp, imasac, inc,          &
-                                 iccocg, vcopt , pvar , pvara,                &
+                                 vcopt , pvar , pvara,                        &
                                  coefap, coefbp, cofafp, cofbfp, i_massflux,  &
                                  b_massflux, i_visc, b_visc, viscel, xcpp,    &
                                  weighf, weighb, icvflb, icvfli,              &
@@ -2241,7 +2241,6 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: idtvar, f_id, imasac, imucpp, inc
-      integer(c_int), value :: iccocg
       type(c_ptr), value :: vcopt
       real(kind=c_double), dimension(*), intent(in) :: pvar, pvara, coefap
       real(kind=c_double), dimension(*), intent(in) :: coefbp, cofafp, cofbfp
@@ -3215,13 +3214,13 @@ module cs_c_bindings
 
     ! Interface to C function for scalar gradient
 
-    subroutine cs_f_gradient_s(f_id, imrgra, inc, iccocg, n_r_sweeps,          &
+    subroutine cs_f_gradient_s(f_id, imrgra, inc, n_r_sweeps,                  &
                                iwarnp, imligp, epsrgp, climgp,                 &
                                coefap, coefbp, pvar, grad)                     &
       bind(C, name='cs_f_gradient_s')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
+      integer(c_int), value :: f_id, imrgra, inc, n_r_sweeps
       integer(c_int), value :: iwarnp, imligp
       real(kind=c_double), value :: epsrgp, climgp
       real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
@@ -3233,14 +3232,14 @@ module cs_c_bindings
 
     ! Interface to C function for scalar potential gradient
 
-    subroutine cs_f_gradient_potential(f_id, imrgra, inc, iccocg, n_r_sweeps,  &
+    subroutine cs_f_gradient_potential(f_id, imrgra, inc, n_r_sweeps,          &
                                        iphydp, iwarnp, imligp,                 &
                                        epsrgp, climgp,                         &
                                        f_ext, coefap, coefbp, pvar, grad)      &
       bind(C, name='cs_f_gradient_potential')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
+      integer(c_int), value :: f_id, imrgra, inc, n_r_sweeps
       integer(c_int), value :: iphydp, iwarnp, imligp
       real(kind=c_double), value :: epsrgp, climgp
       real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
@@ -3252,7 +3251,7 @@ module cs_c_bindings
 
     ! Interface to C function for scalar gradient with weighting
 
-    subroutine cs_f_gradient_weighted_s(f_id, imrgra, inc, iccocg, n_r_sweeps, &
+    subroutine cs_f_gradient_weighted_s(f_id, imrgra, inc, n_r_sweeps,         &
                                         iphydp,  iwarnp, imligp,               &
                                         epsrgp, climgp,                        &
                                         f_ext, coefap, coefbp, pvar, c_weight, &
@@ -3260,7 +3259,7 @@ module cs_c_bindings
       bind(C, name='cs_f_gradient_weighted_s')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
+      integer(c_int), value :: f_id, imrgra, inc, n_r_sweeps
       integer(c_int), value :: iphydp, iwarnp, imligp
       real(kind=c_double), value :: epsrgp, climgp
       real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
@@ -4076,7 +4075,6 @@ contains
   !> \param[in]       f_id             field id, or -1
   !> \param[in]       imrgra           gradient computation mode
   !> \param[in]       inc              0: increment; 1: do not increment
-  !> \param[in]       recompute_cocg   1 or 0: recompute COCG or not
   !> \param[in]       nswrgp           number of sweeps for reconstruction
   !> \param[in]       imligp           gradient limitation method:
   !>                                     < 0 no limitation
@@ -4090,7 +4088,7 @@ contains
   !> \param[in]       coefbp           boundary coefap coefficients
   !> \param[out]      grad             resulting gradient
 
-  subroutine gradient_s(f_id, imrgra, inc, recompute_cocg, nswrgp,             &
+  subroutine gradient_s(f_id, imrgra, inc, nswrgp,                             &
                         imligp, iwarnp, epsrgp, climgp,                        &
                         pvar, coefap, coefbp, grad)
 
@@ -4104,7 +4102,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in) :: f_id, imrgra, inc, recompute_cocg , nswrgp
+    integer, intent(in) :: f_id, imrgra, inc, nswrgp
     integer, intent(in) :: imligp, iwarnp
     double precision, intent(in) :: epsrgp, climgp
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
@@ -4113,7 +4111,7 @@ contains
 
     ! The gradient of a potential (pressure, ...) is a vector
 
-    call cs_f_gradient_s(f_id, imrgra, inc, recompute_cocg, nswrgp,            &
+    call cs_f_gradient_s(f_id, imrgra, inc, nswrgp,                            &
                          iwarnp, imligp,                                       &
                          epsrgp, climgp, coefap, coefbp, pvar, grad)
 
@@ -4126,7 +4124,6 @@ contains
   !> \param[in]       f_id             field id, or -1
   !> \param[in]       imrgra           gradient computation mode
   !> \param[in]       inc              0: increment; 1: do not increment
-  !> \param[in]       recompute_cocg   1 or 0: recompute COCG or not
   !> \param[in]       nswrgp           number of sweeps for reconstruction
   !> \param[in]       imligp           gradient limitation method:
   !>                                     < 0 no limitation
@@ -4144,7 +4141,7 @@ contains
   !> \param[in]       coefbp           boundary coefap coefficients
   !> \param[out]      grad             resulting gradient
 
-  subroutine gradient_weighted_s(f_id, imrgra, inc, recompute_cocg, nswrgp,   &
+  subroutine gradient_weighted_s(f_id, imrgra, inc, nswrgp,                   &
                                  imligp, hyd_p_flag, iwarnp, epsrgp, climgp,  &
                                  f_ext, pvar, c_weight, coefap,               &
                                  coefbp, grad)
@@ -4158,7 +4155,7 @@ contains
 
     ! Arguments
 
-    integer, intent(in) :: f_id, imrgra, inc, recompute_cocg , nswrgp
+    integer, intent(in) :: f_id, imrgra, inc, nswrgp
     integer, intent(in) :: imligp, hyd_p_flag, iwarnp
     double precision, intent(in) :: epsrgp, climgp
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
@@ -4167,7 +4164,7 @@ contains
     real(kind=c_double), dimension(:,:), pointer, intent(in) :: f_ext
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
 
-    call cs_f_gradient_weighted_s(f_id, imrgra, inc, recompute_cocg, nswrgp,   &
+    call cs_f_gradient_weighted_s(f_id, imrgra, inc, nswrgp,                   &
                                   hyd_p_flag, iwarnp, imligp, epsrgp,          &
                                   climgp, f_ext, coefap, coefbp,               &
                                   pvar, c_weight, grad)

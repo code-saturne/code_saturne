@@ -112,7 +112,7 @@ double precision, pointer, dimension(:,:) :: trava
 
 ! Local variables
 
-integer          iccocg, inc, iel, iel1, iel2, ifac, imax, imaxt, imin, imint
+integer          inc, iel, iel1, iel2, ifac, imax, imaxt, imin, imint
 integer          ii    , inod, itypfl, f_id, f_iddp
 integer          isou, ivar, iitsm
 integer          init, iautof
@@ -920,7 +920,6 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
     ! The predicted velocity is corrected by the cell gradient of the
     ! pressure increment.
 
-    iccocg = 1
     inc = 0
 
     call grdpor(inc)
@@ -958,8 +957,8 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
     endif
 
     if (iprcdo.eq.0) then
-      call field_gradient_potential(f_iddp, 0, 0, inc,                   &
-                                    iccocg, iphydr,                      &
+      call field_gradient_potential(f_iddp, 0, inc,              &
+                                    iphydr,                      &
                                     dfrcxt, cpro_gradp)
     endif
     ! Update the velocity field

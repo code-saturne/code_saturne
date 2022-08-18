@@ -112,17 +112,13 @@ BEGIN_C_DECLS
 void
 cs_f_field_gradient_scalar(int                    f_id,
                            int                    use_previous_t,
-                           int                    imrgr0,
                            int                    inc,
-                           int                    recompute_cocg,
                            cs_real_3_t  *restrict grad);
 
 void
 cs_f_field_gradient_potential(int                    f_id,
                               int                    use_previous_t,
-                              int                    imrgr0,
                               int                    inc,
-                              int                    recompute_cocg,
                               int                    hyd_p_flag,
                               cs_real_3_t            f_ext[],
                               cs_real_3_t  *restrict grad);
@@ -130,14 +126,12 @@ cs_f_field_gradient_potential(int                    f_id,
 void
 cs_f_field_gradient_vector(int                     f_id,
                            int                     use_previous_t,
-                           int                     imrgr0,
                            int                     inc,
                            cs_real_33_t  *restrict grad);
 
 void
 cs_f_field_gradient_tensor(int                     f_id,
                            int                     use_previous_t,
-                           int                     imrgr0,
                            int                     inc,
                            cs_real_63_t  *restrict grad);
 
@@ -222,7 +216,6 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
     cs_field_gradient_scalar(f,
                              true, /* use_previous_t */
                              1,    /* inc */
-                             true, /* recompute_cocg */
                              (cs_real_3_t *)grad);
   else if (dim == 3)
     cs_field_gradient_vector(f,
@@ -369,31 +362,23 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
  * parameters:
  *   f_id           <-- field id
  *   use_previous_t <-- should we use values from the previous time step ?
- *   imrgr0         <-- ignored
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_field_gradient_scalar(int                    f_id,
                            int                    use_previous_t,
-                           int                    imrgr0,
                            int                    inc,
-                           int                    recompute_cocg,
                            cs_real_3_t  *restrict grad)
 {
-  CS_UNUSED(imrgr0);
-
   bool _use_previous_t = use_previous_t ? true : false;
-  bool _recompute_cocg = recompute_cocg ? true : false;
 
   const cs_field_t *f = cs_field_by_id(f_id);
 
   cs_field_gradient_scalar(f,
                            _use_previous_t,
                            inc,
-                           _recompute_cocg,
                            grad);
 }
 
@@ -404,10 +389,8 @@ cs_f_field_gradient_scalar(int                    f_id,
  * parameters:
  *   f_id           <-- field id
  *   use_previous_t <-- should we use values from the previous time step ?
- *   imrgr0         <-- ignored
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   f_ext          <-- exterior force generating the hydrostatic pressure
  *   grad           --> gradient
@@ -416,24 +399,18 @@ cs_f_field_gradient_scalar(int                    f_id,
 void
 cs_f_field_gradient_potential(int                    f_id,
                               int                    use_previous_t,
-                              int                    imrgr0,
                               int                    inc,
-                              int                    recompute_cocg,
                               int                    hyd_p_flag,
                               cs_real_3_t            f_ext[],
                               cs_real_3_t  *restrict grad)
 {
-  CS_UNUSED(imrgr0);
-
   bool _use_previous_t = use_previous_t ? true : false;
-  bool _recompute_cocg = recompute_cocg ? true : false;
 
   const cs_field_t *f = cs_field_by_id(f_id);
 
   cs_field_gradient_potential(f,
                               _use_previous_t,
                               inc,
-                              _recompute_cocg,
                               hyd_p_flag,
                               f_ext,
                               grad);
@@ -446,21 +423,16 @@ cs_f_field_gradient_potential(int                    f_id,
  * parameters:
  *   f_id           <-- field id
  *   use_previous_t <-- should we use values from the previous time step ?
- *   imrgr0         <-- ignored
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_field_gradient_vector(int                     f_id,
                            int                     use_previous_t,
-                           int                     imrgr0,
                            int                     inc,
                            cs_real_33_t  *restrict grad)
 {
-  CS_UNUSED(imrgr0);
-
   bool _use_previous_t = use_previous_t ? true : false;
 
   const cs_field_t *f = cs_field_by_id(f_id);
@@ -478,21 +450,16 @@ cs_f_field_gradient_vector(int                     f_id,
  * parameters:
  *   f_id           <-- field id
  *   use_previous_t <-- should we use values from the previous time step ?
- *   imrgr0         <-- ignored
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_field_gradient_tensor(int                     f_id,
                            int                     use_previous_t,
-                           int                     imrgr0,
                            int                     inc,
                            cs_real_63_t  *restrict grad)
 {
-  CS_UNUSED(imrgr0);
-
   bool _use_previous_t = use_previous_t ? true : false;
 
   const cs_field_t *f = cs_field_by_id(f_id);
@@ -536,7 +503,6 @@ cs_f_field_set_volume_average(int       f_id,
  * \param[in]       use_previous_t  should we use values from the previous
  *                                  time step ?
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
- * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[out]      grad            gradient
  */
 /*----------------------------------------------------------------------------*/
@@ -545,7 +511,6 @@ void
 cs_field_gradient_scalar(const cs_field_t          *f,
                          bool                       use_previous_t,
                          int                        inc,
-                         bool                       recompute_cocg,
                          cs_real_3_t      *restrict grad)
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -622,7 +587,6 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                      gradient_type,
                      halo_type,
                      inc,
-                     recompute_cocg,
                      eqp->nswrgr,
                      0, /* ignored */
                      0, /* hyd_p_flag */
@@ -649,7 +613,6 @@ cs_field_gradient_scalar(const cs_field_t          *f,
  * \param[in]       use_previous_t  should we use values from the previous
  *                                  time step ?
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
- * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[in]       hyd_p_flag      flag for hydrostatic pressure
  * \param[in]       f_ext           exterior force generating
  *                                  the hydrostatic pressure
@@ -661,7 +624,6 @@ void
 cs_field_gradient_potential(const cs_field_t          *f,
                             bool                       use_previous_t,
                             int                        inc,
-                            bool                       recompute_cocg,
                             int                        hyd_p_flag,
                             cs_real_3_t                f_ext[],
                             cs_real_3_t      *restrict grad)
@@ -739,7 +701,6 @@ cs_field_gradient_potential(const cs_field_t          *f,
                      gradient_type,
                      halo_type,
                      inc,
-                     recompute_cocg,
                      eqp->nswrgr,
                      0, /* tr_dim */
                      hyd_p_flag,

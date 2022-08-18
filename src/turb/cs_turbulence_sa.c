@@ -150,7 +150,6 @@ _vort_trace(cs_real_t   vort[],
   cs_field_gradient_scalar(CS_F_(nusa),
                            true,   /* use_previous_t */
                            1,      /* inc */
-                           true,   /* iccocg */
                            grad_nu);
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {

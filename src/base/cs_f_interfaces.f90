@@ -41,7 +41,7 @@ module cs_f_interfaces
 
     subroutine diften &
       (idtvar, ivar, vcopt,                                                    &
-      inc, iccocg,                                                             &
+      inc,                                                                     &
       pvar, pvara, coefap, coefbp, cofafp, cofbfp,                             &
       viscf, viscb, viscel,                                                    &
       weighf, weighb,                                                          &
@@ -50,7 +50,7 @@ module cs_f_interfaces
       use cs_c_bindings, only: var_cal_opt
       integer :: idtvar, ivar
       type(var_cal_opt) :: vcopt
-      integer :: inc, iccocg
+      integer :: inc
       double precision, dimension(ncelet) :: pvar, pvara
       double precision, dimension(nfabor) :: coefap, coefbp, cofafp, cofbfp
       double precision, dimension(nfac) :: viscf
@@ -64,13 +64,13 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine itrmav &
-     (f_id, init, inc, imrgra, iccocg, nswrgp, imligp, ircflp,                 &
+     (f_id, init, inc, imrgra, nswrgp, imligp, ircflp,                         &
      iphydp, iwgrp, iwarnp, epsrgp, climgp, extrap, frcxt,                     &
      pvar, coefap, coefbp, cofafp, cofbfp, viscf, viscb, viscel,               &
      weighf, weighb, flumas, flumab)
       use mesh
       integer :: f_id, init, inc, imrgra
-      integer :: iccocg, nswrgp, imligp, ircflp
+      integer :: nswrgp, imligp, ircflp
       integer :: iwarnp, iphydp
       double precision :: epsrgp , climgp , extrap
       double precision, dimension(ncelet) :: pvar
@@ -88,13 +88,13 @@ module cs_f_interfaces
     !---------------------------------------------------------------------------
 
     subroutine itrgrv &
-      (f_id, init, inc, imrgra, iccocg, nswrgp, imligp, ircflp,                &
+      (f_id, init, inc, imrgra, nswrgp, imligp, ircflp,                        &
       iphydp, iwgrp, iwarnp,                                                   &
       epsrgp, climgp, extrap, frcxt,                                           &
       pvar, coefap, coefbp, cofafp, cofbfp, viscf, viscb, viscel,              &
       weighf, weighb, diverg)
       use mesh
-      integer :: f_id, init, inc, imrgra, iccocg, nswrgp, imligp, ircflp
+      integer :: f_id, init, inc, imrgra, nswrgp, imligp, ircflp
       integer :: iwgrp, iwarnp , iphydp
       double precision :: epsrgp, climgp, extrap
       double precision, dimension(ncelet) :: pvar

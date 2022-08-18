@@ -81,7 +81,7 @@ double precision coopts(3,nptdis), rvdis(f_dim,nptdis)
 ! Local variables
 
 integer          ipt    , iel    , isou   , iprev
-integer          inc    , iccocg
+integer          inc
 
 double precision dx     , dy     , dz
 
@@ -95,7 +95,6 @@ double precision, dimension(:,:), pointer :: cvara_v
 
 inc    = 1
 iprev  = 1 ! previsous time step value
-iccocg = 1
 
 ! For scalars
 if (f_dim.eq.1) then
@@ -104,7 +103,7 @@ if (f_dim.eq.1) then
   ! Allocate a temporary array
   allocate(grads(3, ncelet))
 
-  call field_gradient_scalar(f_id, iprev, 0, inc, iccocg, grads)
+  call field_gradient_scalar(f_id, iprev, inc, grads)
 
   ! --- Interpolation
   do ipt = 1, nptdis
@@ -130,7 +129,7 @@ else if (f_dim.eq.3) then
   ! Allocate a temporary array
   allocate(gradv(3, 3, ncelet))
 
-  call field_gradient_vector(f_id, iprev, 0, inc, gradv)
+  call field_gradient_vector(f_id, iprev, inc, gradv)
 
   ! --- Interpolation
   do ipt = 1, nptdis

@@ -261,13 +261,11 @@ _gradfi_dot_gradk(const  cs_lnum_t   n_cells,
   cs_field_gradient_scalar(CS_F_(phi),
                            true,     /* use previous t */
                            1,        /* not on increment */
-                           true,     /* recompute_cocg */
                            grad_phi);
 
   cs_field_gradient_scalar(CS_F_(k),
                            true,     /* use previous t */
                            1,        /* not on increment */
-                           true,     /* recompute_cocg */
                            grad_k);
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
@@ -448,7 +446,6 @@ _solve_eq_fbr_al(const int         istprv,
                          1,     /* init */
                          1,     /* inc */
                          eqp_phi->imrgra,
-                         true,  /* iccocg */
                          eqp_phi->nswrgr,
                          eqp_phi->imligr,
                          0,     /* iphydp */

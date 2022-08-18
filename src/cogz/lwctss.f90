@@ -111,7 +111,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 ! Local variables
 
 integer          ivar, iel, idirac
-integer          inc , iccocg, iprev
+integer          inc , iprev
 integer          ii
 
 double precision sum, epsi
@@ -238,9 +238,8 @@ if (ivar.eq.isca(icoyfp)) then
 
   iprev = 1
   inc = 1
-  iccocg = 1
 
-  call field_gradient_scalar(ivarfl(ii), iprev, 0, inc, iccocg, gradf)
+  call field_gradient_scalar(ivarfl(ii), iprev, inc, gradf)
 
 ! --- Calcul du gradient de Yfuel
 !     ===========================
@@ -252,9 +251,8 @@ if (ivar.eq.isca(icoyfp)) then
 
   iprev = 1
   inc = 1
-  iccocg = 1
 
-  call field_gradient_scalar(ivarfl(ii), iprev, 0, inc, iccocg, grady)
+  call field_gradient_scalar(ivarfl(ii), iprev, inc, grady)
 
 ! --- Calcul du terme source
 !     ======================

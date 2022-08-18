@@ -83,7 +83,7 @@ integer impout
 integer ifac
 integer nlelt, ilelt, iflmas, iflmab
 integer iel11, iel22
-integer iprev, inc, iccocg
+integer iprev, inc
 integer ifcvsl
 integer pas_iter
 
@@ -120,7 +120,6 @@ if (mod(ntcabs,pas_iter).eq.0) then
 
   iprev = 0
   inc = 1
-  iccocg = 1
   eps_geom = 1.d-10
 
   call field_get_key_int(ivarfl(iu), kimasf, iflmas)

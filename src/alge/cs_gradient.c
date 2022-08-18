@@ -183,7 +183,6 @@ void
 cs_f_gradient_s(int               f_id,
                 int               imrgra,
                 int               inc,
-                int               iccocg,
                 int               n_r_sweeps,
                 int               iwarnp,
                 int               imligp,
@@ -198,7 +197,6 @@ void
 cs_f_gradient_potential(int               f_id,
                         int               imrgra,
                         int               inc,
-                        int               iccocg,
                         int               n_r_sweeps,
                         int               iphydp,
                         int               iwarnp,
@@ -215,7 +213,6 @@ void
 cs_f_gradient_weighted_s(int               f_id,
                          int               imrgra,
                          int               inc,
-                         int               iccocg,
                          int               n_r_sweeps,
                          int               iphydp,
                          int               iwarnp,
@@ -6428,6 +6425,7 @@ _gradient_scalar(const char                    *var_name,
     if (last_fvm_count != prev_fvq_count)
       recompute_cocg = true;
   }
+  var_name_prev = var_name;
 
   var_name_prev = var_name;
 
@@ -7432,7 +7430,6 @@ void
 cs_f_gradient_s(int               f_id,
                 int               imrgra,
                 int               inc,
-                int               iccocg,
                 int               n_r_sweeps,
                 int               iwarnp,
                 int               imligp,
@@ -7443,8 +7440,6 @@ cs_f_gradient_s(int               f_id,
                 cs_real_t         pvar[],
                 cs_real_3_t       grad[])
 {
-  bool recompute_cocg = (iccocg) ? true : false;
-
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
@@ -7481,7 +7476,6 @@ cs_f_gradient_s(int               f_id,
                      gradient_type,
                      halo_type,
                      inc,
-                     recompute_cocg,
                      n_r_sweeps,
                      0,             /* ignored */
                      0,             /* iphydp */
@@ -7507,7 +7501,6 @@ void
 cs_f_gradient_potential(int               f_id,
                         int               imrgra,
                         int               inc,
-                        int               iccocg,
                         int               n_r_sweeps,
                         int               iphydp,
                         int               iwarnp,
@@ -7520,8 +7513,6 @@ cs_f_gradient_potential(int               f_id,
                         cs_real_t         pvar[],
                         cs_real_3_t       grad[])
 {
-  bool recompute_cocg = (iccocg) ? true : false;
-
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
@@ -7558,7 +7549,6 @@ cs_f_gradient_potential(int               f_id,
                      gradient_type,
                      halo_type,
                      inc,
-                     recompute_cocg,
                      n_r_sweeps,
                      0,             /* ignored */
                      iphydp,
@@ -7584,7 +7574,6 @@ void
 cs_f_gradient_weighted_s(int               f_id,
                          int               imrgra,
                          int               inc,
-                         int               iccocg,
                          int               n_r_sweeps,
                          int               iphydp,
                          int               iwarnp,
@@ -7598,8 +7587,6 @@ cs_f_gradient_weighted_s(int               f_id,
                          cs_real_t         c_weight[],
                          cs_real_3_t       grad[])
 {
-  bool recompute_cocg = (iccocg) ? true : false;
-
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
@@ -7636,7 +7623,6 @@ cs_f_gradient_weighted_s(int               f_id,
                      gradient_type,
                      halo_type,
                      inc,
-                     recompute_cocg,
                      n_r_sweeps,
                      0,             /* ignored */
                      iphydp,
@@ -7830,7 +7816,6 @@ cs_gradient_free_quantities(void)
  * \param[in]       gradient_type  gradient type
  * \param[in]       halo_type      halo type
  * \param[in]       inc            if 0, solve on increment; 1 otherwise
- * \param[in]       recompute_cocg should COCG FV quantities be recomputed ?
  * \param[in]       n_r_sweeps     if > 1, number of reconstruction sweeps
  *                                 (only used by CS_GRADIENT_GREEN_ITER)
  * \param[in]       tr_dim         ignored
@@ -7856,7 +7841,6 @@ cs_gradient_scalar(const char                    *var_name,
                    cs_gradient_type_t             gradient_type,
                    cs_halo_type_t                 halo_type,
                    int                            inc,
-                   bool                           recompute_cocg,
                    int                            n_r_sweeps,
                    int                            tr_dim,
                    int                            hyd_p_flag,
@@ -8172,7 +8156,6 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                                 cs_gradient_type_t          gradient_type,
                                 cs_halo_type_t              halo_type,
                                 int                         inc,
-                                bool                        recompute_cocg,
                                 int                         n_r_sweeps,
                                 int                         hyd_p_flag,
                                 int                         w_stride,

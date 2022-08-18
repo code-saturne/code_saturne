@@ -106,7 +106,7 @@ double precision, dimension(:), pointer :: bromo, cromo
 
 integer          ifac  , iel   , ivar  , isou, jsou
 integer          iflmas, iflmab
-integer          inc   , iccocg
+integer          inc
 integer          iwarnp, iclip
 integer          imrgrp, nswrgp, imligp
 integer          f_id0 , f_id, st_prv_id
@@ -253,9 +253,8 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
   ! Compute the gradient of Alpha
   iprev  = 0
   inc    = 1
-  iccocg = 1
 
-  call field_gradient_scalar(ivarfl(ial), iprev, 0, inc, iccocg, grad)
+  call field_gradient_scalar(ivarfl(ial), iprev, inc, grad)
 
   call field_get_val_v(ivarfl(irij), cvar_rij)
   utaurf=0.05d0*uref
@@ -342,7 +341,7 @@ endif
 inc = 1
 iprev = 1
 
-call field_gradient_vector(ivarfl(iu), iprev, 0, inc, cpro_gradv)
+call field_gradient_vector(ivarfl(iu), iprev, inc, cpro_gradv)
 
 !===============================================================================
 ! 2.2 Compute the production term for Rij
@@ -438,9 +437,8 @@ if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
   call field_get_val_prev_s(ivarfl(isca(iscalt)), cvara_scalt)
 
   inc = 1
-  iccocg = 1
 
-  call field_gradient_scalar(ivarfl(isca(iscalt)), 1, 0, inc, iccocg, gradro)
+  call field_gradient_scalar(ivarfl(isca(iscalt)), 1, inc, gradro)
 
   ! gradro stores: - rho grad(theta)/theta
   ! grad(rho) and grad(theta) have opposite signs
@@ -458,11 +456,10 @@ else if (igrari.eq.1) then
   ! Boussinesq approximation, only for the thermal scalar for the moment
   if (idilat.eq.0)  then
 
-    iccocg = 1
     inc = 1
 
     ! Use the current value...
-    call field_gradient_scalar(ivarfl(isca(iscalt)), 0, 0, inc, iccocg, gradro)
+    call field_gradient_scalar(ivarfl(isca(iscalt)), 0, inc, gradro)
 
     !FIXME make it dependant on the scalar and use is_buoyant field
     call field_get_val_s(ibeta, cpro_beta)
@@ -495,7 +492,6 @@ else if (igrari.eq.1) then
     climgp = vcopt%climgr
 
     f_id0 = -1
-    iccocg = 1
 
     call field_get_key_int(icrom, key_t_ext_id, iroext)
     ! If we extrapolate the source terms and rho, we use cpdt rho^n
@@ -507,8 +503,8 @@ else if (igrari.eq.1) then
       call field_get_val_s(ibrom, bromo)
     endif
 
-    call gradient_s(f_id0, imrgrp, inc, iccocg, nswrgp, imligp,      &
-                    iwarnp, epsrgp, climgp, cromo, bromo, viscb,     &
+    call gradient_s(f_id0, imrgrp, inc, nswrgp, imligp,            &
+                    iwarnp, epsrgp, climgp, cromo, bromo, viscb,   &
                     gradro)
 
   endif

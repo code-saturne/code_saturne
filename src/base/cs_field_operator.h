@@ -70,7 +70,6 @@ typedef enum {
  *   f              <-- pointer to field
  *   use_previous_t <-- should we use values from the previous time step ?
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   grad           --> gradient
  *----------------------------------------------------------------------------*/
 
@@ -78,7 +77,6 @@ void
 cs_field_gradient_scalar(const cs_field_t          *f,
                          bool                       use_previous_t,
                          int                        inc,
-                         bool                       recompute_cocg,
                          cs_real_3_t      *restrict grad);
 
 /*----------------------------------------------------------------------------
@@ -89,7 +87,6 @@ cs_field_gradient_scalar(const cs_field_t          *f,
  *   f              <-- pointer to field
  *   use_previous_t <-- should we use values from the previous time step ?
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   f_ext          <-- exterior force generating the hydrostatic pressure
  *   grad           --> gradient
@@ -99,7 +96,6 @@ void
 cs_field_gradient_potential(const cs_field_t          *f,
                             bool                       use_previous_t,
                             int                        inc,
-                            bool                       recompute_cocg,
                             int                        hyd_p_flag,
                             cs_real_3_t                f_ext[],
                             cs_real_3_t      *restrict grad);

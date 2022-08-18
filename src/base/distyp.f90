@@ -109,7 +109,7 @@ integer          f_id_yplus
 integer          ndircp
 integer          iphydp
 integer          ifac  , iel   , init
-integer          inc   , iccocg, isweep
+integer          inc   , isweep
 integer          imucpp
 integer          imrgrp, nswrgp
 integer          icvflb, iescap, imligp, iwarnp
@@ -324,7 +324,6 @@ call field_get_id("wall_distance", f_id)
 init   = 1
 ! Take Dirichlet into account
 inc    = 1
-iccocg = 1
 iphydp = 0
 
 imrgrp = vcopt%imrgra
@@ -354,7 +353,7 @@ endif
 ! Compute convective mass flux
 ! here -div(1 grad(y))
 call itrmas &
- ( f_id   , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,     &
+ ( f_id   , init   , inc    , imrgrp , nswrgp , imligp , iphydp ,              &
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    rvoid  ,                                                                    &

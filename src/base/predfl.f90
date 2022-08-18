@@ -101,7 +101,7 @@ double precision smacel(ncesmp,nvar)
 
 character(len=80) :: chaine
 integer          lchain
-integer          iccocg, inc   , init  , isym
+integer          inc   , init  , isym
 integer          ii, iel   , ifac
 integer          nswmpr
 integer          isweep, niterf
@@ -334,7 +334,6 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
   !      rhs^{k+1} = - div(rho u^n) - D(dt, pot^{k+1})
 
   if (isweep.le.nswmpr) then
-    iccocg = 1
     init = 1
     inc  = 0
     imrgrp = vcopt%imrgra
@@ -350,7 +349,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
     call itrgrp &
     !==========
-   ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,   &
+   ( f_id0  , init   , inc    , imrgrp , nswrgp , imligp , iphydp ,            &
      iwgrp  , iwarnp ,                                                         &
      epsrgp , climgp , extrap ,                                                &
      rvoid  ,                                                                  &
@@ -388,7 +387,6 @@ endif
 ! Update the mass flux
 !---------------------
 
-iccocg = 1
 init = 0
 inc  = 0
 iphydp = 0
@@ -401,7 +399,7 @@ climgp = vcopt%climgr
 extrap = 0
 
 call itrmas &
- ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,     &
+ ( f_id0  , init   , inc    , imrgrp , nswrgp , imligp , iphydp ,              &
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    rvoid  ,                                                                    &
@@ -415,12 +413,11 @@ call itrmas &
 ! The last increment is not reconstructed to fullfill exactly the continuity
 ! equation (see theory guide)
 
-iccocg = 0
 nswrgp = 0
 inc = 0
 
 call itrmas &
- ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,     &
+ ( f_id0  , init   , inc    , imrgrp , nswrgp , imligp , iphydp ,              &
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    rvoid  ,                                                                    &

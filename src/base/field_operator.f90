@@ -42,19 +42,14 @@ module field_operator
     !> \param[in]   f_id             field id
     !> \param[in]   use_previous_t   1 if values at previous time step should
     !>                               be used, 0 otherwise
-    !> \param[in]   imrgrO           unused
     !> \param[in]   inc              0: increment; 1: do not increment
-    !> \param[in]   recompute_cocg   1 or 0: recompute COCG or not
     !> \param[out]  grad             gradient
 
-    subroutine field_gradient_scalar(f_id, use_previous_t, imrgr0, inc,        &
-                                     recompute_cocg,                           &
-                                     grad)                                     &
+    subroutine field_gradient_scalar(f_id, use_previous_t, inc, grad)          &
       bind(C, name='cs_f_field_gradient_scalar')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value             :: f_id, use_previous_t, imrgr0, inc
-      integer(c_int), value             :: recompute_cocg
+      integer(c_int), value             :: f_id, use_previous_t, inc
       real(kind=c_double), dimension(*) :: grad
     end subroutine field_gradient_scalar
 
@@ -65,23 +60,18 @@ module field_operator
     !> \param[in]   f_id             field id
     !> \param[in]   use_previous_t   1 if values at previous time step should
     !>                               be used, 0 otherwise
-    !> \param[in]   imrgr0           ignored
     !> \param[in]   inc              0: increment; 1: do not increment
-    !> \param[in]   recompute_cocg   1 or 0: recompute COCG or not
     !> \param[in]   hyd_p_flag       flag for hydrostatic pressure
     !> \param[in]   f_ext            exterior force generating
     !>                               the hydrostatic pressure
     !> \param[out]  grad             gradient
 
-    subroutine field_gradient_potential(f_id, use_previous_t, imrgr0, inc,     &
-                                        recompute_cocg,                        &
-                                        hyd_p_flag,                            &
+    subroutine field_gradient_potential(f_id, use_previous_t, inc, hyd_p_flag, &
                                         f_ext, grad)                           &
       bind(C, name='cs_f_field_gradient_potential')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value                :: f_id, use_previous_t, imrgr0, inc
-      integer(c_int), value                :: recompute_cocg
+      integer(c_int), value                :: f_id, use_previous_t, inc
       integer(c_int), value                :: hyd_p_flag
       real(kind=c_double), dimension(3, *) :: f_ext
       real(kind=c_double), dimension(*)    :: grad
@@ -94,16 +84,14 @@ module field_operator
     !> \param[in]   f_id             field id
     !> \param[in]   use_previous_t   1 if values at previous time step should
     !>                               be used, 0 otherwise
-    !> \param[in]   imrgr0           ignored
     !> \param[in]   inc              0: increment; 1: do not increment
     !> \param[out]  grad             gradient
 
-    subroutine field_gradient_vector(f_id, use_previous_t, imrgr0, inc,        &
-                                     grad)                                     &
+    subroutine field_gradient_vector(f_id, use_previous_t, inc, grad)          &
       bind(C, name='cs_f_field_gradient_vector')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value                 :: f_id, use_previous_t, imrgr0, inc
+      integer(c_int), value                 :: f_id, use_previous_t, inc
       real(kind=c_double), dimension(3,3,*) :: grad
     end subroutine field_gradient_vector
 
@@ -114,16 +102,14 @@ module field_operator
     !> \param[in]   f_id             field id
     !> \param[in]   use_previous_t   1 if values at previous time step should
     !>                               be used, 0 otherwise
-    !> \param[in]   imrgr0           ignored
     !> \param[in]   inc              0: increment; 1: do not increment
     !> \param[out]  grad             gradient
 
-    subroutine field_gradient_tensor(f_id, use_previous_t, imrgr0, inc,        &
-                                     grad)                                     &
+    subroutine field_gradient_tensor(f_id, use_previous_t, inc, grad)          &
       bind(C, name='cs_f_field_gradient_tensor')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(c_int), value                 :: f_id, use_previous_t, imrgr0, inc
+      integer(c_int), value                 :: f_id, use_previous_t, inc
       real(kind=c_double), dimension(6,3,*) :: grad
     end subroutine field_gradient_tensor
 
