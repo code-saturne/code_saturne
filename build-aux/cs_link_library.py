@@ -342,6 +342,13 @@ if __name__ == '__main__':
         if o[:2] == '-l':
             if l_new.count(o) > 0:
                 continue
+            # Also remove names which do not seem to match library names
+            # (should not be needed but helps remove options such as
+            # "-loopopt=0" which appears in the autoconf'ed FCLIBS using
+            # the Intel ifx Fortran.
+            # TODO: add a cleanup routinr for FCLIBS instead.
+            if o.find("=") > 0:   # Non-library option
+                continue
         l_new.append(o)
     other = l_new
     other.reverse()
