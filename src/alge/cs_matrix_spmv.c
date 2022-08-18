@@ -1689,7 +1689,7 @@ _mat_vec_p_l_msr_omp_sched(const cs_matrix_t  *matrix,
 
       }
 
-#     pragma omp for schedule(dynamic, _cs_cl)
+#     pragma omp for schedule(dynamic, CS_THR_MIN)
       for (cs_lnum_t ii = n_s_rows; ii < n_rows; ii++) {
 
         const cs_lnum_t *restrict col_id = e_col_id + e_row_index[ii];
@@ -1719,7 +1719,7 @@ _mat_vec_p_l_msr_omp_sched(const cs_matrix_t  *matrix,
       if (n_s_rows > n_rows)
         n_s_rows = n_rows;
 
-#     pragma omp for
+#     pragma omp for nowait
       for (cs_lnum_t ii = 0; ii < n_s_rows; ii++) {
 
         const cs_lnum_t *restrict col_id = e_col_id + e_row_index[ii];
@@ -1734,7 +1734,7 @@ _mat_vec_p_l_msr_omp_sched(const cs_matrix_t  *matrix,
 
       }
 
-#     pragma omp for schedule(dynamic, _cs_cl)
+#     pragma omp for schedule(dynamic, CS_THR_MIN)
       for (cs_lnum_t ii = n_s_rows; ii < n_rows; ii++) {
 
         const cs_lnum_t *restrict col_id = e_col_id + e_row_index[ii];
