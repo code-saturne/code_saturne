@@ -216,7 +216,7 @@ class cs_compile(object):
 
     #---------------------------------------------------------------------------
 
-    def get_pkg_path_flags(self, flag):
+    def get_pkg_path_flags(self, flag, base_name=None):
         """
         Determine compilation flags for a given flag type.
         """
@@ -231,7 +231,7 @@ class cs_compile(object):
                 flags.insert(0, "-I" + self.pkg.get_dir("includedir"))
             # In the case where it is neptune_cfd, add preprocessing flag
             # to allow compatibility of user functions
-            if self.pkg.name == "neptune_cfd":
+            if self.pkg.name == "neptune_cfd" or base_name == 'nc_solver':
                 flags.append("-DUSE_NEPTUNE_CFD")
 
         elif flag == 'ldflags':
@@ -250,7 +250,7 @@ class cs_compile(object):
         Determine compilation flags for a given flag type.
         """
 
-        cmd_line = self.get_pkg_path_flags(flag)
+        cmd_line = self.get_pkg_path_flags(flag, base_name=base_name)
 
         # Build the command line, and split possible multiple arguments in lists.
         for lib in self.pkg.config.deplibs:
