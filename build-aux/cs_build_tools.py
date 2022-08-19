@@ -44,6 +44,14 @@ def clean_lib_search_flags(flags):
             p = f[2:]
         else:
             p = f
+            if f[0:2] == '-l':
+                # Also remove names which do not seem to match library names
+                # (should not be needed but helps remove options such as
+                # "-loopopt=0" which appears in the autoconf'ed FCLIBS using
+                # the Intel ifx Fortran.
+                # TODO: add a cleanup routinr for FCLIBS instead.
+                if f.find("=") > 0:   # Non-library option
+                    continue
         if os.path.isfile(p) or os.path.isdir(p):
             p = os.path.normpath(p)
         n_flags.append(prf + p)
