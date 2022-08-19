@@ -150,7 +150,7 @@ class compile_build(cs_compile):
 
     #---------------------------------------------------------------------------
 
-    def get_pkg_path_flags(self, flag):
+    def get_pkg_path_flags(self, flag, base_name=None):
         """
         Determine compilation flags for a given flag type.
         """
@@ -216,7 +216,7 @@ class compile_install(cs_compile):
 
     #---------------------------------------------------------------------------
 
-    def get_pkg_path_flags(self, flag):
+    def get_pkg_path_flags(self, flag, base_name=None):
         """
         Determine compilation flags for a given flag type.
         """
