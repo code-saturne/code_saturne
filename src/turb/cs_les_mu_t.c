@@ -493,7 +493,7 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
       cs_field_gradient_scalar(fld,
                                false,     /* use previous t   */
                                1,         /* not on increment */
-                               false,     /* recompute_cocg   */
+                               true,      /* recompute_cocg   */
                                grads);
 
       /* compute grad (<rho.Y>/<rho>) */
