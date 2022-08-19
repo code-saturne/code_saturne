@@ -325,7 +325,7 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
   }
   if (nbprec2 >= 1000000) {
     bft_error(__FILE__, __LINE__, 0,
-              "%s: nbprec2 >= 1000000\n"
+              "%s: nbprec2 = %d >= 1000000\n"
               "(maximum number of precipitated particles exceeded).",
               __func__, (int)nbprec2);
   }
