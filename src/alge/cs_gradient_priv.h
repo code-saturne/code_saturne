@@ -83,9 +83,7 @@ typedef cs_real_t  cs_cocg_33_t[3][3];
  *   fvq            <-- pointer to associated finite volume quantities
  *   halo_type      <-- halo type (extended or not)
  *   recompute_cocg <-- flag to recompute cocg
- *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   fext           <-- exterior force generating pressure
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
@@ -102,9 +100,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             const cs_mesh_quantities_t   *fvq,
                             cs_halo_type_t                halo_type,
                             bool                          recompute_cocg,
-                            int                           hyd_p_flag,
                             cs_real_t                     inc,
-                            const cs_real_3_t             f_ext[],
                             const cs_real_t               coefap[],
                             const cs_real_t               coefbp[],
                             const cs_real_t               pvar[],

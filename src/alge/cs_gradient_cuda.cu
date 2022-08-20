@@ -496,9 +496,7 @@ _sync_or_copy_real_h2d(const  cs_real_t   *val_h,
  *   fvq            <-- pointer to associated finite volume quantities
  *   halo_type      <-- halo type (extended or not)
  *   recompute_cocg <-- flag to recompute cocg
- *   hyd_p_flag     <-- flag for hydrostatic pressure
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   fext           <-- exterior force generating pressure
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
@@ -515,9 +513,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             const cs_mesh_quantities_t   *fvq,
                             cs_halo_type_t                halo_type,
                             bool                          recompute_cocg,
-                            int                           hyd_p_flag,
                             cs_real_t                     inc,
-                            const cs_real_3_t            *f_ext,
                             const cs_real_t              *coefap,
                             const cs_real_t              *coefbp,
                             const cs_real_t              *pvar,
@@ -602,16 +598,12 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   _init_rhsv<<<gridsize_ext, blocksize, 0, stream>>>
     (n_cells_ext, rhsv, pvar_d);
 
-  /* External forces not handled yet */
-
-  CS_NO_WARN_IF_UNUSED(f_ext);
-
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
   /*---------------------------------------------------------------------*/
 
   /* Recompute cocg and at rhsv from interior cells */
 
-  if (hyd_p_flag == 0 && init_cocg) {
+  if (init_cocg) {
 
     _compute_cocg_rhsv_lsq_s_i_face<<<gridsize, blocksize, 0, stream>>>
       (n_cells, cocg, cell_cells_idx, cell_cells, cell_cen, rhsv, c_weight);
@@ -652,7 +644,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
     init_cocg = false;
 
   }
-  else if (hyd_p_flag == 0) {
+  else {
 
     if (recompute_cocg) {
 
@@ -708,16 +700,6 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
          c_weight,
          rhsv);
   }
-
-  /* Case with hydrostatic pressure */
-  /*--------------------------------*/
-
-  else { /* if hyd_p_flag == 1 */
-
-    bft_error(__FILE__, __LINE__, 0,
-              "%s does not support hyd_p_flag == 1 yet", __func__);
-
-  } /* End of test on hydrostatic pressure */
 
   /* Compute gradient */
   /*------------------*/

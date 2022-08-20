@@ -2561,9 +2561,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
 #if defined(HAVE_CUDA)
   bool accel = (   cs_get_device_id() > -1
-                && cpl == NULL
-                && hyd_p_flag == 0
-                && is_porous == false) ? true : false;
+                && cpl == NULL) ? true : false;
 #else
   bool accel = false;
 #endif
@@ -2584,9 +2582,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                                 fvq,
                                 halo_type,
                                 recompute_cocg,
-                                false,
                                 inc,
-                                f_ext,
                                 coefap,
                                 coefbp,
                                 pvar,
