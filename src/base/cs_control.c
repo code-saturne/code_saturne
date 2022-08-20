@@ -527,7 +527,7 @@ _comm_write_sock(cs_control_comm_t  *comm,
   if (comm->trace != NULL) {
     if (size == 1) {
       fprintf(comm->trace, "-- write %d bytes: [",
-              (int)count, (int)size);
+              (int)count);
       _trace_buf(comm->trace, _rec, n_bytes);
       fprintf(comm->trace, "]...\n");
     }

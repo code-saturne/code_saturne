@@ -995,7 +995,6 @@ cs_sles_hypre_solve(void                *context,
   HYPRE_Int its;
   double res;
 
-  precision = precision;
   if (sd == NULL) {
     cs_sles_hypre_setup(c, name, a, verbosity);
     sd = c->setup_data;

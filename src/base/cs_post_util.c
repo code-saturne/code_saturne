@@ -572,11 +572,11 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
   }
   BFT_FREE(gradp);
 
-  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+  const cs_turb_model_t  *turb_model = cs_glob_turb_model;
 
   if (   turb_model->itytur == 2
-      && turb_model->itytur == 6
-      && turb_model->itytur == 5) {
+      || turb_model->itytur == 5
+      || turb_model->itytur == 6) {
     cs_real_3_t *gradk;
     BFT_MALLOC(gradk, m->n_cells_with_ghosts, cs_real_3_t);
 

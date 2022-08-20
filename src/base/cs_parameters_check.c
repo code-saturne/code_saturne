@@ -839,7 +839,7 @@ cs_parameters_check(void)
   const cs_velocity_pressure_model_t *vp_model
     = cs_glob_velocity_pressure_model;
   cs_velocity_pressure_param_t *vp_param
-    = cs_glob_velocity_pressure_param;
+    = cs_get_glob_velocity_pressure_param();
 
   cs_field_t *f_th = cs_thermal_model_field();
 

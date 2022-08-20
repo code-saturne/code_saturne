@@ -485,7 +485,7 @@ cs_turbulence_sa(cs_lnum_t        ncesmp,
              b_face_type,
              tr_gr_nu,
              vort,
-             cpro_rho,
+             cpro_rho_o,
              cpro_viscl,
              rhs_sa,
              imp_sa);

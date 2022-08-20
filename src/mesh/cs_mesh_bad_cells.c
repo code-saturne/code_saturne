@@ -296,7 +296,7 @@ _compute_least_squares(const cs_mesh_t             *mesh,
   cs_real_3_t   cell_center1, cell_center2, vect, dij, eigenvalues;
   cs_real_33_t  w2;
 
-  double surfn, min_diag, max_diag;
+  double min_diag, max_diag;
   double xam, q, p, r, phi;
 
   cs_real_t *w1 = NULL;
@@ -354,7 +354,6 @@ _compute_least_squares(const cs_mesh_t             *mesh,
     cs_real_t bn[3];
 
     cs_math_3_normalize(b_face_normal[face_id], bn);
-    surfn = cs_math_3_norm(b_face_normal[face_id]);
 
     for (i = 0; i < dim; i++)
       dij[i] = bn[i];

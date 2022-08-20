@@ -378,7 +378,6 @@ _init_all_mpi_sat(void)
   int i;
 
   int n_apps = 0;
-  int n_matched_apps = 0;
   int n_sat_apps = 0;
 
   const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
@@ -411,8 +410,6 @@ _init_all_mpi_sat(void)
         _sat_coupling_builder->match_id = i;
       }
     }
-
-    n_matched_apps += 1;
 
   }
 
@@ -463,7 +460,6 @@ _init_all_mpi_sat(void)
           if (strcmp(ai.app_name, scb->app_name) == 0) {
             scb->match_id = sat_appinfo[j*2 + 1];
             sat_appinfo[j*2] = i;
-            n_matched_apps += 1;
             break;
           }
 

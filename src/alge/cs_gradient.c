@@ -1286,7 +1286,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
             cs_real_t sum[6];
             cs_real_t inv_sum[6];
 
-            cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+            const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t kk = 0; kk < 6; kk++)
               sum[kk] = weight[f_id]*_c_weight[ii][kk]
                  +(1.0-weight[f_id])*_c_weight[jj][kk];
@@ -1413,7 +1413,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
             cs_real_t sum[6];
             cs_real_t inv_sum[6];
 
-            cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+            const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t kk = 0; kk < 6; kk++)
               sum[kk] = weight[f_id]*_c_weight[ii][kk]
                  +(1.0-weight[f_id])*_c_weight[jj][kk];
@@ -1790,7 +1790,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
               cs_real_t sum[6];
               cs_real_t inv_sum[6];
 
-              cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+              const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
               for (cs_lnum_t ii = 0; ii < 6; ii++)
                 sum[ii] =        weight[f_id]*_c_weight[c_id1][ii]
                           + (1.0-weight[f_id])*_c_weight[c_id2][ii];
@@ -1950,7 +1950,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
               cs_real_t sum[6];
               cs_real_t inv_sum[6];
 
-              cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+              const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
               for (cs_lnum_t ii = 0; ii < 6; ii++)
                 sum[ii] = weight[f_id]*_c_weight[c_id1][ii]
                    +(1.0-weight[f_id])*_c_weight[c_id2][ii];
@@ -3474,7 +3474,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
           else if (w_stride == 6 && c_weight != NULL) {
             cs_real_t sum[6], inv_sum[6];
 
-            cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+            const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t ii = 0; ii < 6; ii++)
               sum[ii] = weight[f_id]*_c_weight[c_id1][ii]
                  +(1.0-weight[f_id])*_c_weight[c_id2][ii];
@@ -3624,7 +3624,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
           else if (w_stride == 6 && c_weight != NULL) {
             cs_real_t sum[6], inv_sum[6];
 
-            cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
+            const cs_real_6_t *_c_weight = (const cs_real_6_t *)c_weight;
             for (cs_lnum_t ii = 0; ii < 6; ii++)
               sum[ii] =        weight[f_id]*_c_weight[c_id1][ii]
                         + (1.0-weight[f_id])*_c_weight[c_id2][ii];
@@ -6405,7 +6405,7 @@ _gradient_scalar(const char                    *var_name,
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
   static int last_fvm_count = 0;
-  static char *var_name_prev = NULL;
+  static const char *var_name_prev = NULL;
 
   bool recompute_cocg = true;
 
