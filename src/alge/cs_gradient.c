@@ -6427,8 +6427,6 @@ _gradient_scalar(const char                    *var_name,
   }
   var_name_prev = var_name;
 
-  var_name_prev = var_name;
-
   /* Use Neumann BC's as default if not provided */
 
   cs_real_t *_bc_coeff_a = NULL;
