@@ -6353,29 +6353,29 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
  * values for input arrays (var and optionally c_weight)
  * have already been synchronized.
  *
- * \param[in]       var_name        variable name
- * \param[in]       gradient_info   performance logging structure, or NULL
- * \param[in]       gradient_type   gradient type
- * \param[in]       halo_type       halo type
- * \param[in]       inc             if 0, solve on increment; 1 otherwise
- * \param[in]       recompute_cocg  should COCG FV quantities be recomputed ?
- * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
- * \param[in]       hyd_p_flag      flag for hydrostatic pressure
- * \param[in]       w_stride        stride for weighting coefficient
- * \param[in]       verbosity       verbosity level
- * \param[in]       clip_mode       clipping mode
- * \param[in]       epsilon         precision for iterative gradient calculation
- * \param[in]       clip_coeff      clipping coefficient
- * \param[in]       f_ext           exterior force generating
- *                                  the hydrostatic pressure
- * \param[in]       bc_coeff_a      boundary condition term a
- * \param[in]       bc_coeff_b      boundary condition term b
- * \param[in]       var             gradient's base variable
- * \param[in]       c_weight        weighted gradient coefficient variable,
- *                                  or NULL
- * \param[in]       cpl             structure associated with internal coupling,
- *                                  or NULL
- * \param[out]      grad            gradient
+ * \param[in]     var_name         variable name
+ * \param[in]     gradient_info    performance logging structure, or NULL
+ * \param[in]     gradient_type    gradient type
+ * \param[in]     halo_type        halo type
+ * \param[in]     inc              if 0, solve on increment; 1 otherwise
+ * \param[in]     check_recompute_cocg  should boundary COCG be recomputed ?
+ * \param[in]     n_r_sweeps       if > 1, number of reconstruction sweeps
+ * \param[in]     hyd_p_flag       flag for hydrostatic pressure
+ * \param[in]     w_stride         stride for weighting coefficient
+ * \param[in]     verbosity        verbosity level
+ * \param[in]     clip_mode        clipping mode
+ * \param[in]     epsilon          precision for iterative gradient calculation
+ * \param[in]     clip_coeff       clipping coefficient
+ * \param[in]     f_ext            exterior force generating
+ *                                 the hydrostatic pressure
+ * \param[in]     bc_coeff_a       boundary condition term a
+ * \param[in]     bc_coeff_b       boundary condition term b
+ * \param[in]     var              gradient's base variable
+ * \param[in]     c_weight         weighted gradient coefficient variable,
+ *                                 or NULL
+ * \param[in]     cpl              structure associated with internal coupling,
+ *                                 or NULL
+ * \param[out]    grad             gradient
  */
 /*----------------------------------------------------------------------------*/
 
@@ -6385,7 +6385,7 @@ _gradient_scalar(const char                    *var_name,
                  cs_gradient_type_t             gradient_type,
                  cs_halo_type_t                 halo_type,
                  int                            inc,
-                 bool                           recompute_cocg,
+                 bool                           check_recompute_cocg,
                  int                            n_r_sweeps,
                  int                            hyd_p_flag,
                  int                            w_stride,
@@ -6408,13 +6408,28 @@ _gradient_scalar(const char                    *var_name,
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
   static int last_fvm_count = 0;
+  static char *var_name_prev = NULL;
 
-  if (n_r_sweeps > 0) {
+  bool recompute_cocg = true;
+
+  if (check_recompute_cocg) {
+    /* We may reuse the boundary COCG values
+       if we last computed a gradient for this same field or array,
+       and if we are solving in increment (expected to be always
+       preceded by a call with inc == 1). */
+
+    assert(inc == 1 || var_name_prev == var_name);
+
+    if (var_name_prev == var_name && inc == 0)
+      recompute_cocg = false;
+
     int prev_fvq_count = last_fvm_count;
     last_fvm_count = cs_mesh_quantities_compute_count();
     if (last_fvm_count != prev_fvq_count)
       recompute_cocg = true;
   }
+
+  var_name_prev = var_name;
 
   /* Use Neumann BC's as default if not provided */
 
@@ -7898,7 +7913,7 @@ cs_gradient_scalar(const char                    *var_name,
                    gradient_type,
                    halo_type,
                    inc,
-                   recompute_cocg,
+                   false, /* Do not use previous cocg at boundary, recompute */
                    n_r_sweeps,
                    hyd_p_flag,
                    w_stride,
@@ -8198,7 +8213,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                    gradient_type,
                    halo_type,
                    inc,
-                   recompute_cocg,
+                   true,  /* Check recompute of cocg */
                    n_r_sweeps,
                    hyd_p_flag,
                    w_stride,
