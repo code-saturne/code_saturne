@@ -7669,7 +7669,6 @@ cs_f_gradient_s(int               f_id,
                      halo_type,
                      inc,
                      n_r_sweeps,
-                     0,             /* ignored */
                      0,             /* iphydp */
                      1,             /* w_stride */
                      iwarnp,
@@ -7742,7 +7741,6 @@ cs_f_gradient_potential(int               f_id,
                      halo_type,
                      inc,
                      n_r_sweeps,
-                     0,             /* ignored */
                      iphydp,
                      1,             /* w_stride */
                      iwarnp,
@@ -7816,7 +7814,6 @@ cs_f_gradient_weighted_s(int               f_id,
                      halo_type,
                      inc,
                      n_r_sweeps,
-                     0,             /* ignored */
                      iphydp,
                      1,             /* w_stride */
                      iwarnp,
@@ -8010,7 +8007,6 @@ cs_gradient_free_quantities(void)
  * \param[in]       inc            if 0, solve on increment; 1 otherwise
  * \param[in]       n_r_sweeps     if > 1, number of reconstruction sweeps
  *                                 (only used by CS_GRADIENT_GREEN_ITER)
- * \param[in]       tr_dim         ignored
  * \param[in]       hyd_p_flag     flag for hydrostatic pressure
  * \param[in]       w_stride       stride for weighting coefficient
  * \param[in]       verbosity      verbosity level
@@ -8034,7 +8030,6 @@ cs_gradient_scalar(const char                    *var_name,
                    cs_halo_type_t                 halo_type,
                    int                            inc,
                    int                            n_r_sweeps,
-                   int                            tr_dim,
                    int                            hyd_p_flag,
                    int                            w_stride,
                    int                            verbosity,
@@ -8049,8 +8044,6 @@ cs_gradient_scalar(const char                    *var_name,
                    const cs_internal_coupling_t  *cpl,
                    cs_real_t                      grad[restrict][3])
 {
-  CS_UNUSED(tr_dim);
-
   const cs_mesh_t  *mesh = cs_glob_mesh;
   cs_gradient_info_t *gradient_info = NULL;
   cs_timer_t t0, t1;

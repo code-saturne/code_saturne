@@ -522,7 +522,6 @@ cs_les_mu_t_smago_dyn(cs_real_33_t  *gradv)
                          1,     /* inc */
                          eqp_fld->nswrgr,
                          0,
-                         0,
                          1,     /* w_stride */
                          eqp_fld->iwarni,
                          eqp_fld->imligr,

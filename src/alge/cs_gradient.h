@@ -164,7 +164,6 @@ cs_gradient_free_quantities(void);
  * \param[in]       inc            if 0, solve on increment; 1 otherwise
  * \param[in]       n_r_sweeps     if > 1, number of reconstruction sweeps
  *                                 (only used by CS_GRADIENT_GREEN_ITER)
- * \param[in]       tr_dim         ignored
  * \param[in]       hyd_p_flag     flag for hydrostatic pressure
  * \param[in]       w_stride       stride for weighting coefficient
  * \param[in]       verbosity      verbosity level
@@ -188,7 +187,6 @@ cs_gradient_scalar(const char                    *var_name,
                    cs_halo_type_t                 halo_type,
                    int                            inc,
                    int                            n_r_sweeps,
-                   int                            tr_dim,
                    int                            hyd_p_flag,
                    int                            w_stride,
                    int                            verbosity,

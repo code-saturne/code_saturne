@@ -504,7 +504,6 @@ _smoothe(const cs_mesh_t              *m,
                      1,     /* inc */
                      eqp_volf->nswrgr,
                      0,
-                     0,
                      1,     /* w_stride */
                      eqp_volf->verbosity,
                      eqp_volf->imligr,
@@ -1008,7 +1007,6 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      halo_type,
                      1,     /* inc */
                      eqp_volf->nswrgr,
-                     0,
                      0,
                      1,     /* w_stride */
                      eqp_volf->verbosity,

@@ -181,8 +181,6 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
     /* Parameters for gradient computation
      * =================================== */
 
-    int tr_dim = 0;
-    cs_lnum_t inc = 1;
     cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
     cs_var_cal_opt_t var_cal_opt;
@@ -234,9 +232,8 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
     cs_gradient_scalar("pressure [Lagrangian module]",
                        gradient_type,
                        halo_type,
-                       inc,
+                       1,
                        var_cal_opt.nswrgr,
-                       tr_dim,
                        hyd_p_flag,
                        w_stride,
                        var_cal_opt.verbosity,
@@ -268,7 +265,7 @@ cs_lagr_aux_mean_fluid_quantities(cs_field_t    *lagr_time,
         || cs_glob_lagr_time_scheme->interpol_field) {
       cs_field_gradient_vector(extra->vel,
                                0,
-                               inc,
+                               1, /* inc */
                                grad_vel);
     }
   }

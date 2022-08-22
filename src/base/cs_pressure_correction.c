@@ -2177,7 +2177,6 @@ _pressure_correction_fv(int        iterns,
                        halo_type,
                        1,             /* inc */
                        eqp_u->nswrgr,
-                       0,             /* ignored */
                        0,             /* iphydp */
                        1,             /* w_stride */
                        eqp_p->verbosity,

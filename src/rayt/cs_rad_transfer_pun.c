@@ -284,7 +284,6 @@ cs_rad_transfer_pun(int              iband,
                      halo_type,
                      inc,
                      nswrgp,
-                     0,             /* ignored */
                      hyd_p_flag,
                      1,             /* w_stride */
                      iwarnp,

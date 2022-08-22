@@ -926,7 +926,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                          1,     /* inc */
                          eqp_k->nswrgr,
                          0,
-                         0,
                          1,     /* w_stride */
                          eqp_k->verbosity,
                          eqp_k->imligr,
@@ -1133,7 +1132,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                        1,     /* inc */
                        eqp_k->nswrgr,
                        0,
-                       0,
                        1,     /* w_stride */
                        eqp_k->verbosity,
                        eqp_k->imligr,
@@ -1164,7 +1162,6 @@ cs_turbulence_ke(cs_lnum_t        ncesmp,
                        halo_type,
                        1,     /* inc */
                        eqp_k->nswrgr,
-                       0,
                        0,
                        1,     /* w_stride */
                        eqp_k->verbosity,

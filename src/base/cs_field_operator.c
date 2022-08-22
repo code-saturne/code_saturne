@@ -588,7 +588,6 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                      halo_type,
                      inc,
                      eqp->nswrgr,
-                     0, /* ignored */
                      0, /* hyd_p_flag */
                      w_stride,
                      eqp->verbosity,
@@ -702,7 +701,6 @@ cs_field_gradient_potential(const cs_field_t          *f,
                      halo_type,
                      inc,
                      eqp->nswrgr,
-                     0, /* tr_dim */
                      hyd_p_flag,
                      w_stride,
                      eqp->verbosity,

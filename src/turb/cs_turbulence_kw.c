@@ -704,7 +704,6 @@ cs_turbulence_kw(cs_lnum_t        ncesmp,
                          1,     /* inc */
                          eqp_k->nswrgr,
                          0,
-                         0,
                          1,             /* w_stride */
                          eqp_k->verbosity,
                          eqp_k->imligr,
