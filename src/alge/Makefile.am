@@ -93,6 +93,7 @@ cs_convection_diffusion.h \
 cs_divergence.h \
 cs_face_viscosity.h \
 cs_gradient.h \
+cs_gradient_boundary.h \
 cs_gradient_priv.h \
 cs_grid.h \
 cs_matrix.h \
@@ -166,6 +167,7 @@ cs_convection_diffusion.c \
 cs_divergence.c \
 cs_face_viscosity.c \
 cs_gradient.cxx \
+cs_gradient_boundary.c \
 cs_grid.c \
 cs_matrix.c \
 cs_matrix_assembler.c \

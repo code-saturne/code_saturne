@@ -38,6 +38,7 @@
 #include "cs_divergence.h"
 #include "cs_face_viscosity.h"
 #include "cs_gradient.h"
+#include "cs_gradient_boundary.h"
 #include "cs_grid.h"
 #include "cs_matrix_assembler.h"
 #include "cs_matrix_building.h"
