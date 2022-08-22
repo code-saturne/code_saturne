@@ -3,6 +3,8 @@ Release 7.0.5 (not released yet)
 
 Bug fixes:
 
+- GUI: Fix naming of NCFD scalars when creating time averages
+
 - Restart from different mesh: fix values shift in variable exchange when
   some points are not located (updated PLE library).
 
