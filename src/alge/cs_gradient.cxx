@@ -2244,7 +2244,7 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
       cs_real_3_t normal;
       /* Normal is vector 0 if the b_face_normal norm is too small */
-      cs_math_3_normalise(b_face_normal[f_id], normal);
+      cs_math_3_normalize(b_face_normal[f_id], normal);
 
       cocg[ii][0] += normal[0] * normal[0];
       cocg[ii][1] += normal[1] * normal[1];
@@ -9561,7 +9561,7 @@ cs_gradient_porosity_balance(int inc)
 
           cs_real_3_t normal;
 
-          cs_math_3_normalise(i_face_normal[f_id], normal);
+          cs_math_3_normalize(i_face_normal[f_id], normal);
 
           cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
           cs_real_t *vel_j = &(CS_F_(vel)->val_pre[3*jj]);
@@ -9606,7 +9606,7 @@ cs_gradient_porosity_balance(int inc)
 
         cs_real_3_t normal;
 
-        cs_math_3_normalise(b_face_normal[f_id], normal);
+        cs_math_3_normalize(b_face_normal[f_id], normal);
 
         cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
 

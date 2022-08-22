@@ -1854,7 +1854,7 @@ cs_atmo_z_ground_compute(void)
 
   cs_real_t normal[3];
   /* Normal direction is given by the gravity */
-  cs_math_3_normalise((const cs_real_t *)(cs_glob_physical_constants->gravity),
+  cs_math_3_normalize((const cs_real_t *)(cs_glob_physical_constants->gravity),
                       normal);
 
   for (int i = 0; i < 3; i++)

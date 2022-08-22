@@ -2032,7 +2032,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
         /* normal vector coordinates */
         cs_real_3_t normal;
-        cs_math_3_normalise(b_face_normal[*neighbor_face_id], normal);
+        cs_math_3_normalize(b_face_normal[*neighbor_face_id], normal);
 
         /* (V . n) * n  */
         cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen, normal);
@@ -2265,7 +2265,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
 
             /* normal vector coordinates */
             cs_real_3_t normal;
-            cs_math_3_normalise(b_face_normal[*neighbor_face_id], normal);
+            cs_math_3_normalize(b_face_normal[*neighbor_face_id], normal);
 
             /* (V . n) * n  */
             cs_real_t v_dot_n = cs_math_3_dot_product(particle_velocity_seen, normal);
@@ -3490,7 +3490,7 @@ cs_lagr_test_wall_cell(const void                     *particle,
 
       /* normal vector coordinates */
       cs_real_3_t normal;
-      cs_math_3_normalise(b_face_normal[f_id], normal);
+      cs_math_3_normalize(b_face_normal[f_id], normal);
 
       /* [(x_f - x_p) . n ] / L */
       cs_real_t dist_norm = CS_ABS(

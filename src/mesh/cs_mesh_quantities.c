@@ -947,7 +947,7 @@ _correct_cell_face_center(const cs_mesh_t  *mesh,
 
       cs_real_3_t normal;
       /* Normal is vector 0 if the b_face_normal norm is too small */
-      cs_math_3_normalise(b_face_normal[face_id], normal);
+      cs_math_3_normalize(b_face_normal[face_id], normal);
 
       if (cs_math_3_norm(normal) > 0.) {
         double lambda = cs_math_3_distance_dot_product(cell_cen[cell_id],
@@ -1689,7 +1689,7 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
 
     const cs_real_t *face_nomal = i_face_normal[face_id];
     cs_real_t normal[3];
-    cs_math_3_normalise(face_nomal, normal);
+    cs_math_3_normalize(face_nomal, normal);
 
     cs_lnum_t cell_id1 = i_face_cells[face_id][0];
     cs_lnum_t cell_id2 = i_face_cells[face_id][1];
@@ -1754,7 +1754,7 @@ _compute_face_distances(cs_lnum_t          n_i_faces,
 
     const cs_real_t *face_nomal = b_face_normal[face_id];
     cs_real_t normal[3];
-    cs_math_3_normalise(face_nomal, normal);
+    cs_math_3_normalize(face_nomal, normal);
 
     cs_lnum_t cell_id = b_face_cells[face_id];
 
@@ -1906,7 +1906,7 @@ _compute_face_vectors(int                dim,
 
     cs_real_3_t normal;
     /* Normal is vector 0 if the b_face_normal norm is too small */
-    cs_math_3_normalise(&b_face_normal[face_id*dim], normal);
+    cs_math_3_normalize(&b_face_normal[face_id*dim], normal);
 
     /* ---> IF */
     cs_real_t vec_if[3] = {
@@ -2007,7 +2007,7 @@ _compute_face_sup_vectors(const cs_lnum_t    n_cells,
 
     /* Normalized normal */
     cs_real_3_t normal;
-    cs_math_3_normalise(i_face_normal[face_id], normal);
+    cs_math_3_normalize(i_face_normal[face_id], normal);
 
     /* ---> IF and JF */
     cs_real_t vec_if[3] = {

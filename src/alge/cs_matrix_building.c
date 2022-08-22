@@ -1285,7 +1285,7 @@ cs_matrix_vector(const cs_mesh_t            *m,
       };
 
       cs_real_3_t normal;
-      cs_math_3_normalise(i_face_normal[face_id], normal);
+      cs_math_3_normalize(i_face_normal[face_id], normal);
       /* Diagonal part:
        * the n(x)n term is multiplied by i_f_face_factor and (1 - n(x)n) by 1
        * XA_ij <= XA_ik n_k n_j (factor - 1) + XA_ij
@@ -1370,7 +1370,7 @@ cs_matrix_vector(const cs_mesh_t            *m,
     };
 
     cs_real_3_t normal;
-    cs_math_3_normalise(b_face_normal[face_id], normal);
+    cs_math_3_normalize(b_face_normal[face_id], normal);
     cs_real_t n_b_n
       = cs_math_3_33_3_dot_product(normal, coefbp[face_id], normal);
     cs_real_t n_bf_n
@@ -1829,7 +1829,7 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
     };
 
     cs_real_3_t normal;
-    cs_math_3_normalise(i_face_normal[face_id], normal);
+    cs_math_3_normalize(i_face_normal[face_id], normal);
 
     for (int i = 0; i < 3; i++) {
       xa[face_id][0][i][i] = flu[0];
@@ -1884,7 +1884,7 @@ cs_matrix_anisotropic_diffusion(const cs_mesh_t            *m,
     };
 
     cs_real_3_t normal;
-    cs_math_3_normalise(b_face_normal[face_id], normal);
+    cs_math_3_normalize(b_face_normal[face_id], normal);
     cs_real_t n_b_n
       = cs_math_3_33_3_dot_product(normal, coefbp[face_id], normal);
     cs_real_t n_bf_n

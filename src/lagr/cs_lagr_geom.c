@@ -129,7 +129,7 @@ cs_lagr_geom(void)
 
     /* normal vector coordinates */
     cs_real_3_t normal;
-    cs_math_3_normalise(b_face_normal[face_id], normal);
+    cs_math_3_normalize(b_face_normal[face_id], normal);
 
     /* Recover the first face nodes */
     cs_lnum_t v_id0  = mesh->b_face_vtx_lst[mesh->b_face_vtx_idx[face_id]];
@@ -145,7 +145,7 @@ cs_lagr_geom(void)
     cs_real_3_t t1, t1p, t2;
     cs_math_3_orthogonal_projection(normal, v0v1, t1p);
 
-    cs_math_3_normalise(t1p, t1);
+    cs_math_3_normalize(t1p, t1);
 
     /* t2 = n ^ t1 */
     cs_math_3_cross_product(normal, t1, t2);

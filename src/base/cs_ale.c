@@ -188,7 +188,7 @@ _free_surface(const cs_domain_t  *domain,
 
   cs_real_3_t normal;
   /* Normal direction is given by the gravity */
-  cs_math_3_normalise(grav, normal);
+  cs_math_3_normalize(grav, normal);
 
   const cs_real_t  invdt = 1./domain->time_step->dt_ref; /* JB: dt[0] ? */
 
@@ -568,7 +568,7 @@ _update_bcs(const cs_domain_t  *domain,
           const cs_lnum_t face_id = z->elt_ids[elt_id];
 
           cs_real_3_t normal;
-          cs_math_3_normalise(b_face_normal[face_id], normal);
+          cs_math_3_normalize(b_face_normal[face_id], normal);
 
           const cs_lnum_t s = m->b_face_vtx_idx[face_id];
           const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
@@ -697,7 +697,7 @@ _update_bcs(const cs_domain_t  *domain,
 
           cs_real_3_t normal;
           /* Normal direction is given by the gravity */
-          cs_math_3_normalise(b_face_normal[face_id], normal);
+          cs_math_3_normalize(b_face_normal[face_id], normal);
           const cs_real_t dsurf = 1. / mq->b_face_surf[face_id];
 
           b_fluid_vel[face_id][0] = 0.;

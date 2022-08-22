@@ -142,7 +142,7 @@ _mean_stretching_phase_spheroid(const cs_real_t dtp,
   cs_math_33_3_product(eig_vec, orient_new, orientation);
 
   /* Renormalize the orientation (for security) */
-  cs_math_3_normalise(orientation, orientation);
+  cs_math_3_normalize(orientation, orientation);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -200,7 +200,7 @@ _mean_rotation_phase_spheroid(const cs_real_t  dtp,
     orientation[i] = orientation_new[i];
 
   /* Renormalize the orientation (for security) */
-  cs_math_3_normalise(orientation, orientation);
+  cs_math_3_normalize(orientation, orientation);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -270,7 +270,7 @@ _bm_stretching_phase_spheroid(const cs_lnum_t ip,
                                         *(dw23+dw32)+orientation[0]*(dw13+dw31))));
 
   /* Renormalise for security */
-  cs_math_3_normalise(orientation_new, orientation);
+  cs_math_3_normalize(orientation_new, orientation);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -361,7 +361,7 @@ _bm_rotation_phase_spheroid_by_quaternion(const cs_lnum_t  ip,
   cs_math_33_3_product(rot_m, orient_loc, orient_new);
 
   /* Renormalise */
-  cs_math_3_normalise(orient_new, orient_loc);
+  cs_math_3_normalize(orient_new, orient_loc);
 
 }
 
@@ -432,7 +432,7 @@ _bm_rotation_phase_spheroid_by_spherical_coordinates(const cs_lnum_t ip,
     n_rot[0] = orient_loc[1]*ax_singularity[2] -orient_loc[2]*ax_singularity[1];
     n_rot[1] = orient_loc[2]*ax_singularity[0] -orient_loc[0]*ax_singularity[2];
     n_rot[2] = orient_loc[0]*ax_singularity[1] -orient_loc[1]*ax_singularity[0];
-    cs_math_3_normalise(n_rot, n_rot);
+    cs_math_3_normalize(n_rot, n_rot);
     // Compute rotation angle
     cs_real_t rot_angle = acos(  orient_loc[0]*ax_singularity[0]
                                + orient_loc[1]*ax_singularity[1]
@@ -721,7 +721,7 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
                                               quaternion,
                                               brown);
 
-    cs_math_3_normalise(orientation, orientation);
+    cs_math_3_normalize(orientation, orientation);
   }
 
   /* Free memory */

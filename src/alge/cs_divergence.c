@@ -1728,7 +1728,7 @@ cs_ext_force_flux(const cs_mesh_t          *m,
       /* To avoid division by 0, no division by the fluid surface */
 
       cs_real_3_t normal;
-      cs_math_3_normalise(b_face_normal[face_id], normal);
+      cs_math_3_normalize(b_face_normal[face_id], normal);
 
       cs_real_t poro = b_poro_duq[is_p*face_id];
 
@@ -1785,7 +1785,7 @@ cs_ext_force_flux(const cs_mesh_t          *m,
 
       /* To avoid division by 0, no division by the fluid surface */
       cs_real_3_t normal;
-      cs_math_3_normalise(b_face_normal[face_id], normal);
+      cs_math_3_normalize(b_face_normal[face_id], normal);
 
       cs_real_t poro = b_poro_duq[is_p*face_id];
 
@@ -1939,7 +1939,7 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
       /* To avoid division by 0, no division by the fluid surface */
       cs_real_3_t normal;
-      cs_math_3_normalise(b_face_normal[face_id], normal);
+      cs_math_3_normalize(b_face_normal[face_id], normal);
 
 
       b_massflux[face_id] += b_visc[face_id] * b_dist[face_id]
@@ -2078,7 +2078,7 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 
       /* To avoid division by 0, no division by the fluid surface */
       cs_real_3_t normal;
-      cs_math_3_normalise(b_face_normal[face_id], normal);
+      cs_math_3_normalize(b_face_normal[face_id], normal);
 
       /* FIXME: wrong if dirichlet and viscce is really a tensor */
       b_massflux[face_id] += b_visc[face_id] * b_dist[face_id]

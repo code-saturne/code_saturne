@@ -1331,7 +1331,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
          * (warning: the treatment is different from than of P-1 model) */
         if (vect_s != NULL) {
           cs_real_t normal[3];
-          cs_math_3_normalise(b_face_normal[face_id], normal);
+          cs_math_3_normalize(b_face_normal[face_id], normal);
           cs_real_t vs_dot_n = cs_math_3_dot_product(vect_s, normal);
           if (CS_ABS(vs_dot_n) < cs_math_epzero) /* entering */
             neumann = false;

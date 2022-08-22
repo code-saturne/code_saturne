@@ -436,7 +436,7 @@ cs_geom_segment_intersect_face(int               orient,
             retval = t;
             /* Store the normal if needed */
             if (face_norm != NULL)
-              cs_math_3_normalise(pvec, face_norm);
+              cs_math_3_normalize(pvec, face_norm);
           }
         }
       }
@@ -456,7 +456,7 @@ cs_geom_segment_intersect_face(int               orient,
             retval = t;
             /* Store the normal if needed */
             if (face_norm != NULL)
-              cs_math_3_normalise(pvec, face_norm);
+              cs_math_3_normalize(pvec, face_norm);
           }
         }
       } else {

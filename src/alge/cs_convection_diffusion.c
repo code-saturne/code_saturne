@@ -4580,7 +4580,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
               cs_real_3_t n;
-              cs_math_3_normalise(i_face_normal[face_id], n);
+              cs_math_3_normalize(i_face_normal[face_id], n);
 
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pia);
@@ -4681,7 +4681,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
               cs_real_3_t n;
-              cs_math_3_normalise(i_face_normal[face_id], n);
+              cs_math_3_normalize(i_face_normal[face_id], n);
 
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
@@ -4781,7 +4781,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
               cs_real_3_t n;
-              cs_math_3_normalise(i_face_normal[face_id], n);
+              cs_math_3_normalize(i_face_normal[face_id], n);
 
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pia);
@@ -4883,7 +4883,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
               cs_real_3_t n;
-              cs_math_3_normalise(i_face_normal[face_id], n);
+              cs_math_3_normalize(i_face_normal[face_id], n);
 
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
@@ -5001,7 +5001,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
               cs_real_3_t n;
-              cs_math_3_normalise(i_face_normal[face_id], n);
+              cs_math_3_normalize(i_face_normal[face_id], n);
 
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pia);
@@ -5112,7 +5112,7 @@ cs_convection_diffusion_vector(int                         idtvar,
             /* Scaling due to mass balance in porous modelling */
             if (i_f_face_factor != NULL) {
               cs_real_3_t n;
-              cs_math_3_normalise(i_face_normal[face_id], n);
+              cs_math_3_normalize(i_face_normal[face_id], n);
 
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][0], _pi);
               cs_math_3_normal_scaling(n, i_f_face_factor[face_id][1], _pj);
@@ -5244,7 +5244,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
             cs_real_3_t n;
-            cs_math_3_normalise(b_face_normal[face_id], n);
+            cs_math_3_normalize(b_face_normal[face_id], n);
 
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pia);
@@ -5319,7 +5319,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
             cs_real_3_t n;
-            cs_math_3_normalise(b_face_normal[face_id], n);
+            cs_math_3_normalize(b_face_normal[face_id], n);
 
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
           }
@@ -5371,7 +5371,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
             cs_real_3_t n;
-            cs_math_3_normalise(b_face_normal[face_id], n);
+            cs_math_3_normalize(b_face_normal[face_id], n);
 
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
           }
@@ -5441,7 +5441,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
             cs_real_3_t n;
-            cs_math_3_normalise(b_face_normal[face_id], n);
+            cs_math_3_normalize(b_face_normal[face_id], n);
 
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
           }
@@ -5513,7 +5513,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
             cs_real_3_t n;
-            cs_math_3_normalise(b_face_normal[face_id], n);
+            cs_math_3_normalize(b_face_normal[face_id], n);
 
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
           }
@@ -5561,7 +5561,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
             cs_real_3_t n;
-            cs_math_3_normalise(b_face_normal[face_id], n);
+            cs_math_3_normalize(b_face_normal[face_id], n);
 
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
           }
@@ -5641,7 +5641,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
             cs_real_3_t n;
-            cs_math_3_normalise(b_face_normal[face_id], n);
+            cs_math_3_normalize(b_face_normal[face_id], n);
 
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pia);
@@ -5719,7 +5719,7 @@ cs_convection_diffusion_vector(int                         idtvar,
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
             cs_real_3_t n;
-            cs_math_3_normalise(b_face_normal[face_id], n);
+            cs_math_3_normalize(b_face_normal[face_id], n);
 
             cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pi);
           }
@@ -5820,7 +5820,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                  + (1.-pnd)*(grad[jj][0][0]+grad[jj][1][1]+grad[jj][2][2]);
 
           cs_real_3_t n, ipjp;
-          cs_math_3_normalise(i_face_normal[face_id], n);
+          cs_math_3_normalize(i_face_normal[face_id], n);
 
           /* I'J' */
           for (int i = 0; i < 3; i++)
@@ -9394,7 +9394,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
               + (1.-pnd)*(gradv[jj][0][0]+gradv[jj][1][1]+gradv[jj][2][2]);
 
           cs_real_3_t n, ipjp;
-          cs_math_3_normalise(i_face_normal[face_id], n);
+          cs_math_3_normalize(i_face_normal[face_id], n);
 
           /* I'J' */
           for (int i = 0; i < 3; i++)
