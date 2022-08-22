@@ -2889,8 +2889,8 @@ _exchange_point_var_local_incomplete(ple_locator_t     *this_locator,
 
     if (local_list == NULL)
       for (ple_lnum_t i = 0; i < n_points_loc; i++) {
-        const char *local_var_p = (char *)local_var + il[i]*nbytes;
-        char *distant_var_p = (const char *)distant_var + i*nbytes;
+        const char *local_var_p = (const char *)local_var + il[i]*nbytes;
+        char *distant_var_p = (char *)distant_var + i*nbytes;
         for (size_t j = 0; j < nbytes; j++)
           distant_var_p[j] = local_var_p[j];
       }
