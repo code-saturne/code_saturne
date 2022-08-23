@@ -102,7 +102,7 @@ class MaterialsDelegate(QItemDelegate):
         fieldId= index.row() + 1
         # suppress perfect gas
         tmp = ["Argon", "Nitrogen", "Hydrogen", "Oxygen", "Helium", "Air"]
-        if self.mdl.getFieldNature(fieldId) != "solid" and self.mdl.checkEOSRequirements(fieldId):
+        if self.mdl.mainFieldsModel.getFieldNature(fieldId) != "solid" and self.mdl.checkEOSRequirements(fieldId):
             fls = self.eos.getListOfFluids()
             for fli in fls:
                 if fli not in tmp:
@@ -219,7 +219,7 @@ class ReferenceDelegate(QItemDelegate):
             self.modelCombo.addItem(self.tr(self.dicoM2V["user_material"]), 'user_material')
         else :
             if self.eos.isActive():
-                phase = self.mdl.getFieldNature(fieldId)
+                phase = self.mdl.mainFieldsModel.getFieldNature(fieldId)
 
                 if phase == "liquid":
                     ref = self.eos.getLiquidReferences(material, method)
@@ -380,16 +380,16 @@ class StandardItemModelProperty(QStandardItemModel):
         load field in the model
         """
         row = self.rowCount()
-        label = self.mdl.getLabel(fieldId)
+        label = self.mdl.mainFieldsModel.getLabel(fieldId)
         try:
             material = self.dicoM2V[self.mdl.getMaterials(fieldId)]
         except KeyError:
-            material = self.dicoM2V[self.mdl.defaultValues(fieldId)["material"]]
+            material = self.dicoM2V[self.mdl.mainFieldsModel.defaultValues(fieldId)["material"]]
             self.mdl.setMaterials(fieldId, material)
         try:
             method = self.dicoM2V[self.mdl.getMethod(fieldId)]
         except KeyError:
-            method = self.dicoM2V[self.mdl.defaultValues(fieldId)["method"]]
+            method = self.dicoM2V[self.mdl.mainFieldsModel.defaultValues(fieldId)["method"]]
             self.mdl.setMethod(fieldId, method)
         reference = self.mdl.updateReference(fieldId)
 
@@ -522,7 +522,7 @@ temperature = enthalpy / 1000;
                        "user properties" : 'user_properties'}
 
         eos_used = False
-        for field_id in self.mdl.getFieldIdList():
+        for field_id in self.mdl.mainFieldsModel.getFieldIdList():
             if self.mdl.checkEOSRequirements(field_id):
                 eos_used = True
                 break
@@ -625,7 +625,7 @@ temperature = enthalpy / 1000;
         self.pushButtondRodh.clicked.connect(self.slotFormuladrodh)
 
         # load Field
-        for fieldId in self.mdl.getFieldIdList():
+        for fieldId in self.mdl.mainFieldsModel.getFieldIdList():
             self.tableModelProperties.newItem(fieldId)
 
         self.tableViewProperties.resizeColumnsToContents()

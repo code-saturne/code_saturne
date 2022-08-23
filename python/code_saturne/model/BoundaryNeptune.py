@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 import sys, unittest
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.Common import GuiParam
@@ -45,7 +45,7 @@ log.setLevel(GuiParam.DEBUG)
 # Main class
 #-------------------------------------------------------------------------------
 
-class Boundary(MainFieldsModel) :
+class Boundary(Model) :
     """
     Abstract class
     """
@@ -70,21 +70,21 @@ class Boundary(MainFieldsModel) :
         """
         self._label = label
         self._nature = nature
-        self._case = case
-        self._XMLBoundaryConditionsNode = self._case.xmlGetNode('boundary_conditions')
+        self.case = case
+        self._XMLBoundaryConditionsNode = self.case.xmlGetNode('boundary_conditions')
         self._XMLBoundaryNodes = []
-        MainFieldsModel.__init__(self, case)
+        self.mainFieldsModel = MainFieldsModel(case)
         self._fieldId = fieldId
         self.boundNode = None
 
         # Create nodes
         if nature == "inlet" :
-            for field in self.getFieldIdList():
+            for field in self.mainFieldsModel.getFieldIdList():
                 self._XMLBoundaryNodes.append(self._XMLBoundaryConditionsNode.xmlInitNode(nature, field_id = field, label = label))
 
         elif nature == "outlet" :
             self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('outlet', field_id = "none", label = label)
-            for field in self.getFieldIdList():
+            for field in self.mainFieldsModel.getFieldIdList():
                 self._XMLBoundaryNodes.append(self._XMLBoundaryConditionsNode.xmlInitNode(nature, field_id = field, label = label))
         elif nature == "wall" :
             self.boundNode = self._XMLBoundaryConditionsNode.xmlInitNode('wall', field_id = "none", label = label)
@@ -148,7 +148,7 @@ class InletBoundary(Boundary):
         self.__enthalpyChoices = ['flux', 'dirichlet', 'timp_K', 'hsat_P']
 
         # Initialize nodes if necessary
-        for field in self.getFieldIdList():
+        for field in self.mainFieldsModel.getFieldIdList():
             self.getVelocityChoice(field)
             self.getDirectionChoice(field)
 
@@ -211,7 +211,7 @@ class InletBoundary(Boundary):
         """
         Get the choice of velocity.
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         choice, dir = self.__initChoiceForVelocityAndDirection(fieldId)
         return choice
 
@@ -221,7 +221,7 @@ class InletBoundary(Boundary):
         """
         Get the choice of direction.
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         choice, dir = self.__initChoiceForVelocityAndDirection(fieldId)
         return dir
 
@@ -231,7 +231,7 @@ class InletBoundary(Boundary):
         """
         Get value of velocity beyond choice.
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         choice = self.getVelocityChoice(fieldId)
         Model().isInList(choice, self.__velocityChoices)
 
@@ -254,7 +254,7 @@ class InletBoundary(Boundary):
         """
         Set value of velocity.
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         choice = self.getVelocityChoice(fieldId)
         Model().isInList(choice, self.__velocityChoices)
 
@@ -272,7 +272,7 @@ class InletBoundary(Boundary):
         Get the component velocity
         """
         Model().isInList(component, self.__directionTags)
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLVelocityNode = node.xmlGetNode('velocity')
@@ -292,7 +292,7 @@ class InletBoundary(Boundary):
         Set the component velocity for fieldLabel
         """
         Model().isInList(component, self.__directionTags)
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLVelocityNode = node.xmlInitNode('velocity')
@@ -305,7 +305,7 @@ class InletBoundary(Boundary):
         Set the velocity definition according to choice
         """
         Model().isInList(value, self.__velocityChoices)
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
 
         # Check if value is a new velocity choice value
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
@@ -329,7 +329,7 @@ class InletBoundary(Boundary):
         Set the direction of the flow definition according to choice.
         """
         Model().isInList(value, self.__directionChoices)
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
 
         # Check if value is a new direction choice
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
@@ -352,7 +352,7 @@ class InletBoundary(Boundary):
         """
         Get the turbulence choice
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLTurbulenceNode = node.xmlInitNode('turbulence')
 
@@ -369,7 +369,7 @@ class InletBoundary(Boundary):
         """
         Set the choice turbulence
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isInList(value, self.__turbulenceChoices)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
@@ -404,7 +404,7 @@ class InletBoundary(Boundary):
         """
         Get hydraulic diameter
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLTurbulenceNode = node.xmlInitNode('turbulence')
         Model().isInList(XMLTurbulenceNode['choice'],  self.__turbulenceChoices)
@@ -420,7 +420,7 @@ class InletBoundary(Boundary):
         """
         Set hydraulic diameter
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isStrictPositiveFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
@@ -435,7 +435,7 @@ class InletBoundary(Boundary):
         Public method.
         Set the formula for a turbulent variable.
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLTurbulenceNode = node.xmlInitNode('turbulence')
 
@@ -453,7 +453,7 @@ class InletBoundary(Boundary):
         Public method.
         Return the formula for a turbulent variable.
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLTurbulenceNode = node.xmlInitNode('turbulence')
 
@@ -573,7 +573,7 @@ R12-23 = 5e-05;"""
         """
         Get turbulent intensity
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLTurbulenceNode = node.xmlInitNode('turbulence')
         Model().isInList(XMLTurbulenceNode['choice'], ('turbulent_intensity',))
@@ -590,7 +590,7 @@ R12-23 = 5e-05;"""
         """
         Set turbulent intensity
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isStrictPositiveFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
@@ -604,7 +604,7 @@ R12-23 = 5e-05;"""
         """
         Get the enthalpy choice for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='enthalpy')
 
@@ -622,7 +622,7 @@ R12-23 = 5e-05;"""
         """
         Set the enthalpy choice for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isInList(value, ['dirichlet','flux','timp_K','hsat_P'])
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
@@ -641,7 +641,7 @@ R12-23 = 5e-05;"""
         """
         Get energy value for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='enthalpy')
 
@@ -661,7 +661,7 @@ R12-23 = 5e-05;"""
         """
         Set energy value for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
@@ -674,7 +674,7 @@ R12-23 = 5e-05;"""
         """
         Get fraction for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='volume_fraction')
 
@@ -692,7 +692,7 @@ R12-23 = 5e-05;"""
         """
         Set fraction for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isPositiveFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
@@ -707,7 +707,7 @@ R12-23 = 5e-05;"""
         """
         Get diameter variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLDiameterNode = node.xmlInitNode('variable', choice='dirichlet', name='diameter')
 
@@ -725,7 +725,7 @@ R12-23 = 5e-05;"""
         """
         Set diameter variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isStrictPositiveFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
@@ -738,7 +738,7 @@ R12-23 = 5e-05;"""
         """
         Get non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLNonCondensableNode = node.xmlInitNode('variable', choice='dirichlet', name=NonCondensable)
 
@@ -756,7 +756,7 @@ R12-23 = 5e-05;"""
         """
         Set non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isPositiveFloat(value)
         node = self._XMLBoundaryConditionsNode.xmlGetNode("inlet", field_id = fieldId, label = self._label)
         XMLNonCondensableNode = node.xmlInitNode('variable', choice='dirichlet', name=NonCondensable)
@@ -768,7 +768,7 @@ R12-23 = 5e-05;"""
         """
         Get the boundary condition used for the scalar.
         """
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
         node = self._XMLBoundaryConditionsNode.xmlInitNode("inlet", field_id = fieldId, label = self._label)
 
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=scalar)
@@ -787,7 +787,7 @@ R12-23 = 5e-05;"""
         Set boundary condition type for a scalar.
         """
 
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
         node = self._XMLBoundaryConditionsNode.xmlInitNode("inlet", field_id = fieldId, label = self._label)
 
         XMLScalarNode = node.xmlInitNode('variable',
@@ -802,7 +802,7 @@ R12-23 = 5e-05;"""
         """
         Get non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
         node = self._XMLBoundaryConditionsNode.xmlInitNode("inlet", field_id = fieldId, label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
 
@@ -820,7 +820,7 @@ R12-23 = 5e-05;"""
         """
         Set non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
         node = self._XMLBoundaryConditionsNode.xmlInitNode("inlet", field_id = fieldId, label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
         XMLScalarNode.xmlSetData('value', str(value))
@@ -935,7 +935,7 @@ class OutletBoundary(Boundary) :
         """
         Get the enthalpy choice for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
         XMLEnergyNode = node.xmlInitNode('variable', 'choice', name='enthalpy')
 
@@ -951,7 +951,7 @@ class OutletBoundary(Boundary) :
         """
         Set the enthalpy choice for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isInList(value, ['dirichlet','flux','timp_K','hsat_P'])
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
@@ -970,7 +970,7 @@ class OutletBoundary(Boundary) :
         """
         Get energy value for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
         XMLEnergyNode = node.xmlGetChildNode('variable', 'choice', name='enthalpy')
 
@@ -990,7 +990,7 @@ class OutletBoundary(Boundary) :
         """
         Set energy value for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
@@ -1003,7 +1003,7 @@ class OutletBoundary(Boundary) :
         """
         Get the fraction choice for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
         XMLFractionNode = node.xmlInitNode('variable', 'choice', name='volume_fraction')
 
@@ -1019,7 +1019,7 @@ class OutletBoundary(Boundary) :
         """
         Set the fraction choice for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isInList(value, ['dirichlet','automatic'])
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
@@ -1038,7 +1038,7 @@ class OutletBoundary(Boundary) :
         """
         Get fraction for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
         XMLFractionNode = node.xmlInitNode('variable', choice='dirichlet', name='volume_fraction')
 
@@ -1056,7 +1056,7 @@ class OutletBoundary(Boundary) :
         """
         Set fraction for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isPositiveFloat(value)
 
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
@@ -1071,7 +1071,7 @@ class OutletBoundary(Boundary) :
         """
         Get non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
         XMLNonCondensableNode = node.xmlInitNode('variable', choice='dirichlet', name=NonCondensable)
 
@@ -1089,7 +1089,7 @@ class OutletBoundary(Boundary) :
         """
         Set non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isPositiveFloat(value)
         node = self._XMLBoundaryConditionsNode.xmlGetNode("outlet", field_id = fieldId, label = self._label)
         XMLNonCondensableNode = node.xmlInitNode('variable', choice='dirichlet', name=NonCondensable)
@@ -1101,7 +1101,7 @@ class OutletBoundary(Boundary) :
         """
         Get the enthalpy choice for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
         node = self._XMLBoundaryConditionsNode.xmlInitNode("outlet", field_id = fieldId, label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=scalar)
 
@@ -1118,7 +1118,7 @@ class OutletBoundary(Boundary) :
         """
         Set the enthalpy choice for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
 
         node = self._XMLBoundaryConditionsNode.xmlInitNode("outlet", field_id = fieldId, label = self._label)
 
@@ -1134,7 +1134,7 @@ class OutletBoundary(Boundary) :
         """
         Get non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
         node = self._XMLBoundaryConditionsNode.xmlInitNode("outlet", field_id = fieldId, label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
 
@@ -1152,7 +1152,7 @@ class OutletBoundary(Boundary) :
         """
         Set non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
         node = self._XMLBoundaryConditionsNode.xmlInitNode("outlet", field_id = fieldId, label = self._label)
         XMLScalarNode = node.xmlInitNode('variable', 'choice', name=Scalar)
         XMLScalarNode.xmlSetData('value', str(value))
@@ -1280,7 +1280,7 @@ class WallBoundary(Boundary) :
         """
         Get the boundary condition used for the scalar.
         """
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
 
         XMLScalarNode = self.boundNode.xmlInitNode('variable',
                                                    'choice',
@@ -1300,7 +1300,7 @@ class WallBoundary(Boundary) :
         Set boundary condition type for a scalar.
         """
 
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
 
         XMLScalarNode = self.boundNode.xmlInitNode('variable',
                                                    'choice',
@@ -1314,7 +1314,7 @@ class WallBoundary(Boundary) :
         """
         Get non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
 
         XMLScalarNode = self.boundNode.xmlInitNode('variable',
                                                    'choice',
@@ -1335,7 +1335,7 @@ class WallBoundary(Boundary) :
         """
         Set non condensable variable for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
 
         XMLScalarNode = self.boundNode.xmlInitNode('variable', 'choice', name=Scalar)
 
@@ -1347,7 +1347,7 @@ class WallBoundary(Boundary) :
         """
         Get the wall model for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         XMLNode = self.boundNode.xmlInitChildNode('wall_model', field_id = fieldId)
 
         choice = XMLNode['model']
@@ -1370,7 +1370,7 @@ class WallBoundary(Boundary) :
         """
         Set the wall model for field
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         Model().isInList(mdl, self._wallModel)
         XMLNode = self.boundNode.xmlInitChildNode('wall_model', field_id = fieldId)
         XMLNode['model'] = mdl

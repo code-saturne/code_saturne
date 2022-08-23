@@ -191,7 +191,7 @@ class StandardItemModelCourantFourier(QStandardItemModel):
         """
         row = self.rowCount()
 
-        label   = self.mdl.getLabel(fieldId)
+        label   = self.mdl.mainFieldsModel.getLabel(fieldId)
         courant = self.mdl.getMaxCourant(fieldId)
         fourier = self.mdl.getMaxFourier(fieldId)
 
@@ -429,7 +429,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.lineEditDtDecreasingMax.setText(str(value))
 
             if (self.tableModelCourantFourier.rowCount() <= 0) :
-                for fieldId in self.mdl.getFieldIdList():
+                for fieldId in self.mdl.mainFieldsModel.getFieldIdList():
                     self.tableModelCourantFourier.newItem(fieldId)
 
         model = self.mdl.getTimeStopChoice()

@@ -24,7 +24,7 @@
 
 import sys, unittest, copy
 
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.Common import LABEL_LENGTH_MAX
@@ -79,7 +79,7 @@ class FieldAttributesDescription:
 # Model for main fields
 #-------------------------------------------------------------------------------
 
-class MainFieldsModel(Variables, Model):
+class MainFieldsModel(Model):
     """
     This class manages the Field objects in the XML file
     """
@@ -90,6 +90,7 @@ class MainFieldsModel(Variables, Model):
         """
         # XML file parameters
         self.case = case
+        self.variables = Variables(case)
 
         self.XMLNodethermo   = self.case.xmlGetNode('thermophysical_models')
         self.__XMLNodefields = self.XMLNodethermo.xmlInitNode('fields')
@@ -110,7 +111,7 @@ class MainFieldsModel(Variables, Model):
             pressure_node = self.XMLNodethermo.xmlGetNode('variable',
                                                           name='Pressure')
         if pressure_node is None:
-            Variables(self.case).setNewVariableProperty("variable",
+            self.variables.setNewVariableProperty("variable",
                                                         "",
                                                         self.XMLNodeVariable,
                                                         "none",
@@ -120,7 +121,7 @@ class MainFieldsModel(Variables, Model):
         porosity_node = self.XMLNodethermo.xmlGetNode('property',
                                                       name='porosity')
         if porosity_node is None:
-            Variables(self.case).setNewVariableProperty("property",
+            self.variables.setNewVariableProperty("property",
                                                         "",
                                                         self.XMLNodeproperty,
                                                         "none",
@@ -244,30 +245,30 @@ class MainFieldsModel(Variables, Model):
 
         field_name = self.getFieldLabelsList()[int(fieldNumber) - 1]
 
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber,
+        self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber,
                                                     "volume_fraction", "vol_f_" + field_name, post=True)
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "velocity",
+        self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "velocity",
                                                     "U_" + field_name, dim='3', post=True)
         if self.getEnergyResolution(fieldNumber) == "on":
-            Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy",
+            self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy",
                                                         "enthalpy_" + field_name, post=True)
 
         # Physical properties are set by default to "constant" to avoid uninitialized states with the GUI
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "density", "density_"+field_name)
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "molecular_viscosity", "molecular_viscosity_"+field_name)
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "specific_heat", "specific_heat_"+field_name)
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "thermal_conductivity", "thermal_conductivity_"+field_name)
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "density", "density_"+field_name)
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "molecular_viscosity", "molecular_viscosity_"+field_name)
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "specific_heat", "specific_heat_"+field_name)
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "thermal_conductivity", "thermal_conductivity_"+field_name)
 
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "mass_trans", "mass_trans_"+field_name)
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "wall_distance", "y_plus_"+field_name, support = "boundary")
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "mass_trans", "mass_trans_"+field_name)
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "wall_distance", "y_plus_"+field_name, support = "boundary")
         if self.getCompressibleStatus(fieldNumber) == "on":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodp", "drodp_"+field_name)
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodh", "drodh_"+field_name)
+           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodp", "drodp_"+field_name)
+           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drodh", "drodh_"+field_name)
         if self.getEnergyResolution(fieldNumber) == "on":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "temperature", "temp_"+field_name, post = True)
+           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "temperature", "temp_"+field_name, post = True)
         if self.getCriterion(fieldNumber) == "dispersed" or self.getPredefinedFlow() == "multiregime":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "diameter", "diam_"+field_name)
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drift_component", "drift_component_"+field_name, dim='3')
+           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "diameter", "diam_"+field_name)
+           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "drift_component", "drift_component_"+field_name, dim='3')
 
 
     def getFieldLabelsList(self, include_none=False):
@@ -501,11 +502,11 @@ class MainFieldsModel(Variables, Model):
         # TODO mettre en coherence pour les aires interf., tout ce qui est closure law a faire aussi pour la nature.
         # Activated if dispersed or second continuous phase of GLIM
         if self.getCriterion(fieldId) == "dispersed" or self.getPredefinedFlow() == "multiregime":
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "diameter", "diam_"+field_name)
-           Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "drift_component", "drift_component_"+field_name, dim='3')
+           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "diameter", "diam_"+field_name)
+           self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "drift_component", "drift_component_"+field_name, dim='3')
         else :
-           Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "diameter")
-           Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "drift_component")
+           self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "diameter")
+           self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "drift_component")
 
         self.updateXML()
 
@@ -580,11 +581,11 @@ class MainFieldsModel(Variables, Model):
             oldstatus = childNode['status']
             if status != oldstatus:
                if status == "on":
-                  Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "enthalpy", "enthalpy_"+field_name, post = True)
-                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "temperature", "temp_"+field_name, post = True)
+                  self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "enthalpy", "enthalpy_"+field_name, post = True)
+                  self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "temperature", "temp_"+field_name, post = True)
                else :
-                  Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "enthalpy")
-                  Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "temperature")
+                  self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "enthalpy")
+                  self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "temperature")
         childNode.xmlSetAttribute(status = status)
 
 
@@ -655,11 +656,11 @@ class MainFieldsModel(Variables, Model):
             oldstatus = childNode['status']
             if status != oldstatus:
                if status == "on":
-                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "d_rho_d_P", "drho_dP_"+field_name)
-                  Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "d_rho_d_h", "drho_dh_"+field_name)
+                  self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "d_rho_d_P", "drho_dP_"+field_name)
+                  self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, "d_rho_d_h", "drho_dh_"+field_name)
                else :
-                  Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "d_rho_d_P")
-                  Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, "d_rho_d_h")
+                  self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "d_rho_d_P")
+                  self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldId, "d_rho_d_h")
         childNode.xmlSetAttribute(status = status)
 
 
@@ -825,7 +826,7 @@ class MainFieldsModel(Variables, Model):
         self.XMLMassTrans = self.XMLNodeclosure.xmlInitNode('mass_transfer_model')
 
         # Variables : neptune_cfd.core.XMLvariables.Variables
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "constant", self.XMLNodeproperty, "none",
                                                     "surface_tension", "Surf_tens")
         energyModel = "total_enthalpy"
         if self.getPhaseChangeTransferStatus() == "off":
@@ -935,89 +936,89 @@ class MainFieldsModel(Variables, Model):
             ThermodynamicsModel(self.case).setMethod(fieldId, fls[0])
 
     def _deleteFieldsProperties(self):
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationTemperature")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none",
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationTemperature")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none",
                                                     "SaturationEnthalpyLiquid")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationEnthalpyGas")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Tsat_d_P")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "LatentHeat")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_total_flux")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_total_flux")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_evaporation_flux")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_quenching_flux")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none",
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "SaturationEnthalpyGas")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "d_Tsat_d_P")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "LatentHeat")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_total_flux")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_total_flux")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_evaporation_flux")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_quenching_flux")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none",
                                                     "wall_liquid_convective_flux")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none",
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none",
                                                     "wall_steam_convective_flux")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "boundary_temperature")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_temperature")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_oversaturation")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "unal_diameter")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none",
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "boundary_temperature")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_liquid_temperature")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_oversaturation")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "unal_diameter")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none",
                                                     "wall_diameter_mesh_independancy")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_roughness")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none",
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "wall_roughness")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none",
                                                     "wall_dispersed_phase_mass_source_term")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "boiling_criteria")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "exchange_coefficient")
-        Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, "none", "uninfluenced_part")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "boiling_criteria")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "exchange_coefficient")
+        self.variables.removeVariableProperty("property", self.XMLNodeproperty, "none", "uninfluenced_part")
 
     def _createSaturationProperties(self):
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "SaturationTemperature", "TsatK", post=True)
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "SaturationEnthalpyLiquid", "Hsat_Liquid")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "SaturationEnthalpyGas", "Hsat_Gas")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Liquid",
                                                     "dHsat_dp_Liquid")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Hsat_d_P_Gas",
                                                     "dHsat_dp_Gas")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Tsat_d_P",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "d_Tsat_d_P",
                                                     "dTsat_dp")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "LatentHeat", "Hlat")
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "LatentHeat", "Hlat")
 
     def _createWallFieldsProperties(self):
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_total_flux",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_total_flux",
                                                     "wall_total_flux", support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_liquid_total_flux", "wall_liquid_total_flux",
                                                     support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_evaporation_flux", "wall_evaporation_flux",
                                                     support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_quenching_flux",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_quenching_flux",
                                                     "wall_quenching_flux", support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_liquid_convective_flux", "wall_liquid_convective_flux",
                                                     support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_steam_convective_flux", "wall_steam_convective_flux",
                                                     support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "boundary_temperature", "wall_temperature", support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_liquid_temperature", "wall_liquid_temperature",
                                                     support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_oversaturation",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_oversaturation",
                                                     "wall_oversaturation", support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "unal_diameter",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "unal_diameter",
                                                     "unal_diameter", support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_diameter_mesh_independancy",
                                                     "wall_diameter_mesh_independancy", support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_roughness",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "wall_roughness",
                                                     "wall_roughness", support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "wall_dispersed_phase_mass_source_term",
                                                     "wall_dispersed_phase_mass_source_term", support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "boiling_criteria",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "boiling_criteria",
                                                     "boiling_criteria", support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none",
                                                     "exchange_coefficient", "exchange_coefficient", support="boundary")
-        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "uninfluenced_part",
+        self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, "none", "uninfluenced_part",
                                                     "uninfluenced_part", support="boundary")
 
     @Variables.noUndo

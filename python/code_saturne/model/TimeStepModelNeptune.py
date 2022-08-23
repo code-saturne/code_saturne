@@ -23,13 +23,13 @@
 #-------------------------------------------------------------------------------
 
 import sys, unittest
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Model, Variables
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.MainFieldsModel import *
 
 
-class TimeStepModel(MainFieldsModel, Variables, Model):
+class TimeStepModel(Variables, Model):
 
     """
     This class manages the time step in the XML file
@@ -41,7 +41,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         """
         #
         # XML file parameters
-        MainFieldsModel.__init__(self, case)
+        self.mainFieldsModel = MainFieldsModel(case) # TODO use dependency injection
         self.case = case
         self.__analysisControl = self.case.xmlGetNode('analysis_control')
         self.__timeParameters = self.__analysisControl.xmlInitNode('time_parameters')
@@ -71,10 +71,10 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
         self.isInList(model, ('constant', 'uniform', 'steady'))
 
         # CFL/Fo
-        for f_id in self.getFieldIdList():
-            field_name = self.getLabel(f_id)
+        for f_id in self.mainFieldsModel.getFieldIdList():
+            field_name = self.mainFieldsModel.getLabel(f_id)
             for tag in ['courant_number', 'fourier_number']:
-                Variables(self.case).setNewVariableProperty("property",
+                self.setNewVariableProperty("property",
                                                             "",
                                                             self.__timeParameters,
                                                             f_id,
@@ -102,7 +102,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
             childNode = self.__timeParameters.xmlGetNode('dt_max_decreasing_variation')
             if childNode:
                 childNode.xmlRemoveNode()
-            for fieldId in self.getFieldIdList():
+            for fieldId in self.mainFieldsModel.getFieldIdList():
                 childNode = self.__timeParameters.xmlGetNode('max_courant_num',  field_id=fieldId)
                 if childNode:
                     childNode.xmlRemoveNode()
@@ -308,7 +308,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
     def setMaxCourant(self, fieldId, value) :
         """
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         self.isPositiveFloat(value)
 
         self.__timeParameters.xmlSetData('max_courant_num', value, field_id = fieldId)
@@ -318,7 +318,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
     def getMaxCourant(self, fieldId) :
         """
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
         value = self.__timeParameters.xmlGetDouble('max_courant_num',  field_id=fieldId)
         if value is None :
@@ -331,7 +331,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
     def setMaxFourier(self, fieldId, value) :
         """
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         self.isPositiveFloat(value)
 
         self.__timeParameters.xmlSetData('max_fourier_num', value, field_id = fieldId)
@@ -341,7 +341,7 @@ class TimeStepModel(MainFieldsModel, Variables, Model):
     def getMaxFourier(self, fieldId) :
         """
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
         value = self.__timeParameters.xmlGetDouble('max_fourier_num',  field_id=fieldId)
         if value is None :

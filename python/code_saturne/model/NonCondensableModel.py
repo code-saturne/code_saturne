@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 import sys, unittest
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Model, Variables
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.MainFieldsModel import MainFieldsModel
@@ -36,7 +36,7 @@ from code_saturne.model.TimeAveragesModel import TimeAveragesModel
 #-------------------------------------------------------------------------------
 
 
-class NonCondensableModel(MainFieldsModel, Variables, Model):
+class NonCondensableModel(Model):
     """
     This class manages the Field objects in the XML file
     """
@@ -47,7 +47,9 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         """
         #
         # XML file parameters
-        MainFieldsModel.__init__(self, case)
+        self.mainFieldsModel = MainFieldsModel(case) #TODO use dependency injection instead
+        self.variables       = Variables(case) #TODO use dependency injection instead
+
         self.case            = case
         self.XMLNodethermo   = self.case.xmlGetNode('thermophysical_models')
         self.XMLNodeNonCondensable = self.XMLNodethermo.xmlInitNode('non_condensable_list')
@@ -124,10 +126,10 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         Check if the requirements for non condensable gas addition are met
         - Energy equation must be activated for all gases
         """
-        if self.getGasPhaseList() in [[], None]:
+        if self.mainFieldsModel.getGasPhaseList() in [[], None]:
             return False
-        for field_id in self.getGasPhaseList():
-            if self.getEnergyModel(field_id) != "off":
+        for field_id in self.mainFieldsModel.getGasPhaseList():
+            if self.mainFieldsModel.getEnergyModel(field_id) != "off":
                 return True
         return False
 
@@ -155,7 +157,7 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         """
         Return the non condensable name list for a fieldId
         """
-        self.isInList(str(FieldId),self.getFieldIdList())
+        self.isInList(str(FieldId),self.mainFieldsModel.getFieldIdList())
         list = []
         for node in self.XMLNodeNonCondensable.xmlGetNodeList('variable'):
             if self.getNonCondFieldId(node['name']) == str(FieldId) :
@@ -168,8 +170,8 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
         """
         Add a non condensable
         """
-        fieldId = self.getFirstGasField()
-        field_name = self.getFieldLabelsList()[int(fieldId)-1]
+        fieldId = self.mainFieldsModel.getFirstGasField()
+        field_name = self.mainFieldsModel.getFieldLabelsList()[int(fieldId)-1]
         type = self.defaultValues()['typeNonCond']
         label   = type + "_1" + "_" + field_name
         if label in self.getNonCondensableLabelList() :
@@ -181,13 +183,13 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
 
         name = "mass_fraction_non_condensable_gas_" + str(len(self.getNonCondensableNameList())+1)
 
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeNonCondensable, fieldId, name, label)
+        self.variables.setNewVariableProperty("variable", "", self.XMLNodeNonCondensable, fieldId, name, label)
 
         # for non condensable we need use cathare2 or cathare tables
         from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
         ref_material = "Water"
         for m in ("Cathare2", "Cathare"):
-            if m in self.eos.getFluidMethods(ref_material):
+            if m in self.mainFieldsModel.eos.getFluidMethods(ref_material):
                 for i in (1,2):
                     ThermodynamicsModel(self.case).setMaterials(i, ref_material)
                     ThermodynamicsModel(self.case).setMethod(i, m)
@@ -219,17 +221,16 @@ class NonCondensableModel(MainFieldsModel, Variables, Model):
             if node['name'] == name :
                return node['label']
 
-
     @Variables.undoLocal
     def setNonCondFieldId(self, name, field):
         """
         set field Id for non condensable
         """
         fieldId = -1
-        for id in self.getGasPhaseList() :
-            if field == self.getLabel(id) :
+        for id in self.mainFieldsModel.getGasPhaseList() :
+            if field == self.mainFieldsModel.getLabel(id) :
                fieldId = id
-        self.isInList(fieldId, self.getGasPhaseList())
+        self.isInList(fieldId, self.mainFieldsModel.getGasPhaseList())
         for node in self.XMLNodeNonCondensable.xmlGetNodeList('variable'):
             if node['name'] == name :
                node['field_id'] = fieldId
@@ -459,7 +460,7 @@ class NonCondensableTestCase(ModelTest):
 
     def checkGetNonCondensableLabelList(self):
         """Check whether the  NonCondensableModel class could get the NonCondensableLabelList"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
+        self.mainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         assert mdl.getNonCondensableLabelList() == ['Air_1'],\
@@ -468,7 +469,7 @@ class NonCondensableTestCase(ModelTest):
 
     def checkGetNonCondensableNameList(self):
         """Check whether the  NonCondensableModel class could get the NonCondensableNameList"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
+        self.mainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         assert mdl.getNonCondensableNameList() == ['mass_fraction_non_condensable_gas_1'],\
@@ -477,7 +478,7 @@ class NonCondensableTestCase(ModelTest):
 
     def checkGetNonCondensableByFieldId(self):
         """Check whether the  NonCondensableModel class could get the NonCondensableByFieldId"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
+        self.mainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         assert mdl.getNonCondensableByFieldId('1') == ['mass_fraction_non_condensable_gas_1'],\
@@ -486,7 +487,7 @@ class NonCondensableTestCase(ModelTest):
 
     def checkaddNonCondensable(self):
         """Check whether the  NonCondensableModel class could addNonCondensable"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
+        self.mainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         doc = '''<non_condensable_list>
@@ -501,7 +502,7 @@ class NonCondensableTestCase(ModelTest):
 
     def checkGetandSetNonCondLabel(self):
         """Check whether the NonCondensableModel class could set and get NonCondLabel"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
+        self.mainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         mdl.setNonCondLabel('mass_fraction_non_condensable_gas_1','example_label')
@@ -519,7 +520,7 @@ class NonCondensableTestCase(ModelTest):
 
     def checkGetandSetNonCondFieldId(self):
         """Check whether the NonCondensableModel class could set and get NonCondFieldId"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
+        self.mainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         mdl.setNonCondFieldId('mass_fraction_non_condensable_gas_1','field1')
@@ -537,7 +538,7 @@ class NonCondensableTestCase(ModelTest):
 
     def checkGetandSetNonCondType(self):
         """Check whether the NonCondensableModel class could set and get NonCondType"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
+        self.mainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         mdl.setNonCondType('mass_fraction_non_condensable_gas_1','N2')
@@ -565,7 +566,7 @@ class NonCondensableTestCase(ModelTest):
 
     def checkGetandSetNonCondMassMol(self):
         """Check whether the NonCondensableModel class could set and get NonCondMassMoll"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
+        self.mainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         mdl.setNonCondMassMol('mass_fraction_non_condensable_gas_1',8510.1)
@@ -586,7 +587,7 @@ class NonCondensableTestCase(ModelTest):
 
     def checkGetandSetNonCondCobin1and2(self):
         """Check whether the NonCondensableModel class could set and get NonCondCobin1and2"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
+        self.mainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         mdl.setNonCondCobin1('mass_fraction_non_condensable_gas_1',5.5)
@@ -613,7 +614,7 @@ class NonCondensableTestCase(ModelTest):
 
     def checkdeleteNonCondensable(self):
         """Check whether the NonCondensableModel class could deleteNonCondensable"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
+        self.mainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         mdl.addNonCondensable()
@@ -630,7 +631,7 @@ class NonCondensableTestCase(ModelTest):
 
     def checksetIncTyp(self):
         """Check whether the NonCondensableModel class could deleteNonCondensable"""
-        MainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
+        self.mainFieldsModel(self.case).addDefinedField('1', 'field1', 'continuous', 'gas', 'on', 'on', 'off', 1)
         mdl = NonCondensableModel(self.case)
         mdl.addNonCondensable()
         mdl.setIncTyp('mass_fraction_non_condensable_gas_1','N2')

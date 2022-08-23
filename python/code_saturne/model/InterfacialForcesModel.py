@@ -32,7 +32,7 @@ from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 from code_saturne.model.NotebookModel import NotebookModel
 
 
-class InterfacialForcesModel(MainFieldsModel, Variables, Model):
+class InterfacialForcesModel(Model):
     """
     This class manages the turbulence objects in the XML file
     """
@@ -43,7 +43,8 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         #
         # XML file parameters
-        MainFieldsModel.__init__(self, case)
+        self.mainFieldsModel = MainFieldsModel(case)
+        self.variables       = Variables(case)
         self.turb_m   = TurbulenceModel(case)
         self.notebook = NotebookModel(case)
 
@@ -64,12 +65,12 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
         # Init freeCouples for forces : criterion checking !
         self.__allCouples = []
-        for i, fieldaId in enumerate(self.getContinuousFieldList()):
-            for fieldbId in self.getContinuousFieldList()[i + 1:]:
-                self.__allCouples.append([self.getLabel(fieldaId), self.getLabel(fieldbId), "continuous"])
-        for fieldbId in self.getDispersedFieldList():
-            fieldaId = self.getCarrierField(fieldbId)
-            self.__allCouples.append([self.getLabel(fieldaId), self.getLabel(fieldbId), "dispersed"])
+        for i, fieldaId in enumerate(self.mainFieldsModel.getContinuousFieldList()):
+            for fieldbId in self.mainFieldsModel.getContinuousFieldList()[i + 1:]:
+                self.__allCouples.append([self.mainFieldsModel.getLabel(fieldaId), self.mainFieldsModel.getLabel(fieldbId), "continuous"])
+        for fieldbId in self.mainFieldsModel.getDispersedFieldList():
+            fieldaId = self.mainFieldsModel.getCarrierField(fieldbId)
+            self.__allCouples.append([self.mainFieldsModel.getLabel(fieldaId), self.mainFieldsModel.getLabel(fieldbId), "dispersed"])
 
     def getAllCouples(self):
         return self.__allCouples
@@ -77,8 +78,8 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
     # TODO : to remove once the "auto" type of interaction is enabled ?
     def getGLIMfields(self):
         fields = []
-        for i, fieldaId in enumerate(self.getContinuousFieldList()):
-            for fieldbId in self.getContinuousFieldList()[i + 1:]:
+        for i, fieldaId in enumerate(self.mainFieldsModel.getContinuousFieldList()):
+            for fieldbId in self.mainFieldsModel.getContinuousFieldList()[i + 1:]:
                 if self.getContinuousCouplingModel(fieldaId, fieldbId) == "G_Large_Interface_Model":
                     fields += [fieldaId, fieldbId]
         return fields
@@ -96,7 +97,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         # Only if : fieldaId is continuous and k-eps or Rij-eps
         #           fieldbId is dispersed without turbulence
         lst = []
-        if (fieldaId in self.getContinuousFieldList() and fieldbId in self.getDispersedFieldList()) :
+        if (fieldaId in self.mainFieldsModel.getContinuousFieldList() and fieldbId in self.mainFieldsModel.getDispersedFieldList()) :
             if (self.turb_m.isSecondOrderTurbulenceModel(fieldaId) and self.turb_m.getTurbulenceModel(fieldbId) == "none") :
                 lst = self.__availableturbulentedispersionModelsList
             else :
@@ -113,7 +114,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         """
         # only for bubbles in water
         lst = []
-        if ((fieldbId in self.getDispersedFieldList()) and self.getFieldNature(fieldbId) == "gas") :
+        if ((fieldbId in self.mainFieldsModel.getDispersedFieldList()) and self.mainFieldsModel.getFieldNature(fieldbId) == "gas") :
             lst = self.__availablewallforcesModelList
         else :
             lst = ["none"]
@@ -125,9 +126,9 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         return Model list according to fields criterion
         """
         # field A is continuous and field B is dispersed
-        self.isInList(fieldaId,self.getContinuousFieldList())
-        self.isInList(fieldbId,self.getDispersedFieldList())
-        predefined_flow = self.getPredefinedFlow()
+        self.isInList(fieldaId,self.mainFieldsModel.getContinuousFieldList())
+        self.isInList(fieldbId,self.mainFieldsModel.getDispersedFieldList())
+        predefined_flow = self.mainFieldsModel.getPredefinedFlow()
         if predefined_flow == "boiling_flow":
             return ["ishii"]
         elif predefined_flow == "droplet_flow":
@@ -151,9 +152,9 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
     def defaultValues(self):
         default = {}
-        flow_type = self.getPredefinedFlow()
+        flow_type = self.mainFieldsModel.getPredefinedFlow()
         if flow_type == "None":
-            flow_type = self.detectFlowType()
+            flow_type = self.mainFieldsModel.detectFlowType()
 
         default['disperseddragmodel'] = 'none'
         default['liftmodel'] = 'none'
@@ -194,7 +195,7 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
 
     def setDefaultParameters(self, field_id_a, field_id_b):
-        predefined_flow = self.getPredefinedFlow()
+        predefined_flow = self.mainFieldsModel.getPredefinedFlow()
         default = self.defaultValues()
 
         # Dispersed models
@@ -239,10 +240,10 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
         ChildNode = node.xmlInitChildNode('drag_model')
         ChildNode['model'] = model
         if model != "none":
-            Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldbId,
+            self.variables.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldbId,
                                                         "drag_coefficient", "drag_coef" + str(fieldbId))
         else:
-            Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldbId, "drag_coefficient")
+            self.variables.removeVariableProperty("property", self.XMLNodeproperty, fieldbId, "drag_coefficient")
 
 
     @Variables.noUndo
@@ -434,30 +435,30 @@ class InterfacialForcesModel(MainFieldsModel, Variables, Model):
 
         mfm = MainFieldsModel(self.case)
         if mfm.getPredefinedFlow() == 'free_surface':
-            fieldId = self.getContinuousFieldList()[1]
+            fieldId = self.mainFieldsModel.getContinuousFieldList()[1]
 
             if status == "off" and old_status:
                 node = self.XMLClosure.xmlGetChildNode('interfacial_area_diameter')
                 if node:
                     node.xmlRemoveNode()
 
-                Variables(self.case).removeVariableProperty("property",
+                self.variables.removeVariableProperty("property",
                                                             self.XMLNodeproperty,
                                                             fieldId,
                                                             "diameter")
-                Variables(self.case).removeVariableProperty("property",
+                self.variables.removeVariableProperty("property",
                                                             self.XMLNodeproperty,
                                                             fieldId,
                                                             "drift_component")
 
             elif status == "on":
                 field_name = MainFieldsModel(self.case).getFieldLabelsList()[int(fieldId)-1]
-                Variables(self.case).setNewVariableProperty('property', '',
+                self.variables.setNewVariableProperty('property', '',
                                                             self.XMLNodeproperty,
                                                             fieldId,
                                                             'diameter',
                                                             'diam_'+field_name)
-                Variables(self.case).setNewVariableProperty('property', '',
+                self.variables.setNewVariableProperty('property', '',
                                                             self.XMLNodeproperty,
                                                             fieldId,
                                                             'drift_component',

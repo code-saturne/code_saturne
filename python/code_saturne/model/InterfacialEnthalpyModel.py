@@ -23,34 +23,16 @@
 # -------------------------------------------------------------------------------
 
 import unittest
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.MainFieldsModel import *
-
-
-# -------------------------------------------------------------------------------
-# Helper class
-# -------------------------------------------------------------------------------
-
-class EnthalpyFieldModel(Variables, Model):
-    """
-    Class that stores the enthalpy transfer model related to ONE field
-    """
-
-    def __init__(self, case, field_id):
-        self.case = case
-        enthalpy_node = self.XMLInterfEnthalpyNode.xmlGetNodeList('enthalpy')
-        self.model_node = enthalpy_node.xmlInitNode("enthalpy_model", field_id=field_id)
-        self.ponderation_node = enthalpy_node.xmlInitNode("ponderation", field_id=field_id)
-
 
 # -------------------------------------------------------------------------------
 # Constructor
 # -------------------------------------------------------------------------------
 
-
-class InterfacialEnthalpyModel(MainFieldsModel):
+class InterfacialEnthalpyModel(Variables, Model):
     """
     This class manages the wall tranfer model objects in the XML file
     """
@@ -61,7 +43,7 @@ class InterfacialEnthalpyModel(MainFieldsModel):
         """
         #
         # XML file parameters
-        MainFieldsModel.__init__(self, case)
+        self.mainFieldsModel = MainFieldsModel(case)
         self.case = case
         self.XMLClosure            = self.case.xmlGetNode('closure_modeling')
         self.XMLInterfEnthalpyNode = self.XMLClosure.xmlInitNode('interfacial_enthalpy')
@@ -97,20 +79,20 @@ class InterfacialEnthalpyModel(MainFieldsModel):
         # Init freeCouples for enthalpy : criterion checking !
         self.__liquidVaporCouples = []
 
-        for fieldaId in self.getContinuousFieldList() :
-            nature_a = self.getFieldNature(fieldaId)
-            if self.getEnergyResolution(fieldaId) == 'on' :
-                for fieldbId in self.getContinuousFieldList():
-                    nature_b = self.getFieldNature(fieldbId)
+        for fieldaId in self.mainFieldsModel.getContinuousFieldList() :
+            nature_a = self.mainFieldsModel.getFieldNature(fieldaId)
+            if self.mainFieldsModel.getEnergyResolution(fieldaId) == 'on' :
+                for fieldbId in self.mainFieldsModel.getContinuousFieldList():
+                    nature_b = self.mainFieldsModel.getFieldNature(fieldbId)
                     if nature_a == nature_b:
                         continue
-                    if self.getEnergyResolution(fieldbId) == 'on' and fieldbId > fieldaId:
+                    if self.mainFieldsModel.getEnergyResolution(fieldbId) == 'on' and fieldbId > fieldaId:
                         self.__liquidVaporCouples.append((fieldaId, fieldbId))
-                for fieldbId in self.getDispersedFieldList():
-                    nature_b = self.getFieldNature(fieldbId)
+                for fieldbId in self.mainFieldsModel.getDispersedFieldList():
+                    nature_b = self.mainFieldsModel.getFieldNature(fieldbId)
                     if nature_a == nature_b:
                         continue
-                    if self.getEnergyResolution(fieldbId) == 'on' and self.getFieldNature(fieldbId) != "solid":
+                    if self.mainFieldsModel.getEnergyResolution(fieldbId) == 'on' and self.mainFieldsModel.getFieldNature(fieldbId) != "solid":
                         self.__liquidVaporCouples.append((fieldaId, fieldbId))
 
     def getLiquidVaporCouples(self):
@@ -127,8 +109,8 @@ class InterfacialEnthalpyModel(MainFieldsModel):
         if field_id_list is None:
             return []
         fieldaId, fieldbId = field_id_list
-        if self.getFieldNature(fieldaId) == "liquid":
-            if self.getCriterion(fieldbId) == "continuous":
+        if self.mainFieldsModel.getFieldNature(fieldaId) == "liquid":
+            if self.mainFieldsModel.getCriterion(fieldbId) == "continuous":
                 if fieldId == fieldaId:
                     return self.__availableLiquidContinuous
                 else:
@@ -139,7 +121,7 @@ class InterfacialEnthalpyModel(MainFieldsModel):
                 else:
                     return self.__availableVaporBubble
         else:
-            if self.getCriterion(fieldbId) == "continuous":
+            if self.mainFieldsModel.getCriterion(fieldbId) == "continuous":
                 if fieldId == fieldaId:
                     return self.__availableVaporContinuous
                 else:
@@ -174,13 +156,13 @@ class InterfacialEnthalpyModel(MainFieldsModel):
 
         for field_id in [field_id_a, field_id_b]:
             model = ""
-            if self.getFieldNature(field_id) == "gas":
-                if self.getCriterion(field_id) == "continuous":
+            if self.mainFieldsModel.getFieldNature(field_id) == "gas":
+                if self.mainFieldsModel.getCriterion(field_id) == "continuous":
                     model = self.defaultValues()['continuousgas']
                 else:
                     model = self.defaultValues()['dispersedgas']
-            elif self.getFieldNature(field_id) == "liquid":
-                if self.getCriterion(field_id) == "continuous":
+            elif self.mainFieldsModel.getFieldNature(field_id) == "liquid":
+                if self.mainFieldsModel.getCriterion(field_id) == "continuous":
                     model = self.defaultValues()['continuousliquid']
                 else:
                     model = self.defaultValues()['dispersedliquid']
@@ -247,15 +229,15 @@ class InterfacialEnthalpyModel(MainFieldsModel):
         modela = ""
         modelb = ""
 
-        if self.getFieldNature(fieldaId) == "liquid":
-            if self.getCriterion(fieldbId) == "continuous":
+        if self.mainFieldsModel.getFieldNature(fieldaId) == "liquid":
+            if self.mainFieldsModel.getCriterion(fieldbId) == "continuous":
                modela = self.defaultValues()['continuousliquid']
                modelb = self.defaultValues()['continuousgas']
             else:
                 modela = self.defaultValues()['continuousliquid']
                 modelb = self.defaultValues()['dispersedgas']
         else:
-            if self.getCriterion(fieldbId) == "continuous":
+            if self.mainFieldsModel.getCriterion(fieldbId) == "continuous":
                 modela = self.defaultValues()['continuousgas']
                 modelb = self.defaultValues()['continuousliquid']
             else:

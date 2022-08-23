@@ -252,7 +252,7 @@ class XMLinitNeptune(BaseXmlInit):
                 if nodeSurf is None:
                     XMLNodethermo   = self.case.xmlGetNode('thermophysical_models')
                     XMLNodeproperty = XMLNodethermo.xmlInitNode('properties')
-                    Variables(self.case).setNewVariableProperty("property", "constant", XMLNodeproperty, "none", "surface_tension", "Surf_tens")
+                    self.setNewVariableProperty("property", "constant", XMLNodeproperty, "none", "surface_tension", "Surf_tens")
 
         XMLNodeNonCondens = self.case.xmlGetNode('non_condensable_list')
         if XMLNodeNonCondens != None:
@@ -351,7 +351,7 @@ class XMLinitNeptune(BaseXmlInit):
                     fid = node['field_id']
                     na = tvn.xmlGetNode('variable',name='alpha', field_id=fid)
                     if na is None:
-                        Variables(self.case).setNewVariableProperty("variable", "",
+                        self.setNewVariableProperty("variable", "",
                                                                     tvn,
                                                                     fid,
                                                                     'alpha',

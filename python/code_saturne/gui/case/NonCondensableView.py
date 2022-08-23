@@ -183,9 +183,9 @@ class FieldDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
-        for fieldId in self.mdl.getGasPhaseList() :
+        for fieldId in self.mdl.mainFieldsModel.getGasPhaseList() :
             if self.thermo.getMaterials(fieldId) == "Water" :
-                label     = self.mdl.getLabel(fieldId)
+                label     = self.mdl.mainFieldsModel.getLabel(fieldId)
                 self.modelCombo.addItem(self.tr(label), label)
 
         editor.installEventFilter(self)
@@ -371,7 +371,7 @@ class StandardItemModelNonCondensable(QStandardItemModel):
            name = existing_noncond
         label      = self.mdl.getNonCondLabel(name)
         fieldId    = self.mdl.getNonCondFieldId(name)
-        labelfield = self.mdl.getLabel(fieldId)
+        labelfield = self.mdl.mainFieldsModel.getLabel(fieldId)
         type       = self.mdl.getNonCondType(name)
         massmol    = self.mdl.getNonCondMassMol(name)
         cobin1     = self.mdl.getNonCondCobin1(name)

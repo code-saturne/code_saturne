@@ -299,8 +299,8 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
             return
 
         field_a, field_b, interaction_type = self.tableModelInteractions.data_table[index.row()]
-        self.field_id_a = self.mdl.getFieldId(field_a)
-        self.field_id_b = self.mdl.getFieldId(field_b)
+        self.field_id_a = self.mdl.mainFieldsModel.getFieldId(field_a)
+        self.field_id_b = self.mdl.mainFieldsModel.getFieldId(field_b)
 
         if interaction_type == "continuous":
             self._displayContinuousModels()
@@ -308,7 +308,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
             self._displayDispersedModels()
         else:
             raise TypeError("Unknown interaction type : {0}".format(interaction_type))
-        predefined_flow = self.mdl.getPredefinedFlow()
+        predefined_flow = self.mdl.mainFieldsModel.getPredefinedFlow()
         if predefined_flow == "free_surface":
             self.lockFreeSurfaceOptions()
         elif predefined_flow == "boiling_flow":

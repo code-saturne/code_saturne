@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 import sys, unittest
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.MainFieldsModel import *
@@ -31,7 +31,7 @@ from code_saturne.model.Common import LABEL_LENGTH_MAX
 from code_saturne.model.ProfilesModel import ProfilesModel
 from code_saturne.model.TimeAveragesModel import TimeAveragesModel
 
-class SpeciesModel(MainFieldsModel, Variables, Model):
+class SpeciesModel(Variables, Model):
 
     """
     This class manages the turbulence objects in the XML file
@@ -43,7 +43,7 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
         """
         #
         # XML file parameters
-        MainFieldsModel.__init__(self, case)
+        self.mainFieldsModel = MainFieldsModel(case)
         self.case            = case
         self.XMLUserScalar   = self.case.xmlGetNode('additional_scalars')
         self.XMLUser         = self.XMLUserScalar.xmlInitNode('users')
@@ -91,7 +91,7 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
         """
         Return the scalar name list for a fieldId
         """
-        self.isInList(str(FieldId), self.getFieldIdList(include_none=True))
+        self.isInList(str(FieldId), self.mainFieldsModel.getFieldIdList(include_none=True))
         list = []
         for node in self.XMLScalar.xmlGetNodeList('variable'):
             if self.getScalarFieldIdByName(node['name']) == str(FieldId):
@@ -115,7 +115,7 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
 
         carrierfield = self.defaultValues()['carrierField']
 
-        Variables(self.case).setNewVariableProperty("variable", "", self.XMLScalar, carrierfield, name, label)
+        self.setNewVariableProperty("variable", "", self.XMLScalar, carrierfield, name, label)
 
         return label
 
@@ -232,7 +232,7 @@ class SpeciesModel(MainFieldsModel, Variables, Model):
         """
         put carrier field id for scalar
         """
-        self.isInList(str(carrierfield), self.getFieldIdList(include_none=True))
+        self.isInList(str(carrierfield), self.mainFieldsModel.getFieldIdList(include_none=True))
 
         name = "scalar_" + str(scalarId)
         self.isInList(name,self.getScalarNameList())

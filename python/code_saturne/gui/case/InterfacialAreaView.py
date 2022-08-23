@@ -84,7 +84,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         self.case.undoStopGlobal()
         self.mdl = InterfacialAreaModel(self.case)
 
-        dispersed_fields = self.mdl.getDispersedFieldList() + InterfacialForcesModel(self.case).getGLIMfields()
+        dispersed_fields = self.mdl.mainFieldsModel.getDispersedFieldList() + InterfacialForcesModel(self.case).getGLIMfields()
 
         if dispersed_fields == []:
             self.groupBoxField.hide()
@@ -102,7 +102,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         # Large Interface Model is set before the dispersed fields
 
         for fieldId in dispersed_fields:
-            label = self.mdl.getLabel(fieldId)
+            label = self.mdl.mainFieldsModel.getLabel(fieldId)
             name = str(fieldId)
             self.modelField.addItem(self.tr(label), name)
 
@@ -160,7 +160,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         self.currentid = self.modelField.dicoV2M[text]
         self.initializeVariables(self.currentid)
 
-        if self.mdl.getFieldNature(self.currentid) == "gas" :
+        if self.mdl.mainFieldsModel.getFieldNature(self.currentid) == "gas" :
             self.modelSourceTerm.enableItem(0)
         else :
             self.modelSourceTerm.disableItem(0)

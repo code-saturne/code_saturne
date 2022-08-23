@@ -140,8 +140,8 @@ class FieldDelegate(QItemDelegate):
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
         self.modelCombo = ComboModel(editor, 1, 1)
-        for fieldId in self.mdl.getFieldIdList(include_none=True):
-            label     = self.mdl.getLabel(fieldId, include_none=True)
+        for fieldId in self.mdl.mainFieldsModel.getFieldIdList(include_none=True):
+            label     = self.mdl.mainFieldsModel.getLabel(fieldId, include_none=True)
             self.modelCombo.addItem(self.tr(label), label)
 
         editor.installEventFilter(self)
@@ -242,7 +242,7 @@ class StandardItemModelUserScalar(QStandardItemModel):
             if self._data[row][col] == "none":
                 id = "none"
             else:
-                id = self.mdl.getFieldId(self._data[row][col])
+                id = self.mdl.mainFieldsModel.getFieldId(self._data[row][col])
             self.mdl.setScalarFieldId(name, id)
 
         self.dataChanged.emit(index, index)
@@ -268,7 +268,7 @@ class StandardItemModelUserScalar(QStandardItemModel):
 
         fieldId    = self.mdl.getScalarFieldId(row + 1)
         if fieldId != "none":
-            labelfield = self.mdl.getLabel(fieldId)
+            labelfield = self.mdl.mainFieldsModel.getLabel(fieldId)
         else:
             labelfield = "none"
         label      = self.mdl.getScalarLabel(row + 1)

@@ -38,7 +38,7 @@ from code_saturne.model.XMLmodel     import ModelTest
 from code_saturne.model.XMLengine import *
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModelsDescription
 
-class NumericalParamEquatModel(Model):
+class NumericalParamEquatModel(Variables, Model):
 
     """
     This class manages the turbulence objects in the XML file

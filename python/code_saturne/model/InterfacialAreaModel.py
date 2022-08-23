@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 import sys, unittest
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Model, Variables
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.MainFieldsModel import *
@@ -31,7 +31,7 @@ from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
 
 
 # TODO : try to include this model in "InterfaceForcesModel" directly ?
-class InterfacialAreaModel(MainFieldsModel, Variables, Model):
+class InterfacialAreaModel(Model):
 
     """
     This class manages the turbulence objects in the XML file
@@ -43,7 +43,8 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         """
         #
         # XML file parameters
-        MainFieldsModel.__init__(self, case)
+        self.mainFieldsModel = MainFieldsModel(case)
+        self.variables       = Variables(case)
         self.case              = case
         self.XMLclosure        = self.case.xmlGetNode('closure_modeling')
         self.XMLAreaDiam       = self.XMLclosure.xmlInitNode('interfacial_area_diameter')
@@ -63,9 +64,9 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         default['mindiam'] = 1.e-6
         default['maxdiam'] = 0.1
 
-        flow_type = self.getPredefinedFlow()
+        flow_type = self.mainFieldsModel.getPredefinedFlow()
         if flow_type == "None":
-            flow_type = self.detectFlowType()
+            flow_type = self.mainFieldsModel.detectFlowType()
 
         if flow_type in ["boiling_flow", "multiregime_flow"]:
             default['areamodel'] = "interfacial_area_transport"
@@ -80,7 +81,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         """
         Reset all parameters to default when activating a predefined flow (non user)
         """
-        predefined_flow = self.getPredefinedFlow()
+        predefined_flow = self.mainFieldsModel.getPredefinedFlow()
         if predefined_flow == "None":
             return
 
@@ -102,7 +103,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         """
         """
         list = []
-        if self.getFieldNature(fieldId) == "gas" :
+        if self.mainFieldsModel.getFieldNature(fieldId) == "gas" :
             list = self.__GasSourceTerm
         else :
             list = self.__SolidSourceTerm
@@ -113,7 +114,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         """
         """
         list = []
-        for field in self.getDispersedFieldList() :
+        for field in self.mainFieldsModel.getDispersedFieldList() :
             if self.getAreaModel(field) != "constant" :
                 list.append(field)
         return list
@@ -123,7 +124,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
     def setAreaModel(self, fieldId, model) :
         """
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         self.isInList(model, self.getAreaModelList())
 
         oldmodel = None
@@ -143,20 +144,20 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
 
         if oldmodel != model :
             if model == "constant" :
-                Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "Xd")
-                Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
+                self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "Xd")
+                self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
             else:
-                field_name = self.getFieldLabelsList()[int(fieldId)-1]
-                Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "Xd", "Xd_"+field_name)
+                field_name = self.mainFieldsModel.getFieldLabelsList()[int(fieldId)-1]
+                self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "Xd", "Xd_"+field_name)
 
 
     @Variables.noUndo
     def getAreaModel(self, fieldId) :
         """
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
-        cte_field_1 = InterfacialForcesModel(self.case).getContinuousFieldList()[0]
+        cte_field_1 = self.mainFieldsModel.getContinuousFieldList()[0]
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
         if node is None :
@@ -174,7 +175,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
     def setSourceTerm(self, fieldId, model) :
         """
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         self.isInList(model, self.getSourceTermList(fieldId))
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
@@ -187,19 +188,19 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
         childNode = node.xmlInitChildNode('source_term')
         childNode.xmlSetAttribute(model = model)
 
-        field_name = self.getFieldLabelsList()[int(fieldId)-1]
+        field_name = self.mainFieldsModel.getFieldLabelsList()[int(fieldId)-1]
         if oldmodel != model :
             if model == 'kamp_colin' :
-                Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "X2", "X2_"+field_name)
+                self.variables.setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldId, "X2", "X2_"+field_name)
             else:
-                Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
+                self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
 
 
     @Variables.noUndo
     def getSourceTerm(self, fieldId) :
         """
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('source_term')
@@ -216,7 +217,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
     def setInitialDiameter(self, fieldId, value) :
         """
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         self.isPositiveFloat(value)
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
@@ -228,7 +229,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
     def getInitialDiameter(self, fieldId) :
         """
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id = fieldId)
         value = node.xmlGetDouble('diameter')
@@ -242,7 +243,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
     def setMinDiameter(self, fieldId, value):
         """
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         self.isPositiveFloat(value)
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id=fieldId)
@@ -253,7 +254,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
     def getMinDiameter(self, fieldId):
         """
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self.XMLAreaDiam.xmlGetNode('field', field_id=fieldId)
         value = node.xmlGetDouble('min_diameter')
         if value is None:
@@ -266,7 +267,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
     def setMaxDiameter(self, fieldId, value):
         """
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         self.isPositiveFloat(value)
 
         node = self.XMLAreaDiam.xmlGetNode('field', field_id=fieldId)
@@ -277,7 +278,7 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
     def getMaxDiameter(self, fieldId):
         """
         """
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
         node = self.XMLAreaDiam.xmlGetNode('field', field_id=fieldId)
         value = node.xmlGetDouble('max_diameter')
         if value is None:
@@ -288,10 +289,9 @@ class InterfacialAreaModel(MainFieldsModel, Variables, Model):
 
     def remove(self):
         self.XMLAreaDiam.xmlRemoveChildren()
-        variables_model = Variables(self.case)
-        for fieldId in self.getFieldIdList():
-            variables_model.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "Xd")
-            variables_model.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
+        for fieldId in self.mainFieldsModel.getFieldIdList():
+            self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "Xd")
+            self.variables.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, "X2")
 
 
 # -------------------------------------------------------------------------------

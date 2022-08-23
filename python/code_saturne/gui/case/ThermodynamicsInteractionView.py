@@ -132,8 +132,8 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
         self.groupBoxGeneral.show()
 
         field_a, field_b, interaction_type = self.tableModelInteractions.data_table[index.row()]
-        self.field_id_a = self.model.getFieldId(field_a)
-        self.field_id_b = self.model.getFieldId(field_b)
+        self.field_id_a = self.model.mainFieldsModel.getFieldId(field_a)
+        self.field_id_b = self.model.mainFieldsModel.getFieldId(field_b)
 
         tag = "surface_tension"
         choice = self.model.getPropertyMode(self.field_id_a, self.field_id_b, tag)

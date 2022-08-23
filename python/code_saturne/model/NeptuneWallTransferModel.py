@@ -23,7 +23,7 @@
 # -------------------------------------------------------------------------------
 
 import sys
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 

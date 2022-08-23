@@ -96,9 +96,9 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         for id_pair in liquid_vapor_couples:
             field_descriptions = []
             for id in id_pair:
-                name = self.mdl.getLabel(id)
-                phase = self.mdl.getFieldNature(id)
-                criterion = self.mdl.getCriterion(id)
+                name = self.mdl.mainFieldsModel.getLabel(id)
+                phase = self.mdl.mainFieldsModel.getFieldNature(id)
+                criterion = self.mdl.mainFieldsModel.getCriterion(id)
                 field_descriptions.append("{0} ({1} {2})".format(name, criterion, phase))
             # Display fields as "Field1 (continuous liquid) / Field2 (dispersed gas)"
             view = self.tr(" / ".join(field_descriptions))
@@ -128,7 +128,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
 
         self.groupBoxLiquidVaporModel.hide()
         self.groupBoxSolidEnergyTransfer.hide()
-        if (len(self.mdl.getSolidFieldIdList()) > 0):
+        if (len(self.mdl.mainFieldsModel.getSolidFieldIdList()) > 0):
             model = self.mdl.getSolidEnergyTransfer()
             self.modelSolidEnergyTransfer.setItem(str_model=model)
             self.groupBoxSolidEnergyTransfer.show()
@@ -142,7 +142,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
             self.checkBoxActivatePool.setChecked(True)
 
         # Initialize pair of fields
-        predefined_flow = self.mdl.getPredefinedFlow()
+        predefined_flow = self.mdl.mainFieldsModel.getPredefinedFlow()
         if predefined_flow == "None":
             if self.mdl.getEnthalpyCoupleFieldId() is None:
                 self.modelLiquidVaporFields.setItem(str_model="none")
@@ -293,8 +293,8 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
 
     def fillLiquidVaporModels(self, fieldIda, fieldIdb):
         # fieldIda == continuous by construction and nature(fieldIda) != nature(fieldIdb)
-        if self.mdl.getFieldNature(fieldIda) == "liquid":
-            if self.mdl.getCriterion(fieldIdb) == "continuous":
+        if self.mdl.mainFieldsModel.getFieldNature(fieldIda) == "liquid":
+            if self.mdl.mainFieldsModel.getCriterion(fieldIdb) == "continuous":
                 self.modelFieldaModel.addItem(self.tr("Coste-Lavieville NURETH13 model, Wall Law Type Model"),
                                               "wall_law_type_model")
                 self.modelFieldbModel.addItem(self.tr("Interfacial Sublayer Model for LI3C"), "sublayer_LI3C")
@@ -308,7 +308,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
                 self.modelFieldbModel.addItem(self.tr("Relaxation time + subcooled gas treatment"),
                                               "relaxation_time_subcooled")
         else:
-            if self.mdl.getCriterion(fieldIdb) == "continuous":
+            if self.mdl.mainFieldsModel.getCriterion(fieldIdb) == "continuous":
                 self.modelFieldaModel.addItem(self.tr("Interfacial Sublayer Model for LI3C"), "sublayer_LI3C")
                 self.modelFieldbModel.addItem(self.tr("Coste-Lavieville NURETH13 model, Wall Law Type Model"),
                                               "wall_law_type_model")
@@ -405,5 +405,5 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         if pool_boiling_state:
             wall_model.setWallFunctionModel("standard")
         else:
-            if self.mdl.getPredefinedFlow() != "None":
+            if self.mdl.mainFieldsModel.getPredefinedFlow() != "None":
                 wall_model.setWallFunctionModel(wall_model.defaultValues()["wallfunction"])

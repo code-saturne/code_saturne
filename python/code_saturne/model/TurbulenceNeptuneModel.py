@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 import sys, unittest
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.MainFieldsModel import *       # TODO change
 import copy
@@ -94,7 +94,7 @@ class TurbulenceModelsDescription:
 # Main turbulence model class
 #-------------------------------------------------------------------------------
 
-class TurbulenceModel(MainFieldsModel):
+class TurbulenceModel(Variables, Model):
     """
     This class manages the turbulence objects in the XML file
     """
@@ -105,7 +105,7 @@ class TurbulenceModel(MainFieldsModel):
         """
         #
         # XML file parameters
-        MainFieldsModel.__init__(self, case)
+        self.mainFieldsModel = MainFieldsModel(case)
         self.case = case
         self.XMLClosure      = self.case.xmlGetNode('closure_modeling')
         self.XMLturbulence   = self.XMLClosure.xmlInitNode('turbulence')
@@ -129,11 +129,11 @@ class TurbulenceModel(MainFieldsModel):
         """
         put turbulence model for fieldId
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
-        field_name = self.getFieldLabelsList()[int(fieldId)-1]
+        field_name = self.mainFieldsModel.getFieldLabelsList()[int(fieldId)-1]
 
-        criterion = self.getCriterion(fieldId)
+        criterion = self.mainFieldsModel.getCriterion(fieldId)
         if criterion == "continuous":
            self.isInList(model, TurbulenceModelsDescription.continuousTurbulenceModels)
         else:
@@ -163,29 +163,29 @@ class TurbulenceModel(MainFieldsModel):
            if oldmodel != "":
                # erase old variables and properties from XML
                for var in TurbulenceModelsDescription.turbulenceVariables[oldmodel]:
-                   Variables(self.case).removeVariableProperty("variable", self.XMLNodeVariable, fieldId, var)
+                   self.removeVariableProperty("variable", self.XMLNodeVariable, fieldId, var)
 
                for var in TurbulenceModelsDescription.turbulenceProperties[oldmodel]:
-                   Variables(self.case).removeVariableProperty("property", self.XMLNodeproperty, fieldId, var)
+                   self.removeVariableProperty("property", self.XMLNodeproperty, fieldId, var)
 
            # add new variables and properties from XML
            for var in TurbulenceModelsDescription.turbulenceVariables[model]:
              if var == "reynolds_stress":
-                 Variables(self.case).setNewVariableProperty("variable", "",
+                 self.setNewVariableProperty("variable", "",
                                                              self.XMLNodeVariable,
                                                              fieldId,
                                                              var,
                                                              var+"_"+field_name,
                                                              dim=6)
              else:
-                 Variables(self.case).setNewVariableProperty("variable", "",
+                 self.setNewVariableProperty("variable", "",
                                                              self.XMLNodeVariable,
                                                              fieldId,
                                                              var,
                                                              var+"_"+field_name)
 
            for var in TurbulenceModelsDescription.turbulenceProperties[model]:
-               Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, var, var+"_"+field_name)
+               self.setNewVariableProperty("property", "", self.XMLNodeproperty, fieldId, var, var+"_"+field_name)
 
            if oldmodel == "mixing_length":
                node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
@@ -194,9 +194,9 @@ class TurbulenceModel(MainFieldsModel):
 
            # update other field if continuous and set to none
            if model == "none" and criterion == "continuous":
-               for id in self.getFieldIdList():
-                   if self.getCriterion(id) == "dispersed":
-                       if self.getCarrierField(id) == str(fieldId):
+               for id in self.mainFieldsModel.getFieldIdList():
+                   if self.mainFieldsModel.getCriterion(id) == "dispersed":
+                       if self.mainFieldsModel.getCarrierField(id) == str(fieldId):
                            self.setTurbulenceModel(id, TurbulenceModelsDescription.dispersedTurbulenceModels[0])
                            if criterion == "continuous":
                                self.setTwoWayCouplingModel(id, TurbulenceModelsDescription.continuousCouplingModels[0])
@@ -209,9 +209,9 @@ class TurbulenceModel(MainFieldsModel):
         """
         get turbulence model for fieldId
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
-        criterion = self.getCriterion(fieldId)
+        criterion = self.mainFieldsModel.getCriterion(fieldId)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         if node is None:
@@ -229,13 +229,13 @@ class TurbulenceModel(MainFieldsModel):
     @Variables.undoLocal
     def setThermalTurbulentFlux(self, fieldId, model):
 
-        self.isInList(str(fieldId), self.getFieldIdList())
+        self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
 
         self.isInList(model,TurbulenceModelsDescription.ThermalTurbFluxModels)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
 
-        critrerion =  self.getCriterion(fieldId)
+        critrerion =  self.mainFieldsModel.getCriterion(fieldId)
         if node is None:
             if criterion == "continuous":
                 self.XMLturbulence.xmlInitChildNode('field',
@@ -256,17 +256,17 @@ class TurbulenceModel(MainFieldsModel):
     @Variables.noUndo
     def getThermalTurbulentFlux(self, fieldId):
 
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         if node is None:
-            if self.getEnergyResolution(fieldId) == 'on':
+            if self.mainFieldsModel.getEnergyResolution(fieldId) == 'on':
                 self.setThermalTurbulentFlux(fieldId,
                                              self.defaultValues()['turb_flux'])
             else:
                 self.setThermalTurbulentFlux(fieldId, 'none')
         else:
-            if self.getEnergyResolution(fieldId) != 'on':
+            if self.mainFieldsModel.getEnergyResolution(fieldId) != 'on':
                 node['turb_flux'] = 'none'
             elif node['turb_flux'] == 'none':
                node['turb_flux'] = 'sgdh'
@@ -281,7 +281,7 @@ class TurbulenceModel(MainFieldsModel):
         """
         put two way coupling model for fieldId dispersed field
         """
-        self.isInList(str(fieldId),self.getDispersedFieldList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getDispersedFieldList())
         self.isInList(model, TurbulenceModelsDescription.dispersedCouplingModels)
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
@@ -297,7 +297,7 @@ class TurbulenceModel(MainFieldsModel):
         """
         get two way coupling for fieldId dispersed field
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
         node = self.XMLturbulence.xmlGetNode('field', field_id = fieldId)
         if node is None:
@@ -340,7 +340,7 @@ class TurbulenceModel(MainFieldsModel):
         """
         put value for mixing length
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         self.isFloat(value)
 
         fieldNode = self.XMLturbulence.xmlGetNode('field', field_id = str(fieldId))
@@ -352,7 +352,7 @@ class TurbulenceModel(MainFieldsModel):
         """
         get value for mixing length
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
         fieldNode = self.XMLturbulence.xmlGetNode('field', field_id = str(fieldId))
         lengthNode = fieldNode.xmlGetNode('length_scale')
@@ -371,7 +371,7 @@ class TurbulenceModel(MainFieldsModel):
         """
         return 1 if turbulent model of field is k-eps or Rij
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         flag = 0
         if (self.getTurbulenceModel(fieldId) == "k-epsilon" \
          or self.getTurbulenceModel(fieldId) == "k-epsilon_linear_production" \
@@ -385,7 +385,7 @@ class TurbulenceModel(MainFieldsModel):
     def useAdvancedThermalFluxes(self, fieldId):
         flag = False
 
-        if self.getCriterion(fieldId) == 'continuous' and \
+        if self.mainFieldsModel.getCriterion(fieldId) == 'continuous' and \
            'rij-epsilon' in self.getTurbulenceModel(fieldId):
 
             flag = True

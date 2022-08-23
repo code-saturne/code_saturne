@@ -135,8 +135,8 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.zone_id = str(zone.getCodeNumber())
 
         self.modelField = ComboModel(self.comboBoxField, 1, 1)
-        for fieldId in self.mdl.getFieldIdList():
-            label = self.mdl.getLabel(fieldId)
+        for fieldId in self.mdl.mainFieldsModel.getFieldIdList():
+            label = self.mdl.mainFieldsModel.getLabel(fieldId)
             name = str(fieldId)
             self.modelField.addItem(self.tr(label), name)
 
@@ -145,8 +145,8 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.modelField.addItem(self.tr('Non-convected scalars'), 'none')
 
         self.currentid = -1
-        if len(self.mdl.getFieldIdList()) > 0:
-            self.currentid = self.mdl.getFieldIdList()[0]
+        if len(self.mdl.mainFieldsModel.getFieldIdList()) > 0:
+            self.currentid = self.mdl.mainFieldsModel.getFieldIdList()[0]
             self.modelField.setItem(str_model = self.currentid)
         self.modelEnergy = ComboModel(self.comboBoxEnergy, 3, 1)
         self.modelEnergy.addItem(self.tr("Enthalpy"), "enthalpy")
@@ -179,7 +179,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonPressure.setToolTip(exp)
         else:
             self.pushButtonPressure.setStyleSheet("background-color: red")
-        if (len(self.mdl.getFieldIdList()) > 0):
+        if (len(self.mdl.mainFieldsModel.getFieldIdList()) > 0):
             self.groupBoxDefinition.show()
             self.initializeVariables(self.zone_id, self.currentid)
 
@@ -196,7 +196,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             else:
                 self.pushButtonFraction.setStyleSheet("background-color: red")
 
-            if self.mdl.getEnergyResolution(self.currentid) == "on":
+            if self.mdl.mainFieldsModel.getEnergyResolution(self.currentid) == "on":
                 exp = self.mdl.getFormula(self.zone_id, self.currentid, 'enthalpy')
                 if exp:
                     self.pushButtonEnergy.setStyleSheet("background-color: green")
@@ -255,7 +255,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.pushButtonFraction.setStyleSheet("background-color: red")
 
             # Energy
-            if self.mdl.getEnergyResolution(self.currentid) == "on":
+            if self.mdl.mainFieldsModel.getEnergyResolution(self.currentid) == "on":
                 exp = self.mdl.getFormula(self.zone_id,
                                           self.currentid,
                                           'enthalpy')
@@ -577,7 +577,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         self.labelFraction.setVisible(fieldId!='none')
         self.pushButtonFraction.setVisible(fieldId!='none')
 
-        if fieldId != 'none' and self.mdl.getEnergyResolution(fieldId) == "on":
+        if fieldId != 'none' and self.mdl.mainFieldsModel.getEnergyResolution(fieldId) == "on":
             self.labelEnergy.show()
             self.comboBoxEnergy.show()
             self.pushButtonEnergy.show()

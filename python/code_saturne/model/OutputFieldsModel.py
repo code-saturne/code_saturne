@@ -33,7 +33,7 @@ from code_saturne.model.TimeAveragesModel import TimeAveragesModel
 # Constructor
 #-------------------------------------------------------------------------------
 
-class OutputFieldsModel(MainFieldsModel, Variables, Model):
+class OutputFieldsModel(Model):
     """
     This class manages the Field objects in the XML file
     """
@@ -44,7 +44,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
         """
         #
         # XML file parameters
-        MainFieldsModel.__init__(self, case)
+        self.mainFieldsModel = MainFieldsModel(case)
         self.case           = case
         self.XMLNodethermo  = self.case.xmlGetNode('thermophysical_models')
         self.analysis_ctrl  = self.case.xmlInitNode('analysis_control')
@@ -86,7 +86,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
         """
         set label
         """
-        lst = self.getFieldIdList()
+        lst = self.mainFieldsModel.getFieldIdList()
         lst.append("none")
         self.isInList(fieldId, lst)
 
@@ -119,7 +119,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
         """
         return label of name variable for fieldId
         """
-        lst = self.getFieldIdList()
+        lst = self.mainFieldsModel.getFieldIdList()
         lst.append("none")
         self.isInList(fieldId, lst)
 
@@ -142,7 +142,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
         return status for listing output for variable name on fieldId
         """
         self.isOnOff(status)
-        lst = self.getFieldIdList()
+        lst = self.mainFieldsModel.getFieldIdList()
         lst.append("none")
         self.isInList(fieldId, lst)
 
@@ -164,7 +164,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
         """
         return status for listing output for variable name on fieldId
         """
-        lst = self.getFieldIdList()
+        lst = self.mainFieldsModel.getFieldIdList()
         lst.append("none")
         self.isInList(fieldId, lst)
 
@@ -174,7 +174,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
                 break
 
         if node != None:
-            value = self.defaultValues()['listing']
+            value = self.mainFieldsModel.defaultValues()['listing']
             n = node.xmlGetNode('listing_printing')
             if n :
                 value = n['status']
@@ -190,7 +190,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
         return status for post processing for variable name on fieldId
         """
         self.isOnOff(status)
-        lst = self.getFieldIdList()
+        lst = self.mainFieldsModel.getFieldIdList()
         lst.append("none")
         self.isInList(fieldId, lst)
 
@@ -212,7 +212,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
         """
         return status for post processing for variable name on fieldId
         """
-        lst = self.getFieldIdList()
+        lst = self.mainFieldsModel.getFieldIdList()
         lst.append("none")
         self.isInList(fieldId, lst)
 
@@ -222,7 +222,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
                 break
 
         if node != None:
-            value = self.defaultValues()['writer']
+            value = self.mainFieldsModel.defaultValues()['writer']
             n = node.xmlGetNode('postprocessing_recording')
             if n :
                 value = n['status']
@@ -237,7 +237,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
         """
         return list of probes for variable name on fieldId
         """
-        l = self.getFieldIdList()
+        l = self.mainFieldsModel.getFieldIdList()
         l.append("none")
         self.isInList(fieldId, l)
 
@@ -282,7 +282,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
         """
         return list of probes for variable name on fieldId
         """
-        l = self.getFieldIdList()
+        l = self.mainFieldsModel.getFieldIdList()
         l.append("none")
         self.isInList(fieldId, l)
 
@@ -348,7 +348,7 @@ class OutputFieldsModel(MainFieldsModel, Variables, Model):
         """
         return list of variables with none field criteria
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         lst = []
         for variableType in ('variable', 'property', 'scalar'):
             for node in self.case.xmlGetNodeList(variableType, field_id = str(fieldId)):

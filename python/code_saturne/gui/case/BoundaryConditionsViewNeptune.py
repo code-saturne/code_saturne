@@ -145,9 +145,9 @@ class StandardItemModelMainFields(QStandardItemModel):
             nature    = "none"
             criterion = "none"
         else:
-            label     = self.mdl.getLabel(fieldId)
-            nature    = self.mdl.getFieldNature(fieldId)
-            criterion = self.mdl.getCriterion(fieldId)
+            label     = self.mdl.mainFieldsModel.getLabel(fieldId)
+            nature    = self.mdl.mainFieldsModel.getFieldNature(fieldId)
+            criterion = self.mdl.mainFieldsModel.getCriterion(fieldId)
 
         field = [label, nature, criterion]
 
@@ -216,7 +216,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         self.tableViewFields.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewFields.setSelectionMode(QAbstractItemView.SingleSelection)
 
-        for fieldId in self.mdl.getFieldIdList():
+        for fieldId in self.mdl.mainFieldsModel.getFieldIdList():
             self.tableModelFields.newItem(fieldId)
 
         need_none = (SpeciesModel(self.case).getScalarByFieldId("none")!=[])
@@ -233,7 +233,7 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
 
         self.__currentField = self.tableViewFields.currentIndex().row() + 1
         # Set currentField to 'none' if we are dealing with the non-convected variables
-        if self.__currentField > len(self.mdl.getFieldIdList()):
+        if self.__currentField > len(self.mdl.mainFieldsModel.getFieldIdList()):
             self.__currentField = "none"
         log.debug("slotSelectField current field %s" %str(self.__currentField))
 

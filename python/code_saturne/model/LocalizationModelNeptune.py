@@ -24,6 +24,7 @@
 
 from code_saturne.model.LocalizationModel import BoundaryZone, Zone
 from code_saturne.model.BoundaryNeptune import *
+from code_saturne.model.XMLvariables import Variables
 
 #-------------------------------------------------------------------------------
 #

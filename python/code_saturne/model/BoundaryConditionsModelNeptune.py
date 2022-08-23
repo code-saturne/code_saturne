@@ -23,13 +23,13 @@
 #-------------------------------------------------------------------------------
 
 import sys, unittest
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.MainFieldsModel import *
 
 
-class BoundaryConditionsModel(MainFieldsModel, Variables, Model):
+class BoundaryConditionsModel(Variables, Model):
 
     """
     This class manages the boundary conditions objects in the XML file
@@ -42,7 +42,7 @@ class BoundaryConditionsModel(MainFieldsModel, Variables, Model):
         #
         # XML file parameters
         self.case = case
-        MainFieldsModel.__init__(self, case)
+        self.mainFieldsModel = MainFieldsModel(case)
 
 #-------------------------------------------------------------------------------
 # DefineUsersScalars test case

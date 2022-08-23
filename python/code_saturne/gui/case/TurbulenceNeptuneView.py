@@ -87,16 +87,16 @@ class TurbulenceDelegate(QItemDelegate):
         self.modelCombo = ComboModel(editor, 1, 1)
         fieldId = index.row() + 1
 
-        if self.mdl.getCriterion(fieldId) == "continuous":
+        if self.mdl.mainFieldsModel.getCriterion(fieldId) == "continuous":
             turbulence_models = TurbulenceModelsDescription.continuousTurbulenceModels
         else:
-            carrier = self.mdl.getCarrierField(fieldId)
-            if self.mdl.getPredefinedFlow() == "boiling_flow":
+            carrier = self.mdl.mainFieldsModel.getCarrierField(fieldId)
+            if self.mdl.mainFieldsModel.getPredefinedFlow() == "boiling_flow":
                 turbulence_models = TurbulenceModelsDescription.bubblyFlowsTurbulenceModels
-            elif self.mdl.getPredefinedFlow() == "droplet_flow":
+            elif self.mdl.mainFieldsModel.getPredefinedFlow() == "droplet_flow":
                 turbulence_models = TurbulenceModelsDescription.dropletFlowsTurbulenceModels
             elif self.mdl.getTurbulenceModel(carrier) != "none" or \
-                    self.mdl.getFieldNature(fieldId) == "solid":
+                    self.mdl.mainFieldsModel.getFieldNature(fieldId) == "solid":
                 turbulence_models = TurbulenceModelsDescription.dispersedTurbulenceModels
             else:
                 turbulence_models = ["none"]
@@ -146,17 +146,17 @@ class CouplingDelegate(QItemDelegate):
         self.modelCombo = ComboModel(editor, 1, 1)
         fieldId = index.row() + 1
 
-        if self.mdl.getCriterion(fieldId) == "continuous" :
+        if self.mdl.mainFieldsModel.getCriterion(fieldId) == "continuous" :
                self.modelCombo.addItem(self.tr(self.dicoM2V["none"]), "none")
                self.modelCombo.disableItem(str_model="none")
         else :
                self.modelCombo.addItem(self.tr(self.dicoM2V["none"]), "none")
-               carrier = self.mdl.getCarrierField(fieldId)
+               carrier = self.mdl.mainFieldsModel.getCarrierField(fieldId)
                if self.mdl.getTurbulenceModel(carrier) == "k-epsilon" or \
                   self.mdl.getTurbulenceModel(carrier) == "k-epsilon_linear_production" or \
                   self.mdl.getTurbulenceModel(carrier) == "rij-epsilon_ssg" or \
                   self.mdl.getTurbulenceModel(carrier) == "rij-epsilon_ebrsm":
-                   if self.mdl.getFieldNature(fieldId) == "gas" :
+                   if self.mdl.mainFieldsModel.getFieldNature(fieldId) == "gas" :
                        # bulles
                        self.modelCombo.addItem(self.tr(self.dicoM2V["large_inclusions"]), "large_inclusions")
                    else :
@@ -207,7 +207,7 @@ class TurbFluxDelegate(QItemDelegate):
         self.modelCombo = ComboModel(editor, 1, 1)
         fieldId = index.row() + 1
 
-        if self.mdl.getEnergyResolution(fieldId) == 'on':
+        if self.mdl.mainFieldsModel.getEnergyResolution(fieldId) == 'on':
             if self.mdl.useAdvancedThermalFluxes(fieldId) == True:
                 for turbFlux in TurbulenceModelsDescription.ThermalTurbFluxModels:
                     self.modelCombo.addItem(self.tr(self.dicoM2V[turbFlux]), turbFlux)
@@ -299,12 +299,12 @@ class StandardItemModelTurbulence(QStandardItemModel):
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         if index.column() == 3 :
             if self.mdl.useAdvancedThermalFluxes(index.row()+1) == True \
-                and self.mdl.getEnergyResolution(index.row()+1) == 'on':
+                and self.mdl.mainFieldsModel.getEnergyResolution(index.row()+1) == 'on':
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
             else:
                 return Qt.NoItemFlags
         elif index.column() == 1 or index.column() == 4 :
-            if self.mdl.getCriterion(index.row()+1) == "continuous" :
+            if self.mdl.mainFieldsModel.getCriterion(index.row()+1) == "continuous" :
                 return Qt.NoItemFlags
             else :
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
@@ -381,11 +381,11 @@ class StandardItemModelTurbulence(QStandardItemModel):
         """
         row = self.rowCount()
 
-        label        = self.mdl.getLabel(fieldId)
-        carrier      = self.mdl.getCarrierField(fieldId)
+        label        = self.mdl.mainFieldsModel.getLabel(fieldId)
+        carrier      = self.mdl.mainFieldsModel.getCarrierField(fieldId)
         carrierLabel = ""
         if carrier != "off" :
-            carrierLabel = self.mdl.getLabel(carrier)
+            carrierLabel = self.mdl.mainFieldsModel.getLabel(carrier)
         else :
             carrierLabel = carrier
         turbulence = self.dicoM2V[self.mdl.getTurbulenceModel(fieldId)]
@@ -402,7 +402,7 @@ class StandardItemModelTurbulence(QStandardItemModel):
         """
         update item
         """
-        for id in self.mdl.getFieldIdList() :
+        for id in self.mdl.mainFieldsModel.getFieldIdList() :
             self._data[int(id)-1][2] = self.dicoM2V[self.mdl.getTurbulenceModel(id)]
             self._data[int(id)-1][3] = self.dicoM2V[self.mdl.getThermalTurbulentFlux(id)]
             self._data[int(id)-1][4] = self.dicoM2V[self.mdl.getTwoWayCouplingModel(id)]
@@ -500,7 +500,7 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         # Combo models
         self.modelContinuousCoupling = ComboModel(self.comboBoxContinuousCoupling, 1, 1)
         self.modelContinuousCoupling.addItem(self.tr('none'), 'none')
-        if self.mdl.getPhaseChangeTransferStatus() == "off":
+        if self.mdl.mainFieldsModel.getPhaseChangeTransferStatus() == "off":
             self.modelContinuousCoupling.addItem(self.tr("separate phases"), "separate_phase")
         else:
             self.modelContinuousCoupling.addItem(self.tr("separate phases + cond"), "separate_phase_cond")
@@ -515,14 +515,14 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         self.comboBoxContinuousCoupling.activated[str].connect(self.slotContinuousCoupling)
 
         # hide/show groupBoxContinuousCoupling
-        if len(self.mdl.getContinuousFieldList()) >=2 :
+        if len(self.mdl.mainFieldsModel.getContinuousFieldList()) >=2 :
             self.groupBoxContinuousCoupling.show()
             model = self.mdl.getContinuousCouplingModel()
             self.modelContinuousCoupling.setItem(str_model=model)
         else :
             self.groupBoxContinuousCoupling.hide()
 
-        for fieldId in self.mdl.getFieldIdList():
+        for fieldId in self.mdl.mainFieldsModel.getFieldIdList():
             self.tableModelTurbulence.newItem(fieldId)
 
         self.case.undoStartGlobal()

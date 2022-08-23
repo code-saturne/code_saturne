@@ -23,7 +23,7 @@
 #-------------------------------------------------------------------------------
 
 import sys, unittest
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.MainFieldsModel import *
@@ -42,11 +42,10 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         """
         #
         # XML file parameters
-        MainFieldsModel.__init__(self, case)
         TurbulenceModel.__init__(self, case)
         self.case = case
         self.XMLThermo = self.case.xmlGetNode('thermophysical_models')
-        self.__XMLNodefields = self.XMLNodethermo.xmlInitNode('fields')
+        self.__XMLNodefields = self.XMLThermo.xmlInitNode('fields')
 
 
     def defaultValues(self):
@@ -66,7 +65,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Put model for friction.
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         self.isInList(model, ('none', 'pressure', 'fluxes'))
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
@@ -80,7 +79,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Return model for friction.
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('friction')
@@ -98,7 +97,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Put model for granular.
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         self.isInList(model, ('none', 'pressure', 'fluxes'))
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
@@ -112,7 +111,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Return model for granular.
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('granular')
@@ -130,7 +129,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Put model for kinetic.
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         self.isInList(model, ('none', 'uncorrelate_collision', 'correlate_collision'))
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
@@ -144,7 +143,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         Public method.
         Return model for kinetic.
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
         noden = node.xmlGetNode('kinetic')
@@ -185,7 +184,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         """
         put polydispersed coupling status
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
         self.isOnOff(status)
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
@@ -197,7 +196,7 @@ class SolidModel(TurbulenceModel):  # TODO : should SolidModel inherit from Turb
         """
         get polydispersed coupling status
         """
-        self.isInList(str(fieldId),self.getFieldIdList())
+        self.isInList(str(fieldId),self.mainFieldsModel.getFieldIdList())
 
         node = self.__XMLNodefields.xmlGetNode('field', field_id = fieldId)
 

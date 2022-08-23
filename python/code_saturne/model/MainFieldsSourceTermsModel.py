@@ -51,7 +51,7 @@ from code_saturne.model.NotebookModel import NotebookModel
 # Variables and Scalar model initialization modelling class
 #-------------------------------------------------------------------------------
 
-class MainFieldsSourceTermsModel(Model):
+class MainFieldsSourceTermsModel(Variables, Model):
     """
     Class for Variables and Scalar model initialization.
     """

@@ -26,12 +26,13 @@ import unittest
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.model.MainFieldsModel import MainFieldsModel
+from code_saturne.model.EosWrapper import eosWrapper
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.OutputFieldsModel import OutputFieldsModel
 from code_saturne.model.SpeciesModel import SpeciesModel
 from code_saturne.model.XMLengine import *
 from code_saturne.model.XMLmodel import *
-from code_saturne.model.XMLvariables import Model
+from code_saturne.model.XMLvariables import Model, Variables
 
 # -------------------------------------------------------------------------------
 # log config
@@ -46,7 +47,7 @@ log.setLevel(GuiParam.DEBUG)
 #-------------------------------------------------------------------------------
 
 
-class ThermodynamicsModel(MainFieldsModel, Variables, Model):
+class ThermodynamicsModel(Variables, Model):
     """
     This class manages the Field objects in the XML file
     """
@@ -57,7 +58,8 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         """
         #
         # XML file parameters
-        MainFieldsModel.__init__(self, case)
+        self.mainFieldsModel = MainFieldsModel(case)
+        self.eos             = eosWrapper()
         self.case            = case
         self.XMLNodethermo   = self.case.xmlGetNode('thermophysical_models')
         self.__XMLNodefields = self.XMLNodethermo.xmlInitNode('fields')
@@ -157,10 +159,10 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         Check if EOS material laws can be activated
         :param field_id:
         """
-        if (self.getEnergyModel(field_id) == "off"
-                or self.getEnergyResolution(field_id) == "off"
-                or self.getFieldNature(field_id) == "solid"
-                or self.getPredefinedFlow() == "particles_flow"): #TODO check if EOS exists for solid phases
+        if (self.mainFieldsModel.getEnergyModel(field_id) == "off"
+                or self.mainFieldsModel.getEnergyResolution(field_id) == "off"
+                or self.mainFieldsModel.getFieldNature(field_id) == "solid"
+                or self.mainFieldsModel.getPredefinedFlow() == "particles_flow"): #TODO check if EOS exists for solid phases
             return False
 
         return self.eos.isActive()
@@ -169,7 +171,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
     def setMaterials(self, fieldId, material):
         self.check_field_id(fieldId)
         node = self.get_field_node(fieldId)
-        field_name = self.getFieldLabelsList()[int(fieldId) - 1]
+        field_name = self.mainFieldsModel.getFieldLabelsList()[int(fieldId) - 1]
         childNode = node.xmlInitChildNode('material')
         if not (self.checkEOSRequirements(fieldId)):
             material = "user_material"
@@ -202,12 +204,12 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             XMLNodeVariable = self.XMLNodethermo.xmlGetNode('variables')
             node = XMLNodeVariable.xmlGetNode('variable', field_id=fieldId, name="enthalpy")
             if not node:
-                Variables(self.case).setNewVariableProperty("variable", "", XMLNodeVariable, fieldId, "enthalpy", "enthalpy_"+field_name)
+                self.setNewVariableProperty("variable", "", XMLNodeVariable, fieldId, "enthalpy", "enthalpy_"+field_name)
 
     def checkIdenticalMaterialsRequirements(self):
-        force_identical_materials = (self.getPredefinedFlow() in ["free_surface", "boiling_flow", "droplet_flow",
+        force_identical_materials = (self.mainFieldsModel.getPredefinedFlow() in ["free_surface", "boiling_flow", "droplet_flow",
                                                                   "multiregime"]) \
-                                    and (self.getPhaseChangeTransferStatus() == "on")
+                                    and (self.mainFieldsModel.getPhaseChangeTransferStatus() == "on")
         return force_identical_materials
 
     @Variables.noUndo
@@ -285,7 +287,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
             for tag in ['density', 'molecular_viscosity', 'specific_heat', 'thermal_conductivity'] :
                 self.setPropertyMode(fieldId, tag, choice)
 
-            if self.getFieldNature(fieldId) == "gas":
+            if self.mainFieldsModel.getFieldNature(fieldId) == "gas":
                 tag = 'surface_tension'
                 fieldId = "none"
                 self.setPropertyMode(fieldId, tag, choice)
@@ -304,7 +306,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         if material == "user_material" :
             reference = material
         else :
-            phase = self.getFieldNature(fieldId)
+            phase = self.mainFieldsModel.getFieldNature(fieldId)
             if self.eos.isActive():
 
                 ref_idx = 0
@@ -374,7 +376,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
         'surface_tension'
         """
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(fieldId),fieldIdList)
 
@@ -396,7 +398,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
         'surface_tension'
         """
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(fieldId),fieldIdList)
         lst = ('density', 'molecular_viscosity',
@@ -453,7 +455,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         """
         Return a formula for properties
         """
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(fieldId), fieldIdList)
         self.isInList(tag, self.propertiesFormulaList())
@@ -475,7 +477,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         """
         Gives a formula for properties
         """
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(fieldId), fieldIdList)
         self.isInList(tag, self.propertiesFormulaList())
@@ -492,7 +494,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
     @Variables.noUndo
     def getPropertyMode(self, fieldId, tag):
         """Return choice of node I{tag}. Choice is constant or variable"""
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(fieldId), fieldIdList)
         self.isInList(tag, ('density', 'molecular_viscosity',
@@ -515,7 +517,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
     @Variables.undoLocal
     def setPropertyMode(self, fieldId, tag, choice):
         """Put choice in xml file's node I{tag}"""
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(fieldId), fieldIdList)
         self.isInList(tag, ('density', 'molecular_viscosity',
@@ -533,7 +535,7 @@ class ThermodynamicsModel(MainFieldsModel, Variables, Model):
         return node
 
     def check_field_id(self, fieldId):
-        return self.isInList(str(fieldId), self.getFieldIdList())
+        return self.isInList(str(fieldId), self.mainFieldsModel.getFieldIdList())
 
     def get_field_node(self, fieldId):
         node = self.__XMLNodefields.xmlGetNode('field', field_id=fieldId)
@@ -1042,7 +1044,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
 
     def defaultValues(self):
         reference_id = None
-        for field_id in self.getFieldIdList():
+        for field_id in self.mainFieldsModel.getFieldIdList():
             reference_id = field_id
             if not(super().checkEOSRequirements(field_id)):
                 break
@@ -1056,7 +1058,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
     @Variables.noUndo
     def getPropertyMode(self, field_id_a, field_id_b, tag):
         """Return choice of node I{tag}. Choice is constant or variable"""
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(field_id_a), fieldIdList)
         self.isInList(str(field_id_b), fieldIdList)
@@ -1080,7 +1082,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
     @Variables.undoLocal
     def setPropertyMode(self, field_id_a, field_id_b, tag, choice):
         """Put choice in xml file's node I{tag}"""
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(field_id_a), fieldIdList)
         self.isInList(str(field_id_b), fieldIdList)
@@ -1101,7 +1103,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
         'surface_tension'
         """
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(field_id_a), fieldIdList)
         self.isInList(str(field_id_b), fieldIdList)
@@ -1121,7 +1123,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         'molecular_viscosity', 'specific_heat', 'thermal_conductivity',
         'surface_tension'
         """
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(field_id_a), fieldIdList)
         self.isInList(str(field_id_b), fieldIdList)
@@ -1137,7 +1139,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         """
         Return a formula for properties
         """
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(field_id_a), fieldIdList)
         self.isInList(str(field_id_b), fieldIdList)
@@ -1160,7 +1162,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
         """
         Gives a formula for properties
         """
-        fieldIdList = self.getFieldIdList()
+        fieldIdList = self.mainFieldsModel.getFieldIdList()
         fieldIdList.append('none')
         self.isInList(str(field_id_a), fieldIdList)
         self.isInList(str(field_id_b), fieldIdList)
@@ -1214,7 +1216,7 @@ class ThermodynamicsInteractionModel(ThermodynamicsModel):
             symbols.append(s)
             known_fields.append(s)
 
-        for fieldId in self.getFieldIdList():
+        for fieldId in self.mainFieldsModel.getFieldIdList():
             if MainFieldsModel(self.case).getEnergyResolution(fieldId) == "on":
                 label = self.m_out.getVariableLabel(str(fieldId), "enthalpy")
                 symbols.append((label, 'enthalpy_' + str(fieldId)))
