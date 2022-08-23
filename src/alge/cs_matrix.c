@@ -2030,7 +2030,7 @@ _set_e_coeffs_msr_increment_block(cs_matrix_t        *matrix,
       if (jj < ms_e->n_rows) {
         for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
         for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[kk*b_size_2 + pp] += xa[face_id*b_size_2 + pp];
+          mc->_e_val[ll*b_size_2 + pp] += xa[face_id*b_size_2 + pp];
       }
 
     }
