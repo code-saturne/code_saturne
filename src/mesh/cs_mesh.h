@@ -41,6 +41,7 @@
 #include "cs_halo.h"
 #include "cs_interface.h"
 #include "cs_numbering.h"
+#include "cs_parall.h"
 #include "cs_range_set.h"
 
 #include "cs_mesh_builder.h"
@@ -716,14 +717,75 @@ cs_mesh_dump(const cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Determine number of blocks and associated groups to be used
+ *        for loops on interior faces.
+ *
+ * Blocks from a same group may be processed in parallel, while blocks from
+ * separate groups must not run simultaneously to avoid race conditions.
+ *
+ * \param[in]   m           pointer to mesh
+ * \param[in]   e2n         associated indexed sum algorithm type.
+ * \param[in]   block_size  size of thread blocks (chunks) if > 0,
+ *                          ignored (recomputed) if 0.
+ * \param[out]  n_groups    number of associated block groups
+ * \param[out]  n_blocks    number of associated blocks
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_i_faces_thread_block_count(const cs_mesh_t     *m,
+                                   const cs_e2n_sum_t   e2n,
+                                   int                  block_size,
+                                   int                 *n_groups,
+                                   int                 *n_blocks);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute array index bounds for a block of interior faces
+ *        associated to a thread or task.
+ *
+ * When the CS_E2N_SUM_SCATTER indexed sum algorithmm is used and mesh
+ * interior faces are renumbered for threads, the bounds provided are
+ * those based on the matching group and thread.
+ *
+ * In other cases, if block_size < 1 (i.e. not specified), the start and
+ * past-the-end indexes are defined so as to evenly distribute values
+ * to threads, in a manner similar to OpenMP <tt>schedule(static)</tt>.
+ * With a block size larger than zero, indexes will be simply based on
+ * the block's start and past-the end index.
+ *
+ * \param[in]       m            pointer to mesh
+ * \param[in]       e2n          associated indexed sum algorithm type.
+ * \param[in]       group_id     group id
+ * \param[in]       block_id     block id (relative to group)
+ * \param[in]       block_count  number of blocks
+ * \param[in]       block_size   size of blocks (chunks) if > 0,
+ *                               ignored (recomputed) if 0
+ * \param[in, out]  s_id         start index for the current block
+ * \param[in, out]  e_id         past-the-end index for the current block
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_i_faces_thread_block_range(const cs_mesh_t     *m,
+                                   const cs_e2n_sum_t   e2n,
+                                   int                  group_id,
+                                   int                  block_id,
+                                   int                  block_count,
+                                   int                  block_size,
+                                   cs_lnum_t           *s_id,
+                                   cs_lnum_t           *e_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return number of boundary face blocks associated to threads or tasks.
  *
  * \param[in]  m           pointer to mesh
- * \param[in]  block_size  size of thread blocks (chunks) if > 1,
- *                         ignored (recomputed) if 1.
+ * \param[in]  block_size  size of thread blocks (chunks) if > 0,
+ *                         ignored (recomputed) if 0
  *
- * \return  number of associated blocks if block_size > 1, number of threads
- *          if block_size = 1.
+ * \return  number of associated blocks if block_size > 0, number of threads
+ *          if block_size = 0.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -734,7 +796,7 @@ cs_mesh_b_faces_thread_block_count(const cs_mesh_t  *m,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute array index bounds for a block of boundary faces
- *        associated to a block or task.
+ *        associated to a thread or task.
  *
  * When the mesh boundary faces are renumbered for threads (lexicographical
  * ordering based on cell adjacency), the start and past-the-end indexes for
@@ -742,18 +804,20 @@ cs_mesh_b_faces_thread_block_count(const cs_mesh_t  *m,
  * boundary faces adjacent to a given cell are assigned to the same block, so
  * that no other block (task) thread references the same cell.
  *
- * \param[in]       m           pointer to mesh
- * \param[in]       b_id        block id (usually matches chunk/task)
- * \param[in]       block_size  size of thread blocks (chunks) if > 1,
- *                              ignored (recomputed) if 1.
- * \param[in, out]  s_id        start index for the current thread
- * \param[in, out]  e_id        past-the-end index for the current thread
+ * \param[in]       m            pointer to mesh
+ * \param[in]       block_id     block id (usually matches chunk/task)
+ * \param[in]       block_count  number of thread blocks
+ * \param[in]       block_size   size of thread blocks (chunks) if > 0,
+ *                               ignored (recomputed) if 0
+ * \param[in, out]  s_id         start index for the current block
+ * \param[in, out]  e_id         past-the-end index for the current block
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_mesh_b_faces_thread_block_range(const cs_mesh_t  *m,
-                                   int               b_id,
+                                   int               block_id,
+                                   int               block_count,
                                    int               block_size,
                                    cs_lnum_t        *s_id,
                                    cs_lnum_t        *e_id);

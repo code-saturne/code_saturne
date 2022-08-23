@@ -2876,164 +2876,177 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
     rhsv[c_id][3] = pvar[c_id];
   }
 
-  /* Contribution from interior faces */
+  /* Contribution from interior faces
+     -------------------------------- */
+
+  /* Test on e2n (template argument for algorithm type) */
 
   if (e2n != CS_E2N_SUM_GATHER) {
 
-    const cs_lnum_t n_i_faces = m->n_i_faces;
     cs_real_3_t *f_ctb = NULL;
 
     if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
-      BFT_MALLOC(f_ctb, n_i_faces, cs_real_3_t);
+      BFT_MALLOC(f_ctb, m->n_i_faces, cs_real_3_t);
     }
 
-    if (c_weight_s != NULL) {  /* With cell weighting */
+    cs_lnum_t n_i_groups, n_i_threads;
+    cs_mesh_i_faces_thread_block_count(m, e2n, 0, &n_i_groups, &n_i_threads);
 
-#     pragma omp parallel for if(n_i_faces < CS_THR_MIN)
-      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-        cs_lnum_t ii = i_face_cells[f_id][0];
-        cs_lnum_t jj = i_face_cells[f_id][1];
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-        cs_real_2_t poro = {i_poro_duq_0[is_porous*f_id],
-                            i_poro_duq_1[is_porous*f_id]};
+        cs_lnum_t s_id, e_id;
+        cs_mesh_i_faces_thread_block_range(m, e2n, g_id, t_id, n_i_threads, 0,
+                                           &s_id, &e_id);
 
-        cs_real_t dvarij, pfac, dc[3];
+        if (c_weight_s != NULL) {  /* With cell weighting */
 
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+          for (cs_lnum_t f_id = s_id; f_id < e_id; f_id++) {
 
-        if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
-          /* In this case, we do not use other terms of rhsv in this loop,
-             so caching will be better directly using pvar. */
-          dvarij = pvar[jj] - pvar[ii];
+            cs_lnum_t ii = i_face_cells[f_id][0];
+            cs_lnum_t jj = i_face_cells[f_id][1];
+
+            cs_real_2_t poro = {i_poro_duq_0[is_porous*f_id],
+                                i_poro_duq_1[is_porous*f_id]};
+
+            cs_real_t dvarij, pfac, dc[3];
+
+            for (cs_lnum_t ll = 0; ll < 3; ll++)
+              dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+
+            if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+              /* In this case, we do not use other terms of rhsv in this loop,
+                 so caching will be better directly using pvar. */
+              dvarij = pvar[jj] - pvar[ii];
+            }
+            else {
+              /* In this case, use rhsv, as access patterns lead to better
+                 caching behavior (or did when last tested) */
+              dvarij = rhsv[jj][3] - rhsv[ii][3];
+            }
+
+            pfac =  (  dvarij
+                     + cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                      cell_cen[ii],
+                                                      f_ext[ii])
+                     + poro[0]
+                     - cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                      cell_cen[jj],
+                                                      f_ext[jj])
+                     - poro[1])
+                   / cs_math_3_square_norm(dc);
+
+            cs_real_t pond = weight[f_id];
+
+            pfac /= (  pond       *c_weight_s[ii]
+                     + (1. - pond)*c_weight_s[jj]);
+
+            if (e2n == CS_E2N_SUM_SCATTER) {
+              cs_real_t fctb[3];
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                fctb[ll] = dc[ll] * pfac;
+
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                rhsv[ii][ll] += c_weight_s[jj] * fctb[ll];
+
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                rhsv[jj][ll] += c_weight_s[ii] * fctb[ll];
+            }
+            else if (e2n == CS_E2N_SUM_SCATTER_ATOMIC) {
+              cs_real_t fctb[3];
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                fctb[ll] = dc[ll] * pfac;
+
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                #pragma omp atomic
+                rhsv[ii][ll] += c_weight_s[jj] * fctb[ll];
+
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                #pragma omp atomic
+                rhsv[jj][ll] += c_weight_s[ii] * fctb[ll];
+            }
+            else if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                f_ctb[f_id][ll] = dc[ll] * pfac;
+            }
+          }
+
         }
-        else {
-          /* In this case, use rhsv, as access patterns lead to better
-             caching behavior (or did when last tested) */
-          dvarij = rhsv[jj][3] - rhsv[ii][3];
-        }
+        else { /* Without cell weights */
 
-        pfac =  (  dvarij
-                 + cs_math_3_distance_dot_product(i_face_cog[f_id],
-                                                  cell_cen[ii],
-                                                  f_ext[ii])
-                 + poro[0]
-                 - cs_math_3_distance_dot_product(i_face_cog[f_id],
-                                                  cell_cen[jj],
-                                                  f_ext[jj])
-                 - poro[1])
-               / cs_math_3_square_norm(dc);
+          for (cs_lnum_t f_id = s_id; f_id < e_id; f_id++) {
 
-        cs_real_t pond = weight[f_id];
+            cs_lnum_t ii = i_face_cells[f_id][0];
+            cs_lnum_t jj = i_face_cells[f_id][1];
 
-        pfac /=   (  pond       *c_weight_s[ii]
-                   + (1. - pond)*c_weight_s[jj]);
+            cs_real_2_t poro = {i_poro_duq_0[is_porous*f_id],
+                                i_poro_duq_1[is_porous*f_id]};
 
-        if (e2n == CS_E2N_SUM_SCATTER) {
-          cs_real_t fctb[3];
+            cs_real_t dvarij, pfac, dc[3];
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            fctb[ll] = dc[ll] * pfac;
+            for (cs_lnum_t ll = 0; ll < 3; ll++)
+              dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += c_weight_s[jj] * fctb[ll];
+            if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+              /* In this case, we do not use other terms of rhsv in this loop,
+                 so caching will be better directly using pvar. */
+              dvarij = pvar[jj] - pvar[ii];
+            }
+            else {
+              /* In this case, use rhsv, as access patterns lead to better
+                 caching behavior (or did when last tested) */
+              dvarij = rhsv[jj][3] - rhsv[ii][3];
+            }
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[jj][ll] += c_weight_s[ii] * fctb[ll];
-        }
-        else if (e2n == CS_E2N_SUM_SCATTER_ATOMIC) {
-          cs_real_t fctb[3];
+            pfac =  (  dvarij
+                     + cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                      cell_cen[ii],
+                                                      f_ext[ii])
+                     + poro[0]
+                     - cs_math_3_distance_dot_product(i_face_cog[f_id],
+                                                      cell_cen[jj],
+                                                      f_ext[jj])
+                     - poro[1])
+                   / cs_math_3_square_norm(dc);
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            fctb[ll] = dc[ll] * pfac;
+            if (e2n == CS_E2N_SUM_SCATTER) {
+              cs_real_t fctb[3];
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                fctb[ll] = dc[ll] * pfac;
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            #pragma omp atomic
-            rhsv[ii][ll] += c_weight_s[jj] * fctb[ll];
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                rhsv[ii][ll] += fctb[ll];
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            #pragma omp atomic
-            rhsv[jj][ll] += c_weight_s[ii] * fctb[ll];
-        }
-        else if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            f_ctb[f_id][ll] = dc[ll] * pfac;
-        }
-      }
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                rhsv[jj][ll] += fctb[ll];
+            }
+            else if (e2n == CS_E2N_SUM_SCATTER_ATOMIC) {
+              cs_real_t fctb[3];
 
-    }
-    else { /* Without cell weights */
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                fctb[ll] = dc[ll] * pfac;
 
-#     pragma omp parallel for if(n_i_faces < CS_THR_MIN)
-      for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                #pragma omp atomic
+                rhsv[ii][ll] += fctb[ll];
 
-        cs_lnum_t ii = i_face_cells[f_id][0];
-        cs_lnum_t jj = i_face_cells[f_id][1];
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                #pragma omp atomic
+                rhsv[jj][ll] += fctb[ll];
+            }
+            else if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                f_ctb[f_id][ll] = dc[ll] * pfac;
+            }
+          }
 
-        cs_real_2_t poro = {i_poro_duq_0[is_porous*f_id],
-                            i_poro_duq_1[is_porous*f_id]};
+        } /* End of loop on faces */
 
-        cs_real_t dvarij, pfac, dc[3];
+      } /* End of loop on threads */
 
-        for (cs_lnum_t ll = 0; ll < 3; ll++)
-          dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
-
-        if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
-          /* In this case, we do not use other terms of rhsv in this loop,
-             so caching will be better directly using pvar. */
-          dvarij = pvar[jj] - pvar[ii];
-        }
-        else {
-          /* In this case, use rhsv, as access patterns lead to better
-             caching behavior (or did when last tested) */
-          dvarij = rhsv[jj][3] - rhsv[ii][3];
-        }
-
-        pfac =  (  dvarij
-                 + cs_math_3_distance_dot_product(i_face_cog[f_id],
-                                                  cell_cen[ii],
-                                                  f_ext[ii])
-                 + poro[0]
-                 - cs_math_3_distance_dot_product(i_face_cog[f_id],
-                                                  cell_cen[jj],
-                                                  f_ext[jj])
-                 - poro[1])
-               / cs_math_3_square_norm(dc);
-
-        if (e2n == CS_E2N_SUM_SCATTER) {
-          cs_real_t fctb[3];
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            fctb[ll] = dc[ll] * pfac;
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += fctb[ll];
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[jj][ll] += fctb[ll];
-        }
-        else if (e2n == CS_E2N_SUM_SCATTER_ATOMIC) {
-          cs_real_t fctb[3];
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            fctb[ll] = dc[ll] * pfac;
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            #pragma omp atomic
-            rhsv[ii][ll] += fctb[ll];
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            #pragma omp atomic
-            rhsv[jj][ll] += fctb[ll];
-        }
-        else if (e2n == CS_E2N_SUM_STORE_THEN_GATHER) {
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            f_ctb[f_id][ll] = dc[ll] * pfac;
-        }
-      }
-
-    } /* End of loop on faces */
+    } /* End of loop on groups */
 
     /* Assembly for 2-stage algorithm */
 
@@ -3098,9 +3111,11 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
     const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
     const cs_lnum_t *c2c = ma->cell_cells;
     const cs_lnum_t *c2f = ma->cell_i_faces;
+    short int *c2f_sgn = ma->cell_i_faces_sgn;
     if (c2f == NULL) {
       cs_mesh_adjacencies_update_cell_i_faces();
       c2f = ma->cell_i_faces;
+      c2f_sgn = ma->cell_i_faces_sgn;
     }
 
     if (c_weight_s != NULL) {  /* With cell weighting */
@@ -3136,7 +3151,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
                               - poro[1])
                            / cs_math_3_square_norm(dc);
 
-          cs_real_t pond = weight[f_id];
+          cs_real_t pond = (c2f_sgn[i] > 0) ? weight[f_id] : 1. - weight[f_id];
 
           pfac /= (  pond       *w_ii
                    + (1. - pond)*w_jj);
