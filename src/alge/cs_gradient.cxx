@@ -52,7 +52,6 @@
 
 #include "cs_bad_cells_regularisation.h"
 #include "cs_blas.h"
-#include "cs_cell_to_vertex.h"
 #include "cs_ext_neighborhood.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
